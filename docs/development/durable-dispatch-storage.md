@@ -304,7 +304,30 @@ while an actual recovery read and recovery operation retirement still complete
 on the same protected owner. These tests use the actual embedded engine and
 fixed workers; the provider itself is a controlled physical-cleanup fixture.
 
+After composing the separately published management kernel, the same strict
+Linux checks passed all 122 effects and 128 state cases. Ordinary attempt
+capacity and the reserved management provider-worker partition coexist in the
+same dispatcher; this union preserves both sets of required schedules.
+
 This port composes the actual dispatcher worker and protected engine. Ordinary
 Standalone/verified-guest installation and authenticated management qualification
 remain recorded by their owning integration tickets; this focused capacity
 change does not close all of #391 or the durable quota/retention work in #397.
+
+## Recovery admission compatibility
+
+Recovery capacity is configured in `StoreIoLimits.recovery` before the physical
+owner starts. `install_recovery_capacity` validates that same immutable partition;
+it rejects an unconfigured owner or any different limits and creates no worker,
+queue, reservation or replacement owner. `submit_recovery` maps the original read
+or write class into `RecoveryRead` or `RecoveryWrite` on the same fixed workers,
+physical writer and retained-resource ledger. `recovery_snapshot` projects their
+bounded counters. These compatibility methods supply no result or mutation
+authority and cannot turn a late capacity description into resource admission.
+
+The merged source retains the five compatibility recovery schedules and all six
+prior dedicated-partition schedules, alongside the real-engine pressure tests.
+Their fixed-worker, queue, accepted-owner and byte ceilings remain unchanged.
+All 245 state library cases pass on pinned Rust 1.97.1 Linux after reconciliation;
+the [current handoff](phase4-handoffs/2026-10-10/pr796-reconciliation.md) records
+the complete scope. Earlier campaigns qualify their recorded source revisions.

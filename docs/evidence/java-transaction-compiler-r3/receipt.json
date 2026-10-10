@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "authored-component-compiler",
+  "compilerSourceCommit": "ff9ecd0733456bceacf5b96f14274b9c2dc0e8e6",
+  "recipeMilestone": "1f8944ca0ee9a4b65a3f3a51696349b21ee31647",
+  "toolProducerSourceCommit": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "policyInputDigest": "sha256:ce36420661807326255232c0542f334045af5a637a157ad3c99b7e77328ffcba",
+  "toolBundleArchiveDigest": "sha256:37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+  "compiledVariants": 5,
+  "signedNodeExecutionQualified": false,
+  "admissionRejectionQualified": false,
+  "retainedArchiveDigest": "sha256:14d22cf56435725ac56853900e68a0744782c2037864198532aa069bea051177",
+  "retainedArchiveBytes": 6289990,
+  "retainedFiles": 848,
+  "variants": {
+    "aggregate": {
+      "componentDigest": "sha256:3d7f1e8795c09088645e5ae10e75a913b2078ae77fe2822504a533b8f22c5c6a",
+      "componentBytes": 1002405,
+      "sourceDigest": "sha256:019460935a0fac39fd842ea630a7f07b4c6a7c4f5e4a961926f3d4166b4eb6d5",
+      "sourceArchiveDigest": "sha256:c9fa4b58ddce06c51ecdb576236f26f48465cafda2facc40ba7ea5eaab132823",
+      "recipeDigest": "sha256:51003fd8f984316fe51212e8e6161546997b3e0785b52ed09779f6cd8dc27a1d",
+      "companionDigest": "sha256:6554b968e80b2e3132742d3c95e21ba2056fa4fa9f846b419c36daf2da3a57e4",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ],
+      "sourceRevision": "ff9ecd0733456bceacf5b96f14274b9c2dc0e8e6",
+      "workingTreeChanged": false
+    },
+    "forbidden-http": {
+      "componentDigest": "sha256:ac625772e9dacf2b28284f20088c637f3761b920471c4889e8b9d3e7d30cd6dc",
+      "componentBytes": 1103216,
+      "sourceDigest": "sha256:7cedcfa68b62d6181581ef5b8bded50a3b1a727a9c6e87fd3c984a752c4a15fa",
+      "sourceArchiveDigest": "sha256:ee733f5f91e45020ff291e67dbe2194248e9e964b5bca97722292b6690087be3",
+      "recipeDigest": "sha256:51003fd8f984316fe51212e8e6161546997b3e0785b52ed09779f6cd8dc27a1d",
+      "companionDigest": "sha256:2b71f2d1e6151f97478c258a477ef06470fe43c1f13f37387de39efdd63541a3",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:http/client@0.2.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ],
+      "sourceRevision": "ff9ecd0733456bceacf5b96f14274b9c2dc0e8e6",
+      "workingTreeChanged": false
+    },
+    "put-once-compatible-v2": {
+      "componentDigest": "sha256:1221ffac1d4f8db71327d56fba1624df19bff849a26f687a57888ccc4a0279ae",
+      "componentBytes": 1007558,
+      "sourceDigest": "sha256:7b04765cc056526c01cbe2fcc10e7c3d3e1208bdd5ef3f1fc9f3b3963caa9163",
+      "sourceArchiveDigest": "sha256:a7d936cd1008f0b36be9dc470ef290922a3f620d7388a24a51d6aeafecebd689",
+      "recipeDigest": "sha256:952f499e0e3042d2f3b004fb0eb281a3a33cc5a115eebc59e7381627ead1bf8e",
+      "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ],
+      "sourceRevision": "ff9ecd0733456bceacf5b96f14274b9c2dc0e8e6",
+      "workingTreeChanged": false,
+      "requirementsDigest": "sha256:f9c50d3923dea8e7973946c87d0a9b08abe5a7b1af67acbbc3709d7e37cdc205"
+    },
+    "put-once-legacy-v1": {
+      "componentDigest": "sha256:112e60fbf29c131d221f21de677d0e3b268cacf5bc17db184b94655c0513734d",
+      "componentBytes": 1007718,
+      "sourceDigest": "sha256:aab19decd17686ddea99afdda836256bb179eb0c593567f62c90d768aff569db",
+      "sourceArchiveDigest": "sha256:122c2f666a57f83f00967f33f3ad728720f53a6f1e1f31cf02c37c85a0c68b6d",
+      "recipeDigest": "sha256:952f499e0e3042d2f3b004fb0eb281a3a33cc5a115eebc59e7381627ead1bf8e",
+      "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ],
+      "sourceRevision": "ff9ecd0733456bceacf5b96f14274b9c2dc0e8e6",
+      "workingTreeChanged": false,
+      "requirementsDigest": "sha256:f9c50d3923dea8e7973946c87d0a9b08abe5a7b1af67acbbc3709d7e37cdc205"
+    },
+    "put-once-writer-v2": {
+      "componentDigest": "sha256:ec6ac5b4a95957406f664f7df9feb4a92829fb26e8634cde97f8b44ae21082ce",
+      "componentBytes": 1007558,
+      "sourceDigest": "sha256:17540127721207407d3f4450b7e418098a039dbc23ab1ac62029611ee9867614",
+      "sourceArchiveDigest": "sha256:4fbeec46bd691afb94e1e2b44addcadafaa9edfc130b07f371d78b22433243e0",
+      "recipeDigest": "sha256:952f499e0e3042d2f3b004fb0eb281a3a33cc5a115eebc59e7381627ead1bf8e",
+      "companionDigest": "sha256:e5719a610fb20811a402aed0531d13d71547978104048d9e275ae7b7ae061c49",
+      "actualImports": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:intents/staging@0.1.0",
+        "latent:state/key-value@0.2.0"
+      ],
+      "sourceRevision": "ff9ecd0733456bceacf5b96f14274b9c2dc0e8e6",
+      "workingTreeChanged": false,
+      "requirementsDigest": "sha256:23fdda7e19691d21bb832ac5e59113ddc2afdecfc8668715fb43d6ae9c23a275"
+    }
+  },
+  "windowsMergedDependencyTests": {
+    "passed": false,
+    "errors": 1,
+    "skipped": 6,
+    "reason": "original symlink fixture lacks Windows privilege (WinError 1314)",
+    "test": "CompilerDownloadBounds.test_existing_file_and_symlink_are_not_replaced"
+  },
+  "linuxMergedDependencyTests": {
+    "passed": true,
+    "cases": 44,
+    "skipped": 0
+  },
+  "archiveIntegrity": {
+    "allMemberDigestsVerified": true,
+    "fullGzipCrcVerified": true,
+    "zeroOnlyTarPaddingBytes": 4096,
+    "preliminaryEnvelopeMismatchRetained": true
+  }
+}

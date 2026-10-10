@@ -1,85 +1,85 @@
 {
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Preserve every original case, base, decorator and skip site. Reviewed fixture setup adds explicit Java schema/diagnostic inputs or substitutes only the current Wasmtime 48.0.5 baseline; execution predicates, deadlines and bounds stay intact.",
+  "module":"tools/tests/test_native_runtime.py",
   "cases":["AuthenticationTests.test_bundle_cannot_supply_its_own_publisher_trust","AuthenticationTests.test_each_attested_artifact_is_checked_after_verifier_success","AuthenticationTests.test_missing_attestation_wrong_version_and_writable_trust_are_rejected","AuthenticationTests.test_verifier_failure_cannot_fall_back_to_checksum_only","FileTests.test_archive_exact_files_and_modes","FileTests.test_archive_links_devices_traversal_duplicates_and_truncation","FileTests.test_bounded_subprocess_timeout_and_output_are_reaped","FileTests.test_builder_output_round_trips_through_the_strict_installer_reader","FileTests.test_directory_acl_mode_and_unexpected_types","FileTests.test_purge_accepts_only_complete_in_root_hardlink_sets","FileTests.test_purge_does_not_follow_links_or_remove_foreign_target","FileTests.test_serialized_lock_is_finite_and_not_replaceable","FileTests.test_single_link_protected_files_and_symlink_ancestors","FileTests.test_stopped_backup_preserves_only_backward_owned_storage_hardlinks","LifecycleTests.test_failure_remains_unactivated_and_requires_exact_resume","LifecycleTests.test_interrupted_purge_finalization_keeps_a_resumable_tombstone","LifecycleTests.test_profile_selection_and_untracked_existing_roots_are_not_adopted","LifecycleTests.test_removal_retention_reinstallation_and_explicit_purge","LifecycleTests.test_repeat_install_retains_credentials_config_and_deployment_data","LifecycleTests.test_substituted_root_and_modified_binary_are_not_removed","LifecycleTests.test_unsupported_upgrade_is_refused_before_mutation_and_allowed_pair_is_exact","ManifestTests.test_complete_fixture_inventory_and_exact_version","ManifestTests.test_dependency_inventory_retains_lowercase_published_license_files","ManifestTests.test_development_fixture_metadata_is_closed_and_never_release_authority","ManifestTests.test_development_runtime_cannot_modify_normal_or_system_installations","ManifestTests.test_duplicate_documents_and_oversized_inputs","ManifestTests.test_elf_loader_is_the_same_glibc_prerequisite_not_an_unbounded_library_allowlist","ManifestTests.test_exact_publisher_policy_and_no_implicit_candidate_trust","ManifestTests.test_missing_compiler_incompatible_platform_and_approval_mismatch","ManifestTests.test_offline_verification_pins_certificate_not_user_predicate_claims","ManifestTests.test_shared_license_requires_reviewed_exact_monorepo_source_and_digest","ManifestTests.test_systemd_retains_compiler_ownership_and_executable_mappings","ManifestTests.test_unsafe_paths_versions_and_file_modes","ManifestTests.test_vm_driver_uses_pinned_image_and_actual_reboot","ManifestTests.test_zip_bootstrap_contains_only_runtime_modules"],
   "guards":{
-    "AuthenticationTests.test_bundle_cannot_supply_its_own_publisher_trust":
-      "6f0b854244a1a99a2847f54247478ca0f2286aa3c472c95068f15f82ba189dcc",
-    "AuthenticationTests.test_each_attested_artifact_is_checked_after_verifier_success":
-      "6f0b854244a1a99a2847f54247478ca0f2286aa3c472c95068f15f82ba189dcc",
-    "AuthenticationTests.test_missing_attestation_wrong_version_and_writable_trust_are_rejected":
-      "6f0b854244a1a99a2847f54247478ca0f2286aa3c472c95068f15f82ba189dcc",
-    "AuthenticationTests.test_verifier_failure_cannot_fall_back_to_checksum_only":
-      "6f0b854244a1a99a2847f54247478ca0f2286aa3c472c95068f15f82ba189dcc",
-    "FileTests.test_archive_exact_files_and_modes":
-      "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0",
-    "FileTests.test_archive_links_devices_traversal_duplicates_and_truncation":
-      "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0",
-    "FileTests.test_bounded_subprocess_timeout_and_output_are_reaped":
-      "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0",
-    "FileTests.test_builder_output_round_trips_through_the_strict_installer_reader":
-      "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0",
-    "FileTests.test_directory_acl_mode_and_unexpected_types":
-      "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0",
-    "FileTests.test_purge_accepts_only_complete_in_root_hardlink_sets":
-      "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0",
-    "FileTests.test_purge_does_not_follow_links_or_remove_foreign_target":
-      "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0",
-    "FileTests.test_serialized_lock_is_finite_and_not_replaceable":
-      "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0",
-    "FileTests.test_single_link_protected_files_and_symlink_ancestors":
-      "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0",
-    "FileTests.test_stopped_backup_preserves_only_backward_owned_storage_hardlinks":
-      "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0",
-    "LifecycleTests.test_failure_remains_unactivated_and_requires_exact_resume":
-      "8009cdaa52e890a617966073f4b942c8b33405c117ce7a8d58e58af48e83621b",
-    "LifecycleTests.test_interrupted_purge_finalization_keeps_a_resumable_tombstone":
-      "8009cdaa52e890a617966073f4b942c8b33405c117ce7a8d58e58af48e83621b",
-    "LifecycleTests.test_profile_selection_and_untracked_existing_roots_are_not_adopted":
-      "8009cdaa52e890a617966073f4b942c8b33405c117ce7a8d58e58af48e83621b",
-    "LifecycleTests.test_removal_retention_reinstallation_and_explicit_purge":
-      "8009cdaa52e890a617966073f4b942c8b33405c117ce7a8d58e58af48e83621b",
-    "LifecycleTests.test_repeat_install_retains_credentials_config_and_deployment_data":
-      "8009cdaa52e890a617966073f4b942c8b33405c117ce7a8d58e58af48e83621b",
-    "LifecycleTests.test_substituted_root_and_modified_binary_are_not_removed":
-      "8009cdaa52e890a617966073f4b942c8b33405c117ce7a8d58e58af48e83621b",
-    "LifecycleTests.test_unsupported_upgrade_is_refused_before_mutation_and_allowed_pair_is_exact":
-      "8009cdaa52e890a617966073f4b942c8b33405c117ce7a8d58e58af48e83621b",
-    "ManifestTests.test_complete_fixture_inventory_and_exact_version":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
-    "ManifestTests.test_dependency_inventory_retains_lowercase_published_license_files":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
     "ManifestTests.test_development_fixture_metadata_is_closed_and_never_release_authority":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
     "ManifestTests.test_development_runtime_cannot_modify_normal_or_system_installations":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
-    "ManifestTests.test_duplicate_documents_and_oversized_inputs":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
+    "ManifestTests.test_dependency_inventory_retains_lowercase_published_license_files":
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
     "ManifestTests.test_elf_loader_is_the_same_glibc_prerequisite_not_an_unbounded_library_allowlist":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
-    "ManifestTests.test_exact_publisher_policy_and_no_implicit_candidate_trust":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
-    "ManifestTests.test_missing_compiler_incompatible_platform_and_approval_mismatch":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
-    "ManifestTests.test_offline_verification_pins_certificate_not_user_predicate_claims":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
     "ManifestTests.test_shared_license_requires_reviewed_exact_monorepo_source_and_digest":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
-    "ManifestTests.test_systemd_retains_compiler_ownership_and_executable_mappings":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
-    "ManifestTests.test_unsafe_paths_versions_and_file_modes":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
     "ManifestTests.test_vm_driver_uses_pinned_image_and_actual_reboot":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99",
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
+    "ManifestTests.test_exact_publisher_policy_and_no_implicit_candidate_trust":
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
+    "ManifestTests.test_offline_verification_pins_certificate_not_user_predicate_claims":
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
+    "ManifestTests.test_complete_fixture_inventory_and_exact_version":
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
+    "ManifestTests.test_duplicate_documents_and_oversized_inputs":
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
+    "ManifestTests.test_unsafe_paths_versions_and_file_modes":
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
+    "ManifestTests.test_missing_compiler_incompatible_platform_and_approval_mismatch":
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
     "ManifestTests.test_zip_bootstrap_contains_only_runtime_modules":
-      "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99"
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
+    "ManifestTests.test_systemd_retains_compiler_ownership_and_executable_mappings":
+      "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485",
+    "FileTests.test_single_link_protected_files_and_symlink_ancestors":
+      "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1",
+    "FileTests.test_directory_acl_mode_and_unexpected_types":
+      "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1",
+    "FileTests.test_serialized_lock_is_finite_and_not_replaceable":
+      "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1",
+    "FileTests.test_bounded_subprocess_timeout_and_output_are_reaped":
+      "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1",
+    "FileTests.test_archive_exact_files_and_modes":
+      "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1",
+    "FileTests.test_purge_accepts_only_complete_in_root_hardlink_sets":
+      "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1",
+    "FileTests.test_stopped_backup_preserves_only_backward_owned_storage_hardlinks":
+      "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1",
+    "FileTests.test_builder_output_round_trips_through_the_strict_installer_reader":
+      "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1",
+    "FileTests.test_archive_links_devices_traversal_duplicates_and_truncation":
+      "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1",
+    "FileTests.test_purge_does_not_follow_links_or_remove_foreign_target":
+      "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1",
+    "AuthenticationTests.test_each_attested_artifact_is_checked_after_verifier_success":
+      "4749651454ee848b2ea6db3c405ce40d969de7c189b41a53263a0eb9464898f7",
+    "AuthenticationTests.test_missing_attestation_wrong_version_and_writable_trust_are_rejected":
+      "4749651454ee848b2ea6db3c405ce40d969de7c189b41a53263a0eb9464898f7",
+    "AuthenticationTests.test_verifier_failure_cannot_fall_back_to_checksum_only":
+      "4749651454ee848b2ea6db3c405ce40d969de7c189b41a53263a0eb9464898f7",
+    "AuthenticationTests.test_bundle_cannot_supply_its_own_publisher_trust":
+      "4749651454ee848b2ea6db3c405ce40d969de7c189b41a53263a0eb9464898f7",
+    "LifecycleTests.test_repeat_install_retains_credentials_config_and_deployment_data":
+      "4e260790d1921f7c5f1231ba3961fd4090066c38bea5f9f13948689bdbe07767",
+    "LifecycleTests.test_profile_selection_and_untracked_existing_roots_are_not_adopted":
+      "4e260790d1921f7c5f1231ba3961fd4090066c38bea5f9f13948689bdbe07767",
+    "LifecycleTests.test_failure_remains_unactivated_and_requires_exact_resume":
+      "4e260790d1921f7c5f1231ba3961fd4090066c38bea5f9f13948689bdbe07767",
+    "LifecycleTests.test_unsupported_upgrade_is_refused_before_mutation_and_allowed_pair_is_exact":
+      "4e260790d1921f7c5f1231ba3961fd4090066c38bea5f9f13948689bdbe07767",
+    "LifecycleTests.test_removal_retention_reinstallation_and_explicit_purge":
+      "4e260790d1921f7c5f1231ba3961fd4090066c38bea5f9f13948689bdbe07767",
+    "LifecycleTests.test_interrupted_purge_finalization_keeps_a_resumable_tombstone":
+      "4e260790d1921f7c5f1231ba3961fd4090066c38bea5f9f13948689bdbe07767",
+    "LifecycleTests.test_substituted_root_and_modified_binary_are_not_removed":
+      "4e260790d1921f7c5f1231ba3961fd4090066c38bea5f9f13948689bdbe07767"
   },
-  "kind":"python",
-  "module":"tools/tests/test_native_runtime.py",
-  "reviewReason":"Explicitly reviewed active4804/V5 fixture join, exact frozenV4 raw identity, and additive V5 loader pin assertion; retain every parent case, assertion, decorator, base, skip, execution control and original bound. Only setup fingerprints of the independently proved active-engine fixture changes are updated. Keep current826 storage v1. Current development lossless shared Python guard storage. Retain all parent cases and exact execution, skip, decorator, class and owner guards. Preserve the already reviewed synthetic catalogue import/helper module fingerprint for the unchanged PR source; no new guard hash, deadline, command or obligation is approved. October 4 security patch: exact Wasmtime48.0.4 pin substitution; Python ASTs are unchanged after normalizing only48.0.3 to48.0.4. All case identities, skips, decorators, commands, historical obligations and finite guards are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. October 4 security patch: exact Wasmtime48.0.4 pin substitution; Python ASTs are unchanged after normalizing only48.0.3 to48.0.4. All case identities, skips, decorators, commands, historical obligations and finite guards are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Explicit active-engine fixture review: only Wasmtime48.0.3 ->48.0.4 literals change in normalized module/class setup AST; all existing cases, class bases, decorators, skip sites, execution controls, profile IDs, assertions and limits are retained. Reviewed Wasmtime48.0.4 security pin with the complete V5 source and all existing cases; V4 remains byte-identical historical evidence. Existing skip/execution guards are unchanged; setup digests reflect only the reviewed version/profile fixture changes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes. Retain all original authentication cases/decorators/skips/assertions while the module fixture alone follows the incoming maintained phase3-v5 host ABI; its setup fingerprint is re-observed from these exact bytes.",
-  "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
-    "6f0b854244a1a99a2847f54247478ca0f2286aa3c472c95068f15f82ba189dcc":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(LINUX, 'Linux protected trust files; gh is mocked, real crypto runs in the VM gate')"],"decorators":[],"fixtureGuards":["module:setup-sha256:fbcb5b42ba573a41f1bf9fef62fc10df507e6327245aa802880ae413b6ca39da","class:setup-sha256:dcf06aca56abaf9c533acadbc731f5cb441b0a2894a5fc3a9bc6553448f6702f"],"skipSites":[]},
-    "45e3d76bab141cc9bd59a4b71bcc6ce245d20b55d5dc51b4b6a0c163295c51b0":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(LINUX, 'Linux descriptor/permission boundary')"],"decorators":[],"fixtureGuards":["module:setup-sha256:fbcb5b42ba573a41f1bf9fef62fc10df507e6327245aa802880ae413b6ca39da","class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"],"skipSites":[]},
-    "8009cdaa52e890a617966073f4b942c8b33405c117ce7a8d58e58af48e83621b":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(UNPRIVILEGED, 'actual unprivileged Linux filesystem; systemd is mocked explicitly')"],"decorators":[],"fixtureGuards":["module:setup-sha256:fbcb5b42ba573a41f1bf9fef62fc10df507e6327245aa802880ae413b6ca39da","class:setup-sha256:e18d4eca693c6258a2d8259d049a789ad7d60bfa9f9b3b24394af5320f729d0f"],"skipSites":[]},
-    "df5c27a824ae98ec999b4469bf67e5b05e072380f6e8317ccce5930ec5327b99":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:fbcb5b42ba573a41f1bf9fef62fc10df507e6327245aa802880ae413b6ca39da","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]}
+    "3a4759f5c7c7ccd45d75954811dec7803e76884b8255b80d6e1733c4e2df3485":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:7a5822b49a5eca6cd8031e843c507bbded038e8da9051b92f44566831e14d666","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "e0d48eebc18b9aebe963efb8848cf9329c618af022c26c3cc4b91cb8f74ae3c1":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(LINUX, 'Linux descriptor/permission boundary')"],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:7a5822b49a5eca6cd8031e843c507bbded038e8da9051b92f44566831e14d666","class:setup-sha256:da1a3156079602a4407b2b66a887a34b87fd44e3aa6b9b6d8c5c6f382eeab250"]},
+    "4749651454ee848b2ea6db3c405ce40d969de7c189b41a53263a0eb9464898f7":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(LINUX, 'Linux protected trust files; gh is mocked, real crypto runs in the VM gate')"],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:7a5822b49a5eca6cd8031e843c507bbded038e8da9051b92f44566831e14d666","class:setup-sha256:dcf06aca56abaf9c533acadbc731f5cb441b0a2894a5fc3a9bc6553448f6702f"]},
+    "4e260790d1921f7c5f1231ba3961fd4090066c38bea5f9f13948689bdbe07767":{"bases":["unittest.TestCase"],"classDecorators":["unittest.skipUnless(UNPRIVILEGED, 'actual unprivileged Linux filesystem; systemd is mocked explicitly')"],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:7a5822b49a5eca6cd8031e843c507bbded038e8da9051b92f44566831e14d666","class:setup-sha256:e18d4eca693c6258a2d8259d049a789ad7d60bfa9f9b3b24394af5320f729d0f"]}
   }
 }

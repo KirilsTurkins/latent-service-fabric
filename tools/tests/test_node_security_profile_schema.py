@@ -18,12 +18,23 @@ def report():
     return {"schemaVersion": "latent.standalone.config-check.v1", "profile": "external-capsule-v1",
             "threatClass": "T1", "guestBoundary": "in-process-wasmtime", "admission": "enforced",
             "protectedCredentialFile": True, "hostAbiProfile": "lsf-host-abi-phase3-v5",
-            "wasmtimeVersion": "48.0.4", "target": "x86_64-unknown-linux-gnu",
+            "wasmtimeVersion": "48.0.5", "target": "x86_64-unknown-linux-gnu",
             "compiler": "isolated-aot-compiler-v1", "compilerSandbox": "lsf-linux-x86_64-landlock3-seccomp-v1",
             "authenticatedNativeLoading": True}
 
 
 class SecurityProfileSchema(unittest.TestCase):
+    def test_transactional_host_observations_require_actual_enforced_admission(self):
+        schema = validator("node-config-check.schema.json")
+        transactional = dict(report(), hostAbiProfile="lsf-host-abi-phase4-v1")
+        schema.validate(transactional)
+        local = dict(transactional, profile="local-experimental-v1", threatClass="T0",
+                     compiler="in-process", compilerSandbox=None, authenticatedNativeLoading=False)
+        schema.validate(local)
+        self.assertFalse(schema.is_valid(dict(local, admission="trusted-local")))
+        for profile in ("lsf-host-abi-phase4-v2", "lsf-host-abi-phase4-v1\n", "phase4"):
+            self.assertFalse(schema.is_valid(dict(local, hostAbiProfile=profile)), profile)
+
     def test_selector_is_exact_and_not_a_claim_of_runtime_enforcement(self):
         schema = validator("node-security-profile.schema.json")
         for value in ("local-experimental-v1", "external-capsule-v1"):

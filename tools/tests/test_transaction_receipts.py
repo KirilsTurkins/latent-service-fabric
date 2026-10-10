@@ -157,6 +157,9 @@ class TransactionReceiptTests(unittest.TestCase):
         self.assertFalse(value["externalClient"]["transportExecutionQualified"])
         self.assertEqual(sum(len(item["operations"]) for item in value["guest"]["requiredInterfaces"]), 13)
         self.assertEqual(sum(len(item["operations"]) for item in value["externalClient"]["requiredServices"]), 16)
+        operations = {operation["name"] for item in value["externalClient"]["requiredServices"] for operation in item["operations"]}
+        self.assertIn("MutateNamespace", operations)
+        self.assertIn("GetStateOperationReceipt", operations)
         self.assertEqual({item["service"]: {operation["name"] for operation in item["operations"]}
                           for item in value["externalClient"]["requiredServices"]}, {
             "latent.transaction.v1.TransactionService": {"InvokeCommand", "Query", "LookupCommand",

@@ -70,7 +70,7 @@ pub(super) fn worlds(
             .imports
             .get(name)
             .ok_or_else(|| incompatible("component-world-identity-mismatch"))?;
-        if let Some(profile) = latent_core::PHASE3_HOST_ABI_CURRENT.interface(name) {
+        if let Some(profile) = super::host::specification(name) {
             compare.asynchronous = profile.asynchronous;
             compare.resources = profile.resource_types();
         } else if !source.interfaces[*expected].functions.is_empty()

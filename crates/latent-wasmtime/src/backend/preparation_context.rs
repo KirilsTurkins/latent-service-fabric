@@ -125,7 +125,6 @@ impl PreparationContext {
                 false,
             )
         })?;
-        self.install_transaction_imports(&mut linker)?;
         if self.config.activation_runtime.is_some() {
             crate::host::runtime::install(&mut linker).map_err(|_| {
                 platform_error(
@@ -135,6 +134,7 @@ impl PreparationContext {
                 )
             })?;
         }
+        self.install_transaction_imports(&mut linker)?;
         if let Some(invoker) = self.local_services() {
             crate::host::service::install(&mut linker, invoker).map_err(|error| {
                 platform_error(
@@ -161,6 +161,15 @@ impl PreparationContext {
                 platform_error(
                     PlatformErrorCode::Internal,
                     "failed to bind streaming HTTP import",
+                    false,
+                )
+            })?;
+        }
+        if let Some(invoker) = self.outbound_streams() {
+            crate::host::networking::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind outbound streams",
                     false,
                 )
             })?;
@@ -254,6 +263,15 @@ impl PreparationContext {
         &self,
     ) -> Option<Arc<dyn latent_capabilities::broker::http::OutboundHttpInvoker>> {
         self.capabilities.as_ref()?.upgrade()?.http().ok()
+    }
+    pub(super) fn outbound_streams(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::network::OutboundStreamInvoker>> {
+        self.capabilities
+            .as_ref()?
+            .upgrade()?
+            .outbound_streams()
+            .ok()
     }
     pub(super) fn local_services(
         &self,

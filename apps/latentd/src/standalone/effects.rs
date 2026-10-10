@@ -14,6 +14,11 @@ use latent_state::protected_store::ProtectedStoreOwner;
 
 use super::{error, PlatformError, PlatformErrorCode, StandaloneNode};
 
+mod checkpoint;
+mod clock;
+pub use checkpoint::{ProtectedEffectStartup, ProtectedStatePreparation};
+pub use clock::ProtectedEffectClock;
+
 pub use latent_effects::runtime::{
     DispatcherControlError, DispatcherControlJob, DispatcherControlLookup,
     DispatcherControlRequest, PreparedDispatcherControl,

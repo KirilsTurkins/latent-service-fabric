@@ -7,6 +7,14 @@ closed ambient effects and original 64 MiB Java activation ceiling. The complete
 standard concurrency profile remains unqualified; default Java projects retain
 their current supported profile.
 
+The October 10 [PR #807 reconciliation](../development/phase4-handoffs/2026-10-10/pr807-reconciliation.md)
+records fresh signed local-service fixture execution: four ordinary-thread modes
+and four default-CompletableFuture modes, each repeated three times. All 24 calls
+return 42 under the original limits and pass the bounded physical idle checks.
+The complete unchanged-library matrix and ordinary installed-node qualification
+remain open in #741 and #736; earlier observations below retain their source and
+completion boundaries.
+
 The SDK-owned TeaVM compiler plugin reserves a shared-runtime task owner before
 `Thread.start` queues its event. Actual thread completion settles that owner.
 The original TeaVM continuation transformation saves GC roots and restores

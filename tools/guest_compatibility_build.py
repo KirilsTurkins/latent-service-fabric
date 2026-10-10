@@ -8,15 +8,47 @@ from tools.dev_workflow.common import decode, encode, digest, require
 from tools.rust_capsule_project import ROOT, inventory, read_file, read_json, write_json
 
 RECIPE = ("tools/guest_compatibility.py", "tools/guest_compatibility_build.py",
-          "tools/dev_workflow/common.py", "wit/host-abi-phase3-v4.json")
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py",
+          "wit/host-abi-phase3-v4.json", "wit/host-abi-phase4-v1.json",
+          "sdk/profile/transaction-requirements-v1.json")
 
 DEFAULT_PROFILE = "lsf-host-abi-phase3-v4"
 HOST_MANIFESTS = {
     DEFAULT_PROFILE: "wit/host-abi-phase3-v4.json",
     "lsf-host-abi-phase3-v5": "wit/host-abi-phase3-v5.json",
+    "lsf-host-abi-phase4-v1": "wit/host-abi-phase4-v1.json",
 }
 V5_INTERFACES = frozenset({
     "latent:runtime/activation@0.1.0", "latent:network/streams@0.1.0"})
+TRANSACTION_INTERFACES = frozenset({"latent:state/key-value@0.2.0", "latent:intents/staging@0.1.0"})
+
+
+def host_abi(files: dict[str, bytes] | None = None) -> dict:
+    """Validate the original captured transaction profile; supply no authority."""
+    if files is None or not {"transaction-profile.json", "transaction-binding.json"} & files.keys():
+        return host_manifest(DEFAULT_PROFILE)
+    require({"transaction-profile.json", "transaction-binding.json", "capsule-project.json", "state-schema.json"}
+            <= files.keys(), "compatibility-transaction-captured-inputs-required")
+    profile = read_file(ROOT / "sdk/profile/transaction-requirements-v1.json")
+    require(files["transaction-profile.json"] == profile, "compatibility-transaction-profile-drift")
+    requirements = decode(profile, 128 * 1024)
+    project = decode(files["capsule-project.json"], 128 * 1024)
+    require(isinstance(project, dict) and {"service", "name"} <= project.keys(),
+            "compatibility-transaction-project-links-required")
+    from tools.dev_workflow.transaction_binding import validate
+    binding = validate(files["transaction-binding.json"], capsule=project["service"],
+                       deployment=project["name"], binding=project["name"])
+    require(binding["stateSchema"] == digest(files["state-schema.json"]),
+            "compatibility-transaction-schema-drift")
+    for row in requirements["guest"]["requiredInterfaces"]:
+        source = read_file(ROOT / row["source"])
+        captured = row["source"].replace("wit/platform/", "wit/deps/")
+        require(digest(source) == row["sourceSha256"] and files.get(captured) == source,
+                "compatibility-transaction-wit-drift")
+    selected = host_manifest("lsf-host-abi-phase4-v1")
+    require(selected["digest"] == requirements["hostAbiDigest"] == binding["hostAbiDigest"],
+            "compatibility-transaction-host-abi-drift")
+    return selected
 
 
 def declared_host_abi(surface: dict) -> str:
@@ -32,6 +64,8 @@ def declared_host_abi(surface: dict) -> str:
     for name in imports:
         compatibility.token(name)
     require(len(set(imports)) == len(imports), "compatibility-declared-import-limit")
+    if TRANSACTION_INTERFACES.intersection(imports):
+        return "lsf-host-abi-phase4-v1"
     return "lsf-host-abi-phase3-v5" if V5_INTERFACES.intersection(imports) else DEFAULT_PROFILE
 
 
@@ -64,7 +98,12 @@ def capture_host_recipe(output: Path, files: dict[str, bytes], recorded: bytes, 
     return updated
 
 
-def inspection_manifest(output: Path, inspection: dict | None) -> dict:
+def inspection_manifest(output: Path, inspection: dict | None, files: dict[str, bytes] | None = None) -> dict:
+    captured = host_abi(files)
+    if captured["id"] != DEFAULT_PROFILE:
+        require(inspection is None or inspection.get("hostAbiProfile", captured["id"]) == captured["id"],
+                "compatibility-transaction-host-profile-mismatch")
+        return captured
     if inspection is not None:
         profile = inspection.get("hostAbiProfile", DEFAULT_PROFILE)
     else:
@@ -183,7 +222,12 @@ def interface_names(graph: dict, world: str | None = None, *, host_interfaces=()
 
 
 def inspect(commands, wasm: Path, output: Path, declared: dict,
-            *, host_abi_profile: str = DEFAULT_PROFILE) -> dict:
+            *, host_abi_profile: str = DEFAULT_PROFILE, files: dict[str, bytes] | None = None) -> dict:
+    host = host_manifest(host_abi_profile)
+    captured = host_abi(files)
+    if captured["id"] != DEFAULT_PROFILE:
+        require(host_abi_profile in (DEFAULT_PROFILE, captured["id"]), "compatibility-transaction-host-profile-mismatch")
+        host_abi_profile = captured["id"]
     host = host_manifest(host_abi_profile)
     raw = commands.run("compatibility-final-wit", wasm, "component", "wit", output / "component.wasm", "--json")
     names = interface_names(decode(raw, 4 * 1024 * 1024),
@@ -210,7 +254,7 @@ def package_report(output: Path, files: dict[str, bytes], component: bytes) -> N
     language = lock.get("language", "rust" if "Cargo.toml" in files else None)
     inspection_path = output / "compatibility-inspection.json"
     inspection = read_json(inspection_path) if inspection_path.exists() else None
-    host = inspection_manifest(output, inspection)
+    host = inspection_manifest(output, inspection, files)
     if inspection is not None:
         require(inspection["componentDigest"] == digest(component)
                 and inspection["hostAbiDigest"] == digest(encode(host)), "compatibility-stale-inspection")
@@ -229,10 +273,10 @@ def package_report(output: Path, files: dict[str, bytes], component: bytes) -> N
     write_json(output / "compatibility-report.json", value)
 
 
-def failure_report(output: Path, language: str, stage: str) -> None:
+def failure_report(output: Path, language: str, stage: str, *, files: dict[str, bytes] | None = None) -> None:
     """Retain safe known observations when captured inputs exist; never guess errors."""
     try:
-        _failure_report(output, language, stage)
+        _failure_report(output, language, stage, files)
     except Exception:
         # Reporting runs while the compiler exception is already propagating.
         # A stale/unreadable report input must never replace that original error.
@@ -256,7 +300,7 @@ def retain_report(output: Path, value: dict, *, kind: str) -> None:
     write_json(target, value)
 
 
-def _failure_report(output: Path, language: str, stage: str) -> None:
+def _failure_report(output: Path, language: str, stage: str, files: dict[str, bytes] | None = None) -> None:
     source_path = output / "source-inputs.json"
     if not source_path.exists():
         return  # Source identity is unavailable; do not fabricate a snapshot.
@@ -264,7 +308,7 @@ def _failure_report(output: Path, language: str, stage: str) -> None:
     findings = [compatibility.finding("unresolved-behavior", phase, "not-evaluated")]
     inspection_path = output / "compatibility-inspection.json"
     inspection = read_json(inspection_path) if inspection_path.exists() else None
-    host = inspection_manifest(output, inspection)
+    host = inspection_manifest(output, inspection, files)
     component_path = output / "component.wasm"
     component = read_file(component_path, 64 * 1024 * 1024) if component_path.exists() else None
     if inspection is not None:

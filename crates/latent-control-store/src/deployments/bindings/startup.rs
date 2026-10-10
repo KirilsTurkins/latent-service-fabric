@@ -78,6 +78,7 @@ impl DirectoryDeploymentRepository {
             providers: providers.into_boxed_slice(),
             current: Arc::downgrade(&self.current),
             limits,
+            manifest_profile: self.config.manifest_profile,
         });
         let mut next = compiler::compile_catalog_for_bindings(
             previous.routes.deployments.clone(),

@@ -14,6 +14,52 @@ from tools.tests.test_server_source import fixture
 
 
 class JavaServerSource(unittest.TestCase):
+    def test_rejected_delete_records_original_reply_and_sanitized_summary_with_one_request(self):
+        import json
+        import time
+        from unittest.mock import patch
+        from tools.dev_workflow.client import Client
+        from tools.java_server_node import ObservedRouteClient
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            observed = ObservedRouteClient(root / "binary", root / "config", root,
+                evidence=root / "evidence", deadline=time.monotonic() + 30)
+            reply = {"category": "platform-failure", "outcomeKnown": False,
+                "requestDispatched": True, "data": {"originalOperation": "operation-a"},
+                "error": {"code": "outcome-unknown", "message": "private provider detail"}}
+            arguments = ("trigger", "delete", "original-trigger", "--expected-generation",
+                "18446744073709551615", "--expected-state-version", "9007199254740993")
+            with patch.object(Client, "call", return_value=reply) as original:
+                self.assertIs(observed.call(*arguments, timeout=7), reply)
+                original.assert_called_once_with(*arguments, timeout=7, check=None)
+            self.assertEqual(json.loads((root / "evidence/route-control/001.json").read_bytes()), reply)
+            self.assertEqual(json.loads((root / "evidence/route-delete-rejection.json").read_bytes()), {
+                "schemaVersion": "lsf.java.server.route-rejection.v1", "command": "trigger delete",
+                "category": "platform-failure", "errorCode": "outcome-unknown",
+                "outcomeKnown": False, "requestDispatched": True,
+                "expectedGeneration": "18446744073709551615", "expectedStateVersion": "9007199254740993"})
+            self.assertEqual(observed.record_count, 1)
+
+    def test_refused_and_uncertain_route_results_remain_in_evidence_without_retry(self):
+        import json
+        import time
+        from unittest.mock import patch
+        from tools.dev_workflow.client import Client
+        from tools.java_server_node import RecordedRouteClient
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            recorded = RecordedRouteClient(root / "binary", root / "config", root,
+                evidence=root / "evidence", deadline=time.monotonic() + 30)
+            for number, known in enumerate((True, False), 1):
+                reply = {"category": "conflict" if known else "uncertain", "outcomeKnown": known,
+                    "command": "trigger delete", "data": {"originalOperation": "operation-a"},
+                    "error": {"code": "refused" if known else "outcome-unknown"}}
+                with patch.object(Client, "call", return_value=reply) as original:
+                    self.assertIs(recorded.call("trigger", "delete", "original-trigger", timeout=7), reply)
+                    original.assert_called_once_with("trigger", "delete", "original-trigger", timeout=7, check=None)
+                self.assertEqual(json.loads((root / "evidence" / f"{number:03}.json").read_bytes()), reply)
+            self.assertEqual(recorded.record_count, 2)
+
     def test_new_project_uses_ordinary_source_and_no_application_adapter(self):
         with tempfile.TemporaryDirectory() as temporary:
             project = create_server(Path(temporary) / "outside", "independent-server")
@@ -116,7 +162,7 @@ class JavaServerSource(unittest.TestCase):
             def generated(_run, _wit, _world, destination):
                 destination.mkdir()
                 (destination / 'Bindings.java').write_bytes(b'// controlled binding boundary\n')
-                (destination / 'probe.c').write_bytes(b'/* controlled ABI: no transaction import attributes */\n')
+                (destination / 'probe.c').write_bytes(b'/* controlled empty-world canonical bridge: no transaction imports */\n')
                 return {'source': 'controlled-binding'}
 
             class CompileBoundary(Exception):

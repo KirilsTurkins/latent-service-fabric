@@ -46,6 +46,8 @@ CHILD_REASONS = {
     "SchedulerHandoffClosed": "scheduler-handoff-closed",
     "SchedulerSequenceExhausted": "scheduler-sequence-exhausted",
     "SchedulerAllCellsQuarantined": "scheduler-all-cells-quarantined",
+    "SchedulerImmediateCapacityUnavailable": "scheduler-immediate-capacity-unavailable",
+    "SchedulerQueueFull": "scheduler-queue-full",
     "QuotaStateUnavailable": "quota-state-unavailable",
     "PreparationReadyCapacity": "preparation-ready-capacity",
     "PreparationReadyBytes": "preparation-ready-bytes",
@@ -65,6 +67,13 @@ CHILD_REASONS = {
     "ReleaseLifecycleBusy": "release-lifecycle-busy",
     "ReleaseLifecycleUnavailable": "release-lifecycle-unavailable",
     "AdmissionRepositoryRetired": "admission-repository-retired",
+    "PreparationSourceAssociation": "preparation-source-association",
+    "PreparationMetadataBound": "preparation-metadata-bound",
+    "PreparationMetadataOverflow": "preparation-metadata-overflow",
+    "PreparationComponentBound": "preparation-component-bound",
+    "PreparationCacheBound": "preparation-cache-bound",
+    "PreparationDeclaredBudget": "preparation-declared-budget",
+    "ReleaseLifecycleCapacity": "release-lifecycle-capacity",
     "Unclassified": "unclassified",
 }
 CHILD_STAGES = {"Start": "start", "InvocationError": "invocation-error", "ChildFailure": "child-failure"}

@@ -35,7 +35,9 @@ async fn queue_race_prefers_cancellation_then_deadline_over_cell_grant() {
     grant.entered("grant reached deadline barrier").await;
     tokio::task::yield_now().await;
     spin_past(deadline);
-    grant.proceed("deadline and grant become ready together").await;
+    grant
+        .proceed("deadline and grant become ready together")
+        .await;
 
     assert_failure(
         join(task, "deadline versus grant").await,
@@ -108,7 +110,9 @@ async fn cancellation_is_linearizable_against_registration_removal() {
 
     handoff.entered("backend reached result handoff").await;
     handoff.proceed("guest result accepted").await;
-    release.entered("release blocks before registration removal").await;
+    release
+        .entered("release blocks before registration removal")
+        .await;
     runner
         .cancel(&id, "accepted after handoff")
         .await
@@ -130,6 +134,7 @@ async fn release_failure_overrides_guest_result_and_preserves_consumption() {
     let used = consumption();
     let report = ExecutionReport::reusable(Ok(GuestOutcome::Trapped {
         trap: GuestTrap {
+            diagnostic: None,
             code: "controlled-trap".to_owned(),
             message: "mapped before release".to_owned(),
             guest_backtrace: Vec::new(),
@@ -142,7 +147,10 @@ async fn release_failure_overrides_guest_result_and_preserves_consumption() {
     let runner = make_runner(pool.clone(), backend);
     let task = spawn(
         runner.clone(),
-        envelope(ActivationId("release-failure".to_owned()), Some(now() + 10_000)),
+        envelope(
+            ActivationId("release-failure".to_owned()),
+            Some(now() + 10_000),
+        ),
     );
 
     handoff.entered("backend reached release handoff").await;

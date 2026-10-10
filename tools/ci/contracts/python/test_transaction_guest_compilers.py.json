@@ -1,49 +1,24 @@
 {
-  "cases": [
-    "TransactionGuestCompilerTests.test_authored_surface_keeps_declared_results_and_canonical_async_owners",
-    "TransactionGuestCompilerTests.test_failed_capture_retains_failure_and_cannot_claim_compilation_or_signed_execution",
-    "TransactionGuestCompilerTests.test_forbidden_fixture_requires_an_actual_declared_async_http_import"
-  ],
-  "guards": {
-    "TransactionGuestCompilerTests.test_authored_surface_keeps_declared_results_and_canonical_async_owners": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a8669ee0ebff99362c4c782a8567527001c46c15eba12a664c8a9052cc5aaa0c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "TransactionGuestCompilerTests.test_failed_capture_retains_failure_and_cannot_claim_compilation_or_signed_execution": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a8669ee0ebff99362c4c782a8567527001c46c15eba12a664c8a9052cc5aaa0c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "TransactionGuestCompilerTests.test_forbidden_fixture_requires_an_actual_declared_async_http_import": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a8669ee0ebff99362c4c782a8567527001c46c15eba12a664c8a9052cc5aaa0c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    }
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Preserve every original case, base, decorator and skip site. Reviewed fixture setup adds explicit Java schema/diagnostic inputs or substitutes only the current Wasmtime 48.0.5 baseline; execution predicates, deadlines and bounds stay intact.",
+  "module":"tools/tests/test_transaction_guest_compilers.py",
+  "cases":["TransactionGuestCompilerTests.test_authored_surface_keeps_declared_results_and_canonical_async_owners","TransactionGuestCompilerTests.test_failed_capture_retains_failure_and_cannot_claim_compilation_or_signed_execution","TransactionGuestCompilerTests.test_forbidden_fixture_requires_an_actual_declared_async_http_import","TransactionGuestCompilerTests.test_java_schema_mode_rejects_wrong_compiler_or_implicit_boolean_before_creating_output","TransactionGuestCompilerTests.test_post_stage_diagnostic_mode_is_java_only_exclusive_and_retains_its_failed_capture","TransactionGuestCompilerTests.test_three_java_schema_captures_keep_real_put_once_inputs_and_original_read_tokens"],
+  "guards":{
+    "TransactionGuestCompilerTests.test_post_stage_diagnostic_mode_is_java_only_exclusive_and_retains_its_failed_capture":
+      "4fed4f6fdff6801c6efbcb1341e4d1946ac81d266160ff708b8e198e2565b769",
+    "TransactionGuestCompilerTests.test_authored_surface_keeps_declared_results_and_canonical_async_owners":
+      "4fed4f6fdff6801c6efbcb1341e4d1946ac81d266160ff708b8e198e2565b769",
+    "TransactionGuestCompilerTests.test_forbidden_fixture_requires_an_actual_declared_async_http_import":
+      "4fed4f6fdff6801c6efbcb1341e4d1946ac81d266160ff708b8e198e2565b769",
+    "TransactionGuestCompilerTests.test_failed_capture_retains_failure_and_cannot_claim_compilation_or_signed_execution":
+      "4fed4f6fdff6801c6efbcb1341e4d1946ac81d266160ff708b8e198e2565b769",
+    "TransactionGuestCompilerTests.test_three_java_schema_captures_keep_real_put_once_inputs_and_original_read_tokens":
+      "4fed4f6fdff6801c6efbcb1341e4d1946ac81d266160ff708b8e198e2565b769",
+    "TransactionGuestCompilerTests.test_java_schema_mode_rejects_wrong_compiler_or_implicit_boolean_before_creating_output":
+      "4fed4f6fdff6801c6efbcb1341e4d1946ac81d266160ff708b8e198e2565b769"
   },
-  "kind": "python",
-  "module": "tools/tests/test_transaction_guest_compilers.py",
-  "reviewReason": "Retain failed authored compilation without execution claims and reject lost canonical owners, async signatures or actual forbidden HTTP calls",
-  "schemaVersion": "latent.ci.contracts.v1"
+  "guardDefinitions":{
+    "4fed4f6fdff6801c6efbcb1341e4d1946ac81d266160ff708b8e198e2565b769":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a8669ee0ebff99362c4c782a8567527001c46c15eba12a664c8a9052cc5aaa0c","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
 }

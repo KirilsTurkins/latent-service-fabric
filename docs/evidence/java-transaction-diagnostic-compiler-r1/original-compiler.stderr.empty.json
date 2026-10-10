@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "latent.evidence.original-empty-stream.v1",
+  "originalPath": "original-compiler.stderr.txt",
+  "originalBytes": 0,
+  "originalSha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "contentEncoding": "base64",
+  "content": "",
+  "originalInventory": {
+    "path": "file-inventory.json",
+    "sha256": "sha256:d5ccba0374324b3910ceab4c615e6a952568e8862db959e8bc56195a67db648f",
+    "entry": "/1"
+  }
+}

@@ -21,6 +21,15 @@ These facades and captured-source inputs require the separately admitted Phase 4
 profile. Their signed Linux-node and HTTP recovery evidence is tracked by #389
 and required Java slice #718, separately from the completed stateless workflow.
 
+The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
+adds `State.Command`, `State.Query` and `State.Page` plus the logical `Intent`
+builder for state 0.2 and intent staging 0.1. Imported state types have one
+canonical owner across the two interfaces; `Unsigned64` preserves every bit.
+Page calls retain the original view and try-with-resources closes access only.
+These facades and captured-source inputs require the separately admitted Phase 4
+profile. Their signed Linux-node and HTTP recovery evidence is tracked by #389
+and required Java slice #718, separately from the completed stateless workflow.
+
 Compilation and local state-machine tests are not signed-node proof. The
 [implementation report](../../docs/testing/java-guest-authoring.md) records the
 status and exact-source evidence for the required real-component, ownership,
@@ -127,9 +136,10 @@ Pass the actual request method/scheme and actual current response fields;
 nullable media/representation length mean omitted typed fields. Reuse the
 decoded body bytes when constructing the generated response. `validate` returns
 a fixed `Reason` and `requireValid` throws its fixed code, with no raw header,
-token or body. The host remains authoritative and rejects invalid output with an
-empty `no-store` 502. It consumes application cache inputs but keeps dynamic
-browser/proxy output `no-store`. See the complete
+token or body. The host remains authoritative and rejects invalid output with a
+fixed `no-store` 502 and the 12-byte ASCII body `Bad gateway\n` (empty for HEAD).
+It consumes application cache inputs but keeps dynamic browser/proxy output
+`no-store`. See the complete
 [header ownership and referrer decision](../../docs/security/browser-boundary.md#response-headers).
 
 The maintained authoring qualification compiles this SDK helper, exercises its

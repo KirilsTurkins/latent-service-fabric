@@ -6,6 +6,14 @@ ARG UBUNTU_SNAPSHOT=20260924T120000Z
 # The pinned Python image supplies TLS roots until the pinned Ubuntu CA package
 # is installed. Repository signatures remain checked by Ubuntu's archive keyring.
 COPY --from=python /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# Hosted runners may block port 80. Keep the pinned snapshot and Ubuntu
+# signature checks, but fetch both signed archives over HTTPS.
+RUN grep -q 'http://archive.ubuntu.com/ubuntu' /etc/apt/sources.list.d/ubuntu.sources \
+    && grep -q 'http://security.ubuntu.com/ubuntu' /etc/apt/sources.list.d/ubuntu.sources \
+    && sed -i \
+    -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
+    -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' \
+    /etc/apt/sources.list.d/ubuntu.sources
 # Bounded retries preserve the signed snapshot and fail on incomplete indexes.
 RUN sed -i -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
     -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources \

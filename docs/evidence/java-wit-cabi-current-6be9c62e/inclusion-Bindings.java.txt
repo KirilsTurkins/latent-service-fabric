@@ -1,0 +1,52 @@
+// Generated from authoritative WIT and maintained wit-bindgen C. DO NOT EDIT.
+package dev.latent.generated;
+import dev.latent.guest.*;
+import org.teavm.interop.Address;
+import org.teavm.interop.Export;
+import org.teavm.interop.Function;
+public final class Bindings {
+private Bindings() { }
+public interface Exports {
+String echo(String arg0);
+}
+public abstract static class Dispatch extends Function { public abstract Address apply(int operation, Address data, int length); }
+public static void main(String[] args) { Function.get(Dispatch.class, Bindings.class, "dispatch"); }
+@Export(name = "lsf_java_dispatch") public static Address dispatch(int operation, Address data, int length) {
+try (Wire.Reader input = Wire.Reader.copy(data, length); Wire.Writer output = new Wire.Writer()) {
+switch (operation) {
+case 0: {
+String arg0 = readString(input);
+input.finish();
+writeString(output, new dev.latent.app.Capsule().echo(arg0));
+return output.nativeResult(); }
+default: throw new IllegalArgumentException("unknown Java export"); } } }
+private static Unit readUnit(Wire.Reader input) { return Unit.VALUE; }
+private static void writeUnit(Wire.Writer output, Unit value) { java.util.Objects.requireNonNull(value); }
+private static Integer readCharValue(Wire.Reader input) { long value = input.integer(4); Wire.require(value <= 0x10ffff && !(value >= 0xd800 && value <= 0xdfff)); return (int) value; }
+private static Boolean readBool(Wire.Reader input) { return input.bool(); }
+private static void writeBool(Wire.Writer output, Boolean value) { output.bool(value); }
+private static Integer readChar(Wire.Reader input) { return readCharValue(input); }
+private static void writeChar(Wire.Writer output, Integer value) { Wire.require(value >= 0 && value <= 0x10ffff && !(value >= 0xd800 && value <= 0xdfff)); output.unsigned(value, 4); }
+private static Float readF32(Wire.Reader input) { return Float.intBitsToFloat((int) input.integer(4)); }
+private static void writeF32(Wire.Writer output, Float value) { output.integer(Float.floatToRawIntBits(value), 4); }
+private static Double readF64(Wire.Reader input) { return Double.longBitsToDouble(input.integer(8)); }
+private static void writeF64(Wire.Writer output, Double value) { output.integer(Double.doubleToRawLongBits(value), 8); }
+private static Short readS16(Wire.Reader input) { return (short) input.integer(2); }
+private static void writeS16(Wire.Writer output, Short value) { output.integer(value, 2); }
+private static Integer readS32(Wire.Reader input) { return (int) input.integer(4); }
+private static void writeS32(Wire.Writer output, Integer value) { output.integer(value, 4); }
+private static Long readS64(Wire.Reader input) { return (long) input.integer(8); }
+private static void writeS64(Wire.Writer output, Long value) { output.integer(value, 8); }
+private static Byte readS8(Wire.Reader input) { return (byte) input.integer(1); }
+private static void writeS8(Wire.Writer output, Byte value) { output.integer(value, 1); }
+private static String readString(Wire.Reader input) { return input.string(); }
+private static void writeString(Wire.Writer output, String value) { output.string(value); }
+private static Integer readU16(Wire.Reader input) { return (int) input.integer(2); }
+private static void writeU16(Wire.Writer output, Integer value) { output.unsigned(value, 2); }
+private static Long readU32(Wire.Reader input) { return (long) input.integer(4); }
+private static void writeU32(Wire.Writer output, Long value) { output.unsigned(value, 4); }
+private static Unsigned64 readU64(Wire.Reader input) { return new Unsigned64(input.integer(8)); }
+private static void writeU64(Wire.Writer output, Unsigned64 value) { output.integer(value.bits(), 8); }
+private static Short readU8(Wire.Reader input) { return (short) input.integer(1); }
+private static void writeU8(Wire.Writer output, Short value) { output.unsigned(value, 1); }
+}

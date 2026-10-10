@@ -80,9 +80,9 @@ does not implicitly enable creation.
 
 | Resource | Initial profile |
 | --- | --- |
-| Fixed workers | 3, each with an explicit 1 MiB stack |
+| Fixed workers | 4: 3 ordinary and 1 reserved recovery, each with an explicit 1 MiB stack |
 | Active native reads/writes | 2 reads, 1 writer |
-| Queued/accepted jobs and native resource reservations | 8 queued, 32 accepted |
+| Queued/accepted jobs and native resource reservations | 8 queued/32 accepted ordinary; 4 queued/8 accepted recovery |
 | Retained job/result/native-resource bytes | 128 MiB, at most 40 MiB per job |
 | Resident engine cache and baseline metadata reservation | 8 MiB + 64 KiB, until engine destruction |
 | Engine cache | 8 MiB |
@@ -133,6 +133,25 @@ owner quarantines. A live view keeps the database and last worker alive. Logical
 view expiry does not release this physical pin. Foreign owners reject a view.
 An admission failure consumes the passed view and schedules its retirement;
 the operation never runs.
+
+Node checkpoint descriptors use `reserve_recovery_resource` before opening,
+with their full native byte charge and the original global request keeper.
+`initialize_resource` opens once on the same fixed recovery writer;
+`with_resource` borrows the confined native value on a declared recovery
+read/write worker and returns its affine identity with bounded metadata.
+Uninitialized resources, foreign owners and ordinary queue substitutions reject
+before the callback runs. The native value has no public accessor.
+
+Resource drop, including a detached initialization or operation response,
+queues its pre-reserved recovery destruction. Its one retirement witness and
+receipt become positive only after the native destructor, original keeper and
+physical reservation actually retire. Recovery resource reads and destruction
+remain usable with all ordinary workers and queue slots occupied. An operation
+panic preserves sticky quarantine while actual native destruction still runs.
+All 134 registered state cases and strict all-target Clippy passed on pinned
+Linux Rust 1.97.1, including four real protected-store/file ownership schedules.
+This focused qualification does not replace complete CI or standalone startup
+and recovery integration.
 
 `apply_fenced` runs the host's short no-I/O authority/attempt/OCC acceptance fence
 inside the real abortable writer. Engine conflict, validation and quota failures
@@ -267,6 +286,22 @@ the store and preserves its pin for recovery. This protects against overlapping
 dispatcher startup without introducing another engine or process registry.
 The actual Linux registration lifecycle test and all 74 state cases passed,
 along with strict all-target/all-feature Clippy on the pinned image above.
+
+Dispatcher startup inherits the protected store's original bound
+`NativeCapacityOwner` before reserving that physical role or starting workers.
+The first dispatcher wakeup and command capture therefore use the same global
+capacity owner as storage. Reinstalling that owner is idempotent; binding a
+foreign owner fails before admission. The physical store independently checks
+the original identity even if the dispatcher projection is corrupted.
+
+An unbound store remains explicitly unbound. Starting native work seals its
+missing binding, so a late capacity counter cannot be substituted. Recovery
+reopens the same retained records and installs the trusted owner before any new
+native epoch or job. A poisoned binding fails startup rather than becoming an
+unbound observation. The existing
+[dispatcher capacity schedules](../../crates/latent-effects/src/runtime/tests/capacity.rs)
+cover both foreign-owner refusal and unbound restart without another provider
+attempt, enlarged quota or refunded live owner.
 
 Before a host moves a view through a cancellable read call, it may capture
 `view.retirement_witness()`. One non-clone status witness is issued for the

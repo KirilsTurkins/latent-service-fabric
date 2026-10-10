@@ -1,5 +1,18 @@
 # Go client qualification evidence
 
+The Phase 4 source milestone on 2026-10-01 adds fifteen transaction, state and
+dispatcher operations to the same existing bounded HTTP/2 connection owner.
+Pinned Linux Go 1.27.1 and Buf 1.72.0 generated and reproduced eight authoritative
+Protobuf sources; all-package tests, all-package race tests and `go vet ./...`
+passed. Seven new controlled HTTP/2 scenarios exercise all fifteen calls, paired
+large result ownership, full-width integers and original preconditions, durable
+rejection through audit failure, explicit proven-abort recovery, retained formats,
+predecode limits, caller cancellation and receipt recovery. Dispatcher receipts
+remain independent of audit status and never supply command-abort proof.
+These checks establish source/codec/transport behavior. The Phase 4 real signed
+node matrix and six-client acceptance gate remain open under #401. Historical
+measurements and actual-node evidence below belong to the original eight methods.
+
 Scope: #260, native numeric-loopback HTTP/2 + Protobuf client. This record keeps
 controlled-wire/lifecycle evidence distinct from separate real-node provider
 qualification. It is not production, browser, installed-bundle, remote-node or

@@ -18,6 +18,55 @@ use std::{
 use support::{detail_error, error, failed, FakeCompletion, FakeInvoker};
 
 #[test]
+fn preparation_capacity_reasons_require_exact_closed_error_shapes() {
+    for (message, expected) in [
+        (
+            "prepared-source-association",
+            Reason::PreparationSourceAssociation,
+        ),
+        (
+            "preparation metadata exceeds its configured bound",
+            Reason::PreparationMetadataBound,
+        ),
+        (
+            "prepared metadata accounting overflowed",
+            Reason::PreparationMetadataOverflow,
+        ),
+        (
+            "component artifact exceeds the configured byte limit",
+            Reason::PreparationComponentBound,
+        ),
+        (
+            "component exceeds the bounded prepared-cache byte capacity",
+            Reason::PreparationCacheBound,
+        ),
+        (
+            "capsule-declared resource limits exceed the engine profile",
+            Reason::PreparationDeclaredBudget,
+        ),
+        ("release-lifecycle-limit", Reason::ReleaseLifecycleCapacity),
+    ] {
+        let mut failure = error(message);
+        failure.code = PlatformErrorCode::ResourceExhausted;
+        failure.retryable = false;
+        support::assert_reason(failure.clone(), expected);
+
+        let mut wrong_code = failure.clone();
+        wrong_code.code = PlatformErrorCode::Unavailable;
+        support::assert_reason(wrong_code, Reason::Unclassified);
+        let mut retryable = failure.clone();
+        retryable.retryable = true;
+        support::assert_reason(retryable, Reason::Unclassified);
+        let mut extended = failure.clone();
+        extended.message.push_str(" private");
+        support::assert_reason(extended, Reason::Unclassified);
+        let mut malformed = failure;
+        malformed.details = detail_error("private-kind", "private-reason").details;
+        support::assert_reason(malformed, Reason::Unclassified);
+    }
+}
+
+#[test]
 #[expect(
     clippy::too_many_lines,
     reason = "one explicit closed vocabulary matrix covers every supported constructor"

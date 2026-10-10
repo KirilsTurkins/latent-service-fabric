@@ -1,0 +1,574 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/node-state.schema.json",
+  "title": "Standalone bounded transactional state configuration member",
+  "$comment": "Value of state. Omission disables state; null is invalid. Phase4, enforced supply-chain, audit and capability policy owners are required together. This schema constrains operator declarations and creates no namespace, policy, provider, clock continuity or restore approval. Runtime additionally checks UTF-8 byte bounds, exact immutable target/tenant uniqueness, original deadline, reservation/worker cross-field bounds, usable recovery headroom, signed installations and physically anchored checkpoint ancestry outside the fixed dataDirectory/state root. No unspecified partition falls back to a separate or unlimited owner.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "configurationEpoch",
+    "storeIdentity",
+    "checkpointRoot",
+    "startupTimeoutMillis",
+    "store",
+    "native",
+    "dispatcher",
+    "operations"
+  ],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 2
+    },
+    "createIfMissing": {
+      "type": "boolean",
+      "default": false
+    },
+    "configurationEpoch": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 18446744073709551615
+    },
+    "storeIdentity": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "checkpointRoot": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^/"
+    },
+    "startupTimeoutMillis": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 60000
+    },
+    "store": {
+      "$ref": "#/$defs/store"
+    },
+    "native": {
+      "$ref": "#/$defs/native"
+    },
+    "dispatcher": {
+      "$ref": "#/$defs/dispatcher"
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 128,
+      "items": {
+        "$ref": "#/$defs/operation"
+      }
+    },
+    "tenantQuotas": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/tenantQuota"
+      }
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "policies": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/identity"
+      },
+      "uniqueItems": true
+    },
+    "ordinaryStorage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workers",
+        "queuedJobs",
+        "acceptedJobs",
+        "activeReads",
+        "retainedBytes",
+        "maximumJobBytes"
+      ],
+      "properties": {
+        "workers": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 16
+        },
+        "queuedJobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "acceptedJobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        },
+        "activeReads": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 15
+        },
+        "retainedBytes": {
+          "type": "integer",
+          "minimum": 67108864,
+          "maximum": 536870912
+        },
+        "maximumJobBytes": {
+          "type": "integer",
+          "minimum": 41943040,
+          "maximum": 536870912
+        }
+      }
+    },
+    "recoveryStorage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workers",
+        "queuedJobs",
+        "acceptedJobs",
+        "retainedBytes",
+        "maximumJobBytes"
+      ],
+      "properties": {
+        "workers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "queuedJobs": {
+          "type": "integer",
+          "minimum": 4,
+          "maximum": 64
+        },
+        "acceptedJobs": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 128
+        },
+        "retainedBytes": {
+          "type": "integer",
+          "minimum": 16777216,
+          "maximum": 134217728
+        },
+        "maximumJobBytes": {
+          "type": "integer",
+          "minimum": 8396800,
+          "maximum": 134217728
+        }
+      }
+    },
+    "store": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maximumFileBytes",
+        "cacheBytes",
+        "maximumRows",
+        "maximumLogicalBytes",
+        "maximumReadViews",
+        "maximumViewAgeMillis",
+        "ordinary",
+        "recovery"
+      ],
+      "properties": {
+        "maximumFileBytes": {
+          "type": "integer",
+          "minimum": 2097152,
+          "maximum": 1073741824
+        },
+        "cacheBytes": {
+          "type": "integer",
+          "minimum": 1048576,
+          "maximum": 67108864
+        },
+        "maximumRows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "maximumLogicalBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 134217728
+        },
+        "maximumReadViews": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32
+        },
+        "maximumViewAgeMillis": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000
+        },
+        "ordinary": {
+          "$ref": "#/$defs/ordinaryStorage"
+        },
+        "recovery": {
+          "$ref": "#/$defs/recoveryStorage"
+        }
+      }
+    },
+    "ordinaryNative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slots",
+        "bytes",
+        "maximumReservationBytes"
+      ],
+      "properties": {
+        "slots": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 33554432,
+          "maximum": 4294967296
+        },
+        "maximumReservationBytes": {
+          "type": "integer",
+          "minimum": 33554432,
+          "maximum": 4294967296
+        }
+      }
+    },
+    "recoveryNative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slots",
+        "bytes",
+        "maximumReservationBytes"
+      ],
+      "properties": {
+        "slots": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 128
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 33554432,
+          "maximum": 536870912
+        },
+        "maximumReservationBytes": {
+          "type": "integer",
+          "minimum": 33554432,
+          "maximum": 536870912
+        }
+      }
+    },
+    "native": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinary",
+        "recovery",
+        "maximumLifetimeMillis"
+      ],
+      "properties": {
+        "ordinary": {
+          "$ref": "#/$defs/ordinaryNative"
+        },
+        "recovery": {
+          "$ref": "#/$defs/recoveryNative"
+        },
+        "maximumLifetimeMillis": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600000
+        }
+      }
+    },
+    "dispatcher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workers",
+        "queuedJobs",
+        "acceptedJobs",
+        "maximumCommandOwners",
+        "perTenantJobs",
+        "retainedBytes",
+        "pageRows",
+        "pageBytes",
+        "scanPagesPerTick",
+        "pollIntervalMillis"
+      ],
+      "properties": {
+        "workers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "queuedJobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "acceptedJobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "maximumCommandOwners": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        },
+        "perTenantJobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "retainedBytes": {
+          "type": "integer",
+          "minimum": 20971520,
+          "maximum": 536870912
+        },
+        "pageRows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "pageBytes": {
+          "type": "integer",
+          "minimum": 4096,
+          "maximum": 4194304
+        },
+        "scanPagesPerTick": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "pollIntervalMillis": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000
+        }
+      }
+    },
+    "deferredHttp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requirementsDigest",
+        "providerId",
+        "providerIncarnation",
+        "credentialReference",
+        "stagingBinding",
+        "stagingPolicies",
+        "dispatchBinding",
+        "dispatchPolicies"
+      ],
+      "properties": {
+        "requirementsDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "providerId": {
+          "$ref": "#/$defs/identity"
+        },
+        "providerIncarnation": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "credentialReference": {
+          "$ref": "#/$defs/identity"
+        },
+        "stagingBinding": {
+          "$ref": "#/$defs/identity"
+        },
+        "stagingPolicies": {
+          "$ref": "#/$defs/policies"
+        },
+        "dispatchBinding": {
+          "$ref": "#/$defs/identity"
+        },
+        "dispatchPolicies": {
+          "$ref": "#/$defs/policies"
+        }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tenant",
+        "componentDigest",
+        "publication",
+        "contract",
+        "function",
+        "deployment",
+        "binding",
+        "companionDigest",
+        "incarnation",
+        "resultPolicy",
+        "statePolicies"
+      ],
+      "properties": {
+        "tenant": {
+          "$ref": "#/$defs/identity"
+        },
+        "componentDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "publication": {
+          "type": "string",
+          "pattern": "^publication:sha256:[0-9a-f]{64}$"
+        },
+        "contract": {
+          "$ref": "#/$defs/identity"
+        },
+        "function": {
+          "$ref": "#/$defs/identity"
+        },
+        "deployment": {
+          "$ref": "#/$defs/identity"
+        },
+        "route": {
+          "$ref": "#/$defs/identity"
+        },
+        "binding": {
+          "$ref": "#/$defs/identity"
+        },
+        "companionDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "incarnation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 18446744073709551615
+        },
+        "resultPolicy": {
+          "$ref": "#/$defs/identity"
+        },
+        "statePolicies": {
+          "$ref": "#/$defs/policies"
+        },
+        "entity": {
+          "$ref": "#/$defs/identity"
+        },
+        "deferredHttp": {
+          "$ref": "#/$defs/deferredHttp"
+        }
+      }
+    },
+    "tenantLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stateKeys",
+        "tombstoneKeys",
+        "resultRows",
+        "effectRows",
+        "metadataRows",
+        "stateBytes",
+        "tombstoneBytes",
+        "resultBytes",
+        "effectBytes",
+        "payloadBytes",
+        "recoveryBytes",
+        "metadataBytes"
+      ],
+      "properties": {
+        "stateKeys": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "tombstoneKeys": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "resultRows": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "effectRows": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "metadataRows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "stateBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1073741824
+        },
+        "tombstoneBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1073741824
+        },
+        "resultBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1073741824
+        },
+        "effectBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1073741824
+        },
+        "payloadBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1073741824
+        },
+        "recoveryBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1073741824
+        },
+        "metadataBytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 1073741824
+        }
+      }
+    },
+    "tenantQuota": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tenant",
+        "limits"
+      ],
+      "properties": {
+        "tenant": {
+          "$ref": "#/$defs/identity"
+        },
+        "limits": {
+          "$ref": "#/$defs/tenantLimits"
+        }
+      }
+    }
+  }
+}
