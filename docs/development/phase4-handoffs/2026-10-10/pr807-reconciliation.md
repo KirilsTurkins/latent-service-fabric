@@ -116,3 +116,25 @@ guard, and include the scheduler-capacity and source-capture regressions.
 Hosted CI is not awaited after push. No merge, issue closure, production profile
 enablement, full Java/HTTP qualification or refreshed historical HTTP receipt is
 claimed.
+
+## Follow-up CI discovery repair
+
+The next hosted run's [Rust tests job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38056071846/job/114224793136)
+stopped before test execution with
+`latent-wasmtime.test.local-service: unexpectedly-ignored-case`. The original
+reconciliation omitted the new compiler-gated CompletableFuture test from the
+exact case and ignore-state inventory. Its existing `#[ignore]` and component
+requirement are unchanged.
+
+The corrected inventory includes all 33 actual local-service cases, both existing
+opt-in Java fixture cases, their exact ignored leaf names and a matching minimum
+case count. All previous cases, selections and other suite records remain intact.
+The original refusal is reproduced against the actual Linux test binary before
+the corrected inventory is validated. All 89 focused inventory/discovery,
+fragment, CI contract and coverage tests pass. Hosted CI is not awaited after
+the repair push.
+
+The production discovery checker also validates every Wasmtime test target
+against a fresh all-targets Cargo artifact inventory: 557 active cases match
+the exact registry. This verifies discovery; it does not repeat guest execution
+or replace the signed component evidence above.
