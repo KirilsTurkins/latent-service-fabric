@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_guest_tools.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain bounded native compiler stdout/stderr after the existing owned child reaps, including nonzero exit; preserve command failure, original deadlines, output caps, source identity and compiler pins.",
+  "reviewReason": "Integrate all-six transaction client models and bridges while preserving current pinned toolchains, required run blocks and guards.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9d63375f66c5458352924a02402c3e1bef2202de05bf6b9253448a7ec55dde3a"
+  "sha256": "49046b6eaa5db587a0e545bfcc6a05334baa138241e8add93ed17521c4d430e6"
 }

@@ -28,22 +28,35 @@ pub(super) async fn overflow(
             "queue-overflow",
             input,
             &[],
-            (5, "transport-failure"),
+            (4, "platform-failure"),
         )
         .await;
-    assert_eq!(response["error"]["grpcCode"], "resource-exhausted");
+    assert_eq!(response["error"]["code"], "resource-exhausted");
     assert_eq!(response["requestDispatched"], true);
-    assert_eq!(response["outcomeKnown"], false);
-    // The explicit status lookup proves rejection before registration; a bare
-    // transport ResourceExhausted by itself cannot establish a known outcome.
+    assert_eq!(response["outcomeKnown"], true);
+    assert_eq!(response["data"]["terminalState"], "resource_exhausted");
+    let consumption = response["data"]["consumption"]
+        .as_object()
+        .expect("bounded refusal consumption");
+    assert_eq!(consumption.len(), 11);
+    assert!(consumption
+        .values()
+        .all(|value| value.as_u64() == Some(0) || value.as_str() == Some("0")));
+    // The existing retention allowance covers one transient refusal record.
+    // Admission stays full, while this terminal root proves zero guest work.
     let status = harness
         .call(
             "tests",
             &["activation", "get", "queue-overflow"],
-            6,
-            "not-found",
+            0,
+            "success",
         )
         .await;
+    assert_eq!(status["data"]["terminalState"], "resource_exhausted");
+    assert_eq!(
+        status["data"]["finalConsumption"],
+        response["data"]["consumption"]
+    );
     (response, status)
 }
 

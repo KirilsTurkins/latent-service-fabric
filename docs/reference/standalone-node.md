@@ -189,10 +189,10 @@ the repository and manifest document ceilings plus fixed read allowance. These
 input and ownership charges do not measure transient decoder or compiler heap.
 
 One fixed async cleanup driver runs on the invocation runtime. Its continuation
-slots equal total cells plus queue capacity, with the same 1024-slot ceiling,
-and are reserved before activation acceptance. A disconnected or timed-out RPC
-hands over its existing activation owner; no invocation is restarted and no
-deadline is renewed. Standalone's backend cleanup grace is fixed at 100 ms,
+slots follow the journal tracking limit described below, with the same 1024-slot
+ceiling, and are reserved before activation acceptance. A disconnected or
+timed-out RPC hands over its existing activation owner; no invocation is restarted
+and no deadline is renewed. Standalone's backend cleanup grace is fixed at 100 ms,
 giving each handoff a 200 ms absolute cap that includes scheduling and pool
 disposition. These are derived limits, not additional JSON settings. Missing
 cleanup proof preserves cell quarantine; a cap overrun is reported as failure.
@@ -202,12 +202,18 @@ The runtime supports stateless single-threaded and reentrant components. Host
 architecture and operating system are measured by the executable; configuration
 does not invent CPU feature support or expose arbitrary capability/claim policy.
 
-Let `C` be total cell capacity and `Q` total queue capacity. Admission and journal
-active ceilings use `R = C + Q`, because admission reserves CPU and memory for
-queued work as well as running work. A journal activation reserves 4 MiB, so
-`R × 4 MiB` must fit `retention.bytes`. Terminal records are evicted by count,
-bytes or age; configured entry counts do not guarantee that maximum-size entries
-all fit simultaneously.
+Let `C` be total cell capacity and `Q` total queue capacity. Admission uses
+`R = C + Q`, because it reserves CPU and memory for queued work as well as
+running work. A journal activation reserves 4 MiB, so `R × 4 MiB` must fit
+`retention.bytes`. If the existing allowance also covers `(R + 1) × 4 MiB`,
+journal, cancellation and cleanup tracking reserve one additional transient
+request. This lets a request refused by the unchanged admission ceiling retain
+its ordinary platform outcome and closed diagnostic reason. It adds no cell,
+queue position or admission reservation. If the extra record does not fit,
+tracking keeps the original `R` limit and a full tracker rejects before identity
+registration. No retention allowance is raised. Terminal records are evicted by
+count, bytes or age; configured entry counts do not guarantee that maximum-size
+entries all fit simultaneously.
 
 ## Optional isolated AOT compilation
 

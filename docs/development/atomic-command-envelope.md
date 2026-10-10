@@ -79,8 +79,28 @@ identity expiry are separate. Existing linked identities are conservatively
 retained until the maintenance owner can prove safe reclamation. Current read
 permission and proven nonregressing clock continuity are required for inspection.
 
-All initial command codecs are closed binary v1 records: command/attempt
-`LCM`, result `LCR`, pending result `LCP`, input `LIC`, usage `LCU` and retry `LCT`.
+Command/attempt `LCM` and terminal result `LCR` use closed binary format 3.
+Both retain the original incarnation and namespace generation installed by
+that terminal physical envelope. A later command, rollout or lookup cannot
+substitute its current namespace version. The result digest includes this
+original version and the original opaque view token, and startup checks exact
+command/result version and token linkage. The token includes the scope digest
+and original schema/recovery epochs captured from the same state plan. No-state
+rejection/abort envelopes capture and CAS the exact same history row. Initial
+typed receipts and replay encode that original opaque token as canonical padded
+base64; they never reconstruct it from the latest namespace history.
+Pending records have no committed version; committed, rejected and technical
+abort metadata retain their own original durable envelope version.
+
+Historic `LCM`/`LCR` formats 1 and 2 are explicitly unsupported because neither
+retained the complete original epoch-qualified token. Readiness and inspection
+refuse these rows; this change
+provides no backward reader, migration or version reconstruction. Operators must
+retain the previous codec/profile and its protected data until an approved
+migration or new store/incarnation is installed. Removing that codec cannot be
+claimed as compatible retained-work recovery.
+
+Pending result `LCP`, input `LIC`, usage `LCU` and retry `LCT` remain format 1.
 Lengths, counts, discriminants, key identities, body digests and trailing bytes
 are checked before acceptance. `validate_view` scans all ten families in coherent
 pages of at most 128 rows/2 MiB and performs bounded point checks for every
@@ -89,18 +109,57 @@ state and dispatcher formats require their explicit installed codec callback;
 unknown formats fail readiness without resetting data. Startup validation does
 not mint execution authority or infer physical retirement from a decoded row.
 
-## Validation and remaining integration
+## Persistence and recovery acceptance
 
-The source milestone has 14 actual engine tests plus 24 transaction-model
-schedules. The engine cases exercise reopened success/rejection, exact result and
-effect links, duplicate claim/retry CAS, OCC/revocation, physical retirement,
-quota pressure, full-row rejection, exact 1 MiB result with 128 intents, compatible
-rollout, clock regression and malformed/orphan startup records. The combined
-Linux storage/effect/commit targets passed 103/35/38 tests and strict Clippy.
-Windows passed the 38 commit cases; these are distinct declared environments.
+[Issue #386](https://github.com/KirilsTurkins/latent-service-fabric/issues/386)
+owns this persistence library and its focused failure schedules. The engine
+fixtures in [atomic tests](../../crates/latent-commit/src/atomic/tests.rs),
+[captured authority tests](../../crates/latent-commit/src/atomic/tests/captured.rs)
+and [original view-token tests](../../crates/latent-commit/src/atomic/tests/view_tokens.rs)
+exercise actual redb transactions and reopened records. The 24 transaction-model
+cases separately check the shared semantics.
 
-This library milestone does not complete the node activation path, RPC waiter
-coalescing, interrupted-attempt recovery, complete process/fault campaign,
-retention sweeping, provider delivery or six-language standalone qualification.
-Those consumers must use the same physical owner and complete envelope. The
-Phase 4 issues remain open until their full acceptance evidence is reconciled.
+| Issue acceptance | Implementation and focused evidence |
+| --- | --- |
+| Complete host-validated command envelope | `PreparedAdmission` and `CompleteEnvelope` retain original command/fingerprint/attempt, publication/schema/formats, observations, intents, inbox, exact result policy and accounting; reopened success and captured-authority cases check their links. |
+| Authority, OCC and quota at one durable writer boundary | `EmbeddedStore::apply_fenced` checks the complete batch and consumes final acceptance before one Immediate-durability commit; OCC/revocation, captured narrowing and full-capacity rejection cases leave business families untouched. |
+| Stable identities and duplicate/conflicting attempts | Concurrent claims and explicit retry CAS have one winner; retained command, attempt, disposition and effect links survive reopening. Changed fingerprints and stale attempt completion reject. |
+| Bounded success, error, receipt and record preflight | Oversized output/intent/quota cases reject; exact 1 MiB result plus 128 intents commits; receipt-only replay is explicit and malformed record lengths reject. |
+| Known noncommit, confirmed commit and uncertainty | Writer-fence refusal returns the original pending owner; confirmed flush recovers the original result after process loss; backend storage-full returns recovery-required, preserving the original pending identity rather than authorizing replay. |
+| Retain actual I/O, views, buffers and reservations | Private physical-retirement/quarantine cases reject premature abort/retry; the shared state owner tests retain accepted writes, read views and result buffers until native retirement and reserve finite recovery capacity. |
+| Persistence-boundary and I/O schedules | Owned process cuts cover admission, success, state-only, intent-only, rejection, abort and explicit retry before acceptance and after confirmed flush. Backend storage-full and Linux kernel file-size failure reopen without partial state/outbox/inbox/result success. |
+| Durable terminal rejection without business effects | Lost business rejection reopens after changed inventory; process cuts retain only approved rejection/inbox/result metadata and discard business mutations and intents. |
+| Original rejection identity, read policy and reserved capacity | Exact source/result policy and bytes survive restart; full-row terminal rejection consumes its admission reservation, and original namespace/view-token receipts survive later commits. |
+| Generation-checked proven-abort retry | Native retirement is required before durable abort; two explicit retries have one CAS winner, prior attempt rows remain and stale completion cannot commit the replacement attempt. |
+| Linked formats and identity outlive result-body expiry | Expiry cases retain protected command/effect linkage; startup validates cross-family records and refuses unsupported formats, forged identities and orphan results. |
+| Rejection/retry crash and linked-history refinement | The seven process schedules cover rejection persistence and explicit retry admission; lost rejection, concurrent retries, physical quarantine, retained view-token and unresolved-effect expiry cases check the refined outcomes. |
+
+[Process schedules](../../crates/latent-commit/src/atomic/tests/process.rs)
+positively observe the original child at the final writer fence or after a
+confirmed flush, terminate and reap it, then reopen the same engine. There are
+14 cuts across the seven dispositions. Child entry points invoked without the
+owned protocol provide no durability evidence.
+
+[I/O schedules](../../crates/latent-commit/src/atomic/tests/io_faults.rs)
+exercise the production bounded backend's storage-full error at its 2 MiB file
+ceiling and Linux `RLIMIT_FSIZE`/`SIGXFSZ` on the original descriptor. Logical
+preflight passes before these failures. The backend case verifies an unchanged
+pending record, no partial business families and no new executor admission.
+These are bounded backend/kernel failures, not device ENOSPC or power-loss
+qualification. Shared state tests separately inject an actual backend sync
+failure and require original-identity recovery after uncertain persistence.
+
+The 8 October 2026 PR #787 reconciliation passed all 54 commit, 143 state and
+128 effects library cases on Linux x86-64 with pinned Rust 1.97.1. Test storage
+used an ext4 Docker volume; the protected owner intentionally rejects the
+container's overlay filesystem. Ordinary Clippy, formatting and repository/CI
+contract checks are separate checks. Run the focused library selection with:
+
+```sh
+cargo test -p latent-commit -p latent-state -p latent-effects --lib --all-features --locked -- --test-threads=1
+```
+
+Node activation, RPC waiter coalescing, retention sweeping, provider delivery,
+signed guest/client workflows and installed package qualification retain their
+own Phase 4 tickets. They consume this same physical owner and complete envelope;
+this persistence acceptance does not close those tickets or gate #407.

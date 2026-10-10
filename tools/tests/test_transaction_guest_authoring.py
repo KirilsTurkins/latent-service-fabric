@@ -10,6 +10,27 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
+    def test_rust_result_boundary_is_a_real_captured_authored_guest_with_unchanged_sdk_and_grants(self):
+        from tools.transaction_guest_variants import create
+        from tools.rust_capsule_build import validate_project
+        with tempfile.TemporaryDirectory() as temporary:
+            project = create(Path(temporary) / "result", "rust", "result-boundary", "transaction-rust-aggregate")
+            files = snapshot(project)
+            validate_project(files)
+            source = ROOT / "examples/rust-capsules" / TEMPLATE
+            self.assertEqual(files["src/lib.rs"], (source / "result-boundary.rs").read_bytes())
+            self.assertEqual(files["wit/world.wit"], (source / "result-boundary-world.wit").read_bytes())
+            self.assertIn(b'Command::acquire()', files["src/lib.rs"])
+            self.assertIn(b'command.put(', files["src/lib.rs"])
+            self.assertIn(b'.stage(&mut command)', files["src/lib.rs"])
+            self.assertIn(b'-> tuple<string, string, string, string>;', files["wit/world.wit"])
+            declaration = json.loads(files["capsule-project.json"])
+            self.assertEqual(declaration["limits"]["outboundRequests"], 0)
+            self.assertEqual(json.loads(files["transaction-binding.json"])["namespace"], TEMPLATE)
+            with self.assertRaisesRegex(ValueError, "requires Rust"):
+                create(Path(temporary) / "unsupported", "java", "result-boundary")
+
+
     def test_rust_authored_projects_select_and_pin_their_guest_binding_profile(self):
         import tomllib
         from tools.rust_capsule_project import create
@@ -57,8 +78,16 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
         from tools.java_capsule_project import validate as java
         from tools.dotnet_guest.project import validate as dotnet
         validators = dict(zip(LANGUAGES, (rust, c, typescript, go, java, dotnet), strict=True))
-        calls = ("latent_guest::http::send(", "latent_http_client_send(", "host(send(",
+        calls = ("latent_guest::http::send(", "latent_http_client_send(", "send(",
                  "http.Send(", "Bindings.LatentHttpClient.send(", "Http.Send(")
+        typed_denials = {
+            "rust": "Err(latent_guest::http::HttpError::PermissionDenied)",
+            "c": "frame->http_result.val.err.tag == LATENT_HTTP_CLIENT_HTTP_ERROR_PERMISSION_DENIED",
+            "typescript": "forbidden.tag === 'err' && forbidden.val.tag === 'permission-denied'",
+            "go": "!forbidden.IsOk() && forbidden.Err().Tag() == http.HttpErrorPermissionDenied",
+            "java": "Bindings.LatentHttpClientHttpError.permissionDenied().tag()",
+            "dotnet": "!forbidden.IsOk && forbidden.AsErr.Tag == HttpRaw.HttpError.Tags.PermissionDenied",
+        }
         with tempfile.TemporaryDirectory() as temporary:
             for language, call in zip(LANGUAGES, calls, strict=True):
                 with self.subTest(language=language):
@@ -78,6 +107,17 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
                     code = files[SOURCES[language]].decode()
                     self.assertIn(call, code)
                     self.assertIn(URL, code)
+                    self.assertIn(typed_denials[language], code)
+                    staging = {"rust": '.stage(&mut command)', "c": 'lsf_intent_stage(',
+                               "typescript": '.stage(command)', "go": '.Stage(command)',
+                               "java": '.stage(command)', "dotnet": '.Stage(command)'}
+                    self.assertLess(code.index(staging[language]), code.index(call),
+                                    "real staging must precede the forbidden call so rejection tests rollback")
+                    # The native schedule sends reject=false. A declared
+                    # rejection therefore witnesses this exact typed error;
+                    # success, another HTTP error or a trap cannot satisfy it.
+                    self.assertIn("REJECTED" if language in ("c", "dotnet") else
+                                  "'rejected'" if language == "typescript" else "Rejected", code)
                     if language == "c":
                         self.assertIn("frame->http_returned = state == LSF_ASYNC_RETURNED || state == LSF_ASYNC_CANCELLED_RETURNED", code)
                         self.assertIn("else if (frame->phase != FORBIDDEN_HTTP) lsf_state_call_retire", code)

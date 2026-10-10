@@ -119,4 +119,4 @@ class Backend:
                     "owned-process-command-deadline", "owned-process-command-output-limit"}:
                 raise
             raise DevError("backend-transport-lost-status-required", uncertain=operation not in
-                           {"hello", "doctor", "status", "logs", "recover"}) from None
+                           {"hello", "doctor", "status", "logs", "recover", "preflight"}) from None

@@ -104,7 +104,7 @@ The TypeScript package root exposes the pure `transaction` models, including
 Browser command/query/recovery execution must use the purpose-built authenticated
 HTTP boundary rather than private management RPC.
 
-Regeneration uses pinned Buf 1.72.0, Rust 1.97.1 formatting and Go 1.27.1 formatting:
+Regeneration uses pinned Buf 1.72.0, Rust 1.97.1 formatting and Go 1.27.2 formatting:
 
 ```bash
 python3 tools/transaction_client_models.py --check

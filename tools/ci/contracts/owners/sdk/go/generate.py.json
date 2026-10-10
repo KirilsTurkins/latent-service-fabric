@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/go/generate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve every transaction SDK source, exact protobuf generation, transport case and current canonical signing prerequisite after reviewed development integration.",
+  "reviewReason": "Integrate all-six transaction client models and bridges while preserving current pinned toolchains, required run blocks and guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "41b5edeeaf646f262a7c4fcc9e9543d8370254dec15859fb76a7f75e191ff94c"
 }

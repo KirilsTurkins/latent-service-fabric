@@ -32,6 +32,7 @@ impl<S> Drop for Reservation<S> {
                 state.recovery_accepted -= 1;
                 state.recovery_retained_bytes -= self.bytes;
             }
+            state.release_retired_custody();
             if state.snapshot().physically_retired() {
                 state.retired_at = Some(self.control.clock.monotonic_now());
             }

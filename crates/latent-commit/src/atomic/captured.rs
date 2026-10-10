@@ -129,7 +129,17 @@ impl CompleteEnvelope {
         if bytes > STAGED_BYTES {
             return Err(AtomicError::Limit);
         }
-        let result = DurableResult::new(&claim.record, Outcome::Committed, None, value)?;
+        let version = super::writer::next_namespace_version(view, &claim.record)?;
+        let token =
+            super::writer::disposition_view_token(view, &claim.record, state.as_ref(), version)?;
+        let result = DurableResult::new(
+            &claim.record,
+            Outcome::Committed,
+            None,
+            value,
+            version,
+            token,
+        )?;
         let mut authorities = Vec::with_capacity(intents.len());
         let mut rows = Vec::with_capacity(intents.len() * 3);
         for (sequence, intent) in intents.into_iter().enumerate() {

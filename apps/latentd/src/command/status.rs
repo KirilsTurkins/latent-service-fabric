@@ -70,6 +70,44 @@ pub(super) fn stopped<T: Serialize>(report: &T) -> Result<(), Failure> {
     })
 }
 
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "development-outbound-streams"
+))]
+pub(super) fn stream_control(
+    node_id: &str,
+    result: Result<&crate::standalone::StreamControlStatus, &latent_core::PlatformError>,
+    observed: Option<&crate::standalone::StreamControlStatus>,
+) -> Result<(), Failure> {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Record<'a> {
+        schema_version: &'static str,
+        event: &'static str,
+        node_id: &'a str,
+        operation_result: &'static str,
+        failure_code: Option<String>,
+        control: Option<&'a crate::standalone::StreamControlStatus>,
+    }
+    let (operation_result, failure_code, control) = match result {
+        Ok(control) => ("observed", None, Some(control)),
+        Err(error) => (
+            "rejected-or-unconfirmed",
+            Some(format!("{:?}", error.code)),
+            observed,
+        ),
+    };
+    output(&Record {
+        schema_version: SCHEMA,
+        event: "stream-control",
+        node_id,
+        operation_result,
+        failure_code,
+        control,
+    })
+}
+
 #[cfg(target_os = "linux")]
 fn output(record: &impl Serialize) -> Result<(), Failure> {
     let line = encode(record).map_err(|_| Failure::new("output", PlatformErrorCode::Internal))?;

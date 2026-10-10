@@ -15,7 +15,9 @@ RUN grep -q 'http://archive.ubuntu.com/ubuntu' /etc/apt/sources.list.d/ubuntu.so
     -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' \
     /etc/apt/sources.list.d/ubuntu.sources
 # Bounded retries preserve the signed snapshot and fail on incomplete indexes.
-RUN apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 update -qq --error-on=any --snapshot "$UBUNTU_SNAPSHOT" \
+RUN sed -i -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
+    -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources \
+    && apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 update -qq --error-on=any --snapshot "$UBUNTU_SNAPSHOT" \
     && apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 install -y --no-install-recommends --snapshot "$UBUNTU_SNAPSHOT" \
     ca-certificates=20260601~24.04.1 openssl=3.0.13-0ubuntu3.15 \
     libexpat1=2.6.1-2ubuntu0.5 libgdbm6t64=1.23-5.1build1 \

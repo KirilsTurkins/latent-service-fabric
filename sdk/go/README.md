@@ -17,7 +17,7 @@ removed during alpha; there is no compatibility facade.
 
 ## Build and focused validation
 
-The qualified development toolchain is Linux x86-64 with Go **1.27.1**, Buf
+The qualified development toolchain is Linux x86-64 with Go **1.27.2**, Buf
 **1.72.0**, and Python 3.10 or newer. The repository's development image supplies
 these tools. Other OS/architecture combinations are not qualified by this
 delivery; the native participant deliberately requires Linux file permissions.
@@ -35,7 +35,7 @@ go vet ./...
 go build -trimpath -o target/provider-workflow ./cmd/provider-workflow
 ```
 
-Generation uses eight authoritative common, policy, capability, invocation,
+Generation uses nine authoritative common, policy, capability, invocation,
 release, state, transaction and dispatcher Protobuf sources. State and dispatcher
 bindings have a separate private Go package so they can reference transactions
 without introducing an import cycle with the stateless control types. Protobuf

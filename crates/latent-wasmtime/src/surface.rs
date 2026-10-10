@@ -13,6 +13,7 @@ use crate::containment::platform_error;
 use crate::values::validate_signature;
 
 pub(crate) mod blob;
+pub(crate) mod networking;
 pub(crate) mod streaming;
 pub(crate) mod transaction;
 
@@ -113,6 +114,7 @@ pub(crate) struct Providers {
     pub local_services: bool,
     pub http: bool,
     pub streaming_http: bool,
+    pub outbound_streams: bool,
     pub blobs: bool,
     pub secrets: bool,
     pub events: bool,
@@ -132,6 +134,8 @@ impl Providers {
             || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
             || (self.streaming_http
                 && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
+            || (self.outbound_streams
+                && name == latent_capabilities::broker::network::STREAM_CAPABILITY)
     }
 }
 pub(crate) fn validate_with_providers(
@@ -164,6 +168,9 @@ pub(crate) fn validate_with_providers(
         &mut retained_bytes,
         providers,
     )?;
+    if imports.contains(latent_capabilities::broker::network::STREAM_CAPABILITY) {
+        networking::validate_encoding(&artifact.component_bytes)?;
+    }
 
     let declared_exports = artifact
         .manifest
@@ -310,7 +317,7 @@ fn validate_imports(
                 "host capabilities and structural types must be imported interfaces",
             ));
         };
-        let Some(specification) = profile.interface(name) else {
+        let Some(specification) = preparation_interface(profile, name, transactional) else {
             validate_type_interface(&interface, engine, config, remaining)?;
             retain(256 + name.len(), retained_bytes, config)?;
             type_imports.insert(name.to_owned());
@@ -361,6 +368,7 @@ fn validate_imports(
                         match specification.interface {
                             latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            latent_capabilities::broker::network::STREAM_CAPABILITY => networking::validate(name, &function, &interface, engine)?,
                             transaction::STATE | transaction::INTENTS => transaction::validate(specification.interface, name, &function, &interface, engine, transaction_resource)?,
                             _ => return Err(incompatible("unsupported host resource interface")),
                         }
@@ -418,6 +426,23 @@ fn validate_type_interface(
         check_types(&[ty], config, remaining)?;
     }
     Ok(())
+}
+
+fn preparation_interface(
+    profile: latent_core::HostAbiProfile,
+    name: &str,
+    transactional: bool,
+) -> Option<&'static latent_core::HostInterfaceSpec> {
+    // Generic preparation captures both frozen ordinary and transaction ABI
+    // identities. Provider installation and the original strict runtime gate
+    // remain mandatory when composing this exact HTTP client surface.
+    profile.interface(name).or_else(|| {
+        if transactional && name == latent_capabilities::broker::http::HTTP_CAPABILITY {
+            latent_core::PHASE3_HOST_ABI_CURRENT.interface(name)
+        } else {
+            None
+        }
+    })
 }
 
 fn register_functions(

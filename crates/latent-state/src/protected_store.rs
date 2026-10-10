@@ -1,18 +1,32 @@
 //! One protected, bounded node database. All native work, initialization and
 //! affine view retirement belongs to the same fixed storage workers.
 
+mod checkpoint;
 mod config;
+mod custody;
 mod dispatcher;
+mod mode;
 mod native_capacity;
 mod operation;
 mod physical;
+mod resource;
+mod snapshot;
 mod startup;
+mod startup_memory;
 mod view;
 
+pub use checkpoint::{
+    CheckpointInspection, ProtectedCheckpoint, ProtectedCheckpointConfig, ProtectedCheckpointJob,
+    StoreInitializationWitness,
+};
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
+pub use mode::{StateModeObservation, STATE_MODE_FILE, STATE_MODE_NATIVE_BYTES};
 pub use operation::ProtectedStoreOperation;
+pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
+pub use snapshot::{ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
+pub use startup_memory::ProtectedStoreStartupMemory;
 pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
 
 use std::future::Future;
@@ -63,6 +77,45 @@ impl Clone for ProtectedStoreOwner {
 }
 
 impl ProtectedStoreOwner {
+    /// Validate the immutable recovery partition configured before physical
+    /// startup. This creates no worker, result-read or mutation authority.
+    pub fn install_recovery_capacity(
+        &self,
+        reserve: crate::store_io::StoreIoRecoveryCapacity,
+    ) -> Result<(), ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .install_recovery_capacity(reserve)
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    pub fn recovery_snapshot(
+        &self,
+    ) -> Result<crate::store_io::StoreIoRecoverySnapshot, ProtectedStoreError> {
+        self.ready
+            .recovery_snapshot()
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    /// Use only after current purpose-specific policy authorization. A bounded
+    /// read can use the reserved worker while ordinary jobs saturate admission;
+    /// a blocked physical writer remains owned and cannot be bypassed.
+    pub fn with_recovery_store<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_payload_bytes: u64,
+        operation: impl FnOnce(&crate::embedded::EmbeddedStore) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit_recovery(kind, retained_payload_bytes, move |store| {
+                store.with_store(kind, operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
     /// Describes this actual selected engine/configuration. The digest binds
     /// native limits and the current format; it is not a qualification receipt.
     #[must_use]

@@ -96,11 +96,15 @@ def read(path: Path, maximum: int = 1_048_576, **options) -> bytes:
             require(len(data) <= maximum, "file-byte-limit")
 
 
-def digest_fd(descriptor: int, maximum: int = MAX_FILE) -> tuple[str, int]:
+def digest_fd(descriptor: int, maximum: int = MAX_FILE, *, deadline: float | None = None) -> tuple[str, int]:
     os.lseek(descriptor, 0, os.SEEK_SET)
     digest = hashlib.sha256()
     total = 0
-    while block := os.read(descriptor, 65536):
+    while True:
+        require(deadline is None or time.monotonic() < deadline, "file-read-time-bound")
+        block = os.read(descriptor, 65536)
+        if not block:
+            break
         total += len(block)
         require(total <= maximum, "file-byte-limit")
         digest.update(block)

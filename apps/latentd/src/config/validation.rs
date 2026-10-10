@@ -8,7 +8,30 @@ use super::{invalid, NodeConfig, IDENTIFIER_BYTES, JOURNAL_RECORD_BYTES, MIB};
 pub(super) struct Capacity {
     pub cells: u32,
     pub reservations: u32,
+    pub tracked_requests: usize,
     pub maximum_memory: u64,
+}
+
+pub(super) fn tracked_requests(
+    reservations: usize,
+    retained_bytes: usize,
+) -> Result<usize, PlatformError> {
+    // One bounded transient request must reach the unchanged admission owner
+    // when every execution/queue reservation is occupied. It retains only its
+    // normal journal/cancellation/cleanup owners, never another execution cell.
+    let additional = reservations
+        .checked_add(1)
+        .ok_or_else(|| invalid("cells.queueCapacity"))?;
+    let charged = additional
+        .checked_mul(JOURNAL_RECORD_BYTES)
+        .ok_or_else(|| invalid("retention.bytes"))?;
+    // Never enlarge a configured retention budget. Exact historical budgets
+    // retain their original tracking bound and pre-identity capacity refusal.
+    Ok(if charged <= retained_bytes {
+        additional
+    } else {
+        reservations
+    })
 }
 
 pub(super) fn validate(config: &NodeConfig) -> Result<Capacity, PlatformError> {
@@ -165,6 +188,10 @@ fn cells(config: &NodeConfig) -> Result<Capacity, PlatformError> {
     Ok(Capacity {
         cells: total,
         reservations,
+        tracked_requests: tracked_requests(
+            usize::try_from(reservations).map_err(|_| invalid("cells.queueCapacity"))?,
+            config.retention.bytes,
+        )?,
         maximum_memory: memory,
     })
 }

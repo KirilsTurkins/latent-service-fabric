@@ -301,6 +301,18 @@ pub struct NamespaceRead {
 }
 
 impl NamespaceRead {
+    /// Actual owned capacities for a trusted producer moving this native read
+    /// beside its prepaid metadata permit. This is descriptive, never authority.
+    #[must_use]
+    pub fn retained_bytes(&self) -> usize {
+        std::mem::size_of::<Self>()
+            .saturating_add(self.record.tenant.0.capacity())
+            .saturating_add(self.record.id.0.capacity())
+            .saturating_add(self.record.state_schema.capacity())
+            .saturating_add(self.expected.key.key.capacity())
+            .saturating_add(self.expected.value.as_ref().map_or(0, Vec::capacity))
+    }
+
     #[must_use]
     pub fn record(&self) -> &NamespaceRecord {
         &self.record
@@ -341,6 +353,29 @@ impl NamespaceCatalog {
         }
     }
 
+    /// The actual resident metadata charge follows the same lifecycle owner
+    /// through retained handles/completions, even after this catalog closes.
+    pub fn with_retained_capacity(
+        native: &latent_core::native_capacity::NativeCapacityOwner,
+        original: std::sync::Arc<latent_core::native_capacity::NativeReservation>,
+    ) -> Result<Self, NamespaceError> {
+        Ok(Self {
+            lifecycle: super::lifecycle::NamespaceLifecycleRegistry::with_retained_capacity(
+                super::lifecycle::NamespaceLifecycleLimits::default(),
+                native,
+                original,
+            )?,
+        })
+    }
+
+    #[must_use]
+    pub fn uses_native_capacity(
+        &self,
+        native: &latent_core::native_capacity::NativeCapacityOwner,
+    ) -> bool {
+        self.lifecycle.uses_native_capacity(native)
+    }
+
     #[must_use]
     pub fn lifecycle(&self) -> &super::lifecycle::NamespaceLifecycleRegistry {
         &self.lifecycle
@@ -349,29 +384,73 @@ impl NamespaceCatalog {
     /// Register this bounded decoder with the protected owner's startup scan.
     /// Other families require their own decoder; unknown keys/formats fail closed.
     pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), NamespaceError> {
+        Self::row_scope(key, bytes).map(|_| ())
+    }
+
+    /// Original ownership from the same bounded namespace, operation-receipt or
+    /// history decoder and canonical row key used at startup. This descriptive
+    /// association grants no inspection, snapshot, migration or restore access.
+    pub fn row_scope(
+        key: &RowKey,
+        bytes: &[u8],
+    ) -> Result<(TenantId, StateNamespaceId, u64), NamespaceError> {
         if key.family != Family::Namespace {
             return Err(NamespaceError::UnsupportedFormat);
         }
         if key.key.starts_with(super::history::HISTORY_PREFIX) {
-            return super::history::NamespaceHistory::validate_row(key, bytes);
+            super::history::NamespaceHistory::validate_row(key, bytes)?;
         }
-        let expected = if key.key.starts_with(b"ns-v1\0") {
+        let (expected, scope) = if key.key.starts_with(super::history::HISTORY_PREFIX) {
+            let history = super::history::NamespaceHistory::decode(bytes)?;
+            let expected = super::history::history_key(
+                &history.tenant,
+                &history.namespace,
+                history.incarnation,
+            )?
+            .key;
+            (
+                expected,
+                (history.tenant, history.namespace, history.incarnation),
+            )
+        } else if key.key.starts_with(b"ns-v1\0") {
             let record = NamespaceRecord::decode(bytes)?;
-            namespace_record_key(&record.tenant, &record.id)?
+            (
+                namespace_record_key(&record.tenant, &record.id)?,
+                (record.tenant, record.id, record.version.incarnation),
+            )
         } else if key.key.starts_with(b"ns-op-v1\0") {
             let receipt = NamespaceOperationReceipt::decode(bytes)?;
-            namespace_operation_key(
-                &receipt.context.tenant,
-                &receipt.context.actor,
-                &receipt.context.operation_id,
-            )?
+            (
+                namespace_operation_key(
+                    &receipt.context.tenant,
+                    &receipt.context.actor,
+                    &receipt.context.operation_id,
+                )?,
+                (
+                    receipt.record.tenant,
+                    receipt.record.id,
+                    receipt.record.version.incarnation,
+                ),
+            )
         } else {
             return Err(NamespaceError::UnsupportedFormat);
         };
         if key.key != expected {
             return Err(NamespaceError::Corrupt);
         }
-        Ok(())
+        Ok(scope)
+    }
+
+    /// Descriptive startup ownership after the original closed key/codec check.
+    pub fn tenant_for_row(key: &RowKey, bytes: &[u8]) -> Result<TenantId, NamespaceError> {
+        Self::validate_row(key, bytes)?;
+        if key.key.starts_with(super::history::HISTORY_PREFIX) {
+            Ok(super::history::NamespaceHistory::decode(bytes)?.tenant)
+        } else if key.key.starts_with(b"ns-v1\0") {
+            Ok(NamespaceRecord::decode(bytes)?.tenant)
+        } else {
+            Ok(NamespaceOperationReceipt::decode(bytes)?.context.tenant)
+        }
     }
 
     pub fn inspect(
@@ -511,7 +590,7 @@ impl NamespaceCatalog {
         };
         let encoded_record = receipt.record.encode()?;
         let encoded_receipt = receipt.encode()?;
-        let batch = AtomicBatch {
+        let mut batch = AtomicBatch {
             expectations: vec![
                 ExpectedRow {
                     key: namespace_key.clone(),
@@ -533,6 +612,9 @@ impl NamespaceCatalog {
                 },
             ],
         };
+        crate::tenant::prepare_metadata_update(&view, &receipt.context.tenant, &batch)
+            .and_then(|accounting| accounting.append_to(&mut batch))
+            .map_err(storage)?;
         Ok(PreparedNamespaceMutation {
             batch,
             receipt,
