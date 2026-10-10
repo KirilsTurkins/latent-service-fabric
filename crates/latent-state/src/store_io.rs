@@ -15,6 +15,7 @@
 mod custody;
 mod drain;
 mod job;
+mod recovery;
 mod retained;
 mod retirement;
 mod startup;
@@ -25,6 +26,7 @@ mod worker;
 pub(crate) use custody::StoreIoCustody;
 pub use drain::StoreIoDrain;
 pub use job::StoreIoJob;
+pub use recovery::{StoreIoRecoveryCapacity, StoreIoRecoverySnapshot};
 pub use retained::StoreIoRetained;
 pub use retirement::{StoreIoRetirement, StoreIoRetirementWitness};
 pub use startup::{StoreIoReady, StoreIoStartup};
@@ -67,6 +69,31 @@ impl<S> Drop for Owner<S> {
 }
 
 impl<S: Send + Sync + 'static> StoreIoOwner<S> {
+    #[cfg(test)]
+    pub(crate) fn wait_for_snapshot(
+        &self,
+        timeout: std::time::Duration,
+        ready: impl Fn(StoreIoSnapshot) -> bool,
+    ) {
+        let deadline = Instant::now() + timeout;
+        let mut state = self.inner.control.state.lock().unwrap();
+        while !ready(state.snapshot()) {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            assert!(!remaining.is_zero(), "physical store work did not retire");
+            let (next, wake) = self
+                .inner
+                .control
+                .changed
+                .wait_timeout(state, remaining)
+                .unwrap();
+            state = next;
+            assert!(
+                !wake.timed_out() || ready(state.snapshot()),
+                "physical store work did not retire"
+            );
+        }
+    }
+
     /// Creation errors preserve a partial worker owner for physical drain.
     pub fn new(
         store: S,

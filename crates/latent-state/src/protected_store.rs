@@ -77,6 +77,45 @@ impl Clone for ProtectedStoreOwner {
 }
 
 impl ProtectedStoreOwner {
+    /// Validate the immutable recovery partition configured before physical
+    /// startup. This creates no worker, result-read or mutation authority.
+    pub fn install_recovery_capacity(
+        &self,
+        reserve: crate::store_io::StoreIoRecoveryCapacity,
+    ) -> Result<(), ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .install_recovery_capacity(reserve)
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    pub fn recovery_snapshot(
+        &self,
+    ) -> Result<crate::store_io::StoreIoRecoverySnapshot, ProtectedStoreError> {
+        self.ready
+            .recovery_snapshot()
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    /// Use only after current purpose-specific policy authorization. A bounded
+    /// read can use the reserved worker while ordinary jobs saturate admission;
+    /// a blocked physical writer remains owned and cannot be bypassed.
+    pub fn with_recovery_store<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_payload_bytes: u64,
+        operation: impl FnOnce(&crate::embedded::EmbeddedStore) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit_recovery(kind, retained_payload_bytes, move |store| {
+                store.with_store(kind, operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
     /// Describes this actual selected engine/configuration. The digest binds
     /// native limits and the current format; it is not a qualification receipt.
     #[must_use]

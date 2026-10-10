@@ -37,6 +37,7 @@ tokio.workspace = true
 tonic.workspace = true
 
 [dev-dependencies]
+latent-audit = { path = "../latent-audit", features = ["test-support"] }
 latent-node = { path = "../latent-node", features = ["transaction-test-observation"] }
 latent-wasmtime = { path = "../latent-wasmtime" }
 latent-packaging = { path = "../latent-packaging" }

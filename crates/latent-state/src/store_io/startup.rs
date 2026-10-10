@@ -161,6 +161,41 @@ impl<S> Future for StoreIoStartup<S> {
 }
 
 impl<S: Send + Sync + 'static> StoreIoReady<S> {
+    #[cfg(test)]
+    pub(crate) fn wait_for_snapshot(
+        &self,
+        timeout: std::time::Duration,
+        ready: impl Fn(StoreIoSnapshot) -> bool,
+    ) {
+        self.owner.wait_for_snapshot(timeout, ready);
+    }
+
+    /// Validate the original immutable recovery partition; never create workers
+    /// or change the ownership of admitted physical work.
+    pub fn install_recovery_capacity(
+        &self,
+        reserve: super::StoreIoRecoveryCapacity,
+    ) -> Result<(), StoreIoError> {
+        self.owner.install_recovery_capacity(reserve)
+    }
+
+    pub fn recovery_snapshot(&self) -> Result<super::StoreIoRecoverySnapshot, StoreIoError> {
+        self.owner.recovery_snapshot()
+    }
+
+    pub fn submit_recovery<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        bytes: u64,
+        operation: impl FnOnce(&S) -> T + Send + 'static,
+    ) -> Result<StoreIoJob<T>, StoreIoError> {
+        self.owner
+            .submit_recovery(kind, bytes, move |slot| {
+                operation(slot.get().expect("initialized store owner"))
+            })
+            .map_err(|error| error.reason)
+    }
+
     #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
     pub(crate) fn wait_test_metadata_retirement(&self, deadline: Instant) {
         let control = &self.owner.inner.control;
