@@ -47,6 +47,7 @@ impl SupplyChainSettings {
         &self,
         data: &Path,
         runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+        manifest_profile: latent_manifest::ManifestValidationProfile,
     ) -> Result<Option<Arc<SupplyChainAuthority>>, PlatformError> {
         match self {
             Self::TrustedLocal => Ok(None),
@@ -68,13 +69,16 @@ impl SupplyChainSettings {
                 {
                     return Err(invalid("supplyChain.persistedAuthorityMissing"));
                 }
-                Ok(Some(Arc::new(SupplyChainAuthority::open_with_runtime(
-                    &data.join("supply-chain"),
-                    SupplyChainPolicy::from_json(policy)?,
-                    Arc::new(SystemSupplyChainClock),
-                    *lease_seconds,
-                    runtime_profile,
-                )?)))
+                Ok(Some(Arc::new(
+                    SupplyChainAuthority::open_with_runtime_and_manifest_profile(
+                        &data.join("supply-chain"),
+                        SupplyChainPolicy::from_json(policy)?,
+                        Arc::new(SystemSupplyChainClock),
+                        *lease_seconds,
+                        runtime_profile,
+                        manifest_profile,
+                    )?,
+                )))
             }
         }
     }

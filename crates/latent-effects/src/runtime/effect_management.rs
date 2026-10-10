@@ -6,8 +6,8 @@ mod reconciliation;
 mod support;
 use support::MutationInputs;
 use support::{
-    check, evidence, expiration, fenced, live, load_authority, namespace, persist, qualify,
-    role_fence, submit, submit_kind,
+    append_namespace_expectation, check, evidence, expiration, fenced, live, load_authority,
+    namespace, persist, qualify, role_fence, submit, submit_kind,
 };
 
 use latent_state::embedded::StoreError;
@@ -120,7 +120,7 @@ impl DispatcherManagementPort {
                     qualification,
                 )?;
                 let (mut batch, plan, replayed) = prepared.into_parts();
-                batch.expectations.push(namespace.expectation());
+                append_namespace_expectation(&mut batch, &namespace)?;
                 let authority = load_authority(&view, &plan)?;
                 store
                     .apply_fenced(batch, || {

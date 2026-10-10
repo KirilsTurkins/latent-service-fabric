@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/build_dev_guest_tools.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve captured Phase4 guest profile selection and incoming explicit verified Zig mirror/cache with identical compiler pins, bounded bytes and original deadlines","schemaVersion":"latent.ci.contracts.v1","sha256":"bd0b0a562b8d323fda5a0c0a262e1c3da64a38e28f64649eba2045b103ea05dd"}
+{
+  "kind": "owner",
+  "path": "tools/build_dev_guest_tools.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Only the pinned Zig mirror may retry up to three opening timeouts before receiving a response; retain one 600-second deadline, 60-second socket waits, immutable archive hash and byte limits, with no body retry or fallback.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "67577e7a692d48944e3411dfd73a8fef57a91a048849a5ab0580c7e5e4786af3"
+}

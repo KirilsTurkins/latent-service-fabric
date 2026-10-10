@@ -114,6 +114,15 @@ contains exact publication, revision, separate component and release digests, ro
 contract digest, state schema and input/result format. Replays retain that
 source identity despite subsequent route changes.
 
+Transactional invocation carries its full result once in `invocation.result`.
+The command inspection retains disposition, source, receipt, effect IDs and
+payload availability. Its optional duplicate result is omitted by the ordinary
+producer; receivers still accept equal older duplicates and reject disagreement.
+An inline success must match the commit's state version and effect IDs, and all
+inline results remain bound to the exact source and durable disposition.
+Standalone command lookup carries its own retained result and cannot borrow an
+invocation body. The existing per-value and total response limits remain fixed.
+
 [StateService](../../api/proto/latent/control/v1/state.proto) defines namespace
 inspection, entity selection and guarded approved mutations with immutable
 operation receipts. Writes require current management credentials, expected
@@ -183,6 +192,44 @@ permission is checked currently after format recognition. Linked retention expos
 payload/identity expiry and remaining recovery; purge cannot remove a dependency
 still needed by a result, deduplication tombstone, intent or checkpoint.
 Independent record formats do not add a workflow, timer or continuation engine.
+
+The native store keeps independently decoded command (`LCM3`/`LCM4`), result
+(`LCR3`, pending `LCP1`, expired `LCE1`), namespace accounting (`LCU1`/`LCU2`),
+reservation (`LSR1`/`LSR2`) and retry (`LCT1`/`LCT2`) formats. An inspection reports
+the format of the actual decoded row. Selecting a newer guest ABI does not
+rewrite old rows, reconstruct counters or authorize replay. Legacy command and
+retry readers remain explicit; installing tenant declarations over an existing
+business store requires a separately approved accounting migration. Accounted
+retention refuses legacy rows instead of guessing their ownership.
+
+Explicit tenant declarations bound twelve independent usage categories: live
+state keys/bytes, tombstone keys/bytes, result rows/bytes, effect rows/bytes,
+payload bytes, recovery bytes and metadata rows/bytes. Installation is bounded
+and immutable. State, namespace, command and management writers capture the
+original declaration and counter on the same native view and update one tenant
+generation in their existing atomic batch. The original namespace quota, schema
+and history checks remain required. An absent legacy installation is captured as
+an absence precondition; a concurrent installation fences the old prepared batch.
+Quota or CAS refusals leave a healthy store usable and never mint abort or
+physical retirement evidence.
+
+Optional effect-management metadata shares the existing namespace and tenant
+effect-byte ledgers. Planning charges the actual original plan, slot, counter and
+reservation rows plus its existing 40 KiB future disposition promise. Completing
+that original operation replaces only its own reservation with its receipt.
+Replay is read-only; hypothetical future management operations consume no quota.
+Both ledgers change in the same original batch and a stale plan cannot refresh
+its effect version, policy digest, owner or namespace generation.
+
+Maintenance uses one bounded owner and the original recovery worker. It captures
+each effect's exact payload, history, due index and management rows before
+destructive release. An unfinished management plan still protects those rows
+after its deadline. Purge requires a separate current destructive-policy check,
+the original retention horizon and actual native view retirement. A retained
+view remains an owner after its read deadline; expiry alone never permits
+compaction or deletion. Interrupted progress and protective command floors stay
+durable. Census validates original supported row ownership and compares the same
+accounting ledgers; it performs no repair, migration or renewal.
 
 [TransactionBinding](../../schemas/transaction-binding.schema.json) is a bounded
 companion declaration linking exact existing capsule/deployment/binding IDs,

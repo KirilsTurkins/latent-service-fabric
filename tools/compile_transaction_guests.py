@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Build authored transaction guests with the maintained language compilers.
 
-The positive aggregate and actual forbidden-HTTP variant retain independent
+The positive aggregate, actual forbidden-HTTP variant and bounded Rust result
+variant retain independent
 captured projects, SDK locks, components and bounded failure diagnostics.
 These receipts establish compilation, not signing, admission or node execution.
 """
@@ -27,12 +28,13 @@ from tools.transaction_guest_project import TEMPLATE
 from tools.transaction_guest_variants import HTTP, LANGUAGES, SOURCES, create as variant_project
 
 WORLD = "examples:transactional-aggregate/service@1.0.0"
-VARIANTS = ("aggregate", "forbidden-http")
+VARIANTS = ("aggregate", "forbidden-http", "result-boundary")
 
 
 def authored_project(language: str, variant: str, output: Path) -> Path:
-    if variant == "forbidden-http":
-        return variant_project(output, language, variant)
+    if variant in {"forbidden-http", "result-boundary"}:
+        name = "transaction-rust-aggregate" if variant == "result-boundary" else None
+        return variant_project(output, language, variant, name)
     if variant != "aggregate":
         raise ValueError("unknown authored transaction variant")
     if language == "rust":
@@ -147,6 +149,8 @@ def compile_project(language: str, work: Path, output: Path, command: Commands,
 def compile_guests(language: str, output: Path, *, tools: Path | None = None, wasi_sdk: Path | None = None) -> None:
     output = fresh(output)
     for variant in VARIANTS:
+        if variant == "result-boundary" and language != "rust":
+            continue
         current = fresh(output / variant)
         report = {"schemaVersion": "latent.transaction-guest.compiler.v1", "language": language,
             "variant": variant, "evidenceKind": "authored-component-compiler", "status": "running",

@@ -33,7 +33,6 @@ class GoAuthoringTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'generated-Go-export-stub-drift'):
             export_declarations(source.replace('\tpanic(', '\treturn panic('))
 
-
     def test_readme_entrypoints_match_every_typed_capability_facade(self):
         import re
         from tools.go_capsule_project import ROOT

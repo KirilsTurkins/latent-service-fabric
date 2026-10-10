@@ -12,6 +12,7 @@
 //! Deadline expiry quarantines the owner; it never implies an aborted write,
 //! closed engine or physically retired worker. Quarantine is sticky.
 
+mod custody;
 mod drain;
 mod job;
 mod recovery;
@@ -22,6 +23,7 @@ mod state;
 mod types;
 mod worker;
 
+pub(crate) use custody::StoreIoCustody;
 pub use drain::StoreIoDrain;
 pub use job::StoreIoJob;
 pub use recovery::{StoreIoRecoveryCapacity, StoreIoRecoverySnapshot};
@@ -201,7 +203,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         retained_bytes: u64,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
-        self.submit_inner(kind, retained_bytes, None, operation)
+        self.submit_inner(kind, retained_bytes, None, None, operation)
     }
 
     /// Retain the original request owner through native callback completion and
@@ -215,7 +217,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         keeper: Arc<dyn std::any::Any + Send + Sync>,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
-        self.submit_inner(kind, retained_bytes, Some(keeper), operation)
+        self.submit_inner(kind, retained_bytes, Some(keeper), None, operation)
     }
 
     #[allow(clippy::result_large_err)]
@@ -224,6 +226,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         kind: StoreIoKind,
         retained_bytes: u64,
         keeper: Option<Arc<dyn std::any::Any + Send + Sync>>,
+        custody: Option<u64>,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
         let control = &self.inner.control;
@@ -243,7 +246,14 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             let charge = retained_bytes
                 .checked_add(metadata)
                 .ok_or(StoreIoError::Exhausted)?;
-            state.admit(kind.is_recovery(), charge)?;
+            if let Some(sequence) = custody {
+                if !kind.is_recovery() {
+                    return Err(StoreIoError::CustodyMismatch);
+                }
+                state.admit_custody(sequence, charge, control.clock.monotonic_now())?;
+            } else {
+                state.admit(kind.is_recovery(), charge)?;
+            }
             let next = state
                 .next_job
                 .checked_add(1)

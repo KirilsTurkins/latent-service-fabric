@@ -167,10 +167,11 @@ jobs:
           cargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go
           test "$(wasm-tools --version | cut -d ' ' -f 1,2)" = 'wasm-tools 1.254.0'
           mkdir -p "$RUNNER_TEMP/go-guest-tools"
-          curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-guest-tools/go.tbz" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz
-          echo "4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz" | sha256sum --check --strict
-          tar -xjf "$RUNNER_TEMP/go-guest-tools/go.tbz" -C "$RUNNER_TEMP/go-guest-tools"
-          echo "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin" >> "$GITHUB_PATH"
+          curl --fail --location --max-time 180 --output "$RUNNER_TEMP/go-guest-tools/go.tar.gz" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz
+          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-guest-tools/go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/go-guest-tools/go.tar.gz" -C "$RUNNER_TEMP/go-guest-tools"
+          python3 tools/go_guest/runtime.py --prepare-compiler "$RUNNER_TEMP/go-guest-tools/go" --output "$RUNNER_TEMP/go-guest-tools/go-async"
+          echo "$RUNNER_TEMP/go-guest-tools/go-async/bin" >> "$GITHUB_PATH"
       - name: Retain pinned reproduction tools
         run: |
           set -euo pipefail
@@ -181,14 +182,14 @@ jobs:
         with:
           name: go-guest-tools-${{ github.sha }}
           path: |
-            ${{ runner.temp }}/go-guest-tools/go.tbz
+            ${{ runner.temp }}/go-guest-tools/go.tar.gz
             ${{ runner.temp }}/go-guest-tools/componentize-go
             ${{ runner.temp }}/go-guest-tools/wasm-tools
             ${{ runner.temp }}/go-guest-tools/tools.sha256
           if-no-files-found: error
           retention-days: 1
       - name: Generate and compile upstream and constrained LSF components
-        run: python3 tools/go_guest/probe.py --output "$RUNNER_TEMP/go-guest-probe" --go "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
+        run: python3 tools/go_guest/probe.py --output "$RUNNER_TEMP/go-guest-probe" --go "$RUNNER_TEMP/go-guest-tools/go-async/bin/go"
       - name: Qualify proposed transaction shapes and explicit owners with the maintained Go compiler
         run: python3 tools/qualify_transaction_contracts.py --language go --output "$RUNNER_TEMP/transaction-contract-go"
       - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant

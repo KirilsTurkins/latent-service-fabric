@@ -50,7 +50,7 @@ class GoDependencyAuthoring(unittest.TestCase):
         self.identities = ['outside.example.test/developer-module', 'outside.example.test/child']
         for path, identity in zip((self.library, self.child), self.identities):
             path.mkdir()
-            (path / 'go.mod').write_text('module ' + identity + '\n\ngo 1.27.1\n', encoding='ascii')
+            (path / 'go.mod').write_text('module ' + identity + '\n\ngo 1.27.2\n', encoding='ascii')
             (path / 'value.go').write_bytes(b'package library\nfunc Value() int { return 42 }\n')
         (self.child / 'message.txt').write_bytes(b'captured immutable embedded resource')
         (self.library / 'generate.go').write_bytes(b'//go:generate forbidden-generator\npackage library\n')
@@ -68,8 +68,8 @@ class GoDependencyAuthoring(unittest.TestCase):
 
     def select(self, libraries=True):
         self.main = 'application.example.test/source'
-        self.declaration = {'Module': {'Path': self.main}, 'Go': '1.27.1', 'Require': [], 'Replace': [], 'Exclude': []}
-        text = 'module ' + self.main + '\n\ngo 1.27.1\n'
+        self.declaration = {'Module': {'Path': self.main}, 'Go': '1.27.2', 'Require': [], 'Replace': [], 'Exclude': []}
+        text = 'module ' + self.main + '\n\ngo 1.27.2\n'
         if libraries:
             for identity, location in zip(self.identities, (self.library, self.child)):
                 self.declaration['Require'].append({'Path': identity, 'Version': 'v0.0.0'})
@@ -100,7 +100,7 @@ class GoDependencyAuthoring(unittest.TestCase):
         self.assertEqual(Path(environment['GIT_CONFIG_GLOBAL']).read_bytes(), b'')
         arguments = command[1:]
         if arguments == ['version']:
-            raw = b'go version go1.27.1 linux/amd64\n'
+            raw = b'go version go1.27.2 linux/amd64\n'
         elif arguments == ['mod', 'edit', '-json']:
             raw = canonical(self.declaration)
         elif arguments[:2] == ['mod', 'edit'] and arguments[2].startswith('-replace='):
@@ -111,12 +111,12 @@ class GoDependencyAuthoring(unittest.TestCase):
             path.write_text(path.read_text().replace('=> ' + original, '=> ' + destination), encoding='utf-8')
             raw = b''
         elif arguments == ['list', '-m', '-json', 'all']:
-            rows = [{'Path': self.main, 'Main': True, 'GoVersion': '1.27.1'}]
+            rows = [{'Path': self.main, 'Main': True, 'GoVersion': '1.27.2'}]
             text = (Path(cwd) / 'go.mod').read_text()
             for row in self.declaration['Replace']:
                 identity = row['Old']['Path']
                 location = next(line.partition(' => ')[2] for line in text.splitlines() if line.startswith('replace ' + identity + ' => '))
-                rows.append({'Path': identity, 'Version': 'v0.0.0', 'GoVersion': '1.27.1',
+                rows.append({'Path': identity, 'Version': 'v0.0.0', 'GoVersion': '1.27.2',
                              'Replace': {'Path': location, 'Dir': location}})
             raw = b'\n'.join(canonical(row) for row in rows)
         elif arguments == ['mod', 'download', '-json', 'all']:

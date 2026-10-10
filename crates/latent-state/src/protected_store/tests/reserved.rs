@@ -262,16 +262,9 @@ fn protected_recovery_reads_use_reserved_worker_while_native_writer_reader_and_q
         retained_bytes: 8 * 1024 * 1024,
         job_bytes: 4 * 1024 * 1024,
     });
+    let reserve = config.io.recovery.unwrap();
     let owner = start(config);
-    owner
-        .install_recovery_capacity(crate::store_io::StoreIoRecoveryCapacity {
-            workers: 1,
-            queued_jobs: 2,
-            accepted_jobs: 4,
-            retained_bytes: 8 * 1024 * 1024,
-            job_bytes: 4 * 1024 * 1024,
-        })
-        .unwrap();
+    owner.install_recovery_capacity(reserve).unwrap();
     wait(owner.apply(batch(b"original")).unwrap())
         .unwrap()
         .unwrap();

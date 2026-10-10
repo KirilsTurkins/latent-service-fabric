@@ -141,8 +141,9 @@ fn assert_compiler_topology(entries: &[NodeTopologyEntry]) {
 fn assert_cleanup_topology(entries: &[NodeTopologyEntry]) {
     for (name, kind, configured, active) in [
         ("invocation-cleanup-driver", "task", 1, 1),
-        // The fixture has one cell plus two queue slots and no Invoke requests.
-        ("invocation-cleanup-slots", "continuation", 3, 0),
+        // One cell plus two queue slots retain three admission reservations.
+        // Existing retention also covers one rejected-request tracker; no Invoke requests.
+        ("invocation-cleanup-slots", "continuation", 4, 0),
     ] {
         let mut matching = entries.iter().filter(|row| row.name == name);
         let row = matching.next().expect("actual cleanup topology");

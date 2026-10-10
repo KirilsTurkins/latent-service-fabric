@@ -53,7 +53,7 @@ class RecordedRouteClient(RouteClient):
 
 
 class ObservedRouteClient(RecordedRouteClient):
-    """Retain only a bounded, non-sensitive summary of a rejected route delete."""
+    """Retain private route replies and a bounded rejection summary."""
 
     def __init__(self, *args, evidence: Path, **kwargs):
         super().__init__(*args, evidence=evidence / "route-control", **kwargs)

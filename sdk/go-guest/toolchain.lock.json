@@ -9,12 +9,12 @@
     "bindingsRevision": "4f9a02d74cec9257c14ba9b160fa787a3523fd0b"
   },
   "go": {
-    "version": "go1.27.1",
+    "version": "go1.27.2",
     "asyncPatch": "wasiOnIdle",
-    "release": "go1.27.1-wasi-on-idle",
+    "release": "go1.27.2",
     "linuxAmd64": {
-      "url": "https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz",
-      "sha256": "4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c"
+      "url": "https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz",
+      "sha256": "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5"
     }
   },
   "hostAbi": "lsf-host-abi-phase3-v4",

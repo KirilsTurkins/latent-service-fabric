@@ -358,6 +358,9 @@ fn reserved_read_runs_with_ordinary_writer_and_queue_saturated() {
         17
     );
     assert_eq!(owner.snapshot().unwrap().active_writes, 1);
+    owner.wait_for_snapshot(WATCHDOG, |snapshot| {
+        snapshot.active_recovery_reads == 0 && snapshot.recovery_accepted == 0
+    });
     assert_eq!(owner.recovery_snapshot().unwrap().accepted, 0);
     rendezvous.release(ticket).unwrap();
     wait(write).unwrap();

@@ -104,6 +104,7 @@ mod tests {
                     message: "guest execution failed".into(),
                     guest_backtrace: vec!["private-backtrace".into()],
                     metadata,
+                    diagnostic: None,
                 },
                 consumption: consumption.clone(),
             }),
@@ -279,6 +280,24 @@ mod tests {
         }
     }
 
+    #[test]
+    fn codec_metadata_alone_never_classifies_guest_traps() {
+        let metadata = Metadata::from([
+            ("result-codec-error".into(), "ResourceExhausted".into()),
+            ("stage".into(), "5".into()),
+            ("reason".into(), "2".into()),
+            ("payload".into(), "private-guest-value".into()),
+        ]);
+        for trap_code in [
+            "result-limit-exceeded",
+            "invalid-component-result",
+            "guest-runtime-error",
+        ] {
+            let error = mapped(trap_code, metadata.clone());
+            assert_eq!(error.details.len(), 1);
+            assert!(latent_core::diagnostic::ActivationDiagnostic::from_error(&error).is_none());
+        }
+    }
     #[test]
     fn fixed_trap_kinds_survive_mapping_without_private_context() {
         for kind in GuestTrapKind::ALL {

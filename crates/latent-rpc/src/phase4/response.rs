@@ -256,13 +256,21 @@ fn command(
     value: &t::CommandInspection,
     target: &t::CommandSelector,
 ) -> Result<(), ValidationError> {
+    command_with_inline(b, value, target, None)
+}
+fn command_with_inline(
+    b: &mut Budget,
+    value: &t::CommandInspection,
+    target: &t::CommandSelector,
+    inline: Option<&i::invoke_response::Result>,
+) -> Result<(), ValidationError> {
     command_key(b, required(value.key.as_ref())?, target)?;
     let outcome = t::CommandOutcome::try_from(value.outcome).map_err(|_| ValidationError::Shape)?;
     if outcome == t::CommandOutcome::Unspecified {
         return Err(ValidationError::Shape);
     }
     command_details(b, value, outcome)?;
-    command_disposition(value, outcome)
+    command_disposition(value, outcome, inline)
 }
 fn command_key(
     b: &mut Budget,
@@ -331,15 +339,23 @@ fn command_details(
 fn command_disposition(
     value: &t::CommandInspection,
     outcome: t::CommandOutcome,
+    inline: Option<&i::invoke_response::Result>,
 ) -> Result<(), ValidationError> {
+    let inline_payload = value.retained_result.is_none()
+        && value
+            .retention
+            .as_ref()
+            .is_some_and(|retention| retention.payload_available);
     let success = matches!(
         value.retained_result,
         Some(t::command_inspection::RetainedResult::Success(_))
-    );
+    ) || (inline_payload
+        && matches!(inline, Some(i::invoke_response::Result::Success(_))));
     let rejected = matches!(
         value.retained_result,
         Some(t::command_inspection::RetainedResult::BusinessRejection(_))
-    );
+    ) || (inline_payload
+        && matches!(inline, Some(i::invoke_response::Result::DeclaredError(_))));
     let omitted_payload = value.retained_result.is_none()
         && value
             .retention
@@ -757,7 +773,32 @@ fn validate_invoke_command(
     original: &t::InvokeCommandRequest,
 ) -> Result<(), ValidationError> {
     let command_value = required(value.command.as_ref())?;
-    command(b, command_value, required(original.command.as_ref())?)?;
+    if let Some(retry) = &original.retry_attempt {
+        let abort = required(retry.expected_abort.as_ref())?;
+        let previous = abort
+            .attempt_id
+            .parse::<u64>()
+            .map_err(|_| ValidationError::Shape)?;
+        let selected = command_value
+            .attempt_id
+            .parse::<u64>()
+            .map_err(|_| ValidationError::Shape)?;
+        if !(1..16).contains(&previous)
+            || previous.to_string() != abort.attempt_id
+            || selected.to_string() != command_value.attempt_id
+            || previous.checked_add(1) != Some(selected)
+            || abort.command_id != command_value.command_id
+        {
+            return Err(ValidationError::Association);
+        }
+    }
+    let body = required(value.invocation.as_ref())?;
+    command_with_inline(
+        b,
+        command_value,
+        required(original.command.as_ref())?,
+        body.result.as_ref(),
+    )?;
     invocation(b, required(value.invocation.as_ref())?)?;
     let invocation = required(value.invocation.as_ref())?;
     if let Some(source) = &command_value.source {
@@ -773,7 +814,7 @@ fn validate_invoke_command(
         (
             Some(t::command_inspection::RetainedResult::Success(left)),
             Some(i::invoke_response::Result::Success(right)),
-        ) if left == right => {}
+        ) if left == right => invocation_commit_body(command_value, right)?,
         (
             Some(t::command_inspection::RetainedResult::BusinessRejection(left)),
             Some(i::invoke_response::Result::DeclaredError(right)),
@@ -783,7 +824,42 @@ fn validate_invoke_command(
             Some(i::invoke_response::Result::PlatformFailure(right)),
         ) if left == right => {}
         (None, Some(i::invoke_response::Result::PlatformFailure(_))) => {}
+        (None, Some(i::invoke_response::Result::Success(success)))
+            if command_value.outcome == t::CommandOutcome::Committed as i32
+                && command_value
+                    .retention
+                    .as_ref()
+                    .is_some_and(|retention| retention.payload_available) =>
+        {
+            invocation_commit_body(command_value, success)?;
+        }
+        (None, Some(i::invoke_response::Result::DeclaredError(_)))
+            if command_value.outcome == t::CommandOutcome::Rejected as i32
+                && command_value
+                    .retention
+                    .as_ref()
+                    .is_some_and(|retention| retention.payload_available) => {}
         _ => return Err(ValidationError::Association),
+    }
+    Ok(())
+}
+
+fn invocation_commit_body(
+    command: &t::CommandInspection,
+    success: &i::Success,
+) -> Result<(), ValidationError> {
+    let commit = required(command.commit.as_ref())?;
+    let version = required(success.committed_state_version.as_ref())?.as_bytes();
+    if success.effect_ids != commit.effect_ids
+        || version.len() != commit.committed_version.len() * 2
+    {
+        return Err(ValidationError::Association);
+    }
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    for (byte, pair) in commit.committed_version.iter().zip(version.chunks_exact(2)) {
+        if pair != [HEX[usize::from(*byte >> 4)], HEX[usize::from(*byte & 15)]] {
+            return Err(ValidationError::Association);
+        }
     }
     Ok(())
 }

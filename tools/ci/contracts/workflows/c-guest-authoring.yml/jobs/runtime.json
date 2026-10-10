@@ -98,7 +98,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Preserve all original linked retention, reserved recovery and Phase4 transaction compiler obligations, the incoming actual C archive and isolated generated-header rejection controls, all independent execution and dependency authoring cases, exact guards and the complete union of artifact receipt paths. Reconcile current development while retaining both parents C compiler/isolation controls, runtime and Phase4 transaction qualification commands, and complete diagnostic artifact paths. Preserve all current maintained guest compiler steps, diagnostics and triggers; all original command and artifact obligations remain.",
+  "reviewReason": "Keep all exact historical baseline/before/coverage and case/guard obligations while reconciling current actual compiler/dependency/transaction/native owners. Preserve both C runtime parents exact compiler/isolation controls and artifact path union, including actual dependency-control failures and Phase4 transaction receipts. Current C authoring integration preserves every parental command, isolation/correctness guard, step order and receipt path; expanded library suites and static-archive options remain additive. Reconcile current development while retaining both parents C compiler/isolation controls, runtime and Phase4 transaction qualification commands, and complete diagnostic artifact paths.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

@@ -98,6 +98,10 @@ impl VerifiedArtifactMetadata {
         &self.contracts
     }
 
+    pub(crate) fn contracts_capacity(&self) -> usize {
+        self.contracts.capacity()
+    }
+
     #[must_use]
     pub fn verified_digest(&self) -> &ReleaseDigest {
         &self.verified_digest

@@ -14,6 +14,32 @@ from tools.tests.test_server_source import fixture
 
 
 class JavaServerSource(unittest.TestCase):
+    def test_rejected_delete_records_original_reply_and_sanitized_summary_with_one_request(self):
+        import json
+        import time
+        from unittest.mock import patch
+        from tools.dev_workflow.client import Client
+        from tools.java_server_node import ObservedRouteClient
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            observed = ObservedRouteClient(root / "binary", root / "config", root,
+                evidence=root / "evidence", deadline=time.monotonic() + 30)
+            reply = {"category": "platform-failure", "outcomeKnown": False,
+                "requestDispatched": True, "data": {"originalOperation": "operation-a"},
+                "error": {"code": "outcome-unknown", "message": "private provider detail"}}
+            arguments = ("trigger", "delete", "original-trigger", "--expected-generation",
+                "18446744073709551615", "--expected-state-version", "9007199254740993")
+            with patch.object(Client, "call", return_value=reply) as original:
+                self.assertIs(observed.call(*arguments, timeout=7), reply)
+                original.assert_called_once_with(*arguments, timeout=7, check=None)
+            self.assertEqual(json.loads((root / "evidence/route-control/001.json").read_bytes()), reply)
+            self.assertEqual(json.loads((root / "evidence/route-delete-rejection.json").read_bytes()), {
+                "schemaVersion": "lsf.java.server.route-rejection.v1", "command": "trigger delete",
+                "category": "platform-failure", "errorCode": "outcome-unknown",
+                "outcomeKnown": False, "requestDispatched": True,
+                "expectedGeneration": "18446744073709551615", "expectedStateVersion": "9007199254740993"})
+            self.assertEqual(observed.record_count, 1)
+
     def test_refused_and_uncertain_route_results_remain_in_evidence_without_retry(self):
         import json
         import time

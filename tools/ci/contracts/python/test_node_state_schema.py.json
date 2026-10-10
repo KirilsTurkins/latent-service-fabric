@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "NodeStateSchema.test_explicit_finite_owner_profile_and_creation_refusal_default",
+    "NodeStateSchema.test_installed_target_has_exact_immutable_identity_and_no_permission_flags",
+    "NodeStateSchema.test_original_startup_deadline_and_reserved_recovery_bounds_are_finite",
+    "NodeStateSchema.test_tenant_and_provider_constraints_are_closed_and_bounded",
+    "NodeStateSchema.test_unknown_authority_flags_and_positional_or_missing_owner_objects_refuse"
+  ],
+  "guards": {
+    "NodeStateSchema.test_explicit_finite_owner_profile_and_creation_refusal_default": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0b825f881fbd76b0cdea239556902d7fbb220ecb385057d1fcd6285d20b7ed39",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeStateSchema.test_installed_target_has_exact_immutable_identity_and_no_permission_flags": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0b825f881fbd76b0cdea239556902d7fbb220ecb385057d1fcd6285d20b7ed39",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeStateSchema.test_original_startup_deadline_and_reserved_recovery_bounds_are_finite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0b825f881fbd76b0cdea239556902d7fbb220ecb385057d1fcd6285d20b7ed39",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeStateSchema.test_tenant_and_provider_constraints_are_closed_and_bounded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0b825f881fbd76b0cdea239556902d7fbb220ecb385057d1fcd6285d20b7ed39",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NodeStateSchema.test_unknown_authority_flags_and_positional_or_missing_owner_objects_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0b825f881fbd76b0cdea239556902d7fbb220ecb385057d1fcd6285d20b7ed39",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_node_state_schema.py",
+  "reviewReason": "Register five bounded closed state configuration cases with no skipped authority or owner checks",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

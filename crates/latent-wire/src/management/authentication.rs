@@ -46,7 +46,7 @@ pub trait ManagementDecision: Send + Sync {
     ) -> Result<(), PlatformError>;
 }
 
-/// Tenant management requires an administrator. Node inventory and control additionally
+/// Tenant management requires an administrator. Global inventory additionally
 /// requires the trusted node-operator claim supplied by the embedding listener.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct LocalManagementPolicy;

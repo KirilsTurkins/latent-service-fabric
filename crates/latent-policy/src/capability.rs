@@ -27,8 +27,8 @@ pub use store::{
     PolicySnapshot, PolicySnapshotState, SealedPolicyDecision,
 };
 pub use store::{
-    MutationRequest, OperationReceipt, PolicyPage, PolicyPageRequest, PolicyRead, PolicyReadLease,
-    PolicyStore, PolicyStoreLimits, RecordKind, RecordView,
+    MutationRequest, OperationReceipt, PolicyControlGeneration, PolicyPage, PolicyPageRequest,
+    PolicyRead, PolicyReadLease, PolicyStore, PolicyStoreLimits, RecordKind, RecordView,
 };
 
 use latent_core::{PlatformError, PlatformErrorCode};
