@@ -349,6 +349,14 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
                 check("GET", "/case?query&x=%2F&x=+", 200, b"query&x=%2F&x=+")
                 check("POST", "/case?input", 200, bytes((255, 0, 128)), body=bytes((255, 0, 128)),
                       headers={"Content-Type": "application/octet-stream", "Origin": scheme + "://java.server.test"})
+                # This is the declared accepted body boundary, distinct from
+                # the existing 65,537-byte pre-dispatch denial below. Exercise
+                # ordinary HttpExchange streams with arbitrary binary bytes
+                # under the unchanged guest/host limits and observe retirement.
+                maximum_body = bytes(range(256)) * 256
+                check("POST", "/case?input", 200, maximum_body, body=maximum_body,
+                      headers={"Content-Type": "application/octet-stream", "Origin": scheme + "://java.server.test"})
+                check("GET", "/hey", 200, b"Hey!")
                 check("GET", "/case?error", 500, b"E")
                 check("GET", "/case?no-body", 204, b"")
                 for case in ("throw", "over", "under", "double", "before", "closed", "flush", "chunk", "forbidden", "unsafe-cookie", "oversize", "memory"):

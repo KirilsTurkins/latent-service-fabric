@@ -20,12 +20,13 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
                                         read_file, read_json, snapshot, write_json)
 
 BUILD_TYPE = "https://latent.dev/build/java-capsule/v1"
+ACTIVATION_PROFILE = "teavm-activation-fibers-v1"
 RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_capsule_build.py",
           "tools/application_dependencies.py", "tools/application_dependency_store.py",
           "tools/application_dependency_tools.py", "tools/java_application_dependencies.py", "tools/java_dependency_resolution.py",
           "tools/java_registry_tls.py",
           "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
-          "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
+          "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/class_origin.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
           "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
@@ -53,9 +54,14 @@ def retain_logs(source: Path, output: Path) -> None:
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, wasi_sdk: Path, *, gradle="gradle", timeout=900,
-          offline_cache: Path | None = None) -> Path:
+          offline_cache: Path | None = None, read_only_cache: Path | None = None,
+          runtime_profile: str | None = None) -> Path:
     if type(timeout) not in {int, float} or not 0 < timeout <= 900:
         raise ValueError("Java build deadline must be positive and at most 900 seconds")
+    if runtime_profile is not None and (type(runtime_profile) is not str or runtime_profile != ACTIVATION_PROFILE):
+        raise ValueError("unsupported Java runtime profile")
+    if offline_cache is not None and read_only_cache is not None:
+        raise ValueError("Java dependency cache selections are mutually exclusive")
     project_path = guest_dependency_inputs.application_root(checked_path(project_path), 'java')
     output = checked_path(output)
     if output == project_path or output in project_path.parents or (
@@ -70,7 +76,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         files = observed.files
         project, _lock, pins = validate(files)
         source_inputs = inventory(files)
-        recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
+        recipe_files = {path: read_file(ROOT / path) for path in RECIPE}
+        recipe_inputs = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe_inputs)
         with tempfile.TemporaryDirectory(prefix="lsf-java-capsule-") as owned:
@@ -85,7 +92,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands.deadline = start + timeout
                 stage = "application-dependencies"
                 closure = prepare(observed.dependency_root, work, output, "java")
-                if closure is not None and offline_cache is None:
+                if closure is not None and offline_cache is None and read_only_cache is None:
                     raise ValueError("captured Java builds require the verified offline compiler cache")
                 application_jars, application_inventory = classpath(closure, temporary / "selected-application-jars")
                 write_json(output / "java-classpath.json", application_inventory)
@@ -93,9 +100,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 application_resources = java_resources.materialize({**files, **resource_sources}, source_inputs,
                     additional_resources, temporary / "selected-application-resources")
                 stage = "compiler-inputs"
+                cache_selection = {"read_only_cache": read_only_cache} if read_only_cache is not None else {}
                 compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
                     sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
-                    config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache)
+                    config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache,
+                    **cache_selection)
                 (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
                 server_plan, automatic_bridge = None, None
                 if "server" in project:
@@ -112,10 +121,15 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 write_json(output / "diagnostic-source.json", {
                     "capturedSource": str(temporary / "compiled/project/src/main/java"),
                     "requestedSource": str(project_path / "src")})
+                profile_selection = {"activation_profile": True} if runtime_profile == ACTIVATION_PROFILE else {}
+                if server_plan is not None:
+                    profile_selection.update(server_profile=True, server_bridge=automatic_bridge)
+                if application_resources is not None:
+                    profile_selection["application_resources"] = application_resources
+                if "httpClient" in project:
+                    profile_selection["http_client_profile"] = True
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
-                    application_classpath=application_jars, application_resources=application_resources,
-                    server_profile=server_plan is not None, server_bridge=automatic_bridge,
-                    **({"http_client_profile": True} if "httpClient" in project else {}))
+                    application_classpath=application_jars, **profile_selection)
                 component = read_file(component_path, 64 * 1024 * 1024)
                 (output / "component.wasm").write_bytes(component)
                 write_json(output / "bindings.json", generated)
@@ -123,6 +137,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 bindings_dir.mkdir()
                 for path in sorted((temporary / "compiled/bindings").iterdir()):
                     (bindings_dir / path.name).write_bytes(read_file(path))
+                if runtime_profile == ACTIVATION_PROFILE:
+                    for name in ("runtime-profile.json", "source-origins.json"):
+                        (output / name).write_bytes(read_file(temporary / "compiled" / name))
+                    recorded_profile = read_json(output / "runtime-profile.json")
+                    if recorded_profile.get("profile") != runtime_profile:
+                        raise ValueError("Java compiler runtime profile mismatch")
                 stage = "contracts"
                 # Include the selected world, closed adapter world and the exact
                 # staged dependency sources used by the compiler/ABI generator.
@@ -138,8 +158,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 package_files.update(resource_sources)
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
                 surface = read_json(derived / "surface.json")
+                recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
                 stage = "compatibility"
-                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface, files=files)
+                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
+                    host_abi_profile=guest_compatibility_build.declared_host_abi(surface), files=files)
                 additional_assets = []
                 if "httpClient" in project:
                     (output / "http-client-profile.json").write_bytes(java_http_client.profile(
@@ -167,7 +189,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for path, item in zip(application_jars, application_inventory["artifacts"]):
                         if digest(read_file(path, 64 * 1024 * 1024)) != item["selectedDigest"]:
                             raise ValueError("selected Java classpath changed during compilation")
-                if inventory({path: read_file(ROOT / path) for path in RECIPE}) != recipe_inputs:
+                if inventory({path: read_file(ROOT / path) for path in recipe_files}) != recipe_inputs:
                     raise ValueError("Java authoring recipe changed during the build")
                 compiler.check_unchanged()
                 for name, path in paths.items():
@@ -183,6 +205,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"]), ("compiler-closure", compiler.compiler_inputs),
                     ("dependency-lock", files["vendor/lsf/sdk/java-guest/feasibility/dependencies.lock.json"]),
                     ("generated-bindings", read_file(output / "bindings.json"))))
+                if runtime_profile == ACTIVATION_PROFILE:
+                    materials.extend({"name": name, "digest": digest(data), "size": len(data)} for name, data in (
+                        ("java-runtime-profile", read_file(output / "runtime-profile.json")),
+                        ("java-source-origins", read_file(output / "source-origins.json"))))
                 if closure is not None:
                     data = read_file(output / "application-dependencies.json", 8 * 1024 * 1024)
                     materials.extend([{"name": "application-dependency-closure", "digest": digest(data), "size": len(data)},
@@ -199,11 +225,14 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                    "bindings": "lsf-java-wit-v1", "optimization": "O2", "javaHeapBytes": 4_194_304},
                     "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                     "dependencyCompleteness": "declared-inputs-incomplete"})
-                write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
+                marker = {"formatVersion": 1,
                     "packageAssembled": packager is not None,
                     "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                     "componentDigest": digest(component), "sdkBindingDigest": generated["bindings"]["digest"],
-                    "buildSeconds": round(time.monotonic() - start, 6), "commands": compiler.records + commands.records})
+                    "buildSeconds": round(time.monotonic() - start, 6), "commands": compiler.records + commands.records}
+                if runtime_profile == ACTIVATION_PROFILE:
+                    marker["javaRuntimeProfile"] = runtime_profile
+                write_json(output / "BUILD-COMPLETE.json", marker)
             finally:
                 if compiler_dir.is_dir(): retain_logs(compiler_dir, output)
         return output

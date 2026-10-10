@@ -447,3 +447,35 @@ fn failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness() {
     assert!(recorder.snapshot().incomplete);
     assert_eq!(recorder.snapshot().records.len(), 1);
 }
+
+#[test]
+fn scheduler_capacity_reasons_require_exact_public_shape_code_and_retryability() {
+    for (reason, expected) in [
+        (
+            "immediate-capacity-unavailable",
+            Reason::SchedulerImmediateCapacityUnavailable,
+        ),
+        ("queue-full", Reason::SchedulerQueueFull),
+    ] {
+        let mut capacity = detail_error("scheduler.limit", reason);
+        capacity.code = PlatformErrorCode::ResourceExhausted;
+        support::assert_reason(capacity.clone(), expected);
+        let mut wrong_code = capacity.clone();
+        wrong_code.code = PlatformErrorCode::Unavailable;
+        support::assert_reason(wrong_code, Reason::Unclassified);
+        let mut wrong_retry = capacity.clone();
+        wrong_retry.retryable = false;
+        support::assert_reason(wrong_retry, Reason::Unclassified);
+        let mut extra = capacity.clone();
+        extra.details[0]
+            .fields
+            .insert("private".into(), support::PRIVATE.into());
+        support::assert_reason(extra, Reason::Unclassified);
+        let mut duplicate = capacity;
+        duplicate.details.push(duplicate.details[0].clone());
+        support::assert_reason(duplicate, Reason::Unclassified);
+    }
+    let mut unknown = detail_error("scheduler.limit", support::PRIVATE);
+    unknown.code = PlatformErrorCode::ResourceExhausted;
+    support::assert_reason(unknown, Reason::Unclassified);
+}

@@ -128,6 +128,7 @@ impl latent_executor::PreparationReadWait for ObservedReadWait {
 pub struct Fixture {
     _guest_runtime: guest_runtime::Runtime,
     pub manager: LocalActivationManager,
+    scheduler: Arc<LocalScheduler>,
     pub backend: Arc<WasmtimeBackend>,
     _factory: WasmtimeComponentEngineFactory,
     pub store: Arc<DirectoryDeploymentRepository>,
@@ -596,7 +597,7 @@ impl Fixture {
             LocalActivationDependencies {
                 catalog: store.clone(),
                 admission,
-                scheduler,
+                scheduler: scheduler.clone(),
                 artifacts: catalog.clone(),
                 backend: backend.clone(),
             },
@@ -617,6 +618,7 @@ impl Fixture {
         Self {
             _guest_runtime: guest_runtime,
             manager,
+            scheduler,
             backend,
             _factory: factory,
             store,
@@ -652,8 +654,11 @@ impl Fixture {
         tokio::time::timeout(Duration::from_secs(2), async {
             loop {
                 let broker = self.broker.snapshot();
+                let scheduler = self.scheduler.observations(CellClass::Tiny);
                 if self.quotas.usage().unwrap().active_activations == 0
                     && self.manager.cancellation_snapshot().active_registrations == 0
+                    && scheduler.active_leases == 0
+                    && scheduler.queue_depth == 0
                     && self.backend.active_instance_reservations() == 0
                     && self.backend.resource_snapshot().live_stores == 0
                     && broker.calls == 0

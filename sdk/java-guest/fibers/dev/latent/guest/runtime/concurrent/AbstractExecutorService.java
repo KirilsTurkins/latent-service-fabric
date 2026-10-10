@@ -1,7 +1,5 @@
 package dev.latent.guest.runtime.concurrent;
 
-import dev.latent.generated.Bindings;
-import dev.latent.guest.runtime.Activation;
 import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -104,7 +102,7 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
             while (completion.remaining != 0) {
                 Future<T> future;
                 synchronized (completion) {
-                    if (completion.ready.isEmpty()) try (var wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait)) {
+                    if (completion.ready.isEmpty()) {
                         while (completion.ready.isEmpty()) {
                             if (!timed) completion.wait();
                             else {

@@ -13,6 +13,18 @@ public final class Executors {
     public static ExecutorService newFixedThreadPool(int threads, ThreadFactory factory) { return new ManagedExecutor(threads, factory); }
     public static ExecutorService newSingleThreadExecutor() { return newFixedThreadPool(1); }
     public static ExecutorService newSingleThreadExecutor(ThreadFactory factory) { return newFixedThreadPool(1, factory); }
+    public static ExecutorService newCachedThreadPool() { return newCachedThreadPool(defaultThreadFactory()); }
+    public static ExecutorService newCachedThreadPool(ThreadFactory factory) {
+        // Dynamic logical parallelism remains bounded by the original host task
+        // and queue ceilings, without introducing a second product-wide cap.
+        return new ManagedExecutor(Integer.MAX_VALUE, factory, true);
+    }
+    static ExecutorService newDefaultAsyncPool() {
+        // The activation-owned default facility grows lazily under the host's
+        // original task/queue ceilings and retires its workers at root drain.
+        // Untimed idle waits leave finite timer slots for application waits.
+        return new ManagedExecutor(Integer.MAX_VALUE, defaultThreadFactory(), true, false);
+    }
     public static ThreadFactory defaultThreadFactory() {
         int pool = ++nextPool;
         return new ThreadFactory() {

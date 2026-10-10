@@ -30,10 +30,27 @@ public final class Wire {
     private static String text(byte[] bytes) {
         // Component canonical strings already guarantee UTF-8. Recheck the
         // private bridge rather than silently replacing malformed sequences.
-        String value = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
-        byte[] encoded = utf8(value);
-        try { require(Arrays.equals(bytes, encoded)); return value; }
-        finally { Arrays.fill(encoded, (byte) 0); }
+        for (int cursor = 0; cursor < bytes.length;) {
+            int first = bytes[cursor++] & 255;
+            if (first < 128) continue;
+            // Exclude stray continuations, overlong two-byte forms and values
+            // beyond the Unicode scalar range before reading any continuation.
+            require(first >= 0xC2 && first <= 0xF4);
+            int remaining = first <= 0xDF ? 1 : first <= 0xEF ? 2 : 3;
+            require(remaining <= bytes.length - cursor);
+            int second = bytes[cursor++] & 255;
+            require(second >= 0x80 && second <= 0xBF);
+            if (first == 0xE0) require(second >= 0xA0);
+            if (first == 0xED) require(second <= 0x9F);
+            if (first == 0xF0) require(second >= 0x90);
+            if (first == 0xF4) require(second <= 0x8F);
+            for (int index = 1; index < remaining; index++) {
+                require((bytes[cursor++] & 0xC0) == 0x80);
+            }
+        }
+        // Validation needs no duplicate encoder buffers. Decode the reviewed
+        // bytes once; Writer.utf8 still validates outbound UTF-16 surrogates.
+        return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
     }
     public static final class Reader implements AutoCloseable {
         private final byte[] data;

@@ -46,6 +46,8 @@ CHILD_REASONS = {
     "SchedulerHandoffClosed": "scheduler-handoff-closed",
     "SchedulerSequenceExhausted": "scheduler-sequence-exhausted",
     "SchedulerAllCellsQuarantined": "scheduler-all-cells-quarantined",
+    "SchedulerImmediateCapacityUnavailable": "scheduler-immediate-capacity-unavailable",
+    "SchedulerQueueFull": "scheduler-queue-full",
     "QuotaStateUnavailable": "quota-state-unavailable",
     "PreparationReadyCapacity": "preparation-ready-capacity",
     "PreparationReadyBytes": "preparation-ready-bytes",

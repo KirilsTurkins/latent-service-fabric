@@ -8094,20 +8094,23 @@
         "runtime::policy_revocation_at_real_timer_barrier_stops_original_work_and_reclaims_owners",
         "runtime::root_deadline_does_not_complete_long_timer_and_cpu_loop_remains_contained",
         "runtime::root_result_idle_worker_and_trap_never_skip_runtime_retirement",
+        "runtime::signed_java_completable_futures_use_default_activation_executor",
         "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
         "runtime::signed_runtime_limits_closing_and_generation_fences_use_normal_node_admission",
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
       "expectedIgnored": [
+        "runtime::signed_java_completable_futures_use_default_activation_executor",
         "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers"
       ],
       "id": "latent-wasmtime.test.local-service",
       "ignoredLeaves": [
+        "signed_java_completable_futures_use_default_activation_executor",
         "signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 32,
+      "minimumCases": 33,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -8132,6 +8135,7 @@
         "failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness",
         "full_contended_or_poisoned_observation_storage_never_changes_invocation_results",
         "preparation_capacity_reasons_require_exact_closed_error_shapes",
+        "scheduler_capacity_reasons_require_exact_public_shape_code_and_retryability",
         "successful_and_declared_outcomes_keep_payloads_and_owners_without_records",
         "synchronous_start_failure_is_forwarded_once_without_cloning",
         "unknown_malformed_and_missing_details_are_explicitly_unclassified"
@@ -8141,7 +8145,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 9,
+      "minimumCases": 10,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

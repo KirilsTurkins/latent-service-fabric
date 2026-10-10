@@ -19,6 +19,8 @@ pub enum Reason {
     SchedulerHandoffClosed,
     SchedulerSequenceExhausted,
     SchedulerAllCellsQuarantined,
+    SchedulerImmediateCapacityUnavailable,
+    SchedulerQueueFull,
     QuotaStateUnavailable,
     PreparationReadyCapacity,
     PreparationReadyBytes,
@@ -85,6 +87,15 @@ pub(super) fn classify(error: &PlatformError) -> Reason {
                 "handoff-closed" => Reason::SchedulerHandoffClosed,
                 "sequence-exhausted" => Reason::SchedulerSequenceExhausted,
                 "all-cells-quarantined" => Reason::SchedulerAllCellsQuarantined,
+                _ => Reason::Unclassified,
+            }
+        }
+        ("scheduler.limit", 1)
+            if error.code == PlatformErrorCode::ResourceExhausted && error.retryable =>
+        {
+            match reason {
+                "immediate-capacity-unavailable" => Reason::SchedulerImmediateCapacityUnavailable,
+                "queue-full" => Reason::SchedulerQueueFull,
                 _ => Reason::Unclassified,
             }
         }
