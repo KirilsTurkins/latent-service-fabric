@@ -25,7 +25,7 @@ def result(disposition="committed", count="18446744073709551615"):
     query = disposition == "query"
     return {"profile": "transaction-http-v1", "disposition": disposition,
             "representation": "application-result", "command-id": None if query else "1" * 64,
-            "attempt-id": None if query else "2" * 64,
+            "attempt-id": None if query else "1",
             "state-view": base64.b64encode(token()).decode(), "effect-ids": [] if query else ["3" * 64],
             "result-expires-at": None if query else "18446744073709551615",
             "delivery-failure": None, "abort-fence": None,

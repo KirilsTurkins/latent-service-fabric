@@ -116,6 +116,12 @@ enum State {
     Ready(Option<TransactionAdmissionResult>),
     Failed,
 }
+/// Trusted transport representation checks run before the common commit owner.
+pub trait TransactionOutcomeValidator: Send + Sync {
+    fn validate(&self, outcome: &latent_activation::ActivationOutcome)
+        -> Result<(), PlatformError>;
+}
+
 pub struct NativeTransactionAdmission {
     owners: Arc<TransactionAdmissionOwners>,
     installation: Arc<TransactionInstallation>,
@@ -124,6 +130,7 @@ pub struct NativeTransactionAdmission {
     response: Mutex<Option<Arc<super::TransactionResponseAuthority>>>,
     retention: Mutex<Option<Arc<TransactionRetention>>>,
     ingress: Mutex<Option<NativeReservation>>,
+    validator: Option<Arc<dyn TransactionOutcomeValidator>>,
 }
 impl NativeTransactionAdmission {
     pub fn new(
@@ -140,6 +147,7 @@ impl NativeTransactionAdmission {
             response: Mutex::new(None),
             retention: Mutex::new(None),
             ingress: Mutex::new(None),
+            validator: None,
         })
     }
 
@@ -155,6 +163,14 @@ impl NativeTransactionAdmission {
         let mut admission = Self::new(owners, installation, selection)?;
         admission.ingress = Mutex::new(Some(native));
         Ok(admission)
+    }
+
+    /// Require typed prepared input and validate the promised result before
+    /// durable completion. This consumes no new execution or storage authority.
+    #[must_use]
+    pub fn with_prepared_input(mut self, validator: Arc<dyn TransactionOutcomeValidator>) -> Self {
+        self.validator = Some(validator);
+        self
     }
 
     fn reserve_retention(

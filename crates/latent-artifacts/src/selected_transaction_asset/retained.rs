@@ -12,6 +12,12 @@ use crate::ValueType;
 )]
 pub(super) fn bytes(value: &SelectedTransactionAsset) -> usize {
     let mut used = size_of_val(value).saturating_add(128);
+    if let Some((digest, bytes)) = &value.http_requirements {
+        used = used
+            .saturating_add(digest.as_str().len())
+            .saturating_add(bytes.capacity())
+            .saturating_add(128);
+    }
     let descriptor = value.metadata.descriptor();
     used = used
         .saturating_add(descriptor.reference.0.capacity())

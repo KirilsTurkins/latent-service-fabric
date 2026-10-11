@@ -14,7 +14,7 @@ mod validation;
 
 pub(super) use bootstrap::StateBootstrap;
 use clock::AdapterClock;
-pub(super) use installations::InstalledStateServices;
+pub(super) use installations::{InstalledHttpEffects, InstalledStateServices};
 use kernel::{StateKernel, StateShutdownReport};
 pub(super) use runtime::StandaloneStateRuntime;
 pub use runtime::StateRetirementReport;

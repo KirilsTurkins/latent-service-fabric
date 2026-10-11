@@ -1,4 +1,5 @@
 //! Installed targets are captured by the original protected recovery worker.
+mod http;
 mod policy;
 mod selection;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
@@ -41,11 +42,49 @@ pub(in crate::standalone) struct InstalledStateServices {
     pub deployments: Arc<DirectoryDeploymentRepository>,
     pub clock: Arc<dyn ActivationClock>,
     pub audit: Option<latent_audit::AuditHandle>,
+    pub http: InstalledHttpEffects,
+}
+
+pub(in crate::standalone) struct InstalledHttpEffects {
+    pub(super) clock: Arc<super::AdapterClock>,
+    pub(super) adapters: Vec<Arc<latent_http::deferred::HttpEffectAdapter>>,
+    registry: Arc<http::DispatchRegistry>,
+}
+impl InstalledHttpEffects {
+    pub(in crate::standalone) fn empty() -> Self {
+        Self {
+            clock: Arc::new(super::AdapterClock::default()),
+            adapters: Vec::new(),
+            registry: Arc::new(http::DispatchRegistry::new()),
+        }
+    }
+    pub(in crate::standalone) fn new(
+        provider: Option<&crate::standalone::providers::ProviderRuntime>,
+        installation: Option<&crate::config::HttpInstallation>,
+    ) -> Result<Self, PlatformError> {
+        let mut installed = Self::empty();
+        if let Some(installation) = installation {
+            let provider = provider.ok_or_else(super::unavailable)?;
+            installed.adapters = provider
+                .typed_deferred_http_adapters(installation, installed.clock.clone())?
+                .into_iter()
+                .map(|adapter| {
+                    // The typed adapter was just constructed from the original provider.
+                    let adapter = Arc::try_unwrap(adapter).map_err(|_| super::unavailable())?;
+                    Ok(Arc::new(
+                        adapter.with_authorization(installed.registry.clone()),
+                    ))
+                })
+                .collect::<Result<Vec<_>, PlatformError>>()?;
+        }
+        Ok(installed)
+    }
 }
 
 pub(super) struct InstalledState {
     pub installations: Vec<Arc<TransactionInstallation>>,
     pub management: Option<StateManagementBackend>,
+    pub http_rules: bool,
 }
 
 struct Resident {
@@ -53,6 +92,10 @@ struct Resident {
     metadata: Arc<NativeBufferPermit>,
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "Resident reservations and management custody transfer together across bounded installation groups"
+)]
 pub(super) async fn load(
     kernel: &StateKernel,
     settings: &StateSettings,
@@ -99,11 +142,15 @@ pub(super) async fn load(
     }
     let mut installations = Vec::with_capacity(settings.operations.len());
     let mut bindings: Vec<StateManagementBinding> = Vec::with_capacity(settings.operations.len());
+    let mut http_rules = false;
     for (index, operation) in settings.operations.iter().enumerate() {
         let resident = &residents[index / state::INSTALLATION_OPERATIONS_PER_LEASE];
-        let (installation, binding) =
-            capture(kernel, settings, operation, owners, &services, resident).await?;
+        let (installation, binding) = capture(
+            kernel, settings, operation, owners, &services, resident, &policy, effects,
+        )
+        .await?;
         if let Some(installation) = installation {
+            http_rules |= operation.deferred_http.is_some();
             installations.push(Arc::new(installation));
         }
         if let Some(existing) = bindings.iter().find(|existing| {
@@ -156,12 +203,17 @@ pub(super) async fn load(
     Ok(InstalledState {
         installations,
         management,
+        http_rules,
     })
 }
 
 #[expect(
     clippy::too_many_lines,
     reason = "Original capture admission, fixed worker custody and metadata transfer retire in one visible scope"
+)]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "The original kernel, native, policy and effect owners are independently explicit"
 )]
 async fn capture(
     kernel: &StateKernel,
@@ -170,11 +222,9 @@ async fn capture(
     owners: &Arc<TransactionAdmissionOwners>,
     services: &InstalledStateServices,
     resident: &Resident,
+    policy: &Arc<PolicyStore>,
+    effects: &EffectRuntime,
 ) -> Result<(Option<TransactionInstallation>, StateManagementBinding), PlatformError> {
-    // HTTP intent execution belongs to its installed signed adapter integration.
-    if operation.deferred_http.is_some() {
-        return Err(super::unavailable());
-    }
     let deadline = kernel.original_deadline()?;
     let original = Arc::new(
         kernel
@@ -224,6 +274,10 @@ async fn capture(
         + TRANSACTION_ASSET_RESPONSE_BYTES;
     let worker_original = Arc::clone(&original);
     let owners = Arc::clone(owners);
+    let policy = Arc::clone(policy);
+    let adapters = services.http.adapters.clone();
+    let registry = Arc::clone(&services.http.registry);
+    let authority = effects.command_admission_source().effect_authority();
     let job = kernel
         .store
         .with_store_retaining(StoreIoKind::RecoveryRead, charge, original, move |engine| {
@@ -284,6 +338,19 @@ async fn capture(
                 } else {
                     None
                 };
+                let intents = http::install(
+                    asset.get(),
+                    &operation,
+                    &deployment.manifest,
+                    &adapters,
+                    &policy,
+                    &authority,
+                    selected.as_ref(),
+                    &worker_original,
+                    deadline,
+                    &registry,
+                    Arc::clone(&metadata_memory),
+                )?;
                 asset.get().with_current(&mut |_| Ok(()))?;
                 let (asset, capture_memory) = asset.into_parts();
                 let (metadata, declaration, publication, _digest, _original) = asset.into_parts();
@@ -297,7 +364,7 @@ async fn capture(
                             &deployment.manifest,
                             publication,
                             Arc::new(state_binding),
-                            None,
+                            intents,
                             RecoverySelection::OriginalCaller,
                             operation.result_policy,
                             ResultPolicy {

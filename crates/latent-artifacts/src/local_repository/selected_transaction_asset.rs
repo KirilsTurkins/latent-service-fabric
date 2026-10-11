@@ -79,7 +79,7 @@ impl DirectoryArtifactRepository {
             .admission
             .as_ref()
             .ok_or_else(|| super::corrupt("transaction-asset-admission"))?;
-        let (declaration, asset_digest) = stored.transaction_asset(
+        let (declaration, asset_digest, http_requirements) = stored.transaction_asset(
             &directory,
             &grant,
             &verified.metadata,
@@ -95,6 +95,7 @@ impl DirectoryArtifactRepository {
             declaration,
             publication: grant,
             asset_digest,
+            http_requirements,
             original: Arc::clone(&original),
         };
         if value.retained_bytes() > TRANSACTION_ASSET_RESPONSE_BYTES as usize {

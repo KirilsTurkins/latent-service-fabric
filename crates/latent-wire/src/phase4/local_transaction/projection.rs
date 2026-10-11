@@ -26,7 +26,7 @@ impl super::super::Phase4ResponseOwner for TransactionResponseAuthority {
     }
 }
 
-pub(super) fn response(
+pub fn response(
     receipt: ActivationReceipt,
     owned: OwnedTransactionCompletion,
     installation: &TransactionInstallation,

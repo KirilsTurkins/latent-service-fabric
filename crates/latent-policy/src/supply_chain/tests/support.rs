@@ -80,16 +80,57 @@ impl Fixture {
             None,
         )
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "One isolated cryptographic fixture signs the actual package under its explicit test policy"
-    )]
+    pub fn transactional_with_http_companion(bytes: Vec<u8>, http_document: Vec<u8>) -> Self {
+        Self::configured_http(
+            "builder-a",
+            true,
+            None,
+            true,
+            Some((bytes, false)),
+            Some(http_document),
+            false,
+        )
+    }
+    pub fn transactional_executable_with_companion(bytes: Vec<u8>) -> Self {
+        Self::configured_http(
+            "builder-a",
+            true,
+            None,
+            true,
+            Some((bytes, false)),
+            None,
+            true,
+        )
+    }
     fn configured_companion(
         builder_id: &str,
         with_inventory: bool,
         requirements: Option<Value>,
         transactional: bool,
         companion: Option<(Vec<u8>, bool)>,
+    ) -> Self {
+        Self::configured_http(
+            builder_id,
+            with_inventory,
+            requirements,
+            transactional,
+            companion,
+            None,
+            false,
+        )
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "One isolated cryptographic fixture signs the actual package under its explicit test policy"
+    )]
+    fn configured_http(
+        builder_id: &str,
+        with_inventory: bool,
+        requirements: Option<Value>,
+        transactional: bool,
+        companion: Option<(Vec<u8>, bool)>,
+        http_document: Option<Vec<u8>>,
+        executable: bool,
     ) -> Self {
         let mut input = if transactional {
             packaging::transactional_capsule()
@@ -121,6 +162,22 @@ impl Fixture {
                     vec![0x5a; 3 * 1024 * 1024],
                 ));
             }
+        }
+        if executable {
+            packaging::mutate_json(&mut input, "capsule.json", |manifest| {
+                manifest["execution"]["limits"]["memoryBytes"] = json!(64 * 1024 * 1024);
+                manifest["execution"]["limits"]["cpuFuel"] = json!(100_000_000);
+                manifest["execution"]["limits"]["stateReadBytes"] = json!(4 * 1024 * 1024);
+                manifest["execution"]["limits"]["wallTimeLimitMillis"] = json!(10_000);
+            });
+        }
+        if let Some(bytes) = http_document {
+            input.layers.push(packaging::layer(
+                "deferred-http-requirements.json",
+                latent_artifacts::package::LayerRole::Asset,
+                "application/json",
+                bytes,
+            ));
         }
         let inventory = sbom::inventory(&input);
         let limits = PackagingLimits {

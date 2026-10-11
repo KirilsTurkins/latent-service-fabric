@@ -9,6 +9,7 @@ mod lease;
 mod local_transaction;
 mod public_error;
 mod state_management;
+pub use local_transaction::projection::response as project_transaction_completion;
 pub use local_transaction::{LocalTransactionRuntime, LocalTransactionServices};
 pub use state_management::{
     StateManagementAdmission, StateManagementBackend, StateManagementBinding,
@@ -70,6 +71,11 @@ impl OwnedPhase4Response {
     #[must_use]
     pub fn new(response: contract::Response, owner: Arc<dyn Phase4ResponseOwner>) -> Self {
         Self { response, owner }
+    }
+    /// Keep the original current-purpose owner beside any transport projection.
+    #[must_use]
+    pub fn into_parts(self) -> (contract::Response, Arc<dyn Phase4ResponseOwner>) {
+        (self.response, self.owner)
     }
 }
 

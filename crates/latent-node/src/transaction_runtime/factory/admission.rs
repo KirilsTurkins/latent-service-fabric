@@ -30,6 +30,10 @@ enum PendingPublication {
 }
 
 impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
+    fn requires_prepared_input(&self) -> bool {
+        self.validator.is_some()
+    }
+
     fn admit<'a>(
         &'a self,
         envelope: &'a ActivationEnvelope,

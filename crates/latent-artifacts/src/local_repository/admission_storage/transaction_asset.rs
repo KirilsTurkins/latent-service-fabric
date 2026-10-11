@@ -19,6 +19,12 @@ use crate::{
     VerifiedArtifactMetadata,
 };
 
+type TransactionAssets = (
+    TransactionBinding,
+    ArtifactBlobDigest,
+    Option<(ArtifactBlobDigest, Vec<u8>)>,
+);
+
 impl StoredAdmission {
     #[expect(
         clippy::too_many_lines,
@@ -31,13 +37,14 @@ impl StoredAdmission {
         metadata: &VerifiedArtifactMetadata,
         codec: &JsonManifestCodec,
         check: &dyn Fn() -> Result<(), PlatformError>,
-    ) -> Result<(TransactionBinding, ArtifactBlobDigest), PlatformError> {
+    ) -> Result<TransactionAssets, PlatformError> {
         check()?;
         let manifest = read_blob(directory, &self.manifest, DOCUMENT_BYTES)?;
         let configuration = read_blob(directory, &self.configuration, DOCUMENT_BYTES)?;
         let layout = inspect_package(&manifest, &configuration, PackageLimits::default())?;
         if grant.tenant().map(|tenant| tenant.0.as_str()) != Some(self.tenant.as_str())
-            || grant.package().map(|package| package.as_str()) != Some(self.package.as_str())
+            || grant.package().map(latent_core::PackageDigest::as_str)
+                != Some(self.package.as_str())
             || grant.release().0 != self.release
             || layout.digest().as_str() != self.package
             || layout.config().kind != PackageKind::Capsule
@@ -53,6 +60,7 @@ impl StoredAdmission {
             return Err(corrupt("transaction-asset-package-association"));
         }
         let mut companion = None;
+        let mut http_requirements = None;
         for (layer, stored) in layout.config().layers.iter().zip(&self.layers) {
             check()?;
             if layer.path != stored.path
@@ -115,6 +123,16 @@ impl StoredAdmission {
                     }
                     companion = Some((declaration, layer.digest.clone()));
                 }
+                LayerRole::Asset if layer.path == "deferred-http-requirements.json" => {
+                    if http_requirements.is_some()
+                        || layer.media_type != "application/json"
+                        || layer.size > 8192
+                    {
+                        return Err(resource_exhausted("transaction-http-requirements-shape"));
+                    }
+                    let bytes = read_blob(directory, &stored.blob, 8192)?;
+                    http_requirements = Some((layer.digest.clone(), bytes));
+                }
                 LayerRole::Renderer => return Err(corrupt("transaction-asset-renderer")),
                 LayerRole::WitLock | LayerRole::Asset => {}
             }
@@ -143,6 +161,8 @@ impl StoredAdmission {
                 }
             }
         }
-        companion.ok_or_else(|| corrupt("transaction-asset-companion-missing"))
+        let (declaration, digest) =
+            companion.ok_or_else(|| corrupt("transaction-asset-companion-missing"))?;
+        Ok((declaration, digest, http_requirements))
     }
 }

@@ -26,8 +26,10 @@ pub(in crate::standalone) struct StandaloneStateRuntime {
     admission: Option<Arc<TransactionAdmissionOwners>>,
     installations: Vec<Arc<TransactionInstallation>>,
     management: Option<StateManagementBackend>,
+    operations: Vec<crate::config::state::OperationSettings>,
     original_deadline: Instant,
     ready: bool,
+    http_rules: bool,
 }
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
@@ -115,13 +117,27 @@ impl StandaloneStateRuntime {
             return Err(super::unavailable());
         }
         let original_deadline = bootstrap.deadline;
-        let adapter_clock = AdapterClock::default();
+        let adapter_clock = installed.as_ref().map_or_else(
+            || Arc::new(AdapterClock::default()),
+            |s| Arc::clone(&s.http.clock),
+        );
+        let adapters = installed
+            .as_ref()
+            .map(|s| {
+                s.http
+                    .adapters
+                    .iter()
+                    .cloned()
+                    .map(|a| a as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>)
+                    .collect()
+            })
+            .unwrap_or_default();
         let (kernel, mut effects) = StateKernel::start(
             bootstrap,
             settings,
             supply_chain,
-            Vec::new(),
-            &adapter_clock,
+            adapters,
+            adapter_clock.as_ref(),
             runtime,
         )
         .await
@@ -146,6 +162,7 @@ impl StandaloneStateRuntime {
             None => Ok(super::installations::InstalledState {
                 installations: Vec::new(),
                 management: None,
+                http_rules: false,
             }),
         };
         let installed = match installed {
@@ -165,11 +182,24 @@ impl StandaloneStateRuntime {
                 admission: Some(admission),
                 installations: installed.installations,
                 management: installed.management,
+                operations: settings.operations.clone(),
                 original_deadline,
                 ready: false,
+                http_rules: installed.http_rules,
             },
             effects,
         ))
+    }
+
+    pub(in crate::standalone) fn transaction_http(
+        &self,
+    ) -> Option<super::super::http::transaction::Services> {
+        Some(super::super::http::transaction::Services {
+            owners: Arc::clone(self.admission.as_ref()?),
+            installations: self.installations.clone().into(),
+            operations: self.operations.clone().into(),
+            management: self.management.clone()?,
+        })
     }
 
     pub(in crate::standalone) fn transaction_rpc(
@@ -208,9 +238,9 @@ impl StandaloneStateRuntime {
             return Err(super::unavailable());
         }
         self.kernel.check_ready(effects)?;
-        // Deferred dispatch stays paused until an installed effect integration
-        // supplies its signed rules; state commands and fresh queries use the
-        // existing transaction admission and activation cleanup owners.
+        if self.http_rules {
+            effects.resume()?;
+        }
         self.ready = true;
         Ok(())
     }

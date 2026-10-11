@@ -237,8 +237,9 @@ impl StateManagementBackend {
         &self,
         context: AuthenticatedInvocationContext,
         request: contract::Request,
-    ) -> BoxFuture<'_, Result<OwnedPhase4Response, PlatformError>> {
+    ) -> BoxFuture<'static, Result<OwnedPhase4Response, PlatformError>> {
         let admission = self.admit(context, request);
+        let inner = Arc::clone(&self.0);
         Box::pin(async move {
             let AdmittedRequest {
                 context,
@@ -250,7 +251,7 @@ impl StateManagementBackend {
             } = admission?;
             if request.is_node_management() {
                 return dispatcher::execute(
-                    Arc::clone(&self.0),
+                    Arc::clone(&inner),
                     context,
                     request,
                     node_decision.ok_or_else(invalid)?,
@@ -262,7 +263,7 @@ impl StateManagementBackend {
             let binding = binding.ok_or_else(invalid)?;
             if command_result::handles(&request) {
                 return command_result::execute(
-                    Arc::clone(&self.0),
+                    Arc::clone(&inner),
                     context,
                     request,
                     binding,
@@ -272,11 +273,11 @@ impl StateManagementBackend {
                 .await;
             }
             let access =
-                authorization::authorize(&self.0.services, &binding, &context, &request, deadline)
+                authorization::authorize(&inner.services, &binding, &context, &request, deadline)
                     .await?;
             if effects::handles(&request) {
                 return effects::execute(
-                    Arc::clone(&self.0),
+                    Arc::clone(&inner),
                     context,
                     request,
                     access,
@@ -286,22 +287,15 @@ impl StateManagementBackend {
                 )
                 .await;
             }
-            let pending = audit::begin(&self.0, &access, &context, &request).await?;
+            let pending = audit::begin(&inner, &access, &context, &request).await?;
             match request {
                 contract::Request::SelectEntity(value) => {
-                    entities::select(
-                        Arc::clone(&self.0),
-                        value,
-                        access,
-                        permit,
-                        deadline,
-                        pending,
-                    )
-                    .await
+                    entities::select(Arc::clone(&inner), value, access, permit, deadline, pending)
+                        .await
                 }
                 contract::Request::InspectNamespace(value) => {
                     inspection::inspect(
-                        Arc::clone(&self.0),
+                        Arc::clone(&inner),
                         value,
                         access,
                         permit,
@@ -312,7 +306,7 @@ impl StateManagementBackend {
                 }
                 contract::Request::GetStateOperationReceipt(value) => {
                     inspection::receipt(
-                        Arc::clone(&self.0),
+                        Arc::clone(&inner),
                         value,
                         access,
                         permit,
@@ -322,15 +316,8 @@ impl StateManagementBackend {
                     .await
                 }
                 contract::Request::MutateNamespace(value) => {
-                    mutation::mutate(
-                        Arc::clone(&self.0),
-                        value,
-                        access,
-                        permit,
-                        deadline,
-                        pending,
-                    )
-                    .await
+                    mutation::mutate(Arc::clone(&inner), value, access, permit, deadline, pending)
+                        .await
                 }
                 _ => Err(unsupported()),
             }

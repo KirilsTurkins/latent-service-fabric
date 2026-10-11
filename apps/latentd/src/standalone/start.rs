@@ -645,6 +645,10 @@ impl StandaloneNode {
                         deployments: catalogs.deployments.clone(),
                         clock: Arc::clone(&self.clock),
                         audit: self.audit.as_ref().map(super::audit::AuditRuntime::handle),
+                        http: super::state::InstalledHttpEffects::new(
+                            self.providers.as_deref(),
+                            settings.providers.as_ref().and_then(|p| p.http.as_ref()),
+                        )?,
                     }),
                     control_runtime.clone(),
                 )
@@ -822,6 +826,10 @@ impl StandaloneNode {
                         .handle(),
                     clock: self.clock.clone(),
                     budget: settings.admission.budget_ceiling.clone(),
+                    transactions: self
+                        .state
+                        .as_ref()
+                        .and_then(super::state::StandaloneStateRuntime::transaction_http),
                 },
             )?);
         }

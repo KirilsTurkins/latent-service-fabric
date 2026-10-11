@@ -38,6 +38,7 @@ pub struct SelectedTransactionAsset {
     pub(crate) publication: ReleaseUseEligibility,
     pub(crate) asset_digest: ArtifactBlobDigest,
     pub(crate) original: Arc<NativeReservation>,
+    pub(crate) http_requirements: Option<(ArtifactBlobDigest, Vec<u8>)>,
 }
 
 impl SelectedTransactionAsset {
@@ -63,6 +64,14 @@ impl SelectedTransactionAsset {
     #[must_use]
     pub fn asset_digest(&self) -> &ArtifactBlobDigest {
         &self.asset_digest
+    }
+
+    /// One bounded document from the same verified signed package selection.
+    #[must_use]
+    pub fn deferred_http_requirements(&self) -> Option<(&ArtifactBlobDigest, &[u8])> {
+        self.http_requirements
+            .as_ref()
+            .map(|(digest, bytes)| (digest, bytes.as_slice()))
     }
 
     /// Rechecks the original job deadline/close and original selected catalog

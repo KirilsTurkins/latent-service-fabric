@@ -17,6 +17,10 @@ impl NativeTransactionAdmission {
         outcome: ActivationOutcome,
         control: TransactionCommitControl,
     ) -> ActivationOutcome {
+        let outcome = match self.validator.as_ref().map(|v| v.validate(&outcome)) {
+            Some(Err(error)) => failure_for_platform_error(error, outcome_consumption(&outcome)),
+            _ => outcome,
+        };
         let consumption = outcome_consumption(&outcome);
         let admitted = match self.take_result() {
             Ok(Some(admitted)) => admitted,

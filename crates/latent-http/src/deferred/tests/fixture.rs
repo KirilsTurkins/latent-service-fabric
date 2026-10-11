@@ -301,6 +301,12 @@ impl Fixture {
     }
 
     pub async fn new(fault: proxy::Fault) -> Self {
+        Self::with_authorization(fault, None).await
+    }
+    pub async fn with_authorization(
+        fault: proxy::Fault,
+        authorization: Option<Arc<dyn super::super::DeferredHttpAuthorization>>,
+    ) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let root = tempfile::tempdir_in(base).unwrap();
@@ -335,12 +341,15 @@ impl Fixture {
         )
         .unwrap();
         let clock = Arc::new(Clock(AtomicU64::new(100)));
-        let adapter = Arc::new(
+        let mut adapter = Arc::new(
             provider
                 .deferred_adapter("tests", qualification, clock.clone())
                 .unwrap(),
         );
         let authority = EffectAuthorityOwner::new(16, 8, 100).unwrap();
+        if let Some(authorization) = authorization {
+            Arc::get_mut(&mut adapter).unwrap().authorization = Some(authorization);
+        }
         let rule = adapter
             .rule(
                 EffectScope {

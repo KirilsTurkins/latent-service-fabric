@@ -5,7 +5,7 @@ use latent_core::{
     diagnostic::{
         ActivationDiagnostic, ActivationDiagnosticSink, DiagnosticReason, DiagnosticStage,
     },
-    Metadata, PlatformError, PlatformErrorCode, TenantId,
+    PlatformError, PlatformErrorCode, TenantId,
 };
 use latent_ingress::http::{
     self,
@@ -65,8 +65,9 @@ pub(super) fn select(head: &Head, shared: &Shared) -> Result<AcceptedHttpRoute, 
             LocalPrincipalPolicy
                 .authorize_target(&head.principal, &revision.target.tenant.0)
                 .map_err(status)?;
-            if revision.target.contract.0 != http::CONTRACT
-                || revision.target.function.0 != http::FUNCTION
+            if accepted.transaction().is_none()
+                && (revision.target.contract.0 != http::CONTRACT
+                    || revision.target.function.0 != http::FUNCTION)
             {
                 return Err(502);
             }
@@ -90,11 +91,21 @@ pub(super) struct Retention {
     journal: LocalActivationJournal,
     tenant: TenantId,
     scheme: http::Scheme,
+    transaction: Option<(
+        Arc<latent_node::transaction_runtime::NativeTransactionAdmission>,
+        Arc<latent_node::transaction_runtime::TransactionInstallation>,
+    )>,
+    clock: Arc<dyn latent_core::ActivationClock>,
 }
 pub(super) enum Begun {
     Cached(Delivery),
+    Result(latent_core::BoxFuture<'static, Result<Delivery, u16>>),
     Activation(Box<RetainedActivation<Retention>>),
 }
+#[expect(
+    clippy::too_many_lines,
+    reason = "Original route, inbound, cleanup and delivery owners transfer in one bounded scope"
+)]
 pub(super) fn begin(
     head: Head,
     accepted: AcceptedHttpRoute,
@@ -108,11 +119,7 @@ pub(super) fn begin(
     if !matches!(accepted.target(), AcceptedHttpTarget::Application { .. }) {
         return Err(502);
     }
-    let cleanup = shared
-        .services
-        .cleanup
-        .reserve_activation()
-        .map_err(status)?;
+    let transaction = accepted.transaction().cloned();
     let trace = shared.traces.next_trace().map_err(status)?;
     let context = TrustedContext::new(head.principal, trace).map_err(|_| 500u16)?;
     let mapped = head
@@ -120,14 +127,29 @@ pub(super) fn begin(
         .finish(context)
         .map_err(|e| e.status().unwrap_or(0))?;
     let cache = cache_request(&mapped, &accepted, shared);
-    let invocation = mapped
-        .into_invocation()
-        .map_err(|e| e.status().unwrap_or(0))?;
+    let (invocation, facts) = super::transaction::map(mapped, transaction.as_ref())?;
     let (target, lease) = accepted.into_parts();
     let AcceptedHttpTarget::Application { revision, catalog } = target else {
         drop(lease);
         return Err(502);
     };
+    if let (Some(route), Some(facts)) = (transaction.as_ref(), facts.as_ref()) {
+        if route.mode() == http::transaction::RouteMode::Result {
+            return Ok(Begun::Result(super::transaction::recover(
+                shared.services.transactions.as_ref().ok_or(503u16)?,
+                route,
+                facts,
+                invocation,
+                revision,
+                lease,
+            )?));
+        }
+    }
+    let cleanup = shared
+        .services
+        .cleanup
+        .reserve_activation()
+        .map_err(status)?;
     let request = ActivationRequest {
         activation_id: None,
         parent_activation_id: None,
@@ -139,8 +161,11 @@ pub(super) fn begin(
         trace: invocation.context().trace().clone(),
         idempotency_key: None,
         retry_attempt: 0,
-        budget: shared.services.budget.clone(),
-        metadata: Metadata::new(),
+        budget: super::transaction::budget(&shared.services.budget, transaction.as_ref()),
+        metadata: facts
+            .as_ref()
+            .map(super::transaction::business_metadata)
+            .unwrap_or_default(),
         input: Vec::new(),
         input_media_type: http::VALUE_MEDIA_TYPE.to_owned(),
     };
@@ -159,6 +184,19 @@ pub(super) fn begin(
         )
         .map_err(status)?;
     let eligibility = reserved.publication_eligibility().map_err(status)?;
+    let transaction = match (transaction.as_ref(), facts.as_ref()) {
+        (Some(route), Some(facts)) => Some(
+            super::transaction::bind(
+                shared.services.transactions.as_ref().ok_or(503u16)?,
+                route,
+                facts,
+                &mut reserved,
+                invocation.input().len(),
+            )
+            .map_err(status)?,
+        ),
+        _ => None,
+    };
     let cache = match cache.map(|request| {
         request
             .bind_eligibility(eligibility.cache_digest())
@@ -185,6 +223,8 @@ pub(super) fn begin(
             journal: shared.services.manager.journal(),
             tenant,
             scheme: shared.settings.scheme,
+            transaction,
+            clock: Arc::clone(&shared.services.clock),
         },
     );
     // This fixed-size owner allocation is covered by the exchange reservation.
@@ -195,6 +235,9 @@ fn cache_request(
     accepted: &AcceptedHttpRoute,
     shared: &Shared,
 ) -> Option<CacheRequest> {
+    if accepted.transaction().is_some() {
+        return None;
+    }
     let cache = shared.handle.0.response_cache.as_ref()?;
     let AcceptedHttpTarget::Application { revision, .. } = accepted.target() else {
         return None;
@@ -236,6 +279,15 @@ fn cached(
         .map_err(|e| e.status().unwrap_or(0))
 }
 pub(super) fn complete(receipt: ActivationReceipt, retention: Retention) -> Result<Delivery, u16> {
+    if let Some((admission, installation)) = &retention.transaction {
+        return super::transaction::complete(
+            receipt,
+            retention.invocation,
+            admission,
+            installation,
+            retention.clock.as_ref(),
+        );
+    }
     let outcome = match &receipt.outcome {
         ActivationOutcome::Succeeded(value) => Outcome::Returned {
             bytes: &value.output,
@@ -267,7 +319,12 @@ pub(super) fn complete(receipt: ActivationReceipt, retention: Retention) -> Resu
     drop(receipt);
     Ok(delivery)
 }
-fn status(error: PlatformError) -> u16 {
+pub(super) fn status(error: PlatformError) -> u16 {
+    #[cfg(test)]
+    eprintln!(
+        "HTTP adapter refusal code={:?} reason={}",
+        error.code, error.message
+    );
     let code = error.code;
     drop(error);
     match code {

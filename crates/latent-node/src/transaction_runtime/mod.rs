@@ -18,7 +18,7 @@ pub use completion::{CommandCompletion, CommandCompletionDisposition};
 pub use factory::{
     NativeTransactionAdmission, TransactionAdmissionOwners, TransactionAdmissionResult,
     TransactionCompletionResult, TransactionInstallation, TransactionInstallationSelection,
-    TransactionRetrySelection, TransactionSelection,
+    TransactionOutcomeValidator, TransactionRetrySelection, TransactionSelection,
 };
 pub use response::{OwnedTransactionCompletion, TransactionResponseAuthority};
 

@@ -40,6 +40,12 @@ impl TransactionInstallation {
         }
     }
 
+    /// Signed descriptive schema identity; this accessor creates no read grant.
+    #[must_use]
+    pub fn state_schema(&self) -> &str {
+        &self.declaration.state_schema
+    }
+
     /// Descriptive selection from the trusted installed manifest and companion.
     /// Actual admission still resolves and seals this publication and policy.
     #[must_use]

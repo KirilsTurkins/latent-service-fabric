@@ -45,7 +45,8 @@ impl TransactionResponseAuthority {
     }
 
     /// Short Policy -> Namespace -> Native fence. Encoding and physical I/O
-    /// happen outside the callback; original closed guest accounting stays closed.
+    /// happen outside the callback except for one bounded nonblocking transport
+    /// poll. No waiting or storage I/O is permitted; guest accounting stays closed.
     pub fn with_current(&self, publish: &mut dyn FnMut()) -> Result<(), PlatformError> {
         // Clock observation may consult the original command role. Perform it
         // outside Policy/Namespace/Native bookkeeping locks.

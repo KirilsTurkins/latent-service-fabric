@@ -19,6 +19,7 @@ use serde_json::json;
 use std::time::{Duration, Instant};
 
 // Reuse the existing actual package, signature, provenance and trust fixture.
+mod http;
 #[path = "../../../../../../crates/latent-policy/src/supply_chain/tests/support.rs"]
 #[allow(
     unused_imports,
@@ -45,14 +46,30 @@ struct Setup {
     owners: Arc<TransactionAdmissionOwners>,
 }
 impl Setup {
+    async fn new() -> Self {
+        Self::with_http_document(None).await
+    }
+
+    async fn with_http_document(document: Option<Vec<u8>>) -> Self {
+        Self::configured(document, false).await
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "The real signed fixture composes each independent original owner before admission"
     )]
-    async fn new() -> Self {
+    async fn configured(document: Option<Vec<u8>>, executable: bool) -> Self {
         let mut fixture = KernelFixture::new();
         let companion = declaration();
-        let signed = signed::Fixture::transactional_with_companion(companion.clone(), false);
+        let signed = match document {
+            Some(document) => {
+                signed::Fixture::transactional_with_http_companion(companion.clone(), document)
+            }
+            None if executable => {
+                signed::Fixture::transactional_executable_with_companion(companion.clone())
+            }
+            None => signed::Fixture::transactional_with_companion(companion.clone(), false),
+        };
         let profile = ManifestValidationProfile::phase4(
             BudgetProfile::Phase4,
             latent_core::PHASE4_HOST_ABI_V1,
@@ -179,6 +196,10 @@ impl Setup {
         .unwrap();
         deployment["spec"]["resources"] = capsule["execution"]["limits"].clone();
         deployment["spec"]["grants"] = json!([{"capability":latent_capabilities::namespace::STATE_CONTRACT,"policy":"state","operations":["acquire-query"]}]);
+        if executable {
+            deployment["spec"]["grants"][0]["operations"] =
+                json!(["acquire-query", "query-info", "read-result"]);
+        }
         let manifest = JsonManifestCodec::default()
             .decode_deployment(&serde_json::to_vec(&deployment).unwrap())
             .unwrap();
@@ -201,6 +222,7 @@ impl Setup {
             deployments,
             clock: fixture.clock.clone(),
             audit: None,
+            http: super::super::InstalledHttpEffects::empty(),
         };
         Self {
             fixture,
@@ -217,6 +239,7 @@ impl Setup {
             deployments: Arc::clone(&self.services.deployments),
             clock: Arc::clone(&self.services.clock),
             audit: None,
+            http: super::super::InstalledHttpEffects::empty(),
         }
     }
     async fn finish(mut self) {
@@ -282,6 +305,73 @@ fn operator() -> latent_core::InvocationPrincipal {
         tenant: Some(TenantId("tests".into())),
         service: None,
         claims: latent_core::Metadata::new(),
+    }
+}
+
+#[tokio::test]
+async fn signed_http_document_capture_keeps_original_native_owner_and_refuses_oversize() {
+    for size in [8192, 8193] {
+        let bytes = vec![b' '; size];
+        let setup = Setup::with_http_document(Some(bytes.clone())).await;
+        let original = Arc::new(
+            setup
+                .kernel
+                .native
+                .reserve(
+                    NativeAdmissionClass::Recovery,
+                    NativeReservationRequest {
+                        request_bytes: state::INSTALLATION_CAPTURE_REQUEST_BYTES,
+                        work_bytes: state::INSTALLATION_CAPTURE_WORK_BYTES,
+                        response_bytes: TRANSACTION_ASSET_RESPONSE_BYTES,
+                    },
+                    setup.kernel.original_deadline().unwrap(),
+                )
+                .unwrap(),
+        );
+        let operation = setup.fixture.settings.operations[0].clone();
+        let artifacts = setup.services.artifacts.clone();
+        let native = setup.kernel.native.clone();
+        let worker_original = original.clone();
+        let captured = setup
+            .kernel
+            .store
+            .with_store_retaining(
+                StoreIoKind::RecoveryRead,
+                state::INSTALLATION_CAPTURE_REQUEST_BYTES
+                    + state::INSTALLATION_CAPTURE_WORK_BYTES
+                    + TRANSACTION_ASSET_RESPONSE_BYTES,
+                original.clone(),
+                move |_| {
+                    Ok(artifacts.capture_selected_transaction_asset(
+                        &operation.tenant,
+                        &operation.component,
+                        &operation.publication,
+                        &native,
+                        worker_original,
+                    ))
+                },
+            )
+            .unwrap()
+            .await
+            .unwrap()
+            .unwrap();
+        if size == 8192 {
+            let captured = captured.unwrap();
+            assert!(captured.get().is_from_reservation(&original));
+            let (digest, actual) = captured.get().deferred_http_requirements().unwrap();
+            assert_eq!(actual, bytes);
+            assert_eq!(
+                *digest,
+                latent_artifacts::package::artifact_blob_digest(&bytes)
+            );
+            assert!(setup.kernel.native.snapshot().unwrap().recovery.bytes > 2 * 1024 * 1024);
+            drop(captured);
+        } else {
+            assert!(captured.is_err());
+        }
+        drop(original);
+        assert_eq!(setup.kernel.native.snapshot().unwrap().recovery.slots, 1);
+        setup.finish().await;
     }
 }
 

@@ -203,6 +203,32 @@ impl InboundActivationReservation {
         Ok(eligibility)
     }
 
+    /// Bind one trusted transaction to this already accepted activation.
+    pub fn bind_transaction(
+        &mut self,
+        admission: Arc<dyn super::TransactionActivationAdmission>,
+    ) -> Result<(), PlatformError> {
+        self.checkpoint()?;
+        let budget = self.lifecycle.budget.as_ref().ok_or_else(|| {
+            error(
+                PlatformErrorCode::PermissionDenied,
+                "transaction budget missing",
+            )
+        })?;
+        if self.lifecycle.transaction_admission.is_some()
+            || budget.profile() != latent_core::BudgetProfile::Phase4
+            || budget.granted().child_calls != 0
+            || budget.granted().outbound_requests != 0
+        {
+            return Err(error(
+                PlatformErrorCode::PermissionDenied,
+                "transaction binding denied",
+            ));
+        }
+        self.lifecycle.transaction_admission = Some(admission);
+        Ok(())
+    }
+
     /// Retains the exact grant, route and deadline. The length must describe the
     /// bytes actually written to the reserved buffer, not a network declaration.
     pub fn start(mut self, input_length: usize) -> Result<ActivationHandle, PlatformError> {

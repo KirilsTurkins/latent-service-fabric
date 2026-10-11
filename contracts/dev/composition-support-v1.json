@@ -76,7 +76,7 @@
     },
     "revision-identity": {
       "path": "crates/latent-manifest/src/schema.rs",
-      "digest": "sha256:4872d23d309989eb60dcb4fc1edc9ca7f94a492753d3f29d6aec8209d1795a4e",
+      "digest": "sha256:fc38c39293090654994d5b9e3f999d1650679dd1650729206a9e2f95a74dbe46",
       "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
     },
     "static-trigger-owner": {
@@ -96,7 +96,7 @@
     },
     "ready-inspection": {
       "path": "crates/latent-wasmtime/src/backend/readiness/ownership.rs",
-      "digest": "sha256:2f062d6af24f7dd09d94060c766705d8398cab549c71885db5e51269e7a6094e",
+      "digest": "sha256:b7af7664394841f21bf46925167c02637324e0fd19112828c0d9820cb2e025e0",
       "commit": "9c8d836c6ac950c27b2d8add4fbd7e150fd55c7d"
     },
     "browser-response-ownership": {
@@ -106,7 +106,7 @@
     },
     "http-ingress-bounds": {
       "path": "crates/latent-ingress/src/http.rs",
-      "digest": "sha256:6c0511c60c0397abb3b0a43535fe463d9e07b27ef79379222db6fe0f45ccd179",
+      "digest": "sha256:153593c6ee8c7ec6f756f93c6b8cc3dd48b69f71a71acb64b76190151e98518d",
       "commit": "e4c754fac57fa9d568637348a0abd7410dd3d182"
     }
   },

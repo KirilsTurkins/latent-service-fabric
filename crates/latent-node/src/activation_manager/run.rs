@@ -183,6 +183,24 @@ impl Inner {
                 budget.enable_descendants(permit.delegation_limits(), control.clone())?;
             }
         }
+        let canonical_required = lifecycle
+            .transaction_admission
+            .as_ref()
+            .is_some_and(|a| a.requires_prepared_input());
+        let mut early_ready = if canonical_required {
+            let (key, ready) = self
+                .prepare_ready(&envelope, &token, &budget, &transport)
+                .await?;
+            let (ready, input) = self
+                .canonicalize_input(ready, &envelope, &token, &budget, &transport)
+                .await?;
+            let (bytes, memory) = input.into_parts();
+            envelope.input = bytes;
+            lifecycle.canonical_input_memory = Some(memory);
+            Some((key, ready))
+        } else {
+            None
+        };
         if let Some(admission) = &lifecycle.transaction_admission {
             if budget.profile() != latent_core::BudgetProfile::Phase4
                 || envelope.parent_activation_id.is_some()
@@ -219,9 +237,13 @@ impl Inner {
         let expiry = budget.deadline().monotonic();
         // Keep the original admission reservation and deadline while code is
         // prepared. A cold request does not occupy an execution cell.
-        let (key, ready) = self
-            .prepare_ready(&envelope, &token, &budget, &transport)
-            .await?;
+        let (key, ready) = match early_ready.take() {
+            Some(prepared) => prepared,
+            None => {
+                self.prepare_ready(&envelope, &token, &budget, &transport)
+                    .await?
+            }
+        };
         let scheduled = if let Some(permit) = permit {
             stage(
                 self.dependencies
