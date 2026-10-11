@@ -448,6 +448,7 @@ export interface NamespaceInspection {
   readonly quota?: NamespaceQuota;
   readonly generation: bigint;
   readonly namespacePolicyDigest: string;
+  readonly policyDigest?: string;
 }
 
 export interface InspectNamespaceResponse {

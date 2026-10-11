@@ -99,17 +99,50 @@ fn mutable_engine_file_creation_and_reopen_never_truncate_existing_bytes() {
     let dir = root();
     let root = ProtectedRoot::open(dir.path()).unwrap();
     let (mut file, fence) = root.open_mutable_file("state.redb", 4096, true).unwrap();
+    assert!(fence.was_created());
     file.write_all(b"retained-database").unwrap();
     file.sync_all().unwrap();
     root.check_mutable_file(&fence).unwrap();
     drop(file);
     let (mut file, new_fence) = root.open_mutable_file("state.redb", 4096, true).unwrap();
+    assert!(!new_fence.was_created());
     file.rewind().unwrap();
     let mut bytes = Vec::new();
     file.read_to_end(&mut bytes).unwrap();
     assert_eq!(bytes, b"retained-database");
     root.check_mutable_file(&new_fence).unwrap();
     assert!(root.open_mutable_file("missing", 4096, false).is_err());
+}
+
+#[test]
+fn exclusive_offline_output_refuses_existing_failed_files_and_unsafe_names_without_overwrite() {
+    use std::io::Write as _;
+    let directory = root();
+    let root = ProtectedRoot::open(directory.path()).unwrap();
+    for name in ["", ".", "..", "../snapshot", "/snapshot", "nested/snapshot"] {
+        assert!(root.create_mutable_file(name, 4096).is_err());
+    }
+    let (mut output, fence) = root.create_mutable_file("snapshot", 4096).unwrap();
+    assert!(fence.was_created());
+    output.write_all(b"partial-sensitive-snapshot").unwrap();
+    output.sync_all().unwrap();
+    root.check_mutable_file(&fence).unwrap();
+    assert!(root.create_mutable_file("snapshot", 4096).is_err());
+    assert_eq!(
+        fs::read(directory.path().join("snapshot")).unwrap(),
+        b"partial-sensitive-snapshot"
+    );
+    assert_eq!(output.metadata().unwrap().mode() & 0o777, 0o600);
+    symlink(
+        directory.path().join("snapshot"),
+        directory.path().join("alias"),
+    )
+    .unwrap();
+    assert!(root.create_mutable_file("alias", 4096).is_err());
+    assert!(root
+        .create_mutable_file("oversized", 1_073_741_825)
+        .is_err());
+    assert!(!directory.path().join("oversized").exists());
 }
 
 #[test]
@@ -263,6 +296,72 @@ fn exclusive_mutable_creation_has_one_racing_owner_and_retains_winner_identity()
     assert_eq!(fs::read(dir.path().join("checkpoint")).unwrap(), expected);
     assert!(left.create_mutable_file("checkpoint", 4096).is_err());
     assert_eq!(fs::read(dir.path().join("checkpoint")).unwrap(), expected);
+}
+
+#[test]
+fn fresh_root_inventory_refuses_every_old_entry_and_rechecks_from_original_descriptor() {
+    let dir = root();
+    let protected = ProtectedRoot::open(dir.path()).unwrap();
+    protected.check_empty().unwrap();
+    protected.check_empty().unwrap();
+    secret(&dir.path().join("interrupted-empty"), b"");
+    assert!(protected.check_empty().is_err());
+    assert_eq!(fs::read(dir.path().join("interrupted-empty")).unwrap(), b"");
+    fs::remove_file(dir.path().join("interrupted-empty")).unwrap();
+    fs::create_dir(dir.path().join("unexpected-directory")).unwrap();
+    assert!(protected.check_empty().is_err());
+    fs::remove_dir(dir.path().join("unexpected-directory")).unwrap();
+    symlink("missing", dir.path().join("unexpected-link")).unwrap();
+    assert!(protected.check_empty().is_err());
+    assert_eq!(
+        fs::read_link(dir.path().join("unexpected-link")).unwrap(),
+        Path::new("missing")
+    );
+    fs::remove_file(dir.path().join("unexpected-link")).unwrap();
+    protected.check_empty().unwrap();
+    let (_lock, lock_fence) = protected.create_mutable_file("owner.lock", 1).unwrap();
+    protected.check_exact_mutable_files(&[&lock_fence]).unwrap();
+    let (_engine, engine_fence) = protected.create_mutable_file("state", 4096).unwrap();
+    assert!(protected.check_exact_mutable_files(&[&lock_fence]).is_err());
+    protected
+        .check_exact_mutable_files(&[&engine_fence, &lock_fence])
+        .unwrap();
+    protected
+        .check_exact_mutable_files(&[&lock_fence, &engine_fence])
+        .unwrap();
+    secret(&dir.path().join("after-enumeration"), b"retained");
+    assert!(protected
+        .check_exact_mutable_files(&[&lock_fence, &engine_fence])
+        .is_err());
+    assert_eq!(
+        fs::read(dir.path().join("after-enumeration")).unwrap(),
+        b"retained"
+    );
+}
+
+#[test]
+fn fresh_root_inventory_refuses_duplicate_foreign_replaced_and_linked_fences() {
+    let dir = root();
+    let protected = ProtectedRoot::open(dir.path()).unwrap();
+    let (_engine, fence) = protected.create_mutable_file("state", 4096).unwrap();
+    assert!(protected
+        .check_exact_mutable_files(&[&fence, &fence])
+        .is_err());
+    assert!(protected.check_exact_mutable_files(&[&fence; 5]).is_err());
+    let foreign_dir = root();
+    let foreign = ProtectedRoot::open(foreign_dir.path()).unwrap();
+    let (_foreign_engine, foreign_fence) = foreign.create_mutable_file("state", 4096).unwrap();
+    assert!(protected
+        .check_exact_mutable_files(&[&foreign_fence])
+        .is_err());
+    fs::hard_link(dir.path().join("state"), dir.path().join("hard")).unwrap();
+    assert!(protected.check_exact_mutable_files(&[&fence]).is_err());
+    fs::remove_file(dir.path().join("hard")).unwrap();
+    protected.check_exact_mutable_files(&[&fence]).unwrap();
+    fs::rename(dir.path().join("state"), dir.path().join("retained")).unwrap();
+    secret(&dir.path().join("state"), b"replacement");
+    assert!(protected.check_exact_mutable_files(&[&fence]).is_err());
+    assert_eq!(fs::read(dir.path().join("state")).unwrap(), b"replacement");
 }
 
 #[test]

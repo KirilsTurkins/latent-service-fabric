@@ -645,3 +645,16 @@ publication identities, mutation and intent counts, state bytes, and observation
 time. It appears only after the original host captures an intent and grants no
 persistence, cancellation, retry or cleanup authority. Older clients may ignore
 the added field; absence does not prove that no intent was captured.
+
+## Captured namespace policy observation
+
+`NamespaceInspection.policy_digest` adds optional string field 12. It describes
+the exact captured policy/binding revision and supplies no permission, renewed
+grant or mutation proof. Existing namespace-policy field 11, field numbers,
+presence rules and historical meanings remain unchanged. Older clients can
+ignore the addition; absence is an unavailable observation.
+
+The October 11, 2026 descriptor regeneration uses pinned Buf 1.72.0 and verifies
+every prior descriptor semantic before admitting only this field and its
+synthetic optional oneof. All six transaction client models and maintained
+Protobuf producers follow the same authoritative source.

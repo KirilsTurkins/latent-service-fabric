@@ -554,6 +554,7 @@ impl NamespaceCatalog {
         }
         let previous = view.get(&namespace_key).map_err(storage)?;
         let observed = Self::read_in(&view, &context.tenant, mutation.id())?;
+        let mut migration_history = None;
         let record = match mutation {
             NamespaceMutation::Create {
                 id,
@@ -580,6 +581,18 @@ impl NamespaceCatalog {
                     &context.tenant,
                     id,
                 )?;
+                crate::recovery::migration::require_no_incomplete(&view, &record)
+                    .map_err(storage)?;
+                let (_, value) =
+                    super::history::NamespaceHistory::capture(&view, &record).map_err(storage)?;
+                migration_history = Some(ExpectedRow {
+                    key: super::history::history_key(
+                        &record.tenant,
+                        &record.id,
+                        record.version.incarnation,
+                    )?,
+                    value,
+                });
                 record.transition(*expected, action, active_commits)?
             }
         };
@@ -612,6 +625,7 @@ impl NamespaceCatalog {
                 },
             ],
         };
+        batch.expectations.extend(migration_history);
         crate::tenant::prepare_metadata_update(&view, &receipt.context.tenant, &batch)
             .and_then(|accounting| accounting.append_to(&mut batch))
             .map_err(storage)?;

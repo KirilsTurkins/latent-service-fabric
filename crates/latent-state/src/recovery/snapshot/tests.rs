@@ -8,6 +8,23 @@ use crate::store_identity::StoreIdentity;
 use latent_core::{StateNamespaceId, TenantId};
 use std::io::Cursor;
 
+#[test]
+fn legacy_snapshot_decoder_refuses_original_v2_archive_before_any_row_callback() {
+    let fixture = fixture();
+    let (bytes, _) = export(&fixture);
+    let mut callbacks = 0;
+    let refused = crate::recovery::v1::snapshot::inspect_snapshot(
+        &mut Cursor::new(bytes),
+        deadline(),
+        |_, _| {
+            callbacks += 1;
+            Ok(())
+        },
+    );
+    assert_eq!(refused, Err(StoreError::UnsupportedFormat));
+    assert_eq!(callbacks, 0);
+}
+
 const DEFINITION: &[u8] =
     include_bytes!("../../../../../contracts/state/application-aggregate-v1.schema.json");
 const FIXTURE_KEY: &[u8] = b"closed-codec-fixture-v1\0";

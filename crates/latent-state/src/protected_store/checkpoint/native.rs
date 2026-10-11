@@ -16,7 +16,7 @@ const FILE_NAME: &str = "transaction-checkpoint.v1";
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 const LOCK_NAME: &str = "transaction-checkpoint-owner.lock";
 
-pub(super) struct CheckpointFile {
+pub(in crate::protected_store) struct CheckpointFile {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     root: ProtectedRoot,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -40,8 +40,193 @@ pub(super) struct CheckpointFile {
 }
 
 impl CheckpointFile {
+    #[cfg_attr(
+        not(all(target_os = "linux", target_arch = "x86_64")),
+        allow(clippy::unused_self)
+    )]
+    pub(in crate::protected_store) fn restore_fence(
+        &self,
+    ) -> Result<crate::protected_store::restore_adoption::RestoredRootFence, StoreError> {
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            self.original
+                .with_live(|| ())
+                .map_err(|_| StoreError::SnapshotExpired)?;
+            self.check()?;
+            Ok(
+                crate::protected_store::restore_adoption::RestoredRootFence {
+                    root: self.root.identity(),
+                    file: self.fence.identity(),
+                    lock: self.lock_fence.identity(),
+                },
+            )
+        }
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            Err(StoreError::UnsupportedFormat)
+        }
+    }
+
+    /// Strict private restore producer. Unlike ordinary reopen, no existing
+    /// root entry, interrupted initializer or matching identity is Fresh.
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    pub(super) fn open(
+    pub(in crate::protected_store) fn create_restore(
+        store: &PhysicalStore,
+        source: &PhysicalStore,
+        snapshot: &crate::protected_store::snapshot::SnapshotFile,
+        config: ProtectedCheckpointConfig,
+        fresh: StoreInitializationWitness,
+        mut current: impl FnMut() -> Result<(), StoreError>,
+    ) -> Result<Self, StoreError> {
+        current()?;
+        source.check().map_err(|_| StoreError::Unavailable)?;
+        store.check().map_err(|_| StoreError::Unavailable)?;
+        let business_root = store.root_identity().map_err(|_| StoreError::Unavailable)?;
+        if !Arc::ptr_eq(&fresh.owner, &store.failure) || fresh.fresh_root != Some(business_root) {
+            return Err(StoreError::Conflict);
+        }
+        super::check_fresh_view(&store.engine().snapshot()?, &fresh.identity)?;
+        let ProtectedCheckpointConfig {
+            root: checkpoint_root,
+        } = config;
+        let root = ProtectedRoot::open(&checkpoint_root).map_err(|_| StoreError::Unavailable)?;
+        if !store
+            .is_separate_root(&root)
+            .map_err(|_| StoreError::Unavailable)?
+            || !source
+                .is_separate_root(&root)
+                .map_err(|_| StoreError::Unavailable)?
+            || !snapshot.is_separate_root(&root)?
+            || root
+                .filesystem_type()
+                .map_err(|_| StoreError::Unavailable)?
+                != 0xef53
+        {
+            return Err(StoreError::Invalid);
+        }
+        root.check_empty().map_err(|_| StoreError::Conflict)?;
+        current()?;
+        let (root_lock, lock_fence) = root
+            .create_mutable_file(LOCK_NAME, 1)
+            .map_err(|_| StoreError::Conflict)?;
+        root_lock.try_lock().map_err(|_| StoreError::Conflict)?;
+        root.check_exact_mutable_files(&[&lock_fence])
+            .map_err(|_| StoreError::Unavailable)?;
+        current()?;
+        let maximum = u64::try_from(ExternalCheckpoint::MAXIMUM_ENCODED_BYTES)
+            .expect("bounded checkpoint length");
+        let (file, fence) = root
+            .create_mutable_file(FILE_NAME, maximum)
+            .map_err(|_| StoreError::Conflict)?;
+        root.check_exact_mutable_files(&[&lock_fence, &fence])
+            .map_err(|_| StoreError::Unavailable)?;
+        current()?;
+        Ok(Self {
+            root,
+            fence,
+            lock_fence,
+            file: Some(file),
+            root_lock: Some(root_lock),
+            current: std::sync::Mutex::new(None),
+            created_here: true,
+            identity: fresh.identity,
+            failure: Arc::clone(&store.failure),
+            original: snapshot.retain_original(),
+        })
+    }
+
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    pub(in crate::protected_store) fn create_restore(
+        _: &PhysicalStore,
+        _: &PhysicalStore,
+        _: &crate::protected_store::snapshot::SnapshotFile,
+        _: ProtectedCheckpointConfig,
+        _: StoreInitializationWitness,
+        _: impl FnMut() -> Result<(), StoreError>,
+    ) -> Result<Self, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+
+    /// Publish the first external anti-rollback record for this physically
+    /// created paused destination only. Installed controls supply observations
+    /// from its actual view and the SAME protected clock; no archive flag can
+    /// renew authority. Currentness surrounds the physical write/readback.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn seal_restore(
+        &self,
+        view: &ReadView,
+        protected_clock_epoch: u64,
+        dispatch: (u64, u64),
+        mut current: impl FnMut() -> Result<(), StoreError>,
+        accept: impl FnOnce() -> Result<(), StoreError>,
+    ) -> Result<ExternalCheckpoint, StoreError> {
+        current()?;
+        self.original
+            .with_live(|| ())
+            .map_err(|_| StoreError::SnapshotExpired)?;
+        self.check_identity(view)?;
+        {
+            let recorded = self.current.lock().map_err(|_| StoreError::Unavailable)?;
+            if !self.created_here || recorded.is_some() {
+                return Err(StoreError::Conflict);
+            }
+            self.exact_current(recorded.as_ref())?;
+        }
+        let next = ExternalCheckpoint::initial(
+            self.identity.clone(),
+            protected_clock_epoch,
+            dispatch.0,
+            dispatch.1,
+        )?;
+        let encoded = next.encode();
+        self.root
+            .check_exact_mutable_files(&[&self.lock_fence, &self.fence])
+            .map_err(|_| StoreError::Unavailable)?;
+        current()?;
+        let file = self.file.as_ref().expect("worker-owned checkpoint file");
+        accept()?;
+        let written = (|| {
+            file.write_all_at(&encoded, 0)
+                .map_err(|_| StoreError::CommitUncertain)?;
+            file.set_len(u64::try_from(encoded.len()).expect("bounded checkpoint length"))
+                .map_err(|_| StoreError::CommitUncertain)?;
+            file.sync_all().map_err(|_| StoreError::CommitUncertain)?;
+            self.root
+                .check_exact_mutable_files(&[&self.lock_fence, &self.fence])
+                .map_err(|_| StoreError::CommitUncertain)?;
+            current().map_err(|_| StoreError::CommitUncertain)?;
+            if read_record(file).map_err(|_| StoreError::CommitUncertain)? != next {
+                return Err(StoreError::CommitUncertain);
+            }
+            current().map_err(|_| StoreError::CommitUncertain)?;
+            Ok(())
+        })();
+        if let Err(error) = written {
+            self.failure
+                .record(crate::protected_store::ProtectedStoreError::Store(error));
+            return Err(error);
+        }
+        *self
+            .current
+            .lock()
+            .map_err(|_| StoreError::CommitUncertain)? = Some(next.clone());
+        Ok(next)
+    }
+
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    pub(in crate::protected_store) fn seal_restore(
+        &self,
+        _: &ReadView,
+        _: u64,
+        _: (u64, u64),
+        _: impl FnMut() -> Result<(), StoreError>,
+        _: impl FnOnce() -> Result<(), StoreError>,
+    ) -> Result<ExternalCheckpoint, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn open(
         store: &PhysicalStore,
         config: ProtectedCheckpointConfig,
         identity: StoreIdentity,
@@ -54,7 +239,10 @@ impl CheckpointFile {
             .with_live(|| ())
             .map_err(|_| StoreError::Conflict)?;
         let business_root = store.root_identity().map_err(|_| StoreError::Unavailable)?;
-        let root = ProtectedRoot::open(&config.root).map_err(|_| StoreError::Unavailable)?;
+        let ProtectedCheckpointConfig {
+            root: checkpoint_root,
+        } = config;
+        let root = ProtectedRoot::open(&checkpoint_root).map_err(|_| StoreError::Unavailable)?;
         if root.identity() == business_root
             || !store
                 .is_separate_root(&root)
@@ -72,17 +260,17 @@ impl CheckpointFile {
         root_lock.try_lock().map_err(|_| StoreError::Conflict)?;
         let maximum = u64::try_from(ExternalCheckpoint::MAXIMUM_ENCODED_BYTES)
             .expect("bounded checkpoint length");
-        let (file, fence, created_here) = if fresh.is_some() {
-            match root.create_mutable_file(FILE_NAME, maximum) {
-                Ok((file, fence)) => (file, fence, true),
+        let initialized_identity = fresh.map(|witness| witness.identity);
+        let (file, fence, created_here) = if initialized_identity.is_some() {
+            if let Ok((file, fence)) = root.create_mutable_file(FILE_NAME, maximum) {
+                (file, fence, true)
+            } else {
                 // An existing entry, including one created by interrupted
                 // initialization, is never assumed fresh or overwritten.
-                Err(_) => {
-                    let (file, fence) = root
-                        .open_mutable_file(FILE_NAME, maximum, false)
-                        .map_err(|_| StoreError::Unavailable)?;
-                    (file, fence, false)
-                }
+                let (file, fence) = root
+                    .open_mutable_file(FILE_NAME, maximum, false)
+                    .map_err(|_| StoreError::Unavailable)?;
+                (file, fence, false)
             }
         } else {
             let (file, fence) = root
@@ -123,7 +311,7 @@ impl CheckpointFile {
     }
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
-    pub(super) fn open(
+    pub(in crate::protected_store) fn open(
         _: &PhysicalStore,
         _: ProtectedCheckpointConfig,
         _: StoreIdentity,
@@ -146,7 +334,7 @@ impl CheckpointFile {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    fn exact_current(&self, cached: &Option<ExternalCheckpoint>) -> Result<(), StoreError> {
+    fn exact_current(&self, cached: Option<&ExternalCheckpoint>) -> Result<(), StoreError> {
         self.check()?;
         let file = self.file.as_ref().expect("worker-owned checkpoint file");
         if let Some(expected) = cached {
@@ -171,7 +359,7 @@ impl CheckpointFile {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    pub(super) fn inspect(
+    pub(in crate::protected_store) fn inspect(
         &self,
         view: &ReadView,
         dispatch: Option<(u64, u64)>,
@@ -181,7 +369,7 @@ impl CheckpointFile {
             .map_err(|_| StoreError::Conflict)?;
         self.check_identity(view)?;
         let current = self.current.lock().map_err(|_| StoreError::Unavailable)?;
-        self.exact_current(&current)?;
+        self.exact_current(current.as_ref())?;
         if let Some(checkpoint) = current.as_ref() {
             let (epoch, floor) = dispatch.ok_or(StoreError::Conflict)?;
             checkpoint.check_store(&self.identity, epoch, floor)?;
@@ -194,7 +382,7 @@ impl CheckpointFile {
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
     #[allow(clippy::unused_self)]
-    pub(super) fn inspect(
+    pub(in crate::protected_store) fn inspect(
         &self,
         _: &ReadView,
         _: Option<(u64, u64)>,
@@ -227,7 +415,7 @@ impl CheckpointFile {
             .map_err(|_| StoreError::Conflict)?;
         self.check_identity(view)?;
         let mut current = self.current.lock().map_err(|_| StoreError::Unavailable)?;
-        self.exact_current(&current)?;
+        self.exact_current(current.as_ref())?;
         if current.as_ref() != expected {
             return Err(StoreError::Conflict);
         }

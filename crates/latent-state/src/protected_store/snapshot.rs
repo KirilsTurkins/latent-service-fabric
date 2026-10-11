@@ -12,13 +12,18 @@ use super::custody::{ProtectedCustodyJob, ProtectedStoreCustody};
 use super::{ProtectedStoreError, ProtectedStoreOwner};
 use crate::embedded::{ReadView, RowKey, StoreError};
 use crate::recovery::snapshot::{
-    export_snapshot, inspect_snapshot, RequiredArtifact, SnapshotClosure, SnapshotError,
+    export_reviewed_snapshot, inspect_snapshot, RequiredArtifact, SnapshotClosure, SnapshotError,
     SnapshotMetadata, SnapshotReceipt,
 };
 use crate::store_io::{StoreIoError, StoreIoKind, StoreIoRetirement, StoreIoRetirementWitness};
 
 mod native;
-use native::SnapshotFile;
+mod response;
+pub(super) use native::SnapshotFile;
+pub use response::{
+    ProtectedSnapshotManifestFrame, ProtectedSnapshotReceipt, ProtectedSnapshotReceiptJob,
+    SnapshotReceiptOwners, SnapshotReceiptReadFence, SNAPSHOT_RECEIPT_RESPONSE_BYTES,
+};
 
 const RESOURCE_BYTES: u64 = 64 * 1024;
 const WORK_BYTES: u64 = 8 * 1024 * 1024;
@@ -32,7 +37,7 @@ pub struct ProtectedSnapshotConfig {
 }
 
 impl ProtectedSnapshotConfig {
-    fn validate(&self) -> Result<u64, ProtectedStoreError> {
+    pub(super) fn validate(&self) -> Result<u64, ProtectedStoreError> {
         if !self.root.is_absolute()
             || self.root.as_os_str().is_empty()
             || self.root.as_os_str().len() > 4096
@@ -58,7 +63,7 @@ impl ProtectedSnapshotConfig {
 /// the service must retire this resource before reopening business admission.
 #[must_use = "retain exclusive custody through actual snapshot resource retirement"]
 pub struct ProtectedSnapshot {
-    custody: ProtectedStoreCustody<Option<SnapshotFile>>,
+    pub(super) custody: ProtectedStoreCustody<Option<SnapshotFile>>,
 }
 
 impl ProtectedSnapshot {
@@ -73,7 +78,8 @@ impl ProtectedSnapshot {
 
 #[must_use = "waiter loss detaches accepted export; it cannot release physical custody"]
 pub struct ProtectedSnapshotJob {
-    inner: ProtectedCustodyJob<Option<SnapshotFile>, Result<SnapshotReceipt, SnapshotError>>,
+    pub(super) inner:
+        ProtectedCustodyJob<Option<SnapshotFile>, Result<SnapshotReceipt, SnapshotError>>,
 }
 
 impl Future for ProtectedSnapshotJob {
@@ -97,6 +103,32 @@ impl Future for ProtectedSnapshotJob {
 }
 
 impl ProtectedStoreOwner {
+    /// Reopen an explicitly configured existing checkpoint after actual prior
+    /// resource retirement/restart. The fresh Recovery request authorizes only
+    /// present input access; immutable command/effect/migration identities and
+    /// old execution grants are not renewed. Missing/partial files refuse.
+    pub fn open_snapshot(
+        &self,
+        config: ProtectedSnapshotConfig,
+        original: Arc<NativeReservation>,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        let bytes = config.validate()?;
+        let custody = self.reserve_custody(bytes, WORK_BYTES, Arc::clone(&original))?;
+        let inner = self.initialize_custody_with(custody, WORK_BYTES, move |store| {
+            let file = match SnapshotFile::open_existing(store, config, original, current) {
+                Ok(file) => file,
+                Err(SnapshotError::Source(error)) => return Err(error),
+                Err(error) => return Ok((None, Err(error))),
+            };
+            let receipt = inspect_snapshot(&mut file.cursor(), file.deadline(), validate_row)
+                .map_err(SnapshotError::Review);
+            Ok((Some(file), receipt))
+        })?;
+        Ok(ProtectedSnapshotJob { inner })
+    }
+
     /// Export one physically quiesced source to an exclusively created private
     /// operator file. All ten row families and exact immutable associations are
     /// captured from the same native snapshot; the complete bounded stream is
@@ -118,6 +150,32 @@ impl ProtectedStoreOwner {
         validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
         current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
     ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        self.create_reviewed_snapshot(
+            config,
+            metadata,
+            original,
+            |view| validate(view).map_err(SnapshotError::source),
+            verify_artifact,
+            validate_row,
+            current,
+        )
+    }
+
+    /// Typed installed-owner review on the same original snapshot implementation.
+    /// Healthy catalog/current-access/decoder/deadline refusal is independent
+    /// from actual physical corruption or uncertain store I/O. This adds no
+    /// owner, path, grant, lease, fallback engine or deadline extension.
+    #[allow(clippy::too_many_arguments)] // Separate mandatory codec/artifact/currentness owners.
+    pub fn create_reviewed_snapshot(
+        &self,
+        config: ProtectedSnapshotConfig,
+        metadata: SnapshotMetadata,
+        original: Arc<NativeReservation>,
+        validate: impl FnOnce(&ReadView) -> Result<SnapshotClosure, SnapshotError> + Send + 'static,
+        verify_artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError> + Send + 'static,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
         let bytes = config.validate()?;
         metadata.validate().map_err(ProtectedStoreError::Store)?;
         let custody = self.reserve_custody(bytes, WORK_BYTES, Arc::clone(&original))?;
@@ -127,7 +185,7 @@ impl ProtectedStoreOwner {
                 Err(SnapshotError::Source(error)) => return Err(error),
                 Err(error) => return Ok((None, Err(error))),
             };
-            let outcome = export_snapshot(
+            let outcome = export_reviewed_snapshot(
                 store.engine(),
                 metadata,
                 &mut file.cursor(),
@@ -135,7 +193,7 @@ impl ProtectedStoreOwner {
                 validate,
                 verify_artifact,
             )
-            .and_then(|receipt| file.verify(receipt, validate_row));
+            .and_then(|receipt| file.verify(&receipt, validate_row));
             match outcome {
                 Err(SnapshotError::Source(error)) => Err(error),
                 outcome => Ok((Some(file), outcome)),

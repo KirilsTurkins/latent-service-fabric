@@ -5,11 +5,16 @@ mod checkpoint;
 mod config;
 mod custody;
 mod dispatcher;
+mod migration;
 mod mode;
 mod native_capacity;
 mod operation;
 mod physical;
 mod resource;
+mod restore_adoption;
+mod restore_input;
+mod restore_stage;
+mod resume;
 mod snapshot;
 mod startup;
 mod startup_memory;
@@ -21,13 +26,37 @@ pub use checkpoint::{
 };
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
+pub use migration::{
+    AggregateMigrationOwners, MigrationCommitFence, MigrationReceipt, ProtectedMigrationJob,
+};
 pub use mode::{StateModeObservation, STATE_MODE_FILE, STATE_MODE_NATIVE_BYTES};
 pub use operation::ProtectedStoreOperation;
 pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
-pub use snapshot::{ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob};
+pub use restore_adoption::{
+    ProtectedRestoreAdoptionJob, RestoreAdoptionFence, RestoreAdoptionKind, RestoreAdoptionOwners,
+    RestoreAdoptionPlan, RestoreAdoptionRequest, RestoreAdoptionStartError,
+    RESTORE_ADOPTION_RESPONSE_BYTES,
+};
+pub use restore_input::{
+    ProtectedRestoreInput, ProtectedRestoreInputJob, ProtectedRestoreWindowFrame,
+    RestoreInputOwners, RestoreInputPrecondition, RestoreReadFence, RESTORE_INPUT_RESPONSE_BYTES,
+};
+pub use restore_stage::{
+    ProtectedRestoreDestinationConfig, ProtectedRestoreStageJob, RestoreRowDisposition,
+    RestoreStageControls, RestoreStageError, RestoreStageOwners, RestoreStageReceipt,
+    RestoreStageRequest, RestoreWriteFence, RestoreWriteKind,
+};
+pub use resume::{
+    MigrationResumeCommitFence, ProtectedMigrationResumeJob, ProtectedMigrationResumeReceipt,
+};
+pub use snapshot::{
+    ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob,
+    ProtectedSnapshotManifestFrame, ProtectedSnapshotReceipt, ProtectedSnapshotReceiptJob,
+    SnapshotReceiptOwners, SnapshotReceiptReadFence, SNAPSHOT_RECEIPT_RESPONSE_BYTES,
+};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
 pub use startup_memory::ProtectedStoreStartupMemory;
-pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
+pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewOpenJob, ProtectedViewResult};
 
 use std::future::Future;
 use std::sync::Arc;
@@ -65,6 +94,21 @@ pub struct ProtectedStoreOwner {
     native_capacity: Arc<native_capacity::NativeBinding>,
 }
 
+/// One original protected startup may initialize a wholly empty new database.
+/// Only its accepted native worker constructs this affine same-engine witness
+/// after exclusive creation of both retained physical owner anchors. It cannot
+/// escape that borrowed worker or certify a reopened, replaced or restored file.
+pub struct FreshStoreInitialization<'a> {
+    store: &'a crate::embedded::EmbeddedStore,
+}
+
+impl FreshStoreInitialization<'_> {
+    #[must_use]
+    pub fn matches_store(&self, store: &crate::embedded::EmbeddedStore) -> bool {
+        std::ptr::eq(self.store, store)
+    }
+}
+
 impl Clone for ProtectedStoreOwner {
     fn clone(&self) -> Self {
         Self {
@@ -77,6 +121,27 @@ impl Clone for ProtectedStoreOwner {
 }
 
 impl ProtectedStoreOwner {
+    /// Trusted one-time dispatcher initialization on the original storage
+    /// writer. Ordinary reopening receives no fresh witness, even when the
+    /// configured create option is true or the dispatch owner row is missing.
+    pub fn with_initializing_store<T: Send + 'static>(
+        &self,
+        retained_payload_bytes: u64,
+        operation: impl FnOnce(
+                &crate::embedded::EmbeddedStore,
+                Option<FreshStoreInitialization<'_>>,
+            ) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit(StoreIoKind::Write, retained_payload_bytes, move |store| {
+                store.with_initialization(operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
     /// Validate the immutable recovery partition configured before physical
     /// startup. This creates no worker, result-read or mutation authority.
     pub fn install_recovery_capacity(

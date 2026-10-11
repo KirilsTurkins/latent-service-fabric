@@ -407,7 +407,8 @@ public final class Transactions {
             NamespaceStatus status,
             Optional<NamespaceQuota> quota,
             long generation,
-            String namespacePolicyDigest) { }
+            String namespacePolicyDigest,
+            Optional<String> policyDigest) { }
 
     public record InspectNamespaceResponse(
             Optional<NamespaceInspection> namespace) { }

@@ -1017,6 +1017,7 @@ impl From<c::NamespaceInspection> for model::NamespaceInspection {
             quota: value.quota.map(Into::into),
             generation: value.generation,
             namespace_policy_digest: value.namespace_policy_digest,
+            policy_digest: value.policy_digest,
         }
     }
 }
@@ -1040,6 +1041,7 @@ impl TryFrom<model::NamespaceInspection> for c::NamespaceInspection {
             quota: value.quota.map(TryInto::try_into).transpose()?,
             generation: value.generation,
             namespace_policy_digest: value.namespace_policy_digest,
+            policy_digest: value.policy_digest,
         })
     }
 }

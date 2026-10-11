@@ -243,6 +243,86 @@ impl ProtectedStoreOwner {
     }
 }
 
+pub(super) struct StartupReservation {
+    bytes: u64,
+    limits: StoreLimits,
+    io: crate::store_io::StoreIoLimits,
+}
+impl StartupReservation {
+    pub(super) fn new(
+        config: &ProtectedStoreConfig,
+        validator_retained_bytes: u64,
+    ) -> Result<Self, ProtectedStoreError> {
+        let initialization_bytes = config
+            .validate()?
+            .checked_add(8 * 1024 * 1024)
+            .and_then(|bytes| bytes.checked_add(validator_retained_bytes))
+            .ok_or(ProtectedStoreError::InvalidConfiguration)?;
+        if initialization_bytes
+            .checked_add(4096)
+            .is_none_or(|bytes| bytes > config.io.job_bytes)
+            || initialization_bytes
+                .checked_add(config.io.resident_bytes)
+                .and_then(|bytes| bytes.checked_add(4096))
+                .is_none_or(|bytes| bytes > config.io.retained_bytes)
+        {
+            return Err(ProtectedStoreError::InvalidConfiguration);
+        }
+        if !cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+            return Err(ProtectedStoreError::UnsupportedPlatform);
+        }
+        Ok(Self {
+            bytes: initialization_bytes,
+            limits: config.engine,
+            io: config.io.clone(),
+        })
+    }
+}
+
+pub(super) fn start_initializer(
+    reservation: StartupReservation,
+    clock: Arc<dyn ActivationClock>,
+    initialize: impl FnOnce(Arc<FailureLatch>) -> Result<PhysicalStore, ProtectedStoreError>
+        + Send
+        + 'static,
+) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
+    let failure = Arc::new(FailureLatch::default());
+    let initializer_failure = Arc::clone(&failure);
+    let started = StoreIoOwner::initialize_with_clock(
+        move || {
+            initialize(Arc::clone(&initializer_failure)).map_err(|error| {
+                initializer_failure.record(error);
+                StoreIoError::InitializationFailed
+            })
+        },
+        reservation.bytes,
+        reservation.io,
+        PhysicalStore::finalize,
+        clock,
+    );
+    let state = match started {
+        Ok(startup) => {
+            if let Some(gate) = startup.failure_gate() {
+                failure.install(gate);
+            }
+            Starting::Running(startup)
+        }
+        Err(error) => {
+            let Some(owner) = error.owner else {
+                return Err(ProtectedStoreError::Io(error.reason));
+            };
+            Starting::Failed(owner, error.reason)
+        }
+    };
+    Ok(ProtectedStoreStartup {
+        state,
+        failure,
+        limits: reservation.limits,
+        native_capacity: Arc::new(NativeBinding::default()),
+        original: None,
+    })
+}
+
 impl ProtectedStoreStartup {
     pub fn snapshot(&self) -> Result<StoreIoSnapshot, ProtectedStoreError> {
         match &self.state {
@@ -267,6 +347,16 @@ impl ProtectedStoreStartup {
             Starting::Failed(owner, _) => owner.quarantine(),
             Starting::RejectedReady(ready, _) => ready.quarantine(),
         }
+    }
+
+    /// Join only the original workers after physical retirement is observable.
+    pub fn reap_retired_threads(&self) -> Result<usize, ProtectedStoreError> {
+        match &self.state {
+            Starting::Running(startup) => startup.reap_retired_threads(),
+            Starting::Failed(owner, _) => owner.reap_retired_threads(),
+            Starting::RejectedReady(ready, _) => ready.reap_retired_threads(),
+        }
+        .map_err(ProtectedStoreError::Io)
     }
 
     pub fn drain_async<F: Future<Output = ()>>(

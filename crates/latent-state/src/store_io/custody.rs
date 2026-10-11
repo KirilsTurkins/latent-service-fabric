@@ -17,6 +17,8 @@ pub(crate) struct StoreIoCustody<S: Send + 'static, T: Send + 'static> {
     retained: StoreIoRetained<S, T>,
 }
 
+pub(crate) type StoreIoCustodyJob<S, T, R> = StoreIoJob<(StoreIoCustody<S, T>, R)>;
+
 impl<S: Send + Sync + 'static> StoreIoOwner<S> {
     pub(crate) fn reserve_custody<T: Send + 'static>(
         &self,
@@ -39,7 +41,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         kind: StoreIoKind,
         bytes: u64,
         operation: impl FnOnce(&mut StoreIoCustody<S, T>, &S) -> R + Send + 'static,
-    ) -> Result<StoreIoJob<(StoreIoCustody<S, T>, R)>, StoreIoError> {
+    ) -> Result<StoreIoCustodyJob<S, T, R>, StoreIoError> {
         if !custody.retained.belongs_to(self) || !kind.is_recovery() {
             return Err(StoreIoError::CustodyMismatch);
         }

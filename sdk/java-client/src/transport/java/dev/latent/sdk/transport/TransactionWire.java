@@ -766,6 +766,7 @@ final class TransactionWire {
         if (value.quota().isPresent()) result.setQuota(toWire(value.quota().get()));
         result.setGeneration(value.generation());
         result.setNamespacePolicyDigest(value.namespacePolicyDigest());
+        if (value.policyDigest().isPresent()) result.setPolicyDigest(value.policyDigest().get());
         return result.build();
     }
 
@@ -781,7 +782,8 @@ final class TransactionWire {
                 new Transactions.NamespaceStatus(value.getStatusValue()),
                 value.hasQuota() ? Optional.of(fromWire(value.getQuota())) : Optional.empty(),
                 value.getGeneration(),
-                value.getNamespacePolicyDigest());
+                value.getNamespacePolicyDigest(),
+                value.hasPolicyDigest() ? Optional.of(value.getPolicyDigest()) : Optional.empty());
     }
 
     static latent.control.v1.State.InspectNamespaceResponse toWire(Transactions.InspectNamespaceResponse value) {

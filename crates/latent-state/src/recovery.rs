@@ -2,7 +2,13 @@
 //! Historical identities and snapshot bytes are descriptions, never renewed
 //! publication/provider/result authority. Restored work stays paused for review.
 
+pub mod migration;
+pub mod restore;
+pub mod resume;
 pub mod snapshot;
+pub mod v1;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub use v1::offline;
 
 use crate::{
     embedded::{AtomicBatch, ExpectedRow, Family, ReadView, RowKey, RowMutation, StoreError},

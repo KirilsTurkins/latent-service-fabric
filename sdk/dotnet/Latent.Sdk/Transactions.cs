@@ -751,6 +751,7 @@ public sealed record NamespaceQuota(
 /// <param name="Quota">The exact quota value with preserved presence.</param>
 /// <param name="Generation">The exact generation value with preserved presence.</param>
 /// <param name="NamespacePolicyDigest">The exact namespace_policy_digest value with preserved presence.</param>
+/// <param name="PolicyDigest">The exact policy_digest value with preserved presence.</param>
 public sealed record NamespaceInspection(
     ViewIdentity? View,
     ulong EncodedStateBytes,
@@ -762,7 +763,8 @@ public sealed record NamespaceInspection(
     NamespaceStatus Status,
     NamespaceQuota? Quota,
     ulong Generation,
-    string NamespacePolicyDigest);
+    string NamespacePolicyDigest,
+    string? PolicyDigest);
 
 /// <summary>Transport-neutral InspectNamespaceResponse; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Namespace">The exact namespace value with preserved presence.</param>

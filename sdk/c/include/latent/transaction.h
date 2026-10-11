@@ -506,6 +506,8 @@ typedef struct latent_transaction_namespace_inspection {
     latent_transaction_namespace_quota quota;
     uint64_t generation;
     latent_string namespace_policy_digest;
+    bool has_policy_digest;
+    latent_string policy_digest;
 } latent_transaction_namespace_inspection;
 
 typedef struct latent_transaction_inspect_namespace_response {

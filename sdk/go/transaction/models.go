@@ -462,6 +462,7 @@ type NamespaceInspection struct {
 	Quota                 *NamespaceQuota
 	Generation            uint64
 	NamespacePolicyDigest string
+	PolicyDigest          *string
 }
 
 type InspectNamespaceResponse struct {

@@ -7,6 +7,7 @@ pub mod entity_lanes;
 /// Versioned namespace records and lifecycle guards; descriptors grant no access.
 pub mod namespace;
 pub mod protected_store;
+/// Bounded offline recovery descriptions and durable paused admission guards.
 /// Original restored history remains paused until an authorized review.
 pub mod recovery;
 /// Logical disposition capacity charged in the same physical atomic store.

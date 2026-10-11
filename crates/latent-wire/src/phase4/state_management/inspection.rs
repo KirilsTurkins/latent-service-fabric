@@ -126,6 +126,9 @@ fn inspect_in(
         quota: Some(response::quota(read.record().quota)),
         generation: read.record().version.generation,
         namespace_policy_digest: super::authorization::policy_precondition(access),
+        policy_digest: Some(super::authorization::captured_policy_digest(
+            &access.inspect,
+        )),
     };
     Ok(Ok((read, value)))
 }

@@ -23,6 +23,19 @@ pub fn census_contribution(
         crate::store_identity::StoreIdentity::validate_row(key, bytes)?;
         return Ok(TenantCensusContribution::Global);
     }
+    // Original offline-v1 histories remain decodable in their selected profile.
+    // Their writers supplied no v2 aggregate quota envelope, so installed v2
+    // accounting refuses this upgrade rather than inventing a contribution.
+    if key.family == Family::Maintenance
+        && (key
+            .key
+            .starts_with(crate::recovery::v1::migration::PROGRESS_PREFIX)
+            || key
+                .key
+                .starts_with(crate::recovery::v1::resume::RECEIPT_PREFIX))
+    {
+        return Err(StoreError::UnsupportedFormat);
+    }
     if key.family == Family::Maintenance && key.key.starts_with(super::QUOTA_PREFIX) {
         super::validate_row(view, key, bytes)?;
         return metadata(TenantRecord::decode(bytes)?.quota.tenant, key, bytes);
@@ -33,6 +46,18 @@ pub fn census_contribution(
             _ => StoreError::Corrupt,
         })?;
         return metadata(tenant, key, bytes);
+    }
+    if key.family == Family::Maintenance
+        && key
+            .key
+            .starts_with(crate::recovery::migration::PROGRESS_PREFIX)
+    {
+        return crate::recovery::migration::census_contribution(view, key, bytes);
+    }
+    if key.family == Family::Maintenance
+        && key.key.starts_with(crate::recovery::resume::RECEIPT_PREFIX)
+    {
+        return crate::recovery::resume::census_contribution(view, key, bytes);
     }
     // Unsupported recovery producers remain outside this closed profile. A
     // prefix or historical label cannot supply a tenant or fabricate counters.

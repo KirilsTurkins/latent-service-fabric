@@ -22,7 +22,7 @@ use crate::store_io::{
 };
 
 mod native;
-use native::CheckpointFile;
+pub(super) use native::CheckpointFile;
 
 const RESOURCE_BYTES: u64 = 32 * 1024;
 const METADATA_JOB_BYTES: u64 = 4096;
@@ -40,12 +40,33 @@ struct CheckpointKeeper {
 pub struct StoreInitializationWitness {
     owner: Arc<FailureLatch>,
     identity: StoreIdentity,
+    fresh_root: Option<(u64, u64)>,
 }
 
 impl StoreInitializationWitness {
     #[must_use]
     pub fn identity(&self) -> &StoreIdentity {
         &self.identity
+    }
+
+    /// Only a private destination with real empty-root/exclusive-leaf evidence
+    /// can produce this once. Ordinary logical initialization never suffices.
+    pub(super) fn take_restore(store: &super::physical::PhysicalStore) -> Result<Self, StoreError> {
+        store.check().map_err(|_| StoreError::Unavailable)?;
+        if store.fresh_root.is_none() {
+            return Err(StoreError::Conflict);
+        }
+        let identity = store
+            .fresh_identity
+            .lock()
+            .map_err(|_| StoreError::Unavailable)?
+            .take()
+            .ok_or(StoreError::Conflict)?;
+        Ok(Self {
+            owner: Arc::clone(&store.failure),
+            identity,
+            fresh_root: store.fresh_root,
+        })
     }
 }
 
@@ -96,7 +117,7 @@ pub struct CheckpointInspection {
 }
 
 /// A single bounded waiter for a closed checkpoint operation. No generic
-/// production result can transfer File, ProtectedRoot or the private resource.
+/// production result can transfer File, `ProtectedRoot` or the private resource.
 #[must_use = "dropping observation detaches accepted work and reserved destruction"]
 pub struct ProtectedCheckpointJob<R> {
     inner: ProtectedResourceJob<CheckpointFile, R>,
@@ -139,7 +160,11 @@ impl ProtectedStoreOwner {
                             .lock()
                             .map_err(|_| StoreError::Unavailable)?
                             .take();
-                        Ok(identity.map(|identity| StoreInitializationWitness { owner, identity }))
+                        Ok(identity.map(|identity| StoreInitializationWitness {
+                            owner,
+                            identity,
+                            fresh_root: store.fresh_root,
+                        }))
                     })
                 },
             )
@@ -150,7 +175,7 @@ impl ProtectedStoreOwner {
     /// files. Existing files are always opened without truncation; only the
     /// same-owner Fresh witness permits exclusive creation of a missing leaf.
     /// `observe_dispatch` is a trusted bounded metadata projection from one
-    /// coherent native view, normally DispatchCatalog::checkpoint.
+    /// coherent native view, normally `DispatchCatalog::checkpoint`.
     pub fn open_checkpoint(
         &self,
         config: ProtectedCheckpointConfig,

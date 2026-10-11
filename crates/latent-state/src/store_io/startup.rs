@@ -112,6 +112,16 @@ impl<S: Send + Sync + 'static> StoreIoStartup<S> {
         }
     }
 
+    /// Nonblocking joins of actual finished startup workers. An initializer or
+    /// dropped awaiter never certifies retirement; delivery moves this owner to
+    /// `StoreIoReady` and makes the startup handle unavailable.
+    pub fn reap_retired_threads(&self) -> Result<usize, StoreIoError> {
+        self.owner
+            .as_ref()
+            .ok_or(StoreIoError::AlreadyDelivered)?
+            .reap_retired_threads()
+    }
+
     pub fn drain_async<F: Future<Output = ()>>(
         &self,
         deadline: Instant,
@@ -253,7 +263,7 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
         kind: StoreIoKind,
         bytes: u64,
         operation: impl FnOnce(&mut super::StoreIoCustody<OnceLock<S>, T>, &S) -> R + Send + 'static,
-    ) -> Result<StoreIoJob<(super::StoreIoCustody<OnceLock<S>, T>, R)>, StoreIoError> {
+    ) -> Result<super::custody::StoreIoCustodyJob<OnceLock<S>, T, R>, StoreIoError> {
         self.owner
             .submit_custody(custody, kind, bytes, move |custody, slot| {
                 operation(custody, slot.get().expect("initialized store owner"))
@@ -312,5 +322,9 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
     }
     pub fn reap_retired_threads(&self) -> Result<usize, StoreIoError> {
         self.owner.reap_retired_threads()
+    }
+
+    pub fn pending_thread_joins(&self) -> Result<usize, StoreIoError> {
+        self.owner.pending_thread_joins()
     }
 }

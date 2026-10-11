@@ -731,6 +731,13 @@ pub(super) static LATENT_CONTROL_V1_NAMESPACEINSPECTION: Schema = Schema {
             maximum: 128,
             oneof: 0,
         },
+        Field {
+            number: 12,
+            kind: Kind::String,
+            repeated: false,
+            maximum: 128,
+            oneof: 1,
+        },
     ],
 };
 

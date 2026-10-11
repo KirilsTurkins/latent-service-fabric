@@ -508,6 +508,7 @@ pub struct NamespaceInspection {
     pub quota: Option<NamespaceQuota>,
     pub generation: u64,
     pub namespace_policy_digest: String,
+    pub policy_digest: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

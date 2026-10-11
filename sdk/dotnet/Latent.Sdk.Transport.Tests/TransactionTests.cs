@@ -99,7 +99,7 @@ internal static partial class Program
                 case "InspectNamespace":
                     await Peer.Read<WireControl.InspectNamespaceRequest>(context);
                     await Peer.Reply(context, (WireControl.InspectNamespaceResponse)ProfileCodec.ToWire(new Tx.InspectNamespaceResponse(new(new(TxNamespace, new byte[] { 1 }, TxDigest),
-                        1, 1, 1, Array.Empty<Tx.LinkedRetention>(), "redb-v1", TxDigest, Tx.NamespaceStatus.Active, new(1, 4096, 1, 4096, 1, 4096, 4096, 4096), ulong.MaxValue, TxDigest)), new WireControl.InspectNamespaceResponse())); break;
+                        1, 1, 1, Array.Empty<Tx.LinkedRetention>(), "redb-v1", TxDigest, Tx.NamespaceStatus.Active, new(1, 4096, 1, 4096, 1, 4096, 4096, 4096), ulong.MaxValue, TxDigest, null)), new WireControl.InspectNamespaceResponse())); break;
                 case "SelectEntity":
                     await Peer.Read<WireControl.SelectEntityRequest>(context);
                     await Peer.Reply(context, (WireControl.SelectEntityResponse)ProfileCodec.ToWire(new Tx.SelectEntityResponse(new[] { new Tx.EntityInspection("aggregate-a", new byte[] { 1 }) }, new(new byte[] { 2 }, 1, 32)), new WireControl.SelectEntityResponse())); break;

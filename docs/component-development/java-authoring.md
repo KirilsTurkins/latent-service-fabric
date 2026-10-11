@@ -96,6 +96,11 @@ projects are rejected. Reachable JNI, reflection-based loading and dynamic class
 loading still require compatible compiler/runtime support and emitted-component
 evidence.
 
+Each Java project captures the SDK's exact `latent:clock@0.1.0` definition in
+`wit/deps/clock`, so WIT inspection can resolve the declared monotonic and wall
+clock imports before compiler staging. The operator grants those clocks when
+deploying the capsule.
+
 The `word-count` and `shipping` templates provide equivalent Java implementations
 of [Creating a capsule](creating-a-capsule.md). Choose another project directory
 and replace `greeting` in the creation command with either template name.

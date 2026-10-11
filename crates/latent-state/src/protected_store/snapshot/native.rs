@@ -1,5 +1,5 @@
 use std::io::{self, Read, Seek, SeekFrom, Write};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use latent_core::native_capacity::NativeReservation;
@@ -16,14 +16,23 @@ use latent_protected_files::{ProtectedMutableFile, ProtectedRoot};
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use std::os::unix::fs::FileExt;
 
-pub(super) struct SnapshotFile {
+pub(in crate::protected_store) struct SnapshotFile {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     file: std::fs::File,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     fence: ProtectedMutableFile,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     root: ProtectedRoot,
+    // Native staged engine/checkpoint destruction precedes all installed owner
+    // pins and the SAME original permit, including detached accepted work.
+    pub(in crate::protected_store) restore:
+        Mutex<crate::protected_store::restore_stage::RestoreStaging>,
     current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+    migration_owner: Mutex<Option<Arc<dyn crate::protected_store::AggregateMigrationOwners>>>,
+    restore_input_owner: Mutex<Option<Arc<dyn crate::protected_store::RestoreInputOwners>>>,
+    receipt_owner: Mutex<Option<Arc<dyn super::SnapshotReceiptOwners>>>,
+    pub(in crate::protected_store) restore_owner:
+        Mutex<Option<Arc<dyn crate::protected_store::RestoreStageOwners>>>,
     original: Arc<NativeReservation>,
 }
 
@@ -35,11 +44,36 @@ impl SnapshotFile {
         original: Arc<NativeReservation>,
         current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
     ) -> Result<Self, SnapshotError> {
+        Self::open_native(store, config, original, current, true)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn open_existing(
+        store: &PhysicalStore,
+        config: ProtectedSnapshotConfig,
+        original: Arc<NativeReservation>,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+    ) -> Result<Self, SnapshotError> {
+        Self::open_native(store, config, original, current, false)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn open_native(
+        store: &PhysicalStore,
+        config: ProtectedSnapshotConfig,
+        original: Arc<NativeReservation>,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+        create: bool,
+    ) -> Result<Self, SnapshotError> {
         original
             .with_live(|| ())
             .map_err(|_| SnapshotError::Deadline)?;
         current().map_err(SnapshotError::Review)?;
-        let root = ProtectedRoot::open(&config.root).map_err(|_| SnapshotError::Output)?;
+        let ProtectedSnapshotConfig {
+            root: snapshot_root,
+            file_name,
+        } = config;
+        let root = ProtectedRoot::open(&snapshot_root).map_err(|_| SnapshotError::Output)?;
         if !store
             .is_separate_root(&root)
             .map_err(|_| SnapshotError::Source(StoreError::Unavailable))?
@@ -49,15 +83,23 @@ impl SnapshotFile {
         }
         // No overwrite or reclassification of an interrupted prior export.
         // A partial file remains private and cannot pass complete readback.
-        let (file, fence) = root
-            .create_mutable_file(&config.file_name, SNAPSHOT_FILE_BYTES)
-            .map_err(|_| SnapshotError::Output)?;
+        let (file, fence) = if create {
+            root.create_mutable_file(&file_name, SNAPSHOT_FILE_BYTES)
+        } else {
+            root.open_mutable_file(&file_name, SNAPSHOT_FILE_BYTES, false)
+        }
+        .map_err(|_| SnapshotError::Output)?;
         file.try_lock().map_err(|_| SnapshotError::Output)?;
         let result = Self {
             file,
             fence,
             root,
+            restore: Mutex::new(crate::protected_store::restore_stage::RestoreStaging::default()),
             current,
+            migration_owner: Mutex::new(None),
+            restore_input_owner: Mutex::new(None),
+            receipt_owner: Mutex::new(None),
+            restore_owner: Mutex::new(None),
             original,
         };
         result.check().map_err(|_| SnapshotError::Output)?;
@@ -74,18 +116,28 @@ impl SnapshotFile {
         Err(SnapshotError::Review(StoreError::UnsupportedFormat))
     }
 
-    pub(super) fn deadline(&self) -> Instant {
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    pub(in crate::protected_store) fn open_existing(
+        _: &PhysicalStore,
+        _: ProtectedSnapshotConfig,
+        _: Arc<NativeReservation>,
+        _: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+    ) -> Result<Self, SnapshotError> {
+        Err(SnapshotError::Review(StoreError::UnsupportedFormat))
+    }
+
+    pub(in crate::protected_store) fn deadline(&self) -> Instant {
         self.original.original_deadline()
     }
 
-    pub(super) fn cursor(&self) -> SnapshotCursor<'_> {
+    pub(in crate::protected_store) fn cursor(&self) -> SnapshotCursor<'_> {
         SnapshotCursor {
             file: self,
             offset: 0,
         }
     }
 
-    fn check(&self) -> io::Result<()> {
+    pub(in crate::protected_store) fn check(&self) -> io::Result<()> {
         self.original
             .with_live(|| ())
             .map_err(|_| io::Error::other("original snapshot deadline/currentness refused"))?;
@@ -97,23 +149,121 @@ impl SnapshotFile {
         Ok(())
     }
 
+    pub(in crate::protected_store) fn original(&self) -> &NativeReservation {
+        &self.original
+    }
+
+    pub(in crate::protected_store) fn retain_original(&self) -> Arc<NativeReservation> {
+        Arc::clone(&self.original)
+    }
+
+    pub(in crate::protected_store) fn retain_current(
+        &self,
+    ) -> Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync> {
+        Arc::clone(&self.current)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn is_separate_root(
+        &self,
+        other: &ProtectedRoot,
+    ) -> Result<bool, StoreError> {
+        self.check().map_err(|_| StoreError::Unavailable)?;
+        self.root
+            .is_separate_from(other)
+            .map_err(|_| StoreError::Unavailable)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(in crate::protected_store) fn is_separate_store(
+        &self,
+        store: &PhysicalStore,
+    ) -> Result<bool, StoreError> {
+        self.check().map_err(|_| StoreError::Unavailable)?;
+        store
+            .is_separate_root(&self.root)
+            .map_err(|_| StoreError::Unavailable)
+    }
+
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    pub(in crate::protected_store) fn is_separate_store(
+        &self,
+        _: &PhysicalStore,
+    ) -> Result<bool, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
+
+    pub(super) fn retain_receipt_owner(
+        &self,
+        owner: &Arc<dyn super::SnapshotReceiptOwners>,
+    ) -> Result<(), StoreError> {
+        let mut held = self
+            .receipt_owner
+            .lock()
+            .map_err(|_| StoreError::Unavailable)?;
+        match held.as_ref() {
+            Some(original) if Arc::ptr_eq(original, owner) => Ok(()),
+            Some(_) => Err(StoreError::Conflict),
+            None => {
+                *held = Some(Arc::clone(owner));
+                Ok(())
+            }
+        }
+    }
+
+    pub(in crate::protected_store) fn retain_migration_owner(
+        &self,
+        owner: &Arc<dyn crate::protected_store::AggregateMigrationOwners>,
+    ) -> Result<(), StoreError> {
+        let mut held = self
+            .migration_owner
+            .lock()
+            .map_err(|_| StoreError::Unavailable)?;
+        match held.as_ref() {
+            Some(original) if Arc::ptr_eq(original, owner) => Ok(()),
+            Some(_) => Err(StoreError::Conflict),
+            None => {
+                *held = Some(Arc::clone(owner));
+                Ok(())
+            }
+        }
+    }
+
+    pub(in crate::protected_store) fn retain_restore_input_owner(
+        &self,
+        owner: &Arc<dyn crate::protected_store::RestoreInputOwners>,
+    ) -> Result<(), StoreError> {
+        let mut held = self
+            .restore_input_owner
+            .lock()
+            .map_err(|_| StoreError::Unavailable)?;
+        match held.as_ref() {
+            Some(original) if Arc::ptr_eq(original, owner) => Ok(()),
+            Some(_) => Err(StoreError::Conflict),
+            None => {
+                *held = Some(Arc::clone(owner));
+                Ok(())
+            }
+        }
+    }
+
     pub(super) fn verify(
         &self,
-        expected: SnapshotReceipt,
+        expected: &SnapshotReceipt,
         validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
     ) -> Result<SnapshotReceipt, SnapshotError> {
         self.check().map_err(|_| SnapshotError::Output)?;
         let actual = inspect_snapshot(&mut self.cursor(), self.deadline(), validate_row)
             .map_err(SnapshotError::Review)?;
         self.check().map_err(|_| SnapshotError::Output)?;
-        if actual != expected {
+        if &actual != expected {
             return Err(SnapshotError::Review(StoreError::Corrupt));
         }
         Ok(actual)
     }
 }
 
-pub(super) struct SnapshotCursor<'a> {
+pub(in crate::protected_store) struct SnapshotCursor<'a> {
     file: &'a SnapshotFile,
     offset: u64,
 }

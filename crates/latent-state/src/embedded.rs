@@ -14,15 +14,17 @@ use std::{
     time::{Duration, Instant},
 };
 
+/// Logical records-v1 snapshot identity. Startup metadata is independently
+/// upgraded through the bounded v1-to-v2 transition without changing these rows.
 pub const STORE_FORMAT: &str = "latent.transaction-store.v1";
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
 static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
 
 mod bounded_file;
-mod format;
 pub use bounded_file::StoreFileStatus;
 mod compaction;
+mod format;
 pub use compaction::{CompactionLimits, CompactionReport, CompactionStop};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -159,6 +161,9 @@ pub struct EmbeddedStore {
     reclamation: AtomicBool,
 }
 impl EmbeddedStore {
+    pub(crate) fn limits(&self) -> StoreLimits {
+        self.limits
+    }
     /// Must run on the node's bounded physical I/O owner. Never truncate or reset
     /// an existing file on any error. redb owns the descriptor and exclusive lock.
     pub fn open_file(file: File, limits: StoreLimits) -> Result<Self, StoreError> {
@@ -625,6 +630,33 @@ impl ReadView {
             return Err(StoreError::Corrupt);
         }
         Ok(value.map(|v| v.value().to_vec()))
+    }
+
+    /// Closed recovery readback comparison. The native row stays borrowed from
+    /// this finite view, avoiding a second maximum-size owned value beside the
+    /// authenticated stream row. No transaction/guard/native slice escapes.
+    pub(crate) fn matches_row(&self, key: &RowKey, expected: &[u8]) -> Result<bool, StoreError> {
+        if self.opened.elapsed() > self.limits.maximum_view_age {
+            return Err(StoreError::SnapshotExpired);
+        }
+        if expected.len() > self.limits.maximum_value_bytes {
+            return Err(StoreError::Capacity);
+        }
+        let key = key.encoded(self.limits)?;
+        let table = self
+            .tx
+            .as_ref()
+            .expect("retained view")
+            .open_table(ROWS)
+            .map_err(|_| StoreError::Corrupt)?;
+        let value = table.get(key.as_slice()).map_err(|_| StoreError::Corrupt)?;
+        if value
+            .as_ref()
+            .is_some_and(|row| row.value().len() > self.limits.maximum_value_bytes)
+        {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(value.is_some_and(|row| row.value() == expected))
     }
 
     /// One indexed existence observation without copying an arbitrary stored
