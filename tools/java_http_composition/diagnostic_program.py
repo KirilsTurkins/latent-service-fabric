@@ -119,6 +119,38 @@ def _absent_policies(client, program):
     return observed
 
 
+def private_store(work, cutoff, evidence=None):
+    """Capture every path in the stopped node's protected data root.
+
+    The maintained container storage scanner owns descriptor-anchored traversal,
+    content hashes and complete hardlink-group validation. No store bytes are
+    copied into the candidate; the full bounded inventory stays in local evidence.
+    """
+    require(sys.platform == "linux" and os.geteuid() > 0, "java-diagnostic-private-store-linux-owner")
+    from tools.container_runtime import storage
+
+    owner = (os.geteuid(), os.getegid())
+    before = storage.scan(work, cutoff, roots=("data",), owner=owner, retain_identity=True)
+    require(before["data"]["kind"] == "directory" and before["data"]["mode"] & 0o077 == 0,
+            "java-diagnostic-private-store-protected-root")
+    require(storage.scan(work, cutoff, roots=("data",), owner=owner, retain_identity=True) == before,
+            "java-diagnostic-private-store-changed")
+    captured = json.dumps(before, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    require(len(captured) <= 4 * 1024 * 1024, "java-diagnostic-private-store-inventory-bound")
+    receipt = {"sha256": "sha256:" + hashlib.sha256(captured).hexdigest(), "bytes": len(captured),
+               "entries": len(before), "files": sum(row["kind"] == "file" for row in before.values()),
+               "ownerUid": owner[0], "ownerGid": owner[1], "root": "data"}
+    if evidence is not None:
+        inventory = evidence / "private-store-capture.json"
+        with inventory.open("xb") as stream:
+            stream.write(captured)
+        inventory.chmod(0o400)
+        require(file_identity(inventory, 4 * 1024 * 1024) ==
+                {"sha256": receipt["sha256"], "bytes": receipt["bytes"]},
+                "java-diagnostic-private-store-inventory-changed")
+    return receipt
+
+
 @contextmanager
 def session(binary, cli, work, config, output, original_clock, *, ordinal):
     output.mkdir(mode=0o700)
@@ -134,7 +166,8 @@ def session(binary, cli, work, config, output, original_clock, *, ordinal):
             stop(client, node)
             closed = stopped_record(node)
             provider_timeout.verify_shutdown(closed)
-            record.update(cleanPhysicalRetirement=True, shutdown=closed)
+            capture = private_store(work, deadline(original_clock), output)
+            record.update(cleanPhysicalRetirement=True, shutdown=closed, privateStoreCapture=capture)
         finally:
             if node is not None:
                 client.node = None
@@ -225,6 +258,21 @@ def _review(candidate, approved_sha256):
             and set(value["cases"]) in ({"current"}, {"current", "former"})
             and all(row["physical"]["cleanPhysicalRetirement"] is True for row in value["cases"].values()),
             "java-diagnostic-original-preparation-required")
+    for name, prepared in value["cases"].items():
+        capture = prepared["physical"].get("privateStoreCapture")
+        require(isinstance(capture, dict) and capture.get("root") == "data"
+                and type(capture.get("entries")) is int and capture["entries"] >= 1
+                and type(capture.get("files")) is int and capture["files"] >= 0
+                and type(capture.get("ownerUid")) is int and capture["ownerUid"] > 0
+                and type(capture.get("ownerGid")) is int and capture["ownerGid"] > 0
+                and type(capture.get("bytes")) is int and 0 < capture["bytes"] <= 4 * 1024 * 1024
+                and isinstance(capture.get("sha256"), str)
+                and re.fullmatch(r"sha256:[0-9a-f]{64}", capture["sha256"]),
+                "java-diagnostic-original-private-store-capture-required")
+        inventory = candidate.parent / (name + "-prepare") / "private-store-capture.json"
+        require(file_identity(inventory, 4 * 1024 * 1024) ==
+                {"sha256": capture["sha256"], "bytes": capture["bytes"]},
+                "java-diagnostic-original-private-store-inventory-changed")
     return value
 
 
@@ -324,6 +372,8 @@ def execute(native_directory, native_receipt, builds, releases, output, *, appro
                 require(prepared["configFile"] == "node.json", "java-diagnostic-original-config-name")
                 config = work / prepared["configFile"]
                 require(file_identity(config, 262144) == prepared["configSha256"], "java-diagnostic-retained-config-drift")
+                require(private_store(work, cutoff) == prepared["physical"]["privateStoreCapture"],
+                        "java-diagnostic-retained-private-store-drift")
                 observed_output = output / (name + "-execute")
                 with session(binaries["latentd"], binaries["latent"], work, config, observed_output,
                              candidate["clock"], ordinal=2) as (client, node, physical):

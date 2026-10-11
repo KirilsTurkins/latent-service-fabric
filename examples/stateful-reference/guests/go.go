@@ -57,7 +57,7 @@ func Edit(request api.EditRequest) wit.Result[api.Draft, api.BusinessError] {
     event := append([]byte("draft-change-v1:"), []byte(request.DraftId)...)
     payload := state.Value{Bytes: event, MediaType: "application/octet-stream", Metadata: nil}
     intents.New("draft-change", "event", payload).Stage(command).Ok()
-    intents.New("draft-http", "put-once", payload).Stage(command).Ok()
+    intents.New("draft-http", "http", payload).Stage(command).Ok()
     if request.Reject { return wit.Err[api.Draft, api.BusinessError](api.BusinessErrorRejected) }
     return wit.Ok[api.Draft, api.BusinessError](api.Draft{DraftId: request.DraftId, Revision: revision, Units: request.Units,
         NamespaceView: command.Info().Ok().View.Version, KeyVersion: version(primary)})

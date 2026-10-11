@@ -6,7 +6,8 @@ use latent_core::{
     RouteGeneration, TenantId,
 };
 use latent_manifest::{
-    validate_deployment_document, DeploymentManifest, JsonManifestCodec, ManifestCodec,
+    DeploymentManifest, JsonManifestCodec, ManifestCodec, ManifestValidationProfile,
+    ManifestValidator,
 };
 
 use super::observation::{count, CatalogWorkOperation as WorkOperation, Work};
@@ -81,7 +82,7 @@ impl DirectoryDeploymentRepository {
             let mut versions = previous.versions.clone();
             let mut seen = BTreeSet::new();
             for deployment in deployments {
-                let deployment = normalize(deployment, &mut work)?;
+                let deployment = normalize(deployment, &mut work, self.config.manifest_profile)?;
                 if !seen.insert(deployment.id.clone()) {
                     return Err(error(
                         PlatformErrorCode::AlreadyExists,
@@ -131,7 +132,7 @@ impl DirectoryDeploymentRepository {
             if deployment.metadata.tenant.as_ref() != Some(tenant) {
                 return Err(scope_conflict());
             }
-            let deployment = normalize(deployment, &mut work)?;
+            let deployment = normalize(deployment, &mut work, self.config.manifest_profile)?;
             let publication = self.read_publication();
             let previous = &publication.routes;
             check_scope(
@@ -405,7 +406,10 @@ impl DeploymentStore for DirectoryDeploymentRepository {
 
     fn apply(&self, deployment: DeploymentManifest) -> BoxFuture<'_, Result<(), PlatformError>> {
         Box::pin(async move {
-            validate_deployment_document(&deployment).map_err(manifest_error)?;
+            self.config
+                .manifest_profile
+                .validate_deployment(&deployment)
+                .map_err(manifest_error)?;
             let tenant = deployment
                 .metadata
                 .tenant
@@ -457,8 +461,11 @@ impl DeploymentStore for DirectoryDeploymentRepository {
 pub(super) fn normalize(
     mut deployment: DeploymentManifest,
     work: &mut Work,
+    profile: ManifestValidationProfile,
 ) -> Result<DeploymentManifest, PlatformError> {
-    validate_deployment_document(&deployment).map_err(manifest_error)?;
+    profile
+        .validate_deployment(&deployment)
+        .map_err(manifest_error)?;
     if deployment.id.0 == "default" {
         return Err(error(
             PlatformErrorCode::AlreadyExists,

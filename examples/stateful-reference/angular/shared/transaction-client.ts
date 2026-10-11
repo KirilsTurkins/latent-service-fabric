@@ -53,8 +53,8 @@ function revision(value: unknown): string {
     throw new Error('invalid-business-revision');
   return value;
 }
-function binary(bytes: unknown): string {
-  if (!Array.isArray(bytes) || bytes.length > 256 || bytes.some(value => !Number.isInteger(value) || value < 0 || value > 255))
+function binary(bytes: unknown, kind: 'NV' | 'SV'): string {
+  if (!Array.isArray(bytes) || bytes.length !== 67 || bytes[0] !== kind.charCodeAt(0) || bytes[1] !== 86 || bytes[2] !== 2 || bytes.some(value => !Number.isInteger(value) || value < 0 || value > 255))
     throw new Error('invalid-state-observation');
   return btoa(String.fromCharCode(...bytes));
 }
@@ -113,12 +113,12 @@ export function projection(result: unknown): DraftView | {error: string} {
   const exactRevision = revision(value['revision']);
   const units = value['units'];
   if (typeof units !== 'number' || !Number.isInteger(units) || units < 0 || units > 10000) throw new Error('invalid-draft-units');
-  const namespaceView = binary(value['namespace-view']);
+  const namespaceView = binary(value['namespace-view'], 'NV');
   const optional = value['key-version'];
   if (!record(optional) || Object.keys(optional).length !== 1) throw new Error('invalid-key-observation');
   let keyVersion: string | undefined;
   if ('none' in optional && optional['none'] === null) keyVersion = undefined;
-  else if ('some' in optional) keyVersion = binary(optional['some']);
+  else if ('some' in optional) keyVersion = binary(optional['some'], 'SV');
   else throw new Error('invalid-key-observation');
   return {draftId, revision: exactRevision, units, namespaceView, keyVersion};
 }
@@ -143,10 +143,12 @@ function envelope(value: unknown): Envelope {
   if (!record(value) || value['profile'] !== PROFILE) throw new Error('unsupported-transaction-response');
   if (typeof value['disposition'] !== 'string' || !['query', 'in-progress', 'recovery-required', 'committed', 'rejected', 'aborted'].includes(value['disposition']))
     throw new Error('unknown-transaction-disposition');
-  for (const key of ['command-id', 'attempt-id']) {
+  for (const key of ['command-id']) {
     if (value[key] != null && (typeof value[key] !== 'string' || !/^[0-9a-f]{64}$/.test(value[key])))
       throw new Error('invalid-command-identity');
   }
+  if (value['attempt-id'] != null && (typeof value['attempt-id'] !== 'string' || !/^(?:[1-9]|1[0-6])$/.test(value['attempt-id'])))
+    throw new Error('invalid-attempt-identity');
   const effects = value['effect-ids'];
   if (effects != null && (!Array.isArray(effects) || effects.length > 2 || new Set(effects).size !== effects.length ||
       effects.some(id => typeof id !== 'string' || !id || id.length > 256))) throw new Error('invalid-effect-identities');

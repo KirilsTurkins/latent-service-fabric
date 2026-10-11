@@ -9,7 +9,7 @@ description = "Typed Rust SDK with an explicitly bounded shared RPC transport."
 
 [features]
 default = ["transport"]
-transport = ["dep:latent-rpc", "dep:prost", "dep:tokio", "dep:tonic", "dep:http", "dep:http-body", "dep:hyper", "dep:hyper-util", "dep:tower", "dep:zeroize"]
+transport = ["dep:latent-rpc", "dep:prost", "dep:tokio", "dep:tonic", "dep:tonic-prost", "dep:http", "dep:http-body", "dep:hyper", "dep:hyper-util", "dep:tower", "dep:zeroize"]
 
 [lints]
 workspace = true
@@ -20,6 +20,7 @@ latent-rpc = { path = "../../crates/latent-rpc", optional = true }
 prost = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["net", "io-util"], optional = true }
 tonic = { workspace = true, optional = true }
+tonic-prost = { workspace = true, optional = true }
 http = { version = "=1.5.0", optional = true }
 http-body = { workspace = true, optional = true }
 hyper = { version = "=1.11.1", features = ["client", "http2"], optional = true }

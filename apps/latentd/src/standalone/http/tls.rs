@@ -33,7 +33,7 @@ pub(crate) fn configuration(
     let key = Zeroizing::new(read(
         key,
         16 * 1024,
-        ProtectedFilePolicy::SecretLeaf,
+        ProtectedFilePolicy::Secret,
         "httpIngress.privateKeyProtection",
     )?);
     let certificates = CertificateDer::pem_slice_iter(&certificate)

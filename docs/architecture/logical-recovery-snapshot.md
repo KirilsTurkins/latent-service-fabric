@@ -5,6 +5,24 @@ transaction engine. It streams each logical family in key order, preserving
 original state, namespace operation receipts, commands, results, inbox and
 outbox bytes. It does not copy a live database file or execute a provider.
 
+The current protected profile uses the original snapshot-v2 manifest and
+complete source-store identity. Its migration-v2 progress remains bounded to
+8 KiB and its protected checkpoint, staged restore, adoption and current
+authorization fences run on the existing `ProtectedStoreOwner` workers.
+These identities are separate from the bounded startup SV2 header upgrade;
+logical records still retain the transaction-store-v1 identity.
+
+The original snapshot-v1, aggregate-migration-v1 and namespace-resume-v1
+codecs and logical plans remain explicit under `latent_state::recovery::v1`.
+The `latent_state::recovery::offline` address re-exports that profile's existing
+`OfflineRecoverySource`; it opens the same selected engine and storage workers.
+Its progress retains the original 16 KiB limit and reviewed recipe bytes.
+Choosing this profile does not reinterpret v2 manifests or grant recovery
+permission. Its writers refuse installed v2 tenant accounting or v2 progress;
+protected v2 accounting refuses retained v1 producers without a separately
+reviewed migration. There is no automatic format fallback or silent upgrade.
+Normal activation also refuses incomplete migration in either profile.
+
 The first profile requires every namespace to be quiesced and no retained native
 read view. The offline control owner must also drain actual command, dispatch,
 acknowledgement and maintenance owners before opening the exclusive source

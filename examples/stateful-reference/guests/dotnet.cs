@@ -49,7 +49,7 @@ public class ApiExportsImpl : IApiExports
         byte[] eventBytes = Encoding.UTF8.GetBytes("draft-change-v1:" + request.draftId);
         var payload = new Raw.Value(eventBytes, "application/octet-stream", []);
         _ = new Intent("draft-change", "event", payload).Stage(command).AsOk;
-        _ = new Intent("draft-http", "put-once", payload).Stage(command).AsOk;
+        _ = new Intent("draft-http", "http", payload).Stage(command).AsOk;
         if (request.reject) return Result<IApiExports.Draft, IApiExports.BusinessError>.Err(IApiExports.BusinessError.REJECTED);
         return Result<IApiExports.Draft, IApiExports.BusinessError>.Ok(new(request.draftId, revision, request.units,
             command.Info().AsOk.view.version, primary.HasValue ? primary.Value.version : null));

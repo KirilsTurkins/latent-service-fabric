@@ -10,6 +10,8 @@ import unittest
 from tools import stateful_reference_project as app
 from tools.rust_capsule_project import snapshot
 
+HTTP_PROFILE = "qualified-http-v1:" + "a" * 64
+
 
 class StatefulReferenceProject(unittest.TestCase):
     def test_six_real_creators_keep_exact_sdk_closures_and_language_runtime_worlds(self):
@@ -42,34 +44,25 @@ class StatefulReferenceProject(unittest.TestCase):
                     self.assertEqual((after["stateReadBytes"], after["stateWriteBytes"], after["effectCount"]), (4096, 1024, 2))
 
     def test_six_notification_captures_package_exact_profile_bytes_without_grants(self):
-        import base64
         from tools.transaction_guest_project import HTTP_REQUIREMENTS, package_effect_requirements
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             for language in app.LANGUAGES:
                 with self.subTest(language=language):
-                    project = app.create(root / language, language, draft_id="alice")
+                    project = app.create(root / language, language, draft_id="alice", http_profile=HTTP_PROFILE)
                     files = snapshot(project)
                     model = json.loads(files["capsule-project.json"])
                     requirements = json.loads(files[HTTP_REQUIREMENTS])
-                    self.assertEqual(requirements["scope"]["namespace"], "order-drafts-alice")
-                    self.assertEqual(requirements["scope"]["companionDigest"],
-                                     "sha256:" + hashlib.sha256(files["transaction-binding.json"]).hexdigest())
-                    self.assertEqual(requirements["intent"]["binding"], "draft-http")
-                    self.assertEqual(requirements["intent"]["operation"], "put-once")
-                    self.assertEqual(requirements["intent"]["count"], 1)
-                    self.assertIsNone(requirements["intent"]["requestedExpiryUnixMillis"])
-                    payload = requirements["intent"]["payload"]
-                    self.assertEqual(base64.b64decode(payload["bytes"], validate=True), b"draft-change-v1:alice")
-                    self.assertEqual(payload["mediaType"], "application/octet-stream")
-                    self.assertEqual(payload["metadata"], [])
-                    self.assertEqual(requirements["contract"]["maximumBodyBytes"], 21)
-                    self.assertEqual(requirements["ceiling"]["maximumPayloadBytes"], "21")
-                    self.assertEqual(requirements["authority"], {"installed": False, "ruleGranted": False, "executionQualified": False})
-                    output = root / (language + "-package")
-                    output.mkdir()
-                    self.assertEqual(package_effect_requirements(output, model, files),
-                                     (HTTP_REQUIREMENTS, "asset", "application/json"))
+                    self.assertEqual(requirements["namespace"], "order-drafts-alice")
+                    self.assertEqual(requirements["companionDigest"], "sha256:" + hashlib.sha256(files["transaction-binding.json"]).hexdigest())
+                    self.assertEqual((requirements["binding"], requirements["operation"]), ("draft-http", "http"))
+                    self.assertEqual((requirements["adapter"], requirements["payloadFormat"]), ("qualified-http-effect-v1", "http-body-value-v1"))
+                    self.assertEqual(requirements["idempotencyProfile"], HTTP_PROFILE)
+                    self.assertEqual(requirements["ceiling"], {"maximum_payload_bytes": 1024, "maximum_response_bytes": 22528,
+                        "maximum_attempts": 3, "maximum_age_millis": 600000, "attempt_timeout_millis": 2000})
+                    self.assertNotIn("authority", requirements)
+                    output = root / (language + "-package"); output.mkdir()
+                    self.assertEqual(package_effect_requirements(output, model, files), (HTTP_REQUIREMENTS, "asset", "application/json"))
                     self.assertEqual((output / HTTP_REQUIREMENTS).read_bytes(), files[HTTP_REQUIREMENTS])
                     self.assertEqual(snapshot(project), files)
 
@@ -78,57 +71,55 @@ class StatefulReferenceProject(unittest.TestCase):
         from tools.transaction_guest_project import HTTP_REQUIREMENTS, package_effect_requirements
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            project = app.create(root / "source", "java", draft_id="bob")
-            files = snapshot(project)
-            model = json.loads(files["capsule-project.json"])
-            original = json.loads(files[HTTP_REQUIREMENTS])
-            changes = (("scope", "namespace", "order-drafts-alice"),
-                       ("scope", "companionDigest", "sha256:" + "0" * 64),
-                       ("intent", "binding", "qualified-http"), ("intent", "count", 2),
-                       ("intent", "requestedExpiryUnixMillis", "1"),
-                       ("authority", "installed", True), ("ceiling", "maximumPayloadBytes", "65536"))
+            project = app.create(root / "source", "java", draft_id="bob", http_profile=HTTP_PROFILE)
+            files = snapshot(project); model = json.loads(files["capsule-project.json"]); original = json.loads(files[HTTP_REQUIREMENTS])
             mutated = []
-            for group, key, value in changes:
-                changed = copy.deepcopy(original)
-                changed[group][key] = value
-                mutated.append(changed)
-            for key, value in (("bytes", "AA=="), ("mediaType", "application/vnd.lsf.order-draft-v1"),
-                               ("metadata", [["authorization", "synthetic-not-a-credential"]])):
-                changed = copy.deepcopy(original)
-                changed["intent"]["payload"][key] = value
-                mutated.append(changed)
-            for index, changed in enumerate(mutated):
+            for key,value in (("namespace","order-drafts-alice"),("companionDigest","sha256:"+"0"*64),
+                    ("binding","qualified-http"),("operation","put-once"),("idempotencyProfile","qualified-http-v1:"+"b"*64),
+                    ("adapter","qualified-http-put-once-v1"),("payloadFormat","http-put-once-bytes-v1"),
+                    ("count",2),("requestedExpiryUnixMillis","1"),("authority",{"installed":True}),
+                    ("payload",{"bytes":"AA==","mediaType":"application/vnd.lsf.order-draft-v1","metadata":[["authorization","synthetic-not-a-credential"]]})):
+                changed=copy.deepcopy(original);changed[key]=value;mutated.append(changed)
+            for key,value in (("maximum_payload_bytes",65536),("maximum_response_bytes",2048),("maximum_attempts",4)):
+                changed=copy.deepcopy(original);changed["ceiling"][key]=value;mutated.append(changed)
+            for index,changed in enumerate(mutated):
                 with self.subTest(index=index):
-                    candidate = dict(files)
-                    candidate[HTTP_REQUIREMENTS] = json.dumps(changed).encode()
-                    output = root / ("refused-" + str(index))
-                    output.mkdir()
-                    with self.assertRaisesRegex(ValueError, "deferred-http-requirements-drift"):
-                        package_effect_requirements(output, model, candidate)
-                    self.assertEqual(list(output.iterdir()), [])
+                    candidate=dict(files);candidate[HTTP_REQUIREMENTS]=json.dumps(changed).encode()
+                    output=root/("refused-"+str(index));output.mkdir()
+                    with self.assertRaisesRegex(ValueError,"deferred-http-requirements-drift"):
+                        package_effect_requirements(output,model,candidate)
+                    self.assertEqual(list(output.iterdir()),[])
 
     def test_notification_selector_requires_exact_namespace_and_command_query_contract(self):
         import copy
-        from tools.transaction_guest_project import put_once_requirements
+        from tools.transaction_guest_project import reference_http_requirements
         with tempfile.TemporaryDirectory() as temporary:
-            project = app.create(Path(temporary) / "source", "rust", draft_id="a" * 32)
-            files = snapshot(project)
-            model = json.loads(files["capsule-project.json"])
-            declaration = json.loads(files["transaction-binding.json"])
-            self.assertEqual(put_once_requirements(model, files["transaction-binding.json"])["contract"]["maximumBodyBytes"], 48)
-            for namespace in ("orders", "order-drafts-Alice", "order-drafts-", "order-drafts-" + "a" * 33):
-                changed = dict(declaration, namespace=namespace)
-                with self.subTest(namespace=namespace), self.assertRaises(ValueError):
-                    put_once_requirements(model, json.dumps(changed).encode())
-            changed = copy.deepcopy(declaration)
-            changed["operations"][0]["operation"] = "update"
-            with self.assertRaisesRegex(ValueError, "order-draft notification binding"):
-                put_once_requirements(model, json.dumps(changed).encode())
+            project=app.create(Path(temporary)/"source","rust",draft_id="a"*32,http_profile=HTTP_PROFILE)
+            files=snapshot(project);model=json.loads(files["capsule-project.json"]);declaration=json.loads(files["transaction-binding.json"])
+            self.assertEqual(reference_http_requirements(model,files["transaction-binding.json"],HTTP_PROFILE)["namespace"],"order-drafts-"+"a"*32)
+            for namespace in ("orders","order-drafts-Alice","order-drafts-","order-drafts-"+"a"*33):
+                with self.subTest(namespace=namespace),self.assertRaises(ValueError):
+                    reference_http_requirements(model,json.dumps(dict(declaration,namespace=namespace)).encode(),HTTP_PROFILE)
+            changed=copy.deepcopy(declaration);changed["operations"][0]["operation"]="update"
+            with self.assertRaisesRegex(ValueError,"order-draft notification binding"):
+                reference_http_requirements(model,json.dumps(changed).encode(),HTTP_PROFILE)
+
+    def test_unconfigured_http_emits_no_obsolete_descriptor_and_invalid_profile_writes_nothing(self):
+        from tools.transaction_guest_project import HTTP_REQUIREMENTS
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);project=app.create(root/"source","rust")
+            self.assertFalse((project/HTTP_REQUIREMENTS).exists())
+            self.assertNotIn("httpProfile",json.loads((project/"order-draft-source.json").read_bytes()))
+            for index,profile in enumerate(("retained-put-once-v1","qualified-http-v1:"+"A"*64,"https://private.invalid/token")):
+                output=root/str(index)
+                with self.assertRaisesRegex(ValueError,"configured qualified HTTP"):
+                    app.create(output,"rust",http_profile=profile)
+                self.assertFalse(output.exists())
 
     def test_draft_identity_is_bounded_before_the_language_creator_can_write(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for ordinal, draft in enumerate(("", "-alice", "Alice", "a/b", "a\x00b", "a" * 33, "é")):
+            for ordinal, draft in enumerate(("", "-alice", "Alice", "a/b", "a\x00b", "a" * 33, "Ã©")):
                 with self.subTest(draft=draft):
                     output = root / str(ordinal)
                     with self.assertRaisesRegex(ValueError, "order-draft identity"):

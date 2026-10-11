@@ -52,7 +52,7 @@ public final class Capsule implements Bindings.Exports {
             byte[] event = ("draft-change-v1:" + request.draftId()).getBytes(StandardCharsets.UTF_8);
             var payload = new Bindings.LatentStateKeyValueValue(event, "application/octet-stream", List.of());
             new Intent("draft-change", "event", payload).stage(command).value();
-            new Intent("draft-http", "put-once", payload).stage(command).value();
+            new Intent("draft-http", "http", payload).stage(command).value();
             if (request.reject()) return Result.err(Bindings.ExamplesOrderDraftApiBusinessError.Rejected);
             return Result.ok(new Bindings.ExamplesOrderDraftApiDraft(request.draftId(), new Unsigned64(revision), request.units(),
                 command.info().value().view().version(), version(primary)));

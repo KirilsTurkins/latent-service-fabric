@@ -27,7 +27,8 @@ the host-owned committed token for the next query.
 
 Both effects carry the exact per-draft notification `draft-change-v1:<draft-id>`
 as `application/octet-stream`, with empty metadata. The project captures its
-bounded HTTP requirements alongside the signed transaction companion. A recipient
+bounded HTTP requirements alongside the signed transaction companion when the
+configured adapter's exact profile is supplied. A recipient
 can use a fresh authorized query to obtain current state after a notification;
 the notification's original effect identity remains attached to its commitment.
 
@@ -42,6 +43,15 @@ python tools/stateful_reference_project.py --language go --draft-id alice --outp
 python tools/stateful_reference_project.py --language java --draft-id alice --output ../order-draft-java
 python tools/stateful_reference_project.py --language dotnet --draft-id alice --output ../order-draft-dotnet
 ```
+
+These commands create editable sources without selecting an HTTP provider.
+To capture the installed adapter requirements, add
+`--http-profile "qualified-http-v1:<configured endpoint digest>"` at creation.
+Use the actual configured adapter's profile; a project creator cannot invent it.
+The closed signed document selects `qualified-http-effect-v1`, operation `http`
+and `http-body-value-v1`, with a 22,528-byte response allowance. Without the
+profile, no obsolete put-once descriptor is emitted. Staging and dispatch still
+need independently installed current rules and grants.
 
 The captured SDK and original template lock remain unchanged. The ordinary
 language build captures the edited application source and binding inputs.

@@ -112,6 +112,75 @@ class CompatibilityReport(unittest.TestCase):
 
 
 class FinalComponentInspection(unittest.TestCase):
+    def test_phase4_catalog_requires_captured_profile_companion_links_schema_and_wit(self):
+        from tools.java_transaction_schema import create
+        from tools.rust_capsule_project import snapshot
+        with tempfile.TemporaryDirectory() as temporary:
+            files = snapshot(create(Path(temporary) / "project", "legacy-v1"))
+        self.assertEqual(build.host_abi()["id"], PROFILE)
+        self.assertEqual(build.host_abi({})["id"], PROFILE)
+        self.assertEqual(build.host_abi(files)["id"], "lsf-host-abi-phase4-v1")
+        for name in ("transaction-profile.json", "state-schema.json",
+                     "wit/deps/state/package.wit", "wit/deps/intents/package.wit"):
+            changed = dict(files)
+            changed[name] += b" "
+            with self.assertRaises(DevError):
+                build.host_abi(changed)
+        # An authored companion can be reformatted; its new raw digest belongs
+        # to its new captured package, never to an old verification receipt.
+        self.assertEqual(build.host_abi({**files, "transaction-binding.json": files["transaction-binding.json"] + b" "})["id"],
+                         "lsf-host-abi-phase4-v1")
+        for name in ("transaction-profile.json", "transaction-binding.json", "capsule-project.json", "state-schema.json"):
+            changed = {key: value for key, value in files.items() if key != name}
+            with self.assertRaises(DevError):
+                build.host_abi(changed)
+        binding = json.loads(files["transaction-binding.json"])
+        for name, value in (("capsule", "examples/other"), ("deployment", "other"),
+                            ("binding", "other"), ("hostAbiDigest", DIGEST), ("profile", "automatic-transaction")):
+            changed = {**files, "transaction-binding.json": encode({**binding, name: value})}
+            with self.assertRaises(DevError):
+                build.host_abi(changed)
+
+    def test_phase4_recognition_does_not_install_providers_grant_capabilities_or_allow_immediate_http(self):
+        from tools.java_transaction_schema import create
+        from tools.rust_capsule_project import snapshot
+        with tempfile.TemporaryDirectory() as temporary:
+            files = snapshot(create(Path(temporary) / "project", "compatible-v2"))
+        selected = build.host_abi(files)
+        imports = ["latent:state/key-value@0.2.0", "latent:intents/staging@0.1.0"]
+        self.assertEqual([item["classification"] for item in c.import_findings(imports, imports, selected)],
+                         ["unresolved-behavior"])
+        for installed, granted, expected in ((set(), set(), "missing-provider"), (set(imports), set(), "missing-grant")):
+            self.assertEqual([item["classification"] for item in c.import_findings(imports, imports, selected,
+                             installed=installed, granted=granted)], [expected, expected])
+        self.assertEqual(c.import_findings([HTTP], [HTTP], selected)[0]["classification"], "unknown-import")
+
+    def test_phase4_package_and_failure_reports_keep_original_catalog_and_stale_inputs_fail_closed(self):
+        from tools.java_transaction_schema import create
+        from tools.rust_capsule_project import inventory, snapshot
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            files = snapshot(create(root / "project", "writer-v2"))
+            output = root / "observations"
+            output.mkdir()
+            component = b"unit-test-retained-component"
+            (output / "component.wasm").write_bytes(component)
+            (output / "source-inputs.json").write_bytes(inventory(files))
+            inspection = {"componentDigest": digest(component), "hostAbiDigest": digest(encode(build.host_abi(files))),
+                          "findings": [c.finding("unresolved-behavior", "invocation", "not-evaluated")]}
+            (output / "compatibility-inspection.json").write_bytes(encode(inspection))
+            build.package_report(output, files, component)
+            packaged = c.read((output / "compatibility-report.json").read_bytes())
+            self.assertEqual(packaged["runtimeProfile"], "lsf-host-abi-phase4-v1")
+            self.assertEqual((packaged["authority"], packaged["status"]), ("none", "incomplete"))
+            build.failure_report(output, "java", "compatibility", files=files)
+            failed = c.read((output / "compatibility-report.json").read_bytes())
+            self.assertEqual((failed["runtimeProfile"], failed["authority"]), ("lsf-host-abi-phase4-v1", "none"))
+            inspection["hostAbiDigest"] = DIGEST
+            (output / "compatibility-inspection.json").write_bytes(encode(inspection))
+            build.failure_report(output, "java", "compile", files=files)
+            self.assertEqual(json.loads((output / "compatibility-report-failed.json").read_bytes())["status"], "unavailable")
+
     def test_actual_java_type_interface_is_structural_without_installing_or_granting_a_provider(self):
         raw = (Path(__file__).parent / "fixtures/java-type-imports/final-wit-102f61b1.json").read_bytes()
         self.assertEqual(digest(raw), "sha256:fa52df37a921a12fcfed9fc1fb499ee9848291daa01de04bdce572e0f7a0cf4d")

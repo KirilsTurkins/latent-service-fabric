@@ -1,11 +1,9 @@
-//! Recovery resources are installed in the original fixed startup profile.
-//! These compatibility ports validate that profile; they cannot grow capacity.
-use super::{
-    StoreIoAdmissionError, StoreIoError, StoreIoJob, StoreIoKind, StoreIoOwner,
-    StoreIoRecoveryLimits,
-};
+//! Recovery compatibility projections over the immutable physical partition.
+//! The constructor preallocates every queue and fixed worker before admission.
 
-pub type StoreIoRecoveryCapacity = StoreIoRecoveryLimits;
+use super::{StoreIoAdmissionError, StoreIoError, StoreIoJob, StoreIoKind, StoreIoOwner};
+
+pub type StoreIoRecoveryCapacity = super::StoreIoRecoveryLimits;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StoreIoRecoverySnapshot {
@@ -17,9 +15,8 @@ pub struct StoreIoRecoverySnapshot {
 }
 
 impl<S: Send + Sync + 'static> StoreIoOwner<S> {
-    /// Confirm the exact recovery partition selected before worker creation.
-    /// Missing configuration, changed limits or a live owner cannot install or
-    /// displace workers, queues, buffers or reservations after startup.
+    /// Validate the constructor's SAME immutable recovery partition. Never
+    /// create workers, change limits, or displace an accepted physical owner.
     pub fn install_recovery_capacity(
         &self,
         reserve: StoreIoRecoveryCapacity,
@@ -33,14 +30,14 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         if state.closed {
             return Err(StoreIoError::AdmissionClosed);
         }
-        if state.accepted != 0 || state.limits.recovery != Some(reserve) {
+        if state.limits.recovery != Some(reserve) {
             return Err(StoreIoError::InvalidLimits);
         }
         Ok(())
     }
 
-    /// Use the existing fixed recovery lane after current purpose-specific
-    /// authorization. Its writes share the original single-writer fence.
+    /// Use only after original purpose-specific authority has accepted this
+    /// work. The reserve shares the same physical writer and lifetime ledger.
     #[allow(clippy::result_large_err)]
     pub fn submit_recovery<T: Send + 'static, F: FnOnce(&S) -> T + Send + 'static>(
         &self,
@@ -48,10 +45,9 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         bytes: u64,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
-        let kind = if kind.is_write() {
-            StoreIoKind::RecoveryWrite
-        } else {
-            StoreIoKind::RecoveryRead
+        let kind = match kind {
+            StoreIoKind::Read | StoreIoKind::RecoveryRead => StoreIoKind::RecoveryRead,
+            StoreIoKind::Write | StoreIoKind::RecoveryWrite => StoreIoKind::RecoveryWrite,
         };
         self.submit(kind, bytes, operation)
     }

@@ -5,11 +5,12 @@ import {DraftClient} from './transaction-client.ts';
 // These are unit transport fixtures. Real browser qualification uses the node
 // conductor and records its actual responses; no unit receipt is runtime proof.
 const routes = {command: '/draft/edit', query: '/draft/query', result: '/draft/result'};
-const commandId = 'a'.repeat(64), attemptId = 'b'.repeat(64);
-const view = Buffer.concat([Buffer.from([78, 86, 2]), Buffer.alloc(64)]).toString('base64');
+const commandId = 'a'.repeat(64), attemptId = '1';
+const namespaceToken = [78,86,2,...new Array(64).fill(0)], keyToken = [83,86,2,...new Array(64).fill(0)];
+const view = Buffer.from(namespaceToken).toString('base64');
 function response(disposition, {error, revision = '1', units = 3} = {}) {
   const draft = '{"draft-id":"demo","revision":' + revision + ',"units":' + units
-    + ',"namespace-view":[78,86,2],"key-version":{"some":[83,86,2]}}';
+    + ',"namespace-view":' + JSON.stringify(namespaceToken) + ',"key-version":{"some":' + JSON.stringify(keyToken) + '}}';
   const result = error ? '[{"err":' + JSON.stringify(error) + '}]' : '[{"ok":' + draft + '}]';
   const envelope = {profile: 'transaction-http-v1', disposition, representation: 'application-result',
     'command-id': disposition === 'query' ? null : commandId, 'attempt-id': disposition === 'query' ? null : attemptId,
@@ -144,4 +145,25 @@ test('a later response with another command identity cannot replace the original
   const original = app.last;
   await assert.rejects(app.recover(), /foreign-command-response/);
   assert.equal(app.last, original); assert.equal(app.status, 'committed');
+});
+
+
+test('actual decimal attempt identities are accepted and obsolete or malformed counters refused', async () => {
+  for (const attempt of ['1', '16']) {
+    const app = client(async () => {const e = await response('committed').json();e['attempt-id']=attempt;return new Response(JSON.stringify(e));});
+    app.prepare('demo','0',3);await app.submit();assert.equal(app.status,'committed');
+  }
+  for (const attempt of ['0','01','17','b'.repeat(64)]) {
+    const app = client(async () => {const e = await response('committed').json();e['attempt-id']=attempt;return new Response(JSON.stringify(e));});
+    app.prepare('demo','0',3);await assert.rejects(app.submit(),/invalid-attempt-identity/);assert.equal(app.status,'uncertain');
+  }
+});
+
+
+test('short or wrong-kind state observations cannot become write preconditions', async () => {
+  for (const [name,bytes] of [['namespace-view',[78,86,2]],['namespace-view',keyToken],['key-version',namespaceToken]]) {
+    const app=client(async () => {const e=await response('committed').json();const value=JSON.parse(Buffer.from(e.result['body-base64'],'base64'));
+      value[0].ok[name]=name==='key-version'?{some:bytes}:bytes;e.result['body-base64']=Buffer.from(JSON.stringify(value)).toString('base64');return new Response(JSON.stringify(e));});
+    app.prepare('demo','0',3);await assert.rejects(app.submit(),/invalid-state-observation/);assert.equal(app.status,'uncertain');
+  }
 });

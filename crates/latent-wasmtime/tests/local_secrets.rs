@@ -12,6 +12,9 @@ mod support;
 use fixture::*;
 use latent_capabilities::broker::secrets::{SecretError, SecretInvoker};
 
+#[path = "local_secrets/credential_generations.rs"]
+mod credential_generations;
+
 fn marker(first: u8, version: u8, length: u64) -> u64 {
     (u64::from(first) << 32) | (u64::from(version) << 16) | length
 }

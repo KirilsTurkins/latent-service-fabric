@@ -80,8 +80,10 @@ capture through the shared preparation owner: every observed inode's link count
 must equal all of its paths inside that same protected root. External links,
 unsafe ancestors or changes during capture refuse preparation. The strict
 single-link rule for supplied compiler and signing materials remains separate.
-This source checkpoint does not yet certify that complete physical store
-capture; it must consume the shared capture port before an actual candidate run.
+The collector consumes the maintained descriptor-anchored storage scanner after
+the node is reaped, retains the complete bounded inventory beside the candidate,
+and verifies the same private-store digest before execution. These source checks
+do not themselves establish an actual candidate or runtime qualification.
 
 The default program has two sequential retained catalogs: former preparation
 profile and current profile. Each requires eight initial records, derived from

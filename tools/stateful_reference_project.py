@@ -66,11 +66,14 @@ def application_world(seed: bytes) -> bytes:
     return (source.replace("world service {\n", insertion, 1) + auxiliary).encode("utf8")
 
 
-def create(output: Path, language: str, name: str | None = None, draft_id: str = "demo") -> Path:
+def create(output: Path, language: str, name: str | None = None, draft_id: str = "demo", *, http_profile: str | None = None) -> Path:
     if language not in LANGUAGES:
         raise ValueError("unsupported order-draft guest language")
     if not isinstance(draft_id, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,31}", draft_id):
         raise ValueError("order-draft identity must be bounded lowercase letters, digits and hyphens")
+    if http_profile is not None and (not isinstance(http_profile, str)
+            or re.fullmatch(r"qualified-http-v1:[0-9a-f]{64}", http_profile) is None):
+        raise ValueError("configured qualified HTTP idempotency profile is required")
     name = "order-draft-" + language if name is None else name
     if not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", name) or len(name) > 64:
         raise ValueError("order-draft project name must be bounded lowercase kebab case")
@@ -107,9 +110,11 @@ def create(output: Path, language: str, name: str | None = None, draft_id: str =
     declaration_path.write_text(json.dumps(declaration, indent=2) + "\n", encoding="utf8", newline="\n")
     from tools.dev_workflow.transaction_binding import validate
     validate(declaration_path.read_bytes(), capsule=project["service"], deployment=project["name"], binding=project["name"])
-    from tools.transaction_guest_project import HTTP_REQUIREMENTS, put_once_requirements
-    requirements = put_once_requirements(project, declaration_path.read_bytes())
-    (project_root / HTTP_REQUIREMENTS).write_text(json.dumps(requirements, indent=2) + "\n", encoding="utf8", newline="\n")
+    from tools.transaction_guest_project import HTTP_REQUIREMENTS, reference_http_requirements
+    (project_root / HTTP_REQUIREMENTS).unlink(missing_ok=True)
+    if http_profile is not None:
+        requirements = reference_http_requirements(project, declaration_path.read_bytes(), http_profile)
+        (project_root / HTTP_REQUIREMENTS).write_text(json.dumps(requirements, indent=2) + "\n", encoding="utf8", newline="\n")
     # The original SDK lock retains its original template provenance. Edited
     # application source is captured by the normal language build observation.
     authored = {"formatVersion": 1, "application": "order-draft-v1", "language": language, "world": WORLD,
@@ -117,6 +122,8 @@ def create(output: Path, language: str, name: str | None = None, draft_id: str =
                 "source": destination, "sourceDigest": "sha256:" + hashlib.sha256(source).hexdigest(),
                 "witDigest": "sha256:" + hashlib.sha256(world).hexdigest(),
                 "stateSchema": declaration["stateSchema"], "namespace": declaration["namespace"]}
+    if http_profile is not None:
+        authored["httpProfile"] = http_profile
     (project_root / "order-draft-source.json").write_text(json.dumps(authored, indent=2) + "\n", encoding="utf8", newline="\n")
     return project_root
 
@@ -127,8 +134,9 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--name")
     parser.add_argument("--draft-id", default="demo")
+    parser.add_argument("--http-profile", help="Exact idempotency profile of the configured qualified HTTP adapter")
     args = parser.parse_args()
-    output = create(args.output, args.language, args.name, args.draft_id)
+    output = create(args.output, args.language, args.name, args.draft_id, http_profile=args.http_profile)
     print(json.dumps({"project": str(output), "language": args.language, "world": WORLD}))
     return 0
 

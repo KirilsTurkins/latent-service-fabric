@@ -1,19 +1,24 @@
 {
-  "cases":["GeneratorFailureReceipts.test_cleanup_and_ownership_failures_never_claim_reaped","GeneratorNativeFailureReceipts.test_actual_deadline_keeps_failed_status_and_reaped_descendants","GeneratorNativeFailureReceipts.test_actual_output_overflow_keeps_failed_status_and_reaped_descendants"],
+  "cases":["GeneratorFailureReceipts.test_cleanup_and_ownership_failures_never_claim_reaped","GeneratorNativeFailureReceipts.test_actual_deadline_keeps_failed_status_and_reaped_descendants","GeneratorNativeFailureReceipts.test_actual_output_overflow_keeps_failed_status_and_reaped_descendants","GeneratorSandboxDiscovery.test_discovered_host_sandbox_alias_executes_with_canonical_byte_identity","GeneratorSandboxDiscovery.test_untrusted_executable_input_and_output_links_still_fail_before_dispatch"],
   "guards":{
     "GeneratorFailureReceipts.test_cleanup_and_ownership_failures_never_claim_reaped":
       "269a30c4d915a6dbeb8eebd7d4c5d00d89dadd70591ab60ad3a0d4ff5ea8b5d2",
     "GeneratorNativeFailureReceipts.test_actual_deadline_keeps_failed_status_and_reaped_descendants":
       "b4bb75224ef706786b2d1d9d1aae03cc42c985b6d98f1a3f2d9b858082cd7da7",
     "GeneratorNativeFailureReceipts.test_actual_output_overflow_keeps_failed_status_and_reaped_descendants":
-      "b4bb75224ef706786b2d1d9d1aae03cc42c985b6d98f1a3f2d9b858082cd7da7"
+      "b4bb75224ef706786b2d1d9d1aae03cc42c985b6d98f1a3f2d9b858082cd7da7",
+    "GeneratorSandboxDiscovery.test_discovered_host_sandbox_alias_executes_with_canonical_byte_identity":
+      "2396f142615ba78d0f3e8ccc976a3fe94e8d3d39c5f8fac0c96563d1cce9ae1c",
+    "GeneratorSandboxDiscovery.test_untrusted_executable_input_and_output_links_still_fail_before_dispatch":
+      "2396f142615ba78d0f3e8ccc976a3fe94e8d3d39c5f8fac0c96563d1cce9ae1c"
   },
   "kind":"python",
   "module":"tools/tests/test_application_dependency_tools.py",
-  "reviewReason":"Actual namespace deadline and output-overflow retirement; cleanup/ownership failures must keep unconfirmed receipts",
+  "reviewReason":"Actual namespace deadline and output-overflow retirement; cleanup/ownership failures must keep unconfirmed receipts Add two deterministic host-discovery and untrusted-link controls with every original assertion and guard retained.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
     "269a30c4d915a6dbeb8eebd7d4c5d00d89dadd70591ab60ad3a0d4ff5ea8b5d2":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5234667776eb4a926adc52dc5ed7660e328521f77345f777d89d260b566c2a6a","class:setup-sha256:fa9a4861f5aac307c92738d81fcbef9a311f0d8d2dc713033c82e8150acd3be3"],"skipSites":[]},
-    "b4bb75224ef706786b2d1d9d1aae03cc42c985b6d98f1a3f2d9b858082cd7da7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5234667776eb4a926adc52dc5ed7660e328521f77345f777d89d260b566c2a6a","class:raise:raise unittest.SkipTest('actual generator retirement requires Linux Bubblewrap')","class:setup-sha256:8309050d2fcc5ce21f10c8710418103d076993d083809322198bd6d96f01cbab","class:skip:unittest.SkipTest('actual generator retirement requires Linux Bubblewrap')"],"skipSites":[]}
+    "b4bb75224ef706786b2d1d9d1aae03cc42c985b6d98f1a3f2d9b858082cd7da7":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:5234667776eb4a926adc52dc5ed7660e328521f77345f777d89d260b566c2a6a","class:raise:raise unittest.SkipTest('actual generator retirement requires Linux Bubblewrap')","class:setup-sha256:8309050d2fcc5ce21f10c8710418103d076993d083809322198bd6d96f01cbab","class:skip:unittest.SkipTest('actual generator retirement requires Linux Bubblewrap')"],"skipSites":[]},
+    "2396f142615ba78d0f3e8ccc976a3fe94e8d3d39c5f8fac0c96563d1cce9ae1c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:5234667776eb4a926adc52dc5ed7660e328521f77345f777d89d260b566c2a6a","class:setup-sha256:949a5e3d598c771d078b8236c4584f85af2d90a0bb25f98e93781dceba87e51b"]}
   }
 }

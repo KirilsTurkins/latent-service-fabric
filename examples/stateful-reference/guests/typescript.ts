@@ -53,7 +53,7 @@ export const api: typeof Contract = {
       const event = encoder.encode('draft-change-v1:' + request.draftId);
       const payload = {bytes: event, mediaType: 'application/octet-stream', metadata: [] as [string, string][]};
       host(new Intent('draft-change', 'event', payload).stage(command));
-      host(new Intent('draft-http', 'put-once', payload).stage(command));
+      host(new Intent('draft-http', 'http', payload).stage(command));
       if (request.reject) throw 'rejected' satisfies Contract.BusinessError;
       return {draftId: request.draftId, revision, units: request.units,
         namespaceView: host(command.info()).view.version, keyVersion: original?.version};

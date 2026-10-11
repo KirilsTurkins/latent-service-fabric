@@ -1,9 +1,9 @@
 //! Private operator startup tracing. A scope retains only finite failures from
 //! the ordinary startup future; it grants no authority and changes no owner.
-use super::{
-    state::StartupFailure as Failure, PlatformError, RuntimeThreads, ShutdownReport, StandaloneNode,
-};
+mod failure;
+use super::{PlatformError, RuntimeThreads, ShutdownReport, StandaloneNode};
 use crate::config::NodeSettings;
+use failure::Failure;
 use latent_core::{PlatformErrorCode, PrincipalKind, TenantId};
 use serde::Serialize;
 use std::{cell::RefCell, future::Future};
@@ -28,14 +28,10 @@ pub(super) enum Stage {
     ProviderCatalog,
     NodeComposition,
     NodeServices,
-    StateConfiguration,
     StateClock,
     StateOperations,
     NativeCapacity,
-    CommandWaiters,
     EffectAuthority,
-    EffectInstallation,
-    ProtectedStoreAdmission,
     ProtectedStoreStartup,
     EffectDispatcher,
     StateManagement,

@@ -18,35 +18,47 @@ def put_once_requirements(project: dict, companion: bytes) -> dict:
     """Application requirements only; installed native owners supply authority."""
     from tools.dev_workflow.transaction_binding import validate
     binding = validate(companion, capsule=project["service"], deployment=project["name"], binding=project["name"])
-    body, logical_binding = HTTP_BODY, "qualified-http"
-    if project.get("world") == "examples:order-draft/service@1.0.0":
-        # The maintained app emits a finite per-draft change notification. Its
-        # contents describe no current revision; consumers query current state
-        # under their own authority. This keeps the exact signed payload pin.
-        draft = binding["namespace"].removeprefix("order-drafts-")
-        if (binding["namespace"] != "order-drafts-" + draft
-                or re.fullmatch(r"[a-z0-9][a-z0-9-]{0,31}", draft) is None
-                or binding["operations"] != [
-                    {"operation": name, "mode": mode, "inputFormat": INPUT_FORMAT, "resultFormat": RESULT_FORMAT}
-                    for name, mode in (("edit", "strict-command"), ("query", "fresh-query"))]):
-            raise ValueError("order-draft notification binding is invalid")
-        body, logical_binding = b"draft-change-v1:" + draft.encode("ascii"), "draft-http"
     return {
         "schemaVersion": "latent.application.deferred-http-inputs.v1",
         "scope": {"capsule": project["service"], "deployment": project["name"],
                   "transactionBinding": project["name"], "namespace": binding["namespace"],
                   "companionDigest": "sha256:" + hashlib.sha256(companion).hexdigest()},
-        "intent": {"binding": logical_binding, "operation": "put-once", "count": 1,
+        "intent": {"binding": "qualified-http", "operation": "put-once", "count": 1,
                    "requestedExpiryUnixMillis": None,
-                   "payload": {"bytes": base64.b64encode(body).decode(),
+                   "payload": {"bytes": base64.b64encode(HTTP_BODY).decode(),
                                "mediaType": "application/octet-stream", "metadata": []}},
         "adapter": {"name": "qualified-http-put-once-v1", "intentFormat": 1,
                     "payloadFormat": "http-put-once-bytes-v1", "idempotencyProfile": "retained-put-once-v1"},
-        "contract": {"retentionHorizonMillis": "600000", "maximumBodyBytes": len(body), "retryDelayMillis": "10"},
-        "ceiling": {"maximumPayloadBytes": str(len(body)), "maximumResponseBytes": "2048", "maximumAttempts": 3,
+        "contract": {"retentionHorizonMillis": "600000", "maximumBodyBytes": 27, "retryDelayMillis": "10"},
+        "ceiling": {"maximumPayloadBytes": "27", "maximumResponseBytes": "2048", "maximumAttempts": 3,
                     "maximumAgeMillis": "600000", "attemptTimeoutMillis": "2000"},
         "authority": {"installed": False, "ruleGranted": False, "executionQualified": False},
     }
+
+
+REFERENCE_WORLD = "examples:order-draft/service@1.0.0"
+
+
+def reference_http_requirements(project: dict, companion: bytes, profile: str) -> dict:
+    """Pin the configured adapter profile; this document supplies no authority."""
+    from tools.dev_workflow.transaction_binding import validate
+    binding = validate(companion, capsule=project["service"], deployment=project["name"], binding=project["name"])
+    draft = binding["namespace"].removeprefix("order-drafts-")
+    if (project.get("world") != REFERENCE_WORLD or binding["namespace"] != "order-drafts-" + draft
+            or re.fullmatch(r"[a-z0-9][a-z0-9-]{0,31}", draft) is None
+            or binding["operations"] != [
+                {"operation": name, "mode": mode, "inputFormat": INPUT_FORMAT, "resultFormat": RESULT_FORMAT}
+                for name, mode in (("edit", "strict-command"), ("query", "fresh-query"))]):
+        raise ValueError("order-draft notification binding is invalid")
+    if not isinstance(profile, str) or re.fullmatch(r"qualified-http-v1:[0-9a-f]{64}", profile) is None:
+        raise ValueError("configured qualified HTTP idempotency profile is required")
+    return {"formatVersion": 1, "protocol": "lsf-atomic-idempotent-http-v1",
+            "capsule": project["service"], "deployment": project["name"], "stateBinding": binding["binding"],
+            "namespace": binding["namespace"], "companionDigest": "sha256:" + hashlib.sha256(companion).hexdigest(),
+            "binding": "draft-http", "operation": "http", "adapter": "qualified-http-effect-v1",
+            "payloadFormat": "http-body-value-v1", "idempotencyProfile": profile,
+            "ceiling": {"maximum_payload_bytes": 1024, "maximum_response_bytes": 22528,
+                        "maximum_attempts": 3, "maximum_age_millis": 600000, "attempt_timeout_millis": 2000}}
 
 
 def augment(files: dict[str, bytes], project: dict) -> None:
@@ -89,15 +101,30 @@ def package_companion(output: Path, project: dict, files: dict[str, bytes]) -> t
     return ("transaction-binding.json", "asset", "application/vnd.latent.transaction-binding.v1+json")
 
 
+def packaging_arguments(files: dict[str, bytes]) -> tuple[str, ...]:
+    """Select offline compatibility from the verified captured host profile."""
+    from tools.guest_compatibility_build import host_abi
+    return ("--phase4",) if host_abi(files)["id"] == "lsf-host-abi-phase4-v1" else ()
+
+
 def package_effect_requirements(output: Path, project: dict, files: dict[str, bytes]) -> tuple[str, str, str] | None:
     """Carry exact application requirements beside the unchanged signed binding."""
+    from tools.dev_workflow.common import decode, encode, require
     raw = files.get(HTTP_REQUIREMENTS)
     if raw is None:
+        if project.get("world") == REFERENCE_WORLD and "order-draft-source.json" in files:
+            source = decode(files["order-draft-source.json"], 8192)
+            require(source.get("httpProfile") is None, "deferred-http-requirements-required")
         return None
-    from tools.dev_workflow.common import decode, encode, require
     require("transaction-binding.json" in files, "deferred-http-companion-required")
     value = decode(raw, 8192)
-    require(encode(value) == encode(put_once_requirements(project, files["transaction-binding.json"])),
+    if project.get("world") == REFERENCE_WORLD:
+        require("order-draft-source.json" in files, "deferred-http-source-profile-required")
+        source = decode(files["order-draft-source.json"], 8192)
+        expected = reference_http_requirements(project, files["transaction-binding.json"], source.get("httpProfile"))
+    else:
+        expected = put_once_requirements(project, files["transaction-binding.json"])
+    require(encode(value) == encode(expected),
             "deferred-http-requirements-drift")
     with (output / HTTP_REQUIREMENTS).open("xb") as stream:
         stream.write(raw)

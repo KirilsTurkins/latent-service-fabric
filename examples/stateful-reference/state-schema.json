@@ -18,7 +18,7 @@
   },
   "effects": [
     {"binding": "draft-change", "kind": "event", "body": "draft-change-v1: followed by the ASCII draft-id", "mediaType": "application/octet-stream"},
-    {"binding": "draft-http", "kind": "put-once", "body": "draft-change-v1: followed by the ASCII draft-id", "mediaType": "application/octet-stream"}
+    {"binding": "draft-http", "kind": "http", "body": "draft-change-v1: followed by the ASCII draft-id", "mediaType": "application/octet-stream"}
   ],
   "stateSchemaCompatibility": "Both related keys and the exact value format are one schema; incompatible decode changes require explicit migration."
 }

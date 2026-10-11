@@ -1,0 +1,42 @@
+[
+  {
+    "path": "original-compiler-program.txt",
+    "sha256": "sha256:189a85d5d87ec52c98bc240d0a04a41969094ff804181450ac226e5d5e72aae7",
+    "bytes": 2320
+  },
+  {
+    "path": "original-compiler.stderr.txt",
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "original-compiler.stdout.txt",
+    "sha256": "sha256:191abc2ea18c4ca5a28d7d921c3f1b4c36e399b70c58c50fec8cd9b44762e65b",
+    "bytes": 680
+  },
+  {
+    "path": "original-controller-command.json",
+    "sha256": "sha256:75913d70fa1b15258ecac0307846b74d8a1782522fb14de274b00b42ddcfda2b",
+    "bytes": 1023
+  },
+  {
+    "path": "original-controller-process.json",
+    "sha256": "sha256:1643d4ec2c700a00881c9f49c28e21b4791d57386cf54dc2241d6597cacd0ad0",
+    "bytes": 45
+  },
+  {
+    "path": "original-initialization-process.json",
+    "sha256": "sha256:0be13b809f870823c8c2dd2b4a9ea635862abca94fc9f845d8feca006c4450b2",
+    "bytes": 44
+  },
+  {
+    "path": "original-selected-tool-inputs.json",
+    "sha256": "sha256:56739e717c38f474b36e3b7a7f2fe5b8dfe25db7f060f3eb66e99856039e4283",
+    "bytes": 1337
+  },
+  {
+    "path": "receipt.json",
+    "sha256": "sha256:0d6be4cb2b275d2a74f0eb783ffb1da3493106f0ab3dd6c85f5164dfcc5181bb",
+    "bytes": 1427
+  }
+]

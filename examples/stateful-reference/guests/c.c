@@ -132,7 +132,7 @@ static probe_callback_code_t pump(struct frame *f, lsf_async_result_t state) {
         case STAGE_EVENT:
             lsf_require(!f->staged.is_err); f->phase = STAGE_HTTP;
             status = lsf_intent_stage(&f->intent_call, &f->command,
-                lsf_intent(LSF_LITERAL("draft-http"), LSF_LITERAL("put-once"), f->payload, (probe_option_u64_t){0}), &f->staged); break;
+                lsf_intent(LSF_LITERAL("draft-http"), LSF_LITERAL("http"), f->payload, (probe_option_u64_t){0}), &f->staged); break;
         case STAGE_HTTP:
             lsf_require(!f->staged.is_err);
             return finish(f, f->reject, EXPORTS_EXAMPLES_ORDER_DRAFT_API_BUSINESS_ERROR_REJECTED);

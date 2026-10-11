@@ -132,7 +132,7 @@ impl Guest for Capsule {
             .stage(&mut command)
             .await
             .expect("stage event");
-        Intent::new("draft-http".into(), "put-once".into(), payload)
+        Intent::new("draft-http".into(), "http".into(), payload)
             .stage(&mut command)
             .await
             .expect("stage HTTP intent");

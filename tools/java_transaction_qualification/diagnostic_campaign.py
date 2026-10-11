@@ -44,7 +44,10 @@ def staging_witness(node, record, original=None):
     require(type(witness["schemaVersion"]) is int and witness["schemaVersion"] == 1
             and unsigned(witness["activationSerial"]) > 0
             and all(isinstance(witness[name], str) and re.fullmatch(r"[0-9a-f]{64}", witness[name])
-                    for name in ("commandId", "attemptId", "transactionId"))
+                    for name in ("commandId", "transactionId"))
+            and isinstance(witness["attemptId"], str)
+            and re.fullmatch(r"[1-9][0-9]*", witness["attemptId"])
+            and int(witness["attemptId"]) <= 16
             and isinstance(witness["publicationId"], str)
             and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", witness["publicationId"]),
             "original-staging-serial-and-immutable-claim-identity")

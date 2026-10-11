@@ -6,10 +6,13 @@
 //! one short acceptance/revocation fence. This owner contains no activation,
 //! execution cell, guest store, reusable credential, or application timer.
 
+mod control_generation;
 mod grant;
 mod lookup;
 mod namespace;
 mod rejection;
+mod retention;
+pub use control_generation::EffectControlGeneration;
 pub use grant::DispatchGrant;
 pub use lookup::{DispatchPurpose, ProviderLookupAuthorization};
 pub use namespace::NamespaceEffectCloseFence;
@@ -334,6 +337,9 @@ struct Owner {
     rejections: AuthorityRejectionOwner,
     maximum_rules: usize,
     maximum_physical: usize,
+    // Rule/rejection/closed-namespace metadata is destroyed before its original
+    // global resident charge. Contexts and captures retain this same Arc.
+    retained: Option<retention::RetainedAuthority>,
 }
 
 /// One fixed shared node owner. Rule publication and attempt acceptance share
@@ -362,6 +368,15 @@ impl EffectAuthorityOwner {
         maximum_physical: usize,
         clock_floor: u64,
     ) -> Result<Self, AuthorityError> {
+        Self::construct(maximum_rules, maximum_physical, clock_floor, None)
+    }
+
+    fn construct(
+        maximum_rules: usize,
+        maximum_physical: usize,
+        clock_floor: u64,
+        retained: Option<retention::RetainedAuthority>,
+    ) -> Result<Self, AuthorityError> {
         if !(1..=4096).contains(&maximum_rules) || !(1..=128).contains(&maximum_physical) {
             return Err(AuthorityError::Invalid);
         }
@@ -379,6 +394,7 @@ impl EffectAuthorityOwner {
             }),
             maximum_rules,
             maximum_physical,
+            retained,
         })))
     }
 
@@ -391,6 +407,9 @@ impl EffectAuthorityOwner {
     pub fn publish(&self, rule: EffectRule) -> Result<(), AuthorityError> {
         if !rule.valid() {
             return Err(AuthorityError::Invalid);
+        }
+        if self.0.retained.is_some() && !retention::within_prepaid_capacities(&rule) {
+            return Err(AuthorityError::Capacity);
         }
         let mut state = self
             .0

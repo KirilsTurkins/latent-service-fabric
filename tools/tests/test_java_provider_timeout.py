@@ -290,18 +290,26 @@ class JavaProviderTimeoutTests(unittest.TestCase):
 
     def test_shutdown_requires_original_reaped_report_and_every_known_pool_counter(self):
         counters = ("controlOwners", "connections", "pendingRequests", "runningRequests", "workers", "cleanupJobs",
-            "failedCleanup", "sessions", "handles", "calls", "results", "ioCalls", "ioRetainedBytes")
+            "failedCleanup", "sessions", "handles", "calls", "results", "ioCalls", "ioRetainedBytes",
+            "blobStages", "blobHandles", "blobWork")
         report = {"clean": True, **dict.fromkeys(counters, 0)}
         shutdown = {"reaped": True, "record": {"clean": True, "report": {"providers": report}}}
         self.assertTrue(campaign.verify_shutdown(shutdown)["clean"])
+        managed = {"state": "stopped", "reaped": True, "cleanShutdown": True, "providerShutdown": report}
+        self.assertEqual(campaign.verify_managed_shutdown(managed), campaign.verify_shutdown(shutdown))
         for field in counters:
             report[field] = 1
             with self.assertRaises(WorkflowError):
                 campaign.verify_shutdown(shutdown)
+            with self.assertRaises(WorkflowError):
+                campaign.verify_managed_shutdown(managed)
             report[field] = 0
         shutdown["reaped"] = False
         with self.assertRaises(WorkflowError):
             campaign.verify_shutdown(shutdown)
+        managed["cleanShutdown"] = False
+        with self.assertRaises(WorkflowError):
+            campaign.verify_managed_shutdown(managed)
 
 
 if __name__ == "__main__":
