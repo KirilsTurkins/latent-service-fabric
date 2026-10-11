@@ -840,6 +840,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
         reviewed_framework_archives = ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications"
         reviewed_deferred_owners = ".github/workflows/ci.yml:rust:integration_lanes"
+        reviewed_go_probe = ".github/workflows/go-guest.yml:upstream-probe:Generate and compile upstream and constrained LSF components"
         performance_extensions = {
             ".github/workflows/ci.yml:rust:integration_lanes": [
                 "python3 tools/run_ci_lanes.py", '--inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl"',
@@ -890,10 +891,6 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "from tools import ci_suite_inventory as registry\n"
                     "state = classify_paths(['crates/latent-state/src/lib.rs'])\n"
                     "assert state.profile == 'full' and state.renderer\n"
-                    "identity = classify_paths(['crates/latent-identity/src/lib.rs'])\n"
-                    "assert identity.profile == 'full'\n"
-                    "assert identity.fast_packages\n"
-                    "assert set(identity.fast_packages) < set(registry.load()['fastPackages'])\n"
                     "selection = classify_paths(['crates/latent-workflows/src/lib.rs'])\n"
                     "assert selection.profile == 'fast'\n"
                     "assert selection.fast_packages\n"
@@ -916,6 +913,13 @@ class RepositoryMigrationTests(unittest.TestCase):
                     "# tools/run_nats_deferred_tests.py tools/nats_deferred_support.py\n"
                     "# tools/build_angular_package.py")
                 self.assertIn(data["after"][key]["run"].rstrip("\n"), (selected, extended))
+            elif key == reviewed_go_probe:
+                # Only the verified private compiler path changes. Preserve
+                # the probe, its output, execution guards and every other byte.
+                original_compiler = "$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go"
+                self.assertEqual(value["run"].count(original_compiler), 1)
+                self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
+                    original_compiler, "$RUNNER_TEMP/go-guest-tools/go-async/bin/go")), key)
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:

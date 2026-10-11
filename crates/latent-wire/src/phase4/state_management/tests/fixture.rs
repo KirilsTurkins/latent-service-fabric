@@ -336,11 +336,16 @@ impl Fixture {
     }
 }
 fn open_audit(path: &std::path::Path) -> (latent_audit::AuditHandle, latent_audit::AuditWorker) {
-    latent_audit::DirectoryPhase2AuditJournal::open(
+    let (handle, worker) = latent_audit::DirectoryPhase2AuditJournal::open(
         path.join("audit"),
         latent_audit::AuditLimits::default(),
     )
-    .unwrap()
+    .unwrap();
+    // Startup returns the worker owner before its thread first releases the
+    // control mutex. Observe its actual idle state before the fixture's first
+    // mutation; do not retry a rejected operation or relax audit admission.
+    assert!(handle.wait_until_idle_for_test(deadline()).unwrap());
+    (handle, worker)
 }
 pub(super) fn binding(
     publication: PublicationRef,

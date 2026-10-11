@@ -22,7 +22,7 @@ use crate::containment::platform_error;
 use crate::host::policy::ContextExposurePolicy;
 use crate::values::ValueCodecLimits;
 
-pub const WASMTIME_VERSION: &str = "48.0.4";
+pub const WASMTIME_VERSION: &str = "48.0.5";
 pub const GENERIC_BACKEND_ID: &str = "wasmtime-component-phase-1";
 pub const PHASE0_BACKEND_ID: &str = "wasmtime-component-phase-0";
 const MAXIMUM_EPOCH_OBSERVATION_MILLIS: u64 = 1_000;
@@ -107,8 +107,8 @@ pub struct WasmtimeConfig {
     /// Explicit TeaVM C profile: standard Wasm exceptions, no Wasm GC values.
     /// Its fixed exception heap is charged before every activation Store.
     pub java_guest: bool,
-    /// Installs the scoped Phase 4 linker. Access still requires the original
-    /// activation-owned transaction host, identity, ledger and deadline.
+    /// Installs the scoped Phase 4 linker. Actual access still requires an
+    /// activation-owned transaction host with the same ledger and identity.
     pub transactional_state: bool,
     pub target_triple: String,
     pub cpu_feature_set: String,

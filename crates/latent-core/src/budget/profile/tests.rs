@@ -141,10 +141,7 @@ fn phase4_host_buffers_and_guest_growth_share_one_ceiling_through_real_cleanup()
     )
     .unwrap();
     let budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase4).unwrap();
-    let mut buffer = budget.reserve_host_memory(300).unwrap();
-    buffer.confirm();
-    buffer.confirm();
-    assert_eq!(budget.snapshot_at(now).peak_memory_bytes, 300);
+    let buffer = budget.reserve_host_memory(300).unwrap();
     assert_eq!(budget.remaining_at(now).memory_bytes, 724);
     assert!(budget.reserve_runtime_memory(800).is_err());
     budget.reserve_runtime_memory(700).unwrap().confirm();

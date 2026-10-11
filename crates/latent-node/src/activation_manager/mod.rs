@@ -45,10 +45,7 @@ pub use inbound::InboundActivationReservation;
 use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
-pub use transaction::{
-    TransactionActivationAdmission, TransactionAdmission, TransactionAdmissionControl,
-    TransactionCompletion, TransactionCompletionHook, TransactionDisposition, TransactionExecution,
-};
+pub use transaction::{TransactionActivationAdmission, TransactionCommitControl};
 pub use transport_stop::ActivationTransportInterruption;
 use transport_stop::TransportStop;
 
@@ -109,10 +106,6 @@ pub struct ActivationReceipt {
     pub activation_id: ActivationId,
     pub resolved_revision: Option<ResolvedRevision>,
     pub outcome: ActivationOutcome,
-    /// Original durable disposition/recovery observation, independent of the
-    /// transport outcome. Its private fields cannot be supplied as authority.
-    pub transaction: Option<TransactionDisposition>,
-    pub delivery_failure: Option<PlatformError>,
 }
 
 /// No detached task is spawned. Dropping this handle, even before its first
@@ -170,7 +163,11 @@ fn handle(
     let transport_stop = lifecycle.transport_stop.clone();
     let completion = Box::pin(async move {
         let mut lifecycle = lifecycle;
-        let result = CatchPanic::new(inner.drive(envelope, &mut lifecycle)).await;
+        let result = CatchPanic::new(async {
+            let outcome = inner.drive(envelope, &mut lifecycle).await;
+            lifecycle.complete_transaction(outcome).await
+        })
+        .await;
         let outcome = match result {
             Ok(outcome) => outcome,
             Err(()) => failure_for_platform_error(
@@ -183,14 +180,11 @@ fn handle(
         };
         let resolved_revision = lifecycle.resolved.clone();
         let activation_id = lifecycle.activation_id().clone();
-        let (outcome, transaction, delivery_failure) =
-            lifecycle.complete(outcome).await.into_parts();
+        let outcome = lifecycle.complete(outcome);
         ActivationReceipt {
             activation_id,
             resolved_revision,
             outcome,
-            transaction,
-            delivery_failure,
         }
     });
     ActivationHandle {

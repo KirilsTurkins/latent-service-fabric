@@ -156,7 +156,7 @@ impl Project for proto::CapabilityResourceUsage {
                 return Err(invalid_response());
             }
         }
-        tree.sequence(&self.unavailable, 3)?;
+        tree.sequence(&self.unavailable, 4)?;
         for value in &self.unavailable {
             identity(value, tree, 64)?;
             if !matches!(
@@ -164,6 +164,7 @@ impl Project for proto::CapabilityResourceUsage {
                 "provider-pools-no-retained-owner"
                     | "provider-io-no-retained-pool-owner"
                     | "audit-owner-not-configured"
+                    | "outbound-streams-no-retained-observation"
             ) {
                 return Err(invalid_response());
             }
@@ -260,6 +261,21 @@ fn usage_key(scope: &str, key: &str) -> bool {
                 | "query_bytes"
                 | "recovery_pending"
                 | "stage_bytes"
+        );
+    }
+    if let Some(suffix) = key.strip_prefix("stream_") {
+        return matches!(
+            suffix,
+            "configuration_epoch"
+                | "retired_generations"
+                | "stopped"
+                | "owners"
+                | "connections"
+                | "pending_operations"
+                | "retained_chunks"
+                | "maintenance_owners"
+                | "live_accepted_write_bytes"
+                | "live_delivered_read_bytes"
         );
     }
     false

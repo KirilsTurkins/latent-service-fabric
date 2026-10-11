@@ -28,6 +28,26 @@ pub struct ProtectedMutableFile {
     root_identity: (u64, u64),
     file_identity: (u64, u64),
     maximum_bytes: u64,
+    created: bool,
+}
+
+impl ProtectedMutableFile {
+    /// Observed successful exclusive creation by this retained protected root.
+    /// Reopening an empty file or permitting creation in configuration does not
+    /// establish this fact. The store must also verify its other owner anchors.
+    #[must_use]
+    pub const fn was_created(&self) -> bool {
+        self.created
+    }
+}
+
+impl ProtectedMutableFile {
+    /// Opened object description only. It grants no path lookup, writer or
+    /// Fresh authority; the original root still must check this exact fence.
+    #[must_use]
+    pub const fn identity(&self) -> (u64, u64) {
+        self.file_identity
+    }
 }
 
 impl ProtectedRoot {
@@ -82,6 +102,29 @@ impl ProtectedRoot {
         self.chain.last().expect("root anchor").identity
     }
 
+    /// Compare actual retained ancestor identities on a bounded control worker.
+    /// Siblings may share ancestors; neither final root may be the other root
+    /// or appear anywhere in its anchored ancestry. Revalidate both chains
+    /// before and after comparison, including owner/mode and named-inode fences.
+    /// No file or descriptor escapes through this metadata-only operation.
+    pub fn is_separate_from(&self, other: &Self) -> Result<bool, PlatformError> {
+        self.check()?;
+        other.check()?;
+        let this_root = self.identity();
+        let other_root = other.identity();
+        let separate = !self
+            .chain
+            .iter()
+            .any(|anchor| anchor.identity == other_root)
+            && !other
+                .chain
+                .iter()
+                .any(|anchor| anchor.identity == this_root);
+        self.check()?;
+        other.check()?;
+        Ok(separate)
+    }
+
     /// Query the filesystem of the retained descriptor, not a replacement path.
     pub fn filesystem_type(&self) -> Result<u64, PlatformError> {
         self.check()?;
@@ -90,6 +133,97 @@ impl ProtectedRoot {
         let kind = u64::try_from(info.f_type).map_err(|_| failure())?;
         self.check()?;
         Ok(kind)
+    }
+
+    /// Require a physically empty retained root, including no old empty file,
+    /// owner lock, link, directory or interrupted initialization entry. This
+    /// bounded descriptor walk grants no permission to create or replace a
+    /// file; exclusive creation and later exact named-inode fences remain
+    /// mandatory. Run on the admitted fixed control worker.
+    pub fn check_empty(&self) -> Result<(), PlatformError> {
+        self.check_exact_mutable_files(&[])
+    }
+
+    /// Require exactly these at most four actual mutable-file fences in this
+    /// root. Unknown names refuse immediately; every expected file must be
+    /// present once and still pass its original type/owner/link/inode checks.
+    /// A fresh directory descriptor gives each bounded walk its own offset.
+    /// Directory content changes during the walk refuse conservatively.
+    pub fn check_exact_mutable_files(
+        &self,
+        expected: &[&ProtectedMutableFile],
+    ) -> Result<(), PlatformError> {
+        if expected.len() > 4
+            || expected.iter().enumerate().any(|(index, fence)| {
+                fence.root_identity != self.identity()
+                    || expected[..index].iter().any(|old| old.name == fence.name)
+            })
+        {
+            return Err(state_failure());
+        }
+        self.check().map_err(|_| state_failure())?;
+        for fence in expected {
+            self.check_mutable_file(fence)?;
+        }
+        let directory = File::from(
+            fs::openat(
+                &self.chain.last().expect("root anchor").file,
+                ".",
+                platform::directory_flags(),
+                Mode::empty(),
+            )
+            .map_err(|_| state_failure())?,
+        );
+        platform::validate_directory(&directory, self.uid, self.gid)
+            .map_err(|()| state_failure())?;
+        let before = directory.metadata().map_err(|_| state_failure())?;
+        if (before.dev(), before.ino()) != self.identity() {
+            return Err(state_failure());
+        }
+        let mut scratch = [std::mem::MaybeUninit::<u8>::uninit(); 1024];
+        let mut entries = fs::RawDir::new(&directory, &mut scratch);
+        let mut seen = [false; 4];
+        let mut count = 0;
+        while let Some(entry) = entries.next() {
+            let entry = entry.map_err(|_| state_failure())?;
+            count += 1;
+            if count > expected.len() + 2 {
+                return Err(state_failure());
+            }
+            let name = entry.file_name().to_bytes();
+            if name == b"." || name == b".." {
+                continue;
+            }
+            let index = expected
+                .iter()
+                .position(|fence| fence.name.as_bytes() == name)
+                .ok_or_else(state_failure)?;
+            if seen[index] || entry.ino() != expected[index].file_identity.1 {
+                return Err(state_failure());
+            }
+            seen[index] = true;
+        }
+        if seen[..expected.len()].iter().any(|present| !present) {
+            return Err(state_failure());
+        }
+        let after = directory.metadata().map_err(|_| state_failure())?;
+        let contents = |metadata: &std::fs::Metadata| {
+            (
+                metadata.dev(),
+                metadata.ino(),
+                metadata.mtime(),
+                metadata.mtime_nsec(),
+                metadata.ctime(),
+                metadata.ctime_nsec(),
+            )
+        };
+        if contents(&before) != contents(&after) {
+            return Err(state_failure());
+        }
+        for fence in expected {
+            self.check_mutable_file(fence)?;
+        }
+        self.check().map_err(|_| state_failure())
     }
 
     /// Open an explicitly configured engine file without truncation, following
@@ -108,8 +242,8 @@ impl ProtectedRoot {
         self.check().map_err(|_| state_failure())?;
         let directory = &self.chain.last().expect("root anchor").file;
         let flags = OFlags::RDWR | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK;
-        let file = match fs::openat(directory, name, flags, Mode::empty()) {
-            Ok(descriptor) => File::from(descriptor),
+        let (file, created) = match fs::openat(directory, name, flags, Mode::empty()) {
+            Ok(descriptor) => (File::from(descriptor), false),
             Err(rustix::io::Errno::NOENT) if create => {
                 let descriptor = fs::openat(
                     directory,
@@ -121,7 +255,7 @@ impl ProtectedRoot {
                 let file = File::from(descriptor);
                 file.sync_all().map_err(|_| state_failure())?;
                 directory.sync_all().map_err(|_| state_failure())?;
-                file
+                (file, true)
             }
             Err(_) => return Err(state_failure()),
         };
@@ -133,7 +267,55 @@ impl ProtectedRoot {
             root_identity: self.identity(),
             file_identity: (metadata.dev(), metadata.ino()),
             maximum_bytes,
+            created,
         };
+        self.check_mutable_file(&fence)?;
+        Ok((file, fence))
+    }
+
+    /// Explicit offline output creation. An existing leaf, failed staging file
+    /// or substituted name always refuses; this operation never reopens or
+    /// truncates it. Runs on the same bounded physical control worker.
+    /// Create a new explicitly configured mutable leaf, refusing every existing
+    /// entry, including an empty or malformed file. Retain the returned fence
+    /// with the descriptor and check it before each bounded control operation.
+    /// This performs file and directory synchronization on the storage worker.
+    /// A failed initialization never removes or replaces the created leaf.
+    pub fn create_mutable_file(
+        &self,
+        name: &str,
+        maximum_bytes: u64,
+    ) -> Result<(File, ProtectedMutableFile), PlatformError> {
+        if !valid_leaf(name) || maximum_bytes == 0 || maximum_bytes > 1_073_741_824 {
+            return Err(state_failure());
+        }
+        self.check().map_err(|_| state_failure())?;
+        let directory = &self.chain.last().expect("root anchor").file;
+        let descriptor = fs::openat(
+            directory,
+            name,
+            OFlags::RDWR
+                | OFlags::CREATE
+                | OFlags::EXCL
+                | OFlags::NOFOLLOW
+                | OFlags::CLOEXEC
+                | OFlags::NONBLOCK,
+            Mode::RUSR | Mode::WUSR,
+        )
+        .map_err(|_| state_failure())?;
+        let file = File::from(descriptor);
+        platform::require_mode_only_permissions(&file).map_err(|()| state_failure())?;
+        let metadata = file.metadata().map_err(|_| state_failure())?;
+        mutable_metadata(&metadata, self.uid, maximum_bytes)?;
+        let fence = ProtectedMutableFile {
+            name: name.into(),
+            root_identity: self.identity(),
+            file_identity: (metadata.dev(), metadata.ino()),
+            maximum_bytes,
+            created: true,
+        };
+        file.sync_all().map_err(|_| state_failure())?;
+        directory.sync_all().map_err(|_| state_failure())?;
         self.check_mutable_file(&fence)?;
         Ok((file, fence))
     }

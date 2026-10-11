@@ -16,9 +16,8 @@ from tools.rust_capsule_project import ROOT, digest, read_json, write_json
 SPIN_CPU_FUEL = 10_000_000_000
 
 
-
-def projects(output: Path, *, diagnostic_adaptations: dict | None = None) -> dict[str, Path]:
-
+def projects(output: Path, *, tools: dict[str, Path] | None = None,
+             diagnostic_adaptations: dict | None = None) -> dict[str, Path]:
     result = {}
     for name in ("domain", "context-required"):
         project = create(output / name, "greeting", "java-http-" + name)
@@ -44,8 +43,9 @@ def projects(output: Path, *, diagnostic_adaptations: dict | None = None) -> dic
         diagnostic_adaptations["domain"] = provider_timeout.adapt_domain(result["domain"])
 
     selection = ROOT / "examples/java-http-composition/routes.json"
-    result["adapter"] = generate(result["domain"], selection, output / "adapter")
-    check(result["domain"], selection, result["adapter"])
+    selected_tools = {} if tools is None else {"tools": tools}
+    result["adapter"] = generate(result["domain"], selection, output / "adapter", **selected_tools)
+    check(result["domain"], selection, result["adapter"], **selected_tools)
     result["adapter-next"] = create_revision(result["adapter"], output / "adapter-next")
     return result
 

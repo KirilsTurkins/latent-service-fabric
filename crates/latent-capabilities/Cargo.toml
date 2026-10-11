@@ -17,7 +17,6 @@ test-support = []
 [dependencies]
 serde.workspace = true
 latent-core = { path = "../latent-core" }
-latent-commit = { path = "../latent-commit" }
 latent-effects = { path = "../latent-effects" }
 latent-activation = { path = "../latent-activation" }
 latent-artifacts = { path = "../latent-artifacts" }

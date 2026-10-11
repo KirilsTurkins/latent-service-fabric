@@ -31,16 +31,13 @@ impl StateTransactionHost {
         }
         Ok(())
     }
-    fn identity(&self) -> Result<ViewIdentity, StateFailure> {
-        Ok(ViewIdentity {
+    pub(super) fn identity(&self) -> ViewIdentity {
+        ViewIdentity {
             namespace: self.scope.namespace.0.clone(),
             incarnation: self.scope.incarnation.to_string(),
-            version: self
-                .view_identity
-                .token(&self.scope)
-                .map_err(|error| super::io::state_error(error, false))?,
+            version: self.view_token.clone(),
             state_schema: self.scope.state_schema.clone(),
-        })
+        }
     }
 }
 impl TransactionHost for StateTransactionHost {
@@ -87,12 +84,10 @@ impl TransactionHost for StateTransactionHost {
         self.budget()
             .consume(
                 BudgetDimension::StateReadBytes,
-                (self.scope.namespace.0.len()
-                    + self.scope.state_schema.len()
-                    + latent_state::session::version::VIEW_TOKEN_BYTES) as u64,
+                (self.scope.namespace.0.len() + self.scope.state_schema.len() + 64) as u64,
             )
             .map_err(|_| StateFailure::ReadBudgetExhausted)?;
-        self.identity()
+        Ok(self.identity())
     }
     fn command_info(&self) -> Result<CommandInfo, StateFailure> {
         if self.mode != Mode::Command {
@@ -226,7 +221,7 @@ impl TransactionHost for StateTransactionHost {
             let next_cursor = page.continuation.map(|cursor| cursor.bytes().to_vec());
             Ok(Page {
                 info: PageInfo {
-                    view: self.identity()?,
+                    view: self.identity(),
                     entry_count: u32::try_from(entries.len())
                         .map_err(|_| StateFailure::InvalidLimit)?,
                     encoded_bytes: encoded_bytes as u64,
