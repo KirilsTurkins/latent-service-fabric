@@ -47,7 +47,8 @@ impl Fixture {
     pub fn cancel_original(&self, envelope: &ActivationEnvelope) {
         assert_eq!(
             self.cancellations
-                .cancel(&envelope.activation_id, "before commit"),
+                .cancel(&envelope.activation_id, "before commit")
+                .unwrap(),
             latent_core::CancelDisposition::Accepted
         );
     }

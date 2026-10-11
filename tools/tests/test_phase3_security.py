@@ -203,6 +203,24 @@ class ChildFailureSnapshotTests(unittest.TestCase):
         self.assertEqual(value["reasonCodes"], [])
         self.assertEqual(value["platformCodes"], [])
 
+    def test_fixture_busy_snapshot_keeps_the_closed_reason_and_discards_malformed_variants(self):
+        result = self.capture([("ChildFailure", "PermissionDenied", "FixtureCurrentnessBusy")])
+        value = diagnostics.extract(result, security.ROOT, security.ROOT)
+        self.assertEqual(value["platformCodes"], ["PermissionDenied"])
+        self.assertEqual(value["reasonCodes"], ["fixture-busy"])
+        self.assertEqual(value["childFailureSnapshot"], {
+            "records": [{"stage": "child-failure", "code": "PermissionDenied", "reason": "fixture-busy"}],
+            "incomplete": False, "recordedCount": 1, "omittedCount": 0,
+        })
+        for reason in (b"FixtureCurrentnessBusyPrivate", b"fixtureCurrentnessBusy", b"private-token"):
+            with self.subTest(reason=reason):
+                malformed = subprocess.CompletedProcess([], 101,
+                    result.stdout.replace(b"FixtureCurrentnessBusy", reason), b"")
+                rejected = diagnostics.extract(malformed, security.ROOT, security.ROOT)
+                self.assertNotIn("childFailureSnapshot", rejected)
+                self.assertEqual(rejected["reasonCodes"], [])
+                self.assertNotIn("private-token", json.dumps(rejected))
+
     def test_native_and_receipt_bounds_preserve_explicit_truncation(self):
         rows = [("Start", "Unavailable", "AdmissionAuthorityBusy")] * 32
         value = diagnostics.extract(self.capture(rows), security.ROOT, security.ROOT)

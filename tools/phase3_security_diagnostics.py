@@ -67,6 +67,7 @@ CHILD_REASONS = {
     "ReleaseLifecycleBusy": "release-lifecycle-busy",
     "ReleaseLifecycleUnavailable": "release-lifecycle-unavailable",
     "AdmissionRepositoryRetired": "admission-repository-retired",
+    "FixtureCurrentnessBusy": "fixture-busy",
     "PreparationSourceAssociation": "preparation-source-association",
     "PreparationMetadataBound": "preparation-metadata-bound",
     "PreparationMetadataOverflow": "preparation-metadata-overflow",
