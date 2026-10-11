@@ -94,6 +94,7 @@ impl ExecutionBackend for FaultBackend {
                 }),
                 Mode::Trap => Ok(GuestOutcome::Trapped {
                     trap: GuestTrap {
+                        diagnostic: None,
                         code: "unreachable".to_owned(),
                         message: "test trap".to_owned(),
                         guest_backtrace: Vec::new(),

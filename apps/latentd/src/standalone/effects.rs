@@ -14,6 +14,11 @@ use latent_state::protected_store::ProtectedStoreOwner;
 
 use super::{error, PlatformError, PlatformErrorCode, StandaloneNode};
 
+mod checkpoint;
+mod clock;
+pub use checkpoint::{ProtectedEffectStartup, ProtectedStatePreparation};
+pub use clock::ProtectedEffectClock;
+
 pub use latent_effects::runtime::{
     DispatcherControlError, DispatcherControlJob, DispatcherControlLookup,
     DispatcherControlRequest, PreparedDispatcherControl,
@@ -51,13 +56,7 @@ impl EffectRuntime {
         )
         .await
         .map(|owner| Self { owner })
-        .map_err(|reason| {
-            super::startup_observation::record(
-                super::startup_observation::Stage::EffectDispatcher,
-                reason,
-            );
-            runtime_error(reason)
-        })
+        .map_err(runtime_error)
     }
 
     #[must_use]

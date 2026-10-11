@@ -34,9 +34,6 @@ pub(super) struct Lifecycle {
     pub(super) child_control: Option<Arc<super::probes::ActivationControl>>,
     pub(super) transaction_admission: Option<Arc<dyn super::TransactionActivationAdmission>>,
     pub(super) transaction_host: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
-    pub(super) transaction_hook: Option<Arc<dyn super::TransactionCompletionHook>>,
-    pub(super) transaction_completion: Option<super::TransactionCompletion>,
-    pub(super) canonical_input_memory: Option<latent_core::HostMemoryReservation>,
     pub(super) execution_started: bool,
     pub(super) quarantine_reason: Option<String>,
     pub(super) assigned: bool,
@@ -64,9 +61,6 @@ impl Lifecycle {
             child_control: None,
             transaction_admission: None,
             transaction_host: None,
-            transaction_hook: None,
-            transaction_completion: None,
-            canonical_input_memory: None,
             execution_started: false,
             quarantine_reason: None,
             assigned: false,
@@ -111,17 +105,6 @@ impl Lifecycle {
     }
     pub(super) fn activation_id(&self) -> &ActivationId {
         self.registration().activation_id()
-    }
-
-    pub(super) fn staging_observer(
-        &self,
-        identity: latent_executor::transaction::TransactionStagingIdentity,
-    ) -> Result<Arc<dyn latent_executor::transaction::TransactionStagingObserver>, PlatformError>
-    {
-        self.journal
-            .as_ref()
-            .expect("original journal owner")
-            .staging_observer(identity)
     }
 
     pub(super) fn advance(
@@ -189,66 +172,72 @@ impl Lifecycle {
         self.observe_cleanup(disposition);
     }
 
-    pub(super) fn complete_admission_failure(
-        mut self,
-        outcome: ActivationOutcome,
-    ) -> ActivationOutcome {
-        assert!(self.transaction_host.is_none() && self.transaction_hook.is_none());
+    pub(super) fn complete(mut self, outcome: ActivationOutcome) -> ActivationOutcome {
         self.reclaim();
-        self.publish(outcome, false).0
+        self.publish(outcome)
     }
 
-    pub(super) async fn complete(
-        mut self,
-        outcome: ActivationOutcome,
-    ) -> super::TransactionCompletion {
-        self.reclaim();
-        let completion = if let Some(completion) = self.transaction_completion.take() {
-            completion
-        } else if let Some(hook) = self.transaction_hook.take() {
-            match super::control::CatchPanic::new(hook.complete(outcome)).await {
-                Ok(completion) => completion,
-                Err(()) => super::TransactionCompletion::ordinary(failure_for_platform_error(
-                    error(
-                        PlatformErrorCode::Internal,
-                        "transaction completion panicked",
-                    ),
-                    BudgetConsumption::default(),
-                )),
-            }
-        } else {
-            super::TransactionCompletion::ordinary(outcome)
-        };
-        let durable = completion.durable_command().is_some();
-        let (outcome, delivery_failure) = self.publish(completion.outcome().clone(), durable);
-        completion.with_delivery(outcome, delivery_failure)
-    }
-
-    fn publish(
+    pub(super) async fn complete_transaction(
         &mut self,
         mut outcome: ActivationOutcome,
-        durable: bool,
-    ) -> (ActivationOutcome, Option<PlatformError>) {
-        let mut delivery_failure = None;
+    ) -> ActivationOutcome {
+        let Some(admission) = self.transaction_admission.clone() else {
+            return outcome;
+        };
+        let Some(budget) = self.budget.clone() else {
+            return outcome;
+        };
+        if !self.execution_started {
+            if let Some(host) = &self.transaction_host {
+                host.finish_guest_access();
+            }
+        }
+        // Observe actual guest consumption before a business result becomes
+        // eligible for commit. Finalization closes spending, while the opaque
+        // completion control retains only the original acceptance fences.
         if let Some(stop) = self.transport_stop.failure() {
+            outcome = failure_for_platform_error(stop, outcome_consumption(&outcome));
+        }
+        let now = self.clock.monotonic_now();
+        let deadline = budget.check_deadline_at(now).err();
+        self.record_deadline_decision(now, budget.deadline().monotonic(), deadline.is_some());
+        let finalized = budget.finalize_at(Some(&outcome_consumption(&outcome)), now);
+        let consumption = finalized.consumption().clone();
+        outcome = if let Some(error) = deadline.or_else(|| finalized.violation().cloned()) {
+            failure_for_platform_error(error.to_platform_error(), consumption)
+        } else {
+            replace_consumption(outcome, consumption)
+        };
+        let control = super::TransactionCommitControl::new(
+            self.registration().handle(),
+            self.transport_stop.clone(),
+            self.clock.clone(),
+            budget,
+        );
+        admission.complete(outcome, control).await
+    }
+
+    fn publish(&mut self, mut outcome: ActivationOutcome) -> ActivationOutcome {
+        let commit_accepted = self.registration().commit_accepted();
+        if let Some(stop) = self.transport_stop.failure().filter(|_| !commit_accepted) {
             // Raw interruption is provisional, not an accepted explicit Cancel.
             // Existing deadline/finalization checks and the registry winner below
             // keep their authority. Cleanup disposition was already observed.
-            if durable {
-                delivery_failure = Some(stop.clone());
-            }
             outcome = failure_for_platform_error(stop, outcome_consumption(&outcome));
         }
         if let Some(budget) = &self.budget {
             let now = self.clock.monotonic_now();
-            let deadline = budget.check_deadline_at(now).err();
+            let deadline = (!commit_accepted)
+                .then(|| budget.check_deadline_at(now).err())
+                .flatten();
             self.record_deadline_decision(now, budget.deadline().monotonic(), deadline.is_some());
             let finalized = budget.finalize_at(Some(&outcome_consumption(&outcome)), now);
             let consumption = finalized.consumption().clone();
-            outcome = if let Some(error) = deadline.or_else(|| finalized.violation().cloned()) {
-                if durable {
-                    delivery_failure = Some(error.to_platform_error());
-                }
+            outcome = if let Some(error) = deadline.or_else(|| {
+                (!commit_accepted)
+                    .then(|| finalized.violation().cloned())
+                    .flatten()
+            }) {
                 failure_for_platform_error(error.to_platform_error(), consumption)
             } else {
                 replace_consumption(outcome, consumption)
@@ -261,9 +250,6 @@ impl Lifecycle {
             // ledger construction. They still retain the original ingress limit;
             // an accepted explicit cancellation keeps its registry winner below.
             if expired {
-                if durable {
-                    delivery_failure = Some(super::control::deadline_error());
-                }
                 outcome = failure_for_platform_error(
                     super::control::deadline_error(),
                     outcome_consumption(&outcome),
@@ -272,9 +258,6 @@ impl Lifecycle {
         }
         let journal = self.journal.as_ref().expect("one terminal publication");
         if let Err(failure) = journal.validate_terminal(&outcome) {
-            if durable {
-                delivery_failure = Some(failure.clone());
-            }
             outcome = failure_for_platform_error(failure, outcome_consumption(&outcome));
         }
         // Linearize the winner before recording the result. Registration stays
@@ -285,9 +268,6 @@ impl Lifecycle {
         let cancellation_accepted = publication.cancellation_reason.is_some();
         if publication.state == ActivationTerminalState::Cancelled {
             if let Some(reason) = publication.cancellation_reason {
-                if durable {
-                    delivery_failure = Some(error(PlatformErrorCode::Cancelled, &reason));
-                }
                 outcome = failure_for_platform_error(
                     error(PlatformErrorCode::Cancelled, &reason),
                     outcome_consumption(&outcome),
@@ -315,7 +295,7 @@ impl Lifecycle {
             }
             observation.terminal(&outcome, stamp, self.resolved.as_ref());
         }
-        (outcome, delivery_failure)
+        outcome
     }
 
     fn record_deadline_decision(
@@ -349,7 +329,9 @@ impl Drop for Lifecycle {
         // Inner async work (including a Wasmtime store and prepared-use token)
         // has already been dropped. Dispose cell then quota before accounting.
         self.reclaim();
-        let code = if std::thread::panicking() {
+        let code = if self.registration().commit_accepted() {
+            PlatformErrorCode::Unavailable
+        } else if std::thread::panicking() {
             PlatformErrorCode::Internal
         } else if self.transport_stop.cause()
             == Some(ActivationTransportInterruption::DeadlineExceeded)
@@ -358,13 +340,15 @@ impl Drop for Lifecycle {
         } else {
             PlatformErrorCode::Cancelled
         };
-        let message = if code == PlatformErrorCode::DeadlineExceeded {
+        let message = if code == PlatformErrorCode::Unavailable {
+            "transaction completion owner abandoned after commit acceptance"
+        } else if code == PlatformErrorCode::DeadlineExceeded {
             "activation transport deadline exceeded"
         } else {
             "activation handle abandoned before terminal completion"
         };
         let outcome =
             failure_for_platform_error(error(code, message), BudgetConsumption::default());
-        let _ = self.publish(outcome, false);
+        let _ = self.publish(outcome);
     }
 }

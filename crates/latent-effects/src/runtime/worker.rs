@@ -193,7 +193,7 @@ async fn prepare(
         super::capacity::PREPARATION_BYTES,
         capacity,
         move |store| {
-            let accept_claim = || {
+            let accept = || {
                 let state = shared
                     .state
                     .lock()
@@ -203,47 +203,26 @@ async fn prepare(
                 }
                 original.check()
             };
-            let claim =
-                DispatchCatalog::claim_fenced(store, epoch, &candidate.due, time, accept_claim)?;
+            let claim = DispatchCatalog::claim_fenced(store, epoch, &candidate.due, time, accept)?;
             let crate::dispatch_store::ClaimedEffect {
                 authority,
                 attempt,
                 payload,
             } = claim;
             let time = clock.observe();
-            let deadline = worker_context
+            let accepted = worker_context
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .as_ref()
+                .as_mut()
                 .expect("owned physical context")
-                .deadline();
-            let mut payload = Some(payload);
-            let mut adapter_refusal = false;
-            let mut accept = || {
-                let payload = payload.take().ok_or(AuthorityError::Invalid)?;
-                let admitted = worker_context
-                    .lock()
-                    .map_err(|_| AuthorityError::Unavailable)?
-                    .as_mut()
-                    .ok_or(AuthorityError::Unavailable)?
-                    .accept_with(&authority, attempt.attempt(), time, |grant| {
-                        original.accept_provider(|| adapter.accept(grant, payload, attempt.clone()))
-                    })??;
-                adapter_refusal = admitted.is_err();
-                admitted
-            };
-            let accepted = adapter.with_current_dispatch(&authority, deadline, &mut accept);
+                .accept_with(&authority, attempt.attempt(), time, |grant| {
+                    original.accept_provider(|| adapter.accept(grant, payload, attempt.clone()))
+                });
             let accepted = match accepted {
-                Ok(future) => {
+                Ok(Ok(Ok(future))) => {
                     // Same accepted storage job owns claim/admission/send-marker:
                     // queue pressure cannot strand an admitted unpolled operation.
-                    match DispatchCatalog::begin_send_fenced(
-                        store,
-                        epoch,
-                        &attempt,
-                        time,
-                        accept_claim,
-                    ) {
+                    match DispatchCatalog::begin_send_fenced(store, epoch, &attempt, time, accept) {
                         Ok(()) => Ok(future),
                         Err(DispatchStoreError::Authority(error)) => {
                             drop(future); // Proven unpolled: provider buffers retire before receipt.
@@ -255,14 +234,17 @@ async fn prepare(
                         Err(error) => return Err(error),
                     }
                 }
-                Err(error) => Err(AdapterOutcome {
-                    receipt: negative(error, time.unix_millis, !adapter_refusal),
-                    retry: (adapter_refusal
-                        && matches!(
-                            error,
-                            AuthorityError::Capacity | AuthorityError::Unavailable
-                        ))
+                Ok(Ok(Err(error))) => Err(AdapterOutcome {
+                    receipt: negative(error, time.unix_millis, false),
+                    retry: matches!(
+                        error,
+                        AuthorityError::Capacity | AuthorityError::Unavailable
+                    )
                     .then_some((RetryProof::KnownNonexecution, 100)),
+                }),
+                Ok(Err(error)) | Err(error) => Err(AdapterOutcome {
+                    receipt: negative(error, time.unix_millis, true),
+                    retry: None,
                 }),
             };
             Ok(Prepared { attempt, accepted })

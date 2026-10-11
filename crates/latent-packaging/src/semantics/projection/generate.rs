@@ -6,7 +6,6 @@ use latent_contracts::{
     ContractDescriptor, FieldDescriptor, FunctionDescriptor, InterfaceDescriptor, ValueType,
 };
 use latent_core::{ContractId, FunctionId, InterfaceId, PlatformError};
-use std::collections::BTreeMap;
 use wit_parser::{FunctionKind, Resolve, Type, TypeDefKind, WorldId, WorldItem};
 
 use super::{digest, exhausted, incompatible, interface_name, invalid, validate, SemanticLimits};
@@ -67,7 +66,7 @@ pub(in crate::semantics) fn generate(
                 parameters,
                 results,
                 documentation: function.docs.contents.clone(),
-                attributes: BTreeMap::default(),
+                attributes: Default::default(),
             });
         }
         let mut dependencies = resolve

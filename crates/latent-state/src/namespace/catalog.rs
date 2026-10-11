@@ -301,6 +301,18 @@ pub struct NamespaceRead {
 }
 
 impl NamespaceRead {
+    /// Actual owned capacities for a trusted producer moving this native read
+    /// beside its prepaid metadata permit. This is descriptive, never authority.
+    #[must_use]
+    pub fn retained_bytes(&self) -> usize {
+        std::mem::size_of::<Self>()
+            .saturating_add(self.record.tenant.0.capacity())
+            .saturating_add(self.record.id.0.capacity())
+            .saturating_add(self.record.state_schema.capacity())
+            .saturating_add(self.expected.key.key.capacity())
+            .saturating_add(self.expected.value.as_ref().map_or(0, Vec::capacity))
+    }
+
     #[must_use]
     pub fn record(&self) -> &NamespaceRecord {
         &self.record
@@ -341,6 +353,29 @@ impl NamespaceCatalog {
         }
     }
 
+    /// The actual resident metadata charge follows the same lifecycle owner
+    /// through retained handles/completions, even after this catalog closes.
+    pub fn with_retained_capacity(
+        native: &latent_core::native_capacity::NativeCapacityOwner,
+        original: std::sync::Arc<latent_core::native_capacity::NativeReservation>,
+    ) -> Result<Self, NamespaceError> {
+        Ok(Self {
+            lifecycle: super::lifecycle::NamespaceLifecycleRegistry::with_retained_capacity(
+                super::lifecycle::NamespaceLifecycleLimits::default(),
+                native,
+                original,
+            )?,
+        })
+    }
+
+    #[must_use]
+    pub fn uses_native_capacity(
+        &self,
+        native: &latent_core::native_capacity::NativeCapacityOwner,
+    ) -> bool {
+        self.lifecycle.uses_native_capacity(native)
+    }
+
     #[must_use]
     pub fn lifecycle(&self) -> &super::lifecycle::NamespaceLifecycleRegistry {
         &self.lifecycle
@@ -362,8 +397,10 @@ impl NamespaceCatalog {
         if key.family != Family::Namespace {
             return Err(NamespaceError::UnsupportedFormat);
         }
-        let (expected, scope) = if key.key.starts_with(super::history::HISTORY_PREFIX) {
+        if key.key.starts_with(super::history::HISTORY_PREFIX) {
             super::history::NamespaceHistory::validate_row(key, bytes)?;
+        }
+        let (expected, scope) = if key.key.starts_with(super::history::HISTORY_PREFIX) {
             let history = super::history::NamespaceHistory::decode(bytes)?;
             let expected = super::history::history_key(
                 &history.tenant,
@@ -517,6 +554,7 @@ impl NamespaceCatalog {
         }
         let previous = view.get(&namespace_key).map_err(storage)?;
         let observed = Self::read_in(&view, &context.tenant, mutation.id())?;
+        let mut migration_history = None;
         let record = match mutation {
             NamespaceMutation::Create {
                 id,
@@ -543,6 +581,18 @@ impl NamespaceCatalog {
                     &context.tenant,
                     id,
                 )?;
+                crate::recovery::migration::require_no_incomplete(&view, &record)
+                    .map_err(storage)?;
+                let (_, value) =
+                    super::history::NamespaceHistory::capture(&view, &record).map_err(storage)?;
+                migration_history = Some(ExpectedRow {
+                    key: super::history::history_key(
+                        &record.tenant,
+                        &record.id,
+                        record.version.incarnation,
+                    )?,
+                    value,
+                });
                 record.transition(*expected, action, active_commits)?
             }
         };
@@ -575,6 +625,7 @@ impl NamespaceCatalog {
                 },
             ],
         };
+        batch.expectations.extend(migration_history);
         crate::tenant::prepare_metadata_update(&view, &receipt.context.tenant, &batch)
             .and_then(|accounting| accounting.append_to(&mut batch))
             .map_err(storage)?;

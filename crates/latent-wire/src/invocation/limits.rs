@@ -99,9 +99,10 @@ impl InvocationLimits {
                     || self.max_outbound_requests != 0
                     || self.max_blob_read_bytes != 0
                     || self.max_blob_write_bytes != 0))
-            || self.max_state_read_bytes != 0
-            || self.max_state_write_bytes != 0
-            || self.max_effect_count != 0
+            || (self.budget_profile != latent_core::BudgetProfile::Phase4
+                && (self.max_state_read_bytes != 0
+                    || self.max_state_write_bytes != 0
+                    || self.max_effect_count != 0))
         {
             return Err(boundary_error(
                 PlatformErrorCode::InvalidArgument,

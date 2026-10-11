@@ -91,7 +91,7 @@ pub struct CacheRequest {
     generation: u64,
     created: Instant,
     eligibility: Option<[u8; 32]>,
-    owner: Owner,
+    _owner: Owner,
 }
 pub enum CacheLookup {
     Hit(CacheHit),
@@ -165,7 +165,6 @@ impl ResponseCache {
     }
     /// A newer catalog invalidates all future hits/fills, without retaining a
     /// per-deployment tombstone map. Late requests cannot restore an older view.
-    #[must_use]
     pub fn observe_generation(&self, generation: u64) -> bool {
         let Ok(mut state) = self.0.state.lock() else {
             return false;
@@ -198,7 +197,6 @@ impl ResponseCache {
     }
     /// The caller must perform current publication eligibility and admission
     /// checks before using the resulting hit. This cache is not an authorizer.
-    #[must_use]
     pub fn request(&self, request: &Request, scope: &CacheScope<'_>) -> Option<CacheRequest> {
         let principal = request.context().principal();
         if request.cache_sensitive
@@ -279,7 +277,7 @@ impl ResponseCache {
             generation: scope.state_version,
             created: Instant::now(),
             eligibility: None,
-            owner,
+            _owner: owner,
         })
     }
     fn owner(&self) -> Option<Owner> {
@@ -368,7 +366,7 @@ impl CacheRequest {
                 _charge: charge,
             }),
             cache: self.cache,
-            _owner: self.owner,
+            _owner: self._owner,
         })
     }
 }

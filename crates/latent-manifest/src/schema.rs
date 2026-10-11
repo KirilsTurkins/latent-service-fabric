@@ -12,8 +12,6 @@ const DEPLOYMENT_SCHEMA_TEXT: &str = include_str!("../../../schemas/deployment.s
 const BINDING_SCHEMA_TEXT: &str = include_str!("../../../schemas/binding.schema.json");
 const TRIGGER_SCHEMA_TEXT: &str = include_str!("../../../schemas/trigger.schema.json");
 const POLICY_SCHEMA_TEXT: &str = include_str!("../../../schemas/policy.schema.json");
-const TRANSACTION_INCARNATION_PATTERN: &str = "^(?:[1-9][0-9]{0,18}|1[0-7][0-9]{18}|18[0-3][0-9]{17}|184[0-3][0-9]{16}|1844[0-5][0-9]{15}|18446[0-6][0-9]{14}|184467[0-3][0-9]{13}|1844674[0-3][0-9]{12}|184467440[0-6][0-9]{10}|1844674407[0-2][0-9]{9}|18446744073[0-6][0-9]{8}|1844674407370[0-8][0-9]{6}|18446744073709[0-4][0-9]{5}|184467440737095[0-4][0-9]{4}|18446744073709550[0-9]{3}|18446744073709551[0-5][0-9]{2}|1844674407370955160[0-9]{1}|1844674407370955161[0-4]|18446744073709551615)$";
-const TRANSACTION_KEY_PATTERN: &str = "^(?:(?:[A-Za-z0-9+/]{4}){0,340}(?:[A-Za-z0-9+/]{4}|[A-Za-z0-9+/][AQgw]==|[A-Za-z0-9+/]{2}[AEIMQUYcgkosw048]=)|(?:[A-Za-z0-9+/]{4}){341}[A-Za-z0-9+/][AQgw]==)$";
 
 static CAPSULE_SCHEMA: OnceLock<Value> = OnceLock::new();
 static DEPLOYMENT_SCHEMA: OnceLock<Value> = OnceLock::new();
@@ -85,7 +83,7 @@ fn assert_supported_schema(schema: &Value, path: &str) {
                     assert_supported_schema(child, &format!("{path}.{keyword}.{name}"));
                 }
             }
-            "oneOf" | "allOf" => {
+            "oneOf" => {
                 let children = value.as_array().unwrap_or_else(|| {
                     panic!("embedded schema keyword `{path}.{keyword}` must be an array")
                 });
@@ -131,22 +129,6 @@ fn validate_node(
         }
         if violations.len() >= max_violations {
             return;
-        }
-    }
-
-    if let Some(requirements) = schema.get("allOf").and_then(Value::as_array) {
-        for requirement in requirements {
-            validate_node(
-                requirement,
-                instance,
-                path,
-                root,
-                violations,
-                max_violations,
-            );
-            if violations.len() >= max_violations {
-                return;
-            }
         }
     }
 
@@ -469,15 +451,6 @@ fn validate_string(
     if let Some(pattern) = schema.get("pattern").and_then(Value::as_str) {
         let (matches, code, message) = match pattern {
             "^sha256:[a-fA-F0-9]{64}$" => (is_sha256_digest(value), "invalid-digest", "value must be a sha256: digest followed by exactly 64 hexadecimal characters"),
-            "^sha256:[0-9a-f]{64}$" => (
-                value.parse::<latent_core::ArtifactBlobDigest>().is_ok(),
-                "invalid-digest", "digest must be a canonical lowercase SHA-256 identity",
-            ),
-            "^/" => (value.starts_with('/'), "invalid-path", "path must begin with a slash"),
-            r"^[^\u0000-\u001f\u007f-\u009f]+$" => (
-                !value.is_empty() && !value.chars().any(|character| matches!(u32::from(character), 0..=31 | 127..=159)),
-                "invalid-identity", "identity must not contain C0 or C1 control characters",
-            ),
             r"^sha256:[0-9a-f]{64}(?![\s\S])" => (
                 value.parse::<latent_core::ArtifactBlobDigest>().is_ok(),
                 "invalid-renderer-digest",
@@ -498,53 +471,11 @@ fn validate_string(
                 "invalid-target-triple",
                 "target must contain at least three nonempty ASCII alphanumeric, underscore or dot segments separated by hyphens",
             ),
-            TRANSACTION_INCARNATION_PATTERN => (
-                value.parse::<u64>().is_ok_and(|number| number > 0 && number.to_string() == value),
-                "invalid-incarnation", "incarnation must be a canonical positive unsigned 64-bit integer",
-            ),
-            TRANSACTION_KEY_PATTERN => (
-                canonical_key_base64(value), "invalid-precondition-key", "precondition key must be canonical padded base64 for 1 through 1024 bytes",
-            ),
             _ => panic!("embedded schema uses unsupported pattern `{pattern}`"),
         };
         if !matches {
             push_violation(violations, max_violations, path, code, message);
         }
-    }
-}
-
-fn canonical_key_base64(value: &str) -> bool {
-    let bytes = value.as_bytes();
-    if bytes.is_empty() || bytes.len() % 4 != 0 || bytes.len() > 1368 {
-        return false;
-    }
-    let padding = bytes.iter().rev().take_while(|byte| **byte == b'=').count();
-    if padding > 2 {
-        return false;
-    }
-    let sextet = |byte: u8| -> Option<u8> {
-        match byte {
-            b'A'..=b'Z' => Some(byte - b'A'),
-            b'a'..=b'z' => Some(byte - b'a' + 26),
-            b'0'..=b'9' => Some(byte - b'0' + 52),
-            b'+' => Some(62),
-            b'/' => Some(63),
-            _ => None,
-        }
-    };
-    let data = bytes.len() - padding;
-    if bytes[..data].iter().any(|byte| sextet(*byte).is_none()) {
-        return false;
-    }
-    let decoded = bytes.len() / 4 * 3 - padding;
-    if !(1..=1024).contains(&decoded) {
-        return false;
-    }
-    let tail = sextet(bytes[data - 1]).expect("nonempty checked base64 data");
-    match padding {
-        2 => tail & 15 == 0,
-        1 => tail & 3 == 0,
-        _ => true,
     }
 }
 

@@ -6,6 +6,15 @@ defines endpoint/auth restrictions, message/owner limits, original deadlines,
 typed outcomes, operation recovery and physical shutdown. Build with
 `--no-default-features` for the transport-neutral models only.
 
+The additive `transaction::TransactionClient` interface exposes fifteen
+StateService, TransactionService and DispatcherService calls on the same
+`RpcClient` owner. Recovery keeps the original caller-scoped selector, stale-edit
+preconditions and node-control action/generation. A validated durable observation
+survives independent audit failure. Dropping a future, cancellation and a gRPC
+ABORTED status never authorize a new attempt or refresh its precondition.
+Phase 4 signed-node execution and the six-client matrix remain open under #401;
+the focused source tests establish codec, association and transport behavior.
+
 ## Invoke HTTP and blob guests
 
 `provider_client` calls an **already admitted and deployed guest**. It does not

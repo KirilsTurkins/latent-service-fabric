@@ -330,6 +330,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_fault_campaign.py",
-  "reviewReason": "Retain every original 20 compiler and rollback case and execution guard; review fixtures against the actual preserved running phase and original captured-intent witness, and add five refusal, serial, accounting and pre-cancellation ordering cases. No authority, resource ceiling, session or deadline extension.",
+  "reviewReason": "Retain original fixture guards and cases while registering installed transaction capture and finite diagnostic controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

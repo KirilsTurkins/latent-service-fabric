@@ -1,5 +1,10 @@
 # Direct transaction HTTP binding v1
 
+This is a preserved proposal for #409/#828. PR #823's reconciled standalone
+installation serves the existing authenticated transaction RPCs. The HTTP
+binding and prepared input codec described below still require their own
+integration and signed guest qualification.
+
 The `transaction-http-v1` application profile uses the shared HTTP ingress and
 the normal activation owner. Its fixed target is the selected deployment,
 publication, contract and function. It does not create a cross-service

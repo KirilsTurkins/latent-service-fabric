@@ -232,8 +232,6 @@ impl Fixture {
                 artifacts: catalog.clone(),
                 authorization: Arc::new(crate::management::LocalManagementPolicy),
                 admission: admission.clone(),
-                maintenance: Arc::new(latent_commit::atomic::ResultMaintenanceOwner::default()),
-                maintenance_clock: Arc::new(FixtureMaintenanceClock),
                 clock: Arc::new(SystemActivationClock),
                 audit: audit.as_ref().map(|(handle, _)| handle.clone()),
             },
@@ -337,21 +335,17 @@ impl Fixture {
         assert_eq!(self.admission.budget.outstanding_reservations(), 0);
     }
 }
-
-struct FixtureMaintenanceClock;
-impl super::super::StateMaintenanceClock for FixtureMaintenanceClock {
-    fn sample(&self) -> Result<latent_commit::atomic::MaintenanceClock, PlatformError> {
-        // Namespace-only fixture cases never manufacture maintenance continuity.
-        Err(unsupported())
-    }
-}
-
 fn open_audit(path: &std::path::Path) -> (latent_audit::AuditHandle, latent_audit::AuditWorker) {
-    latent_audit::DirectoryPhase2AuditJournal::open(
+    let (handle, worker) = latent_audit::DirectoryPhase2AuditJournal::open(
         path.join("audit"),
         latent_audit::AuditLimits::default(),
     )
-    .unwrap()
+    .unwrap();
+    // Startup returns the worker owner before its thread first releases the
+    // control mutex. Observe its actual idle state before the fixture's first
+    // mutation; do not retry a rejected operation or relax audit admission.
+    assert!(handle.wait_until_idle_for_test(deadline()).unwrap());
+    (handle, worker)
 }
 pub(super) fn binding(
     publication: PublicationRef,

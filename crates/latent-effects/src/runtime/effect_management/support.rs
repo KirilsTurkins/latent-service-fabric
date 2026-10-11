@@ -13,7 +13,7 @@ use crate::dispatch_store::{
     effect_row_key,
 };
 use latent_core::{StateNamespaceId, TenantId};
-use latent_state::embedded::{EmbeddedStore, FencedStoreError, ReadView, StoreError};
+use latent_state::embedded::{AtomicBatch, EmbeddedStore, FencedStoreError, ReadView, StoreError};
 use latent_state::namespace::catalog::{NamespaceCatalog, NamespaceRead};
 use latent_state::protected_store::ProtectedStoreError;
 use latent_state::store_io::StoreIoKind;
@@ -128,6 +128,27 @@ pub(super) fn namespace(
     }
     Ok(read)
 }
+/// Accounted plans already include this exact namespace observation. Preserve
+/// its compare-and-set once; conflicting or duplicate observations still refuse.
+pub(super) fn append_namespace_expectation(
+    batch: &mut AtomicBatch,
+    namespace: &NamespaceRead,
+) -> Result<(), Error> {
+    let expected = namespace.expectation();
+    let mut matching = batch
+        .expectations
+        .iter()
+        .filter(|row| row.key == expected.key);
+    if let Some(original) = matching.next() {
+        if original.value != expected.value || matching.next().is_some() {
+            return Err(Error::Conflict);
+        }
+    } else {
+        batch.expectations.push(expected);
+    }
+    Ok(())
+}
+
 pub(super) fn load_authority(
     view: &ReadView,
     plan: &EffectManagementPlan,
@@ -191,7 +212,7 @@ pub(super) fn persist(
         EffectManagementCatalog::prepare_mutation(view, services.epoch, plan, evidence, time)?;
     let authority = prepared.authority().clone();
     let (mut batch, receipt, replayed) = prepared.into_parts();
-    batch.expectations.push(namespace.expectation());
+    append_namespace_expectation(&mut batch, &namespace)?;
     store
         .apply_fenced(batch, || {
             let current = services.time.observe();

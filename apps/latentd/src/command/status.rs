@@ -18,23 +18,6 @@ pub(super) fn configuration(report: &crate::config::ExecutionProfileReport) -> R
     output(report)
 }
 
-#[cfg(target_os = "linux")]
-pub(super) fn inspection(
-    report: &crate::standalone::state::NativeTransactionHostInspection,
-) -> Result<(), Failure> {
-    let bytes = serde_json::to_vec(report)
-        .map_err(|_| Failure::new("output", PlatformErrorCode::Internal))?;
-    if bytes.len() > 262_144 {
-        return Err(Failure::new("output", PlatformErrorCode::ResourceExhausted));
-    }
-    let mut stdout = io::stdout().lock();
-    stdout
-        .write_all(&bytes)
-        .and_then(|()| stdout.write_all(b"\n"))
-        .and_then(|()| stdout.flush())
-        .map_err(|_| Failure::new("output", PlatformErrorCode::Unavailable))
-}
-
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg(target_os = "linux")]
@@ -84,6 +67,44 @@ pub(super) fn stopped<T: Serialize>(report: &T) -> Result<(), Failure> {
         event: "stopped",
         clean: true,
         report,
+    })
+}
+
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "development-outbound-streams"
+))]
+pub(super) fn stream_control(
+    node_id: &str,
+    result: Result<&crate::standalone::StreamControlStatus, &latent_core::PlatformError>,
+    observed: Option<&crate::standalone::StreamControlStatus>,
+) -> Result<(), Failure> {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Record<'a> {
+        schema_version: &'static str,
+        event: &'static str,
+        node_id: &'a str,
+        operation_result: &'static str,
+        failure_code: Option<String>,
+        control: Option<&'a crate::standalone::StreamControlStatus>,
+    }
+    let (operation_result, failure_code, control) = match result {
+        Ok(control) => ("observed", None, Some(control)),
+        Err(error) => (
+            "rejected-or-unconfirmed",
+            Some(format!("{:?}", error.code)),
+            observed,
+        ),
+    };
+    output(&Record {
+        schema_version: SCHEMA,
+        event: "stream-control",
+        node_id,
+        operation_result,
+        failure_code,
+        control,
     })
 }
 

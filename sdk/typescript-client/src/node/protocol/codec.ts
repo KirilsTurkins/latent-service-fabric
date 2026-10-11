@@ -2,19 +2,19 @@ import { Buffer } from "node:buffer";
 import { create, fromBinary, toBinary, ScalarType, type DescField, type DescMessage, type Message } from "@bufbuild/protobuf";
 import { preflight, ShapeError } from "./preflight.js";
 
-interface Budget { bytes: number; fields: number; messages: number }
+interface Budget { bytes: number; fields: number; messages: number; transaction: boolean }
 type RecordValue = Record<string, unknown>;
 
-export function encode(schema: DescMessage, value: unknown, maximum: number): Uint8Array {
-  const message = input(schema, value, { bytes: maximum, fields: 2048, messages: 256 }, 0);
+export function encode(schema: DescMessage, value: unknown, maximum: number, transaction = false): Uint8Array {
+  const message = input(schema, value, { bytes: maximum, fields: transaction ? 65536 : 2048, messages: transaction ? 4096 : 256, transaction }, 0);
   const encoded = toBinary(schema, message, { writeUnknownFields: false });
   if (encoded.length > maximum) throw new ShapeError();
   return encoded;
 }
 
-export function decode(schema: DescMessage, bytes: Uint8Array, maximum: number): RecordValue {
+export function decode(schema: DescMessage, bytes: Uint8Array, maximum: number, transaction = false): RecordValue {
   if (bytes.length > maximum) throw new ShapeError();
-  preflight(schema, bytes);
+  preflight(schema, bytes, transaction);
   const message = fromBinary(schema, bytes, { readUnknownFields: false, recursionLimit: 12 });
   return output(schema, message as unknown as RecordValue);
 }
@@ -57,7 +57,7 @@ function fieldInput(field: DescField, value: unknown, budget: Budget, depth: num
       || (field.scalar !== ScalarType.STRING && field.scalar !== ScalarType.UINT64)) throw new ShapeError();
     const result: RecordValue = Object.create(null);
     for (const [key, item] of entries) {
-      if (Buffer.byteLength(key, "utf8") > 128
+      if (Buffer.byteLength(key, "utf8") > (budget.transaction ? 256 : 128)
         || (field.scalar === ScalarType.STRING && (typeof item !== "string" || Buffer.byteLength(item, "utf8") > 1024))) throw new ShapeError();
       scalarInput(ScalarType.STRING, false, key, budget);
       result[key] = scalarInput(field.scalar, false, item, budget);
@@ -65,7 +65,7 @@ function fieldInput(field: DescField, value: unknown, budget: Budget, depth: num
     return result;
   }
   if (field.fieldKind === "list") {
-    if (!Array.isArray(value) || value.length > 128) throw new ShapeError();
+    if (!Array.isArray(value) || value.length > (field.name === "required_record_ids" ? 256 : 128)) throw new ShapeError();
     for (let index = 0; index < value.length; index++) if (!Object.hasOwn(value, index)) throw new ShapeError();
     return value.map((item: unknown) => field.message
       ? input(field.message, item, budget, depth + 1)

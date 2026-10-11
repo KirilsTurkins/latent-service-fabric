@@ -635,6 +635,7 @@ impl WasmtimeBackend {
                         message: "runtime-lifecycle-unproven".into(),
                         guest_backtrace: Vec::new(),
                         metadata: Metadata::new(),
+                        diagnostic: None,
                     },
                     consumption,
                 })
@@ -880,25 +881,6 @@ impl WasmtimeBackend {
 }
 
 impl ExecutionBackend for WasmtimeBackend {
-    fn canonicalize_transaction_input<'a>(
-        &'a self,
-        ready: latent_executor::PreparedReadiness,
-        envelope: &'a latent_activation::ActivationEnvelope,
-        budget: &'a latent_core::ActivationBudget,
-        wait: &'a dyn latent_executor::PreparationReadWait,
-    ) -> BoxFuture<
-        'a,
-        Result<
-            (
-                latent_executor::PreparedReadiness,
-                latent_executor::CanonicalTransactionInput,
-            ),
-            PlatformError,
-        >,
-    > {
-        Box::pin(self.canonicalize_readiness_input(ready, envelope, budget, wait))
-    }
-
     fn prepare_ready_from_repository<'a>(
         &'a self,
         repository: Arc<dyn ArtifactRepository>,
@@ -1141,6 +1123,7 @@ fn classify_call_result(
         drop(call_result);
         return Ok(GuestOutcome::Trapped {
             trap: latent_executor::GuestTrap {
+                diagnostic: latent_core::diagnostic::ActivationDiagnostic::from_error(&error),
                 code: "budget-accounting-failed".to_owned(),
                 message: bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
                 guest_backtrace: Vec::new(),
@@ -1161,6 +1144,7 @@ fn classify_call_result(
             }
             Err(error) => Ok(GuestOutcome::Trapped {
                 trap: latent_executor::GuestTrap {
+                    diagnostic: latent_core::diagnostic::ActivationDiagnostic::from_error(&error),
                     code: if error.code == PlatformErrorCode::ResourceExhausted {
                         "result-limit-exceeded"
                     } else {

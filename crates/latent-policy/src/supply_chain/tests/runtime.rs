@@ -1,9 +1,6 @@
 use super::catalog::ready;
 use super::*;
-use latent_artifacts::{
-    AdmissionAuthority, AdmissionStorageLimits, ArtifactRepository, DirectoryArtifactRepository,
-    DirectoryArtifactRepositoryConfig,
-};
+use latent_artifacts::{AdmissionAuthority, ArtifactRepository, DirectoryArtifactRepository};
 use latent_core::{PlatformErrorCode, TenantId};
 use latent_manifest::RuntimeCompatibilityProfile;
 
@@ -107,8 +104,8 @@ fn incompatible_restart_retains_exact_history_but_no_live_eligibility() {
     );
     let catalog = DirectoryArtifactRepository::open_enforced(
         &catalog_root,
-        DirectoryArtifactRepositoryConfig::default(),
-        AdmissionStorageLimits::default(),
+        Default::default(),
+        Default::default(),
         authority.clone(),
     )
     .unwrap();
@@ -143,8 +140,8 @@ fn incompatible_restart_retains_exact_history_but_no_live_eligibility() {
     );
     let catalog = DirectoryArtifactRepository::open_enforced(
         &catalog_root,
-        DirectoryArtifactRepositoryConfig::default(),
-        AdmissionStorageLimits::default(),
+        Default::default(),
+        Default::default(),
         authority.clone(),
     )
     .unwrap();

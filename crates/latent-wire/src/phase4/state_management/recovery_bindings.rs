@@ -68,8 +68,14 @@ pub(super) fn scope(
 pub(super) fn command(
     request: &contract::Request,
 ) -> Result<Option<&latent_rpc::transaction::v1::CommandSelector>, PlatformError> {
-    if let Some(effect) = super::effect_read::original(request) {
-        return effect.command.as_ref().map(Some).ok_or_else(invalid);
+    match request {
+        contract::Request::LookupCommand(value) => {
+            return Ok(Some(value.command.as_ref().ok_or_else(invalid)?))
+        }
+        contract::Request::LookupCommit(value) => {
+            return Ok(Some(value.command.as_ref().ok_or_else(invalid)?))
+        }
+        _ => {}
     }
     let original = match request {
         contract::Request::PlanEffectMutation(value) => Some(value.as_ref()),

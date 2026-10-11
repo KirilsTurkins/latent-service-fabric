@@ -338,6 +338,18 @@ impl PreparedAdmission {
                 .get(&attempt_row_key(identity, receipt.attempt))?
                 .ok_or(AtomicError::Corrupt)?;
             let record = CommandRecord::decode(&bytes)?;
+            if record.key != input.key || record.fingerprint != fingerprint {
+                return Err(AtomicError::Corrupt);
+            }
+            if !record.accounted {
+                // Supported original LCM3/LCT1 retries have no retention index.
+                // They remain readable only in the explicit uninstalled tenant
+                // profile; a new configuration cannot reconstruct ownership.
+                if installed_tenant || receipt.is_accounted() || record.attempt != receipt.attempt {
+                    return Err(AtomicError::UnsupportedFormat);
+                }
+                return Ok(AdmissionDecision::Existing(record));
+            }
             let index_key = super::retention::RetryIndex::row_key(identity, receipt.attempt);
             let index = super::retention::RetryIndex::decode(
                 &view.get(&index_key)?.ok_or(AtomicError::Corrupt)?,
@@ -1226,6 +1238,7 @@ impl Usage {
         Ok((usage, row, bytes))
     }
     pub(super) fn decode(bytes: &[u8]) -> Result<Self, AtomicError> {
+        latent_state::reservation::NamespaceLedger::decode(bytes)?;
         let accounted = bytes.starts_with(latent_state::reservation::QUOTA_MAGIC);
         let bound = if accounted {
             latent_state::reservation::QUOTA_BYTES
@@ -1341,6 +1354,7 @@ impl Usage {
         } else if self.review_clock.is_some() {
             return Err(AtomicError::UnsupportedFormat);
         }
+        latent_state::reservation::NamespaceLedger::decode(&out.0)?;
         Ok(out.0)
     }
     pub(super) fn check(&self, namespace: &NamespaceRecord) -> Result<(), AtomicError> {
@@ -1363,20 +1377,11 @@ pub(super) fn usage_row_key(
     namespace: &str,
     incarnation: u64,
 ) -> Result<RowKey, AtomicError> {
-    let mut bytes = latent_state::reservation::QUOTA_PREFIX.to_vec();
-    bytes.extend_from_slice(
-        &namespace_record_key(
-            &TenantId(tenant.into()),
-            &StateNamespaceId(namespace.into()),
-        )
-        .map_err(|_| AtomicError::Invalid)?,
-    );
-    bytes.extend_from_slice(&incarnation.to_le_bytes());
-    let row = RowKey {
-        family: Family::Maintenance,
-        key: bytes,
-    };
-    Ok(row)
+    Ok(latent_state::reservation::namespace_ledger_key(
+        &TenantId(tenant.into()),
+        &StateNamespaceId(namespace.into()),
+        incarnation,
+    )?)
 }
 
 /// Closed per-row accounting: encoded family/key/value plus the declared

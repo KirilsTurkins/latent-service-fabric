@@ -16,6 +16,28 @@ local-child broker halves the parent's remaining allowance. Retain the returned
 source, WIT, descriptor, template and helper digests in the new build receipt.
 Original C4 projects and receipts remain unchanged.
 
+The packaged Java conductor enables this campaign with
+`--diagnostic-campaign`. The hosted packaged qualification workflow exposes the
+same explicit `java_diagnostics` input alongside `platform: java-composition`.
+Its default remains the original composition campaign. Both modes authenticate
+the selected native and compiler packages, build fresh Java components, and
+retain their own compiler and signing receipts. `diagnosticCampaignPassed` is
+separate from the ordinary composition and preflight result: an unavailable
+typed runtime observation leaves that field false.
+
+The optional campaign also invokes the maintained `/api/spin` adapter with a
+one-billion CPU request, below its original ten-billion declaration, and requires
+the actual service child's authorized terminal observation to identify stage 5,
+reason 11. Its last consumption comes from the supported activation status.
+A separate held spin keeps both execution cells occupied. This disposable
+configuration narrows its original four-slot queue to one slot; one accepted
+waiting root then fills the remaining admission reservation. A third root must
+be refused with terminal stage 1 or 2, reason 9. Stage 2, reason 14 remains a
+queue deadline and cannot qualify as pressure. The waiting root and held tree
+are cancelled once each, their CLI owners are reaped, and the waiting root must
+show zero CPU and memory consumption. Both cases check idle resource counters
+and a distinct fresh successful invocation. Missing typed data stays unavailable.
+
 Start the existing `sdk_provider_scenario.start_provider` peer under the
 conductor's original deadline. Pass its actual loopback port to `configure`
 before node startup. That function adds the original bounded HTTP provider
@@ -25,6 +47,11 @@ domain's explicit deployment operation. It scopes the current policy to the
 original adapter service caller, exact domain publication, GET and the peer's
 fixed `/allowed` destination. Credentials and raw request fields are absent from
 the evidence.
+
+For a managed workspace, `configure` must receive the actual
+`runtime/config` directory because the provider credential directory is relative
+to that installed configuration. The conductor's evidence directory is not a
+substitute installation root.
 
 `qualify` performs two distinct real HTTP requests through the adapter and child.
 For the first request the peer records an actual authenticated GET, then an actual
@@ -42,7 +69,10 @@ text or substitutes a queue deadline for a running provider timeout.
 After normal node shutdown, pass the original `stopped_record` to
 `verify_shutdown`. Provider counters are unavailable before that report; the
 helper requires every known pool counter to be zero and the original node to be
-reaped. Call `stop_peer` to reap the original peer and require exactly one
+reaped. Managed `dev down` returns its shipped bounded projection; pass those
+original bytes to `verify_managed_shutdown`, which requires `state: stopped`,
+`reaped`, `cleanShutdown` and every `providerShutdown` counter. Do not reconstruct
+an arbitrary standalone report from that projection. Call `stop_peer` to reap the original peer and require exactly one
 physically closed hold and one fresh authorized request. The SDK matrix's
 `stop_provider` requires four holds and is not the correct campaign oracle.
 For a failed campaign use the existing `close_failed_provider`, retain its failed
