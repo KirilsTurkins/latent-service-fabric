@@ -6,7 +6,8 @@ use wasm_encoder::{
 };
 use wasmtime::component::ResourceType;
 
-use crate::test_fixtures::host as fixture;
+#[path = "../../../../latent-packaging/tests/fixtures/host.rs"]
+mod fixture;
 
 const STATE: &str = "latent:state/key-value@0.2.0";
 const INTENTS: &str = "latent:intents/staging@0.1.0";
@@ -108,7 +109,7 @@ fn transaction_owned_signatures_fit_the_existing_http_preparation_profile() {
         .unwrap();
         let report = serde_json::json!({ "schemaVersion": "latent.transaction-contract.preparation.v1",
             "evidenceKind": "engine-type-plan", "preparationQualified": true, "runtimeExecutionQualified": false,
-            "engineVersion": "48.0.4", "profile": profile, "operations": operations, "asynchronous": asynchronous,
+            "engineVersion": "48.0.5", "profile": profile, "operations": operations, "asynchronous": asynchronous,
             "plans": records });
         let bytes = serde_json::to_vec_pretty(&report).unwrap();
         assert!(bytes.len() <= 32 * 1024);

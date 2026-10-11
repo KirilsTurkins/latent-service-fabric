@@ -1,7 +1,7 @@
 {
   "schemaVersion":"latent.ci.contracts.v2",
   "kind":"python",
-  "reviewReason":"Retain both parent case/skip/decorator/base inventories; actual merged fixture guards reviewed against source, with current native operation and frozen WIT parity preserved.",
+  "reviewReason":"Preserve current compiler/source, finite scheduling and retained ownership contracts; add captured dependency and migration/restore controls without removing existing cases or guards.",
   "module":"tools/tests/test_wit_contracts.py",
   "cases":["WitContractTests.test_captured_versioned_dependencies_keep_their_original_directories","WitContractTests.test_duplicate_detector_catches_type_function_collision","WitContractTests.test_example_package_is_staged_with_platform_dependencies","WitContractTests.test_interface_item_names_are_unique","WitContractTests.test_same_label_profiles_stage_distinct_exact_worlds_and_dependencies","WitContractTests.test_staging_rejects_source_and_platform_overlaps_before_mutation","WitContractTests.test_type_use_preserves_dotted_prerelease_and_build_version_identity","WitContractTests.test_type_use_selector_stages_the_exact_state_dependency","WitContractTests.test_type_use_selector_stages_the_real_intents_state_dependency","WitContractTests.test_versioned_runtime_worlds_stage_only_their_selected_package_versions","WitContractTests.test_versioned_type_uses_stage_exact_transitive_state_dependency"],
   "guards":{

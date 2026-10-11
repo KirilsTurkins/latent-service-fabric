@@ -32,7 +32,8 @@ func Update(request api.UpdateRequest) wit.Result[api.Aggregate, api.BusinessErr
     command.Put(key, payload).Ok()
     intents.New("approved-event", "event", payload).Stage(command).Ok()
     if request.Reject { return wit.Err[api.Aggregate, api.BusinessError](api.BusinessErrorRejected) }
-    return wit.Ok[api.Aggregate, api.BusinessError](api.Aggregate{Count: next, ViewVersion: viewVersion, KeyVersion: keyVersion})
+    return wit.Ok[api.Aggregate, api.BusinessError](api.Aggregate{Count: next,
+        ViewVersion: viewVersion, KeyVersion: keyVersion})
 }
 func Query() wit.Result[api.Aggregate, api.BusinessError] {
     query := state.AcquireQuery().Ok(); defer query.Close()
@@ -41,7 +42,8 @@ func Query() wit.Result[api.Aggregate, api.BusinessError] {
     if !valid { return wit.Err[api.Aggregate, api.BusinessError](api.BusinessErrorMalformedState) }
     keyVersion := wit.None[[]byte]()
     if stored.IsSome() { keyVersion = wit.Some(stored.Some().Version) }
-    return wit.Ok[api.Aggregate, api.BusinessError](api.Aggregate{Count: count, ViewVersion: query.Info().Ok().Version, KeyVersion: keyVersion})
+    return wit.Ok[api.Aggregate, api.BusinessError](api.Aggregate{Count: count,
+        ViewVersion: query.Info().Ok().Version, KeyVersion: keyVersion})
 }
 func Scan(prefix []byte, limit uint32, cursor wit.Option[[]byte]) wit.Result[api.ScanResult, api.BusinessError] {
     query := state.AcquireQuery().Ok(); defer query.Close()

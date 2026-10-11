@@ -1,0 +1,53 @@
+{
+  "status": "passed",
+  "nativeSource": "66bda98056d3c2e64ca45731eb47e2942e6355ea",
+  "nativeTree": "8dc6bd3f1614eae33d3329e78d17dad57adce5ac",
+  "sdkSource": "21031d9c53b69590a997951f48ee2fd4d5e10c1e",
+  "sdkTree": "eb54b59d2c3fa07147a148e8d9814a75ff17588b",
+  "controllerHead": "86475b434e2853230d5f66282197f6dce92c42c7",
+  "features": [],
+  "tupleRole": "separately-attributed-server-regression",
+  "currentCompleteQualificationClaimed": false,
+  "newCompilerOrNativeProducerStarted": false,
+  "originalLimitsChanged": false,
+  "component": {
+    "bytes": 1918906,
+    "sha256": "81694bfe86054e3a37a26ebeea380a19377a40db39b977fdfe376a8fff95974b"
+  },
+  "httpControls": 52,
+  "original50ControlsRetained": true,
+  "maximumBodyBytes": 65536,
+  "maximumHttpStatus": 200,
+  "bodyByteEquality": true,
+  "cleanNodeStop": true,
+  "nodeProcessReaped": true,
+  "allObservedSourceNativeBuildAndControllerInputsUnchanged": true,
+  "seconds": 61.95759436099979,
+  "maximumSeconds": 900,
+  "schemaVersion": "lsf.java.server.maximum-body-regression.v1",
+  "originalHttpControlsRetained": 50,
+  "bodyPattern": "All byte values0..255 repeated256times",
+  "freshRequestAfterMaximumSucceeded": true,
+  "allPerRequestObservedOwnersZero": true,
+  "allObservedCellsRestoredWithoutQuarantine": true,
+  "hostAbiProfile": "lsf-host-abi-phase3-v5",
+  "wasmtimeVersion": "48.0.4",
+  "cpu": 2,
+  "memoryBytes": 4294967296,
+  "releasePublication": false,
+  "qualificationComplete": false,
+  "evidenceIdentities": {
+    "RESULT.json": {
+      "bytes": 981,
+      "sha256": "4d88836b084b9770be04e507cae5c209e35bf9bad9bfed6fadd5bedc8f3fb05a"
+    },
+    "FINAL.json": {
+      "bytes": 1470,
+      "sha256": "909ddecad1864e2057221e6ad07466de025731e68666e8611c7be33c13be2e92"
+    },
+    "node/conformance.json": {
+      "bytes": 194774,
+      "sha256": "781099adb3006904a792ed04ba46088c2aed6543715f30a997da622990d7fc9f"
+    }
+  }
+}

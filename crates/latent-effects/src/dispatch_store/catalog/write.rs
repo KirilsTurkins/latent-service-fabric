@@ -163,7 +163,7 @@ impl WriteSet {
     ) -> Result<(), StoreError> {
         self.batch
             .expectations
-            .extend(latent_state::recovery::namespace_readiness_expectations(
+            .extend(latent_state::recovery::dispatch_readiness_expectations(
                 view,
                 &latent_core::TenantId(scope.tenant.clone()),
                 &latent_core::StateNamespaceId(scope.namespace.clone()),

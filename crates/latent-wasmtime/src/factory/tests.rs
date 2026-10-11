@@ -8,6 +8,30 @@ const CHILD_SCENARIO: &str = "LSF_WASMTIME_EPOCH_TEST";
 const COMPLETED: &str = "epoch-scenario-completed";
 
 #[test]
+fn transactional_factory_initialization_links_scoped_imports_without_guest_owners() {
+    supervise(
+        "factory::tests::transactional_factory_initialization_links_scoped_imports_without_guest_owners",
+        || {
+            for transactional_state in [false, true] {
+                let factory = WasmtimeComponentEngineFactory::new(WasmtimeConfig {
+                    transactional_state,
+                    ..WasmtimeConfig::default()
+                })
+                .expect("ordinary and transactional factories initialize their exact imports");
+                let snapshot = factory.create_backend_instance().resource_snapshot();
+                assert_eq!(snapshot.stores_created, 0);
+                assert_eq!(snapshot.live_stores, 0);
+                assert_eq!(snapshot.live_host_states, 0);
+                assert_eq!(snapshot.active_invocations, 0);
+                let epoch = factory.shared.epoch_observation();
+                factory.shutdown().expect("all original workers join");
+                assert!(epoch.completed());
+            }
+        },
+    );
+}
+
+#[test]
 fn input_observer_is_shared_without_retaining_factory_or_workers() {
     supervise(
         "factory::tests::input_observer_is_shared_without_retaining_factory_or_workers",
@@ -109,7 +133,7 @@ fn explicit_ticker_stop_wakes_a_long_interval_and_is_idempotent() {
         || {
             let engine = Engine::default();
             let mut ticker =
-                EpochTicker::start(&engine, Duration::from_hours(1)).expect("one helper");
+                EpochTicker::start(&engine, Duration::from_secs(3600)).expect("one helper");
             let observation = ticker.observation();
             ticker.stop_and_join().expect("wake and join immediately");
             assert!(observation.completed());
@@ -130,7 +154,7 @@ fn repeated_ticker_drop_joins_every_worker() {
         || {
             let engine = Engine::default();
             for _ in 0..3 {
-                let ticker = EpochTicker::start(&engine, Duration::from_hours(1))
+                let ticker = EpochTicker::start(&engine, Duration::from_secs(3600))
                     .expect("one helper at a time");
                 let observation = ticker.observation();
                 drop(ticker);

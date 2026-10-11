@@ -2,11 +2,8 @@
 //! This owns no namespace, policy grant, publication or compiler. Failure is
 //! retained by the enclosing campaign; no uncertain mutation is retried.
 use clap::Parser;
-use latent_wire::{
-    invocation::proto as i,
-    management::proto as c,
-    phase4::{contract, transaction as t},
-};
+use latent_rpc::{phase4 as contract, transaction::v1 as t};
+use latent_wire::{invocation::proto as i, management::proto as c};
 use std::{net::SocketAddr, path::PathBuf, time::Duration};
 use t::transaction_service_client::TransactionServiceClient;
 use tonic::{transport::Endpoint, Request};

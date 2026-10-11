@@ -55,7 +55,7 @@ pub(crate) fn check_header(
     entrypoint: &str,
     annotations: &BTreeMap<String, String>,
     count: usize,
-    limits: &PackagingLimits,
+    limits: PackagingLimits,
 ) -> Result<(), PlatformError> {
     limits.validate()?;
     if name.len() > 128
@@ -80,6 +80,8 @@ pub struct PackagingLimits {
     pub package: PackageLimits,
     pub semantics: SemanticLimits,
     pub sbom: SbomLimits,
+    /// Trusted build/admission configuration; never supplied by package metadata.
+    pub manifest_profile: latent_manifest::ManifestValidationProfile,
 }
 
 impl PackagingLimits {

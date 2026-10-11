@@ -13,7 +13,9 @@ use std::{
 use zeroize::Zeroizing;
 
 mod credential;
+mod credential_generation;
 mod reload;
+pub use credential_generation::{ProviderCredentialGeneration, TlsProviderCredentialGeneration};
 
 pub trait SecretClock: Send + Sync {
     fn sample(&self) -> ClockSample;

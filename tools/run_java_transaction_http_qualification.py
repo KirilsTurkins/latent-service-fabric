@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Qualify preserved signed Java guests using actual already-built Phase 4 owners.
 
+Preserved continuation collector: its version-1 configuration, HTTP installation
+and offline recovery modes require porting to the current version-2 owners.
+PR #823 does not supply those adapters. A refusal remains failed evidence.
+
 Linux/Python 3.13. This creates one private disposable root and retains every
 failed attempt. It invokes no compiler, installs no inferred grant and cannot
 qualify a packaged developer distribution or the full Phase 4 completion gate.

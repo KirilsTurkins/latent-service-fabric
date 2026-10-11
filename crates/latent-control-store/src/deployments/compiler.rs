@@ -18,11 +18,8 @@ use std::sync::Arc;
 
 use latent_artifacts::{ArtifactRepository, ReleaseUseEligibility, VerifiedArtifactMetadata};
 use latent_core::{Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, RouteGeneration};
-use latent_manifest::{
-    __serde_json as json, validate_deployment_document, JsonManifestCodec, ManifestCodec,
-};
+use latent_manifest::{__serde_json as json, JsonManifestCodec, ManifestCodec, ManifestValidator};
 
-use super::control_admission::{annotate, Stage};
 use super::observation::{count, Work};
 use super::pagination::DeploymentIndex;
 use super::{
@@ -476,9 +473,10 @@ async fn compile_catalog_inner(
         // The existing per-version allowance also covers bounded record/order slots.
         let mut records = vec![None; deployments.len()];
         for (position, deployment, publication) in ordered {
-            // Finite data validation precedes loading the selected artifact.
-            // Only its sealed package metadata selects the final profile below.
-            validate_deployment_document(deployment).map_err(manifest_error)?;
+            config
+                .manifest_profile
+                .validate_deployment(deployment)
+                .map_err(manifest_error)?;
             let equal_prior = compatible
                 .and_then(|catalog| catalog.record_by_id(&deployment.id))
                 .filter(|record| record.deployment.as_ref() == deployment.as_ref());
@@ -544,9 +542,7 @@ async fn compile_catalog_inner(
                 // Failure leaves this private catalog unpublished, and commit
                 // still rechecks every grant under its existing currentness fence.
                 if let Some(authority) = control_authority {
-                    authority
-                        .renew_control_lease()
-                        .map_err(|failure| annotate(true, Stage::PackageLease, failure))?;
+                    authority.renew_control_lease()?;
                 }
                 let (artifact, execution) = execution::load(
                     artifacts,
@@ -617,9 +613,7 @@ async fn compile_catalog_inner(
                 grant.release() == &deployment.release
                     && Some(grant.publication()) == publication.as_ref()
             }) {
-                grant.authorize_tenant(tenant).map_err(|failure| {
-                    annotate(control_authority.is_some(), Stage::PackageTenant, failure)
-                })?;
+                grant.authorize_tenant(tenant)?;
             }
             if let Some(denied) = inactive.last().filter(|entry| {
                 entry.release() == &deployment.release
@@ -637,9 +631,16 @@ async fn compile_catalog_inner(
                     return Err(denied.error());
                 }
             }
-            artifact
-                .validate_deployment(deployment)
-                .map_err(manifest_error)?;
+            if artifact.is_web_execution_projection() {
+                config
+                    .manifest_profile
+                    .validate_web_execution_projection(deployment, artifact.manifest())
+            } else {
+                config
+                    .manifest_profile
+                    .validate_deployment_against_capsule(deployment, artifact.manifest())
+            }
+            .map_err(manifest_error)?;
             let mut descriptors = BTreeMap::new();
             if release_surface.is_none() {
                 for descriptor in artifact.contracts() {
@@ -763,7 +764,7 @@ async fn compile_catalog_inner(
             let revision_id = if let Some(record) = derivation_reuse {
                 record.revision.clone()
             } else {
-                deployment_revision_id_observed(deployment, work)?
+                deployment_revision_id_observed(deployment, work, config.manifest_profile)?
             };
             admission::charge_policy(&revision_id, deployment, &mut metadata_budget)?;
             if !revision_ids.insert(revision_id.clone()) {
@@ -855,15 +856,7 @@ async fn compile_catalog_inner(
         };
         if inherit_bindings {
             catalog.bindings =
-                super::bindings::inherit(&catalog, previous, artifacts, control_authority)
-                    .await
-                    .map_err(|failure| {
-                        annotate(
-                            control_authority.is_some(),
-                            Stage::InheritedBindings,
-                            failure,
-                        )
-                    })?;
+                super::bindings::inherit(&catalog, previous, artifacts, control_authority).await?;
         }
         charge(&mut metadata_budget, catalog.bindings.retained_bytes())?;
         Ok(catalog)

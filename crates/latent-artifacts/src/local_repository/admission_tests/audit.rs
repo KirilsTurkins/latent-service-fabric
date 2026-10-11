@@ -63,9 +63,8 @@ fn independent_verification_is_visible_but_unreturnable_publication_has_no_criti
             .1,
         ReleaseOperationLookup::Unknown
     ));
-    let expires = Instant::now() + Duration::from_secs(5);
-    let ticket = loop {
-        match audit.query(
+    let page = audit
+        .query(
             AuditQueryRequest {
                 scope: AuditScope::Tenant(tenant()),
                 filter: AuditFilter::default(),
@@ -73,18 +72,11 @@ fn independent_verification_is_visible_but_unreturnable_publication_has_no_criti
                 limit: 8,
                 maximum_bytes: 64 * 1024,
             },
-            expires,
-        ) {
-            Ok(ticket) => break ticket,
-            Err(error) if error.message == "audit-busy" && Instant::now() < expires => {
-                // The observation can precede release of the worker's brief
-                // bookkeeping lock. Keep this read under one fixed deadline.
-                std::thread::yield_now();
-            }
-            Err(error) => panic!("audit query failed: {error:?}"),
-        }
-    };
-    let page = ticket.blocking_wait().unwrap();
+            Instant::now() + Duration::from_secs(5),
+        )
+        .unwrap()
+        .blocking_wait()
+        .unwrap();
     assert_eq!(page.records().len(), 1);
     let AuditRecordData::Observation(observation) = &page.records()[0].data else {
         panic!("verification only");

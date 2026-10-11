@@ -37,7 +37,6 @@ pub struct PolicySnapshot {
     tenant: TenantId,
     policies: Vec<Pinned>,
     binding: Pinned,
-    generation: u64,
     lease: PolicyReadLease,
 }
 /// Facts must come from the transport/activation's trusted context. Claims and
@@ -161,7 +160,6 @@ impl PolicyStore {
             tenant: tenant.clone(),
             policies,
             binding,
-            generation: state.image.generation,
             lease,
         })
     }
@@ -258,13 +256,6 @@ impl PolicyStore {
     }
 }
 impl PolicySnapshot {
-    /// Actual bounded owner's captured generation, descriptive only. Permission
-    /// still requires a sealed decision and the current policy/publication fence.
-    #[must_use]
-    pub const fn generation(&self) -> u64 {
-        self.generation
-    }
-
     /// A bounded observation, not a currentness token or execution permission.
     #[must_use]
     pub fn diagnostic_state(&self) -> PolicySnapshotState {
@@ -413,7 +404,6 @@ impl PolicySnapshot {
         {
             return Err(denied());
         }
-        publication.check_current()?;
         restrictions.deployment.validate(input.capability)?;
         restrictions
             .provider_configuration
@@ -452,6 +442,12 @@ impl PolicySnapshot {
         {
             return Err(capacity());
         }
+        // An immutable current policy can prove a selection is denied without
+        // acquiring positive publication authority. Check positive currentness
+        // only after every narrowing succeeds: clock-lease maintenance cannot
+        // disguise an actual denial as transient provider unavailability.
+        // Every successful decision still requires this original publication.
+        publication.check_current()?;
         Ok(SealedPolicyDecision {
             snapshot: self,
             publication,

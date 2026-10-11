@@ -62,7 +62,7 @@ impl Node {
         threads: RuntimeThreads,
         origin: Instant,
     ) -> Result<Self> {
-        Self::start_with_clock(
+        Box::pin(Self::start_with_clock(
             maximum_commands,
             config,
             fixture,
@@ -70,7 +70,7 @@ impl Node {
             threads,
             origin,
             std::sync::Arc::new(latent_core::SystemActivationClock),
-        )
+        ))
         .await
     }
 

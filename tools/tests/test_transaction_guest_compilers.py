@@ -50,6 +50,7 @@ class TransactionGuestCompilerTests(unittest.TestCase):
     def test_authored_surface_keeps_declared_results_and_canonical_async_owners(self):
         expected = contract()
         check_surface(expected, copy.deepcopy(expected), "aggregate")
+        check_surface(expected, copy.deepcopy(expected), "result-boundary")
         for change in ("missing-intents", "sync-get", "forged-owner", "new-export"):
             actual = copy.deepcopy(expected)
             if change == "missing-intents":

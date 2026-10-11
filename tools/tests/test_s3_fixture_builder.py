@@ -22,7 +22,7 @@ RECIPE = "c" * 64
 BINARY = "d" * 64
 ROOTFS = "e" * 64
 IMAGE = "sha256:" + "f" * 64
-MODULE = b"module example.invalid/fixture\ngo 1.27.1\n"
+MODULE = b"module example.invalid/fixture\ngo 1.27.2\n"
 SUM = b"synthetic module checksums\n"
 
 

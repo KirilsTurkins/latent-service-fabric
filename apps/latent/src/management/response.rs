@@ -1,4 +1,4 @@
-use latent_manifest::ManifestCodec;
+use latent_manifest::{ManifestCodec, ManifestValidator, Phase1ManifestValidator};
 use latent_wire::management::{deployment_from_proto, proto, release_descriptor_from_proto};
 use serde_json::{json, Value};
 
@@ -34,7 +34,8 @@ pub(super) fn release(value: proto::ReleaseDescriptor) -> Result<Value, Failure>
 
 pub(super) fn deployment(value: proto::Deployment) -> Result<Value, Failure> {
     let versioned = deployment_from_proto(value).map_err(|_| invalid_response())?;
-    latent_manifest::validate_deployment_document(&versioned.manifest)
+    Phase1ManifestValidator
+        .validate_deployment(&versioned.manifest)
         .map_err(|_| invalid_response())?;
     let encoded = prepare::codec()
         .encode_deployment(&versioned.manifest)
@@ -163,12 +164,6 @@ pub(super) fn activation_tree(
             "targetService":node.target_service,"receivedAtUnixMillis":node.received_at_unix_millis.to_string(),
             "lastUpdatedUnixMillis":node.last_updated_unix_millis.to_string(),"diagnostic":diagnostic,
             "diagnosticIsTerminal":node.diagnostic_is_terminal,
-            "transactionStaging":node.transaction_staging.map(|value| json!({
-                "schemaVersion":value.schema_version,"activationSerial":value.activation_serial.to_string(),
-                "commandId":value.command_id,"attemptId":value.attempt_id,"transactionId":value.transaction_id,
-                "publicationId":value.publication_id,"stagedMutations":value.staged_mutations,
-                "capturedIntents":value.captured_intents,"stateWriteBytes":value.state_write_bytes.to_string(),
-                "observedAtUnixMillis":value.observed_at_unix_millis.to_string()})),
             "principalKind":node.principal_kind,"callerService":node.caller_service,
             "grantedBudget":node.granted_budget.map(|value| json!({
                 "cpuFuel":value.cpu_fuel.to_string(),"memoryBytes":value.memory_bytes.to_string(),

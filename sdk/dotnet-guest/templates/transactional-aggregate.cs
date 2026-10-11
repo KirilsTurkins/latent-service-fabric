@@ -37,8 +37,7 @@ public class ApiExportsImpl : IApiExports
         var stored = query.Get(Key).AsOk;
         var count = Count(stored);
         return count.HasValue
-            ? Result<IApiExports.Aggregate, IApiExports.BusinessError>.Ok(new(count.Value, query.Info().AsOk.version,
-                stored.HasValue ? stored.Value.version : null))
+            ? Result<IApiExports.Aggregate, IApiExports.BusinessError>.Ok(new(count.Value, query.Info().AsOk.version, stored.HasValue ? stored.Value.version : null))
             : Result<IApiExports.Aggregate, IApiExports.BusinessError>.Err(IApiExports.BusinessError.MALFORMED_STATE);
     }
     public static Result<IApiExports.ScanResult, IApiExports.BusinessError> Scan(byte[] prefix, uint limit, byte[]? cursor) {

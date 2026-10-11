@@ -6,7 +6,9 @@ use latent_packaging::{PackageBundle, PackageInput};
 use serde_json::{json, Value};
 #[path = "../../../latent-packaging/tests/fixtures/mod.rs"]
 mod fixture;
-use crate::support as runtime_fixture;
+#[path = "../generic_backend/support.rs"]
+#[allow(dead_code)]
+mod runtime_fixture;
 #[path = "../../../latent-packaging/tests/sbom_association/support.rs"]
 #[allow(dead_code)]
 mod sbom;
@@ -78,6 +80,17 @@ pub fn activation_runtime(bytes: Vec<u8>) -> PackageBundle {
         &[ACTIVATION],
     )
 }
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub fn outbound_streams(bytes: Vec<u8>) -> PackageBundle {
+    build(
+        "caller", bytes,
+        "package tests:caller@1.0.0; interface api { run: async func(which: u32) -> u32; } world service { import latent:network/streams@0.1.0; export api; }",
+        component::CALLER,
+        vec![function("run", true,
+            vec![json!({"name":"which","value_type":"U32","documentation":null})], json!("U32"))],
+        &[latent_capabilities::broker::network::STREAM_CAPABILITY],
+    )
+}
 pub fn java_activation_runtime(bytes: Vec<u8>, source: &str) -> PackageBundle {
     build(
         "caller",
@@ -141,6 +154,9 @@ fn build(
         .map(|contract| json!({"contract":contract,"optional":false}))
         .collect::<Vec<_>>());
     manifest["execution"]["limits"] = budget_json();
+    if imports.contains(&latent_capabilities::broker::network::STREAM_CAPABILITY) {
+        manifest["execution"]["limits"]["outboundRequests"] = json!(8);
+    }
     manifest["execution"]["threading"] = json!("single-threaded");
     let mut locked = vec![];
     let mut layers = vec![

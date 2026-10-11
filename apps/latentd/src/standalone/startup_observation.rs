@@ -1,9 +1,9 @@
 //! Private operator startup tracing. A scope retains only finite failures from
 //! the ordinary startup future; it grants no authority and changes no owner.
-use super::{
-    state::StartupFailure as Failure, PlatformError, RuntimeThreads, ShutdownReport, StandaloneNode,
-};
+mod failure;
+use super::{PlatformError, RuntimeThreads, ShutdownReport, StandaloneNode};
 use crate::config::NodeSettings;
+use failure::Failure;
 use latent_core::{PlatformErrorCode, PrincipalKind, TenantId};
 use serde::Serialize;
 use std::{cell::RefCell, future::Future};
@@ -28,14 +28,10 @@ pub(super) enum Stage {
     ProviderCatalog,
     NodeComposition,
     NodeServices,
-    StateConfiguration,
     StateClock,
     StateOperations,
     NativeCapacity,
-    CommandWaiters,
     EffectAuthority,
-    EffectInstallation,
-    ProtectedStoreAdmission,
     ProtectedStoreStartup,
     EffectDispatcher,
     StateManagement,
@@ -107,6 +103,21 @@ async fn capture<T>(future: impl Future<Output = T>) -> (T, Trace) {
             (output, trace)
         })
         .await
+}
+
+pub(crate) async fn observe_startup<T>(
+    future: impl Future<Output = Result<T, PlatformError>>,
+) -> (Result<T, PlatformError>, Option<StartupFailureReport>) {
+    let (result, trace) = capture(future).await;
+    let report = result.as_ref().err().map(|error| StartupFailureReport {
+        schema_version: "latent.startup-failure-observation.v1",
+        startup_succeeded: false,
+        terminal_failure: Some(Failure::from(error)),
+        observations: trace.observations.into_iter().flatten().collect(),
+        truncated: trace.truncated,
+        shutdown: None,
+    });
+    (result, report)
 }
 
 impl StandaloneNode {

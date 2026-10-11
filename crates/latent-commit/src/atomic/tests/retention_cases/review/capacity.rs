@@ -261,7 +261,7 @@ fn legacy_accounting_remains_readable_without_granting_an_implicit_destructive_u
 
 #[test]
 fn forged_quota_padding_and_mixed_reservation_formats_fail_coherent_startup() {
-    let (_dir, store, _) = setup();
+    let (dir, store, _) = setup();
     let owner = claim(&store, input("mixed-pending"));
     let view = store.snapshot().unwrap();
     let key = latent_state::reservation::reservation_key(&owner.record().id.bytes()).unwrap();
@@ -281,6 +281,12 @@ fn forged_quota_padding_and_mixed_reservation_formats_fail_coherent_startup() {
         validate_view(&store.snapshot().unwrap(), foreign_codec),
         Err(latent_state::embedded::StoreError::Corrupt)
     );
+    drop(store);
+    let store = open(&dir.path().join("state.redb"));
+    assert_eq!(
+        validate_view(&store.snapshot().unwrap(), foreign_codec),
+        Err(latent_state::embedded::StoreError::Corrupt)
+    );
     store
         .apply(AtomicBatch {
             expectations: vec![],
@@ -292,20 +298,34 @@ fn forged_quota_padding_and_mixed_reservation_formats_fail_coherent_startup() {
         .unwrap();
     let view = store.snapshot().unwrap();
     let (_, quota, old) = writer::Usage::read(&view, owner.record().key()).unwrap();
-    let mut forged = old.unwrap();
+    let original = old.unwrap();
+    let mut forged = original.clone();
     *forged.last_mut().unwrap() = 1;
     drop(view);
-    store
-        .apply(AtomicBatch {
+    // The engine's actual high-water pass now validates this shared LCU2
+    // reservation codec before commit. Invalid padding cannot be installed by
+    // the normal writer merely to manufacture a corrupt startup fixture.
+    assert!(matches!(
+        latent_state::reservation::NamespaceLedger::decode(&forged),
+        Err(latent_state::embedded::StoreError::Corrupt)
+    ));
+    assert_eq!(
+        store.apply(AtomicBatch {
             expectations: vec![],
             mutations: vec![RowMutation {
-                key: quota,
+                key: quota.clone(),
                 value: Some(forged),
             }],
-        })
-        .unwrap();
-    assert_eq!(
-        validate_view(&store.snapshot().unwrap(), foreign_codec),
+        }),
         Err(latent_state::embedded::StoreError::Corrupt)
     );
+    let view = store.snapshot().unwrap();
+    assert_eq!(view.get(&quota).unwrap(), Some(original.clone()));
+    validate_view(&view, foreign_codec).unwrap();
+    drop(view);
+    drop(store);
+    let store = open(&dir.path().join("state.redb"));
+    let view = store.snapshot().unwrap();
+    assert_eq!(view.get(&quota).unwrap(), Some(original));
+    validate_view(&view, foreign_codec).unwrap();
 }

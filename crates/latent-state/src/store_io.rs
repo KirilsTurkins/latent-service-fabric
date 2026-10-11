@@ -12,6 +12,7 @@
 //! Deadline expiry quarantines the owner; it never implies an aborted write,
 //! closed engine or physically retired worker. Quarantine is sticky.
 
+mod custody;
 mod drain;
 mod job;
 mod recovery;
@@ -23,6 +24,7 @@ mod thread;
 mod types;
 mod worker;
 
+pub(crate) use custody::StoreIoCustody;
 pub use drain::StoreIoDrain;
 pub use job::StoreIoJob;
 pub use recovery::{StoreIoRecoveryCapacity, StoreIoRecoverySnapshot};
@@ -68,6 +70,31 @@ impl<S> Drop for Owner<S> {
 }
 
 impl<S: Send + Sync + 'static> StoreIoOwner<S> {
+    #[cfg(test)]
+    pub(crate) fn wait_for_snapshot(
+        &self,
+        timeout: std::time::Duration,
+        ready: impl Fn(StoreIoSnapshot) -> bool,
+    ) {
+        let deadline = Instant::now() + timeout;
+        let mut state = self.inner.control.state.lock().unwrap();
+        while !ready(state.snapshot()) {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            assert!(!remaining.is_zero(), "physical store work did not retire");
+            let (next, wake) = self
+                .inner
+                .control
+                .changed
+                .wait_timeout(state, remaining)
+                .unwrap();
+            state = next;
+            assert!(
+                !wake.timed_out() || ready(state.snapshot()),
+                "physical store work did not retire"
+            );
+        }
+    }
+
     /// Creation errors preserve a partial worker owner for physical drain.
     pub fn new(
         store: S,
@@ -178,7 +205,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         retained_bytes: u64,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
-        self.submit_inner(kind, retained_bytes, None, operation)
+        self.submit_inner(kind, retained_bytes, None, None, operation)
     }
 
     /// Retain the original request owner through native callback completion and
@@ -192,7 +219,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         keeper: Arc<dyn std::any::Any + Send + Sync>,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
-        self.submit_inner(kind, retained_bytes, Some(keeper), operation)
+        self.submit_inner(kind, retained_bytes, Some(keeper), None, operation)
     }
 
     #[allow(clippy::result_large_err)]
@@ -201,6 +228,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         kind: StoreIoKind,
         retained_bytes: u64,
         keeper: Option<Arc<dyn std::any::Any + Send + Sync>>,
+        custody: Option<u64>,
         operation: F,
     ) -> Result<StoreIoJob<T>, StoreIoAdmissionError<F>> {
         let control = &self.inner.control;
@@ -220,7 +248,14 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             let charge = retained_bytes
                 .checked_add(metadata)
                 .ok_or(StoreIoError::Exhausted)?;
-            state.admit(kind.is_recovery(), charge)?;
+            if let Some(sequence) = custody {
+                if !kind.is_recovery() {
+                    return Err(StoreIoError::CustodyMismatch);
+                }
+                state.admit_custody(sequence, charge, control.clock.monotonic_now())?;
+            } else {
+                state.admit(kind.is_recovery(), charge)?;
+            }
             let next = state
                 .next_job
                 .checked_add(1)

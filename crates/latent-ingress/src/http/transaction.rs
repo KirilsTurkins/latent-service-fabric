@@ -209,6 +209,7 @@ impl TransactionRoute {
 /// Bounded original request facts retained with the exchange. Input bytes must
 /// subsequently use the prepared component's actual type-directed codec before
 /// constructing a durable fingerprint; generic JSON rewriting is insufficient.
+#[derive(Clone)]
 pub struct TransactionRequest {
     pub(super) client_key: Option<String>,
     pub(super) preconditions: Vec<Precondition>,
@@ -222,6 +223,7 @@ pub struct TransactionRequest {
 /// Explicit original abort evidence and a separate retry-request identity.
 /// The command coordinator must match every field against its actual stored
 /// aborted attempt; decoding a request never creates a retry permit.
+#[derive(Clone)]
 pub struct CommandRetry {
     request_id: String,
     fence: AbortFence,
@@ -291,7 +293,7 @@ pub(super) fn command_retry(
     let encoded = decode_canonical(fence, 1024, None)?;
     let wire: AbortFenceWire =
         serde_json::from_slice(&encoded).map_err(|_| HttpError::InvalidHeaders)?;
-    for identity in [&wire.command_id, &wire.attempt_id, &wire.transaction_id] {
+    for identity in [&wire.command_id, &wire.transaction_id] {
         if identity.len() != 64
             || !identity
                 .bytes()
@@ -299,6 +301,13 @@ pub(super) fn command_retry(
         {
             return Err(HttpError::InvalidHeaders);
         }
+    }
+    let attempt = wire
+        .attempt_id
+        .parse::<u64>()
+        .map_err(|_| HttpError::InvalidHeaders)?;
+    if attempt == 0 || attempt > 16 || attempt.to_string() != wire.attempt_id {
+        return Err(HttpError::InvalidHeaders);
     }
     let proof = decode_canonical(&wire.owner_fence, 32, Some(32))?;
     Ok(Some(CommandRetry {

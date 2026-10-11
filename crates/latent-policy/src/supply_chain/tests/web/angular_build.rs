@@ -54,7 +54,7 @@ fn actual_observed_angular_package_authenticates_publisher_builder_sbom_and_rest
                     .iter_mut()
                     .find(|(path, _)| path.starts_with("public/"))
                     .unwrap()
-                    .1[0] ^= 1;
+                    .1[0] ^= 1
             }
         }
         assert!(

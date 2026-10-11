@@ -254,6 +254,8 @@ impl EmbeddedStore {
         self.charge_table(&table)?;
         drop(table);
         drop(tx);
+        // Validate the selected 4096-byte page profile through the public
+        // engine API, rather than assuming an imported file's private layout.
         let check = database
             .begin_write()
             .map_err(|_| StoreError::Unavailable)?;
@@ -582,7 +584,7 @@ impl ReadView {
     }
 
     pub fn get(&self, key: &RowKey) -> Result<Option<Vec<u8>>, StoreError> {
-        self.get_bounded(key, self.limits.maximum_value_bytes)
+        self.get_at_age(key, self.opened.elapsed())
     }
 
     /// Refuse a hostile oversized value before copying it into the caller's
@@ -592,10 +594,25 @@ impl ReadView {
         key: &RowKey,
         maximum_bytes: usize,
     ) -> Result<Option<Vec<u8>>, StoreError> {
+        self.get_bounded_at_age(key, maximum_bytes, self.opened.elapsed())
+    }
+
+    // The public entry always samples the original monotonic lifetime. Engine
+    // tests can exercise the same boundary without timing a native disk flush.
+    fn get_at_age(&self, key: &RowKey, age: Duration) -> Result<Option<Vec<u8>>, StoreError> {
+        self.get_bounded_at_age(key, self.limits.maximum_value_bytes, age)
+    }
+
+    fn get_bounded_at_age(
+        &self,
+        key: &RowKey,
+        maximum_bytes: usize,
+        age: Duration,
+    ) -> Result<Option<Vec<u8>>, StoreError> {
         if maximum_bytes == 0 || maximum_bytes > self.limits.maximum_value_bytes {
             return Err(StoreError::Invalid);
         }
-        if self.opened.elapsed() > self.limits.maximum_view_age {
+        if age > self.limits.maximum_view_age {
             return Err(StoreError::SnapshotExpired);
         }
         let key = key.encoded(self.limits)?;

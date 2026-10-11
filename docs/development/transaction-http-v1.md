@@ -1,15 +1,24 @@
 # Direct transaction HTTP binding v1
 
+PR #828 connects this profile to the installed transaction owners introduced by
+PR #823. It serves direct commands, fresh queries and explicit original-result
+reads through the existing shared HTTP listener. Namespace creation remains an
+explicit authorized management operation; restart captures its actual incarnation.
+
 The `transaction-http-v1` application profile uses the shared HTTP ingress and
 the normal activation owner. Its fixed target is the selected deployment,
 publication, contract and function. It does not create a cross-service
 transaction through a stateless adapter's synchronous child call.
 
-This checkpoint defines route/request ownership and prepared input
-canonicalization. Standalone state composition, response/result delivery and
-real signed Java socket qualification are required before the profile is ready
-for application use. Portable mapping tests are not evidence of durable guest
-execution.
+Results use host-owned JSON framing, a 128 KiB application-result limit and
+`Cache-Control: no-store`. Commands validate that representation before durable
+completion. Every socket write and flush poll checks the retained current data
+permission. A cleanup failure remains a delivery diagnostic alongside the durable
+receipt. HTTP status does not turn uncertainty into an abort.
+
+Real signed Java, browser and complete recovery qualification remain acceptance
+work for #409/#718. Portable mapping, signed fixture execution and provider tests
+retain separate evidence boundaries.
 
 ## Installed scope
 
@@ -67,8 +76,9 @@ A retry after a proven abort is explicit. The original `Idempotency-Key` remains
 unchanged, and the request supplies both `Command-Retry-Key` (a separate bounded
 retry request identity) and `Command-Abort-Fence`. The latter is canonical padded
 base64 of a closed JSON object with `command-id`, `attempt-id`, `transaction-id`
-and `owner-fence`, copied from the actual server-issued aborted receipt. The three
-identities are lowercase 64-character hex; `owner-fence` is canonical base64 of
+and `owner-fence`, copied from the actual server-issued aborted receipt. The
+command and transaction identities are lowercase 64-character hex. The attempt
+is a canonical decimal counter from 1 through 16; `owner-fence` is canonical base64 of
 the actual 32-byte abort proof. The coordinator must match the original stored
 attempt, original fingerprint and current authority before accepting a retry.
 Malformed, incomplete or unsupported pairs fail before claim; queries and result
@@ -77,8 +87,9 @@ never manufactures an abort proof or triggers a retry.
 
 ## Before a command claim
 
-The installed admission first validates current scope and caller without a claim
-or guest-code preparation. The existing backend then retains immutable code readiness under the original
+Ordinary activation admission and the signed installed route check run before
+preparation. Namespace-specific permission is sealed before any durable claim.
+The existing backend retains immutable code readiness under the original
 activation reservation, deadline and cancellation. Wasmtime canonicalizes the
 input with the prepared component's actual parameter types, using the same
 bounded decoder and encoder as invocation. Record order, tagged presence,
@@ -97,6 +108,15 @@ The HTTP exchange continues owning its input through activation cleanup and
 bounded delivery. Disconnect handles retain its capacity until their last real
 owner retires. A lost transport response cannot by itself authorize another
 execution or classify an existing durable command as aborted.
+
+Result routes use the existing reserved recovery lane and current result-read
+policy. They create no activation or execution cell and do not require an old
+guest execution generation to remain current. The lookup still matches the
+installed tenant, namespace, incarnation, entity, companion and result policy.
+
+Deferred HTTP installation uses the same provider and dispatcher. See
+[signed deferred HTTP requirements](deferred-http-installation.md) for the
+closed document and separate staging/dispatch permissions.
 
 Related foundations: [optimistic state sessions](optimistic-state-sessions.md)
 and the [single transaction writer fence](transaction-writer-fence.md).

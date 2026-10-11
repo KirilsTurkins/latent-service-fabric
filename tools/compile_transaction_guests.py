@@ -27,7 +27,7 @@ from tools.transaction_guest_project import TEMPLATE
 from tools.transaction_guest_variants import HTTP, LANGUAGES, SOURCES, create as variant_project
 
 WORLD = "examples:transactional-aggregate/service@1.0.0"
-VARIANTS = ("aggregate", "forbidden-http")
+VARIANTS = ("aggregate", "forbidden-http", "result-boundary")
 JAVA_SCHEMA_VARIANTS = ("put-once-legacy-v1", "put-once-compatible-v2", "put-once-writer-v2")
 JAVA_DIAGNOSTIC_VARIANT = "put-once-diagnostics"
 
@@ -43,8 +43,9 @@ def authored_project(language: str, variant: str, output: Path) -> Path:
             raise ValueError("Java schema qualification requires the Java compiler")
         from tools.java_transaction_schema import create
         return create(output, variant.removeprefix("put-once-"), effect="put-once")
-    if variant == "forbidden-http":
-        return variant_project(output, language, variant)
+    if variant in {"forbidden-http", "result-boundary"}:
+        name = "transaction-rust-aggregate" if variant == "result-boundary" else None
+        return variant_project(output, language, variant, name)
     if variant != "aggregate":
         raise ValueError("unknown authored transaction variant")
     if language == "rust":
@@ -167,6 +168,8 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
     variants = ((JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
                 else (*VARIANTS, *JAVA_SCHEMA_VARIANTS) if java_schema_put_once else VARIANTS)
     for variant in variants:
+        if variant == "result-boundary" and language != "rust":
+            continue
         current = fresh(output / variant)
         report = {"schemaVersion": "latent.transaction-guest.compiler.v1", "language": language,
             "variant": variant, "evidenceKind": "authored-component-compiler", "status": "running",

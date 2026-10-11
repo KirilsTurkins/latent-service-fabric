@@ -112,10 +112,7 @@ mod tests {
         assert!(Module::new(&engine, gc_type_module()).is_err());
 
         let java = WasmtimeConfig {
-            guest_languages: crate::GuestLanguageProfiles {
-                java_guest: true,
-                ..Default::default()
-            },
+            java_guest: true,
             fuel_async_yield_interval: Some(10_000),
             ..WasmtimeConfig::default()
         };

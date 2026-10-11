@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use latent_core::{PlatformError, PHASE3_HOST_ABI_CURRENT};
+use latent_core::{PlatformError, PHASE3_HOST_ABI_CURRENT, PHASE4_HOST_ABI_V1};
 use latent_wasmtime::ExecutionIsolationProfile;
 use serde::Serialize;
 
@@ -66,6 +66,12 @@ impl ExecutionProfileReport {
             return false;
         }
         self.profile == settings.wasmtime.execution_isolation_profile
+            && self.host_abi_profile
+                == if settings.wasmtime.transactional_state {
+                    PHASE4_HOST_ABI_V1.id
+                } else {
+                    PHASE3_HOST_ABI_CURRENT.id
+                }
             && self.authenticated_native_loading == settings.isolated_aot.is_some()
             && self.protected_credential_file == settings.credentials_from_protected_file
             && (self.admission == "enforced") == settings.supply_chain.is_enforced()
@@ -87,6 +93,7 @@ impl ExecutionProfileReport {
 
 pub(super) fn check(settings: &NodeSettings) -> Result<ExecutionProfileReport, PlatformError> {
     let profile = settings.wasmtime.execution_isolation_profile;
+    check_state_owners(settings)?;
     check_marker(settings)?;
     if profile == ExecutionIsolationProfile::ExternalCapsule
         && (!settings.credentials_from_protected_file
@@ -114,7 +121,11 @@ pub(super) fn check(settings: &NodeSettings) -> Result<ExecutionProfileReport, P
             "trusted-local"
         },
         protected_credential_file: settings.credentials_from_protected_file,
-        host_abi_profile: PHASE3_HOST_ABI_CURRENT.id,
+        host_abi_profile: if settings.wasmtime.transactional_state {
+            PHASE4_HOST_ABI_V1.id
+        } else {
+            PHASE3_HOST_ABI_CURRENT.id
+        },
         wasmtime_version: latent_wasmtime::WASMTIME_VERSION,
         target: settings.wasmtime.target_triple.clone(),
         compiler: if settings.isolated_aot.is_some() {
@@ -132,6 +143,21 @@ pub(super) fn check(settings: &NodeSettings) -> Result<ExecutionProfileReport, P
     })
 }
 
+fn check_state_owners(settings: &NodeSettings) -> Result<(), PlatformError> {
+    if (settings.budget_profile == latent_core::BudgetProfile::Phase4) != settings.state.is_some()
+        || settings.state.is_some() != settings.wasmtime.transactional_state
+        || settings.state.is_some()
+            && (settings.budget_profile != latent_core::BudgetProfile::Phase4
+                || !settings.manifest_profile.transactional()
+                || !settings.supply_chain.is_enforced()
+                || settings.audit.is_none()
+                || settings.capability_policies.is_none())
+    {
+        return Err(invalid("state.authorityOwners"));
+    }
+    Ok(())
+}
+
 fn check_marker(settings: &NodeSettings) -> Result<(), PlatformError> {
     if settings.wasmtime.execution_isolation_profile != ExecutionIsolationProfile::ExternalCapsule {
         match std::fs::symlink_metadata(settings.data_directory.join("EXECUTION_PROFILE")) {
@@ -144,6 +170,7 @@ fn check_marker(settings: &NodeSettings) -> Result<(), PlatformError> {
 }
 
 pub(super) fn persist(settings: &NodeSettings) -> Result<(), PlatformError> {
+    check_state_owners(settings)?;
     check_marker(settings)?;
     if settings.wasmtime.execution_isolation_profile == ExecutionIsolationProfile::ExternalCapsule {
         super::protected_file::execution_profile_marker(&settings.data_directory, true)?;
