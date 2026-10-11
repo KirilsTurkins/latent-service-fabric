@@ -11,6 +11,7 @@ mod publication;
 mod recovery;
 mod requests;
 mod result_bounds;
+mod result_lookup;
 mod retries;
 mod scopes;
 

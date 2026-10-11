@@ -8774,6 +8774,9 @@
         "phase4::local_transaction::tests::recovery::actual_guest_zero_max_and_oversized_command_keys_are_bounded_before_execution",
         "phase4::local_transaction::tests::result_bounds::actual_guest_maximum_supported_result_ceiling_keeps_exact_replay_and_one_commit",
         "phase4::local_transaction::tests::result_bounds::actual_guest_zero_and_oversized_retained_result_leave_no_state_or_effect_commit",
+        "phase4::local_transaction::tests::result_lookup::actual_guest_lookup_preserves_declared_rejection_after_later_business_mutation",
+        "phase4::local_transaction::tests::result_lookup::actual_guest_lookup_retains_current_read_authority_and_distinct_payload_identity_cutoffs",
+        "phase4::local_transaction::tests::result_lookup::actual_guest_lost_result_lookup_preserves_original_receipt_under_ordinary_saturation",
         "phase4::local_transaction::tests::retries::actual_guest_durable_conflict_abort_allows_one_explicit_retry_and_preserves_attempt_history",
         "phase4::local_transaction::tests::retries::actual_guest_retry_request_receipt_keeps_its_historical_attempt_while_later_work_runs",
         "phase4::local_transaction::tests::retries::bounds::actual_guest_expired_abort_preserves_protective_identity_and_refuses_new_execution",
@@ -8851,6 +8854,9 @@
         "phase4::local_transaction::tests::recovery::actual_guest_zero_max_and_oversized_command_keys_are_bounded_before_execution",
         "phase4::local_transaction::tests::result_bounds::actual_guest_maximum_supported_result_ceiling_keeps_exact_replay_and_one_commit",
         "phase4::local_transaction::tests::result_bounds::actual_guest_zero_and_oversized_retained_result_leave_no_state_or_effect_commit",
+        "phase4::local_transaction::tests::result_lookup::actual_guest_lookup_preserves_declared_rejection_after_later_business_mutation",
+        "phase4::local_transaction::tests::result_lookup::actual_guest_lookup_retains_current_read_authority_and_distinct_payload_identity_cutoffs",
+        "phase4::local_transaction::tests::result_lookup::actual_guest_lost_result_lookup_preserves_original_receipt_under_ordinary_saturation",
         "phase4::local_transaction::tests::retries::actual_guest_durable_conflict_abort_allows_one_explicit_retry_and_preserves_attempt_history",
         "phase4::local_transaction::tests::retries::actual_guest_retry_request_receipt_keeps_its_historical_attempt_while_later_work_runs",
         "phase4::local_transaction::tests::retries::bounds::actual_guest_expired_abort_preserves_protective_identity_and_refuses_new_execution",
@@ -8869,6 +8875,9 @@
         "actual_guest_exact_maximum_result_body_commits_once_and_replays_exactly",
         "actual_guest_expired_abort_preserves_protective_identity_and_refuses_new_execution",
         "actual_guest_explicit_shared_scope_coalesces_authorized_users_and_revocation_denies_replay",
+        "actual_guest_lookup_preserves_declared_rejection_after_later_business_mutation",
+        "actual_guest_lookup_retains_current_read_authority_and_distinct_payload_identity_cutoffs",
+        "actual_guest_lost_result_lookup_preserves_original_receipt_under_ordinary_saturation",
         "actual_guest_maximum_retry_attempts_preserve_all_aborts_and_refuse_a_fourth_generation",
         "actual_guest_maximum_supported_result_ceiling_keeps_exact_replay_and_one_commit",
         "actual_guest_namespace_recreation_uses_new_incarnation_and_denies_stale_selector",
@@ -8887,7 +8896,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 210,
+      "minimumCases": 213,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -9399,6 +9408,78 @@
     },
     {
       "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latentd.example.transaction-recovery",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "apps/latentd/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latentd",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/transaction_recovery.rs",
+      "target": "transaction_recovery",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latentd.example.transaction-rpc-probe",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "apps/latentd/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latentd",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/transaction_rpc_probe.rs",
+      "target": "transaction_rpc_probe",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
+      "expectedCases": [],
+      "expectedIgnored": [],
+      "id": "latentd.example.transaction-startup-diagnosis",
+      "ignoredLeaves": [],
+      "kind": "example",
+      "manifest": "apps/latentd/Cargo.toml",
+      "minimumCases": 0,
+      "mode": "compile-only",
+      "package": "latentd",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "source": "examples/transaction_startup_diagnosis.rs",
+      "target": "transaction_startup_diagnosis",
+      "timeoutSeconds": 900
+    },
+    {
+      "boundary": "runtime",
       "expectedCases": [
         "command::tests::check_config_requires_an_explicit_file_and_never_selects_serve",
         "command::tests::obsolete_catalog_migration_command_is_rejected",
@@ -9424,6 +9505,7 @@
         "config::rollouts::tests::configured_boundaries_reject_overflow_and_inconsistent_domains",
         "config::rollouts::tests::optional_manual_configuration_requires_audit_and_has_finite_defaults",
         "config::state::owners::tests::explicit_limits_keep_reserved_recovery_and_production_record_framing",
+        "config::state::owners::tests::installed_metadata_keeps_startup_residency_and_an_independent_full_recovery_job",
         "config::state::owners::tests::native_reservations_include_full_wire_copies_and_original_startup_lifetime",
         "config::state::owners::tests::owner_declarations_reject_unknown_permission_flags_and_missing_partitions",
         "config::state::owners::tests::recovery_limits_cannot_be_consumed_by_ordinary_work_or_below_actual_frame_bounds",
@@ -9670,6 +9752,9 @@
         "standalone::start::tests::trust_currentness::real_policy_expiry_denies_native_work_and_recovers_readable_negative_history",
         "standalone::start::tests::trust_currentness::real_proof_age_expiry_denies_retained_native_work_with_a_current_clock_lease",
         "standalone::start::tests::trust_currentness::real_publisher_revocation_denies_native_work_without_any_registry_event",
+        "standalone::startup_observation::tests::finite_startup_trace_preserves_original_failure_and_excludes_private_error_data",
+        "standalone::startup_observation::tests::scoped_startup_traces_remain_isolated_across_concurrent_tasks_and_nested_scopes",
+        "standalone::startup_observation::tests::trace_capacity_preserves_first_failures_and_marks_overflow_without_success_events",
         "standalone::state::bootstrap::tests::actual_effect_rule_metadata_keeps_the_same_resident_charge_after_bootstrap_retirement",
         "standalone::state::bootstrap::tests::affine_initializer_memory_survives_bootstrap_drop_until_its_last_real_owner_retires",
         "standalone::state::bootstrap::tests::bootstrap_prepays_the_original_recovery_owner_without_opening_files_or_installing_rules",
@@ -9678,6 +9763,10 @@
         "standalone::state::bootstrap::tests::mixed_opened_configuration_cannot_change_store_checkpoint_or_installed_target_before_initialization",
         "standalone::state::bootstrap::tests::namespace_metadata_cannot_allocate_before_the_same_store_or_after_original_close",
         "standalone::state::clock::tests::an_unbound_provider_clock_never_synthesizes_wall_time_or_continuity",
+        "standalone::state::installations::tests::signed::operator_fixture::export_operator_workflow_fixture",
+        "standalone::state::installations::tests::signed::operator_fixture::export_publication_workflow_fixture",
+        "standalone::state::installations::tests::signed::operator_fixture::resources::export_phase2_resource_fixture",
+        "standalone::state::installations::tests::signed_installed_targets_require_actual_namespace_and_keep_resident_source_charges",
         "standalone::state::kernel::tests::existing_corrupt_checkpoint_is_preserved_and_cannot_publish_a_dispatch_owner",
         "standalone::state::kernel::tests::fresh_protected_kernel_creates_checkpoint_before_one_paused_same_owner_dispatcher",
         "standalone::state::kernel::tests::missing_checkpoint_on_actual_restart_never_recreates_fresh_evidence_or_advances_dispatch",
@@ -9757,7 +9846,10 @@
         "standalone::start::tests::trust_currentness::profile::external_profile_preserves_cold_warm_and_restart_requirements",
         "standalone::start::tests::trust_currentness::real_policy_expiry_denies_native_work_and_recovers_readable_negative_history",
         "standalone::start::tests::trust_currentness::real_proof_age_expiry_denies_retained_native_work_with_a_current_clock_lease",
-        "standalone::start::tests::trust_currentness::real_publisher_revocation_denies_native_work_without_any_registry_event"
+        "standalone::start::tests::trust_currentness::real_publisher_revocation_denies_native_work_without_any_registry_event",
+        "standalone::state::installations::tests::signed::operator_fixture::export_operator_workflow_fixture",
+        "standalone::state::installations::tests::signed::operator_fixture::export_publication_workflow_fixture",
+        "standalone::state::installations::tests::signed::operator_fixture::resources::export_phase2_resource_fixture"
       ],
       "id": "latentd.lib.latentd",
       "ignoredLeaves": [
@@ -9772,6 +9864,9 @@
         "actual_http_component_tls_body_and_slow_output_keep_owners_until_retirement",
         "adapter_and_rpc_have_equivalent_selected_outcomes",
         "configured_provider_startup_and_shutdown_remain_repeatable",
+        "export_operator_workflow_fixture",
+        "export_phase2_resource_fixture",
+        "export_publication_workflow_fixture",
         "external_profile_preserves_cold_warm_and_restart_requirements",
         "phase1_budget_collector",
         "phase1_cache_collector",
@@ -9791,7 +9886,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 329,
+      "minimumCases": 337,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

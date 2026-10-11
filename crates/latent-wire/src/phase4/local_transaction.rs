@@ -1,5 +1,5 @@
 //! The ordinary authenticated RPC uses the existing native activation lifecycle.
-mod projection;
+pub(super) mod projection;
 mod selection;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;

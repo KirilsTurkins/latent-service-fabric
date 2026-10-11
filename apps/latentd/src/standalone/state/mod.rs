@@ -4,6 +4,7 @@
 mod bootstrap;
 mod clock;
 mod configuration;
+mod installations;
 mod kernel;
 mod preparation;
 mod runtime;
@@ -13,6 +14,7 @@ mod validation;
 
 pub(super) use bootstrap::StateBootstrap;
 use clock::AdapterClock;
+pub(super) use installations::InstalledStateServices;
 use kernel::{StateKernel, StateShutdownReport};
 pub(super) use runtime::StandaloneStateRuntime;
 pub use runtime::StateRetirementReport;

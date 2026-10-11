@@ -95,6 +95,18 @@ impl CapturedTransactionSelection {
         })
     }
 
+    /// Match installation restrictions against the exact captured live record.
+    /// Same release/ID alone cannot substitute different grants or resources.
+    pub fn check_deployment(
+        &self,
+        expected: &latent_manifest::DeploymentManifest,
+    ) -> Result<(), PlatformError> {
+        self.pin
+            .with_current_deployment(&self.pin.publication, Some(expected), &mut || {
+                self.original.with_live(|| ()).map_err(|_| unavailable())
+            })
+    }
+
     /// Move physical pins to the existing SAME-node resident Recovery owner;
     /// reserve before moving, and recheck the original capture rather than
     /// retargeting a current catalog or renewing its finite caller deadline.

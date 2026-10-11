@@ -137,6 +137,7 @@ impl Fixture {
             maximum_result_bytes,
             "aggregate",
             1,
+            Default::default(),
         )
         .await
     }
@@ -149,6 +150,7 @@ impl Fixture {
             latent_core::transaction_contract::VALUE_BYTES,
             "result-boundary",
             1,
+            Default::default(),
         )
         .await
     }
@@ -161,11 +163,31 @@ impl Fixture {
             4096,
             "aggregate",
             2,
+            Default::default(),
+        )
+        .await
+    }
+    pub async fn with_lookup_frames() -> Self {
+        let mut native = latent_core::native_capacity::NativeCapacityLimits::default();
+        // Three independently held recovery responses remain physically owned.
+        // This explicit fixture fits within standalone's 96 MiB profile and
+        // preserves the original smaller envelope for every existing case.
+        native.recovery.bytes = 64 * 1024 * 1024;
+        Self::with_guest(
+            false,
+            NamespaceQuota::default(),
+            latent_capabilities::namespace::RecoverySelection::OriginalCaller,
+            &["alice"],
+            4096,
+            "aggregate",
+            1,
+            native,
         )
         .await
     }
     #[expect(
         clippy::too_many_lines,
+        clippy::too_many_arguments,
         reason = "One real runtime composition captures each independent owner before admission"
     )]
     async fn with_guest(
@@ -176,6 +198,7 @@ impl Fixture {
         maximum_result_bytes: usize,
         variant: &str,
         parallelism: u32,
+        native_capacity: latent_core::native_capacity::NativeCapacityLimits,
     ) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
@@ -197,9 +220,13 @@ impl Fixture {
             )
             .unwrap(),
         );
+        let effects = EffectAuthorityOwner::new(128, 16, 100).unwrap();
+        catalog
+            .lifecycle_authority()
+            .install_rejection_observer(effects.rejection_observer())
+            .unwrap();
         let (publication, metadata, deployment, declaration) =
             publication::publish(&catalog, manifest_profile, variant).await;
-        let effects = EffectAuthorityOwner::new(128, 16, 100).unwrap();
         let policy = Arc::new(
             PolicyStore::open(
                 &root.path().join("policy"),
@@ -208,6 +235,9 @@ impl Fixture {
             )
             .unwrap(),
         );
+        policy
+            .install_rejection_observer(effects.rejection_observer())
+            .unwrap();
         let (state, intents) =
             policy::install(&policy, &publication, &effects, &recovery, subjects);
         let mut config = ProtectedStoreConfig::bounded_linux(root.path().join("state"));
@@ -216,7 +246,7 @@ impl Fixture {
         config.create_if_missing = true;
         let store = Arc::new(start_store(config.clone()).unwrap().await.unwrap());
         let native =
-            latent_core::native_capacity::NativeCapacityOwner::new(Default::default()).unwrap();
+            latent_core::native_capacity::NativeCapacityOwner::new(native_capacity).unwrap();
         store.bind_native_capacity(&native).unwrap();
         let schema = declaration.state_schema.clone();
         let namespaces = Arc::new(NamespaceCatalog::new());
@@ -469,6 +499,104 @@ impl Fixture {
         latent_capabilities::namespace::CallerScope::derive(&principal(subject), &self.recovery)
             .unwrap()
             .scope
+    }
+
+    pub async fn recovery_backend(&self) -> crate::phase4::StateManagementBackend {
+        use crate::phase4::{
+            StateManagementBackend, StateManagementBinding, StateManagementRecoveryAdmission,
+            StateManagementServices,
+        };
+        use latent_node::PolicyCallBinding;
+        use latent_policy::capability::GrantRestriction;
+        let namespace = self
+            .store
+            .with_store(StoreIoKind::Read, 8192, |store| {
+                Ok(NamespaceCatalog::read_in(
+                    &store.snapshot()?,
+                    &TenantId(publication::TENANT.into()),
+                    &latent_core::StateNamespaceId(publication::NAMESPACE.into()),
+                )
+                .unwrap()
+                .unwrap())
+            })
+            .unwrap()
+            .await
+            .unwrap()
+            .unwrap();
+        StateManagementBackend::new(
+            StateManagementServices {
+                store: Arc::clone(&self.store),
+                namespaces: Arc::clone(&self.namespaces),
+                policy: Arc::clone(&self.policy),
+                artifacts: self.catalog.clone(),
+                authorization: Arc::new(LocalManagementPolicy),
+                admission: Arc::new(StateManagementRecoveryAdmission::new(self.native.clone())),
+                clock: Arc::new(SystemActivationClock),
+                audit: None,
+            },
+            vec![StateManagementBinding {
+                publication: latent_artifacts::PublicationRef {
+                    id: self.publication.publication().clone(),
+                    scope: latent_artifacts::LifecycleScope::Tenant(TenantId(
+                        publication::TENANT.into(),
+                    )),
+                },
+                component: self.publication.release().clone(),
+                service: latent_core::ServiceId(publication::SERVICE.into()),
+                namespace: namespace.record().id.clone(),
+                incarnation: 1,
+                state_schema: namespace.record().state_schema.clone(),
+                result_policy: "visibility-v1".into(),
+                maximum_quota: namespace.record().quota,
+                state: PolicyCallBinding {
+                    policies: vec!["state".into()],
+                    binding: "transaction-rust-aggregate".into(),
+                    profile: "namespace-v1".into(),
+                    configuration_digest: format!("sha256:{}", "2".repeat(64)),
+                    configuration_epoch: 1,
+                    operations: vec!["namespace-inspect".into(), "read-result".into()],
+                    deployment: GrantRestriction {
+                        operations: Vec::new(),
+                        resources: None,
+                        ceiling: None,
+                    },
+                    provider_configuration: GrantRestriction {
+                        operations: Vec::new(),
+                        resources: None,
+                        ceiling: None,
+                    },
+                },
+            }],
+        )
+        .unwrap()
+        .with_command_recovery(self.dispatcher.as_ref().unwrap().command_admission_source())
+        .unwrap()
+    }
+
+    pub fn lookup_request(&self, key: &str) -> t::LookupCommandRequest {
+        t::LookupCommandRequest {
+            profile: Some(latent_rpc::phase4::current_profile()),
+            command: command(key, 1, false).command,
+            authorization_publication: Some(latent_rpc::control::v1::PublicationRef {
+                id: self.publication.publication().as_str().into(),
+                tenant: publication::TENANT.into(),
+            }),
+            attempt_id: None,
+        }
+    }
+
+    pub fn saturate_ordinary_native(&self) -> Vec<latent_core::native_capacity::NativeReservation> {
+        use latent_core::native_capacity::{NativeAdmissionClass, NativeReservationRequest};
+        let mut reservations = Vec::new();
+        while let Ok(reservation) = self.native.reserve(
+            NativeAdmissionClass::Ordinary,
+            NativeReservationRequest::default(),
+            Instant::now() + Duration::from_secs(5),
+        ) {
+            reservations.push(reservation);
+        }
+        assert!(!reservations.is_empty());
+        reservations
     }
     pub async fn drop_duplicate_during_native_lookup(&self) {
         use std::{

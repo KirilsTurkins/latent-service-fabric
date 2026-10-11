@@ -104,7 +104,7 @@ bindings alongside its other imports. An HTTP application Capsule follows the
 same rule. Its shared listener and WIT export do not create provider grants. The
 separately sealed browser-renderer context projection keeps its existing rules.
 
-Installation requires Linux x86_64, a protected configuration file, `phase3`
+Installation requires Linux x86_64, a protected configuration file, `phase3` or `phase4`
 budgets, `capabilityPolicies`, and durable audit. Omission disables installation;
 explicit null and unsupported fields fail closed. `check-config` validates the
 configuration without installing providers or opening credential/blob storage.

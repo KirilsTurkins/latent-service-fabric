@@ -1,18 +1,31 @@
 //! Actual empty-target bootstrap never falls back to a stateless readiness path.
 use std::{sync::Arc, time::Instant};
 
+use latent_core::ActivationClock;
 use latent_core::PlatformError;
-use latent_node::transaction_runtime::TransactionAdmissionOwners;
+use latent_node::transaction_runtime::{TransactionAdmissionOwners, TransactionInstallation};
 use latent_policy::{capability::PolicyStore, supply_chain::SupplyChainAuthority};
+use latent_wire::{
+    invocation::{
+        ActivationCleanupHandle, InvocationLimits, LocalPrincipalPolicy,
+        SystemInvocationTraceSource,
+    },
+    phase4::{
+        LocalTransactionRuntime, LocalTransactionServices, Phase4Runtime, StateManagementBackend,
+    },
+};
 use serde::Serialize;
 
 use super::{AdapterClock, StateBootstrap, StateKernel, StateShutdownReport};
 use crate::config::state::StateSettings;
 use crate::standalone::effects::EffectRuntime;
+use crate::standalone::startup_observation::{record_platform, Stage};
 
 pub(in crate::standalone) struct StandaloneStateRuntime {
     kernel: StateKernel,
     admission: Option<Arc<TransactionAdmissionOwners>>,
+    installations: Vec<Arc<TransactionInstallation>>,
+    management: Option<StateManagementBackend>,
     original_deadline: Instant,
     ready: bool,
 }
@@ -87,12 +100,12 @@ impl StandaloneStateRuntime {
         settings: &StateSettings,
         supply_chain: Arc<SupplyChainAuthority>,
         policy: Arc<PolicyStore>,
+        installed: Option<super::InstalledStateServices>,
         runtime: tokio::runtime::Handle,
     ) -> Result<(Self, EffectRuntime), PlatformError> {
-        // These installed declarations need actual signed/current rule and
-        // selected-asset producers. Descriptive config cannot replace them or
-        // turn this empty bootstrap into a live transactional installation.
-        if !settings.operations.is_empty() || !settings.tenant_quotas.is_empty() {
+        if (!settings.operations.is_empty() || !settings.tenant_quotas.is_empty())
+            && installed.is_none()
+        {
             return Err(super::unavailable());
         }
         // A current observer is attached before either original catalog is
@@ -111,10 +124,35 @@ impl StandaloneStateRuntime {
             &adapter_clock,
             runtime,
         )
-        .await?;
-        let admission = match kernel.admission_owners(policy, &effects) {
+        .await
+        .inspect_err(|error| record_platform(Stage::ProtectedStoreStartup, error))?;
+        let admission = match kernel.admission_owners(Arc::clone(&policy), &effects) {
             Ok(admission) => admission,
             Err(failure) => {
+                record_platform(Stage::StateManagement, &failure);
+                let _retirement = effects.shutdown(original_deadline).await;
+                drop(effects);
+                let _retirement = kernel.shutdown(original_deadline).await;
+                return Err(failure);
+            }
+        };
+        let installed = match installed {
+            Some(services) => {
+                super::installations::load(
+                    &kernel, settings, &admission, policy, services, &effects,
+                )
+                .await
+            }
+            None => Ok(super::installations::InstalledState {
+                installations: Vec::new(),
+                management: None,
+            }),
+        };
+        let installed = match installed {
+            Ok(installed) => installed,
+            Err(failure) => {
+                record_platform(Stage::StateOperations, &failure);
+                drop(admission);
                 let _retirement = effects.shutdown(original_deadline).await;
                 drop(effects);
                 let _retirement = kernel.shutdown(original_deadline).await;
@@ -125,11 +163,41 @@ impl StandaloneStateRuntime {
             Self {
                 kernel,
                 admission: Some(admission),
+                installations: installed.installations,
+                management: installed.management,
                 original_deadline,
                 ready: false,
             },
             effects,
         ))
+    }
+
+    pub(in crate::standalone) fn transaction_rpc(
+        &self,
+        manager: latent_node::LocalActivationManager,
+        cleanup: ActivationCleanupHandle,
+        limits: InvocationLimits,
+        clock: Arc<dyn ActivationClock>,
+    ) -> Result<Option<Arc<dyn Phase4Runtime>>, PlatformError> {
+        let Some(management) = self.management.as_ref() else {
+            return Ok(None);
+        };
+        if self.installations.is_empty() {
+            return Ok(Some(Arc::new(management.clone())));
+        }
+        Ok(Some(Arc::new(LocalTransactionRuntime::new(
+            manager,
+            cleanup,
+            Arc::clone(self.admission.as_ref().ok_or_else(super::unavailable)?),
+            self.installations.clone(),
+            Arc::new(management.clone()),
+            limits,
+            LocalTransactionServices {
+                clock,
+                principals: Arc::new(LocalPrincipalPolicy),
+                traces: Arc::new(SystemInvocationTraceSource::default()),
+            },
+        )?)))
     }
 
     pub(in crate::standalone) fn publish_ready(
@@ -140,8 +208,9 @@ impl StandaloneStateRuntime {
             return Err(super::unavailable());
         }
         self.kernel.check_ready(effects)?;
-        // Dispatcher remains paused. No execution rule or configured target is
-        // installed by this empty protected bootstrap readiness observation.
+        // Deferred dispatch stays paused until an installed effect integration
+        // supplies its signed rules; state commands and fresh queries use the
+        // existing transaction admission and activation cleanup owners.
         self.ready = true;
         Ok(())
     }
@@ -162,6 +231,8 @@ impl StandaloneStateRuntime {
             deadline.min(self.original_deadline)
         };
         drop(self.admission.take());
+        drop(self.management.take());
+        self.installations.clear();
         self.kernel.shutdown(deadline).await.map(Into::into)
     }
 }

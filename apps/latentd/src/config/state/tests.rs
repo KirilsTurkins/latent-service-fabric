@@ -1,6 +1,8 @@
 use super::*;
 pub(crate) fn input() -> serde_json::Value {
-    let owners = owners::tests::input();
+    let mut owners = owners::tests::input();
+    owners["store"]["recovery"]["maximumJobBytes"] = (32 * 1024 * 1024).into();
+    owners["store"]["recovery"]["retainedBytes"] = (64 * 1024 * 1024).into();
     serde_json::json!({"formatVersion":2,"configurationEpoch":1,"storeIdentity":"state-test",
         "checkpointRoot":std::env::temp_dir().join("state-checkpoint"),"startupTimeoutMillis":5_000,
         "store":owners["store"],"native":owners["native"],"dispatcher":owners["dispatcher"],

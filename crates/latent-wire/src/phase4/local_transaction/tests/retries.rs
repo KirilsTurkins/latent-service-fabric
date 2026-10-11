@@ -121,6 +121,24 @@ async fn actual_guest_durable_conflict_abort_allows_one_explicit_retry_and_prese
     assert_eq!(f.executions(), 3);
     assert_eq!(f.backend.real.resource_snapshot().stores_created, 3);
     assert_eq!(f.rows(Family::Outbox).await, 2);
+    let recovery = f.recovery_backend().await;
+    let mut lookup = f.lookup_request("conflicted");
+    lookup.attempt_id = Some(fence.attempt_id.clone());
+    let historical = recovery
+        .execute_state(context("alice"), lookup.into())
+        .await
+        .unwrap();
+    let latent_rpc::phase4::Response::LookupCommand(value) = &historical.response else {
+        panic!("historical lookup");
+    };
+    let recovered = value.command.as_ref().unwrap();
+    assert_eq!(recovered.attempt_id, fence.attempt_id);
+    assert_eq!(recovered.proven_abort.as_ref(), Some(&fence));
+    assert_eq!(recovered.outcome, t::CommandOutcome::Aborted as i32);
+    assert!(recovered.commit.is_none());
+    assert_eq!(f.executions(), 3);
+    drop(historical);
+    drop(recovery);
     policy::revoke(&f.policy);
     let denied = f
         .adapter()

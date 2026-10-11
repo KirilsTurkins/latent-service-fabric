@@ -52,7 +52,12 @@ impl StateKernel {
     pub(super) fn check_ready(&self, effects: &EffectRuntime) -> Result<(), PlatformError> {
         let bootstrap = self.bootstrap.as_ref().ok_or_else(super::unavailable)?;
         bootstrap.check_live()?;
-        self.clock.sample()?;
+        self.clock.sample().inspect_err(|error| {
+            super::super::startup_observation::record_platform(
+                super::super::startup_observation::Stage::StateClock,
+                error,
+            );
+        })?;
         let store = self.store.snapshot().map_err(|_| super::unavailable())?;
         let source = effects.command_admission_source();
         if !source.uses_store(&self.store)
@@ -115,6 +120,10 @@ impl StateKernel {
             Ok(preparation) => preparation,
             Err(failure) => {
                 drop(namespaces);
+                super::super::startup_observation::record_platform(
+                    super::super::startup_observation::Stage::StateOperations,
+                    &failure,
+                );
                 retire_failed_bootstrap(bootstrap).await;
                 return Err(failure);
             }
@@ -156,6 +165,10 @@ impl StateKernel {
         let (mut effects, clock) = match protected {
             Ok(protected) => protected,
             Err(failure) => {
+                super::super::startup_observation::record_platform(
+                    super::super::startup_observation::Stage::EffectDispatcher,
+                    &failure,
+                );
                 drop(namespaces);
                 retire_failed_bootstrap(bootstrap).await;
                 return Err(failure);

@@ -1,5 +1,37 @@
 use super::*;
 
+#[test]
+fn installed_metadata_keeps_startup_residency_and_an_independent_full_recovery_job() {
+    let values = input();
+    let storage: StorageLimitsConfig = serde_json::from_value(values["store"].clone()).unwrap();
+    let mut store = storage
+        .derive(std::env::temp_dir().join("installed-owner/state"), false)
+        .unwrap();
+    let native = NativeLimitsConfig::default()
+        .derive(Duration::from_secs(5))
+        .unwrap();
+    let startup = startup_footprint(&store, native).unwrap();
+    assert!(installation_footprint(&store, native, startup, 0).is_ok());
+    assert!(installation_footprint(&store, native, startup, 1).is_err());
+    let recovery = store.io.recovery.as_mut().unwrap();
+    recovery.job_bytes = 32 * MIB;
+    recovery.retained_bytes = 64 * MIB;
+    assert!(installation_footprint(&store, native, startup, 1).is_ok());
+    assert!(installation_footprint(&store, native, startup, 8).is_ok());
+    assert!(installation_footprint(&store, native, startup, 9).is_ok());
+    assert!(installation_footprint(&store, native, startup, 32).is_err());
+    let mut insufficient = native;
+    insufficient.recovery.slots = 2;
+    assert!(installation_footprint(&store, insufficient, startup, 1).is_err());
+    insufficient = native;
+    insufficient.recovery.slots = 3;
+    assert!(installation_footprint(&store, insufficient, startup, 8).is_ok());
+    assert!(installation_footprint(&store, insufficient, startup, 9).is_err());
+    insufficient = native;
+    insufficient.recovery.maximum_reservation_bytes = 24 * MIB;
+    assert!(installation_footprint(&store, insufficient, startup, 1).is_err());
+}
+
 pub(in crate::config::state) fn input() -> serde_json::Value {
     serde_json::json!({
         "store": {

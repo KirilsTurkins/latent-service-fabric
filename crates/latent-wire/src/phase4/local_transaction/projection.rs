@@ -239,7 +239,7 @@ pub(super) fn source(value: &SourceIdentity) -> t::SourceIdentity {
         result_format: value.result_format.clone(),
     }
 }
-fn inspection(
+pub(in crate::phase4) fn inspection(
     record: &CommandRecord,
     result: Option<&DurableResult>,
     cleanup_failure: Option<i::PlatformError>,
@@ -247,6 +247,7 @@ fn inspection(
     let available = result.is_some_and(|result| result.value().is_some());
     let source = source(record.source());
     let committed = record.outcome() == Outcome::Committed;
+    let (_, record_version) = record.durable_format();
     // InvokeCommand carries the exact body once in invocation.result. Repeating
     // it here makes the supported maximum exceed the unchanged frame budget.
     // Standalone LookupCommand retains its own body projection separately.
@@ -295,8 +296,8 @@ fn inspection(
             owner_fence: proof.bytes().to_vec(),
         }),
         retention: Some(t::LinkedRetention {
-            record_format: "lsf-command-v3".into(),
-            record_version: 3,
+            record_format: format!("lsf-command-v{record_version}"),
+            record_version,
             payload_expires_at_unix_millis: Some(record.result_expires()),
             identity_expires_at_unix_millis: Some(record.identity_expires()),
             remaining_recovery_millis: None,

@@ -272,6 +272,46 @@ pub(crate) fn effect_metadata_bytes() -> Result<u64, PlatformError> {
     .map_err(|_| invalid("native"))
 }
 
+/// Resident declarations, the original startup shell and a full recovery job
+/// must fit together. Captures run sequentially before transport cutover.
+pub(super) fn installation_footprint(
+    store: &ProtectedStoreConfig,
+    native: NativeCapacityLimits,
+    startup_work: u64,
+    operations: usize,
+) -> Result<(), PlatformError> {
+    if operations == 0 {
+        return Ok(());
+    }
+    let leases = operations.div_ceil(super::INSTALLATION_OPERATIONS_PER_LEASE);
+    let resident = (operations as u64)
+        .checked_mul(super::INSTALLATION_METADATA_BYTES + super::INSTALLATION_SELECTION_BYTES)
+        .and_then(|bytes| bytes.checked_add(leases as u64 * NATIVE_RESERVATION_METADATA_BYTES))
+        .ok_or_else(|| invalid("native"))?;
+    let capture = super::INSTALLATION_CAPTURE_WORK_BYTES
+        + super::INSTALLATION_CAPTURE_REQUEST_BYTES
+        + latent_artifacts::TRANSACTION_ASSET_RESPONSE_BYTES
+        + NATIVE_RESERVATION_METADATA_BYTES;
+    let largest_resident = operations.min(super::INSTALLATION_OPERATIONS_PER_LEASE) as u64
+        * (super::INSTALLATION_METADATA_BYTES + super::INSTALLATION_SELECTION_BYTES)
+        + NATIVE_RESERVATION_METADATA_BYTES;
+    let required = startup_work
+        .checked_add(NATIVE_RESERVATION_METADATA_BYTES)
+        .and_then(|bytes| bytes.checked_add(resident))
+        .and_then(|bytes| bytes.checked_add(capture.max(32 * MIB)))
+        .ok_or_else(|| invalid("native"))?;
+    let recovery = store.io.recovery.ok_or_else(|| invalid("store"))?;
+    if recovery.job_bytes < capture
+        || recovery.retained_bytes < capture
+        || native.recovery.slots < leases + 2
+        || native.recovery.maximum_reservation_bytes < capture.max(largest_resident)
+        || native.recovery.bytes < required
+    {
+        return Err(invalid("native"));
+    }
+    Ok(())
+}
+
 configuration_object! {
 #[derive(Clone)]
 pub struct DispatcherLimitsConfig {

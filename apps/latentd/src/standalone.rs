@@ -14,6 +14,7 @@ mod providers;
 mod rollouts;
 mod shutdown;
 mod start;
+mod startup_observation;
 mod state;
 mod telemetry;
 pub mod transport;
@@ -50,6 +51,8 @@ pub use providers::StreamControlStatus;
 pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
+pub(crate) use startup_observation::observe_startup;
+pub use startup_observation::StartupFailureReport;
 pub use state::StateRetirementReport;
 
 /// Runtime builder callbacks count actual node-owned runtime and blocking threads.

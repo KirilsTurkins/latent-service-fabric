@@ -62,6 +62,8 @@ where
             request.uri().path(),
             "/latent.invocation.v1.InvocationService/Cancel"
                 | "/latent.invocation.v1.InvocationService/GetActivation"
+                | "/latent.transaction.v1.TransactionService/LookupCommand"
+                | "/latent.transaction.v1.TransactionService/LookupCommit"
         );
         if request
             .extensions()

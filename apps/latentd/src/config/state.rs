@@ -16,6 +16,14 @@ pub(crate) const STARTUP_APPLICATION_BYTES: u64 = 64 * 1024;
 // Existing fixed authority rule ceiling; its actual resident map is charged
 // separately from the application shell, before either owner allocates.
 pub(crate) const EFFECT_AUTHORITY_MAXIMUM_RULES: usize = 128;
+pub(crate) const INSTALLATION_OPERATIONS_PER_LEASE: usize = 8;
+pub(crate) const INSTALLATION_METADATA_BYTES: u64 =
+    latent_artifacts::TRANSACTION_ASSET_RESPONSE_BYTES + 64 * 1024;
+pub(crate) const INSTALLATION_SELECTION_BYTES: u64 =
+    latent_control_store::CapturedTransactionSelection::METADATA_BYTES;
+pub(crate) const INSTALLATION_CAPTURE_WORK_BYTES: u64 =
+    latent_artifacts::TRANSACTION_ASSET_WORK_BYTES + INSTALLATION_SELECTION_BYTES + 2 * 1024 * 1024;
+pub(crate) const INSTALLATION_CAPTURE_REQUEST_BYTES: u64 = 64 * 1024;
 
 // Operator objects retain streaming duplicate/unknown-field rejection and
 // refuse Serde's positional struct-array representation at every owner layer.
@@ -195,6 +203,7 @@ pub(crate) fn derive(value: &StateConfig, data: &Path) -> Result<StateSettings, 
         .native
         .derive(Duration::from_millis(value.startup_timeout_millis))?;
     let startup_work_bytes = owners::startup_footprint(&store, native)?;
+    owners::installation_footprint(&store, native, startup_work_bytes, value.operations.len())?;
     let dispatcher = value.dispatcher.derive()?;
     let tenant_quotas = tenant::derive(&value.tenant_quotas, &value.operations)?;
     let operations = derive_operations(&value.operations)?;

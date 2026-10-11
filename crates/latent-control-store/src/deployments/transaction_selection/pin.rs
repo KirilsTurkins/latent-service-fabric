@@ -1,6 +1,6 @@
-use super::{
-    capacity, denied, unavailable, CapturedTransactionSelection, InstalledTransactionSelection,
-};
+#[cfg(test)]
+use super::CapturedTransactionSelection;
+use super::{capacity, denied, unavailable, InstalledTransactionSelection};
 use crate::deployments::{
     compiler::CompiledCatalog, publication::PublishedCatalog, DirectoryDeploymentRepository,
 };
@@ -118,6 +118,15 @@ impl SelectionPin {
         publication: &ReleaseUseEligibility,
         action: &mut dyn FnMut() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
+        self.with_current_deployment(publication, None, action)
+    }
+
+    pub(super) fn with_current_deployment(
+        &self,
+        publication: &ReleaseUseEligibility,
+        expected: Option<&latent_manifest::DeploymentManifest>,
+        action: &mut dyn FnMut() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
         let owner = self.current.upgrade().ok_or_else(denied)?;
         let current = owner.try_read().map_err(|_| unavailable())?;
         if !current.confirmed
@@ -133,6 +142,9 @@ impl SelectionPin {
         let actual =
             current.select_record(&self.target, self.routing_key.as_deref(), self.config)?;
         if actual.deployment.id != self.deployment || actual.revision != self.revision {
+            return Err(denied());
+        }
+        if expected.is_some_and(|expected| actual.deployment.as_ref() != expected) {
             return Err(denied());
         }
         current.with_current_admission(&mut |checker| {

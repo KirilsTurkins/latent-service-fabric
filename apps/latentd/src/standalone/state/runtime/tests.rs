@@ -62,6 +62,7 @@ async fn started(fixture: &Fixture) -> (StandaloneStateRuntime, EffectRuntime, P
         &fixture.settings,
         fixture.authority.clone(),
         Arc::clone(&policies.store),
+        None,
         tokio::runtime::Handle::current(),
     )
     .await
@@ -149,6 +150,7 @@ async fn configured_installations_refuse_before_business_io_instead_of_exposing_
             &fixture.settings,
             fixture.authority.clone(),
             policies.store.clone(),
+            None,
             tokio::runtime::Handle::current(),
         )
         .await
@@ -178,6 +180,7 @@ async fn a_foreign_policy_observer_refuses_before_checkpoint_or_dispatch_epoch_a
         &fixture.settings,
         fixture.authority.clone(),
         policies.store.clone(),
+        None,
         tokio::runtime::Handle::current(),
     )
     .await

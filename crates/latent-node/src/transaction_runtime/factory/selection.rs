@@ -49,6 +49,13 @@ impl TransactionInstallation {
         namespace: &str,
         mode: TransactionOperationMode,
     ) -> Option<&latent_manifest::TransactionOperation> {
+        if self
+            .selection
+            .as_ref()
+            .is_some_and(|selection| selection.target() != target)
+        {
+            return None;
+        }
         if namespace != self.declaration.namespace
             || target.service.0 != self.metadata.manifest().metadata.name
             || Some(&target.tenant) != self.publication.tenant()

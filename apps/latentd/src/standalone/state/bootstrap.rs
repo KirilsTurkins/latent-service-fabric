@@ -101,7 +101,14 @@ impl StateBootstrap {
             &native,
             Arc::clone(&original),
         )
-        .map_err(|_| super::unavailable())?;
+        .map_err(|_| {
+            let failure = super::unavailable();
+            super::super::startup_observation::record_platform(
+                super::super::startup_observation::Stage::EffectAuthority,
+                &failure,
+            );
+            failure
+        })?;
         let configuration = super::configuration::identity(state);
         Ok(Self {
             authority,
