@@ -1,3 +1,4 @@
+use crate::management::phase2::projection::Project;
 use crate::{
     error::Failure,
     management::{canonical_digest, invalid_response, phase2::projection},
@@ -161,4 +162,34 @@ pub(super) fn deletion(
         "stateVersion":state.to_string(),"generation":actual_generation.to_string(),
         "durability":durability,"replayed":replayed}),
     )
+}
+
+pub(super) fn lookup(
+    value: proto::GetTriggerOperationResponse,
+    tenant: &str,
+    id: &str,
+) -> Result<crate::output::Outcome, Failure> {
+    let disposition = match proto::TriggerOperationLookupDisposition::try_from(value.disposition) {
+        Ok(proto::TriggerOperationLookupDisposition::Found) if value.receipt.is_some() => "found",
+        Ok(proto::TriggerOperationLookupDisposition::Unknown) if value.receipt.is_none() => {
+            "unknown"
+        }
+        Ok(proto::TriggerOperationLookupDisposition::Uncertain) if value.receipt.is_none() => {
+            "uncertain"
+        }
+        _ => return Err(invalid_response()),
+    };
+    // The first retained sequence is one past the high watermark for an empty
+    // journal. This remains descriptive and never grants mutation/retry authority.
+    if value.retained_floor > value.high_watermark.saturating_add(1) {
+        return Err(invalid_response());
+    }
+    if let Some(receipt) = &value.receipt {
+        receipt_scope(receipt, tenant, id, None)?;
+    }
+    let mut output = crate::output::Outcome::success(json!({"disposition":disposition,
+        "receipt":value.receipt.map(Project::project), "retainedFloor":value.retained_floor.to_string(),
+        "highWatermark":value.high_watermark.to_string(), "executionPermission":false}));
+    output.outcome_known = disposition == "found";
+    Ok(output)
 }

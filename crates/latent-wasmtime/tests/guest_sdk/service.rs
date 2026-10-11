@@ -11,12 +11,14 @@ mod packages;
 use latent_activation::ActivationOutcome;
 use latent_artifacts::ArtifactRepository;
 use latent_core::TenantId;
+use latent_executor::ExecutionBackend;
 
 async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fixture::Fixture {
     let caller_name = format!("{language}-service");
     let callee_name = format!("{language}-callee");
     let caller = package::bundle(&package::input(&caller_name));
     let callee = package::bundle(&package::input(&callee_name));
+    let releases = [packages::release(&caller), packages::release(&callee)];
     let signers = package::Signers::new(&package::observation(&caller_name).build_type);
     let mut uploads = vec![];
     for (name, bundle) in [
@@ -36,7 +38,43 @@ async fn configured(root: &std::path::Path, permit: bool, language: &str) -> fix
             .await
             .unwrap();
     }
-    fixture::Fixture::with_packages(2, false, permit, None, Some((catalog, caller, callee))).await
+    let f =
+        fixture::Fixture::with_packages(2, false, permit, None, Some((catalog, caller, callee)))
+            .await;
+    // This gate measures typed service outcomes and fresh guest ownership under
+    // the unchanged five-second parent budget. Keep cold native compilation in
+    // explicit signed setup; each real invocation still verifies currentness
+    // and its grants, and the child still receives half the remaining budget.
+    for (role, release) in ["caller", "callee"].into_iter().zip(releases) {
+        let started = std::time::Instant::now();
+        let publication = f
+            .catalog
+            .execution_eligibility_selected(&release, None)
+            .unwrap()
+            .unwrap()
+            .publication()
+            .clone();
+        let mut key = f.backend.preparation_key(&release).unwrap();
+        key.publication = Some(publication);
+        let ready = tokio::time::timeout(
+            std::time::Duration::from_secs(600),
+            f.backend
+                .prepare_ready_from_repository(f.catalog.clone(), key),
+        )
+        .await
+        .expect("bounded signed service preparation setup")
+        .expect("prepare the exact admitted service publication");
+        let prepared_owner = f.backend.materialize_ready(ready).unwrap();
+        drop(prepared_owner);
+        f.idle().await;
+        assert_eq!(f.backend.resource_snapshot().stores_created, 0);
+        assert!(f.observations.starts.lock().unwrap().is_empty());
+        eprintln!(
+            "sdk-service signed-preparation language={language} role={role} elapsed-micros={} stores-created=0 guest-activations=0",
+            started.elapsed().as_micros()
+        );
+    }
+    f
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

@@ -39,9 +39,54 @@ pub struct OwnedPolicyDecision {
     require_audit: bool,
 }
 impl OwnedPolicyDecision {
+    /// Original sealed row stamps only; these descriptions grant no authority
+    /// and do not recheck or renew the retained policy decision.
+    pub fn policy_revisions(&self) -> impl Iterator<Item = super::CapabilityPolicyRevision<'_>> {
+        self.snapshot.policy_revisions()
+    }
+
+    #[must_use]
+    pub fn binding_revision(&self) -> super::CapabilityPolicyRevision<'_> {
+        self.snapshot.binding_revision()
+    }
+
     #[must_use]
     pub const fn requires_audit(&self) -> bool {
         self.require_audit
+    }
+
+    /// Descriptive digest of the original configured rows and exact consumer
+    /// publication. Operation, payload and remaining budget are excluded so a
+    /// current inspection and approved action share a configuration precondition.
+    /// This does not recheck currentness, acquire a lease, or supply a grant.
+    #[must_use]
+    pub fn configuration_digest(&self) -> [u8; 32] {
+        let mut hash = blake3::Hasher::new();
+        hash.update(b"lsf-retained-policy-configuration-v1\0");
+        let mut field = |bytes: &[u8]| {
+            hash.update(&(bytes.len() as u64).to_be_bytes());
+            hash.update(bytes);
+        };
+        for text in [
+            &self.snapshot.tenant.0,
+            &self.input.service,
+            &self.input.publication,
+            &self.input.capability,
+        ] {
+            field(text.as_bytes());
+        }
+        let mut rows: Vec<_> = self.snapshot.policy_revisions().collect();
+        rows.sort_by(|left, right| left.id.cmp(right.id));
+        field(&(rows.len() as u64).to_be_bytes());
+        for row in rows
+            .into_iter()
+            .chain(std::iter::once(self.snapshot.binding_revision()))
+        {
+            field(row.id.as_bytes());
+            field(&row.revision.to_be_bytes());
+            field(row.digest.as_bytes());
+        }
+        *hash.finalize().as_bytes()
     }
 
     fn borrowed(&self) -> SealedPolicyDecision<'_> {
@@ -118,6 +163,25 @@ impl PolicyStore {
     ) -> Result<(), PlatformError> {
         self.with_current(&captured.borrowed(), action)
     }
+
+    /// Recheck several original retained decisions under one policy/publication
+    /// fence. This preserves the same lock order as `with_current_decisions`;
+    /// callbacks must be short and must not perform I/O or enter another fence.
+    pub fn with_retained_decisions(
+        &self,
+        captured: &[&OwnedPolicyDecision],
+        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if captured.is_empty() || captured.len() > 8 {
+            return Err(denied());
+        }
+        let borrowed: Vec<_> = captured
+            .iter()
+            .map(|decision| decision.borrowed())
+            .collect();
+        let references: Vec<_> = borrowed.iter().collect();
+        self.with_current_decisions(&references, action)
+    }
 }
 
 fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
@@ -136,6 +200,9 @@ fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
             origin: origin.clone(),
             method: method.into(),
             path: path.into(),
+        },
+        ResourceTarget::Stream { endpoint } => ResourceRequest::Stream {
+            endpoint: endpoint.clone(),
         },
         ResourceTarget::Blob { namespace } => ResourceRequest::Blob {
             namespace: namespace.into(),
@@ -169,5 +236,63 @@ fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
             recovery_scope: recovery_scope.into(),
             result_policy: result_policy.into(),
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::own_resource;
+    use crate::capability::{
+        ResourceConstraint, ResourceRequest, ResourceTarget, StreamEndpoint, StreamTransport,
+    };
+
+    #[test]
+    fn owned_stream_target_retains_exact_endpoint_without_borrowed_authority() {
+        let mut original = StreamEndpoint {
+            host: "mail.example".into(),
+            port: 587,
+            transport: StreamTransport::Tcp,
+        };
+        let captured = own_resource(ResourceTarget::Stream {
+            endpoint: &original,
+        });
+        let ResourceRequest::Stream { endpoint: retained } = captured else {
+            panic!("retained stream authority must remain a stream target");
+        };
+        assert_eq!(retained, original);
+        let scope = ResourceConstraint::Stream {
+            endpoints: vec![retained.clone()],
+        };
+        assert!(scope.covers(&ResourceTarget::Stream {
+            endpoint: &retained
+        }));
+        for alternate in [
+            StreamEndpoint {
+                host: "other.example".into(),
+                ..retained.clone()
+            },
+            StreamEndpoint {
+                port: 465,
+                ..retained.clone()
+            },
+            StreamEndpoint {
+                transport: StreamTransport::HostTls,
+                ..retained.clone()
+            },
+        ] {
+            assert!(!scope.covers(&ResourceTarget::Stream {
+                endpoint: &alternate
+            }));
+        }
+        original.host = "changed.example".into();
+        original.port = 465;
+        original.transport = StreamTransport::HostTls;
+        drop(original);
+        assert_eq!(retained.host, "mail.example");
+        assert_eq!(retained.port, 587);
+        assert_eq!(retained.transport, StreamTransport::Tcp);
+        assert!(scope.covers(&ResourceTarget::Stream {
+            endpoint: &retained
+        }));
     }
 }

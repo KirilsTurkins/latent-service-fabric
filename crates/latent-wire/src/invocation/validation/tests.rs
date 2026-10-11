@@ -73,6 +73,49 @@ fn phase3_requires_endpoint_selection_and_preserves_zero_and_future_phase_denial
     );
 }
 
+#[test]
+fn phase4_state_and_intent_ceilings_require_explicit_endpoint_profile_and_remain_bounded() {
+    let policy = CountingPolicy(AtomicUsize::new(0));
+    let mut call = request();
+    let budget = call.budget.as_mut().unwrap();
+    budget.state_read_bytes = 4096;
+    budget.state_write_bytes = 2048;
+    budget.effect_count = 2;
+    let mut limits = InvocationLimits {
+        max_state_read_bytes: 4096,
+        max_state_write_bytes: 2048,
+        max_effect_count: 2,
+        ..InvocationLimits::default()
+    };
+    for profile in [
+        latent_core::BudgetProfile::Phase1,
+        latent_core::BudgetProfile::Phase3,
+    ] {
+        limits.budget_profile = profile;
+        assert!(limits.validate().is_err());
+        assert_eq!(
+            validate(call.clone(), &limits, &policy).unwrap_err().code(),
+            Code::InvalidArgument
+        );
+    }
+    limits.budget_profile = latent_core::BudgetProfile::Phase4;
+    limits.validate().unwrap();
+    validate(call.clone(), &limits, &policy).unwrap();
+    for dimension in 0..3 {
+        let mut excessive = call.clone();
+        let budget = excessive.budget.as_mut().unwrap();
+        match dimension {
+            0 => budget.state_read_bytes += 1,
+            1 => budget.state_write_bytes += 1,
+            _ => budget.effect_count += 1,
+        }
+        assert_eq!(
+            validate(excessive, &limits, &policy).unwrap_err().code(),
+            Code::ResourceExhausted
+        );
+    }
+}
+
 fn validate(
     request: proto::InvokeRequest,
     limits: &InvocationLimits,
@@ -124,15 +167,21 @@ fn absent_identity_is_preserved_and_present_empty_or_unrooted_parent_is_rejected
     assert_eq!(policy.0.load(Ordering::Relaxed), 1);
     let mut explicit = request();
     explicit.activation_id = Some("呼出-1".into());
-    explicit.parent_activation_id = Some("opaque-parent".into());
-    explicit.root_activation_id = Some("opaque-root".into());
     let value = validate(explicit, &limits, &policy).unwrap();
     assert_eq!(value.request.requested_activation_id.unwrap().0, "呼出-1");
-    assert_eq!(
-        value.request.parent_activation_id.unwrap().0,
-        "opaque-parent"
-    );
-    assert_eq!(value.request.root_activation_id.unwrap().0, "opaque-root");
+    assert!(value.request.parent_activation_id.is_none());
+    assert!(value.request.root_activation_id.is_none());
+    for parent in [None, Some("opaque-parent".into())] {
+        let mut forged = request();
+        forged.activation_id = Some("呼出-1".into());
+        forged.parent_activation_id = parent;
+        forged.root_activation_id = Some("opaque-root".into());
+        assert_eq!(
+            validate(forged, &limits, &policy).unwrap_err().code(),
+            Code::PermissionDenied
+        );
+    }
+    assert_eq!(policy.0.load(Ordering::Relaxed), 2);
 }
 
 #[test]
@@ -297,9 +346,18 @@ fn generated_identity_references_survive_a_short_caller_identity_limit() {
     lineage.activation_id = Some("chosen".into());
     lineage.root_activation_id = Some(generated.clone());
     lineage.parent_activation_id = Some(generated.clone());
-    let valid = validate(lineage, &limits, &policy).unwrap();
-    assert_eq!(valid.request.root_activation_id.unwrap().0, generated);
-    assert_eq!(valid.request.parent_activation_id.unwrap().0, generated);
+    // Generated references fit the bounded shape, but only a trusted internal
+    // broker can assign ancestry; caller identity length never grants authority.
+    assert_eq!(
+        validate(lineage, &limits, &policy).unwrap_err().code(),
+        Code::PermissionDenied
+    );
+    let mut root = request();
+    root.activation_id = Some("chosen".into());
+    let valid = validate(root, &limits, &policy).unwrap();
+    assert_eq!(valid.request.requested_activation_id.unwrap().0, "chosen");
+    assert!(valid.request.root_activation_id.is_none());
+    assert!(valid.request.parent_activation_id.is_none());
     assert_eq!(
         validate_status_query(
             proto::GetActivationRequest {

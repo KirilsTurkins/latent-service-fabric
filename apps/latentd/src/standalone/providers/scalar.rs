@@ -6,9 +6,6 @@ use latent_capabilities::broker::{
 };
 use latent_core::{BudgetDimension, PlatformError};
 
-/// Authorizes the existing bounded host implementation through ordinary exact
-/// bindings and grants. It creates no context, sink, process or worker; the
-/// invocation Store still owns its original context and activation accounting.
 pub(super) fn core(
     broker: &ActivationCapabilityBroker,
     epoch: u64,
@@ -37,6 +34,29 @@ pub(super) fn core(
         configuration_epoch: epoch,
         restriction_json: restriction,
         minimum_call_charges: &[],
+    })
+}
+
+pub(super) fn activation_runtime(
+    broker: &ActivationCapabilityBroker,
+    installation: &crate::config::ActivationRuntimeInstallation,
+) -> Result<ProviderRegistration, PlatformError> {
+    let operations = latent_core::activation_runtime::OPERATIONS;
+    let digest = installation.configuration_digest()?;
+    let restriction = serde_json::to_vec(&serde_json::json!({"operations": operations}))
+        .map_err(|_| super::unavailable())?;
+    let charges = operations.map(|operation| ProviderBudgetRequirement {
+        operation,
+        dimension: BudgetDimension::CpuFuel,
+        minimum: 100,
+    });
+    broker.register_provider(ProviderConfiguration {
+        capability: latent_core::activation_runtime::CAPABILITY,
+        profile: latent_core::activation_runtime::PROFILE,
+        configuration_digest: digest.as_str(),
+        configuration_epoch: installation.identity.epoch,
+        restriction_json: &restriction,
+        minimum_call_charges: &charges,
     })
 }
 

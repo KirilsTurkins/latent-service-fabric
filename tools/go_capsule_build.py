@@ -22,10 +22,12 @@ RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsul
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
-          "examples/echo-contract/deployment.json")
+          "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py",
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/go_application_dependencies.py",
            "tools/go_dependency_authoring.py", "tools/captured_compiler_isolation.py")
+RECIPE += ("tools/go_generator_authoring.py",)
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
@@ -48,7 +50,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         files = observed.files
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
-        recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
+        recipe_files = {path: read_file(ROOT / path) for path in RECIPE}
+        recipe_inputs = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe_inputs)
         with tempfile.TemporaryDirectory(prefix="lsf-go-capsule-") as owned:
@@ -83,8 +86,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             surface = read_json(derived / "surface.json")
+            recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
             stage = "compatibility"
-            guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+            guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
+                host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
@@ -94,7 +99,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             observed.check_unchanged()
             if snapshot(work, exclude=("dependencies", "application-vendor") if closure else ()) != files:
                 raise ValueError("project changed during the observed Go build")
-            if inventory({path: read_file(ROOT / path) for path in RECIPE}) != recipe_inputs:
+            if inventory({path: read_file(ROOT / path) for path in recipe_files}) != recipe_inputs:
                 raise ValueError("Go authoring recipe changed during the build")
             compiler.check_unchanged()
             if closure is not None:
@@ -111,6 +116,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("source-snapshot", source_inputs), ("build-recipe", recipe_inputs), ("package-inputs", package_inventory),
                 ("toolchain-config", files["vendor/lsf/sdk/go-guest/toolchain.lock.json"]),
                 ("dependency-lock", files["vendor/lsf/sdk/go-guest/runtime-deps/dependencies.lock.json"])))
+            if 'go-generated-inputs.json' in files:
+                materials.append({'name': 'go-generator-inputs', 'role': 'generated',
+                                  'digest': digest(files['go-generated-inputs.json']),
+                                  'size': len(files['go-generated-inputs.json'])})
             if closure is not None:
                 for name in ("application-dependencies.json", "compiler-containment.json", "go-module-build-inputs.json"):
                     data = read_file(output / name, 16 * 1024 * 1024)

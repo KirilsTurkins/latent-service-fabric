@@ -185,7 +185,7 @@ class SeparateEntropySelection(unittest.TestCase):
                     destination = arguments[-1]
                     destination.mkdir()
                     for name in ("contracts.json", "wit-lock.json", "surface.json"):
-                        write_json(destination / name, {})
+                        write_json(destination / name, {"imports": []} if name == "surface.json" else {})
             class Compiler:
                 def __init__(self, tools, commands, vendor, **keywords):
                     self.commands, self.materials, self.before = commands, [], {}

@@ -19,6 +19,8 @@ use zeroize::Zeroizing;
 mod admission;
 mod ingress;
 pub use ingress::IngressRequest;
+mod deferred;
+pub use deferred::DeferredRequest;
 mod protocol;
 pub use protocol::ProviderMetadata;
 mod client;
@@ -97,6 +99,19 @@ pub struct InstalledProvider {
     epoch: Arc<Epoch>,
 }
 impl InstalledProvider {
+    /// Close admission to this epoch without refunding its physical owners.
+    pub fn retire(&self) {
+        self.epoch.retire();
+    }
+    #[must_use]
+    pub fn is_retired(&self) -> bool {
+        self.epoch.retired.load(Ordering::Acquire)
+    }
+    #[must_use]
+    pub fn logical_id(&self) -> &str {
+        &self.epoch.logical_id
+    }
+
     #[must_use]
     pub fn reference(&self) -> ProviderReference {
         self.epoch.registration.reference()
@@ -112,6 +127,9 @@ trait ErasedClient: Any + Send + Sync {
     fn maintain(&self, now: Instant, closed: bool);
 }
 impl ProviderPools {
+    pub fn limits(&self) -> Result<ProviderPoolLimits, PlatformError> {
+        self.inner.quotas.limits()
+    }
     pub fn new(
         broker: Arc<ActivationCapabilityBroker>,
         io: Arc<IoRuntime>,

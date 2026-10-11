@@ -28,6 +28,7 @@ use super::Inner;
 struct ExecutionControl {
     probe: Arc<ActivationControl>,
     accounting: ActivationBudget,
+    transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
 }
 
 impl ExecutionCancellation for ExecutionControl {
@@ -36,18 +37,18 @@ impl ExecutionCancellation for ExecutionControl {
     }
     fn is_cancelled(&self) -> bool {
         self.probe.stopped()
-            || (self.accounting.profile() == latent_core::BudgetProfile::Phase3
+            || (self.accounting.profile().supports_descendants()
                 && self.accounting.descendant_is_cancelled())
     }
     fn reason(&self) -> Option<String> {
         self.probe.reason().or_else(|| {
-            (self.accounting.profile() == latent_core::BudgetProfile::Phase3
+            (self.accounting.profile().supports_descendants()
                 && self.accounting.descendant_is_cancelled())
             .then(|| "activation ancestor stopped".to_owned())
         })
     }
     fn probe(&self) -> Option<Arc<dyn ExecutionCancellationProbe>> {
-        if self.accounting.profile() == latent_core::BudgetProfile::Phase3 {
+        if self.accounting.profile().supports_descendants() {
             Some(Arc::new(self.clone()))
         } else {
             Some(self.probe.clone())
@@ -55,6 +56,9 @@ impl ExecutionCancellation for ExecutionControl {
     }
     fn budget_accounting(&self) -> Option<&ActivationBudget> {
         Some(&self.accounting)
+    }
+    fn transaction_host(&self) -> Option<Arc<dyn latent_executor::transaction::TransactionHost>> {
+        self.transaction.clone()
     }
 }
 
@@ -164,26 +168,83 @@ impl Inner {
             )
         };
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
+        let control = child_control.unwrap_or_else(|| {
+            Arc::new(ActivationControl::new(
+                lifecycle.registration(),
+                transport.clone(),
+                budget.profile().supports_descendants(),
+            ))
+        });
+        if let Some(permit) = &permit {
+            if budget.profile().supports_descendants() {
+                // Transaction admission and code preparation already consume
+                // original authority. Bind the real cancellation owner before
+                // either can inspect the lineage, without occupying a cell.
+                budget.enable_descendants(permit.delegation_limits(), control.clone())?;
+            }
+        }
+        let canonical_required = lifecycle
+            .transaction_admission
+            .as_ref()
+            .is_some_and(|a| a.requires_prepared_input());
+        let mut early_ready = if canonical_required {
+            let (key, ready) = self
+                .prepare_ready(&envelope, &token, &budget, &transport)
+                .await?;
+            let (ready, input) = self
+                .canonicalize_input(ready, &envelope, &token, &budget, &transport)
+                .await?;
+            let (bytes, memory) = input.into_parts();
+            envelope.input = bytes;
+            lifecycle.canonical_input_memory = Some(memory);
+            Some((key, ready))
+        } else {
+            None
+        };
+        if let Some(admission) = &lifecycle.transaction_admission {
+            if budget.profile() != latent_core::BudgetProfile::Phase4
+                || envelope.parent_activation_id.is_some()
+                || budget.granted().child_calls != 0
+                || budget.granted().outbound_requests != 0
+            {
+                return Err(error(
+                    PlatformErrorCode::PermissionDenied,
+                    "strict transaction admission required",
+                ));
+            }
+            let host = admission.admit(&envelope, &budget).await?;
+            if host.activation_id() != &envelope.activation_id
+                || !host.budget().is_same_instance(&budget)
+            {
+                return Err(error(
+                    PlatformErrorCode::PermissionDenied,
+                    "transaction admission owner mismatch",
+                ));
+            }
+            if host.mode() == latent_executor::transaction::Mode::Query
+                && (budget.granted().state_write_bytes != 0 || budget.granted().effect_count != 0)
+            {
+                return Err(error(
+                    PlatformErrorCode::PermissionDenied,
+                    "query write budget denied",
+                ));
+            }
+            lifecycle.transaction_host = Some(host);
+        }
         if permit.is_some() {
             lifecycle.advance(ActivationPhase::Queued, Metadata::new())?;
         }
         let expiry = budget.deadline().monotonic();
         // Keep the original admission reservation and deadline while code is
         // prepared. A cold request does not occupy an execution cell.
-        let (key, ready) = self
-            .prepare_ready(&envelope, &token, &budget, &transport)
-            .await?;
-        let control = child_control.unwrap_or_else(|| {
-            Arc::new(ActivationControl::new(
-                lifecycle.registration(),
-                transport.clone(),
-                budget.profile() == latent_core::BudgetProfile::Phase3,
-            ))
-        });
-        let scheduled = if let Some(permit) = permit {
-            if budget.profile() == latent_core::BudgetProfile::Phase3 {
-                budget.enable_descendants(permit.delegation_limits(), control.clone())?;
+        let (key, ready) = match early_ready.take() {
+            Some(prepared) => prepared,
+            None => {
+                self.prepare_ready(&envelope, &token, &budget, &transport)
+                    .await?
             }
+        };
+        let scheduled = if let Some(permit) = permit {
             stage(
                 self.dependencies
                     .scheduler
@@ -272,6 +333,7 @@ impl Inner {
         let cancellation = ExecutionControl {
             probe: control.clone(),
             accounting: budget,
+            transaction: lifecycle.transaction_host.clone(),
         };
         lifecycle.advance(ActivationPhase::Running, Metadata::new())?;
         lifecycle.execution_started = true;
@@ -392,7 +454,7 @@ impl Inner {
         )?;
         let child_owner = child
             .map(|child| {
-                if permit.budget_profile() != latent_core::BudgetProfile::Phase3 {
+                if !permit.budget_profile().supports_descendants() {
                     return Err(error(
                         PlatformErrorCode::PermissionDenied,
                         "local service requires Phase 3 admission",

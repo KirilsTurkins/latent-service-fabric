@@ -2,7 +2,9 @@ use std::time::Duration;
 
 use latent_core::PlatformError;
 use latent_node::{LocalActivationJournalConfig, LocalActivationManagerConfig};
-use latent_wasmtime::{CompilerOptimization, InstanceAllocator, WasmtimeConfig};
+use latent_wasmtime::{
+    BufferedWebValueProfile, CompilerOptimization, InstanceAllocator, WasmtimeConfig,
+};
 use latent_wire::invocation::InvocationLimits;
 use latent_wire::management::ManagementLimits;
 
@@ -18,6 +20,7 @@ pub(super) fn wasmtime(
 ) -> Result<WasmtimeConfig, PlatformError> {
     let mut runtime = WasmtimeConfig {
         execution_isolation_profile: config.security_profile,
+        transactional_state: config.state.is_some(),
         instance_allocator: match config.engine.allocator {
             EngineAllocator::OnDemand => InstanceAllocator::OnDemand,
             EngineAllocator::Pooling => InstanceAllocator::Pooling,
@@ -43,6 +46,11 @@ pub(super) fn wasmtime(
         maximum_preparation_document_bytes: preparation_documents(config)?,
         // Capture remains positive even if the effective grant denies logging.
         invocation_log_maximum_bytes: 16 * 1024,
+        activation_runtime: config
+            .providers
+            .as_ref()
+            .and_then(|providers| providers.activation_runtime.as_ref())
+            .map(super::providers::ActivationRuntimeInstallation::runtime_limits),
         ..WasmtimeConfig::default()
     };
     #[cfg(feature = "development-test-node")]
@@ -72,10 +80,18 @@ pub(super) fn wasmtime(
         }
         // Explicit buffered HTTP profile; these settings participate in engine
         // identity before catalog compatibility or authenticated AOT loading.
-        runtime.hostcall_fuel = 2 * MIB;
-        runtime.value_codec_limits.max_nodes = latent_ingress::http::MAX_JSON_NODES;
-        runtime.value_codec_limits.max_string_bytes = 512 * 1024;
-        runtime.value_codec_limits.max_lifted_bytes = 64 * MIB;
+        let mut limits = runtime.value_codec_limits;
+        limits.max_nodes = latent_ingress::http::MAX_JSON_NODES;
+        limits.max_string_bytes = 512 * 1024;
+        limits.max_lifted_bytes = 64 * MIB;
+        runtime.buffered_web_value_profile = Some(BufferedWebValueProfile {
+            hostcall_fuel: 2 * MIB,
+            limits,
+        });
+    }
+    #[cfg(feature = "development-test-node")]
+    if let Some(profile) = &config.development_preparation {
+        profile.apply(config, &mut runtime)?;
     }
     runtime.validate().map_err(|_| invalid("wasmtime"))?;
     Ok(runtime)
@@ -89,7 +105,7 @@ pub(super) fn manager(config: &NodeConfig, capacity: &Capacity) -> LocalActivati
             maximum_input_bytes: config.limits.maximum_payload_bytes,
         },
         journal: LocalActivationJournalConfig {
-            maximum_active: capacity.reservations as usize,
+            maximum_active: capacity.tracked_requests,
             maximum_terminal: config.retention.terminal_entries,
             maximum_record_bytes: JOURNAL_RECORD_BYTES,
             maximum_retained_bytes: config.retention.bytes,
@@ -109,6 +125,9 @@ pub(super) fn invocation(
         budget_profile: config.budget_profile.profile(),
         max_child_calls: budget.child_calls,
         max_outbound_requests: budget.outbound_requests,
+        max_state_read_bytes: budget.state_read_bytes,
+        max_state_write_bytes: budget.state_write_bytes,
+        max_effect_count: budget.effect_count,
         max_blob_read_bytes: budget.blob_read_bytes,
         max_blob_write_bytes: budget.blob_write_bytes,
         max_payload_bytes: config.limits.maximum_payload_bytes,

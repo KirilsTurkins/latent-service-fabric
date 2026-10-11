@@ -497,7 +497,40 @@ does not by itself enable Angular T1, additional renderer imports or providers.
 The [management reference](../reference/management-services.md#web-publication-and-preparation)
 defines the trust fence, finite ownership and uncertainty boundary.
 
+### Phase 4 transaction definitions and State capability audit (#382, #397)
+
+The descriptor baseline adds `latent/control/v1/state.proto` and
+`latent/transaction/v1/transaction.proto`. Their four `StateService` and seven
+`TransactionService` methods describe bounded namespace/entity selection,
+explicit management operations, commands, fresh queries and outcome/effect
+recovery. The golden preserves all earlier field numbers, types, oneofs,
+existing enum values and service signatures.
+
+`AuditCapabilityResourceClass` appends `STATE` at value 11 for the typed State
+capability decision already emitted by this delivery. Values 0 through 10 and
+the rest of the earlier audit descriptor remain unchanged. The other twelve
+earlier file descriptors are unchanged in full. The strict descriptor validator
+continues to reject any unreviewed semantic change.
+
+This record freezes transport definitions. The companion
+[transaction contract](transactions.md) defines host authority, durable formats
+and recovery identities; these definitions grant no access and do not install a
+transactional runtime. Later methods or fields require another reviewed baseline
+update.
+This record freezes transport definitions. The companion
+[transaction contract](transactions.md) defines host authority,
+durable formats and recovery identities; adding a descriptor grants no access
+and does not install a transactional runtime. Later management deliveries append
+their methods and fields through separately reviewed descriptor updates.
+
 ## Alpha removal of component-only release selectors
+
+The SDK stream substrate adds `AUDIT_CAPABILITY_RESOURCE_CLASS_STREAM = 11`
+to the capability audit enum. Values 0 through 10 and all message fields keep
+their existing wire numbers. Stream evidence remains distinct from an HTTP
+response or protocol acknowledgement; `HOST_COMPLETED` records only the
+local host operation. The descriptor baseline deliberately includes this
+additive enum value.
 
 Release get, lifecycle inspection, revoke/retire and evidence renewal now require
 an exact authenticated-tenant `PublicationRef`. Their obsolete request `digest`
@@ -512,16 +545,116 @@ explicit. See the [current publication API](../reference/publication-api.md).
 This alpha change supersedes the earlier release-selector compatibility record;
 no deprecation interval or obsolete client compatibility is promised.
 
-## Additive Phase 4 transaction definitions
+## Additive privileged activation-tree inspection
 
-The descriptor baseline includes `latent/transaction/v1/transaction.proto` and
-`latent/control/v1/state.proto`, plus `AuditCapabilityResourceClass` value 11
-for state resources. The Buf-generated descriptor was reviewed against every
-existing file: all previous field numbers, types, enum values, messages and RPC
-signatures remain unchanged. The exhaustive descriptor oracle includes both
-new files and still rejects unreviewed semantic changes.
+Issue #709 adds `NodeService.InspectActivationTree` and its four messages and
+three closed diagnostic enums. Every earlier declaration, field number and RPC
+is preserved. Producer details use `activation.diagnostic.v1` internally;
+public invocation and browser errors continue to discard that detail.
+Unknown enum numbers and optional zero values survive all six common models
+and native transports. See [activation inspection](../reference/activation-inspection.md).
+
+Caller-supplied root/parent IDs now reject before an external activation is
+accepted. These IDs cannot authorize a tree edge. Trusted local service brokers
+derive lineage from the actual parent owner and authenticated tenant.
+
+## Additive immutable target inspection
+
+Issue #716 adds the unary `NodeService.InspectHttpTarget` method, eight bounded
+inspection messages and three observation enums. The descriptor contract
+preserves every existing file, message, field number, enum value and RPC. The
+node descriptor additionally imports the existing release descriptor for exact
+publication identities.
+
+The authenticated tenant administrator receives coherent, stale or unavailable
+observations of the selected catalog and policy owners. Optional preparation
+inspects the same admitted readiness owner without materialization or guest and
+provider execution. The reply reports actual provider imports and validated
+structural type imports separately, and preserves numeric option presence and
+future enum values. See [target inspection](../reference/target-inspection.md).
+
+Engine configuration digests and internal sealed metadata fingerprints retain
+their separate meanings. Live grant checks are explicitly absent; an inspection
+does not grant execution or mutation authority. Public invocation and browser
+error projections retain their existing disclosure rules.
+
+## Phase 4 transaction and management descriptor additions
+
+The Buf 1.72.0 descriptor baseline adds `latent/transaction/v1/transaction.proto`,
+`latent/control/v1/state.proto` and `latent/control/v1/dispatcher.proto`. The seven
+transaction, six state and three dispatcher methods use independent bounded
+messages. Every prior file, field, enum value and service signature is preserved.
+The audit descriptor adds state and dispatcher targets at fields 25 and 26,
+state resource class 11 and control actions 13 through 29; all prior audit rows
+remain exact.
 
 These definitions describe [transaction and recovery contracts](transactions.md).
 They do not establish that a host implements the profile or grant access from
 a namespace, command, effect or receipt identifier. WIT guest ABI versions and
 durable storage formats retain their separate compatibility boundaries.
+
+## Additive immutable target inspection
+
+Issue #716 adds the unary `NodeService.InspectHttpTarget` method, eight bounded
+inspection messages and three observation enums. The descriptor contract
+preserves every existing file, message, field number, enum value and RPC. The
+node descriptor additionally imports the existing release descriptor for exact
+publication identities.
+
+The authenticated tenant administrator receives coherent, stale or unavailable
+observations of the selected catalog and policy owners. Optional preparation
+inspects the same admitted readiness owner without materialization or guest and
+provider execution. The reply reports actual provider imports and validated
+structural type imports separately, and preserves numeric option presence and
+future enum values. See [target inspection](../reference/target-inspection.md).
+
+Engine configuration digests and internal sealed metadata fingerprints retain
+their separate meanings. Live grant checks are explicitly absent; an inspection
+does not grant execution or mutation authority. Public invocation and browser
+error projections retain their existing disclosure rules.
+The additive baseline also includes the three `DispatcherService` management
+methods and their typed request, response, generation, snapshot and operation
+receipt messages, together with the typed audit state and dispatcher targets.
+The 2026-10-03 regeneration used Buf 1.72.0 and retained all field names, numbers,
+types, nested messages, oneof membership, enum values and service signatures
+from both the earlier transaction source and current development. These are
+contract definitions; they do not qualify installed dispatch or transport
+execution.
+`PlanEffectMutation` prepares a finite descriptive plan. Effect redrive,
+reconciliation and termination require that complete original plan when calling
+`MutateState`. Receipt recovery preserves the original action, record version,
+policy digest and operation ID while requesting a separately current read
+publication. An expired historical plan can describe an already completed
+operation. It supplies neither a grant nor provider proof. Provider confirmation,
+administrator declaration and scheduled redrive remain separate typed facts.
+Historical effect records without the new record version remain readable and
+cannot authorize a new mutation.
+
+The golden matches the frozen sixteen-operation client descriptor and was
+reviewed against every prior named row using actual Buf output. The
+[transaction reference](transactions.md) describes the separate guest ABI,
+durable-format, authority and production qualification boundaries.
+
+## Captured transaction staging observation
+
+`TransactionStagingWitness` adds a host observation to privileged activation
+inspection. `ActivationTreeNode.transaction_staging` uses the previously unused
+optional field 15; existing field numbers and meanings remain unchanged. The
+witness records the captured activation, command, attempt, transaction and
+publication identities, mutation and intent counts, state bytes, and observation
+time. It appears only after the original host captures an intent and grants no
+persistence, cancellation, retry or cleanup authority. Older clients may ignore
+the added field; absence does not prove that no intent was captured.
+
+## Captured namespace policy observation
+
+`NamespaceInspection.policy_digest` adds optional string field 12. It describes
+the exact captured policy/binding revision and supplies no permission, renewed
+grant or mutation proof. Existing namespace-policy field 11, field numbers,
+presence rules and historical meanings remain unchanged. Older clients can
+ignore the addition; absence is an unavailable observation.
+
+The October 11, 2026 descriptor regeneration uses pinned Buf 1.72.0 and verifies
+every prior descriptor semantic before admitting only this field and its
+synthetic optional oneof. All six transaction client models and maintained
+Protobuf producers follow the same authoritative source.

@@ -103,3 +103,126 @@ observations are operator assertions, not authenticated source, hermetic
 builds or complete transitive SBOMs. Broad PR CI and qualification at the final
 head must pass before merge; historical measurements do not approve later
 source. All six language tickets, #345 and the release gates remain separate.
+
+## Captured library observation on October 1, 2026
+
+The [machine-readable observation](c-library-dependency-observation-2026-10-01.json)
+records a later experiment for #684. Component builds used frontend
+`abe3edaf7a71b58007f52d2cb1244b73e4c60b79`; the maintained negative-control CLI
+and native SDK ownership checks used
+`ee00033be6eea7e89c0ff3201a8de433f10a8c14`. Normal node and packaging binaries
+were built from `907e8fa0791e85d764d7b06a716f4f238a84e05d`; their native source
+inputs were independently checked equal to both frontend/control sources.
+The observation retains compiler, image, binary, component, archive, profile
+and raw-receipt digests. It does not attribute these results to later source.
+
+Five C projects and a sixth greeting built offline through the pinned Zig,
+Wasm validation, component composition and package recipes in 311.157 seconds.
+The greeting calls both the unchanged jsmn 1.1.0 parser and an outside-project
+library directly. That library calls the parser transitively and reads an
+immutable included resource. Original library sources were removed after
+capture. The sixth build uses a source-built static archive, separately
+captured headers/resource and a different application-selected library
+identity. No LSF catalogue entry selects either library.
+
+Two fresh normal signed nodes ran separately using only signed release inputs;
+compiler distributions, original libraries and source/CAS directories were
+absent. Each made 111 control calls and completed 27 invocations: 18 successes,
+four declared errors and five platform failures for trap, memory, fuel,
+deadline and cancellation. Both retained 24 samples and six provider-idle
+checks, successful recovery after failure/disconnection, clean shutdown,
+joined epoch helpers and zero recorded live owner counters. Each also retained
+844 flushed telemetry entries; those history entries are recorded separately
+from live owners. The two node workflows completed together in 95.751 seconds
+with the original 180-second workflow, 5,000-ms invocation and 15,000-ms control
+limits.
+
+The actual maintained CLI passed all 21 compiler/generator controls in 58.183
+seconds with network disabled. They exercise malformed unused objects,
+duplicate strong symbols, wrong targets, archive bounds, closure/profile
+changes, denied ambient inputs, generator approval and descendant cleanup,
+then a fresh successful generator stage. The deadline receipt confirms
+`reaped`; actual Linux regressions also confirm descendant termination after
+output overflow and preserve `unconfirmed` for failed cleanup/ownership.
+The unchanged C SDK native ownership fixture compiled and ran with the pinned
+Zig compiler. These checks add evidence for library inputs and process cleanup;
+they do not replace the full guest SDK capability qualification.
+
+Earlier failed attempts are retained: the ordinary argument bound rejected a
+single 1,025-member archiver command, and the pinned archiver itself rejected a
+malformed object before member validation. Later controls used bounded batches
+and explicit adversarial archive framing without changing those limits. The
+first maintained replay passed its controls but retained an unconfirmed
+deadline receipt; the corrected receipt classification and final replay remain
+separate observations.
+
+Those earlier component/control experiments did not execute the full maintained
+SDK gate or all six printed guide steps. A later complete maintained replay at
+`6f8d5537383d238fa795eba4435505bb7912e8e7` passed in 332.404 seconds: all six
+source/static component builds, all ten guest SDK capability/ownership cases,
+both normal signed-node workflows with 27 invocations each, and every one of
+the six printed Bash guide steps. The native tools were built from that same
+source; all 7,292 tracked frozen files were checked, and the maintained helper
+inputs and native binary digests remained equal before and after qualification.
+The guide completed in 24.392 seconds. The machine-readable observation retains
+the full qualification, source, tool, binary, component, node and guide receipt
+identities, together with each successful command's duration and exit status.
+
+This complete replay reused the preceding attempt's owned native build cache
+after checking the exact source inputs. Every maintained command ran again;
+the original 900-second overall and 600-second command limits remained in
+force. It used two CPUs, 4 GiB and 512 process slots. Unlike the earlier
+release-only node experiments, these node workflows ran through the maintained
+compiler host with explicit grants and normal signed/admitted release inputs.
+Compiler build stages retained their ordinary capture isolation and offline
+policy.
+
+Both earlier complete attempts remain recorded. The first stopped before native
+compilation because the copied offline registry index lacked `base64`; an
+explicit locked acquisition populated only the owned cache. The second passed
+the six component builds, all ten SDK tests and the source-library signed node,
+then exhausted the original overall deadline at `static-library-sign-demo`.
+Neither failure changed a test, tool pin or deadline.
+
+A subsequent integration replay at
+`8021fe8defa7ffe682c50e8b4028b88205080348` passed nine SDK cases but failed the
+first service success: cold caller compilation consumed 4.784 seconds of its
+unchanged five-second parent budget, and the queued child correctly exhausted
+its delegated remaining time. That failed receipt and diagnostics remain
+separate from the earlier complete replay.
+
+The service fixture now prepares both exact admitted caller/callee publications
+through the ordinary repository/backend path before measuring typed outcomes.
+It drops each preparation owner and checks physical idle owners, zero guest
+Stores and no activation observations. Preparation time is reported separately;
+all existing success, declared-error, permission-denial and reuse assertions
+retain their original guest ceilings and invocation checks. This qualifies
+prepared execution; cold compilation latency still requires separate evidence.
+The updated full maintained replay at
+`088a555195e713eb2812b2dc282fc3fb32fc1f6c` passed in 699.352 seconds. The
+[retained observation](c-maintained-replay-2026-10-02.json) binds all seven
+maintained commands, ten original direct SDK cases with no ignored or filtered
+cases, both normal signed nodes with 27 invocations each, and all six printed
+guide steps. All 7,307 frozen tracked files were checked before and after the
+run. The owned native cache was explicitly rebuilt at that source, and every
+maintained command ran with the original 900-second overall and 600-second
+command limits.
+
+The same run subsequently passed all 21 actual compiler and generator controls.
+Their captured source root is now a strict child of the isolated compiler
+workspace; captured SDK inputs remain read-only, while outputs use the separate
+owned compiler directory. The observation retains successful and failed
+receipt identities, generator descendant reaping, and a fresh generator after
+the deadline case. An earlier attempt stopped before SDK tests because its
+qualification container incorrectly denied network access during explicit
+upstream HTTPS capture. Its raw failure remains separate; the fresh passing
+attempt retained the ordinary offline compiler and generator namespaces.
+
+The complete receipts and raw logs were copied outside Docker and source
+worktrees, with an exact archive digest and per-file inventory. These results
+apply to the recorded source. Installed frontend dependency build/test/watch,
+private capture, and later exact-source CI require their own observations.
+
+Current remote CI and complete #684 acceptance reconciliation remain required,
+including the full C dependency edit/test/watch and private capture workflows.
+No release was published; newcomer review #345 remains separate.

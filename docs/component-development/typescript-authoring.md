@@ -1,5 +1,7 @@
 # TypeScript compiler and runtime profile
 
+Ordinary application npm graphs use the [captured dependency workflow](typescript-dependencies.md), separately from the pinned SDK compiler lock.
+
 For application development, use [Creating a capsule](creating-a-capsule.md).
 That shared tutorial has all six language choices and uses `dev init`, `build`,
 `deploy` and `test`. You do not need the source-build commands below for it.
@@ -74,6 +76,8 @@ and replace `greeting` in the creation command with either template name.
 `http-status` adds a typed, asynchronous HTTP call; its import still needs an
 installed provider and an explicit deployment grant. Creating a project grants
 no network access.
+
+Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers affine view/page owners, full-width `bigint` values, the captured profile, schema and binding companion. The host owns commitment, and signed transaction execution has its own qualification matrix. The tutorial below retains its existing stateless profile.
 
 ## 2. Build and package the project
 
@@ -279,6 +283,9 @@ printf 'Saved project and results: %s\n' "$LSF_TYPESCRIPT_PROJECTS"
 
 Your source and results remain at that path. Edit the greeting, create a new
 build directory, and repeat signing and delivery to try a change. The
+[application library guide](typescript-library-authoring.md) adds reviewed npm
+capture, private inputs and maintained frontend test/watch commands.
+The
 [delivery and recovery](../learn/deliver-and-recover-a-capsule.md) guide explains
 update and recovery principles using a separate Rust tutorial project and node.
 Follow that tutorial's prerequisites and variables when using its commands;

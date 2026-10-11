@@ -80,10 +80,13 @@ def queue_fixture(sample: dict) -> dict:
     full = {"queueDepth": "3", "cellCapacity": [{"total": 2, "active": 2, "available": 0, "queueDepth": 3, "queuedTenants": 2}],
             "quotas": {"usage": {"activeActivations": 5, "queuedActivations": 3}}}
     queued = [invoke(a1, terminal="cancelled"), invoke(a2, terminal="cancelled"), invoke(other, [{"ok": "queued other tenant"}])]
+    refused = invoke("queue-overflow", terminal="resource_exhausted", code="resource-exhausted")
+    unused = {key: "0" if isinstance(value, str) else 0 for key, value in consumption().items()}
+    refused["data"]["consumption"] = unused
     return {"holdersRunning": [status(first), status(second)], "queued": [status(item, phase="queued") for item in (a1, a2, other)],
             "full": full, "unchangedFull": copy.deepcopy(full),
-            "overflow": cli("invoke", None, "transport-failure", {"grpcCode": "resource-exhausted"}, known=False),
-            "overflowStatus": cli("activation get", None, "not-found"), "firstHandoff": status(a1),
+            "overflow": refused,
+            "overflowStatus": status("queue-overflow", "resource_exhausted", unused), "firstHandoff": status(a1),
             "secondHandoff": {"examplesResult": queued[2], "secondHolderRunning": status(second), "secondQueuedRunning": status(a2)},
             "cancelled": [cli("activation cancel", {"activationId": item, "disposition": "accepted", "terminalState": None})
                           for item in (first, a1, a2, second)],
@@ -92,7 +95,7 @@ def queue_fixture(sample: dict) -> dict:
                                                             for index, item in enumerate((a1, a2, other))],
             "idleSample": idle_fixture(sample, "queue-settled"),
             "fairnessOracle": "other-tenant-completes-before-uncancelled-same-tenant-spin",
-            "overflowBoundary": "standalone-active-owner-ceiling-before-extra-journal-registration"}
+            "overflowBoundary": "standalone-active-owner-ceiling-with-retained-refusal-before-guest-admission"}
 
 
 def wall_fixture(sample: dict) -> dict:
@@ -127,10 +130,10 @@ def remaining(fuel=99_999_900, memory=67_000_000, logs=16384) -> dict:
 
 
 def telemetry_fixture(tenant: str, identifier: str, log_count: int, ordinal: int) -> dict:
-    root, parent = ("parity-root", "parity-parent") if tenant == "examples" else ("capability-root", "capability-parent")
+    root, parent = identifier, None
     release = sha256(b"echo" if tenant == "examples" else b"capabilities")
     trace = {"trace_id": f"{ordinal:032x}", "span_id": f"{ordinal:016x}", "trace_flags": 0, "baggage": {}}
-    attrs = {"activation_id": identifier, "root_activation_id": root, "parent_activation_id": parent,
+    attrs = {"activation_id": identifier, "root_activation_id": root,
              "tenant": tenant, "service": "shared", "release": release, "revision": "revision-synthetic", "route_generation": "1"}
     attrs.update(contract="examples:echo/api@0.1.0" if tenant == "examples" else "tests:capabilities/api@0.1.0",
                  function="echo" if tenant == "examples" else identifier.split("-cap-", 1)[-1])
@@ -160,7 +163,7 @@ def capability_fixture(name: str, direct: bool, ordinal: int) -> dict:
                                                 wall_time_micros=used["wall_time_micros"], log_bytes=used["log_bytes"])
     if name == "snapshot":
         trace = call["completion_span"]["trace"]
-        decoded = {"activation": identifier, "root": "capability-root", "parent": {"some": "capability-parent"},
+        decoded = {"activation": identifier, "root": identifier, "parent": {"none": None},
                    "principal": {"subject": "parity-tests", "kind": "administrator", "tenant": {"some": "tests"}, "service": {"none": None}, "claims": []},
                    "trace": {"trace-id": trace["trace_id"], "span-id": trace["span_id"], "trace-flags": 0, "baggage": []},
                    "deadline": {"some": "5000"}, "metadata": [["guest.visible", "paired"]], "remaining": remaining()}
@@ -479,7 +482,11 @@ class ConformanceValidatorTests(unittest.TestCase):
                    lambda value: value["secondHandoff"]["secondHolderRunning"]["data"].update(terminalState="deadline_exceeded"),
                    lambda value: value["secondHandoff"]["secondQueuedRunning"]["data"].update(terminalAtUnixMillis="1000"),
                    lambda value: value["cancelled"][2]["data"].update(disposition="already-terminal", terminalState="deadline_exceeded"),
-                   lambda value: value["overflow"].update(category="platform-failure", outcomeKnown=True),
+                   lambda value: value["overflow"].update(category="transport-failure", outcomeKnown=False),
+                   lambda value: value["overflow"]["data"]["consumption"].update(cpuFuel="1"),
+                   lambda value: value["overflow"]["data"]["consumption"].update(peakMemoryBytes="1"),
+                   lambda value: value["overflow"]["data"].update(terminalState="completed"),
+                   lambda value: value["overflowStatus"]["data"].update(terminalState="cancelled"),
                    lambda value: value["overflowStatus"].update(category="success", data={}),
                    lambda value: value["queuedStatuses"][2]["data"].update(finalConsumption=consumption() | {"cpuFuel": "99"}),
                    lambda value: value["idleSample"]["inventory"]["cellCapacity"][0].update(quarantined=1)]
@@ -519,7 +526,12 @@ class ConformanceValidatorTests(unittest.TestCase):
         changes = [lambda value: value["capability_pairs"].pop(),
                    lambda value: value["capability_pairs"][0].update(name="clocks"),
                    lambda value: value["capability_pairs"][0]["rpc"].update(cell_id="other-cell"),
+                   lambda value: value["capability_pairs"][0]["rpc"].update(root_activation_id="capability-root"),
+                   lambda value: value["capability_pairs"][0]["rpc"].update(parent_activation_id="capability-parent"),
+                   lambda value: value["capability_pairs"][0]["rpc"]["completion_span"]["attributes"].update(parent_activation_id=None),
                    lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0].update(activation="direct-cap-snapshot"),
+                   lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0].update(root="capability-root"),
+                   lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0].update(parent={"some": "capability-parent"}),
                    lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0]["principal"].update(tenant={"some": "examples"}),
                    lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0]["principal"].update(kind="user"),
                    lambda value: value["capability_pairs"][0]["rpc"]["decoded"][0]["trace"].update({"trace-id": "f" * 32}),

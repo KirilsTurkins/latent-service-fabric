@@ -71,3 +71,5 @@ fn rejects(ty: &Type, json: &str) {
     .expect_err("invalid input");
     assert_eq!(error.code, PlatformErrorCode::InvalidArgument, "{json}");
 }
+
+mod canonical;

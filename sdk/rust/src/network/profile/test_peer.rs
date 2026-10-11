@@ -2,7 +2,14 @@ use latent_core::TenantId;
 use latent_rpc::{control::v1 as control, invocation::v1 as invocation};
 use latent_sdk::network::{ClientConfig, ClientLimits, RpcClient};
 use prost::Message;
-use std::{net::SocketAddr, time::Duration};
+use std::{
+    net::SocketAddr,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
 use tokio::{net::TcpListener, sync::oneshot, task::JoinHandle};
 use tonic::{codegen::tokio_stream::wrappers::TcpListenerStream, Request, Response, Status};
 
@@ -13,6 +20,7 @@ struct Service;
 
 pub struct ScriptedPeer {
     address: SocketAddr,
+    pub target_requests: Arc<AtomicUsize>,
     shutdown: Option<oneshot::Sender<()>>,
     task: Option<JoinHandle<()>>,
 }
@@ -22,6 +30,8 @@ impl ScriptedPeer {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let (shutdown, stopped) = oneshot::channel();
+        let target_requests = Arc::new(AtomicUsize::new(0));
+        let target_service = Targets(target_requests.clone());
         let task = tokio::spawn(async move {
             tonic::transport::Server::builder()
                 .concurrency_limit_per_connection(4)
@@ -32,6 +42,9 @@ impl ScriptedPeer {
                 .add_service(
                     invocation::invocation_service_server::InvocationServiceServer::new(Service),
                 )
+                .add_service(control::node_service_server::NodeServiceServer::new(
+                    target_service,
+                ))
                 .serve_with_incoming_shutdown(TcpListenerStream::new(listener), async {
                     let _ = stopped.await;
                 })
@@ -40,6 +53,7 @@ impl ScriptedPeer {
         });
         Self {
             address,
+            target_requests,
             shutdown: Some(shutdown),
             task: Some(task),
         }
@@ -61,6 +75,95 @@ impl ScriptedPeer {
             .await
             .unwrap()
             .unwrap();
+    }
+}
+
+#[derive(Clone)]
+struct Targets(Arc<AtomicUsize>);
+
+#[tonic::async_trait]
+impl control::node_service_server::NodeService for Targets {
+    async fn register_node(
+        &self,
+        _: Request<control::RegisterNodeRequest>,
+    ) -> Result<Response<control::RegisterNodeResponse>, Status> {
+        Err(Status::unimplemented("fixture"))
+    }
+    async fn report_inventory(
+        &self,
+        _: Request<control::ReportInventoryRequest>,
+    ) -> Result<Response<control::Empty>, Status> {
+        Err(Status::unimplemented("fixture"))
+    }
+    async fn heartbeat(
+        &self,
+        _: Request<control::HeartbeatRequest>,
+    ) -> Result<Response<control::Empty>, Status> {
+        Err(Status::unimplemented("fixture"))
+    }
+    async fn get_node(
+        &self,
+        _: Request<control::GetNodeRequest>,
+    ) -> Result<Response<control::GetNodeResponse>, Status> {
+        Err(Status::unimplemented("fixture"))
+    }
+    async fn list_nodes(
+        &self,
+        _: Request<control::ListNodesRequest>,
+    ) -> Result<Response<control::ListNodesResponse>, Status> {
+        Err(Status::unimplemented("fixture"))
+    }
+    async fn inspect_activation_tree(
+        &self,
+        _: Request<control::InspectActivationTreeRequest>,
+    ) -> Result<Response<control::InspectActivationTreeResponse>, Status> {
+        Err(Status::unimplemented("fixture"))
+    }
+    async fn inspect_http_target(
+        &self,
+        request: Request<control::InspectHttpTargetRequest>,
+    ) -> Result<Response<control::InspectHttpTargetResponse>, Status> {
+        authenticated(&request)?;
+        self.0.fetch_add(1, Ordering::Relaxed);
+        let request = request.into_inner();
+        Ok(Response::new(control::InspectHttpTargetResponse {
+            schema_version: 1,
+            tenant: if request.function == "foreign" {
+                "foreign"
+            } else {
+                "tests"
+            }
+            .into(),
+            service: request.service,
+            contract: request.contract,
+            function: request.function.clone(),
+            route: request.route.unwrap_or_else(|| "default".into()),
+            state: if request.function == "future" { 777 } else { 1 },
+            catalog_transaction: u64::MAX,
+            candidates: vec![control::TargetCandidate {
+                deployment_id: "deployment-a".into(),
+                revision_id: if request.function == "drift" {
+                    "revision-b"
+                } else {
+                    "revision-a"
+                }
+                .into(),
+                component_digest: format!("sha256:{}", "a".repeat(64)),
+                publication: request.publication,
+                reasons: vec![777],
+                preparation: Some(control::TargetPreparation {
+                    state: match request.function.as_str() {
+                        "unmeasured" => 1,
+                        "future" => 779,
+                        _ if request.include_preparation => 3,
+                        _ => 4,
+                    },
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }))
     }
 }
 

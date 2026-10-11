@@ -1,0 +1,57 @@
+{
+  "expiresAtUnixSeconds": 1790819550,
+  "policyDigest": "sha256:bed1692f846ea7cd434025a94c61f5bf03ad929a0e928d4c9f5ff63cc826b225",
+  "releases": [
+    {
+      "buildType": "https://latent.dev/build/java-capsule/v1",
+      "builderId": "local-demo-builder-01",
+      "builderKeyFingerprint": "sha256:ab95312b6310042406cbe204a1afac2bac8fac88594a5c3c6bb94c9aab3f6bbb",
+      "componentDigest": "sha256:12d658d3be1acb712bbc054168a8f13f0ee01b3e55ad9c3f94080df3f9d27c24",
+      "name": "java-http-domain",
+      "observationDigest": "sha256:ee1a405e301e36f4d5521987faf5f188a838fc6b673e7d733df3154d12b4b5c2",
+      "packageDigest": "sha256:0c6f202f5f40f8219fd44d04e90cdb4173248262508b24f8799d7581124f0cc6",
+      "service": "examples/java-http-domain",
+      "sourceSnapshotDigest": "sha256:81493e7db1a7e64b1e57464fe78954c025ed1775f906b168cd9c449003f8abdf",
+      "world": "examples:java-http-domain/service@1.0.0"
+    },
+    {
+      "buildType": "https://latent.dev/build/java-capsule/v1",
+      "builderId": "local-demo-builder-02",
+      "builderKeyFingerprint": "sha256:a9f6ef8e3dbc7ddb7e2fda7f8ae762552683a5a7634c81d0b36cd336fd4696f9",
+      "componentDigest": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+      "name": "java-http-context-required",
+      "observationDigest": "sha256:c88a554412d27b60d5af7db845493996bf3d8621dbfa2882683a9abf5dd2f18f",
+      "packageDigest": "sha256:1d154124fedc4fc97f6cd767679fe25d2ffe05868e854f9d1057dc02c0307e2f",
+      "service": "examples/java-http-context-required",
+      "sourceSnapshotDigest": "sha256:11a7c8bf0d35fdf665c865dac36d8d023a6c20146b8cf75a2ad72dbe54a4e9b2",
+      "world": "examples:java-http-context-required/service@1.0.0"
+    },
+    {
+      "buildType": "https://latent.dev/build/java-capsule/v1",
+      "builderId": "local-demo-builder-03",
+      "builderKeyFingerprint": "sha256:27fd2a8bb717a1fea636f7257f4e6685cca5483c3575eb14c3ddfcb08d0d96f2",
+      "componentDigest": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+      "name": "java-http-adapter",
+      "observationDigest": "sha256:2ecb50449585b7d1685ce534431d23e3eea3bac2922c403afe6b7284d500d772",
+      "packageDigest": "sha256:cefe298b3aa0684efe1214465969968790eecfeb6b409726bea00daec60b1198",
+      "service": "examples/java-http-adapter",
+      "sourceSnapshotDigest": "sha256:9c4ec67562fe7ef047d5a34093d2c459cbf4b619b48cdf12a18ccc280d27a93f",
+      "world": "examples:java-http-adapter/service@1.0.0"
+    },
+    {
+      "buildType": "https://latent.dev/build/java-capsule/v1",
+      "builderId": "local-demo-builder-04",
+      "builderKeyFingerprint": "sha256:1525c92929ad101449648be7913fea8f3672b97487caf390a27ebbda4d2eb5a2",
+      "componentDigest": "sha256:4344aa85da161e33b8906ee4a5c2db272358ca52116f191e5d9ce61eb041d562",
+      "name": "java-http-adapter-next",
+      "observationDigest": "sha256:e8c8fb9f21a82758c3e3861b64aec33356819ed8c894f5d8c130cc4fe937986e",
+      "packageDigest": "sha256:fde7b6e30cab464535f93891878fd1b69ca8afeba31ba8e81ff10e0d477ae1cb",
+      "service": "examples/java-http-adapter",
+      "sourceSnapshotDigest": "sha256:87d7a678fd42321014d6ba09106ac740bb97464edf0f8c4e1ea8fc15a31320da",
+      "world": "examples:java-http-adapter/service@1.0.0"
+    }
+  ],
+  "schemaVersion": "latent.capsule.demo.v1",
+  "tenant": "examples",
+  "trust": "isolated-short-lived-demo-only"
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "latent.offline-migration-recipe.v1",
+  "identity": "lsf.java-aggregate-migration.v1",
+  "sourceSchema": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
+  "targetSchema": "sha256:5465983620116dc20476955ea815d665e2868421f6bed705760f12225bada6eb",
+  "source": {"key": "aggregate/count", "bytes": 8, "mediaType": "application/vnd.lsf.aggregate-v1"},
+  "target": {"key": "aggregate/count", "bytes": 12, "mediaType": "application/vnd.lsf.aggregate-v2", "prefixHex": "41470200"},
+  "profile": "exclusive-quiesced-single-java-aggregate",
+  "checkpoint": "verified-protected-logical-snapshot-v1",
+  "stateRows": 1,
+  "maximumOperationBytes": 65536,
+  "externalEffects": false,
+  "automaticResume": false,
+  "automaticDowngrade": false
+}

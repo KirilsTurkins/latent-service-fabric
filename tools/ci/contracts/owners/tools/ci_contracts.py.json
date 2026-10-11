@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/ci_contracts.py","reviewBoundary":"committed-fingerprint","reviewReason":"Issue #732: enforce fingerprint review for the newly explicit structural/storage/parser owner.","schemaVersion":"latent.ci.contracts.v1","sha256":"e35e622fa286f12aa6bdedacf3c0313cf5ca8adad4dfb8c5bb6e5d5be57a4283"}
+{
+  "kind": "owner",
+  "path": "tools/ci_contracts.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review strict Python-only v2 physical storage normalization, flat digest/reference checks and the original decoded-byte bound without changing semantic v1 contracts or proposal review requirements. Decode Python test source explicitly as UTF-8 so reviewed guards are stable on Windows and Linux.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6ee97f61c2162e0298e4e8076a0ad23866f217f94497dbe07df9ec073d4f9518"
+}

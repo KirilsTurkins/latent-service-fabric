@@ -1,0 +1,10 @@
+package examples:shared-types@1.0.0;
+interface types {
+    type count = u64;
+    record item { count: count, text: string }
+}
+interface api {
+    use types.{item};
+    echo: func(value: item) -> item;
+}
+world service { export api; }

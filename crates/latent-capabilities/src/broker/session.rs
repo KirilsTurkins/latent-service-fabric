@@ -83,6 +83,17 @@ pub(super) struct HandleEntry {
 pub(super) struct SessionState {
     pub slots: Vec<Option<Arc<HandleEntry>>>,
 }
+impl SessionCore {
+    pub(super) fn observe_diagnostic(
+        &self,
+        diagnostic: latent_core::diagnostic::ActivationDiagnostic,
+    ) {
+        if let Some(sink) = self.owner.diagnostic_sink.get() {
+            sink.record(&self.plan.target.tenant, &self.activation_id, diagnostic);
+        }
+    }
+}
+
 pub(super) struct SessionCore {
     pub owner: Arc<Inner>,
     pub plan: Arc<CompiledCapabilityPlan>,
@@ -97,6 +108,7 @@ pub(super) struct SessionCore {
     pub state: Mutex<SessionState>,
     pub random_bytes: AtomicUsize,
     pub metrics: Mutex<super::metrics::SessionUsage>,
+    pub(super) network: super::network::NetworkUsage,
     web_context: bool,
     _metadata: Charge,
     _slot: Charge,
@@ -289,6 +301,7 @@ impl ActivationCapabilityBroker {
         let metadata = self.inner.counters.acquire(
             Kind::Metadata,
             4096 + size_of::<super::metrics::SessionUsage>()
+                + size_of::<super::network::NetworkUsage>()
                 + self.inner.limits.maximum_handles_per_session
                     * std::mem::size_of::<Option<Arc<HandleEntry>>>(),
         )?;
@@ -329,6 +342,7 @@ impl ActivationCapabilityBroker {
             stats,
             random_bytes: AtomicUsize::new(0),
             metrics: Mutex::new(super::metrics::SessionUsage::default()),
+            network: super::network::NetworkUsage::default(),
             web_context: publication.web_projection().is_some(),
             state: Mutex::new(SessionState {
                 slots: (0..self.inner.limits.maximum_handles_per_session)
@@ -552,7 +566,15 @@ impl CapabilitySession {
             .bindings
             .iter()
             .position(|b| b.provider.capability == capability)
-            .ok_or_else(denied)?;
+            .ok_or_else(|| {
+                use latent_core::diagnostic::{
+                    ActivationDiagnostic as D, DiagnosticReason as R, DiagnosticStage as S,
+                };
+                D::new(S::Binding, R::BindingAbsent).attach(super::error(
+                    latent_core::PlatformErrorCode::PermissionDenied,
+                    "capability-binding-absent",
+                ))
+            })?;
         let binding = &self.core.plan.bindings[index];
         let installed = binding.provider.live.try_read().map_err(|_| busy())?;
         if !*installed {
@@ -682,6 +704,9 @@ fn own_resource(resource: ResourceTarget<'_>) -> ResourceRequest {
             origin: origin.clone(),
             method: method.to_owned(),
             path: path.to_owned(),
+        },
+        ResourceTarget::Stream { endpoint } => ResourceRequest::Stream {
+            endpoint: endpoint.clone(),
         },
         ResourceTarget::Blob { namespace } => ResourceRequest::Blob {
             namespace: namespace.to_owned(),

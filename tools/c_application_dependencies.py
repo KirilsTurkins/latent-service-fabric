@@ -8,6 +8,7 @@ import re
 from tools.application_dependencies import Closure
 from tools.application_dependency_store import DependencyError, MAX_OBJECT, path_name, read_bytes
 from tools.build_snapshot import digest
+from tools.c_static_symbols import MAX_SYMBOL_BYTES, MAX_SYMBOLS, strong_symbols
 
 
 def unsigned(data: bytes, offset: int) -> tuple[int, int]:
@@ -27,7 +28,7 @@ def unsigned(data: bytes, offset: int) -> tuple[int, int]:
 def wasm_object(payload: bytes) -> dict:
     if not payload.startswith(b"\0asm\x01\0\0\0"):
         raise DependencyError("c-static-archive-host-native-member")
-    offset, linking, features = 8, None, {}
+    offset, linking, features, definitions = 8, None, {}, []
     while offset < len(payload):
         section = payload[offset]; offset += 1
         size, offset = unsigned(payload, offset)
@@ -46,9 +47,10 @@ def wasm_object(payload: bytes) -> dict:
             if name == "linking":
                 if linking is not None:
                     raise DependencyError("c-wasm-object-malformed")
-                linking, _unused = unsigned(payload, content)
+                linking, content = unsigned(payload, content)
                 if linking != 2:
                     raise DependencyError("c-wasm-linking-abi-unsupported")
+                definitions = strong_symbols(payload[content:end])
             elif name == "target_features":
                 count, content = unsigned(payload, content)
                 if count > 64:
@@ -71,13 +73,14 @@ def wasm_object(payload: bytes) -> dict:
         raise DependencyError("c-wasm-static-member-is-not-relocatable-object")
     if any(features.get(name) == "+" for name in ("atomics", "memory64", "shared-mem")):
         raise DependencyError("c-wasm-object-requires-unqualified-runtime-profile")
-    return {"digest": digest(payload), "size": len(payload), "linkingVersion": linking, "targetFeatures": features}
+    return {"digest": digest(payload), "size": len(payload), "linkingVersion": linking,
+            "targetFeatures": features, "strongSymbols": definitions}
 
 
-def archive_members(data: bytes) -> list[dict]:
+def archive_members(data: bytes, *, validator=None) -> list[dict]:
     if not data.startswith(b"!<arch>\n"):
         raise DependencyError("c-static-archive-format-or-thin-archive-denied")
-    offset, long_names, members, seen = 8, b"", [], set()
+    offset, long_names, members, seen, symbols, symbol_bytes = 8, b"", [], set(), set(), 0
     while offset < len(data):
         if offset + 60 > len(data):
             raise DependencyError("c-static-archive-malformed")
@@ -121,7 +124,17 @@ def archive_members(data: bytes) -> list[dict]:
         if "/" in name or name.casefold() in seen or len(members) >= 1024:
             raise DependencyError("c-static-archive-member-collision-or-limit")
         seen.add(name.casefold())
-        members.append({"name": name, **wasm_object(payload)})
+        inspected = wasm_object(payload)
+        if validator is not None:
+            validator(name, payload)
+        for symbol in inspected["strongSymbols"]:
+            if symbol in symbols:
+                raise DependencyError("c-static-archive-duplicate-strong-symbol")
+            symbols.add(symbol)
+            symbol_bytes += len(symbol.encode("utf-8"))
+            if len(symbols) > MAX_SYMBOLS or symbol_bytes > MAX_SYMBOL_BYTES:
+                raise DependencyError("c-wasm-symbol-table-limit")
+        members.append({"name": name, **inspected})
     if not members:
         raise DependencyError("c-static-archive-empty")
     return members
@@ -138,7 +151,7 @@ class Inputs:
 
 def selected(closure: Closure | None, *, compiler_digest: str, runtime_digest: str,
              compiler_distribution_digest: str | None = None) -> Inputs:
-    sources, includes, archives, defines, receipts = [], [], [], [], []
+    sources, includes, archives, defines, receipts, symbols, symbol_bytes = [], [], [], [], [], set(), 0
     if closure is None:
         return Inputs((), (), (), (), {"formatVersion": 1, "artifacts": []})
     if closure.lock["selection"].get("target", "wasm32-wasi") != "wasm32-wasi":
@@ -167,6 +180,14 @@ def selected(closure: Closure | None, *, compiler_digest: str, runtime_digest: s
             if not item["mount"].endswith(".a") or item["role"] != "application":
                 raise DependencyError("c-library-file-must-be-static-archive")
             members = archive_members(read_bytes(root))
+            for member in members:
+                for symbol in member["strongSymbols"]:
+                    if symbol in symbols:
+                        raise DependencyError("c-static-archive-duplicate-strong-symbol")
+                    symbols.add(symbol)
+                    symbol_bytes += len(symbol.encode("utf-8"))
+                    if len(symbols) > MAX_SYMBOLS or symbol_bytes > MAX_SYMBOL_BYTES:
+                        raise DependencyError("c-wasm-symbol-table-limit")
             profile = options.get("archiveProfile")
             expected = {"formatVersion": 1, "target": "wasm32-wasi", "compilerDigest": compiler_digest,
                         "compilerDistributionDigest": compiler_distribution_digest,

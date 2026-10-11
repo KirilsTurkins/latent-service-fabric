@@ -34,14 +34,22 @@ Angular qualification profiles. [The private package](../../website/package.json
 root Cargo and SDK manifests. Docusaurus 3.10.2, React 19.3.0 and TypeScript 5.9.3
 are exact pins, not floating recommendations. There is no root npm workspace.
 
-The explicit `npm-11.19.1-lsf-bundle-v1` derivation replaces npm's bundled
-`ip-address`/`undici`/`brace-expansion` with 10.7.2/6.28.1/5.0.12 before executing the package manager.
-Preparation authenticates four registry archives, executes no package code and
-writes a deterministic TAR under ignored `target/`; the toolchain lock checks
-that TAR's exact integrity. All bundled packages remain in advisory scanning.
+The explicit `npm-11.19.1-lsf-bundle-v4` derivation replaces npm's bundled
+`ip-address`/`undici`/`brace-expansion`/`http-cache-semantics`/`postcss-selector-parser`
+with 10.7.2/6.28.1/5.0.12/4.3.0/7.1.6 before executing the package manager.
+Preparation authenticates seven registry archives and two SHA-bound source repair
+documents, executes no package code and writes deterministic TARs under ignored
+`target/`. The npm bundle includes the maintained HTTP cache repair; website and
+framework locks select the same repaired cache and bounded braces distribution.
+Their exact archive integrities are checked before use. All bundled packages
+remain in advisory scanning.
 The brace-expansion replacement retains only its reviewed `balanced-match` requirement
 and the exact 4.0.4 package already present in the authenticated npm archive;
 new dependencies or nested shadow copies are rejected.
+The selector parser retains its exact existing `cssesc` 3.0.0 and
+`util-deprecate` 1.0.2 dependencies. The website and framework inventories also
+pin tinypool 2.1.2, source-map-js 1.2.2, postcss-selector-parser 7.1.6 and KaTeX
+0.18.2, including transitive copies, for the October 2026 advisory fixes.
 This is not an upstream npm release. The [toolchain instructions](../../website/README.md)
 describe offline inputs and the explicit maintainer-only refresh path.
 

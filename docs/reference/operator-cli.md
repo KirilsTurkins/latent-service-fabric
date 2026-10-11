@@ -42,6 +42,7 @@ namespace/result permissions; protocol definitions do not install that runtime.
 | `deployment delete ID [--expected-generation N] [--operation-id OP --expected-state-version S]` | Deletes without a preliminary read. Managed mode requires a positive object generation and returns operation/audit metadata. |
 | `deployment operation OP` | Looks up the tenant's bounded retained managed-operation receipt; unknown does not prove absence of execution. |
 | `route get [--generation N]` | Gets the current tenant route projection; unavailable generations are not found. |
+| `route target --service S --contract C --function F [--route R] [--revision ID] [--publication ID] [--routing-key K] [--include-preparation] [--maximum-wait-millis N]` | [Inspects exact immutable target candidates](target-inspection.md), existing HTTP binding versions and safe preparation identities under tenant administrator authorization. Does not invoke or change routes. |
 | `invoke --service S --contract C --function F --input FILE` | Invokes once using the selected profile tenant. Additional options are below. |
 | `activation get ID` | Gets bounded retained lifecycle/status information. |
 | `activation cancel ID [--reason TEXT]` | Preserves `accepted`, `already_terminal`, or `not_found`. |

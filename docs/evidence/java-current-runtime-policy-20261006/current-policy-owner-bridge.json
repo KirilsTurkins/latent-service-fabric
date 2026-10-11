@@ -1,0 +1,2935 @@
+{
+  "executedSource": "f8a60eaaa083cd9c71590c367fb643c73cc15fd3",
+  "sourceReceiptSha256": "5ce434868efa0bf2cddb508c28007358a4f7054cc7d2a93c804b8f59f7a6f5c2",
+  "branches": [
+    {
+      "pr": 748,
+      "head": "91d9751d4f344da79615c669f6e3a661a5a9160f",
+      "sourceProofs": [
+        {
+          "path": "crates/latent-policy/Cargo.toml",
+          "bytes": 1135,
+          "sha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "currentSha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring.rs",
+          "bytes": 1569,
+          "sha256": "bff479bde05eecd3bcfcd3f0384492b0154b900cfd8391093c714c22102c6f04",
+          "currentSha256": "dda65679ac86ed297d6ecd206a59312ecb61e0737fe0135d5902484667db6844",
+          "sameExecutedBytes": false
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs",
+          "bytes": 3388,
+          "sha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "currentSha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/freshness.rs",
+          "bytes": 5418,
+          "sha256": "5993cfc2c46372d255b743e0a0de3f022d07425f5c36afdc823f5844a6508992",
+          "currentSha256": null,
+          "sameExecutedBytes": false
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/inputs.rs",
+          "bytes": 9315,
+          "sha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "currentSha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/mod.rs",
+          "bytes": 7839,
+          "sha256": "5a7f354b26bc3fa622d1b2197cf5034787870fbf075041180775ef38c0d824e7",
+          "currentSha256": "988b772d29ff1a0c8b0884cfa1e7f7b3565f8bb823692b0f604deb41c59e32de",
+          "sameExecutedBytes": false
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy.rs",
+          "bytes": 3725,
+          "sha256": "9041d4566434c764ebcc838d4a96bae9fdd9837b934d75ef31a6ff840f6c2b42",
+          "currentSha256": "221ed2cc3598053c1490af6205efb50ebf240ddf2584850f349c6c62412f1b55",
+          "sameExecutedBytes": false
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy/tests.rs",
+          "bytes": 11385,
+          "sha256": "a74d6adcd79389f7450f24d0b18537d3d82857a36414208a7d4c63f8ec2f1847",
+          "currentSha256": "1a1efc36e2e98109e5d4b381fc2a231932421c7fa90eb66527f97ee8a2a22383",
+          "sameExecutedBytes": false
+        },
+        {
+          "path": "crates/latent-policy/src/capability.rs",
+          "bytes": 6416,
+          "sha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "currentSha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/binding.rs",
+          "bytes": 2707,
+          "sha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "currentSha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control.rs",
+          "bytes": 4182,
+          "sha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "currentSha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control/tests.rs",
+          "bytes": 3979,
+          "sha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "currentSha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/language.rs",
+          "bytes": 5653,
+          "sha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "currentSha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/narrowing.rs",
+          "bytes": 2678,
+          "sha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "currentSha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resource_request.rs",
+          "bytes": 3322,
+          "sha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "currentSha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resources.rs",
+          "bytes": 18543,
+          "sha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "currentSha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store.rs",
+          "bytes": 6202,
+          "sha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "currentSha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority.rs",
+          "bytes": 16497,
+          "sha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "currentSha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority/owned.rs",
+          "bytes": 8215,
+          "sha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "currentSha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/codec.rs",
+          "bytes": 4264,
+          "sha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "currentSha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger.rs",
+          "bytes": 8536,
+          "sha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "currentSha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger/linux.rs",
+          "bytes": 3982,
+          "sha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "currentSha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/model.rs",
+          "bytes": 3978,
+          "sha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "currentSha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/mutation.rs",
+          "bytes": 6184,
+          "sha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "currentSha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ownership.rs",
+          "bytes": 3512,
+          "sha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "currentSha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/reads.rs",
+          "bytes": 6543,
+          "sha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "currentSha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests.rs",
+          "bytes": 11091,
+          "sha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "currentSha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority.rs",
+          "bytes": 5745,
+          "sha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "currentSha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication.rs",
+          "bytes": 8854,
+          "sha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "currentSha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication/service.rs",
+          "bytes": 5233,
+          "sha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "currentSha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/perimeter.rs",
+          "bytes": 2207,
+          "sha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "currentSha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests.rs",
+          "bytes": 11246,
+          "sha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "currentSha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests/state.rs",
+          "bytes": 4915,
+          "sha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "currentSha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/lib.rs",
+          "bytes": 138,
+          "sha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "currentSha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain.rs",
+          "bytes": 24571,
+          "sha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "currentSha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/clock.rs",
+          "bytes": 602,
+          "sha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "currentSha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/config.rs",
+          "bytes": 9767,
+          "sha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "currentSha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/grant.rs",
+          "bytes": 3399,
+          "sha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "currentSha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/json.rs",
+          "bytes": 3907,
+          "sha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "currentSha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/ledger.rs",
+          "bytes": 7860,
+          "sha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "currentSha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/receipt.rs",
+          "bytes": 11485,
+          "sha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "currentSha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests.rs",
+          "bytes": 2391,
+          "sha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "currentSha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/authority.rs",
+          "bytes": 12498,
+          "sha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "currentSha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/catalog.rs",
+          "bytes": 13922,
+          "sha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "currentSha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock.rs",
+          "bytes": 3330,
+          "sha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "currentSha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock_renewal.rs",
+          "bytes": 15916,
+          "sha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "currentSha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/history.rs",
+          "bytes": 4269,
+          "sha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "currentSha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lifecycle.rs",
+          "bytes": 13091,
+          "sha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "currentSha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lock_diagnostics.rs",
+          "bytes": 3614,
+          "sha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "currentSha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture.rs",
+          "bytes": 10312,
+          "sha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "currentSha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture/resources.rs",
+          "bytes": 5990,
+          "sha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "currentSha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/preparation.rs",
+          "bytes": 7266,
+          "sha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "currentSha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/publications.rs",
+          "bytes": 8286,
+          "sha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "currentSha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/runtime.rs",
+          "bytes": 5149,
+          "sha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "currentSha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/support.rs",
+          "bytes": 12306,
+          "sha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "currentSha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/verification.rs",
+          "bytes": 7899,
+          "sha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "currentSha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web.rs",
+          "bytes": 10271,
+          "sha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "currentSha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/angular_build.rs",
+          "bytes": 3006,
+          "sha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "currentSha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/preparation.rs",
+          "bytes": 2642,
+          "sha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "currentSha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_catalog.rs",
+          "bytes": 20021,
+          "sha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "currentSha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_fixture.rs",
+          "bytes": 9357,
+          "sha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "currentSha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_registry.rs",
+          "bytes": 10303,
+          "sha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "currentSha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification.rs",
+          "bytes": 10700,
+          "sha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "currentSha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification/web.rs",
+          "bytes": 3432,
+          "sha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "currentSha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verify.rs",
+          "bytes": 9553,
+          "sha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "currentSha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web.rs",
+          "bytes": 4083,
+          "sha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "currentSha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/grant.rs",
+          "bytes": 3255,
+          "sha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "currentSha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/receipt.rs",
+          "bytes": 10048,
+          "sha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "currentSha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "sameExecutedBytes": true
+        }
+      ],
+      "identicalExecutedPolicyFiles": 63,
+      "differentPaths": [
+        "crates/latent-policy/examples/capsule_authoring.rs",
+        "crates/latent-policy/examples/capsule_authoring/freshness.rs",
+        "crates/latent-policy/examples/capsule_authoring/mod.rs",
+        "crates/latent-policy/examples/capsule_authoring/policy.rs",
+        "crates/latent-policy/examples/capsule_authoring/policy/tests.rs"
+      ],
+      "sameAllPolicySources": false,
+      "wholeCurrentCIClaimed": false
+    },
+    {
+      "pr": 762,
+      "head": "6be9c62e6ef363e4057e12db110ba31c50c86104",
+      "sourceProofs": [
+        {
+          "path": "crates/latent-policy/Cargo.toml",
+          "bytes": 1135,
+          "sha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "currentSha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring.rs",
+          "bytes": 1569,
+          "sha256": "bff479bde05eecd3bcfcd3f0384492b0154b900cfd8391093c714c22102c6f04",
+          "currentSha256": "dda65679ac86ed297d6ecd206a59312ecb61e0737fe0135d5902484667db6844",
+          "sameExecutedBytes": false
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs",
+          "bytes": 3388,
+          "sha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "currentSha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/freshness.rs",
+          "bytes": 5418,
+          "sha256": "5993cfc2c46372d255b743e0a0de3f022d07425f5c36afdc823f5844a6508992",
+          "currentSha256": null,
+          "sameExecutedBytes": false
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/inputs.rs",
+          "bytes": 9315,
+          "sha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "currentSha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/mod.rs",
+          "bytes": 7839,
+          "sha256": "5a7f354b26bc3fa622d1b2197cf5034787870fbf075041180775ef38c0d824e7",
+          "currentSha256": "988b772d29ff1a0c8b0884cfa1e7f7b3565f8bb823692b0f604deb41c59e32de",
+          "sameExecutedBytes": false
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy.rs",
+          "bytes": 3725,
+          "sha256": "9041d4566434c764ebcc838d4a96bae9fdd9837b934d75ef31a6ff840f6c2b42",
+          "currentSha256": "221ed2cc3598053c1490af6205efb50ebf240ddf2584850f349c6c62412f1b55",
+          "sameExecutedBytes": false
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy/tests.rs",
+          "bytes": 11385,
+          "sha256": "a74d6adcd79389f7450f24d0b18537d3d82857a36414208a7d4c63f8ec2f1847",
+          "currentSha256": "1a1efc36e2e98109e5d4b381fc2a231932421c7fa90eb66527f97ee8a2a22383",
+          "sameExecutedBytes": false
+        },
+        {
+          "path": "crates/latent-policy/src/capability.rs",
+          "bytes": 6416,
+          "sha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "currentSha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/binding.rs",
+          "bytes": 2707,
+          "sha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "currentSha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control.rs",
+          "bytes": 4182,
+          "sha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "currentSha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control/tests.rs",
+          "bytes": 3979,
+          "sha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "currentSha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/language.rs",
+          "bytes": 5653,
+          "sha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "currentSha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/narrowing.rs",
+          "bytes": 2678,
+          "sha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "currentSha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resource_request.rs",
+          "bytes": 3322,
+          "sha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "currentSha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resources.rs",
+          "bytes": 18543,
+          "sha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "currentSha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store.rs",
+          "bytes": 6202,
+          "sha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "currentSha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority.rs",
+          "bytes": 16497,
+          "sha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "currentSha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority/owned.rs",
+          "bytes": 8215,
+          "sha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "currentSha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/codec.rs",
+          "bytes": 4264,
+          "sha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "currentSha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger.rs",
+          "bytes": 8536,
+          "sha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "currentSha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger/linux.rs",
+          "bytes": 3982,
+          "sha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "currentSha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/model.rs",
+          "bytes": 3978,
+          "sha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "currentSha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/mutation.rs",
+          "bytes": 6184,
+          "sha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "currentSha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ownership.rs",
+          "bytes": 3512,
+          "sha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "currentSha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/reads.rs",
+          "bytes": 6543,
+          "sha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "currentSha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests.rs",
+          "bytes": 11091,
+          "sha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "currentSha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority.rs",
+          "bytes": 5745,
+          "sha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "currentSha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication.rs",
+          "bytes": 8854,
+          "sha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "currentSha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication/service.rs",
+          "bytes": 5233,
+          "sha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "currentSha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/perimeter.rs",
+          "bytes": 2207,
+          "sha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "currentSha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests.rs",
+          "bytes": 11246,
+          "sha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "currentSha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests/state.rs",
+          "bytes": 4915,
+          "sha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "currentSha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/lib.rs",
+          "bytes": 138,
+          "sha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "currentSha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain.rs",
+          "bytes": 24571,
+          "sha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "currentSha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/clock.rs",
+          "bytes": 602,
+          "sha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "currentSha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/config.rs",
+          "bytes": 9767,
+          "sha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "currentSha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/grant.rs",
+          "bytes": 3399,
+          "sha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "currentSha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/json.rs",
+          "bytes": 3907,
+          "sha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "currentSha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/ledger.rs",
+          "bytes": 7860,
+          "sha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "currentSha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/receipt.rs",
+          "bytes": 11485,
+          "sha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "currentSha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests.rs",
+          "bytes": 2391,
+          "sha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "currentSha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/authority.rs",
+          "bytes": 12498,
+          "sha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "currentSha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/catalog.rs",
+          "bytes": 13922,
+          "sha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "currentSha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock.rs",
+          "bytes": 3330,
+          "sha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "currentSha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock_renewal.rs",
+          "bytes": 15916,
+          "sha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "currentSha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/history.rs",
+          "bytes": 4269,
+          "sha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "currentSha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lifecycle.rs",
+          "bytes": 13091,
+          "sha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "currentSha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lock_diagnostics.rs",
+          "bytes": 3614,
+          "sha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "currentSha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture.rs",
+          "bytes": 10312,
+          "sha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "currentSha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture/resources.rs",
+          "bytes": 5990,
+          "sha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "currentSha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/preparation.rs",
+          "bytes": 7266,
+          "sha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "currentSha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/publications.rs",
+          "bytes": 8286,
+          "sha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "currentSha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/runtime.rs",
+          "bytes": 5149,
+          "sha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "currentSha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/support.rs",
+          "bytes": 12306,
+          "sha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "currentSha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/verification.rs",
+          "bytes": 7899,
+          "sha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "currentSha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web.rs",
+          "bytes": 10271,
+          "sha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "currentSha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/angular_build.rs",
+          "bytes": 3006,
+          "sha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "currentSha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/preparation.rs",
+          "bytes": 2642,
+          "sha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "currentSha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_catalog.rs",
+          "bytes": 20021,
+          "sha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "currentSha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_fixture.rs",
+          "bytes": 9357,
+          "sha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "currentSha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_registry.rs",
+          "bytes": 10303,
+          "sha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "currentSha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification.rs",
+          "bytes": 10700,
+          "sha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "currentSha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification/web.rs",
+          "bytes": 3432,
+          "sha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "currentSha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verify.rs",
+          "bytes": 9553,
+          "sha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "currentSha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web.rs",
+          "bytes": 4083,
+          "sha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "currentSha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/grant.rs",
+          "bytes": 3255,
+          "sha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "currentSha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/receipt.rs",
+          "bytes": 10048,
+          "sha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "currentSha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "sameExecutedBytes": true
+        }
+      ],
+      "identicalExecutedPolicyFiles": 63,
+      "differentPaths": [
+        "crates/latent-policy/examples/capsule_authoring.rs",
+        "crates/latent-policy/examples/capsule_authoring/freshness.rs",
+        "crates/latent-policy/examples/capsule_authoring/mod.rs",
+        "crates/latent-policy/examples/capsule_authoring/policy.rs",
+        "crates/latent-policy/examples/capsule_authoring/policy/tests.rs"
+      ],
+      "sameAllPolicySources": false,
+      "wholeCurrentCIClaimed": false
+    },
+    {
+      "pr": 777,
+      "head": "711a6c3324d368a71b547fc0767b86cf019f2970",
+      "sourceProofs": [
+        {
+          "path": "crates/latent-policy/Cargo.toml",
+          "bytes": 1135,
+          "sha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "currentSha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring.rs",
+          "bytes": 1569,
+          "sha256": "bff479bde05eecd3bcfcd3f0384492b0154b900cfd8391093c714c22102c6f04",
+          "currentSha256": "bff479bde05eecd3bcfcd3f0384492b0154b900cfd8391093c714c22102c6f04",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs",
+          "bytes": 3388,
+          "sha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "currentSha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/freshness.rs",
+          "bytes": 5418,
+          "sha256": "5993cfc2c46372d255b743e0a0de3f022d07425f5c36afdc823f5844a6508992",
+          "currentSha256": "5993cfc2c46372d255b743e0a0de3f022d07425f5c36afdc823f5844a6508992",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/inputs.rs",
+          "bytes": 9315,
+          "sha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "currentSha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/mod.rs",
+          "bytes": 7839,
+          "sha256": "5a7f354b26bc3fa622d1b2197cf5034787870fbf075041180775ef38c0d824e7",
+          "currentSha256": "5a7f354b26bc3fa622d1b2197cf5034787870fbf075041180775ef38c0d824e7",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy.rs",
+          "bytes": 3725,
+          "sha256": "9041d4566434c764ebcc838d4a96bae9fdd9837b934d75ef31a6ff840f6c2b42",
+          "currentSha256": "9041d4566434c764ebcc838d4a96bae9fdd9837b934d75ef31a6ff840f6c2b42",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy/tests.rs",
+          "bytes": 11385,
+          "sha256": "a74d6adcd79389f7450f24d0b18537d3d82857a36414208a7d4c63f8ec2f1847",
+          "currentSha256": "a74d6adcd79389f7450f24d0b18537d3d82857a36414208a7d4c63f8ec2f1847",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability.rs",
+          "bytes": 6416,
+          "sha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "currentSha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/binding.rs",
+          "bytes": 2707,
+          "sha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "currentSha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control.rs",
+          "bytes": 4182,
+          "sha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "currentSha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control/tests.rs",
+          "bytes": 3979,
+          "sha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "currentSha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/language.rs",
+          "bytes": 5653,
+          "sha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "currentSha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/narrowing.rs",
+          "bytes": 2678,
+          "sha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "currentSha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resource_request.rs",
+          "bytes": 3322,
+          "sha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "currentSha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resources.rs",
+          "bytes": 18543,
+          "sha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "currentSha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store.rs",
+          "bytes": 6202,
+          "sha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "currentSha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority.rs",
+          "bytes": 16497,
+          "sha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "currentSha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority/owned.rs",
+          "bytes": 8215,
+          "sha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "currentSha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/codec.rs",
+          "bytes": 4264,
+          "sha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "currentSha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger.rs",
+          "bytes": 8536,
+          "sha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "currentSha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger/linux.rs",
+          "bytes": 3982,
+          "sha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "currentSha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/model.rs",
+          "bytes": 3978,
+          "sha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "currentSha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/mutation.rs",
+          "bytes": 6184,
+          "sha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "currentSha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ownership.rs",
+          "bytes": 3512,
+          "sha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "currentSha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/reads.rs",
+          "bytes": 6543,
+          "sha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "currentSha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests.rs",
+          "bytes": 11091,
+          "sha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "currentSha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority.rs",
+          "bytes": 5745,
+          "sha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "currentSha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication.rs",
+          "bytes": 8854,
+          "sha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "currentSha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication/service.rs",
+          "bytes": 5233,
+          "sha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "currentSha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/perimeter.rs",
+          "bytes": 2207,
+          "sha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "currentSha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests.rs",
+          "bytes": 11246,
+          "sha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "currentSha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests/state.rs",
+          "bytes": 4915,
+          "sha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "currentSha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/lib.rs",
+          "bytes": 138,
+          "sha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "currentSha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain.rs",
+          "bytes": 24571,
+          "sha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "currentSha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/clock.rs",
+          "bytes": 602,
+          "sha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "currentSha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/config.rs",
+          "bytes": 9767,
+          "sha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "currentSha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/grant.rs",
+          "bytes": 3399,
+          "sha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "currentSha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/json.rs",
+          "bytes": 3907,
+          "sha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "currentSha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/ledger.rs",
+          "bytes": 7860,
+          "sha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "currentSha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/receipt.rs",
+          "bytes": 11485,
+          "sha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "currentSha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests.rs",
+          "bytes": 2391,
+          "sha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "currentSha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/authority.rs",
+          "bytes": 12498,
+          "sha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "currentSha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/catalog.rs",
+          "bytes": 13922,
+          "sha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "currentSha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock.rs",
+          "bytes": 3330,
+          "sha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "currentSha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock_renewal.rs",
+          "bytes": 15916,
+          "sha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "currentSha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/history.rs",
+          "bytes": 4269,
+          "sha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "currentSha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lifecycle.rs",
+          "bytes": 13091,
+          "sha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "currentSha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lock_diagnostics.rs",
+          "bytes": 3614,
+          "sha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "currentSha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture.rs",
+          "bytes": 10312,
+          "sha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "currentSha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture/resources.rs",
+          "bytes": 5990,
+          "sha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "currentSha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/preparation.rs",
+          "bytes": 7266,
+          "sha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "currentSha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/publications.rs",
+          "bytes": 8286,
+          "sha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "currentSha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/runtime.rs",
+          "bytes": 5149,
+          "sha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "currentSha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/support.rs",
+          "bytes": 12306,
+          "sha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "currentSha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/verification.rs",
+          "bytes": 7899,
+          "sha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "currentSha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web.rs",
+          "bytes": 10271,
+          "sha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "currentSha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/angular_build.rs",
+          "bytes": 3006,
+          "sha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "currentSha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/preparation.rs",
+          "bytes": 2642,
+          "sha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "currentSha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_catalog.rs",
+          "bytes": 20021,
+          "sha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "currentSha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_fixture.rs",
+          "bytes": 9357,
+          "sha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "currentSha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_registry.rs",
+          "bytes": 10303,
+          "sha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "currentSha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification.rs",
+          "bytes": 10700,
+          "sha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "currentSha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification/web.rs",
+          "bytes": 3432,
+          "sha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "currentSha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verify.rs",
+          "bytes": 9553,
+          "sha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "currentSha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web.rs",
+          "bytes": 4083,
+          "sha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "currentSha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/grant.rs",
+          "bytes": 3255,
+          "sha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "currentSha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/receipt.rs",
+          "bytes": 10048,
+          "sha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "currentSha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "sameExecutedBytes": true
+        }
+      ],
+      "identicalExecutedPolicyFiles": 68,
+      "differentPaths": [],
+      "sameAllPolicySources": true,
+      "wholeCurrentCIClaimed": false
+    },
+    {
+      "pr": 785,
+      "head": "f8a60eaaa083cd9c71590c367fb643c73cc15fd3",
+      "sourceProofs": [
+        {
+          "path": "crates/latent-policy/Cargo.toml",
+          "bytes": 1135,
+          "sha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "currentSha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring.rs",
+          "bytes": 1569,
+          "sha256": "bff479bde05eecd3bcfcd3f0384492b0154b900cfd8391093c714c22102c6f04",
+          "currentSha256": "bff479bde05eecd3bcfcd3f0384492b0154b900cfd8391093c714c22102c6f04",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs",
+          "bytes": 3388,
+          "sha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "currentSha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/freshness.rs",
+          "bytes": 5418,
+          "sha256": "5993cfc2c46372d255b743e0a0de3f022d07425f5c36afdc823f5844a6508992",
+          "currentSha256": "5993cfc2c46372d255b743e0a0de3f022d07425f5c36afdc823f5844a6508992",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/inputs.rs",
+          "bytes": 9315,
+          "sha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "currentSha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/mod.rs",
+          "bytes": 7839,
+          "sha256": "5a7f354b26bc3fa622d1b2197cf5034787870fbf075041180775ef38c0d824e7",
+          "currentSha256": "5a7f354b26bc3fa622d1b2197cf5034787870fbf075041180775ef38c0d824e7",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy.rs",
+          "bytes": 3725,
+          "sha256": "9041d4566434c764ebcc838d4a96bae9fdd9837b934d75ef31a6ff840f6c2b42",
+          "currentSha256": "9041d4566434c764ebcc838d4a96bae9fdd9837b934d75ef31a6ff840f6c2b42",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy/tests.rs",
+          "bytes": 11385,
+          "sha256": "a74d6adcd79389f7450f24d0b18537d3d82857a36414208a7d4c63f8ec2f1847",
+          "currentSha256": "a74d6adcd79389f7450f24d0b18537d3d82857a36414208a7d4c63f8ec2f1847",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability.rs",
+          "bytes": 6416,
+          "sha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "currentSha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/binding.rs",
+          "bytes": 2707,
+          "sha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "currentSha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control.rs",
+          "bytes": 4182,
+          "sha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "currentSha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control/tests.rs",
+          "bytes": 3979,
+          "sha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "currentSha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/language.rs",
+          "bytes": 5653,
+          "sha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "currentSha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/narrowing.rs",
+          "bytes": 2678,
+          "sha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "currentSha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resource_request.rs",
+          "bytes": 3322,
+          "sha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "currentSha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resources.rs",
+          "bytes": 18543,
+          "sha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "currentSha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store.rs",
+          "bytes": 6202,
+          "sha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "currentSha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority.rs",
+          "bytes": 16497,
+          "sha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "currentSha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority/owned.rs",
+          "bytes": 8215,
+          "sha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "currentSha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/codec.rs",
+          "bytes": 4264,
+          "sha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "currentSha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger.rs",
+          "bytes": 8536,
+          "sha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "currentSha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger/linux.rs",
+          "bytes": 3982,
+          "sha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "currentSha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/model.rs",
+          "bytes": 3978,
+          "sha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "currentSha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/mutation.rs",
+          "bytes": 6184,
+          "sha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "currentSha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ownership.rs",
+          "bytes": 3512,
+          "sha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "currentSha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/reads.rs",
+          "bytes": 6543,
+          "sha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "currentSha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests.rs",
+          "bytes": 11091,
+          "sha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "currentSha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority.rs",
+          "bytes": 5745,
+          "sha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "currentSha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication.rs",
+          "bytes": 8854,
+          "sha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "currentSha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication/service.rs",
+          "bytes": 5233,
+          "sha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "currentSha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/perimeter.rs",
+          "bytes": 2207,
+          "sha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "currentSha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests.rs",
+          "bytes": 11246,
+          "sha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "currentSha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests/state.rs",
+          "bytes": 4915,
+          "sha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "currentSha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/lib.rs",
+          "bytes": 138,
+          "sha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "currentSha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain.rs",
+          "bytes": 24571,
+          "sha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "currentSha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/clock.rs",
+          "bytes": 602,
+          "sha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "currentSha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/config.rs",
+          "bytes": 9767,
+          "sha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "currentSha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/grant.rs",
+          "bytes": 3399,
+          "sha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "currentSha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/json.rs",
+          "bytes": 3907,
+          "sha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "currentSha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/ledger.rs",
+          "bytes": 7860,
+          "sha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "currentSha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/receipt.rs",
+          "bytes": 11485,
+          "sha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "currentSha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests.rs",
+          "bytes": 2391,
+          "sha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "currentSha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/authority.rs",
+          "bytes": 12498,
+          "sha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "currentSha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/catalog.rs",
+          "bytes": 13922,
+          "sha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "currentSha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock.rs",
+          "bytes": 3330,
+          "sha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "currentSha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock_renewal.rs",
+          "bytes": 15916,
+          "sha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "currentSha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/history.rs",
+          "bytes": 4269,
+          "sha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "currentSha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lifecycle.rs",
+          "bytes": 13091,
+          "sha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "currentSha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lock_diagnostics.rs",
+          "bytes": 3614,
+          "sha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "currentSha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture.rs",
+          "bytes": 10312,
+          "sha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "currentSha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture/resources.rs",
+          "bytes": 5990,
+          "sha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "currentSha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/preparation.rs",
+          "bytes": 7266,
+          "sha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "currentSha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/publications.rs",
+          "bytes": 8286,
+          "sha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "currentSha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/runtime.rs",
+          "bytes": 5149,
+          "sha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "currentSha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/support.rs",
+          "bytes": 12306,
+          "sha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "currentSha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/verification.rs",
+          "bytes": 7899,
+          "sha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "currentSha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web.rs",
+          "bytes": 10271,
+          "sha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "currentSha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/angular_build.rs",
+          "bytes": 3006,
+          "sha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "currentSha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/preparation.rs",
+          "bytes": 2642,
+          "sha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "currentSha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_catalog.rs",
+          "bytes": 20021,
+          "sha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "currentSha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_fixture.rs",
+          "bytes": 9357,
+          "sha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "currentSha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_registry.rs",
+          "bytes": 10303,
+          "sha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "currentSha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification.rs",
+          "bytes": 10700,
+          "sha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "currentSha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification/web.rs",
+          "bytes": 3432,
+          "sha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "currentSha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verify.rs",
+          "bytes": 9553,
+          "sha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "currentSha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web.rs",
+          "bytes": 4083,
+          "sha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "currentSha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/grant.rs",
+          "bytes": 3255,
+          "sha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "currentSha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/receipt.rs",
+          "bytes": 10048,
+          "sha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "currentSha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "sameExecutedBytes": true
+        }
+      ],
+      "identicalExecutedPolicyFiles": 68,
+      "differentPaths": [],
+      "sameAllPolicySources": true,
+      "wholeCurrentCIClaimed": false
+    },
+    {
+      "pr": 786,
+      "head": "4fe57b1c39bc1ab53bef5f4c276a5af19ff5e2e0",
+      "sourceProofs": [
+        {
+          "path": "crates/latent-policy/Cargo.toml",
+          "bytes": 1135,
+          "sha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "currentSha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring.rs",
+          "bytes": 1569,
+          "sha256": "bff479bde05eecd3bcfcd3f0384492b0154b900cfd8391093c714c22102c6f04",
+          "currentSha256": "bff479bde05eecd3bcfcd3f0384492b0154b900cfd8391093c714c22102c6f04",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs",
+          "bytes": 3388,
+          "sha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "currentSha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/freshness.rs",
+          "bytes": 5418,
+          "sha256": "5993cfc2c46372d255b743e0a0de3f022d07425f5c36afdc823f5844a6508992",
+          "currentSha256": "5993cfc2c46372d255b743e0a0de3f022d07425f5c36afdc823f5844a6508992",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/inputs.rs",
+          "bytes": 9315,
+          "sha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "currentSha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/mod.rs",
+          "bytes": 7839,
+          "sha256": "5a7f354b26bc3fa622d1b2197cf5034787870fbf075041180775ef38c0d824e7",
+          "currentSha256": "5a7f354b26bc3fa622d1b2197cf5034787870fbf075041180775ef38c0d824e7",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy.rs",
+          "bytes": 3725,
+          "sha256": "9041d4566434c764ebcc838d4a96bae9fdd9837b934d75ef31a6ff840f6c2b42",
+          "currentSha256": "9041d4566434c764ebcc838d4a96bae9fdd9837b934d75ef31a6ff840f6c2b42",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy/tests.rs",
+          "bytes": 11385,
+          "sha256": "a74d6adcd79389f7450f24d0b18537d3d82857a36414208a7d4c63f8ec2f1847",
+          "currentSha256": "a74d6adcd79389f7450f24d0b18537d3d82857a36414208a7d4c63f8ec2f1847",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability.rs",
+          "bytes": 6416,
+          "sha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "currentSha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/binding.rs",
+          "bytes": 2707,
+          "sha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "currentSha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control.rs",
+          "bytes": 4182,
+          "sha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "currentSha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control/tests.rs",
+          "bytes": 3979,
+          "sha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "currentSha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/language.rs",
+          "bytes": 5653,
+          "sha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "currentSha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/narrowing.rs",
+          "bytes": 2678,
+          "sha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "currentSha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resource_request.rs",
+          "bytes": 3322,
+          "sha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "currentSha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resources.rs",
+          "bytes": 18543,
+          "sha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "currentSha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store.rs",
+          "bytes": 6202,
+          "sha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "currentSha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority.rs",
+          "bytes": 16497,
+          "sha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "currentSha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority/owned.rs",
+          "bytes": 8215,
+          "sha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "currentSha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/codec.rs",
+          "bytes": 4264,
+          "sha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "currentSha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger.rs",
+          "bytes": 8536,
+          "sha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "currentSha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger/linux.rs",
+          "bytes": 3982,
+          "sha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "currentSha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/model.rs",
+          "bytes": 3978,
+          "sha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "currentSha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/mutation.rs",
+          "bytes": 6184,
+          "sha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "currentSha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ownership.rs",
+          "bytes": 3512,
+          "sha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "currentSha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/reads.rs",
+          "bytes": 6543,
+          "sha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "currentSha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests.rs",
+          "bytes": 11091,
+          "sha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "currentSha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority.rs",
+          "bytes": 5745,
+          "sha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "currentSha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication.rs",
+          "bytes": 8854,
+          "sha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "currentSha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication/service.rs",
+          "bytes": 5233,
+          "sha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "currentSha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/perimeter.rs",
+          "bytes": 2207,
+          "sha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "currentSha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests.rs",
+          "bytes": 11246,
+          "sha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "currentSha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests/state.rs",
+          "bytes": 4915,
+          "sha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "currentSha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/lib.rs",
+          "bytes": 138,
+          "sha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "currentSha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain.rs",
+          "bytes": 24571,
+          "sha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "currentSha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/clock.rs",
+          "bytes": 602,
+          "sha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "currentSha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/config.rs",
+          "bytes": 9767,
+          "sha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "currentSha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/grant.rs",
+          "bytes": 3399,
+          "sha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "currentSha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/json.rs",
+          "bytes": 3907,
+          "sha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "currentSha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/ledger.rs",
+          "bytes": 7860,
+          "sha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "currentSha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/receipt.rs",
+          "bytes": 11485,
+          "sha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "currentSha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests.rs",
+          "bytes": 2391,
+          "sha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "currentSha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/authority.rs",
+          "bytes": 12498,
+          "sha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "currentSha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/catalog.rs",
+          "bytes": 13922,
+          "sha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "currentSha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock.rs",
+          "bytes": 3330,
+          "sha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "currentSha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock_renewal.rs",
+          "bytes": 15916,
+          "sha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "currentSha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/history.rs",
+          "bytes": 4269,
+          "sha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "currentSha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lifecycle.rs",
+          "bytes": 13091,
+          "sha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "currentSha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lock_diagnostics.rs",
+          "bytes": 3614,
+          "sha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "currentSha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture.rs",
+          "bytes": 10312,
+          "sha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "currentSha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture/resources.rs",
+          "bytes": 5990,
+          "sha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "currentSha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/preparation.rs",
+          "bytes": 7266,
+          "sha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "currentSha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/publications.rs",
+          "bytes": 8286,
+          "sha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "currentSha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/runtime.rs",
+          "bytes": 5149,
+          "sha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "currentSha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/support.rs",
+          "bytes": 12306,
+          "sha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "currentSha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/verification.rs",
+          "bytes": 7899,
+          "sha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "currentSha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web.rs",
+          "bytes": 10271,
+          "sha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "currentSha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/angular_build.rs",
+          "bytes": 3006,
+          "sha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "currentSha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/preparation.rs",
+          "bytes": 2642,
+          "sha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "currentSha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_catalog.rs",
+          "bytes": 20021,
+          "sha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "currentSha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_fixture.rs",
+          "bytes": 9357,
+          "sha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "currentSha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_registry.rs",
+          "bytes": 10303,
+          "sha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "currentSha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification.rs",
+          "bytes": 10700,
+          "sha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "currentSha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification/web.rs",
+          "bytes": 3432,
+          "sha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "currentSha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verify.rs",
+          "bytes": 9553,
+          "sha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "currentSha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web.rs",
+          "bytes": 4083,
+          "sha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "currentSha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/grant.rs",
+          "bytes": 3255,
+          "sha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "currentSha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/receipt.rs",
+          "bytes": 10048,
+          "sha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "currentSha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "sameExecutedBytes": true
+        }
+      ],
+      "identicalExecutedPolicyFiles": 68,
+      "differentPaths": [],
+      "sameAllPolicySources": true,
+      "wholeCurrentCIClaimed": false
+    },
+    {
+      "pr": 802,
+      "head": "6643c4e95dd4dbeb4007d6d4ab23f8b250c605b3",
+      "sourceProofs": [
+        {
+          "path": "crates/latent-policy/Cargo.toml",
+          "bytes": 1135,
+          "sha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "currentSha256": "76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring.rs",
+          "bytes": 1569,
+          "sha256": "bff479bde05eecd3bcfcd3f0384492b0154b900cfd8391093c714c22102c6f04",
+          "currentSha256": "bff479bde05eecd3bcfcd3f0384492b0154b900cfd8391093c714c22102c6f04",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/fixture_tls.rs",
+          "bytes": 3388,
+          "sha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "currentSha256": "383849b107eb9f7f0596a9d51c813c3c80a05c3259b8bdae7faf52474d39dc5e",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/freshness.rs",
+          "bytes": 5418,
+          "sha256": "5993cfc2c46372d255b743e0a0de3f022d07425f5c36afdc823f5844a6508992",
+          "currentSha256": "5993cfc2c46372d255b743e0a0de3f022d07425f5c36afdc823f5844a6508992",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/inputs.rs",
+          "bytes": 9315,
+          "sha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "currentSha256": "4961eaa73fc094f19738fd0bfd727f04fb648935da12e048d8768636d27da779",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/mod.rs",
+          "bytes": 7839,
+          "sha256": "5a7f354b26bc3fa622d1b2197cf5034787870fbf075041180775ef38c0d824e7",
+          "currentSha256": "5a7f354b26bc3fa622d1b2197cf5034787870fbf075041180775ef38c0d824e7",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy.rs",
+          "bytes": 3725,
+          "sha256": "9041d4566434c764ebcc838d4a96bae9fdd9837b934d75ef31a6ff840f6c2b42",
+          "currentSha256": "9041d4566434c764ebcc838d4a96bae9fdd9837b934d75ef31a6ff840f6c2b42",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/examples/capsule_authoring/policy/tests.rs",
+          "bytes": 11385,
+          "sha256": "a74d6adcd79389f7450f24d0b18537d3d82857a36414208a7d4c63f8ec2f1847",
+          "currentSha256": "a74d6adcd79389f7450f24d0b18537d3d82857a36414208a7d4c63f8ec2f1847",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability.rs",
+          "bytes": 6416,
+          "sha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "currentSha256": "4f685a79f9f854555d316a294d5c61d2ff2d98305dc2443bd41f6074b8232590",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/binding.rs",
+          "bytes": 2707,
+          "sha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "currentSha256": "35c903e98e445501dc22d970fbd062df36b654a9444b264db89190926393995b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control.rs",
+          "bytes": 4182,
+          "sha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "currentSha256": "37e780e63abefcdd5d70bad682cb7c5192421147826432a65f172d5e8a13efd5",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/control/tests.rs",
+          "bytes": 3979,
+          "sha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "currentSha256": "c7a193dd19fd7d7bcc0579734dcc6e502abee6972565535686794a1c7c38bca4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/language.rs",
+          "bytes": 5653,
+          "sha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "currentSha256": "2ec24a2cecd755f7477837b7565bd3936eff987c328ad66524d87f0f796584d6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/narrowing.rs",
+          "bytes": 2678,
+          "sha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "currentSha256": "b34c23d9f69625a657c18466b259514e15917e13156a91be1fc836d3683398df",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resource_request.rs",
+          "bytes": 3322,
+          "sha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "currentSha256": "740010bea3b2d8d3a81195d28c4014ee4b19a4bd2f0f470925a24c9b13d4b190",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/resources.rs",
+          "bytes": 18543,
+          "sha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "currentSha256": "ea1adf175c1a3362a8c5af570b11dc8db9402c8843a26cf7046e4708db0a51f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store.rs",
+          "bytes": 6202,
+          "sha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "currentSha256": "6992845a819fdbc44174d1768d6d4abc189c64bb8a88e92169d39087b224a8dc",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority.rs",
+          "bytes": 16497,
+          "sha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "currentSha256": "3e1f845427383b62e09a2783dc8ff6632ce4c3c01b492f5a846b508283af3c0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/authority/owned.rs",
+          "bytes": 8215,
+          "sha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "currentSha256": "015adec92224e46f0c07722f4fd24d14171d9659009c9d66fab3302fc02ccf8a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/codec.rs",
+          "bytes": 4264,
+          "sha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "currentSha256": "a601d761234a6e8fe927299dc6d2ef8356df6b632dcc49fe11751b666d39df0f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger.rs",
+          "bytes": 8536,
+          "sha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "currentSha256": "5554939d4947ba4caff0a167c1dd0a54d4063b3b5b4bd942a8b6d516a59e5e2d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ledger/linux.rs",
+          "bytes": 3982,
+          "sha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "currentSha256": "e729fd65f0e79b4e52e0ad2ea36548c8a734b74ee0d7c9394dcd18efca25623d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/model.rs",
+          "bytes": 3978,
+          "sha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "currentSha256": "a83dfb404a6fa267ff1dcdd95675d28441fdd0afba9ce34ea295224632aeb80c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/mutation.rs",
+          "bytes": 6184,
+          "sha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "currentSha256": "4004d87905573e5dce78f0f1d39c319b23a20d7b7b23c19a54a76fdfd42aadc8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/ownership.rs",
+          "bytes": 3512,
+          "sha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "currentSha256": "6d078e81e15f3cac965af979a71638102e5d16dee6fb5f07146d50fe51316812",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/reads.rs",
+          "bytes": 6543,
+          "sha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "currentSha256": "cb5a185551c1a7f8d6e37fcab6e93b0abae092b8e4d7b4547535632a79156b28",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests.rs",
+          "bytes": 11091,
+          "sha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "currentSha256": "733bb0f9a1cd23b5988cb8bd3972908aace82a3efd48b589f2d65af66bc2bac9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority.rs",
+          "bytes": 5745,
+          "sha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "currentSha256": "a6de6ff7ea5ca4afa233b68e35d39eceef6ff969cf5023b75612c3e019ba7641",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication.rs",
+          "bytes": 8854,
+          "sha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "currentSha256": "4a1cf98642e194d0096ba898f02e4b8232df76306130005beb42cd6d3e1c0144",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/authority/publication/service.rs",
+          "bytes": 5233,
+          "sha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "currentSha256": "9f347954d509615f503abb1928df442070422c5f0253ed59ba076fd058a5d1f6",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/store/tests/perimeter.rs",
+          "bytes": 2207,
+          "sha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "currentSha256": "55dbd5312f9515c1c6bbb9fdf51f36cbeb2dcc434b6a9044be3278118fa704f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests.rs",
+          "bytes": 11246,
+          "sha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "currentSha256": "4a08c941aafca3030bb69ebe56bbd606c9485bc2d1758d511f03f9c70ca464c7",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/capability/tests/state.rs",
+          "bytes": 4915,
+          "sha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "currentSha256": "5d86742be8ca37e1a18bb005ed7fcc10f0656e8dded536b08619e6c46c912339",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/lib.rs",
+          "bytes": 138,
+          "sha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "currentSha256": "fe2eff5275798f7185a1881e655f773541a87eb5779bde1e0584ddee585856ad",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain.rs",
+          "bytes": 24571,
+          "sha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "currentSha256": "c9bc9144146bfdb4890bcd90629acc28b33822693ad23b934667637e262c1f7b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/clock.rs",
+          "bytes": 602,
+          "sha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "currentSha256": "641361ac1932915ba4913917ad0b83e702d31cdf6ae809c682da9ff2f446cb54",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/config.rs",
+          "bytes": 9767,
+          "sha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "currentSha256": "c6c8c51afcd834b0f40702a02807b2b3269a06fb8f1622370b6f20b0f562e052",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/grant.rs",
+          "bytes": 3399,
+          "sha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "currentSha256": "ad8ffda1cb5370f42f64547e4bc1ac565ce1e1bbf2fc21951d7020703c9dafbe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/json.rs",
+          "bytes": 3907,
+          "sha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "currentSha256": "0a6dabd697057bf85258c5714c0127ba3f58d11934a34ca35a363746cfddf619",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/ledger.rs",
+          "bytes": 7860,
+          "sha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "currentSha256": "3bf6c652858d680d3204eaec8ad4ded5378e0ab0398916c3cdf9f2b6cdc3ccd9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/receipt.rs",
+          "bytes": 11485,
+          "sha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "currentSha256": "4fe7655b9e39f9ef58d7da1374dd704c650c2530fbd03cbe6a6c01cfa531d74c",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests.rs",
+          "bytes": 2391,
+          "sha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "currentSha256": "d35584936ceab974280b42d218ceb352df6809d6dcc600d08c8b45e7e2ecc3f2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/authority.rs",
+          "bytes": 12498,
+          "sha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "currentSha256": "6bbc3b5b8845aebc4589ed5b6991538e1514d36f0ff0ff4429096ccd9f2d5343",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/catalog.rs",
+          "bytes": 13922,
+          "sha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "currentSha256": "07040db13ba309d712b2a17d25cdce67dbbee29e67507ba4068435e9c793648d",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock.rs",
+          "bytes": 3330,
+          "sha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "currentSha256": "da5d07972a9ef7227fa7cb1598b10aebbfe42230c9e25f3ccc41858e8d7aa15a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/clock_renewal.rs",
+          "bytes": 15916,
+          "sha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "currentSha256": "dca6a34d838de2e936774ec71ef0a5b0977059e3f1377d6d94e968f973f7693f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/history.rs",
+          "bytes": 4269,
+          "sha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "currentSha256": "b3460035802916e092f6c8ee0a91710a824e45dd2f49b056f6258da917b783b8",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lifecycle.rs",
+          "bytes": 13091,
+          "sha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "currentSha256": "4755f6a99ea7a83f7f5f637570c24486ee67819a97e58069656f8e15286ea67a",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/lock_diagnostics.rs",
+          "bytes": 3614,
+          "sha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "currentSha256": "9e6b121cab90c089a3eede786792b1f86553132649591c0b76abac77bb0c1bd3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture.rs",
+          "bytes": 10312,
+          "sha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "currentSha256": "99c81f913be72cf68ad6f3930ee2687a6528c8a84274d62af4e3846b9b86c46b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/operator_fixture/resources.rs",
+          "bytes": 5990,
+          "sha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "currentSha256": "4ff0b6e6e71dbd406c998f3fa8bb6cd20463f3ba1c875995860c08a5f00fabc4",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/preparation.rs",
+          "bytes": 7266,
+          "sha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "currentSha256": "c4eb1d12e48933a108d032cc35873a67f527969319ec014549fcc7d917ff57d2",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/publications.rs",
+          "bytes": 8286,
+          "sha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "currentSha256": "06e05749fadc4d2b6c12cb7365c36b15e233e50e4d9f1a850a30d8e19f7ec2b3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/runtime.rs",
+          "bytes": 5149,
+          "sha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "currentSha256": "44b24f910d53286ac66a74f8b1856dd8bed9b9edddbf019248a2817a369f7cf3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/support.rs",
+          "bytes": 12306,
+          "sha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "currentSha256": "0a38c4f2f9656c54638c78d42dfa7fe2e4364be3ae021b1ee174b111e8e59cbd",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/verification.rs",
+          "bytes": 7899,
+          "sha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "currentSha256": "9d49999d4f42772e67ae44cccce64061cdc682a032d422bb78569f0a0c899b2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web.rs",
+          "bytes": 10271,
+          "sha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "currentSha256": "8a59bce74da04b3ac6d377e7d124dfa2b5533de5d0d582a278baa405f10f23bb",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/angular_build.rs",
+          "bytes": 3006,
+          "sha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "currentSha256": "95ceaae345a7eb2627391cd0bd73ad2ffdb94e3f7b08917b6015c6fba7ede293",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web/preparation.rs",
+          "bytes": 2642,
+          "sha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "currentSha256": "be8bd94b80192f70f74b587e838c2a47fd3609200bbad751790e37d20f05f5f9",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_catalog.rs",
+          "bytes": 20021,
+          "sha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "currentSha256": "0dad788d56224234bd0bec67c0f5a0c1c25f934a564ae3716d3bb350023e822f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_fixture.rs",
+          "bytes": 9357,
+          "sha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "currentSha256": "8fcc50058da8049c2d59489b7b3ade23227cdb0fb366487533b0eb917b9236c3",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/tests/web_registry.rs",
+          "bytes": 10303,
+          "sha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "currentSha256": "aa88fd35c3004f74ebd451fbf73c5ac731fc3a20661ec38fada1f54e3954287f",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification.rs",
+          "bytes": 10700,
+          "sha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "currentSha256": "235549270442a29abd80cb85f1b583ba2a902a6b704b5966c6f8db3fc3d2d975",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verification/web.rs",
+          "bytes": 3432,
+          "sha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "currentSha256": "cfa282854b9dd7cd946d41025b72298e6c7c49e8f7d137c830598e882ab97b94",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/verify.rs",
+          "bytes": 9553,
+          "sha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "currentSha256": "c355459a0ca5004d741cde4bb87ef1c19d175a513db61531046acbe2211cae78",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web.rs",
+          "bytes": 4083,
+          "sha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "currentSha256": "e19ef083a9739b7826372af8a0613516cfa3410495074d910732011fb6ceaabe",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/grant.rs",
+          "bytes": 3255,
+          "sha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "currentSha256": "42751472a21394c42ae679e616b7618ac66617858a69817c1d594c3ac25c2f2b",
+          "sameExecutedBytes": true
+        },
+        {
+          "path": "crates/latent-policy/src/supply_chain/web/receipt.rs",
+          "bytes": 10048,
+          "sha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "currentSha256": "b7641f9c35bbdfd2fadb44cf19710553e322a6440099008e034318cca0f4c852",
+          "sameExecutedBytes": true
+        }
+      ],
+      "identicalExecutedPolicyFiles": 68,
+      "differentPaths": [],
+      "sameAllPolicySources": true,
+      "wholeCurrentCIClaimed": false
+    }
+  ],
+  "old66f2ZeroDiffExtended": false
+}

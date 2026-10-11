@@ -1,0 +1,55 @@
+{
+  "apiVersion": "latent.dev/v1alpha1",
+  "kind": "Capsule",
+  "metadata": {
+    "name": "examples/java-http-context-required",
+    "tenant": "examples"
+  },
+  "component": {
+    "digest": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+    "version": "1.0.0",
+    "world": "examples:java-http-context-required/service@1.0.0"
+  },
+  "exports": [
+    "examples:java-http-context-required/api@1.0.0"
+  ],
+  "imports": [
+    {
+      "contract": "latent:clock/monotonic@0.1.0",
+      "optional": false
+    },
+    {
+      "contract": "latent:clock/wall@0.1.0",
+      "optional": false
+    },
+    {
+      "contract": "latent:context/context@0.1.0",
+      "optional": false
+    }
+  ],
+  "execution": {
+    "backend": "wasm-component",
+    "threading": "single-threaded",
+    "stateModel": "stateless",
+    "limits": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 67108864,
+      "wallTimeLimitMillis": 120000,
+      "childCalls": 0,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "logBytes": 0,
+      "effectCount": 0
+    },
+    "hostCallDepthMaximum": 8,
+    "componentCallDepthMaximum": 4,
+    "snapshotEligible": false,
+    "fusionEligible": false
+  },
+  "compatibility": {
+    "minimumFabricVersion": "0.1.0-alpha.5"
+  }
+}

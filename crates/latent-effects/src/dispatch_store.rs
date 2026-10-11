@@ -13,6 +13,16 @@ pub const PAYLOAD_PREFIX: &[u8] = b"effect-payload-v1\0";
 pub const DUE_PREFIX: &[u8] = b"dispatch-due-v1\0";
 const DUE_FORMAT: &[u8; 5] = b"LDI\0\x01";
 
+mod catalog;
+mod codec;
+pub mod control;
+pub mod effect_management;
+pub use catalog::{
+    ClaimedEffect, DispatchCatalog, DispatchCounts, DispatchEpoch, DuePage, HistoryPage,
+    RetainedEffectRows,
+};
+pub use codec::{DispatchStoreError, HistoryRecord};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DueRecord {
     pub due_millis: u64,
@@ -112,7 +122,16 @@ pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         Family::Maintenance if key.key.starts_with(DUE_PREFIX) => {
             DueRecord::decode(key, bytes)?;
         }
-        _ => return Err(StoreError::UnsupportedFormat),
+        Family::Maintenance
+            if key.key == control::CONTROL_STATE_KEY
+                || key.key.starts_with(control::CONTROL_RECEIPT_PREFIX) =>
+        {
+            control::ControlCatalog::validate_row(key, bytes)?;
+        }
+        Family::Maintenance if effect_management::EffectManagementCatalog::owns_row(key) => {
+            effect_management::EffectManagementCatalog::validate_row(key, bytes)?;
+        }
+        _ => return codec::validate_row(key, bytes),
     }
     Ok(())
 }

@@ -8,9 +8,11 @@ Failures retain bounded diagnostics and never become a successful receipt.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import sys
 import time
@@ -27,6 +29,27 @@ from tools.stage_runtime_wit import copy_wit_tree, dependencies
 WORLD = "tests:transaction-contract/service@1.0.0"
 FIXTURE = ROOT / "sdk/transaction-contract"
 LANGUAGES = ("rust", "c", "typescript", "go", "java", "dotnet")
+
+
+def definition_report_details(language: str, details: dict) -> dict:
+    """Label public .NET binding checksums without changing compiler evidence.
+
+    The maintained compiler owns its raw inventory and reproducibility checks.
+    This report projection only spells the algorithm on its SHA256 fields.
+    """
+    if language != "dotnet":
+        return details
+    result = copy.deepcopy(details)
+    bindings = result["bindings"]["bindings"]
+
+    def checksum(value: str) -> str:
+        if not isinstance(value, str) or re.fullmatch(r"(?:sha256:)?[0-9a-f]{64}", value) is None:
+            raise ValueError("invalid public .NET binding SHA256")
+        return value if value.startswith("sha256:") else "sha256:" + value
+
+    bindings["authoritativeWitSha256"] = checksum(bindings["authoritativeWitSha256"])
+    bindings["outputs"] = {name: checksum(value) for name, value in bindings["outputs"].items()}
+    return result
 
 
 def check_surface(expected: dict, actual: dict) -> None:
@@ -203,7 +226,8 @@ def qualify(language: str, output: Path, *, tools: Path | None = None, wasi_sdk:
         (output / "component.wit").write_bytes(surface)
         report.update(status="compiler-definition-qualified", compilerDefinitionQualified=True,
                       componentDigest=digest(read_file(component, 64 * 1024 * 1024)), componentBytes=component.stat().st_size,
-                      semanticSurfaceDigest=digest(json.dumps(actual, sort_keys=True, separators=(",", ":")).encode()), details=details)
+                      semanticSurfaceDigest=digest(json.dumps(actual, sort_keys=True, separators=(",", ":")).encode()),
+                      details=definition_report_details(language, details))
     except BaseException as error:
         report.update(status="failed", reason=str(error))
         raise

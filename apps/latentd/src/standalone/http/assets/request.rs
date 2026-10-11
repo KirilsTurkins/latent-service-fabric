@@ -11,6 +11,7 @@ pub(in crate::standalone::http) struct Request {
     pub head: bool,
     pub route: Option<latent_control_store::http_routes::AcceptedHttpRoute>,
     pub redirect: Option<String>,
+    pub not_found: bool,
     matching: Option<Tags>,
     none_matching: Option<Tags>,
 }
@@ -68,12 +69,19 @@ impl Request {
             head,
             route: None,
             redirect: None,
+            not_found: false,
             matching,
             none_matching,
         })
     }
 
     pub(super) fn status(&self, etag: &str) -> Result<u16, u16> {
+        // Preconditions have been parsed/limited, but RFC 9110 preconditions
+        // are ignored for an otherwise unsuccessful request. A navigation
+        // miss can never become 200/304 or a conditional 412.
+        if self.not_found {
+            return Ok(404);
+        }
         // RFC 9110 precedence: If-Match is evaluated before If-None-Match.
         if self
             .matching

@@ -6,6 +6,9 @@
 use crate::authority::{AuthorityError, DurableEffectAuthority, EffectTime};
 use serde::{Deserialize, Serialize};
 
+mod management;
+pub use management::{effect_record_version, EffectManagementFact, EffectManagementStamp};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Disposition {
     Pending,
@@ -41,6 +44,16 @@ pub struct AttemptIdentity {
 
 impl AttemptIdentity {
     #[must_use]
+    pub const fn owner_epoch(&self) -> u64 {
+        self.owner_epoch
+    }
+
+    #[must_use]
+    pub const fn claim_generation(&self) -> u64 {
+        self.claim_generation
+    }
+
+    #[must_use]
     pub const fn attempt(&self) -> u32 {
         self.attempt
     }
@@ -66,7 +79,7 @@ pub struct AttemptReceipt {
 }
 
 impl AttemptReceipt {
-    fn valid(&self) -> bool {
+    pub(crate) fn valid(&self) -> bool {
         matches!(
             self.disposition,
             Disposition::ProviderAcknowledged
@@ -100,9 +113,28 @@ pub struct EffectRecord {
     last_clock_millis: u64,
     history_sequence: u64,
     latest: Option<AttemptReceipt>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    management: Option<EffectManagementStamp>,
 }
 
 impl EffectRecord {
+    /// Actual supported decoded envelope format, independent from its payload,
+    /// adapter profile and application schema. This metadata is never a grant.
+    #[must_use]
+    pub const fn durable_format(&self) -> (&'static str, u32) {
+        (
+            "latent.effect-record.v1",
+            if self.management.is_some() { 2 } else { 1 },
+        )
+    }
+
+    /// Prepay every currently supported record shape, including the original
+    /// bounded management stamp. Optional management rows are charged when
+    /// their exact original batches are prepared, not invented at commit.
+    pub fn retained_bound(authority: &DurableEffectAuthority) -> Result<u64, AuthorityError> {
+        Self::committed(authority)?.encode()?;
+        Ok(65_541)
+    }
     pub fn committed(authority: &DurableEffectAuthority) -> Result<Self, AuthorityError> {
         Ok(Self {
             authority_record: authority.encode()?,
@@ -116,6 +148,7 @@ impl EffectRecord {
             last_clock_millis: authority.committed_at_millis(),
             history_sequence: 0,
             latest: None,
+            management: None,
         })
     }
 
@@ -139,8 +172,81 @@ impl EffectRecord {
     }
 
     #[must_use]
+    pub const fn owner_epoch(&self) -> u64 {
+        self.owner_epoch
+    }
+
+    #[must_use]
+    pub const fn claim_generation(&self) -> u64 {
+        self.claim_generation
+    }
+
+    #[must_use]
+    pub const fn retry_at_millis(&self) -> u64 {
+        self.retry_at_millis
+    }
+
+    #[must_use]
+    pub const fn send_started(&self) -> bool {
+        self.send_started
+    }
+
+    /// A missing exact decoder or current policy denies an unclaimed intent.
+    /// Physical in-flight work and terminal outcomes cannot be overwritten.
+    pub fn block_eligible(&mut self, time: EffectTime) -> Result<(), AuthorityError> {
+        self.check_clock(time)?;
+        if !matches!(
+            self.disposition,
+            Disposition::Pending | Disposition::RetryScheduled
+        ) {
+            return Err(AuthorityError::Stale);
+        }
+        self.disposition = if time.unix_millis >= self.authority()?.expires_at_millis() {
+            Disposition::Expired
+        } else {
+            Disposition::PolicyBlocked
+        };
+        Ok(())
+    }
+
+    #[must_use]
     pub fn latest(&self) -> Option<&AttemptReceipt> {
         self.latest.as_ref()
+    }
+
+    #[must_use]
+    pub fn management(&self) -> Option<&EffectManagementStamp> {
+        self.management.as_ref()
+    }
+
+    /// Original audited retention may stop unresolved work only beyond its
+    /// delivery horizon and after the caller proves actual attempt retirement.
+    /// Keep measured provider/administrator facts and the original last receipt.
+    pub fn expire_retired(&mut self, time: EffectTime) -> Result<(), AuthorityError> {
+        self.check_clock(time)?;
+        if self.disposition == Disposition::Dispatching {
+            return Err(AuthorityError::Unavailable);
+        }
+        if time.unix_millis < self.authority()?.expires_at_millis() {
+            return Err(AuthorityError::Expired);
+        }
+        if !self.disposition.terminal() {
+            self.disposition = Disposition::Expired;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn active_attempt(&self) -> Result<AttemptIdentity, AuthorityError> {
+        if self.disposition != Disposition::Dispatching {
+            return Err(AuthorityError::Stale);
+        }
+        Ok(AttemptIdentity {
+            effect: self.authority()?.link().effect.clone(),
+            owner_epoch: self.owner_epoch,
+            claim_generation: self.claim_generation,
+            attempt: self.attempt,
+            retry_horizon_millis: self.retry_horizon_millis,
+        })
     }
 
     /// Only `Pending` or explicitly qualified `RetryScheduled` work is claimable.
@@ -349,7 +455,11 @@ impl EffectRecord {
         if body.len() > 65_536 {
             return Err(AuthorityError::Capacity);
         }
-        let mut bytes = b"LER\0\x01".to_vec();
+        let mut bytes = if self.management.is_some() {
+            b"LER\0\x02".to_vec()
+        } else {
+            b"LER\0\x01".to_vec()
+        };
         bytes.extend(body);
         Ok(bytes)
     }
@@ -358,17 +468,24 @@ impl EffectRecord {
         if bytes.len() > 65_541 {
             return Err(AuthorityError::Capacity);
         }
-        if !bytes.starts_with(b"LER\0\x01") {
+        let managed_format = bytes.starts_with(b"LER\0\x02");
+        if !managed_format && !bytes.starts_with(b"LER\0\x01") {
             return Err(AuthorityError::UnsupportedFormat);
         }
         let record: Self =
             serde_json::from_slice(&bytes[5..]).map_err(|_| AuthorityError::Invalid)?;
+        if record.management.is_some() != managed_format {
+            return Err(AuthorityError::UnsupportedFormat);
+        }
         record.validate()?;
         Ok(record)
     }
 
     fn validate(&self) -> Result<(), AuthorityError> {
         let authority = self.authority()?;
+        if let Some(stamp) = &self.management {
+            stamp.validate(self)?;
+        }
         if self.attempt > authority.ceiling().maximum_attempts
             || self.last_clock_millis < authority.committed_at_millis()
             || self.history_sequence > u64::from(self.attempt)
@@ -392,7 +509,11 @@ impl EffectRecord {
             }
             Disposition::Dispatching => self.attempt > 0,
             Disposition::ProviderAcknowledged => {
-                self.send_started && has_receipt(Disposition::ProviderAcknowledged)
+                self.send_started
+                    && (has_receipt(Disposition::ProviderAcknowledged)
+                        || self.management.as_ref().is_some_and(|stamp| {
+                            stamp.fact() == EffectManagementFact::ProviderConfirmed
+                        }))
             }
             Disposition::KnownFailed => has_receipt(Disposition::KnownFailed),
             Disposition::Uncertain => self.send_started && has_receipt(Disposition::Uncertain),
@@ -402,9 +523,12 @@ impl EffectRecord {
                         || has_receipt(Disposition::Uncertain))
             }
             Disposition::DeadLettered => {
-                self.attempt == authority.ceiling().maximum_attempts
+                (self.attempt == authority.ceiling().maximum_attempts
                     && (has_receipt(Disposition::KnownFailed)
-                        || has_receipt(Disposition::Uncertain))
+                        || has_receipt(Disposition::Uncertain)))
+                    || self.management.as_ref().is_some_and(|stamp| {
+                        stamp.fact() == EffectManagementFact::AdministratorTerminated
+                    })
             }
             Disposition::PolicyBlocked | Disposition::Expired => true,
         };
@@ -414,7 +538,7 @@ impl EffectRecord {
         Ok(())
     }
 
-    fn check_claim(&self, claim: &AttemptIdentity) -> Result<(), AuthorityError> {
+    pub(crate) fn check_claim(&self, claim: &AttemptIdentity) -> Result<(), AuthorityError> {
         if self.disposition != Disposition::Dispatching
             || claim.effect != self.authority()?.link().effect
             || claim.owner_epoch != self.owner_epoch

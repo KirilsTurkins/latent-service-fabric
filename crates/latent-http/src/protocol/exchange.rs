@@ -16,6 +16,7 @@ pub(super) async fn run(
     request: ProtocolRequest,
     maximum: usize,
     consume: &mut (dyn FnMut(&[u8]) -> Result<(), HttpError> + Send),
+    before_write: &mut (dyn FnMut() -> Result<(), HttpError> + Send),
 ) -> Result<ProtocolResponse, ProtocolFailure> {
     scope.checkpoint()?;
     if maximum > MAXIMUM_PROTOCOL_BODY_BYTES {
@@ -44,6 +45,8 @@ pub(super) async fn run(
         return Err(HttpError::ConnectionFailed.into());
     };
     connection.wrote.store(false, Ordering::Release);
+    scope.checkpoint()?;
+    before_write()?;
     let sender = &mut connection.sender;
     let future = async {
         let response = sender

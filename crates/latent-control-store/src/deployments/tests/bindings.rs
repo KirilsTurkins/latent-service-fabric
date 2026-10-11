@@ -9,9 +9,22 @@ mod publications;
 mod rejections;
 mod slow_preparation;
 mod startup;
+mod transaction_profile;
 use fixture::*;
 use latent_capabilities::broker::CapabilityPlanSource;
 use latent_routing::{RouteCompiler, RouteResolver, RouteSnapshotPublisher};
+
+#[test]
+fn checked_structural_values_do_not_require_or_create_provider_bindings() {
+    let f = Fixture::with_structural_values();
+    f.install();
+    let pin = f.store.pin().unwrap();
+    let revision = pin.resolve(&target(), None).unwrap();
+    let plan = f.store.plan(&revision).unwrap();
+    assert!(plan.matches_revision(&revision));
+    assert_eq!(f.store.binding_inventory().1, 1);
+    assert_eq!(f.store.binding_inventory().2, 1);
+}
 
 #[test]
 fn identical_consumers_reuse_one_transient_package_but_never_a_previous_compilation() {

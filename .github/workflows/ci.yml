@@ -152,8 +152,13 @@ jobs:
         run: |
           packages="$(python3 - <<'PYCODE'
           from tools.ci_profile import classify_paths
+          from tools import ci_suite_inventory as registry
+          state = classify_paths(['crates/latent-state/src/lib.rs'])
+          assert state.profile == 'full' and state.renderer
           selection = classify_paths(['crates/latent-workflows/src/lib.rs'])
           assert selection.profile == 'fast'
+          assert selection.fast_packages
+          assert set(selection.fast_packages) < set(registry.load()['fastPackages'])
           print(selection.outputs()['fast_packages'])
           PYCODE
           )"
@@ -382,6 +387,7 @@ jobs:
         run: |
           # Reviewed delegated owners: tools/ci_lane_worker.py tools/run_s3_blob_tests.py tools/run_vault_secret_tests.py tools/run_nats_event_tests.py
           # tools/run_capability_policy_workflow.py tools/build_angular_renderer.py tools/run_angular_renderer_tests.py tools/check_owned_diagnostics.py
+          # tools/run_nats_deferred_tests.py tools/nats_deferred_support.py
           # tools/build_angular_package.py tools/run_angular_build_tests.py tools/build_s3_fixture.py
           python3 tools/run_ci_lanes.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --renderer "$CI_LANE_RENDERER" --workers "$CI_LANE_WORKERS" --lane "$CI_NATIVE_LANE" --output "$RUNNER_TEMP/ci-lanes"
       - name: Retain bounded CI lane timing and completion receipts
@@ -434,6 +440,7 @@ jobs:
         timeout-minutes: 15
         shell: bash
         run: |
+          python3 website/toolchain/prepare.py
           npm ci --prefix examples/framework-compatibility --ignore-scripts
           framework_root="${RUNNER_TEMP}/framework-sites"
           mkdir -p "$framework_root" "${RUNNER_TEMP}/phase2-gate"
@@ -803,10 +810,16 @@ jobs:
       - name: Restore compiled Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          prefix-key: ${{ (matrix.lane == 'bindings' || matrix.lane == 'optimization') && 'lsf-ci-dependencies-v2' || 'lsf-ci-dependencies-v3' }}
+          prefix-key: lsf-ci-dependencies-v3-contract-profiles
           shared-key: ${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}
           key: ubuntu-24.04
-          cache-targets: true
+          # Cache compiled Cargo profiles, never generated fixture directories.
+          cache-targets: false
+          cache-directories: |
+            target/debug
+            target/release
+            target/wasm32-unknown-unknown
+            target/wasm32-wasip2
           cache-bin: false
           cache-workspace-crates: false
           cache-all-crates: false
@@ -833,7 +846,7 @@ jobs:
       - name: Set up the Go SDK provider participant
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: 1.27.1
+          go-version: 1.27.2
           cache-dependency-path: sdk/go/go.sum
       - name: Set up the Java SDK provider participant
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -938,9 +951,13 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          toolchain: 1.97.1
+          components: rustfmt
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: 1.27.1
+          go-version: 1.27.2
           cache-dependency-path: sdk/go/go.sum
       - uses: bufbuild/buf-setup-action@a47c93e0b1648d5651a065437926377d060baa99 # v1
         with:
@@ -1000,6 +1017,12 @@ jobs:
           python3 sdk/java-client/tools/java_toolchain.py classes sdk/java-client/build/latent-java-client.jar > "$RUNNER_TEMP/java-sdk/jar-classfile.json"
           test "$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)" = \
             "Version ${EXPECTED_TYPESCRIPT_VERSION}"
+      - name: Verify additive transaction client definitions and bounded Rust bridges
+        run: |
+          python3 tools/transaction_client_models.py --check
+          python3 tools/transaction_client_conversions.py --check
+          python3 tools/transaction_client_rust_shapes.py --check
+          python3 -m unittest tools.tests.test_transaction_client_models
       - name: Retain Java SDK qualification diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

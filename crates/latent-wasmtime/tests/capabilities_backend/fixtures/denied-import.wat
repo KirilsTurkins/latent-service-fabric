@@ -1,5 +1,7 @@
 (component
-  (type $required (instance))
+  ;; A denied capability must contain a callable import. An empty instance is
+  ;; structural-only and does not request ambient authority.
+  (type $required (instance (export "probe" (func))))
   (import "tests:denied/host@0.1.0" (instance (type $required)))
   (core module $guest (func (export "value") (result i32) i32.const 7))
   (core instance $guest (instantiate $guest))

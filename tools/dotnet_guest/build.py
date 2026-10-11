@@ -20,11 +20,12 @@ BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
     "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/runtime.py", "tools/dotnet_guest/composer.py",
     "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/entropy.py", "tools/dotnet_guest/outputs.py",
-    "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
+    "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
     "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
-    "examples/echo-contract/deployment.json")
+    "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py",
+    "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ('tools/application_dependencies.py', 'tools/application_dependency_store.py', 'tools/application_dependency_tools.py',
            'tools/application_dependency_approval.py', 'tools/captured_compiler_isolation.py', 'tools/dotnet_compiler_isolation.py',
            'tools/dotnet_application_dependencies.py')
@@ -50,7 +51,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         files = observed.files
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
-        recipe = inventory({name: read_file(ROOT / name) for name in RECIPE})
+        recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
+        recipe = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe)
         with tempfile.TemporaryDirectory(prefix="lsf-dotnet-capsule-") as owned:
@@ -74,6 +76,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands.run("contracts", paths["contracts-tool"], wit_input, derived)
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
+            surface = read_json(derived / "surface.json")
+            recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             stage = "compiler-inputs"
             verified = verify_inputs(observed.dependency_root, 'dotnet')
             compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None)
@@ -112,9 +116,9 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             write_json(output / "bindings.json", generated)
-            surface = read_json(derived / "surface.json")
             stage = "compatibility"
-            guest_compatibility_build.inspect(commands, compiler.wasm, output, surface)
+            guest_compatibility_build.inspect(commands, compiler.wasm, output, surface,
+                host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
@@ -124,7 +128,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             observed.check_unchanged()
             if snapshot(work, exclude=('dependencies', 'application-vendor') if closure else ()) != files:
                 raise ValueError("captured C# project changed during compilation")
-            if inventory({name: read_file(ROOT / name) for name in RECIPE}) != recipe:
+            if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe:
                 raise ValueError("C# authoring recipe changed during compilation")
             compiler.check_unchanged()
             if closure:

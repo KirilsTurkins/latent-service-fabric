@@ -1,4 +1,4 @@
-"""Real released static serving and OCI; no Rust, cloud, or generated runtime."""
+"""Real native static serving and OCI; mode identifies the supplied binaries."""
 from __future__ import annotations
 
 import argparse
@@ -111,7 +111,8 @@ def run(args):
             require(b'Release guide' in http_response(client, node, 'frontend.example.test', '/docs/guide/')[0], 'frontend-docs-restart')
             stop(client, node)
             node = None
-            return {'passed': True, 'actualReleasedNode': True, 'actualTlsOciByDigest': True,
+            return {'passed': True, 'actualReleasedNode': args.released_node,
+                    'actualCurrentNode': not args.released_node, 'actualTlsOciByDigest': True,
                     'publishedSiteAndDocumentation': True, 'operationReceiptRecovery': True, 'evidenceRenewal': True,
                     'explicitRouteRollback': True, 'restartPreservedBothPublications': True,
                     'dormantExecutionBeforeAndAfter': before['cache']['entries'] == after['cache']['entries'] == '0',
@@ -127,6 +128,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('work', 'cli', 'node'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--released-node', action='store_true',
+                        help='The caller supplied the authenticated released CLI and node.')
     try:
         result = run(parser.parse_args())
     except Exception as error:

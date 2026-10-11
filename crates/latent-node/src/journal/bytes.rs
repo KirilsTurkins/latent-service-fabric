@@ -8,7 +8,8 @@ use latent_core::{ActivationId, Metadata, PlatformError, TenantId};
 use super::{capacity, state::Record, MAXIMUM_EVENTS};
 
 pub(super) fn base(id: &ActivationId, tenant: &TenantId) -> Result<usize, PlatformError> {
-    // Covers sparse key/pointer index nodes, owner/queue keys, one heap-allocated
+    // Covers all three sparse key/pointer indexes (record, terminal FIFO and
+    // lineage: even three single sparse nodes fit this 4 KiB allowance), owner/queue keys, one heap-allocated
     // record, all seven event slots, and every retained copy of its ID. Records
     // must stay boxed so unused B-tree slots do not reserve inline outcomes.
     4096_usize
@@ -61,7 +62,29 @@ pub(super) fn outcome(outcome: &ActivationOutcome, maximum: usize) -> Result<usi
             cost.charge(error.details.len().checked_mul(128).ok_or_else(capacity)?)?;
             for detail in &error.details {
                 cost.string(&detail.kind)?;
-                cost.metadata(&detail.fields)?;
+                if latent_core::diagnostic::ActivationDiagnostic::from_detail(detail).is_some()
+                    || (detail.kind == "admission.limit"
+                        && detail.fields.len() == 3
+                        && ["scope", "dimension", "reason"].iter().all(|key| {
+                            detail
+                                .fields
+                                .get(*key)
+                                .is_some_and(|value| value.len() <= 128)
+                        }))
+                {
+                    // These producer maps have at most nine bounded entries,
+                    // so its map occupies one leaf. Reserve 768 bytes for that
+                    // leaf (including its unused string slots) and charge every
+                    // live string allocation separately. The
+                    // generic per-entry allowance remains for arbitrary maps.
+                    cost.charge(768)?;
+                    for (key, value) in &detail.fields {
+                        cost.string(key)?;
+                        cost.string(value)?;
+                    }
+                } else {
+                    cost.metadata(&detail.fields)?;
+                }
             }
         }
     }
@@ -88,8 +111,18 @@ impl Cost {
         self.charge(value.len())
     }
     fn metadata(&mut self, metadata: &Metadata) -> Result<(), PlatformError> {
-        // One KiB per entry bounds sparse string-to-string B-tree nodes too.
-        self.charge(metadata.len().checked_mul(1024).ok_or_else(capacity)?)?;
+        // The resolved lifecycle producer emits one three-entry leaf. Its
+        // immutable identifiers are finite and every string is charged below.
+        // Keep the conservative per-entry bound for arbitrary attribute maps.
+        let resolved = metadata.len() == 3
+            && ["revision", "release", "route-generation"]
+                .iter()
+                .all(|key| metadata.get(*key).is_some_and(|value| value.len() <= 512));
+        self.charge(if resolved {
+            768
+        } else {
+            metadata.len().checked_mul(1024).ok_or_else(capacity)?
+        })?;
         for (key, value) in metadata {
             self.string(key)?;
             self.string(value)?;

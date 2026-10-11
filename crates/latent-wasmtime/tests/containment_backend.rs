@@ -588,6 +588,7 @@ async fn healthy_activations_remain_correct_while_an_infinite_activation_times_o
         latent_core::ActivationTerminalState::DeadlineExceeded,
         latent_core::PlatformErrorCode::DeadlineExceeded,
         "activation.deadline-exceeded",
+        Some(latent_core::diagnostic::DiagnosticReason::DeadlineExceeded),
     );
     assert!(consumption.wall_time_micros > 0);
     assert_deadline_tolerance(elapsed, requested_deadline, &config);
@@ -632,6 +633,7 @@ async fn healthy_activations_remain_correct_while_another_activation_traps() {
         latent_core::ActivationTerminalState::GuestTrap,
         latent_core::PlatformErrorCode::GuestTrap,
         "activation.guest-trap",
+        None,
     );
     assert_mixed_healthy(healthy, &backend, "trap").await;
     assert_end_to_end_reclaimed(&runner, &pool, &backend, 5);
@@ -712,6 +714,7 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
         latent_core::ActivationTerminalState::ResourceExhausted,
         latent_core::PlatformErrorCode::ResourceExhausted,
         "activation.memory-exhausted",
+        Some(latent_core::diagnostic::DiagnosticReason::GuestMemoryExhausted),
     );
     assert!(
         consumption.peak_memory_bytes <= granted_memory,
@@ -987,18 +990,36 @@ fn assert_activation_failure(
     terminal_state: latent_core::ActivationTerminalState,
     code: latent_core::PlatformErrorCode,
     detail_kind: &str,
+    diagnostic_reason: Option<latent_core::diagnostic::DiagnosticReason>,
 ) -> latent_core::BudgetConsumption {
     match outcome {
         ActivationOutcome::Failed {
             terminal_state: actual_terminal_state,
-            error,
+            mut error,
             consumption,
         } => {
             assert_eq!(actual_terminal_state, terminal_state);
             assert_eq!(error.code, code);
             assert!(!error.retryable);
             assert!(error.message.len() <= 512);
-            assert_eq!(error.details.len(), 1);
+            use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticStage};
+            let expected = diagnostic_reason
+                .map(|reason| ActivationDiagnostic::new(DiagnosticStage::Execution, reason));
+            assert_eq!(ActivationDiagnostic::from_error(&error), expected);
+            if code == latent_core::PlatformErrorCode::GuestTrap {
+                let detail = error.details.pop().expect("closed guest trap kind");
+                assert_eq!(detail.kind, "activation.guest-trap-kind");
+                assert_eq!(
+                    detail.fields,
+                    Metadata::from([(
+                        "kind".to_owned(),
+                        latent_core::error::GuestTrapKind::UnreachableCode
+                            .wire_name()
+                            .to_owned(),
+                    )])
+                );
+            }
+            assert_eq!(error.details.len(), 1 + usize::from(expected.is_some()));
             assert_eq!(error.details[0].kind, detail_kind);
             assert!(error.details[0]
                 .fields
