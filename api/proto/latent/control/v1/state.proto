@@ -52,6 +52,8 @@ message NamespaceInspection {
   uint64 generation = 10;
   // Captured configuration precondition only; this digest supplies no grant.
   string namespace_policy_digest = 11;
+  // Exact captured policy/binding revisions; descriptive, never a grant.
+  optional string policy_digest = 12;
 }
 
 enum NamespaceMutationKind {

@@ -12,6 +12,27 @@ from tools.go_guest.sdk import install, CAPABILITIES, explicit_resource_owners
 
 
 class GoAuthoringTests(unittest.TestCase):
+    def test_generated_business_record_owners_survive_export_stub_replacement(self):
+        from tools.go_guest.sdk import export_declarations
+        source = ('package export_examples_aggregate_api\n\nimport (\n'
+                  '\twit "go.bytecodealliance.org/pkg/wit/types"\n'
+                  '\traw "wit_component/latent_types"\n)\n\n'
+                  'type Aggregate struct { Count uint64; Cursor wit.Option[[]byte] }\n'
+                  'type BusinessError uint8\nconst BusinessErrorRejected uint8 = 0\n'
+                  'func Update(value uint32) wit.Result[Aggregate, BusinessError] {\n'
+                  '\tpanic("not implemented")\n}\n')
+        result = export_declarations(source)
+        self.assertIn('type Aggregate struct', result)
+        self.assertIn('Cursor wit.Option[[]byte]', result)
+        self.assertIn('type BusinessError uint8', result)
+        self.assertIn('const BusinessErrorRejected', result)
+        self.assertIn('wit "go.bytecodealliance.org/pkg/wit/types"', result)
+        self.assertNotIn('raw "wit_component/latent_types"', result)
+        self.assertNotIn('func Update', result)
+        self.assertNotIn('panic(', result)
+        with self.assertRaisesRegex(ValueError, 'generated-Go-export-stub-drift'):
+            export_declarations(source.replace('\tpanic(', '\treturn panic('))
+
     def test_readme_entrypoints_match_every_typed_capability_facade(self):
         import re
         from tools.go_capsule_project import ROOT

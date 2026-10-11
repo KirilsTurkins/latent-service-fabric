@@ -30,6 +30,17 @@ use std::sync::Arc;
 
 pub const HTTP_DEFERRED_PROFILE: &str = "qualified-http-effect-v1";
 
+/// The installed root checks each actual protocol method/path against its
+/// separate current dispatch policy. This callback performs no network I/O.
+pub trait DeferredHttpAuthorization: Send + Sync {
+    fn check_current(
+        &self,
+        grant: &DispatchGrant,
+        method: &str,
+        path: &str,
+    ) -> Result<(), HttpError>;
+}
+
 /// Reuses the exact immediate provider, TLS configuration, opaque credential
 /// binding and provider pools. It creates no activation, worker or new engine.
 pub struct HttpEffectAdapter {
@@ -39,6 +50,7 @@ pub struct HttpEffectAdapter {
     tenant: String,
     profile: DispatchProfile,
     time: Arc<dyn EffectTimeSource>,
+    authorization: Option<Arc<dyn DeferredHttpAuthorization>>,
     _metadata: ProviderMetadata,
 }
 
@@ -106,6 +118,7 @@ impl HttpProvider {
             tenant: tenant.into(),
             profile,
             time,
+            authorization: None,
             _metadata: metadata,
         })
     }
@@ -146,6 +159,21 @@ impl DeferredEffectAdapter for HttpEffectAdapter {
 }
 
 impl HttpEffectAdapter {
+    #[must_use]
+    pub fn with_authorization(mut self, authorization: Arc<dyn DeferredHttpAuthorization>) -> Self {
+        self.authorization = Some(authorization);
+        self
+    }
+    #[must_use]
+    pub fn endpoint(&self) -> &QualifiedHttpEndpoint {
+        &self.endpoint
+    }
+
+    #[must_use]
+    pub fn provider_reference(&self) -> latent_capabilities::broker::ProviderReference {
+        self.provider.reference()
+    }
+
     fn accept_operation(
         &self,
         grant: DispatchGrant,
@@ -180,6 +208,7 @@ impl HttpEffectAdapter {
             transport: self.transport.clone(),
             endpoint: Arc::clone(&self.endpoint),
             time: Arc::clone(&self.time),
+            authorization: self.authorization.clone(),
             value,
             body_digest,
             request,

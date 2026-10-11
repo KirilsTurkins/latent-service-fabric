@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/build_dev_frontend.py","reviewBoundary":"committed-fingerprint","reviewReason":"Compose captured dependency approval and packaged resources in the Linux helper; retain merged source changes from both feature branches; capture the exact compatibility outcome/context/runtime receipt import closure required by scenario test dispatch","schemaVersion":"latent.ci.contracts.v1","sha256":"a9d764d679297cfdb47fcb1b4d05c0c0d1caa56e7c930c8244088a33deefab21"}
+{
+  "kind": "owner",
+  "path": "tools/build_dev_frontend.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reconcile captured-input transfer, approved generators and conservative diagnostics with current transaction/native owners. Preserve all original cases, skip guards, historical commands, isolation requirements and receipt paths.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a54f3a50980de5ec923c61260370c6b68fa5971f96e575422d110760fd851e31"
+}

@@ -1,0 +1,461 @@
+{
+  "schemaVersion": "latent.transaction-guest.compiler.v1",
+  "language": "java",
+  "variant": "put-once-diagnostics",
+  "evidenceKind": "authored-component-compiler",
+  "status": "compiled",
+  "compiled": true,
+  "signedNodeExecutionQualified": false,
+  "admissionRejectionQualified": false,
+  "world": "examples:transactional-aggregate/service@1.0.0",
+  "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+  "sourceDigest": "sha256:e65c1f414b28bd6ffd2182beaa7522d20a4ed01743a7ed659c8360acfcc607d0",
+  "applicationVariant": "diagnostics",
+  "effect": "put-once",
+  "applicationSchemaInputDigest": "sha256:99cf9b5a7a026bf6c2805d9b0ae66a6f4efe690d6eb00764c9e7862a6a378031",
+  "deferredHttpRequirementsDigest": "sha256:f9c50d3923dea8e7973946c87d0a9b08abe5a7b1af67acbbc3709d7e37cdc205",
+  "diagnosticInputDigest": "sha256:2c3bd02ebfca6354b07d11516fbfe0b53e0ecc647bdaa97ab79d81dfddaa2814",
+  "recipeDigest": "sha256:547c354e6cf8ef2222e08c634b01ca4828bdf313acf2b17fa7a0fb22ea8ddb33",
+  "sourceArchiveDigest": "sha256:db825063cdbaba3d9c77697711c89369489920614b5bb4b2a3c9afa772d394e5",
+  "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+  "sourceRevision": "aab172ba3df2c4d7c6f6335b074400432055f174",
+  "workingTreeChanged": false,
+  "componentDigest": "sha256:0640b1bb0a28a7cc80b785efd6c1a3c8d55612e0a70759be2f2a400268dec20f",
+  "componentBytes": 1013874,
+  "actualImports": [
+    "latent:clock/monotonic@0.1.0",
+    "latent:clock/wall@0.1.0",
+    "latent:intents/staging@0.1.0",
+    "latent:state/key-value@0.2.0"
+  ],
+  "details": {
+    "bindings": {
+      "bindings": {
+        "formatVersion": 1,
+        "world": "examples:transactional-aggregate/service@1.0.0",
+        "generator": "lsf-java-wit-v1+wit-bindgen-0.62.0",
+        "outputs": {
+          "Bindings.java": {
+            "digest": "sha256:5e342db195cc44acc07c0d838a1e73c50693b998255d55ad3c466f06f97a41fc",
+            "size": 30996
+          },
+          "bridge.c": {
+            "digest": "sha256:d6986949af4638f99b889701aee668a000307bb488d4a9f9a4c593d7cbdef12d",
+            "size": 50083
+          },
+          "probe.c": {
+            "digest": "sha256:e46d3b5c06ab6a3281066b5a8b0579ec804d194e9a10cf83f8239297b831aafa",
+            "size": 39578
+          },
+          "probe.h": {
+            "digest": "sha256:213668346711f03f96a15506d11ca08fdeb08c368d31458fb4458e06f3126106",
+            "size": 17932
+          },
+          "probe_component_type.o": {
+            "digest": "sha256:6160456d5a5c69fdbf7af244deb40d6e0ca1b861c448f4b1d2e8cc1ea344a930",
+            "size": 2345
+          }
+        },
+        "digest": "sha256:d4ec83d4b6ce2df37db714ccdf44c46a5ac42ee15b374186c862b998d5bf842d",
+        "imports": 15,
+        "exports": 3,
+        "resources": 3
+      },
+      "dependencies": {
+        "status": "checksummed-gradle-metadata",
+        "downloadedJars": 26,
+        "reviewedJars": 70,
+        "lock": {
+          "sha256": "4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+          "size": 16525
+        },
+        "metadata": {
+          "sha256": "2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30",
+          "size": 46640
+        }
+      },
+      "platform": {
+        "fiber.c": {
+          "upstreamSha256": "b7f4592776d780165154c69e75b243ad9f32df0a717eb8bd29a11924fc6bc6df",
+          "adaptedSha256": "c8484f6e4a9801f33f03197756fd92062523f8344cd9ef139cacf9a35337213f"
+        },
+        "time.c": {
+          "upstreamSha256": "9f4d0ea0a14f0786cb76172acd9bdefd4464aebf58a0372cfa66ff92dcacae2e",
+          "adaptedSha256": "685144b5e9ad8f907a455ecd546a620a1222f75179e9ecd36af12cc150809b45"
+        },
+        "memory.c": {
+          "upstreamSha256": "d685e2f0f8b3983d5886b48ece7d83298b864893f3c80701ed11cc779a51ada2",
+          "adaptedSha256": "54d8d661b7aef84a7abc04a33d6899b160aba730444eac2d33be04009c5e95f2"
+        },
+        "file.c": {
+          "upstreamSha256": "49c8a5f152eefffbe2832b607fcd40b225936fc593d1a0d53fb81ed700a30538",
+          "adaptedSha256": "6cbcbadf02ff4db88c4a8a82cf14cdc4f2ee3ee79621ecfab297c45f631c81a6"
+        },
+        "arrayclass.c": {
+          "upstreamSha256": "044dc626c36581887874d0f4cda5070be0dfdcdb703c6ef0893616e568dc0058",
+          "adaptedSha256": "a09f225c1517579640a9d0ba9483368eb0ce4d284339755c5b820aa63c85ddc0"
+        }
+      },
+      "semanticSurfaceDigest": "sha256:1b1f53e660e06d3cc6170bdf67a9e0e82bdce28f6a2f703ae089fd2f08d22f46"
+    },
+    "tools": [
+      {
+        "name": "java",
+        "digest": "sha256:7380ce48ed5013735d2c8414db54adb8f981e7933ff594bd36f3baccddaafba3",
+        "size": 16264
+      },
+      {
+        "name": "gradle",
+        "digest": "sha256:0b088fd5c9c972089c80c691b28cc4c65def93e1b814fc9f60f0734493954caf",
+        "size": 8700
+      },
+      {
+        "name": "clang",
+        "digest": "sha256:0ed7eeb0e922f6effcee5ebfa87cedf961676b78962291884cdac68d9138d5c4",
+        "size": 118680
+      },
+      {
+        "name": "wit-bindgen",
+        "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+        "size": 19856344
+      },
+      {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      }
+    ],
+    "commands": [
+      {
+        "stage": "java-version",
+        "command": [
+          "/tmp/java718-diagnostic-r6/managed/jdk/bin/java",
+          "-version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.042589
+      },
+      {
+        "stage": "gradle-version",
+        "command": [
+          "/tmp/java718-diagnostic-r6/managed/gradle/bin/gradle",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 1.860359
+      },
+      {
+        "stage": "clang-version",
+        "command": [
+          "/tmp/java718-diagnostic-r6/managed/wasi-sdk/bin/clang",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.021862
+      },
+      {
+        "stage": "wit-bindgen-version",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wit-bindgen",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.01188
+      },
+      {
+        "stage": "wasm-tools-version",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "--version"
+        ],
+        "exitCode": 0,
+        "seconds": 0.011815
+      },
+      {
+        "stage": "wit-graph",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiler/sdk-reference/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012152
+      },
+      {
+        "stage": "wit-bindings",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wit-bindgen",
+          "c",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiler/sdk-reference/wit",
+          "--world",
+          "latent:java-guest/sdk@1.0.0",
+          "--rename-world",
+          "probe",
+          "--no-sig-flattening",
+          "--async=-all",
+          "--out-dir",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiler/sdk-reference/bindings"
+        ],
+        "exitCode": 0,
+        "seconds": 0.011746
+      },
+      {
+        "stage": "bindings-metadata",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiler/sdk-reference/bindings/probe_component_type.o"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012445
+      },
+      {
+        "stage": "wit-graph",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012367
+      },
+      {
+        "stage": "wit-bindings",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wit-bindgen",
+          "c",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/wit",
+          "--world",
+          "examples:transactional-aggregate/service@1.0.0",
+          "--rename-world",
+          "probe",
+          "--no-sig-flattening",
+          "--async=-all",
+          "--out-dir",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/bindings"
+        ],
+        "exitCode": 0,
+        "seconds": 0.011966
+      },
+      {
+        "stage": "bindings-metadata",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/bindings/probe_component_type.o"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012218
+      },
+      {
+        "stage": "wit-graph",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.01269
+      },
+      {
+        "stage": "wit-bindings",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wit-bindgen",
+          "c",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/wit",
+          "--world",
+          "examples:transactional-aggregate/service@1.0.0",
+          "--rename-world",
+          "probe",
+          "--no-sig-flattening",
+          "--async=-all",
+          "--out-dir",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/bindings-check"
+        ],
+        "exitCode": 0,
+        "seconds": 0.011948
+      },
+      {
+        "stage": "bindings-metadata",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/bindings-check/probe_component_type.o"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012336
+      },
+      {
+        "stage": "java-to-c",
+        "command": [
+          "/tmp/java718-diagnostic-r6/managed/gradle/bin/gradle",
+          "--no-daemon",
+          "generateC"
+        ],
+        "exitCode": 0,
+        "seconds": 68.577879
+      },
+      {
+        "stage": "c-to-wasm",
+        "command": [
+          "/tmp/java718-diagnostic-r6/managed/wasi-sdk/bin/clang",
+          "-target",
+          "wasm32-wasip1",
+          "-std=c11",
+          "-O2",
+          "-DLSF_TEAVM_WASM=1",
+          "-DTEAVM_CUSTOM_LOG=1",
+          "-mllvm",
+          "-wasm-enable-sjlj",
+          "-lsetjmp",
+          "-mllvm",
+          "-wasm-use-legacy-eh=false",
+          "-mexec-model=reactor",
+          "-Wl,--no-entry",
+          "-Wl,--export-memory",
+          "-Wl,-z,stack-size=65536",
+          "-Wl,--max-memory=67108864",
+          "-include",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime/native.h",
+          "-I",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/bindings",
+          "-I",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/project/vendor/lsf/sdk/java-guest/runtime",
+          "-iquote",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/project/build/teavm-c/c",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/project/build/teavm-c/c/all.c",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/bindings/bridge.c",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/project/vendor/lsf/sdk/java-guest/feasibility/platform.c",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/bindings/probe.c",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/bindings/probe_component_type.o",
+          "-o",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/core.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 11.372153
+      },
+      {
+        "stage": "closed-runtime",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "embed",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/wit",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/project/vendor/lsf/sdk/java-guest/feasibility/closed-runtime.wat",
+          "--world",
+          "runtime-support",
+          "-o",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/closed-runtime.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.012141
+      },
+      {
+        "stage": "component-new",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "new",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/core.wasm",
+          "--adapt",
+          "wasi_snapshot_preview1=/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/closed-runtime.wasm",
+          "-o",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/component.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.022134
+      },
+      {
+        "stage": "component-validate",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "validate",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/component.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.011744
+      },
+      {
+        "stage": "component-surface",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/component.wasm"
+        ],
+        "exitCode": 0,
+        "seconds": 0.011715
+      },
+      {
+        "stage": "expected-wit",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/wit",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.011949
+      },
+      {
+        "stage": "compiled-wit",
+        "command": [
+          "/tmp/java718-diagnostic-r6/bundle/sdk/bin/wasm-tools",
+          "component",
+          "wit",
+          "/tmp/java718-diagnostic-r6/capture/put-once-diagnostics/compiled/component.wasm",
+          "--json"
+        ],
+        "exitCode": 0,
+        "seconds": 0.0119
+      }
+    ]
+  },
+  "commands": [
+    {
+      "stage": "source-revision",
+      "exitCode": 0,
+      "seconds": 0.005901
+    },
+    {
+      "stage": "source-status",
+      "exitCode": 0,
+      "seconds": 0.175448
+    },
+    {
+      "stage": "validator-version",
+      "exitCode": 0,
+      "seconds": 0.012019
+    },
+    {
+      "stage": "authored-wit",
+      "exitCode": 0,
+      "seconds": 0.011872
+    },
+    {
+      "stage": "validate-authored-component",
+      "exitCode": 0,
+      "seconds": 0.01169
+    },
+    {
+      "stage": "actual-component-wit",
+      "exitCode": 0,
+      "seconds": 0.011564
+    },
+    {
+      "stage": "retained-component-wit",
+      "exitCode": 0,
+      "seconds": 0.011638
+    }
+  ]
+}

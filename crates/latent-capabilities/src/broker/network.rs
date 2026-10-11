@@ -105,12 +105,36 @@ pub struct StreamConnectRequest {
 }
 
 pub type StreamInvocation = BoxFuture<'static, Result<Box<dyn OutboundStream>, StreamError>>;
+
+/// Finite instantaneous physical ownership observations for trusted node
+/// operators. Live byte counts disappear only with their retained owners;
+/// they are neither cumulative audit totals nor permission/readiness proofs.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct StreamNodeUsage {
+    pub configuration_epoch: u64,
+    pub retired_generations: usize,
+    pub stopped: bool,
+    pub owners: usize,
+    pub connections: usize,
+    pub pending_operations: usize,
+    pub retained_chunks: usize,
+    pub maintenance_owners: usize,
+    pub live_accepted_write_bytes: u64,
+    pub live_delivered_read_bytes: u64,
+}
+
 pub trait OutboundStreamInvoker: Send + Sync {
     fn start(
         &self,
         session: &CapabilitySession,
         request: StreamConnectRequest,
     ) -> Result<StreamInvocation, StreamError>;
+
+    /// Implementations use bounded nonblocking reads of their actual owners.
+    /// An unavailable observation must never be replaced by a zero count.
+    fn inspect_node_usage(&self) -> Result<Option<StreamNodeUsage>, PlatformError> {
+        Ok(None)
+    }
 }
 
 /// Each operation owns its future independently of a guest facade/Store borrow.
@@ -125,6 +149,14 @@ pub trait OutboundStream: Send + Sync {
         &self,
         bytes: Vec<u8>,
         timeout_millis: Option<u32>,
+    ) -> Result<BoxFuture<'static, Result<u32, StreamError>>, StreamError>;
+    /// Prepay the window and original native memory before invoking this
+    /// synchronous producer. The resulting future owns only materialized bytes.
+    fn write_from(
+        &self,
+        maximum: usize,
+        timeout_millis: Option<u32>,
+        produce: &mut dyn FnMut() -> Result<Vec<u8>, PlatformError>,
     ) -> Result<BoxFuture<'static, Result<u32, StreamError>>, StreamError>;
     fn ready(
         &self,
@@ -144,6 +176,25 @@ pub(super) struct NetworkUsage {
     connections: AtomicUsize,
     attempts: AtomicUsize,
     bytes: AtomicU64,
+    chunks: AtomicUsize,
+    resident_bytes: AtomicUsize,
+}
+
+pub struct StreamChunkReservation {
+    table: super::SessionResourceTableReservation,
+    bytes: usize,
+}
+impl Drop for StreamChunkReservation {
+    fn drop(&mut self) {
+        self.table.with_session(|session| {
+            session
+                .core
+                .network
+                .resident_bytes
+                .fetch_sub(self.bytes, Ordering::AcqRel);
+            session.core.network.chunks.fetch_sub(1, Ordering::AcqRel);
+        });
+    }
 }
 
 /// A lease on the original sealed activation, including queued connection
@@ -152,6 +203,16 @@ pub struct StreamScope {
     table: super::SessionResourceTableReservation,
 }
 impl CapabilitySession {
+    pub fn reserve_host_memory(
+        &self,
+        bytes: u64,
+    ) -> Result<latent_core::budget::HostMemoryReservation, PlatformError> {
+        self.check_liveness()?;
+        self.core
+            .budget
+            .reserve_host_memory(bytes)
+            .map_err(|error| error.to_platform_error())
+    }
     pub fn reserve_stream(&self) -> Result<StreamScope, PlatformError> {
         self.check_liveness()?;
         let table = self.reserve_resource_table(17 * 1024)?;
@@ -166,6 +227,44 @@ impl CapabilitySession {
     }
 }
 impl StreamScope {
+    /// Four resident payload owners, with at most 64 KiB including read copies,
+    /// across all threads/connections/closed-but-retained chunks of this Store.
+    pub fn reserve_chunk(&self, bytes: usize) -> Result<StreamChunkReservation, PlatformError> {
+        if bytes == 0 || bytes > 2 * MAXIMUM_CHUNK_BYTES {
+            return Err(super::capacity());
+        }
+        self.with_session(|session| {
+            session.check_liveness()?;
+            let table = session.reserve_resource_table(512)?;
+            session
+                .core
+                .network
+                .chunks
+                .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+                    value.checked_add(1).filter(|n| *n <= 4)
+                })
+                .map_err(|_| super::capacity())?;
+            if session
+                .core
+                .network
+                .resident_bytes
+                .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+                    value.checked_add(bytes).filter(|n| *n <= 64 * 1024)
+                })
+                .is_err()
+            {
+                session.core.network.chunks.fetch_sub(1, Ordering::AcqRel);
+                return Err(super::capacity());
+            }
+            Ok(StreamChunkReservation { table, bytes })
+        })
+    }
+    pub fn reserve_host_memory(
+        &self,
+        bytes: u64,
+    ) -> Result<latent_core::budget::HostMemoryReservation, PlatformError> {
+        self.with_session(|session| session.reserve_host_memory(bytes))
+    }
     pub fn with_session<T>(&self, inspect: impl FnOnce(&CapabilitySession) -> T) -> T {
         self.table.with_session(inspect)
     }

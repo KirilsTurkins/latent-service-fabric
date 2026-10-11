@@ -24,12 +24,15 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
           "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
           "tools/stage_runtime_wit.py", "tools/transaction_guest_project.py",
           "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
+RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
+           "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
 RECIPE += ("tools/rust_dependency_authoring.py", "tools/rust_capsule.lock") + guest_authoring_frontend.RECIPE
 RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
            "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
            "tools/dev_workflow/resource_inputs.py",
            "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/state.py",
            "tools/dev_workflow/windows.py")
+RECIPE += ("tools/transaction_guest_project.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += ('tools/guest_runtime_receipts.py',)
@@ -216,10 +219,13 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
             layers.append((name, "asset", "text/plain"))
-    from tools.transaction_guest_project import package_companion
+    from tools.transaction_guest_project import package_companion, package_effect_requirements
     companion = package_companion(output, project, files)
     if companion is not None:
         layers.append(companion)
+    effect_requirements = package_effect_requirements(output, project, files)
+    if effect_requirements is not None:
+        layers.append(effect_requirements)
     write_json(output / "package-source.json", {
         "formatVersion": 1, "kind": "capsule", "name": project["name"], "version": project["version"],
         "entrypoint": "component.wasm", "annotations": {},
@@ -384,8 +390,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             surface = read_json(derived / "surface.json")
-            stage = "compatibility"
             recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
+            stage = "compatibility"
             guest_compatibility_build.inspect(commands, paths["wasm-tools"], output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)

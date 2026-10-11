@@ -49,20 +49,23 @@ def publish_callee(client, fixture):
             "function": "answer"}
 
 
-def start_provider(client, control, *, maximum_seconds=DEFAULT_LIFETIME_SECONDS):
+def start_provider(client, control, *, maximum_seconds=DEFAULT_LIFETIME_SECONDS, port=None):
     require(type(maximum_seconds) is int and 0 < maximum_seconds <= MAX_LIFETIME_SECONDS,
             "sdk-provider-lifetime-bound")
     now = time.monotonic()
     require(type(client.deadline) in (int, float) and math.isfinite(client.deadline)
             and client.deadline > now, "sdk-provider-owner-deadline")
     deadline = min(client.deadline, now + maximum_seconds)
+    require(port is None or type(port) is int and 1 <= port <= 65535, "sdk-provider-retained-port")
+    selection = [] if port is None else ["--port", str(port)]
     process = Process([sys.executable, str(Path(__file__).with_name("sdk_provider_http_fixture.py")),
-                       "--control", str(control), "--deadline-monotonic", str(deadline)],
+                       "--control", str(control), "--deadline-monotonic", str(deadline), *selection],
                       control, client.environment, client.cancellation, maximum=4096)
     try:
         started = process.line(min(deadline, time.monotonic() + 10))
         require(set(started) == {"port"} and type(started["port"]) is int
                 and 1 <= started["port"] <= 65535, "sdk-provider-startup")
+        require(port is None or started["port"] == port, "sdk-provider-original-port")
         return process, started["port"]
     except BaseException:
         process.close()

@@ -5,8 +5,8 @@ use super::{codec, namespace_key, StateError, StateScope};
 use crate::{
     embedded::{ExpectedRow, ReadView},
     namespace::{
-        history::{history_key, HistoryEpochs, NamespaceHistory},
-        NamespaceRecord, NamespaceVersion,
+        history::{history_key, HistoryEpochs, HistoryStatus, NamespaceHistory},
+        NamespaceRecord, NamespaceStatus, NamespaceVersion,
     },
 };
 use sha2::{Digest, Sha256};
@@ -116,6 +116,7 @@ pub fn capture_view_identity(
 pub struct CapturedView {
     identity: ViewIdentity,
     history_expectation: ExpectedRow,
+    recovery_expectation: ExpectedRow,
 }
 
 impl CapturedView {
@@ -128,9 +129,23 @@ impl CapturedView {
     pub fn history_expectation(&self) -> ExpectedRow {
         self.history_expectation.clone()
     }
+
+    #[must_use]
+    pub fn recovery_expectation(&self) -> ExpectedRow {
+        self.recovery_expectation.clone()
+    }
 }
 
 pub fn capture_view(view: &ReadView, scope: &StateScope) -> Result<CapturedView, StateError> {
+    let recovery_bytes = view.get(&crate::recovery::guard_key())?;
+    if let Some(bytes) = &recovery_bytes {
+        crate::recovery::RecoveryGuard::decode(bytes)?
+            .require_ready()
+            .map_err(|error| match error {
+                crate::embedded::StoreError::Unavailable => StateError::RecoveryRequired,
+                other => StateError::from(other),
+            })?;
+    }
     let bytes = view
         .get(&namespace_key(scope)?)?
         .ok_or(StateError::PermissionDenied)?;
@@ -142,7 +157,13 @@ pub fn capture_view(view: &ReadView, scope: &StateScope) -> Result<CapturedView,
     {
         return Err(StateError::PermissionDenied);
     }
+    if namespace.status != NamespaceStatus::Active {
+        return Err(StateError::RecoveryRequired);
+    }
     let (history, history_bytes) = NamespaceHistory::capture(view, &namespace)?;
+    if history.status != HistoryStatus::Ready {
+        return Err(StateError::RecoveryRequired);
+    }
     Ok(CapturedView {
         identity: ViewIdentity {
             namespace: namespace.version,
@@ -152,6 +173,10 @@ pub fn capture_view(view: &ReadView, scope: &StateScope) -> Result<CapturedView,
             key: history_key(&scope.tenant, &scope.namespace, scope.incarnation)
                 .map_err(|_| StateError::Corrupt)?,
             value: history_bytes,
+        },
+        recovery_expectation: ExpectedRow {
+            key: crate::recovery::guard_key(),
+            value: recovery_bytes,
         },
     })
 }

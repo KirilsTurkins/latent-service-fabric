@@ -28,6 +28,7 @@ pub struct EntityPage {
     pub view: version::ViewIdentity,
 }
 
+#[derive(Clone, Copy)]
 pub struct EntityPageRequest<'a> {
     pub prefix: &'a [u8],
     pub after: Option<[u8; 32]>,
@@ -72,7 +73,50 @@ pub fn inspect_entities(
     {
         return Err(StateError::InvalidCursor);
     }
-    let mut physical_prefix = codec::key_prefix(&scope)?;
+    let entities = collect_entities(view, namespace, &request, &scope, &mut current)?;
+    let mut passed = request.after.is_none();
+    let mut output = Vec::with_capacity(request.maximum);
+    let mut more = false;
+    for entity in entities {
+        let digest: [u8; 32] = Sha256::digest(entity.as_bytes()).into();
+        if !passed {
+            passed = Some(digest) == request.after;
+            continue;
+        }
+        if output.len() == request.maximum {
+            more = true;
+            break;
+        }
+        scope.entity = Some(entity.clone());
+        output.push(EntityInspection {
+            entity,
+            version: identity.token(&scope)?,
+        });
+    }
+    if !passed {
+        return Err(StateError::InvalidCursor);
+    }
+    current()?;
+    let continuation = if more {
+        Some(Sha256::digest(output.last().ok_or(StateError::Corrupt)?.entity.as_bytes()).into())
+    } else {
+        None
+    };
+    Ok(EntityPage {
+        entities: output,
+        continuation,
+        view: identity,
+    })
+}
+
+fn collect_entities(
+    view: &ReadView,
+    namespace: &NamespaceRecord,
+    request: &EntityPageRequest<'_>,
+    scope: &StateScope,
+    current: &mut impl FnMut() -> Result<(), StateError>,
+) -> Result<BTreeSet<String>, StateError> {
+    let mut physical_prefix = codec::key_prefix(scope)?;
     if physical_prefix.pop() != Some(0) {
         return Err(StateError::Corrupt);
     }
@@ -121,37 +165,5 @@ pub fn inspect_entities(
             break;
         }
     }
-    let mut passed = request.after.is_none();
-    let mut output = Vec::with_capacity(request.maximum);
-    let mut more = false;
-    for entity in entities {
-        let digest: [u8; 32] = Sha256::digest(entity.as_bytes()).into();
-        if !passed {
-            passed = Some(digest) == request.after;
-            continue;
-        }
-        if output.len() == request.maximum {
-            more = true;
-            break;
-        }
-        scope.entity = Some(entity.clone());
-        output.push(EntityInspection {
-            entity,
-            version: identity.token(&scope)?,
-        });
-    }
-    if !passed {
-        return Err(StateError::InvalidCursor);
-    }
-    current()?;
-    let continuation = if more {
-        Some(Sha256::digest(output.last().ok_or(StateError::Corrupt)?.entity.as_bytes()).into())
-    } else {
-        None
-    };
-    Ok(EntityPage {
-        entities: output,
-        continuation,
-        view: identity,
-    })
+    Ok(entities)
 }

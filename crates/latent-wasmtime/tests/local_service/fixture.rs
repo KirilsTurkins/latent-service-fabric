@@ -45,6 +45,9 @@ mod authority;
 mod diagnostics;
 #[path = "../guest_sdk/runtime.rs"]
 mod guest_runtime;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[path = "outbound/owners.rs"]
+pub mod streams;
 
 pub struct Observations {
     pub starts: Mutex<Vec<latent_telemetry::ActivationObservationContext>>,
@@ -138,6 +141,8 @@ pub struct Fixture {
     pub target: DeploymentManifest,
     pub observations: Arc<Observations>,
     pub read_wait: Arc<ObservedReadWait>,
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub streams: Option<Box<streams::Owners>>,
     _root: tempfile::TempDir,
 }
 impl Fixture {
@@ -171,11 +176,24 @@ impl Fixture {
             provided,
             Arc::new(SyntheticFixtureLoad),
             None,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            None,
         )
         .await
     }
     pub async fn with_load_source(load: Arc<dyn NodeLoadSource>) -> Self {
-        Self::with_packages_and_load(2, false, true, None, None, load, None).await
+        Self::with_packages_and_load(
+            2,
+            false,
+            true,
+            None,
+            None,
+            load,
+            None,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            None,
+        )
+        .await
     }
     pub async fn with_activation_runtime(
         cells: u32,
@@ -195,6 +213,30 @@ impl Fixture {
             Some(provided),
             Arc::new(SyntheticFixtureLoad),
             Some((limits, call_wall_millis)),
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            None,
+        )
+        .await
+    }
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub async fn with_outbound_streams(
+        cells: u32,
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        configuration: latent_streams::StreamProviderConfig,
+    ) -> Self {
+        Self::with_packages_and_load(
+            cells,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            None,
+            Some(Box::new(configuration)),
         )
         .await
     }
@@ -215,7 +257,14 @@ impl Fixture {
         )>,
         load: Arc<dyn NodeLoadSource>,
         activation_runtime: Option<(latent_core::activation_runtime::RuntimeLimits, u64)>,
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
+            Box<latent_streams::StreamProviderConfig>,
+        >,
     ) -> Self {
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        let stream_enabled = outbound_streams.is_some();
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        let stream_enabled = false;
         let root = tempfile::tempdir().unwrap();
         let target_tenant = if foreign { "tenant-b" } else { "tenant-a" };
         let (catalog, caller, callee) = if let Some(provided) = provided {
@@ -333,8 +382,12 @@ impl Fixture {
             grants.extend(guest_runtime::grants());
             grants
         };
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if stream_enabled {
+            consumer.grants = streams::grants();
+        }
         let mut target = deployment("callee", target_tenant, &callee, &callee_publication);
-        target.grants = if activation_runtime.is_some() {
+        target.grants = if activation_runtime.is_some() || stream_enabled {
             vec![]
         } else {
             guest_runtime::grants()
@@ -432,6 +485,15 @@ impl Fixture {
                 principal: ("service", "service:8:tenant-a:6:caller"),
             },
         ];
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        let streams = outbound_streams.map(|configuration| {
+            Box::new(streams::Owners::install(
+                &broker,
+                &policies,
+                &caller_publication,
+                &configuration,
+            ))
+        });
         let guest_runtime = if let Some((_, call_wall_millis)) = activation_runtime {
             guest_runtime::Runtime::activation_scoped_with_clocks(
                 &broker,
@@ -450,6 +512,10 @@ impl Fixture {
             provider_binding_id: "installed".into(), allowed_modes: vec![BindingMode::IsolatedLocal], restriction_json: br#"{"operations":[]}"#.to_vec() };
         let mut definitions = vec![definition];
         definitions.extend(guest_runtime.definitions("tenant-a", &["caller", "callee"]));
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if streams.is_some() {
+            definitions.push(streams::Owners::definition());
+        }
         let mut providers = vec![ConfiguredBindingProvider {
             tenant: TenantId("tenant-a".into()),
             service: ServiceId("callee".into()),
@@ -457,6 +523,10 @@ impl Fixture {
             local_deployment: Some(DeploymentId("callee".into())),
         }];
         providers.extend(guest_runtime.providers("tenant-a"));
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if let Some(streams) = &streams {
+            providers.push(streams.provider());
+        }
         let (generation, transaction) = store.binding_version().unwrap();
         let update = store
             .prepare_binding_update(
@@ -475,6 +545,12 @@ impl Fixture {
             store.clone(),
         ));
         guest_runtime.install(&capabilities);
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if let Some(streams) = &streams {
+            capabilities
+                .install_outbound_streams(streams.lifecycle.clone())
+                .unwrap();
+        }
         let read_wait = Arc::new(ObservedReadWait {
             active: AtomicU64::new(0),
             entered: tokio::sync::Notify::new(),
@@ -492,7 +568,7 @@ impl Fixture {
         .unwrap();
         let backend = Arc::new(factory.create_backend_instance());
         let quotas = LocalQuotaProvider::with_profile(
-            node_policy(cells),
+            node_policy(cells, stream_enabled),
             BudgetProfile::Phase3,
             latent_core::DelegationLimits::default(),
         )
@@ -555,6 +631,8 @@ impl Fixture {
             target,
             observations,
             read_wait,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            streams,
             _root: root,
         }
     }
@@ -564,6 +642,10 @@ impl Fixture {
         request.target.contract = ContractId(component::CALLER.into());
         request.target.function = FunctionId("run".into());
         request.budget = packages::budget();
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if self.streams.is_some() {
+            request.budget.outbound_requests = 8;
+        }
         request.input = format!("[{which}]").into_bytes();
         request.input_media_type = "application/vnd.latent.wit-values.v1+json".into();
         request
@@ -658,9 +740,12 @@ fn deployment(
         .decode_deployment(&serde_json::to_vec(&document).unwrap())
         .unwrap()
 }
-fn node_policy(cells: u32) -> latent_admission::NodeAdmissionPolicy {
+fn node_policy(cells: u32, stream_enabled: bool) -> latent_admission::NodeAdmissionPolicy {
     let mut policy = admission_fixture::node_policy(cells);
     policy.budget_ceiling = packages::budget();
+    if stream_enabled {
+        policy.budget_ceiling.outbound_requests = 8;
+    }
     policy.architecture = std::env::consts::ARCH.into();
     policy.limits.maximum_reserved_cpu_fuel = packages::budget().cpu_fuel * 8;
     policy.limits.maximum_reserved_memory_bytes = packages::budget().memory_bytes * 8;

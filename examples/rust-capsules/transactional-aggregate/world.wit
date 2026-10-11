@@ -2,7 +2,11 @@ package examples:transactional-aggregate@1.0.0;
 
 interface api {
     record update-request { delta: u32, reject: bool }
-    record aggregate { count: u64, version: list<u8> }
+    record aggregate {
+        count: u64,
+        view-version: list<u8>,
+        key-version: option<list<u8>>,
+    }
     record scan-result {
         count: u32,
         encoded-bytes: u64,

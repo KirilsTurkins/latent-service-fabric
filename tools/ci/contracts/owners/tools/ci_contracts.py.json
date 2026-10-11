@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/ci_contracts.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review strict Python-only v2 physical storage normalization, flat digest/reference checks and the original decoded-byte bound without changing semantic v1 contracts or proposal review requirements.",
+  "reviewReason": "Review strict Python-only v2 physical storage normalization, flat digest/reference checks and the original decoded-byte bound without changing semantic v1 contracts or proposal review requirements. Decode Python test source explicitly as UTF-8 so reviewed guards are stable on Windows and Linux.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3904e8c00c63a36f3f2b958a0d44781f39fa472ce8e747fd1cdd75b8c910da88"
+  "sha256": "6ee97f61c2162e0298e4e8076a0ad23866f217f94497dbe07df9ec073d4f9518"
 }

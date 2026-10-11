@@ -79,6 +79,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands.run("contracts", paths["contracts-tool"], wit_input, derived)
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
+            surface = read_json(derived / "surface.json")
+            recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             stage = "compiler-inputs"
             verified = verify_inputs(observed.dependency_root, 'dotnet')
             compiler = Compiler(tools, commands, work / "vendor/lsf", offline=offline, captured=verified is not None)
@@ -117,9 +119,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             write_json(output / "bindings.json", generated)
-            surface = read_json(derived / "surface.json")
             stage = "compatibility"
-            recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             guest_compatibility_build.inspect(commands, compiler.wasm, output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)

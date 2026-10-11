@@ -1,0 +1,893 @@
+{
+  "formatVersion": 1,
+  "date": "2026-10-10",
+  "scope": "Fresh signed local-service fixtures; full Java runtime and unchanged-library qualification remain pending",
+  "sourceHeads": {
+    "originalPr": "406f9e4075f1804051ff831c9395e15a9d1cdee4",
+    "integratedDevelopment": "01748829e2225a9655c87c6a02e3030f6457a1d8"
+  },
+  "runtimeSourceInputs": {
+    "crates/latent-wasmtime/tests/local_service/runtime.rs": "sha256:981da182a89a9b852d630eef86c527616cf51ba085f9299d22cbd143f2570804",
+    "crates/latent-wasmtime/tests/local_service/fixture.rs": "sha256:1a04cf3a1943c8655f7f0736367d5186ebf4dc67742458b2f6ea8eefae399c1b",
+    "crates/latent-wasmtime/tests/local_service/packages.rs": "sha256:d7e4bf348968cf90890d2ecef0183d99cb6d776cba5786467c0b4f7cca028e01",
+    "crates/latent-wasmtime/tests/guest_sdk/runtime.rs": "sha256:3abc2846ff09d68ebd196c119832ccd7032709095346208b747d17eac2f670bb",
+    "wit/platform/activation-runtime/package.wit": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+    "Cargo.lock": "sha256:3023aaf71a95a786921226051f1cdee75711db941d1fdc11f88a3dffd2c62db1"
+  },
+  "tools": {
+    "rust": "1.97.1",
+    "python": "3.13.5",
+    "java": "25.0.4.1+1",
+    "gradle": "9.1.0",
+    "teaVM": "0.15.0",
+    "wasiSdk": "29",
+    "wasmTools": "1.254.0",
+    "wasmtime": "48.0.5"
+  },
+  "limits": {
+    "cpuFuel": 10000000000,
+    "memoryBytes": 67108864,
+    "wallTimeLimitMillis": 120000,
+    "tasks": 5,
+    "executors": 3,
+    "queuedWork": 8,
+    "waits": 8,
+    "timers": 2,
+    "results": 8,
+    "nativeOwners": 2
+  },
+  "coldPreparation": {
+    "watchdogSeconds": 600,
+    "activationStarted": false,
+    "guestStoresCreated": 0,
+    "guestBudgetsChanged": false
+  },
+  "retirement": {
+    "checkedAfterEachCall": true,
+    "timeoutSeconds": 2,
+    "zeroCounters": [
+      "activeActivations",
+      "cancellationRegistrations",
+      "schedulerActiveLeases",
+      "schedulerQueueDepth",
+      "instanceReservations",
+      "liveStores",
+      "brokerCalls",
+      "brokerSessions",
+      "brokerHandles",
+      "brokerResults",
+      "brokerBufferBytes"
+    ]
+  },
+  "productionProfileEnabled": false,
+  "fixtures": [
+    {
+      "name": "completable",
+      "test": "runtime::signed_java_completable_futures_use_default_activation_executor",
+      "compilerStatus": "component-built-unqualified",
+      "compilerQualification": "pending",
+      "compilerNodeExecution": "not-run",
+      "sourceDigest": "sha256:332d25d65c8835f201d253c5f6d266c2bfb7aa94b5e4bad92f252ad97b4b2c81",
+      "componentDigest": "sha256:eca3a69e7770c1d11c97e0a6bf6bf075db7525f1165b6fbe842d4d46856a20c5",
+      "componentBytes": 4400713,
+      "compilerReportDigest": "sha256:26151339633f2225d30859f0046f76f4ee6076ed2c6ef8c59073f4d3e5408798",
+      "sdkInputs": {
+        "bindings.lock.json": "sha256:82250bf8bc0dfd03e836f03d25b6304e5cc4e52c4825ed8983ee80af70c82966",
+        "client/compiler/dev/latent/guest/client/compiler/HttpPlugin.java": "sha256:ca3f503ec391949a276296cf84e3864eecbb9c5bbbef8c2cd3264798767b6513",
+        "client/dev/latent/guest/client/Connection.java": "sha256:e23d5c4e84f9dc9e3d511faae997e518af9b40c5b4c28a2d2c8e07b277397a86",
+        "client/dev/latent/guest/client/HttpFailure.java": "sha256:e538d7e8cd1a606f53527e9f73c45a64c7cdf25ac3af2f48c9314c77aeb03495",
+        "client/dev/latent/guest/client/StandardMembers.java": "sha256:919bcf39dd73efb75ea2f548b76ade5558efe0a6c426f62a2b3e40f146560f68",
+        "client/dev/latent/guest/client/StreamHandler.java": "sha256:7f64983efe2dd94c8496fafa2771a6a4647595de80e77ad84ee20dc9159ab816",
+        "client/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin": "sha256:6b6726b06cae0ce58ce40afe76c191c3629d2e59eea02389a1f4c39b5709c931",
+        "compiler.gradle": "sha256:a088e5d7049510389915cef55dc7833f0415155a847373a67be8b4da651840ef",
+        "feasibility/closed-runtime.wat": "sha256:5cc7f5b37abb698acc319a9ae1589fbbb54788abf46c0027fb0933bd2e6e0874",
+        "feasibility/dependencies.lock.json": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+        "feasibility/gradle/verification-metadata.xml": "sha256:2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30",
+        "feasibility/platform.c": "sha256:d5d3662aa5def128b7858e61c5746038a26d47a409c22bb731bc72fbed336aad",
+        "feasibility/settings.gradle": "sha256:23755faa9365a644fa70a39f8a1ef83e99422914fc67b85d6df51e60984d7982",
+        "fibers/analysis/SourceOrigins.java": "sha256:ea08f33555c785740a1c132987525ceb3ac98d32673a9350f4d73fc312041c5b",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java": "sha256:fc7253b0e968b1d9d961a14f72ae3a7a1d32ffdd61eb3d9be4e9c3e16c79b278",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java": "sha256:4820f3b9a4a76c22b6c6110488c98f7094fae05f4d4c628513206491b057a587",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java": "sha256:13b16ef78e0af8e6ac19e3397714b841c41a3913f75428c290a051ae02c5259c",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java": "sha256:7f5c0b54e8ec17ac62f79224914105da4085cb8f73792c025cb27786240006f4",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java": "sha256:ff3318393a22fac68998cf7ba6e219e71f454e6e5bf53162ae583f07a5609161",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java": "sha256:c8942a70c5f6b0dd789474f7238eb0db2e2dce9ff02561d52c6e9d4b858f202e",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java": "sha256:e8e69c388a711c5630c0adc8b4f10e2ab913f27dacb5bc524ab1ac67e23bbc98",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java": "sha256:33f89cb353b7a2a01049d883094872a5d8ff60e6ee48bef39da42f45221a9e81",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java": "sha256:e0f0c8a78d0b51b46c9d671c93e085717750934af415aa9a46d18e710c3b64f8",
+        "fibers/conformance/Capsule.java": "sha256:6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8",
+        "fibers/conformance/Main.java": "sha256:a96aca25de5763b79e0a38c8198d8fdb31be39c041f4379975b3b45238077b55",
+        "fibers/conformance/compiler/CompletableFutureExecutorAcceptanceOwnerControl.java": "sha256:dad023e7239ae1ab191d93ccd716143987a8ce8d20cbe620dcd1ccaf9ef7a6bf",
+        "fibers/conformance/compiler/CompletableFutureExecutorThrowReferenceControl.java": "sha256:7c80ec01f16004b093d31f7dda4af46f11576275ee7cb6cf263924c410c30a20",
+        "fibers/conformance/compiler/CompletableFutureExecutorUncertainOwnerControl.java": "sha256:8037ac55f1528f8e27dc80a3a51819aa32843422bd67dae6063e94e081beeb90",
+        "fibers/conformance/compiler/CompletableFutureModelControl.java": "sha256:8524af8f6945912baacf6a533b89487b61f431f11956b8e67c2d3c46ec66831e",
+        "fibers/conformance/compiler/CompletableFutureNativeControl.java": "sha256:da3ba1825f109a9424e5fcc51c54f68d3dd0bd3229434301b845e47a28a97f2a",
+        "fibers/conformance/compiler/CompletableFutureOwnerControl.java": "sha256:480904e4d771e869749646a7c99881116f1b7ed7f0be247b495f4ea843133b5c",
+        "fibers/conformance/compiler/QueueDeadlineModelControl.java": "sha256:7f9b71f04026a5d974d9b241563a71728a04d89a91207134eb0fd979ed07f2e1",
+        "fibers/conformance/compiler/ThrowableInitializationControl.java": "sha256:054d9c090494b09886c68cac7a9c6692571680c135b2cc0a0aaab492331b298f",
+        "fibers/conformance/compiler/TimeUnitModelControl.java": "sha256:0c3ce1612aefbe767dd76561fca4eccf134723b73b17f6dea0fa5174add62304",
+        "fibers/conformance/compiler/TimeUnitNativeControl.java": "sha256:c0b184f181cb90458118cd5c6ecaff0b9102e02a02c22a757b6256995b8e0f18",
+        "fibers/conformance/compiler/WaitFrameModelControl.java": "sha256:e6f87114da8deb730fcdc534f0bcef15b246a54326a1ee4a6d5608243dfc95b9",
+        "fibers/conformance/compiler/WaitFramePluginOrder.java": "sha256:c7b55b90997026a26068ef354cb9b6f19c164bf3ea29848abc98f6c100024933",
+        "fibers/conformance/compiler/source-control/PrivateSourceRunner.java": "sha256:c17f10e805098a2d75924349b850e580c6c6d61fa6917bbfd7301742ffd37cd1",
+        "fibers/conformance/compiler/source-control/dev/latent/generated/Bindings.java": "sha256:fd4856b438535f419b5d0f76b1e82abaca5d0e249975b725ca29afff32e77d3c",
+        "fibers/conformance/compiler/source-control/dev/latent/guest/runtime/Activation.java": "sha256:9a60d06f61bc909bf2ee9368cf2644bc5c0a67fb3f7865121b2b8bdb484c3b2d",
+        "fibers/conformance/compiler/source-control/dev/latent/guest/runtime/concurrent/Executors.java": "sha256:077912210e90bf3d36a9d24151a64ac6f30a1d57834dae2d614a000520a60488",
+        "fibers/conformance/compiler/source-control/org/teavm/dependency/LambdaEmitterControlContext.java": "sha256:62946adf455a102ed57550b933d5832894299551a484c6a9652e55d26262ca43",
+        "fibers/conformance/compiler/timer-source-control/TimerReadinessSourceControl.java": "sha256:525069928e6907205380f1f4728f00b81a31d5e706ea43ad5d3634889e24a567",
+        "fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java": "sha256:3d7e29553798e2f42515499ada87d2baa29ba2e88ebd329971a9ba0cfc75e975",
+        "fibers/conformance/completable/Capsule.java": "sha256:332d25d65c8835f201d253c5f6d266c2bfb7aa94b5e4bad92f252ad97b4b2c81",
+        "fibers/conformance/completable/Main.java": "sha256:5d176eccd17d12d61b8fb05de2272c5bec8f033715b8ee0daca3c7f823e19149",
+        "fibers/conformance/service.wit": "sha256:14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236",
+        "fibers/dev/latent/guest/runtime/Activation.java": "sha256:f42d1fb2ea6a47a9d5eb872f647e608fc2b5fe3c73e15912eb842e280c4fb05f",
+        "fibers/dev/latent/guest/runtime/Monitors.java": "sha256:ee2cad97eeca8edf024f20da7f974583b3fc445b0fabee4c9102e8aca9aa341e",
+        "fibers/dev/latent/guest/runtime/concurrent/AbstractExecutorService.java": "sha256:3654119185bc8dbef26f1e28a310395cef9f5fbe851e4534fc15b0387be25ece",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletableFuture.java": "sha256:66a424517efaa74496fd6e60b13af27f83023abf3a82d14de4e7c5bd5f467aa5",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletionException.java": "sha256:e745f58e7e0e41d42b55303d2a7329799348a0ab77a2cde81810466a3d256482",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletionStage.java": "sha256:e980415748ea784a24510b3916ecedb7747d692dd9267459e0587e085c827140",
+        "fibers/dev/latent/guest/runtime/concurrent/ExecutorService.java": "sha256:c115a8e148278b324414a8ad4b4ad3cda23ce8daaf9e58ba40581b72ea6805bb",
+        "fibers/dev/latent/guest/runtime/concurrent/Executors.java": "sha256:99b83e98d68442a5c0dfbf442eca78f295ba76242824dcbf371c45165e871df7",
+        "fibers/dev/latent/guest/runtime/concurrent/Future.java": "sha256:4a688803e8209e56ce331ece8291740cfee79d63e063fbab441aa6dd36e87f76",
+        "fibers/dev/latent/guest/runtime/concurrent/FutureTask.java": "sha256:e5c19c5fe00bd0d773c51ac1635a30e59299c2d3d60e412c3f0e026ce116d5c3",
+        "fibers/dev/latent/guest/runtime/concurrent/ManagedExecutor.java": "sha256:08f8133cc28836b2296893d0efc265298e15c8aa72fd8defad97e1900e3b0d92",
+        "fibers/dev/latent/guest/runtime/concurrent/RejectedExecutionException.java": "sha256:e21010bc97c6990e75877998547ed8bef4c185294a3feb3e3b1d5b16c622b4ba",
+        "fibers/dev/latent/guest/runtime/concurrent/RunnableFuture.java": "sha256:cf3e9e8bab8aecf190dab76e5f7e7e4333057b65ea9112670dd6cb8521fd6328",
+        "fibers/dev/latent/guest/runtime/concurrent/ThreadFactory.java": "sha256:1aed06e12da6b8111a47dbc2266ee0eb0d51db5f4a9c25e9e59eb70c3cd4e0b6",
+        "fibers/dev/latent/guest/runtime/concurrent/TimeUnit.java": "sha256:6c829473167d1cbe05f4fcb858a0f5f355209711ee3959ec58f2d6c569ac1ab1",
+        "fibers/dev/latent/guest/runtime/concurrent/TimeoutException.java": "sha256:9b0d6e7a88746f81b0fdb8804d25a727459db8463d35738afcfee3830a3ae462",
+        "fibers/dev/latent/guest/runtime/lang/IllegalThreadStateException.java": "sha256:83947523c65623a32529382307165d76e834cbb7db43f0fdd49b541b8ce2b5ee",
+        "fibers/services/META-INF/services/org.teavm.extension.spi.substitution.SubstitutionPolicy": "sha256:63aeefe90f3f53194148af50cd1979161641af701e99afcaf933f7d47f331722",
+        "fibers/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin": "sha256:fc6191902956c60cc7a13507ed9e3cba8f233269ff133bc41aa9882e06ea1410",
+        "resources/compiler/dev/latent/guest/resources/compiler/ImmutableResourcePlugin.java": "sha256:73dff0e6ff259f800ce1fc1658a5cb4512893c3d4cdbd30e8e612401678fa98c",
+        "resources/conformance/ImmutableResourceModelControl.java": "sha256:09951194e7172b32c4f9a2226ca63985618d341942a5826ed62a1ece5730b59b",
+        "resources/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin": "sha256:32e9032d90ce3ef988d35aa3c11a087ab867a8e977824b56c92a32a3d035ba6d",
+        "runtime/bridge.h": "sha256:66428dca085509e2aa2aa543af4927949f8f1176255351a6e24b73641b078ec3",
+        "runtime/dev/latent/guest/BufferedWebResponseValidator.java": "sha256:caf6a2bf912fbaadad9f673551a10d2fec20edb874216019845392e7d807323f",
+        "runtime/dev/latent/guest/Handle.java": "sha256:5d00dda66f7c167bd8e7f3e98d8e5be5c69225b8cd4744426f2dcabc1d63a63a",
+        "runtime/dev/latent/guest/Intent.java.in": "sha256:ba3876ddc0ca1b9b0bbf53cb73a9477529ee055b5984ae9be4edcb5966027168",
+        "runtime/dev/latent/guest/Option.java": "sha256:aa45393e65f74c005bdb2e0b9ac32a5a4e8b717090bc4c1ff8b9ec7cda681468",
+        "runtime/dev/latent/guest/Resource.java": "sha256:5ec05ea064c1ff25a4af8c3ff2948beef46ba3e711a956016481fb2b65449da2",
+        "runtime/dev/latent/guest/Result.java": "sha256:0a65cdf987fe048f3d467a090662b4ab4d340b74bdcb35598ca4f7e2c6142743",
+        "runtime/dev/latent/guest/SensitiveBytes.java": "sha256:27cf682fc87999875f81611c9575674e2e43bfee0e1fe55950e357ceec83f870",
+        "runtime/dev/latent/guest/State.java.in": "sha256:f437a93ff5d9494c9184c8952cbc775823bb2b8006940d0826e94557e2d1d765",
+        "runtime/dev/latent/guest/Text.java": "sha256:0d1909cfe30b5cf0fb0a312ac03fbced5171c4c5e971d43f6d736e46872920cc",
+        "runtime/dev/latent/guest/Unit.java": "sha256:4fbf8085595c1c3f7c5494e3ce1efcb0a738161960863e85d24b0489a7500cf8",
+        "runtime/dev/latent/guest/Unsigned64.java": "sha256:63d81a6e1bf67638e718e2eaf00565fc71ebdd1153fff23b0fafd04949ef3da6",
+        "runtime/dev/latent/guest/Wire.java": "sha256:1f58751b4c7f6b2f2e439cd732a36a29cc744cf30304bc1a72a8d79bac8139f6",
+        "runtime/native.h": "sha256:cdbf1bdf723470622a1d27e8b9e6034a4781aa6787c0d80aa872f3680ceeb5a1",
+        "server/analysis/ServerAnalyzer.java": "sha256:5ac9b701df5800d813d211da38f1c5b437523769acb27cc7eeec16fc8dbcb3cf",
+        "server/compiler/dev/latent/guest/server/compiler/ServerPlugin.java": "sha256:4246ac20a4c21c5a150ed1f059153f75bcb990ae66969655c941cd65d53bbf70",
+        "server/compiler/dev/latent/guest/server/compiler/ServerSubstitution.java": "sha256:483fe84624df6f79152ff69fc2b8721ce2c660e0e379e2467b7a2638ca4d48e0",
+        "server/dev/latent/guest/server/http/Headers.java": "sha256:6da1f6d198e54bc633f105f0df5435457132ba4608142905d86373ddcc30d8fc",
+        "server/dev/latent/guest/server/http/HttpContext.java": "sha256:fe9a9da991c3f4d9d49c39758bf4bc73dd8943e4d2ab577e47f3ccb3dd1a3b14",
+        "server/dev/latent/guest/server/http/HttpExchange.java": "sha256:1efb3e2b9551d65e9e11100ad481ae92c5db8ddca15bdcc5f5c4340df82a7331",
+        "server/dev/latent/guest/server/http/HttpHandler.java": "sha256:3fea23b3c8b978170eca701be3ab5fef603d6bb8bb6c4561c90b81bca228075c",
+        "server/dev/latent/guest/server/http/HttpServer.java": "sha256:b3269969f2586abb102f56f5f0ef0378557263bbe1a28bed034c2cc140fec33b",
+        "server/dev/latent/guest/server/http/ServerSession.java": "sha256:777a4cc4f820d0663d13c61fa06fd1acc109be055a6394f6cde275ffb2124df8",
+        "server/dev/latent/guest/server/net/InetAddress.java": "sha256:74d701369d130ea81f7f9c35b9baf6befd6a91e544abae20ca495b009ef301ad",
+        "server/dev/latent/guest/server/net/InetSocketAddress.java": "sha256:994f142ef502bab2608cffbe46e66552a04d8ba04cbf18f199229326804ea41b",
+        "server/dev/latent/guest/server/net/SocketAddress.java": "sha256:3cc5189d87ac04d8235eb51ceeafe248251ccdf71c2aa688c44b767e24d92d22",
+        "server/services/META-INF/services/org.teavm.extension.spi.substitution.SubstitutionPolicy": "sha256:a6eb63f9ae2476f7a3860488a805e585cccb413d7100b1bc563be2c2af4c2da1",
+        "server/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin": "sha256:cc3f5ed31c1f82703c77282c6414f5026f06c1a7b4141f69210462124f6c594f",
+        "server/templates/Capsule.java": "sha256:18d4a66f11bae7f68ebb9a85a2054d6d0a24872bd3f570788131145d3ff15fda",
+        "server/templates/Server.java": "sha256:2a6ab95d8f76295a5e19cf15850cc3e6719d353d68a8664c79407468577cec12",
+        "templates/greeting.java": "sha256:b3ef5de6dd9c15fc8c292112b657375b55e07722296a387bf0fe776ccbd95b62",
+        "templates/http-status.java": "sha256:d9fd6b5f0a8e1b2f138a1ace7bce59ef86757663184ee5b47bc5b77e98c1e9a6",
+        "templates/recovery.java": "sha256:93fa2fe75d40c688ed730666a4d4d4551fd398356852daf7ee0f6dea3c045b95",
+        "templates/shipping.java": "sha256:52c40e4a0af92515a923d0d53c2f2d5adfd712e82319206b2d4037370a5cd127",
+        "templates/transactional-aggregate.java": "sha256:28939cbc29ad95e2f963cc2e7e6b13fe126368427ee70b0206a3012ad5006039",
+        "templates/word-count.java": "sha256:36924c01937175faa45beff0c09f716b40e85f4b3a988b207077eb434fd26334",
+        "tools/capture.py": "sha256:99283643627ff4905a51112888994a6ed599c894824b531967cfb7e248746939",
+        "tools/dependencies.py": "sha256:770a90fc706bdbe961fb25757784b8b6d0826f1a194cc95da91a6f06fd01a9b1",
+        "tools/feasibility.py": "sha256:429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c",
+        "tools/teavm_platform.py": "sha256:0e1a6aa652e6012081f27faf7fca36ae023d74fa21ddaf61848d97fc6f178247",
+        "wit/world.wit": "sha256:806182a284782a4db4e5fc2e4f5f3bf47b78b04fa291d1eab8cef8f177f71882"
+      },
+      "reference": [
+        {
+          "iteration": 0,
+          "modes": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "results": [
+            42,
+            42,
+            42,
+            42
+          ]
+        },
+        {
+          "iteration": 1,
+          "modes": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "results": [
+            42,
+            42,
+            42,
+            42
+          ]
+        },
+        {
+          "iteration": 2,
+          "modes": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "results": [
+            42,
+            42,
+            42,
+            42
+          ]
+        }
+      ],
+      "signedNativeTestPassed": true,
+      "nativeLogDigest": "sha256:294d1ece6a25650c9cad672a88ef9ae9e5bc8e0da6e54536c6f1557031418d60",
+      "calls": [
+        {
+          "iteration": 0,
+          "mode": 0,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 6065232,
+            "peak_memory_bytes": 9373696,
+            "wall_time_micros": 28097,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 0,
+          "mode": 1,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5747945,
+            "peak_memory_bytes": 9373512,
+            "wall_time_micros": 12129,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 0,
+          "mode": 2,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5733549,
+            "peak_memory_bytes": 9373880,
+            "wall_time_micros": 30941,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 0,
+          "mode": 3,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5533324,
+            "peak_memory_bytes": 9373696,
+            "wall_time_micros": 45640,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 1,
+          "mode": 0,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 6065232,
+            "peak_memory_bytes": 9373696,
+            "wall_time_micros": 27357,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 1,
+          "mode": 1,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5747945,
+            "peak_memory_bytes": 9373512,
+            "wall_time_micros": 14996,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 1,
+          "mode": 2,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5733549,
+            "peak_memory_bytes": 9373880,
+            "wall_time_micros": 33577,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 1,
+          "mode": 3,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5533324,
+            "peak_memory_bytes": 9373696,
+            "wall_time_micros": 46230,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 2,
+          "mode": 0,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 6065232,
+            "peak_memory_bytes": 9373696,
+            "wall_time_micros": 29345,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 2,
+          "mode": 1,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5747945,
+            "peak_memory_bytes": 9373512,
+            "wall_time_micros": 14502,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 2,
+          "mode": 2,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5733549,
+            "peak_memory_bytes": 9373880,
+            "wall_time_micros": 31620,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 2,
+          "mode": 3,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5533324,
+            "peak_memory_bytes": 9373696,
+            "wall_time_micros": 44941,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "threads",
+      "test": "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
+      "compilerStatus": "component-built-unqualified",
+      "compilerQualification": "pending",
+      "compilerNodeExecution": "not-run",
+      "sourceDigest": "sha256:6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8",
+      "componentDigest": "sha256:dcc8a0044f0507924cd8912651f3fe03390d34d1cd6dd605fd3b2599d2e6d47d",
+      "componentBytes": 11990081,
+      "compilerReportDigest": "sha256:70b724cfac4a9be2f31c05300d955a88ca75e76cf87ac8d0de2df88d1aa8eae8",
+      "sdkInputs": {
+        "bindings.lock.json": "sha256:82250bf8bc0dfd03e836f03d25b6304e5cc4e52c4825ed8983ee80af70c82966",
+        "client/compiler/dev/latent/guest/client/compiler/HttpPlugin.java": "sha256:ca3f503ec391949a276296cf84e3864eecbb9c5bbbef8c2cd3264798767b6513",
+        "client/dev/latent/guest/client/Connection.java": "sha256:e23d5c4e84f9dc9e3d511faae997e518af9b40c5b4c28a2d2c8e07b277397a86",
+        "client/dev/latent/guest/client/HttpFailure.java": "sha256:e538d7e8cd1a606f53527e9f73c45a64c7cdf25ac3af2f48c9314c77aeb03495",
+        "client/dev/latent/guest/client/StandardMembers.java": "sha256:919bcf39dd73efb75ea2f548b76ade5558efe0a6c426f62a2b3e40f146560f68",
+        "client/dev/latent/guest/client/StreamHandler.java": "sha256:7f64983efe2dd94c8496fafa2771a6a4647595de80e77ad84ee20dc9159ab816",
+        "client/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin": "sha256:6b6726b06cae0ce58ce40afe76c191c3629d2e59eea02389a1f4c39b5709c931",
+        "compiler.gradle": "sha256:a088e5d7049510389915cef55dc7833f0415155a847373a67be8b4da651840ef",
+        "feasibility/closed-runtime.wat": "sha256:5cc7f5b37abb698acc319a9ae1589fbbb54788abf46c0027fb0933bd2e6e0874",
+        "feasibility/dependencies.lock.json": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+        "feasibility/gradle/verification-metadata.xml": "sha256:2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30",
+        "feasibility/platform.c": "sha256:d5d3662aa5def128b7858e61c5746038a26d47a409c22bb731bc72fbed336aad",
+        "feasibility/settings.gradle": "sha256:23755faa9365a644fa70a39f8a1ef83e99422914fc67b85d6df51e60984d7982",
+        "fibers/analysis/SourceOrigins.java": "sha256:ea08f33555c785740a1c132987525ceb3ac98d32673a9350f4d73fc312041c5b",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java": "sha256:fc7253b0e968b1d9d961a14f72ae3a7a1d32ffdd61eb3d9be4e9c3e16c79b278",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java": "sha256:4820f3b9a4a76c22b6c6110488c98f7094fae05f4d4c628513206491b057a587",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java": "sha256:13b16ef78e0af8e6ac19e3397714b841c41a3913f75428c290a051ae02c5259c",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java": "sha256:7f5c0b54e8ec17ac62f79224914105da4085cb8f73792c025cb27786240006f4",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java": "sha256:ff3318393a22fac68998cf7ba6e219e71f454e6e5bf53162ae583f07a5609161",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java": "sha256:c8942a70c5f6b0dd789474f7238eb0db2e2dce9ff02561d52c6e9d4b858f202e",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java": "sha256:e8e69c388a711c5630c0adc8b4f10e2ab913f27dacb5bc524ab1ac67e23bbc98",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java": "sha256:33f89cb353b7a2a01049d883094872a5d8ff60e6ee48bef39da42f45221a9e81",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java": "sha256:e0f0c8a78d0b51b46c9d671c93e085717750934af415aa9a46d18e710c3b64f8",
+        "fibers/conformance/Capsule.java": "sha256:6a2f7a5a13b3295761b0f18989e47cc7ff106a7c9546c559492247fcd36430c8",
+        "fibers/conformance/Main.java": "sha256:a96aca25de5763b79e0a38c8198d8fdb31be39c041f4379975b3b45238077b55",
+        "fibers/conformance/compiler/CompletableFutureExecutorAcceptanceOwnerControl.java": "sha256:dad023e7239ae1ab191d93ccd716143987a8ce8d20cbe620dcd1ccaf9ef7a6bf",
+        "fibers/conformance/compiler/CompletableFutureExecutorThrowReferenceControl.java": "sha256:7c80ec01f16004b093d31f7dda4af46f11576275ee7cb6cf263924c410c30a20",
+        "fibers/conformance/compiler/CompletableFutureExecutorUncertainOwnerControl.java": "sha256:8037ac55f1528f8e27dc80a3a51819aa32843422bd67dae6063e94e081beeb90",
+        "fibers/conformance/compiler/CompletableFutureModelControl.java": "sha256:8524af8f6945912baacf6a533b89487b61f431f11956b8e67c2d3c46ec66831e",
+        "fibers/conformance/compiler/CompletableFutureNativeControl.java": "sha256:da3ba1825f109a9424e5fcc51c54f68d3dd0bd3229434301b845e47a28a97f2a",
+        "fibers/conformance/compiler/CompletableFutureOwnerControl.java": "sha256:480904e4d771e869749646a7c99881116f1b7ed7f0be247b495f4ea843133b5c",
+        "fibers/conformance/compiler/QueueDeadlineModelControl.java": "sha256:7f9b71f04026a5d974d9b241563a71728a04d89a91207134eb0fd979ed07f2e1",
+        "fibers/conformance/compiler/ThrowableInitializationControl.java": "sha256:054d9c090494b09886c68cac7a9c6692571680c135b2cc0a0aaab492331b298f",
+        "fibers/conformance/compiler/TimeUnitModelControl.java": "sha256:0c3ce1612aefbe767dd76561fca4eccf134723b73b17f6dea0fa5174add62304",
+        "fibers/conformance/compiler/TimeUnitNativeControl.java": "sha256:c0b184f181cb90458118cd5c6ecaff0b9102e02a02c22a757b6256995b8e0f18",
+        "fibers/conformance/compiler/WaitFrameModelControl.java": "sha256:e6f87114da8deb730fcdc534f0bcef15b246a54326a1ee4a6d5608243dfc95b9",
+        "fibers/conformance/compiler/WaitFramePluginOrder.java": "sha256:c7b55b90997026a26068ef354cb9b6f19c164bf3ea29848abc98f6c100024933",
+        "fibers/conformance/compiler/source-control/PrivateSourceRunner.java": "sha256:c17f10e805098a2d75924349b850e580c6c6d61fa6917bbfd7301742ffd37cd1",
+        "fibers/conformance/compiler/source-control/dev/latent/generated/Bindings.java": "sha256:fd4856b438535f419b5d0f76b1e82abaca5d0e249975b725ca29afff32e77d3c",
+        "fibers/conformance/compiler/source-control/dev/latent/guest/runtime/Activation.java": "sha256:9a60d06f61bc909bf2ee9368cf2644bc5c0a67fb3f7865121b2b8bdb484c3b2d",
+        "fibers/conformance/compiler/source-control/dev/latent/guest/runtime/concurrent/Executors.java": "sha256:077912210e90bf3d36a9d24151a64ac6f30a1d57834dae2d614a000520a60488",
+        "fibers/conformance/compiler/source-control/org/teavm/dependency/LambdaEmitterControlContext.java": "sha256:62946adf455a102ed57550b933d5832894299551a484c6a9652e55d26262ca43",
+        "fibers/conformance/compiler/timer-source-control/TimerReadinessSourceControl.java": "sha256:525069928e6907205380f1f4728f00b81a31d5e706ea43ad5d3634889e24a567",
+        "fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java": "sha256:3d7e29553798e2f42515499ada87d2baa29ba2e88ebd329971a9ba0cfc75e975",
+        "fibers/conformance/completable/Capsule.java": "sha256:332d25d65c8835f201d253c5f6d266c2bfb7aa94b5e4bad92f252ad97b4b2c81",
+        "fibers/conformance/completable/Main.java": "sha256:5d176eccd17d12d61b8fb05de2272c5bec8f033715b8ee0daca3c7f823e19149",
+        "fibers/conformance/service.wit": "sha256:14c7bb47a7634153b4dcf39473a31f7f87f971f8c90a602b378be498dc938236",
+        "fibers/dev/latent/guest/runtime/Activation.java": "sha256:f42d1fb2ea6a47a9d5eb872f647e608fc2b5fe3c73e15912eb842e280c4fb05f",
+        "fibers/dev/latent/guest/runtime/Monitors.java": "sha256:ee2cad97eeca8edf024f20da7f974583b3fc445b0fabee4c9102e8aca9aa341e",
+        "fibers/dev/latent/guest/runtime/concurrent/AbstractExecutorService.java": "sha256:3654119185bc8dbef26f1e28a310395cef9f5fbe851e4534fc15b0387be25ece",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletableFuture.java": "sha256:66a424517efaa74496fd6e60b13af27f83023abf3a82d14de4e7c5bd5f467aa5",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletionException.java": "sha256:e745f58e7e0e41d42b55303d2a7329799348a0ab77a2cde81810466a3d256482",
+        "fibers/dev/latent/guest/runtime/concurrent/CompletionStage.java": "sha256:e980415748ea784a24510b3916ecedb7747d692dd9267459e0587e085c827140",
+        "fibers/dev/latent/guest/runtime/concurrent/ExecutorService.java": "sha256:c115a8e148278b324414a8ad4b4ad3cda23ce8daaf9e58ba40581b72ea6805bb",
+        "fibers/dev/latent/guest/runtime/concurrent/Executors.java": "sha256:99b83e98d68442a5c0dfbf442eca78f295ba76242824dcbf371c45165e871df7",
+        "fibers/dev/latent/guest/runtime/concurrent/Future.java": "sha256:4a688803e8209e56ce331ece8291740cfee79d63e063fbab441aa6dd36e87f76",
+        "fibers/dev/latent/guest/runtime/concurrent/FutureTask.java": "sha256:e5c19c5fe00bd0d773c51ac1635a30e59299c2d3d60e412c3f0e026ce116d5c3",
+        "fibers/dev/latent/guest/runtime/concurrent/ManagedExecutor.java": "sha256:08f8133cc28836b2296893d0efc265298e15c8aa72fd8defad97e1900e3b0d92",
+        "fibers/dev/latent/guest/runtime/concurrent/RejectedExecutionException.java": "sha256:e21010bc97c6990e75877998547ed8bef4c185294a3feb3e3b1d5b16c622b4ba",
+        "fibers/dev/latent/guest/runtime/concurrent/RunnableFuture.java": "sha256:cf3e9e8bab8aecf190dab76e5f7e7e4333057b65ea9112670dd6cb8521fd6328",
+        "fibers/dev/latent/guest/runtime/concurrent/ThreadFactory.java": "sha256:1aed06e12da6b8111a47dbc2266ee0eb0d51db5f4a9c25e9e59eb70c3cd4e0b6",
+        "fibers/dev/latent/guest/runtime/concurrent/TimeUnit.java": "sha256:6c829473167d1cbe05f4fcb858a0f5f355209711ee3959ec58f2d6c569ac1ab1",
+        "fibers/dev/latent/guest/runtime/concurrent/TimeoutException.java": "sha256:9b0d6e7a88746f81b0fdb8804d25a727459db8463d35738afcfee3830a3ae462",
+        "fibers/dev/latent/guest/runtime/lang/IllegalThreadStateException.java": "sha256:83947523c65623a32529382307165d76e834cbb7db43f0fdd49b541b8ce2b5ee",
+        "fibers/services/META-INF/services/org.teavm.extension.spi.substitution.SubstitutionPolicy": "sha256:63aeefe90f3f53194148af50cd1979161641af701e99afcaf933f7d47f331722",
+        "fibers/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin": "sha256:fc6191902956c60cc7a13507ed9e3cba8f233269ff133bc41aa9882e06ea1410",
+        "resources/compiler/dev/latent/guest/resources/compiler/ImmutableResourcePlugin.java": "sha256:73dff0e6ff259f800ce1fc1658a5cb4512893c3d4cdbd30e8e612401678fa98c",
+        "resources/conformance/ImmutableResourceModelControl.java": "sha256:09951194e7172b32c4f9a2226ca63985618d341942a5826ed62a1ece5730b59b",
+        "resources/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin": "sha256:32e9032d90ce3ef988d35aa3c11a087ab867a8e977824b56c92a32a3d035ba6d",
+        "runtime/bridge.h": "sha256:66428dca085509e2aa2aa543af4927949f8f1176255351a6e24b73641b078ec3",
+        "runtime/dev/latent/guest/BufferedWebResponseValidator.java": "sha256:caf6a2bf912fbaadad9f673551a10d2fec20edb874216019845392e7d807323f",
+        "runtime/dev/latent/guest/Handle.java": "sha256:5d00dda66f7c167bd8e7f3e98d8e5be5c69225b8cd4744426f2dcabc1d63a63a",
+        "runtime/dev/latent/guest/Intent.java.in": "sha256:ba3876ddc0ca1b9b0bbf53cb73a9477529ee055b5984ae9be4edcb5966027168",
+        "runtime/dev/latent/guest/Option.java": "sha256:aa45393e65f74c005bdb2e0b9ac32a5a4e8b717090bc4c1ff8b9ec7cda681468",
+        "runtime/dev/latent/guest/Resource.java": "sha256:5ec05ea064c1ff25a4af8c3ff2948beef46ba3e711a956016481fb2b65449da2",
+        "runtime/dev/latent/guest/Result.java": "sha256:0a65cdf987fe048f3d467a090662b4ab4d340b74bdcb35598ca4f7e2c6142743",
+        "runtime/dev/latent/guest/SensitiveBytes.java": "sha256:27cf682fc87999875f81611c9575674e2e43bfee0e1fe55950e357ceec83f870",
+        "runtime/dev/latent/guest/State.java.in": "sha256:f437a93ff5d9494c9184c8952cbc775823bb2b8006940d0826e94557e2d1d765",
+        "runtime/dev/latent/guest/Text.java": "sha256:0d1909cfe30b5cf0fb0a312ac03fbced5171c4c5e971d43f6d736e46872920cc",
+        "runtime/dev/latent/guest/Unit.java": "sha256:4fbf8085595c1c3f7c5494e3ce1efcb0a738161960863e85d24b0489a7500cf8",
+        "runtime/dev/latent/guest/Unsigned64.java": "sha256:63d81a6e1bf67638e718e2eaf00565fc71ebdd1153fff23b0fafd04949ef3da6",
+        "runtime/dev/latent/guest/Wire.java": "sha256:1f58751b4c7f6b2f2e439cd732a36a29cc744cf30304bc1a72a8d79bac8139f6",
+        "runtime/native.h": "sha256:cdbf1bdf723470622a1d27e8b9e6034a4781aa6787c0d80aa872f3680ceeb5a1",
+        "server/analysis/ServerAnalyzer.java": "sha256:5ac9b701df5800d813d211da38f1c5b437523769acb27cc7eeec16fc8dbcb3cf",
+        "server/compiler/dev/latent/guest/server/compiler/ServerPlugin.java": "sha256:4246ac20a4c21c5a150ed1f059153f75bcb990ae66969655c941cd65d53bbf70",
+        "server/compiler/dev/latent/guest/server/compiler/ServerSubstitution.java": "sha256:483fe84624df6f79152ff69fc2b8721ce2c660e0e379e2467b7a2638ca4d48e0",
+        "server/dev/latent/guest/server/http/Headers.java": "sha256:6da1f6d198e54bc633f105f0df5435457132ba4608142905d86373ddcc30d8fc",
+        "server/dev/latent/guest/server/http/HttpContext.java": "sha256:fe9a9da991c3f4d9d49c39758bf4bc73dd8943e4d2ab577e47f3ccb3dd1a3b14",
+        "server/dev/latent/guest/server/http/HttpExchange.java": "sha256:1efb3e2b9551d65e9e11100ad481ae92c5db8ddca15bdcc5f5c4340df82a7331",
+        "server/dev/latent/guest/server/http/HttpHandler.java": "sha256:3fea23b3c8b978170eca701be3ab5fef603d6bb8bb6c4561c90b81bca228075c",
+        "server/dev/latent/guest/server/http/HttpServer.java": "sha256:b3269969f2586abb102f56f5f0ef0378557263bbe1a28bed034c2cc140fec33b",
+        "server/dev/latent/guest/server/http/ServerSession.java": "sha256:777a4cc4f820d0663d13c61fa06fd1acc109be055a6394f6cde275ffb2124df8",
+        "server/dev/latent/guest/server/net/InetAddress.java": "sha256:74d701369d130ea81f7f9c35b9baf6befd6a91e544abae20ca495b009ef301ad",
+        "server/dev/latent/guest/server/net/InetSocketAddress.java": "sha256:994f142ef502bab2608cffbe46e66552a04d8ba04cbf18f199229326804ea41b",
+        "server/dev/latent/guest/server/net/SocketAddress.java": "sha256:3cc5189d87ac04d8235eb51ceeafe248251ccdf71c2aa688c44b767e24d92d22",
+        "server/services/META-INF/services/org.teavm.extension.spi.substitution.SubstitutionPolicy": "sha256:a6eb63f9ae2476f7a3860488a805e585cccb413d7100b1bc563be2c2af4c2da1",
+        "server/services/META-INF/services/org.teavm.vm.spi.TeaVMPlugin": "sha256:cc3f5ed31c1f82703c77282c6414f5026f06c1a7b4141f69210462124f6c594f",
+        "server/templates/Capsule.java": "sha256:18d4a66f11bae7f68ebb9a85a2054d6d0a24872bd3f570788131145d3ff15fda",
+        "server/templates/Server.java": "sha256:2a6ab95d8f76295a5e19cf15850cc3e6719d353d68a8664c79407468577cec12",
+        "templates/greeting.java": "sha256:b3ef5de6dd9c15fc8c292112b657375b55e07722296a387bf0fe776ccbd95b62",
+        "templates/http-status.java": "sha256:d9fd6b5f0a8e1b2f138a1ace7bce59ef86757663184ee5b47bc5b77e98c1e9a6",
+        "templates/recovery.java": "sha256:93fa2fe75d40c688ed730666a4d4d4551fd398356852daf7ee0f6dea3c045b95",
+        "templates/shipping.java": "sha256:52c40e4a0af92515a923d0d53c2f2d5adfd712e82319206b2d4037370a5cd127",
+        "templates/transactional-aggregate.java": "sha256:28939cbc29ad95e2f963cc2e7e6b13fe126368427ee70b0206a3012ad5006039",
+        "templates/word-count.java": "sha256:36924c01937175faa45beff0c09f716b40e85f4b3a988b207077eb434fd26334",
+        "tools/capture.py": "sha256:99283643627ff4905a51112888994a6ed599c894824b531967cfb7e248746939",
+        "tools/dependencies.py": "sha256:770a90fc706bdbe961fb25757784b8b6d0826f1a194cc95da91a6f06fd01a9b1",
+        "tools/feasibility.py": "sha256:429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c",
+        "tools/teavm_platform.py": "sha256:0e1a6aa652e6012081f27faf7fca36ae023d74fa21ddaf61848d97fc6f178247",
+        "wit/world.wit": "sha256:806182a284782a4db4e5fc2e4f5f3bf47b78b04fa291d1eab8cef8f177f71882"
+      },
+      "reference": [
+        {
+          "iteration": 0,
+          "modes": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "results": [
+            42,
+            42,
+            42,
+            42
+          ]
+        },
+        {
+          "iteration": 1,
+          "modes": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "results": [
+            42,
+            42,
+            42,
+            42
+          ]
+        },
+        {
+          "iteration": 2,
+          "modes": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "results": [
+            42,
+            42,
+            42,
+            42
+          ]
+        }
+      ],
+      "signedNativeTestPassed": true,
+      "nativeLogDigest": "sha256:43f3cc8f9fed785e8cb8ff404e34818fa585bc9fa85315a83eb18364c4d2aadc",
+      "calls": [
+        {
+          "iteration": 0,
+          "mode": 0,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 12488794,
+            "peak_memory_bytes": 9439232,
+            "wall_time_micros": 110857,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 0,
+          "mode": 1,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 9140720,
+            "peak_memory_bytes": 9439232,
+            "wall_time_micros": 68566,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 0,
+          "mode": 2,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5698939,
+            "peak_memory_bytes": 9439232,
+            "wall_time_micros": 45524,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 0,
+          "mode": 3,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5905401,
+            "peak_memory_bytes": 9439416,
+            "wall_time_micros": 18388,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 1,
+          "mode": 0,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 12448890,
+            "peak_memory_bytes": 9439232,
+            "wall_time_micros": 108623,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 1,
+          "mode": 1,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 9140720,
+            "peak_memory_bytes": 9439232,
+            "wall_time_micros": 68873,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 1,
+          "mode": 2,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5698939,
+            "peak_memory_bytes": 9439232,
+            "wall_time_micros": 48119,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 1,
+          "mode": 3,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5905401,
+            "peak_memory_bytes": 9439416,
+            "wall_time_micros": 18037,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 2,
+          "mode": 0,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 12683326,
+            "peak_memory_bytes": 9439232,
+            "wall_time_micros": 109611,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 2,
+          "mode": 1,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 9140720,
+            "peak_memory_bytes": 9439232,
+            "wall_time_micros": 79798,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 2,
+          "mode": 2,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5698939,
+            "peak_memory_bytes": 9439232,
+            "wall_time_micros": 46532,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        },
+        {
+          "iteration": 2,
+          "mode": 3,
+          "result": [
+            42
+          ],
+          "consumption": {
+            "cpu_fuel": 5862295,
+            "peak_memory_bytes": 9439416,
+            "wall_time_micros": 19309,
+            "child_calls": 0,
+            "outbound_requests": 0,
+            "state_read_bytes": 0,
+            "state_write_bytes": 0,
+            "blob_read_bytes": 0,
+            "blob_write_bytes": 0,
+            "log_bytes": 0,
+            "effect_count": 0
+          }
+        }
+      ]
+    }
+  ]
+}

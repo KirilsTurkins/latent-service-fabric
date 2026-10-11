@@ -60,6 +60,33 @@ impl Inner {
         Ok((key, ready))
     }
 
+    pub(super) async fn canonicalize_input(
+        &self,
+        ready: PreparedReadiness,
+        envelope: &ActivationEnvelope,
+        token: &CancellationToken,
+        budget: &ActivationBudget,
+        transport: &TransportStop,
+    ) -> Result<
+        (
+            PreparedReadiness,
+            latent_executor::CanonicalTransactionInput,
+        ),
+        PlatformError,
+    > {
+        let read_wait = wait::Timer;
+        stage(
+            self.dependencies
+                .backend
+                .canonicalize_transaction_input(ready, envelope, budget, &read_wait),
+            token,
+            budget.deadline().monotonic(),
+            &self.clock,
+            transport,
+        )
+        .await
+    }
+
     pub(super) async fn materialize(
         &self,
         envelope: &ActivationEnvelope,

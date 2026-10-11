@@ -73,7 +73,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         files, dependency_root = build_inputs(project_path)
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
-        recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
+        recipe_files = {path: read_file(ROOT / path) for path in RECIPE}
         recipe_inputs = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe_inputs)
@@ -127,8 +127,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             surface = read_json(derived / "surface.json")
-            stage = "compatibility"
             recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
+            stage = "compatibility"
             guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)
