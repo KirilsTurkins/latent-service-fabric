@@ -1,5 +1,6 @@
 use super::*;
 use crate::{invocation::LocalPrincipalPolicy, management::LocalManagementPolicy};
+use c::dispatcher_service_server::DispatcherService;
 use c::state_service_server::StateService;
 use latent_core::{InvocationPrincipal, PrincipalKind, SystemActivationClock, TenantId};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -13,6 +14,20 @@ impl Phase4Runtime for RefusingRuntime {
     ) -> BoxFuture<'_, Result<OwnedPhase4Response, PlatformError>> {
         self.0.fetch_add(1, Ordering::Relaxed);
         assert!(call.request().is_recovery());
+        if call.request().is_node_management() {
+            assert_eq!(
+                call.context().principal().kind,
+                PrincipalKind::Administrator
+            );
+            assert_eq!(
+                call.context()
+                    .principal()
+                    .claims
+                    .get("latent.node.operator")
+                    .map(String::as_str),
+                Some("true")
+            );
+        }
         Box::pin(async {
             Err(PlatformError {
                 code: PlatformErrorCode::PermissionDenied,
@@ -147,4 +162,110 @@ async fn malformed_profile_and_stale_transport_deadline_never_admit_work() {
         tonic::Code::DeadlineExceeded
     );
     assert_eq!(runtime.0.load(Ordering::Relaxed), 0);
+}
+
+async fn dispatcher_status(
+    adapter: &Phase4ServiceAdapter,
+    context: Option<&AuthenticatedInvocationContext>,
+    route: u8,
+) -> Status {
+    fn request<T>(context: Option<&AuthenticatedInvocationContext>, value: T) -> Request<T> {
+        let mut request = match context {
+            Some(context) => context.request(value),
+            None => Request::new(value),
+        };
+        // Caller metadata cannot create or replace the listener's trusted claim.
+        request
+            .metadata_mut()
+            .insert("latent.node.operator", "true".parse().unwrap());
+        request
+    }
+    let control = c::ControlDispatcherRequest {
+        profile: Some(contract::current_profile()),
+        scope: c::DispatcherScope::Node as i32,
+        operation_id: "original-pause".into(),
+        action: c::DispatcherAction::Pause as i32,
+        expected_generation: Some(c::DispatcherGeneration {
+            owner_epoch: 7,
+            revision: 1,
+        }),
+    };
+    match route {
+        0 => adapter
+            .inspect_dispatcher(request(
+                context,
+                c::InspectDispatcherRequest {
+                    profile: Some(contract::current_profile()),
+                    scope: c::DispatcherScope::Node as i32,
+                },
+            ))
+            .await
+            .unwrap_err(),
+        1 => adapter
+            .control_dispatcher(request(context, control))
+            .await
+            .unwrap_err(),
+        2 => adapter
+            .get_dispatcher_operation(request(
+                context,
+                c::GetDispatcherOperationRequest {
+                    original: Some(control),
+                },
+            ))
+            .await
+            .unwrap_err(),
+        _ => panic!("unknown test route"),
+    }
+}
+
+#[tokio::test]
+async fn dispatcher_calls_require_trusted_node_operator_and_administrator_before_runtime() {
+    let runtime = Arc::new(RefusingRuntime(AtomicUsize::new(0)));
+    let adapter = adapter(runtime.clone());
+    for route in 0..3 {
+        assert_eq!(
+            dispatcher_status(&adapter, None, route).await.code(),
+            tonic::Code::Unauthenticated
+        );
+    }
+    for (kind, claim) in [
+        (PrincipalKind::Administrator, None),
+        (PrincipalKind::Administrator, Some("false")),
+        (PrincipalKind::Administrator, Some("True")),
+        (PrincipalKind::User, Some("true")),
+        (PrincipalKind::Node, Some("true")),
+    ] {
+        let mut principal = context(kind, "tenant").principal().clone();
+        if let Some(claim) = claim {
+            principal
+                .claims
+                .insert("latent.node.operator".into(), claim.into());
+        }
+        let context = AuthenticatedInvocationContext::new(principal);
+        for route in 0..3 {
+            assert_eq!(
+                dispatcher_status(&adapter, Some(&context), route)
+                    .await
+                    .code(),
+                tonic::Code::PermissionDenied
+            );
+        }
+    }
+    assert_eq!(runtime.0.load(Ordering::Relaxed), 0);
+    let mut principal = context(PrincipalKind::Administrator, "tenant")
+        .principal()
+        .clone();
+    principal
+        .claims
+        .insert("latent.node.operator".into(), "true".into());
+    let context = AuthenticatedInvocationContext::new(principal);
+    for route in 0..3 {
+        assert_eq!(
+            dispatcher_status(&adapter, Some(&context), route)
+                .await
+                .code(),
+            tonic::Code::PermissionDenied
+        );
+        assert_eq!(runtime.0.load(Ordering::Relaxed), usize::from(route) + 1);
+    }
 }

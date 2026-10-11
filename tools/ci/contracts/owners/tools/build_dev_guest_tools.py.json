@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/build_dev_guest_tools.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve captured Phase4 guest profile selection and incoming explicit verified Zig mirror/cache with identical compiler pins, bounded bytes and original deadlines","schemaVersion":"latent.ci.contracts.v1","sha256":"bd0b0a562b8d323fda5a0c0a262e1c3da64a38e28f64649eba2045b103ea05dd"}
+{
+  "kind": "owner",
+  "path": "tools/build_dev_guest_tools.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Integrate all-six transaction client models and bridges while preserving current pinned toolchains, required run blocks and guards.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "49046b6eaa5db587a0e545bfcc6a05334baa138241e8add93ed17521c4d430e6"
+}

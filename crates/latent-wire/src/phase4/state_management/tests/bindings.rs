@@ -88,15 +88,26 @@ async fn management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_sam
     .await
     .unwrap();
     let foreign = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
-    dispatcher.bind_native_capacity(&foreign).unwrap();
-    assert!(dispatcher.management_port().uses_store(&fixture.store));
-    assert!(!dispatcher
-        .management_port()
-        .uses_native_capacity(&fixture.admission.native));
-    let backend = StateManagementBackend::new(services(&fixture), bindings(&fixture)).unwrap();
-    assert!(backend
-        .with_dispatcher(dispatcher.management_port())
-        .is_err());
+    assert!(matches!(
+        dispatcher.bind_native_capacity(&foreign),
+        Err(latent_effects::runtime::DispatcherError::InvalidConfiguration)
+    ));
+    let port = dispatcher.management_port();
+    assert!(port.uses_store(&fixture.store));
+    assert!(port.uses_native_capacity(&fixture.admission.native));
+    let valid = StateManagementBackend::new(services(&fixture), bindings(&fixture))
+        .unwrap()
+        .with_dispatcher(port.clone())
+        .unwrap();
+    drop(valid);
+    let mut backend = StateManagementBackend::new(services(&fixture), bindings(&fixture)).unwrap();
+    // The public constructors now reject the foreign dispatcher binding. Keep
+    // the independent management check by corrupting only this private fixture
+    // after successful construction, with the same actual protected engine.
+    Arc::get_mut(&mut backend.0).unwrap().services.admission =
+        Arc::new(StateManagementRecoveryAdmission::new(foreign.clone()));
+    assert!(!port.uses_native_capacity(&backend.0.services.admission.native_capacity()));
+    assert!(backend.with_dispatcher(port).is_err());
     assert_eq!(
         fixture
             .admission
@@ -104,6 +115,7 @@ async fn management_dispatcher_binding_rejects_a_foreign_global_owner_on_the_sam
             .load(std::sync::atomic::Ordering::Relaxed),
         0
     );
+    assert!(foreign.snapshot().unwrap().physically_retired());
     assert!(dispatcher.shutdown(deadline()).await.unwrap().clean);
     fixture.finish().await;
 }

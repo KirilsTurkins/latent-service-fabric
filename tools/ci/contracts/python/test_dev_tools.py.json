@@ -1,41 +1,39 @@
 {
-  "cases":["AdapterResults.test_missing_nested_cleanup_receipt_remains_uncertain","AdapterResults.test_readonly_distribution_seeds_a_writable_private_cache","CompanionInputs.test_adapter_requires_closed_inventory_and_tool_arguments","CompanionInputs.test_companion_modification_is_not_a_cache_hit","CompanionInputs.test_unrecorded_importable_file_is_rejected","CompanionInputs.test_verification_observes_cancellation","CompanionInputs.test_wrong_owner_host_and_template_revision_fail_before_execution","CompilerDownloadBounds.test_default_deadline_is_not_extended","CompilerDownloadBounds.test_eof_cannot_hide_an_expired_deadline","CompilerDownloadBounds.test_existing_file_and_symlink_are_not_replaced","CompilerDownloadBounds.test_invalid_limits_fail_before_network_or_output","CompilerDownloadBounds.test_large_archive_deadline_still_rejects_at_boundary","CompilerDownloadBounds.test_network_failure_is_not_retried","CompilerDownloadBounds.test_one_extra_byte_is_rejected_before_writing_or_digesting","CompilerDownloadBounds.test_pinned_zig_transfer_can_exceed_small_archive_deadline","CompilerDownloadBounds.test_small_default_transfer_accepts_only_pinned_bytes","CompilerDownloadBounds.test_truncated_changed_and_empty_archives_still_fail_digest","DotnetRuntimeDistribution.test_all_three_adapters_survive_actual_distribution_pack_and_private_unpack","DotnetRuntimeDistribution.test_bcl_patch_tool_and_source_survive_actual_pack_and_private_unpack","DotnetRuntimeDistribution.test_missing_bcl_patch_tool_or_source_fails_before_publication","DotnetRuntimeDistribution.test_missing_pending_or_http_adapter_fails_before_a_distribution_can_be_published","DotnetRuntimeDistribution.test_missing_selected_composer_fails_before_a_distribution_can_be_published","FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly","LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound","ManagedCompilerInputs.test_changed_member_and_path_escape_are_rejected","ManagedCompilerInputs.test_distribution_materializes_internal_links_and_rejects_external_links","ManagedCompilerInputs.test_expansion_is_private_and_source_is_immutable","ManagedCompilerInputs.test_expansion_observes_cancellation_and_finite_byte_budget","NativeDifferential.test_actual_bytes_component_and_native_host_must_all_match","SelectedRecipeImports.test_all_six_actual_selected_recipes_import_without_checkout_fallback","SelectedRecipeImports.test_missing_captured_shared_helper_cannot_import_from_checkout"],
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Preserve every original case and guard including default no-retry behavior; add six regressions for scoped Zig connection retries, exhaustion, shared deadline, permanent failures, partial bodies and invalid attempt bounds",
+  "module":"tools/tests/test_dev_tools.py",
+  "cases":["AdapterResults.test_missing_nested_cleanup_receipt_remains_uncertain","AdapterResults.test_readonly_distribution_seeds_a_writable_private_cache","CompanionInputs.test_adapter_requires_closed_inventory_and_tool_arguments","CompanionInputs.test_companion_modification_is_not_a_cache_hit","CompanionInputs.test_unrecorded_importable_file_is_rejected","CompanionInputs.test_verification_observes_cancellation","CompanionInputs.test_wrong_owner_host_and_template_revision_fail_before_execution","CompilerDownloadBounds.test_connection_retries_share_the_original_deadline","CompilerDownloadBounds.test_default_deadline_is_not_extended","CompilerDownloadBounds.test_enabled_connection_retries_do_not_retry_http_or_other_transport_errors","CompilerDownloadBounds.test_eof_cannot_hide_an_expired_deadline","CompilerDownloadBounds.test_existing_file_and_symlink_are_not_replaced","CompilerDownloadBounds.test_invalid_connection_attempts_fail_before_network_or_output","CompilerDownloadBounds.test_invalid_limits_fail_before_network_or_output","CompilerDownloadBounds.test_large_archive_deadline_still_rejects_at_boundary","CompilerDownloadBounds.test_network_failure_is_not_retried","CompilerDownloadBounds.test_one_extra_byte_is_rejected_before_writing_or_digesting","CompilerDownloadBounds.test_partial_body_timeout_is_not_retried_or_cached","CompilerDownloadBounds.test_pinned_zig_transfer_can_exceed_small_archive_deadline","CompilerDownloadBounds.test_small_default_transfer_accepts_only_pinned_bytes","CompilerDownloadBounds.test_truncated_changed_and_empty_archives_still_fail_digest","CompilerDownloadBounds.test_zig_connection_exhaustion_keeps_the_failure_and_discards_output","CompilerDownloadBounds.test_zig_opening_timeouts_retry_only_the_same_pinned_source","DotnetRuntimeDistribution.test_all_three_adapters_survive_actual_distribution_pack_and_private_unpack","DotnetRuntimeDistribution.test_bcl_patch_tool_and_source_survive_actual_pack_and_private_unpack","DotnetRuntimeDistribution.test_missing_bcl_patch_tool_or_source_fails_before_publication","DotnetRuntimeDistribution.test_missing_pending_or_http_adapter_fails_before_a_distribution_can_be_published","DotnetRuntimeDistribution.test_missing_selected_composer_fails_before_a_distribution_can_be_published","FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly","LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound","ManagedCompilerInputs.test_changed_member_and_path_escape_are_rejected","ManagedCompilerInputs.test_distribution_materializes_internal_links_and_rejects_external_links","ManagedCompilerInputs.test_expansion_is_private_and_source_is_immutable","ManagedCompilerInputs.test_expansion_observes_cancellation_and_finite_byte_budget","NativeDifferential.test_actual_bytes_component_and_native_host_must_all_match","SelectedRecipeImports.test_all_six_actual_selected_recipes_import_without_checkout_fallback","SelectedRecipeImports.test_missing_captured_shared_helper_cannot_import_from_checkout"],
   "guards":{
-    "AdapterResults.test_missing_nested_cleanup_receipt_remains_uncertain":
-      "36a1e906a660213e0f16d756c51b8e6ad32769e815ca10ab3f7be2a0f97a40b8",
-    "AdapterResults.test_readonly_distribution_seeds_a_writable_private_cache":
-      "ee72cd3082f6739f28c0667d51e59373fa85cecf765d6b7d7e6010a93af94c60",
-    "CompanionInputs.test_adapter_requires_closed_inventory_and_tool_arguments":
-      "f82f4918f2b253af75856e4661bbcb99c94a5799f1bfd6152fed361dfa64ad77",
+    "FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly":
+      "75693ad0beb00ebca452cc0066bec67d14b473b8aa45ed4501af251d9d59e4fb",
     "CompanionInputs.test_companion_modification_is_not_a_cache_hit":
       "f82f4918f2b253af75856e4661bbcb99c94a5799f1bfd6152fed361dfa64ad77",
     "CompanionInputs.test_unrecorded_importable_file_is_rejected":
       "f82f4918f2b253af75856e4661bbcb99c94a5799f1bfd6152fed361dfa64ad77",
-    "CompanionInputs.test_verification_observes_cancellation":
-      "f82f4918f2b253af75856e4661bbcb99c94a5799f1bfd6152fed361dfa64ad77",
     "CompanionInputs.test_wrong_owner_host_and_template_revision_fail_before_execution":
       "f82f4918f2b253af75856e4661bbcb99c94a5799f1bfd6152fed361dfa64ad77",
-    "CompilerDownloadBounds.test_default_deadline_is_not_extended":
-      "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80",
-    "CompilerDownloadBounds.test_eof_cannot_hide_an_expired_deadline":
-      "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80",
-    "CompilerDownloadBounds.test_existing_file_and_symlink_are_not_replaced":
-      "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80",
-    "CompilerDownloadBounds.test_invalid_limits_fail_before_network_or_output":
-      "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80",
-    "CompilerDownloadBounds.test_large_archive_deadline_still_rejects_at_boundary":
-      "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80",
-    "CompilerDownloadBounds.test_network_failure_is_not_retried":
-      "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80",
-    "CompilerDownloadBounds.test_one_extra_byte_is_rejected_before_writing_or_digesting":
-      "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80",
-    "CompilerDownloadBounds.test_pinned_zig_transfer_can_exceed_small_archive_deadline":
-      "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80",
-    "CompilerDownloadBounds.test_small_default_transfer_accepts_only_pinned_bytes":
-      "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80",
-    "CompilerDownloadBounds.test_truncated_changed_and_empty_archives_still_fail_digest":
-      "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80",
+    "CompanionInputs.test_verification_observes_cancellation":
+      "f82f4918f2b253af75856e4661bbcb99c94a5799f1bfd6152fed361dfa64ad77",
+    "CompanionInputs.test_adapter_requires_closed_inventory_and_tool_arguments":
+      "f82f4918f2b253af75856e4661bbcb99c94a5799f1bfd6152fed361dfa64ad77",
+    "AdapterResults.test_readonly_distribution_seeds_a_writable_private_cache":
+      "ee72cd3082f6739f28c0667d51e59373fa85cecf765d6b7d7e6010a93af94c60",
+    "AdapterResults.test_missing_nested_cleanup_receipt_remains_uncertain":
+      "36a1e906a660213e0f16d756c51b8e6ad32769e815ca10ab3f7be2a0f97a40b8",
+    "LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound":
+      "36a1e906a660213e0f16d756c51b8e6ad32769e815ca10ab3f7be2a0f97a40b8",
+    "ManagedCompilerInputs.test_expansion_is_private_and_source_is_immutable":
+      "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4",
+    "ManagedCompilerInputs.test_changed_member_and_path_escape_are_rejected":
+      "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4",
+    "ManagedCompilerInputs.test_expansion_observes_cancellation_and_finite_byte_budget":
+      "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4",
+    "ManagedCompilerInputs.test_distribution_materializes_internal_links_and_rejects_external_links":
+      "aee2f49fbff494c5758ce5d8e54f97f1b85d5bc75b0816938366552b9b197710",
     "DotnetRuntimeDistribution.test_all_three_adapters_survive_actual_distribution_pack_and_private_unpack":
+      "e875da909f708952761f7f893d94d32b2b5fd05de2566d4b162826cf88254c91",
+    "DotnetRuntimeDistribution.test_missing_selected_composer_fails_before_a_distribution_can_be_published":
       "e875da909f708952761f7f893d94d32b2b5fd05de2566d4b162826cf88254c91",
     "DotnetRuntimeDistribution.test_bcl_patch_tool_and_source_survive_actual_pack_and_private_unpack":
       "e875da909f708952761f7f893d94d32b2b5fd05de2566d4b162826cf88254c91",
@@ -43,41 +41,55 @@
       "e875da909f708952761f7f893d94d32b2b5fd05de2566d4b162826cf88254c91",
     "DotnetRuntimeDistribution.test_missing_pending_or_http_adapter_fails_before_a_distribution_can_be_published":
       "e875da909f708952761f7f893d94d32b2b5fd05de2566d4b162826cf88254c91",
-    "DotnetRuntimeDistribution.test_missing_selected_composer_fails_before_a_distribution_can_be_published":
-      "e875da909f708952761f7f893d94d32b2b5fd05de2566d4b162826cf88254c91",
-    "FrontendDistribution.test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly":
-      "75693ad0beb00ebca452cc0066bec67d14b473b8aa45ed4501af251d9d59e4fb",
-    "LargeInventory.test_cached_tool_manifest_uses_the_signed_inventory_bound":
-      "36a1e906a660213e0f16d756c51b8e6ad32769e815ca10ab3f7be2a0f97a40b8",
-    "ManagedCompilerInputs.test_changed_member_and_path_escape_are_rejected":
-      "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4",
-    "ManagedCompilerInputs.test_distribution_materializes_internal_links_and_rejects_external_links":
-      "aee2f49fbff494c5758ce5d8e54f97f1b85d5bc75b0816938366552b9b197710",
-    "ManagedCompilerInputs.test_expansion_is_private_and_source_is_immutable":
-      "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4",
-    "ManagedCompilerInputs.test_expansion_observes_cancellation_and_finite_byte_budget":
-      "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4",
     "NativeDifferential.test_actual_bytes_component_and_native_host_must_all_match":
       "413bd4d285b4f390a8959d04587d6b2b09cf109d235dbd5c62cda78e1ceb0de6",
+    "CompilerDownloadBounds.test_small_default_transfer_accepts_only_pinned_bytes":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_pinned_zig_transfer_can_exceed_small_archive_deadline":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_default_deadline_is_not_extended":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_large_archive_deadline_still_rejects_at_boundary":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_eof_cannot_hide_an_expired_deadline":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_one_extra_byte_is_rejected_before_writing_or_digesting":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_truncated_changed_and_empty_archives_still_fail_digest":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_invalid_limits_fail_before_network_or_output":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_existing_file_and_symlink_are_not_replaced":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_network_failure_is_not_retried":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_zig_opening_timeouts_retry_only_the_same_pinned_source":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_zig_connection_exhaustion_keeps_the_failure_and_discards_output":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_connection_retries_share_the_original_deadline":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_enabled_connection_retries_do_not_retry_http_or_other_transport_errors":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_partial_body_timeout_is_not_retried_or_cached":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
+    "CompilerDownloadBounds.test_invalid_connection_attempts_fail_before_network_or_output":
+      "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e",
     "SelectedRecipeImports.test_all_six_actual_selected_recipes_import_without_checkout_fallback":
       "1fc82b7a48fad95fbd9835bb9dea2f16f1a397cd59b13a7587b3c0603b532a2f",
     "SelectedRecipeImports.test_missing_captured_shared_helper_cannot_import_from_checkout":
       "1fc82b7a48fad95fbd9835bb9dea2f16f1a397cd59b13a7587b3c0603b532a2f"
   },
-  "kind":"python",
-  "module":"tools/tests/test_dev_tools.py",
-  "reviewReason":"Reviewed fixed-development NuGet/composer/entropy union preserves HTTP BCL controls, private captured namespace, original case bodies and job guards; only the target composer/four-adapter receipt extension and local runtime module alias are retained.",
-  "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
-    "36a1e906a660213e0f16d756c51b8e6ad32769e815ca10ab3f7be2a0f97a40b8":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-    "ee72cd3082f6739f28c0667d51e59373fa85cecf765d6b7d7e6010a93af94c60":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(os.name == 'posix', 'private Linux Cargo cache modes')"],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["skip-control-sha256:b6d61e3eabeea8ff2a8ebf84c50089d6c32ada2cda37aa51e5344da16dfabb54","unittest.skipUnless(os.name == 'posix', 'private Linux Cargo cache modes')"]},
-    "f82f4918f2b253af75856e4661bbcb99c94a5799f1bfd6152fed361dfa64ad77":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:5ea179615ba346d9c88080ae1884c89ffa1f09d142059e75d5a13f5ed8dd3778"],"skipSites":[]},
-    "d052d0969e400dd8f65918a98a9606d7dc4381d175f2dbe70ddd646b681d6a80":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:bc93beb5dac83fa8762622291a0383d0fdae38f0ac5786a703c826ad9797f4b3"],"skipSites":[]},
-    "e875da909f708952761f7f893d94d32b2b5fd05de2566d4b162826cf88254c91":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"],"skipSites":[]},
-    "75693ad0beb00ebca452cc0066bec67d14b473b8aa45ed4501af251d9d59e4fb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(sys.platform == 'linux', 'Candidate assembly runs on Linux')"],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":["skip-control-sha256:39b950b22ab98a03d787af3946ffa46eeb301a697e65c13f1fcb8252b6389903","unittest.skipUnless(sys.platform == 'linux', 'Candidate assembly runs on Linux')"]},
-    "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:963fb0f91e7f76927e266fe376625b669d2f17bcdd138eb53a3f810ccf29c339"],"skipSites":[]},
-    "aee2f49fbff494c5758ce5d8e54f97f1b85d5bc75b0816938366552b9b197710":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(os.name == 'posix', 'Linux compiler distribution symlinks')"],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:963fb0f91e7f76927e266fe376625b669d2f17bcdd138eb53a3f810ccf29c339"],"skipSites":["skip-control-sha256:72b1e23a80e5db19823ca778108c720067ab09fe8b2664842312c9a012f3381f","unittest.skipUnless(os.name == 'posix', 'Linux compiler distribution symlinks')"]},
-    "413bd4d285b4f390a8959d04587d6b2b09cf109d235dbd5c62cda78e1ceb0de6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:bea9b2d13cd74dfefe42c1049e068bb766e58b71ab58d1e6ddf6d5f0171d5600"],"skipSites":[]},
-    "1fc82b7a48fad95fbd9835bb9dea2f16f1a397cd59b13a7587b3c0603b532a2f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:5b577fb95d2faa46c9f8a17db5afb9198007f04db9c799b968bb0c4fdf6cd8d7"],"skipSites":[]}
+    "75693ad0beb00ebca452cc0066bec67d14b473b8aa45ed4501af251d9d59e4fb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(sys.platform == 'linux', 'Candidate assembly runs on Linux')"],"skipSites":["skip-control-sha256:39b950b22ab98a03d787af3946ffa46eeb301a697e65c13f1fcb8252b6389903","unittest.skipUnless(sys.platform == 'linux', 'Candidate assembly runs on Linux')"],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "f82f4918f2b253af75856e4661bbcb99c94a5799f1bfd6152fed361dfa64ad77":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:5ea179615ba346d9c88080ae1884c89ffa1f09d142059e75d5a13f5ed8dd3778"]},
+    "ee72cd3082f6739f28c0667d51e59373fa85cecf765d6b7d7e6010a93af94c60":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(os.name == 'posix', 'private Linux Cargo cache modes')"],"skipSites":["skip-control-sha256:b6d61e3eabeea8ff2a8ebf84c50089d6c32ada2cda37aa51e5344da16dfabb54","unittest.skipUnless(os.name == 'posix', 'private Linux Cargo cache modes')"],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "36a1e906a660213e0f16d756c51b8e6ad32769e815ca10ab3f7be2a0f97a40b8":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "e4a5601667f4b5922a193baf5c5410c63398cd2023a5beadc794446ef5ef40b4":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:963fb0f91e7f76927e266fe376625b669d2f17bcdd138eb53a3f810ccf29c339"]},
+    "aee2f49fbff494c5758ce5d8e54f97f1b85d5bc75b0816938366552b9b197710":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":["unittest.skipUnless(os.name == 'posix', 'Linux compiler distribution symlinks')"],"skipSites":["skip-control-sha256:72b1e23a80e5db19823ca778108c720067ab09fe8b2664842312c9a012f3381f","unittest.skipUnless(os.name == 'posix', 'Linux compiler distribution symlinks')"],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:963fb0f91e7f76927e266fe376625b669d2f17bcdd138eb53a3f810ccf29c339"]},
+    "e875da909f708952761f7f893d94d32b2b5fd05de2566d4b162826cf88254c91":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:b94431ab0823764f54c9e80bfa540bbf04dcfecea1c8395ccfe4f08ff7034ea2"]},
+    "413bd4d285b4f390a8959d04587d6b2b09cf109d235dbd5c62cda78e1ceb0de6":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:bea9b2d13cd74dfefe42c1049e068bb766e58b71ab58d1e6ddf6d5f0171d5600"]},
+    "c8cfbfd154648cec6a56eb8135ae75a845cbfa575f06d596311ea87769cce63e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:73e2eec1d780eb92c44a27198b4b090bcfe3cb4d52b2da95c3dcc563bcef4c8a"]},
+    "1fc82b7a48fad95fbd9835bb9dea2f16f1a397cd59b13a7587b3c0603b532a2f":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:a9d69b6162d07a0d0fd5c5ed5cec54541144ec234357d6edfaf9c6be4534ba40","class:setup-sha256:5b577fb95d2faa46c9f8a17db5afb9198007f04db9c799b968bb0c4fdf6cd8d7"]}
   }
 }

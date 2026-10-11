@@ -13,7 +13,7 @@ use std::{
     fmt,
     sync::{
         atomic::{AtomicU64, Ordering},
-        Arc, Mutex, MutexGuard, TryLockError,
+        Arc, RwLock, RwLockReadGuard, RwLockWriteGuard, TryLockError,
     },
 };
 
@@ -25,7 +25,7 @@ use std::{
 /// and trust generations before adopting state across process restarts.
 pub struct PublisherVerifier {
     limits: SignatureLimits,
-    state: Mutex<Arc<PublisherTrust>>,
+    state: RwLock<Arc<PublisherTrust>>,
     clock: AtomicU64,
 }
 
@@ -36,13 +36,13 @@ impl PublisherVerifier {
         trust.fresh(now)?;
         Ok(Self {
             limits,
-            state: Mutex::new(Arc::new(trust)),
+            state: RwLock::new(Arc::new(trust)),
             clock: AtomicU64::new(now),
         })
     }
 
     pub fn state_id(&self) -> SignatureResult<TrustStateId> {
-        Ok(self.lock()?.state_id().clone())
+        Ok(self.read()?.state_id().clone())
     }
 
     /// Highest trusted time observed, including rejected/expired operations.
@@ -61,7 +61,7 @@ impl PublisherVerifier {
         now: u64,
     ) -> SignatureResult<VerifiedPackageSignature> {
         self.observe(now)?;
-        let trust = Arc::clone(&*self.lock()?);
+        let trust = Arc::clone(&*self.read()?);
         trust.fresh(now)?;
         let inspected = inspect_evidence(expected, evidence, self.limits)?;
         let proof = check::authenticate(&trust, inspected, now)?;
@@ -87,7 +87,7 @@ impl PublisherVerifier {
         self.observe(now)?;
         next.fits(self.limits)?;
         next.fresh(now)?;
-        let mut current = self.lock()?;
+        let mut current = self.write()?;
         if current.state_id() != expected {
             return Err(SignatureFailure::TrustConflict.into());
         }
@@ -110,7 +110,7 @@ impl PublisherVerifier {
     }
 
     fn check_captured(&self, proof: &VerifiedPackageSignature, now: u64) -> SignatureResult<()> {
-        let current = self.lock()?;
+        let current = self.read()?;
         if current.state_id() != proof.state_id() {
             return Err(SignatureFailure::StaleProof.into());
         }
@@ -124,8 +124,17 @@ impl PublisherVerifier {
         Ok(())
     }
 
-    fn lock(&self) -> SignatureResult<MutexGuard<'_, Arc<PublisherTrust>>> {
-        self.state.try_lock().map_err(|error| match error {
+    // Pure currentness readers share the same immutable trust snapshot. An
+    // active writer still refuses the read immediately; no queue or retry.
+    fn read(&self) -> SignatureResult<RwLockReadGuard<'_, Arc<PublisherTrust>>> {
+        self.state.try_read().map_err(|error| match error {
+            TryLockError::WouldBlock => SignatureFailure::ResourceLimit.into(),
+            TryLockError::Poisoned(_) => SignatureFailure::Internal.into(),
+        })
+    }
+
+    fn write(&self) -> SignatureResult<RwLockWriteGuard<'_, Arc<PublisherTrust>>> {
+        self.state.try_write().map_err(|error| match error {
             TryLockError::WouldBlock => SignatureFailure::ResourceLimit.into(),
             TryLockError::Poisoned(_) => SignatureFailure::Internal.into(),
         })

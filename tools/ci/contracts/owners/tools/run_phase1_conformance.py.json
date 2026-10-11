@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/run_phase1_conformance.py","reviewBoundary":"committed-fingerprint","reviewReason":"Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.","schemaVersion":"latent.ci.contracts.v1","sha256":"aa2f0f830208a05781d771d721d4f43208bd9125c5214952c3760bece9bae8aa"}
+{
+  "kind": "owner",
+  "path": "tools/run_phase1_conformance.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Keep every source identity and collector limit; give the full-tree Git status observation a finite 60 second metadata deadline without optional index writes while preserving the 10 second revision probe and fail-closed behavior",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "8d211a2a515cbb127a48f893c7d099cd622b0d6088997d728d5fc644851db881"
+}

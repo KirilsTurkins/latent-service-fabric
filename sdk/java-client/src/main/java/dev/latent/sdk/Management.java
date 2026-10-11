@@ -364,6 +364,18 @@ public final class Management {
             Optional<Long> liftingFuel,
             Optional<Long> liftMultiplier) { }
 
+    public record TransactionStagingWitness(
+            int schemaVersion,
+            long activationSerial,
+            String commandId,
+            String attemptId,
+            String transactionId,
+            String publicationId,
+            int stagedMutations,
+            int capturedIntents,
+            long stateWriteBytes,
+            long observedAtUnixMillis) { }
+
     public record ActivationTreeNode(
             String activationId,
             Optional<String> parentActivationId,
@@ -378,7 +390,8 @@ public final class Management {
             Optional<Long> effectiveDeadlineUnixMillis,
             boolean diagnosticIsTerminal,
             String targetService,
-            long receivedAtUnixMillis) { }
+            long receivedAtUnixMillis,
+            Optional<TransactionStagingWitness> transactionStaging) { }
 
     public record InspectActivationTreeRequest(
             String activationId,
