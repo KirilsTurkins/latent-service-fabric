@@ -14,6 +14,7 @@ mod providers;
 mod rollouts;
 mod shutdown;
 mod start;
+mod state;
 mod telemetry;
 pub mod transport;
 
@@ -40,9 +41,16 @@ pub use effects::{
     PreparedDispatcherControl,
 };
 pub use policies::PolicyShutdownReport;
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "development-outbound-streams"
+))]
+pub use providers::StreamControlStatus;
 pub use providers::{ProviderDescriptor, ProviderShutdownReport};
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
+pub use state::StateRetirementReport;
 
 /// Runtime builder callbacks count actual node-owned runtime and blocking threads.
 #[derive(Default)]
@@ -59,6 +67,10 @@ pub struct StandaloneNode {
     http: Option<http::HttpOwner>,
     audit: Option<audit::AuditRuntime>,
     effects: Option<effects::EffectRuntime>,
+    state: Option<state::StandaloneStateRuntime>,
+    // Present only during protected startup. Failed service installation keeps
+    // the original boot cutoff instead of manufacturing a new drain interval.
+    startup_deadline: Option<std::time::Instant>,
     rollouts: Option<rollouts::RolloutRuntime>,
     policies: Option<policies::PolicyRuntime>,
     providers: Option<Box<providers::ProviderRuntime>>,
@@ -152,6 +164,11 @@ impl StandaloneNode {
             .as_ref()
             .is_some_and(|transport| !transport.is_finished())
             && self.http.as_ref().is_none_or(|http| !http.is_finished())
+            && self.state.as_ref().is_none_or(|state| {
+                self.effects
+                    .as_ref()
+                    .is_some_and(|effects| state.is_running(effects))
+            })
     }
 }
 

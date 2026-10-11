@@ -80,10 +80,13 @@ def queue_fixture(sample: dict) -> dict:
     full = {"queueDepth": "3", "cellCapacity": [{"total": 2, "active": 2, "available": 0, "queueDepth": 3, "queuedTenants": 2}],
             "quotas": {"usage": {"activeActivations": 5, "queuedActivations": 3}}}
     queued = [invoke(a1, terminal="cancelled"), invoke(a2, terminal="cancelled"), invoke(other, [{"ok": "queued other tenant"}])]
+    refused = invoke("queue-overflow", terminal="resource_exhausted", code="resource-exhausted")
+    unused = {key: "0" if isinstance(value, str) else 0 for key, value in consumption().items()}
+    refused["data"]["consumption"] = unused
     return {"holdersRunning": [status(first), status(second)], "queued": [status(item, phase="queued") for item in (a1, a2, other)],
             "full": full, "unchangedFull": copy.deepcopy(full),
-            "overflow": cli("invoke", None, "transport-failure", {"grpcCode": "resource-exhausted"}, known=False),
-            "overflowStatus": cli("activation get", None, "not-found"), "firstHandoff": status(a1),
+            "overflow": refused,
+            "overflowStatus": status("queue-overflow", "resource_exhausted", unused), "firstHandoff": status(a1),
             "secondHandoff": {"examplesResult": queued[2], "secondHolderRunning": status(second), "secondQueuedRunning": status(a2)},
             "cancelled": [cli("activation cancel", {"activationId": item, "disposition": "accepted", "terminalState": None})
                           for item in (first, a1, a2, second)],
@@ -92,7 +95,7 @@ def queue_fixture(sample: dict) -> dict:
                                                             for index, item in enumerate((a1, a2, other))],
             "idleSample": idle_fixture(sample, "queue-settled"),
             "fairnessOracle": "other-tenant-completes-before-uncancelled-same-tenant-spin",
-            "overflowBoundary": "standalone-active-owner-ceiling-before-extra-journal-registration"}
+            "overflowBoundary": "standalone-active-owner-ceiling-with-retained-refusal-before-guest-admission"}
 
 
 def wall_fixture(sample: dict) -> dict:
@@ -479,7 +482,11 @@ class ConformanceValidatorTests(unittest.TestCase):
                    lambda value: value["secondHandoff"]["secondHolderRunning"]["data"].update(terminalState="deadline_exceeded"),
                    lambda value: value["secondHandoff"]["secondQueuedRunning"]["data"].update(terminalAtUnixMillis="1000"),
                    lambda value: value["cancelled"][2]["data"].update(disposition="already-terminal", terminalState="deadline_exceeded"),
-                   lambda value: value["overflow"].update(category="platform-failure", outcomeKnown=True),
+                   lambda value: value["overflow"].update(category="transport-failure", outcomeKnown=False),
+                   lambda value: value["overflow"]["data"]["consumption"].update(cpuFuel="1"),
+                   lambda value: value["overflow"]["data"]["consumption"].update(peakMemoryBytes="1"),
+                   lambda value: value["overflow"]["data"].update(terminalState="completed"),
+                   lambda value: value["overflowStatus"]["data"].update(terminalState="cancelled"),
                    lambda value: value["overflowStatus"].update(category="success", data={}),
                    lambda value: value["queuedStatuses"][2]["data"].update(finalConsumption=consumption() | {"cpuFuel": "99"}),
                    lambda value: value["idleSample"]["inventory"]["cellCapacity"][0].update(quarantined=1)]

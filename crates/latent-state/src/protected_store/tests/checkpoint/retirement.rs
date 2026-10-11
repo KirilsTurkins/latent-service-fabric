@@ -33,7 +33,7 @@ impl OrdinaryPressure {
             );
             tickets.push(receiver.recv_timeout(WATCHDOG).unwrap());
         }
-        let queued = owner.with_store(StoreIoKind::Read, 0, |_| Ok(())).unwrap();
+        let queued = owner.with_store(StoreIoKind::Write, 0, |_| Ok(())).unwrap();
         assert!(matches!(
             owner.with_store(StoreIoKind::Read, 0, |_| Ok(())),
             Err(ProtectedStoreError::Io(StoreIoError::QueueFull))
@@ -47,8 +47,15 @@ impl OrdinaryPressure {
     }
 
     fn release_writer(&mut self) {
+        // The declared admission order is Read, Read, Write. Keep both actual
+        // ordinary readers blocked while freeing the shared single-writer slot.
+        assert_eq!(self.tickets.len(), 3);
+        assert_eq!(self.jobs.len(), 3);
         self.gates.release(self.tickets.pop().unwrap()).unwrap();
         wait(self.jobs.pop().unwrap()).unwrap().unwrap();
+        // The accepted ordinary queued write also shares that slot. Observe it
+        // only after releasing the checkpoint callback, whichever writer enters
+        // first; waiting here could itself block the reserved recovery writer.
     }
 
     fn release(self) {
@@ -128,15 +135,20 @@ fn detached_checkpoint_write_keeps_original_global_owner_through_actual_recovery
             Ok(actual)
         })
         .unwrap();
-    let mut job = Box::pin(job);
-    PollProbe::default().pending(job.as_mut());
-    assert_eq!(owner.snapshot().unwrap().active_writes, 1);
-    assert_eq!(owner.snapshot().unwrap().active_recovery_writes, 0);
-    assert_eq!(owner.snapshot().unwrap().recovery_queued, 1);
-    // Recovery preserves the single-writer gate. Free the original writer,
-    // retaining both ordinary reads and their full queue during checkpoint I/O.
+    // Recovery has an independent queue/worker, but writes retain the original
+    // global single-writer ceiling. The accepted checkpoint must wait for the
+    // already active ordinary writer rather than enter concurrently with it.
+    let queued = owner.snapshot().unwrap();
+    assert_eq!(queued.active_reads, 2);
+    assert_eq!(queued.active_writes, 1);
+    assert_eq!(queued.active_recovery_writes, 0);
+    assert_eq!(queued.recovery_queued, 1);
     ordinary.release_writer();
     let ticket = receiver.recv_timeout(WATCHDOG).unwrap();
+    let entered = owner.snapshot().unwrap();
+    assert_eq!(entered.active_reads, 2);
+    assert_eq!(entered.active_writes, 1);
+    assert_eq!(entered.active_recovery_writes, 1);
     drop(job);
     clock.advance(std::time::Duration::from_secs(2));
     assert!(!retired.has_retired());

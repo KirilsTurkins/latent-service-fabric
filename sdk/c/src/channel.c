@@ -121,9 +121,15 @@ static int header(nghttp2_session *session, const nghttp2_frame *frame, const ui
         call->has_grpc_status = true;
         call->grpc_status = (int32_t)number;
     } else if (header_equal(name, name_length, "latent-audit-status")) {
-        if (length == 0 || length > 64) return stream_failure(call, LATENT_PROFILE_FAILURE_CATEGORY_DECODE);
+        if (length == 0 || length > 64) {
+            if (lsf_is_transaction(call->operation)) { call->transaction_audit_invalid = true; return 0; }
+            return stream_failure(call, LATENT_PROFILE_FAILURE_CATEGORY_DECODE);
+        }
         for (size_t index = 0; index < length; ++index) {
-            if (value[index] < 0x21 || value[index] > 0x7e) return stream_failure(call, LATENT_PROFILE_FAILURE_CATEGORY_DECODE);
+            if (value[index] < 0x21 || value[index] > 0x7e) {
+                if (lsf_is_transaction(call->operation)) { call->transaction_audit_invalid = true; return 0; }
+                return stream_failure(call, LATENT_PROFILE_FAILURE_CATEGORY_DECODE);
+            }
         }
         memcpy(call->audit_status, value, length);
         call->metadata.has_audit_status = true;
@@ -131,8 +137,10 @@ static int header(nghttp2_session *session, const nghttp2_frame *frame, const ui
         audit_ack(call);
     } else if (header_equal(name, name_length, "latent-audit-attempt")) {
         uint64_t number;
-        if (!latent_profile_parse_u64((latent_string){(const char *)value, length}, &number))
+        if (!latent_profile_parse_u64((latent_string){(const char *)value, length}, &number)) {
+            if (lsf_is_transaction(call->operation)) { call->transaction_audit_invalid = true; return 0; }
             return stream_failure(call, LATENT_PROFILE_FAILURE_CATEGORY_DECODE);
+        }
         call->metadata.has_audit_attempt_sequence = true;
         call->metadata.audit_attempt_sequence = number;
         audit_ack(call);

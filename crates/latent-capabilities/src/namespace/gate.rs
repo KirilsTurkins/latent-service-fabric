@@ -25,6 +25,12 @@ impl Gate {
             Err(denied())
         }
     }
+    pub(super) fn check_retained_response(&self) -> Result<(), PlatformError> {
+        match self.0.load(Ordering::Acquire) {
+            OPEN | ACCEPTED => Ok(()),
+            _ => Err(denied()),
+        }
+    }
     fn accept(&self) -> Result<(), PlatformError> {
         self.0
             .compare_exchange(OPEN, ACCEPTED, Ordering::AcqRel, Ordering::Acquire)
@@ -90,7 +96,19 @@ impl CommitIoAcceptance<'_> {
         self,
         revalidate: impl FnOnce() -> Result<R, NamespaceError>,
     ) -> Result<(), NamespaceError> {
+        self.accept_with_final(revalidate, || Ok(()))
+    }
+
+    /// Retain the effect fence through namespace acceptance and the original
+    /// activation cancellation CAS. Both callbacks are bounded metadata work;
+    /// they must do no I/O or recursively acquire an ownership lock.
+    pub fn accept_with_final<R>(
+        self,
+        revalidate: impl FnOnce() -> Result<R, NamespaceError>,
+        accept_original: impl FnOnce() -> Result<(), NamespaceError>,
+    ) -> Result<(), NamespaceError> {
         let mut revalidate = Some(revalidate);
+        let mut accept_original = Some(accept_original);
         let mut detailed = None;
         let result = self.authority.with_operation(
             self.store,
@@ -105,7 +123,9 @@ impl CommitIoAcceptance<'_> {
                         return Err(denied());
                     }
                 };
-                let result = self.authority.gate.accept();
+                let result = self.authority.gate.accept().and_then(|()| {
+                    accept_original.take().ok_or_else(denied)?().map_err(|_| denied())
+                });
                 drop(guard);
                 result
             },

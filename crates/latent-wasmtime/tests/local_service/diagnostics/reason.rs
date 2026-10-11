@@ -19,6 +19,8 @@ pub enum Reason {
     SchedulerHandoffClosed,
     SchedulerSequenceExhausted,
     SchedulerAllCellsQuarantined,
+    SchedulerImmediateCapacityUnavailable,
+    SchedulerQueueFull,
     QuotaStateUnavailable,
     PreparationReadyCapacity,
     PreparationReadyBytes,
@@ -38,6 +40,13 @@ pub enum Reason {
     ReleaseLifecycleBusy,
     ReleaseLifecycleUnavailable,
     AdmissionRepositoryRetired,
+    PreparationSourceAssociation,
+    PreparationMetadataBound,
+    PreparationMetadataOverflow,
+    PreparationComponentBound,
+    PreparationCacheBound,
+    PreparationDeclaredBudget,
+    ReleaseLifecycleCapacity,
     Unclassified,
 }
 
@@ -81,6 +90,15 @@ pub(super) fn classify(error: &PlatformError) -> Reason {
                 _ => Reason::Unclassified,
             }
         }
+        ("scheduler.limit", 1)
+            if error.code == PlatformErrorCode::ResourceExhausted && error.retryable =>
+        {
+            match reason {
+                "immediate-capacity-unavailable" => Reason::SchedulerImmediateCapacityUnavailable,
+                "queue-full" => Reason::SchedulerQueueFull,
+                _ => Reason::Unclassified,
+            }
+        }
         ("admission.limit", 3)
             if error.code == PlatformErrorCode::Unavailable
                 && error.retryable
@@ -109,6 +127,24 @@ fn currentness_shape(error: &PlatformError, reason: &str) -> bool {
 }
 
 fn empty_detail_reason(error: &PlatformError) -> Reason {
+    if error.code == PlatformErrorCode::ResourceExhausted && !error.retryable {
+        return match error.message.as_str() {
+            "prepared-source-association" => Reason::PreparationSourceAssociation,
+            "preparation metadata exceeds its configured bound" => Reason::PreparationMetadataBound,
+            "prepared metadata accounting overflowed" => Reason::PreparationMetadataOverflow,
+            "component artifact exceeds the configured byte limit" => {
+                Reason::PreparationComponentBound
+            }
+            "component exceeds the bounded prepared-cache byte capacity" => {
+                Reason::PreparationCacheBound
+            }
+            "capsule-declared resource limits exceed the engine profile" => {
+                Reason::PreparationDeclaredBudget
+            }
+            "release-lifecycle-limit" => Reason::ReleaseLifecycleCapacity,
+            _ => Reason::Unclassified,
+        };
+    }
     if error.code != PlatformErrorCode::Unavailable {
         return Reason::Unclassified;
     }

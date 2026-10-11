@@ -168,6 +168,21 @@ impl Inner {
             )
         };
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
+        let control = child_control.unwrap_or_else(|| {
+            Arc::new(ActivationControl::new(
+                lifecycle.registration(),
+                transport.clone(),
+                budget.profile().supports_descendants(),
+            ))
+        });
+        if let Some(permit) = &permit {
+            if budget.profile().supports_descendants() {
+                // Transaction admission and code preparation already consume
+                // original authority. Bind the real cancellation owner before
+                // either can inspect the lineage, without occupying a cell.
+                budget.enable_descendants(permit.delegation_limits(), control.clone())?;
+            }
+        }
         if let Some(admission) = &lifecycle.transaction_admission {
             if budget.profile() != latent_core::BudgetProfile::Phase4
                 || envelope.parent_activation_id.is_some()
@@ -207,17 +222,7 @@ impl Inner {
         let (key, ready) = self
             .prepare_ready(&envelope, &token, &budget, &transport)
             .await?;
-        let control = child_control.unwrap_or_else(|| {
-            Arc::new(ActivationControl::new(
-                lifecycle.registration(),
-                transport.clone(),
-                budget.profile().supports_descendants(),
-            ))
-        });
         let scheduled = if let Some(permit) = permit {
-            if budget.profile().supports_descendants() {
-                budget.enable_descendants(permit.delegation_limits(), control.clone())?;
-            }
             stage(
                 self.dependencies
                     .scheduler

@@ -4,18 +4,25 @@ use std::sync::{Arc, OnceLock};
 use std::task::{Context, Poll};
 use std::time::Instant;
 
+use latent_core::native_capacity::NativeReservation;
 use latent_core::{ActivationClock, SystemActivationClock};
 
+use super::native_capacity::NativeBinding;
 use super::physical::{validate_records, FailureLatch, PhysicalStore};
-use super::{ProtectedStoreConfig, ProtectedStoreError, ProtectedStoreOwner};
+use super::startup_memory::{memory_error, startup_memory_size, InitializationMemory};
+use super::{
+    ProtectedStoreConfig, ProtectedStoreError, ProtectedStoreOwner, ProtectedStoreStartupMemory,
+};
 use crate::embedded::{ReadView, RowKey, StoreError, StoreLimits};
 use crate::store_io::{
-    StoreIoDrain, StoreIoError, StoreIoOwner, StoreIoShutdown, StoreIoSnapshot, StoreIoStartup,
+    StoreIoDrain, StoreIoError, StoreIoOwner, StoreIoReady, StoreIoShutdown, StoreIoSnapshot,
+    StoreIoStartup,
 };
 
 enum Starting {
     Running(StoreIoStartup<PhysicalStore>),
     Failed(StoreIoOwner<OnceLock<PhysicalStore>>, StoreIoError),
+    RejectedReady(StoreIoReady<PhysicalStore>, ProtectedStoreError),
 }
 
 /// Owned startup; existing protected data is never reset on an error.
@@ -24,6 +31,8 @@ pub struct ProtectedStoreStartup {
     state: Starting,
     failure: Arc<FailureLatch>,
     limits: StoreLimits,
+    native_capacity: Arc<NativeBinding>,
+    original: Option<Arc<NativeReservation>>,
 }
 
 impl ProtectedStoreOwner {
@@ -99,7 +108,14 @@ impl ProtectedStoreOwner {
         validator: impl FnOnce(&ReadView) -> Result<(), StoreError> + Send + 'static,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
-        Self::start_validated_view_inner(config, None, validator_retained_bytes, validator, clock)
+        Self::start_validated_view_inner(
+            config,
+            None,
+            None,
+            validator_retained_bytes,
+            validator,
+            clock,
+        )
     }
 
     /// Bind a store identity within the actual exclusive initializer, after
@@ -116,6 +132,29 @@ impl ProtectedStoreOwner {
         Self::start_validated_view_inner(
             config,
             Some(identity),
+            None,
+            validator_retained_bytes,
+            validator,
+            clock,
+        )
+    }
+
+    /// Prepay initialization and resident engine memory on the node's original
+    /// Recovery admission before creating workers or opening native files. The
+    /// same owner is already bound when readiness is delivered; original memory
+    /// survives detached startup waiters and actual engine/root destruction.
+    pub fn start_bound_retained_validated_view_with_clock(
+        config: ProtectedStoreConfig,
+        identity: crate::store_identity::StoreIdentity,
+        memory: ProtectedStoreStartupMemory,
+        validator_retained_bytes: u64,
+        validator: impl FnOnce(&ReadView) -> Result<(), StoreError> + Send + 'static,
+        clock: Arc<dyn ActivationClock>,
+    ) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
+        Self::start_validated_view_inner(
+            config,
+            Some(identity),
+            Some(memory),
             validator_retained_bytes,
             validator,
             clock,
@@ -125,13 +164,81 @@ impl ProtectedStoreOwner {
     fn start_validated_view_inner(
         config: ProtectedStoreConfig,
         identity: Option<crate::store_identity::StoreIdentity>,
+        memory: Option<ProtectedStoreStartupMemory>,
         validator_retained_bytes: u64,
         validator: impl FnOnce(&ReadView) -> Result<(), StoreError> + Send + 'static,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<ProtectedStoreStartup, ProtectedStoreError> {
-        let reservation = StartupReservation::new(&config, validator_retained_bytes)?;
-        start_initializer(reservation, clock, move |failure| {
-            PhysicalStore::initialize(&config, failure, validator, identity)
+        let size = startup_memory_size(&config, validator_retained_bytes)?;
+        if !cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+            return Err(ProtectedStoreError::UnsupportedPlatform);
+        }
+        let (native_capacity, original, initialization_memory, resident_memory) = match memory {
+            Some(memory) => {
+                let prepared = memory.prepare(&size)?;
+                (
+                    prepared.binding,
+                    Some(prepared.original),
+                    Some(prepared.initialization),
+                    Some(prepared.resident),
+                )
+            }
+            None => (Arc::new(NativeBinding::default()), None, None, None),
+        };
+        let failure = Arc::new(FailureLatch::default());
+        let initializer_failure = Arc::clone(&failure);
+        let limits = config.engine;
+        let io = config.io.clone();
+        let started = StoreIoOwner::initialize_with_clock(
+            move || {
+                let result = initialization_memory
+                    .as_ref()
+                    .map_or(Ok(()), InitializationMemory::check)
+                    .and_then(|()| {
+                        PhysicalStore::initialize(
+                            &config,
+                            Arc::clone(&initializer_failure),
+                            validator,
+                            identity,
+                            resident_memory,
+                            initialization_memory.as_ref(),
+                        )
+                    });
+                // Owned configuration/validator buffers and failed native
+                // locals retire on this same worker before the init permit.
+                drop(config);
+                let result = result.map_err(|error| {
+                    initializer_failure.record(error);
+                    StoreIoError::InitializationFailed
+                });
+                drop(initialization_memory);
+                result
+            },
+            size.initialization - 4096,
+            io,
+            PhysicalStore::finalize,
+            clock,
+        );
+        let state = match started {
+            Ok(startup) => {
+                if let Some(gate) = startup.failure_gate() {
+                    failure.install(gate);
+                }
+                Starting::Running(startup)
+            }
+            Err(error) => {
+                let Some(owner) = error.owner else {
+                    return Err(ProtectedStoreError::Io(error.reason));
+                };
+                Starting::Failed(owner, error.reason)
+            }
+        };
+        Ok(ProtectedStoreStartup {
+            state,
+            failure,
+            limits,
+            native_capacity,
+            original,
         })
     }
 }
@@ -211,6 +318,8 @@ pub(super) fn start_initializer(
         state,
         failure,
         limits: reservation.limits,
+        native_capacity: Arc::new(NativeBinding::default()),
+        original: None,
     })
 }
 
@@ -219,6 +328,7 @@ impl ProtectedStoreStartup {
         match &self.state {
             Starting::Running(startup) => startup.snapshot(),
             Starting::Failed(owner, _) => owner.snapshot(),
+            Starting::RejectedReady(ready, _) => ready.snapshot(),
         }
         .map_err(ProtectedStoreError::Io)
     }
@@ -227,6 +337,7 @@ impl ProtectedStoreStartup {
         match &self.state {
             Starting::Running(startup) => startup.close(),
             Starting::Failed(owner, _) => owner.close(),
+            Starting::RejectedReady(ready, _) => ready.close(),
         }
     }
 
@@ -234,15 +345,16 @@ impl ProtectedStoreStartup {
         match &self.state {
             Starting::Running(startup) => startup.quarantine(),
             Starting::Failed(owner, _) => owner.quarantine(),
+            Starting::RejectedReady(ready, _) => ready.quarantine(),
         }
     }
 
-    /// Join only workers whose physical retirement has actually completed,
-    /// including a failed validator. Deadline expiry never permits this join.
+    /// Join only the original workers after physical retirement is observable.
     pub fn reap_retired_threads(&self) -> Result<usize, ProtectedStoreError> {
         match &self.state {
             Starting::Running(startup) => startup.reap_retired_threads(),
             Starting::Failed(owner, _) => owner.reap_retired_threads(),
+            Starting::RejectedReady(ready, _) => ready.reap_retired_threads(),
         }
         .map_err(ProtectedStoreError::Io)
     }
@@ -255,6 +367,7 @@ impl ProtectedStoreStartup {
         match &self.state {
             Starting::Running(startup) => startup.drain_async(deadline, wait),
             Starting::Failed(owner, _) => owner.drain_async(deadline, wait),
+            Starting::RejectedReady(ready, _) => ready.drain_async(deadline, wait),
         }
         .map(ProtectedStoreDrain::new)
         .map_err(ProtectedStoreError::Io)
@@ -269,21 +382,45 @@ impl Future for ProtectedStoreStartup {
         let result = match &mut this.state {
             Starting::Running(startup) => Pin::new(startup).poll(cx),
             Starting::Failed(_, error) => Poll::Ready(Err(*error)),
+            Starting::RejectedReady(_, error) => return Poll::Ready(Err(*error)),
         };
         match result {
             Poll::Ready(Ok(ready)) => {
                 this.failure.install(ready.failure_gate());
-                Poll::Ready(Ok(ProtectedStoreOwner {
-                    ready,
+                let original = this.original.take();
+                let mut ready = Some(ready);
+                let mut publish = || ProtectedStoreOwner {
+                    ready: ready.take().expect("single readiness publication"),
                     failure: Arc::clone(&this.failure),
                     limits: this.limits,
-                    native_capacity: Arc::new(super::native_capacity::NativeBinding::default()),
-                }))
+                    native_capacity: Arc::clone(&this.native_capacity),
+                };
+                let published = if let Some(original) = &original {
+                    original.with_live(publish).map_err(memory_error)
+                } else {
+                    Ok(publish())
+                };
+                match published {
+                    Ok(owner) => Poll::Ready(Ok(owner)),
+                    Err(error) => {
+                        // The original short gate has been released. Keep the
+                        // private ready owner available for positive drain;
+                        // neither a witness nor a business job can escape.
+                        let ready = ready.expect("rejected gate did not publish readiness");
+                        ready.quarantine();
+                        this.failure.record(error);
+                        this.state = Starting::RejectedReady(ready, error);
+                        Poll::Ready(Err(error))
+                    }
+                }
             }
-            Poll::Ready(Err(error)) => Poll::Ready(Err(this
-                .failure
-                .get()
-                .unwrap_or(ProtectedStoreError::Io(error)))),
+            Poll::Ready(Err(error)) => {
+                drop(this.original.take());
+                Poll::Ready(Err(this
+                    .failure
+                    .get()
+                    .unwrap_or(ProtectedStoreError::Io(error))))
+            }
             Poll::Pending => Poll::Pending,
         }
     }

@@ -121,6 +121,12 @@ qualify an application or change the shipped `same-origin` referrer policy.
 
 Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers canonical imported owners, `Unsigned64`, try-with-resources and the captured profile, schema and binding companion. The host owns commitment. The signed transaction and HTTP recovery matrix is tracked by #389 and required Java slice #718. The tutorial below retains its existing stateless profile.
 
+The compiler selects the Phase 4 compatibility catalogue only after checking the
+captured profile, binding links, schema and exact State and intents WIT. This
+recognizes their declared ABI in the report; provider installation, current
+grants and signed execution remain separate checks. Ordinary projects retain
+the Phase 3 catalogue.
+
 ## 2. Build and package the project
 
 ```bash
@@ -142,6 +148,29 @@ The output includes `component.wasm`, `capsule.json`, `contracts.json`,
 `wit-lock.json`, `deployment.json`, `package/` and `build-observation.json`.
 Full-width WIT integers retain their original types; application errors remain
 `result` values. Unsupported WIT types fail explicitly during contract derivation.
+
+For the explicit SDK activation runtime profile, use
+`--runtime-profile teavm-activation-fibers-v1` on the build command. The selected
+world must declare `latent:runtime/activation@0.1.0` and
+`latent:clock/monotonic@0.1.0`. The compiler preserves the application's original
+Java classes and stages the SDK's runtime substitutions, continuation handling
+and owned dispatch. It records source origins and the selected checkpoint class
+index in `source-origins.json` and `runtime-profile.json`; both become signed
+build materials after the entire build succeeds. The compatibility check captures
+the frozen V5 ABI from the declared WIT surface. Operator provider installation
+and grants remain separate requirements.
+
+Keep the selected world and exported contracts in the project tenant's namespace.
+The isolated example signer uses tenant `examples`. The normal full activation
+build and its first signed execution attempt are recorded in
+[Java activation fibers](../runtime/java-activation-fibers.md); that invocation
+failed and does not establish complete CompletableFuture execution support.
+
+`--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
+dependency cache. Gradle writes locks and updates to the build's private home.
+Choose one cache mode per build. Profile selection does not change invocation
+limits or establish complete Java concurrency qualification; the measured
+boundaries are described in [Java activation fibers](../runtime/java-activation-fibers.md).
 
 ## 3. Sign for this local experiment
 

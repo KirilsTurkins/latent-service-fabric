@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex, OnceLock};
 
+use super::startup_memory::{InitializationMemory, ResidentMemory};
 use super::{
     FreshStoreInitialization, ProtectedFencedStoreError, ProtectedStoreConfig, ProtectedStoreError,
 };
@@ -61,6 +62,10 @@ pub(super) struct PhysicalStore {
     root_lock: std::fs::File,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     lock_fence: latent_protected_files::ProtectedMutableFile,
+    #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+    drop_probe: Mutex<Option<Box<dyn FnOnce() + Send>>>,
+    // Last: original global memory outlives every native resource destructor.
+    _resident_memory: Option<ResidentMemory>,
 }
 
 impl PhysicalStore {
@@ -70,8 +75,18 @@ impl PhysicalStore {
         failure: Arc<FailureLatch>,
         validator: impl FnOnce(&ReadView) -> Result<(), StoreError>,
         identity: Option<crate::store_identity::StoreIdentity>,
+        resident_memory: Option<ResidentMemory>,
+        initialization_memory: Option<&InitializationMemory>,
     ) -> Result<Self, ProtectedStoreError> {
-        Self::initialize_fenced(config, failure, None, validator, identity)
+        Self::initialize_fenced(
+            config,
+            failure,
+            None,
+            validator,
+            identity,
+            resident_memory,
+            initialization_memory,
+        )
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -81,7 +96,15 @@ impl PhysicalStore {
         original_fence: super::restore_adoption::RestoredRootFence,
         validator: impl FnOnce(&ReadView) -> Result<(), StoreError>,
     ) -> Result<Self, ProtectedStoreError> {
-        Self::initialize_fenced(config, failure, Some(original_fence), validator, None)
+        Self::initialize_fenced(
+            config,
+            failure,
+            Some(original_fence),
+            validator,
+            None,
+            None,
+            None,
+        )
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -91,8 +114,11 @@ impl PhysicalStore {
         original_fence: Option<super::restore_adoption::RestoredRootFence>,
         validator: impl FnOnce(&ReadView) -> Result<(), StoreError>,
         identity: Option<crate::store_identity::StoreIdentity>,
+        resident_memory: Option<ResidentMemory>,
+        initialization_memory: Option<&InitializationMemory>,
     ) -> Result<Self, ProtectedStoreError> {
         use latent_protected_files::ProtectedRoot;
+        check_initialization(initialization_memory)?;
         let root =
             ProtectedRoot::open(&config.root).map_err(|_| ProtectedStoreError::UnsafeRoot)?;
         if root
@@ -124,6 +150,7 @@ impl PhysicalStore {
         }) {
             return Err(ProtectedStoreError::UnsafeRoot);
         }
+        check_initialization(initialization_memory)?;
         let (engine, status) =
             EmbeddedStore::open_bounded_file(file, config.engine, config.maximum_file_bytes)
                 .map_err(ProtectedStoreError::Store)?;
@@ -131,6 +158,7 @@ impl PhysicalStore {
             let view = engine.snapshot().map_err(ProtectedStoreError::Store)?;
             validator(&view).map_err(ProtectedStoreError::Store)?;
         }
+        check_initialization(initialization_memory)?;
         // The engine is still private to its single initializer. No read/job,
         // command or dispatcher consumer can race the coherent empty-store
         // check and actual identity transaction before readiness publication.
@@ -143,7 +171,12 @@ impl PhysicalStore {
                     .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
                 root.check_mutable_file(&fence)
                     .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
-                engine.apply(batch).map_err(ProtectedStoreError::Store)?;
+                engine
+                    .apply_fenced(batch, || check_initialization(initialization_memory))
+                    .map_err(|error| match error {
+                        FencedStoreError::Store(error) => ProtectedStoreError::Store(error),
+                        FencedStoreError::Fence(error) => error,
+                    })?;
                 Some(identity)
             } else {
                 None
@@ -160,6 +193,13 @@ impl PhysicalStore {
             .map_err(|_| post_identity_root_error)?;
         root.check_mutable_file(&fence)
             .map_err(|_| post_identity_root_error)?;
+        check_initialization(initialization_memory).map_err(|error| {
+            if fresh_identity.is_some() {
+                ProtectedStoreError::CommitUncertain
+            } else {
+                error
+            }
+        })?;
         Ok(Self {
             engine: Some(engine),
             status,
@@ -176,6 +216,9 @@ impl PhysicalStore {
             fence,
             root_lock,
             lock_fence,
+            #[cfg(test)]
+            drop_probe: Mutex::new(None),
+            _resident_memory: resident_memory,
         })
     }
 
@@ -185,6 +228,8 @@ impl PhysicalStore {
         _: Arc<FailureLatch>,
         _: impl FnOnce(&ReadView) -> Result<(), StoreError>,
         _: Option<crate::store_identity::StoreIdentity>,
+        _: Option<ResidentMemory>,
+        _: Option<&InitializationMemory>,
     ) -> Result<Self, ProtectedStoreError> {
         Err(ProtectedStoreError::UnsupportedPlatform)
     }
@@ -197,10 +242,6 @@ impl PhysicalStore {
         _: impl FnOnce(&ReadView) -> Result<(), StoreError>,
     ) -> Result<Self, ProtectedStoreError> {
         Err(ProtectedStoreError::UnsupportedPlatform)
-    }
-
-    pub fn engine(&self) -> &EmbeddedStore {
-        self.engine.as_ref().expect("worker-owned live engine")
     }
 
     pub(super) fn restore_fence(
@@ -219,6 +260,73 @@ impl PhysicalStore {
         {
             Err(ProtectedStoreError::UnsupportedPlatform)
         }
+    }
+
+    pub fn engine(&self) -> &EmbeddedStore {
+        self.engine.as_ref().expect("worker-owned live engine")
+    }
+
+    #[cfg_attr(
+        not(all(target_os = "linux", target_arch = "x86_64")),
+        allow(clippy::unused_self)
+    )]
+    pub(super) fn ensure_state_mode_marker(
+        &self,
+        identity: &crate::store_identity::StoreIdentity,
+        original: &latent_core::native_capacity::NativeReservation,
+        before_native_retirement: impl FnOnce(),
+    ) -> Result<super::mode::StateModeObservation, StoreError> {
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            let view = self.engine().snapshot()?;
+            let stored_identity = view
+                .get_bounded(
+                    &crate::store_identity::StoreIdentity::row_key(),
+                    crate::store_identity::MAXIMUM_ENCODED_BYTES,
+                )?
+                .as_deref()
+                .map(crate::store_identity::StoreIdentity::decode)
+                .transpose()?;
+            if stored_identity.as_ref() != Some(identity) {
+                return Err(StoreError::Conflict);
+            }
+            // This metadata is set only after the actual exclusive initializer
+            // applied its identity batch and checked the retained root fences.
+            // Reopen equality never sets it. The checkpoint consumes it later.
+            let actual_fresh_identity = self
+                .fresh_identity
+                .lock()
+                .map_err(|_| StoreError::Unavailable)?
+                .as_ref()
+                == Some(identity);
+            if actual_fresh_identity {
+                // Fresh initialization is not permission to create a marker
+                // after trusted startup code has already written business or
+                // dispatcher rows. Use this same coherent view and bounded
+                // indexed existence checks before any mode file I/O.
+                super::mode::require_initializer_only(&view, identity)?;
+            }
+            drop(view);
+            super::mode::ensure_native(
+                &self.root,
+                identity,
+                actual_fresh_identity,
+                original,
+                before_native_retirement,
+            )
+        }
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            let _unused = (identity, original, before_native_retirement);
+            Err(StoreError::UnsupportedFormat)
+        }
+    }
+
+    #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+    pub(super) fn install_drop_probe(&self, probe: impl FnOnce() + Send + 'static) {
+        let mut selected = self.drop_probe.lock().unwrap();
+        assert!(selected.is_none(), "one bounded native destruction probe");
+        *selected = Some(Box::new(probe));
     }
 
     /// Protected descriptor identity metadata only. The root itself never
@@ -379,6 +487,11 @@ impl PhysicalStore {
     }
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn check_initialization(memory: Option<&InitializationMemory>) -> Result<(), ProtectedStoreError> {
+    memory.map_or(Ok(()), InitializationMemory::check)
+}
+
 pub(super) fn validate_records(
     view: &ReadView,
     validator: &mut impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
@@ -412,6 +525,13 @@ pub(super) fn validate_records(
 
 impl Drop for PhysicalStore {
     fn drop(&mut self) {
+        #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+        {
+            let probe = self.drop_probe.lock().unwrap().take();
+            if let Some(probe) = probe {
+                probe();
+            }
+        }
         drop(self.engine.take());
         // The root lock outlives actual engine destruction, including its final
         // native flush. Release failure cannot be reported as a clean drain.

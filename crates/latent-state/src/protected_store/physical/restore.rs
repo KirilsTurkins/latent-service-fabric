@@ -90,6 +90,9 @@ impl PhysicalStore {
         current().map_err(ProtectedStoreError::Store)?;
         let fresh_root = root.identity();
         Ok(Self {
+            _resident_memory: None,
+            #[cfg(test)]
+            drop_probe: Mutex::new(None),
             engine: Some(engine),
             status,
             failure: Arc::new(FailureLatch::default()),

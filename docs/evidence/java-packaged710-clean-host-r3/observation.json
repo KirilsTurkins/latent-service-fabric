@@ -1,0 +1,2655 @@
+{
+  "approvedProducerSource": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "bounds": {
+    "commands": 360,
+    "componentBuilds": 4,
+    "conductorSeconds": 7200,
+    "liveNodes": 1,
+    "nodeCampaignSeconds": 900
+  },
+  "cleanup": {
+    "test-java-former-profile-710": {
+      "build": {
+        "state": "idle"
+      },
+      "cleanShutdown": true,
+      "dataRetained": true,
+      "guestInstance": {
+        "bootId": "47e7ed44-4348-49ff-a4c7-33f1703b4c18",
+        "initStartTicks": "3426935",
+        "pidNamespace": "4026532381"
+      },
+      "node": "lsf-0a1ea0b2898f8bc5",
+      "profile": "local-experimental-v1",
+      "providerShutdown": {
+        "blobHandles": 0,
+        "blobStages": 0,
+        "blobWork": 0,
+        "calls": 0,
+        "clean": true,
+        "cleanupJobs": 0,
+        "connections": 0,
+        "controlOwners": 0,
+        "failedCleanup": 0,
+        "handles": 0,
+        "ioCalls": 0,
+        "ioRetainedBytes": 0,
+        "pendingRequests": 0,
+        "results": 0,
+        "runningRequests": 0,
+        "secretGenerations": 0,
+        "secretReferences": 0,
+        "sessions": 0,
+        "workers": 0
+      },
+      "providers": [
+        {
+          "capability": "latent:clock/monotonic@0.1.0",
+          "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+          "configurationEpoch": "1",
+          "id": "clockMonotonic",
+          "profile": "activation-monotonic-v1",
+          "service": "runtime-host",
+          "tenant": "examples"
+        },
+        {
+          "capability": "latent:clock/wall@0.1.0",
+          "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+          "configurationEpoch": "1",
+          "id": "clockWall",
+          "profile": "activation-wall-v1",
+          "service": "runtime-host",
+          "tenant": "examples"
+        },
+        {
+          "capability": "latent:service/invoke@0.1.0",
+          "configurationDigest": "sha256:b8416566cc5a30f8c5ba4453079aa956472d52dfa27d68d700ffa8c80e306025",
+          "configurationEpoch": "1",
+          "id": "localService",
+          "profile": "lsf-local-service-invocation-v1",
+          "service": "examples/java-http-domain",
+          "tenant": "examples"
+        }
+      ],
+      "readiness": {
+        "activationReady": true,
+        "authenticated": true,
+        "profile": "local-experimental-v1",
+        "schemaVersion": "latent.native-readiness.v1"
+      },
+      "reaped": true,
+      "state": "stopped"
+    }
+  },
+  "commands": [
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "connect",
+        "--workspace",
+        "test-java-composition-710",
+        "--backend-config",
+        "/qualification-work/campaign-r1/controller/test-java-composition-710-backend.json"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "backend": "linux",
+          "workspace": "test-java-composition-710"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 0.402,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 127,
+      "stdoutSha256": "73d9831312842b4dc51dd980a2bf0bc719218fb94dbd32be1e5488d4a0f1406a"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "install",
+        "--workspace",
+        "test-java-composition-710",
+        "--runtime-inputs",
+        "/qualification-work/campaign-r1/controller/test-java-composition-710-runtime.json"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "activationReady": null,
+          "experimental": true,
+          "installationId": "7b1a22a9faa785533eae5cf4eee45860",
+          "preflight": {
+            "host": {
+              "distribution": "ubuntu-24.04",
+              "glibc": "glibc 2.39",
+              "kernel": "6.18.33.2-microsoft-standard-WSL2",
+              "pressureReadable": true,
+              "python": "3.12.3",
+              "target": "x86_64-unknown-linux-gnu"
+            },
+            "profile": {
+              "admission": "trusted-local",
+              "authenticatedNativeLoading": false,
+              "compiler": "in-process",
+              "compilerSandbox": null,
+              "guestBoundary": "in-process-wasmtime",
+              "hostAbiProfile": "lsf-host-abi-phase3-v4",
+              "profile": "local-experimental-v1",
+              "protectedCredentialFile": true,
+              "schemaVersion": "latent.standalone.config-check.v1",
+              "target": "x86_64-unknown-linux-gnu",
+              "threatClass": "T0",
+              "wasmtimeVersion": "48.0.3"
+            },
+            "schemaVersion": "latent.native-preflight.v1"
+          },
+          "profile": "local-experimental-v1",
+          "schemaVersion": "latent.native-install-result.v1",
+          "sourceCommit": "761172002e4a4d02102f8c757235b888fe4859e1",
+          "version": "0.1.0-alpha.5"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 68.757,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 975,
+      "stdoutSha256": "d5b1fb1c02e05d8fadcbc7a96efb3f231be6df7cd95c8ddaba7841b70a027c60"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "install-tools",
+        "--workspace",
+        "test-java-composition-710",
+        "--tool-inputs",
+        "/qualification-work/campaign-r1/controller/java-tools.json"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "bundle": "37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+          "directory": "/home/lsfqa/.lsf-dev/test-java-composition-710/tools/37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9/payload",
+          "host": "linux-x86_64",
+          "hostAbi": "lsf-host-abi-phase3-v4",
+          "inventorySha256": "sha256:d25a857a386ed1ecda45a04a7c054fdb320ef5c5ecc38c424ff3ce5f8e7bda71",
+          "language": "java",
+          "ownerIssue": 548,
+          "publisherAuthenticated": true,
+          "publisherPolicySha256": "sha256:2dfb9c7ef993e23f5a3c84ed38d2f0a68ea5cb36dae46a753eeb73ae2b2e1672",
+          "schemaVersion": "latent.dev.tools-selection.v1",
+          "sourceCommit": "761172002e4a4d02102f8c757235b888fe4859e1",
+          "version": "0.1.0-alpha.5"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 305.404,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 729,
+      "stdoutSha256": "fe0101561130d1f5796e57f0fd7e710ac81c9c5f42ce0de793ec19d86ddf3fca"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "acquire",
+        "--bundle-directory",
+        "/approved/java",
+        "--publisher-policy",
+        "/qualification-work/verification/developer-policy.json",
+        "--trusted-root",
+        "/qualification-work/verification/trusted_root.jsonl",
+        "--verifier",
+        "/qualification-work/verification/gh-linux",
+        "--verifier-sha256",
+        "sha256:56b8bbbb27b066ecb33dbef9a256dc9d1314adaeff0908a752feba6c34053b40",
+        "--version",
+        "0.1.0-alpha.5",
+        "--target",
+        "linux-x86_64",
+        "--allow-candidate"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "bundle": "37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+          "purpose": "candidate",
+          "sourceCommit": "761172002e4a4d02102f8c757235b888fe4859e1",
+          "target": "linux-x86_64"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 12.827,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 249,
+      "stdoutSha256": "410de2def2e1778137786f2c7d69e602d6b9c8031fd396485f7c5d23f4128714"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "init",
+        "/qualification-work/campaign-r1/projects/domain",
+        "--bundle",
+        "37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+        "--template",
+        "java/greeting",
+        "--template-sha256",
+        "sha256:1440d2df4045cce128867049ce2428ae5bb9dbcbf52d4a9c56a968c3390ccb2f"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "project": "my-greeting",
+          "template": "sha256:1440d2df4045cce128867049ce2428ae5bb9dbcbf52d4a9c56a968c3390ccb2f",
+          "trustRequired": true
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 0.403,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 199,
+      "stdoutSha256": "7ac1a6658442b63cb39a91b72b8f64b48cd38b5ad8351d153addef0a89d9fdd4"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "trust",
+        "--workspace",
+        "test-java-composition-710",
+        "--project",
+        "/qualification-work/campaign-r1/projects/domain"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "trustedRecipe": "sha256:d406e18aa37cc73b9831e4cea951f6ab89786f0950b02d498693efed8efc7db0",
+          "workspace": "test-java-composition-710"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 0.102,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 199,
+      "stdoutSha256": "6f3312efc8fb358c9ba6eafada4745ad0cbad49d4cae1de473b586fdf97e1d7a"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "build",
+        "--workspace",
+        "test-java-composition-710",
+        "--project",
+        "/qualification-work/campaign-r1/projects/domain"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "artifacts": {
+            "capsule": "sha256:4f90d6898345b6584ceb3fed448c535f264a51a20550ecba7d17f8106774ba6e",
+            "component": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+            "contracts": "sha256:98d26e9203c10ccf3b0cac1cdad02e2e0a53e4ea0c1b4a5dd2b1dd277ebb463a",
+            "deployment": "sha256:0c7b2946b8f4b5b4a2dbcbb3189c0c7634b5e235add50ffb5494c66c1eb08e5e",
+            "evidence": "sha256:b652cc8fcc753330960bfda74842b041336d59248c1a3104c1a3d99621470550",
+            "packageSource": "sha256:fa90783f35d1c73972f10743e5a114688dcd3127686064f93b5d4c973f65e177"
+          },
+          "attempt": "1f9e03f10a99de9ed378128d4f739d1d",
+          "authority": "observed-local-build",
+          "buildKey": "sha256:6beb6f49ca2cc427c4071714da6df4da664647dbbea243671743c59bdc85ab14",
+          "diagnostics": [],
+          "host": "linux-x86_64",
+          "hostAbi": "lsf-host-abi-phase3-v4",
+          "package": {
+            "componentDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+            "executionAuthorized": false,
+            "kind": "capsule",
+            "layerBytes": "1097419",
+            "layers": 7,
+            "name": "java-http-domain",
+            "packageDigest": "sha256:6faf3c4f3787d488341b8bfd5faf521dd292f900b2c3938c7caf9956f4bb42cc",
+            "sbomInventoryDigest": null,
+            "trustEvaluated": false,
+            "version": "1.0.0",
+            "webBuildOutputs": null
+          },
+          "packager": "sha256:7665166c9134e74d7597836ed5132db5329b5fbc3d9ce9a44d6a693cce6d1645",
+          "recipe": "sha256:d406e18aa37cc73b9831e4cea951f6ab89786f0950b02d498693efed8efc7db0",
+          "schemaVersion": "latent.dev.build.v1",
+          "source": "sha256:1b5261b5c9297f24113c88b093973f68f3286528568ee20dac396216eb7e29e8",
+          "target": "wasm-component",
+          "template": {
+            "ownerIssue": 548,
+            "revision": "761172002e4a4d02102f8c757235b888fe4859e1",
+            "sha256": "sha256:438c01295860501b6eda3f3dd71c84c043eb52a45ae5b4c60edb4e39200cfeaa"
+          },
+          "toolInventory": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+          "tools": [
+            {
+              "name": "python",
+              "path": "sdk/bin/python",
+              "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+              "version": "3.13.5"
+            },
+            {
+              "name": "recipe",
+              "path": "recipe/tools/dev_guest_recipe.py",
+              "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+              "version": "1"
+            },
+            {
+              "name": "contracts",
+              "path": "sdk/bin/capsule-contracts",
+              "sha256": "sha256:e0fb57811825a0171a7600791d038b3766b186d3affa997d7fa3dc0d1987c199",
+              "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+            },
+            {
+              "name": "test-signer",
+              "path": "sdk/bin/capsule-test-signer",
+              "sha256": "sha256:5a693c38f188c337d64d0bd704e41806372686eafa36b90a3470546ca9c7c257",
+              "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+            },
+            {
+              "name": "wasm-tools",
+              "path": "sdk/bin/wasm-tools",
+              "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+              "version": "1.254.0"
+            },
+            {
+              "name": "wit-bindgen",
+              "path": "sdk/bin/wit-bindgen",
+              "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+              "version": "0.62.0"
+            }
+          ]
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 54.258,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 2808,
+      "stdoutSha256": "4923d4c056045ac8898b8e1915549926bde1ae50b923ccfe45e9ede97ed5bdc2"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "init",
+        "/qualification-work/campaign-r1/projects/context-required",
+        "--bundle",
+        "37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+        "--template",
+        "java/greeting",
+        "--template-sha256",
+        "sha256:1440d2df4045cce128867049ce2428ae5bb9dbcbf52d4a9c56a968c3390ccb2f"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "project": "my-greeting",
+          "template": "sha256:1440d2df4045cce128867049ce2428ae5bb9dbcbf52d4a9c56a968c3390ccb2f",
+          "trustRequired": true
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 0.403,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 199,
+      "stdoutSha256": "7ac1a6658442b63cb39a91b72b8f64b48cd38b5ad8351d153addef0a89d9fdd4"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "trust",
+        "--workspace",
+        "test-java-composition-710",
+        "--project",
+        "/qualification-work/campaign-r1/projects/context-required"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "trustedRecipe": "sha256:9587c012f15600191ed273e55a3e7ed89d895f8899952c561a1f8329c240070a",
+          "workspace": "test-java-composition-710"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 0.202,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 199,
+      "stdoutSha256": "e5b5628d67001ff6d76b6312933e4510150ce6e4c9e9244c4f6ab17d77b4bd65"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "build",
+        "--workspace",
+        "test-java-composition-710",
+        "--project",
+        "/qualification-work/campaign-r1/projects/context-required"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "artifacts": {
+            "capsule": "sha256:a4943b00e91465085875777566952adc740518eebb57186986f28538fb6114b6",
+            "component": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+            "contracts": "sha256:0f241e4152756d6b2e01a0348aafc2a27ff5de9b2191e4760cef930dd57752b7",
+            "deployment": "sha256:319e9e4335be925f7cf9d94b0641ba1e685ca36d70f2d0cab534716add9335cb",
+            "evidence": "sha256:e6979ca07e0119c7e37eb0203d4c652eec7049dd5079c63fbeeb06f1d05690cf",
+            "packageSource": "sha256:80ade999cdd6cf947f0076087714217b14f2ad91b0f2a08fa98afb9bdc47f7cf"
+          },
+          "attempt": "a11f7a9e80c001991cf7aa1841d9c9af",
+          "authority": "observed-local-build",
+          "buildKey": "sha256:d34231d81419a80afed89a3ae4d76ff696a1238107ef1122c9027b1e13bd0180",
+          "diagnostics": [],
+          "host": "linux-x86_64",
+          "hostAbi": "lsf-host-abi-phase3-v4",
+          "package": {
+            "componentDigest": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+            "executionAuthorized": false,
+            "kind": "capsule",
+            "layerBytes": "554979",
+            "layers": 8,
+            "name": "java-http-context-required",
+            "packageDigest": "sha256:5af740c26a96a00fbf3119d0d61d08373ec263b0fefdcb79ec1af0f7e440dbea",
+            "sbomInventoryDigest": null,
+            "trustEvaluated": false,
+            "version": "1.0.0",
+            "webBuildOutputs": null
+          },
+          "packager": "sha256:7665166c9134e74d7597836ed5132db5329b5fbc3d9ce9a44d6a693cce6d1645",
+          "recipe": "sha256:9587c012f15600191ed273e55a3e7ed89d895f8899952c561a1f8329c240070a",
+          "schemaVersion": "latent.dev.build.v1",
+          "source": "sha256:26cb910014ae0e91546e434e45fe52bceb2de48656605d5170665cc1da4e56aa",
+          "target": "wasm-component",
+          "template": {
+            "ownerIssue": 548,
+            "revision": "761172002e4a4d02102f8c757235b888fe4859e1",
+            "sha256": "sha256:438c01295860501b6eda3f3dd71c84c043eb52a45ae5b4c60edb4e39200cfeaa"
+          },
+          "toolInventory": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+          "tools": [
+            {
+              "name": "python",
+              "path": "sdk/bin/python",
+              "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+              "version": "3.13.5"
+            },
+            {
+              "name": "recipe",
+              "path": "recipe/tools/dev_guest_recipe.py",
+              "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+              "version": "1"
+            },
+            {
+              "name": "contracts",
+              "path": "sdk/bin/capsule-contracts",
+              "sha256": "sha256:e0fb57811825a0171a7600791d038b3766b186d3affa997d7fa3dc0d1987c199",
+              "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+            },
+            {
+              "name": "test-signer",
+              "path": "sdk/bin/capsule-test-signer",
+              "sha256": "sha256:5a693c38f188c337d64d0bd704e41806372686eafa36b90a3470546ca9c7c257",
+              "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+            },
+            {
+              "name": "wasm-tools",
+              "path": "sdk/bin/wasm-tools",
+              "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+              "version": "1.254.0"
+            },
+            {
+              "name": "wit-bindgen",
+              "path": "sdk/bin/wit-bindgen",
+              "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+              "version": "0.62.0"
+            }
+          ]
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 56.839,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 2817,
+      "stdoutSha256": "a101f1ea3630ca2a633e3b86037470c0a552e78bc2d40c236468784f0a75347a"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "init",
+        "/qualification-work/campaign-r1/projects/adapter",
+        "--bundle",
+        "37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+        "--template",
+        "java/greeting",
+        "--template-sha256",
+        "sha256:1440d2df4045cce128867049ce2428ae5bb9dbcbf52d4a9c56a968c3390ccb2f"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "project": "my-greeting",
+          "template": "sha256:1440d2df4045cce128867049ce2428ae5bb9dbcbf52d4a9c56a968c3390ccb2f",
+          "trustRequired": true
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 0.506,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 199,
+      "stdoutSha256": "7ac1a6658442b63cb39a91b72b8f64b48cd38b5ad8351d153addef0a89d9fdd4"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "trust",
+        "--workspace",
+        "test-java-composition-710",
+        "--project",
+        "/qualification-work/campaign-r1/projects/adapter"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "trustedRecipe": "sha256:abc79688dd83c51830788dfc82792f5c7b3b226e69c75a234386bb605f729deb",
+          "workspace": "test-java-composition-710"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 0.202,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 199,
+      "stdoutSha256": "4e1c5bee58a4f433a1f0d6a61d92baf62b784308785a5994189b53037266b5f4"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "build",
+        "--workspace",
+        "test-java-composition-710",
+        "--project",
+        "/qualification-work/campaign-r1/projects/adapter"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "artifacts": {
+            "capsule": "sha256:8e2a7b0858e3ae463baf742f9abc173369c0c6797a2af4f138be5fc1a2ad4176",
+            "component": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+            "contracts": "sha256:2ced024a03f95ef6a144786dce43bf176461e3a2a7f241b9bc48a159d3ac2dee",
+            "deployment": "sha256:a2d557d62192e37f90fe8da46e6d7569492ba977f8b9f98a9bbc59dd1143f295",
+            "evidence": "sha256:e62c962c5c96859a413a95ebeec54ff6ae1b174748fcab805ff04731553e85e5",
+            "packageSource": "sha256:351a49a5565b79e32b63c1c362b718f583cc8351a070de0da44e1ae9b4b7fca4"
+          },
+          "attempt": "0ccb049bfd7cafc9d712ca7ce2a0e8c7",
+          "authority": "observed-local-build",
+          "buildKey": "sha256:36a02960e1976dd6f466f99ac4154681f2c3dc5d4998c3373955964bc5dcb17b",
+          "diagnostics": [],
+          "host": "linux-x86_64",
+          "hostAbi": "lsf-host-abi-phase3-v4",
+          "package": {
+            "componentDigest": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+            "executionAuthorized": false,
+            "kind": "capsule",
+            "layerBytes": "1820388",
+            "layers": 10,
+            "name": "java-http-adapter",
+            "packageDigest": "sha256:723b4a3f062380b6560f22ad9ac693ecb19bdaa8fd8ee781fdfba8cb8047936d",
+            "sbomInventoryDigest": null,
+            "trustEvaluated": false,
+            "version": "1.0.0",
+            "webBuildOutputs": null
+          },
+          "packager": "sha256:7665166c9134e74d7597836ed5132db5329b5fbc3d9ce9a44d6a693cce6d1645",
+          "recipe": "sha256:abc79688dd83c51830788dfc82792f5c7b3b226e69c75a234386bb605f729deb",
+          "schemaVersion": "latent.dev.build.v1",
+          "source": "sha256:560bc6fd2a3ca0c965d886e545232f3f87a5713053874cea7454c3c44a224070",
+          "target": "wasm-component",
+          "template": {
+            "ownerIssue": 548,
+            "revision": "761172002e4a4d02102f8c757235b888fe4859e1",
+            "sha256": "sha256:438c01295860501b6eda3f3dd71c84c043eb52a45ae5b4c60edb4e39200cfeaa"
+          },
+          "toolInventory": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+          "tools": [
+            {
+              "name": "python",
+              "path": "sdk/bin/python",
+              "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+              "version": "3.13.5"
+            },
+            {
+              "name": "recipe",
+              "path": "recipe/tools/dev_guest_recipe.py",
+              "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+              "version": "1"
+            },
+            {
+              "name": "contracts",
+              "path": "sdk/bin/capsule-contracts",
+              "sha256": "sha256:e0fb57811825a0171a7600791d038b3766b186d3affa997d7fa3dc0d1987c199",
+              "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+            },
+            {
+              "name": "test-signer",
+              "path": "sdk/bin/capsule-test-signer",
+              "sha256": "sha256:5a693c38f188c337d64d0bd704e41806372686eafa36b90a3470546ca9c7c257",
+              "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+            },
+            {
+              "name": "wasm-tools",
+              "path": "sdk/bin/wasm-tools",
+              "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+              "version": "1.254.0"
+            },
+            {
+              "name": "wit-bindgen",
+              "path": "sdk/bin/wit-bindgen",
+              "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+              "version": "0.62.0"
+            }
+          ]
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 122.896,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 2810,
+      "stdoutSha256": "501ddda6abe6f1dbbd0b73bd87367a9e5e150e2cb5eaccc9c2b04a064cbb99c9"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "init",
+        "/qualification-work/campaign-r1/projects/adapter-next",
+        "--bundle",
+        "37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+        "--template",
+        "java/greeting",
+        "--template-sha256",
+        "sha256:1440d2df4045cce128867049ce2428ae5bb9dbcbf52d4a9c56a968c3390ccb2f"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "project": "my-greeting",
+          "template": "sha256:1440d2df4045cce128867049ce2428ae5bb9dbcbf52d4a9c56a968c3390ccb2f",
+          "trustRequired": true
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 0.403,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 199,
+      "stdoutSha256": "7ac1a6658442b63cb39a91b72b8f64b48cd38b5ad8351d153addef0a89d9fdd4"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "trust",
+        "--workspace",
+        "test-java-composition-710",
+        "--project",
+        "/qualification-work/campaign-r1/projects/adapter-next"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "trustedRecipe": "sha256:b99c80220f8321613140f99cfeba9777cfc13beec4fb19a4f4cdf1dc26fa2b6f",
+          "workspace": "test-java-composition-710"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 0.203,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 199,
+      "stdoutSha256": "f0ceb54d96e443108f9c3e568e20b6d11866aeb0fc137727a77189e5bdd5f395"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "build",
+        "--workspace",
+        "test-java-composition-710",
+        "--project",
+        "/qualification-work/campaign-r1/projects/adapter-next"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "artifacts": {
+            "capsule": "sha256:34d7487e32480c1e0e716baf0468a22431e7ab086c008cd6efbdd658451c5e08",
+            "component": "sha256:4344aa85da161e33b8906ee4a5c2db272358ca52116f191e5d9ce61eb041d562",
+            "contracts": "sha256:2ced024a03f95ef6a144786dce43bf176461e3a2a7f241b9bc48a159d3ac2dee",
+            "deployment": "sha256:6d034ea2ea25715a8f5e0b3be95f371ce0a94639ca75a8fa4f610accd6106977",
+            "evidence": "sha256:803a59b1c1cdca0eb1e158b53c1c5e3e83222f4be70ba36886205805cf171128",
+            "packageSource": "sha256:0ae56958253672a806a990713a34430b79080e5b5ab173c106030a3752ab70a5"
+          },
+          "attempt": "1e73934f50f61ba4af926353c87c460b",
+          "authority": "observed-local-build",
+          "buildKey": "sha256:4ab3f7a4920bbb2c16871ca4d0983e7d05c20e1ba263964fdd7db1e515471f23",
+          "diagnostics": [],
+          "host": "linux-x86_64",
+          "hostAbi": "lsf-host-abi-phase3-v4",
+          "package": {
+            "componentDigest": "sha256:4344aa85da161e33b8906ee4a5c2db272358ca52116f191e5d9ce61eb041d562",
+            "executionAuthorized": false,
+            "kind": "capsule",
+            "layerBytes": "1820435",
+            "layers": 10,
+            "name": "java-http-adapter-next",
+            "packageDigest": "sha256:cbba94683a0fa28ed0d846d6e9fc3d665b17a2a84334e4b51ae9c75a931e4762",
+            "sbomInventoryDigest": null,
+            "trustEvaluated": false,
+            "version": "1.0.1",
+            "webBuildOutputs": null
+          },
+          "packager": "sha256:7665166c9134e74d7597836ed5132db5329b5fbc3d9ce9a44d6a693cce6d1645",
+          "recipe": "sha256:b99c80220f8321613140f99cfeba9777cfc13beec4fb19a4f4cdf1dc26fa2b6f",
+          "schemaVersion": "latent.dev.build.v1",
+          "source": "sha256:ef6899168f22683c3f2735656ce8696e94548be3979b4785e76f06797e02714d",
+          "target": "wasm-component",
+          "template": {
+            "ownerIssue": 548,
+            "revision": "761172002e4a4d02102f8c757235b888fe4859e1",
+            "sha256": "sha256:438c01295860501b6eda3f3dd71c84c043eb52a45ae5b4c60edb4e39200cfeaa"
+          },
+          "toolInventory": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+          "tools": [
+            {
+              "name": "python",
+              "path": "sdk/bin/python",
+              "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+              "version": "3.13.5"
+            },
+            {
+              "name": "recipe",
+              "path": "recipe/tools/dev_guest_recipe.py",
+              "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+              "version": "1"
+            },
+            {
+              "name": "contracts",
+              "path": "sdk/bin/capsule-contracts",
+              "sha256": "sha256:e0fb57811825a0171a7600791d038b3766b186d3affa997d7fa3dc0d1987c199",
+              "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+            },
+            {
+              "name": "test-signer",
+              "path": "sdk/bin/capsule-test-signer",
+              "sha256": "sha256:5a693c38f188c337d64d0bd704e41806372686eafa36b90a3470546ca9c7c257",
+              "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+            },
+            {
+              "name": "wasm-tools",
+              "path": "sdk/bin/wasm-tools",
+              "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+              "version": "1.254.0"
+            },
+            {
+              "name": "wit-bindgen",
+              "path": "sdk/bin/wit-bindgen",
+              "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+              "version": "0.62.0"
+            }
+          ]
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 143.972,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 2815,
+      "stdoutSha256": "c895bb0372508323f0c8edf8406a29daccecb83c6d070669f57ad336f694c814"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "connect",
+        "--workspace",
+        "test-java-former-profile-710",
+        "--backend-config",
+        "/qualification-work/campaign-r1/controller/test-java-former-profile-710-backend.json"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "backend": "linux",
+          "workspace": "test-java-former-profile-710"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 1.006,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 130,
+      "stdoutSha256": "7d8bef47e2435897a03e85fb24f315658f3d0eedf7d4aa6aafc1040e6c867378"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "install",
+        "--workspace",
+        "test-java-former-profile-710",
+        "--runtime-inputs",
+        "/qualification-work/campaign-r1/controller/test-java-former-profile-710-runtime.json"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "activationReady": null,
+          "experimental": true,
+          "installationId": "ae82b8b468a6019b02ab045b10ca0c8d",
+          "preflight": {
+            "host": {
+              "distribution": "ubuntu-24.04",
+              "glibc": "glibc 2.39",
+              "kernel": "6.18.33.2-microsoft-standard-WSL2",
+              "pressureReadable": true,
+              "python": "3.12.3",
+              "target": "x86_64-unknown-linux-gnu"
+            },
+            "profile": {
+              "admission": "trusted-local",
+              "authenticatedNativeLoading": false,
+              "compiler": "in-process",
+              "compilerSandbox": null,
+              "guestBoundary": "in-process-wasmtime",
+              "hostAbiProfile": "lsf-host-abi-phase3-v4",
+              "profile": "local-experimental-v1",
+              "protectedCredentialFile": true,
+              "schemaVersion": "latent.standalone.config-check.v1",
+              "target": "x86_64-unknown-linux-gnu",
+              "threatClass": "T0",
+              "wasmtimeVersion": "48.0.3"
+            },
+            "schemaVersion": "latent.native-preflight.v1"
+          },
+          "profile": "local-experimental-v1",
+          "schemaVersion": "latent.native-install-result.v1",
+          "sourceCommit": "761172002e4a4d02102f8c757235b888fe4859e1",
+          "version": "0.1.0-alpha.5"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 70.322,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 975,
+      "stdoutSha256": "53895291c6081b8a9dd785eeae97bea20ae34b40346afc3667739aa4dba60ae0"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "down",
+        "--workspace",
+        "test-java-former-profile-710"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "build": {
+            "state": "idle"
+          },
+          "cleanShutdown": true,
+          "dataRetained": true,
+          "guestInstance": {
+            "bootId": "47e7ed44-4348-49ff-a4c7-33f1703b4c18",
+            "initStartTicks": "3426935",
+            "pidNamespace": "4026532381"
+          },
+          "node": "lsf-0a1ea0b2898f8bc5",
+          "profile": "local-experimental-v1",
+          "providerShutdown": {
+            "blobHandles": 0,
+            "blobStages": 0,
+            "blobWork": 0,
+            "calls": 0,
+            "clean": true,
+            "cleanupJobs": 0,
+            "connections": 0,
+            "controlOwners": 0,
+            "failedCleanup": 0,
+            "handles": 0,
+            "ioCalls": 0,
+            "ioRetainedBytes": 0,
+            "pendingRequests": 0,
+            "results": 0,
+            "runningRequests": 0,
+            "secretGenerations": 0,
+            "secretReferences": 0,
+            "sessions": 0,
+            "workers": 0
+          },
+          "providers": [
+            {
+              "capability": "latent:clock/monotonic@0.1.0",
+              "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+              "configurationEpoch": "1",
+              "id": "clockMonotonic",
+              "profile": "activation-monotonic-v1",
+              "service": "runtime-host",
+              "tenant": "examples"
+            },
+            {
+              "capability": "latent:clock/wall@0.1.0",
+              "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+              "configurationEpoch": "1",
+              "id": "clockWall",
+              "profile": "activation-wall-v1",
+              "service": "runtime-host",
+              "tenant": "examples"
+            },
+            {
+              "capability": "latent:service/invoke@0.1.0",
+              "configurationDigest": "sha256:b8416566cc5a30f8c5ba4453079aa956472d52dfa27d68d700ffa8c80e306025",
+              "configurationEpoch": "1",
+              "id": "localService",
+              "profile": "lsf-local-service-invocation-v1",
+              "service": "examples/java-http-domain",
+              "tenant": "examples"
+            }
+          ],
+          "readiness": {
+            "activationReady": true,
+            "authenticated": true,
+            "profile": "local-experimental-v1",
+            "schemaVersion": "latent.native-readiness.v1"
+          },
+          "reaped": true,
+          "state": "stopped"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 2.433,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 1636,
+      "stdoutSha256": "074c7ebd55a8b74b43f7d3a5ba428507a69fadf7068a42f7eccdcebd305334ab"
+    },
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "up",
+        "--workspace",
+        "test-java-former-profile-710"
+      ],
+      "events": [
+        {
+          "event": "ready",
+          "result": {
+            "guestInstance": {
+              "bootId": "47e7ed44-4348-49ff-a4c7-33f1703b4c18",
+              "initStartTicks": "3426935",
+              "pidNamespace": "4026532381"
+            },
+            "node": "lsf-0a1ea0b2898f8bc5",
+            "profile": "local-experimental-v1",
+            "providers": [
+              {
+                "capability": "latent:clock/monotonic@0.1.0",
+                "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                "configurationEpoch": "1",
+                "id": "clockMonotonic",
+                "profile": "activation-monotonic-v1",
+                "service": "runtime-host",
+                "tenant": "examples"
+              },
+              {
+                "capability": "latent:clock/wall@0.1.0",
+                "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+                "configurationEpoch": "1",
+                "id": "clockWall",
+                "profile": "activation-wall-v1",
+                "service": "runtime-host",
+                "tenant": "examples"
+              },
+              {
+                "capability": "latent:service/invoke@0.1.0",
+                "configurationDigest": "sha256:b8416566cc5a30f8c5ba4453079aa956472d52dfa27d68d700ffa8c80e306025",
+                "configurationEpoch": "1",
+                "id": "localService",
+                "profile": "lsf-local-service-invocation-v1",
+                "service": "examples/java-http-domain",
+                "tenant": "examples"
+              }
+            ],
+            "readiness": {
+              "activationReady": true,
+              "authenticated": true,
+              "profile": "local-experimental-v1",
+              "schemaVersion": "latent.native-readiness.v1"
+            },
+            "state": "ready"
+          },
+          "schemaVersion": "latent.dev.result.v1",
+          "workspace": "test-java-former-profile-710"
+        },
+        {
+          "cleanup": {
+            "build": {
+              "state": "idle"
+            },
+            "cleanShutdown": true,
+            "dataRetained": true,
+            "guestInstance": {
+              "bootId": "47e7ed44-4348-49ff-a4c7-33f1703b4c18",
+              "initStartTicks": "3426935",
+              "pidNamespace": "4026532381"
+            },
+            "node": "lsf-0a1ea0b2898f8bc5",
+            "profile": "local-experimental-v1",
+            "providerShutdown": {
+              "blobHandles": 0,
+              "blobStages": 0,
+              "blobWork": 0,
+              "calls": 0,
+              "clean": true,
+              "cleanupJobs": 0,
+              "connections": 0,
+              "controlOwners": 0,
+              "failedCleanup": 0,
+              "handles": 0,
+              "ioCalls": 0,
+              "ioRetainedBytes": 0,
+              "pendingRequests": 0,
+              "results": 0,
+              "runningRequests": 0,
+              "secretGenerations": 0,
+              "secretReferences": 0,
+              "sessions": 0,
+              "workers": 0
+            },
+            "providers": [
+              {
+                "capability": "latent:clock/monotonic@0.1.0",
+                "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                "configurationEpoch": "1",
+                "id": "clockMonotonic",
+                "profile": "activation-monotonic-v1",
+                "service": "runtime-host",
+                "tenant": "examples"
+              },
+              {
+                "capability": "latent:clock/wall@0.1.0",
+                "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+                "configurationEpoch": "1",
+                "id": "clockWall",
+                "profile": "activation-wall-v1",
+                "service": "runtime-host",
+                "tenant": "examples"
+              },
+              {
+                "capability": "latent:service/invoke@0.1.0",
+                "configurationDigest": "sha256:b8416566cc5a30f8c5ba4453079aa956472d52dfa27d68d700ffa8c80e306025",
+                "configurationEpoch": "1",
+                "id": "localService",
+                "profile": "lsf-local-service-invocation-v1",
+                "service": "examples/java-http-domain",
+                "tenant": "examples"
+              }
+            ],
+            "readiness": {
+              "activationReady": true,
+              "authenticated": true,
+              "profile": "local-experimental-v1",
+              "schemaVersion": "latent.native-readiness.v1"
+            },
+            "reaped": true,
+            "state": "stopped"
+          },
+          "event": "foreground-stopped",
+          "schemaVersion": "latent.dev.result.v1",
+          "workspace": "test-java-former-profile-710"
+        },
+        {
+          "code": "success",
+          "result": {
+            "cleanShutdown": true,
+            "dataRetained": true,
+            "guestInstance": {
+              "bootId": "47e7ed44-4348-49ff-a4c7-33f1703b4c18",
+              "initStartTicks": "3426935",
+              "pidNamespace": "4026532381"
+            },
+            "node": "lsf-0a1ea0b2898f8bc5",
+            "profile": "local-experimental-v1",
+            "providerShutdown": {
+              "blobHandles": 0,
+              "blobStages": 0,
+              "blobWork": 0,
+              "calls": 0,
+              "clean": true,
+              "cleanupJobs": 0,
+              "connections": 0,
+              "controlOwners": 0,
+              "failedCleanup": 0,
+              "handles": 0,
+              "ioCalls": 0,
+              "ioRetainedBytes": 0,
+              "pendingRequests": 0,
+              "results": 0,
+              "runningRequests": 0,
+              "secretGenerations": 0,
+              "secretReferences": 0,
+              "sessions": 0,
+              "workers": 0
+            },
+            "providers": [
+              {
+                "capability": "latent:clock/monotonic@0.1.0",
+                "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                "configurationEpoch": "1",
+                "id": "clockMonotonic",
+                "profile": "activation-monotonic-v1",
+                "service": "runtime-host",
+                "tenant": "examples"
+              },
+              {
+                "capability": "latent:clock/wall@0.1.0",
+                "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+                "configurationEpoch": "1",
+                "id": "clockWall",
+                "profile": "activation-wall-v1",
+                "service": "runtime-host",
+                "tenant": "examples"
+              },
+              {
+                "capability": "latent:service/invoke@0.1.0",
+                "configurationDigest": "sha256:b8416566cc5a30f8c5ba4453079aa956472d52dfa27d68d700ffa8c80e306025",
+                "configurationEpoch": "1",
+                "id": "localService",
+                "profile": "lsf-local-service-invocation-v1",
+                "service": "examples/java-http-domain",
+                "tenant": "examples"
+              }
+            ],
+            "readiness": {
+              "activationReady": true,
+              "authenticated": true,
+              "profile": "local-experimental-v1",
+              "schemaVersion": "latent.native-readiness.v1"
+            },
+            "reaped": true,
+            "state": "stopped",
+            "workflow": {
+              "buildProcess": {
+                "state": "idle"
+              },
+              "lastAcceptedBuild": null,
+              "lastConfirmedDeployment": null,
+              "lastConfirmedPublication": null,
+              "pendingOperation": null,
+              "selectedSource": null
+            }
+          },
+          "schemaVersion": "latent.dev.result.v1"
+        }
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "seconds": 22.728,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 4758,
+      "stdoutSha256": "442f499d57e8298b34445ad090fc03b9ea59dc01391103a7a11b7565a719b486"
+    }
+  ],
+  "compilerLogRetentionFailure": "DevError",
+  "conductorSource": {
+    "checkout": "5cb1a74184f5b2f789c8d4b468d03d699c05fad4",
+    "compositionProbe": {
+      "bytes": 20779,
+      "files": [
+        {
+          "bytes": 86,
+          "path": "__init__.py",
+          "sha256": "sha256:2bbc52bc30f2774850be858ea3bc06ef0bd18aaff99a0424a100208ced0162e3"
+        },
+        {
+          "bytes": 5359,
+          "path": "frontend.py",
+          "sha256": "sha256:a65f41580a52a7c31c88ef52f821d0de9ce62965668d0b60497173022415b493"
+        },
+        {
+          "bytes": 5049,
+          "path": "schedule.py",
+          "sha256": "sha256:6c16da089828b76cf1f1cb619c5a3c4f9cf4c678b9f93526952626c1f032ae5d"
+        },
+        {
+          "bytes": 4882,
+          "path": "selection.py",
+          "sha256": "sha256:3908ef0068e6008cabb9055b21ae65a8abb8462856c515fbd04bea34f8233513"
+        },
+        {
+          "bytes": 5403,
+          "path": "source.py",
+          "sha256": "sha256:7cb2026dc749a3e0e13adda72c445acf8563807d1cacf8fb068aac71dd3eb949"
+        }
+      ],
+      "filesDigest": "sha256:77d0303b53c3ce21f03828150b9a9aaeb3eba20a2821d20858a3994273ee36f4"
+    },
+    "entrypoint": {
+      "bytes": 916,
+      "sha256": "sha256:bea9e79d1d5dd4aa8aa5f1bdd32554640e819d9aa2227ad1cb850f3de47ccfcb"
+    },
+    "fixture": {
+      "bytes": 10623,
+      "files": [
+        {
+          "bytes": 3006,
+          "path": "adapter/Capsule.java",
+          "sha256": "sha256:1371c8187b835d2e77a2e8468e61d50ff903740bc0e8bc919a612724ac292dfc"
+        },
+        {
+          "bytes": 323,
+          "path": "adapter/world.wit",
+          "sha256": "sha256:7008db346e0d134b86a27bbdacf9dcfa7b92fd50d50b1d8b91a4af7868546804"
+        },
+        {
+          "bytes": 1509,
+          "path": "client-test.mjs",
+          "sha256": "sha256:dfbf5dbe9bf8f41e6c93cf7a0ca742474b3cb85e944b252d54772c125d2003ee"
+        },
+        {
+          "bytes": 871,
+          "path": "client.mjs",
+          "sha256": "sha256:cdc3b7b59f13761c8afc5fa29aa1335ae905e2a1393b1b6998a7383fa88f52c1"
+        },
+        {
+          "bytes": 356,
+          "path": "context-required/Capsule.java",
+          "sha256": "sha256:47878cada2e0989a23d47a1db462a2dfb3bcb981cf63d5701987810a46bd5e9b"
+        },
+        {
+          "bytes": 357,
+          "path": "context-required/world.wit",
+          "sha256": "sha256:c8a6451f17847c508038efac74eddcd0f08dd3e2138e441c92349c602da5a304"
+        },
+        {
+          "bytes": 1732,
+          "path": "domain/Capsule.java",
+          "sha256": "sha256:fe9f10ed66ed7908263ffac30e6ed763c6fb080fa1f701f5787291afc5318de5"
+        },
+        {
+          "bytes": 1123,
+          "path": "domain/world.wit",
+          "sha256": "sha256:47f868b02372a6a0f507a38af061a7b545cc79ba5e5447dcbf5e1eabac118240"
+        },
+        {
+          "bytes": 1346,
+          "path": "routes.json",
+          "sha256": "sha256:6fdc1feeac2d0f4c8b2fd6cd0203c2c7484bf5d24d71c63584995cdb6a92e646"
+        }
+      ],
+      "filesDigest": "sha256:62cd3fb47ad5998fd4b315eb2dc504241d718c29910d67f87d66b783a167d5c4"
+    },
+    "generator": {
+      "bytes": 30133,
+      "files": [
+        {
+          "bytes": 80,
+          "path": "__init__.py",
+          "sha256": "sha256:b0f73d7f86b91313761aa1624f28d068bc31f37264b350acffb3b7a2314ac4bc"
+        },
+        {
+          "bytes": 5869,
+          "path": "adapter.py",
+          "sha256": "sha256:0673f747e3b73476186b9395207d42e785ee4d2c3f353d5e08cb8af004f4a738"
+        },
+        {
+          "bytes": 5920,
+          "path": "client-runtime.mjs",
+          "sha256": "sha256:5ad4c641f4c1a585cee257d2b3a0e2952309563bb367cd36e6340eba0d80077a"
+        },
+        {
+          "bytes": 3058,
+          "path": "client.py",
+          "sha256": "sha256:45aea0cff1545474cc534c7f427c7f7605d13f26ee44f95d379540ac9d43def5"
+        },
+        {
+          "bytes": 3656,
+          "path": "probes.py",
+          "sha256": "sha256:2ebef8b147c45cd27dcdeba869c3f29d4561820cae8ddd1b9720d6f9b793a16f"
+        },
+        {
+          "bytes": 7216,
+          "path": "project.py",
+          "sha256": "sha256:726c83f8de86fe494ddb0ef386abd7514c5bfd8c5d9ba0402f60d7ca56537b56"
+        },
+        {
+          "bytes": 4334,
+          "path": "selection.py",
+          "sha256": "sha256:9811ed5e03350e3416fbe905116125ec59ebc386797b50a924d841f6f2a222a5"
+        }
+      ],
+      "filesDigest": "sha256:4b1ec9bf457729575d36a6ef6da6e0c24c2d791a4ef51f00ef6c4c0b6d57e2a9"
+    },
+    "helpers": {
+      "bytes": 148113,
+      "files": [
+        {
+          "bytes": 80,
+          "path": "__init__.py",
+          "sha256": "sha256:5b867d8b99585c27618160b2cc97e73c42ddb65762565bccbd16f35dae69bc1a"
+        },
+        {
+          "bytes": 3140,
+          "path": "build.py",
+          "sha256": "sha256:e185ee1eb7cec7650ee1eda6a39bb738395a3ab9a4e7f5798ff29cddcae1b28d"
+        },
+        {
+          "bytes": 14801,
+          "path": "context.py",
+          "sha256": "sha256:c57f193d1c0775ffe6ce516da7b35493512bf4f39cf5e74351b85fcb0182ead7"
+        },
+        {
+          "bytes": 8670,
+          "path": "inspection.py",
+          "sha256": "sha256:195563da728d4e082481e13a0181b00614faf006890c11a2a84c92203bb7327c"
+        },
+        {
+          "bytes": 14598,
+          "path": "node.py",
+          "sha256": "sha256:d9e5c180436a7bcfd1a0f530bd7143b3a3caeb7e8f5967984db800944aa4d29b"
+        },
+        {
+          "bytes": 25032,
+          "path": "packaged.py",
+          "sha256": "sha256:250d850200a7904616f2a83768bfc26cee4a965a00191e034594a9ce5ed14f3d"
+        },
+        {
+          "bytes": 6573,
+          "path": "preflight.py",
+          "sha256": "sha256:4673c0a45167f22a960942f99bb5f8a536f8ddea77fb20d54dd4a4544585bef9"
+        },
+        {
+          "bytes": 14580,
+          "path": "provider_timeout.py",
+          "sha256": "sha256:1aebfb37ea30bec5f2108dfb8a0050363d33bf7df82ffdaaa6191e5a023e02fa"
+        },
+        {
+          "bytes": 29948,
+          "path": "qualify.py",
+          "sha256": "sha256:62da735a8edaf8c12876f53bac6707deb6306896f13b2776841c37a5f293f9ce"
+        },
+        {
+          "bytes": 12338,
+          "path": "resource_diagnostics.py",
+          "sha256": "sha256:69012db9e6a1f9699a190ce7e253b49857ae1de45b534383da87ed437fdff380"
+        },
+        {
+          "bytes": 2519,
+          "path": "revision.py",
+          "sha256": "sha256:d66cde515e93d41bc6c8c98fb43d09bb91564d46f4705614c9f84b8c42e01c34"
+        },
+        {
+          "bytes": 15834,
+          "path": "trust.py",
+          "sha256": "sha256:385e069a96640f5050ec871f38efae47357a8e2b73814f615393e544ea0ad5eb"
+        }
+      ],
+      "filesDigest": "sha256:2426039f9f71ee7218cfc7fa13e6eb402c676b82c077540d48b6740d7ae5340f"
+    },
+    "javaSdk": {
+      "bytes": 211943,
+      "files": [
+        {
+          "bytes": 10460,
+          "path": "README.md",
+          "sha256": "sha256:886c05e57fa8ff394c8968d6220ec7dd7849b181e0662bea7da34748559d625a"
+        },
+        {
+          "bytes": 973,
+          "path": "bindings.lock.json",
+          "sha256": "sha256:82250bf8bc0dfd03e836f03d25b6304e5cc4e52c4825ed8983ee80af70c82966"
+        },
+        {
+          "bytes": 1311,
+          "path": "compiler.gradle",
+          "sha256": "sha256:6673d6dd1adbaf3d8b125c0678a9f807849b6a292880c8efcb07f6c61ff7c349"
+        },
+        {
+          "bytes": 3648,
+          "path": "conformance/Capsule.java",
+          "sha256": "sha256:89fda2cd74dd8953290d097ed1146e2988966f655e1eb0b8b1423059264be064"
+        },
+        {
+          "bytes": 631,
+          "path": "conformance/world.wit",
+          "sha256": "sha256:290940b6f20b5fd15488dcbe38bde3d7d215768d6dfc75783acfe669d58e8349"
+        },
+        {
+          "bytes": 2305,
+          "path": "examples/blob.java",
+          "sha256": "sha256:926cdffdd0318189985a7086967d8a5572242fa60defbbdaa703dab032a5a868"
+        },
+        {
+          "bytes": 378,
+          "path": "examples/callee.java",
+          "sha256": "sha256:3fbf1754232b3d4f2b4062da7dd77d2309cd46666e12f942b66a1bb55b411155"
+        },
+        {
+          "bytes": 1116,
+          "path": "examples/events.java",
+          "sha256": "sha256:2ea114adc1bcaca4cc28fb8601a5a2146f6a31b6dc8524a6b939080649f82084"
+        },
+        {
+          "bytes": 1025,
+          "path": "examples/http.java",
+          "sha256": "sha256:4e09ae99bc29ee215c86024c749439746fa8348e259b92959fd66a70c928cd55"
+        },
+        {
+          "bytes": 959,
+          "path": "examples/metrics.java",
+          "sha256": "sha256:9e94b7e71c99aa7638dcad202e518f8c6813608be6b58cf2bfaedc4acd3d758c"
+        },
+        {
+          "bytes": 798,
+          "path": "examples/random.java",
+          "sha256": "sha256:214efd6b32fe87bc1a3ab5dd78c5ac51209acc72025d1dd09861090414d49cb7"
+        },
+        {
+          "bytes": 1548,
+          "path": "examples/secrets.java",
+          "sha256": "sha256:36597a1cf38d7fc73505587304ad1726e6c78aea24bb8c715af7a9c91c20f24d"
+        },
+        {
+          "bytes": 1550,
+          "path": "examples/service.java",
+          "sha256": "sha256:05a4bf812b64f1dfbbc753867901c58cbfed12b3baf7c9c354b94ebc8dd7704a"
+        },
+        {
+          "bytes": 1971,
+          "path": "examples/streaming.java",
+          "sha256": "sha256:326ebca705f52d657e85e0af5b4af947be66c0de1a129ba498e1aa68049ad8b7"
+        },
+        {
+          "bytes": 18,
+          "path": "feasibility/.gitignore",
+          "sha256": "sha256:93579b58fc86ec5cba9cf7479f71821e42339affb3f040689e93d156d41f290c"
+        },
+        {
+          "bytes": 980,
+          "path": "feasibility/bridge.c",
+          "sha256": "sha256:c2d02146b56554e24dd85b5d31f2d7979464b21d3d4489722d4c15f03264c9e0"
+        },
+        {
+          "bytes": 1597,
+          "path": "feasibility/build.gradle",
+          "sha256": "sha256:ab17bfdc9cd20d51c74c57b35f64a0df70a054fa072f831e8f68701a2f550341"
+        },
+        {
+          "bytes": 1191,
+          "path": "feasibility/closed-runtime.wat",
+          "sha256": "sha256:5cc7f5b37abb698acc319a9ae1589fbbb54788abf46c0027fb0933bd2e6e0874"
+        },
+        {
+          "bytes": 16525,
+          "path": "feasibility/dependencies.lock.json",
+          "sha256": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4"
+        },
+        {
+          "bytes": 46640,
+          "path": "feasibility/gradle/verification-metadata.xml",
+          "sha256": "sha256:2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30"
+        },
+        {
+          "bytes": 480,
+          "path": "feasibility/platform.c",
+          "sha256": "sha256:d5d3662aa5def128b7858e61c5746038a26d47a409c22bb731bc72fbed336aad"
+        },
+        {
+          "bytes": 127,
+          "path": "feasibility/settings.gradle",
+          "sha256": "sha256:23755faa9365a644fa70a39f8a1ef83e99422914fc67b85d6df51e60984d7982"
+        },
+        {
+          "bytes": 738,
+          "path": "feasibility/src/main/java/dev/latent/guest/NativeEntrypoints.java",
+          "sha256": "sha256:f6f58ab9c90d59490953f167a9c38779001325f4df93e62e7eb417e2d82c5588"
+        },
+        {
+          "bytes": 1840,
+          "path": "feasibility/src/main/java/dev/latent/guest/Probe.java",
+          "sha256": "sha256:02e0a6911b72e3ba7cd1c7df651df1572a75fa409e1ba75136e04f42a161e557"
+        },
+        {
+          "bytes": 444,
+          "path": "feasibility/wit/world.wit",
+          "sha256": "sha256:d569e23879f53ca23e42fc6f5de4a703a254411c6139f09055b9e662f2994b5a"
+        },
+        {
+          "bytes": 3641,
+          "path": "runtime/bridge.h",
+          "sha256": "sha256:66428dca085509e2aa2aa543af4927949f8f1176255351a6e24b73641b078ec3"
+        },
+        {
+          "bytes": 14455,
+          "path": "runtime/dev/latent/guest/BufferedWebResponseValidator.java",
+          "sha256": "sha256:caf6a2bf912fbaadad9f673551a10d2fec20edb874216019845392e7d807323f"
+        },
+        {
+          "bytes": 949,
+          "path": "runtime/dev/latent/guest/Handle.java",
+          "sha256": "sha256:5d00dda66f7c167bd8e7f3e98d8e5be5c69225b8cd4744426f2dcabc1d63a63a"
+        },
+        {
+          "bytes": 502,
+          "path": "runtime/dev/latent/guest/Option.java",
+          "sha256": "sha256:aa45393e65f74c005bdb2e0b9ac32a5a4e8b717090bc4c1ff8b9ec7cda681468"
+        },
+        {
+          "bytes": 1231,
+          "path": "runtime/dev/latent/guest/Resource.java",
+          "sha256": "sha256:5ec05ea064c1ff25a4af8c3ff2948beef46ba3e711a956016481fb2b65449da2"
+        },
+        {
+          "bytes": 981,
+          "path": "runtime/dev/latent/guest/Result.java",
+          "sha256": "sha256:0a65cdf987fe048f3d467a090662b4ab4d340b74bdcb35598ca4f7e2c6142743"
+        },
+        {
+          "bytes": 555,
+          "path": "runtime/dev/latent/guest/SensitiveBytes.java",
+          "sha256": "sha256:27cf682fc87999875f81611c9575674e2e43bfee0e1fe55950e357ceec83f870"
+        },
+        {
+          "bytes": 992,
+          "path": "runtime/dev/latent/guest/Text.java",
+          "sha256": "sha256:0d1909cfe30b5cf0fb0a312ac03fbced5171c4c5e971d43f6d736e46872920cc"
+        },
+        {
+          "bytes": 53,
+          "path": "runtime/dev/latent/guest/Unit.java",
+          "sha256": "sha256:4fbf8085595c1c3f7c5494e3ce1efcb0a738161960863e85d24b0489a7500cf8"
+        },
+        {
+          "bytes": 2192,
+          "path": "runtime/dev/latent/guest/Unsigned64.java",
+          "sha256": "sha256:63d81a6e1bf67638e718e2eaf00565fc71ebdd1153fff23b0fafd04949ef3da6"
+        },
+        {
+          "bytes": 6322,
+          "path": "runtime/dev/latent/guest/Wire.java",
+          "sha256": "sha256:e172958b5869bbf93a8766e65f1c074cdaa9136df19b68a4d9ac5db9a64458e3"
+        },
+        {
+          "bytes": 306,
+          "path": "runtime/native.h",
+          "sha256": "sha256:cdbf1bdf723470622a1d27e8b9e6034a4781aa6787c0d80aa872f3680ceeb5a1"
+        },
+        {
+          "bytes": 571,
+          "path": "templates/greeting.java",
+          "sha256": "sha256:b3ef5de6dd9c15fc8c292112b657375b55e07722296a387bf0fe776ccbd95b62"
+        },
+        {
+          "bytes": 801,
+          "path": "templates/http-status.java",
+          "sha256": "sha256:d9fd6b5f0a8e1b2f138a1ace7bce59ef86757663184ee5b47bc5b77e98c1e9a6"
+        },
+        {
+          "bytes": 735,
+          "path": "templates/recovery.java",
+          "sha256": "sha256:93fa2fe75d40c688ed730666a4d4d4551fd398356852daf7ee0f6dea3c045b95"
+        },
+        {
+          "bytes": 445,
+          "path": "templates/shipping.java",
+          "sha256": "sha256:52c40e4a0af92515a923d0d53c2f2d5adfd712e82319206b2d4037370a5cd127"
+        },
+        {
+          "bytes": 785,
+          "path": "templates/word-count.java",
+          "sha256": "sha256:36924c01937175faa45beff0c09f716b40e85f4b3a988b207077eb434fd26334"
+        },
+        {
+          "bytes": 2708,
+          "path": "tests/Ownership.java",
+          "sha256": "sha256:7147fffbe1d700703e1035c9ba6213d35b77a2fbc504ff3477c2977a8d33dcdf"
+        },
+        {
+          "bytes": 10642,
+          "path": "tests/ResponseValidation.java",
+          "sha256": "sha256:a4d3a1f354be522723861762af06d434b52ba8d6709384ac56da346ec26da75b"
+        },
+        {
+          "bytes": 7816,
+          "path": "tests/test_bindings.py",
+          "sha256": "sha256:83703f66c83571b3b1b261ebf65f9ae783b7ba5ca052bba4186ae7096631dd86"
+        },
+        {
+          "bytes": 2194,
+          "path": "tests/test_compiler.py",
+          "sha256": "sha256:a68eb447a4c70f2f327e1ae11bab344d4f9e58ec171f37c722a480286bc516d3"
+        },
+        {
+          "bytes": 7226,
+          "path": "tests/test_dependencies.py",
+          "sha256": "sha256:148e83cb3d31c9a6cef641edde8d6ffaed39879f3ce33ec3664fc3275193644f"
+        },
+        {
+          "bytes": 6853,
+          "path": "tests/test_feasibility.py",
+          "sha256": "sha256:71a9f377ce4d1a41c38cec25a8c66883ad215caeac7f69301b16f52604b49d64"
+        },
+        {
+          "bytes": 1407,
+          "path": "tests/test_platform.py",
+          "sha256": "sha256:763fd598a9faf36a799942e895d6c2dc7b1e47630182ed9eea9a6e6e32ee4c23"
+        },
+        {
+          "bytes": 4062,
+          "path": "tests/test_projects.py",
+          "sha256": "sha256:2c9344adfd0e63766798a36fa1c4379bfdcddde1301de0baa2a94927194b9a3e"
+        },
+        {
+          "bytes": 4903,
+          "path": "tests/test_qualification.py",
+          "sha256": "sha256:7d8b33bad7ce3eb4e4c0c1190c131ae944f2f75fb2c973483a1f643bcaacdd97"
+        },
+        {
+          "bytes": 69,
+          "path": "tests/wit-composition/aliases/deps/shared/types.wit",
+          "sha256": "sha256:e068908ec20752b5623d040c46b0911f5d2cdded5af82528ddbca453578007eb"
+        },
+        {
+          "bytes": 202,
+          "path": "tests/wit-composition/aliases/world.wit",
+          "sha256": "sha256:0cf0e0a8ca2943fadaa0f163b1afbb7e1f7ef8d5bff2180bc84789eb0e4d1fd1"
+        },
+        {
+          "bytes": 117,
+          "path": "tests/wit-composition/future/world.wit",
+          "sha256": "sha256:52806f297a7e6075999a94dd7193de7937b638f875d526a6772c44f4cbc3d00f"
+        },
+        {
+          "bytes": 148,
+          "path": "tests/wit-composition/inclusion/world.wit",
+          "sha256": "sha256:f7679d0a490e330bcb20abe2b078c5518dfdbd726a45011d4aa5712a1743814e"
+        },
+        {
+          "bytes": 104,
+          "path": "tests/wit-composition/malformed/world.wit",
+          "sha256": "sha256:5e49fcb1a1a1327eeb060ca82cde749eb08f3f523492a87607bb1db51c31498d"
+        },
+        {
+          "bytes": 172,
+          "path": "tests/wit-composition/multiple-exports/world.wit",
+          "sha256": "sha256:2115fbe444ab7059f6d26e06765dfb5f8fc72b4ef23bb0184a2dbdb6215193b9"
+        },
+        {
+          "bytes": 70,
+          "path": "tests/wit-composition/names/deps/first/types.wit",
+          "sha256": "sha256:8febab9f443c98729a104f77def0432052a70b8753dfb0538d84e825f726c1c3"
+        },
+        {
+          "bytes": 70,
+          "path": "tests/wit-composition/names/deps/second/types.wit",
+          "sha256": "sha256:b16345279355b58f468b73b39cc23169b40845df823be21490909be309c63c44"
+        },
+        {
+          "bytes": 187,
+          "path": "tests/wit-composition/names/world.wit",
+          "sha256": "sha256:7bb9ebd6f660731c1fe5dae3688a0e518797e4ffaf560a6ae2017a096fee9bf7"
+        },
+        {
+          "bytes": 154,
+          "path": "tests/wit-composition/public-resources/world.wit",
+          "sha256": "sha256:fe2680a71f4a2a3035c149ac13b30aed909bbdcf66032b0ee275d98cc14e8baa"
+        },
+        {
+          "bytes": 233,
+          "path": "tests/wit-composition/shared-types/world.wit",
+          "sha256": "sha256:7395b0df03719498b41ee7097af6520908f500ce15365757df21b470d8f6d2f1"
+        },
+        {
+          "bytes": 69,
+          "path": "tests/wit-composition/versions/deps/shared-v1/types.wit",
+          "sha256": "sha256:e068908ec20752b5623d040c46b0911f5d2cdded5af82528ddbca453578007eb"
+        },
+        {
+          "bytes": 69,
+          "path": "tests/wit-composition/versions/deps/shared-v2/types.wit",
+          "sha256": "sha256:6be50e1e99488b7a601bf0061f66d07948899537f5b95a3b8df215bacc3c4987"
+        },
+        {
+          "bytes": 188,
+          "path": "tests/wit-composition/versions/world.wit",
+          "sha256": "sha256:85a62f80a2ecdaead0cbf02b4a4e4bbf501d7744f79302d718b5045e8218aa4c"
+        },
+        {
+          "bytes": 1246,
+          "path": "tools/capture.py",
+          "sha256": "sha256:99283643627ff4905a51112888994a6ed599c894824b531967cfb7e248746939"
+        },
+        {
+          "bytes": 6562,
+          "path": "tools/dependencies.py",
+          "sha256": "sha256:770a90fc706bdbe961fb25757784b8b6d0826f1a194cc95da91a6f06fd01a9b1"
+        },
+        {
+          "bytes": 12327,
+          "path": "tools/feasibility.py",
+          "sha256": "sha256:429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c"
+        },
+        {
+          "bytes": 6713,
+          "path": "tools/teavm_platform.py",
+          "sha256": "sha256:8d244a3eadea498dec231c7fa85b1f11b49074d9e7a453f607800b5f3775797a"
+        },
+        {
+          "bytes": 663,
+          "path": "wit/world.wit",
+          "sha256": "sha256:806182a284782a4db4e5fc2e4f5f3bf47b78b04fa291d1eab8cef8f177f71882"
+        }
+      ],
+      "filesDigest": "sha256:9f1274fbe3253a62a463ea54383b6d6117ef0077c0a83595740539f06b3c4002"
+    },
+    "runtimeSources": {
+      "bytes": 14532223,
+      "files": 2276,
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested",
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "sha256": "sha256:2001064d320645d2c459a4c8825be46a3e034f77e66d85455240b57a7b8d9f7d"
+    },
+    "wit": {
+      "bytes": 20844,
+      "files": [
+        {
+          "bytes": 1406,
+          "path": "blob-v2/package.wit",
+          "sha256": "sha256:d1744403a7882fbe8bf99808ac28c26d271eb1fb26fbac2519f1c7b2840d0dcb"
+        },
+        {
+          "bytes": 867,
+          "path": "blob/package.wit",
+          "sha256": "sha256:e73a86a069223567fd782ef0e20d83a8f25a1353d39b6d2c174c31bbfb936210"
+        },
+        {
+          "bytes": 139,
+          "path": "clock/package.wit",
+          "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+        },
+        {
+          "bytes": 1409,
+          "path": "context/package.wit",
+          "sha256": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1"
+        },
+        {
+          "bytes": 1299,
+          "path": "events-v2/package.wit",
+          "sha256": "sha256:645d6373dd55afeaaa400bd27f35e55dbb9c99a9599013d8419e90b02fb911d3"
+        },
+        {
+          "bytes": 572,
+          "path": "events/package.wit",
+          "sha256": "sha256:b599d127622a47c4d763df29ca5d0907f083566645a5d882d593701f39db68c1"
+        },
+        {
+          "bytes": 1296,
+          "path": "http-v2/package.wit",
+          "sha256": "sha256:2728b8d0458a441a7dab01dde896f1cc87c453382a6f5ce35bd86718f5e6fa9d"
+        },
+        {
+          "bytes": 2915,
+          "path": "http-v3/package.wit",
+          "sha256": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d"
+        },
+        {
+          "bytes": 997,
+          "path": "http/package.wit",
+          "sha256": "sha256:6ae7533f6e81d6364601a12d5f533ee60342eb6ba2e897e545e10743b4e92945"
+        },
+        {
+          "bytes": 1914,
+          "path": "invocation/package.wit",
+          "sha256": "sha256:2e9f13a01c9cf90834c53ff38f408e8e23f39cc29cbd7bc5b47d796159f61b67"
+        },
+        {
+          "bytes": 418,
+          "path": "log/package.wit",
+          "sha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e"
+        },
+        {
+          "bytes": 272,
+          "path": "random/package.wit",
+          "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60"
+        },
+        {
+          "bytes": 551,
+          "path": "runtime-phase3-blobs/world.wit",
+          "sha256": "sha256:5a509dd87892ee54828c17d0189c034bf892afa6e47701834bd42db095244cfc"
+        },
+        {
+          "bytes": 516,
+          "path": "runtime-phase3-streaming/world.wit",
+          "sha256": "sha256:240f3e0864a5f683cacef9f70868e1d4450ab466bd7473b639e788cedbdfef7c"
+        },
+        {
+          "bytes": 704,
+          "path": "runtime-phase3/world.wit",
+          "sha256": "sha256:09dae5ca8c10761c4c8a32411942c00564884b146bebb4069fa125e8d02ec8e0"
+        },
+        {
+          "bytes": 558,
+          "path": "runtime/world.wit",
+          "sha256": "sha256:8dfb4076a53ed66f332def355a16ff35b2e01a3987db49aebbcff54de88efa09"
+        },
+        {
+          "bytes": 407,
+          "path": "secrets/package.wit",
+          "sha256": "sha256:4e0593c21ac5e3051500717fcf347cf7e23821816a9fc15945c68e93cee4ee54"
+        },
+        {
+          "bytes": 1450,
+          "path": "state/package.wit",
+          "sha256": "sha256:3f2862a27509e8d723e497ff9f6f9d416a86e54b96a7a11e2e6172040c4aee93"
+        },
+        {
+          "bytes": 505,
+          "path": "telemetry/package.wit",
+          "sha256": "sha256:c79721b703eca86c55ab04ddcb37cbc7965287db64880c0a0bb555b92baaadc6"
+        },
+        {
+          "bytes": 610,
+          "path": "timer/package.wit",
+          "sha256": "sha256:3c35d5a9078315848f86144e0f8f65cb7a4f8da1a54905098d4ff9c6e227090e"
+        },
+        {
+          "bytes": 181,
+          "path": "web-http/package.wit",
+          "sha256": "sha256:92bc3b8ca3cb5c0ec76b012d695ea6ddf962a1534eeac297dfe7b27125dc5450"
+        },
+        {
+          "bytes": 1858,
+          "path": "web/package.wit",
+          "sha256": "sha256:3ad4d3e122c839115891ba9b69c9b790245a64ecb00690e23270623ac94b1450"
+        }
+      ],
+      "filesDigest": "sha256:46039200dec313848bcd4ca65e2a985222dac70f517ca2b252b700254454c4cc"
+    },
+    "workflow": {
+      "bytes": 16711,
+      "sha256": "sha256:f712b16dcff1abbb5eb893ff103b100d64e32b6342a2e163cf6312da1f59333b"
+    }
+  },
+  "diagnosticCampaignPassed": false,
+  "diagnosticCampaignRequested": false,
+  "failure": "AttributeError",
+  "freshBuilds": {
+    "authoringTools": {
+      "inventory": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+      "tools": {
+        "wasm-tools": {
+          "name": "wasm-tools",
+          "path": "sdk/bin/wasm-tools",
+          "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+          "version": "1.254.0"
+        },
+        "wit-bindgen": {
+          "name": "wit-bindgen",
+          "path": "sdk/bin/wit-bindgen",
+          "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+          "version": "0.62.0"
+        }
+      }
+    },
+    "buildReceipts": {
+      "adapter": {
+        "artifacts": {
+          "capsule": "sha256:8e2a7b0858e3ae463baf742f9abc173369c0c6797a2af4f138be5fc1a2ad4176",
+          "component": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+          "contracts": "sha256:2ced024a03f95ef6a144786dce43bf176461e3a2a7f241b9bc48a159d3ac2dee",
+          "deployment": "sha256:a2d557d62192e37f90fe8da46e6d7569492ba977f8b9f98a9bbc59dd1143f295",
+          "evidence": "sha256:e62c962c5c96859a413a95ebeec54ff6ae1b174748fcab805ff04731553e85e5",
+          "packageSource": "sha256:351a49a5565b79e32b63c1c362b718f583cc8351a070de0da44e1ae9b4b7fca4"
+        },
+        "attempt": "0ccb049bfd7cafc9d712ca7ce2a0e8c7",
+        "authority": "observed-local-build",
+        "buildKey": "sha256:36a02960e1976dd6f466f99ac4154681f2c3dc5d4998c3373955964bc5dcb17b",
+        "diagnostics": [],
+        "host": "linux-x86_64",
+        "hostAbi": "lsf-host-abi-phase3-v4",
+        "package": {
+          "componentDigest": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+          "executionAuthorized": false,
+          "kind": "capsule",
+          "layerBytes": "1820388",
+          "layers": 10,
+          "name": "java-http-adapter",
+          "packageDigest": "sha256:723b4a3f062380b6560f22ad9ac693ecb19bdaa8fd8ee781fdfba8cb8047936d",
+          "sbomInventoryDigest": null,
+          "trustEvaluated": false,
+          "version": "1.0.0",
+          "webBuildOutputs": null
+        },
+        "packager": "sha256:7665166c9134e74d7597836ed5132db5329b5fbc3d9ce9a44d6a693cce6d1645",
+        "recipe": "sha256:abc79688dd83c51830788dfc82792f5c7b3b226e69c75a234386bb605f729deb",
+        "schemaVersion": "latent.dev.build.v1",
+        "source": "sha256:560bc6fd2a3ca0c965d886e545232f3f87a5713053874cea7454c3c44a224070",
+        "target": "wasm-component",
+        "template": {
+          "ownerIssue": 548,
+          "revision": "761172002e4a4d02102f8c757235b888fe4859e1",
+          "sha256": "sha256:438c01295860501b6eda3f3dd71c84c043eb52a45ae5b4c60edb4e39200cfeaa"
+        },
+        "toolInventory": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+        "tools": [
+          {
+            "name": "python",
+            "path": "sdk/bin/python",
+            "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+            "version": "3.13.5"
+          },
+          {
+            "name": "recipe",
+            "path": "recipe/tools/dev_guest_recipe.py",
+            "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+            "version": "1"
+          },
+          {
+            "name": "contracts",
+            "path": "sdk/bin/capsule-contracts",
+            "sha256": "sha256:e0fb57811825a0171a7600791d038b3766b186d3affa997d7fa3dc0d1987c199",
+            "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+          },
+          {
+            "name": "test-signer",
+            "path": "sdk/bin/capsule-test-signer",
+            "sha256": "sha256:5a693c38f188c337d64d0bd704e41806372686eafa36b90a3470546ca9c7c257",
+            "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+          },
+          {
+            "name": "wasm-tools",
+            "path": "sdk/bin/wasm-tools",
+            "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+            "version": "1.254.0"
+          },
+          {
+            "name": "wit-bindgen",
+            "path": "sdk/bin/wit-bindgen",
+            "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+            "version": "0.62.0"
+          }
+        ]
+      },
+      "adapter-next": {
+        "artifacts": {
+          "capsule": "sha256:34d7487e32480c1e0e716baf0468a22431e7ab086c008cd6efbdd658451c5e08",
+          "component": "sha256:4344aa85da161e33b8906ee4a5c2db272358ca52116f191e5d9ce61eb041d562",
+          "contracts": "sha256:2ced024a03f95ef6a144786dce43bf176461e3a2a7f241b9bc48a159d3ac2dee",
+          "deployment": "sha256:6d034ea2ea25715a8f5e0b3be95f371ce0a94639ca75a8fa4f610accd6106977",
+          "evidence": "sha256:803a59b1c1cdca0eb1e158b53c1c5e3e83222f4be70ba36886205805cf171128",
+          "packageSource": "sha256:0ae56958253672a806a990713a34430b79080e5b5ab173c106030a3752ab70a5"
+        },
+        "attempt": "1e73934f50f61ba4af926353c87c460b",
+        "authority": "observed-local-build",
+        "buildKey": "sha256:4ab3f7a4920bbb2c16871ca4d0983e7d05c20e1ba263964fdd7db1e515471f23",
+        "diagnostics": [],
+        "host": "linux-x86_64",
+        "hostAbi": "lsf-host-abi-phase3-v4",
+        "package": {
+          "componentDigest": "sha256:4344aa85da161e33b8906ee4a5c2db272358ca52116f191e5d9ce61eb041d562",
+          "executionAuthorized": false,
+          "kind": "capsule",
+          "layerBytes": "1820435",
+          "layers": 10,
+          "name": "java-http-adapter-next",
+          "packageDigest": "sha256:cbba94683a0fa28ed0d846d6e9fc3d665b17a2a84334e4b51ae9c75a931e4762",
+          "sbomInventoryDigest": null,
+          "trustEvaluated": false,
+          "version": "1.0.1",
+          "webBuildOutputs": null
+        },
+        "packager": "sha256:7665166c9134e74d7597836ed5132db5329b5fbc3d9ce9a44d6a693cce6d1645",
+        "recipe": "sha256:b99c80220f8321613140f99cfeba9777cfc13beec4fb19a4f4cdf1dc26fa2b6f",
+        "schemaVersion": "latent.dev.build.v1",
+        "source": "sha256:ef6899168f22683c3f2735656ce8696e94548be3979b4785e76f06797e02714d",
+        "target": "wasm-component",
+        "template": {
+          "ownerIssue": 548,
+          "revision": "761172002e4a4d02102f8c757235b888fe4859e1",
+          "sha256": "sha256:438c01295860501b6eda3f3dd71c84c043eb52a45ae5b4c60edb4e39200cfeaa"
+        },
+        "toolInventory": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+        "tools": [
+          {
+            "name": "python",
+            "path": "sdk/bin/python",
+            "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+            "version": "3.13.5"
+          },
+          {
+            "name": "recipe",
+            "path": "recipe/tools/dev_guest_recipe.py",
+            "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+            "version": "1"
+          },
+          {
+            "name": "contracts",
+            "path": "sdk/bin/capsule-contracts",
+            "sha256": "sha256:e0fb57811825a0171a7600791d038b3766b186d3affa997d7fa3dc0d1987c199",
+            "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+          },
+          {
+            "name": "test-signer",
+            "path": "sdk/bin/capsule-test-signer",
+            "sha256": "sha256:5a693c38f188c337d64d0bd704e41806372686eafa36b90a3470546ca9c7c257",
+            "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+          },
+          {
+            "name": "wasm-tools",
+            "path": "sdk/bin/wasm-tools",
+            "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+            "version": "1.254.0"
+          },
+          {
+            "name": "wit-bindgen",
+            "path": "sdk/bin/wit-bindgen",
+            "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+            "version": "0.62.0"
+          }
+        ]
+      },
+      "context-required": {
+        "artifacts": {
+          "capsule": "sha256:a4943b00e91465085875777566952adc740518eebb57186986f28538fb6114b6",
+          "component": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+          "contracts": "sha256:0f241e4152756d6b2e01a0348aafc2a27ff5de9b2191e4760cef930dd57752b7",
+          "deployment": "sha256:319e9e4335be925f7cf9d94b0641ba1e685ca36d70f2d0cab534716add9335cb",
+          "evidence": "sha256:e6979ca07e0119c7e37eb0203d4c652eec7049dd5079c63fbeeb06f1d05690cf",
+          "packageSource": "sha256:80ade999cdd6cf947f0076087714217b14f2ad91b0f2a08fa98afb9bdc47f7cf"
+        },
+        "attempt": "a11f7a9e80c001991cf7aa1841d9c9af",
+        "authority": "observed-local-build",
+        "buildKey": "sha256:d34231d81419a80afed89a3ae4d76ff696a1238107ef1122c9027b1e13bd0180",
+        "diagnostics": [],
+        "host": "linux-x86_64",
+        "hostAbi": "lsf-host-abi-phase3-v4",
+        "package": {
+          "componentDigest": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+          "executionAuthorized": false,
+          "kind": "capsule",
+          "layerBytes": "554979",
+          "layers": 8,
+          "name": "java-http-context-required",
+          "packageDigest": "sha256:5af740c26a96a00fbf3119d0d61d08373ec263b0fefdcb79ec1af0f7e440dbea",
+          "sbomInventoryDigest": null,
+          "trustEvaluated": false,
+          "version": "1.0.0",
+          "webBuildOutputs": null
+        },
+        "packager": "sha256:7665166c9134e74d7597836ed5132db5329b5fbc3d9ce9a44d6a693cce6d1645",
+        "recipe": "sha256:9587c012f15600191ed273e55a3e7ed89d895f8899952c561a1f8329c240070a",
+        "schemaVersion": "latent.dev.build.v1",
+        "source": "sha256:26cb910014ae0e91546e434e45fe52bceb2de48656605d5170665cc1da4e56aa",
+        "target": "wasm-component",
+        "template": {
+          "ownerIssue": 548,
+          "revision": "761172002e4a4d02102f8c757235b888fe4859e1",
+          "sha256": "sha256:438c01295860501b6eda3f3dd71c84c043eb52a45ae5b4c60edb4e39200cfeaa"
+        },
+        "toolInventory": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+        "tools": [
+          {
+            "name": "python",
+            "path": "sdk/bin/python",
+            "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+            "version": "3.13.5"
+          },
+          {
+            "name": "recipe",
+            "path": "recipe/tools/dev_guest_recipe.py",
+            "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+            "version": "1"
+          },
+          {
+            "name": "contracts",
+            "path": "sdk/bin/capsule-contracts",
+            "sha256": "sha256:e0fb57811825a0171a7600791d038b3766b186d3affa997d7fa3dc0d1987c199",
+            "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+          },
+          {
+            "name": "test-signer",
+            "path": "sdk/bin/capsule-test-signer",
+            "sha256": "sha256:5a693c38f188c337d64d0bd704e41806372686eafa36b90a3470546ca9c7c257",
+            "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+          },
+          {
+            "name": "wasm-tools",
+            "path": "sdk/bin/wasm-tools",
+            "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+            "version": "1.254.0"
+          },
+          {
+            "name": "wit-bindgen",
+            "path": "sdk/bin/wit-bindgen",
+            "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+            "version": "0.62.0"
+          }
+        ]
+      },
+      "domain": {
+        "artifacts": {
+          "capsule": "sha256:4f90d6898345b6584ceb3fed448c535f264a51a20550ecba7d17f8106774ba6e",
+          "component": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+          "contracts": "sha256:98d26e9203c10ccf3b0cac1cdad02e2e0a53e4ea0c1b4a5dd2b1dd277ebb463a",
+          "deployment": "sha256:0c7b2946b8f4b5b4a2dbcbb3189c0c7634b5e235add50ffb5494c66c1eb08e5e",
+          "evidence": "sha256:b652cc8fcc753330960bfda74842b041336d59248c1a3104c1a3d99621470550",
+          "packageSource": "sha256:fa90783f35d1c73972f10743e5a114688dcd3127686064f93b5d4c973f65e177"
+        },
+        "attempt": "1f9e03f10a99de9ed378128d4f739d1d",
+        "authority": "observed-local-build",
+        "buildKey": "sha256:6beb6f49ca2cc427c4071714da6df4da664647dbbea243671743c59bdc85ab14",
+        "diagnostics": [],
+        "host": "linux-x86_64",
+        "hostAbi": "lsf-host-abi-phase3-v4",
+        "package": {
+          "componentDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+          "executionAuthorized": false,
+          "kind": "capsule",
+          "layerBytes": "1097419",
+          "layers": 7,
+          "name": "java-http-domain",
+          "packageDigest": "sha256:6faf3c4f3787d488341b8bfd5faf521dd292f900b2c3938c7caf9956f4bb42cc",
+          "sbomInventoryDigest": null,
+          "trustEvaluated": false,
+          "version": "1.0.0",
+          "webBuildOutputs": null
+        },
+        "packager": "sha256:7665166c9134e74d7597836ed5132db5329b5fbc3d9ce9a44d6a693cce6d1645",
+        "recipe": "sha256:d406e18aa37cc73b9831e4cea951f6ab89786f0950b02d498693efed8efc7db0",
+        "schemaVersion": "latent.dev.build.v1",
+        "source": "sha256:1b5261b5c9297f24113c88b093973f68f3286528568ee20dac396216eb7e29e8",
+        "target": "wasm-component",
+        "template": {
+          "ownerIssue": 548,
+          "revision": "761172002e4a4d02102f8c757235b888fe4859e1",
+          "sha256": "sha256:438c01295860501b6eda3f3dd71c84c043eb52a45ae5b4c60edb4e39200cfeaa"
+        },
+        "toolInventory": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+        "tools": [
+          {
+            "name": "python",
+            "path": "sdk/bin/python",
+            "sha256": "sha256:9215e2262f4cd54a183038268b2c5ada9caefbc7cc0a474f62117b31b5682927",
+            "version": "3.13.5"
+          },
+          {
+            "name": "recipe",
+            "path": "recipe/tools/dev_guest_recipe.py",
+            "sha256": "sha256:a1bc426af36899995107b014cbe8b7cfa40e5544883e1115f6d56c67224a3169",
+            "version": "1"
+          },
+          {
+            "name": "contracts",
+            "path": "sdk/bin/capsule-contracts",
+            "sha256": "sha256:e0fb57811825a0171a7600791d038b3766b186d3affa997d7fa3dc0d1987c199",
+            "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+          },
+          {
+            "name": "test-signer",
+            "path": "sdk/bin/capsule-test-signer",
+            "sha256": "sha256:5a693c38f188c337d64d0bd704e41806372686eafa36b90a3470546ca9c7c257",
+            "version": "761172002e4a4d02102f8c757235b888fe4859e1"
+          },
+          {
+            "name": "wasm-tools",
+            "path": "sdk/bin/wasm-tools",
+            "sha256": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+            "version": "1.254.0"
+          },
+          {
+            "name": "wit-bindgen",
+            "path": "sdk/bin/wit-bindgen",
+            "sha256": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+            "version": "0.62.0"
+          }
+        ]
+      }
+    },
+    "publisherTools": {
+      "bundle": "37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+      "directory": "/home/lsfqa/.lsf-dev/test-java-composition-710/tools/37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9/payload",
+      "host": "linux-x86_64",
+      "hostAbi": "lsf-host-abi-phase3-v4",
+      "inventorySha256": "sha256:d25a857a386ed1ecda45a04a7c054fdb320ef5c5ecc38c424ff3ce5f8e7bda71",
+      "language": "java",
+      "ownerIssue": 548,
+      "publisherAuthenticated": true,
+      "publisherPolicySha256": "sha256:2dfb9c7ef993e23f5a3c84ed38d2f0a68ea5cb36dae46a753eeb73ae2b2e1672",
+      "schemaVersion": "latent.dev.tools-selection.v1",
+      "sourceCommit": "761172002e4a4d02102f8c757235b888fe4859e1",
+      "version": "0.1.0-alpha.5"
+    },
+    "releaseSet": {
+      "expiresAtUnixSeconds": 1790869919,
+      "policyDigest": "sha256:ab49fa663e29278fa02d70ba568b743937699d22206d684f85cb767f3eb4073c",
+      "releases": [
+        {
+          "buildType": "https://latent.dev/build/java-capsule/v1",
+          "builderId": "local-demo-builder-01",
+          "builderKeyFingerprint": "sha256:50152d5960964c8b9c6fa99b86c61f92696c51ebcf5631dfc175c6bd94ed4e41",
+          "componentDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+          "name": "java-http-domain",
+          "observationDigest": "sha256:b2813bb7279ae2d0421351f1fe9537bac09943cf7f5af935003a4c63c644fe89",
+          "packageDigest": "sha256:26c71eb68e2f82a542d08e5af76f4829bdef7629e8a7c2d285bc5da767088e41",
+          "service": "examples/java-http-domain",
+          "sourceSnapshotDigest": "sha256:5d38bbe8a9948c03acb313d580a50bbd0f0a7295bf821fa2eeab5fffe9cd0f4e",
+          "world": "examples:java-http-domain/service@1.0.0"
+        },
+        {
+          "buildType": "https://latent.dev/build/java-capsule/v1",
+          "builderId": "local-demo-builder-02",
+          "builderKeyFingerprint": "sha256:aabb30e5ae387e623e31b5cf6401fd9a80b330455023b9c5fa627f832eab9665",
+          "componentDigest": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+          "name": "java-http-context-required",
+          "observationDigest": "sha256:0e1cc2b6f5f6b8716ba29192384f248fa60f76859c02c8eac73698494bdcc3a6",
+          "packageDigest": "sha256:1d154124fedc4fc97f6cd767679fe25d2ffe05868e854f9d1057dc02c0307e2f",
+          "service": "examples/java-http-context-required",
+          "sourceSnapshotDigest": "sha256:11a7c8bf0d35fdf665c865dac36d8d023a6c20146b8cf75a2ad72dbe54a4e9b2",
+          "world": "examples:java-http-context-required/service@1.0.0"
+        },
+        {
+          "buildType": "https://latent.dev/build/java-capsule/v1",
+          "builderId": "local-demo-builder-03",
+          "builderKeyFingerprint": "sha256:75a3ad31777af14be69a94a8d1ffaa098b7a47b232ba3946ff9f65bf5fad4c3f",
+          "componentDigest": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+          "name": "java-http-adapter",
+          "observationDigest": "sha256:6b35e0aa4f53dc7d37438526d3a652becb32e4aea62dff01d3aec6d8fea86189",
+          "packageDigest": "sha256:fde66661f1a1cfb975b65840ee236f8cfe5bef12363ed95d7822580de77b6484",
+          "service": "examples/java-http-adapter",
+          "sourceSnapshotDigest": "sha256:e7200ebc1dbae4903da1bf58468adc6afd11f1b9d16f5f2ce15d2c37e3ef15f6",
+          "world": "examples:java-http-adapter/service@1.0.0"
+        },
+        {
+          "buildType": "https://latent.dev/build/java-capsule/v1",
+          "builderId": "local-demo-builder-04",
+          "builderKeyFingerprint": "sha256:3f645f024f92d29295adaa65ffcfe45a788df51ae3a4b22681d903015b992a4d",
+          "componentDigest": "sha256:4344aa85da161e33b8906ee4a5c2db272358ca52116f191e5d9ce61eb041d562",
+          "name": "java-http-adapter-next",
+          "observationDigest": "sha256:faed5e3b283aeeeb761e4b32f4badf01baf57b6d1cec6727f4d11d02d082eb31",
+          "packageDigest": "sha256:a24ba232b9c04c6f85b607cfa0c4a4cba839e28a24a55fe4eae97a61d578e35e",
+          "service": "examples/java-http-adapter",
+          "sourceSnapshotDigest": "sha256:91e5a61c3a6d7c88ce168da86133946e0f20a4df2dc9c77769624040bb18829f",
+          "world": "examples:java-http-adapter/service@1.0.0"
+        }
+      ],
+      "schemaVersion": "latent.capsule.demo.v1",
+      "tenant": "examples",
+      "trust": "isolated-short-lived-demo-only"
+    },
+    "runtimeRebuilt": false,
+    "signer": {
+      "bytes": 12956288,
+      "sha256": "sha256:5a693c38f188c337d64d0bd704e41806372686eafa36b90a3470546ca9c7c257"
+    },
+    "templateIdentity": "sha256:1440d2df4045cce128867049ce2428ae5bb9dbcbf52d4a9c56a968c3390ccb2f"
+  },
+  "freshJavaBuild": true,
+  "frontend": {
+    "authentication": {
+      "attestation": [
+        {
+          "attestation": {
+            "bundle": {
+              "dsseEnvelope": {
+                "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJzdWJqZWN0IjpbeyJuYW1lIjoiU0hBMjU2U1VNUyIsImRpZ2VzdCI6eyJzaGEyNTYiOiIwNTA0NDU0YjQwNzY2NWJkZWIzNWM2NGZmMDgyMTA5ZmRmYWVlYjljZmY4Mzg3NzRjZDJiOWMzZWNkZmU2ZTI0In19XSwicHJlZGljYXRlVHlwZSI6Imh0dHBzOi8vc2xzYS5kZXYvcHJvdmVuYW5jZS92MSIsInByZWRpY2F0ZSI6eyJidWlsZERlZmluaXRpb24iOnsiYnVpbGRUeXBlIjoiaHR0cHM6Ly9hY3Rpb25zLmdpdGh1Yi5pby9idWlsZHR5cGVzL3dvcmtmbG93L3YxIiwiZXh0ZXJuYWxQYXJhbWV0ZXJzIjp7IndvcmtmbG93Ijp7InJlZiI6InJlZnMvaGVhZHMvZmVhdC9mZWVkYmFjazItamF2YTcxMC1pbnRlZ3JhdGlvbiIsInJlcG9zaXRvcnkiOiJodHRwczovL2dpdGh1Yi5jb20vS2lyaWxzVHVya2lucy9sYXRlbnQtc2VydmljZS1mYWJyaWMiLCJwYXRoIjoiLmdpdGh1Yi93b3JrZmxvd3MvZGV2ZWxvcGVyLXRvb2xzLnltbCJ9fSwiaW50ZXJuYWxQYXJhbWV0ZXJzIjp7ImdpdGh1YiI6eyJldmVudF9uYW1lIjoid29ya2Zsb3dfZGlzcGF0Y2giLCJyZXBvc2l0b3J5X2lkIjoiMTMzNzU5MTM2NSIsInJlcG9zaXRvcnlfb3duZXJfaWQiOiIyMzYwMjg1MTEiLCJydW5uZXJfZW52aXJvbm1lbnQiOiJnaXRodWItaG9zdGVkIn19LCJyZXNvbHZlZERlcGVuZGVuY2llcyI6W3sidXJpIjoiZ2l0K2h0dHBzOi8vZ2l0aHViLmNvbS9LaXJpbHNUdXJraW5zL2xhdGVudC1zZXJ2aWNlLWZhYnJpY0ByZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24iLCJkaWdlc3QiOnsiZ2l0Q29tbWl0IjoiNzYxMTcyMDAyZTRhNGQwMjEwMmY4Yzc1NzIzNWI4ODhmZTQ4NTllMSJ9fV19LCJydW5EZXRhaWxzIjp7ImJ1aWxkZXIiOnsiaWQiOiJodHRwczovL2dpdGh1Yi5jb20vS2lyaWxzVHVya2lucy9sYXRlbnQtc2VydmljZS1mYWJyaWMvLmdpdGh1Yi93b3JrZmxvd3MvZGV2ZWxvcGVyLXRvb2xzLnltbEByZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24ifSwibWV0YWRhdGEiOnsiaW52b2NhdGlvbklkIjoiaHR0cHM6Ly9naXRodWIuY29tL0tpcmlsc1R1cmtpbnMvbGF0ZW50LXNlcnZpY2UtZmFicmljL2FjdGlvbnMvcnVucy8zNjgwNDA5Njg5NS9hdHRlbXB0cy8xIn19fX0=",
+                "payloadType": "application/vnd.in-toto+json",
+                "signatures": [
+                  {
+                    "sig": "MEUCIQDIvwB3WL6+nvVdW4p5xtrA5trLGHNuP8YQh8dSXmq8HgIgLlnqOgHvE/b7uxsnTmp0rtBxBWjc1KMcphoAAFRJoq0="
+                  }
+                ]
+              },
+              "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+              "verificationMaterial": {
+                "certificate": {
+                  "rawBytes": "MIIIcTCCB/egAwIBAgIUIRMqgE2xq3TBy9g2osGs5ZSGqxIwCgYIKoZIzj0EAwMwNzEVMBMGA1UEChMMc2lnc3RvcmUuZGV2MR4wHAYDVQQDExVzaWdzdG9yZS1pbnRlcm1lZGlhdGUwHhcNMjYxMDAxMDMzMzE5WhcNMjYxMDAxMDM0MzE5WjAAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAESOh83roY8ha58XjE0FKYQoCc1m/wi7NLS9bp0xTj3TBHV0Sjx2gTYFLYys7ySM2C/RHRPDhzVr06Myloi9f3SKOCBxYwggcSMA4GA1UdDwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzAdBgNVHQ4EFgQUW4DshtQu9HTY2MsNyVyREbx25pkwHwYDVR0jBBgwFoAU39Ppz1YkEZb5qNjpKFWixi4YZD8wgZsGA1UdEQEB/wSBkDCBjYaBimh0dHBzOi8vZ2l0aHViLmNvbS9LaXJpbHNUdXJraW5zL2xhdGVudC1zZXJ2aWNlLWZhYnJpYy8uZ2l0aHViL3dvcmtmbG93cy9kZXZlbG9wZXItdG9vbHMueW1sQHJlZnMvaGVhZHMvZmVhdC9mZWVkYmFjazItamF2YTcxMC1pbnRlZ3JhdGlvbjA5BgorBgEEAYO/MAEBBCtodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tMB8GCisGAQQBg78wAQIEEXdvcmtmbG93X2Rpc3BhdGNoMDYGCisGAQQBg78wAQMEKDc2MTE3MjAwMmU0YTRkMDIxMDJmOGM3NTcyMzViODg4ZmU0ODU5ZTEwHQYKKwYBBAGDvzABBAQPRGV2ZWxvcGVyIHRvb2xzMDEGCisGAQQBg78wAQUEI0tpcmlsc1R1cmtpbnMvbGF0ZW50LXNlcnZpY2UtZmFicmljMDsGCisGAQQBg78wAQYELXJlZnMvaGVhZHMvZmVhdC9mZWVkYmFjazItamF2YTcxMC1pbnRlZ3JhdGlvbjA7BgorBgEEAYO/MAEIBC0MK2h0dHBzOi8vdG9rZW4uYWN0aW9ucy5naXRodWJ1c2VyY29udGVudC5jb20wgZwGCisGAQQBg78wAQkEgY0MgYpodHRwczovL2dpdGh1Yi5jb20vS2lyaWxzVHVya2lucy9sYXRlbnQtc2VydmljZS1mYWJyaWMvLmdpdGh1Yi93b3JrZmxvd3MvZGV2ZWxvcGVyLXRvb2xzLnltbEByZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24wOAYKKwYBBAGDvzABCgQqDCg3NjExNzIwMDJlNGE0ZDAyMTAyZjhjNzU3MjM1Yjg4OGZlNDg1OWUxMB0GCisGAQQBg78wAQsEDwwNZ2l0aHViLWhvc3RlZDBGBgorBgEEAYO/MAEMBDgMNmh0dHBzOi8vZ2l0aHViLmNvbS9LaXJpbHNUdXJraW5zL2xhdGVudC1zZXJ2aWNlLWZhYnJpYzA4BgorBgEEAYO/MAENBCoMKDc2MTE3MjAwMmU0YTRkMDIxMDJmOGM3NTcyMzViODg4ZmU0ODU5ZTEwPQYKKwYBBAGDvzABDgQvDC1yZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24wGgYKKwYBBAGDvzABDwQMDAoxMzM3NTkxMzY1MDAGCisGAQQBg78wARAEIgwgaHR0cHM6Ly9naXRodWIuY29tL0tpcmlsc1R1cmtpbnMwGQYKKwYBBAGDvzABEQQLDAkyMzYwMjg1MTEwgZwGCisGAQQBg78wARIEgY0MgYpodHRwczovL2dpdGh1Yi5jb20vS2lyaWxzVHVya2lucy9sYXRlbnQtc2VydmljZS1mYWJyaWMvLmdpdGh1Yi93b3JrZmxvd3MvZGV2ZWxvcGVyLXRvb2xzLnltbEByZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24wOAYKKwYBBAGDvzABEwQqDCg3NjExNzIwMDJlNGE0ZDAyMTAyZjhjNzU3MjM1Yjg4OGZlNDg1OWUxMCEGCisGAQQBg78wARQEEwwRd29ya2Zsb3dfZGlzcGF0Y2gwagYKKwYBBAGDvzABFQRcDFpodHRwczovL2dpdGh1Yi5jb20vS2lyaWxzVHVya2lucy9sYXRlbnQtc2VydmljZS1mYWJyaWMvYWN0aW9ucy9ydW5zLzM2ODA0MDk2ODk1L2F0dGVtcHRzLzEwFgYKKwYBBAGDvzABFgQIDAZwdWJsaWMwfwYKKwYBBAGDvzABGARxDG9yZXBvOktpcmlsc1R1cmtpbnNAMjM2MDI4NTExL2xhdGVudC1zZXJ2aWNlLWZhYnJpY0AxMzM3NTkxMzY1OnJlZjpyZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24wgYkGCisGAQQB1nkCBAIEewR5AHcAdQDdPTBqxscRMmMZHhyZZzcCokpeuN48rf+HinKALynujgAAAaD1hhGlAAAEAwBGMEQCIHZjeDyEz2PCjQqqUNQtybLdDAVx/hf1lQTUcvABUev2AiB8PAo0GrWFzGFibsV7c8mJEyu2SxmR6xAmy5YiThvtcjAKBggqhkjOPQQDAwNoADBlAjAkKA25FLpq+PofVrUVy2Lo4ZiSnXcgLQsdoMSsdjVdjdgBe3M7JbmnWRAi3r/16gsCMQDDaoemA02g8GLOzAh/KfoUoBiufFFWEcYm1sZ/SFsKaf9sYpsMFNn1tki1Gv2r5IU="
+                },
+                "timestampVerificationData": {},
+                "tlogEntries": [
+                  {
+                    "canonicalizedBody": "eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoiZHNzZSIsInNwZWMiOnsiZW52ZWxvcGVIYXNoIjp7ImFsZ29yaXRobSI6InNoYTI1NiIsInZhbHVlIjoiYWUyZWFlYzAyNzI4YTBiNTZiNzZkMDFjNjk4MzBjODhiYWZkZjE2NzRjMjBmYjUyYjYxODcxN2ZmODdlNTFjMiJ9LCJwYXlsb2FkSGFzaCI6eyJhbGdvcml0aG0iOiJzaGEyNTYiLCJ2YWx1ZSI6IjUyMzU5NDJjMmFkMTU2ZGMwYzVkNjk1NGI0ZDYxYjAxNzFlZTFmYTE0ZWQ3ZDRlOGNhNDgwNTgxNjM4MGYwN2IifSwic2lnbmF0dXJlcyI6W3sic2lnbmF0dXJlIjoiTUVVQ0lRREl2d0IzV0w2K252VmRXNHA1eHRyQTV0ckxHSE51UDhZUWg4ZFNYbXE4SGdJZ0xsbnFPZ0h2RS9iN3V4c25UbXAwcnRCeEJXamMxS01jcGhvQUFGUkpvcTA9IiwidmVyaWZpZXIiOiJMUzB0TFMxQ1JVZEpUaUJEUlZKVVNVWkpRMEZVUlMwdExTMHRDazFKU1VsalZFTkRRaTlsWjBGM1NVSkJaMGxWU1ZKTmNXZEZNbmh4TTFSQ2VUbG5NbTl6UjNNMVdsTkhjWGhKZDBObldVbExiMXBKZW1vd1JVRjNUWGNLVG5wRlZrMUNUVWRCTVZWRlEyaE5UV015Ykc1ak0xSjJZMjFWZFZwSFZqSk5ValIzU0VGWlJGWlJVVVJGZUZaNllWZGtlbVJIT1hsYVV6RndZbTVTYkFwamJURnNXa2RzYUdSSFZYZElhR05PVFdwWmVFMUVRWGhOUkUxNlRYcEZOVmRvWTA1TmFsbDRUVVJCZUUxRVRUQk5la1UxVjJwQlFVMUdhM2RGZDFsSUNrdHZXa2w2YWpCRFFWRlpTVXR2V2tsNmFqQkVRVkZqUkZGblFVVlRUMmc0TTNKdldUaG9ZVFU0V0dwRk1FWkxXVkZ2UTJNeGJTOTNhVGRPVEZNNVluQUtNSGhVYWpOVVFraFdNRk5xZURKblZGbEdURmw1Y3pkNVUwMHlReTlTU0ZKUVJHaDZWbkl3TmsxNWJHOXBPV1l6VTB0UFEwSjRXWGRuWjJOVFRVRTBSd3BCTVZWa1JIZEZRaTkzVVVWQmQwbElaMFJCVkVKblRsWklVMVZGUkVSQlMwSm5aM0pDWjBWR1FsRmpSRUY2UVdSQ1owNVdTRkUwUlVablVWVlhORVJ6Q21oMFVYVTVTRlJaTWsxelRubFdlVkpGWW5neU5YQnJkMGgzV1VSV1VqQnFRa0puZDBadlFWVXpPVkJ3ZWpGWmEwVmFZalZ4VG1wd1MwWlhhWGhwTkZrS1drUTRkMmRhYzBkQk1WVmtSVkZGUWk5M1UwSnJSRU5DYWxsaFFtbHRhREJrU0VKNlQyazRkbG95YkRCaFNGWnBURzFPZG1KVE9VeGhXRXB3WWtoT1ZRcGtXRXB5WVZjMWVrd3llR2hrUjFaMVpFTXhlbHBZU2pKaFYwNXNURmRhYUZsdVNuQlplVGgxV2pKc01HRklWbWxNTTJSMlkyMTBiV0pIT1ROamVUbHJDbHBZV214aVJ6bDNXbGhKZEdSSE9YWmlTRTExWlZjeGMxRklTbXhhYmsxMllVZFdhRnBJVFhaYWJWWm9aRU01YlZwWFZtdFpiVVpxWVhwSmRHRnRSaklLV1ZSamVFMURNWEJpYmxKc1dqTkthR1JIYkhaaWFrRTFRbWR2Y2tKblJVVkJXVTh2VFVGRlFrSkRkRzlrU0ZKM1kzcHZka3d6VW5aaE1sWjFURzFHYWdwa1IyeDJZbTVOZFZveWJEQmhTRlpwWkZoT2JHTnRUblppYmxKc1ltNVJkVmt5T1hSTlFqaEhRMmx6UjBGUlVVSm5OemgzUVZGSlJVVllaSFpqYlhSdENtSkhPVE5ZTWxKd1l6TkNhR1JIVG05TlJGbEhRMmx6UjBGUlVVSm5OemgzUVZGTlJVdEVZekpOVkVVelRXcEJkMDF0VlRCWlZGSnJUVVJKZUUxRVNtMEtUMGROTTA1VVkzbE5lbFpwVDBSbk5GcHRWVEJQUkZVMVdsUkZkMGhSV1V0TGQxbENRa0ZIUkhaNlFVSkNRVkZRVWtkV01scFhlSFpqUjFaNVNVaFNkZ3BpTW5oNlRVUkZSME5wYzBkQlVWRkNaemM0ZDBGUlZVVkpNSFJ3WTIxc2MyTXhVakZqYlhSd1ltNU5kbUpIUmpCYVZ6VXdURmhPYkdOdVduQlpNbFYwQ2xwdFJtbGpiV3hxVFVSelIwTnBjMGRCVVZGQ1p6YzRkMEZSV1VWTVdFcHNXbTVOZG1GSFZtaGFTRTEyV20xV2FHUkRPVzFhVjFacldXMUdhbUY2U1hRS1lXMUdNbGxVWTNoTlF6RndZbTVTYkZvelNtaGtSMngyWW1wQk4wSm5iM0pDWjBWRlFWbFBMMDFCUlVsQ1F6Qk5TekpvTUdSSVFucFBhVGgyWkVjNWNncGFWelIxV1ZkT01HRlhPWFZqZVRWdVlWaFNiMlJYU2pGak1sWjVXVEk1ZFdSSFZuVmtRelZxWWpJd2QyZGFkMGREYVhOSFFWRlJRbWMzT0hkQlVXdEZDbWRaTUUxbldYQnZaRWhTZDJONmIzWk1NbVJ3WkVkb01WbHBOV3BpTWpCMlV6SnNlV0ZYZUhwV1NGWjVZVEpzZFdONU9YTlpXRkpzWW01UmRHTXlWbmtLWkcxc2FscFRNVzFaVjBwNVlWZE5ka3h0WkhCa1IyZ3hXV2s1TTJJelNuSmFiWGgyWkROTmRscEhWakphVjNoMlkwZFdlVXhZVW5aaU1uaDZURzVzZEFwaVJVSjVXbGRhZWt3eWFHeFpWMUo2VERKYWJGbFlVWFphYlZac1drZEthRmt5YzNsTVYzQm9aRzFGTTAxVVFYUmhWelV3V2xka2VWbFlVbkJpTWpSM0NrOUJXVXRMZDFsQ1FrRkhSSFo2UVVKRFoxRnhSRU5uTTA1cVJYaE9la2wzVFVSS2JFNUhSVEJhUkVGNVRWUkJlVnBxYUdwT2VsVXpUV3BOTVZscVp6UUtUMGRhYkU1RVp6RlBWMVY0VFVJd1IwTnBjMGRCVVZGQ1p6YzRkMEZSYzBWRWQzZE9XakpzTUdGSVZtbE1WMmgyWXpOU2JGcEVRa2RDWjI5eVFtZEZSUXBCV1U4dlRVRkZUVUpFWjAxT2JXZ3daRWhDZWs5cE9IWmFNbXd3WVVoV2FVeHRUblppVXpsTVlWaEtjR0pJVGxWa1dFcHlZVmMxZWt3eWVHaGtSMVoxQ21SRE1YcGFXRW95WVZkT2JFeFhXbWhaYmtwd1dYcEJORUpuYjNKQ1owVkZRVmxQTDAxQlJVNUNRMjlOUzBSak1rMVVSVE5OYWtGM1RXMVZNRmxVVW1zS1RVUkplRTFFU20xUFIwMHpUbFJqZVUxNlZtbFBSR2MwV20xVk1FOUVWVFZhVkVWM1VGRlpTMHQzV1VKQ1FVZEVkbnBCUWtSblVYWkVRekY1V2xkYWVncE1NbWhzV1ZkU2Vrd3lXbXhaV0ZGMldtMVdiRnBIU21oWk1uTjVURmR3YUdSdFJUTk5WRUYwWVZjMU1GcFhaSGxaV0ZKd1lqSTBkMGRuV1V0TGQxbENDa0pCUjBSMmVrRkNSSGRSVFVSQmIzaE5lazB6VGxScmVFMTZXVEZOUkVGSFEybHpSMEZSVVVKbk56aDNRVkpCUlVsbmQyZGhTRkl3WTBoTk5reDVPVzRLWVZoU2IyUlhTWFZaTWpsMFREQjBjR050YkhOak1WSXhZMjEwY0dKdVRYZEhVVmxMUzNkWlFrSkJSMFIyZWtGQ1JWRlJURVJCYTNsTmVsbDNUV3BuTVFwTlZFVjNaMXAzUjBOcGMwZEJVVkZDWnpjNGQwRlNTVVZuV1RCTloxbHdiMlJJVW5kamVtOTJUREprY0dSSGFERlphVFZxWWpJd2RsTXliSGxoVjNoNkNsWklWbmxoTW14MVkzazVjMWxZVW14aWJsRjBZekpXZVdSdGJHcGFVekZ0V1ZkS2VXRlhUWFpNYldSd1pFZG9NVmxwT1ROaU0wcHlXbTE0ZG1RelRYWUtXa2RXTWxwWGVIWmpSMVo1VEZoU2RtSXllSHBNYm14MFlrVkNlVnBYV25wTU1taHNXVmRTZWt3eVdteFpXRkYyV20xV2JGcEhTbWhaTW5ONVRGZHdhQXBrYlVVelRWUkJkR0ZYTlRCYVYyUjVXVmhTY0dJeU5IZFBRVmxMUzNkWlFrSkJSMFIyZWtGQ1JYZFJjVVJEWnpOT2FrVjRUbnBKZDAxRVNteE9SMFV3Q2xwRVFYbE5WRUY1V21wb2FrNTZWVE5OYWsweFdXcG5ORTlIV214T1JHY3hUMWRWZUUxRFJVZERhWE5IUVZGUlFtYzNPSGRCVWxGRlJYZDNVbVF5T1hrS1lUSmFjMkl6WkdaYVIyeDZZMGRHTUZreVozZGhaMWxMUzNkWlFrSkJSMFIyZWtGQ1JsRlNZMFJHY0c5a1NGSjNZM3B2ZGt3eVpIQmtSMmd4V1drMWFncGlNakIyVXpKc2VXRlhlSHBXU0ZaNVlUSnNkV041T1hOWldGSnNZbTVSZEdNeVZubGtiV3hxV2xNeGJWbFhTbmxoVjAxMldWZE9NR0ZYT1hWamVUbDVDbVJYTlhwTWVrMHlUMFJCTUUxRWF6SlBSR3N4VERKR01HUkhWblJqU0ZKNlRIcEZkMFpuV1V0TGQxbENRa0ZIUkhaNlFVSkdaMUZKUkVGYWQyUlhTbk1LWVZkTmQyWjNXVXRMZDFsQ1FrRkhSSFo2UVVKSFFWSjRSRWM1ZVZwWVFuWlBhM1J3WTIxc2MyTXhVakZqYlhSd1ltNU9RVTFxVFRKTlJFazBUbFJGZUFwTU1uaG9aRWRXZFdSRE1YcGFXRW95WVZkT2JFeFhXbWhaYmtwd1dUQkJlRTE2VFROT1ZHdDRUWHBaTVU5dVNteGFhbkI1V2xkYWVrd3lhR3haVjFKNkNrd3lXbXhaV0ZGMldtMVdiRnBIU21oWk1uTjVURmR3YUdSdFJUTk5WRUYwWVZjMU1GcFhaSGxaV0ZKd1lqSTBkMmRaYTBkRGFYTkhRVkZSUWpGdWEwTUtRa0ZKUldWM1VqVkJTR05CWkZGRVpGQlVRbkY0YzJOU1RXMU5Xa2hvZVZwYWVtTkRiMnR3WlhWT05EaHlaaXRJYVc1TFFVeDViblZxWjBGQlFXRkVNUXBvYUVkc1FVRkJSVUYzUWtkTlJWRkRTVWhhYW1WRWVVVjZNbEJEYWxGeGNWVk9VWFI1WWt4a1JFRldlQzlvWmpGc1VWUlZZM1pCUWxWbGRqSkJhVUk0Q2xCQmJ6QkhjbGRHZWtkR2FXSnpWamRqT0cxS1JYbDFNbE40YlZJMmVFRnRlVFZaYVZSb2RuUmpha0ZMUW1kbmNXaHJhazlRVVZGRVFYZE9iMEZFUW13S1FXcEJhMHRCTWpWR1RIQnhLMUJ2WmxaeVZWWjVNa3h2TkZwcFUyNVlZMmRNVVhOa2IwMVRjMlJxVm1ScVpHZENaVE5OTjBwaWJXNVhVa0ZwTTNJdk1RbzJaM05EVFZGRVJHRnZaVzFCTURKbk9FZE1UM3BCYUM5TFptOVZiMEpwZFdaR1JsZEZZMWx0TVhOYUwxTkdjMHRoWmpseldYQnpUVVpPYmpGMGEya3hDa2QyTW5JMVNWVTlDaTB0TFMwdFJVNUVJRU5GVWxSSlJrbERRVlJGTFMwdExTMEsifV19fQ==",
+                    "inclusionPromise": {
+                      "signedEntryTimestamp": "MEUCIEcKqNO4PkznMoTsyvsVIXl2OkdztFpmt42EUqy5SqBBAiEAvIDAXw7Ahf7IwegZWWHJjb4kOkS1nWat4kIDEcIv4vU="
+                    },
+                    "inclusionProof": {
+                      "checkpoint": {
+                        "envelope": "rekor.sigstore.dev - 1193050959916656506\n2907796042\n4ZXyY2nfRq8BHMfQTNICginAMQUaPZ63frpZdfKCDCM=\n\n— rekor.sigstore.dev wNI9ajBGAiEA6YMElm5e0iAbtP9LtV/fw+XZlyPwYPKA/7Nl9oI3CF8CIQDmCL8y8QSGRWWNtEliOXIcqwSK+x1j9NaQ1+v73LYinA==\n"
+                      },
+                      "hashes": [
+                        "ehp/xxc5s4VjNTW0t6y2Zm0xHfRUsl2v3G8Wax15VKo=",
+                        "bLeDmJB0TxByMKErJ58+h2GzhFyj45yMii0MGskYqVU=",
+                        "fHUy0yzECVBZG6oR/Z7XDcHVsTIwjNAEYxb8wUwiPb8=",
+                        "pWaXx+klM8Ex/te5FctM2cxDaWjSXbR5qd3lJh4e2n8=",
+                        "MwWSGjR68RN5vh6+njL2lEPIAvPaXSXuBAkn2YMD/UQ=",
+                        "+p23EAXm5maUIpiA8qVLyVn4UzhS/oEcaVuEjuhLKuI=",
+                        "wtMw1AKl7ekMqHN5gHeVeBNeU0XoW7SB3yIwAYu/wns=",
+                        "Pt78Ug6I9b80ykEa1cL2oPXl8cTEvdp0jQEWjCTUoOQ=",
+                        "CTg5mNZSpThTjxS2Q8U/UDNUU6cmJhxSwO3wb7NMtbY=",
+                        "urXW9nCMN3EoNy07gjFK71lEJlne9NGlE6AKGeCuNkQ=",
+                        "K0qTJzoKtBGMr+FBxRwatOFsZMsA4KtqWEuudGOLb4E=",
+                        "7S+svDvYU7NG4E7MIACc717y17BLwp3WXnLDWY+ZIog=",
+                        "cIz1OY2tO8cVEgp0TmAffPApps2hJuAcAN+pESrpHHY=",
+                        "4lYk7cX8PszZLoyQMWjMDB1BOBn4f7hehtFiHo92e5Y=",
+                        "ttpxd0TJprOUtb/8Wf5DeIzwNtUw72Q0YnXE2LFMIZo=",
+                        "qxzHanAzz57SDdmJe0B7bJK72NTIBbwEMGBBKvDOROw=",
+                        "xH/DCseLHr9eKoYT8qsORZK7zVdEGYWHuVtsVrD95wY="
+                      ],
+                      "logIndex": "2907796038",
+                      "rootHash": "4ZXyY2nfRq8BHMfQTNICginAMQUaPZ63frpZdfKCDCM=",
+                      "treeSize": "2907796042"
+                    },
+                    "integratedTime": "1790825599",
+                    "kindVersion": {
+                      "kind": "dsse",
+                      "version": "0.0.1"
+                    },
+                    "logId": {
+                      "keyId": "wNI9atQGlz+VWfO6LRygH4QUfY/8W4RFwiT5i5WRgB0="
+                    },
+                    "logIndex": "3029700300"
+                  }
+                ]
+              }
+            },
+            "bundle_url": "",
+            "initiator": ""
+          },
+          "verificationResult": {
+            "mediaType": "application/vnd.dev.sigstore.verificationresult+json;version=0.1",
+            "signature": {
+              "certificate": {
+                "buildConfigDigest": "761172002e4a4d02102f8c757235b888fe4859e1",
+                "buildConfigURI": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration",
+                "buildSignerDigest": "761172002e4a4d02102f8c757235b888fe4859e1",
+                "buildSignerURI": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration",
+                "buildTrigger": "workflow_dispatch",
+                "certificateIssuer": "CN=sigstore-intermediate,O=sigstore.dev",
+                "githubWorkflowName": "Developer tools",
+                "githubWorkflowRef": "refs/heads/feat/feedback2-java710-integration",
+                "githubWorkflowRepository": "KirilsTurkins/latent-service-fabric",
+                "githubWorkflowSHA": "761172002e4a4d02102f8c757235b888fe4859e1",
+                "githubWorkflowTrigger": "workflow_dispatch",
+                "issuer": "https://token.actions.githubusercontent.com",
+                "runInvocationURI": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36804096895/attempts/1",
+                "runnerEnvironment": "github-hosted",
+                "sourceRepositoryDigest": "761172002e4a4d02102f8c757235b888fe4859e1",
+                "sourceRepositoryIdentifier": "1337591365",
+                "sourceRepositoryOwnerIdentifier": "236028511",
+                "sourceRepositoryOwnerURI": "https://github.com/KirilsTurkins",
+                "sourceRepositoryRef": "refs/heads/feat/feedback2-java710-integration",
+                "sourceRepositoryURI": "https://github.com/KirilsTurkins/latent-service-fabric",
+                "sourceRepositoryVisibilityAtSigning": "public",
+                "subjectAlternativeName": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration"
+              }
+            },
+            "statement": {
+              "_type": "https://in-toto.io/Statement/v1",
+              "predicate": {
+                "buildDefinition": {
+                  "buildType": "https://actions.github.io/buildtypes/workflow/v1",
+                  "externalParameters": {
+                    "workflow": {
+                      "path": ".github/workflows/developer-tools.yml",
+                      "ref": "refs/heads/feat/feedback2-java710-integration",
+                      "repository": "https://github.com/KirilsTurkins/latent-service-fabric"
+                    }
+                  },
+                  "internalParameters": {
+                    "github": {
+                      "event_name": "workflow_dispatch",
+                      "repository_id": "1337591365",
+                      "repository_owner_id": "236028511",
+                      "runner_environment": "github-hosted"
+                    }
+                  },
+                  "resolvedDependencies": [
+                    {
+                      "digest": {
+                        "gitCommit": "761172002e4a4d02102f8c757235b888fe4859e1"
+                      },
+                      "uri": "git+https://github.com/KirilsTurkins/latent-service-fabric@refs/heads/feat/feedback2-java710-integration"
+                    }
+                  ]
+                },
+                "runDetails": {
+                  "builder": {
+                    "id": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration"
+                  },
+                  "metadata": {
+                    "invocationId": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36804096895/attempts/1"
+                  }
+                }
+              },
+              "predicateType": "https://slsa.dev/provenance/v1",
+              "subject": [
+                {
+                  "digest": {
+                    "sha256": "0504454b407665bdeb35c64ff082109fdfaeeb9cff838774cd2b9c3ecdfe6e24"
+                  },
+                  "name": "SHA256SUMS"
+                }
+              ]
+            },
+            "verifiedIdentity": {
+              "issuer": {
+                "issuer": "",
+                "regexp": ".*"
+              },
+              "runnerEnvironment": "github-hosted",
+              "subjectAlternativeName": {
+                "subjectAlternativeName": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration"
+              }
+            },
+            "verifiedTimestamps": [
+              {
+                "timestamp": "2026-10-01T03:33:19Z",
+                "type": "Tlog",
+                "uri": "https://rekor.sigstore.dev"
+              }
+            ]
+          }
+        }
+      ],
+      "verifier": {
+        "argv": [
+          "/qualification-work/verification/gh-linux",
+          "attestation",
+          "verify",
+          "/approved/frontend/SHA256SUMS",
+          "--bundle",
+          "/approved/frontend/attestation.json",
+          "--custom-trusted-root",
+          "/qualification-work/verification/trusted_root.jsonl",
+          "--repo",
+          "KirilsTurkins/latent-service-fabric",
+          "--hostname",
+          "github.com",
+          "--cert-identity",
+          "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration",
+          "--cert-oidc-issuer",
+          "https://token.actions.githubusercontent.com",
+          "--source-ref",
+          "refs/heads/feat/feedback2-java710-integration",
+          "--source-digest",
+          "761172002e4a4d02102f8c757235b888fe4859e1",
+          "--signer-digest",
+          "761172002e4a4d02102f8c757235b888fe4859e1",
+          "--deny-self-hosted-runners",
+          "--predicate-type",
+          "https://slsa.dev/provenance/v1",
+          "--digest-alg",
+          "sha256",
+          "--format",
+          "json"
+        ],
+        "exitCode": 0,
+        "outputLimitExceeded": false,
+        "seconds": 0.503,
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 15609,
+        "stdoutSha256": "54a6b7282b1afcd5b814c3f6900c747d920d2cfd127fd8c59f64d26d86e0a218"
+      }
+    },
+    "executionQualified": false,
+    "frontend": {
+      "bytes": 2200344,
+      "sha256": "sha256:15b61742c90b58192c9af748c6036c93be9d34d0078361d6746f8fac609113d8"
+    },
+    "originalArchive": {
+      "bytes": 34949774,
+      "sha256": "sha256:b6d96ae6f4672975791d207c166848f0582e8b4461ee201ac4262c861e8b35a6"
+    },
+    "originalManifest": {
+      "bytes": 101568,
+      "sha256": "sha256:227a6b126fd42f0a48879090f237b3666155914313830b88f37cef2908975df9"
+    },
+    "preflightResources": [
+      {
+        "path": "schemas/dev-composition-input.schema.json",
+        "sha256": "sha256:b12ad0f9b4fd89105c1d9002eefd608932992fdde18c40c5ebb6e81403ff38b1",
+        "size": 10965
+      },
+      {
+        "path": "schemas/static-site-budget.schema.json",
+        "sha256": "sha256:64f43e465f875650958c2f563427b5c3f024f487f808eaa90742ec23f2e9eaa8",
+        "size": 5786
+      },
+      {
+        "path": "contracts/dev/composition-support-v1.json",
+        "sha256": "sha256:13b43cbd26d4b1500c4e03c90800bd8a66a804cac541dbaa3ea4fe11f75df7f6",
+        "size": 16181
+      },
+      {
+        "path": "contracts/http/browser-response-ownership-v1.json",
+        "sha256": "sha256:b00795bf709c37d153af0bd6d445415ba6bd2fb47310b4c47ee1c3d2d951e2a3",
+        "size": 5873
+      }
+    ],
+    "publisherAuthenticated": true,
+    "schemaVersion": "latent.java-http.authenticated-frontend.v1",
+    "sourceCommit": "761172002e4a4d02102f8c757235b888fe4859e1",
+    "target": "linux-x86_64"
+  },
+  "nativeRuntimeRebuilt": false,
+  "passed": false,
+  "retainedC4ArtifactsReused": false,
+  "schemaVersion": "latent.dev.packaged-java-composition.v1"
+}

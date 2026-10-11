@@ -21,13 +21,29 @@ pub fn interface_with_dependencies(
     for (path, source) in sources {
         resolve.push_source(path, source).unwrap();
     }
+    encode_interface(&resolve, name, asynchronous)
+}
+
+/// Parse one exact committed package directory and its own declared WIT deps.
+/// This is an unexecuted type fixture, not an installed WASI implementation.
+pub fn interface_from_directory(
+    directory: &std::path::Path,
+    name: &str,
+    asynchronous: Option<bool>,
+) -> InstanceType {
+    let mut resolve = Resolve::default();
+    resolve.push_dir(directory).unwrap();
+    encode_interface(&resolve, name, asynchronous)
+}
+
+fn encode_interface(resolve: &Resolve, name: &str, asynchronous: Option<bool>) -> InstanceType {
     let (_, interface) = resolve
         .interfaces
         .iter()
         .find(|(id, _)| resolve.id_of(*id).as_deref() == Some(name))
         .unwrap();
     let mut encoder = Encoder {
-        resolve: &resolve,
+        resolve,
         host: InstanceType::new(),
         types: BTreeMap::new(),
         names: BTreeMap::new(),

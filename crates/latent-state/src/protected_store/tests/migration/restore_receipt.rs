@@ -359,3 +359,71 @@ fn recovered_stage_receipt_requires_original_read_fence_consumption_and_same_ins
     setup.require_census();
     assert!(finish(&setup.owner).clean);
 }
+
+#[test]
+fn detached_receipt_reader_keeps_real_views_custody_and_original_capacity_until_retirement() {
+    let mut setup = Setup::with_restore_destination();
+    let (root, _) = super::super::fixture();
+    let (checkpoint, _) = super::super::fixture();
+    let (snapshot, input, owners, request) = restore_stage::prepare(
+        &setup,
+        restore_stage::destination(root.path(), checkpoint.path(), 4 * 1024 * 1024),
+    );
+    let (snapshot, staged) = wait(restore_stage::job(
+        &setup,
+        snapshot,
+        input,
+        &owners,
+        request.clone(),
+    ))
+    .unwrap();
+    let staged = staged.unwrap().unwrap();
+    let expected = expected(staged.input());
+    drop(staged);
+    let (snapshot, input) = review(&setup, snapshot, expected, &owners);
+    let checkpoint_before = fs::read(checkpoint.path().join("transaction-checkpoint.v1")).unwrap();
+    let (gates, receiver) = owners.pause_receipt_review();
+    let original = Arc::downgrade(setup.original());
+    let installed = Arc::downgrade(&owners);
+    let work = setup
+        .owner
+        .recover_restore_receipt(
+            snapshot,
+            input,
+            request,
+            Arc::clone(&owners) as Arc<dyn RestoreStageOwners>,
+        )
+        .unwrap();
+    let ticket = receiver.recv_timeout(WATCHDOG).unwrap();
+    drop(work); // Accepted worker still holds actual source and staged views.
+    drop(owners);
+    setup.release_original();
+    setup.owner.close();
+    let mut drain = Box::pin(
+        setup
+            .owner
+            .drain_async(Instant::now() + WATCHDOG, std::future::pending())
+            .unwrap(),
+    );
+    PollProbe::default().pending(drain.as_mut());
+    assert!(original.upgrade().is_some());
+    assert!(installed.upgrade().is_some());
+    assert!(setup.owner.snapshot().unwrap().custody_active);
+    assert_eq!(setup.native.snapshot().unwrap().recovery.slots, 1);
+    assert!(root.path().join("transaction-state.redb").exists());
+    assert_eq!(
+        fs::read(checkpoint.path().join("transaction-checkpoint.v1")).unwrap(),
+        checkpoint_before
+    );
+    gates.release(ticket).unwrap();
+    let shutdown = wait(drain);
+    assert!(shutdown.clean);
+    assert!(shutdown.snapshot.physically_retired());
+    assert!(original.upgrade().is_none());
+    assert!(installed.upgrade().is_none());
+    assert_eq!(setup.native.snapshot().unwrap().recovery.slots, 0);
+    assert_eq!(
+        fs::read(checkpoint.path().join("transaction-checkpoint.v1")).unwrap(),
+        checkpoint_before
+    );
+}

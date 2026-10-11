@@ -170,6 +170,41 @@ fn actual_restart_keeps_incomplete_original_progress_and_refuses_namespace_bypas
 }
 
 #[test]
+fn namespace_transition_prepared_before_migration_cannot_commit_after_staging_history() {
+    for accounted in [false, true] {
+        let fixture = Fixture::new(AggregateMigrationRecipe::Count, accounted);
+        let current = fixture.current();
+        let prepared = NamespaceCatalog::new()
+            .prepare(
+                &fixture.store,
+                NamespaceOperationContext {
+                    tenant: current.namespace.tenant.clone(),
+                    actor: "operator".into(),
+                    operation_id: "racing-retirement".into(),
+                },
+                &NamespaceMutation::Transition {
+                    id: current.namespace.id.clone(),
+                    expected: current.namespace.version,
+                    action: NamespaceTransition::Retire,
+                },
+                0,
+            )
+            .unwrap();
+        fixture.apply(MigrationPhase::Stage);
+        let original = fixture.progress_bytes();
+        assert_eq!(
+            fixture.store.apply(prepared.batch),
+            Err(StoreError::Conflict)
+        );
+        assert_eq!(fixture.progress_bytes(), original);
+        assert_eq!(fixture.current().namespace, current.namespace);
+        if accounted {
+            fixture.require_census();
+        }
+    }
+}
+
+#[test]
 fn current_reviewer_and_real_writer_refusal_do_not_publish_a_pause_or_partial_cell() {
     let fixture = Fixture::new(AggregateMigrationRecipe::Count, true);
     let before = fixture.cell();

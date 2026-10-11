@@ -171,6 +171,17 @@ impl<S> Future for StoreIoStartup<S> {
 }
 
 impl<S: Send + Sync + 'static> StoreIoReady<S> {
+    #[cfg(test)]
+    pub(crate) fn wait_for_snapshot(
+        &self,
+        timeout: std::time::Duration,
+        ready: impl Fn(StoreIoSnapshot) -> bool,
+    ) {
+        self.owner.wait_for_snapshot(timeout, ready);
+    }
+
+    /// Validate the original immutable recovery partition; never create workers
+    /// or change the ownership of admitted physical work.
     pub fn install_recovery_capacity(
         &self,
         reserve: super::StoreIoRecoveryCapacity,
