@@ -10,7 +10,8 @@ public final class DiagnosticVectors {
             TransactionDiagnostics.afterStage(7);
         } else if (arguments[0].equals("trap")) {
             if (TransactionDiagnostics.businessDelta(TransactionDiagnostics.TRAP_DELTA) != 1
-                || TransactionDiagnostics.businessDelta(TransactionDiagnostics.LOOP_DELTA) != 1)
+                || TransactionDiagnostics.businessDelta(TransactionDiagnostics.LOOP_DELTA) != 1
+                || TransactionDiagnostics.businessDelta(TransactionDiagnostics.MEMORY_DELTA) != 1)
                 throw new AssertionError("bounded-diagnostic-delta");
             expect("diagnostic-trap-after-stage", () -> TransactionDiagnostics.afterStage(TransactionDiagnostics.TRAP_DELTA));
         } else if (arguments[0].equals("reused")) {

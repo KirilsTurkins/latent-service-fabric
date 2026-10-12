@@ -3,38 +3,22 @@ from pathlib import Path
 import json
 
 from tools.java_capsule_build import build
-from tools.java_capsule_project import create, validate
+from tools.java_capsule_project import create
 from tools.java_http_composition.revision import create_revision
 from tools.java_http_generation.project import generate, check
 from tools.java_http_generation.probes import qualify as qualify_generation
-from tools.rust_capsule_project import ROOT, digest, read_json, snapshot, write_json
+from tools.rust_capsule_project import ROOT, digest, read_json, write_json
 
-COMPOSITION_CPU_FUEL = 10_000_000_000
-
-
-def qualification_budget(project: Path) -> dict:
-    """Capture a fresh fixture declaration before compilation and signing."""
-    before = snapshot(project)
-    descriptor, _, _ = validate(before)
-    if descriptor["limits"]["cpuFuel"] != 1_000_000_000:
-        raise ValueError("java-composition-default-cpu-budget-changed")
-    previous = dict(descriptor["limits"])
-    descriptor["limits"]["cpuFuel"] = COMPOSITION_CPU_FUEL
-    (project / "capsule-project.json").write_text(json.dumps(descriptor, indent=2) + "\n", encoding="utf-8")
-    after = snapshot(project)
-    validate(after)
-    if set(before) != set(after) or any(before[name] != after[name]
-            for name in before if name != "capsule-project.json"):
-        raise ValueError("java-composition-budget-changed-other-source")
-    return {"beforeDescriptorDigest": digest(before["capsule-project.json"]),
-        "afterDescriptorDigest": digest(after["capsule-project.json"]),
-        "beforeLimits": previous, "afterLimits": descriptor["limits"],
-        "signedExecutionQualified": False}
+# Keep the real spin child alive across the bounded promotion/rollback calls.
+# The earlier 1B parent allowance exhausted its half-sized child in under a
+# second. This fixture ceiling stays within its existing node's 10B ceiling;
+# cancellation, the original deadline and physical-release checks still apply.
+SPIN_CPU_FUEL = 10_000_000_000
 
 
-def projects(output: Path, *, generation_cases: Path | None = None) -> dict[str, Path]:
+def projects(output: Path, *, tools: dict[str, Path] | None = None,
+             diagnostic_adaptations: dict | None = None) -> dict[str, Path]:
     result = {}
-    budgets = {}
     for name in ("domain", "context-required"):
         project = create(output / name, "greeting", "java-http-" + name)
         fixture = ROOT / "examples/java-http-composition" / name
@@ -44,35 +28,43 @@ def projects(output: Path, *, generation_cases: Path | None = None) -> dict[str,
         descriptor["world"] = "examples:java-http-" + name + "/service@1.0.0"
         descriptor["limits"].update(childCalls=4 if name == "adapter" else 0,
                                     memoryBytes=134217728 if name == "adapter" else 67108864)
+        if name == "domain":
+            descriptor["limits"]["cpuFuel"] = SPIN_CPU_FUEL
         (project / "capsule-project.json").write_text(json.dumps(descriptor, indent=2) + "\n", encoding="utf-8")
         lock = read_json(project / "sdk-lock.json")
         lock["template"] = {"name": "java-http-" + name,
                             "sourceDigest": digest((fixture / "Capsule.java").read_bytes()),
                             "witDigest": digest((fixture / "world.wit").read_bytes())}
         (project / "sdk-lock.json").write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
-        if name == "domain":
-            budgets[name] = qualification_budget(project)
         result[name] = project
+
+    if diagnostic_adaptations is not None:
+        from tools.java_http_composition import provider_timeout
+        diagnostic_adaptations["domain"] = provider_timeout.adapt_domain(result["domain"])
+
     selection = ROOT / "examples/java-http-composition/routes.json"
-    result["adapter"] = generate(result["domain"], selection, output / "adapter")
-    check(result["domain"], selection, result["adapter"])
-    if generation_cases is not None:
-        qualify_generation(result["domain"], selection, result["adapter"], generation_cases)
-    budgets["adapter"] = qualification_budget(result["adapter"])
+    selected_tools = {} if tools is None else {"tools": tools}
+    result["adapter"] = generate(result["domain"], selection, output / "adapter", **selected_tools)
+    check(result["domain"], selection, result["adapter"], **selected_tools)
     result["adapter-next"] = create_revision(result["adapter"], output / "adapter-next")
-    write_json(output / "qualification-budgets.json", {
-        "schemaVersion": "latent.java-http.fixture-budgets.v1",
-        "purpose": "bounded composed drain qualification", "captures": budgets,
-        "candidateCpuFuel": read_json(result["adapter-next"] / "capsule-project.json")["limits"]["cpuFuel"],
-        "generatorCheckedBeforeFixtureEdit": True,
-        "generationNegativeCasesChecked": generation_cases is not None,
-        "signedExecutionQualified": False})
     return result
 
 
-def compile_pair(output: Path, wasi_sdk: Path, binaries: dict) -> dict[str, Path]:
-    selected = projects(output / "projects", generation_cases=output / "generation-cases")
+
+def compile_pair(output: Path, wasi_sdk: Path, binaries: dict, *, diagnostics=False) -> dict[str, Path]:
+    if type(diagnostics) is not bool:
+        raise ValueError("Java diagnostic build selection must be explicit")
+    adaptations = {} if diagnostics else None
+    selected = projects(output / "projects", diagnostic_adaptations=adaptations)
+    qualify_generation(selected["domain"], ROOT / "examples/java-http-composition/routes.json",
+        selected["adapter"], output / "generation-cases")
+    if diagnostics:
+        from tools.java_http_composition import provider_timeout
+        for name in ("adapter", "adapter-next"):
+            adaptations[name] = provider_timeout.adapt_adapter(selected[name])
+        write_json(output / "diagnostic-adaptations.json", adaptations)
     return {name: build(project, output / "builds" / name,
-        binaries["examples/capsule_contracts"], binaries["examples/package"],
+        binaries["examples/capsule_contracts"], binaries.get("examples/package"),
+
         "https://github.com/KirilsTurkins/latent-service-fabric", wasi_sdk)
         for name, project in selected.items()}

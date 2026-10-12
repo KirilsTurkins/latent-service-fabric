@@ -11,6 +11,7 @@ use super::state::Inner;
 use super::{AdmittedSchedulingRequest, SchedulingCancellation};
 use crate::{ActivationScheduler, CellClass};
 
+mod immediate_contention;
 mod publication;
 
 #[derive(Default)]

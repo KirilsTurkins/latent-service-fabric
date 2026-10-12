@@ -5,24 +5,21 @@ use super::{ActivationBudget, BudgetDimension, BudgetError, BudgetProfile};
 /// Affine capacity reserved before a native allocation. Call `confirm` only
 /// after allocation succeeds; retain this guard with the actual allocation,
 /// including a quarantined owner. Dropping an awaiter is not retirement.
-/// Phase 4 counts reserved transfer/view capacity immediately and retains its
-/// outstanding owner through terminal reporting until this guard is dropped.
 #[derive(Debug)]
 #[must_use = "retain with the actual native allocation"]
 pub struct HostMemoryReservation {
     budget: ActivationBudget,
     bytes: u64,
     confirmed: bool,
-    counted: bool,
 }
 
 impl ActivationBudget {
     pub fn reserve_host_memory(&self, bytes: u64) -> Result<HostMemoryReservation, BudgetError> {
-        let counted = self.profile() == BudgetProfile::Phase4;
+        let transaction = self.profile() == BudgetProfile::Phase4;
         if !matches!(
             self.profile(),
             BudgetProfile::Phase3 | BudgetProfile::Phase4
-        ) || counted && (bytes == 0 || self.has_budget_parent())
+        ) || (transaction && (bytes == 0 || self.has_budget_parent()))
         {
             return Err(BudgetError::InvalidAccountingOperation {
                 dimension: BudgetDimension::MemoryBytes,
@@ -43,25 +40,26 @@ impl ActivationBudget {
                 requested: bytes,
             });
         }
-        if counted {
-            state.outstanding_reservations = state.outstanding_reservations.checked_add(1).ok_or(
-                BudgetError::ArithmeticOverflow {
-                    dimension: BudgetDimension::MemoryBytes,
-                },
-            )?;
-            // Transaction transfer/view capacity remains physically occupied
-            // before any guest or awaiter can observe its final disposition.
-            state.host_observed_memory += bytes;
-            state.consumption.peak_memory_bytes = state.consumption.peak_memory_bytes.max(
-                state.own_memory_peak + state.child_observed_memory + state.host_observed_memory,
-            );
-        }
+        let count = state.outstanding_reservations.checked_add(1).ok_or(
+            BudgetError::ArithmeticOverflow {
+                dimension: BudgetDimension::MemoryBytes,
+            },
+        )?;
         state.host_reserved_memory += bytes;
+        state.outstanding_reservations = count;
+        if transaction {
+            // The transaction host prepays its finite native working set.
+            // Preserve that original Phase 4 observation while Phase 3 runtime
+            // allocations remain explicitly confirmed after allocation.
+            state.host_observed_memory += bytes;
+            let observed =
+                state.own_memory_peak + state.host_observed_memory + state.child_observed_memory;
+            state.consumption.peak_memory_bytes = state.consumption.peak_memory_bytes.max(observed);
+        }
         Ok(HostMemoryReservation {
             budget: self.clone(),
             bytes,
-            confirmed: counted,
-            counted,
+            confirmed: transaction,
         })
     }
 
@@ -92,9 +90,7 @@ impl Drop for HostMemoryReservation {
     fn drop(&mut self) {
         let mut state = self.budget.lock_state();
         state.host_reserved_memory -= self.bytes;
-        if self.counted {
-            state.outstanding_reservations -= 1;
-        }
+        state.outstanding_reservations -= 1;
         if self.confirmed {
             state.host_observed_memory -= self.bytes;
             self.budget.propagate_memory(self.bytes, false);
@@ -154,12 +150,15 @@ mod tests {
         let mut owner = budget.reserve_host_memory(250).unwrap();
         owner.confirm();
         owner.confirm();
+        assert_eq!(budget.outstanding_reservations(), 1);
         budget.observe_peak_memory(600).unwrap();
         let terminal = budget.finalize_at(None, Instant::now());
+        assert!(terminal.violation().is_none());
         assert_eq!(terminal.consumption().peak_memory_bytes, 850);
         assert_eq!(budget.host_memory_bytes(), 250);
         assert!(budget.reserve_host_memory(1).is_err());
         drop(owner);
+        assert_eq!(budget.outstanding_reservations(), 0);
         assert_eq!(budget.host_memory_bytes(), 0);
         assert_eq!(budget.finalize_at(None, Instant::now()), terminal);
     }

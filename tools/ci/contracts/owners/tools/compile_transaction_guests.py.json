@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_transaction_guests.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve all original compiler plans and guards; add explicitly selected Java memory, unsigned UTF-8 state and real forbidden-child capture inputs without runtime qualification claims",
+  "reviewReason": "Reconcile exact Java value/child compiler captures and current version-2 collector, preserving all prior required cases and refusal oracles",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1c2c1c759e2eeb08cbb2dc0321378001a3812ef5ce73390381be4ee9b4eabd25"
+  "sha256": "9c24e537f73745520165fe3f21c6f5476b7faf08c9c8d792532da97b777ecb98"
 }

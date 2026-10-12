@@ -8,6 +8,13 @@ historical: runtime/SDK `2d6cc2eafc0a17dfe573be4252fa49835bebbbd6`, application 
 `d38e168c7bfc270e5e257f6b2c3b591dca24e104`, first HTTP status 503. The historical
 private application has not been reexecuted by this fixture.
 
+The [executed C4/3b7 evidence](../evidence/java-composed-c4-3b7/README.md)
+retains four actual Java builds, exact source/runtime identities and successful
+standalone, former-profile, composed HTTP, context, generated-client and canary
+campaigns. Its original failed aggregate remains failed. Reused native binaries,
+new Java component bytes and the corrected finite canary window are recorded
+separately; native frontend and transactional qualification keep their own scope.
+
 ## Reproduction and allocation decision
 
 The domain exports a list of a 13-field record, including UTF-8 strings and a

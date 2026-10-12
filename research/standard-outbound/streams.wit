@@ -1,6 +1,7 @@
 package latent:network@0.1.0;
 
-// ADR-0061 comparison contract. Not installed or recognized by production hosts.
+// Current V5 recognizes this contract. TCP installation remains development-only.
+// Production installation requires ADR-0061 review and implementation gates.
 interface streams {
     resource connection;
     resource chunk;

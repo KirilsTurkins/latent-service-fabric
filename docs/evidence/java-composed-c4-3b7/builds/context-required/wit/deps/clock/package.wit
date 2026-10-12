@@ -1,0 +1,9 @@
+package latent:clock@0.1.0;
+
+interface monotonic {
+    now-nanos: func() -> u64;
+}
+
+interface wall {
+    now-unix-millis: func() -> u64;
+}

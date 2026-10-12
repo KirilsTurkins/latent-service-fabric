@@ -15,16 +15,24 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.ClassRefsRenamer;
+import org.teavm.platform.plugin.PlatformPlugin;
+import org.teavm.vm.spi.Before;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 /** SDK-owned compiler extension. The closure index is emitted from actual class
  * files, not a package allowlist or an application-executed compiler plugin. */
+@Before(PlatformPlugin.class)
 public final class RuntimePlugin implements TeaVMPlugin {
     private static final String RUNTIME = "dev.latent.guest.runtime.Activation";
     private final Set<String> applicationClasses = new HashSet<>();
@@ -54,6 +62,8 @@ public final class RuntimePlugin implements TeaVMPlugin {
         TimeUnitMethods.transform(cls, context);
         ThrowableInitialization.transform(cls);
         MonitorContinuations.transform(cls);
+        SleepContinuations.transform(cls);
+        WaitContinuations.transform(cls);
         boolean thread = cls.getName().equals("java.lang.Thread");
         boolean monotonic = thread || cls.getName().equals("java.lang.Object")
             || cls.getName().equals("org.teavm.runtime.EventQueue");
@@ -63,11 +73,15 @@ public final class RuntimePlugin implements TeaVMPlugin {
             SynchronizedMethods.lower(cls.getName(), method);
             if (thread) threadMethod(method, program);
             if (monotonic) {
+                boolean queuePump = cls.getName().equals("org.teavm.runtime.EventQueue")
+                    && method.getDescriptor().equals(new MethodDescriptor("processSingle", ValueType.LONG));
+                if (queuePump) verifyQueueClock(program);
                 for (var block : program.getBasicBlocks()) for (Instruction instruction : block) {
                     if (instruction instanceof InvokeInstruction invoke
                             && invoke.getMethod().getClassName().equals("java.lang.System")
                             && invoke.getMethod().getName().equals("currentTimeMillis")) {
-                        invoke.setMethod(new MethodReference(RUNTIME, "monotonicMillis", ValueType.LONG));
+                        invoke.setMethod(new MethodReference(RUNTIME,
+                            queuePump ? "queueMonotonicMillis" : "monotonicMillis", ValueType.LONG));
                     }
                 }
             }
@@ -86,9 +100,49 @@ public final class RuntimePlugin implements TeaVMPlugin {
         }
     }
 
+    private static void verifyQueueClock(Program program) {
+        var clocks = new java.util.ArrayList<InvokeInstruction>();
+        for (var block : program.getBasicBlocks()) for (var instruction : block) {
+            if (instruction instanceof InvokeInstruction invoke
+                    && invoke.getMethod().equals(new MethodReference("java.lang.System", "currentTimeMillis", ValueType.LONG)))
+                clocks.add(invoke);
+        }
+        if (clocks.size() != 2) throw new IllegalStateException("unreviewed-maintained-queue-clock");
+        var first = aliases(program, clocks.get(0).getReceiver());
+        var second = aliases(program, clocks.get(1).getReceiver());
+        int delays = 0;
+        int comparisons = 0;
+        for (var block : program.getBasicBlocks()) for (var instruction : block) {
+            if (!(instruction instanceof BinaryInstruction binary)
+                    || binary.getOperandType() != NumericOperandType.LONG) continue;
+            if (binary.getOperation() == BinaryOperation.SUBTRACT && first.contains(binary.getSecondOperand())) delays++;
+            if ((binary.getOperation() == BinaryOperation.COMPARE_GREATER || binary.getOperation() == BinaryOperation.COMPARE_LESS)
+                    && second.contains(binary.getSecondOperand())) comparisons++;
+        }
+        if (delays != 2 || comparisons != 1) throw new IllegalStateException("unreviewed-maintained-queue-delay");
+    }
+
+    private static Set<Variable> aliases(Program program, Variable original) {
+        var values = new HashSet<Variable>();
+        values.add(original);
+        boolean changed;
+        do {
+            changed = false;
+            for (var block : program.getBasicBlocks()) for (var instruction : block) {
+                if (instruction instanceof AssignInstruction assign && values.contains(assign.getAssignee()))
+                    changed |= values.add(assign.getReceiver());
+            }
+        } while (changed);
+        return values;
+    }
+
     private static boolean privateConcurrentHelper(String suffix) {
+        // Generated callback classes belong to the actual TeaVM caller. Only
+        // these declared CompletableFuture helpers retain the SDK identity.
         return suffix.equals("ManagedExecutor") || suffix.startsWith("ManagedExecutor$")
-            || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$");
+            || suffix.startsWith("AbstractExecutorService$") || suffix.startsWith("Executors$")
+            || suffix.startsWith("TimeUnit$") || suffix.equals("CompletableFuture$Action")
+            || suffix.equals("CompletableFuture$Aggregate") || suffix.equals("CompletableFuture$DefaultExecutor");
     }
 
     private static String concurrentReference(String name) {
@@ -118,7 +172,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
         if (normalized != cls) throw new IllegalStateException("unexpected-owned-runtime-class-alias");
     }
 
-    private static void threadMethod(MethodHolder method, Program program) {
+    static void threadMethod(MethodHolder method, Program program) {
         if (method.getName().equals("start") && method.parameterCount() == 0) {
             var admission = call("starting", ValueType.object("java.lang.Thread"), ValueType.VOID);
             admission.setArguments(program.variableAt(0));
@@ -149,7 +203,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
             var self = replacement.createVariable();
             var millis = replacement.createVariable();
             var nanos = replacement.createVariable();
-            var block = replacement.createBasicBlock();
+            var block = ContinuationProgram.body(replacement);
             var join = call("join", ValueType.object("java.lang.Thread"), ValueType.LONG, ValueType.INTEGER, ValueType.VOID);
             join.setArguments(self, millis, nanos);
             block.add(join);

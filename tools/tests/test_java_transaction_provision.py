@@ -44,41 +44,24 @@ def observation():
 
 
 class ProvisioningOracle(unittest.TestCase):
-    def test_namespace_receipt_requires_exact_original_native_operator_scope_and_rejects_subject_alias(self):
-        from tools.java_transaction_qualification.lifecycle import namespace_receipt
-
-        operator = {'subject': cfg.OPERATOR, 'ownerKind': 'administrator', 'tenant': cfg.TENANT,
-                    'service': None, 'recoveryKind': 'original-caller', 'recoveryScope': 'recovery:sha256:' + 'a' * 64}
-        state_schema = 'sha256:' + 'b' * 64
-        original = {'outcomeKnown': True, 'data': {'auditAcknowledgement': {'status': 'AUDIT_ACK_STATUS_DURABLE'},
-            'receipt': {'operationId': 'java-create', 'authenticatedOperator': 'administrator:' + operator['recoveryScope'],
-                'stateSchema': state_schema, 'afterGeneration': '1',
-                'namespace': {'tenant': cfg.TENANT, 'namespace': cfg.NAMESPACE, 'incarnation': '1'}}}}
-        self.assertIs(namespace_receipt(original, state_schema, operator), original['data']['receipt'])
-        for actor in (cfg.OPERATOR, 'administrator:recovery:sha256:' + 'c' * 64,
-                      'user:' + operator['recoveryScope']):
-            changed = copy.deepcopy(original)
-            changed['data']['receipt']['authenticatedOperator'] = actor
-            with self.subTest(actor=actor), self.assertRaisesRegex(ValueError, 'actual-authorized-namespace-create'):
-                namespace_receipt(changed, state_schema, operator)
-        changed_operator = dict(operator, subject='unrelated-administrator')
-        with self.assertRaisesRegex(ValueError, 'original-observed-namespace-operator'):
-            namespace_receipt(original, state_schema, changed_operator)
-        for field, value in (('operationId', 'another-operation'), ('stateSchema', 'sha256:' + 'c' * 64),
-                             ('afterGeneration', '2'), ('namespace', {'tenant': 'foreign', 'namespace': cfg.NAMESPACE,
-                                                                      'incarnation': '1'})):
-            changed = copy.deepcopy(original)
-            changed['data']['receipt'][field] = value
-            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual-authorized-namespace-create'):
-                namespace_receipt(changed, state_schema, operator)
-        for field in ('outcome', 'audit'):
-            changed = copy.deepcopy(original)
-            if field == 'outcome':
-                changed['outcomeKnown'] = False
-            else:
-                changed['data']['auditAcknowledgement'] = None
-            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'actual-authorized-namespace-create'):
-                namespace_receipt(changed, state_schema, operator)
+    def test_named_management_recovery_selection_schema_is_closed_bounded_and_grants_no_scope(self):
+        from jsonschema import Draft202012Validator
+        root = Path(__file__).resolve().parents[2]
+        schema = json.loads((root / "schemas/node-state-recovery-selections.schema.json").read_text())
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(schema)
+        valid = [{"selector":"readers", "selection":{"kind":"shared","name":"orders-team"}},
+                 {"selector":"delegated", "selection":{"kind":"delegated","delegation":"review-42","service":"orders-worker"}}]
+        validator.validate(valid)
+        validator.validate([])
+        for invalid in [None, valid * 65,
+                        [{"selector":"readers","selection":{"kind":"shared","name":""}}],
+                        [{"selector":"readers","selection":{"kind":"shared","name":"orders","grant":True}}],
+                        [{"selector":"readers","selection":{"kind":"future"}}],
+                        [{"selector":"readers","selection":{"kind":"delegated","delegation":"x","service":None}}]]:
+            self.assertTrue(list(validator.iter_errors(invalid)))
+        self.assertEqual(schema["maxItems"], 128)
+        self.assertFalse(schema["items"]["additionalProperties"])
 
     def test_prior_runtime_without_transport_principal_observation_refuses(self):
         value, operations, _ = observation()

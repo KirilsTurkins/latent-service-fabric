@@ -12,6 +12,68 @@ from tools.transaction_guest_project import HTTP_REQUIREMENTS
 
 
 class JavaTransactionDiagnosticTests(unittest.TestCase):
+    def test_new_fault_capture_preserves_original_abi_payload_companion_and_limits(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original = snapshot(create_schema(root / "original", "legacy-v1", effect="put-once"))
+            diagnostic = snapshot(create(root / "diagnostic"))
+            descriptor, lock, _pins = validate(diagnostic)
+            record = json.loads(diagnostic["transaction-diagnostic-inputs.json"])
+            for name in ("wit/world.wit", "transaction-binding.json", HTTP_REQUIREMENTS, "state-schema.json"):
+                self.assertEqual(diagnostic[name], original[name])
+            self.assertEqual(descriptor["limits"], json.loads(original["capsule-project.json"])["limits"])
+            self.assertEqual(descriptor["service"], "examples/transaction-java-aggregate")
+            self.assertEqual(descriptor["version"], "1.0.1")
+            self.assertEqual(lock["sdk"], json.loads(original["sdk-lock.json"])["sdk"])
+            self.assertEqual(lock["template"]["sourceDigest"], digest(diagnostic[SOURCE]))
+            self.assertEqual(json.loads(diagnostic["application-schema-inputs.json"])["sourceDigest"], digest(diagnostic[SOURCE]))
+            self.assertNotEqual(diagnostic[SOURCE], original[SOURCE])
+            self.assertEqual(record["selectors"], SELECTORS)
+            self.assertEqual(record["originalSourceDigest"], digest(original[SOURCE]))
+            self.assertEqual(record["sourceDigest"], digest(diagnostic[SOURCE]))
+            self.assertEqual(record["helperDigest"], digest(diagnostic[HELPER]))
+            self.assertTrue(record["freshInstanceRequired"])
+            for key in ("componentCompiled", "stateExecutionQualified", "cancellationQualified",
+                        "fuelExhaustionQualified", "freshInstanceQualified", "memoryExhaustionQualified",
+                        "crashBeforeCommitQualified"):
+                self.assertIs(record[key], False)
+            self.assertEqual(record["faultAfter"], ["state-put", "captured-put-once-intent"])
+            self.assertNotIn(b"latent:http/client", diagnostic["wit/world.wit"])
+
+    def test_post_stage_faults_reject_a_missing_duplicate_or_reordered_original_state_put(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            ordinary = snapshot(create_schema(Path(temporary) / "ordinary", "legacy-v1", effect="put-once"))
+            source = ordinary[SOURCE].decode()
+            put = "            command.put(KEY, payload).value();\n"
+            stage = '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();\n'
+            changed = (source.replace(put, ""), source.replace(put, put + put),
+                       source.replace(put, "").replace(stage, stage + put))
+            for value in changed:
+                with self.subTest(source=value), self.assertRaisesRegex(ValueError, "staging source drift"):
+                    source_variant(value)
+            diagnostic = snapshot(create(Path(temporary) / "diagnostic"))
+            record = json.loads(diagnostic["transaction-diagnostic-inputs.json"])
+            self.assertEqual(record["selectors"], {"trapAfterStage": "4294967293",
+                "loopAfterStage": "4294967294", "memoryAfterStage": "4294967292"})
+            self.assertIs(record["memoryExhaustionQualified"], False)
+            self.assertIs(record["crashBeforeCommitQualified"], False)
+
+    def test_original_staging_drift_is_rejected_and_an_existing_capture_is_never_replaced(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ordinary = snapshot(create_schema(root / "ordinary", "legacy-v1", effect="put-once"))
+            source = ordinary[SOURCE].decode()
+            with self.assertRaisesRegex(ValueError, "source drift"):
+                source_variant(source.replace('new Intent("qualified-http", "put-once", effectPayload)',
+                                              'new Intent("unapproved", "put-once", effectPayload)'))
+            with self.assertRaisesRegex(ValueError, "source drift"):
+                source_variant(source.replace("long next = old + request.delta();", "long next = 0;"))
+            project = create(root / "diagnostic")
+            before = snapshot(project)
+            with self.assertRaisesRegex(ValueError, "fresh output"):
+                create(project)
+            self.assertEqual(snapshot(project), before)
+
     def test_value_capture_preserves_owned_abi_limits_and_emits_unsigned_utf8_and_absent_controls(self):
         from tools.java_transaction_values import SELECTORS as VALUE_SELECTORS, create as create_values
         with tempfile.TemporaryDirectory() as temporary:
@@ -73,70 +135,6 @@ class JavaTransactionDiagnosticTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "unknown controlled"):
                 create_variant(root / "wrong-language", "c", "forbidden-child")
             self.assertFalse((root / "wrong-language").exists())
-
-    def test_memory_selector_is_separate_and_keeps_original_staging_and_limits(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            original = snapshot(create(root / "original"))
-            selected = snapshot(create(root / "memory", memory_after_stage=True))
-            record = json.loads(selected["transaction-diagnostic-inputs.json"])
-            self.assertEqual(record["selectors"], {**SELECTORS, "memoryAfterStage": "4294967292"})
-            self.assertEqual(selected[SOURCE], original[SOURCE])
-            for name in ("wit/world.wit", "transaction-binding.json", HTTP_REQUIREMENTS, "state-schema.json", "capsule-project.json"):
-                self.assertEqual(selected[name], original[name])
-            self.assertIn(b"allocated = new byte[80 * 1024 * 1024]", selected[HELPER])
-            self.assertNotIn(b"MEMORY_DELTA", original[HELPER])
-            self.assertEqual(record["helperDigest"], digest(selected[HELPER]))
-            self.assertIs(record["memoryExhaustionQualified"], False)
-            self.assertIs(record["crashBeforeCommitQualified"], False)
-            self.assertEqual(record["faultAfter"], ["state-put", "captured-put-once-intent"])
-            for value in (1, None, "true"):
-                with self.assertRaisesRegex(ValueError, "explicit boolean"):
-                    create(root / "not-created", memory_after_stage=value)
-            self.assertFalse((root / "not-created").exists())
-
-    def test_new_fault_capture_preserves_original_abi_payload_companion_and_limits(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            original = snapshot(create_schema(root / "original", "legacy-v1", effect="put-once"))
-            diagnostic = snapshot(create(root / "diagnostic"))
-            descriptor, lock, _pins = validate(diagnostic)
-            record = json.loads(diagnostic["transaction-diagnostic-inputs.json"])
-            for name in ("wit/world.wit", "transaction-binding.json", HTTP_REQUIREMENTS, "state-schema.json"):
-                self.assertEqual(diagnostic[name], original[name])
-            self.assertEqual(descriptor["limits"], json.loads(original["capsule-project.json"])["limits"])
-            self.assertEqual(descriptor["service"], "examples/transaction-java-aggregate")
-            self.assertEqual(descriptor["version"], "1.0.1")
-            self.assertEqual(lock["sdk"], json.loads(original["sdk-lock.json"])["sdk"])
-            self.assertEqual(lock["template"]["sourceDigest"], digest(diagnostic[SOURCE]))
-            self.assertEqual(json.loads(diagnostic["application-schema-inputs.json"])["sourceDigest"], digest(diagnostic[SOURCE]))
-            self.assertNotEqual(diagnostic[SOURCE], original[SOURCE])
-            self.assertEqual(record["selectors"], SELECTORS)
-            self.assertEqual(record["originalSourceDigest"], digest(original[SOURCE]))
-            self.assertEqual(record["sourceDigest"], digest(diagnostic[SOURCE]))
-            self.assertEqual(record["helperDigest"], digest(diagnostic[HELPER]))
-            self.assertTrue(record["freshInstanceRequired"])
-            for key in ("componentCompiled", "stateExecutionQualified", "cancellationQualified",
-                        "fuelExhaustionQualified", "freshInstanceQualified"):
-                self.assertIs(record[key], False)
-            self.assertEqual(record["faultAfter"], ["state-put", "captured-put-once-intent"])
-            self.assertNotIn(b"latent:http/client", diagnostic["wit/world.wit"])
-
-    def test_original_staging_drift_is_rejected_and_an_existing_capture_is_never_replaced(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            ordinary = snapshot(create_schema(root / "ordinary", "legacy-v1", effect="put-once"))
-            source = ordinary[SOURCE].decode()
-            with self.assertRaisesRegex(ValueError, "source drift"):
-                source_variant(source.replace('new Intent("qualified-http", "put-once", effectPayload)',
-                                              'new Intent("unapproved", "put-once", effectPayload)'))
-            with self.assertRaisesRegex(ValueError, "source drift"):
-                source_variant(source.replace("long next = old + request.delta();", "long next = 0;"))
-            project = create(root / "diagnostic")
-            before = snapshot(project)
-            with self.assertRaisesRegex(ValueError, "fresh output"):
-                create(project)
-            self.assertEqual(snapshot(project), before)
 
 
 if __name__ == "__main__":

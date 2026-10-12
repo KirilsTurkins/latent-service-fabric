@@ -75,36 +75,7 @@ pub async fn execute(operation: TriggerOperation, session: &Session) -> Result<O
                 .await?
                 .into_inner();
             check(&value, session)?;
-            let disposition =
-                match proto::TriggerOperationLookupDisposition::try_from(value.disposition) {
-                    Ok(proto::TriggerOperationLookupDisposition::Found)
-                        if value.receipt.is_some() =>
-                    {
-                        "found"
-                    }
-                    Ok(proto::TriggerOperationLookupDisposition::Unknown)
-                        if value.receipt.is_none() =>
-                    {
-                        "unknown"
-                    }
-                    Ok(proto::TriggerOperationLookupDisposition::Uncertain)
-                        if value.receipt.is_none() =>
-                    {
-                        "uncertain"
-                    }
-                    _ => return Err(invalid_response()),
-                };
-            if value.retained_floor > value.high_watermark {
-                return Err(invalid_response());
-            }
-            if let Some(receipt) = &value.receipt {
-                response::receipt_scope(receipt, session.tenant(), &id, None)?;
-            }
-            let mut output = Outcome::success(json!({"disposition":disposition,
-                "receipt":value.receipt.map(Project::project), "retainedFloor":value.retained_floor.to_string(),
-                "highWatermark":value.high_watermark.to_string(), "executionPermission":false}));
-            output.outcome_known = disposition == "found";
-            Ok(output)
+            response::lookup(value, session.tenant(), &id)
         }
     }
 }

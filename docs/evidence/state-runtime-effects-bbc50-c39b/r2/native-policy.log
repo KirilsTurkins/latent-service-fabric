@@ -1,0 +1,67 @@
+ Downloading crates ...
+  Downloaded hyper-rustls v0.27.9
+  Downloaded sync_wrapper v1.0.2
+  Downloaded openssl-probe v0.2.1
+  Downloaded tower-service v0.3.3
+  Downloaded tower-layer v0.3.3
+  Downloaded rustls-native-certs v0.8.4
+  Downloaded tower v0.5.3
+  Downloaded base64 v0.22.1
+  Downloaded tower-http v0.6.11
+  Downloaded rustls-platform-verifier v0.7.0
+  Downloaded reqwest v0.13.5
+   Compiling rustix v1.1.5
+   Compiling tokio v1.53.1
+   Compiling percent-encoding v2.3.2
+   Compiling slab v0.4.12
+   Compiling futures-task v0.3.34
+   Compiling futures-util v0.3.34
+   Compiling form_urlencoded v1.2.2
+   Compiling tower-service v0.3.3
+   Compiling url v2.5.8
+   Compiling hyper v1.11.1
+   Compiling fs-set-times v0.20.3
+   Compiling latent-manifest v0.1.0-alpha.5 (/source/crates/latent-manifest)
+   Compiling latent-audit v0.1.0-alpha.5 (/source/crates/latent-audit)
+   Compiling rustix-linux-procfs v0.1.1
+   Compiling sync_wrapper v1.0.2
+   Compiling base64 v0.22.1
+   Compiling tower-layer v0.3.3
+   Compiling openssl-probe v0.2.1
+   Compiling time v0.3.55
+   Compiling rustls-native-certs v0.8.4
+   Compiling tower v0.5.3
+   Compiling cap-primitives v4.0.3
+   Compiling hyper-util v0.1.20
+   Compiling latent-artifacts v0.1.0-alpha.5 (/source/crates/latent-artifacts)
+   Compiling tokio-rustls v0.26.5
+   Compiling hickory-proto v0.26.3
+   Compiling hyper-rustls v0.27.9
+   Compiling cap-std v4.0.3
+   Compiling tower-http v0.6.11
+   Compiling rustls-platform-verifier v0.7.0
+   Compiling reqwest v0.13.5
+   Compiling cap-fs-ext v4.0.3
+   Compiling latent-network v0.1.0-alpha.5 (/source/crates/latent-network)
+   Compiling yasna v0.6.0
+   Compiling tempfile v3.27.0
+   Compiling latent-packaging v0.1.0-alpha.5 (/source/crates/latent-packaging)
+   Compiling latent-oci v0.1.0-alpha.5 (/source/crates/latent-oci)
+   Compiling rcgen v0.14.10
+   Compiling latent-signing v0.1.0-alpha.5 (/source/crates/latent-signing)
+   Compiling latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+error[E0425]: cannot find type `InvocationPrincipal` in this scope
+ --> crates/latent-policy/src/capability/store/tests/authority/publication/dispatch.rs:8:58
+  |
+8 | fn configured(store: &PolicyStore, publication: &str) -> InvocationPrincipal {
+  |                                                          ^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0433]: cannot find type `InvocationPrincipal` in this scope
+  --> crates/latent-policy/src/capability/store/tests/authority/publication/dispatch.rs:12:21
+   |
+12 |     actor.subject = InvocationPrincipal::local_service_subject(
+   |                     ^^^^^^^^^^^^^^^^^^^ use of undeclared type `InvocationPrincipal`
+
+Some errors have detailed explanations: E0425, E0433.
+For more information about an error, try `rustc --explain E0425`.
+error: could not compile `latent-policy` (lib test) due to 2 previous errors

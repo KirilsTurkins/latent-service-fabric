@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/build_dev_frontend.py","reviewBoundary":"committed-fingerprint","reviewReason":"Preserve the original owner review boundary; review the actual merged captured source inputs, profile and compiler recipe.","schemaVersion":"latent.ci.contracts.v1","sha256":"61260d5e701523da566c33d897505a63df7ebbfc01930550ab37b10f75a0b854"}
+{
+  "kind": "owner",
+  "path": "tools/build_dev_frontend.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reconcile captured-input transfer, approved generators and conservative diagnostics with current transaction/native owners. Preserve all original cases, skip guards, historical commands, isolation requirements and receipt paths.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a54f3a50980de5ec923c61260370c6b68fa5971f96e575422d110760fd851e31"
+}

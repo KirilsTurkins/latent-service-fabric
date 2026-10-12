@@ -43,3 +43,11 @@ world http {
     import latent:http/streaming@0.3.0;
     import latent:runtime/activation@0.1.0;
 }
+
+// This separate facet is selected only for an actual wall-clock dependency
+// with an exact source declaration. Its host import still requires an
+// independently admitted provider and grant.
+world wall {
+    import latent:clock/wall@0.1.0;
+    export wasi:clocks/wall-clock@0.2.6;
+}

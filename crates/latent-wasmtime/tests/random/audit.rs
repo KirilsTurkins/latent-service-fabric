@@ -15,7 +15,16 @@ async fn required_audit_records_operations_and_outcomes_without_generated_bytes_
         Some(audit.clone()),
     )
     .await;
+    assert!(audit
+        .wait_until_idle_for_test(Instant::now() + Duration::from_secs(2))
+        .unwrap());
     assert_eq!(invoke(&f, 0, 16, 1).await, marker(16));
+    // A durable acknowledgement precedes the worker's return to its memory
+    // wait. Observe that actual wait so hot audit-busy rejection cannot mask
+    // the deliberately failing entropy source in the next invocation.
+    assert!(audit
+        .wait_until_idle_for_test(Instant::now() + Duration::from_secs(2))
+        .unwrap());
     source.fail.store(true, Ordering::Release);
     assert_eq!(invoke(&f, 1, 0, 1).await, UNAVAILABLE);
     let request = AuditQueryRequest {

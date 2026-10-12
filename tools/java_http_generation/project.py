@@ -21,7 +21,9 @@ RECIPE = ("tools/java_http_adapter.py", "tools/java_http_generation/selection.py
     "tools/java_guest/c.py", "tools/java_guest/surface.py")
 
 
-def rendered(domain: Path, selection_path: Path) -> tuple[dict, dict[str, bytes], dict]:
+def rendered(domain: Path, selection_path: Path, *, tools: dict[str, Path] | None = None) -> tuple[dict, dict[str, bytes], dict]:
+    if tools is not None and set(tools) != {"wasm-tools", "wit-bindgen"}:
+        raise ValueError("generation-tools: select both exact WIT tools")
     captured = snapshot(domain)
     project, _, pins = validate(captured)
     selection_bytes = read_file(selection_path, 65536)
@@ -32,7 +34,10 @@ def rendered(domain: Path, selection_path: Path) -> tuple[dict, dict[str, bytes]
         environment = build_environment(temporary)
 
         def run(stage, *arguments):
-            result = run_bounded_result(list(map(str, arguments)), cwd=temporary, env=environment,
+            command = list(map(str, arguments))
+            if tools is not None and command[0] in tools:
+                command[0] = str(tools[command[0]])
+            result = run_bounded_result(command, cwd=temporary, env=environment,
                 timeout_seconds=60, max_output_bytes=4 * 1024 * 1024)
             if result.returncode != 0:
                 raise ValueError(stage + ": " + result.stderr.decode("utf-8", "replace")[:4096])
@@ -60,6 +65,7 @@ def rendered(domain: Path, selection_path: Path) -> tuple[dict, dict[str, bytes]
         if sum(map(len, outputs.values())) > 1024 * 1024:
             raise ValueError("generated-code: finite one MiB output limit exceeded")
         observation = {"profile": PROFILE, "domainWorld": project["world"],
+            "domainCpuFuel": project["limits"]["cpuFuel"],
             "domainSourceDigest": digest(inventory(captured)), "domainWit": json.loads(inventory(snapshot(wit))),
             "domainBindings": generated, "selectionDigest": digest(selection_bytes),
             "recipeDigest": digest(recipe), "outputs": json.loads(inventory(outputs)),
@@ -70,11 +76,11 @@ def rendered(domain: Path, selection_path: Path) -> tuple[dict, dict[str, bytes]
         return selection, outputs, observation
 
 
-def generate(domain: Path, selection_path: Path, output: Path) -> Path:
+def generate(domain: Path, selection_path: Path, output: Path, *, tools: dict[str, Path] | None = None) -> Path:
     domain, selection_path, output = map(checked_path, (domain, selection_path, output))
     if output == domain or domain in output.parents or output in domain.parents:
         raise ValueError("generation-output: choose a fresh directory outside the domain project")
-    selection, outputs, observation = rendered(domain, selection_path)
+    selection, outputs, observation = rendered(domain, selection_path, tools=tools)
     output = create(output, "greeting", selection["adapterName"])
     for name, data in outputs.items():
         target = output / name
@@ -82,7 +88,7 @@ def generate(domain: Path, selection_path: Path, output: Path) -> Path:
         target.write_bytes(data)
     descriptor = read_json(output / "capsule-project.json")
     descriptor["world"] = "examples:" + selection["adapterName"] + "/service@1.0.0"
-    descriptor["limits"].update(childCalls=4, memoryBytes=134217728)
+    descriptor["limits"].update(cpuFuel=observation["domainCpuFuel"], childCalls=4, memoryBytes=134217728)
     (output / "capsule-project.json").write_bytes(canonical(descriptor) + b"\n")
     lock = read_json(output / "sdk-lock.json")
     lock["template"] = {"name": PROFILE, "sourceDigest": digest(outputs["src/dev/latent/app/Capsule.java"]),
@@ -98,11 +104,11 @@ def generate(domain: Path, selection_path: Path, output: Path) -> Path:
     return output
 
 
-def check(domain: Path, selection_path: Path, output: Path) -> Path:
+def check(domain: Path, selection_path: Path, output: Path, *, tools: dict[str, Path] | None = None) -> Path:
     output = checked_path(output)
     actual = snapshot(output)
     with tempfile.TemporaryDirectory(prefix="lsf-java-http-check-") as owned:
-        expected = generate(domain, selection_path, Path(owned) / "adapter")
+        expected = generate(domain, selection_path, Path(owned) / "adapter", tools=tools)
         if snapshot(expected) != actual:
             raise ValueError("stale-generation: WIT, routes, SDK, recipe or generated files changed; generate a fresh adapter")
     return output

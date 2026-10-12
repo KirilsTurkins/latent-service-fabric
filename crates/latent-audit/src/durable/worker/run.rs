@@ -63,10 +63,19 @@ pub(super) fn run(shared: Arc<Shared>, mut store: Store) {
                     s.summary.recovery_pending |= s.pending.is_some();
                     break Work::Stop;
                 }
+                #[cfg(any(test, feature = "test-support"))]
+                {
+                    s.waiting = true;
+                    shared.wake.notify_all();
+                }
                 s = shared
                     .wake
                     .wait(s)
                     .unwrap_or_else(std::sync::PoisonError::into_inner);
+                #[cfg(any(test, feature = "test-support"))]
+                {
+                    s.waiting = false;
+                }
             }
         };
         match work {

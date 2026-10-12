@@ -190,12 +190,6 @@ def sources(args):
     selected = selection(args)
     if selected is not None:
         result["diagnostic"] = selected
-    if getattr(args, "pending_restore_only", False):
-        result["programme"] = "signed-java-unresolved-effect-restore-v3"
-    from .fixed_environment import identity
-    reviewed = identity(args)
-    if reviewed is not None:
-        result["reviewedPolicyEnvironment"] = reviewed
     return result
 
 
@@ -299,9 +293,4 @@ def mode(args):
             and (args.resume_candidate is None) == (args.candidate_digest is None)
             and not (args.prepare_authority_only and args.resume_candidate is not None),
             "exclusive-paired-candidate-mode")
-    pending = getattr(args, "pending_restore_only", False)
-    require(type(pending) is bool and (not pending or args.recovery_helper is not None),
-            "pending-programme-requires-installed-recovery-owner")
-    from .diagnostic_inputs import selection
-    require(not pending or selection(args) is None, "pending-and-diagnostic-programmes-are-separate")
     return "resume" if args.resume_candidate is not None else "prepare" if args.prepare_authority_only else "run"

@@ -1,73 +1,9 @@
 # Signed Java transaction qualification
 
-An optional paired `--reviewed-policy-environment <absolute-review.json>` and
-`--reviewed-policy-environment-digest sha256:<exact-reviewed-bytes>` selects the
-separately reviewed recipient port/incarnation and ingress port. It retains the
-default random selection when absent. The immutable review pins the original
-native tools, compiled inputs, ten raw policy documents and original host
-reference. Current native host observations and every generated mutation/file
-must match before policy application; TLS, caller, publication or document drift
-refuses the attempt. Ports and review bytes grant no native authority. Both
-prepare/resume source pins include this selection, with the original twelve
-actions, six node sessions and nonrenewable 1,200-second deadline unchanged.
-Reading and validating the review starts no signing or preparation clock.
-
-The optional closed `reviewedTlsFixture` input within that review selects only
-the original native-produced `ca.der`, `key.pem` and `server.pem`. The source
-directory is exactly `tls-fixture`, with bounded byte counts and digests for all
-three regular files. Links, hardlinks, extra files and changed bytes refuse.
-Each new attempt copies those exact bytes into a new private TLS directory and
-checks the current certificate chain, explicit localhost SAN and key match with
-a bounded in-memory TLS handshake. The default still creates a fresh native
-fixture. Protected clock, signing, workroot and catalogs remain newly produced;
-retaining TLS bytes supplies no native authority or clock continuity. The
-selection and every digest remain in preparation/resume source pins.
-
-When the selected native source changes, an optional closed
-`reviewedTlsProducerBridge` pins the original native producer, original conductor,
-original signer identity and bounded raw `tls-producer-receipt.json`, together
-with the same three TLS file records and the new selected native source. The
-receipt's source and signer facts must match that reviewed bridge exactly.
-Without the bridge, the TLS producer must equal the selected native source.
-Preparation/resume source pins retain the full bridge. Current tools, native
-host observations and policy bytes still require their own exact fresh checks;
-the historical receipt supplies only TLS provenance and no execution approval.
-
-Namespace create and quiesce receipts must name the canonical administrator plus
-the recovery scope from the independently observed, rechecked native operator.
-The literal workflow operator name remains the logical identifier in snapshot
-and recovery-plan payloads. Quiesce also requires its original operation, exact
-namespace/schema, generation step, committed quiescing disposition and audit
-acknowledgement. A receipt cannot supply its own expected authenticated scope.
-
-Native host inspection opens and cleanly retires the enforced admission catalog.
-Before the following node start, both provision and resume spend the existing
-six-second admission retirement interval inside the same original deadline.
-An exhausted deadline refuses before node startup or policy mutation. Inspection
-does not renew the campaign clock or bypass the persisted restart floor.
-
-The separate `--pending-restore-only` selection uses the installed native V3
-close owner. It requires a new candidate whose source selection and collector
-digests include that programme. It retains the original twelve native-action,
-six node-session and 1,200-second nonrenewable limits. It cannot be combined
-with the diagnostic or schema/terminal programme or reuse their approval.
-
-The signed Java command commits once while a controlled TLS recipient applies
-once and loses its reply and status observation. The captured native effect is
-actually `Uncertain`; the programme preserves that label. It snapshots the
-quiesced unresolved history, lets the original root acknowledge the same remote
-application, then restores the earlier history into a new protected root.
-The installed native owner supplies the exact close plan and current operator
-checks. The programme requires wrong-acknowledgement refusal, the original
-close receipt on replay, and unchanged original command/result identity,
-business value and recipient PUT/GET/application counters through resume and
-physical same-root reopening. Closing does not infer provider acknowledgement.
-The separately executed native TLS golden covers an exact `Pending` row.
-
-The original default schema/terminal programme remains a separate twelve-action
-campaign. Unit frame checks supply no signed Java or native execution proof;
-successful actual campaign receipts must retain their original native,
-conductor, component, authority and physical retirement observations.
+This preserved continuation describes the older HTTP/offline checkpoint. The
+current version-2 standalone owners need a port of that collector. See the
+[PR #823 reconciliation](../development/phase4-handoffs/2026-10-11/pr823-reconciliation.md)
+for current implementation and qualification boundaries.
 
 The qualification conductor in `tools/java_transaction_qualification` retains
 the five original Java components compiled at
@@ -188,7 +124,7 @@ provider observations and positive shutdown/retirement reports separately.
 The immutable production binaries built at
 `0537a6682f7a7e89c00c13d2bb327432cc3ad6cb` precede the transaction manifest
 profile closure and the historical result-read change described in
-[Historical transaction results](../development/historical-transaction-results.md).
+[Installed result delivery and recovery](../development/installed-transaction-rpc.md).
 A signed Java campaign must use new native binaries containing both changes.
 The older binaries cannot supply signed Java or positive schema/restore
 result-recovery evidence.

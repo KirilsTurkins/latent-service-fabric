@@ -24,7 +24,6 @@ pub(super) struct Inner {
     pub quotas: LocalQuotaProvider,
     pub pools: BTreeMap<CellClass, Arc<dyn CellPool>>,
     pub state: Mutex<State>,
-    pub dispatch: Mutex<()>,
 }
 
 pub(super) struct State {
@@ -56,6 +55,7 @@ pub(super) struct ClassState {
     #[cfg(test)]
     pub work: super::work::Work,
     pub depth: u32,
+    pub dispatching: bool,
     pub counters: SchedulerSnapshot,
     pub active_since: BTreeSet<(Instant, u64)>,
 }
@@ -67,6 +67,7 @@ impl ClassState {
             #[cfg(test)]
             work: super::work::Work::default(),
             depth: 0,
+            dispatching: false,
             counters: SchedulerSnapshot::default(),
             active_since: BTreeSet::new(),
         }
@@ -341,16 +342,34 @@ impl Inner {
         // Construct the bounded batch before the guard, so unwinding drops the
         // dispatcher before disposing any retained unaccepted assignment.
         let mut publications = Vec::new();
-        // Only one synchronous pump runs at a time. Reentrant callers simply
-        // leave work to it; this mutex is never awaited or acquired blocking.
-        let Ok(dispatch) = self.dispatch.try_lock() else {
-            return false;
+        let dispatch = {
+            let mut state = self.lock();
+            let queue = state.classes.get_mut(&class).expect("configured class");
+            if queue.dispatching {
+                return false;
+            }
+            // An empty observer has no fair turn and must not make a real
+            // immediate request contend with unrelated dispatch bookkeeping.
+            if queue.depth == 0 {
+                return true;
+            }
+            queue.dispatching = true;
+            DispatchTurn::new(Arc::clone(self), class)
         };
-        let dispatched = self.pump_guarded(class, &mut publications);
+        self.pump_owned(class, dispatch, &mut publications)
+    }
+
+    pub(super) fn pump_owned(
+        self: &Arc<Self>,
+        class: CellClass,
+        dispatch: DispatchTurn,
+        publications: &mut Vec<AssignmentPublication>,
+    ) -> bool {
+        let dispatched = self.pump_guarded(class, publications);
         drop(dispatch);
         // Waking a caller may synchronously attempt a descendant's nonqueueing
         // dispatch. Publish only after the original fair pass has unlocked.
-        for (sender, outcome) in publications {
+        for (sender, outcome) in publications.drain(..) {
             let _ = sender.send(outcome);
         }
         dispatched
@@ -595,6 +614,28 @@ impl Inner {
             }
         }
         drop(retired);
+    }
+}
+
+pub(super) struct DispatchTurn {
+    owner: Arc<Inner>,
+    class: CellClass,
+}
+
+impl DispatchTurn {
+    pub(super) fn new(owner: Arc<Inner>, class: CellClass) -> Self {
+        Self { owner, class }
+    }
+}
+
+impl Drop for DispatchTurn {
+    fn drop(&mut self) {
+        self.owner
+            .lock()
+            .classes
+            .get_mut(&self.class)
+            .expect("configured class")
+            .dispatching = false;
     }
 }
 

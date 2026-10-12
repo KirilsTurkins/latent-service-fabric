@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import sys
 import time
+import tomllib
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -58,9 +59,26 @@ CASES = {
 }
 
 
+def select_transaction_types(project: Path) -> None:
+    """Opt this combined type-checking harness into its captured SDK facade."""
+    path = project / "Cargo.toml"
+    original = path.read_bytes()
+    before = b'latent-guest = { path = "vendor/lsf/sdk/rust-guest" }'
+    after = b'latent-guest = { path = "vendor/lsf/sdk/rust-guest", features = ["transaction"] }'
+    model = tomllib.loads(original.decode("utf8"))
+    dependency = model["target"]['cfg(target_arch = "wasm32")']["dependencies"]["latent-guest"]
+    if original.count(before) != 1 or dependency != {"path": "vendor/lsf/sdk/rust-guest"}:
+        raise ValueError("ownership SDK manifest selection changed")
+    # The greeting seed retains every original project/runtime budget and lock.
+    # These snippets undergo only Rust type checking; no package or runtime
+    # grant is produced by choosing the transaction bindings feature.
+    path.write_bytes(original.replace(before, after))
+
+
 def check(output: Path, *, offline=False):
     output = fresh(output)
     project = create(output / "project", "greeting", "borrow-checks")
+    select_transaction_types(project)
     pins = read_json(project / "sdk-lock.json")
     original = snapshot(project)
     environment = build_environment(output)

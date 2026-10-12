@@ -12,6 +12,7 @@ from tools.build_observation import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 from tools.dotnet_guest.sdk import install as install_sdk
 from tools.dotnet_guest import runtime, http_errors
+from tools.dotnet_guest.resources import install as install_resources
 from tools.guest_compatibility_build import interface_names
 
 SDK_VERSION = "10.0.100"
@@ -234,6 +235,11 @@ class Compiler:
             self.http_error_port = http_errors.prepare(self.sdk, self.http_error_tools, self.dotnet, declared, project,
                 output, command.output, self.run,
                 protect_inputs=self.isolation.protect_inputs if self.isolation else None)
+        resources = install_resources(snapshot(work, exclude=("dependencies", "application-vendor")), project)
+        if self.isolation is not None and resources is not None:
+            self.isolation.protect_inputs(project / "Capsule.csproj")
+            if resources.objects:
+                self.isolation.protect_inputs(project / "resources")
         self.run("locked-restore", self.dotnet, "restore", project / "Capsule.csproj", "--configfile",
             project / "nuget.config", "--locked-mode", "--packages", self.package_cache, "--disable-parallel",
             "-p:NuGetAudit=false", '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')
@@ -349,6 +355,9 @@ class Compiler:
             "filesDigest": digest(json.dumps(receipt["outputs"], sort_keys=True).encode())}
         if http_error_port is not None:
             generated_receipt["httpErrorPort"] = http_error_port
+        if resources is not None:
+            resources.check_unchanged()
+            generated_receipt["embeddedResourceInputs"] = resources.observation
         return component, generated_receipt
 
     def check_unchanged(self):

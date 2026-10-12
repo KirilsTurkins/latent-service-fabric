@@ -1,0 +1,18 @@
+   Compiling latent-core v0.1.0-alpha.5 (/source/crates/latent-core)
+   Compiling latent-network v0.1.0-alpha.5 (/source/crates/latent-network)
+   Compiling latent-manifest v0.1.0-alpha.5 (/source/crates/latent-manifest)
+   Compiling latent-contracts v0.1.0-alpha.5 (/source/crates/latent-contracts)
+   Compiling latent-audit v0.1.0-alpha.5 (/source/crates/latent-audit)
+   Compiling latent-artifacts v0.1.0-alpha.5 (/source/crates/latent-artifacts)
+   Compiling latent-signing v0.1.0-alpha.5 (/source/crates/latent-signing)
+   Compiling latent-packaging v0.1.0-alpha.5 (/source/crates/latent-packaging)
+   Compiling latent-oci v0.1.0-alpha.5 (/source/crates/latent-oci)
+   Compiling latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+    Finished `test` profile [unoptimized] target(s) in 32.02s
+     Running unittests src/lib.rs (/target/debug/deps/latent_policy-c3e3d27d4ed4d334)
+
+running 1 test
+test capability::store::tests::authority::publication::dispatch::explicit_native_dispatch_decision_keeps_current_source_policy_and_original_deadline ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 105 filtered out; finished in 0.11s
+

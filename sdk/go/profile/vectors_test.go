@@ -187,6 +187,9 @@ func TestSharedProfileVectors(tester *testing.T) {
 		if !(value.Nodes[0].ReceivedAtUnixMillis == uint64(18446744073709551615)) {
 			tester.Fatal("activation-root-real-ingress-identity.nodes.0.received_at_unix_millis")
 		}
+		if !(!(value.Nodes[0].TransactionStaging != nil)) {
+			tester.Fatal("activation-root-real-ingress-identity.nodes.0.transaction_staging.presence")
+		}
 		if !(value.Page != nil) {
 			tester.Fatal("activation-root-real-ingress-identity.page.presence")
 		}
@@ -324,6 +327,9 @@ func TestSharedProfileVectors(tester *testing.T) {
 		}
 		if !(value.Nodes[0].ReceivedAtUnixMillis == uint64(0)) {
 			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis")
+		}
+		if !(!(value.Nodes[0].TransactionStaging != nil)) {
+			tester.Fatal("activation-tree-failed-preparation-before-guest.nodes.0.transaction_staging.presence")
 		}
 		if !(value.Page != nil) {
 			tester.Fatal("activation-tree-failed-preparation-before-guest.page.presence")
@@ -3171,6 +3177,138 @@ func TestSharedProfileVectors(tester *testing.T) {
 		}
 		if !(value.LiveGrantsChecked == false) {
 			tester.Fatal("target-inspection-future-states-remain-descriptive.live_grants_checked")
+		}
+	}
+	{
+		value := InspectActivationTreeResponse{SchemaVersion: uint32(1), Nodes: []ActivationTreeNode{ActivationTreeNode{ActivationId: "original-command", RootActivationId: "original-command", Phase: "running", LastUpdatedUnixMillis: uint64(0), PrincipalKind: "user", GrantedBudget: fixturePointer(ResourceBudget{CpuFuel: uint64(0), MemoryBytes: uint64(0), ChildCalls: uint32(0), OutboundRequests: uint32(0), StateReadBytes: uint64(0), StateWriteBytes: uint64(18446744073709551615), BlobReadBytes: uint64(0), BlobWriteBytes: uint64(0), LogBytes: uint64(0), EffectCount: uint32(2)}), DiagnosticIsTerminal: false, TargetService: "examples/aggregate", ReceivedAtUnixMillis: uint64(1000), TransactionStaging: fixturePointer(TransactionStagingWitness{SchemaVersion: uint32(1), ActivationSerial: uint64(18446744073709551615), CommandId: "1111111111111111111111111111111111111111111111111111111111111111", AttemptId: "2222222222222222222222222222222222222222222222222222222222222222", TransactionId: "3333333333333333333333333333333333333333333333333333333333333333", PublicationId: "publication:sha256:4444444444444444444444444444444444444444444444444444444444444444", StagedMutations: uint32(2), CapturedIntents: uint32(2), StateWriteBytes: uint64(18446744073709551615), ObservedAtUnixMillis: uint64(18446744073709551615)})}}, Page: fixturePointer(PageResponse{}), HistoryAvailable: true, CursorExpired: false, RetainedHistoryOnly: true}
+		if !(value.SchemaVersion == uint32(1)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.schema_version")
+		}
+		if !(len(value.Nodes) == 1) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.count")
+		}
+		if !(value.Nodes[0].ActivationId == "original-command") {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.activation_id")
+		}
+		if !(!(value.Nodes[0].ParentActivationId != nil)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.parent_activation_id.presence")
+		}
+		if !(value.Nodes[0].RootActivationId == "original-command") {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.root_activation_id")
+		}
+		if !(value.Nodes[0].Phase == "running") {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.phase")
+		}
+		if !(!(value.Nodes[0].TerminalState != nil)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.terminal_state.presence")
+		}
+		if !(value.Nodes[0].LastUpdatedUnixMillis == uint64(0)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.last_updated_unix_millis")
+		}
+		if !(!(value.Nodes[0].Diagnostic != nil)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.diagnostic.presence")
+		}
+		if !(value.Nodes[0].PrincipalKind == "user") {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.principal_kind")
+		}
+		if !(!(value.Nodes[0].CallerService != nil)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.caller_service.presence")
+		}
+		if !(value.Nodes[0].GrantedBudget != nil) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.presence")
+		}
+		if !((*value.Nodes[0].GrantedBudget).CpuFuel == uint64(0)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.cpu_fuel")
+		}
+		if !((*value.Nodes[0].GrantedBudget).MemoryBytes == uint64(0)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.memory_bytes")
+		}
+		if !((*value.Nodes[0].GrantedBudget).ChildCalls == uint32(0)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.child_calls")
+		}
+		if !((*value.Nodes[0].GrantedBudget).OutboundRequests == uint32(0)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.outbound_requests")
+		}
+		if !((*value.Nodes[0].GrantedBudget).StateReadBytes == uint64(0)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.state_read_bytes")
+		}
+		if !((*value.Nodes[0].GrantedBudget).StateWriteBytes == uint64(18446744073709551615)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.state_write_bytes")
+		}
+		if !((*value.Nodes[0].GrantedBudget).BlobReadBytes == uint64(0)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.blob_read_bytes")
+		}
+		if !((*value.Nodes[0].GrantedBudget).BlobWriteBytes == uint64(0)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.blob_write_bytes")
+		}
+		if !((*value.Nodes[0].GrantedBudget).LogBytes == uint64(0)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.log_bytes")
+		}
+		if !((*value.Nodes[0].GrantedBudget).EffectCount == uint32(2)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.effect_count")
+		}
+		if !(!((*value.Nodes[0].GrantedBudget).WallTimeLimitMillis != nil)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.granted_budget.wall_time_limit_millis.presence")
+		}
+		if !(!(value.Nodes[0].EffectiveDeadlineUnixMillis != nil)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.effective_deadline_unix_millis.presence")
+		}
+		if !(value.Nodes[0].DiagnosticIsTerminal == false) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.diagnostic_is_terminal")
+		}
+		if !(value.Nodes[0].TargetService == "examples/aggregate") {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.target_service")
+		}
+		if !(value.Nodes[0].ReceivedAtUnixMillis == uint64(1000)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.received_at_unix_millis")
+		}
+		if !(value.Nodes[0].TransactionStaging != nil) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.presence")
+		}
+		if !((*value.Nodes[0].TransactionStaging).SchemaVersion == uint32(1)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.schema_version")
+		}
+		if !((*value.Nodes[0].TransactionStaging).ActivationSerial == uint64(18446744073709551615)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.activation_serial")
+		}
+		if !((*value.Nodes[0].TransactionStaging).CommandId == "1111111111111111111111111111111111111111111111111111111111111111") {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.command_id")
+		}
+		if !((*value.Nodes[0].TransactionStaging).AttemptId == "2222222222222222222222222222222222222222222222222222222222222222") {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.attempt_id")
+		}
+		if !((*value.Nodes[0].TransactionStaging).TransactionId == "3333333333333333333333333333333333333333333333333333333333333333") {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.transaction_id")
+		}
+		if !((*value.Nodes[0].TransactionStaging).PublicationId == "publication:sha256:4444444444444444444444444444444444444444444444444444444444444444") {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.publication_id")
+		}
+		if !((*value.Nodes[0].TransactionStaging).StagedMutations == uint32(2)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.staged_mutations")
+		}
+		if !((*value.Nodes[0].TransactionStaging).CapturedIntents == uint32(2)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.captured_intents")
+		}
+		if !((*value.Nodes[0].TransactionStaging).StateWriteBytes == uint64(18446744073709551615)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.state_write_bytes")
+		}
+		if !((*value.Nodes[0].TransactionStaging).ObservedAtUnixMillis == uint64(18446744073709551615)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.observed_at_unix_millis")
+		}
+		if !(value.Page != nil) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.page.presence")
+		}
+		if !(!((*value.Page).NextPageToken != nil)) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.page.next_page_token.presence")
+		}
+		if !(value.HistoryAvailable == true) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.history_available")
+		}
+		if !(value.CursorExpired == false) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.cursor_expired")
+		}
+		if !(value.RetainedHistoryOnly == true) {
+			tester.Fatal("activation-tree-original-captured-intent-witness.retained_history_only")
 		}
 	}
 	{

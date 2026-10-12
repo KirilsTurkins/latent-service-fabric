@@ -8,7 +8,7 @@
     "ProvisioningOracle.test_generated_proposals_fit_the_unchanged_retained_policy_program",
     "ProvisioningOracle.test_http_and_rpc_scope_must_be_same_original_authenticated_user",
     "ProvisioningOracle.test_missing_duplicate_or_changed_native_effect_profiles_refuse",
-    "ProvisioningOracle.test_namespace_receipt_requires_exact_original_native_operator_scope_and_rejects_subject_alias",
+    "ProvisioningOracle.test_named_management_recovery_selection_schema_is_closed_bounded_and_grants_no_scope",
     "ProvisioningOracle.test_original_publication_set_cannot_be_guessed_or_aliased",
     "ProvisioningOracle.test_prior_runtime_without_transport_principal_observation_refuses",
     "ProvisioningOracle.test_selected_configuration_preserves_original_checkpoint_and_refuses_large_input",
@@ -111,7 +111,7 @@
       ],
       "skipSites": []
     },
-    "ProvisioningOracle.test_namespace_receipt_requires_exact_original_native_operator_scope_and_rejects_subject_alias": {
+    "ProvisioningOracle.test_named_management_recovery_selection_schema_is_closed_bounded_and_grants_no_scope": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -174,6 +174,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_provision.py",
-  "reviewReason": "Preserve every native-host and provisioning control; require the exact observed administrator recovery scope in namespace receipts and reject literal subject aliases, wrong scopes, changed selectors, generations, schema, unknown outcomes or missing audit acknowledgement.",
+  "reviewReason": "Retain original fixture guards and cases while registering installed transaction capture and finite diagnostic controls.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

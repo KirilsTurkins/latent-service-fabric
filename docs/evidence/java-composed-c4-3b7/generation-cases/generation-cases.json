@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "latent.java-http.generation-cases.v1",
+  "cases": {
+    "private-admin": {
+      "outcome": "rejected",
+      "reason": "route-selection: private operation cannot become a public route"
+    },
+    "publishing": {
+      "outcome": "rejected",
+      "reason": "route-selection: private operation cannot become a public route"
+    },
+    "provider-event": {
+      "outcome": "rejected",
+      "reason": "route-selection: private operation cannot become a public route"
+    },
+    "duplicate-route": {
+      "outcome": "rejected",
+      "reason": "route-selection: duplicate route or client name"
+    },
+    "duplicate-client": {
+      "outcome": "rejected",
+      "reason": "route-selection: duplicate route or client name"
+    },
+    "wrong-contract": {
+      "outcome": "rejected",
+      "reason": "route-selection: contract is not an actual nonempty domain export"
+    },
+    "oversized-child-deadline": {
+      "outcome": "rejected",
+      "reason": "route-selection: childDeadlineOffsetMillis must be an integer from zero to 60000"
+    },
+    "noninteger-child-deadline": {
+      "outcome": "rejected",
+      "reason": "route-selection: childDeadlineOffsetMillis must be an integer from zero to 60000"
+    },
+    "stale-generated-source": {
+      "outcome": "rejected",
+      "reason": "stale-generation: WIT, routes, SDK, recipe or generated files changed; generate a fresh adapter"
+    },
+    "stale-domain-type-width": {
+      "outcome": "rejected",
+      "reason": "stale-generation: WIT, routes, SDK, recipe or generated files changed; generate a fresh adapter"
+    }
+  },
+  "status": "passed",
+  "freshAfterFailures": true
+}

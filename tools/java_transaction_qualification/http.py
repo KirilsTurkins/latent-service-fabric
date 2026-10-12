@@ -51,8 +51,10 @@ def response(status: int, body: bytes, headers: list[tuple[str, str]]) -> dict:
             "finite-transaction-disposition")
     for name in ("command-id", "attempt-id"):
         raw = value[name]
+        pattern = r"[0-9a-f]{64}" if name == "command-id" else r"[1-9][0-9]*"
         require((raw is None) == (disposition == "query")
-                and (raw is None or isinstance(raw, str) and re.fullmatch(r"[0-9a-f]{64}", raw)),
+                and (raw is None or isinstance(raw, str) and re.fullmatch(pattern, raw)
+                     and (name == "command-id" or int(raw) <= 16)),
                 "original-command-attempt-identity")
     require(isinstance(value["effect-ids"], list) and len(value["effect-ids"]) <= 32
             and all(isinstance(item, str) and re.fullmatch(r"[0-9a-f]{64}", item) for item in value["effect-ids"])

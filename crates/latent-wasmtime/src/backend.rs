@@ -568,8 +568,8 @@ impl WasmtimeBackend {
             &stop,
             accounting,
             capabilities,
-            runtime.surface.hostcall_fuel,
             transaction,
+            runtime.surface.hostcall_fuel,
         )?);
         // Decoding and every borrowed validation have completed. The Store now
         // owns only the moved context; destroy the actual raw input before call.
@@ -635,6 +635,7 @@ impl WasmtimeBackend {
                         message: "runtime-lifecycle-unproven".into(),
                         guest_backtrace: Vec::new(),
                         metadata: Metadata::new(),
+                        diagnostic: None,
                     },
                     consumption,
                 })
@@ -690,7 +691,7 @@ impl WasmtimeBackend {
                 false,
             ));
         }
-        Self::validate_bound_imports(&request.imports, &runtime.surface.binding_imports)?;
+        Self::validate_bound_imports(&request.imports, &runtime.surface.imports)?;
         self.validate_invocation_budget(&request.budget, &runtime.declared_budget)?;
         let function = runtime
             .surface
@@ -714,8 +715,8 @@ impl WasmtimeBackend {
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
-        hostcall_fuel: usize,
         transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
+        hostcall_fuel: usize,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -895,6 +896,25 @@ impl ExecutionBackend for WasmtimeBackend {
         wait: &'a dyn latent_executor::PreparationReadWait,
     ) -> BoxFuture<'a, Result<latent_executor::PreparedReadiness, PlatformError>> {
         Box::pin(self.prepare_ready_repository(repository, key, Some(wait)))
+    }
+
+    fn canonicalize_transaction_input<'a>(
+        &'a self,
+        ready: latent_executor::PreparedReadiness,
+        envelope: &'a latent_activation::ActivationEnvelope,
+        budget: &'a latent_core::ActivationBudget,
+        wait: &'a dyn latent_executor::PreparationReadWait,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            (
+                latent_executor::PreparedReadiness,
+                latent_executor::CanonicalTransactionInput,
+            ),
+            PlatformError,
+        >,
+    > {
+        Box::pin(self.canonicalize_readiness_input(ready, envelope, budget, wait))
     }
 
     fn materialize_ready(
@@ -1122,6 +1142,7 @@ fn classify_call_result(
         drop(call_result);
         return Ok(GuestOutcome::Trapped {
             trap: latent_executor::GuestTrap {
+                diagnostic: latent_core::diagnostic::ActivationDiagnostic::from_error(&error),
                 code: "budget-accounting-failed".to_owned(),
                 message: bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
                 guest_backtrace: Vec::new(),
@@ -1142,6 +1163,7 @@ fn classify_call_result(
             }
             Err(error) => Ok(GuestOutcome::Trapped {
                 trap: latent_executor::GuestTrap {
+                    diagnostic: latent_core::diagnostic::ActivationDiagnostic::from_error(&error),
                     code: if error.code == PlatformErrorCode::ResourceExhausted {
                         "result-limit-exceeded"
                     } else {

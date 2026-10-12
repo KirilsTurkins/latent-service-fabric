@@ -100,7 +100,7 @@ def terminal(kind="fuel"):
             for name, value in selected.LIMITS.items()}, "diagnosticIsTerminal": reason is not None,
         "diagnostic": None if reason is None else {"stage": 5, "reason": reason},
         "transactionStaging": {"schemaVersion": 1, "activationSerial": "1",
-            "commandId": "1" * 64, "attemptId": "2" * 64, "transactionId": "4" * 64,
+            "commandId": "1" * 64, "attemptId": "1", "transactionId": "4" * 64,
             "publicationId": PUBLICATION, "stagedMutations": 1, "capturedIntents": 1,
             "stateWriteBytes": consumption["stateWriteBytes"], "observedAtUnixMillis": "1500"}}
     return status, node

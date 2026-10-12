@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Qualify preserved signed Java guests using actual already-built Phase 4 owners.
 
+The current version-2 startup declaration is explicit; HTTP installation and
+offline recovery observations still require the current installed owners.
+A refusal remains failed evidence.
+
 Linux/Python 3.13. This creates one private disposable root and retains every
 failed attempt. It invokes no compiler, installs no inferred grant and cannot
 qualify a packaged developer distribution or the full Phase 4 completion gate.
@@ -21,8 +25,6 @@ from tools.build_observation import file_identity
 from tools.build_process_signals import owned_cancellation
 from tools.java_transaction_qualification import configuration as cfg, inputs, lifecycle, packaging, policies, staging
 from tools.java_transaction_qualification import diagnostic_inputs
-from tools.java_transaction_qualification import fixed_environment
-from tools.java_transaction_qualification import reviewed_tls
 from tools.java_transaction_qualification.campaign import Campaign
 from tools.java_transaction_qualification.evidence import Evidence, RecordingClient, native
 from tools.java_transaction_qualification.offline_campaign import OfflineCampaign
@@ -40,10 +42,10 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/staging.py", "tools/java_transaction_qualification/native_store.py",
     "tools/java_transaction_qualification/diagnostic_inputs.py",
     "tools/java_transaction_qualification/diagnostic_campaign.py",
-    "tools/java_transaction_qualification/pending_restore.py",
-    "tools/java_transaction_qualification/fixed_environment.py",
-    "tools/java_transaction_qualification/reviewed_tls.py",
-    "contracts/state/java-aggregate-v1-to-v2-migration.json")
+    "tools/java_transaction_qualification/current_inputs.py",
+    "tools/java_transaction_qualification/current_campaign.py")
+COLLECTORS += ("tools/java_transaction_qualification/refusal_observation.py",
+               "tools/java_transaction_qualification/state_configuration.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
@@ -58,15 +60,11 @@ def parse():
     parser.add_argument("--conductor-source-commit", required=True, help="Separate frozen collector source identity")
     parser.add_argument("--recovery-helper", type=Path, help="Optional actual installed native recovery executable")
     parser.add_argument("--recovery-source-commit", help="Must match the original coherent native build source")
-    parser.add_argument("--pending-restore-only", action="store_true",
-                        help="Separate 12-action V3 unresolved-effect restore and close programme")
     parser.add_argument("--prepare-authority-only", action="store_true", help="Stop before candidate policy mutations")
     parser.add_argument("--resume-candidate", type=Path, help="Consume the exact stopped original candidate once")
     parser.add_argument("--candidate-digest", help="Exact retained candidate digest supplied after review")
-    parser.add_argument("--reviewed-policy-environment", type=Path,
-                        help="Optional original exact unsigned policy/environment review")
-    parser.add_argument("--reviewed-policy-environment-digest",
-                        help="Exact sha256 digest of the separately reviewed unsigned document")
+    parser.add_argument("--current-selections", type=Path, help="Separate explicit current six-component material selections")
+    parser.add_argument("--current-selections-digest", help="Exact selection-document digest; historical r3 pins remain unchanged")
     for name in diagnostic_inputs.ARGUMENTS:
         parser.add_argument("--" + name.replace("_", "-"), type=Path if name in
                             {"diagnostic_capture", "diagnostic_receipt"} else str,
@@ -86,9 +84,20 @@ def parse():
     recovery_input(args)
     diagnostic_inputs.selection(args)
     staging.mode(args)
-    fixed_environment.load(args)
-    fixed_environment.check_tools(args, tool_identity(args))
+    current_mode(args)
     return args
+
+
+def current_mode(args):
+    selected = getattr(args, "current_selections", None)
+    selected_digest = getattr(args, "current_selections_digest", None)
+    inputs.require((selected is None) == (selected_digest is None), "paired-current-java-campaign-inputs")
+    if selected is not None:
+        inputs.require(args.resume_candidate is None and not args.prepare_authority_only
+                       and all(getattr(args, name, None) is None for name in diagnostic_inputs.ARGUMENTS),
+                       "current-campaign-cannot-adopt-historical-candidate-or-diagnostic")
+        from tools.java_transaction_qualification import current_campaign
+        current_campaign.selections(args.portable, selected, selected_digest)
 
 
 def recovery_input(args):
@@ -114,11 +123,7 @@ def collector_identity():
 
 
 def prepare_environment(client, args, work, signed):
-    reviewed = fixed_environment.load(args)
-    if not reviewed_tls.copy(args, reviewed, work / "tls"):
-        native(client, args.signer, "fixture-tls", "fixture-tls", work / "tls")
-    else:
-        client.evidence.record("reviewed-native-tls-fixture", reviewed["reviewedTlsFixture"])
+    native(client, args.signer, "fixture-tls", "fixture-tls", work / "tls")
     native(client, args.signer, "fixture-clock", "fixture-state-clock", work / "clock", lifecycle.NODE_ID)
     clock = read_json(work / "clock/clock-bootstrap.json")
     checkpoint = work / "clock/state-clock.json"
@@ -139,14 +144,10 @@ def prepare_environment(client, args, work, signed):
     recipient_root, node_root = work / "recipient", work / "node"
     recipient_root.mkdir(mode=0o700)
     node_root.mkdir(mode=0o700)
-    selection = {} if reviewed is None else reviewed["recipient"]
-    incarnation = selection.get("providerIncarnation") or os.urandom(32).hex()
-    peer = lifecycle.Peer(client, recipient_root, work / "tls", peer_token, incarnation,
-                          port=selection.get("port", 0))
+    peer = lifecycle.Peer(client, recipient_root, work / "tls", peer_token, os.urandom(32).hex())
     try:
         configuration = cfg.configure(node_root, signed, args.aot_compiler, work / "tls", checkpoint,
-                                      peer.port, credential,
-                                      ingress_port=0 if reviewed is None else int(selection["ingressAuthority"].split(":")[1]))
+                                      peer.port, credential)
         client.evidence.record("bootstrap-configuration", configuration.value)
         return peer, configuration, lifecycle.Node(client, args.node, node_root)
     except BaseException:
@@ -167,19 +168,15 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
     proposals = policies.documents(hosts, publications, diagnostic=diagnostic)
     client.evidence.record("actual-native-hosts", hosts.value)
     client.evidence.record("reviewed-policy-proposals", proposals)
-    mutations = policies.prepare_mutations(client, proposals) if retained or fixed_environment.load(args) is not None else None
-    fixed_environment.check_authority(args, client, hosts.value, mutations)
+    mutations = policies.prepare_mutations(client, proposals) if retained else None
     if retained:
         client.evidence.record("reviewed-policy-mutations", mutations)
     return full_path, publications, proposals, catalog, hosts.value, mutations
 
 
-def admit_authority(client, signed, items, configuration, node, full_path, publications, proposals, hosts):
+def admit_authority(client, signed, items, configuration, node, full_path, publications, proposals):
     # Explicit normal authenticated mutations turn these proposals into actual
     # current decisions. The inspection and configuration alone grant nothing.
-    # Native host inspection also opens and retires the admission catalog. Its
-    # persisted restart floor must elapse inside the original campaign deadline.
-    lifecycle.admission_lease_interval(client)
     node.start(configuration.path)
     actual_receipts = policies.apply(client, proposals)
     client.evidence.record("authenticated-policy-receipts", actual_receipts)
@@ -187,23 +184,20 @@ def admit_authority(client, signed, items, configuration, node, full_path, publi
     lifecycle.admission_lease_interval(client)
     node.start(full_path)
     legacy = next(item for item in items if item.name == "put-once-legacy-v1")
-    observed = policies.ObservedHosts.read(hosts, read_json(full_path)["state"]["operations"])
-    lifecycle.create_namespace(client, legacy, publications[legacy.name], operator=observed.operator)
+    lifecycle.create_namespace(client, legacy, publications[legacy.name])
     return full_path, publications, proposals, actual_receipts
 
 
 def provision(client, args, signed, items, peer, configuration, node):
-    full_path, publications, proposals, _, hosts, _ = prepare_authority(
+    full_path, publications, proposals, _, _, _ = prepare_authority(
         client, args, signed, items, peer, configuration, node)
-    return admit_authority(client, signed, items, configuration, node, full_path, publications, proposals, hosts)
+    return admit_authority(client, signed, items, configuration, node, full_path, publications, proposals)
 
 
 def resume_authority(client, args, configuration, node, full_path, prepared):
     hosts = lifecycle.inspect(client, args.node, full_path, read_json(full_path)["state"]["operations"],
                               stage="transaction-host-recheck")
     inputs.require(hosts.value == prepared["hosts"], "original-native-profile-drift")
-    fixed_environment.check_authority(args, client, hosts.value, prepared["mutations"])
-    lifecycle.admission_lease_interval(client)
     node.start(configuration.path)
     inputs.require(staging.catalog(client, prepared["publications"]) == prepared["catalog"],
                    "original-current-catalog-drift")
@@ -221,17 +215,6 @@ def execute_campaign(client, args, work, record, configuration, node, peer,
                      signed, items, full_path, publications, proposals, receipts, diagnostic=None):
     campaign = Campaign(client, configuration, full_path, signed, items, publications, proposals, receipts, peer, node)
     campaign.diagnostic = diagnostic
-    if getattr(args, "pending_restore_only", False):
-        from tools.java_transaction_qualification.pending_restore import PendingRestore
-        record["pendingCampaign"] = PendingRestore(campaign, args.recovery_helper,
-            work / "pending-recovery").execute()
-        record["remainingScenarios"].remove("pending-effect-restore-reconciliation")
-        node.stop()
-        peer.stop()
-        client.evidence.passed("actual-physical-retirement", {
-            "cleanNodeSessions": len(node.shutdown), "originalNodeReports": node.shutdown,
-            "recipient": peer.shutdown})
-        return
     record["campaign"] = campaign.execute()
     for name in record["campaign"].get("qualifiedDiagnosticScenarios", []):
         record["remainingScenarios"].remove(name)
@@ -252,6 +235,9 @@ def failure(record, stage, error):
 
 
 def loaded_inputs(args, work):
+    if getattr(args, "current_selections", None) is not None:
+        from tools.java_transaction_qualification import current_campaign
+        return current_campaign.load(args)
     original = inputs.load(args.portable)
     diagnostic = diagnostic_inputs.load(args, work / "diagnostic-input")
     if diagnostic is not None:
@@ -260,9 +246,7 @@ def loaded_inputs(args, work):
                        and diagnostic.item.requirements_digest == legacy.requirements_digest
                        and diagnostic.item.host_abi_digest == legacy.host_abi_digest,
                        "same-original-diagnostic-companion-requirements-and-abi")
-    selected = original + ((diagnostic.item,) if diagnostic is not None else ())
-    fixed_environment.check_inputs(args, selected)
-    return selected, diagnostic
+    return original + ((diagnostic.item,) if diagnostic is not None else ()), diagnostic
 
 
 def input_identity(record, items, diagnostic):
@@ -303,14 +287,22 @@ def run(args):
             deadline = staging.deadline(original_clock, args.timeout)
             tools, collectors = tool_identity(args), collector_identity()
             items, diagnostic = loaded_inputs(args, work)
+            record["compilerSourceCommit"] = items[0].compiler_source
             record.update(nativeTools=tools, collectorDigests=collectors)
             input_identity(record, items, diagnostic)
             client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence)
             try:
                 stage = "package"
-                signed = packaging.package(args.portable, work / "packages", args.contracts_tool, args.signer,
-                    timeout=max(1, int(min(600, deadline - time.monotonic()))),
-                    diagnostic=None if diagnostic is None else diagnostic.item)
+                package_timeout = max(1, int(min(600, deadline - time.monotonic())))
+                if getattr(args, "current_selections", None) is not None:
+                    from tools.java_transaction_qualification import current_campaign
+                    selected = current_campaign.selections(args.portable, args.current_selections,
+                                                           args.current_selections_digest)
+                    signed = packaging.package_current(selected, work / "packages", args.contracts_tool,
+                                                       args.signer, timeout=package_timeout)
+                else:
+                    signed = packaging.package(args.portable, work / "packages", args.contracts_tool, args.signer,
+                        timeout=package_timeout, diagnostic=None if diagnostic is None else diagnostic.item)
                 evidence.record("actual-package-fixture", read_json(work / "packages/package-fixture-receipt.json"))
                 stage = "bootstrap"
                 peer, configuration, node = prepare_environment(client, args, work, signed)
@@ -406,8 +398,7 @@ def resume(args):
                 stage = "current-authority-recheck"
                 receipts = resume_authority(client, args, configuration, node, full_path, prepared)
                 legacy = next(item for item in items if item.name == "put-once-legacy-v1")
-                observed = policies.ObservedHosts.read(prepared["hosts"], read_json(full_path)["state"]["operations"])
-                lifecycle.create_namespace(client, legacy, publications[legacy.name], operator=observed.operator)
+                lifecycle.create_namespace(client, legacy, publications[legacy.name])
                 stage = "actual-http"
                 execute_campaign(client, args, work, record, configuration, node, peer,
                                  signed, items, full_path, publications, proposals, receipts, diagnostic)

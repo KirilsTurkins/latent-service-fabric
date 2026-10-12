@@ -16,11 +16,15 @@ from tools.transaction_guest_project import HTTP_REQUIREMENTS
 from tools.transaction_guest_variants import replace_once
 
 HELPER = "src/dev/latent/app/TransactionDiagnostics.java"
-SELECTORS = {"trapAfterStage": "4294967293", "loopAfterStage": "4294967294"}
-MEMORY_SELECTORS = {**SELECTORS, "memoryAfterStage": "4294967292"}
+SELECTORS = {"trapAfterStage": "4294967293", "loopAfterStage": "4294967294",
+             "memoryAfterStage": "4294967292"}
 
 
 def source_variant(original: str) -> str:
+    put = "            command.put(KEY, payload).value();\n"
+    stage = '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();\n'
+    if original.count(put) != 1 or original.count(stage) != 1 or original.index(put) > original.index(stage):
+        raise ValueError("controlled diagnostic staging source drift")
     selected = replace_once(original,
         "    update(Bindings.ExamplesTransactionalAggregateApiUpdateRequest request) {\n",
         "    update(Bindings.ExamplesTransactionalAggregateApiUpdateRequest request) {\n"
@@ -35,19 +39,14 @@ def source_variant(original: str) -> str:
     selected = replace_once(selected, "            long next = old + request.delta();",
         "            long next = old + TransactionDiagnostics.businessDelta(request.delta());")
     return replace_once(selected,
-        '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();\n',
-        '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();\n'
-        "            TransactionDiagnostics.afterStage(request.delta());\n")
+        stage, stage + "            TransactionDiagnostics.afterStage(request.delta());\n")
 
 
-def create(directory: Path, name: str = "transaction-java-aggregate", *, memory_after_stage: bool = False) -> Path:
-    if type(memory_after_stage) is not bool:
-        raise ValueError("memory-after-stage selection requires an explicit boolean")
+def create(directory: Path, name: str = "transaction-java-aggregate") -> Path:
     project = create_schema(directory, "legacy-v1", name, effect="put-once")
     original = read_file(project / SOURCE)
     source = source_variant(original.decode()).encode()
-    helper = read_file(ROOT / ("examples/java-transaction-schema/memory/TransactionDiagnostics.java"
-                              if memory_after_stage else "examples/java-transaction-schema/TransactionDiagnostics.java"))
+    helper = read_file(ROOT / "examples/java-transaction-schema/TransactionDiagnostics.java")
     (project / SOURCE).write_bytes(source)
     (project / HELPER).write_bytes(helper)
     descriptor = read_json(project / "capsule-project.json")
@@ -60,17 +59,15 @@ def create(directory: Path, name: str = "transaction-java-aggregate", *, memory_
     schema_inputs["sourceDigest"] = digest(source)
     (project / "application-schema-inputs.json").write_bytes(json.dumps(schema_inputs, indent=2).encode() + b"\n")
     record = {"schemaVersion": "latent.java.transaction-diagnostic-inputs.v1",
-        "selectors": MEMORY_SELECTORS if memory_after_stage else SELECTORS,
-        "selectedBusinessDelta": "1", "freshInstanceRequired": True,
+        "selectors": SELECTORS, "selectedBusinessDelta": "1", "freshInstanceRequired": True,
         "faultAfter": ["state-put", "captured-put-once-intent"],
         "originalSourceDigest": digest(original), "sourceDigest": digest(source),
         "helperDigest": digest(helper), "worldDigest": digest(read_file(project / "wit/world.wit")),
         "companionDigest": digest(read_file(project / "transaction-binding.json")),
         "requirementsDigest": digest(read_file(project / HTTP_REQUIREMENTS)),
         "componentCompiled": False, "stateExecutionQualified": False,
-        "cancellationQualified": False, "fuelExhaustionQualified": False, "freshInstanceQualified": False}
-    if memory_after_stage:
-        record.update(memoryExhaustionQualified=False, crashBeforeCommitQualified=False)
+        "cancellationQualified": False, "fuelExhaustionQualified": False, "freshInstanceQualified": False,
+        "memoryExhaustionQualified": False, "crashBeforeCommitQualified": False}
     (project / "transaction-diagnostic-inputs.json").write_bytes(json.dumps(record, indent=2).encode() + b"\n")
     return project
 
@@ -79,9 +76,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, required=True)
     parser.add_argument("--name", default="transaction-java-aggregate")
-    parser.add_argument("--memory-after-stage", action="store_true")
     arguments = parser.parse_args()
-    print(create(arguments.project, arguments.name, memory_after_stage=arguments.memory_after_stage))
+    print(create(arguments.project, arguments.name))
 
 
 if __name__ == "__main__":
