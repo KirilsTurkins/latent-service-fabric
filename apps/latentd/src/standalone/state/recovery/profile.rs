@@ -22,12 +22,17 @@ pub(super) const V2: &[u8] = include_bytes!(concat!(
 const CODEC_DIGEST: &str = "c551c777b8cc96c1a32558e262f0137aece8692061e5ea062bca2385bf3d6237";
 const V1_MEDIA: &str = "application/vnd.lsf.aggregate-v1";
 const V2_MEDIA: &str = "application/vnd.lsf.aggregate-v2";
+const CURRENT_MARKER: &str = "4635e27f9fa3d49e96adbd50fd5fa85197d34af328e0054ccc948102f2a7a9cf";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Profile {
     Legacy,
     Compatible,
     Writer,
+    CurrentLegacy,
+    CurrentCompatible,
+    CurrentWriter,
+    CurrentDiagnostic,
 }
 
 #[derive(Deserialize)]
@@ -50,6 +55,10 @@ impl Profile {
             Self::Legacy => "legacy-v1",
             Self::Compatible => "compatible-v2",
             Self::Writer => "writer-v2",
+            Self::CurrentLegacy => "legacy-v1-current-http",
+            Self::CurrentCompatible => "compatible-v2-current-http",
+            Self::CurrentWriter => "writer-v2-current-http",
+            Self::CurrentDiagnostic => "diagnostic-v1-current-http",
         }
     }
     pub fn installed(component: &str) -> Result<Self, PlatformError> {
@@ -63,6 +72,18 @@ impl Profile {
             "sha256:ec6ac5b4a95957406f664f7df9feb4a92829fb26e8634cde97f8b44ae21082ce" => {
                 Ok(Self::Writer)
             }
+            "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd" => {
+                Ok(Self::CurrentLegacy)
+            }
+            "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813" => {
+                Ok(Self::CurrentCompatible)
+            }
+            "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d" => {
+                Ok(Self::CurrentWriter)
+            }
+            "sha256:322dfed5d9838edfbbd53bf0672c31f849ac7c7309358975bf1bf6c10b0a24bb" => {
+                Ok(Self::CurrentDiagnostic)
+            }
             _ => Err(super::denied()),
         }
     }
@@ -72,6 +93,7 @@ impl Profile {
         declaration: &[u8],
         source: &[u8],
         codec: Option<&[u8]>,
+        marker: Option<&[u8]>,
     ) -> Result<ReviewedSchema, PlatformError> {
         if declaration.len() > 4096 {
             return Err(super::denied());
@@ -89,7 +111,12 @@ impl Profile {
         };
         if input.schema_version != "latent.java.application-schema-inputs.v1"
             || input.variant != variant
-            || input.effect != "put-once"
+            || input.effect
+                != if self.current_http() {
+                    "current-http"
+                } else {
+                    "put-once"
+                }
             || input.publication_review_granted
             || input.component_compiled
             || input.state_execution_qualified
@@ -97,11 +124,17 @@ impl Profile {
             || digest(source) != source_digest
             || !same(&input.readers, &readers)
             || !same(&input.writers, &writers)
-            || match self {
+            || match self.base() {
                 Self::Legacy => codec.is_some(),
                 Self::Compatible | Self::Writer => {
                     codec.is_none_or(|bytes| digest(bytes) != CODEC_DIGEST)
                 }
+                _ => true,
+            }
+            || if self.current_http() {
+                marker.is_none_or(|bytes| digest(bytes) != CURRENT_MARKER)
+            } else {
+                marker.is_some()
             }
         {
             return Err(super::denied());
@@ -144,7 +177,13 @@ impl Profile {
             return Err(super::denied());
         }
         let mut proof = Sha256::new();
-        proof.update(IDENTITY);
+        if self.current_http() {
+            proof.update(b"lsf.java718.aggregate-current-http.v1");
+            proof.update(self.source().1);
+            proof.update(CURRENT_MARKER);
+        } else {
+            proof.update(IDENTITY);
+        }
         proof.update(self.source().0);
         proof.update(RECIPE);
         for value in [0, 1, u64::MAX] {
@@ -153,13 +192,13 @@ impl Profile {
             new.extend_from_slice(&old);
             if self.decode(V1_MEDIA, &old) != Some(value)
                 || self.decode(V2_MEDIA, &new)
-                    != if self == Self::Legacy {
+                    != if self.base() == Self::Legacy {
                         None
                     } else {
                         Some(value)
                     }
                 || self.encode(value)
-                    != if self == Self::Writer {
+                    != if self.base() == Self::Writer {
                         new.clone()
                     } else {
                         old.clone()
@@ -191,11 +230,15 @@ impl Profile {
     fn schemas(self) -> Result<(Vec<SchemaId>, Vec<SchemaId>), PlatformError> {
         let old = SchemaId::from_definition(V1).map_err(|_| super::denied())?;
         let new = SchemaId::from_definition(V2).map_err(|_| super::denied())?;
-        let readers = match self {
+        let readers = match self.base() {
             Self::Legacy => vec![old.clone()],
             _ => vec![new.clone(), old.clone()],
         };
-        let writers = vec![if self == Self::Writer { new } else { old }];
+        let writers = vec![if self.base() == Self::Writer {
+            new
+        } else {
+            old
+        }];
         Ok((readers, writers))
     }
     fn source(self) -> (&'static str, &'static str) {
@@ -212,12 +255,28 @@ impl Profile {
                 "writer-v2",
                 "590a44e63a9a490ac65d0f1996e71339eb3ec1e119c9222e946d1a70f0b6e1ca",
             ),
+            Self::CurrentLegacy => (
+                "legacy-v1",
+                "31ae58fe2dac40229b9719930cf6dacaad3ea97790db6039b9d76044368ccf12",
+            ),
+            Self::CurrentCompatible => (
+                "compatible-v2",
+                "71a1ad4e95e4601a148a3642b6593c112771f443623699ed26da4e76665766ba",
+            ),
+            Self::CurrentWriter => (
+                "writer-v2",
+                "2ea02a9201cad1a5214724315e36fbb128aee101878568826918363bf3f0f743",
+            ),
+            Self::CurrentDiagnostic => (
+                "legacy-v1",
+                "ac4a89a75bc9868350f21924eefcf2c20ceefd6dc200b0b9c3c4e6064c51b1d8",
+            ),
         }
     }
     pub fn decode(self, media: &str, bytes: &[u8]) -> Option<u64> {
         let value = if media == V1_MEDIA && bytes.len() == 8 {
             bytes
-        } else if self != Self::Legacy
+        } else if self.base() != Self::Legacy
             && media == V2_MEDIA
             && bytes.len() == 12
             && bytes[..4] == [0x41, 0x47, 2, 0]
@@ -229,13 +288,24 @@ impl Profile {
         Some(u64::from_le_bytes(value.try_into().ok()?))
     }
     fn encode(self, value: u64) -> Vec<u8> {
-        let mut bytes = if self == Self::Writer {
+        let mut bytes = if self.base() == Self::Writer {
             vec![0x41, 0x47, 2, 0]
         } else {
             Vec::new()
         };
         bytes.extend_from_slice(&value.to_le_bytes());
         bytes
+    }
+    pub(super) fn current_http(self) -> bool {
+        !matches!(self, Self::Legacy | Self::Compatible | Self::Writer)
+    }
+    pub(super) fn base(self) -> Self {
+        match self {
+            Self::CurrentLegacy | Self::CurrentDiagnostic => Self::Legacy,
+            Self::CurrentCompatible => Self::Compatible,
+            Self::CurrentWriter => Self::Writer,
+            original => original,
+        }
     }
 }
 
@@ -252,11 +322,19 @@ mod tests {
 
     #[test]
     fn installed_java_codecs_preserve_unsigned_maximum_and_refuse_wrong_media_tag_and_shape() {
-        for profile in [Profile::Legacy, Profile::Compatible, Profile::Writer] {
+        for profile in [
+            Profile::Legacy,
+            Profile::Compatible,
+            Profile::Writer,
+            Profile::CurrentLegacy,
+            Profile::CurrentCompatible,
+            Profile::CurrentWriter,
+            Profile::CurrentDiagnostic,
+        ] {
             assert_ne!(profile.conformance().unwrap(), [0; 32]);
             for value in [0, 1, u64::MAX] {
                 let bytes = profile.encode(value);
-                let media = if profile == Profile::Writer {
+                let media = if profile.base() == Profile::Writer {
                     V2_MEDIA
                 } else {
                     V1_MEDIA
@@ -296,12 +374,13 @@ mod tests {
                     [1; 32],
                     declaration,
                     b"changed source",
-                    Some(b"changed codec")
+                    Some(b"changed codec"),
+                    None
                 )
                 .is_err());
         }
         assert!(profile
-            .review([1; 32], &vec![b' '; 4097], b"", None)
+            .review([1; 32], &vec![b' '; 4097], b"", None, None)
             .is_err());
     }
 }

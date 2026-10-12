@@ -63,8 +63,8 @@ same package/evidence/current-publication verification with stricter document
 and decoded-metadata ceilings. Broad capture behavior remains available.
 
 The original gateway reservation is 32 KiB request, 9.5 MiB plus the configured
-cache for Work, and 14 MiB response. The response separately charges bounded
-result metadata and its eventual stdout frame before shutdown. A frame retains
+cache for Work, and 14 MiB response. The response separately charges 2 MiB result
+metadata and its 2 MiB eventual stdout frame before shutdown. A frame retains
 its affine owner until its actual bytes are destroyed. It does not reserve
 again after closing native admission.
 

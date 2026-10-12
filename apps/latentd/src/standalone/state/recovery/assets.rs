@@ -37,8 +37,11 @@ pub(super) fn capture(
         "schemas/application-aggregate-v2.schema.json",
         "java-aggregate-v1-to-v2-migration.json",
     ];
-    if profile != Profile::Legacy {
+    if profile.base() != Profile::Legacy {
         names.push("src/dev/latent/app/AggregateCodec.java");
+    }
+    if profile.current_http() {
+        names.push("java-current-http-profile.json");
     }
     let source = repository.capture_selected_transaction_layers(
         operation.asset.get(),
@@ -65,7 +68,7 @@ pub(super) fn capture(
         "src/dev/latent/app/Capsule.java",
         "text/plain",
     )?;
-    let codec = if profile == Profile::Legacy {
+    let codec = if profile.base() == Profile::Legacy {
         None
     } else {
         Some(asset(
@@ -87,7 +90,23 @@ pub(super) fn capture(
             return Err(super::denied());
         }
     }
-    let schema = profile.review(digest_bytes(package.as_str())?, declaration, capsule, codec)?;
+    let marker = if profile.current_http() {
+        Some(asset(
+            &config,
+            &layers,
+            "java-current-http-profile.json",
+            "application/json",
+        )?)
+    } else {
+        None
+    };
+    let schema = profile.review(
+        digest_bytes(package.as_str())?,
+        declaration,
+        capsule,
+        codec,
+        marker,
+    )?;
     let mut artifacts = required(&operation, &schema)?;
     // This is the current host's fixed tested producer, not a relabelled package
     // asset or grant from the old recipe. Protected v2 input/current authorization
@@ -107,6 +126,12 @@ pub(super) fn capture(
     ]);
     if let Some(codec) = codec {
         artifacts.push(artifact("lsf.java718.aggregate-codec.v1".into(), codec));
+    }
+    if let Some(marker) = marker {
+        artifacts.push(artifact(
+            "lsf.java718.current-http-source-input.v1".into(),
+            marker,
+        ));
     }
     publication.check_current()?;
     Ok(SchemaEvidence {

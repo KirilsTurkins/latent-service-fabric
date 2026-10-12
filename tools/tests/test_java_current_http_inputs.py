@@ -41,6 +41,19 @@ class CurrentJavaHttpInputs(unittest.TestCase):
             selected = package_effect_requirements(output, read_json(current / 'capsule-project.json'), snapshot(current))
             self.assertEqual(selected, (HTTP_REQUIREMENTS, 'asset', 'application/json'))
             self.assertEqual((output / HTTP_REQUIREMENTS).read_bytes(), read_file(current / HTTP_REQUIREMENTS))
+            from tools.java_transaction_qualification.packaging import schema_assets
+            files = snapshot(current)
+            self.assertEqual(schema_assets(files)[CURRENT_HTTP_PROFILE], files[CURRENT_HTTP_PROFILE])
+            missing = dict(files)
+            del missing[CURRENT_HTTP_PROFILE]
+            with self.assertRaises(ValueError):
+                schema_assets(missing)
+            changed = dict(files)
+            marker = json.loads(changed[CURRENT_HTTP_PROFILE])
+            marker["approved"] = True
+            changed[CURRENT_HTTP_PROFILE] = json.dumps(marker).encode()
+            with self.assertRaises(ValueError):
+                schema_assets(changed)
 
     def test_changed_profile_or_added_approval_field_refuses_packaging(self):
         with tempfile.TemporaryDirectory() as temporary:

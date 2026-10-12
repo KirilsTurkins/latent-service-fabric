@@ -160,6 +160,7 @@ async fn prepare(
     let mut selections = Vec::new();
     for operation in &state.operations {
         if Some(&operation.tenant) != principal.tenant.as_ref()
+            || super::profile::Profile::installed(&operation.component.0).is_err()
             || selections.iter().any(
                 |(existing, _): &(
                     crate::config::state::OperationSettings,

@@ -37,6 +37,15 @@ def schema_assets(files):
                     ("publicationReviewGranted", "componentCompiled", "stateExecutionQualified")),
             "captured-schema-declaration-is-not-native-review")
     selected = {path: files[path] for path in SCHEMA_ASSETS}
+    if declaration.get("effect") == "current-http":
+        from tools.transaction_guest_project import CURRENT_HTTP_PROFILE
+        require(CURRENT_HTTP_PROFILE in files and 0 < len(files[CURRENT_HTTP_PROFILE]) <= 8192,
+                "signed-current-http-profile-marker-required")
+        marker = decode(files[CURRENT_HTTP_PROFILE], 8192)
+        require(set(marker) == {"schemaVersion", "idempotencyProfile"}
+                and marker["schemaVersion"] == "latent.java.current-http-source-input.v1",
+                "closed-signed-current-http-marker")
+        selected[CURRENT_HTTP_PROFILE] = files[CURRENT_HTTP_PROFILE]
     if declaration["variant"] != "legacy-v1":
         require(CODEC_ASSET in files and 0 < len(files[CODEC_ASSET]) <= 262144,
                 "original-compatible-reader-codec-required")
