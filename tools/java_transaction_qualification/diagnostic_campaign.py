@@ -374,8 +374,7 @@ class DiagnosticCampaign:
 
     def execute(self):
         c = self.campaign
-        lifecycle.deploy(self.client, c.signed, self.input.item, self.publication,
-                         c.proposals["deploymentGrants"], c.configuration.authority)
+        c.deploy(self.input.item.name)
         selected = {"trap": "trapAfterStage", "fuel": "loopAfterStage", "cancel": "loopAfterStage"}
         if "memoryAfterStage" in self.input.selectors:
             selected["memory"] = "memoryAfterStage"
@@ -384,10 +383,10 @@ class DiagnosticCampaign:
         # the same store, current policies, recipient and nonrenewable deadline.
         c.node.stop()
         retired = c.node.shutdown[-1]
-        c.node.start(c.full_path)
+        if getattr(c.node, 'current_activation', None) is None:
+            c.node.start(c.full_path)
         legacy = c.items["put-once-legacy-v1"]
-        lifecycle.deploy(self.client, c.signed, legacy, c.publications[legacy.name],
-                         c.proposals["deploymentGrants"], c.configuration.authority)
+        c.deploy(legacy.name)
         _, fresh = c.query(0)
         for kind, observed in observations.items():
             self.client.evidence.passed("actual-post-stage-" + kind, dict(observed,

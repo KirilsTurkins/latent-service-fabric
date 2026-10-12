@@ -48,7 +48,8 @@ COLLECTORS += ("tools/java_transaction_qualification/refusal_observation.py",
                "tools/java_transaction_qualification/state_configuration.py",
                "tools/java_transaction_qualification/restore_installation.py",
                "tools/java_transaction_qualification/restore_authority.py",
-               "tools/java_transaction_qualification/current_recipient.py")
+               "tools/java_transaction_qualification/current_recipient.py",
+               "tools/java_transaction_qualification/current_activation.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
@@ -266,14 +267,16 @@ def prepare_environment(client, args, work, signed):
                     inputs.require(marker["idempotencyProfile"] == profile,
                                    "actual-current-preview-matches-every-captured-http-profile")
             client.evidence.record("actual-current-http-constructor-preview", preview)
-        return peer, configuration, lifecycle.Node(client, args.node, node_root)
+        return peer, configuration, lifecycle.Node(client, args.node, node_root,
+            current_publication_program=endpoint is not None)
     except BaseException:
         peer.close()
         raise
 
 
 def prepare_authority(client, args, signed, items, peer, configuration, node, *, retained=False):
-    node.start(configuration.path)
+    node.start(configuration.path, **({'current_session': 'publish'}
+               if getattr(node, 'current_publication_program', False) else {}))
     publications = lifecycle.publish(client, signed, items)
     catalog = staging.catalog(client, publications) if retained else None
     node.stop()
@@ -296,18 +299,30 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
 def admit_authority(client, signed, items, configuration, node, full_path, publications, proposals):
     # Explicit normal authenticated mutations turn these proposals into actual
     # current decisions. The inspection and configuration alone grant nothing.
-    node.start(configuration.path)
+    current = getattr(node, 'current_publication_program', False)
+    node.start(configuration.path, **({'current_session': 'authority'} if current else {}))
     actual_receipts = policies.apply(client, proposals)
     client.evidence.record("authenticated-policy-receipts", actual_receipts)
     legacy = next(item for item in items if item.name == "put-once-legacy-v1")
-    current_v2 = configuration.value["state"]["formatVersion"] == 2
-    if current_v2:
-        lifecycle.create_namespace(client, legacy, publications[legacy.name])
+    activation = None
+    if current:
+        from tools.java_transaction_qualification.current_activation import CurrentActivation
+        activation = CurrentActivation(client, configuration, node, signed, items, publications, proposals, full_path)
+        activation.metadata[legacy.name] = lifecycle.deployment_metadata(client, signed, legacy,
+            publications[legacy.name], proposals['deploymentGrants'])
     node.stop()
     lifecycle.admission_lease_interval(client)
-    node.start(full_path)
-    if not current_v2:
-        lifecycle.create_namespace(client, legacy, publications[legacy.name])
+    if current:
+        full_path = activation.path(legacy.name)
+        node.start(full_path, current_session='namespace-create')
+    else:
+        node.start(full_path)
+    lifecycle.create_namespace(client, legacy, publications[legacy.name])
+    if current:
+        node.stop()
+        lifecycle.admission_lease_interval(client)
+        activation.start(None, legacy.name, 'legacy-runtime')
+        node.current_activation = activation
     return full_path, publications, proposals, actual_receipts
 
 

@@ -143,8 +143,7 @@ class Campaign:
     def execute(self):
         legacy = "put-once-legacy-v1"
         publication = self.publications[legacy]
-        lifecycle.deploy(self.client, self.signed, self.items[legacy], publication,
-                         self.proposals["deploymentGrants"], self.configuration.authority)
+        self.deploy(legacy)
         before = lifecycle.inspect_namespace(self.client, publication)
         view, initial = self.query(0)
         require(initial["key-version"] == {"none": None}, "fresh-namespace-key-is-absent")
@@ -170,6 +169,13 @@ class Campaign:
         return {"httpRequests": self.transport.requests,
                 "qualifiedDiagnosticScenarios": diagnostic_scenarios,
                 "originalCommands": {key: value for key, value in self.originals.items()}}
+
+    def deploy(self, name):
+        activation = getattr(self.node, 'current_activation', None)
+        if activation is not None:
+            return activation.switch(self, name)
+        return lifecycle.deploy(self.client, self.signed, self.items[name], self.publications[name],
+                                self.proposals['deploymentGrants'], self.configuration.authority)
 
     def _lost_and_duplicate(self, publication, initial):
         key, condition = "java-original-1", precondition(initial)
@@ -279,8 +285,7 @@ class Campaign:
         require(lifecycle.schema(self.items[compatible]) == lifecycle.schema(self.items["put-once-legacy-v1"]),
                 "actual-compatible-original-schema")
         publication = self.publications[compatible]
-        lifecycle.deploy(self.client, self.signed, self.items[compatible], publication,
-                         self.proposals["deploymentGrants"], self.configuration.authority)
+        self.deploy(compatible)
         for key in ("java-original-1", "java-original-rejection"):
             retained = self.original(key)
             http.replay(self.originals[key], retained)
@@ -312,7 +317,8 @@ class Campaign:
         # lookup. The same original IDs/receipt/horizon remain authoritative.
         with mode.open("wb") as output:
             output.write(b"reply")
-        self.node.start(self.full_path)
+        self.node.start(self.full_path, **({'current_session': 'compatible-after-crash'}
+                        if getattr(self.node, 'current_publication_program', False) else {}))
         http.replay(committed, self.original(key))
         self.query(4)
         recovered = self.wait_effect(publication, key, committed)

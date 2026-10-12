@@ -22,28 +22,60 @@ from .inputs import decode, digest, require
 KEY = b"aggregate/count"
 PATHS = {"command": "/transaction/command", "query": "/transaction/query",
          "scan": "/transaction/scan", "result": "/transaction/result"}
+CURRENT_NODE_PROGRAM = (
+    'publish', 'authority', 'namespace-create', 'legacy-runtime',
+    'diagnostic-metadata', 'diagnostic-runtime', 'legacy-metadata', 'legacy-after-diagnostic',
+    'compatible-metadata', 'compatible-runtime', 'compatible-after-crash',
+    'writer-metadata', 'writer-runtime', 'restored-runtime',
+)
+CURRENT_METADATA_SESSIONS = {'publish', 'authority', 'diagnostic-metadata', 'legacy-metadata',
+                             'compatible-metadata', 'writer-metadata'}
 
 
 class Node:
-    def __init__(self, client, executable: Path, directory: Path):
+    def __init__(self, client, executable: Path, directory: Path, *, current_publication_program=False):
+        require(type(current_publication_program) is bool
+                and (not current_publication_program or getattr(client, 'phase4', False)),
+                'explicit-current-node-program')
         self.client, self.executable, self.directory = client, executable, directory
         self.process, self.ordinal = None, 0
         self.shutdown = []
         self.restore_authority_sessions = 0
+        self.current_publication_program = current_publication_program
+        self.current_activation = None
 
-    def start(self, configuration: Path, *, restore_authority=False):
+    def start(self, configuration: Path, *, restore_authority=False, current_session=None):
         require(type(restore_authority) is bool, "explicit-restore-authority-session")
         if restore_authority:
             settings = read_json(configuration)
             state = settings.get("state")
-            require(self.process is None and self.restore_authority_sessions == 0
+            require(not self.current_publication_program
+                    or self.ordinal - self.restore_authority_sessions == 13,
+                    'current-restore-authority-after-writer-retirement')
+            require(current_session is None and self.process is None and self.restore_authority_sessions == 0
                     and isinstance(state, dict) and type(state.get("formatVersion")) is int
                     and state.get("formatVersion") == 2
                     and state.get("operations") == [] and state.get("createIfMissing") is False,
                     "bounded-current-restore-authority-session")
             self.restore_authority_sessions += 1
+        elif self.current_publication_program:
+            position = self.ordinal - self.restore_authority_sessions
+            require(self.process is None and position < len(CURRENT_NODE_PROGRAM)
+                    and current_session == CURRENT_NODE_PROGRAM[position], 'bounded-current-node-session-program')
+            settings = read_json(configuration)
+            state = settings.get('state')
+            require(isinstance(state, dict) and type(state.get('formatVersion')) is int
+                    and state['formatVersion'] == 2 and isinstance(state.get('operations'), list),
+                    'current-node-session-state-owner')
+            operations = state['operations']
+            if current_session in CURRENT_METADATA_SESSIONS:
+                require(operations == [], 'metadata-session-cannot-install-runtime')
+            else:
+                require(len(operations) == 3 and len({row['publication'] for row in operations}) == 1
+                        and {row['function'] for row in operations} == {'update', 'query', 'scan'},
+                        'one-current-runtime-per-session')
         else:
-            require(self.process is None and self.ordinal - self.restore_authority_sessions < 6,
+            require(current_session is None and self.process is None and self.ordinal - self.restore_authority_sessions < 6,
                     "bounded-exclusive-node-session")
         self.ordinal += 1
         process = Process([str(self.executable), "serve", "--config", str(configuration)], self.directory,
