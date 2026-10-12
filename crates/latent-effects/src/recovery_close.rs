@@ -8,7 +8,7 @@ use crate::{
 use latent_core::{StateNamespaceId, TenantId};
 use latent_state::{
     embedded::{AtomicBatch, ExpectedRow, Family, ReadView, RowKey, RowMutation, StoreError},
-    recovery::{resume::NamespaceRecoveryView, RecoveryGuard, RecoveryStatus},
+    recovery::v1::{resume::NamespaceRecoveryView, RecoveryGuard, RecoveryStatus},
     tenant::{prepare_update, row_charge, TenantDelta, TenantUsage},
 };
 use serde::{Deserialize, Serialize};

@@ -97,7 +97,7 @@ impl ExecutionCancellation for Control {
     }
 }
 pub struct Fixture<P = LocalSecretProvider> {
-    guest_runtime: support::guest_runtime::Runtime,
+    _guest_runtime: support::guest_runtime::Runtime,
     pub ceiling: latent_core::ResourceBudget,
     _factory: WasmtimeComponentEngineFactory,
     pub backend: WasmtimeBackend,
@@ -368,7 +368,7 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
         let prepared = ready.descriptor().clone();
         drop(ready);
         Self {
-            guest_runtime,
+            _guest_runtime: guest_runtime,
             ceiling,
             _factory: factory,
             backend,
@@ -521,7 +521,7 @@ impl<P: latent_capabilities::broker::secrets::SecretInvoker + Clone + 'static> F
         self.idle();
     }
     pub fn runtime_entropy_calls(&self) -> u64 {
-        self.guest_runtime.entropy_calls()
+        self._guest_runtime.entropy_calls()
     }
 
     pub fn idle(&self) {

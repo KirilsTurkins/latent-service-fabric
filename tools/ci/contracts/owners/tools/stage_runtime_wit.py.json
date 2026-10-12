@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/stage_runtime_wit.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve exact package identities already captured under application-selected dependency directories; retain missing transitive staging and authoritative parser rejection. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
+  "reviewReason": "Preserve current compiler/source, finite scheduling and retained ownership contracts; add captured dependency and migration/restore controls without removing existing cases or guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828"
 }

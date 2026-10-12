@@ -5,7 +5,8 @@ for original source directories, bounded archives and target-correct static
 archives. Add `cSources`, `includeDirectories` and `defines` to each application
 artifact's metadata. These are finite captured selections, with transitive
 artifact IDs in `dependencies`; arbitrary configure/shell/compiler hooks are not
-executed.
+executed. Use the separately [approved source and header generation step](c-generators.md)
+for executable tools, then build offline from its captured output and provenance.
 
 ```json
 {

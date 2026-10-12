@@ -22,7 +22,7 @@ use crate::containment::platform_error;
 use crate::host::policy::ContextExposurePolicy;
 use crate::values::ValueCodecLimits;
 
-pub const WASMTIME_VERSION: &str = "48.0.4";
+pub const WASMTIME_VERSION: &str = "48.0.5";
 pub const GENERIC_BACKEND_ID: &str = "wasmtime-component-phase-1";
 pub const PHASE0_BACKEND_ID: &str = "wasmtime-component-phase-0";
 const MAXIMUM_EPOCH_OBSERVATION_MILLIS: u64 = 1_000;
@@ -89,17 +89,6 @@ impl CompilerOptimization {
     }
 }
 
-/// Explicit guest language installations, separate from activation authority.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct GuestLanguageProfiles {
-    /// Explicit installation of the closed Angular profile. Ordinary defaults
-    /// never imply support for a JavaScript runtime or an ambient host surface.
-    pub angular_renderer: bool,
-    /// Explicit `TeaVM` C profile: standard Wasm exceptions, no Wasm GC values.
-    /// Its fixed exception heap is charged before every activation Store.
-    pub java_guest: bool,
-}
-
 /// Hard node limits for compilation, retained preparation and fresh stores.
 ///
 /// Component Model async execution, fuel and epoch interruption are required;
@@ -112,7 +101,12 @@ pub struct WasmtimeConfig {
     pub execution_isolation_profile: ExecutionIsolationProfile,
     #[cfg(feature = "development-clock-fixture")]
     pub development_clock_readings: Option<DevelopmentClockReadings>,
-    pub guest_languages: GuestLanguageProfiles,
+    /// Explicit installation of the closed Angular profile. Ordinary defaults
+    /// never imply support for a JavaScript runtime or an ambient host surface.
+    pub angular_renderer: bool,
+    /// Explicit TeaVM C profile: standard Wasm exceptions, no Wasm GC values.
+    /// Its fixed exception heap is charged before every activation Store.
+    pub java_guest: bool,
     /// Installs the scoped Phase 4 linker. Actual access still requires an
     /// activation-owned transaction host with the same ledger and identity.
     pub transactional_state: bool,
@@ -171,6 +165,9 @@ pub struct WasmtimeConfig {
     /// for an actual web application export; never inherited by local children.
     pub buffered_web_value_profile: Option<BufferedWebValueProfile>,
     pub context_policy: ContextExposurePolicy,
+    /// Opt-in logical-runtime limits; recognition and clock-read permission
+    /// alone do not install or grant language scheduling/timer operations.
+    pub activation_runtime: Option<latent_core::activation_runtime::RuntimeLimits>,
 }
 
 /// Host-owned bounds for the buffered web ABI, separate from service values.
@@ -183,28 +180,16 @@ pub struct BufferedWebValueProfile {
 /// Compatibility name retaining every old field and its default value.
 pub type Phase0WasmtimeConfig = WasmtimeConfig;
 
-impl std::ops::Deref for WasmtimeConfig {
-    type Target = GuestLanguageProfiles;
-
-    fn deref(&self) -> &Self::Target {
-        &self.guest_languages
-    }
-}
-
-impl std::ops::DerefMut for WasmtimeConfig {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.guest_languages
-    }
-}
-
 impl Default for WasmtimeConfig {
     fn default() -> Self {
         Self {
             execution_isolation_profile: ExecutionIsolationProfile::LocalExperimental,
             #[cfg(feature = "development-clock-fixture")]
             development_clock_readings: None,
-            guest_languages: GuestLanguageProfiles::default(),
+            angular_renderer: false,
+            java_guest: false,
             transactional_state: false,
+            activation_runtime: None,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),
             maximum_component_bytes: 16 * 1024 * 1024,
@@ -301,6 +286,9 @@ impl WasmtimeConfig {
         self.cache_limits().validate()?;
         self.validate_compiler()?;
         self.context_policy.validate()?;
+        if let Some(limits) = self.activation_runtime {
+            limits.validate()?;
+        }
         if let Some(web) = self.buffered_web_value_profile {
             if web.hostcall_fuel == 0 {
                 return Err(invalid_config());

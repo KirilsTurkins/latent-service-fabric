@@ -151,29 +151,32 @@ impl super::super::PreparationContext {
         key: &PreparationKey,
         input: Compilation,
         job: &PreparationJob,
+        wait: Option<&WorkerWindow>,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        self.check_eligibility(
-            input.eligibility.as_ref(),
-            &key.release,
-            key.publication.as_ref(),
-        )?;
-        checked.check()?;
+        WorkerWindow::check(wait, || {
+            self.check_eligibility(
+                input.eligibility.as_ref(),
+                &key.release,
+                key.publication.as_ref(),
+            )
+        })?;
+        WorkerWindow::check(wait, || checked.check())?;
         self.validate_renderer_component(checked.artifact())?;
         let service = self
             .native_aot
             .as_ref()
             .ok_or_else(crate::backend::admission_association_error)?;
         let code = service.load(checked, &self.engine)?;
-        checked.check()?;
+        WorkerWindow::check(wait, || checked.check())?;
         let runtime = self.link_runtime(
             checked.artifact(),
             key,
             input,
             job,
             CompiledCode::Native(code),
-            None,
+            wait,
         )?;
-        checked.check()?;
+        WorkerWindow::check(wait, || checked.check())?;
         Ok(runtime)
     }
 
@@ -201,20 +204,16 @@ impl super::super::PreparationContext {
             artifact,
             &self.config,
             surface::Providers {
+                activation_runtime: self.config.activation_runtime.is_some(),
                 local_services: self.local_services().is_some(),
-                network: surface::NetworkProviders {
-                    http: self.http().is_some(),
-                    streaming_http: self.streaming_http().is_some(),
-                },
-                storage: surface::StorageProviders {
-                    blobs: self.blobs().is_some(),
-                    secrets: self.secrets().is_some(),
-                },
-                signals: surface::SignalProviders {
-                    events: self.events().is_some(),
-                    random: self.random().is_some(),
-                    metrics: self.metrics().is_some(),
-                },
+                http: self.http().is_some(),
+                streaming_http: self.streaming_http().is_some(),
+                outbound_streams: self.outbound_streams().is_some(),
+                blobs: self.blobs().is_some(),
+                secrets: self.secrets().is_some(),
+                events: self.events().is_some(),
+                random: self.random().is_some(),
+                metrics: self.metrics().is_some(),
             },
         )
         .map_err(|mut error| {
@@ -256,9 +255,9 @@ impl super::super::PreparationContext {
         let lifetime_charge = self
             .runtime_ledger
             .register(crate::cache::PreparedRuntimeCost {
-                source: artifact.component_bytes.len(),
-                metadata: metadata_bytes,
-                compiled_image: image_bytes,
+                source_bytes: artifact.component_bytes.len(),
+                metadata_bytes,
+                compiled_image_bytes: image_bytes,
             })?;
         let declared_budget = artifact.manifest.execution.resource_budget_ceiling.clone();
         let imports = artifact

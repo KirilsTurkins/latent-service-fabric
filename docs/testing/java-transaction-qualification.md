@@ -1,5 +1,10 @@
 # Signed Java transaction qualification
 
+This preserved continuation describes the older HTTP/offline checkpoint. The
+current version-2 standalone owners need a port of that collector. See the
+[PR #823 reconciliation](../development/phase4-handoffs/2026-10-11/pr823-reconciliation.md)
+for current implementation and qualification boundaries.
+
 The qualification conductor in `tools/java_transaction_qualification` retains
 the five original Java components compiled at
 `ff9ecd0733456bceacf5b96f14274b9c2dc0e8e6`. It checks the original component,
@@ -119,7 +124,7 @@ provider observations and positive shutdown/retirement reports separately.
 The immutable production binaries built at
 `0537a6682f7a7e89c00c13d2bb327432cc3ad6cb` precede the transaction manifest
 profile closure and the historical result-read change described in
-[Historical transaction results](../development/historical-transaction-results.md).
+[Installed result delivery and recovery](../development/installed-transaction-rpc.md).
 A signed Java campaign must use new native binaries containing both changes.
 The older binaries cannot supply signed Java or positive schema/restore
 result-recovery evidence.

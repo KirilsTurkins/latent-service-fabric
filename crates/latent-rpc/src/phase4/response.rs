@@ -9,6 +9,31 @@ pub(super) fn validate(response: &Response, original: &Request) -> Result<(), Va
     let mut b = Budget::new::<Response>(MAX_RESPONSE_BYTES)?;
     b.charge(response.native_message_bytes())?;
     match (response, original) {
+        (Response::InspectDispatcher(value), Request::InspectDispatcher(_)) => {
+            super::dispatcher::snapshot(&mut b, required(value.dispatcher.as_ref())?)?;
+            audit(&mut b, value.audit_ack.as_ref())
+        }
+        (Response::ControlDispatcher(value), Request::ControlDispatcher(original)) => {
+            let receipt = required(value.receipt.as_ref())?;
+            super::dispatcher::receipt(&mut b, receipt, original)?;
+            audit(&mut b, value.audit_ack.as_ref())?;
+            if (value.replayed && value.published)
+                || (original.action == c::DispatcherAction::Pause as i32
+                    && value.published
+                    && !value.paused)
+            {
+                return Err(ValidationError::Shape);
+            }
+            Ok(())
+        }
+        (Response::GetDispatcherOperation(value), Request::GetDispatcherOperation(original)) => {
+            super::dispatcher::receipt(
+                &mut b,
+                required(value.receipt.as_ref())?,
+                required(original.original.as_ref())?,
+            )?;
+            audit(&mut b, value.audit_ack.as_ref())
+        }
         (Response::InspectNamespace(value), Request::InspectNamespace(original)) => {
             validate_inspect_namespace(&mut b, value, original)
         }
@@ -21,18 +46,39 @@ pub(super) fn validate(response: &Response, original: &Request) -> Result<(), Va
         ) => {
             let target = required(original.namespace.as_ref())?;
             match (&value.receipt, &value.namespace_receipt) {
-                (Some(value), None) => state_receipt(&mut b, value, target, &original.operation_id),
-                (None, Some(value)) => {
-                    namespace_receipt(&mut b, value, target, &original.operation_id)
+                (Some(receipt), None) => {
+                    state_receipt(&mut b, receipt, target, &original.operation_id)?;
+                    match (&receipt.effect, &original.original_effect_plan) {
+                        (Some(_), Some(plan)) => {
+                            super::effect_management::receipt(&mut b, receipt, plan)?
+                        }
+                        (None, None) => {}
+                        _ => return Err(ValidationError::Association),
+                    }
                 }
-                _ => Err(ValidationError::Shape),
+                (None, Some(value)) => {
+                    if original.original_effect_plan.is_some() {
+                        return Err(ValidationError::Association);
+                    }
+                    namespace_receipt(&mut b, value, target, &original.operation_id)?;
+                }
+                _ => return Err(ValidationError::Shape),
             }
+            audit(&mut b, value.audit_ack.as_ref())
         }
         (Response::SelectEntity(value), Request::SelectEntity(original)) => {
             validate_select_entity(&mut b, value, original)
         }
         (Response::MutateState(value), Request::MutateState(original)) => {
             validate_mutate_state(&mut b, value, original)
+        }
+        (Response::PlanEffectMutation(value), Request::PlanEffectMutation(original)) => {
+            let plan = required(value.plan.as_ref())?;
+            super::effect_management::plan(&mut b, plan)?;
+            if plan.original.as_ref() != Some(&**original) {
+                return Err(ValidationError::Association);
+            }
+            audit(&mut b, value.audit_ack.as_ref())
         }
         (Response::LookupCommand(value), Request::LookupCommand(original)) => {
             validate_lookup_command(&mut b, value, original)
@@ -148,20 +194,9 @@ fn state_receipt(
             c::StateMutationKind::RetryKnownFailedEffect
             | c::StateMutationKind::TerminateEffect
             | c::StateMutationKind::PurgeExpiredPayload
-            | c::StateMutationKind::CheckpointNamespace,
+            | c::StateMutationKind::CheckpointNamespace
+            | c::StateMutationKind::ReconcileEffect,
         ) => Ok(()),
-        Ok(c::StateMutationKind::ReleaseExpiredCommandFloor) => {
-            let before = request::namespace_view_generation(&value.before_version, namespace)?;
-            let after = request::namespace_view_generation(&value.after_version, namespace)?;
-            if value.disposition != c::StateOperationDisposition::Committed as i32
-                || value.before_version[..43] != value.after_version[..43]
-                || value.before_version[51..] != value.after_version[51..]
-                || before.checked_add(1) != Some(after)
-            {
-                return Err(ValidationError::Association);
-            }
-            Ok(())
-        }
         _ => Err(ValidationError::Shape),
     }
 }
@@ -221,13 +256,21 @@ fn command(
     value: &t::CommandInspection,
     target: &t::CommandSelector,
 ) -> Result<(), ValidationError> {
+    command_with_inline(b, value, target, None)
+}
+fn command_with_inline(
+    b: &mut Budget,
+    value: &t::CommandInspection,
+    target: &t::CommandSelector,
+    inline: Option<&i::invoke_response::Result>,
+) -> Result<(), ValidationError> {
     command_key(b, required(value.key.as_ref())?, target)?;
     let outcome = t::CommandOutcome::try_from(value.outcome).map_err(|_| ValidationError::Shape)?;
     if outcome == t::CommandOutcome::Unspecified {
         return Err(ValidationError::Shape);
     }
     command_details(b, value, outcome)?;
-    command_disposition(value, outcome)
+    command_disposition(value, outcome, inline)
 }
 fn command_key(
     b: &mut Budget,
@@ -296,15 +339,23 @@ fn command_details(
 fn command_disposition(
     value: &t::CommandInspection,
     outcome: t::CommandOutcome,
+    inline: Option<&i::invoke_response::Result>,
 ) -> Result<(), ValidationError> {
+    let inline_payload = value.retained_result.is_none()
+        && value
+            .retention
+            .as_ref()
+            .is_some_and(|retention| retention.payload_available);
     let success = matches!(
         value.retained_result,
         Some(t::command_inspection::RetainedResult::Success(_))
-    );
+    ) || (inline_payload
+        && matches!(inline, Some(i::invoke_response::Result::Success(_))));
     let rejected = matches!(
         value.retained_result,
         Some(t::command_inspection::RetainedResult::BusinessRejection(_))
-    );
+    ) || (inline_payload
+        && matches!(inline, Some(i::invoke_response::Result::DeclaredError(_))));
     let omitted_payload = value.retained_result.is_none()
         && value
             .retention
@@ -362,6 +413,19 @@ fn effect(
     b.optional_id(value.provider_receipt.as_ref())?;
     b.optional_id(value.failure_code.as_ref())?;
     b.optional_id(value.management_operation_receipt_id.as_ref())?;
+    if !value.record_version.is_empty() {
+        super::effect_management::version(b, &value.record_version)?;
+    } else {
+        b.bytes(&value.record_version, 32)?;
+    }
+    if !matches!(
+        (value.owner_epoch, value.claim_generation),
+        (None, None) | (Some(1..), Some(1..))
+    ) || (value.owner_epoch.is_some()
+        && (value.dispatch_attempt == 0 || value.dispatch_attempt > 128))
+    {
+        return Err(ValidationError::Shape);
+    }
     if value.effect_id != effect_id {
         return Err(ValidationError::Association);
     }
@@ -377,7 +441,9 @@ fn effect(
             | t::EffectDisposition::UncertainAfterDispatch
             | t::EffectDisposition::Expired
             | t::EffectDisposition::PolicyBlocked
-            | t::EffectDisposition::AdministrativelyTerminated,
+            | t::EffectDisposition::AdministrativelyTerminated
+            | t::EffectDisposition::RetryScheduled
+            | t::EffectDisposition::DeadLettered,
         ) => Ok(()),
         _ => Err(ValidationError::Shape),
     }
@@ -484,10 +550,6 @@ fn validate_inspect_namespace(
         required(original.namespace.as_ref())?,
     )?;
     namespace_status(value.status)?;
-    if let Some(policy) = &value.policy_digest {
-        b.string(policy, 71)?;
-        digest(policy)?;
-    }
     if value.generation == 0 {
         return Err(ValidationError::Shape);
     }
@@ -495,6 +557,10 @@ fn validate_inspect_namespace(
     b.id(&value.engine_profile)?;
     b.string(&value.engine_profile_digest, 71)?;
     digest(&value.engine_profile_digest)?;
+    b.string(&value.namespace_policy_digest, 71)?;
+    if !value.namespace_policy_digest.is_empty() {
+        digest(&value.namespace_policy_digest)?;
+    }
     b.sequence(&value.retained_formats, 128)?;
     for value in &value.retained_formats {
         retention(b, value)?;
@@ -609,6 +675,11 @@ fn validate_mutate_state(
     {
         return Err(ValidationError::Association);
     }
+    match (&receipt.effect, &original.effect_plan) {
+        (Some(_), Some(plan)) => super::effect_management::receipt(b, receipt, plan)?,
+        (None, None) => {}
+        _ => return Err(ValidationError::Association),
+    }
     audit(b, value.audit_ack.as_ref())
 }
 
@@ -702,7 +773,32 @@ fn validate_invoke_command(
     original: &t::InvokeCommandRequest,
 ) -> Result<(), ValidationError> {
     let command_value = required(value.command.as_ref())?;
-    command(b, command_value, required(original.command.as_ref())?)?;
+    if let Some(retry) = &original.retry_attempt {
+        let abort = required(retry.expected_abort.as_ref())?;
+        let previous = abort
+            .attempt_id
+            .parse::<u64>()
+            .map_err(|_| ValidationError::Shape)?;
+        let selected = command_value
+            .attempt_id
+            .parse::<u64>()
+            .map_err(|_| ValidationError::Shape)?;
+        if !(1..16).contains(&previous)
+            || previous.to_string() != abort.attempt_id
+            || selected.to_string() != command_value.attempt_id
+            || previous.checked_add(1) != Some(selected)
+            || abort.command_id != command_value.command_id
+        {
+            return Err(ValidationError::Association);
+        }
+    }
+    let body = required(value.invocation.as_ref())?;
+    command_with_inline(
+        b,
+        command_value,
+        required(original.command.as_ref())?,
+        body.result.as_ref(),
+    )?;
     invocation(b, required(value.invocation.as_ref())?)?;
     let invocation = required(value.invocation.as_ref())?;
     if let Some(source) = &command_value.source {
@@ -718,7 +814,7 @@ fn validate_invoke_command(
         (
             Some(t::command_inspection::RetainedResult::Success(left)),
             Some(i::invoke_response::Result::Success(right)),
-        ) if left == right => {}
+        ) if left == right => invocation_commit_body(command_value, right)?,
         (
             Some(t::command_inspection::RetainedResult::BusinessRejection(left)),
             Some(i::invoke_response::Result::DeclaredError(right)),
@@ -728,7 +824,42 @@ fn validate_invoke_command(
             Some(i::invoke_response::Result::PlatformFailure(right)),
         ) if left == right => {}
         (None, Some(i::invoke_response::Result::PlatformFailure(_))) => {}
+        (None, Some(i::invoke_response::Result::Success(success)))
+            if command_value.outcome == t::CommandOutcome::Committed as i32
+                && command_value
+                    .retention
+                    .as_ref()
+                    .is_some_and(|retention| retention.payload_available) =>
+        {
+            invocation_commit_body(command_value, success)?;
+        }
+        (None, Some(i::invoke_response::Result::DeclaredError(_)))
+            if command_value.outcome == t::CommandOutcome::Rejected as i32
+                && command_value
+                    .retention
+                    .as_ref()
+                    .is_some_and(|retention| retention.payload_available) => {}
         _ => return Err(ValidationError::Association),
+    }
+    Ok(())
+}
+
+fn invocation_commit_body(
+    command: &t::CommandInspection,
+    success: &i::Success,
+) -> Result<(), ValidationError> {
+    let commit = required(command.commit.as_ref())?;
+    let version = required(success.committed_state_version.as_ref())?.as_bytes();
+    if success.effect_ids != commit.effect_ids
+        || version.len() != commit.committed_version.len() * 2
+    {
+        return Err(ValidationError::Association);
+    }
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    for (byte, pair) in commit.committed_version.iter().zip(version.chunks_exact(2)) {
+        if pair != [HEX[usize::from(*byte >> 4)], HEX[usize::from(*byte & 15)]] {
+            return Err(ValidationError::Association);
+        }
     }
     Ok(())
 }

@@ -169,6 +169,7 @@ fn static_web_upload() -> PackageAdmissionUpload {
                 mode: StaticFallbackMode::Spa,
                 document: Some("/index.html".into()),
             },
+            error_document: None,
         }),
         renderer: None,
     };
@@ -348,7 +349,7 @@ fn catalog(root: &TempRoot, repo: &Arc<DirectoryArtifactRepository>) -> Store {
         repo.clone(),
         Limits::default(),
         repo.lifecycle_authority(),
-        super::lifecycle::profile("48.0.4"),
+        super::lifecycle::profile("48.0.5"),
     ))
     .unwrap()
 }

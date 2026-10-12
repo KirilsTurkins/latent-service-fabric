@@ -26,6 +26,9 @@ impl DispatchCatalog {
     ) -> Result<latent_state::tenant::TenantCensusContribution, StoreError> {
         use latent_state::tenant::TenantCensusContribution;
         validate_row(key, bytes)?;
+        if crate::dispatch_store::effect_management::EffectManagementCatalog::owns_row(key) {
+            return crate::dispatch_store::effect_management::EffectManagementCatalog::tenant_census_contribution(view, key, bytes);
+        }
         if key.family == Family::Maintenance
             && key.key.starts_with(crate::recovery_close::RECEIPT_PREFIX)
         {
@@ -118,9 +121,7 @@ impl DispatchCatalog {
         let key = effect_row_key(effect)?;
         let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
         let record = EffectRecord::decode(&bytes).map_err(storage_error)?;
-        // The V2 explicit close receipt is a separate retained recovery link.
-        // Automatic reclamation must not drop that operator decision or leave
-        // another selected effect without its shared decoder/receipt closure.
+        // Explicit v3 close receipts retain their shared decision/decoder links.
         if record.recovery_close_digest().is_some() {
             return Err(StoreError::UnsupportedFormat);
         }
@@ -166,6 +167,16 @@ impl DispatchCatalog {
                 value: None,
             },
         ];
+        let (management_rows, additional_charge) =
+            crate::dispatch_store::effect_management::EffectManagementCatalog::retained_rows(
+                view, effect,
+            )?;
+        for row in management_rows {
+            if row.value.is_some() {
+                reclaim.push(row.key.clone());
+            }
+            expectations.push(row);
+        }
         for item in history.rows {
             let key = item.key()?;
             reclaim.push(key.clone());
@@ -190,6 +201,7 @@ impl DispatchCatalog {
             expectations,
             due: due_key,
             reclaim,
+            additional_charge,
         })
     }
 
@@ -273,11 +285,7 @@ impl DispatchCatalog {
     /// Describes the original retained owner epoch and clock floor through its
     /// closed decoder. These numbers grant no restart, restore or dispatch right.
     pub fn owner_checkpoint(view: &ReadView) -> Result<Option<(u64, u64)>, StoreError> {
-        view.get(&OwnerRecord::key())?
-            .as_deref()
-            .map(OwnerRecord::decode)
-            .transpose()
-            .map(|owner| owner.map(|owner| (owner.epoch, owner.clock_floor)))
+        Self::checkpoint(view)
     }
 }
 

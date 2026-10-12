@@ -13,8 +13,32 @@ pub(super) struct Access {
     pub binding: Arc<StateManagementBinding>,
     pub caller: CallerScope,
     pub inspect: OwnedPolicyDecision,
+    pub listing: Option<OwnedPolicyDecision>,
     pub mutation: Option<OwnedPolicyDecision>,
-    pub policy_digest: String,
+}
+/// A descriptive SHA-256 precondition over original sealed configuration, not a
+/// permission. Every operation still rechecks its actual retained policy owner.
+pub(super) fn policy_precondition(access: &Access) -> String {
+    use sha2::{Digest, Sha256};
+    let mut hash = Sha256::new();
+    hash.update(b"lsf-namespace-policy-precondition-v1\0");
+    hash.update(access.inspect.configuration_digest());
+    for text in [
+        &access.binding.namespace.0,
+        &access.binding.result_policy,
+        &access.binding.state_schema,
+        &access.binding.state.profile,
+        &access.binding.state.configuration_digest,
+    ] {
+        hash.update((text.len() as u64).to_be_bytes());
+        hash.update(text.as_bytes());
+    }
+    hash.update(access.binding.incarnation.to_be_bytes());
+    hash.update(access.binding.state.configuration_epoch.to_be_bytes());
+    format!(
+        "sha256:{:x}",
+        latent_core::digest::HexDigest(hash.finalize())
+    )
 }
 pub(super) fn validate_binding(value: &StateManagementBinding) -> Result<(), PlatformError> {
     if value.publication.scope.tenant().is_none()
@@ -91,6 +115,7 @@ pub(super) async fn authorize(
         context,
         publication: &publication,
         caller: &caller,
+        entity: None,
         deadline,
         input_bytes: request.encoded_len(),
     };
@@ -98,12 +123,12 @@ pub(super) async fn authorize(
         contract::Request::MutateNamespace(value) => {
             Some(original.seal(mutation_operation(value.mutation)?, binding.incarnation)?)
         }
-        contract::Request::MutateState(value)
-            if value.mutation == c::StateMutationKind::ReleaseExpiredCommandFloor as i32 =>
-        {
-            Some(original.seal("namespace-destroy", binding.incarnation)?)
-        }
         _ => None,
+    };
+    let listing = if matches!(request, contract::Request::SelectEntity(_)) {
+        Some(original.seal("namespace-list", binding.incarnation)?)
+    } else {
+        None
     };
     let response_incarnation = if matches!(request, contract::Request::MutateNamespace(value) if value.mutation == c::NamespaceMutationKind::Recreate as i32)
     {
@@ -112,16 +137,10 @@ pub(super) async fn authorize(
         binding.incarnation
     };
     let inspect = original.seal("namespace-inspect", response_incarnation)?;
-    let policy_digest = captured_policy_digest(&inspect);
-    if let contract::Request::MutateState(value) = request {
-        if value.expected_policy_digest != policy_digest {
-            return Err(error(
-                PlatformErrorCode::StateConflict,
-                "state-policy-precondition-changed",
-            ));
-        }
-    }
     if (inspect.requires_audit()
+        || listing
+            .as_ref()
+            .is_some_and(OwnedPolicyDecision::requires_audit)
         || mutation
             .as_ref()
             .is_some_and(OwnedPolicyDecision::requires_audit))
@@ -136,11 +155,14 @@ pub(super) async fn authorize(
         binding: Arc::clone(binding),
         caller,
         inspect,
+        listing,
         mutation,
-        policy_digest,
     })
 }
-fn captured_policy_digest(decision: &OwnedPolicyDecision) -> String {
+/// Describe exactly the sealed binding/policy revisions, using the same
+/// canonical digest as current state-management clients. This is a precondition
+/// description and supplies no currentness check, replacement lease or grant.
+pub(super) fn captured_policy_digest(decision: &OwnedPolicyDecision) -> String {
     use sha2::{Digest, Sha256};
     let mut hash = Sha256::new();
     hash.update(b"lsf-state-management-policy-v1\0");
@@ -164,6 +186,7 @@ struct OriginalAccess<'a> {
     context: &'a AuthenticatedInvocationContext,
     publication: &'a ReleaseUseEligibility,
     caller: &'a CallerScope,
+    entity: Option<&'a str>,
     deadline: Instant,
     input_bytes: usize,
 }
@@ -179,6 +202,7 @@ impl OriginalAccess<'_> {
             context,
             publication,
             caller,
+            entity,
             deadline,
             input_bytes,
         } = *self;
@@ -205,7 +229,7 @@ impl OriginalAccess<'_> {
                 resource: ResourceTarget::State {
                     namespace: &binding.namespace.0,
                     incarnation,
-                    entity: None,
+                    entity,
                     recovery_kind: caller.kind,
                     recovery_scope: &caller.scope,
                     result_policy: &binding.result_policy,
@@ -230,6 +254,38 @@ impl OriginalAccess<'_> {
             publication,
         )?;
         services.policy.retain_decision(&decision)
+    }
+}
+pub(super) struct EffectDecision<'a> {
+    pub services: &'a StateManagementServices,
+    pub binding: &'a StateManagementBinding,
+    pub context: &'a AuthenticatedInvocationContext,
+    pub caller: &'a CallerScope,
+    pub entity: Option<&'a str>,
+    pub deadline: Instant,
+    pub input_bytes: usize,
+}
+impl EffectDecision<'_> {
+    pub fn seal(&self, operation: &str) -> Result<OwnedPolicyDecision, PlatformError> {
+        let publication = self
+            .services
+            .artifacts
+            .execution_eligibility_selected(
+                &self.binding.component,
+                Some(&self.binding.publication.id),
+            )?
+            .ok_or_else(denied)?;
+        OriginalAccess {
+            services: self.services,
+            binding: self.binding,
+            context: self.context,
+            publication: &publication,
+            caller: self.caller,
+            entity: self.entity,
+            deadline: self.deadline,
+            input_bytes: self.input_bytes,
+        }
+        .seal(operation, self.binding.incarnation)
     }
 }
 pub(super) fn mutation_operation(kind: i32) -> Result<&'static str, PlatformError> {

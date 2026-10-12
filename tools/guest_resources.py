@@ -112,7 +112,15 @@ class PackagedResources:
     objects: dict[str, bytes]
 
 
-def capture(files: dict[str, bytes], component: bytes, source: bytes, *, additional_resources=()) -> PackagedResources | None:
+@dataclass(frozen=True)
+class SelectedResources:
+    rows: list[dict]
+    objects: dict[str, bytes]
+    total_bytes: int
+
+
+def select(files: dict[str, bytes], *, additional_resources=()) -> SelectedResources | None:
+    """Validate one exact selection before either compilation or packaging."""
     require(isinstance(additional_resources, (list, tuple)) and len(additional_resources) <= MAX_COUNT,
             "resource-count-limit", "exhausted")
     if MANIFEST not in files and not additional_resources:
@@ -141,13 +149,20 @@ def capture(files: dict[str, bytes], component: bytes, source: bytes, *, additio
         selected.append({"path": logical, "object": object_path, "digest": identity, "size": len(payload),
                          "mediaType": content_type, "origin": "dependency" if "owner" in row else "application",
                          **({"owner": row["owner"]} if "owner" in row else {})})
+    return SelectedResources(sorted(selected, key=lambda item: item["path"]), objects, total)
+
+
+def capture(files: dict[str, bytes], component: bytes, source: bytes, *, additional_resources=()) -> PackagedResources | None:
+    selected = select(files, additional_resources=additional_resources)
+    if selected is None:
+        return None
     base = {"schemaVersion": PROFILE, "sourceDigest": digest(source), "componentDigest": digest(component),
             "manifestDigest": digest(files[MANIFEST]) if MANIFEST in files else None,
             "dependencyLockDigest": digest(files["latent.dependencies.lock.json"]) if "latent.dependencies.lock.json" in files else None,
             "limits": {"count": MAX_COUNT, "nameBytes": MAX_NAME, "fileBytes": MAX_FILE, "totalBytes": MAX_TOTAL},
-            "count": len(selected), "bytes": total, "resources": sorted(selected, key=lambda item: item["path"]),
+            "count": len(selected.rows), "bytes": selected.total_bytes, "resources": selected.rows,
             "runtimeLookup": "language-profile-qualification-required", "scratchStorage": "unsupported"}
-    return PackagedResources({**base, "identity": digest(encode(base))}, objects)
+    return PackagedResources({**base, "identity": digest(encode(base))}, selected.objects)
 
 
 def assemble(output: Path, files: dict[str, bytes], component: bytes, *, additional_resources=()) -> list[tuple[str, str, str]]:

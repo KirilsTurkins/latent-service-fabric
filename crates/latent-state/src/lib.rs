@@ -8,13 +8,16 @@ pub mod entity_lanes;
 pub mod namespace;
 pub mod protected_store;
 /// Bounded offline recovery descriptions and durable paused admission guards.
+/// Original restored history remains paused until an authorized review.
 pub mod recovery;
 /// Logical disposition capacity charged in the same physical atomic store.
 pub mod reservation;
 /// Host-owned read/staging sessions; the complete envelope coordinator commits.
 pub mod session;
+/// Closed persisted node store identity; this metadata grants no state access.
+pub mod store_identity;
 pub mod store_io;
-/// Explicit reviewed tenant aggregates in the same atomic store; no authority.
+/// Explicit finite tenant quotas and coherent startup census; DTOs grant no access.
 pub mod tenant;
 
 use latent_core::{
@@ -86,6 +89,9 @@ pub struct EntityLease {
     pub expires_at_unix_millis: u64,
 }
 
+/// Legacy host read/staging port. Phase 4 state sessions transfer an affine
+/// validated plan to the complete command/result/intent/inbox coordinator;
+/// independent state-only commitment is not part of this port.
 pub trait StateBackend: Send + Sync {
     fn begin(
         &self,
@@ -110,14 +116,6 @@ pub trait StateBackend: Send + Sync {
         transaction: &'a mut StateTransaction,
         mutation: StateMutation,
     ) -> BoxFuture<'a, Result<(), PlatformError>>;
-
-    #[deprecated(
-        note = "Independent state commit cannot atomically publish Phase 4 commands, results, intents and inbox; use the complete host envelope coordinator"
-    )]
-    fn commit(
-        &self,
-        transaction: StateTransaction,
-    ) -> BoxFuture<'_, Result<CommitReceipt, PlatformError>>;
 
     fn rollback(&self, transaction: StateTransaction) -> BoxFuture<'_, Result<(), PlatformError>>;
 }

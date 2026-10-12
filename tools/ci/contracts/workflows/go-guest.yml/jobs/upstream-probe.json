@@ -63,7 +63,7 @@
       },
       {
         "name": "Install the locked compiler and generator",
-        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tbz\" https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz\necho \"4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c  $RUNNER_TEMP/go-guest-tools/go.tbz\" | sha256sum --check --strict\ntar -xjf \"$RUNNER_TEMP/go-guest-tools/go.tbz\" -C \"$RUNNER_TEMP/go-guest-tools\"\necho \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin\" >> \"$GITHUB_PATH\"\n"
+        "run": "set -euo pipefail\ncargo install --git https://github.com/bytecodealliance/componentize-go --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go\ntest \"$(wasm-tools --version | cut -d ' ' -f 1,2)\" = 'wasm-tools 1.254.0'\nmkdir -p \"$RUNNER_TEMP/go-guest-tools\"\ncurl --fail --location --max-time 180 --output \"$RUNNER_TEMP/go-guest-tools/go.tar.gz\" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz\necho \"ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/go-guest-tools/go.tar.gz\" | sha256sum --check --strict\ntar -xzf \"$RUNNER_TEMP/go-guest-tools/go.tar.gz\" -C \"$RUNNER_TEMP/go-guest-tools\"\npython3 tools/go_guest/runtime.py --prepare-compiler \"$RUNNER_TEMP/go-guest-tools/go\" --output \"$RUNNER_TEMP/go-guest-tools/go-async\"\necho \"$RUNNER_TEMP/go-guest-tools/go-async/bin\" >> \"$GITHUB_PATH\"\n"
       },
       {
         "name": "Retain pinned reproduction tools",
@@ -74,13 +74,13 @@
         "with": {
           "if-no-files-found": "error",
           "name": "go-guest-tools-${{ github.sha }}",
-          "path": "${{ runner.temp }}/go-guest-tools/go.tbz\n${{ runner.temp }}/go-guest-tools/componentize-go\n${{ runner.temp }}/go-guest-tools/wasm-tools\n${{ runner.temp }}/go-guest-tools/tools.sha256\n",
+          "path": "${{ runner.temp }}/go-guest-tools/go.tar.gz\n${{ runner.temp }}/go-guest-tools/componentize-go\n${{ runner.temp }}/go-guest-tools/wasm-tools\n${{ runner.temp }}/go-guest-tools/tools.sha256\n",
           "retention-days": 1
         }
       },
       {
         "name": "Generate and compile upstream and constrained LSF components",
-        "run": "python3 tools/go_guest/probe.py --output \"$RUNNER_TEMP/go-guest-probe\" --go \"$RUNNER_TEMP/go-guest-tools/go-linux-amd64-bootstrap/bin/go\""
+        "run": "python3 tools/go_guest/probe.py --output \"$RUNNER_TEMP/go-guest-probe\" --go \"$RUNNER_TEMP/go-guest-tools/go-async/bin/go\""
       },
       {
         "name": "Qualify proposed transaction shapes and explicit owners with the maintained Go compiler",
@@ -130,7 +130,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Retain both original transaction compiler and incoming captured-library commands, guards and diagnostic paths, with all historical command coverage unchanged. Reconcile development72dabc captured native SDK dependency/isolation prerequisites with all original Phase4 definition/authoring commands, historical mappings, guarded case declarations, matrices and deadlines retained. Reviewed actual normalized workflow union: keep authenticated framework preparation and original narrow full-state precheck/subset assertions, append the landed deferred JetStream delegated owners, and preserve every original command and timeout.",
+  "reviewReason": "Reviewed official Go 1.27.2 compiler with exact private scheduler source staging; all commands, original limits, checked digests, case selections and required artifacts remain",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

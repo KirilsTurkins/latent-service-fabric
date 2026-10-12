@@ -127,7 +127,7 @@ def python_expectations(root: Path) -> dict:
     for path in sorted(directory.glob("test_*.py")):
         name = path.relative_to(root).as_posix()
         safe_path(root, name)
-        tree = ast.parse(path.read_text(), filename=name)
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=name)
         guards = {}
         parents = {child: parent for parent in ast.walk(tree) for child in ast.iter_child_nodes(parent)}
         module_guards = fixture_guards(tree.body, "module")

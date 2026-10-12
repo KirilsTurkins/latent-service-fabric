@@ -3,7 +3,7 @@
 use super::preparation::{
     counters, empty_component, metadata_overflow, ComponentIntegrity, PreparationCounters,
 };
-use super::{bounded_error, sha256_digest};
+use super::{bounded_error, sha256_digest, PreparedRuntime};
 use crate::bindings;
 use crate::config::{WasmtimeConfig, PHASE0_BACKEND_ID};
 use crate::containment::platform_error;
@@ -14,7 +14,7 @@ use latent_artifacts::{AdmissionAuthority, ArtifactPreparationIdentity, CapsuleA
 use latent_core::{Metadata, PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedComponent};
 use latent_manifest::{ExecutionBackendKind, StateModel, ThreadingModel};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use wasmtime::component::{Component, InstancePre, Linker};
 use wasmtime::Engine;
 
@@ -32,7 +32,7 @@ pub(super) struct PreparationContext {
     pub(super) config: WasmtimeConfig,
     pub(super) preparation: Arc<PreparationCounters>,
     pub(super) observer: PreparationObserver,
-    pub(super) uncached: super::UncachedPrepared,
+    pub(super) uncached: Arc<Mutex<Option<(String, Arc<PreparedRuntime>)>>>,
 }
 
 impl PreparationContext {
@@ -125,6 +125,15 @@ impl PreparationContext {
                 false,
             )
         })?;
+        if self.config.activation_runtime.is_some() {
+            crate::host::runtime::install(&mut linker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind activation runtime support",
+                    false,
+                )
+            })?;
+        }
         self.install_transaction_imports(&mut linker)?;
         if let Some(invoker) = self.local_services() {
             crate::host::service::install(&mut linker, invoker).map_err(|error| {
@@ -152,6 +161,15 @@ impl PreparationContext {
                 platform_error(
                     PlatformErrorCode::Internal,
                     "failed to bind streaming HTTP import",
+                    false,
+                )
+            })?;
+        }
+        if let Some(invoker) = self.outbound_streams() {
+            crate::host::networking::install(&mut linker, invoker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind outbound streams",
                     false,
                 )
             })?;
@@ -245,6 +263,15 @@ impl PreparationContext {
         &self,
     ) -> Option<Arc<dyn latent_capabilities::broker::http::OutboundHttpInvoker>> {
         self.capabilities.as_ref()?.upgrade()?.http().ok()
+    }
+    pub(super) fn outbound_streams(
+        &self,
+    ) -> Option<Arc<dyn latent_capabilities::broker::network::OutboundStreamInvoker>> {
+        self.capabilities
+            .as_ref()?
+            .upgrade()?
+            .outbound_streams()
+            .ok()
     }
     pub(super) fn local_services(
         &self,

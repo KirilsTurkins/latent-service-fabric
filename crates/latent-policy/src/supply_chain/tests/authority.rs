@@ -87,14 +87,30 @@ fn uncovered_time_never_advances_clock_and_failed_covered_requests_do() {
     assert!(authority
         .verify(&TenantId("tests".into()), fixture.upload())
         .is_err());
-    assert_eq!(authority.inner.lock().unwrap().observed_at, NOW);
+    assert_eq!(
+        authority
+            .inner
+            .lock()
+            .unwrap()
+            .observed_at
+            .load(Ordering::Acquire),
+        NOW
+    );
     fixture.clock.set(NOW + 3);
     let mut unsigned = fixture.upload();
     unsigned.signatures.clear();
     assert!(authority
         .verify(&TenantId("tests".into()), unsigned)
         .is_err());
-    assert_eq!(authority.inner.lock().unwrap().observed_at, NOW + 3);
+    assert_eq!(
+        authority
+            .inner
+            .lock()
+            .unwrap()
+            .observed_at
+            .load(Ordering::Acquire),
+        NOW + 3
+    );
     fixture.clock.set(NOW + 2);
     assert!(authority
         .verify(&TenantId("tests".into()), fixture.upload())

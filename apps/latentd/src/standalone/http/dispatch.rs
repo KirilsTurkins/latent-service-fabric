@@ -1,13 +1,18 @@
 use super::{head::Head, Shared};
 use latent_activation::{ActivationOutcome, ActivationRequest};
 use latent_control_store::http_routes::{AcceptedHttpRoute, AcceptedHttpTarget};
-use latent_core::{Metadata, PlatformError, PlatformErrorCode};
+use latent_core::{
+    diagnostic::{
+        ActivationDiagnostic, ActivationDiagnosticSink, DiagnosticReason, DiagnosticStage,
+    },
+    PlatformError, PlatformErrorCode, TenantId,
+};
 use latent_ingress::http::{
     self,
     cache::{CacheLookup, CacheRequest, CacheScope},
-    Delivery, Invocation, Outcome, TrustedContext,
+    Delivery, DeliveryCause, Invocation, Outcome, TrustedContext,
 };
-use latent_node::ActivationReceipt;
+use latent_node::{ActivationReceipt, LocalActivationJournal};
 use latent_wire::invocation::{
     InvocationTraceSource, LocalPrincipalPolicy, PrincipalPolicy, RetainedActivation,
 };
@@ -83,12 +88,24 @@ pub(super) struct Retention {
     pub invocation: Invocation,
     pub _route: latent_control_store::http_routes::TriggerReadLease,
     cache: Option<CacheRequest>,
-    transaction: bool,
+    journal: LocalActivationJournal,
+    tenant: TenantId,
+    scheme: http::Scheme,
+    transaction: Option<(
+        Arc<latent_node::transaction_runtime::NativeTransactionAdmission>,
+        Arc<latent_node::transaction_runtime::TransactionInstallation>,
+    )>,
+    clock: Arc<dyn latent_core::ActivationClock>,
 }
 pub(super) enum Begun {
     Cached(Delivery),
+    Result(latent_core::BoxFuture<'static, Result<Delivery, u16>>),
     Activation(Box<RetainedActivation<Retention>>),
 }
+#[expect(
+    clippy::too_many_lines,
+    reason = "Original route, inbound, cleanup and delivery owners transfer in one bounded scope"
+)]
 pub(super) fn begin(
     head: Head,
     accepted: AcceptedHttpRoute,
@@ -102,36 +119,59 @@ pub(super) fn begin(
     if !matches!(accepted.target(), AcceptedHttpTarget::Application { .. }) {
         return Err(502);
     }
-    let cleanup = shared
-        .services
-        .cleanup
-        .reserve_activation()
-        .map_err(status)?;
+    let transaction = accepted.transaction().cloned();
     let trace = shared.traces.next_trace().map_err(status)?;
     let context = TrustedContext::new(head.principal, trace).map_err(|_| 500u16)?;
     let mapped = head
         .collector
         .finish(context)
         .map_err(|e| e.status().unwrap_or(0))?;
-    let transaction = accepted.transaction().cloned();
-    let cache = if transaction.is_none() {
-        cache_request(&mapped, &accepted, shared)
-    } else {
-        None
-    };
+    let cache = cache_request(&mapped, &accepted, shared);
     let (invocation, facts) = super::transaction::map(mapped, transaction.as_ref())?;
     let (target, lease) = accepted.into_parts();
     let AcceptedHttpTarget::Application { revision, catalog } = target else {
         drop(lease);
         return Err(502);
     };
-    let request = activation_request(
-        &invocation,
-        &revision.target,
-        shared,
-        transaction.as_ref(),
-        facts.as_ref(),
-    );
+    if let (Some(route), Some(facts)) = (transaction.as_ref(), facts.as_ref()) {
+        if route.mode() == http::transaction::RouteMode::Result {
+            return Ok(Begun::Result(super::transaction::recover(
+                shared.services.transactions.as_ref().ok_or(503u16)?,
+                route,
+                facts,
+                invocation,
+                revision,
+                lease,
+            )?));
+        }
+    }
+    let cleanup = shared
+        .services
+        .cleanup
+        .reserve_activation()
+        .map_err(status)?;
+    let request = ActivationRequest {
+        activation_id: None,
+        parent_activation_id: None,
+        root_activation_id: None,
+        principal: invocation.context().principal().clone(),
+        target: revision.target.clone(),
+        deadline_unix_millis: Some(invocation.deadline().unix_millis()),
+        priority: 0,
+        trace: invocation.context().trace().clone(),
+        idempotency_key: None,
+        retry_attempt: 0,
+        budget: super::transaction::budget(&shared.services.budget, transaction.as_ref()),
+        metadata: facts
+            .as_ref()
+            .map(super::transaction::business_metadata)
+            .unwrap_or_default(),
+        input: Vec::new(),
+        input_media_type: http::VALUE_MEDIA_TYPE.to_owned(),
+    };
+    // Diagnostics belong to the admitted target, including principals whose
+    // tenant scope is global. Never derive this from a guest header or value.
+    let tenant = revision.target.tenant.clone();
     let mut reserved = shared
         .services
         .manager
@@ -144,11 +184,19 @@ pub(super) fn begin(
         )
         .map_err(status)?;
     let eligibility = reserved.publication_eligibility().map_err(status)?;
-    if let (Some(route), Some(facts)) = (&transaction, facts) {
-        let state = shared.services.state.as_ref().ok_or(403u16)?;
-        super::transaction::bind(state, route, &facts, &eligibility, &mut reserved)
-            .map_err(status)?;
-    }
+    let transaction = match (transaction.as_ref(), facts.as_ref()) {
+        (Some(route), Some(facts)) => Some(
+            super::transaction::bind(
+                shared.services.transactions.as_ref().ok_or(503u16)?,
+                route,
+                facts,
+                &mut reserved,
+                invocation.input().len(),
+            )
+            .map_err(status)?,
+        ),
+        _ => None,
+    };
     let cache = match cache.map(|request| {
         request
             .bind_eligibility(eligibility.cache_digest())
@@ -172,45 +220,24 @@ pub(super) fn begin(
             invocation,
             _route: lease,
             cache,
-            transaction: transaction.is_some(),
+            journal: shared.services.manager.journal(),
+            tenant,
+            scheme: shared.settings.scheme,
+            transaction,
+            clock: Arc::clone(&shared.services.clock),
         },
     );
     // This fixed-size owner allocation is covered by the exchange reservation.
     Ok(Begun::Activation(Box::new(activation)))
-}
-fn activation_request(
-    invocation: &Invocation,
-    target: &latent_routing::InvocationTarget,
-    shared: &Shared,
-    route: Option<&http::transaction::TransactionRoute>,
-    facts: Option<&http::transaction::TransactionRequest>,
-) -> ActivationRequest {
-    ActivationRequest {
-        activation_id: None,
-        parent_activation_id: None,
-        root_activation_id: None,
-        principal: invocation.context().principal().clone(),
-        target: target.clone(),
-        deadline_unix_millis: Some(invocation.deadline().unix_millis()),
-        priority: 0,
-        trace: invocation.context().trace().clone(),
-        idempotency_key: facts.and_then(|facts| {
-            facts
-                .client_key()
-                .map(|key| latent_core::IdempotencyKey(key.into()))
-        }),
-        retry_attempt: 0,
-        budget: super::transaction::budget(&shared.services.budget, route),
-        metadata: Metadata::new(),
-        input: Vec::new(),
-        input_media_type: http::VALUE_MEDIA_TYPE.to_owned(),
-    }
 }
 fn cache_request(
     mapped: &http::Request,
     accepted: &AcceptedHttpRoute,
     shared: &Shared,
 ) -> Option<CacheRequest> {
+    if accepted.transaction().is_some() {
+        return None;
+    }
     let cache = shared.handle.0.response_cache.as_ref()?;
     let AcceptedHttpTarget::Application { revision, .. } = accepted.target() else {
         return None;
@@ -252,8 +279,14 @@ fn cached(
         .map_err(|e| e.status().unwrap_or(0))
 }
 pub(super) fn complete(receipt: ActivationReceipt, retention: Retention) -> Result<Delivery, u16> {
-    if retention.transaction {
-        return super::transaction::complete(&receipt, retention.invocation);
+    if let Some((admission, installation)) = &retention.transaction {
+        return super::transaction::complete(
+            receipt,
+            retention.invocation,
+            admission,
+            installation,
+            retention.clock.as_ref(),
+        );
     }
     let outcome = match &receipt.outcome {
         ActivationOutcome::Succeeded(value) => Outcome::Returned {
@@ -263,15 +296,35 @@ pub(super) fn complete(receipt: ActivationReceipt, retention: Retention) -> Resu
         ActivationOutcome::DeclaredError { .. } => Outcome::DeclaredError,
         ActivationOutcome::Failed { error, .. } => Outcome::Platform(error.code),
     };
-    let delivery = retention
+    let mut delivery = retention
         .invocation
         .complete_cached(outcome, retention.cache)
-        .map_err(|e| e.status().unwrap_or(0));
+        .map_err(|e| e.status().unwrap_or(0))?;
+    // Validate while the actual activation ID is still owned. The socket writer
+    // also checks the profile; no invalid output can publish a pending cache fill.
+    delivery
+        .enforce_browser_profile(retention.scheme)
+        .map_err(|e| e.status().unwrap_or(0))?;
+    if delivery.cause() == DeliveryCause::InvalidGuestResponse {
+        retention.journal.record(
+            &retention.tenant,
+            &receipt.activation_id,
+            ActivationDiagnostic::new(
+                DiagnosticStage::OutputValidation,
+                DiagnosticReason::HttpResponseRejected,
+            ),
+        );
+    }
     // Only the bounded delivery owner survives into socket writes.
     drop(receipt);
-    delivery
+    Ok(delivery)
 }
-fn status(error: PlatformError) -> u16 {
+pub(super) fn status(error: PlatformError) -> u16 {
+    #[cfg(test)]
+    eprintln!(
+        "HTTP adapter refusal code={:?} reason={}",
+        error.code, error.message
+    );
     let code = error.code;
     drop(error);
     match code {

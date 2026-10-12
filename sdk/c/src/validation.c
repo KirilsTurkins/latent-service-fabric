@@ -26,8 +26,9 @@ static bool page_request(const latent_profile_page_request *page, uint32_t maxim
 }
 
 bool lsf_request_valid(latent_profile_call *call, const void *request) {
+    if (lsf_is_transaction(call->operation)) return lsf_transaction_request_valid(call, request);
     latent_string tenant = call->owner->config.tenant;
-    switch (call->operation) {
+    switch ((int)call->operation) {
         case LSF_INSPECT_HTTP_TARGET: return lsf_target_request_valid(call, request);
         case LSF_INVOKE: {
             const latent_profile_invoke_request *value = request;
@@ -185,7 +186,8 @@ static bool receipt_valid(latent_profile_call *call, const latent_profile_capabi
 }
 
 bool lsf_response_valid(latent_profile_call *call) {
-    switch (call->operation) {
+    if (lsf_is_transaction(call->operation)) return lsf_transaction_response_valid(call);
+    switch ((int)call->operation) {
         case LSF_INSPECT_HTTP_TARGET: return lsf_target_response_valid(call, &call->result.inspect_http_target.value);
         case LSF_INVOKE: {
             const latent_profile_invoke_response *value = &call->result.invoke.value;
@@ -246,16 +248,6 @@ bool lsf_response_valid(latent_profile_call *call) {
                     || !bounded(node->principal_kind, 64) || (node->has_terminal_state && !bounded(node->terminal_state, 64))) return false;
                 if (node->has_diagnostic && (node->diagnostic.schema_version != 1
                     || (node->diagnostic.has_profile_digest && !digest(node->diagnostic.profile_digest, "")))) return false;
-                if (node->has_transaction_staging) {
-                    const latent_profile_transaction_staging_witness *witness = &node->transaction_staging;
-                    if (witness->schema_version != 1 || witness->activation_serial == 0 || !digest(witness->command_id, "")
-                        || !digest(witness->attempt_id, "") || !digest(witness->transaction_id, "")
-                        || !digest(witness->publication_id, "publication:sha256:") || witness->staged_mutations > 128
-                        || witness->captured_intents == 0 || witness->captured_intents > 128 || !node->has_granted_budget
-                        || witness->captured_intents > node->granted_budget.effect_count || witness->state_write_bytes == 0
-                        || witness->state_write_bytes > node->granted_budget.state_write_bytes
-                        || witness->observed_at_unix_millis < node->received_at_unix_millis) return false;
-                }
             }
             return true;
         }
@@ -329,7 +321,7 @@ static bool platform_details(latent_profile_call *call, bool *limit) {
 }
 
 static void metadata_result(latent_profile_call *call) {
-    switch (call->operation) {
+    switch ((int)call->operation) {
         case LSF_INVOKE: call->result.invoke.metadata = call->metadata; break;
         case LSF_CANCEL: call->result.cancel.metadata = call->metadata; break;
         case LSF_GET_ACTIVATION: call->result.get_activation.metadata = call->metadata; break;
@@ -346,7 +338,7 @@ static void metadata_result(latent_profile_call *call) {
 void lsf_finish_response(latent_profile_call *call) {
     if (lsf_now() >= call->deadline) { lsf_fail(call, LATENT_PROFILE_FAILURE_CATEGORY_DEADLINE); return; }
     if (!call->status_ok || !call->content_type_ok || !call->has_grpc_status
-        || (call->metadata.has_audit_ack && (call->metadata.audit_ack.status == LATENT_PROFILE_AUDIT_ACK_STATUS_DURABLE
+        || (!lsf_is_transaction(call->operation) && call->metadata.has_audit_ack && (call->metadata.audit_ack.status == LATENT_PROFILE_AUDIT_ACK_STATUS_DURABLE
              || call->metadata.audit_ack.status == LATENT_PROFILE_AUDIT_ACK_STATUS_OUTCOME_UNKNOWN)
              && (!call->metadata.has_audit_attempt_sequence || call->metadata.audit_attempt_sequence == 0))) {
         lsf_fail(call, LATENT_PROFILE_FAILURE_CATEGORY_DECODE); return;
@@ -360,7 +352,7 @@ void lsf_finish_response(latent_profile_call *call) {
         bool recovery = call->operation == LSF_GET_ACTIVATION || call->operation == LSF_GET_POLICY_OPERATION;
         bool observed = call->grpc_status == 3 || (call->grpc_status == 5 && !recovery) || call->grpc_status == 6
             || call->grpc_status == 7 || call->grpc_status == 9 || call->grpc_status == 10 || call->grpc_status == 12 || call->grpc_status == 16;
-        if (observed && !lsf_text_equal(call->metadata.audit_status, LSF_TEXT("outcome-unknown"))
+        if (!lsf_is_transaction(call->operation) && observed && !lsf_text_equal(call->metadata.audit_status, LSF_TEXT("outcome-unknown"))
             && !lsf_text_equal(call->metadata.audit_status, LSF_TEXT("audit-unavailable")))
             call->failure.outcome = LATENT_PROFILE_OUTCOME_KNOWLEDGE_OBSERVED;
         return;
@@ -370,6 +362,10 @@ void lsf_finish_response(latent_profile_call *call) {
     for (unsigned index = 1; index < 5; ++index) length = (length << 8) | call->response[index];
     if (length != call->response_length - 5) { lsf_fail(call, LATENT_PROFILE_FAILURE_CATEGORY_DECODE); return; }
     bool limit = false;
+    if (lsf_is_transaction(call->operation) && !lsf_transaction_wire(lsf_rpcs[call->operation].response,
+            call->response + 5, length, call->deadline, &limit)) {
+        lsf_fail(call, limit ? LATENT_PROFILE_FAILURE_CATEGORY_LIMIT : LATENT_PROFILE_FAILURE_CATEGORY_DECODE); return;
+    }
     bool decoded = lsf_decode(lsf_rpcs[call->operation].response, call->response + 5, length,
                               &call->result, &call->arena, call->deadline, &limit);
     if (call->operation == LSF_INVOKE && !call->metadata.identity.has_activation_id
@@ -381,6 +377,7 @@ void lsf_finish_response(latent_profile_call *call) {
     if (!decoded || !lsf_response_valid(call)) {
         lsf_fail(call, limit ? LATENT_PROFILE_FAILURE_CATEGORY_LIMIT : LATENT_PROFILE_FAILURE_CATEGORY_DECODE); return;
     }
+    if (lsf_is_transaction(call->operation)) { lsf_complete(call); return; }
     call->metadata.outcome = call->operation == LSF_GET_POLICY_OPERATION && !call->result.get_policy_operation.value.has_receipt
         ? LATENT_PROFILE_OUTCOME_KNOWLEDGE_UNKNOWN : LATENT_PROFILE_OUTCOME_KNOWLEDGE_OBSERVED;
     metadata_result(call);

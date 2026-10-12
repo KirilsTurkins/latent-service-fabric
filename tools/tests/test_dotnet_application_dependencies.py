@@ -621,11 +621,14 @@ class CapturedCompilerSelection(unittest.TestCase):
             # Member names model the selected WIT; signatures remain WAC's check.
             symbol = {
                 'latent:clock/monotonic': 'now-nanos',
+                'latent:runtime/activation': 'observe',
+                'latent:http/streaming': 'open',
                 'latent:random/random': 'u64-value',
                 'latent:secrets/reader': 'read',
                 'wasi:random/random': 'get-random-bytes',
                 'wasi:random/insecure': 'get-insecure-random-u64',
                 'wasi:http/types': '[constructor]fields',
+                'wasi:http/outgoing-handler': 'handle',
             }[base]
             interfaces.append({'name': name, 'package': len(packages) - 1,
                                'functions': {symbol: {'name': symbol}}, 'types': {}})

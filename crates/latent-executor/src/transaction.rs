@@ -4,31 +4,6 @@
 
 use latent_core::{transaction_contract::Value, ActivationBudget, ActivationId, BoxFuture};
 
-/// Original immutable claim selected by the trusted command host. These
-/// descriptive identifiers convey neither read permission nor commit authority.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TransactionStagingIdentity {
-    pub command_id: String,
-    pub attempt_id: String,
-    pub transaction_id: String,
-    pub publication_id: String,
-}
-
-/// Observed only after insertion of a successfully captured intent. Provisional
-/// budget reservations, running state and guest metadata cannot produce it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct TransactionStagingProgress {
-    pub staged_mutations: u32,
-    pub captured_intents: u32,
-    pub state_write_bytes: u64,
-}
-
-/// A trusted manager supplies this bounded observer before guest access.
-/// Reporting performs no native I/O and changes no business/commit disposition.
-pub trait TransactionStagingObserver: Send + Sync {
-    fn observe(&self, progress: TransactionStagingProgress);
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Command,
@@ -132,17 +107,6 @@ impl RetainedTransfer {
 /// once-only even after guest drop; every method rechecks current authority.
 /// No method exposes a namespace selector, native view, provider or commit.
 pub trait TransactionHost: Send + Sync {
-    /// Only command hosts expose an original claim. No guest-visible WIT method
-    /// can bind an observer or supply the identifiers.
-    fn staging_identity(&self) -> Option<TransactionStagingIdentity> {
-        None
-    }
-    fn bind_staging_observer(
-        &self,
-        _observer: std::sync::Arc<dyn TransactionStagingObserver>,
-    ) -> Result<(), StateFailure> {
-        Err(StateFailure::UnsupportedVersion)
-    }
     fn activation_id(&self) -> &ActivationId;
     fn mode(&self) -> Mode;
     fn budget(&self) -> &ActivationBudget;
@@ -152,16 +116,19 @@ pub trait TransactionHost: Send + Sync {
     fn command_info(&self) -> Result<CommandInfo, StateFailure>;
     fn authorize_read(&self) -> Result<(), StateFailure>;
     fn retain_transfer(&self, bytes: usize) -> Result<RetainedTransfer, StateFailure>;
-    fn read(&self, key: Vec<u8>) -> BoxFuture<'_, Result<Option<VersionedValue>, StateFailure>>;
-    fn scan(
-        &self,
+    fn read<'a>(
+        &'a self,
+        key: Vec<u8>,
+    ) -> BoxFuture<'a, Result<Option<VersionedValue>, StateFailure>>;
+    fn scan<'a>(
+        &'a self,
         prefix: Vec<u8>,
         limit: u32,
         cursor: Option<Vec<u8>>,
-    ) -> BoxFuture<'_, Result<Page, StateFailure>>;
-    fn put(&self, key: Vec<u8>, value: Value) -> BoxFuture<'_, Result<(), StateFailure>>;
-    fn delete(&self, key: Vec<u8>) -> BoxFuture<'_, Result<(), StateFailure>>;
-    fn stage(&self, intent: Intent) -> BoxFuture<'_, Result<u32, IntentFailure>>;
+    ) -> BoxFuture<'a, Result<Page, StateFailure>>;
+    fn put<'a>(&'a self, key: Vec<u8>, value: Value) -> BoxFuture<'a, Result<(), StateFailure>>;
+    fn delete<'a>(&'a self, key: Vec<u8>) -> BoxFuture<'a, Result<(), StateFailure>>;
+    fn stage<'a>(&'a self, intent: Intent) -> BoxFuture<'a, Result<u32, IntentFailure>>;
     /// Invoked by the real Store's host-state destructor after guest references
     /// are severed. This closes guest access; pending physical IO stays owned.
     fn finish_guest_access(&self);

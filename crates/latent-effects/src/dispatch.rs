@@ -115,8 +115,6 @@ pub struct EffectRecord {
     latest: Option<AttemptReceipt>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     management: Option<EffectManagementStamp>,
-    /// V3 only: exact immutable operator reconciliation receipt, never a
-    /// provider acknowledgement or another delivery attempt.
     #[serde(skip)]
     recovery_close: Option<[u8; 32]>,
 }
@@ -136,12 +134,28 @@ struct ClosedRecordBodyOwned {
 }
 
 impl EffectRecord {
-    /// Immutable authority bytes do not grow after commit. The remaining fixed
-    /// fields can add at most 4 KiB: two bounded escaped receipt strings,
-    /// disposition tags and ten fixed-width integer/optional observations.
+    /// Actual supported decoded envelope format, independent from its payload,
+    /// adapter profile and application schema. This metadata is never a grant.
+    #[must_use]
+    pub const fn durable_format(&self) -> (&'static str, u32) {
+        (
+            "latent.effect-record.v1",
+            if self.recovery_close.is_some() {
+                3
+            } else if self.management.is_some() {
+                2
+            } else {
+                1
+            },
+        )
+    }
+
+    /// Prepay every currently supported record shape, including the original
+    /// bounded management stamp. Optional management rows are charged when
+    /// their exact original batches are prepared, not invented at commit.
     pub fn retained_bound(authority: &DurableEffectAuthority) -> Result<u64, AuthorityError> {
-        let initial = Self::committed(authority)?.encode()?.len() as u64;
-        initial.checked_add(4096).ok_or(AuthorityError::Invalid)
+        Self::committed(authority)?.encode()?;
+        Ok(65_541)
     }
     pub fn committed(authority: &DurableEffectAuthority) -> Result<Self, AuthorityError> {
         Ok(Self {
@@ -224,6 +238,11 @@ impl EffectRecord {
     }
 
     #[must_use]
+    pub fn management(&self) -> Option<&EffectManagementStamp> {
+        self.management.as_ref()
+    }
+
+    #[must_use]
     pub const fn recovery_close_digest(&self) -> Option<[u8; 32]> {
         self.recovery_close
     }
@@ -268,10 +287,9 @@ impl EffectRecord {
         self.validate()
     }
 
-    /// Host-audited retention may stop unresolved work only after the original
-    /// delivery horizon and actual attempt retirement. Its audit is persisted
-    /// by the complete maintenance envelope. Keep the last measured receipt;
-    /// expiry is never a fabricated provider acknowledgement or nonexecution.
+    /// Original audited retention may stop unresolved work only beyond its
+    /// delivery horizon and after the caller proves actual attempt retirement.
+    /// Keep measured provider/administrator facts and the original last receipt.
     pub fn expire_retired(&mut self, time: EffectTime) -> Result<(), AuthorityError> {
         self.check_clock(time)?;
         if self.disposition == Disposition::Dispatching {
@@ -284,11 +302,6 @@ impl EffectRecord {
             self.disposition = Disposition::Expired;
         }
         Ok(())
-    }
-
-    #[must_use]
-    pub fn management(&self) -> Option<&EffectManagementStamp> {
-        self.management.as_ref()
     }
 
     pub(crate) fn active_attempt(&self) -> Result<AttemptIdentity, AuthorityError> {

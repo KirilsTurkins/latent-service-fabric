@@ -184,6 +184,15 @@ async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     read_body(socket, shared, buffer, &mut head, used - end, deadline).await?;
     let delivery = match dispatch::begin(head, selected, shared)? {
         dispatch::Begun::Cached(delivery) => delivery,
+        dispatch::Begun::Result(result) => {
+            let mut unexpected = [0u8; 1];
+            tokio::select! {
+                biased;
+                () = tokio::time::sleep_until(deadline.monotonic().into()) => return Err(0),
+                _ = socket.read(&mut unexpected) => return Err(0),
+                result = result => result?,
+            }
+        }
         dispatch::Begun::Activation(mut activation) => {
             let mut unexpected = [0u8; 1];
             let result = tokio::select! {

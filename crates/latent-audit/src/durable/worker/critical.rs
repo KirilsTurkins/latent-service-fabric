@@ -181,9 +181,18 @@ impl Drop for AuditAttempt {
     }
 }
 fn abandon(p: &Arc<Pending>) {
-    p.abandoned.store(true, Ordering::Release);
     if let Some(s) = p.shared.upgrade() {
+        // The worker checks abandonment under this mutex before waiting.
+        // Publish under the same fence so notification cannot precede wait.
+        let state = s
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        p.abandoned.store(true, Ordering::Release);
+        drop(state);
         s.wake.notify_one();
+    } else {
+        p.abandoned.store(true, Ordering::Release);
     }
 }
 #[expect(

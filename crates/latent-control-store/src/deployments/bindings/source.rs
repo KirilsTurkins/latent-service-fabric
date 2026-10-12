@@ -62,9 +62,28 @@ fn lookup(
         .plans
         .iter()
         .find(|plan| plan.matches_revision(revision))
-        .ok_or_else(denied)?;
+        .ok_or_else(|| missing_plan(catalog, revision))?;
     plan.check_eligible()?;
     Ok(Arc::clone(plan))
+}
+fn missing_plan(catalog: &CompiledCatalog, revision: &ResolvedRevision) -> PlatformError {
+    for index in &catalog.bindings.grant_denials {
+        let Some(record) = catalog.records.get(*index) else {
+            continue;
+        };
+        // Match the same tenant/service/publication/revision/epoch tuple as a
+        // compiled plan. Knowing another record's identifier discloses nothing.
+        if record.deployment.metadata.tenant.as_ref() == Some(&revision.target.tenant)
+            && record.deployment.service == revision.target.service
+            && record.revision == revision.revision
+            && record.deployment.release == revision.release
+            && record.publication == revision.publication
+            && catalog.generation == revision.route_generation
+        {
+            return super::grant_denied();
+        }
+    }
+    denied()
 }
 pub(super) struct LocalTarget {
     deployment: DeploymentId,

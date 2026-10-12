@@ -1,24 +1,58 @@
 {
-  "cases":["ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution","ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement","ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed","ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough","ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source","ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt"],
-  "guards":{
-    "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution":
-      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
-    "ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement":
-      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
-    "ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed":
-      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
-    "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough":
-      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
-    "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source":
-      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
-    "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt":
-      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb"
+  "schemaVersion": "latent.ci.contracts.v2",
+  "kind": "python",
+  "reviewReason": "Retain every original case/decorator/skip. The shared graph fixture adds callable wall-clock symbols for the two exact clock interfaces; all new named-facet denial and tamper cases are reviewed.",
+  "module": "tools/tests/test_dotnet_exact_composition.py",
+  "cases": [
+    "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution",
+    "ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement",
+    "ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed",
+    "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough",
+    "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source",
+    "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt",
+    "WallFacetCompositionTests.test_changed_wall_facet_bytes_fail_before_composer_execution",
+    "WallFacetCompositionTests.test_duplicate_clock_export_requires_exact_named_wall_facet",
+    "WallFacetCompositionTests.test_member_coverage_accepts_only_the_same_named_wall_override",
+    "WallFacetCompositionTests.test_named_wall_facet_replaces_only_one_exact_closed_clock_edge",
+    "WallFacetCompositionTests.test_wall_name_does_not_authorize_different_ports_versions_or_extra_authority"
+  ],
+  "guards": {
+    "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough": "bc7ef5757d9d8f0f3740422fc58c09205d8084c9a3cf3590c3538fcf3f579471",
+    "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution": "bc7ef5757d9d8f0f3740422fc58c09205d8084c9a3cf3590c3538fcf3f579471",
+    "ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement": "bc7ef5757d9d8f0f3740422fc58c09205d8084c9a3cf3590c3538fcf3f579471",
+    "ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed": "bc7ef5757d9d8f0f3740422fc58c09205d8084c9a3cf3590c3538fcf3f579471",
+    "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt": "bc7ef5757d9d8f0f3740422fc58c09205d8084c9a3cf3590c3538fcf3f579471",
+    "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source": "bc7ef5757d9d8f0f3740422fc58c09205d8084c9a3cf3590c3538fcf3f579471",
+    "WallFacetCompositionTests.test_named_wall_facet_replaces_only_one_exact_closed_clock_edge": "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5",
+    "WallFacetCompositionTests.test_wall_name_does_not_authorize_different_ports_versions_or_extra_authority": "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5",
+    "WallFacetCompositionTests.test_duplicate_clock_export_requires_exact_named_wall_facet": "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5",
+    "WallFacetCompositionTests.test_member_coverage_accepts_only_the_same_named_wall_override": "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5",
+    "WallFacetCompositionTests.test_changed_wall_facet_bytes_fail_before_composer_execution": "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5"
   },
-  "kind":"python",
-  "module":"tools/tests/test_dotnet_exact_composition.py",
-  "reviewReason":"Add six exact-interface composition controls after the actual pinned WAC semver duplicate-argument failure; preserve all historical authoring and entropy cases. Callable-member fixture repair: preserve every original case, test body, skip, base, decorator and execution guard; update only the reviewed graph-helper setup identity. The frozen type-only reader reproduces nine failures before this fixture repair; production clock authority, structural type-only classification and exact-version matching are unchanged. Store identical case-owned guards using the authenticated shared v2 representation; retain every original case and execution control.",
-  "schemaVersion":"latent.ci.contracts.v2",
-  "guardDefinitions":{
-    "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a5b5b87702a6df9d8d991735aedb90e6613b2f5b4ab3bb0adf7b030da04b0bbc","class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"],"skipSites":[]}
+  "guardDefinitions": {
+    "bc7ef5757d9d8f0f3740422fc58c09205d8084c9a3cf3590c3538fcf3f579471": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e6f9fb638b45ed80dc12295e725ad5ebb5acb20aedac52f4c87aadcb95bbbb71",
+        "class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"
+      ]
+    },
+    "14b4895eed8c37618fb3d6f8451de2bcd029181c145971c74d7ca15336ca6bc5": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e6f9fb638b45ed80dc12295e725ad5ebb5acb20aedac52f4c87aadcb95bbbb71",
+        "class:setup-sha256:49c4fbc4189c9d72236491a93c6e80c64fe712430640c69d6fd0f5dcb93b712b"
+      ]
+    }
   }
 }

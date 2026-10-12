@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+import hashlib
 import json
+import os
 from pathlib import Path
+import re
 import shutil
 import socket
+import stat
 import sys
 import tempfile
 import time
@@ -20,9 +25,150 @@ from tools.phase2_operator_scenario import NODE_ID, configure_node, connect, sto
 from tools.phase3_web_scenario import FOREIGN_TOKEN, client_profile, foreign_profile, http_response, publish, tree_inventory
 from tools.run_phase2_operator_workflow import registry_fixture, registry_profile
 from tools.run_security_profile_workflow import replace_config
+from tools.static_site import MAX_ASSETS, MAX_ASSET_BYTES
 from tools.test_run import redact
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def active_installation(client, node):
+    """Select only the private installation started by the existing restore drill."""
+    arguments = node.owner.process.args
+    root = client.directory.parent / 'restored-installation'
+    require(isinstance(arguments, list) and len(arguments) == 4
+            and arguments[1:3] == ['serve', '--config']
+            and Path(arguments[3]) == root / 'node.json', 'static-fault-active-installation')
+    require(read_json(root / 'node.json')['dataDirectory'] == 'data', 'static-fault-data-directory')
+    return root
+
+
+def fault_identity(info):
+    return info.st_dev, info.st_ino, info.st_size, info.st_nlink
+
+
+def fault_regular(info):
+    require(stat.S_ISREG(info.st_mode) and 0 < info.st_nlink <= 4096
+            and not (getattr(info, 'st_file_attributes', 0) & 0x400)
+            and (not hasattr(os, 'geteuid') or info.st_uid == os.geteuid()), 'static-fault-owned-regular-file')
+
+
+def fault_digest(stream, size, client=None):
+    stream.seek(0)
+    digest, total = hashlib.sha256(), 0
+    while True:
+        if client is not None:
+            client.cancellation.check()
+            require(time.monotonic() < client.deadline, 'static-fault-deadline')
+        chunk = stream.read(min(16384, size + 1 - total))
+        if not chunk:
+            break
+        total += len(chunk)
+        require(total <= size, 'static-fault-blob-growth')
+        digest.update(chunk)
+    require(total == size, 'static-fault-blob-size')
+    return 'sha256:' + digest.hexdigest()
+
+
+@contextmanager
+def corrupt_signed_error_blob(client, installation, asset):
+    """Flip one byte of the actual signed blob and restore that inode in finally.
+
+    Catalog publication hard links are expected. The stopped restore drill has
+    already copied their complete private installation into separate inodes;
+    package inputs and the stopped original installation remain untouched.
+    """
+    digest, size = asset.get('digest'), asset.get('size')
+    require(asset.get('path') == '/404.html' and asset.get('mediaType') == 'text/html'
+            and isinstance(digest, str) and re.fullmatch(r'sha256:[0-9a-f]{64}', digest)
+            and type(size) is int and 0 < size <= MAX_ASSET_BYTES, 'static-fault-signed-error-asset')
+    require(installation.is_absolute() and installation.resolve(strict=True) == installation,
+            'static-fault-canonical-installation')
+    root = installation / 'data/releases/blobs'
+    for directory in (installation, installation / 'data', installation / 'data/releases', root):
+        info = directory.lstat()
+        require(stat.S_ISDIR(info.st_mode) and not directory.is_symlink()
+                and not (getattr(info, 'st_file_attributes', 0) & 0x400)
+                and (not hasattr(os, 'geteuid') or info.st_uid == os.geteuid()), 'static-fault-owned-directory')
+    path = root / digest[7:]
+    before = path.lstat()
+    fault_regular(before)
+    require(before.st_size == size, 'static-fault-blob-size')
+    flags = os.O_RDWR | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_CLOEXEC', 0) | getattr(os, 'O_NONBLOCK', 0)
+    descriptor = os.open(path, flags)
+    with os.fdopen(descriptor, 'r+b', buffering=0) as stream:
+        opened = os.fstat(stream.fileno())
+        fault_regular(opened)
+        require(fault_identity(opened) == fault_identity(before), 'static-fault-blob-replaced')
+        require(fault_digest(stream, size, client) == digest, 'static-fault-original-digest')
+        stream.seek(0)
+        original = stream.read(1)
+        changed = bytes([original[0] ^ 1])
+        observation = {'signedDigest': digest, 'signedBytes': size, 'restored': False}
+        # The finally boundary includes the first write and fsync too. Cleanup
+        # restores the held original inode despite cancellation/deadline refusal.
+        try:
+            stream.seek(0)
+            require(stream.write(changed) == 1, 'static-fault-write')
+            stream.flush()
+            os.fsync(stream.fileno())
+            observation['corruptDigest'] = fault_digest(stream, size, client)
+            require(observation['corruptDigest'] != digest, 'static-fault-not-applied')
+            yield observation
+        finally:
+            current = os.fstat(stream.fileno())
+            fault_regular(current)
+            require(fault_identity(current) == fault_identity(before), 'static-fault-inode-changed')
+            if 'corruptDigest' in observation:
+                require(fault_digest(stream, size) == observation['corruptDigest'], 'static-fault-concurrent-content-change')
+            stream.seek(0)
+            require(stream.write(original) == 1, 'static-fault-restore-write')
+            stream.flush()
+            os.fsync(stream.fileno())
+            require(fault_digest(stream, size) == digest, 'static-fault-restore-digest')
+            require(fault_identity(path.lstat()) == fault_identity(before), 'static-fault-path-replaced')
+            observation['restored'] = True
+
+
+def corrupt_error_document(client, args, node, hosts, records, publications):
+    asset = next(row for row in records['generator']['assets'] if row['path'] == '/404.html')
+    before_idle, before_capacity = idle(client), catalog_capacity(client, args)
+    # Run before smoke/browser first cache the verified error bytes. Cache hits
+    # may correctly retain previously verified immutable content after a fault.
+    with corrupt_signed_error_blob(client, active_installation(client, node), asset) as fault:
+        wire = []
+        for method in ('GET', 'HEAD'):
+            body, fields = http_response(client, node, hosts['generator'], '/guide/missing', method=method,
+                headers={'Accept': 'text/html'}, expected=502)
+            require(not body and fields['content-length'] == '0' and fields['cache-control'] == 'no-store'
+                    and 'content-type' not in fields and 'etag' not in fields, 'static-corrupt-error-wire-body')
+            wire.append({'method': method, 'status': 502, 'originBodyBytes': len(body)})
+        require(b'Static guide' in http_response(client, node, hosts['generator'], '/guide/')[0],
+                'static-corruption-unrelated-document')
+        actual_browser = browser(client, args, hosts, 'A', mode='error-corrupt')
+        during_idle = idle(client)
+    restored = []
+    for method in ('GET', 'HEAD'):
+        body, fields = http_response(client, node, hosts['generator'], '/guide/missing', method=method,
+            headers={'Accept': 'text/html'}, expected=404)
+        require(fields['content-length'] == str(asset['size']) and fields['cache-control'] == 'private, no-store',
+                'static-restored-error-representation')
+        require((not body) if method == 'HEAD' else
+                'sha256:' + hashlib.sha256(body).hexdigest() == asset['digest'], 'static-restored-error-digest')
+        restored.append({'method': method, 'status': 404, 'originBodyBytes': len(body),
+                         'representationBytes': int(fields['content-length'])})
+    after_idle, after_capacity = idle(client), catalog_capacity(client, args)
+    require(before_capacity['accounting'] == after_capacity['accounting'], 'static-corruption-catalog-accounting')
+    near_count = []
+    for name in ('generator', 'generator-docs'):
+        count = len(records[name]['assets'])
+        require(MAX_ASSETS - 2 <= count <= MAX_ASSETS, 'static-near-count-fixture')
+        near_count.append({'publicationId': publications[name], 'signedFixtureAssetCount': count,
+                           'maximumAssets': MAX_ASSETS, 'remainingAssetCount': MAX_ASSETS - count})
+    return {'passed': True, 'fault': fault, 'corruptOriginResponses': wire, 'browser': actual_browser,
+            'restoredOriginResponses': restored, 'nearCountPublications': near_count,
+            'before': before_idle, 'during': during_idle, 'after': after_idle,
+            'catalogAccountingUnchanged': True, 'assetCountsSource': 'signed-fixture',
+            'physicalCacheBytesClaimed': False}
 
 
 def configure(directory, fixture):
@@ -207,7 +353,23 @@ def smoke(client, node, hosts, records, publications):
         require(b'Static home' in http_response(client, node, host, mount + '/')[0], 'static-root-document')
         _, redirect = http_response(client, node, host, mount + '/guide?q=1', expected=308)
         require(redirect['location'] == mount + '/guide/?q=1', 'static-mounted-redirect')
-        http_response(client, node, host, mount + '/guide/missing', headers={'Accept': 'text/html'}, expected=404)
+        missing, error_fields = http_response(client, node, host, mount + '/guide/missing', headers={'Accept': 'text/html'}, expected=404)
+        if not mount:
+            require(b'Page not found' in missing and error_fields['cache-control'] == 'private, no-store', 'static-signed-404')
+            head, head_fields = http_response(client, node, host, mount + '/guide/missing', method='HEAD',
+                headers={'Accept': 'text/html', 'If-None-Match': error_fields['etag']}, expected=404)
+            require(not head and head_fields['content-length'] == str(len(missing))
+                    and head_fields['etag'] == error_fields['etag'], 'static-error-head-representation')
+            for condition in [{'If-None-Match': error_fields['etag']}, {'If-Match': '"other"'}]:
+                body, _ = http_response(client, node, host, mount + '/guide/missing',
+                    headers={'Accept': 'text/html', **condition}, expected=404)
+                require(body == missing, 'static-error-condition-preserves-404')
+            for path in ['/missing.js', '/missing.css', '/missing.svg', '/missing.woff2', '/api/missing']:
+                body, _ = http_response(client, node, host, path, headers={'Accept': 'text/html',
+                    'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document'}, expected=404)
+                require(not body, 'spoofed-metadata-cannot-return-error-document')
+        else:
+            require(not missing, 'static-unconfigured-404')
     record = records['csr-a']
     asset = next(row for row in record['assets'] if row['mediaType'] == 'text/javascript')
     immutable = '/_lsf/assets/' + publications['csr-a'] + asset['path']
@@ -266,6 +428,7 @@ def run(args):
             node, maintenance = restore_drill(client, args, node_root, config, node, hosts, publications, apply, catalog_capacity)
             selected_profile = client_profile(client, 2)
             dormant = idle(client)
+            corrupt_error = corrupt_error_document(client, args, node, hosts, records, publications)
             timings, immutable, etag = smoke(client, node, hosts, records, publications)
             browser_a = browser(client, args, hosts, 'A')
             handoff = browser(client, args, hosts, 'A', mode='cutover', transition=lambda:
@@ -288,8 +451,43 @@ def run(args):
             denied = client.call('web', 'get', '--publication', publications['csr-b'], codes=(4, 6))
             require(denied['category'] != 'success', 'static-foreign-publication')
             client.config = original_profile
+            # Both configurations use ordinary signed publications. Switching
+            # and rollback never mutate HTML or reinstate retired authority.
+            error_lifecycle = []
+            unconfigured_wire = []
+            for method in ('GET', 'HEAD'):
+                receipts.append(apply(client, 'generator-' + method.lower(), publications['generator-docs'], hosts['generator'], method=method))
+                body, fields = http_response(client, node, hosts['generator'], '/guide/missing', method=method,
+                    headers={'Accept': 'text/html'}, expected=404)
+                observed = {'schemaVersion': 'latent.static.unconfigured-error-observation.v1',
+                    'method': method, 'status': 404, 'bodyBytes': len(body),
+                    'bodySha256': hashlib.sha256(body).hexdigest(),
+                    'headers': {key: fields[key] for key in
+                        ('content-length', 'cache-control', 'content-type', 'etag') if key in fields}}
+                # Preserve the actual bounded wire observations even if the
+                # later assertion fails before the successful receipt exists.
+                print(json.dumps(observed, sort_keys=True), file=sys.stderr)
+                unconfigured_wire.append(observed)
+                require(not body and fields['content-length'] == '0'
+                        and fields['cache-control'] == 'no-store'
+                        and 'content-type' not in fields and 'etag' not in fields,
+                        'static-unconfigured-error-wire-body')
+            error_lifecycle.append(browser(client, args, hosts, 'B', mode='error-unconfigured'))
+            for method in ('GET', 'HEAD'):
+                receipts.append(apply(client, 'generator-' + method.lower(), publications['generator'], hosts['generator'], method=method))
+            error_lifecycle.append(browser(client, args, hosts, 'B', mode='error-configured'))
             audit_receipt = audit(client, receipts)
+            # The existing reconciliation campaign explicitly retires generator
+            # after testing eligible cutover/rollback. Reuse that transition;
+            # retiring it earlier would invalidate its historical obligations.
             reconciliation = route_reconciliation(client, args, directory, hosts['csr'], publications)
+            for method in ('GET', 'HEAD'):
+                body, _ = http_response(client, node, hosts['generator'], '/guide/missing', method=method,
+                    headers={'Accept': 'text/html'}, expected=(403, 404))
+                require(not body, 'retired-error-document-served')
+            error_lifecycle.append(browser(client, args, hosts, 'B', mode='error-denied'))
+            rejected = apply(client, 'generator-get', publications['generator'], hosts['generator'], codes=(4,))
+            require(rejected['category'] == 'platform-failure', 'static-retired-error-rollback-admitted')
             retained_capacity = catalog_capacity(client, args)
             for key in ('sharedBlobBytes', 'publicationLinkBytes'):
                 require(retained_capacity['accounting'][key] == capacity_observations[-1]['accounting'][key],
@@ -312,6 +510,9 @@ def run(args):
                 'rollback': rollback, 'revokedConditionalDenied': True, 'revokedRollbackDenied': True,
                 'foreignPublicationDenied': True, 'before': before, 'dormant': dormant, 'after': after,
                 'audit': audit_receipt, 'routeReconciliation': reconciliation,
+                'errorDocumentLifecycle': error_lifecycle,
+                'corruptErrorDocument': corrupt_error,
+                'unconfiguredErrorResponses': unconfigured_wire,
                 'catalogCapacity': {'finitePublicationSequence': capacity_observations,
                                     'afterRetirementAndRevocation': retained_capacity,
                                     'stoppedRestoreAndExpansion': maintenance},

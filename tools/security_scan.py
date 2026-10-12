@@ -47,6 +47,8 @@ def scan(mode: str, repo: Path, scratch: Path, tools: Path, base: str = "") -> t
               "finding_count": len(remaining), "exception_count": len(waived),
               "findings": [item.public() for item in remaining[:50]],
               "excepted_findings": [item.public() for item in waived[:50]]}
+    if mode == "dependencies":
+        report["remediated_count"] = len(observation.get("source_remediated_findings", []))
     return int(bool(remaining)), report
 
 

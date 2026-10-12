@@ -244,7 +244,6 @@ pub(super) fn source() -> (Directory, Arc<DirectoryArtifactRepository>, Coalesci
 #[cfg(unix)]
 pub(super) fn supervised_abort(scenario: &str, environment: &str, ready: &str) {
     use std::io::Read as _;
-    use std::os::unix::process::ExitStatusExt as _;
     use std::process::{Child, Command, Stdio};
     struct Supervised(Child);
     impl Drop for Supervised {
@@ -290,6 +289,7 @@ pub(super) fn supervised_abort(scenario: &str, environment: &str, ready: &str) {
         output.contains(ready),
         "the intended child branch must execute"
     );
+    use std::os::unix::process::ExitStatusExt as _;
     assert_eq!(
         status.signal(),
         Some(6),

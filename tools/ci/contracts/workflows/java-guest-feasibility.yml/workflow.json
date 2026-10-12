@@ -23,8 +23,10 @@
         ],
         "paths": [
           "sdk/java-guest/**",
-          "sdk/transaction-contract/**",
           "examples/java-http-composition/**",
+          "examples/java-transaction-schema/**",
+          "contracts/state/application-aggregate-*.schema.json",
+          "sdk/transaction-contract/**",
           "tools/**",
           "apps/**",
           "crates/**",
@@ -45,7 +47,7 @@
   "requiredJobs": [
     "compiler-component"
   ],
-  "reviewReason": "Preserve all workflow controls and add both Java HTTP composition and transaction-contract change paths; CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Integration preserves both required command sets. Incoming development review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Incoming current-target review: Keep all source-bound transaction compiler trigger paths and all Java server-guide trigger paths while preserving required job, permissions, exact branch names and concurrency guards.",
+  "reviewReason": "Preserve the original Java workflow jobs and controls; expand source triggers for the explicit diagnostic fixture and schema helpers.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

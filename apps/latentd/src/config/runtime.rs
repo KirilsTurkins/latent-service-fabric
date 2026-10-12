@@ -20,6 +20,7 @@ pub(super) fn wasmtime(
 ) -> Result<WasmtimeConfig, PlatformError> {
     let mut runtime = WasmtimeConfig {
         execution_isolation_profile: config.security_profile,
+        transactional_state: config.state.is_some(),
         instance_allocator: match config.engine.allocator {
             EngineAllocator::OnDemand => InstanceAllocator::OnDemand,
             EngineAllocator::Pooling => InstanceAllocator::Pooling,
@@ -45,6 +46,11 @@ pub(super) fn wasmtime(
         maximum_preparation_document_bytes: preparation_documents(config)?,
         // Capture remains positive even if the effective grant denies logging.
         invocation_log_maximum_bytes: 16 * 1024,
+        activation_runtime: config
+            .providers
+            .as_ref()
+            .and_then(|providers| providers.activation_runtime.as_ref())
+            .map(super::providers::ActivationRuntimeInstallation::runtime_limits),
         ..WasmtimeConfig::default()
     };
     #[cfg(feature = "development-test-node")]
@@ -61,11 +67,6 @@ pub(super) fn wasmtime(
     if config.engine.java_guest {
         runtime.install_java_guest();
     }
-    // This changes the preparation/profile identity before compatibility and
-    // authenticated native-cache selection. Imports still need a real scoped
-    // host installed on the original activation before any guest Store exists.
-    runtime.transactional_state =
-        config.budget_profile.profile() == latent_core::BudgetProfile::Phase4;
     if config.renderer_profile.is_some() {
         if config.renderer_profile != Some(latent_manifest::RendererProfile::AngularSsrComponentV1)
         {
@@ -104,7 +105,7 @@ pub(super) fn manager(config: &NodeConfig, capacity: &Capacity) -> LocalActivati
             maximum_input_bytes: config.limits.maximum_payload_bytes,
         },
         journal: LocalActivationJournalConfig {
-            maximum_active: capacity.reservations as usize,
+            maximum_active: capacity.tracked_requests,
             maximum_terminal: config.retention.terminal_entries,
             maximum_record_bytes: JOURNAL_RECORD_BYTES,
             maximum_retained_bytes: config.retention.bytes,
@@ -124,6 +125,9 @@ pub(super) fn invocation(
         budget_profile: config.budget_profile.profile(),
         max_child_calls: budget.child_calls,
         max_outbound_requests: budget.outbound_requests,
+        max_state_read_bytes: budget.state_read_bytes,
+        max_state_write_bytes: budget.state_write_bytes,
+        max_effect_count: budget.effect_count,
         max_blob_read_bytes: budget.blob_read_bytes,
         max_blob_write_bytes: budget.blob_write_bytes,
         max_payload_bytes: config.limits.maximum_payload_bytes,

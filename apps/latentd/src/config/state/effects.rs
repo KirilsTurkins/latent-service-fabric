@@ -2,8 +2,8 @@
 use latent_core::PlatformError;
 use serde::Deserialize;
 
-#[derive(Clone, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+configuration_object! {
+#[derive(Clone)]
 pub struct DeferredHttpConfig {
     pub requirements_digest: String,
     pub provider_id: String,
@@ -13,6 +13,7 @@ pub struct DeferredHttpConfig {
     pub staging_policies: Vec<String>,
     pub dispatch_binding: String,
     pub dispatch_policies: Vec<String>,
+}
 }
 
 pub(super) fn present<'de, D: serde::Deserializer<'de>>(

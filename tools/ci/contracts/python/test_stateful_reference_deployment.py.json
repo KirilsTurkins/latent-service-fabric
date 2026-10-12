@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "StatefulReferenceDeployment.test_identity_mismatch_and_non_u64_incarnation_refuse_before_emitting_constraints",
+    "StatefulReferenceDeployment.test_precondition_key_has_an_exact_1024_byte_boundary_and_canonical_bits",
+    "StatefulReferenceDeployment.test_real_companion_produces_only_closed_exact_command_query_result_and_ssr_links",
+    "StatefulReferenceDeployment.test_shared_profile_rejects_wrong_methods_profiles_links_and_extra_fields"
+  ],
+  "guards": {
+    "StatefulReferenceDeployment.test_identity_mismatch_and_non_u64_incarnation_refuse_before_emitting_constraints": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15528c29734ff1237a6fcc2c1e2be72514d36a0dff985f41df37b546bb077929",
+        "class:setup-sha256:9dc7a2c318ca67b3b66194dac8f1f8a064e934f598af6d6334c2e77588350efc"
+      ],
+      "skipSites": []
+    },
+    "StatefulReferenceDeployment.test_precondition_key_has_an_exact_1024_byte_boundary_and_canonical_bits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15528c29734ff1237a6fcc2c1e2be72514d36a0dff985f41df37b546bb077929",
+        "class:setup-sha256:9dc7a2c318ca67b3b66194dac8f1f8a064e934f598af6d6334c2e77588350efc"
+      ],
+      "skipSites": []
+    },
+    "StatefulReferenceDeployment.test_real_companion_produces_only_closed_exact_command_query_result_and_ssr_links": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15528c29734ff1237a6fcc2c1e2be72514d36a0dff985f41df37b546bb077929",
+        "class:setup-sha256:9dc7a2c318ca67b3b66194dac8f1f8a064e934f598af6d6334c2e77588350efc"
+      ],
+      "skipSites": []
+    },
+    "StatefulReferenceDeployment.test_shared_profile_rejects_wrong_methods_profiles_links_and_extra_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:15528c29734ff1237a6fcc2c1e2be72514d36a0dff985f41df37b546bb077929",
+        "class:setup-sha256:9dc7a2c318ca67b3b66194dac8f1f8a064e934f598af6d6334c2e77588350efc"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_stateful_reference_deployment.py",
+  "reviewReason": "Reviewed exact shared transaction HTTP trigger links, finite per-entity published companions, full-width incarnation refusals and canonical 1024-byte precondition boundaries; preserves prior buffered/static profiles and confers no grants or runtime qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

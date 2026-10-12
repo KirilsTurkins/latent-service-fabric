@@ -170,6 +170,14 @@ impl StopControl {
         None
     }
 
+    /// Trusted host revocation closes accepted execution under its original
+    /// stop owner. This does not install a user-requested registry winner.
+    pub(crate) fn cancel_for_revocation(&self) {
+        if self.observe().is_none() {
+            self.record(StopCause::Cancelled);
+        }
+    }
+
     #[cfg(test)]
     pub(crate) fn kind(&self) -> Option<GuestInterruptionKind> {
         stop_kind(self.cause())
@@ -241,12 +249,12 @@ pub(crate) fn configure_epoch<T: 'static>(
 
 pub(crate) fn interrupted_outcome(
     kind: GuestInterruptionKind,
-    reason: &str,
+    reason: String,
     consumption: BudgetConsumption,
 ) -> GuestOutcome {
     GuestOutcome::Interrupted {
         kind,
-        reason: bounded_text(reason, MAX_DIAGNOSTIC_BYTES),
+        reason: bounded_text(&reason, MAX_DIAGNOSTIC_BYTES),
         consumption,
     }
 }
@@ -258,7 +266,7 @@ pub(crate) fn classify_runtime_error(
     consumption: BudgetConsumption,
 ) -> Result<GuestOutcome, PlatformError> {
     if let Some(kind) = stop.observe() {
-        return Ok(interrupted_outcome(kind, &stop.reason(kind), consumption));
+        return Ok(interrupted_outcome(kind, stop.reason(kind), consumption));
     }
     let mut outcome = classify_runtime_failure(
         None,
@@ -295,12 +303,12 @@ fn classify_runtime_failure(
             GuestInterruptionKind::FuelExhausted => "activation CPU fuel exhausted",
             GuestInterruptionKind::MemoryExhausted => "activation linear-memory limit exceeded",
         };
-        return Ok(interrupted_outcome(kind, reason, consumption));
+        return Ok(interrupted_outcome(kind, reason.to_owned(), consumption));
     }
     if memory_exhausted {
         return Ok(interrupted_outcome(
             GuestInterruptionKind::MemoryExhausted,
-            "activation linear-memory limit exceeded",
+            "activation linear-memory limit exceeded".to_owned(),
             consumption,
         ));
     }
@@ -309,7 +317,7 @@ fn classify_runtime_failure(
         if matches!(trap, Trap::OutOfFuel) {
             return Ok(interrupted_outcome(
                 GuestInterruptionKind::FuelExhausted,
-                "activation CPU fuel exhausted",
+                "activation CPU fuel exhausted".to_owned(),
                 consumption,
             ));
         }
@@ -321,11 +329,12 @@ fn classify_runtime_failure(
             ));
         }
 
-        let label = trap_label(*trap);
+        let label = trap_label(trap);
         let mut metadata = Metadata::new();
         metadata.insert("trap".to_owned(), label.to_owned());
         return Ok(GuestOutcome::Trapped {
             trap: GuestTrap {
+                diagnostic: None,
                 code: "guest-trap".to_owned(),
                 message: bounded_text(&format!("guest trapped: {label}"), MAX_DIAGNOSTIC_BYTES),
                 guest_backtrace: Vec::new(),
@@ -343,6 +352,7 @@ fn classify_runtime_failure(
     metadata.insert("classification".to_owned(), "runtime-error".to_owned());
     Ok(GuestOutcome::Trapped {
         trap: GuestTrap {
+            diagnostic: None,
             code: "guest-runtime-error".to_owned(),
             message: "guest execution failed".to_owned(),
             guest_backtrace: Vec::new(),
@@ -352,7 +362,7 @@ fn classify_runtime_failure(
     })
 }
 
-fn trap_label(trap: Trap) -> &'static str {
+fn trap_label(trap: &Trap) -> &'static str {
     match trap {
         Trap::StackOverflow => "stack-overflow",
         Trap::MemoryOutOfBounds => "memory-out-of-bounds",
@@ -469,14 +479,82 @@ mod tests {
     }
 
     #[test]
+    fn backend_trap_labels_match_the_public_closed_classification() {
+        use latent_core::error::GuestTrapKind;
+
+        for (engine_trap, kind) in [
+            (Trap::StackOverflow, GuestTrapKind::StackOverflow),
+            (Trap::MemoryOutOfBounds, GuestTrapKind::MemoryOutOfBounds),
+            (Trap::HeapMisaligned, GuestTrapKind::HeapMisaligned),
+            (Trap::TableOutOfBounds, GuestTrapKind::TableOutOfBounds),
+            (Trap::IndirectCallToNull, GuestTrapKind::IndirectCallToNull),
+            (Trap::BadSignature, GuestTrapKind::BadSignature),
+            (Trap::IntegerOverflow, GuestTrapKind::IntegerOverflow),
+            (
+                Trap::IntegerDivisionByZero,
+                GuestTrapKind::IntegerDivisionByZero,
+            ),
+            (
+                Trap::BadConversionToInteger,
+                GuestTrapKind::BadConversionToInteger,
+            ),
+            (Trap::UnreachableCodeReached, GuestTrapKind::UnreachableCode),
+            (Trap::AllocationTooLarge, GuestTrapKind::AllocationTooLarge),
+        ] {
+            let outcome =
+                classify_runtime_failure(None, false, Some(&engine_trap), consumption()).unwrap();
+            let GuestOutcome::Trapped {
+                trap,
+                consumption: actual,
+            } = outcome
+            else {
+                panic!("ordinary engine trap must preserve the trapped outcome");
+            };
+            assert_eq!(trap.code, "guest-trap");
+            assert_eq!(
+                trap.metadata,
+                Metadata::from([("trap".into(), kind.wire_name().into())])
+            );
+            assert_eq!(
+                GuestTrapKind::from_wire_name(&trap.metadata["trap"]),
+                Some(kind)
+            );
+            assert!(trap.guest_backtrace.is_empty());
+            assert_eq!(actual, consumption());
+        }
+    }
+
+    #[test]
+    fn runtime_error_kind_does_not_forward_untyped_engine_context() {
+        let error = wasmtime::Error::msg("private-request secret-token private-engine-frame")
+            .context("private-context");
+        let outcome =
+            classify_runtime_error(&error, &StopControl::new(None, None), false, consumption())
+                .unwrap();
+        let GuestOutcome::Trapped {
+            trap,
+            consumption: actual,
+        } = outcome
+        else {
+            panic!("untyped runtime failure must preserve the trapped outcome");
+        };
+        assert_eq!(trap.code, "guest-runtime-error");
+        assert_eq!(trap.message, "guest execution failed");
+        assert_eq!(
+            trap.metadata,
+            Metadata::from([("classification".into(), "runtime-error".into())])
+        );
+        assert!(trap.guest_backtrace.is_empty());
+        assert_eq!(actual, consumption());
+        assert!(!format!("{trap:?}").contains("private"));
+        assert!(!format!("{trap:?}").contains("secret-token"));
+    }
+
+    #[test]
     fn first_stop_cause_is_sticky_across_repeated_epoch_observations() {
         let probe = Arc::new(TestCancellationProbe::new(false));
         let stop = StopControl::new(
-            Some(
-                Instant::now()
-                    .checked_sub(Duration::from_millis(1))
-                    .unwrap(),
-            ),
+            Some(Instant::now() - Duration::from_millis(1)),
             Some(probe.clone()),
         );
 
@@ -504,7 +582,7 @@ mod tests {
                 self.sample().monotonic()
             }
         }
-        let origin = Instant::now() + Duration::from_mins(1);
+        let origin = Instant::now() + Duration::from_secs(60);
         let deadline = origin + Duration::from_millis(10);
         let clock = Arc::new(Clock(std::sync::Mutex::new(latent_core::ClockSample::new(
             1000, origin,
@@ -532,14 +610,7 @@ mod tests {
     #[test]
     fn cancellation_wins_when_cancellation_and_deadline_are_first_visible_together() {
         let probe = Arc::new(TestCancellationProbe::new(true));
-        let stop = StopControl::new(
-            Some(
-                Instant::now()
-                    .checked_sub(Duration::from_millis(1))
-                    .unwrap(),
-            ),
-            Some(probe),
-        );
+        let stop = StopControl::new(Some(Instant::now() - Duration::from_millis(1)), Some(probe));
 
         assert_eq!(stop.observe(), Some(GuestInterruptionKind::Cancelled));
         assert_eq!(stop.observe(), Some(GuestInterruptionKind::Cancelled));

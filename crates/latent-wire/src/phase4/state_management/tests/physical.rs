@@ -95,10 +95,7 @@ async fn concurrent_original_generation_checks_have_one_native_writer_without_re
 #[tokio::test]
 async fn detached_namespace_waiter_retains_real_work_until_commit_and_clean_recovery() {
     let mut fixture = Fixture::new(false).await;
-    let native = latent_core::native_capacity::NativeCapacityOwner::new(
-        latent_core::native_capacity::NativeCapacityLimits::default(),
-    )
-    .unwrap();
+    let native = fixture.admission.native.clone();
     super::recovery::install(&mut fixture, native.clone());
     drop(fixture.create().await);
     let gates = Rendezvous::new(1);

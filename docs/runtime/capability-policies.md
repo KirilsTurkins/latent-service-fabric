@@ -6,7 +6,12 @@ The closed language is `lsf-capability-policy-v1`; provider selection metadata u
 `lsf-provider-binding-v1`. These are authorization building blocks for the broker
 and [exact binding compiler](capability-bindings.md). Creating a policy does not install a
 provider, extend the current guest linker, or make a descriptive DTO executable.
-The [host ABI profile](host-abi-profile.md) remains the operation authority.
+The [host ABI profile](host-abi-profile.md) defines the guest operations.
+Native transaction management also uses the closed host labels `effect-plan`,
+`effect-reconcile`, `effect-redrive`, `effect-terminate`, `state-checkpoint` and
+`purge-expired-payload` under an exact state resource policy. Recognizing these
+labels does not add guest imports or supply the current operator, publication,
+namespace or provider authority required by the host.
 
 ## Policy language
 

@@ -1,0 +1,205 @@
+{
+  "cases": [
+    "TypeScriptGeneratorApproval.test_changed_generated_bytes_fail_normal_build_and_frontend_before_compiler",
+    "TypeScriptGeneratorApproval.test_changed_source_tool_and_input_reject_previous_approval_before_dispatch",
+    "TypeScriptGeneratorApproval.test_cli_request_binds_tool_inputs_source_sdk_arguments_and_limits_without_execution",
+    "TypeScriptGeneratorApproval.test_missing_wrong_or_tampered_request_approval_never_executes",
+    "TypeScriptGeneratorApproval.test_outer_descriptor_change_invalidates_exact_nested_application_approval",
+    "TypeScriptGeneratorApproval.test_requests_cannot_replace_source_sdk_or_existing_directory_or_widen_limits",
+    "TypeScriptGeneratorNative.test_actual_approved_generator_reuses_captured_typescript_offline_without_original_tool",
+    "TypeScriptGeneratorNative.test_actual_deadline_reaps_descendants_retains_failure_and_preserves_source",
+    "TypeScriptGeneratorNative.test_actual_script_has_no_ambient_home_credentials_or_network",
+    "TypeScriptGeneratorNative.test_binary_nonportable_linked_and_empty_outputs_never_enter_typescript_source",
+    "TypeScriptGeneratorNative.test_failed_manifest_write_rolls_back_only_the_fresh_adopted_subtree",
+    "TypeScriptGeneratorNative.test_nested_captured_npm_selection_and_disabled_scripts_survive_source_generation",
+    "TypeScriptGeneratorNative.test_oversized_generated_source_is_rejected_at_original_project_file_bound"
+  ],
+  "guards": {
+    "TypeScriptGeneratorApproval.test_changed_generated_bytes_fail_normal_build_and_frontend_before_compiler": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorApproval.test_changed_source_tool_and_input_reject_previous_approval_before_dispatch": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorApproval.test_cli_request_binds_tool_inputs_source_sdk_arguments_and_limits_without_execution": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorApproval.test_missing_wrong_or_tampered_request_approval_never_executes": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorApproval.test_outer_descriptor_change_invalidates_exact_nested_application_approval": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorApproval.test_requests_cannot_replace_source_sdk_or_existing_directory_or_widen_limits": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorNative.test_actual_approved_generator_reuses_captured_typescript_offline_without_original_tool": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorNative.test_actual_deadline_reaps_descendants_retains_failure_and_preserves_source": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorNative.test_actual_script_has_no_ambient_home_credentials_or_network": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorNative.test_binary_nonportable_linked_and_empty_outputs_never_enter_typescript_source": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorNative.test_failed_manifest_write_rolls_back_only_the_fresh_adopted_subtree": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorNative.test_nested_captured_npm_selection_and_disabled_scripts_survive_source_generation": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptGeneratorNative.test_oversized_generated_source_is_rejected_at_original_project_file_bound": {
+      "bases": [
+        "TypeScriptGeneratorFixture"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:raise:raise unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "module:setup-sha256:88e50e97aacccfcb41e79db4b5b7fc82dc212662ef21bd7b6acc31f2eadba63a",
+        "module:skip:unittest.SkipTest('actual TypeScript source generation requires Linux Bubblewrap')",
+        "class:setup-sha256:b0eab4bd303f01a956f293087a1a5acf8c74782e73322026c15b67691fd62fd9"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_generator_authoring.py",
+  "reviewReason": "Add explicit TypeScript source-generator approval, retained default script denial and actual containment/output cleanup controls",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

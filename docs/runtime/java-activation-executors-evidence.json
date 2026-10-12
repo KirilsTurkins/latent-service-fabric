@@ -1,0 +1,200 @@
+{
+  "formatVersion": 1,
+  "profile": "teavm-activation-fibers-v1",
+  "status": "original-three-mode-signed-conformance-passed",
+  "completeStandardConcurrencyProfile": "unqualified",
+  "execution": "normal-LocalActivationManager-signed-admitted-fixture",
+  "sourceCommit": "8943a364bfa53480d001b4d82353dc0ef576c6a0",
+  "sourceTree": "76b9c30105371230f169fbf6b2bc7c424288afe5",
+  "sourceOverlays": [],
+  "applicationSha256": "0ed38276bc00e859f8b78f3328b2cd359123202e16782c4c477fc84e5e4558e5",
+  "componentSha256": "7014861a8a908b8500ebe26b228c10f3a9fb645cf603b95e2d4644c180a98643",
+  "componentSize": 11095730,
+  "compilerInputsSha256": "90084065888bd8044720b7c6c4319af94ff429d45976ab38e2730d687beb2250",
+  "compilerTools": {
+    "java": "25.0.4.1+1",
+    "gradle": "9.1.0",
+    "teavm": "0.15.0",
+    "wasiSdk": "29.0",
+    "rust": "1.97.1"
+  },
+  "originalLimits": {
+    "cpuFuel": 10000000000,
+    "memoryBytes": 67108864,
+    "wallTimeLimitMillis": 120000,
+    "maximumConcurrentSessionCalls": 16,
+    "runtime": {
+      "tasks": 5,
+      "executors": 3,
+      "queuedWork": 8,
+      "waits": 8,
+      "timers": 2,
+      "results": 8,
+      "nativeOwners": 2
+    }
+  },
+  "referenceJdkResults": [
+    {
+      "iteration": 0,
+      "modes": [
+        0,
+        1,
+        2
+      ],
+      "results": [
+        42,
+        42,
+        42
+      ]
+    },
+    {
+      "iteration": 1,
+      "modes": [
+        0,
+        1,
+        2
+      ],
+      "results": [
+        42,
+        42,
+        42
+      ]
+    },
+    {
+      "iteration": 2,
+      "modes": [
+        0,
+        1,
+        2
+      ],
+      "results": [
+        42,
+        42,
+        42
+      ]
+    }
+  ],
+  "compilerModelControls": {
+    "throwableConstructors": 5,
+    "timeunitMethodBodies": 21,
+    "referenceConversionChecks": 1661,
+    "jarDigests": {
+      "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410",
+      "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+      "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49",
+      "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f",
+      "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c",
+      "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140",
+      "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b",
+      "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018",
+      "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6"
+    }
+  },
+  "exceptionPointerSpills": {
+    "scannedClasses": 247,
+    "pointerSpills": 151,
+    "adaptedClasses": 14
+  },
+  "observations": [
+    {
+      "iteration": 0,
+      "mode": 0,
+      "assertedOutput": 42,
+      "cpuFuel": 10642181,
+      "peakGuestMemoryBytes": 9373512,
+      "activationWallTimeMicros": 94333015
+    },
+    {
+      "iteration": 0,
+      "mode": 1,
+      "assertedOutput": 42,
+      "cpuFuel": 8588780,
+      "peakGuestMemoryBytes": 9373512,
+      "activationWallTimeMicros": 82777
+    },
+    {
+      "iteration": 0,
+      "mode": 2,
+      "assertedOutput": 42,
+      "cpuFuel": 5488469,
+      "peakGuestMemoryBytes": 9373512,
+      "activationWallTimeMicros": 51125
+    },
+    {
+      "iteration": 1,
+      "mode": 0,
+      "assertedOutput": 42,
+      "cpuFuel": 11139825,
+      "peakGuestMemoryBytes": 9373512,
+      "activationWallTimeMicros": 111035
+    },
+    {
+      "iteration": 1,
+      "mode": 1,
+      "assertedOutput": 42,
+      "cpuFuel": 8588780,
+      "peakGuestMemoryBytes": 9373512,
+      "activationWallTimeMicros": 82058
+    },
+    {
+      "iteration": 1,
+      "mode": 2,
+      "assertedOutput": 42,
+      "cpuFuel": 5488469,
+      "peakGuestMemoryBytes": 9373512,
+      "activationWallTimeMicros": 46894
+    },
+    {
+      "iteration": 2,
+      "mode": 0,
+      "assertedOutput": 42,
+      "cpuFuel": 12150347,
+      "peakGuestMemoryBytes": 9373512,
+      "activationWallTimeMicros": 109591
+    },
+    {
+      "iteration": 2,
+      "mode": 1,
+      "assertedOutput": 42,
+      "cpuFuel": 8588780,
+      "peakGuestMemoryBytes": 9373512,
+      "activationWallTimeMicros": 72397
+    },
+    {
+      "iteration": 2,
+      "mode": 2,
+      "assertedOutput": 42,
+      "cpuFuel": 5488469,
+      "peakGuestMemoryBytes": 9373512,
+      "activationWallTimeMicros": 47908
+    }
+  ],
+  "afterEveryInvocation": {
+    "activeActivations": 0,
+    "cancellationRegistrations": 0,
+    "instanceReservations": 0,
+    "liveGuestStores": 0,
+    "brokerCalls": 0,
+    "brokerSessions": 0,
+    "brokerHandles": 0,
+    "brokerResults": 0,
+    "brokerBufferBytes": 0
+  },
+  "test": "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
+  "exitCode": 0,
+  "oomKilled": false,
+  "nativeAttemptSeconds": 195.010677,
+  "nativeLogSize": 5434,
+  "nativeLogSha256": "d147836eb04a3ccc4738b7ecac7e6d9f8a44f60a05b2e75771ab6fcf12095fe9",
+  "freshTrackedSourceFiles": 7358,
+  "sourceFreshnessSha256": "b027f04224f325f440e1a229eae32b623ad8daecb910dec990005a3791ee0a4e",
+  "completedUtc": "2026-10-01T14:52:14.768215+00:00",
+  "remainingQualification": [
+    "expanded-four-mode-default-future-profile",
+    "published-library-controls",
+    "genuinely-pending-provider-I/O-coexistence",
+    "interruption-and-cancellation-races",
+    "cross-tenant-and-late-wake-boundaries",
+    "measured-active-and-dormant-owner-plateaus"
+  ]
+}

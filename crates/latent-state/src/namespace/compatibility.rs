@@ -193,6 +193,7 @@ pub enum RetainedKind {
 #[serde(deny_unknown_fields)]
 pub struct RetainedFormat {
     pub kind: RetainedKind,
+    #[serde(deserialize_with = "decode_identity")]
     pub identity: String,
 }
 
@@ -303,6 +304,23 @@ fn hex(bytes: &[u8; 32]) -> String {
         write!(&mut output, "{byte:02x}").expect("writing a bounded String cannot fail");
     }
     output
+}
+
+pub(crate) fn decode_identity<'de, D: serde::Deserializer<'de>>(
+    decoder: D,
+) -> Result<String, D::Error> {
+    struct Identity;
+    impl serde::de::Visitor<'_> for Identity {
+        type Value = String;
+        fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            formatter.write_str("a bounded closed namespace identity")
+        }
+        fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
+            identity(value).map_err(|_| E::custom("invalid bounded identity"))?;
+            Ok(value.to_owned())
+        }
+    }
+    decoder.deserialize_str(Identity)
 }
 
 #[cfg(test)]

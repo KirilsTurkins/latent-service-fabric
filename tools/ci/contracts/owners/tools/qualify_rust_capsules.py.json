@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/qualify_rust_capsules.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain TypeScript captured-library and Go authoring/direct-library helper closures, the incoming complete C source/static helper closure, and every Rust and dotnet command, grant, approval receipt, bound and cleanup requirement. Static-library behavior is explicitly C-only and opt-in.","schemaVersion":"latent.ci.contracts.v1","sha256":"bd19b4a8218573240c7783a4d633069607871efed5afcd7333eeeff0c18ddadc"}
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_capsules.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Capture immutable completed host executables and qualify signed .NET resource fixture",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "940d61f396d4b724568f861d59e44ddc0b05c4bbf3d2ecdf54de093185d3b9c5"
+}

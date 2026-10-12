@@ -1,49 +1,40 @@
 # Command completion coordinator
 
-The node transaction admission uses the existing activation manager, protected
-store, namespace/policy owners, atomic command ledger and bounded notification
-registry. `CommandCoordinator` creates no executor, dispatcher, native worker,
-database, timer or command execution map. `CommandAdmissionFactory` supplies the
-actual selected publication and distinct original command/result-read owners
-against the node's real admitted envelope and budget. Descriptive input cannot
-grant access or assert durable completion.
+The shared runtime uses the existing `NativeTransactionAdmission`, activation
+manager, protected store, namespace/policy owners and atomic command ledger.
+It validates the selected publication, authenticated scope and original
+admission budget before native lookup or durable claim publication. Retained
+native capacity stays attached to actual accepted work. Descriptive input
+cannot grant access or assert durable completion.
 
-Before publishing a claim, admission binds the original namespace cancellation
-gate to the activation registration and reserves bounded native/result memory
-from that same activation. The durable claim must retain the original sealed
-namespace expectation. An opaque admitted claim is required to reobserve its
-exact post-admission generation; raw decoded pending rows cannot do this.
-The actual metadata view must also pass the durable global recovery guard and
-original namespace/history readiness before claiming or observing work.
-Registration/capacity failure admits no second guest. Known never-started paths
-still await actual native retirement before technical abort metadata is possible.
+The durable claim retains its original sealed namespace expectation. Current
+namespace/history and global recovery readiness remain mandatory. Existing
+command identities take the authorized recovery path without another guest;
+historical caller or grant metadata cannot renew result-read authority.
 
-The existing backend teardown positively closes guest access. The manager does
-that itself only for a guest that was never created. Completion validates the
-complete application response before handing state to the writer. HTTP must
-install its approved portable-response codec/validator here; the ordinary typed
-codec does not approve HTTP credentials, cookies or session headers.
+After actual guest teardown, the lifecycle finalizes original consumption and
+invokes the same admission owner's completion with `TransactionCommitControl`.
+`CommandCompletion` checks the original claim, role, host, activation, budget and
+retained authority before one complete atomic envelope can reach the writer.
 
-Success consumes the actual `StateTransactionHost.handoff` plan and captured
-intents. Declared rejection discards all staged state/intents. Both publish one
-complete atomic namespace/state/result/command/effect/inbox envelope through the
-same protected worker. The final abortable acceptance callback repeats current
-policy, namespace, publication and effect checks, and accepts the original gate
-once. Cancellation before acceptance blocks business commit. Acceptance observed
-after cancellation cannot be labelled abort or success without durable lookup.
+The existing final writer fence linearizes cancellation against irreversible
+acceptance. Acceptance is not a published terminal outcome. Cancellation while
+that I/O is accepted returns `Unavailable` with the closed
+`activation.command-commit-acceptance-observed` detail, retaining the original
+writer, registration, budget and recovery identity. It cannot report a proposed
+success as `AlreadyTerminal` or refund physical work. After actual terminal
+publication, cancellation reports the actual state, including platform failure
+when disposition remains uncertain. Recovery uses current-authorized lookup.
 
-Original publication/input/preconditions, source/time, business namespace version
-and full opaque schema/recovery view token remain in the same envelope. Typed
-initial receipts and replay return canonical padded base64 of that original
-token. The new closed command/result format 3 explicitly refuses historic formats
-1 and 2; no reader reconstructs omitted original history from current state.
+Original publication, input/preconditions, source/time, namespace version and
+history tokens remain bound to the envelope. Current accounted and legacy
+format profiles retain their explicit supported decoders and retention metadata;
+no reader reconstructs omitted history from current business state.
 
-`TransactionCompletion` keeps durable disposition separate from delivery failure.
-Its private confirmed constructor verifies actual original command/result
-linkage. `read_authorized()` must hold before any consumer releases result or
-receipt data. Revocation after a physical commit cannot erase internal durability
-or grant a public body. Original platform producer diagnostics survive failure
-and cleanup; a codec failure is not relabelled as HTTP validation.
+Durable disposition and delivery/cleanup remain separate. Current result-read
+authority is checked before releasing receipt/body data; revocation cannot erase
+internal durability or grant a public body. Original producer diagnostics remain
+separate from HTTP validation or observation.
 
 Technical abort requires the lower owner's positive private retirement proof and
 fresh distinct read/control authorization, not a timeout, notification, dropped
@@ -59,10 +50,7 @@ interrupted native work, lost delivery and commit uncertainty never schedule a
 replacement guest. Explicit protected retry/recovery policy remains a separate
 owner operation.
 
-The focused engine tests cover original token preservation across changed
-history, later commit and reopen, and exact absent/present history CAS before
-no-state rejection/abort acceptance, including the exact absent or reviewed
-global recovery guard. This source milestone does not certify the
-HTTP/management wire adapter, actual component completion campaign, recovery
-operator wiring or the full #387/#388/#718 acceptance gates. Those integrations
-must consume these owners and are qualified separately.
+The [PR #811 reconciliation](phase4-handoffs/2026-10-11/pr811-reconciliation.md)
+records current validation and snapshot decisions. Installed direct/RPC/HTTP
+command, cancellation, crash/restart and the six-guest matrix remain with #388
+and its consumers; source or external-client qualification does not finish them.

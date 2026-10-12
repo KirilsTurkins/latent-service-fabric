@@ -11,11 +11,11 @@ from tools.transaction_guest_project import TEMPLATE, package_companion
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
     def test_java_authored_wit_captures_runtime_clocks_before_compiler_staging(self):
-        from tools.compile_transaction_guests import authored_project, VARIANTS
+        from tools.compile_transaction_guests import authored_project, JAVA_SCHEMA_VARIANTS
         from tools.java_capsule_project import validate
         from tools.stage_runtime_wit import dependencies, stage
         with tempfile.TemporaryDirectory() as temporary:
-            for variant in VARIANTS:
+            for variant in ("aggregate", "forbidden-http", *JAVA_SCHEMA_VARIANTS):
                 with self.subTest(variant=variant):
                     source = authored_project("java", variant, Path(temporary) / variant)
                     files = snapshot(source)
@@ -31,6 +31,65 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
                     self.assertEqual(snapshot(staged), snapshot(source / "wit"))
                     self.assertEqual(snapshot(source), files)
 
+    def test_rust_result_boundary_is_a_real_captured_authored_guest_with_unchanged_sdk_and_grants(self):
+        from tools.transaction_guest_variants import create
+        from tools.rust_capsule_build import validate_project
+        with tempfile.TemporaryDirectory() as temporary:
+            project = create(Path(temporary) / "result", "rust", "result-boundary", "transaction-rust-aggregate")
+            files = snapshot(project)
+            validate_project(files)
+            source = ROOT / "examples/rust-capsules" / TEMPLATE
+            self.assertEqual(files["src/lib.rs"], (source / "result-boundary.rs").read_bytes())
+            self.assertEqual(files["wit/world.wit"], (source / "result-boundary-world.wit").read_bytes())
+            self.assertIn(b'Command::acquire()', files["src/lib.rs"])
+            self.assertIn(b'command.put(', files["src/lib.rs"])
+            self.assertIn(b'.stage(&mut command)', files["src/lib.rs"])
+            self.assertIn(b'-> tuple<string, string, string, string>;', files["wit/world.wit"])
+            declaration = json.loads(files["capsule-project.json"])
+            self.assertEqual(declaration["limits"]["outboundRequests"], 0)
+            self.assertEqual(json.loads(files["transaction-binding.json"])["namespace"], TEMPLATE)
+            with self.assertRaisesRegex(ValueError, "requires Rust"):
+                create(Path(temporary) / "unsupported", "java", "result-boundary")
+
+
+    def test_rust_authored_projects_select_and_pin_their_guest_binding_profile(self):
+        import tomllib
+        from tools.rust_capsule_project import create
+        from tools.rust_capsule_build import validate_project
+        with tempfile.TemporaryDirectory() as temporary:
+            for template in (*TEMPLATES, TEMPLATE):
+                with self.subTest(template=template):
+                    project = create(Path(temporary) / template, template)
+                    files = snapshot(project)
+                    validate_project(files)
+                    cargo = tomllib.loads(files["Cargo.toml"].decode())
+                    guest = cargo["target"]['cfg(target_arch = "wasm32")']["dependencies"]["latent-guest"]
+                    self.assertEqual(guest.get("features", []), ["transaction"] if template == TEMPLATE else [])
+                    raw = files["Cargo.toml"]
+                    if template == TEMPLATE:
+                        changed = raw.replace(b', features = ["transaction"]', b"")
+                    else:
+                        changed = raw.replace(b'latent-guest = { path = "vendor/lsf/sdk/rust-guest" }',
+                            b'latent-guest = { path = "vendor/lsf/sdk/rust-guest", features = ["transaction"] }')
+                    self.assertNotEqual(changed, raw)
+                    with self.assertRaisesRegex(ValueError, "pinned authoring recipe"):
+                        validate_project({**files, "Cargo.toml": changed})
+
+    def test_java_transaction_capture_closes_its_declared_runtime_clock_dependencies(self):
+        from tools.java_capsule_project import create, validate
+        from tools.stage_runtime_wit import REFERENCE
+        with tempfile.TemporaryDirectory() as temporary:
+            project = create(Path(temporary) / "source", TEMPLATE, "transaction-java-clock-closure")
+            files = snapshot(project)
+            validate(files)
+            self.assertIn("latent:clock/monotonic@0.1.0", files["wit/world.wit"].decode())
+            self.assertIn("latent:clock/wall@0.1.0", files["wit/world.wit"].decode())
+            self.assertEqual(files["wit/deps/clock/package.wit"], files["vendor/lsf/wit/platform/clock/package.wit"])
+            imported = {match.group(1) + "@" + match.group(2) for match in REFERENCE.finditer(files["wit/world.wit"].decode())}
+            declared = {raw.decode().split(";", 1)[0].removeprefix("package ").strip()
+                        for name, raw in files.items() if name.startswith("wit/deps/") and name.endswith("package.wit")}
+            self.assertTrue(imported <= declared)
+
     def test_six_forbidden_http_variants_keep_profile_companion_and_sdk_capture(self):
         from tools.transaction_guest_variants import create, HTTP, LANGUAGES, SOURCES, URL
         from tools.rust_capsule_build import validate_project as rust
@@ -40,8 +99,16 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
         from tools.java_capsule_project import validate as java
         from tools.dotnet_guest.project import validate as dotnet
         validators = dict(zip(LANGUAGES, (rust, c, typescript, go, java, dotnet), strict=True))
-        calls = ("latent_guest::http::send(", "latent_http_client_send(", "host(send(",
+        calls = ("latent_guest::http::send(", "latent_http_client_send(", "send(",
                  "http.Send(", "Bindings.LatentHttpClient.send(", "Http.Send(")
+        typed_denials = {
+            "rust": "Err(latent_guest::http::HttpError::PermissionDenied)",
+            "c": "frame->http_result.val.err.tag == LATENT_HTTP_CLIENT_HTTP_ERROR_PERMISSION_DENIED",
+            "typescript": "forbidden.tag === 'err' && forbidden.val.tag === 'permission-denied'",
+            "go": "!forbidden.IsOk() && forbidden.Err().Tag() == http.HttpErrorPermissionDenied",
+            "java": "Bindings.LatentHttpClientHttpError.permissionDenied().tag()",
+            "dotnet": "!forbidden.IsOk && forbidden.AsErr.Tag == HttpRaw.HttpError.Tags.PermissionDenied",
+        }
         with tempfile.TemporaryDirectory() as temporary:
             for language, call in zip(LANGUAGES, calls, strict=True):
                 with self.subTest(language=language):
@@ -55,12 +122,29 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
                     self.assertEqual(companion["profile"], "lsf-transaction-v1")
                     self.assertEqual([item["operation"] for item in companion["operations"]], ["update", "query", "scan"])
                     self.assertEqual(companion["capsule"], project["service"])
-                    self.assertEqual(files["wit/deps/forbidden-http/package.wit"],
+                    self.assertEqual(files["wit/deps/http-v2/package.wit"],
                                      files["vendor/lsf/wit/platform/http-v2/package.wit"])
+                    from tools.stage_runtime_wit import copy_wit_tree, dependencies, PACKAGE, source_text
+                    staged = Path(temporary) / (language + "-compiler-wit")
+                    copy_wit_tree(source / "wit", staged)
+                    for package in dependencies(source / "wit", source / "vendor/lsf/wit/platform"):
+                        copy_wit_tree(package, staged / "deps" / package.name)
+                    self.assertEqual(PACKAGE.findall(source_text(staged)).count("latent:http@0.2.0"), 1)
                     self.assertEqual(files["wit/world.wit"].decode().count("import " + HTTP + ";"), 1)
                     code = files[SOURCES[language]].decode()
                     self.assertIn(call, code)
                     self.assertIn(URL, code)
+                    self.assertIn(typed_denials[language], code)
+                    staging = {"rust": '.stage(&mut command)', "c": 'lsf_intent_stage(',
+                               "typescript": '.stage(command)', "go": '.Stage(command)',
+                               "java": '.stage(command)', "dotnet": '.Stage(command)'}
+                    self.assertLess(code.index(staging[language]), code.index(call),
+                                    "real staging must precede the forbidden call so rejection tests rollback")
+                    # The native schedule sends reject=false. A declared
+                    # rejection therefore witnesses this exact typed error;
+                    # success, another HTTP error or a trap cannot satisfy it.
+                    self.assertIn("REJECTED" if language in ("c", "dotnet") else
+                                  "'rejected'" if language == "typescript" else "Rejected", code)
                     if language == "c":
                         self.assertIn("frame->http_returned = state == LSF_ASYNC_RETURNED || state == LSF_ASYNC_CANCELLED_RETURNED", code)
                         self.assertIn("else if (frame->phase != FORBIDDEN_HTTP) lsf_state_call_retire", code)

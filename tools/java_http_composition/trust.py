@@ -187,7 +187,7 @@ def qualify(binaries, releases, output):
         source = releases / pair[0]["name"]
         for name in ("altered-component", "altered-policy", "noncanonical-revocation-digest",
                      "wrong-builder-source", "wrong-builder-key", "missing-provenance",
-                     "revoked-builder-key", "stale-trust"):
+                     "revoked-builder-key", "revoked-builder", "stale-trust"):
             directory = fresh(output / name)
             changed = copy.deepcopy(policy)
             artifact = source
@@ -226,6 +226,8 @@ def qualify(binaries, releases, output):
                 selected[0]["publicKey"], selected[1]["publicKey"] = selected[1]["publicKey"], selected[0]["publicKey"]
             elif name == "revoked-builder-key":
                 changed["builderRevocations"]["revokedKeys"].append(pair[0]["builderKeyFingerprint"])
+            elif name == "revoked-builder":
+                changed["builderRevocations"]["revokedBuilders"].append(pair[0]["builderId"])
             elif name == "stale-trust":
                 changed["builderRevocations"]["validUntil"] = int(time.time()) - 1
             if name in ("wrong-builder-source", "wrong-builder-key"):

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import {chromium} from '@playwright/test';
+import {chromium, expect} from '@playwright/test';
 import {serveBuiltSite, validateBuiltSite} from '../lib/built-site.mjs';
 import {generatedDirectory, prepare} from '../lib/prepare.mjs';
 import {websiteRoot} from '../lib/repository.mjs';
@@ -61,7 +61,7 @@ try {
       }
       const remembered = await context.newPage();
       await remembered.goto(url, {waitUntil: 'networkidle'});
-      assert.equal(await remembered.locator('[data-example="client/ui-syntax"]').first().getByRole('tab', {name: 'C#/.NET', exact: true}).getAttribute('aria-selected'), 'true');
+      await expect(remembered.locator('[data-example="client/ui-syntax"]').first().getByRole('tab', {name: 'C#/.NET', exact: true})).toHaveAttribute('aria-selected', 'true');
       await remembered.close();
       await page.goto(url + '?lsf-client-language=invalid&lsf-guest-language=c', {waitUntil: 'networkidle'});
       const selected = blocks.first().getByRole('tab', {name: 'Rust', exact: true});

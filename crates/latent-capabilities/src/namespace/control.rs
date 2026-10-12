@@ -13,7 +13,9 @@ use latent_state::{
             NamespaceCatalog, NamespaceMutation, NamespaceOperationContext,
             NamespaceOperationReceipt, NamespaceRead,
         },
-        lifecycle::{NamespaceLifecycleCompletion, NamespaceLifecycleRegistry},
+        lifecycle::{
+            NamespaceLifecycleCompletion, NamespaceLifecycleHandle, NamespaceLifecycleRegistry,
+        },
         NamespaceError, NamespaceRecord, NamespaceTransition,
     },
 };
@@ -354,7 +356,27 @@ fn inspection_actual(
     receipt: Option<&NamespaceOperationReceipt>,
     action: impl FnOnce() -> Result<(), PlatformError>,
 ) -> Result<(), PlatformError> {
+    inspection_scope(actual, current, receipt)?;
     let mut action = Some(action);
+    let mut failure = None;
+    let result = lifecycle.with_current_record(current, || {
+        action.take().ok_or(NamespaceError::PermissionDenied)?().map_err(|error| {
+            failure = Some(error);
+            NamespaceError::PermissionDenied
+        })
+    });
+    if let Some(error) = failure {
+        Err(error)
+    } else {
+        result.map_err(platform)
+    }
+}
+
+fn inspection_scope(
+    actual: &EvaluationInput<'_>,
+    current: &NamespaceRead,
+    receipt: Option<&NamespaceOperationReceipt>,
+) -> Result<(), PlatformError> {
     let ResourceTarget::State {
         namespace,
         incarnation,
@@ -388,16 +410,5 @@ fn inspection_actual(
     }) {
         return Err(denied());
     }
-    let mut failure = None;
-    let result = lifecycle.with_current_record(current, || {
-        action.take().ok_or(NamespaceError::PermissionDenied)?().map_err(|error| {
-            failure = Some(error);
-            NamespaceError::PermissionDenied
-        })
-    });
-    if let Some(error) = failure {
-        Err(error)
-    } else {
-        result.map_err(platform)
-    }
+    Ok(())
 }

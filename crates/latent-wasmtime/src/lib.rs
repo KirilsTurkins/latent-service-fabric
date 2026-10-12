@@ -19,8 +19,6 @@ mod preparation_observer;
 mod services;
 mod surface;
 mod telemetry;
-#[cfg(test)]
-mod test_fixtures;
 mod timing;
 mod values;
 
@@ -45,9 +43,9 @@ pub use compiler::CompilerObserver;
 #[cfg(feature = "development-clock-fixture")]
 pub use config::DevelopmentClockReadings;
 pub use config::{
-    BufferedWebValueProfile, CompilerOptimization, ExecutionIsolationProfile,
-    GuestLanguageProfiles, InstanceAllocator, Phase0InstanceAllocator, Phase0WasmtimeConfig,
-    WasmtimeConfig, GENERIC_BACKEND_ID, WASMTIME_VERSION,
+    BufferedWebValueProfile, CompilerOptimization, ExecutionIsolationProfile, InstanceAllocator,
+    Phase0InstanceAllocator, Phase0WasmtimeConfig, WasmtimeConfig, GENERIC_BACKEND_ID,
+    WASMTIME_VERSION,
 };
 pub use containment::RuntimeResourceSnapshot;
 pub use factory::WasmtimeComponentEngineFactory;
@@ -73,13 +71,6 @@ pub use timing::{InvocationTimingStoreSnapshot, Phase0InvocationTiming};
 pub use values::{ValueCodecLimits, MEDIA_TYPE as WIT_VALUES_MEDIA_TYPE};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ExecutionContainment {
-    pub async_support: bool,
-    pub fuel_enabled: bool,
-    pub epoch_interruption_enabled: bool,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WasmtimeEngineProfile {
     pub id: String,
     pub wasmtime_version: String,
@@ -87,22 +78,10 @@ pub struct WasmtimeEngineProfile {
     pub cpu_feature_set: String,
     pub pooling_allocator: bool,
     pub copy_on_write_images: bool,
-    pub containment: ExecutionContainment,
+    pub async_support: bool,
+    pub fuel_enabled: bool,
+    pub epoch_interruption_enabled: bool,
     pub configuration: Metadata,
-}
-
-impl std::ops::Deref for WasmtimeEngineProfile {
-    type Target = ExecutionContainment;
-
-    fn deref(&self) -> &Self::Target {
-        &self.containment
-    }
-}
-
-impl std::ops::DerefMut for WasmtimeEngineProfile {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.containment
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -134,7 +113,8 @@ pub trait AheadOfTimeCache: Send + Sync {
         key: &'a PreparationKey,
     ) -> BoxFuture<'a, Result<Option<AheadOfTimeArtifact>, PlatformError>>;
 
-    fn put(&self, artifact: AheadOfTimeArtifact) -> BoxFuture<'_, Result<(), PlatformError>>;
+    fn put<'a>(&'a self, artifact: AheadOfTimeArtifact)
+        -> BoxFuture<'a, Result<(), PlatformError>>;
 }
 
 pub trait PrecompiledArtifactValidator: Send + Sync {

@@ -13,6 +13,7 @@ use crate::containment::platform_error;
 use crate::values::validate_signature;
 
 pub(crate) mod blob;
+pub(crate) mod networking;
 pub(crate) mod streaming;
 pub(crate) mod transaction;
 
@@ -109,42 +110,32 @@ fn lookup_function<'a, T>(
 
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Providers {
+    pub activation_runtime: bool,
     pub local_services: bool,
-    pub network: NetworkProviders,
-    pub storage: StorageProviders,
-    pub signals: SignalProviders,
-}
-#[derive(Clone, Copy, Default)]
-pub(crate) struct NetworkProviders {
     pub http: bool,
     pub streaming_http: bool,
-}
-#[derive(Clone, Copy, Default)]
-pub(crate) struct StorageProviders {
+    pub outbound_streams: bool,
     pub blobs: bool,
     pub secrets: bool,
-}
-#[derive(Clone, Copy, Default)]
-pub(crate) struct SignalProviders {
     pub events: bool,
     pub random: bool,
     pub metrics: bool,
 }
 impl Providers {
     fn supports(self, name: &str) -> bool {
-        (self.signals.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
-            || (self.signals.random
-                && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
-            || (self.signals.metrics
-                && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
-            || (self.storage.secrets
-                && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
-            || (self.storage.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
+        (self.activation_runtime && name == crate::host::runtime::CAPABILITY)
+            || (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
+            || (self.random && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
+            || (self.metrics && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
+            || (self.secrets && name == latent_capabilities::broker::secrets::SECRETS_CAPABILITY)
+            || (self.blobs && name == latent_capabilities::broker::blob::BLOB_CAPABILITY)
             || (self.local_services
                 && name == latent_capabilities::broker::SERVICE_INVOCATION_CAPABILITY)
-            || (self.network.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
-            || (self.network.streaming_http
+            || (self.http && name == latent_capabilities::broker::http::HTTP_CAPABILITY)
+            || (self.streaming_http
                 && name == latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY)
+            || (self.outbound_streams
+                && name == latent_capabilities::broker::network::STREAM_CAPABILITY)
     }
 }
 pub(crate) fn validate_with_providers(
@@ -177,6 +168,9 @@ pub(crate) fn validate_with_providers(
         &mut retained_bytes,
         providers,
     )?;
+    if imports.contains(latent_capabilities::broker::network::STREAM_CAPABILITY) {
+        networking::validate_encoding(&artifact.component_bytes)?;
+    }
 
     let declared_exports = artifact
         .manifest
@@ -303,7 +297,6 @@ fn validate_imports(
     providers: Providers,
 ) -> Result<(BTreeSet<String>, BTreeSet<String>), PlatformError> {
     let mut imports = BTreeSet::new();
-    let mut type_imports = BTreeSet::new();
     let transactional = component_type
         .imports(engine)
         .any(|(name, _)| name == transaction::STATE || name == transaction::INTENTS);
@@ -316,6 +309,7 @@ fn validate_imports(
         latent_core::PHASE3_HOST_ABI_CURRENT
     };
     let transaction_resource = transaction::command_resource(component_type, engine);
+    let mut type_imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
         let ComponentItem::ComponentInstance(interface) = item.ty else {
@@ -323,7 +317,7 @@ fn validate_imports(
                 "host capabilities and structural types must be imported interfaces",
             ));
         };
-        let Some(specification) = profile.interface(name) else {
+        let Some(specification) = preparation_interface(profile, name, transactional) else {
             validate_type_interface(&interface, engine, config, remaining)?;
             retain(256 + name.len(), retained_bytes, config)?;
             type_imports.insert(name.to_owned());
@@ -364,7 +358,7 @@ fn validate_imports(
                         if specification.interface == transaction::STATE {
                             transaction::is_async(name)?
                         } else {
-                            specification.asynchronous
+                            specification.operation_is_asynchronous(name)
                         },
                         config,
                         remaining,
@@ -374,6 +368,7 @@ fn validate_imports(
                         match specification.interface {
                             latent_capabilities::broker::blob::BLOB_CAPABILITY => blob::validate(name, &function, &interface, engine)?,
                             latent_capabilities::broker::streaming_http::STREAMING_HTTP_CAPABILITY => streaming::validate(name, &function, &interface, engine)?,
+                            latent_capabilities::broker::network::STREAM_CAPABILITY => networking::validate(name, &function, &interface, engine)?,
                             transaction::STATE | transaction::INTENTS => transaction::validate(specification.interface, name, &function, &interface, engine, transaction_resource)?,
                             _ => return Err(incompatible("unsupported host resource interface")),
                         }
@@ -431,6 +426,23 @@ fn validate_type_interface(
         check_types(&[ty], config, remaining)?;
     }
     Ok(())
+}
+
+fn preparation_interface(
+    profile: latent_core::HostAbiProfile,
+    name: &str,
+    transactional: bool,
+) -> Option<&'static latent_core::HostInterfaceSpec> {
+    // Generic preparation captures both frozen ordinary and transaction ABI
+    // identities. Provider installation and the original strict runtime gate
+    // remain mandatory when composing this exact HTTP client surface.
+    profile.interface(name).or_else(|| {
+        if transactional && name == latent_capabilities::broker::http::HTTP_CAPABILITY {
+            latent_core::PHASE3_HOST_ABI_CURRENT.interface(name)
+        } else {
+            None
+        }
+    })
 }
 
 fn register_functions(

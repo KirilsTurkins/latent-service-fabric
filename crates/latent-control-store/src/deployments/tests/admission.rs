@@ -407,10 +407,8 @@ fn real_catalog_cancellation_enqueue_failure_expiry_and_future_drop_reclaim_all_
             .unwrap();
         let accounting = ActivationBudget::new(permit.effective_budget().clone());
         assert_eq!(
-            cancellations
-                .cancel(permit.activation_id(), "cancel")
-                .unwrap(),
-            CancelDisposition::Accepted
+            cancellations.cancel(permit.activation_id(), "cancel"),
+            Ok(CancelDisposition::Accepted)
         );
         if running {
             let permit = permit.start_execution_at(sample.monotonic()).unwrap();

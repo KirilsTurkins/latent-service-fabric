@@ -24,9 +24,10 @@ pub use lifecycle::{
     WebLifecycleRecord, WebMutationResult, WebOperationReceipt, WebPublicationStatus,
 };
 pub use model::{
-    CheckedWebLayout, StaticDirectoryIndexMode, StaticFallbackMode, StaticWebFallback,
-    StaticWebRouting, StaticWebRoutingProfile, WebApplicationManifest, WebAsset, WebBackendProfile,
-    WebRenderMode, WebRenderer, WebRendererProfile, WebRoute,
+    CheckedWebLayout, StaticDirectoryIndexMode, StaticFallbackMode, StaticWebErrorDocument,
+    StaticWebErrorDocumentProfile, StaticWebFallback, StaticWebRouting, StaticWebRoutingProfile,
+    WebApplicationManifest, WebAsset, WebBackendProfile, WebRenderMode, WebRenderer,
+    WebRendererProfile, WebRoute,
 };
 pub use read::{WebBlobRead, WebReadLimits, WebReadSnapshot, WebSelection};
 pub(crate) use read::{WebReadBudget, WebReadPermit};

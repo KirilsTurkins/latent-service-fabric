@@ -13,6 +13,8 @@ pub use latent::service::invoke as service;
 pub use latent::telemetry::custom as metrics;
 use latent_component_bindings::blob_guest::latent;
 
+#[cfg(feature = "transaction")]
 pub use latent_component_bindings::transaction_guest::latent::intents::staging as intents;
 /// Opt-in Phase 4 bindings. Recognition is separate from installed authority.
+#[cfg(feature = "transaction")]
 pub use latent_component_bindings::transaction_guest::latent::state::key_value as state;

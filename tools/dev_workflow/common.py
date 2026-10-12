@@ -15,7 +15,7 @@ MAX_REVISIONS = 4
 MAX_DEPLOY_SECONDS = 300
 MAX_START_SECONDS = 180
 PROTOCOL = "latent.dev.protocol.v1"
-HOST_ABI = "lsf-host-abi-phase3-v4"
+HOST_ABI = "lsf-host-abi-phase3-v5"
 TRANSACTION_HOST_ABI = "lsf-host-abi-phase4-v1"
 GUEST_HOST_ABIS = frozenset({HOST_ABI, TRANSACTION_HOST_ABI})
 

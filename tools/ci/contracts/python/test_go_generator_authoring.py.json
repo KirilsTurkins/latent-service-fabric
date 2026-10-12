@@ -1,0 +1,92 @@
+{
+  "cases": [
+    "GeneratorApprovalTests.test_changed_application_source_rejects_a_previous_execution_approval",
+    "GeneratorApprovalTests.test_generator_cannot_overwrite_existing_source_or_sdk_and_cannot_widen_limits",
+    "GeneratorApprovalTests.test_missing_wrong_approval_and_changed_selected_inputs_never_execute",
+    "GeneratorApprovalTests.test_request_has_exact_tool_input_source_sdk_and_finite_execution_identity_without_running",
+    "GeneratorNativeTests.test_actual_approved_generator_captures_sources_and_reuses_them_offline_without_tool",
+    "GeneratorNativeTests.test_actual_cancelled_generator_retains_failed_receipt_and_reaps_descendants_without_adoption"
+  ],
+  "guards": {
+    "GeneratorApprovalTests.test_changed_application_source_rejects_a_previous_execution_approval": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:99805ac3125248d35fe3043b7f43dff85bef43b324454d525c13fc38e8e2180e",
+        "class:setup-sha256:fcc5d7711c6d762ea23828723092d6e3362d9500cad834e77c5e780581af6ddb"
+      ],
+      "skipSites": []
+    },
+    "GeneratorApprovalTests.test_generator_cannot_overwrite_existing_source_or_sdk_and_cannot_widen_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:99805ac3125248d35fe3043b7f43dff85bef43b324454d525c13fc38e8e2180e",
+        "class:setup-sha256:fcc5d7711c6d762ea23828723092d6e3362d9500cad834e77c5e780581af6ddb"
+      ],
+      "skipSites": []
+    },
+    "GeneratorApprovalTests.test_missing_wrong_approval_and_changed_selected_inputs_never_execute": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:99805ac3125248d35fe3043b7f43dff85bef43b324454d525c13fc38e8e2180e",
+        "class:setup-sha256:fcc5d7711c6d762ea23828723092d6e3362d9500cad834e77c5e780581af6ddb"
+      ],
+      "skipSites": []
+    },
+    "GeneratorApprovalTests.test_request_has_exact_tool_input_source_sdk_and_finite_execution_identity_without_running": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:99805ac3125248d35fe3043b7f43dff85bef43b324454d525c13fc38e8e2180e",
+        "class:setup-sha256:fcc5d7711c6d762ea23828723092d6e3362d9500cad834e77c5e780581af6ddb"
+      ],
+      "skipSites": []
+    },
+    "GeneratorNativeTests.test_actual_approved_generator_captures_sources_and_reuses_them_offline_without_tool": {
+      "bases": [
+        "GeneratorApprovalTests"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:99805ac3125248d35fe3043b7f43dff85bef43b324454d525c13fc38e8e2180e",
+        "class:raise:raise unittest.SkipTest('actual Go generator containment requires Linux Bubblewrap')",
+        "class:setup-sha256:4bb37fa0f80817b80f639d7311b42a9d80ea48a6816b3356ec4974412338ba50",
+        "class:skip:unittest.SkipTest('actual Go generator containment requires Linux Bubblewrap')"
+      ],
+      "skipSites": []
+    },
+    "GeneratorNativeTests.test_actual_cancelled_generator_retains_failed_receipt_and_reaps_descendants_without_adoption": {
+      "bases": [
+        "GeneratorApprovalTests"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:99805ac3125248d35fe3043b7f43dff85bef43b324454d525c13fc38e8e2180e",
+        "class:raise:raise unittest.SkipTest('actual Go generator containment requires Linux Bubblewrap')",
+        "class:setup-sha256:4bb37fa0f80817b80f639d7311b42a9d80ea48a6816b3356ec4974412338ba50",
+        "class:skip:unittest.SkipTest('actual Go generator containment requires Linux Bubblewrap')"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_generator_authoring.py",
+  "reviewReason": "Own explicit Go generator approval, source and SDK drift, finite bounds, real namespace denial, offline output reuse and actual descendant cleanup.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

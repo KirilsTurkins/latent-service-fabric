@@ -141,6 +141,7 @@ def main():
     programs = {
         "semantic-tests": SDK / "tests/profile_semantics.c",
         "transport-tests": SDK / "tests/transport.c",
+        "transaction-tests": SDK / "tests/transactions.c",
         "wire-tests": generated / "wire_vectors.c",
         "owner-bounds": SDK / "tests/owner_bounds.c",
         "private-config-tests": SDK / "tests/private_config.c",
