@@ -3263,10 +3263,21 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "stale-private-diagnostic-checkpoint",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707,
+        709
+      ],
+      "currentSourcePaths": [
+        "crates/latent-wasmtime/tests/local_service/diagnostics.rs"
+      ],
+      "reviewedDiffSha256": "5faaaa27530ce05448d64f8f2281f0ca987f1e92ae5fd9d06f1a35c61997fc78",
+      "developmentHead": "2eafdc45a4c81a6cc0d1793c6701d64ddbeee64d",
+      "reconciliation": "The authored late changes are only the opt-in test stderr hash diagnostics (72f0e7b2 and bf30467b). Current typed failure recording, bounded array, no-retry forwarding and incomplete-state reporting are byte-identical after removing that diagnostic block. Earlier source generator and scheduler owners are delivered in current development. The exact historical diagnostic source remains available in the original branch; no requirement calls for exposing its private message fingerprints.",
+      "closureObservedUtc": "2026-10-12T17:21:49.155690+00:00"
     },
     {
       "pullRequest": 966,
@@ -3697,5 +3708,5 @@
       "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     }
   ],
-  "remainingOpenCount": 14
+  "remainingOpenCount": 13
 }
