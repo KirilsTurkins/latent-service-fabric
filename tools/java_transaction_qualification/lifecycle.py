@@ -291,7 +291,7 @@ def inspect_namespace(client, publication):
     return value
 
 
-def deploy(client, signed: Path, item, publication: str, grants, authority: str):
+def deployment_metadata(client, signed: Path, item, publication: str, grants):
     manifest = read_json(signed / ("java718-" + item.name) / "deployment.json")
     require(manifest["spec"]["release"] == item.component_digest, "original-deployment-component")
     manifest["spec"].update(publication=publication, grants=grants)
@@ -309,9 +309,18 @@ def deploy(client, signed: Path, item, publication: str, grants, authority: str)
     target = {"service": cfg.SERVICE, "contract": cfg.CONTRACT, "route": cfg.DEPLOYMENT,
         "publication": publication, "revision": selected[0]["revisions"][0]["revisionId"],
         "deploymentGeneration": int(deployed["generation"])}
+    return deployed, target
+
+
+def bind_http_routes(client, authority: str, item, target):
     for mode in PATHS:
         function = mode if mode in {"query", "scan"} else "update"
         _trigger(client, authority, item, dict(target, function=function), mode)
+
+
+def deploy(client, signed: Path, item, publication: str, grants, authority: str):
+    deployed, target = deployment_metadata(client, signed, item, publication, grants)
+    bind_http_routes(client, authority, item, target)
     client.evidence.passed("deploy-" + item.name, {"deployment": deployed, "selectedTarget": target})
     return target
 
