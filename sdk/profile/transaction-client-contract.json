@@ -142,7 +142,7 @@
       "service": "latent.transaction.v1.TransactionService"
     },
     "latent/control/v1/state.proto": {
-      "sha256": "sha256:92a7e12495b9bafb17d0d97ed417ece33ce7ea9041fbea17ed79bdf0151cdb34",
+      "sha256": "sha256:6abb06d94f25b0d69f58cb224fc45731b156fa70ef02f8f8107ecc8a65b7f1b0",
       "service": "latent.control.v1.StateService"
     },
     "latent/control/v1/dispatcher.proto": {
@@ -2410,7 +2410,8 @@
       "TERMINATE_EFFECT": 2,
       "PURGE_EXPIRED_PAYLOAD": 3,
       "CHECKPOINT_NAMESPACE": 4,
-      "RECONCILE_EFFECT": 5
+      "RECONCILE_EFFECT": 5,
+      "RELEASE_EXPIRED_COMMAND_FLOOR": 6
     },
     "StateOperationDisposition": {
       "UNSPECIFIED": 0,

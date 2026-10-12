@@ -104,6 +104,7 @@ public final class Transactions {
         public static final StateMutationKind PURGE_EXPIRED_PAYLOAD = new StateMutationKind(3);
         public static final StateMutationKind CHECKPOINT_NAMESPACE = new StateMutationKind(4);
         public static final StateMutationKind RECONCILE_EFFECT = new StateMutationKind(5);
+        public static final StateMutationKind RELEASE_EXPIRED_COMMAND_FLOOR = new StateMutationKind(6);
     }
 
     public record StateOperationDisposition(int value) {

@@ -658,3 +658,16 @@ The October 11, 2026 descriptor regeneration uses pinned Buf 1.72.0 and verifies
 every prior descriptor semantic before admitting only this field and its
 synthetic optional oneof. All six transaction client models and maintained
 Protobuf producers follow the same authoritative source.
+
+## Retired command floor release
+
+The October 12, 2026 regeneration adds only
+`AuditControlAction.AUDIT_CONTROL_ACTION_COMMAND_FLOOR_RELEASE` at number 30 and
+`StateMutationKind.STATE_MUTATION_KIND_RELEASE_EXPIRED_COMMAND_FLOOR` at number 6.
+Pinned Buf 1.72.0 output was compared against every prior descriptor semantic;
+removing exactly these two entries restores the previous golden byte meanings.
+All existing enum numbers, fields, reservations and sixteen client operations
+remain unchanged. The six transaction models and Node descriptor retain both
+additions and exact current source identities. A descriptive enum value grants
+no floor-release authority; the protected clock, native owner and audited
+maintenance receipt still determine whether a release can run.
