@@ -37,6 +37,7 @@ def run(dotnet: Path, output: Path) -> dict:
             temporary = Path(owned)
             project = temporary / "project"
             project.mkdir()
+            (project / "global.json").write_bytes(encode({"sdk": {"version": SDK_VERSION, "rollForward": "disable"}}))
             environment = build_environment(temporary)
             environment.update(DOTNET_CLI_TELEMETRY_OPTOUT="1", DOTNET_SKIP_FIRST_TIME_EXPERIENCE="1",
                 DOTNET_NOLOGO="1", DOTNET_MULTILEVEL_LOOKUP="0", DOTNET_CLI_HOME=str(temporary / "home"),
@@ -75,7 +76,6 @@ def run(dotnet: Path, output: Path) -> dict:
                 b'<EnableDefaultCompileItems>false</EnableDefaultCompileItems><ResourceInjection>expanded</ResourceInjection>'
                 b'</PropertyGroup><ItemGroup><Compile Include="Program.cs"/><Injected Include="expanded-item"/>'
                 b'</ItemGroup></Project>')
-            (project / "global.json").write_bytes(encode({"sdk": {"version": SDK_VERSION, "rollForward": "disable"}}))
             (project / "nuget.config").write_bytes(b'<configuration><packageSources><clear/></packageSources></configuration>')
             (project / "packages.lock.json").write_bytes(encode({"version": 1, "dependencies": {"net10.0": {}}}))
             program = '''using System;

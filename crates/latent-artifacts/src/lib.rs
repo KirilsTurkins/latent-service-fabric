@@ -24,10 +24,12 @@ pub mod web;
 pub use publication::PublicationRef;
 pub use publication_management::PublicationOperationReceipt;
 pub use retained_package::{RetainedPackageParts, RetainedPackageSource};
+mod selected_transaction_layers;
 pub use selected_transaction_asset::{
-    SelectedTransactionAsset, SelectedTransactionAssetParts, TRANSACTION_ASSET_RESPONSE_BYTES,
-    TRANSACTION_ASSET_WORK_BYTES,
+    SelectedTransactionAsset, SelectedTransactionAssetParts, TransactionAssetProfile,
+    TRANSACTION_ASSET_RESPONSE_BYTES, TRANSACTION_ASSET_WORK_BYTES,
 };
+pub use selected_transaction_layers::SelectedTransactionLayers;
 
 pub use audit::{
     reconcile_release_audit, AuditedAdmissionAuthority, ReleaseAuditAck, ReleaseAuditGuard,

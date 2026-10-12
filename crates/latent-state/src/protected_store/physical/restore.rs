@@ -24,7 +24,7 @@ impl PhysicalStore {
         snapshot: &crate::protected_store::snapshot::SnapshotFile,
         identity: StoreIdentity,
         mut current: impl FnMut() -> Result<(), StoreError>,
-        accept: impl FnOnce() -> Result<(), StoreError>,
+        mut accept: impl FnMut() -> Result<(), StoreError>,
     ) -> Result<Self, ProtectedStoreError> {
         use latent_protected_files::ProtectedRoot;
         current().map_err(ProtectedStoreError::Store)?;
@@ -76,7 +76,7 @@ impl PhysicalStore {
             .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
         source.check()?;
         engine
-            .apply_fenced(batch, accept)
+            .apply_fenced(batch, &mut accept)
             .map_err(|error| match error {
                 FencedStoreError::Store(error) | FencedStoreError::Fence(error) => {
                     ProtectedStoreError::Store(error)
@@ -88,6 +88,29 @@ impl PhysicalStore {
             .map_err(|_| ProtectedStoreError::CommitUncertain)?;
         source.check()?;
         current().map_err(ProtectedStoreError::Store)?;
+        let mode_memory = snapshot
+            .original()
+            .reserve_buffer(
+                latent_core::native_capacity::NativeBufferClass::Work,
+                super::super::mode::STATE_MODE_NATIVE_BYTES,
+            )
+            .map_err(|_| ProtectedStoreError::InvalidConfiguration)?;
+        accept().map_err(ProtectedStoreError::Store)?;
+        let (mode, mode_fence) = super::super::mode::ensure_native_fenced(
+            &root,
+            &identity,
+            true,
+            snapshot.original(),
+            || {},
+        )
+        .map_err(ProtectedStoreError::Store)?;
+        if !mode.created_here {
+            return Err(ProtectedStoreError::Store(StoreError::Conflict));
+        }
+        root.check_exact_mutable_files(&[&lock_fence, &fence, &mode_fence])
+            .map_err(|_| ProtectedStoreError::CommitUncertain)?;
+        current().map_err(ProtectedStoreError::Store)?;
+        drop(mode_memory);
         let fresh_root = root.identity();
         Ok(Self {
             _resident_memory: None,
@@ -106,6 +129,7 @@ impl PhysicalStore {
             fence,
             root_lock,
             lock_fence,
+            mode_fence: Some(mode_fence),
         })
     }
 
@@ -116,7 +140,7 @@ impl PhysicalStore {
         _: &crate::protected_store::snapshot::SnapshotFile,
         _: StoreIdentity,
         _: impl FnMut() -> Result<(), StoreError>,
-        _: impl FnOnce() -> Result<(), StoreError>,
+        _: impl FnMut() -> Result<(), StoreError>,
     ) -> Result<Self, ProtectedStoreError> {
         Err(ProtectedStoreError::UnsupportedPlatform)
     }

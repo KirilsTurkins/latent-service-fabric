@@ -101,6 +101,33 @@ fn unclaimed_response_and_native_operation_pin_are_not_quiescence() {
 }
 
 #[test]
+fn exclusive_resource_keeps_full_retained_charge_and_cannot_raise_active_job_ceiling() {
+    let (store, _, _) = store();
+    let owner = StoreIoOwner::new(store, exclusive_limits(), |_| Ok(())).unwrap();
+    assert!(matches!(
+        owner.reserve_custody::<()>(20_000, Instant::now() + WATCHDOG, Arc::new(())),
+        Err(StoreIoError::ByteBudget)
+    ));
+    assert!(matches!(
+        owner.reserve_recovery_retained::<()>(11_000),
+        Err(StoreIoError::JobTooLarge)
+    ));
+    let custody = owner
+        .reserve_custody::<()>(11_000, Instant::now() + WATCHDOG, Arc::new(()))
+        .unwrap();
+    let snapshot = owner.recovery_snapshot().unwrap();
+    assert!(snapshot.retained_bytes >= 11_000);
+    assert_eq!(snapshot.accepted, 1);
+    assert!(matches!(
+        owner.submit_custody(custody, StoreIoKind::RecoveryWrite, 10_001, |_, _| ()),
+        Err(StoreIoError::JobTooLarge)
+    ));
+    metadata_retired(&owner);
+    assert_eq!(owner.recovery_snapshot().unwrap().retained_bytes, 0);
+    assert!(finish(&owner).clean);
+}
+
+#[test]
 fn custody_excludes_all_generic_work_and_only_its_original_affine_job_can_run() {
     let (store, writes, _) = store();
     let owner = StoreIoOwner::new(store, exclusive_limits(), |_| Ok(())).unwrap();

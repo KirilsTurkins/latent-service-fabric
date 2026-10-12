@@ -8,7 +8,7 @@ use crate::{
         custody::ProtectedCustodyJob, ProtectedStoreError, ProtectedStoreOwner,
         RestoreInputPrecondition,
     },
-    recovery::snapshot::{inspect_snapshot, RequiredArtifact, SnapshotError, SnapshotReceipt},
+    recovery::snapshot::{RequiredArtifact, SnapshotError, SnapshotReceipt},
     store_io::{StoreIoError, StoreIoKind},
 };
 use latent_core::native_capacity::{
@@ -162,10 +162,11 @@ impl ProtectedStoreOwner {
         if expected.snapshot_digest == [0; 32] || expected.manifest_digest == [0; 32] {
             return Err(ProtectedStoreError::InvalidConfiguration);
         }
+        let work = snapshot.custody.maximum_job_bytes();
         let inner = self.with_custody(
             snapshot.custody,
             StoreIoKind::RecoveryRead,
-            8 * 1024 * 1024,
+            work,
             move |file, _| {
                 let Some(file) = file else {
                     return Ok(Err(SnapshotError::Review(StoreError::Invalid)));
@@ -195,16 +196,15 @@ fn read(
         .reserve_buffer(NativeBufferClass::Response, SNAPSHOT_RECEIPT_RESPONSE_BYTES)
         .map_err(native_snapshot_error)?;
     check_input(file, &owners)?;
-    let receipt = inspect_snapshot(&mut file.cursor(), file.deadline(), |key, bytes| {
-        owners.row(key, bytes)
-    })
-    .map_err(|error| {
-        file.original()
-            .with_live(|| ())
-            .map_err(native_snapshot_error)
-            .err()
-            .unwrap_or(SnapshotError::Review(error))
-    })?;
+    let receipt = file
+        .inspect(|key, bytes| owners.row(key, bytes))
+        .map_err(|error| {
+            file.original()
+                .with_live(|| ())
+                .map_err(native_snapshot_error)
+                .err()
+                .unwrap_or(SnapshotError::Review(error))
+        })?;
     if receipt.snapshot_digest != expected.snapshot_digest
         || receipt.manifest_digest != expected.manifest_digest
     {

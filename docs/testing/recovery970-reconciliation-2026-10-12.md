@@ -30,22 +30,21 @@ relabelled as current protected snapshots. The current state bootstrap, native
 capacity, namespace ownership, installed transaction path and stateless behavior
 remain the delivered owners.
 
-## Concrete current-owner feasibility boundary
+## Original boundary and current gateway continuation
 
 The original [authenticated gateway](https://github.com/KirilsTurkins/latent-service-fabric/blob/fd8853fd0e51235d17661079720faf4c810cd6bb/apps/latentd/src/standalone/state/recovery/mod.rs),
 [current-authority close action](https://github.com/KirilsTurkins/latent-service-fabric/blob/fd8853fd0e51235d17661079720faf4c810cd6bb/apps/latentd/src/standalone/state/recovery/reconciliation.rs)
 and original decoder/catalog/request graph remain recoverable at the exact
 checkpoint. Their absence from current source does not prove safe supersession.
 
-The current [native example](../../apps/latentd/examples/transaction_recovery.rs)
-explicitly refuses offline requests and supports startup diagnosis only. The
-current [StateKernel](../../apps/latentd/src/standalone/state/kernel.rs) and
-[transaction runtime](../../apps/latentd/src/standalone/state/runtime.rs) have no
-equivalent admitted offline gateway/RecoveryCodecs installation. Reintroducing
-the older graph would compete with current signed installation, tenant accounting
-and startup ownership. This reconciliation preserves the useful lower-level
-operation and marks the installed gateway as an implementation gap; it claims
-neither replacement equivalence nor complete installed recovery qualification.
+The initial reconciled source checkpoint retained startup diagnosis and the
+lower-level controls while identifying the missing installed gateway. The
+[current gateway continuation](recovery970-current-gateway-2026-10-12.md) now
+wraps current signed installation, tenant accounting, protected checkpoint,
+physical Fresh restore and purpose-specific authorization owners. It retains
+the old byte approval boundary and adds separate current proposal inspection.
+Its complete signed/operator campaign is still pending; the earlier native
+receipt below does not qualify these new gateway bytes.
 
 ## Actual controlled workload and acceptance limits
 

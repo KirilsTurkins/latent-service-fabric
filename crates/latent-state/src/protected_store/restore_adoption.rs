@@ -36,6 +36,7 @@ pub(super) struct RestoredRootFence {
     pub(super) root: (u64, u64),
     pub(super) file: (u64, u64),
     pub(super) lock: (u64, u64),
+    pub(super) mode: Option<(u64, u64)>,
 }
 
 /// Original reviewed identities only; no caller path, ready flag or permission.

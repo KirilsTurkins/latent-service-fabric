@@ -229,6 +229,22 @@ impl<S: Send + Sync + 'static> StoreIoReady<S> {
         // under this SAME lock and still rejects newly arrived work/native pins.
     }
 
+    #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+    pub(crate) fn wait_test_custody_retirement(&self, deadline: Instant) {
+        let control = &self.owner.inner.control;
+        let mut state = control.state.lock().unwrap();
+        while state.custody.is_some() {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            assert!(
+                !remaining.is_zero(),
+                "actual custody destructor did not retire"
+            );
+            state = control.changed.wait_timeout(state, remaining).unwrap().0;
+        }
+        assert_eq!(state.physical_owners, 0);
+        assert_eq!(state.accepted, 0);
+    }
+
     pub(crate) fn failure_gate(&self) -> impl Fn(StoreIoError) + Send + Sync + 'static {
         let control = Arc::clone(&self.owner.inner.control);
         move |error| control.fail(error)

@@ -123,6 +123,11 @@ pub(super) async fn authorize(
         contract::Request::MutateNamespace(value) => {
             Some(original.seal(mutation_operation(value.mutation)?, binding.incarnation)?)
         }
+        contract::Request::MutateState(value)
+            if value.mutation == c::StateMutationKind::ReleaseExpiredCommandFloor as i32 =>
+        {
+            Some(original.seal("namespace-destroy", binding.incarnation)?)
+        }
         _ => None,
     };
     let listing = if matches!(request, contract::Request::SelectEntity(_)) {
@@ -137,6 +142,16 @@ pub(super) async fn authorize(
         binding.incarnation
     };
     let inspect = original.seal("namespace-inspect", response_incarnation)?;
+    if let contract::Request::MutateState(value) = request {
+        if value.mutation == c::StateMutationKind::ReleaseExpiredCommandFloor as i32
+            && value.expected_policy_digest != captured_policy_digest(&inspect)
+        {
+            return Err(error(
+                PlatformErrorCode::StateConflict,
+                "state-policy-precondition-changed",
+            ));
+        }
+    }
     if (inspect.requires_audit()
         || listing
             .as_ref()

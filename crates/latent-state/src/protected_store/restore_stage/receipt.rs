@@ -14,13 +14,13 @@ impl ProtectedStoreOwner {
         request: RestoreStageRequest,
         owners: Arc<dyn RestoreStageOwners>,
     ) -> Result<ProtectedRestoreStageJob, ProtectedStoreError> {
-        let inner =
-            self.with_physical_custody(snapshot.custody, WORK_BYTES, move |file, source| {
-                let Some(file) = file else {
-                    return Ok(Err(RestoreStageError::Review(StoreError::Invalid)));
-                };
-                Ok(recover(source, file, input, request, owners))
-            })?;
+        let work = snapshot.custody.maximum_job_bytes();
+        let inner = self.with_physical_custody(snapshot.custody, work, move |file, source| {
+            let Some(file) = file else {
+                return Ok(Err(RestoreStageError::Review(StoreError::Invalid)));
+            };
+            Ok(recover(source, file, input, request, owners))
+        })?;
         Ok(ProtectedRestoreStageJob { inner })
     }
 }
@@ -70,11 +70,12 @@ fn recover(
         .store
         .check()
         .map_err(RestoreStageError::Destination)?;
-    let actual = inspect_snapshot(&mut file.cursor(), file.deadline(), |key, bytes| {
-        current_store(file, owners.as_ref())?;
-        owners.archive_row(key, bytes)
-    })
-    .map_err(RestoreStageError::Review)?;
+    let actual = file
+        .inspect(|key, bytes| {
+            current_store(file, owners.as_ref())?;
+            owners.archive_row(key, bytes)
+        })
+        .map_err(RestoreStageError::Review)?;
     if &actual != input.snapshot() {
         return Err(RestoreStageError::Review(StoreError::Conflict));
     }

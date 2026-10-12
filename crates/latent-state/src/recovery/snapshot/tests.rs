@@ -9,6 +9,52 @@ use latent_core::{StateNamespaceId, TenantId};
 use std::io::Cursor;
 
 #[test]
+fn scoped_snapshot_refuses_oversized_declared_row_before_reading_or_allocating_its_value() {
+    let mut bytes = MAGIC.to_vec();
+    bytes.extend_from_slice(&[1, Family::State as u8]);
+    bytes.extend_from_slice(&1_u16.to_le_bytes());
+    bytes.extend_from_slice(&(2_u32 * 1024 * 1024 + 1).to_le_bytes());
+    let declared_header_bytes = bytes.len() as u64;
+    let mut input = Cursor::new(bytes);
+    let mut callbacks = 0;
+    assert_eq!(
+        inspect_snapshot_bounded(
+            &mut input,
+            deadline(),
+            |_, _| {
+                callbacks += 1;
+                Ok(())
+            },
+            2 * 1024 * 1024,
+            1
+        ),
+        Err(StoreError::Capacity)
+    );
+    assert_eq!(input.position(), declared_header_bytes);
+    assert_eq!(callbacks, 0);
+}
+
+#[test]
+fn scoped_snapshot_refuses_oversized_manifest_before_allocating_or_decoding_it() {
+    let mut bytes = MAGIC.to_vec();
+    bytes.push(0);
+    bytes.extend_from_slice(&(64_u32 * 1024 + 1).to_le_bytes());
+    let header = bytes.len() as u64;
+    let mut input = Cursor::new(bytes);
+    assert_eq!(
+        inspect_snapshot_bounded(
+            &mut input,
+            deadline(),
+            |_, _| panic!("row callback"),
+            2 * 1024 * 1024,
+            1
+        ),
+        Err(StoreError::Capacity)
+    );
+    assert_eq!(input.position(), header);
+}
+
+#[test]
 fn legacy_snapshot_decoder_refuses_original_v2_archive_before_any_row_callback() {
     let fixture = fixture();
     let (bytes, _) = export(&fixture);

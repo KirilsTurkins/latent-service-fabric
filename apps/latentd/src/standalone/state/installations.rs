@@ -1,6 +1,6 @@
 //! Installed targets are captured by the original protected recovery worker.
-mod http;
-mod policy;
+pub(in crate::standalone::state) mod http;
+pub(in crate::standalone::state) mod policy;
 mod selection;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
@@ -9,7 +9,7 @@ use latent_policy::supply_chain::{SupplyChainClock, SupplyChainPolicy};
 
 use std::sync::Arc;
 
-use latent_artifacts::{DirectoryArtifactRepository, TRANSACTION_ASSET_RESPONSE_BYTES};
+use latent_artifacts::DirectoryArtifactRepository;
 use latent_capabilities::namespace::RecoverySelection;
 use latent_commit::atomic::{ReplayPolicy, ResultPolicy};
 use latent_control_store::{DeploymentStore, DirectoryDeploymentRepository};
@@ -186,6 +186,12 @@ pub(super) async fn load(
                         kernel.native.clone(),
                     )),
                     clock: services.clock,
+                    maintenance: Arc::clone(&kernel.maintenance),
+                    maintenance_clock: Arc::new(
+                        super::maintenance::ProtectedMaintenanceClock::new(Arc::clone(
+                            &kernel.clock,
+                        ))?,
+                    ),
                     audit: services.audit,
                 },
                 bindings,
@@ -226,6 +232,7 @@ async fn capture(
     effects: &EffectRuntime,
 ) -> Result<(Option<TransactionInstallation>, StateManagementBinding), PlatformError> {
     let deadline = kernel.original_deadline()?;
+    let profile = state::installation_profile(&settings.store);
     let original = Arc::new(
         kernel
             .native
@@ -233,8 +240,8 @@ async fn capture(
                 NativeAdmissionClass::Recovery,
                 NativeReservationRequest {
                     request_bytes: state::INSTALLATION_CAPTURE_REQUEST_BYTES,
-                    work_bytes: state::INSTALLATION_CAPTURE_WORK_BYTES,
-                    response_bytes: TRANSACTION_ASSET_RESPONSE_BYTES,
+                    work_bytes: state::installation_capture_work(profile),
+                    response_bytes: profile.response_bytes(),
                 },
                 deadline,
             )
@@ -247,7 +254,10 @@ async fn capture(
         )
         .map_err(|_| super::unavailable())?;
     let scratch = original
-        .reserve_buffer(NativeBufferClass::Work, 2 * 1024 * 1024)
+        .reserve_buffer(
+            NativeBufferClass::Work,
+            state::installation_scratch(profile),
+        )
         .map_err(|_| super::unavailable())?;
     let deployment = tokio::time::timeout_at(
         deadline.into(),
@@ -270,8 +280,8 @@ async fn capture(
     let resident_original = Arc::clone(&resident.original);
     let metadata_memory = Arc::clone(&resident.metadata);
     let charge = state::INSTALLATION_CAPTURE_REQUEST_BYTES
-        + state::INSTALLATION_CAPTURE_WORK_BYTES
-        + TRANSACTION_ASSET_RESPONSE_BYTES;
+        + state::installation_capture_work(profile)
+        + profile.response_bytes();
     let worker_original = Arc::clone(&original);
     let owners = Arc::clone(owners);
     let policy = Arc::clone(policy);
@@ -284,12 +294,13 @@ async fn capture(
             // Invalid selectors do not corrupt or quarantine an otherwise valid store.
             let mut storage_failure = None;
             let result = (|| {
-                let asset = artifacts.capture_selected_transaction_asset(
+                let asset = artifacts.capture_selected_transaction_asset_profile(
                     &operation.tenant,
                     &operation.component,
                     &operation.publication,
                     &native,
                     Arc::clone(&worker_original),
+                    profile,
                 )?;
                 policy::check_asset(asset.get(), &operation, &deployment.manifest)?;
                 let target = InvocationTarget {

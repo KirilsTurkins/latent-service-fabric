@@ -30,7 +30,16 @@ and `signedInvocations=0`. The maintained NativeAOT tools and all five runtime
 adapters, including wall clock, compiled successfully. Current command coverage
 retains 88 baseline and 280 required run blocks with 149 delegated owners.
 
-Actual component and signed-node qualification is running separately; the host
-MSBuild receipt is not guest qualification. Full six-language #681 acceptance,
+The ordinary resource helper compiled through NativeAOT, was signed/admitted on
+the real node and passed all original authoring tutorial/fault/HTTP controls.
+Its CLR string hashing requires the existing explicit noncrypto entropy port;
+without that declaration the first private attempt trapped. The passing attempt
+kept the original resource helper and added only the authoritative declaration
+and its finite fixture provider/grant. Missing entropy authority was denied
+before execution with zero fuel and memory. The original failure and subsequent
+diagnostic build failures remain in private evidence. Resource data itself
+introduces no authority, and secure random remains denied.
+
+The host MSBuild receipt is separate from this signed guest evidence. Full six-language #681 acceptance,
 the .NET thread-pool port #746 and independent runtime gates remain open. This
 PR does not close a ticket.

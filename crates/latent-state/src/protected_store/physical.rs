@@ -62,6 +62,8 @@ pub(super) struct PhysicalStore {
     root_lock: std::fs::File,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     lock_fence: latent_protected_files::ProtectedMutableFile,
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    mode_fence: Option<latent_protected_files::ProtectedMutableFile>,
     #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
     drop_probe: Mutex<Option<Box<dyn FnOnce() + Send>>>,
     // Last: original global memory outlives every native resource destructor.
@@ -150,6 +152,24 @@ impl PhysicalStore {
         }) {
             return Err(ProtectedStoreError::UnsafeRoot);
         }
+        let mode_fence = original_fence
+            .and_then(|original| original.mode)
+            .map(|original| {
+                let (_, mode) = root
+                    .open_mutable_file(
+                        super::mode::STATE_MODE_FILE,
+                        super::mode::MAXIMUM_BYTES as u64,
+                        false,
+                    )
+                    .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
+                if mode.identity() != original {
+                    return Err(ProtectedStoreError::UnsafeRoot);
+                }
+                root.check_exact_mutable_files(&[&lock_fence, &fence, &mode])
+                    .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
+                Ok(mode)
+            })
+            .transpose()?;
         check_initialization(initialization_memory)?;
         let (engine, status) =
             EmbeddedStore::open_bounded_file(file, config.engine, config.maximum_file_bytes)
@@ -216,6 +236,7 @@ impl PhysicalStore {
             fence,
             root_lock,
             lock_fence,
+            mode_fence,
             #[cfg(test)]
             drop_probe: Mutex::new(None),
             _resident_memory: resident_memory,
@@ -254,6 +275,10 @@ impl PhysicalStore {
                 root: self.root.identity(),
                 file: self.fence.identity(),
                 lock: self.lock_fence.identity(),
+                mode: self
+                    .mode_fence
+                    .as_ref()
+                    .map(latent_protected_files::ProtectedMutableFile::identity),
             })
         }
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
@@ -364,6 +389,12 @@ impl PhysicalStore {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
             if self.fresh_root.is_some() {
+                if let Some(mode) = &self.mode_fence {
+                    return self
+                        .root
+                        .check_exact_mutable_files(&[&self.lock_fence, &self.fence, mode])
+                        .map_err(|_| ProtectedStoreError::UnsafeRoot);
+                }
                 return self
                     .root
                     .check_exact_mutable_files(&[&self.lock_fence, &self.fence])
@@ -372,6 +403,11 @@ impl PhysicalStore {
             self.root
                 .check_mutable_file(&self.lock_fence)
                 .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
+            if let Some(mode) = &self.mode_fence {
+                self.root
+                    .check_mutable_file(mode)
+                    .map_err(|_| ProtectedStoreError::UnsafeRoot)?;
+            }
             self.root
                 .check_mutable_file(&self.fence)
                 .map_err(|_| ProtectedStoreError::UnsafeRoot)

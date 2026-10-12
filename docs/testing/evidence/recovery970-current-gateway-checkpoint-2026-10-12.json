@@ -1,0 +1,205 @@
+{
+  "schemaVersion": "latent.recovery970.current-gateway-checkpoint.v1",
+  "qualification": "bounded-current-native-controls-only",
+  "sourceBoundary": {
+    "pushedPreGatewayHead": "7ed1bb5f6d7909b43a96f99a29755be39d983d78",
+    "integratedCurrentOwnerHead": "22167ac8182e82fe734a3c628fb498a0bad27994",
+    "gatewayAtExecution": "uncommitted source overlays retained privately; no complete committed source/tree claim for these earlier binaries"
+  },
+  "controls": [
+    {
+      "attempt": 3,
+      "buildAttempt": 4,
+      "controls": [
+        {
+          "target": "latentd",
+          "case": "actual_signed_compact_installation_fits_eight_mib_job_and_retires_original_owners",
+          "binarySha256": "2ba01872239a6a3042e0b9d6ab66632a9b7d4a4f735da38a4e18b272ba77d9b7",
+          "exitCode": 0
+        },
+        {
+          "target": "latentd",
+          "case": "operation_selection_does_not_change_the_exact_store_profile_proposal",
+          "binarySha256": "2ba01872239a6a3042e0b9d6ab66632a9b7d4a4f735da38a4e18b272ba77d9b7",
+          "exitCode": 0
+        },
+        {
+          "target": "latentd",
+          "case": "config::state::owners::tests",
+          "binarySha256": "2ba01872239a6a3042e0b9d6ab66632a9b7d4a4f735da38a4e18b272ba77d9b7",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "scoped_fresh_restore_keeps_eight_mib_cache_and_the_original_sixteen_mib_recovery_ceiling",
+          "binarySha256": "313981df9bf563d5e1b6cce11a1d8fdaf1644e2cca517e46a46834b5d0fc7655",
+          "exitCode": 101
+        },
+        {
+          "target": "latent_state",
+          "case": "scoped_snapshot_refuses_oversized_declared_row_before_reading_or_allocating_its_value",
+          "binarySha256": "313981df9bf563d5e1b6cce11a1d8fdaf1644e2cca517e46a46834b5d0fc7655",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "protected_store::tests::migration::restore_adoption",
+          "binarySha256": "313981df9bf563d5e1b6cce11a1d8fdaf1644e2cca517e46a46834b5d0fc7655",
+          "exitCode": 101
+        }
+      ]
+    },
+    {
+      "attempt": 4,
+      "buildAttempt": 6,
+      "controls": [
+        {
+          "target": "latent_state",
+          "case": "store_io::tests::custody",
+          "binarySha256": "f673d58d7b28c63ca4be635e99887088687c5be64dd1f2eb2aa13b18b85a99d6",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "scoped_fresh_restore_keeps_eight_mib_cache_and_the_original_sixteen_mib_recovery_ceiling",
+          "binarySha256": "f673d58d7b28c63ca4be635e99887088687c5be64dd1f2eb2aa13b18b85a99d6",
+          "exitCode": 101
+        },
+        {
+          "target": "latent_state",
+          "case": "scoped_snapshot_refuses_oversized_declared_row_before_reading_or_allocating_its_value",
+          "binarySha256": "f673d58d7b28c63ca4be635e99887088687c5be64dd1f2eb2aa13b18b85a99d6",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "protected_store::tests::migration::restore_adoption",
+          "binarySha256": "f673d58d7b28c63ca4be635e99887088687c5be64dd1f2eb2aa13b18b85a99d6",
+          "exitCode": 0
+        }
+      ]
+    },
+    {
+      "attempt": 5,
+      "buildAttempt": 7,
+      "controls": [
+        {
+          "target": "latent_state",
+          "case": "scoped_fresh_restore_keeps_eight_mib_cache_and_the_original_sixteen_mib_recovery_ceiling",
+          "binarySha256": "7bd31fbe873547b043d03be3ad50cfcc32f25024079157e3dbf7b445616ae627",
+          "exitCode": 101
+        },
+        {
+          "target": "latent_state",
+          "case": "scoped_snapshot_refuses_oversized_declared_row_before_reading_or_allocating_its_value",
+          "binarySha256": "7bd31fbe873547b043d03be3ad50cfcc32f25024079157e3dbf7b445616ae627",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "protected_store::tests::migration::restore_adoption",
+          "binarySha256": "7bd31fbe873547b043d03be3ad50cfcc32f25024079157e3dbf7b445616ae627",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "recovery::namespace_resume::tests",
+          "binarySha256": "7bd31fbe873547b043d03be3ad50cfcc32f25024079157e3dbf7b445616ae627",
+          "exitCode": 0
+        }
+      ]
+    },
+    {
+      "attempt": 6,
+      "buildAttempt": 8,
+      "controls": [
+        {
+          "target": "latentd",
+          "case": "phase4_provider_configuration_keeps_protected_files_audit_policy_and_state_owners_required",
+          "binarySha256": "182ffc3d726d17ccbd0ae92dcee8334ceb2462a932c20cb94181bc984a989485",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "scoped_fresh_restore_keeps_eight_mib_cache_and_the_original_sixteen_mib_recovery_ceiling",
+          "binarySha256": "0ca74b7d1b63b5f49f9224fb3a9c99b915a70f9c1655ba399ce175c4ae5d34d3",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "scoped_snapshot_refuses_oversized_declared_row_before_reading_or_allocating_its_value",
+          "binarySha256": "0ca74b7d1b63b5f49f9224fb3a9c99b915a70f9c1655ba399ce175c4ae5d34d3",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "protected_store::tests::migration::restore_adoption",
+          "binarySha256": "0ca74b7d1b63b5f49f9224fb3a9c99b915a70f9c1655ba399ce175c4ae5d34d3",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "recovery::namespace_resume::tests",
+          "binarySha256": "0ca74b7d1b63b5f49f9224fb3a9c99b915a70f9c1655ba399ce175c4ae5d34d3",
+          "exitCode": 0
+        },
+        {
+          "target": "latent_state",
+          "case": "scoped_snapshot_refuses_oversized_manifest_before_allocating_or_decoding_it",
+          "binarySha256": "0ca74b7d1b63b5f49f9224fb3a9c99b915a70f9c1655ba399ce175c4ae5d34d3",
+          "exitCode": 0
+        }
+      ]
+    }
+  ],
+  "constructorPreview": {
+    "binarySha256": "0375557c2aac588570fa75358428c805f7b3f2c99d25a05100fe2b20b4a1685d",
+    "configurationSha256": "6432aa0df3a8474ef12e6539f22851642a91d15227ecdbc53927d7fe6e27ff00",
+    "exitCode": 0,
+    "businessFilesCreated": [],
+    "checkpointFilesCreated": [],
+    "preview": {
+      "schemaVersion": "latent.configured-http-effect-inspection.v1",
+      "adapters": [
+        {
+          "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "profile": {
+            "provider": "http",
+            "destination": "https://localhost:52027/effect",
+            "adapter": "qualified-http-effect-v1",
+            "intent_format": 1,
+            "payload_format": "http-body-value-v1",
+            "idempotency_profile": "qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161"
+          }
+        }
+      ]
+    }
+  },
+  "constructorFeatures": [
+    "development-outbound-streams",
+    "development-test-node"
+  ],
+  "fixedRecoveryDeclaration": {
+    "nativeBytes": 100663296,
+    "nativeMaximumReservationBytes": 33554432,
+    "storeRetainedBytes": 16777216,
+    "storeMaximumJobBytes": 8396800,
+    "cacheBytes": 8388608
+  },
+  "failedAttemptsRetained": true,
+  "completeSignedCurrentJavaCampaignQualified": false,
+  "defaultFeatureTupleQualified": false,
+  "packagedOperatorQualified": false,
+  "remainingIssueAcceptance": [
+    "399",
+    "388",
+    "391",
+    "709"
+  ],
+  "limitations": [
+    "Earlier 573-case native receipt retains its earlier source identity.",
+    "Physical restore/adoption controls use explicit native installed-codec fixtures.",
+    "Constructor preview grants no publication, source review, schema approval or capability.",
+    "New source-bound default binaries and fresh constructor preview remain required before the complete signed current campaign."
+  ]
+}

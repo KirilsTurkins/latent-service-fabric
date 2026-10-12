@@ -51,8 +51,9 @@ pub use resume::{
 };
 pub use snapshot::{
     ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob,
-    ProtectedSnapshotManifestFrame, ProtectedSnapshotReceipt, ProtectedSnapshotReceiptJob,
-    SnapshotReceiptOwners, SnapshotReceiptReadFence, SNAPSHOT_RECEIPT_RESPONSE_BYTES,
+    ProtectedSnapshotManifestFrame, ProtectedSnapshotProfile, ProtectedSnapshotReceipt,
+    ProtectedSnapshotReceiptJob, SnapshotReceiptOwners, SnapshotReceiptReadFence,
+    SNAPSHOT_RECEIPT_RESPONSE_BYTES,
 };
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
 pub use startup_memory::ProtectedStoreStartupMemory;

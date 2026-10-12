@@ -15,6 +15,8 @@ fn services(fixture: &Fixture) -> StateManagementServices {
         artifacts: Arc::clone(&value.artifacts),
         authorization: Arc::clone(&value.authorization),
         admission: Arc::clone(&value.admission),
+        maintenance: Arc::clone(&value.maintenance),
+        maintenance_clock: Arc::clone(&value.maintenance_clock),
         clock: Arc::clone(&value.clock),
         audit: value.audit.clone(),
     }

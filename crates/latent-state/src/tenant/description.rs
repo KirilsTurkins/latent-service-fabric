@@ -59,6 +59,13 @@ pub fn census_contribution(
     {
         return crate::recovery::resume::census_contribution(view, key, bytes);
     }
+    if key.family == Family::Maintenance
+        && key
+            .key
+            .starts_with(crate::recovery::namespace_resume::RECEIPT_PREFIX)
+    {
+        return crate::recovery::namespace_resume::census_contribution(view, key, bytes);
+    }
     // Unsupported recovery producers remain outside this closed profile. A
     // prefix or historical label cannot supply a tenant or fabricate counters.
     let tenant = crate::session::tenant_for_row(view, key, bytes)?;

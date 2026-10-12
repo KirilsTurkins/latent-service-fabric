@@ -53,7 +53,13 @@ pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
 pub(crate) use startup_observation::observe_startup;
 pub use startup_observation::StartupFailureReport;
+pub use state::ConfiguredHttpEffectInspection;
 pub use state::StateRetirementReport;
+pub use state::{
+    NativeDeferredEffectHostInspection, NativeHttpCallerInspection, NativeTransactionHostInspection,
+};
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub use state::{NativeRecoveryReport, NativeRecoveryRequest};
 
 /// Runtime builder callbacks count actual node-owned runtime and blocking threads.
 #[derive(Default)]

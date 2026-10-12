@@ -2,6 +2,7 @@
 use std::sync::Arc;
 
 use latent_core::{native_capacity::NativeCapacityOwner, PlatformError};
+use latent_state::embedded::StoreError;
 use latent_state::protected_store::{ProtectedStoreOwner, ProtectedStoreStartup};
 
 use super::{bootstrap::StateBootstrap, validation};
@@ -33,13 +34,21 @@ impl StateBootstrap {
         &mut self,
         settings: &StateSettings,
     ) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
-        self.open_store_inner(settings, None).await
+        self.open_store_inner(settings, None, false).await
+    }
+
+    pub(in crate::standalone::state) async fn open_store_offline(
+        &mut self,
+        settings: &StateSettings,
+    ) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
+        self.open_store_inner(settings, None, true).await
     }
 
     async fn open_store_inner(
         &mut self,
         settings: &StateSettings,
         before_validation: Option<Box<dyn FnOnce() + Send>>,
+        offline: bool,
     ) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
         self.check_live()?;
         if self.opened_store.is_some() || !self.matches(settings) {
@@ -48,12 +57,23 @@ impl StateBootstrap {
         let original = self.original();
         let identity = settings.store_identity.clone();
         let quotas = validation::quotas(settings);
+        let mut configuration = settings.store.clone();
+        if offline {
+            configuration.create_if_missing = false;
+        }
         let initializer = ProtectedStoreOwner::start_bound_retained_validated_view_with_clock(
-            settings.store.clone(),
+            configuration,
             identity.clone(),
             self.take_memory()?,
             STARTUP_VALIDATOR_BYTES,
             move |view| {
+                if offline
+                    && (latent_state::store_identity::StoreIdentity::inspect(view)?.as_ref()
+                        != Some(&identity)
+                        || latent_state::tenant::require_installation(view, &quotas).is_err())
+                {
+                    return Err(StoreError::UnsupportedFormat);
+                }
                 if let Some(observe) = before_validation {
                     observe();
                 }

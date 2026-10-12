@@ -4,6 +4,7 @@ mod dispatcher;
 mod effects;
 mod entities;
 mod fixture;
+mod floor;
 mod physical;
 mod recovery;
 mod rejection;

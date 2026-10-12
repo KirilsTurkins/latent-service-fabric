@@ -3,6 +3,59 @@ use latent_state::embedded::{ReadView, StoreError};
 use super::{DispatchCatalog, OwnerRecord};
 
 impl DispatchCatalog {
+    /// Same exclusive offline owner advances only its observed clock floor.
+    /// This plan is descriptive; the current operator/native writer must still
+    /// accept it at the physical fence and seal the external checkpoint.
+    pub fn prepare_offline_clock(
+        view: &ReadView,
+        time: crate::authority::EffectTime,
+    ) -> Result<latent_state::embedded::AtomicBatch, StoreError> {
+        use latent_state::embedded::{AtomicBatch, ExpectedRow, RowMutation};
+        let key = OwnerRecord::key();
+        let bytes = view.get(&key)?.ok_or(StoreError::Corrupt)?;
+        let mut owner = OwnerRecord::decode(&bytes)?;
+        owner.observe(time).map_err(|_| StoreError::Unavailable)?;
+        Ok(AtomicBatch {
+            expectations: vec![ExpectedRow {
+                key: key.clone(),
+                value: Some(bytes),
+            }],
+            mutations: vec![RowMutation {
+                key,
+                value: Some(owner.encode()?),
+            }],
+        })
+    }
+
+    /// Fresh paused restoration replaces the archived local owner with a
+    /// strictly later fence from the actual current source/checkpoint. Retained
+    /// effect/attempt bytes remain unchanged and cannot inherit a send grant.
+    pub fn prepare_restored_owner(
+        staged: &ReadView,
+        current: &ReadView,
+        time: crate::authority::EffectTime,
+    ) -> Result<latent_state::embedded::AtomicBatch, StoreError> {
+        use latent_state::embedded::{AtomicBatch, ExpectedRow, RowMutation};
+        let source = Self::checkpoint(current)?.ok_or(StoreError::Corrupt)?;
+        let key = OwnerRecord::key();
+        if staged.get(&key)?.is_some() || !time.continuity_proven || time.unix_millis < source.1 {
+            return Err(StoreError::Conflict);
+        }
+        let owner = OwnerRecord {
+            epoch: source.0.checked_add(1).ok_or(StoreError::Capacity)?,
+            clock_floor: time.unix_millis,
+        };
+        Ok(AtomicBatch {
+            expectations: vec![ExpectedRow {
+                key: key.clone(),
+                value: None,
+            }],
+            mutations: vec![RowMutation {
+                key,
+                value: Some(owner.encode()?),
+            }],
+        })
+    }
     /// Descriptive durable owner/time floor from this coherent view. A caller
     /// cannot turn this tuple into a live epoch, grant or restore approval.
     pub fn checkpoint(view: &ReadView) -> Result<Option<(u64, u64)>, StoreError> {

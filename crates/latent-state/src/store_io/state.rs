@@ -114,7 +114,7 @@ impl<S> State<S> {
         if self.custody.is_some() {
             return Err(StoreIoError::CustodyBusy);
         }
-        self.admit_capacity(recovery, bytes)
+        self.admit_capacity(recovery, bytes, false)
     }
 
     pub fn admit_custody(
@@ -130,7 +130,15 @@ impl<S> State<S> {
         if now >= custody.deadline {
             return Err(StoreIoError::CustodyExpired);
         }
-        self.admit_capacity(true, bytes)
+        self.admit_capacity(true, bytes, false)
+    }
+
+    /// A private exclusive resource holds the actual destination cache and
+    /// descriptors across callbacks. Its full bytes consume the SAME retained
+    /// partition; each active callback independently keeps the fixed job limit.
+    pub fn admit_custody_resource(&self, bytes: u64) -> Result<(), StoreIoError> {
+        self.require_idle_custody()?;
+        self.admit_capacity(true, bytes, true)
     }
 
     pub fn require_idle_custody(&self) -> Result<(), StoreIoError> {
@@ -176,7 +184,12 @@ impl<S> State<S> {
         }
     }
 
-    fn admit_capacity(&self, recovery: bool, bytes: u64) -> Result<(), StoreIoError> {
+    fn admit_capacity(
+        &self,
+        recovery: bool,
+        bytes: u64,
+        custody_resource: bool,
+    ) -> Result<(), StoreIoError> {
         if self.closed {
             return Err(StoreIoError::AdmissionClosed);
         }
@@ -219,7 +232,7 @@ impl<S> State<S> {
         if accepted >= maximum_accepted {
             return Err(StoreIoError::AcceptedFull);
         }
-        if bytes > job_bytes {
+        if !custody_resource && bytes > job_bytes {
             return Err(StoreIoError::JobTooLarge);
         }
         if current_bytes

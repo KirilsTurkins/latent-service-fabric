@@ -1,0 +1,249 @@
+{
+  "schemaVersion": "lsf.java.server.lifecycle.reconciliation.v1",
+  "scope": "actual isolated signed ordinary Java sources and default native node, not release approval or issue closure",
+  "status": "passed",
+  "runtimeSourceHead": "551ace33cf19f69b3f7a0e341520997e84a4dd02",
+  "runtimeSourceTree": "d51703672cbb4142bacb777c5d8d8344fc6bcdad",
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:dbc7cb0b5ceed36601cd69ac55ea99eef52d8c0975353ecba1e32553ca7e3756",
+      "bytes": 1846
+    },
+    "sourceHead": "551ace33cf19f69b3f7a0e341520997e84a4dd02",
+    "sourceTree": "d51703672cbb4142bacb777c5d8d8344fc6bcdad",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.5",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:049e70e08388e70fae1117130b55113173e1d64d733e990b9d5c754b4b770e81",
+        "bytes": 67551304,
+        "actualFeatures": [],
+        "artifactManifest": "/work/pr895-source-20261012/apps/latent/Cargo.toml"
+      },
+      "latentd": {
+        "sha256": "sha256:e5adbe008aab08e7b776e9dbd97bfb9cd3201a9b9857785623b623db2dd4525c",
+        "bytes": 177936464,
+        "actualFeatures": [],
+        "artifactManifest": "/work/pr895-source-20261012/apps/latentd/Cargo.toml"
+      },
+      "package": {
+        "sha256": "sha256:59f47381d2be435ee2de134bd9fb05ae2d61d6e87440f235f48cedd2c859c117",
+        "bytes": 16818480,
+        "actualFeatures": [],
+        "artifactManifest": "/work/pr895-source-20261012/crates/latent-packaging/Cargo.toml"
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:11290d3ad0a3ab9b4477beb0a70bc1f8219cdd9a3204b4bd1497c8631e7189ba",
+        "bytes": 7883088,
+        "actualFeatures": [],
+        "artifactManifest": "/work/pr895-source-20261012/crates/latent-packaging/Cargo.toml"
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:892ffca62d14466017f2c65a8b6d2133383f948f835f55dd1bb506c8fe882d91",
+        "bytes": 22438216,
+        "actualFeatures": [],
+        "artifactManifest": "/work/pr895-source-20261012/crates/latent-policy/Cargo.toml"
+      }
+    }
+  },
+  "baselineSourceInputs": {
+    "sha256": "sha256:ff52d6d7417959b7375f26703ac266b2d61b03bc5609f04ea1130166e7db714d",
+    "bytes": 25062
+  },
+  "qualificationReceipt": {
+    "sha256": "sha256:48352f35b8e090539fada08b9da496ff2f93c21e13fe31e1051d9356c398472d",
+    "bytes": 258021
+  },
+  "suiteReceipt": {
+    "sha256": "sha256:24e8e59895290a04ff3621486db875f540c3e7163c2d26357734bfe3442f1447",
+    "bytes": 2104
+  },
+  "baseline": {
+    "httpCases": 52,
+    "componentDigest": "sha256:bc878168a2a1ff450a197fedf1d5fe6e4dc1b3393488627fe2a085e83eec535a",
+    "sourceSnapshotDigest": "sha256:ff52d6d7417959b7375f26703ac266b2d61b03bc5609f04ea1130166e7db714d",
+    "inputs": {
+      "cli": {
+        "sha256": "sha256:049e70e08388e70fae1117130b55113173e1d64d733e990b9d5c754b4b770e81",
+        "bytes": 67551304
+      },
+      "node": {
+        "sha256": "sha256:e5adbe008aab08e7b776e9dbd97bfb9cd3201a9b9857785623b623db2dd4525c",
+        "bytes": 177936464
+      },
+      "workflow": {
+        "sha256": "sha256:c946ddd0fa29c63fa632de8877d81a33b089f0079bcd225561e2154fdbe78be2",
+        "bytes": 29884
+      },
+      "declaration": {
+        "sha256": "sha256:67e097ce633f522627cffedad4cef9abb217d12c329d7c21c4b51e6b1e8324f6",
+        "bytes": 2285
+      },
+      "profile": {
+        "sha256": "sha256:1285ae0cbfc57230cad8160abba5f85522524d05d8b05a30c5562649c700b6dd",
+        "bytes": 2310
+      },
+      "sourceInputs": {
+        "sha256": "sha256:ff52d6d7417959b7375f26703ac266b2d61b03bc5609f04ea1130166e7db714d",
+        "bytes": 25062
+      },
+      "component": {
+        "sha256": "sha256:bc878168a2a1ff450a197fedf1d5fe6e4dc1b3393488627fe2a085e83eec535a",
+        "bytes": 1918178
+      },
+      "tlsFixtureTool": {
+        "sha256": "sha256:892ffca62d14466017f2c65a8b6d2133383f948f835f55dd1bb506c8fe882d91",
+        "bytes": 22438216
+      }
+    },
+    "inputsUnchanged": true,
+    "cleanShutdown": true,
+    "limits": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 67108864,
+      "wallTimeLimitMillis": 120000,
+      "outboundRequests": 0
+    }
+  },
+  "lifecycle": {
+    "httpObservations": 18,
+    "cases": [
+      "tampered-declarations-retain-real-last-good-ingress",
+      "second-real-source-publication",
+      "ordinary-client-gate-response-without-redeployment",
+      "real-inflight-revision-remains-pinned-across-redeployment",
+      "real-redeployment-pins-new-publication",
+      "rollback-requires-explicit-old-publication-redeployment",
+      "authenticated-explicit-rollback-fresh-generation",
+      "competing-publication-denied-without-overwrite",
+      "ordinary-static-state-is-fresh-per-invocation",
+      "actual-client-disconnect-retires-original-http-owner",
+      "original-one-billion-fuel-ceiling-with-fresh-reuse",
+      "narrower-root-deadline-closes-original-peer"
+    ],
+    "componentDigest": "sha256:f373a8910f87713bf9e17d2d5fbf93114dbbef6c214b5f25257b80e59c4713b8",
+    "sourceSnapshotDigest": "sha256:969dc3462348ee202aa82164c8a957d1c0d6f59241a802f1630368e4a1c9f0dc",
+    "inputs": {
+      "cli": {
+        "sha256": "sha256:049e70e08388e70fae1117130b55113173e1d64d733e990b9d5c754b4b770e81",
+        "bytes": 67551304
+      },
+      "node": {
+        "sha256": "sha256:e5adbe008aab08e7b776e9dbd97bfb9cd3201a9b9857785623b623db2dd4525c",
+        "bytes": 177936464
+      },
+      "workflow": {
+        "sha256": "sha256:c946ddd0fa29c63fa632de8877d81a33b089f0079bcd225561e2154fdbe78be2",
+        "bytes": 29884
+      },
+      "declaration": {
+        "sha256": "sha256:44017ae0325614198aeccae86b24f11341a7629eb64a0b779b4f92cb36c25e0f",
+        "bytes": 3243
+      },
+      "profile": {
+        "sha256": "sha256:1285ae0cbfc57230cad8160abba5f85522524d05d8b05a30c5562649c700b6dd",
+        "bytes": 2310
+      },
+      "sourceInputs": {
+        "sha256": "sha256:969dc3462348ee202aa82164c8a957d1c0d6f59241a802f1630368e4a1c9f0dc",
+        "bytes": 25211
+      },
+      "component": {
+        "sha256": "sha256:f373a8910f87713bf9e17d2d5fbf93114dbbef6c214b5f25257b80e59c4713b8",
+        "bytes": 2430704
+      },
+      "tlsFixtureTool": {
+        "sha256": "sha256:892ffca62d14466017f2c65a8b6d2133383f948f835f55dd1bb506c8fe882d91",
+        "bytes": 22438216
+      }
+    },
+    "secondRevisionInputs": {
+      "observer": {
+        "sha256": "sha256:739db520ee52ea49894646782dd4e1dcd888f4c51d38f8b92c966f651eae0d06",
+        "bytes": 33299
+      },
+      "peer": {
+        "sha256": "sha256:5889ff37f4cefaa10767a4447c92217e9016a83ad176c196ef7c1cac6feb68cc",
+        "bytes": 5019
+      },
+      "releaseSet": {
+        "sha256": "sha256:f96691813941c2005d35296595a73ad902a5fd482153ac5a3636d30538e91330",
+        "bytes": 910
+      },
+      "declaration": {
+        "sha256": "sha256:fb88555ec23917e900188eb063f82e10672feae2514d4b84b718756a3c15de13",
+        "bytes": 3243
+      },
+      "profile": {
+        "sha256": "sha256:1285ae0cbfc57230cad8160abba5f85522524d05d8b05a30c5562649c700b6dd",
+        "bytes": 2310
+      },
+      "sourceInputs": {
+        "sha256": "sha256:5fc84e2ca9784636412ecc73779e97d1b36912c87c1b85ba54f8d966ee3918c6",
+        "bytes": 25211
+      },
+      "component": {
+        "sha256": "sha256:3b1cb1f0f8b19f969f152118643910eb1f06ef394f0843e87907219eba37e66e",
+        "bytes": 2430720
+      },
+      "buildReceipt": {
+        "sha256": "sha256:73a818db73b13031150c9b6f7bcd1df5df00f9a0bd551b2007c2fda214cfeebc",
+        "bytes": 9809
+      },
+      "signedEvidence": {
+        "sha256": "sha256:2a121f9a9e252b6be0bae3383c2484751df7eacb4b18549a2b6c205ec395a673",
+        "bytes": 393
+      },
+      "deployment": {
+        "sha256": "sha256:b786ec9657f18bcb17b673f6e98eb47346c68352bfe8fc4c8661d6f21eaf09ec",
+        "bytes": 907
+      }
+    },
+    "inputsUnchanged": true,
+    "providerShutdown": {
+      "clean": true,
+      "controlOwners": 0,
+      "connections": 0,
+      "pendingRequests": 0,
+      "runningRequests": 0,
+      "workers": 0,
+      "cleanupJobs": 0,
+      "failedCleanup": 0,
+      "sessions": 0,
+      "handles": 0,
+      "calls": 0,
+      "results": 0,
+      "ioCalls": 0,
+      "ioRetainedBytes": 0,
+      "blobStages": 0,
+      "blobHandles": 0,
+      "blobWork": 0,
+      "secretGenerations": 0,
+      "secretReferences": 0
+    },
+    "cleanShutdown": true,
+    "limits": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 67108864,
+      "wallTimeLimitMillis": 120000,
+      "outboundRequests": 1
+    }
+  },
+  "journalLimitsPerFreshNode": {
+    "records": 256,
+    "diskBytes": 4194304,
+    "queuedOperations": 8,
+    "queuedBytes": 32768,
+    "queryOwners": 2
+  },
+  "retainedFailedAttempts": {
+    "count": 12,
+    "combinedHistoryFailure": "exact256record journal exhausted; no records evicted, quota increased, or mutation retried",
+    "providerReadMismatch": "captured4096byte client read denied by1024byte fixture provider"
+  },
+  "sourceOnlyControls": [
+    "CompletableFuture model181 method bodies24 monitor bodies25 owned callback bodies23 actual generated callbacks;6 field references"
+  ],
+  "openScope": "No executor profile, raw socket loop compatibility, production runtime release, or full JDK claim"
+}

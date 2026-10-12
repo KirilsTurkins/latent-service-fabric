@@ -24,11 +24,11 @@ impl ProtectedStoreOwner {
             .retirement_witness()
             .ok_or(ProtectedStoreError::Store(StoreError::Conflict))?;
         let source = self.clone();
-        let inner =
-            self.with_physical_custody(snapshot.custody, 8 * 1024 * 1024, move |file, _| {
-                let file = file.as_ref().ok_or(StoreError::Invalid)?;
-                Ok(prepare(file, stage, request, owners, source, retired))
-            })?;
+        let work = snapshot.custody.maximum_job_bytes();
+        let inner = self.with_physical_custody(snapshot.custody, work, move |file, _| {
+            let file = file.as_ref().ok_or(StoreError::Invalid)?;
+            Ok(prepare(file, stage, request, owners, source, retired))
+        })?;
         Ok(ProtectedRestoreAdoptionJob { inner })
     }
 }

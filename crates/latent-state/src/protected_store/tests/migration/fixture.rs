@@ -281,7 +281,32 @@ impl Setup {
         response_bytes: u64,
         work_bytes: u64,
     ) -> Self {
-        let (root, config) = super::super::fixture();
+        Self::with_admission_profile(clock, response_bytes, work_bytes, false)
+    }
+
+    pub fn with_finite_restore_profile() -> Self {
+        Self::with_admission_profile(
+            Arc::new(SystemActivationClock),
+            RESTORE_INPUT_RESPONSE_BYTES,
+            17 * 1024 * 1024 + 512 * 1024,
+            true,
+        )
+    }
+
+    fn with_admission_profile(
+        clock: Arc<dyn ActivationClock>,
+        response_bytes: u64,
+        work_bytes: u64,
+        finite: bool,
+    ) -> Self {
+        let (root, mut config) = super::super::fixture();
+        if finite {
+            config.engine.cache_bytes = 8 * 1024 * 1024;
+            config.io.resident_bytes = 8 * 1024 * 1024 + 256 * 1024;
+            let recovery = config.io.recovery.as_mut().unwrap();
+            recovery.job_bytes = 8 * 1024 * 1024 + 8192;
+            recovery.retained_bytes = 16 * 1024 * 1024;
+        }
         let (target, _) = super::super::fixture();
         let owner = start(&config, Arc::clone(&clock));
         let native =
