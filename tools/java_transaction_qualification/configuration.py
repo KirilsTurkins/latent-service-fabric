@@ -170,11 +170,15 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
 
 
 def installed(items: tuple[ComponentInput, ...], publications: dict[str, str],
-              recipient_incarnation: str, *, credential_reference=RECIPIENT_CREDENTIAL) -> list[dict]:
+              recipient_incarnation: str, *, credential_reference=RECIPIENT_CREDENTIAL,
+              service_integration_dispatch=False) -> list[dict]:
     import re
     require(re.fullmatch(r"[0-9a-f]{64}", recipient_incarnation), "actual-recipient-incarnation")
     require(credential_reference in {RECIPIENT_CREDENTIAL, "java-current-http"},
             "explicit-current-recipient-credential-reference")
+    require(type(service_integration_dispatch) is bool
+            and (not service_integration_dispatch or credential_reference == 'java-current-http'),
+            'explicit-current-service-integration-dispatch')
     result = []
     accepted = tuple(item for item in items if item.name != "forbidden-http")
     from .diagnostic_inputs import NAME
@@ -210,6 +214,9 @@ def installed(items: tuple[ComponentInput, ...], publications: dict[str, str],
                     "credentialReference": credential_reference, "stagingBinding": "java-staging-installed",
                     "stagingPolicies": [STAGING_POLICY], "dispatchBinding": "java-dispatch-installed",
                     "dispatchPolicies": [DISPATCH_POLICY]}
+                if service_integration_dispatch:
+                    row['deferredHttp']['dispatchAuthority'] = {
+                        'formatVersion': 1, 'mode': 'signed-service-integration'}
             result.append(row)
     count = len(expected_names) * 3
     require(len(result) == count and len({(row["publication"], row["function"]) for row in result}) == count,

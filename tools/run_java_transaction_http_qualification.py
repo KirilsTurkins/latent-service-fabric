@@ -281,7 +281,8 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
     catalog = staging.catalog(client, publications) if retained else None
     node.stop()
     lifecycle.admission_lease_interval(client)
-    selection = {} if not getattr(peer, "current_http", False) else {"credential_reference": "java-current-http"}
+    selection = {} if not getattr(peer, "current_http", False) else {
+        "credential_reference": "java-current-http", 'service_integration_dispatch': True}
     operations = cfg.installed(items, publications, peer.incarnation, **selection)
     diagnostic = any(item.name == diagnostic_inputs.NAME for item in items)
     full_path = configuration.selected(configuration.path.parent / "installed-node.json", operations, diagnostic=diagnostic)

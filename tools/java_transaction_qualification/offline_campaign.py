@@ -62,6 +62,19 @@ def restored_configuration(original, destination):
     return settings
 
 
+def restored_resume_request(view, file, snapshot, acknowledgement, migration_operation=None):
+    request = {'action': 'resume', 'operationId': 'java-restored-resume',
+               'expectedView': recovery.original_view(view)}
+    if migration_operation is not None:
+        require(migration_operation == 'java-schema-v1-to-v2', 'original-current-migration-operation')
+        require(isinstance(file, dict) and set(file) == {'root', 'name'}, 'original-restored-snapshot-file')
+        request.update(action='resume-restored-migration', migrationOperationId=migration_operation,
+            file=dict(file), snapshotDigest=recovery.original_digest(snapshot['snapshotDigest']),
+            manifestDigest=recovery.original_digest(snapshot['manifestDigest']),
+            windowAcknowledgement=recovery.original_digest(acknowledgement))
+    return request
+
+
 class OfflineCampaign:
     def __init__(self, campaign, helper, directory):
         self.campaign, self.directory = campaign, directory
@@ -73,6 +86,7 @@ class OfflineCampaign:
         self.writer = "put-once-writer-v2"
         self.publication = campaign.publications[self.writer]
         self.configuration = campaign.full_path
+        self.migration_operation = None
 
     def action(self, request, *, action=None):
         original = self.native.run(self.configuration, self.publication, request)
@@ -131,6 +145,7 @@ class OfflineCampaign:
             "expectedView": recovery.original_view(observed["view"]),
             "checkpointDigest": checkpoint["snapshotDigest"],
             "checkpointManifestDigest": checkpoint["manifestDigest"]}
+        self.migration_operation = migration['operationId']
         staged = self.action(dict(migration, action="stage-migration"),
                              action="stage-migration" if self.current_v2 else "migration")
         require(staged["completed"] is False, "actual-native-migration-staged")
@@ -224,8 +239,9 @@ class OfflineCampaign:
         observed = self.inspect()
         requested = recovery.original_view(observed["view"])
         epoch_advanced(list(http.view_token(current["state-view"])), requested, "recovery")
-        resumed = self.action({"action": "resume", "operationId": "java-restored-resume",
-            "expectedView": requested})
+        resume_request = restored_resume_request(requested, file, snapshot, acknowledgement,
+            self.migration_operation if getattr(self.node, 'current_activation', None) is not None else None)
+        resumed = self.action(resume_request)
         self.node.start(self.configuration, **({'current_session': 'restored-runtime'}
                         if getattr(self.node, 'current_publication_program', False) else {}))
         self.campaign.full_path = self.configuration

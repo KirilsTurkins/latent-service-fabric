@@ -94,3 +94,20 @@ purpose-specific policies. These proposals still require ordinary authenticated
 application. Historical proposal defaults remain unchanged. Returning to the
 legacy publication records a separate named transition and both deployment
 generations; evidence uniqueness and byte/count bounds stay enforced.
+
+Current deferred update declarations now explicitly select the closed native
+`dispatchAuthority` version 1 mode `signed-service-integration`. Historical
+declarations omit it. This selects the proposed native owner and supplies no
+permission by itself; signed requirements, the current deployment, provider
+and authenticated HTTP policy remain required. The native implementation and
+actual startup proof are pending.
+
+The last current restore action selects `resume-restored-migration`, with the
+original migration operation, actual V2 snapshot/manifest identities, restore
+window acknowledgement and freshly inspected current view. It replaces one
+action within the unchanged twelve-action sequence. Historical generic resume
+remains separate. The new native plan must issue its own attributed receipt
+under the accepted restore guard and current source/writer fences; an old
+migration receipt supplies no restored activation authority. Ninety-seven
+focused source controls pass. Full runtime, migration and restore evidence
+remain pending.
