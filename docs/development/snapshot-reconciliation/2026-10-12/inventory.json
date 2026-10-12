@@ -2973,10 +2973,22 @@
         879
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        718,
+        389,
+        409
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr959.zip",
+      "historicalArchiveSha256": "59309dc5d5d256118d39d4229b95ff8a992331c1fe5ea11197fed71d3de3bb4a",
+      "historicalFiles": 345,
+      "closureObservedUtc": "2026-10-12T16:02:21.320123+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     },
     {
       "pullRequest": 960,
@@ -2989,10 +3001,21 @@
         696
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        677,
+        694
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr960.zip",
+      "historicalArchiveSha256": "55ecccedbf93e6c38cef02349a32f63e11db4de8f30c2e53a5f40cc8f36994bd",
+      "historicalFiles": 123,
+      "closureObservedUtc": "2026-10-12T16:02:24.460893+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     },
     {
       "pullRequest": 961,
@@ -3183,10 +3206,23 @@
         957
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        394,
+        397,
+        398,
+        399
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr966.zip",
+      "historicalArchiveSha256": "6456f7d354c2ab2c548d650e5f338652aa713d929843472c226436b61fdc246b",
+      "historicalFiles": 3,
+      "closureObservedUtc": "2026-10-12T16:02:28.665971+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     },
     {
       "pullRequest": 967,
@@ -3484,10 +3520,21 @@
         768
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707,
+        709
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr975.zip",
+      "historicalArchiveSha256": "7426013f70e2552554738d56c5f8b5416ebde99129520c986d4b546d8fb25753",
+      "historicalFiles": 52,
+      "closureObservedUtc": "2026-10-12T16:02:31.673236+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     },
     {
       "pullRequest": 976,
@@ -3502,10 +3549,21 @@
         849
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707,
+        710
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr976.zip",
+      "historicalArchiveSha256": "d68af1f6cabd2ef4f014c489b6a799e2c4e61a98661fead45684cce90fc86342",
+      "historicalFiles": 22,
+      "closureObservedUtc": "2026-10-12T16:02:34.609384+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     },
     {
       "pullRequest": 977,
@@ -3519,10 +3577,21 @@
         845
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707,
+        718
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr977.zip",
+      "historicalArchiveSha256": "9ddadbf9ee28cab439c4beadb70cc96e40169ba11ce23222a614ca43f2ea99f3",
+      "historicalFiles": 5,
+      "closureObservedUtc": "2026-10-12T16:02:37.737885+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     },
     {
       "pullRequest": 978,
@@ -3535,10 +3604,23 @@
         956
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        389,
+        401,
+        405,
+        406
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr978.zip",
+      "historicalArchiveSha256": "e4e934f302a8f0c5e4ae6096df36e06c5cd8271ec89a4f1caf4e225a9c692d73",
+      "historicalFiles": 5,
+      "closureObservedUtc": "2026-10-12T16:02:40.822190+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     }
   ]
 }
