@@ -165,10 +165,22 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        679,
+        680
+      ],
+      "currentSourcePaths": [
+        "crates/latent-core/src/error/guest_trap_kind.rs",
+        "crates/latent-wire/src/invocation/conversion/public_error.rs"
+      ],
+      "reviewedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reconciliation": "Public trap and wire mappings are byte-identical. Current trap tests preserve the cases with the current activation identity argument.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:14:53.263986+00:00"
     },
     {
       "pullRequest": 859,
@@ -218,10 +230,23 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        679,
+        680,
+        693
+      ],
+      "currentSourcePaths": [
+        "tools/dotnet_guest/http_errors.py",
+        "tools/tests/test_dotnet_http_errors.py"
+      ],
+      "reviewedDiffSha256": "11ffe2ccac0ea6bd5e4843ae1daa1cdae51365064ef88a9485bccc4c690dbd04",
+      "reconciliation": "HTTP error implementation is byte-identical. The current fixture names its actual imported functions for structural type checking; all previous cases remain.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:14:57.110769+00:00"
     },
     {
       "pullRequest": 862,
@@ -730,10 +755,22 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        679
+      ],
+      "currentSourcePaths": [
+        "tools/guest_emitted_code.py",
+        "tools/tests/test_guest_emitted_code.py"
+      ],
+      "reviewedDiffSha256": "21c8e98798be4ea325202bce97e65ba07ad3f51c7b5cd8cbbd58583b847b17d3",
+      "reconciliation": "Analyzer is byte-identical; development adds one capture-domain identity case and removes no previous test.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:15:00.316535+00:00"
     },
     {
       "pullRequest": 884,
@@ -744,10 +781,22 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        679
+      ],
+      "currentSourcePaths": [
+        "tools/guest_emitted_code.py",
+        "tools/tests/test_guest_emitted_code.py"
+      ],
+      "reviewedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reconciliation": "Analyzer and its tests are byte-identical to development.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:15:03.677045+00:00"
     },
     {
       "pullRequest": 885,
@@ -1641,10 +1690,23 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        680,
+        737,
+        738
+      ],
+      "currentSourcePaths": [
+        "crates/latent-wasmtime/tests/generic_backend/host_abi.rs",
+        "research/standard-outbound/streams.wit"
+      ],
+      "reviewedDiffSha256": "d830efb8093c4364429fe66c014efe8e2267e00a57d63c94eea329fa14b6143e",
+      "reconciliation": "WASI sockets upstream reproducers and host ABI controls are byte-identical. Only the streams comment now describes the development-only V5 installation.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:15:06.893117+00:00"
     },
     {
       "pullRequest": 925,
@@ -1799,10 +1861,23 @@
         756
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        679,
+        680
+      ],
+      "currentSourcePaths": [
+        "tools/guest_compatibility_build.py",
+        "tools/tests/test_guest_compatibility_recipes.py"
+      ],
+      "reviewedDiffSha256": "a498bd3750a2fed21acc0c60a49ac0937d9da01de7a237bf8279340811195e1a",
+      "reconciliation": "Current compatibility owner retains V4/V5 profile selection, adds captured Phase4 ABI checks and bounded structural value-type inspection, and preserves reports. Current recipe fixture includes its required frontend distributions.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:15:10.198257+00:00"
     },
     {
       "pullRequest": 933,
