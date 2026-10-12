@@ -7,6 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { coreIntegerLowering } from './signed64.mjs';
 import { explicitResourceOwners } from './resources.mjs';
 import { selectedSourceSplicer } from './source_splicer.mjs';
+import { lazySyncImportWaiters, retireGeneratedTaskSlots } from './async_waiters.mjs';
 
 const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer] = process.argv.slice(2);
 const prepareImport = witPath === '--source-import-adapter';
@@ -86,6 +87,9 @@ const result = await componentize({
   ...(selectedSplicer ? {lsfSplicer:selectedSplicer} : {}),
   lsfBindings(source) {
     generatedBindings = explicitResourceOwners(coreIntegerLowering(source));
+    if (selectedEngine) {
+      generatedBindings = retireGeneratedTaskSlots(lazySyncImportWaiters(generatedBindings));
+    }
     return generatedBindings;
   },
   disableFeatures: ['stdio', 'random', 'clocks', 'http', 'fetch-event'],

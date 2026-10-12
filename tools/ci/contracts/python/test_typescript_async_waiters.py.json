@@ -1,0 +1,46 @@
+{
+  "cases": [
+    "TypeScriptAsyncWaiterTests.test_generated_task_slots_retire_after_exit_without_reordering_waiters",
+    "TypeScriptAsyncWaiterTests.test_idle_state_actual_shared_wait_and_successive_imports"
+  ],
+  "guards": {
+    "TypeScriptAsyncWaiterTests.test_generated_task_slots_retire_after_exit_without_reordering_waiters": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:c9168dd4e71df7aeaad0ff721e2bc22592c4b8e4f38fbd79cf163e3a3ab73122",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:f45a11e77e54963c2eb0fe4dacc37ce1422cd82fe22687620fcfeb85ee1deaa9",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ]
+    },
+    "TypeScriptAsyncWaiterTests.test_idle_state_actual_shared_wait_and_successive_imports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:c9168dd4e71df7aeaad0ff721e2bc22592c4b8e4f38fbd79cf163e3a3ab73122",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:2d1d6901307c29ae62c187e0940af46eefe3ee848097605e24d3ec1e68b1b458",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_async_waiters.py",
+  "reviewReason": "Preserve idle/shared/successive-import waiter coverage and add exact generated-task exit retirement and queue ordering; preserve the Node availability guard and all existing cases.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

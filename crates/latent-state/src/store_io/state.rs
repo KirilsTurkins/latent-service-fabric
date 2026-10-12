@@ -49,6 +49,8 @@ pub(super) struct State<S> {
     pub live_workers: usize,
     pub exiting_workers: usize,
     pub next_job: u64,
+    pub next_custody: u64,
+    pub custody: Option<CustodyState>,
     pub next_drain: u64,
     pub drain_waiter: Option<(u64, Option<Waker>)>,
     pub closed: bool,
@@ -59,6 +61,12 @@ pub(super) struct State<S> {
     pub shutdown_deadline: Option<Instant>,
     pub finalizer: Option<Finalizer<S>>,
     pub bootstrap: Bootstrap,
+}
+
+pub(super) struct CustodyState {
+    pub sequence: u64,
+    pub deadline: Instant,
+    pub physically_retired: bool,
 }
 
 impl<S> State<S> {
@@ -87,6 +95,8 @@ impl<S> State<S> {
             live_workers: 0,
             exiting_workers: 0,
             next_job: 0,
+            next_custody: 0,
+            custody: None,
             next_drain: 0,
             drain_waiter: None,
             closed: false,
@@ -101,6 +111,72 @@ impl<S> State<S> {
     }
 
     pub fn admit(&self, recovery: bool, bytes: u64) -> Result<(), StoreIoError> {
+        if self.custody.is_some() {
+            return Err(StoreIoError::CustodyBusy);
+        }
+        self.admit_capacity(recovery, bytes)
+    }
+
+    pub fn admit_custody(
+        &self,
+        sequence: u64,
+        bytes: u64,
+        now: Instant,
+    ) -> Result<(), StoreIoError> {
+        let custody = self.custody.as_ref().ok_or(StoreIoError::CustodyMismatch)?;
+        if custody.sequence != sequence || custody.physically_retired {
+            return Err(StoreIoError::CustodyMismatch);
+        }
+        if now >= custody.deadline {
+            return Err(StoreIoError::CustodyExpired);
+        }
+        self.admit_capacity(true, bytes)
+    }
+
+    pub fn require_idle_custody(&self) -> Result<(), StoreIoError> {
+        if self.closed {
+            return Err(StoreIoError::AdmissionClosed);
+        }
+        if self.custody.is_some()
+            || self.accepted != 0
+            || self.physical_owners != 0
+            || self.active_reads != 0
+            || self.active_writes != 0
+            || self.active_recovery_reads != 0
+            || !self.queue.is_empty()
+            || !self.recovery_queue.is_empty()
+            || !self.retirements.is_empty()
+            || !self.recovery_retirements.is_empty()
+            || !matches!(self.bootstrap, Bootstrap::Ready)
+            || self.engine_phase != StoreIoEnginePhase::Owned
+        {
+            return Err(StoreIoError::CustodyBusy);
+        }
+        Ok(())
+    }
+
+    /// Only the actual native destructor marks custody retired. The final job
+    /// bookkeeping/response reservation must also retire before admission opens.
+    pub fn release_retired_custody(&mut self) {
+        if self
+            .custody
+            .as_ref()
+            .is_some_and(|custody| custody.physically_retired)
+            && self.accepted == 0
+            && self.physical_owners == 0
+            && self.active_reads == 0
+            && self.active_writes == 0
+            && self.active_recovery_reads == 0
+            && self.queue.is_empty()
+            && self.recovery_queue.is_empty()
+            && self.retirements.is_empty()
+            && self.recovery_retirements.is_empty()
+        {
+            self.custody = None;
+        }
+    }
+
+    fn admit_capacity(&self, recovery: bool, bytes: u64) -> Result<(), StoreIoError> {
         if self.closed {
             return Err(StoreIoError::AdmissionClosed);
         }
@@ -194,6 +270,9 @@ impl<S> State<S> {
                 self.active_recovery_writes -= 1;
             }
         }
+        if !enter {
+            self.release_retired_custody();
+        }
     }
 
     pub fn snapshot(&self) -> StoreIoSnapshot {
@@ -210,6 +289,7 @@ impl<S> State<S> {
             retained_bytes: self.retained_bytes,
             physical_owners: self.physical_owners,
             queued_retirements: self.retirements.len() + self.recovery_retirements.len(),
+            custody_active: self.custody.is_some(),
             live_workers: self.live_workers,
             admission_closed: self.closed,
             engine_phase: self.engine_phase,

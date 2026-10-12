@@ -122,7 +122,7 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
@@ -201,6 +201,7 @@ class Compiler:
         application_graph, application_world = graph, world
         application_canonical = canonical
         if self.runtime_profile in runtime.NATIVE_PROFILES:
+            selected_world = runtime.scoped_selected_world(world)
             runtime.check_application_bindings(application_graph, application_world, profile=self.runtime_profile)
             from tools.typescript_guest.activation_engine import NATIVE_SOURCES
             from tools.typescript_guest.clock_engine import CLOCK_NATIVE_SOURCES
@@ -227,6 +228,9 @@ class Compiler:
                 files = derive_clock_world(canonical.encode(), graph, world, runtime_wit, clock_wit)
             else:
                 files = runtime.derive_world(canonical.encode(), graph, world, runtime_wit)
+            original_sources = {path.relative_to(work/'wit').as_posix(): read_file(path, 256 * 1024)
+                                for path in sorted((work/'wit').rglob('*.wit'))}
+            files = runtime.original_world_sources(files, original_sources)
             for name, raw in files.items():
                 target = selected/name
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -238,15 +242,16 @@ class Compiler:
             actual = semantic(json.loads(command.run('selected-runtime-types', wasm, 'component', 'wit', selected, '--json')))
             abi = semantic(json.loads(command.run('selected-activation-types', wasm, 'component', 'wit', activation, '--json')))
             if self.runtime_profile in runtime.CLOCK_PROFILES:
-                from tools.typescript_guest.clock_engine import check_clock_world
                 clocks = output/'clock-wit'
                 (clocks/'deps/clock').mkdir(parents=True)
                 (clocks/'deps/clock/package.wit').write_bytes(clock_wit)
                 (clocks/'world.wit').write_text('package lsf:clock-abi@1.0.0;\nworld abi { import latent:clock/monotonic@0.1.0; import latent:clock/wall@0.1.0; }\n',encoding='utf-8')
                 clock_graph = semantic(json.loads(command.run('selected-clock-types', wasm, 'component', 'wit', clocks, '--json')))
-                self.runtime_observation = check_clock_world(graph, actual, abi, clock_graph, world)
+                self.runtime_observation = runtime.check_derived_world(
+                    graph, actual, abi, world, selected_world=selected_world, clock=clock_graph)
             else:
-                self.runtime_observation = runtime.check_derived_world(graph, actual, abi, world)
+                self.runtime_observation = runtime.check_derived_world(
+                    graph, actual, abi, world, selected_world=selected_world)
             self.runtime_observation['engineInput'] = self.engine_metadata
             # The full clock type comparison is reused by both profiles. Its
             # default clock-only label must not erase the explicit source-owned
@@ -255,9 +260,9 @@ class Compiler:
             if self.source_splicer_metadata is not None:
                 self.runtime_observation['compilerSplicerInput'] = self.source_splicer_metadata
             write_json(output/'typescript-runtime-selection.json', self.runtime_observation)
-            write_json(output/'selected-wit-inputs.json', {'world': runtime.SELECTED_WORLD, 'sources': [
+            write_json(output/'selected-wit-inputs.json', {'world': selected_world, 'sources': [
                 {'path': 'wit/'+name, 'content': raw.decode('utf-8')} for name, raw in sorted(files.items())]})
-            source, graph, world = selected, actual, runtime.SELECTED_WORLD
+            source, graph, world = selected, actual, selected_world
             canonical = command.run('selected-runtime-wit', wasm, 'component', 'wit', selected, '--no-docs').decode()
         # Only application bindings are projected. The exact native activation
         # async-lower imports remain in the selected engine metadata and cannot

@@ -1,5 +1,7 @@
 use super::*;
 
+mod control_generation;
+
 #[test]
 fn scoped_rejection_is_irreversible_across_fresh_installation_without_other_tenant_churn() {
     let owner = AuthorityRejectionOwner::new(3).unwrap();

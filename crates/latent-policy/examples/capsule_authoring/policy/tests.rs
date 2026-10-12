@@ -9,6 +9,7 @@ const NOW: u64 = 10_000;
 
 struct Fixture {
     subject: PackageSigningSubject,
+    observation: BuildObservation,
     signature: SignatureEvidence,
     provenance: ProvenanceEvidence,
     policy: Value,
@@ -111,6 +112,7 @@ impl Fixture {
                 )
                 .unwrap(),
             subject,
+            observation,
             policy: serde_json::from_slice(&document).unwrap(),
         }
     }
@@ -237,5 +239,85 @@ fn demo_publisher_and_builder_proof_age_ceilings_remain_independent() {
                 SignatureFailure::StaleProof
             );
         }
+    }
+}
+
+#[test]
+fn separated_builders_verify_only_their_exact_source_under_permuted_policy() {
+    let fixture = Fixture::new();
+    let first = fixture.observation;
+    let mut second = first.clone();
+    second.source.revision = "c".repeat(64);
+    second.source.snapshot_digest = format!("sha256:{}", "c".repeat(64));
+    for material in &mut second.materials {
+        if material.name == "source-snapshot" {
+            material.digest = second.source.snapshot_digest.clone();
+        }
+    }
+    let publisher = generate_signing_key().unwrap();
+    let mut builders = Vec::new();
+    for id in ["paired-builder-a", "paired-builder-b"] {
+        let key = generate_signing_key().unwrap();
+        let public = *key.public_key();
+        let signer = LocalBuilderSigner::from_pkcs8(key.into_pkcs8(), id.into(), public).unwrap();
+        builders.push((id, public, signer));
+    }
+    assert_ne!(builders[0].1, builders[1].1);
+    let assignments = [
+        (builders[0].0, &builders[0].1, &first),
+        (builders[1].0, &builders[1].1, &second),
+    ];
+    let (_, document) = create_for_builders(NOW, publisher.public_key(), &assignments).unwrap();
+    let mut policy: Value = serde_json::from_slice(&document).unwrap();
+    let original = BuilderPolicy::from_json(
+        &serde_json::to_vec(&policy["builder"]).unwrap(),
+        ProvenanceLimits::default(),
+    )
+    .unwrap();
+    policy["builder"]["keys"].as_array_mut().unwrap().reverse();
+    policy["builder"]["requirements"]
+        .as_array_mut()
+        .unwrap()
+        .reverse();
+    let permuted = BuilderPolicy::from_json(
+        &serde_json::to_vec(&policy["builder"]).unwrap(),
+        ProvenanceLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(original.digest(), permuted.digest());
+    let (_, verifier) = verifiers(policy);
+    let validity = SignatureValidity {
+        issued_at: NOW,
+        expires_at: NOW + DEMO_VALIDITY_SECONDS,
+    };
+    for (ordinal, observation) in [&first, &second].into_iter().enumerate() {
+        let accepted = builders[ordinal]
+            .2
+            .sign_build(
+                &fixture.subject,
+                observation,
+                validity,
+                ProvenanceLimits::default(),
+            )
+            .unwrap();
+        verifier
+            .verify_package(&fixture.subject, accepted.as_ref(), NOW)
+            .unwrap();
+        let wrong_builder = builders[1 - ordinal]
+            .2
+            .sign_build(
+                &fixture.subject,
+                observation,
+                validity,
+                ProvenanceLimits::default(),
+            )
+            .unwrap();
+        assert_eq!(
+            verifier
+                .verify_package(&fixture.subject, wrong_builder.as_ref(), NOW)
+                .unwrap_err()
+                .reason(),
+            SignatureFailure::SourceDisallowed,
+        );
     }
 }

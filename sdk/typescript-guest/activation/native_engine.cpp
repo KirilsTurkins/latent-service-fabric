@@ -269,13 +269,15 @@ bool lift_import_value(JSContext* cx, uint32_t id, JS::MutableHandleValue value)
 bool finish_import(JSContext* cx, uint32_t id) { return imports.liftCompleted(cx, id); }
 bool cancel_import(JSContext* cx, uint32_t id) { return imports.cancel(cx, id); }
 
-bool acknowledge_result_retirement(JSContext* cx) {
+void observe_result_retirement(JSContext* cx) {
   // The original post_call has released lowering buffers and the call's native
   // rooted values. Reachable application graphs remain charged until the Store
   // physically retires; never claim their release merely because root settled.
+  // Canonical post-return cannot leave the component. GC records physical
+  // retirement without importing broker settlement; the exact reservations stay
+  // charged until a permitted checkpoint or the host's physical Store retirement.
   JS::PrepareForFullGC(cx);
   JS::NonIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::API);
-  return acknowledge_promise_retirement(cx);
 }
 
 } // namespace lsf::typescript::activation

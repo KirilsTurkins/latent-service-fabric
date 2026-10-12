@@ -56,6 +56,38 @@ def selection(profile: str) -> dict:
             'apiSupport': 'not-evaluated', 'authority': 'none'}
 
 
+def scoped_selected_world(world: str) -> str:
+    """Keep the derived runtime world in the original application's namespace."""
+    if not WORLD.fullmatch(world):
+        raise ValueError('typescript-runtime-world-identity')
+    namespace, package = world.split(':', 1)
+    if package.split('/', 1)[0] == 'lsf-typescript-activation':
+        raise ValueError('typescript-runtime-world-identity')
+    return namespace + ':lsf-typescript-activation/selected@1.0.0'
+
+
+def original_world_sources(derived: dict[str, bytes], original: dict[str, bytes]) -> dict[str, bytes]:
+    """Relay original package documents instead of the decoder's nested-package printout."""
+    if not original or len(original) > 256 or 'world.wit' not in derived:
+        raise ValueError('typescript-original-world-source-set')
+    result = {name: raw for name, raw in derived.items() if name != 'deps/application/package.wit'}
+    total = 0
+    for name, raw in original.items():
+        path = PurePosixPath(name)
+        if (not isinstance(name, str) or path.is_absolute() or '..' in path.parts
+                or path.as_posix() != name or not name.endswith('.wit')
+                or ':' in name or '\\' in name or len(name) > 512 or not isinstance(raw, bytes)):
+            raise ValueError('typescript-original-world-source-path')
+        total += len(raw)
+        if not raw or len(raw) > 256 * 1024 or total > 4 * 1024 * 1024:
+            raise ValueError('typescript-original-world-source-limit')
+        target = name if name.startswith('deps/') else 'deps/application/' + name
+        if target in result and result[target] != raw:
+            raise ValueError('typescript-original-world-source-conflict')
+        result[target] = raw
+    return result
+
+
 def check_application_bindings(original_graph: dict, world: str, *, profile: str = ASYNC_PROFILE) -> None:
     """The native activation ABI is engine-owned, never a JavaScript adapter.
 
@@ -267,7 +299,9 @@ def derive_world(canonical_original: bytes, original_graph: dict, world: str,
     find_world(original_graph, world)
     if not canonical_original or not activation_wit:
         raise ValueError('typescript-runtime-original-wit-required')
-    root = (f'package lsf:typescript-activation@1.0.0;\n\nworld selected {{\n'
+    selected = scoped_selected_world(world)
+    package = selected.split('/', 1)[0] + '@1.0.0'
+    root = (f'package {package};\n\nworld selected {{\n'
             f'    include {world};\n    import {ACTIVATION_INTERFACE};\n}}\n').encode()
     files = {'world.wit': root, 'deps/application/package.wit': canonical_original}
     # If the original already supplies this interface, final parser-graph
@@ -278,9 +312,10 @@ def derive_world(canonical_original: bytes, original_graph: dict, world: str,
     return files
 
 
-def check_derived_world(original: dict, derived: dict, activation: dict, world: str) -> dict:
+def check_derived_world(original: dict, derived: dict, activation: dict, world: str,
+                        *, selected_world: str = SELECTED_WORLD, clock: dict | None = None) -> dict:
     before = public_graph(original, world)
-    after = public_graph(derived, SELECTED_WORLD)
+    after = public_graph(derived, selected_world)
     if after['exports'] != before['exports']:
         raise ValueError('typescript-runtime-public-exports-changed')
     expected = dict(before['imports'])
@@ -291,10 +326,21 @@ def check_derived_world(original: dict, derived: dict, activation: dict, world: 
     if ACTIVATION_INTERFACE in expected and expected[ACTIVATION_INTERFACE] != supplied[ACTIVATION_INTERFACE]:
         raise ValueError('typescript-runtime-shadowed-activation-interface')
     expected.update(supplied)
+    if clock is not None:
+        from tools.typescript_guest.clock_engine import CLOCK_INTERFACES
+        clock_world = next(world_id(clock, item) for item in clock['worlds'])
+        clocks = public_graph(clock, clock_world)['imports']
+        if set(clocks) != set(CLOCK_INTERFACES):
+            raise ValueError('exact-maintained-clock-and-activation-modules-required')
+        for name, body in clocks.items():
+            if name in expected and expected[name] != body:
+                raise ValueError('shadowed-maintained-clock-or-runtime-interface')
+            expected[name] = body
     if after['imports'] != expected:
         raise ValueError('typescript-runtime-import-contract-changed')
     encoded = json.dumps(before, sort_keys=True, separators=(',', ':')).encode()
-    return {'profile': ASYNC_PROFILE, 'originalWorld': world, 'selectedWorld': SELECTED_WORLD,
+    return {'profile': CLOCK_PROFILE if clock is not None else ASYNC_PROFILE,
+            'originalWorld': world, 'selectedWorld': selected_world,
             'publicContractDigest': digest(encoded), 'activationInterface': ACTIVATION_INTERFACE,
             'publicExportsAndOriginalImportsPreserved': True, 'qualification': 'unknown',
             'apiSupport': 'not-evaluated', 'authority': 'none'}

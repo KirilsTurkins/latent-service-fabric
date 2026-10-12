@@ -1,0 +1,7 @@
+package examples:names@1.0.0;
+interface api { run: func() -> string; }
+world service {
+    import examples:foo-bar/types@1.0.0;
+    import examples-foo:bar/types@1.0.0;
+    export api;
+}

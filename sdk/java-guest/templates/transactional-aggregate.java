@@ -19,24 +19,28 @@ public final class Capsule implements Bindings.Exports {
     @Override public Result<Bindings.ExamplesTransactionalAggregateApiAggregate, Bindings.ExamplesTransactionalAggregateApiBusinessError>
     update(Bindings.ExamplesTransactionalAggregateApiUpdateRequest request) {
         try (var command = State.acquireCommand().value()) {
-            var old = count(command.get(KEY).value());
+            var stored = command.get(KEY).value();
+            var old = count(stored);
             if (old == null) return Result.err(Bindings.ExamplesTransactionalAggregateApiBusinessError.MalformedState);
             long next = old + request.delta();
             if (Long.compareUnsigned(next, old) < 0) return Result.err(Bindings.ExamplesTransactionalAggregateApiBusinessError.Overflow);
+            var viewVersion = command.info().value().view().version();
+            var keyVersion = stored.isSome() ? Option.some(stored.value().version()) : Option.<byte[]>none();
             byte[] bytes = new byte[8]; for (int i = 0; i < 8; i++) bytes[i] = (byte)(next >>> (8 * i));
             var payload = new Bindings.LatentStateKeyValueValue(bytes, MEDIA, List.of());
             command.put(KEY, payload).value();
             new Intent("approved-event", "event", payload).stage(command).value();
             if (request.reject()) return Result.err(Bindings.ExamplesTransactionalAggregateApiBusinessError.Rejected);
-            var version = command.get(KEY).value().value().version();
-            return Result.ok(new Bindings.ExamplesTransactionalAggregateApiAggregate(new Unsigned64(next), version));
+            return Result.ok(new Bindings.ExamplesTransactionalAggregateApiAggregate(new Unsigned64(next), viewVersion, keyVersion));
         }
     }
     @Override public Result<Bindings.ExamplesTransactionalAggregateApiAggregate, Bindings.ExamplesTransactionalAggregateApiBusinessError> query() {
         try (var query = State.acquireQuery().value()) {
-            var count = count(query.get(KEY).value());
+            var stored = query.get(KEY).value();
+            var count = count(stored);
             if (count == null) return Result.err(Bindings.ExamplesTransactionalAggregateApiBusinessError.MalformedState);
-            return Result.ok(new Bindings.ExamplesTransactionalAggregateApiAggregate(new Unsigned64(count), query.info().value().version()));
+            var keyVersion = stored.isSome() ? Option.some(stored.value().version()) : Option.<byte[]>none();
+            return Result.ok(new Bindings.ExamplesTransactionalAggregateApiAggregate(new Unsigned64(count), query.info().value().version(), keyVersion));
         }
     }
     @Override public Result<Bindings.ExamplesTransactionalAggregateApiScanResult, Bindings.ExamplesTransactionalAggregateApiBusinessError>

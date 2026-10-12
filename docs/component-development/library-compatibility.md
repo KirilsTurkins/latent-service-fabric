@@ -6,6 +6,25 @@ surface or an import outside the recognized host ABI stops packaging. The
 retained `compatibility-inspection.json` identifies the component and ABI inputs.
 The existing package validator additionally checks the complete WIT types.
 
+Recipes select the frozen V5 manifest only when the authoritative declared WIT
+surface explicitly imports `latent:runtime/activation@0.1.0` or
+`latent:network/streams@0.1.0`; other surfaces keep the frozen V4 manifest.
+The profile selector accepts only those two manifest identities. It neither
+falls back after a missing manifest nor derives authority from emitted imports.
+V5 inspections record the selected profile and its exact manifest digest;
+packaging and failure reporting recheck that digest. Existing V4 inspection
+records retain their original shape. Provider installation, exact grants,
+runtime support and normal node admission still require their own evidence.
+
+V4 recipes require only their existing V4 manifest. A declared V5 surface adds
+the exact V5 manifest to the retained recipe inventory before its first use;
+the final recipe recheck includes that input. .NET and TypeScript derive the
+surface before compilation. Adapters that derive staged WIT afterward capture
+the additional observation input before inspecting and packaging the result.
+Adding that input cannot hide a changed original recipe. A missing or changed
+V5 manifest fails the build. A compiler bundle retains the manifest for its
+explicitly advertised ABI profile, while V4 bundles need no V5 material.
+
 Each package contains `compatibility-report.json`, a source-bound observation
 using `lsf.guest.compatibility.v1`. Its identity binds the source inventory,
 component, selected host ABI and SDK lock. The report does not install providers,
@@ -45,6 +64,22 @@ and qualification owner; it does not certify arbitrary APIs, transitive
 callbacks or lifecycle quiescence. Renaming a package changes its captured
 graph identity without changing API eligibility. These receipts remain beside
 the build and preserve the packaged compatibility report and asset identity.
+
+`compatibility-reachability.json` additionally inspects bounded compiler-emitted
+core code. It follows direct calls from all core exports, start functions and
+observed addressable callbacks, using a conservative superset of the component's
+selected exports. A closed core graph can identify a function without an emitted
+root path. That observation does not prove API elimination, actual execution,
+transitive library reachability or successful initialization. Indirect dispatch,
+tables, opaque instruction encodings and analysis limits remain unknown. The
+sidecar binds source, component, runtime/host profiles, selected graph and recipe;
+it never runs initializers. At most 64 findings and 64 KiB are retained, with
+explicit omission and symbol redaction counts. Source locations remain explicitly
+unobserved when the emitted code supplies no authenticated mapping.
+
+```sh
+python -m tools.guest_emitted_code output/compatibility-reachability.json --context output/compatibility-context.json
+```
 
 Reports distinguish dependency resolution, target/ABI problems, unsupported
 operations, missing runtime implementations, unqualified profiles, unknown

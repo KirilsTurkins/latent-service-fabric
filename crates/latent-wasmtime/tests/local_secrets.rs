@@ -12,6 +12,9 @@ mod support;
 use fixture::*;
 use latent_capabilities::broker::secrets::{SecretError, SecretInvoker};
 
+#[path = "local_secrets/credential_generations.rs"]
+mod credential_generations;
+
 fn marker(first: u8, version: u8, length: u64) -> u64 {
     (u64::from(first) << 32) | (u64::from(version) << 16) | length
 }
@@ -54,6 +57,7 @@ async fn shutdown(f: &Fixture) {
 #[tokio::test]
 async fn guest_read_version_errors_rotation_and_cell_reuse() {
     let f = Fixture::new().await;
+    let runtime_entropy_before = f.runtime_entropy_calls();
     assert_eq!(invoke(&f, 0).await, marker(b'A', b'1', 5));
     assert_eq!(invoke(&f, 1).await, 1001); // No matching read grant.
     assert_eq!(invoke(&f, 2).await, 1001); // Provider credential is never raw data.
@@ -63,6 +67,7 @@ async fn guest_read_version_errors_rotation_and_cell_reuse() {
     write(&f.directory.path().join("secrets/value"), b"Beta");
     assert_eq!(f.secrets.reload(1, specs("2")).unwrap().await.unwrap(), 2);
     assert_eq!(invoke(&f, 0).await, marker(b'B', b'2', 4));
+    assert_eq!(f.runtime_entropy_calls(), runtime_entropy_before);
     shutdown(&f).await;
 }
 

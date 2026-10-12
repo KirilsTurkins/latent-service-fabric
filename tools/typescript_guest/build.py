@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from tools import guest_compatibility_context_build, guest_runtime_receipts
+from tools.transaction_guest_project import packaging_arguments
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import tempfile
 import time
 from tools.build_observation import build_environment, file_identity, public_repository
@@ -54,6 +55,34 @@ RECIPE += ('tools/typescript_guest/import_engine.py','tools/typescript_guest/imp
 RECIPE += ('tools/typescript_guest/runtime_bundle.py',)
 RECIPE += ('tools/typescript_guest/text_codec_engine.py',)
 RECIPE += ("tools/typescript_generator_authoring.py",)
+
+
+def runtime_package_sources(original: dict[str, bytes], selected: dict,
+                            *, selected_world: str = runtime.SELECTED_WORLD) -> dict[str, bytes]:
+    """Keep selected lock sources separate from the immutable application capture."""
+    if (not isinstance(selected, dict) or set(selected) != {'world', 'sources'}
+            or selected['world'] != selected_world
+            or not isinstance(selected['sources'], list) or not 1 <= len(selected['sources']) <= 256):
+        raise ValueError('typescript-selected-package-source-envelope')
+    sources = {}
+    total = 0
+    for row in selected['sources']:
+        if not isinstance(row, dict) or set(row) != {'path', 'content'}:
+            raise ValueError('typescript-selected-package-source-entry')
+        name, content = row['path'], row['content']
+        if (not isinstance(name, str) or not isinstance(content, str)
+                or not name.startswith('wit/') or not name.endswith('.wit')
+                or len(name) > 512 or PurePosixPath(name).as_posix() != name
+                or any(part in ('', '.', '..') for part in name.split('/'))
+                or ':' in name or '\\' in name or name in sources):
+            raise ValueError('typescript-selected-package-source-path')
+        raw = content.encode('utf-8')
+        total += len(raw)
+        if not raw or len(raw) > 256 * 1024 or total > 4 * 1024 * 1024:
+            raise ValueError('typescript-selected-package-source-limit')
+        sources[name] = raw
+    return {**{name: raw for name, raw in original.items()
+               if not (name.startswith('wit/') and name.endswith('.wit'))}, **sources}
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path,
@@ -109,6 +138,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands.run("contracts", paths["contracts-tool"], wit_input, derived)
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
+            surface = read_json(derived / "surface.json")
+            recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             stage = "compiler-inputs"
             options = {'isolated_workspace': temporary if closure is not None else None}
             if runtime_profile in runtime.NATIVE_PROFILES:
@@ -131,19 +162,24 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "compile"
             component_path, generated = compiler.compile(work, project["world"], temporary / "compiled", application_modules=application_modules)
             package_project = project
+            package_sources = files
             runtime_assets = ()
             runtime_materials = []
             if runtime_profile in runtime.NATIVE_PROFILES:
                 for name in ('contracts.json', 'wit-lock.json', 'surface.json'):
                     (output/('original-'+name)).write_bytes(read_file(output/name))
                 selected_contracts = temporary/'selected-contracts'
+                selected_input = temporary/'compiled/selected-wit-inputs.json'
+                selected_world = runtime.scoped_selected_world(project['world'])
+                package_sources = runtime_package_sources(files, read_json(selected_input),
+                                                          selected_world=selected_world)
                 commands.run('selected-runtime-contracts', paths['contracts-tool'],
-                             temporary/'compiled/selected-wit-inputs.json', selected_contracts)
+                             selected_input, selected_contracts)
                 for name in ('contracts.json', 'wit-lock.json', 'surface.json'):
                     (output/name).write_bytes(read_file(selected_contracts/name))
                 if read_json(output/'surface.json')['exports'] != read_json(output/'original-surface.json')['exports']:
                     raise ValueError('selected TypeScript runtime changed public contract exports')
-                package_project = dict(project, world=runtime.SELECTED_WORLD)
+                package_project = dict(project, world=selected_world)
                 (output/'typescript-runtime-selection.json').write_bytes(
                     read_file(temporary/'compiled/typescript-runtime-selection.json', 65536))
                 runtime_assets = (('typescript-runtime-selection.json', 'asset',
@@ -166,13 +202,13 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             guest_compatibility_build.inspect(commands, compiler.wasm, output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             if runtime_assets:
-                package_inputs(output, package_project, surface, files, component, additional_assets=runtime_assets)
+                package_inputs(output, package_project, surface, package_sources, component, additional_assets=runtime_assets)
             else:
                 package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
             stage = "recheck"
             captured_after = {name: data for name, data in snapshot(work, exclude=("dependencies", "application-vendor")).items()
                               if not name.startswith("generated/") and name != "tsconfig.json"}

@@ -165,9 +165,18 @@ def derive_queue_experiment(original: dict[str, bytes], native: dict[str, bytes]
         b"  // all calls are async functions returning promises\n", "actual-root-frame-suspended")
     embedding = replace_once(embedding, b"  Runtime.free_list.clear();\n  RootedValue result(Runtime.cx);\n",
         b"  Runtime.free_list.clear();\n"
-        b"  if (!lsf::typescript::activation::acknowledge_result_retirement(Runtime.cx))\n"
-        b'    Runtime.engine->abort("(post_call) actual result retirement denied");\n'
+        b"  lsf::typescript::activation::observe_result_retirement(Runtime.cx);\n"
         b"  RootedValue result(Runtime.cx);\n", "actual-post-call-result-retirement")
+    embedding = replace_once(embedding, b'  LOG("(call) end");\n',
+        b"  // Result bytes are fully lowered; these temporary JS roots no longer\n"
+        b"  // own a caller-visible value. Retire them while a normal call can\n"
+        b"  // still acknowledge physical native release to the host broker.\n"
+        b"  ret.setUndefined();\n  r.setUndefined();\n  promise = nullptr;\n"
+        b"  call_then_handler_obj = nullptr;\n  call_catch_handler_obj = nullptr;\n"
+        b"  empty_receiver = nullptr;\n  args.clear();\n"
+        b"  if (!lsf::typescript::activation::root_work_drained(Runtime.cx))\n"
+        b'    Runtime.engine->abort("(call) lowered-result native retirement denied");\n'
+        b'  LOG("(call) end");\n', "physical-call-temporary-retirement-after-lowering")
     result["embedding/embedding.cpp"] = embedding
 
     event_loop = result["StarlingMonkey/runtime/event_loop.cpp"]

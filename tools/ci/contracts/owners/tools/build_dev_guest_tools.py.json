@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/build_dev_guest_tools.py","reviewBoundary":"committed-fingerprint","reviewReason":"Add only explicit source-bound TypeScript toolkit candidate input bundle capture; preserve all old pins/cache/deadlines/defaults and unknown qualification","schemaVersion":"latent.ci.contracts.v1","sha256":"cf2edc560ee608487017305772bd658a1684be7a027ea4ed53025d9d3a65edb7"}
+{
+  "kind": "owner",
+  "path": "tools/build_dev_guest_tools.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve the original builder and finite compiler contracts while adding only explicit source-bound TypeScript runtime input staging; preserve unknown API qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "9f26d50850c304d4a706126991b84abcb7a808e442911f07bfafe63578256f42"
+}

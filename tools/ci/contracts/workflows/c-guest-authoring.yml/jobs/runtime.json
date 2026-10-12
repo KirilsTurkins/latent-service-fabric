@@ -98,7 +98,7 @@
   },
   "jobId": "runtime",
   "kind": "job",
-  "reviewReason": "Retain all original C capability, library, static archive, guide and rejection controls; add an explicitly reviewed generator, offline rebuild and normal signed-component execution. Preserve exact historical coverage and all current actual compiler/package/runtime obligations while reconciling independently reviewed Phase 4 owners. Preserve both C runtime parents exact compiler/isolation controls and artifact path union, including actual dependency-control failures and Phase4 transaction receipts. Current C authoring integration preserves every parental command, isolation/correctness guard, step order and receipt path; expanded library suites and static-archive options remain additive. Reconcile current development while retaining both parents C compiler/isolation controls, runtime and Phase4 transaction qualification commands, and complete diagnostic artifact paths. Preserve the authored transaction aggregate and forbidden immediate HTTP compiler gate unchanged, all incoming C archive and isolated generated-header rejection controls and authoring cases, exact workflow guards, and every original and incoming artifact receipt path. Reconcile current development while retaining both parents C compiler/isolation controls, runtime and Phase4 transaction qualification commands, and complete diagnostic artifact paths.",
+  "reviewReason": "Reconcile captured-input transfer, approved generators and conservative diagnostics with current transaction/native owners. Preserve all original cases, skip guards, historical commands, isolation requirements and receipt paths.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/c-guest-authoring.yml"
 }

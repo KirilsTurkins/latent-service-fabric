@@ -1,0 +1,26 @@
+   Compiling latent-core v0.1.0-alpha.5 (/source/crates/latent-core)
+   Compiling tokio v1.53.1
+   Compiling latent-manifest v0.1.0-alpha.5 (/source/crates/latent-manifest)
+   Compiling latent-audit v0.1.0-alpha.5 (/source/crates/latent-audit)
+   Compiling latent-contracts v0.1.0-alpha.5 (/source/crates/latent-contracts)
+   Compiling latent-routing v0.1.0-alpha.5 (/source/crates/latent-routing)
+   Compiling latent-protected-files v0.1.0-alpha.5 (/source/crates/latent-protected-files)
+   Compiling latent-artifacts v0.1.0-alpha.5 (/source/crates/latent-artifacts)
+   Compiling latent-state v0.1.0-alpha.5 (/source/crates/latent-state)
+   Compiling latent-activation v0.1.0-alpha.5 (/source/crates/latent-activation)
+   Compiling latent-signing v0.1.0-alpha.5 (/source/crates/latent-signing)
+   Compiling latent-packaging v0.1.0-alpha.5 (/source/crates/latent-packaging)
+   Compiling latent-effects v0.1.0-alpha.5 (/source/crates/latent-effects)
+   Compiling latent-policy v0.1.0-alpha.5 (/source/crates/latent-policy)
+   Compiling latent-commit v0.1.0-alpha.5 (/source/crates/latent-commit)
+   Compiling latent-telemetry v0.1.0-alpha.5 (/source/crates/latent-telemetry)
+   Compiling latent-executor v0.1.0-alpha.5 (/source/crates/latent-executor)
+   Compiling latent-capabilities v0.1.0-alpha.5 (/source/crates/latent-capabilities)
+    Finished `test` profile [unoptimized] target(s) in 41.51s
+     Running unittests src/lib.rs (/target/debug/deps/latent_capabilities-c66c060c0023da96)
+
+running 1 test
+test namespace::tests::authority::intents::retained_staging_revocation_blocks_actual_commit_without_revoking_state_or_running_effect_fence ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 150 filtered out; finished in 0.16s
+

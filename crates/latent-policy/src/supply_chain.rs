@@ -20,7 +20,7 @@ pub use verification::{
     PackageVerificationRequest, WebPackageVerificationReport,
 };
 
-pub use clock::{SupplyChainClock, SystemSupplyChainClock};
+pub use clock::{CoveredClock, CoveredClockSource, SupplyChainClock, SystemSupplyChainClock};
 pub use config::SupplyChainPolicy;
 
 use latent_artifacts::{
@@ -45,6 +45,8 @@ pub struct SupplyChainAuthority {
 struct Inner {
     clock: Arc<dyn SupplyChainClock>,
     runtime: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
+    clock_metadata: clock::Metadata,
     state: RwLock<State>,
     // Immutable readers do not exclude final publication. The separate fence
     // preserves exclusive commits and rejects nested entry without a wait queue.
@@ -149,7 +151,14 @@ impl SupplyChainAuthority {
         clock: Arc<dyn SupplyChainClock>,
         lease_seconds: u64,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(root, policy, clock, lease_seconds, None)
+        Self::open_inner(
+            root,
+            policy,
+            clock,
+            lease_seconds,
+            None,
+            latent_manifest::ManifestValidationProfile::default(),
+        )
     }
 
     /// Opens with the same immutable, detected host profile used for deployment
@@ -161,7 +170,35 @@ impl SupplyChainAuthority {
         lease_seconds: u64,
         runtime: Arc<latent_manifest::RuntimeCompatibilityProfile>,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(root, policy, clock, lease_seconds, Some(runtime))
+        Self::open_with_runtime_and_manifest_profile(
+            root,
+            policy,
+            clock,
+            lease_seconds,
+            runtime,
+            latent_manifest::ManifestValidationProfile::default(),
+        )
+    }
+
+    /// Selects the host's checked manifest/preparation profile explicitly. The
+    /// immutable selection supplies no publisher, builder, namespace or provider
+    /// authority; all original evidence and currentness checks remain required.
+    pub fn open_with_runtime_and_manifest_profile(
+        root: &Path,
+        policy: SupplyChainPolicy,
+        clock: Arc<dyn SupplyChainClock>,
+        lease_seconds: u64,
+        runtime: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+        manifest_profile: latent_manifest::ManifestValidationProfile,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(
+            root,
+            policy,
+            clock,
+            lease_seconds,
+            Some(runtime),
+            manifest_profile,
+        )
     }
 
     fn open_inner(
@@ -170,6 +207,7 @@ impl SupplyChainAuthority {
         clock: Arc<dyn SupplyChainClock>,
         lease_seconds: u64,
         runtime: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
+        manifest_profile: latent_manifest::ManifestValidationProfile,
     ) -> Result<Self, PlatformError> {
         if !(1..=5).contains(&lease_seconds) {
             return Err(invalid("admission-clock-lease-limit"));
@@ -203,10 +241,18 @@ impl SupplyChainAuthority {
         if after < now || after >= ceiling {
             return Err(unavailable("admission-clock-lease-uncovered"));
         }
+        let state = State {
+            policy,
+            verifiers,
+            floor,
+            observed_at: AtomicU64::new(after),
+            lease_seconds,
+        };
         Ok(Self {
             inner: Arc::new(Inner {
                 clock,
                 runtime,
+                manifest_profile,
                 retired: AtomicBool::new(false),
                 verifying: AtomicBool::new(false),
                 ledger: Mutex::new(ledger),
@@ -214,13 +260,8 @@ impl SupplyChainAuthority {
                 reader_poisoned: AtomicBool::new(false),
                 commit_fence: Mutex::new(()),
                 committing: AtomicBool::new(false),
-                state: RwLock::new(State {
-                    policy,
-                    verifiers,
-                    floor,
-                    observed_at: AtomicU64::new(after),
-                    lease_seconds,
-                }),
+                clock_metadata: clock::Metadata::new(&state),
+                state: RwLock::new(state),
             }),
         })
     }
@@ -263,13 +304,17 @@ impl SupplyChainAuthority {
         full_window: bool,
     ) -> Result<Option<DurableFloor>, PlatformError> {
         self.inner.currentness()?;
-        let before = state.observed_at.load(Ordering::Acquire);
+        let before = state
+            .observed_at
+            .load(Ordering::Acquire)
+            .max(self.inner.clock_metadata.observed_at());
         let now = self.inner.clock.now()?;
         self.inner.currentness()?;
         if now < before {
             return Err(unavailable("admission-clock-regression"));
         }
         let now = state.observed_at.fetch_max(now, Ordering::AcqRel).max(now);
+        self.inner.clock_metadata.record(now);
         // Keep at least two seconds of margin with the default lease, avoiding
         // filesystem work on every control tick. Short leases renew each second.
         let margin = state.lease_seconds.min(2);
@@ -295,7 +340,10 @@ impl SupplyChainAuthority {
     fn finish_renewal_sample(&self, state: &State) -> Result<(), PlatformError> {
         let ceiling = state.floor.restart_not_before;
         self.inner.currentness()?;
-        let before = state.observed_at.load(Ordering::Acquire);
+        let before = state
+            .observed_at
+            .load(Ordering::Acquire)
+            .max(self.inner.clock_metadata.observed_at());
         let after = self.inner.clock.now()?;
         self.inner.currentness()?;
         if after < before || after >= ceiling {
@@ -308,6 +356,8 @@ impl SupplyChainAuthority {
         if after >= ceiling {
             return Err(unavailable("admission-clock-lease-uncovered"));
         }
+        self.inner.clock_metadata.record(after);
+        self.inner.publish_clock_metadata(state)?;
         Ok(())
     }
     fn renew(&self, state: &mut State, ledger: &Ledger) -> Result<(), PlatformError> {
@@ -373,14 +423,17 @@ impl SupplyChainAuthority {
         // The durable floor is already advanced. Any subsequent problem closes
         // the old authority too; it cannot resume behind that new floor.
         self.inner.halted.store(true, Ordering::Release);
+        let previous = now.max(self.inner.clock_metadata.observed_at());
         let after = self.inner.clock.now()?;
-        if after < now || after >= state.floor.restart_not_before {
+        if after < previous || after >= state.floor.restart_not_before {
             return Err(unavailable("admission-clock-lease-uncovered"));
         }
         let verifiers = next.verifiers(after)?;
         state.policy = next;
         state.verifiers = Some(verifiers);
         state.observed_at.store(after, Ordering::Release);
+        self.inner.clock_metadata.record(after);
+        self.inner.publish_clock_metadata(&state)?;
         self.inner.halted.store(false, Ordering::Release);
         Ok(())
     }
@@ -478,8 +531,12 @@ impl AdmissionAuthority for SupplyChainAuthority {
         // Structural history is checked under the single verification owner,
         // outside the currentness fence, before any policy/clock denial that may
         // retain non-authorizing historical metadata (as for web recovery).
-        let upload = receipt::Receipt::validate_retained(binding, upload)?;
-        let prepared = verify::prepare(upload)?;
+        let upload = receipt::Receipt::validate_retained_with_profile(
+            binding,
+            upload,
+            self.inner.manifest_profile,
+        )?;
+        let prepared = verify::prepare_with_profile(upload, self.inner.manifest_profile)?;
         let ledger = self
             .inner
             .ledger
@@ -589,7 +646,10 @@ impl Inner {
     }
     fn sample_clock(&self, state: &State) -> Result<u64, PlatformError> {
         self.currentness()?;
-        let before = state.observed_at.load(Ordering::Acquire);
+        let before = state
+            .observed_at
+            .load(Ordering::Acquire)
+            .max(self.clock_metadata.observed_at());
         let now = self.clock.now()?;
         self.currentness()?;
         if now < before {
@@ -605,7 +665,15 @@ impl Inner {
         if now >= state.floor.restart_not_before {
             return Err(unavailable("admission-clock-lease-uncovered"));
         }
+        self.clock_metadata.record(now);
         Ok(now)
+    }
+    fn publish_clock_metadata(&self, state: &State) -> Result<(), PlatformError> {
+        if let Err(error) = self.clock_metadata.publish(state) {
+            self.halted.store(true, Ordering::Release);
+            return Err(error);
+        }
+        Ok(())
     }
     fn persist(&self, ledger: &Ledger, next: &DurableFloor) -> Result<(), PlatformError> {
         if let Err(error) = ledger.persist(next) {

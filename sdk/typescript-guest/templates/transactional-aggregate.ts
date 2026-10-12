@@ -20,21 +20,25 @@ export const api: typeof Contract = {
   update(request) {
     const command = host(Command.acquire());
     try {
-      const next = count(host(command.get(key))) + BigInt(request.delta);
+      const stored = host(command.get(key));
+      const next = count(stored) + BigInt(request.delta);
       if (next > (1n << 64n) - 1n) throw 'overflow' satisfies Contract.BusinessError;
+      const viewVersion = host(command.info()).view.version;
+      const keyVersion = stored?.version;
       const bytes = new Uint8Array(8); new DataView(bytes.buffer).setBigUint64(0, next, true);
       const payload = { bytes, mediaType: media, metadata: [] as [string, string][] };
       host(command.put(key, payload));
       host(new Intent('approved-event', 'event', payload).stage(command));
       if (request.reject) throw 'rejected' satisfies Contract.BusinessError;
-      const staged = host(command.get(key));
-      if (staged === undefined) throw new Error('missing staged value');
-      return { count: next, version: staged.version };
+      return { count: next, viewVersion, keyVersion };
     } finally { command.close(); }
   },
   query() {
     const query = host(Query.acquire());
-    try { return { count: count(host(query.get(key))), version: host(query.info()).version }; }
+    try {
+      const stored = host(query.get(key));
+      return { count: count(stored), viewVersion: host(query.info()).version, keyVersion: stored?.version };
+    }
     finally { query.close(); }
   },
   scan(prefix, limit, cursor) {

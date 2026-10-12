@@ -13,7 +13,7 @@ bool begin_root(JSContext* cx);
 bool park_root(JSContext* cx);
 bool settle_root(JSContext* cx);
 bool root_work_drained(JSContext* cx);
-bool acknowledge_result_retirement(JSContext* cx);
+void observe_result_retirement(JSContext* cx);
 bool start_timer(JSContext* cx, JS::HandleObject callback,
                  const JS::HandleValueArray& arguments, int32_t delay_ms,
                  bool repeat, int32_t* id);

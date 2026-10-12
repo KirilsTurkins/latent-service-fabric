@@ -1,0 +1,54 @@
+{
+  "argv": [
+    "cargo",
+    "+1.97.1",
+    "--config",
+    ".cargo/managed-guest.toml",
+    "test",
+    "-p",
+    "latent-wasmtime",
+    "--test",
+    "native_aot_cache",
+    "--all-features",
+    "--locked",
+    "--",
+    "--test-threads=1"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 183.4451918430001,
+  "timeoutSeconds": 900,
+  "registeredSuite": {
+    "boundary": "runtime",
+    "expectedCases": [
+      "ownership::evicted_ready_handle_keeps_its_image_and_revocation_never_recovers_from_native_cache",
+      "reopen::buffered_web_profile_change_after_restart_cannot_reuse_a_stale_native_image",
+      "reopen::identical_component_after_restart_requires_its_exact_engine_before_native_reuse",
+      "reopen::real_miss_invokes_then_reopened_native_hit_verifies_source_without_compiling",
+      "tamper::replaced_bytes_with_matching_sha_and_wrong_host_key_never_reach_the_loader"
+    ],
+    "expectedIgnored": [],
+    "id": "latent-wasmtime.test.native-aot-cache",
+    "ignoredLeaves": [],
+    "kind": "test",
+    "manifest": "crates/latent-wasmtime/Cargo.toml",
+    "minimumCases": 5,
+    "mode": "libtest",
+    "package": "latent-wasmtime",
+    "platforms": [
+      "linux-x86_64"
+    ],
+    "prerequisites": [
+      "pinned Rust toolchain",
+      "successful source-matched Cargo artifact inventory"
+    ],
+    "recipe": "workspace-all-features",
+    "resourceClass": "runtime-bounded",
+    "source": "tests/native_aot_cache.rs",
+    "target": "native_aot_cache",
+    "timeoutSeconds": 900
+  },
+  "source": "6c0e6c1fb4645f72b7ecd6545bc4c34888236c89",
+  "logSha256": "e26b2500b88db62546660caaf0f29b656b1985aa16f85c29bc92df68b1c1e086",
+  "oldResultsUsedAsPass": false,
+  "completeRepositoryCI": false
+}

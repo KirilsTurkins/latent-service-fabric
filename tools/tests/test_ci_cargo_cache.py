@@ -148,6 +148,10 @@ class CacheIdentityTests(unittest.TestCase):
             "${{ matrix.lane == 'measurements' && 'frozen-collector' || matrix.lane == 'optimization' && 'optimization-smoke' || matrix.lane == 'bindings' && 'host-correctness' || 'host-contracts' }}")
         for option in ("cache-bin", "cache-workspace-crates", "cache-all-crates", "cache-on-failure"):
             self.assertIs(native["with"][option], False)
+        self.assertEqual(native["with"]["prefix-key"], "lsf-ci-dependencies-v3-contract-profiles")
+        self.assertIs(native["with"]["cache-targets"], False)
+        self.assertEqual(native["with"]["cache-directories"].splitlines(), [
+            "target/debug", "target/release", "target/wasm32-unknown-unknown", "target/wasm32-wasip2"])
 
     def test_native_cache_writers_remove_owned_fixtures_after_evidence_and_retire_empty_directory_caches(self):
         from tools.ci_lane_inventory import workflow_model
@@ -155,7 +159,7 @@ class CacheIdentityTests(unittest.TestCase):
         steps = workflow_model((root / ".github/workflows/ci.yml").read_text())["jobs"]["contracts"]["steps"]
         native = next(step for step in steps if step.get("name") == "Restore compiled Rust dependencies")
         self.assertEqual(native["with"]["prefix-key"],
-            "${{ (matrix.lane == 'bindings' || matrix.lane == 'optimization') && 'lsf-ci-dependencies-v2' || 'lsf-ci-dependencies-v3' }}")
+            "lsf-ci-dependencies-v3-contract-profiles")
         cleanup = next(step for step in steps if step.get("name") == "Remove validated echo fixtures before dependency cache pruning")
         self.assertEqual(cleanup["if"],
             "github.event_name == 'push' && github.ref == 'refs/heads/development' && (matrix.lane == 'standalone' || matrix.lane == 'measurements')")
