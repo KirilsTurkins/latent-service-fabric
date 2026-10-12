@@ -35,7 +35,35 @@ storage/native retirement, all owner/reservation/byte counters zero, and the
 process reaped. The older Python retirement validator then rejected obsolete
 DTO names; that collector correction has a separate owner.
 
-These source controls do not qualify publication, the proposed management-only
-namespace bootstrap sequence, signed Java execution, or the complete #718/#682
-acceptance criteria. Those require a fresh, explicitly identified native tuple
-and a separately retained actual campaign.
+The [bounded actual packet](pr970-cli-transaction-evidence.json) identifies the
+committed CLI product and its separately copied debug-section transformation.
+Default package inspection refuses the real transaction package; explicit
+`--phase4` inspection succeeds without claiming trust or execution authority;
+altering the component layer remains a local refusal. These controls use the
+documented local-error exit 2. An earlier private control incorrectly expected
+exit 1; that failed attempt is retained and supplies no passing evidence.
+
+The real current legacy Java fixture also publishes once through the ordinary
+CLI into a fresh node with empty configured operations, using explicit ephemeral
+test trust. The native node and signer remain bound to their earlier `a37aa977`
+source, the CLI to `ae3b0149`, the collector to `50594f0e`, and the Java capture to
+`9bae8395`; this is a deliberately distinct-source diagnostic tuple. The
+publication receipt reports committed admission, generation 1, and durable audit
+acknowledgement 2. The node physically retires its storage/native owners and is
+reaped. No guest invocation occurs.
+
+The complete bootstrap sequence remains incomplete. The selected legacy
+query-only inspection passes, but full legacy inspection refuses before any
+policy, deployment, or namespace mutation. A timed read-only full inspection
+returns permission denied in 1,729.603424 ms, below its unchanged 5,000 ms startup
+deadline; the update-only control separately returns unavailable in
+1,221.817493 ms. The HTTP adapter requires a 22,528-byte native response
+reservation while the signed fixture retains the original 2,048-byte response
+ceiling. The native owner must reconcile that envelope without silently
+enlarging the original response/payload limits or treating an empty-operations
+inspection as selected-source authority. Earlier generic aggregate and path
+placement failures remain separate evidence.
+
+The proposed management-only namespace bootstrap, signed Java execution, and
+the complete #718/#682 acceptance criteria remain unqualified. The packet makes
+no issue closure claim.
