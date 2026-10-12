@@ -73,7 +73,8 @@
         790
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:30:44.103154+00:00"
     },
     {
       "pullRequest": 854,
@@ -89,7 +90,8 @@
         769
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:30:47.726701+00:00"
     },
     {
       "pullRequest": 855,
@@ -117,7 +119,8 @@
           898
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:30:51.266777+00:00"
     },
     {
       "pullRequest": 856,
@@ -150,7 +153,8 @@
           858
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:30:54.471089+00:00"
     },
     {
       "pullRequest": 858,
@@ -202,7 +206,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:30:58.434843+00:00"
     },
     {
       "pullRequest": 861,
@@ -235,7 +240,8 @@
           856
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:01.927586+00:00"
     },
     {
       "pullRequest": 863,
@@ -259,7 +265,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:05.721930+00:00"
     },
     {
       "pullRequest": 864,
@@ -294,7 +301,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:08.896585+00:00"
     },
     {
       "pullRequest": 865,
@@ -326,7 +334,8 @@
           865
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:11.957048+00:00"
     },
     {
       "pullRequest": 867,
@@ -356,7 +365,8 @@
           889
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:16.855894+00:00"
     },
     {
       "pullRequest": 868,
@@ -374,7 +384,8 @@
           865
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:20.150834+00:00"
     },
     {
       "pullRequest": 869,
@@ -392,7 +403,8 @@
           865
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:23.328124+00:00"
     },
     {
       "pullRequest": 870,
@@ -427,7 +439,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:26.202078+00:00"
     },
     {
       "pullRequest": 871,
@@ -468,10 +481,16 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
-      "incorporatingMergedPrs": [],
+      "disposition": "implemented-source-identical-to-development",
+      "incorporatingMergedPrs": [
+        843
+      ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "currentSourcePaths": [
+        "tools/c_generator_authoring.py",
+        "tools/tests/test_c_generator_authoring.py"
+      ]
     },
     {
       "pullRequest": 874,
@@ -504,7 +523,8 @@
           874
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:28.845925+00:00"
     },
     {
       "pullRequest": 876,
@@ -552,7 +572,8 @@
           884
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:34.117444+00:00"
     },
     {
       "pullRequest": 877,
@@ -615,7 +636,8 @@
           884
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:36.730788+00:00"
     },
     {
       "pullRequest": 879,
@@ -640,7 +662,8 @@
           959
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:41.851981+00:00"
     },
     {
       "pullRequest": 880,
@@ -664,7 +687,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:44.428611+00:00"
     },
     {
       "pullRequest": 881,
@@ -744,7 +768,8 @@
           898
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:47.589194+00:00"
     },
     {
       "pullRequest": 886,
@@ -762,7 +787,8 @@
         843
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:50.254029+00:00"
     },
     {
       "pullRequest": 887,
@@ -786,7 +812,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:53.334338+00:00"
     },
     {
       "pullRequest": 888,
@@ -811,7 +838,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:55.994885+00:00"
     },
     {
       "pullRequest": 889,
@@ -844,7 +872,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:58.787271+00:00"
     },
     {
       "pullRequest": 891,
@@ -882,7 +911,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:01.926860+00:00"
     },
     {
       "pullRequest": 893,
@@ -908,7 +938,8 @@
           889
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:04.863843+00:00"
     },
     {
       "pullRequest": 894,
@@ -925,7 +956,8 @@
         807
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:07.540145+00:00"
     },
     {
       "pullRequest": 895,
@@ -966,7 +998,8 @@
           889
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:10.262255+00:00"
     },
     {
       "pullRequest": 897,
@@ -1005,7 +1038,8 @@
           924
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:13.274506+00:00"
     },
     {
       "pullRequest": 898,
@@ -1067,7 +1101,8 @@
           884
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:15.856592+00:00"
     },
     {
       "pullRequest": 900,
@@ -1106,7 +1141,8 @@
           886
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:18.726470+00:00"
     },
     {
       "pullRequest": 901,
@@ -1124,7 +1160,8 @@
           902
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:21.586937+00:00"
     },
     {
       "pullRequest": 902,
@@ -1163,7 +1200,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:24.245396+00:00"
     },
     {
       "pullRequest": 904,
@@ -1189,7 +1227,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:26.911210+00:00"
     },
     {
       "pullRequest": 905,
@@ -1207,7 +1246,8 @@
           902
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:29.482960+00:00"
     },
     {
       "pullRequest": 906,
@@ -1252,7 +1292,8 @@
           884
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:34.481975+00:00"
     },
     {
       "pullRequest": 907,
@@ -1336,7 +1377,8 @@
           954
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:36.946955+00:00"
     },
     {
       "pullRequest": 911,
@@ -1365,7 +1407,8 @@
           954
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:41.044002+00:00"
     },
     {
       "pullRequest": 912,
@@ -1397,7 +1440,8 @@
           912
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:43.712165+00:00"
     },
     {
       "pullRequest": 914,
@@ -1408,10 +1452,16 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
-      "incorporatingMergedPrs": [],
+      "disposition": "implemented-source-identical-to-development",
+      "incorporatingMergedPrs": [
+        843
+      ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "currentSourcePaths": [
+        "tools/typescript_generator_authoring.py",
+        "tools/tests/test_typescript_generator_authoring.py"
+      ]
     },
     {
       "pullRequest": 915,
@@ -1432,7 +1482,8 @@
           923
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:49.643089+00:00"
     },
     {
       "pullRequest": 916,
@@ -1467,7 +1518,8 @@
           923
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:52.827397+00:00"
     },
     {
       "pullRequest": 918,
@@ -1489,7 +1541,8 @@
           923
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:55.561848+00:00"
     },
     {
       "pullRequest": 919,
@@ -1524,7 +1577,8 @@
           923
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:58.283785+00:00"
     },
     {
       "pullRequest": 921,
@@ -1542,7 +1596,8 @@
           923
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:00.881675+00:00"
     },
     {
       "pullRequest": 922,
@@ -1560,7 +1615,8 @@
           923
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:03.981805+00:00"
     },
     {
       "pullRequest": 923,
@@ -1630,7 +1686,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:06.753193+00:00"
     },
     {
       "pullRequest": 927,
@@ -1649,7 +1706,8 @@
         771
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:09.509258+00:00"
     },
     {
       "pullRequest": 928,
@@ -1668,7 +1726,8 @@
         820
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:12.169585+00:00"
     },
     {
       "pullRequest": 929,
@@ -1685,7 +1744,8 @@
         776
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:14.834112+00:00"
     },
     {
       "pullRequest": 930,
@@ -1703,7 +1763,8 @@
         806
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:17.700382+00:00"
     },
     {
       "pullRequest": 931,
@@ -1725,7 +1786,8 @@
           856
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:20.408375+00:00"
     },
     {
       "pullRequest": 932,
@@ -1765,7 +1827,8 @@
           856
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:23.464563+00:00"
     },
     {
       "pullRequest": 934,
@@ -1807,7 +1870,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:26.301474+00:00"
     },
     {
       "pullRequest": 935,
@@ -1862,7 +1926,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:28.760317+00:00"
     },
     {
       "pullRequest": 937,
@@ -1880,7 +1945,8 @@
         827
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:32.161478+00:00"
     },
     {
       "pullRequest": 938,
@@ -1901,7 +1967,8 @@
           947
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:35.010822+00:00"
     },
     {
       "pullRequest": 939,
@@ -1922,7 +1989,8 @@
           947
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:01.068087+00:00"
     },
     {
       "pullRequest": 940,
@@ -1964,7 +2032,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:03.807913+00:00"
     },
     {
       "pullRequest": 941,
@@ -1997,7 +2066,8 @@
           924
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:06.947146+00:00"
     },
     {
       "pullRequest": 942,
@@ -2049,7 +2119,8 @@
           914
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:09.950907+00:00"
     },
     {
       "pullRequest": 943,
@@ -2066,7 +2137,8 @@
         810
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:13.195465+00:00"
     },
     {
       "pullRequest": 944,
@@ -2090,7 +2162,8 @@
           872
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:16.033964+00:00"
     },
     {
       "pullRequest": 945,
@@ -2111,7 +2184,8 @@
           947
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:18.729968+00:00"
     },
     {
       "pullRequest": 946,
@@ -2131,7 +2205,8 @@
           947
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:21.141278+00:00"
     },
     {
       "pullRequest": 947,
@@ -2150,7 +2225,8 @@
         798
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:23.565375+00:00"
     },
     {
       "pullRequest": 948,
@@ -2170,7 +2246,8 @@
           947
         ]
       ],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:26.078446+00:00"
     },
     {
       "pullRequest": 949,
@@ -2250,7 +2327,8 @@
         759
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:28.497397+00:00"
     },
     {
       "pullRequest": 952,
@@ -2267,7 +2345,8 @@
         795
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:35.443924+00:00"
     },
     {
       "pullRequest": 953,
@@ -2298,7 +2377,8 @@
         775
       ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:37.977228+00:00"
     },
     {
       "pullRequest": 955,
@@ -2309,10 +2389,16 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
-      "incorporatingMergedPrs": [],
+      "disposition": "implemented-source-identical-to-development",
+      "incorporatingMergedPrs": [
+        843
+      ],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "currentSourcePaths": [
+        "tools/guest_emitted_code.py",
+        "tools/tests/test_guest_emitted_code.py"
+      ]
     },
     {
       "pullRequest": 957,
