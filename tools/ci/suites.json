@@ -8827,6 +8827,7 @@
         "phase4::state_management::tests::effects::detached_revoked_lookup_keeps_original_native_owner_until_actual_provider_cleanup",
         "phase4::state_management::tests::effects::effect_identifiers_and_operator_flag_cannot_replace_exact_caller_data_read_permission",
         "phase4::state_management::tests::effects::effect_plan_full_original_semantics_and_stale_policy_are_never_refreshed",
+        "phase4::state_management::tests::effects::foreign_command_effect_associations_are_denied_without_rewriting_original_rows",
         "phase4::state_management::tests::effects::fresh_lookup_after_execution_expiry_uses_reserved_capacity_and_preserves_provider_fact",
         "phase4::state_management::tests::effects::frozen_rpc_adapter_preserves_effect_plan_receipt_and_original_recovery_association",
         "phase4::state_management::tests::effects::unknown_actual_dispatch_attempt_cannot_be_redriven_from_an_operator_declaration",
@@ -8919,7 +8920,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 213,
+      "minimumCases": 214,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [
@@ -9600,6 +9601,7 @@
         "config::tests::stream_reload::replacement_keeps_original_protected_mode_link_size_and_closed_type_checks",
         "config::tests::stream_reload::runtime_and_stream_installations_cannot_share_an_identity_or_service_owner",
         "config::tests::stream_reload::stream_reload_keeps_runtime_identity_epoch_and_all_seven_limits_immutable",
+        "config::tests::streams::explicit_stream_tls_requires_exact_hostname_and_closed_pinned_trust_inputs",
         "config::tests::streams::stream_bindings_require_the_exact_installed_identity_and_contract",
         "config::tests::streams::stream_configuration_requires_protected_input_explicit_feature_and_exact_address_policy",
         "config::tests::streams::stream_input_is_closed_and_never_echoes_credentials_or_host_key_paths",
@@ -9913,7 +9915,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 341,
+      "minimumCases": 342,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

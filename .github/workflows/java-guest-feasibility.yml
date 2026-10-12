@@ -133,6 +133,8 @@ jobs:
             | tee "$RUNNER_TEMP/java-aggregate-encoding/vectors.log"
       - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
         run: python3 tools/compile_transaction_guests.py --language java --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guests-java"
+      - name: Compile exact state value and forbidden child inputs
+        run: python3 tools/compile_transaction_guests.py --language java --java-state-acceptance --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guest-acceptance-java"
       - name: Check explicit post-stage diagnostic helpers without claiming transaction execution
         id: transaction-diagnostic-vectors
         shell: bash
@@ -223,6 +225,7 @@ jobs:
             ${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler/*.log
             ${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler/*.command.json
             ${{ runner.temp }}/transaction-guests-java/**/report.json
+            ${{ runner.temp }}/transaction-guest-acceptance-java/**
             ${{ runner.temp }}/transaction-guests-java/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-java/**/recipe-inputs.json
             ${{ runner.temp }}/transaction-guests-java/**/source.tar.gz
