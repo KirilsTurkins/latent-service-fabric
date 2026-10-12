@@ -1,6 +1,9 @@
 """Observe one actual Go source build; never sign, execute or grant authority."""
 from __future__ import annotations
 
+from tools import guest_compatibility_context_build, guest_runtime_receipts
+from tools.transaction_guest_project import packaging_arguments
+
 import json
 from pathlib import Path
 import tempfile
@@ -8,7 +11,7 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_resources
+from tools import guest_authoring_frontend, guest_compatibility_build, guest_dependency_inputs, guest_resources
 from tools.go_guest.compiler import Compiler
 from tools.go_capsule_project import validate
 from tools.application_dependencies import prepare
@@ -22,16 +25,24 @@ RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsul
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
-          "examples/echo-contract/deployment.json")
+          "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py",
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
-           "tools/application_dependency_approval.py", "tools/go_application_dependencies.py", "tools/captured_compiler_isolation.py")
+           "tools/application_dependency_approval.py", "tools/go_application_dependencies.py",
+           "tools/go_dependency_authoring.py", "tools/captured_compiler_isolation.py")
+RECIPE += ("tools/go_generator_authoring.py",)
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
+RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += guest_resources.RECIPE
+RECIPE += guest_dependency_inputs.RECIPE
+RECIPE += guest_authoring_frontend.RECIPE
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,
           *, offline_cache: Path | None = None) -> Path:
-    project_path, output = checked_path(project_path), checked_path(output)
+    project_path = guest_dependency_inputs.application_root(checked_path(project_path), 'go')
+    output = checked_path(output)
     if output == project_path or output in project_path.parents or (
             project_path in output.parents and project_path / "target" not in output.parents):
         raise ValueError("build output must be outside source or beneath its target directory")
@@ -40,10 +51,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     commands, stage = None, "capture"
     started, start = int(time.time()), time.monotonic()
     try:
-        files = snapshot(project_path)
+        observed = guest_dependency_inputs.capture_source(project_path, 'go')
+        files = observed.files
         project, lock, pins = validate(files)
         source_inputs = inventory(files)
-        recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
+        recipe_files = {path: read_file(ROOT / path) for path in RECIPE}
+        recipe_inputs = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe_inputs)
         with tempfile.TemporaryDirectory(prefix="lsf-go-capsule-") as owned:
@@ -55,7 +68,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 path.write_bytes(data)
             commands = Commands(work, output, build_environment(temporary))
             stage = "application-dependencies"
-            closure = prepare(project_path, work, output, "go")
+            closure = prepare(observed.dependency_root, work, output, "go")
             compiler = Compiler(temporary / "compiler", work / "vendor/lsf/sdk/go-guest", commands,
                                 offline_cache=offline_cache, source_root=project_path / "src", application_closure=closure)
             materials = list(compiler.materials.values())
@@ -78,17 +91,20 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             surface = read_json(derived / "surface.json")
+            recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
             stage = "compatibility"
-            guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+            guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
+                host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
             stage = "recheck"
-            if snapshot(project_path) != files or snapshot(work, exclude=("dependencies", "application-vendor") if closure else ()) != files:
+            observed.check_unchanged()
+            if snapshot(work, exclude=("dependencies", "application-vendor") if closure else ()) != files:
                 raise ValueError("project changed during the observed Go build")
-            if inventory({path: read_file(ROOT / path) for path in RECIPE}) != recipe_inputs:
+            if inventory({path: read_file(ROOT / path) for path in recipe_files}) != recipe_inputs:
                 raise ValueError("Go authoring recipe changed during the build")
             compiler.check_unchanged()
             if closure is not None:
@@ -105,10 +121,19 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("source-snapshot", source_inputs), ("build-recipe", recipe_inputs), ("package-inputs", package_inventory),
                 ("toolchain-config", files["vendor/lsf/sdk/go-guest/toolchain.lock.json"]),
                 ("dependency-lock", files["vendor/lsf/sdk/go-guest/runtime-deps/dependencies.lock.json"])))
+            if 'go-generated-inputs.json' in files:
+                materials.append({'name': 'go-generator-inputs',
+                                  'digest': digest(files['go-generated-inputs.json']),
+                                  'size': len(files['go-generated-inputs.json'])})
             if closure is not None:
                 for name in ("application-dependencies.json", "compiler-containment.json", "go-module-build-inputs.json"):
                     data = read_file(output / name, 16 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            runtime_profile = closure.lock['selection']['runtimeProfile'] if closure is not None else 'go-component-async-v1'
+            materials.append(guest_runtime_receipts.emit(output, 'go', runtime_profile, files,
+                source_inputs, component, materials, graph=closure.lock if closure is not None else None,
+                binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],
+                    "target": "wasip1/wasm", "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("Go build clock or overall deadline invalid")
@@ -120,6 +145,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                "runtime": "go-component-async-v1", "locked": True, "ambientWasi": False},
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
+            guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1, "packageAssembled": packager is not None,
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                 "componentDigest": digest(component), "sdkBindingDigest": binding_digest,

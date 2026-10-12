@@ -115,3 +115,45 @@ async fn real_miss_invokes_then_reopened_native_hit_verifies_source_without_comp
         .join_until(std::time::Instant::now() + std::time::Duration::from_secs(5))
         .unwrap());
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn buffered_web_profile_change_after_restart_cannot_reuse_a_stale_native_image() {
+    let fixture = Fixture::new();
+    let repository = fixture.catalog();
+    let release = publish(&repository, false).await;
+    let mut config = super::runtime::config();
+    config.buffered_web_value_profile = Some(latent_wasmtime::BufferedWebValueProfile {
+        hostcall_fuel: 2 * 1024 * 1024,
+        limits: config.value_codec_limits,
+    });
+    let original = fixture.session_with_config(repository.clone(), KEY, None, config.clone());
+    let ready = original
+        .prepare(repository.clone(), &release)
+        .await
+        .unwrap();
+    original.answer(ready).await;
+    original.idle();
+    assert_eq!(original.snapshot().isolated_compilations, 1);
+    drop(original);
+    drop(repository);
+
+    // The signed source/catalog/key are unchanged. Only a separately bounded
+    // codec policy changed. Even a service component must not load the image
+    // authenticated for the previous combined node-profile identity.
+    config
+        .buffered_web_value_profile
+        .as_mut()
+        .unwrap()
+        .limits
+        .max_string_bytes /= 2;
+    let repository = fixture.catalog();
+    let changed = fixture.session_with_config(repository.clone(), KEY, None, config);
+    assert_eq!(changed.snapshot().images.loader_attempts, 0);
+    let ready = changed.prepare(repository.clone(), &release).await.unwrap();
+    let snapshot = changed.snapshot();
+    assert_eq!(snapshot.cache_hits, 0);
+    assert_eq!(snapshot.isolated_compilations, 1);
+    assert_eq!(snapshot.images.loader_attempts, 1);
+    changed.answer(ready).await;
+    changed.idle();
+}

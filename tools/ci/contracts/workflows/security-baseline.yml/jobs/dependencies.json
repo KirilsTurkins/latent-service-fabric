@@ -43,6 +43,13 @@
         }
       },
       {
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version": "24.19.0",
+          "package-manager-cache": false
+        }
+      },
+      {
         "name": "Inventory all manifests and query current OSV data without builds or installs",
         "run": "python3 controls/tools/security_scan.py dependencies --repo source --tools \"$RUNNER_TEMP/security-tools\" --scratch \"$RUNNER_TEMP/security-scan\""
       }
@@ -55,7 +62,7 @@
   },
   "jobId": "dependencies",
   "kind": "job",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Query dependency advisories without an automatic package-manager cache; retain every scan and manifest check.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/security-baseline.yml"
 }

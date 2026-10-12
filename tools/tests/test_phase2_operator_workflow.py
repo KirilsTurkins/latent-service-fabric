@@ -526,6 +526,137 @@ class FailedCallObservationTests(unittest.TestCase):
         self.assert_one_process(process, launch)
 
 
+class FailedPublicationReceiptTests(unittest.TestCase):
+    def setUp(self):
+        from tools import run_publication_workflow as workflow
+        self.workflow = workflow
+        self.fixture = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for name in ("blue", "green"):
+            inputs = self.fixture / name / "inputs"
+            inputs.mkdir(parents=True)
+            (inputs / "component.wasm").write_bytes(b"same controlled component")
+            (inputs / "capsule.json").write_bytes(b"same controlled metadata")
+            (inputs.parent / "sbom-inputs.json").write_text(json.dumps({"fixture": name}))
+        self.args = SimpleNamespace(cli=self.fixture / "PRIVATE-CLI", node=self.fixture / "PRIVATE-NODE",
+                                    fixture_root=self.fixture, source_commit="1" * 40)
+        self.args.cli.write_bytes(b"never launched")
+        self.args.node.write_bytes(b"never launched")
+        self.events, self.clients, self.work = [], [], []
+        metadata = {"publicationWorkflow": True, "credentials": [], "input": ["PRIVATE-PAYLOAD"]}
+        original_read = workflow.read_json
+        self.enterContext(patch.object(workflow, "read_json", side_effect=lambda path:
+            metadata.copy() if Path(path).name in {"fixture.json", "config.json"} else original_read(path)))
+        self.enterContext(patch.object(workflow, "configure_node", return_value=self.fixture / "config.json"))
+        self.identities = {"sourceCommit": "1" * 40, "cliDigest": "sha256:" + "2" * 64,
+                           "nodeDigest": "sha256:" + "3" * 64}
+        self.enterContext(patch.object(workflow, "build_identity", return_value=self.identities))
+        self.enterContext(patch.object(workflow, "other_connection"))
+        real_client = Client
+
+        def client(*args):
+            value = real_client(*args)
+            value.calls = 18
+            self.clients.append(value)
+            self.work.append(value.directory)
+            return value
+
+        self.enterContext(patch.object(workflow, "Client", side_effect=client))
+        self.node = Mock()
+        self.node.close.side_effect = lambda: self.events.append("node-close")
+        self.enterContext(patch.object(workflow, "connect", return_value=self.node))
+        self.process = Mock()
+        self.process.complete.return_value = subprocess.CompletedProcess([], 4,
+            json.dumps(cli_document(command="invoke", category="platform-failure",
+                error={"code": "resource-exhausted", "message": "PRIVATE-MESSAGE",
+                       "details": [{"kind": "PRIVATE-DETAIL", "payload": "PRIVATE"}]})).encode(),
+            b"PRIVATE-STDERR")
+        self.process.close.side_effect = lambda: self.events.append("cli-close")
+        self.launch = self.enterContext(patch("tools.phase2_operator_process.Process", return_value=self.process))
+
+        def fail(_client, *_args):
+            return self.clients[0].call("invoke", "PRIVATE-ARGV", "PRIVATE-TOKEN")
+
+        self.enterContext(patch.object(workflow, "publish", side_effect=fail))
+        self.stdout = self.enterContext(redirect_stdout(io.StringIO()))
+
+    def test_original_cli_failure_receipt_is_bounded_and_after_all_cleanup(self):
+        def render(value):
+            self.assertEqual(self.events, ["cli-close", "node-close"])
+            self.assertTrue(self.work and not any(path.exists() for path in self.work))
+            return bounded_receipt(value)
+
+        with patch.object(self.workflow, "bounded_receipt", side_effect=render), \
+             self.assertRaisesRegex(WorkflowError, "^cli-exit-call-19-status-4-code-resource-exhausted-grpc-absent$"):
+            self.workflow.run(self.args)
+        value = json.loads(self.stdout.getvalue())
+        self.assertIs(value["passed"], False)
+        self.assertEqual(value["identities"], self.identities)
+        self.assertIs(value["identityRechecked"], False)
+        self.assertEqual(value["nodeShutdown"], "unverified")
+        self.assertEqual(value["temporaryOutputsRemoved"], "unverified")
+        self.assertEqual(len(value["failedCalls"]), 1)
+        self.assertEqual(value["failedCalls"][0]["publicCode"], "resource-exhausted")
+        self.assertEqual(value["failedCalls"][0]["call"], 19)
+        self.assertNotIn("PRIVATE", self.stdout.getvalue())
+        self.assertLess(len(self.stdout.getvalue().encode()), 65536)
+        self.launch.assert_called_once()
+        self.process.complete.assert_called_once()
+        self.process.close.assert_called_once_with()
+
+    def test_other_tenant_failed_call_is_retained_without_an_additional_process(self):
+        def fail(_client, *_args):
+            return self.clients[1].call("invoke", "PRIVATE-OTHER-TOKEN")
+
+        with patch.object(self.workflow, "publish", side_effect=fail), self.assertRaises(WorkflowError):
+            self.workflow.run(self.args)
+        value = json.loads(self.stdout.getvalue())
+        self.assertEqual(value["failedCalls"], [self.clients[1].failed_call])
+        self.assertIsNone(self.clients[0].failed_call)
+        self.launch.assert_called_once()
+
+    def test_receipt_sink_failure_never_replaces_the_original_cli_error(self):
+        with patch.object(self.workflow, "bounded_receipt", side_effect=RuntimeError("PRIVATE")), \
+             self.assertRaisesRegex(WorkflowError, "^cli-exit-call-19-status-4-code-resource-exhausted-grpc-absent$"):
+            self.workflow.run(self.args)
+        self.assertEqual(self.stdout.getvalue(), "")
+        self.assertEqual(self.events, ["cli-close", "node-close"])
+        self.launch.assert_called_once()
+
+    def test_cleanup_failure_is_retained_without_claiming_successful_retirement(self):
+        original = WorkflowError("owned-node-cleanup")
+        self.node.close.side_effect = original
+        with self.assertRaises(WorkflowError) as caught:
+            self.workflow.run(self.args)
+        self.assertIs(caught.exception, original)
+        value = json.loads(self.stdout.getvalue())
+        self.assertEqual(value["nodeShutdown"], "unverified")
+        self.assertIs(value["passed"], False)
+        self.assertEqual(value["failedCalls"][0]["publicCode"], "resource-exhausted")
+        self.launch.assert_called_once()
+
+    def test_cancellation_is_preserved_after_existing_owner_scopes_unwind(self):
+        original = SystemExit(143)
+        with patch.object(self.workflow, "publish", side_effect=original), \
+             self.assertRaises(SystemExit) as caught:
+            self.workflow.run(self.args)
+        self.assertIs(caught.exception, original)
+        self.assertEqual(self.events, ["node-close"])
+        value = json.loads(self.stdout.getvalue())
+        self.assertIs(value["passed"], False)
+        self.assertEqual(value["failedCalls"], [])
+        self.launch.assert_not_called()
+
+    def test_failure_before_acquisition_keeps_missing_identity_explicit(self):
+        with patch.object(self.workflow, "read_json", return_value={"publicationWorkflow": False}), \
+             self.assertRaisesRegex(WorkflowError, "^wrong-fixture-profile$"):
+            self.workflow.run(self.args)
+        value = json.loads(self.stdout.getvalue())
+        self.assertIsNone(value["identities"])
+        self.assertEqual(value["failedCalls"], [])
+        self.assertIs(value["passed"], False)
+        self.launch.assert_not_called()
+
+
 class FailedOperatorReceiptTests(unittest.TestCase):
     def setUp(self):
         from tools import run_phase2_operator_workflow as workflow

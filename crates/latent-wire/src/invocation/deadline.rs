@@ -16,6 +16,24 @@ pub(super) fn plan(
     limits: &InvocationLimits,
 ) -> Result<DeadlinePlan, Status> {
     let caller = request.get_ref().deadline_unix_millis;
+    plan_parts(
+        request.metadata(),
+        caller,
+        context,
+        context_expires_at,
+        sample,
+        limits,
+    )
+}
+
+pub(super) fn plan_parts(
+    metadata: &tonic::metadata::MetadataMap,
+    caller: Option<u64>,
+    context: Option<u64>,
+    context_expires_at: Option<Instant>,
+    sample: ClockSample,
+    limits: &InvocationLimits,
+) -> Result<DeadlinePlan, Status> {
     let absolute = |value: u64| -> Result<Duration, Status> {
         let millis = value
             .checked_sub(sample.unix_millis())
@@ -54,7 +72,7 @@ pub(super) fn plan(
     } else {
         context
     };
-    let transport_delay = grpc_timeout(request)?;
+    let transport_delay = grpc_timeout(metadata)?;
     if transport_delay == Some(Duration::ZERO) {
         return Err(Status::deadline_exceeded(
             "the invocation deadline has expired",
@@ -99,8 +117,8 @@ fn unix_after(sample: ClockSample, delay: Duration) -> Result<u64, Status> {
         .ok_or_else(|| Status::invalid_argument("transport deadline overflow"))
 }
 
-fn grpc_timeout(request: &Request<proto::InvokeRequest>) -> Result<Option<Duration>, Status> {
-    let all = request.metadata().get_all("grpc-timeout");
+fn grpc_timeout(metadata: &tonic::metadata::MetadataMap) -> Result<Option<Duration>, Status> {
+    let all = metadata.get_all("grpc-timeout");
     let mut values = all.iter();
     let Some(value) = values.next() else {
         return Ok(None);

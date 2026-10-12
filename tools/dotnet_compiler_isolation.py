@@ -87,6 +87,35 @@ class DotnetIsolation(Isolation):
         return {path.name: identity for path, identity in self.argument_files.items()}
 
 
+def stage_http_errors(sdk: Path, tools: Path, destination: Path) -> Path:
+    """Carry the SDK-owned BCL transformer and exact framework into the namespace."""
+    from tools.dotnet_guest import http_errors
+    from tools.rust_capsule_project import snapshot
+
+    http_errors.verify_installed(sdk, tools)
+    sources = {name: snapshot(tools / name) for name in ('http-errors', 'http-errors-source')}
+    originals = http_errors.source_paths(tools)
+    for original in originals:
+        http_errors.require_digest(original, http_errors.SOURCE_DIGEST, 'http-error-framework')
+    destination.mkdir()
+    for name, files in sources.items():
+        for relative, body in files.items():
+            path = destination / name / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open('xb') as output:
+                output.write(body)
+    for original, copied in zip(originals, http_errors.source_paths(destination)):
+        copied.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(original, copied)
+        http_errors.require_digest(copied, http_errors.SOURCE_DIGEST, 'http-error-framework')
+        http_errors.require_digest(original, http_errors.SOURCE_DIGEST, 'http-error-framework')
+    for name, files in sources.items():
+        if snapshot(tools / name) != files or snapshot(destination / name) != files:
+            raise DependencyError('http-error-namespace-input-mutated')
+    http_errors.verify_installed(sdk, destination)
+    return destination
+
+
 def stage_adapters(runtimes: dict[str, Path], destination: Path) -> dict[str, Path]:
     """Capture the finite SDK adapter family inside the compiler namespace."""
     from tools.dotnet_guest.runtime import ADAPTERS
@@ -141,6 +170,9 @@ def stage(compiler, workspace: Path) -> DotnetIsolation:
     composer = root / 'component-composer'
     shutil.copytree(compiler.roots['component-composer'], composer)
     selected['component-composer'] = composer
+    if 'http-errors' in compiler.roots:
+        compiler.http_error_tools = stage_http_errors(compiler.sdk, compiler.tools, root / 'http-error-support')
+        selected['http-error-support'] = compiler.http_error_tools
     python_root = root / 'python'
     python_bin = python_root / 'bin/python'
     python_bin.parent.mkdir(parents=True)

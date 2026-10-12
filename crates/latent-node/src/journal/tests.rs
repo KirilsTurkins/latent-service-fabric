@@ -5,7 +5,11 @@ use latent_core::{ActivationPhase, ActivationTerminalState, BudgetConsumption, M
 
 use super::*;
 
+#[path = "tests/broker_lineage.rs"]
+mod broker_lineage;
 mod support;
+#[path = "tests/tree.rs"]
+mod tree;
 use support::{envelope, journal, outcome, Clock};
 
 #[test]
@@ -281,7 +285,7 @@ fn tenant_queries_and_cancellation_never_expose_another_tenants_record() {
         journal
             .cancel_with(&foreign, &input.activation_id, || {
                 calls.fetch_add(1, Ordering::Relaxed);
-                CancelDisposition::Accepted
+                Ok(CancelDisposition::Accepted)
             })
             .expect("valid foreign scope"),
         CancelDisposition::NotFound
@@ -290,17 +294,49 @@ fn tenant_queries_and_cancellation_never_expose_another_tenants_record() {
         journal
             .cancel_with(&input.target.tenant, &input.activation_id, || {
                 calls.fetch_add(1, Ordering::Relaxed);
-                CancelDisposition::Accepted
+                Ok(CancelDisposition::Accepted)
             })
             .expect("valid scope"),
         CancelDisposition::Accepted
     );
+    let cancellations = crate::ActivationCancellationRegistry::new(32).expect("registry");
+    let registration = cancellations
+        .register(input.activation_id.clone())
+        .expect("original registration");
+    assert!(registration
+        .handle()
+        .accept_commit(ActivationTerminalState::Completed, || true));
+    assert_eq!(
+        journal
+            .cancel_with(&foreign, &input.activation_id, || {
+                panic!("foreign tenants cannot observe accepted commit I/O")
+            })
+            .expect("valid foreign scope during commit"),
+        CancelDisposition::NotFound
+    );
+    let pending = journal
+        .cancel_with(&input.target.tenant, &input.activation_id, || {
+            cancellations.cancel(&input.activation_id, "late cancellation")
+        })
+        .expect_err("accepted commit I/O is not terminal");
+    assert_eq!(pending.code, PlatformErrorCode::Unavailable);
+    assert!(!pending.retryable);
+    assert_eq!(cancellations.snapshot().active_registrations, 1);
+    assert_eq!(
+        journal
+            .status(&input.target.tenant, &input.activation_id)
+            .expect("status")
+            .expect("original record")
+            .terminal_state,
+        None
+    );
+    registration.publish_terminal(ActivationTerminalState::Completed);
     owner.finish(outcome());
     assert_eq!(
         journal
             .cancel_with(&input.target.tenant, &input.activation_id, || {
                 calls.fetch_add(1, Ordering::Relaxed);
-                CancelDisposition::Accepted
+                Ok(CancelDisposition::Accepted)
             })
             .expect("valid terminal scope"),
         CancelDisposition::AlreadyTerminal(ActivationTerminalState::Completed)

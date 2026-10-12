@@ -151,29 +151,32 @@ impl super::super::PreparationContext {
         key: &PreparationKey,
         input: Compilation,
         job: &PreparationJob,
+        wait: Option<&WorkerWindow>,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        self.check_eligibility(
-            input.eligibility.as_ref(),
-            &key.release,
-            key.publication.as_ref(),
-        )?;
-        checked.check()?;
+        WorkerWindow::check(wait, || {
+            self.check_eligibility(
+                input.eligibility.as_ref(),
+                &key.release,
+                key.publication.as_ref(),
+            )
+        })?;
+        WorkerWindow::check(wait, || checked.check())?;
         self.validate_renderer_component(checked.artifact())?;
         let service = self
             .native_aot
             .as_ref()
             .ok_or_else(crate::backend::admission_association_error)?;
         let code = service.load(checked, &self.engine)?;
-        checked.check()?;
+        WorkerWindow::check(wait, || checked.check())?;
         let runtime = self.link_runtime(
             checked.artifact(),
             key,
             input,
             job,
             CompiledCode::Native(code),
-            None,
+            wait,
         )?;
-        checked.check()?;
+        WorkerWindow::check(wait, || checked.check())?;
         Ok(runtime)
     }
 
@@ -201,21 +204,42 @@ impl super::super::PreparationContext {
             artifact,
             &self.config,
             surface::Providers {
+                activation_runtime: self.config.activation_runtime.is_some(),
                 local_services: self.local_services().is_some(),
                 http: self.http().is_some(),
                 streaming_http: self.streaming_http().is_some(),
+                outbound_streams: self.outbound_streams().is_some(),
                 blobs: self.blobs().is_some(),
                 secrets: self.secrets().is_some(),
                 events: self.events().is_some(),
                 random: self.random().is_some(),
                 metrics: self.metrics().is_some(),
             },
-        )?;
+        )
+        .map_err(|mut error| {
+            // Bind the selected surface observation to the original trusted
+            // engine/cache profile, including both finite transfer policies.
+            for detail in &mut error.details {
+                if let Some(mut observation) =
+                    latent_core::diagnostic::ActivationDiagnostic::from_detail(detail)
+                {
+                    observation.profile_digest = self
+                        .profile
+                        .configuration
+                        .get("configuration-digest")
+                        .and_then(|value| value.strip_prefix("blake3:"))
+                        .and_then(|value| blake3::Hash::from_hex(value).ok())
+                        .map(|value| *value.as_bytes());
+                    *detail = observation.detail();
+                }
+            }
+            error
+        })?;
         let metadata_bytes = input
             .metadata_bytes
             .checked_add(surface.retained_bytes)
             .ok_or_else(metadata_overflow)?;
-        let pre = self.link_component(component)?;
+        let pre = self.link_component(component, &surface.type_imports)?;
         if self.profile.id == PHASE0_BACKEND_ID {
             crate::phase0::validate_prepared(&pre)?;
         }

@@ -248,6 +248,9 @@ def materialize(files: list[dict], destination: Path, store: Store):
         if set(row) != {"path", "digest", "size"}:
             raise DependencyError("dependency-file-inventory-invalid")
         entries.add(row["path"], store.get(row["digest"], row["size"]))
+    # Empty selections still have an owned physical directory. Its existence and
+    # exact inventory are rechecked just like a nonempty captured input tree.
+    destination.mkdir(parents=True, exist_ok=True)
     for name, data in entries.files.items():
         path = regular_path(destination / name)
         path.parent.mkdir(parents=True, exist_ok=True)

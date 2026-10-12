@@ -38,7 +38,8 @@ impl Default for HttpStreamLimits {
     }
 }
 impl HttpStreamLimits {
-    pub(crate) fn validate(self) -> Result<(), HttpError> {
+    /// Check the closed transfer and chunk ceilings without installing a provider.
+    pub fn validate(self) -> Result<(), HttpError> {
         if self.maximum_input_bytes > 63 * 1024 * 1024
             || self.maximum_output_bytes == 0
             || self.maximum_output_bytes > 63 * 1024 * 1024

@@ -1,6 +1,9 @@
 use super::{LifecycleScope, ReleaseLifecycleRecord, ReleaseLifecycleState};
 use crate::web::WebUseEligibility;
 use crate::{AdmissionAuthority, AdmissionRecheck, ReleaseEligibility};
+use latent_core::authority_rejection::{
+    AuthorityRejection, AuthorityRejectionObserver, AuthorityRejectionRegistration,
+};
 use latent_core::{
     PackageDigest, PlatformError, PlatformErrorCode, PublicationId, ReleaseDigest, TenantId,
 };
@@ -20,6 +23,7 @@ pub(super) struct Owner {
     live: AtomicBool,
     healthy: AtomicBool,
     authority: Option<Arc<dyn AdmissionAuthority>>,
+    pub(super) rejection: AuthorityRejectionRegistration,
 }
 impl Owner {
     pub(super) fn new(authority: Option<Arc<dyn AdmissionAuthority>>) -> Arc<Self> {
@@ -28,6 +32,7 @@ impl Owner {
             live: AtomicBool::new(true),
             healthy: AtomicBool::new(true),
             authority,
+            rejection: AuthorityRejectionRegistration::default(),
         })
     }
     pub(super) fn check(&self) -> Result<(), PlatformError> {
@@ -39,21 +44,25 @@ impl Owner {
     }
     pub(super) fn read(&self) -> Result<RwLockReadGuard<'_, ()>, PlatformError> {
         self.check()?;
+        self.rejection.expose()?;
         let guard = self.fence.try_read().map_err(super::lock_error)?;
         self.check()?;
         Ok(guard)
     }
     pub(super) fn write(&self) -> Result<RwLockWriteGuard<'_, ()>, PlatformError> {
         self.check()?;
+        self.rejection.expose()?;
         let guard = self.fence.try_write().map_err(super::lock_error)?;
         self.check()?;
         Ok(guard)
     }
     pub(super) fn poison(&self) {
         self.healthy.store(false, Ordering::Release);
+        let _ = self.rejection.reject(AuthorityRejection::OwnerRetired);
     }
     pub(super) fn retire(&self) {
         self.live.store(false, Ordering::Release);
+        let _ = self.rejection.reject(AuthorityRejection::OwnerRetired);
     }
 }
 #[derive(Clone)]
@@ -61,6 +70,27 @@ pub struct LifecycleAuthorityHandle {
     pub(super) owner: Arc<Owner>,
 }
 impl LifecycleAuthorityHandle {
+    #[must_use]
+    pub fn rejection_observer_matches(
+        &self,
+        observer: &Arc<dyn AuthorityRejectionObserver>,
+    ) -> bool {
+        self.owner.rejection.observes(observer)
+    }
+
+    /// Attach once before this real catalog owner exposes any eligibility or
+    /// lifecycle operation. Only lower-layer rejection metadata is retained.
+    pub fn install_rejection_observer(
+        &self,
+        observer: Arc<dyn AuthorityRejectionObserver>,
+    ) -> Result<(), PlatformError> {
+        let _guard = self.owner.fence.try_write().map_err(super::lock_error)?;
+        if !self.owner.live.load(Ordering::Acquire) || !self.owner.healthy.load(Ordering::Acquire) {
+            return Err(super::unavailable());
+        }
+        self.owner.rejection.install(observer)
+    }
+
     #[must_use]
     pub fn same_owner(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.owner, &other.owner)
@@ -243,6 +273,7 @@ impl ReleaseUseEligibility {
         lifecycle: LifecycleEligibility,
         admission: Option<ReleaseEligibility>,
     ) -> Result<Self, PlatformError> {
+        lifecycle.owner.rejection.expose()?;
         if lifecycle.projection.is_some() {
             return Err(super::invalid());
         }

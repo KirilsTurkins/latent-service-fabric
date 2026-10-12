@@ -60,11 +60,9 @@
           "tools/java_capsule*.py",
           "tools/java_dependency*.py",
           "tools/java_application_dependencies.py",
-          "tools/java_annotation_processors.py",
           "tools/java_resource_artifacts.py",
           "tools/java_registry_tls.py",
           "tools/tests/test_java_dependency_authoring.py",
-          "tools/tests/test_java_annotation_processors.py",
           "tools/tests/test_java_resource_runtime.py",
           "tools/tests/test_java_private_resolution.py",
           "tools/java_guest/**",
@@ -142,7 +140,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Add explicit processor source/test path filters; preserve triggers, action pins, permissions, concurrency and all required jobs.",
+  "reviewReason": "Keep every developer workflow gate and discover original explicit Java processor controls",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

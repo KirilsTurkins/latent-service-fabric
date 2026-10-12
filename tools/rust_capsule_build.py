@@ -1,6 +1,9 @@
 """Bounded actual-source compiler recipe for standalone Rust capsules."""
 from __future__ import annotations
 
+from tools import guest_compatibility_context_build, guest_runtime_receipts
+from tools.transaction_guest_project import packaging_arguments
+
 import json
 import re
 from pathlib import Path
@@ -14,16 +17,26 @@ from tools.build_process import BuildProcessError, run_bounded_result
 from tools.rust_capsule_project import (ROOT, canonical, checked_path, digest, fresh,
                                         inventory, decode_json, read_file, read_json, snapshot, write_json)
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
-from tools import guest_compatibility_build, guest_resources
+from tools import guest_authoring_frontend, guest_compatibility_build, guest_resources
 
 BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
           "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
           "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
-          "tools/stage_runtime_wit.py")
+          "tools/stage_runtime_wit.py", "tools/transaction_guest_project.py",
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
+RECIPE += ("tools/rust_dependency_authoring.py", "tools/rust_capsule.lock") + guest_authoring_frontend.RECIPE
+RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
+           "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
+           "tools/dev_workflow/resource_inputs.py",
+           "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/state.py",
+           "tools/dev_workflow/windows.py")
+RECIPE += ("tools/transaction_guest_project.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
+RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
@@ -65,6 +78,20 @@ class Commands:
         return result.stdout
 
 
+def validate_sdk_inputs(files: dict[str, bytes]) -> tuple[dict, dict[str, bytes]]:
+    """Check the immutable Rust SDK and toolchain without resolving application code."""
+    pins = decode_json(files["sdk-lock.json"])
+    if (not isinstance(pins, dict) or set(pins) != {"formatVersion", "toolchain", "sdk", "bindings", "template"}
+            or type(pins["formatVersion"]) is not int or pins["formatVersion"] != 1):
+        raise ValueError("unsupported SDK lock format")
+    actual = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
+    if json.loads(inventory(actual)) != pins["sdk"]:
+        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    if files["rust-toolchain.toml"] != actual.get("rust-toolchain.toml"):
+        raise ValueError("Rust toolchain configuration differs from the vendored SDK")
+    return pins, actual
+
+
 def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
     required = {"Cargo.toml", "Cargo.lock", "capsule-project.json", "sdk-lock.json", "src/lib.rs", "rust-toolchain.toml"}
     if not required <= files.keys():
@@ -77,15 +104,7 @@ def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
         raise ValueError("invalid Cargo capsule name")
     if not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "tenant", "service", "world")):
         raise ValueError("invalid capsule identity")
-    pins = decode_json(files["sdk-lock.json"])
-    if (not isinstance(pins, dict) or set(pins) != {"formatVersion", "toolchain", "sdk", "bindings", "template"}
-            or type(pins["formatVersion"]) is not int or pins["formatVersion"] != 1):
-        raise ValueError("unsupported SDK lock format")
-    actual = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
-    if json.loads(inventory(actual)) != pins["sdk"]:
-        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
-    if files["rust-toolchain.toml"] != actual.get("rust-toolchain.toml"):
-        raise ValueError("Rust toolchain configuration differs from the vendored SDK")
+    pins, actual = validate_sdk_inputs(files)
     if any(Path(path).name in {"config", "config.toml"} and ".cargo" in Path(path).parts for path in files):
         raise ValueError("project Cargo configuration overrides are not supported")
     cargo = tomllib.loads(files["Cargo.toml"].decode())
@@ -106,6 +125,8 @@ def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
         raise ValueError("dependency patches and replacements cannot override the pinned SDK")
     expected = {"wit-bindgen": "=" + pins["toolchain"]["rust"]["dependencies"]["wit-bindgen"],
                 "latent-guest": {"path": "vendor/lsf/sdk/rust-guest"}}
+    if pins["template"]["name"] == "transactional-aggregate":
+        expected["latent-guest"]["features"] = ["transaction"]
     maintained = cargo.get("target", {}).get('cfg(target_arch = "wasm32")', {}).get("dependencies", {})
     if (not isinstance(maintained, dict) or any(maintained.get(name) != value for name, value in expected.items())
             or not captured and maintained != expected):
@@ -165,7 +186,7 @@ def binding_check(work: Path, pins: dict, command: Commands, bindgen: Path) -> s
 
 
 def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, bytes], component: bytes,
-                   *, additional_resources=()) -> None:
+                   *, additional_resources=(), additional_assets=()) -> None:
     manifest = read_json(ROOT / "examples/echo-contract/capsule.json")
     manifest["metadata"] = {"name": project["service"], "tenant": project["tenant"]}
     if project["tenant"] is None:
@@ -185,12 +206,27 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
     guest_compatibility_build.package_report(output, files, component)
     layers.append(("compatibility-report.json", "asset", "application/vnd.latent.guest.compatibility.v1+json"))
     layers.extend(guest_resources.assemble(output, files, component, additional_resources=additional_resources))
+    if len(additional_assets) > 8: raise ValueError("additional compiler asset limit")
+    for name, role, media in additional_assets:
+        if (not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", name)
+                or name in {layer[0] for layer in layers} or role != "asset"
+                or not isinstance(media, str) or not re.fullmatch(r"application/[A-Za-z0-9.+-]{1,128}", media)):
+            raise ValueError("invalid or conflicting compiler asset")
+        read_file(output / name, 1024 * 1024)
+        layers.append((name, role, media))
     for name, data in files.items():
         if name.startswith("wit/") and name.endswith(".wit"):
             path = output / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
             layers.append((name, "asset", "text/plain"))
+    from tools.transaction_guest_project import package_companion, package_effect_requirements
+    companion = package_companion(output, project, files)
+    if companion is not None:
+        layers.append(companion)
+    effect_requirements = package_effect_requirements(output, project, files)
+    if effect_requirements is not None:
+        layers.append(effect_requirements)
     write_json(output / "package-source.json", {
         "formatVersion": 1, "kind": "capsule", "name": project["name"], "version": project["version"],
         "entrypoint": "component.wasm", "annotations": {},
@@ -213,14 +249,16 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
     from tools.application_dependency_approval import approve as approve_execution, request as execution_request
     from tools.rust_application_dependencies import configure as configure_application
     from tools.captured_compiler_isolation import Isolation
+    from tools.guest_dependency_inputs import application_root, capture_source
 
-    project_path, output = checked_path(project_path), checked_path(output)
+    project_path, output = application_root(checked_path(project_path), 'rust'), checked_path(output)
     if output == project_path or output in project_path.parents:
         raise ValueError("build output overlaps source")
     if project_path in output.parents and project_path / "target" not in output.parents:
         raise ValueError("in-project build outputs must be inside target/")
     public_repository(repository)
-    files = snapshot(project_path)
+    observed = capture_source(project_path, 'rust')
+    files = observed.files
     project, pins = validate_project(files)
     source_inputs = inventory(files)
     recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
@@ -264,7 +302,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                CARGO_INCREMENTAL="0", CARGO_TARGET_DIR=str(temporary / "target"))
             commands = Commands(work, output, environment)
             stage = "application-dependencies"
-            verified = verify_inputs(project_path, "rust")
+            verified = verify_inputs(observed.dependency_root, "rust")
             closure, approval = None, None
             isolation, adapted_manifest = None, None
             if verified is not None:
@@ -298,7 +336,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     if executable_approval is None:
                         raise ValueError("captured Cargo build scripts/macros require the exact retained executable-input approval identity")
                     approval = approve_execution(verified, isolation, executable_recipe, executable_approval)
-                closure = prepare(project_path, work, output, "rust", execution_approval=approval)
+                closure = prepare(observed.dependency_root, work, output, "rust", execution_approval=approval)
                 adapted_manifest, cargo_inputs = configure_application(closure, work, Path(environment["CARGO_HOME"]))
                 isolation.protect_inputs(work)
                 write_json(output / "cargo-inputs.json", cargo_inputs)
@@ -353,13 +391,15 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             surface = read_json(derived / "surface.json")
+            recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
             stage = "compatibility"
-            guest_compatibility_build.inspect(commands, paths["wasm-tools"], output, surface)
+            guest_compatibility_build.inspect(commands, paths["wasm-tools"], output, surface,
+                host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
             stage = "recheck"
             captured_files = snapshot(work, exclude=("dependencies", "application-vendor"))
             if adapted_manifest is not None:
@@ -368,7 +408,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 captured_files["Cargo.toml"] = files["Cargo.toml"]
                 closure.check_unchanged()
                 isolation.check_unchanged()
-            if snapshot(project_path) != files or captured_files != files:
+            observed.check_unchanged()
+            if captured_files != files:
                 raise ValueError("project changed during the observed build")
             if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe_inputs:
                 raise ValueError("authoring recipe changed during the build")
@@ -391,6 +432,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for name in ("executable-input-approval-request.json", "executable-input-outputs.json"):
                         data = read_file(output / name, 8 * 1024 * 1024)
                         materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            runtime_profile = closure.lock['selection']['runtimeProfile'] if closure is not None else 'wasm32-unknown-unknown-panic-abort-v1'
+            materials.append(guest_runtime_receipts.emit(output, 'rust', runtime_profile, files,
+                source_inputs, component, materials, graph=closure.lock if closure is not None else None,
+                binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],
+                    "target": "wasm32-unknown-unknown", "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or time.monotonic() - start > 900 or finished - started > 900:
                 raise ValueError("build clock or overall deadline invalid")
@@ -403,6 +449,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"}
             write_json(output / "build-observation.json", observation)
+            guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1, "observationDigest": digest(read_file(output / "build-observation.json")),
                 "packageAssembled": packager is not None,
                 "sourceDigest": digest(source_inputs), "componentDigest": digest(component), "sdkBindingDigest": binding_digest,

@@ -41,8 +41,29 @@ func validateWire(ctx context.Context, data []byte, descriptor protoreflect.Mess
 			if field.Kind() == protoreflect.StringKind || field.Kind() == protoreflect.BytesKind || field.Kind() == protoreflect.MessageKind {
 				expected = protowire.BytesType
 			}
-			if kind != expected {
+			packed := field.IsList() && expected == protowire.VarintType && kind == protowire.BytesType
+			if kind != expected && !packed {
 				return errShape
+			}
+			if packed {
+				values, consumed := protowire.ConsumeBytes(data)
+				if consumed < 0 {
+					return errShape
+				}
+				for len(values) != 0 {
+					if failure := ctx.Err(); failure != nil {
+						return failure
+					}
+					*nodes--
+					if *nodes < 0 {
+						return errBound
+					}
+					value, used := protowire.ConsumeVarint(values)
+					if used < 0 || field.Kind() == protoreflect.BoolKind && value > 1 || field.Kind() == protoreflect.Uint32Kind && value > 1<<32-1 || field.Kind() == protoreflect.EnumKind && (int64(value) < -1<<31 || int64(value) > 1<<31-1) {
+						return errShape
+					}
+					values = values[used:]
+				}
 			}
 			if field.Kind() == protoreflect.MessageKind {
 				nested, consumed := protowire.ConsumeBytes(data)

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Lossless sharding of the reviewed v1 inventory; owner fingerprints remain enforced.",
+  "reviewReason": "Reconcile captured-input transfer, approved generators and conservative diagnostics with current transaction/native owners. Preserve all original cases, skip guards, historical commands, isolation requirements and receipt paths.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9bde963d139e42fc9788f9200ed81f98276824ebd175e149deb20996806fb842"
+  "sha256": "a8105e0c679fdd6229f99a827e507c4641901cccf4bbf264b12ad759fc582b6b"
 }

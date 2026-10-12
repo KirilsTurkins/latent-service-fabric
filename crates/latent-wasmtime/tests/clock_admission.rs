@@ -146,3 +146,161 @@ async fn clock_wait_does_not_renew_an_expired_original_admission_lease() {
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
     f.idle();
 }
+
+#[tokio::test]
+async fn real_session_currentness_wait_precedes_store_registration_and_calls_guest_once() {
+    let signed = signed::Fixture::new(true).await;
+    let f = &signed.guest;
+    let held = signed.hold_before_session();
+    let (request, control) = f.request("real-session-contention");
+    let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
+    pending_at_fence(invocation.as_mut(), &held).await;
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 0);
+    assert_eq!(f.broker.snapshot().sessions, 0);
+    assert_eq!(f.backend.resource_snapshot().live_stores, 0);
+    assert_eq!(f.backend.active_instance_reservations(), 1);
+    held.lock().unwrap().take().unwrap().release();
+    let report = invocation.await;
+    let GuestOutcome::Returned { consumption, .. } = report.outcome.unwrap() else {
+        panic!("one original guest must complete after session contention");
+    };
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 2);
+    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+    assert!(control
+        .budget
+        .finalize_at(Some(&consumption), Instant::now())
+        .violation()
+        .is_none());
+    f.idle();
+}
+
+#[tokio::test]
+async fn dropping_real_session_currentness_wait_retires_prepared_owner_without_guest() {
+    let signed = signed::Fixture::new(true).await;
+    let f = &signed.guest;
+    let held = signed.hold_before_session();
+    let (request, control) = f.request("real-session-drop");
+    let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
+    pending_at_fence(invocation.as_mut(), &held).await;
+    assert_eq!(f.broker.snapshot().sessions, 0);
+    assert_eq!(f.backend.resource_snapshot().live_stores, 0);
+    drop(invocation);
+    held.lock().unwrap().take().unwrap().release();
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 0);
+    assert_eq!(control.budget.host_memory_bytes(), 0);
+    f.idle();
+}
+
+#[tokio::test]
+async fn real_session_wait_keeps_original_cancellation_and_lease_expiry() {
+    for cancelled in [false, true] {
+        let signed = signed::Fixture::new(true).await;
+        let f = &signed.guest;
+        let held = signed.hold_before_session();
+        let (request, control) = f.request("real-session-stop");
+        let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
+        pending_at_fence(invocation.as_mut(), &held).await;
+        if cancelled {
+            control.probe.0.store(true, Ordering::Release);
+        } else {
+            signed.expire_original_lease();
+        }
+        held.lock().unwrap().take().unwrap().release();
+        let report = invocation.await;
+        if cancelled {
+            assert!(matches!(
+                report.outcome.unwrap(),
+                GuestOutcome::Interrupted { .. }
+            ));
+        } else {
+            let error = report.outcome.unwrap_err();
+            assert_eq!(error.code, latent_core::PlatformErrorCode::Unavailable);
+            assert!(error.details.iter().any(|detail| detail
+                .fields
+                .get("reason")
+                .map(String::as_str)
+                == Some("admission-clock-lease-uncovered")));
+        }
+        assert_eq!(f.clock.calls.load(Ordering::Acquire), 0);
+        assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+        f.idle();
+    }
+}
+
+#[tokio::test]
+async fn legacy_session_without_timer_fails_closed_before_store_or_guest() {
+    let signed = signed::Fixture::new(false).await;
+    let f = &signed.guest;
+    let held = signed.hold_before_session();
+    let (request, control) = f.request("real-session-legacy");
+    let report = f.backend.invoke_contained(request, &control).await;
+    held.lock().unwrap().take().unwrap().release();
+    assert_eq!(
+        report.outcome.unwrap_err().code,
+        latent_core::PlatformErrorCode::Unavailable
+    );
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 0);
+    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+    f.idle();
+}
+
+#[tokio::test]
+#[ignore = "requires explicitly rebuilt std clock guest from the pinned infrastructure source"]
+async fn ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores() {
+    use sha2::{Digest, Sha256};
+    let directory = std::path::PathBuf::from(
+        std::env::var_os("LSF_RUST_STD_CLOCK_GUEST")
+            .expect("prepare the ordinary std clock component"),
+    );
+    let marker: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(directory.join("clock-guest.json")).unwrap())
+            .unwrap();
+    assert_eq!(marker["profile"], "lsf-rust-std-clock-built-source-v1");
+    assert_eq!(marker["compiler"], "1.97.1");
+    assert_eq!(marker["target"], "wasm32-unknown-unknown");
+    assert_eq!(marker["applicationClockSdkCalled"], false);
+    let bytes = std::fs::read(directory.join("component.wasm")).unwrap();
+    assert!(!bytes.is_empty() && bytes.len() < 4 * 1024 * 1024);
+    assert_eq!(
+        marker["componentDigest"],
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(&bytes))
+        )
+    );
+    // Cryptographic test publisher/builder admission and actual production
+    // broker execution. The separate build marker is an input witness, not
+    // proof of production builder trust or std/thread runtime qualification.
+    let signed = signed::Fixture::with_component(true, &bytes).await;
+    let f = &signed.guest;
+    for id in ["ordinary-clock-first", "ordinary-clock-fresh"] {
+        let (request, control) = f.request(id);
+        let report = f.backend.invoke_contained(request, &control).await;
+        assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+        let GuestOutcome::Returned {
+            output,
+            consumption,
+            ..
+        } = report.outcome.unwrap()
+        else {
+            panic!("ordinary std::time::SystemTime must return through the current clock host");
+        };
+        let values: serde_json::Value = serde_json::from_slice(&output).unwrap();
+        assert!(values[0].as_str().unwrap().parse::<u64>().unwrap() > 0);
+        assert!(control
+            .budget
+            .finalize_at(Some(&consumption), Instant::now())
+            .violation()
+            .is_none());
+        f.idle();
+    }
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 4);
+    assert_eq!(f.backend.resource_snapshot().stores_created, 2);
+    fixture::revoke(&f.policies);
+    let (request, control) = f.request("ordinary-clock-denied");
+    let report = f.backend.invoke_contained(request, &control).await;
+    assert!(!matches!(report.outcome, Ok(GuestOutcome::Returned { .. })));
+    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 4);
+    f.idle();
+}

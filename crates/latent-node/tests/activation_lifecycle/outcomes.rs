@@ -18,7 +18,7 @@ async fn success_has_ordered_stateless_events_and_retains_diagnostics_without_ou
     let expected = input.input.clone();
     let receipt = finish(harness.manager.start(input).expect("start")).await;
     let ActivationOutcome::Succeeded(success) = receipt.outcome else {
-        panic!("success outcome")
+        panic!("success outcome: {:?}", receipt.outcome)
     };
     assert_eq!(success.output, expected);
     assert_eq!(success.output_media_type, "application/octet-stream");
@@ -176,7 +176,9 @@ async fn preexecution_route_admission_deadline_and_artifact_failures_are_termina
         };
         let receipt = finish(harness.manager.start(input).expect("valid initial shape")).await;
         assert!(
-            matches!(receipt.outcome, ActivationOutcome::Failed { terminal_state, .. } if terminal_state == expected)
+            matches!(receipt.outcome, ActivationOutcome::Failed { terminal_state, .. } if terminal_state == expected),
+            "mode={mode}, expected={expected:?}, retained={:?}",
+            receipt.outcome
         );
         let status = harness.status("early-failure");
         assert_eq!(status.terminal_state, Some(expected));

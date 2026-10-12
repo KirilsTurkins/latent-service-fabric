@@ -295,7 +295,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Retain every original guest compiler/application/evidence command, exact source-owned cache environment, and historical obligation while composing incoming bounded cache, browser, and qualification output isolation.",
+  "reviewReason": "Preserve all required compiler, fixture and artifact commands and original conditions; qualify the explicit Java diagnostic variant and retain the reviewed cache action update.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

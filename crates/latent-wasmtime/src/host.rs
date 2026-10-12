@@ -15,12 +15,15 @@ pub(crate) mod events;
 pub(crate) mod http;
 mod logging;
 pub(crate) mod metrics;
+pub(crate) mod networking;
 mod owned_context;
 pub(crate) mod policy;
 pub(crate) mod random;
+pub(crate) mod runtime;
 pub(crate) mod secrets;
 pub(crate) mod service;
 pub(crate) mod streaming_http;
+pub(crate) mod transaction;
 mod web_identity;
 pub(crate) use logging::InvocationLogBuffer;
 pub use logging::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
@@ -142,7 +145,7 @@ impl ResourceLimiter for TrackingLimiter {
                 .map(|budget| {
                     budget
                         .reserve_runtime_memory(aggregate as u64)
-                        .map_err(|error| wasmtime::Error::msg(error.to_platform_error().message))
+                        .map_err(wasmtime::Error::new)
                 })
                 .transpose()?;
             let previous_peak_memory_bytes = self.peak_memory_bytes;
@@ -236,6 +239,9 @@ impl ActivationHostContext {
 }
 
 pub(crate) struct HostState {
+    pub(crate) runtime: Option<runtime::Table>,
+    pub(crate) runtime_limits: Option<latent_core::activation_runtime::RuntimeLimits>,
+    pub(crate) runtime_stop: Option<Arc<crate::containment::StopControl>>,
     context: ActivationHostContext,
     pub(crate) limiter: TrackingLimiter,
     pub(crate) logs: InvocationLogBuffer,
@@ -249,6 +255,7 @@ pub(crate) struct HostState {
     development_clock_readings: Option<crate::config::DevelopmentClockReadings>,
     host_call_timing: HostCallTiming,
     pub(crate) capabilities: capabilities::HostCapabilities,
+    pub(crate) transaction: transaction::Access,
 }
 
 /// In-guest host-import time. This is intentionally reported separately from
@@ -279,11 +286,14 @@ impl HostState {
             sink,
         );
         let mut limiter = TrackingLimiter::with_config(maximum_memory_bytes, config);
-        if accounting.budget().profile() == latent_core::BudgetProfile::Phase3 {
+        if accounting.budget().profile().supports_descendants() {
             limiter.budget = Some(accounting.budget().clone());
         }
         Self {
             context,
+            runtime: None,
+            runtime_limits: config.activation_runtime,
+            runtime_stop: None,
             limiter,
             logs,
             accounting,
@@ -296,6 +306,7 @@ impl HostState {
             development_clock_readings: config.development_clock_readings,
             host_call_timing: HostCallTiming::default(),
             capabilities: capabilities::HostCapabilities::default(),
+            transaction: transaction::Access::default(),
         }
     }
 

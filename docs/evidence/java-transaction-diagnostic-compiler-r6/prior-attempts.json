@@ -1,0 +1,82 @@
+{
+  "attempts": [
+    {
+      "attempt": "diagnostic-compiler-r2",
+      "reason": "docker-pipe-unavailable",
+      "exitCode": 1,
+      "seconds": 0.572782,
+      "compilerInvoked": false,
+      "originalStreams": [
+        {
+          "name": "controller.stderr.txt",
+          "bytes": 224,
+          "sha256": "sha256:e9133cf10b02b0b91c8b119848513db0ac541e7c3c19681266939e4b9952f7cc"
+        },
+        {
+          "name": "controller.stdout.txt",
+          "bytes": 0,
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "attempt": "diagnostic-compiler-r3",
+      "reason": "docker-image-unavailable",
+      "exitCode": 125,
+      "seconds": 0.304136,
+      "compilerInvoked": false,
+      "originalStreams": [
+        {
+          "name": "controller.stderr.txt",
+          "bytes": 169,
+          "sha256": "sha256:5ce69f7bca7ec065f2c452df98439001e2a6e0d693f8408b263ca7cd32bd3b09"
+        },
+        {
+          "name": "controller.stdout.txt",
+          "bytes": 0,
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "attempt": "diagnostic-compiler-r4",
+      "reason": "verification-receipt-windows-crlf",
+      "exitCode": 1,
+      "seconds": 23.75738,
+      "compilerInvoked": false,
+      "originalStreams": [
+        {
+          "name": "controller.stderr.txt",
+          "bytes": 335,
+          "sha256": "sha256:85a0ee249af1ef3d2dfc74724c8a1475dc3c5468f146c019442112f31f4059c7"
+        },
+        {
+          "name": "controller.stdout.txt",
+          "bytes": 0,
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "attempt": "diagnostic-compiler-r5",
+      "reason": "single-link-regular-file-required",
+      "exitCode": 1,
+      "seconds": 25.927804,
+      "compilerInvoked": false,
+      "originalStreams": [
+        {
+          "name": "controller.stderr.txt",
+          "bytes": 1191,
+          "sha256": "sha256:467d42829f30158808ea954b9fe3f7e8b215cf1941c2de546e5facc2e76a20c1"
+        },
+        {
+          "name": "controller.stdout.txt",
+          "bytes": 0,
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    }
+  ],
+  "failedRawEvidencePreservedOutsideWorktrees": true,
+  "originalLostR1Relabelled": false
+}

@@ -130,6 +130,7 @@ const RESOURCES: &[&str] = &[
 enum Value {
     Unsigned,
     Known(&'static [&'static str]),
+    GuestTrapKind,
 }
 
 pub(super) fn public_platform_error(
@@ -180,6 +181,7 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("consumed", Unsigned),
             ("requested", Unsigned),
         ],
+        "activation.guest-trap-kind" => &[("kind", Value::GuestTrapKind)],
         "activation.deadline-exceeded" | "budget.deadline-out-of-range" => &[
             ("deadline_unix_millis", Unsigned),
             ("admitted_at_unix_millis", Unsigned),
@@ -210,6 +212,9 @@ fn public_detail(mut detail: ErrorDetail, limits: &InvocationLimits) -> Option<E
         }
         let valid = match kind {
             Value::Known(values) => values.contains(&value.as_str()),
+            Value::GuestTrapKind => {
+                latent_core::error::GuestTrapKind::from_wire_name(&value).is_some()
+            }
             Value::Unsigned => {
                 !value.is_empty()
                     && value.len() <= 20

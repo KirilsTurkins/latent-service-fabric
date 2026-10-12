@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/compile_transaction_guests.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve current authored Java value and forbidden-child modes alongside actual namespace recovery work",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "9c24e537f73745520165fe3f21c6f5476b7faf08c9c8d792532da97b777ecb98"
+}

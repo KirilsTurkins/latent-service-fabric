@@ -81,7 +81,7 @@ class SuiteFragmentTests(unittest.TestCase):
     def test_dotnet_adapter_fragment_registers_each_forced_empty_native_harness(self):
         manifest = ROOT / "tools/toolchain-smoke/Cargo.toml"
         examples = {row["name"]: row for row in tomllib.loads(manifest.read_text())["example"]}
-        expected = {"dotnet-activation-runtime", "dotnet-http-runtime", "dotnet-noncrypto-entropy"}
+        expected = {"dotnet-activation-runtime", "dotnet-http-runtime", "dotnet-noncrypto-entropy", "dotnet-wall-clock-runtime"}
         rows = json.loads((ROOT / "tools/ci/suites.d/dotnet-runtime.json").read_text())["suites"]
         self.assertEqual({row["target"] for row in rows}, expected)
         for row in rows:

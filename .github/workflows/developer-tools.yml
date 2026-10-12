@@ -68,11 +68,9 @@ on:
       - tools/java_capsule*.py
       - tools/java_dependency*.py
       - tools/java_application_dependencies.py
-      - tools/java_annotation_processors.py
       - tools/java_resource_artifacts.py
       - tools/java_registry_tls.py
       - tools/tests/test_java_dependency_authoring.py
-      - tools/tests/test_java_annotation_processors.py
       - tools/tests/test_java_resource_runtime.py
       - tools/tests/test_java_private_resolution.py
       - tools/java_guest/**
@@ -182,7 +180,7 @@ jobs:
         run: printf 'LSF_DEV_COMPILER_CACHE=%s\n' "$RUNNER_TEMP/compiler-archives" >> "$GITHUB_ENV"
       - name: Restore untrusted pinned compiler archives
         id: compiler-cache
-        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/compiler-archives
           key: compiler-archives-v1-${{ runner.os }}-${{ matrix.language }}-${{ hashFiles('tools/build_dev_guest_tools.py', 'tools/dev_guest_tools.py', 'tools/dev_tool_distribution.py', 'tools/install_guest_bindgen.py', 'tools/dev_managed_distribution.py', 'tools/dev_go_distribution.py', 'tools/dev_typescript_distribution.py') }}

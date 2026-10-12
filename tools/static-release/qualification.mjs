@@ -1,5 +1,5 @@
-// Actual released binaries, newly generated test keys and immutable frontend
-// outputs in a clean Ubuntu frontend container. No Rust toolchain or fixture.
+// Actual native binaries, newly generated test keys and immutable frontend
+// outputs. Released qualification also requires a clean toolchain-free host.
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, realpath, readFile, access} from 'node:fs/promises';
 import path from 'node:path';
@@ -49,6 +49,23 @@ export async function qualify(cli, destination, node, releasedCli = true) {
     const prepared = path.join(work, name), evidence = path.join(work, name + '-evidence');
     const receipt = await main(['prepare', '--cli', cli, '--python', await realpath('/usr/bin/python3'),
       '--build-output', build, '--inventory', input, '--repository', repository, '--output', prepared]);
+    const budget = receipt.captureBudget;
+    assert.equal(budget.schemaVersion, 'latent.static-site.budget.v1');
+    assert.equal(budget.complete, true);
+    assert.equal(budget.captureLimits.publicAssetCount.actual, names.length);
+    assert.equal(budget.captureLimits.publicAssetCount.remaining, 252 - names.length);
+    assert.equal(budget.captureLimits.logicalPublicBytes.actual, inventory.reduce((sum, row) => sum + row.size, 0));
+    const webBytes = await readFile(path.join(prepared, 'inputs/metadata/web-application.json'));
+    assert.equal(budget.captureLimits.webManifestBytes.actual, webBytes.length);
+    assert.equal(budget.captureLimits.webManifestBytes.remaining, 262144 - webBytes.length);
+    const captureBytes = await readFile(path.join(prepared, 'inputs/metadata/static-observation.json'));
+    assert.equal(Object.hasOwn(JSON.parse(captureBytes), 'budget'), false);
+    const assembly = JSON.parse(await readFile(path.join(prepared, 'observation.json')));
+    assert.equal(assembly.materials.find(row => row.name === 'static-capture-observation').digest, sha256(captureBytes));
+    assert.equal(assembly.materials.some(row => row.name === 'capture-budget'), false);
+    assert.deepEqual(JSON.parse(await readFile(path.join(prepared, 'capture-budget.json'))), budget);
+    assert.equal(budget.storageObservation.catalogCapacityObserved, false);
+    assert.equal(Object.values(budget.qualification).some(Boolean), false);
     const now = Math.floor(Date.now() / 1000), approval = path.join(work, name + '-approval.json');
     const requested = await main(['request-signing', '--prepared', prepared, '--identities', identitiesFile,
       '--lifetime-seconds', '1800', '--output', approval]);
@@ -73,12 +90,18 @@ export async function qualify(cli, destination, node, releasedCli = true) {
     await assert.rejects(native(cli, ['--tenant', 'tests', 'package', 'verify', path.join(prepared, 'package'),
       '--evidence-index', path.join(evidence, 'index.json'), '--evidence-root', evidence, '--policy', deniedFile], work));
     rows.push({example: name, packageDigest: signed.packageDigest, verifiedByReleasedCli: releasedCli,
-      revokedPublisherRejected: true, assemblyExecuted: true, frameworkBuildExecuted: false});
+      revokedPublisherRejected: true, assemblyExecuted: true, frameworkBuildExecuted: false,
+      captureBudgetVersion: budget.schemaVersion, exactEncodedManifestHeadroom: true,
+      diagnosticsExcludedFromSignedCapture: true});
   }
   const live = node ? JSON.parse((await run(await realpath('/usr/bin/python3'),
     [path.join(path.dirname(fileURLToPath(import.meta.url)), 'qualification_native.py'), '--work', work,
-      '--cli', cli, '--node', node], work, 120)).toString('utf8')) : null;
-  if (node) assert.equal(live?.passed, true, JSON.stringify(live));
+      '--cli', cli, '--node', node, ...(releasedCli ? ['--released-node'] : [])], work, 120)).toString('utf8')) : null;
+  if (node) {
+    assert.equal(live?.passed, true, JSON.stringify(live));
+    assert.equal(live.actualReleasedNode, releasedCli);
+    assert.equal(live.actualCurrentNode, !releasedCli);
+  }
   const receipt = {schemaVersion: 'latent.frontend.release-qualification.v1', passed: true, actualReleasedCli: releasedCli,
     rustToolchainAvailable: releasedCli ? false : null, uid: process.getuid(), node: process.version, examples: rows,
     nativeWorkflow: live, testIdentityOnly: true, cloudQualified: false};

@@ -115,12 +115,50 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
             association::node(value.inventory.as_ref(), &id)?;
             response::got_node(value)
         }
+        Operation::InspectActivationTree(request) => {
+            inspect_activation_tree(request, session).await
+        }
+        Operation::InspectHttpTarget(request) => {
+            let expected = request.clone();
+            let value = call!(session, NodeServiceClient, inspect_http_target, request);
+            super::target_inspection::associate(&value, &expected, session.tenant())?;
+            Ok(super::target_inspection::response(value))
+        }
         Operation::ListNodes(request) => list_nodes(request, session).await,
         _ => Err(Failure::local(
             "invalid-operation",
             "This is not a management operation.",
         )),
     }
+}
+
+async fn inspect_activation_tree(
+    request: proto::InspectActivationTreeRequest,
+    session: &Session,
+) -> Result<Outcome, Failure> {
+    let selector = request.service.clone();
+    let from = request.from_unix_millis;
+    let maximum = request.page.as_ref().map_or(32, |page| {
+        if page.page_size == 0 {
+            32
+        } else {
+            page.page_size as usize
+        }
+    });
+    let value = call!(session, NodeServiceClient, inspect_activation_tree, request);
+    if value.nodes.len() > maximum
+        || value.nodes.iter().any(|node| {
+            selector.as_ref().is_some_and(|service| {
+                &node.target_service != service
+                    || node.parent_activation_id.is_some()
+                    || node.activation_id != node.root_activation_id
+                    || from.is_some_and(|from| node.received_at_unix_millis < from)
+            })
+        })
+    {
+        return Err(super::invalid_response());
+    }
+    response::activation_tree(value)
 }
 
 async fn list_releases(

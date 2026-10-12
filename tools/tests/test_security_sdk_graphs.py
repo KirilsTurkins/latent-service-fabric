@@ -15,6 +15,26 @@ from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, le
 
 
 class SdkGraphTests(unittest.TestCase):
+    def test_standard_rust_transform_graph_is_pinned_and_missing_directory_cannot_hide_orphans(self) -> None:
+        from tools.security_common import POLICY, read_file, tracked_paths
+        root = Path(__file__).resolve().parents[2]
+        owned = "sdk/rust-standard-runtime/stack-transform/"
+        configuration = json.loads(read_file(POLICY, "inventory.json"))
+        entry = next(row for row in configuration["manifests"] if row["path"] == owned + "Cargo.toml")
+        covered, record = cargo_inventory(root, entry)
+        self.assertEqual(covered, {owned + "Cargo.toml", owned + "Cargo.lock"})
+        self.assertEqual(record["coverage"], "RustSec")
+        self.assertGreater(record["packages"], 0)
+        with self.assertRaisesRegex(SecurityError, "unreviewed-isolated-cargo-manifest"):
+            cargo_inventory(root, {**entry, "manifest_sha256": "0" * 64})
+        legacy = [path for path in tracked_paths(root) if not path.startswith(owned)]
+        with patch("tools.security_inventory.tracked_paths", return_value=legacy):
+            _, records = inventory(root)
+        self.assertTrue(any(row["path"] == entry["path"] and row["coverage"] == "not-shipped-at-source-revision" for row in records))
+        for orphan in (owned + "Cargo.lock", owned + "README.md"):
+            with self.subTest(orphan=orphan), patch("tools.security_inventory.tracked_paths", return_value=[*legacy, orphan]), self.assertRaises(SecurityError):
+                inventory(root)
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
@@ -298,6 +318,76 @@ class SdkGraphTests(unittest.TestCase):
         for extra in (*config, "sdk/dotnet/Latent.Sdk.Transport/README.md"):
             with self.subTest(extra=extra), patch("tools.security_inventory.tracked_paths", return_value=[*legacy, extra]), self.assertRaises(SecurityError):
                 inventory(root)
+
+    def test_http_error_helpers_keep_exact_manifest_pins_and_the_scanned_compiler_dependency(self) -> None:
+        import xml.etree.ElementTree as xml
+        from tools.security_common import POLICY, read_file
+        root = Path(__file__).resolve().parents[2]
+        configuration = json.loads(read_file(POLICY, "inventory.json"))
+        expected = {
+            "sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj":
+                "766809881ad0b7ff2ce3a59edf7a24de0a86d4869b455e27d3f3e9368fde1546",
+            "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj":
+                "ac7f14d0c3a2b03f2fd8486d974f065100b94d4c66d1bd6b249215f47362feed",
+        }
+        for path, checksum in expected.items():
+            with self.subTest(path=path):
+                entries = [item for item in configuration["manifests"] if item["path"] == path]
+                self.assertEqual(len(entries), 1)
+                self.assertEqual(entries[0]["kind"], "no-external-packages")
+                self.assertEqual(entries[0]["sha256"], checksum)
+                self.assertEqual(entries[0]["absent_when_directory_missing"], str(Path(path).parent).replace("\\", "/"))
+                payload = read_file(root, path).replace(b"\r\n", b"\n")
+                self.assertEqual(digest(payload), checksum)
+                project = xml.fromstring(payload)
+                self.assertEqual(list(project.iter("PackageReference")), [])
+                self.assertEqual(list(project.iter("ProjectReference")), [])
+        packages, records = inventory(root)
+        helper = xml.fromstring(read_file(root, "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj"))
+        references = [item.attrib for item in helper.iter("Reference")]
+        self.assertEqual(references, [{"Include": "Mono.Cecil", "HintPath": "$(LsfCecilPath)"}])
+        self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
+                              "sdk/dotnet-guest/probes/smoke/packages.lock.json"), packages)
+        self.assertEqual({item["path"] for item in records if item["path"] in expected}, set(expected))
+        self.assertTrue(all(item["packages"] == 0 for item in records if item["path"] in expected))
+
+    def test_http_error_manifest_changes_cannot_add_a_package_import_or_replace_cecil(self) -> None:
+        from tools.security_common import read_file
+        root = Path(__file__).resolve().parents[2]
+        paths = ("sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
+                 "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj")
+        for path in paths:
+            original = read_file(root, path)
+            for change in (b'<PackageReference Include="Unreviewed" Version="1.0.0" />',
+                           b'<Import Project="unreviewed.props" />',
+                           b'<Reference Include="Other.Cecil" HintPath="outside.dll" />'):
+                mutated = original.replace(b"</Project>", change + b"</Project>")
+                def changed(repo, name, *limits):
+                    return mutated if repo == root and name == path else read_file(repo, name, *limits)
+                with self.subTest(path=path, change=change), \
+                     patch("tools.security_inventory.read_file", side_effect=changed), \
+                     self.assertRaisesRegex(SecurityError, "unreviewed-sdk-manifest-change"):
+                    inventory(root)
+
+    def test_http_error_legacy_directory_absence_cannot_hide_partial_or_orphan_manifests(self) -> None:
+        from tools.security_common import tracked_paths
+        root = Path(__file__).resolve().parents[2]
+        owned = ("sdk/dotnet-guest/probes/http-errors/", "sdk/dotnet-guest/tools/http-errors/")
+        legacy = [path for path in tracked_paths(root) if not path.startswith(owned)]
+        with patch("tools.security_inventory.tracked_paths", return_value=legacy):
+            packages, records = inventory(root)
+        self.assertEqual({item["path"] for item in records
+                          if item["path"].startswith(owned) and item["coverage"] == "not-shipped-at-source-revision"},
+                         {"sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj",
+                          "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj"})
+        self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
+                              "sdk/dotnet-guest/probes/smoke/packages.lock.json"), packages)
+        for prefix in owned:
+            for extra in (prefix + "README.md", prefix + "unexpected.csproj", prefix + "packages.lock.json"):
+                with self.subTest(extra=extra), \
+                     patch("tools.security_inventory.tracked_paths", return_value=[*legacy, extra]), \
+                     self.assertRaisesRegex(SecurityError, "unreviewed-or-missing-dependency-manifest"):
+                    inventory(root)
 
     def test_c_unknown_dependency_url_or_source_commit_fails(self) -> None:
         for failure in ("extra", "url", "commit", "purl", "digest"):

@@ -45,7 +45,7 @@
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Add explicit captured Java processor controls as a separate step while preserving both historical controller commands and every required job.",
+  "reviewReason": "Preserve every current authoring contract test and add original31 processor approval source controls",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

@@ -6,8 +6,19 @@
 
 #![forbid(unsafe_code)]
 
+#[cfg(all(
+    target_arch = "wasm32",
+    feature = "guest-activation",
+    feature = "guest-transaction"
+))]
+compile_error!("select one capsule@0.5.0 guest profile: guest-activation or guest-transaction");
+
 #[cfg(not(target_arch = "wasm32"))]
 pub mod host {
+    /// Invocation-local language-runtime support; recognition installs nothing.
+    pub mod activation {
+        include!(concat!(env!("OUT_DIR"), "/activation_host.rs"));
+    }
     /// Buffered application export; trusted identity remains the context import.
     pub mod web {
         include!(concat!(env!("OUT_DIR"), "/web_host.rs"));
@@ -32,10 +43,20 @@ pub mod host {
         include!(concat!(env!("OUT_DIR"), "/blob_host.rs"));
     }
 
+    /// Phase 4 resource types install no storage or transaction authority.
+    pub mod transaction {
+        include!(concat!(env!("OUT_DIR"), "/transaction_host.rs"));
+    }
+
     /// Host bindings for the maintained echo integration fixture.
     pub mod echo {
         include!(concat!(env!("OUT_DIR"), "/echo_host.rs"));
     }
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "guest-activation"))]
+pub mod activation_guest {
+    include!(concat!(env!("OUT_DIR"), "/activation_guest.rs"));
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -62,6 +83,12 @@ pub mod streaming_guest {
 pub mod blob_guest {
     //! Immutable blob handles and owned bounded range results.
     include!(concat!(env!("OUT_DIR"), "/blob_guest.rs"));
+}
+
+#[cfg(all(target_arch = "wasm32", feature = "guest-transaction"))]
+pub mod transaction_guest {
+    //! Exact opt-in transaction/query/intent imports; commitment is host-owned.
+    include!(concat!(env!("OUT_DIR"), "/transaction_guest.rs"));
 }
 
 #[cfg(target_arch = "wasm32")]

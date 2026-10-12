@@ -4,6 +4,10 @@ For application Maven/local JARs and their separately reviewed offline closure,
 follow [Java application JARs](java-dependencies.md). The source-only workflow
 below remains supported.
 
+For ordinary `HttpServer` registration with a compiler-generated web entrypoint,
+see the [selected Java server profile](java-httpserver.md). Its member boundary
+and pending real ingress qualification are separate from the typed RPC examples.
+
 For application development, use [Creating a capsule](creating-a-capsule.md).
 That shared tutorial has all six language choices and uses `dev init`, `build`,
 `deploy` and `test`. You do not need the source-build commands below for it.
@@ -11,6 +15,11 @@ That shared tutorial has all six language choices and uses `dev init`, `build`,
 This reference is for compiler integration, custom package signing and direct
 node admission. The complete source recipe is retained here for developers who
 need to work below the packaged workflow.
+
+To expose selected typed operations through shared HTTP ingress, use the
+[maintained Java adapter generator](java-http-composition.md). It keeps the
+typed domain contract, includes explicit private-operation exclusions and
+checks stale source-bound generation before building.
 
 
 Create an independent Java project, edit its typed contract, and run its signed
@@ -87,12 +96,36 @@ projects are rejected. Reachable JNI, reflection-based loading and dynamic class
 loading still require compatible compiler/runtime support and emitted-component
 evidence.
 
+Each Java project captures the SDK's exact `latent:clock@0.1.0` definition in
+`wit/deps/clock`, so WIT inspection can resolve the declared monotonic and wall
+clock imports before compiler staging. The operator grants those clocks when
+deploying the capsule.
+
 The `word-count` and `shipping` templates provide equivalent Java implementations
 of [Creating a capsule](creating-a-capsule.md). Choose another project directory
 and replace `greeting` in the creation command with either template name.
 `http-status` adds a typed, asynchronous HTTP call; its import still needs an
 installed provider and an explicit deployment grant. Creating a project grants
 no network access.
+
+When authoring an inbound buffered web application, validate the actual response
+before returning the generated record with the development SDK's
+[`BufferedWebResponseValidator`](../../sdk/java-guest/runtime/dev/latent/guest/BufferedWebResponseValidator.java).
+Its fixed local reasons explain reserved host headers and bounded body/header,
+redirect, media and cookie rules before live traffic. The
+[SDK example](../../sdk/java-guest/README.md#inbound-buffered-web-responses-development)
+and [complete ownership table](../security/browser-boundary.md#response-headers)
+show the supported contract. Dynamically calculated responses still require
+execution and current host validation; a declared safe header list does not
+qualify an application or change the shipped `same-origin` referrer policy.
+
+Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers canonical imported owners, `Unsigned64`, try-with-resources and the captured profile, schema and binding companion. The host owns commitment. The signed transaction and HTTP recovery matrix is tracked by #389 and required Java slice #718. The tutorial below retains its existing stateless profile.
+
+The compiler selects the Phase 4 compatibility catalogue only after checking the
+captured profile, binding links, schema and exact State and intents WIT. This
+recognizes their declared ABI in the report; provider installation, current
+grants and signed execution remain separate checks. Ordinary projects retain
+the Phase 3 catalogue.
 
 ## 2. Build and package the project
 
@@ -115,6 +148,29 @@ The output includes `component.wasm`, `capsule.json`, `contracts.json`,
 `wit-lock.json`, `deployment.json`, `package/` and `build-observation.json`.
 Full-width WIT integers retain their original types; application errors remain
 `result` values. Unsupported WIT types fail explicitly during contract derivation.
+
+For the explicit SDK activation runtime profile, use
+`--runtime-profile teavm-activation-fibers-v1` on the build command. The selected
+world must declare `latent:runtime/activation@0.1.0` and
+`latent:clock/monotonic@0.1.0`. The compiler preserves the application's original
+Java classes and stages the SDK's runtime substitutions, continuation handling
+and owned dispatch. It records source origins and the selected checkpoint class
+index in `source-origins.json` and `runtime-profile.json`; both become signed
+build materials after the entire build succeeds. The compatibility check captures
+the frozen V5 ABI from the declared WIT surface. Operator provider installation
+and grants remain separate requirements.
+
+Keep the selected world and exported contracts in the project tenant's namespace.
+The isolated example signer uses tenant `examples`. The normal full activation
+build and its first signed execution attempt are recorded in
+[Java activation fibers](../runtime/java-activation-fibers.md); that invocation
+failed and does not establish complete CompletableFuture execution support.
+
+`--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
+dependency cache. Gradle writes locks and updates to the build's private home.
+Choose one cache mode per build. Profile selection does not change invocation
+limits or establish complete Java concurrency qualification; the measured
+boundaries are described in [Java activation fibers](../runtime/java-activation-fibers.md).
 
 ## 3. Sign for this local experiment
 

@@ -65,7 +65,19 @@ The node derives child ID, parent/root IDs and trace correlation from the actual
 accepted caller. The child principal is `service`, has the source service and a
 length-framed subject `service:<tenant-length>:<tenant>:<service-length>:<service>`,
 and is admitted in the target tenant. User credentials and administrative claims
-are not forwarded. Guest metadata carries no identity authority. Idempotency keys
+are not forwarded. Guest metadata carries no identity authority.
+
+Foreign-tenant children are registered through the original live broker call,
+which must match the exact selected target, derived principal, parent/root IDs,
+source tenant/service and the parent journal's original budget instance. Equal
+budget values or a reused parent ID are insufficient. Raw activation registration
+still requires same-tenant lineage. The journal releases its budget identity on
+terminal publication; retained history does not keep a live ledger owner.
+Authorized inspection returns only the requested tenant's records, diagnostics
+and budgets. Original opaque parent/root IDs preserve correlation across tenants
+without granting access to foreign records.
+
+Idempotency keys
 remain correlation data and do not provide durable deduplication or exactly-once
 execution. Calls accepted before interruption may already have executed.
 

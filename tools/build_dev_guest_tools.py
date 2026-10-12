@@ -11,6 +11,7 @@ import sys
 import tarfile
 import time
 import tomllib
+import urllib.error
 import urllib.request
 
 if __package__ in {None, ""}:
@@ -19,10 +20,10 @@ if __package__ in {None, ""}:
 from tools import dev_tool_distribution as distribution, dev_managed_distribution as managed, native_runtime_build, rust_capsule_project
 from tools import dev_go_distribution, dev_typescript_distribution
 from tools.build_observation import build_environment, resolve_tools
-from tools.build_process import run_bounded
+from tools.build_process import BuildProcessError, run_bounded_result
 from tools.dev_distribution import assemble, file_digest
 from tools.dev_guest_tools import ZIG_BYTES, ZIG_SHA256, ZIG_VERSION
-from tools.dev_workflow.common import HOST_ABI, PROTOCOL, encode, require
+from tools.dev_workflow.common import GUEST_HOST_ABIS, HOST_ABI, PROTOCOL, encode, require
 from tools.dev_workflow.project import LANGUAGES
 from tools.install_guest_bindgen import URL as BINDGEN_URL
 
@@ -30,9 +31,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PYTHON_IMAGE = "python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419"
 SOURCES = {
     # One explicit mirror listed by Zig for automation. The reviewed archive
-    # bytes remain pinned below; there is no retry or alternate source fallback.
+    # bytes remain pinned below. Only opening timeouts may retry this same URL,
+    # before a response or archive bytes, inside the original finite deadline.
     "zig": {"url": f"https://pkg.hexops.org/zig/zig-x86_64-linux-{ZIG_VERSION}.tar.xz?source=latent-sdk-ci",
-            "sha256": "sha256:" + ZIG_SHA256, "maximum": ZIG_BYTES, "version": ZIG_VERSION, "timeoutSeconds": 600},
+            "sha256": "sha256:" + ZIG_SHA256, "maximum": ZIG_BYTES, "version": ZIG_VERSION,
+            "timeoutSeconds": 600, "connectionAttempts": 3},
     "wasm-tools": {"url": f"https://github.com/bytecodealliance/wasm-tools/releases/download/v{distribution.WASM_VERSION}/"
                           f"wasm-tools-{distribution.WASM_VERSION}-x86_64-linux.tar.gz",
                    "sha256": "sha256:" + distribution.WASM_SHA256, "maximum": 5862464, "version": distribution.WASM_VERSION},
@@ -42,8 +45,9 @@ SOURCES = {
 
 
 # Large pinned archives (notably Zig) can legitimately take over 90 seconds.
-# Keep one finite acceptance deadline, with no retries or source substitution.
+# Keep one finite acceptance deadline, with no source substitution or body retry.
 DOWNLOAD_TIMEOUT_SECONDS = 600
+DOWNLOAD_SOCKET_TIMEOUT_SECONDS = 60
 DOWNLOAD_CHUNK_BYTES = 64 * 1024
 
 
@@ -52,6 +56,9 @@ def download(destination: Path, source: dict, *, cache: Path | None = None) -> N
     timeout = source.get("timeoutSeconds", DOWNLOAD_TIMEOUT_SECONDS)
     require(type(timeout) is int and 0 < timeout <= DOWNLOAD_TIMEOUT_SECONDS,
             "compiler-download-timeout-invalid")
+    attempts = source.get("connectionAttempts", 1)
+    require(type(attempts) is int and 1 <= attempts <= 3,
+            "compiler-download-attempts-invalid")
     maximum = source["maximum"]
     require(type(maximum) is int and maximum > 0, "compiler-download-maximum-invalid")
     started, used = time.monotonic(), 0
@@ -80,7 +87,22 @@ def download(destination: Path, source: dict, *, cache: Path | None = None) -> N
             hit = cached is not None and cached.exists()
             print(json.dumps({"compilerArchive": source["sha256"], "phase": "cache" if hit else "download"}),
                   file=sys.stderr, flush=True)
-            incoming = cached.open("rb") if hit else urllib.request.urlopen(source["url"], timeout=min(30, timeout))
+            if hit:
+                incoming = cached.open("rb")
+            else:
+                for attempt in range(attempts):
+                    remaining = deadline - time.monotonic()
+                    require(remaining > 0, "compiler-download-deadline")
+                    try:
+                        incoming = urllib.request.urlopen(
+                            source["url"], timeout=min(DOWNLOAD_SOCKET_TIMEOUT_SECONDS, remaining))
+                        break
+                    except (TimeoutError, urllib.error.URLError) as error:
+                        timed_out = isinstance(error, TimeoutError) or isinstance(error.reason, TimeoutError)
+                        if not timed_out or attempt + 1 == attempts:
+                            raise
+                        print(json.dumps({"compilerArchive": source["sha256"], "phase": "connection-timeout",
+                                          "attempt": attempt + 1}), file=sys.stderr, flush=True)
             with incoming:
                 while True:
                     require(time.monotonic() < deadline, "compiler-download-deadline")
@@ -124,6 +146,8 @@ def main() -> int:
     parser.add_argument("--python-prefix", type=Path, required=True, help="/usr/local copied from the pinned Python OCI image")
     parser.add_argument("--allow-dirty", action="store_true", help="Unsigned local assembly testing only")
     parser.add_argument("--language", choices=sorted(LANGUAGES), required=True)
+    parser.add_argument("--host-abi", choices=sorted(GUEST_HOST_ABIS), default=HOST_ABI,
+                        help="Explicit captured guest profile; grants no node authority")
     parser.add_argument("--node-tests", action="store_true", help="Also stage source-built node executables for focused contributor tests")
     parser.add_argument("--compiler-cache", type=Path, default=os.environ.get("LSF_DEV_COMPILER_CACHE"),
                         help="Untrusted digest-addressed archives, reverified before use; defaults to LSF_DEV_COMPILER_CACHE")
@@ -148,10 +172,12 @@ def main() -> int:
     logs = output / "logs"
     logs.mkdir()
     def run(name: str, *command, maximum=16 * 1024 * 1024):
-        result = run_bounded([str(item) for item in command], cwd=ROOT, env=environment,
-                             timeout_seconds=600, max_output_bytes=maximum)
+        result = run_bounded_result([str(item) for item in command], cwd=ROOT, env=environment,
+                                    timeout_seconds=600, max_output_bytes=maximum)
         (logs / (name + ".stdout")).write_bytes(result.stdout)
         (logs / (name + ".stderr")).write_bytes(result.stderr)
+        if result.returncode != 0:
+            raise BuildProcessError("command-exit")
         return result.stdout
     pins = tomllib.loads((ROOT / "tools/toolchain.toml").read_text())
     tools, _ = resolve_tools(pins, ROOT, environment)
@@ -231,8 +257,8 @@ def main() -> int:
     for name in executables:
         (payload / name).chmod(0o700)
     run("python-version", payload / "sdk/bin/python", "-I", "-B", "-c", "import sys; assert sys.version_info[:3] == (3, 13, 5)")
-    inventory = distribution.compiler_inventory(payload, commit, args.language)
-    distribution.templates(payload, commit, args.language)
+    inventory = distribution.compiler_inventory(payload, commit, args.language, host_abi=args.host_abi)
+    distribution.templates(payload, commit, args.language, host_abi=args.host_abi)
     metadata = json.loads(run("metadata", tools["cargo"], "metadata", "--locked", "--format-version", "1",
                               "--filter-platform", "x86_64-unknown-linux-gnu"))
     sbom, licenses = native_runtime_build.dependency_inventory(metadata,
@@ -298,12 +324,13 @@ def main() -> int:
                                   "relatedSpdxElement": item["SPDXID"]} for item in extra)
     (payload / "sbom.spdx.json").write_bytes(encode(sbom))
     (payload / "build-provenance.json").write_bytes(encode({"schemaVersion": "latent.dev.build-provenance.v1",
-        "sourceCommit": commit, "sourceDirty": dirty, "target": "linux-x86_64", "hostAbi": HOST_ABI, "protocol": PROTOCOL,
+        "sourceCommit": commit, "sourceDirty": dirty, "target": "linux-x86_64", "hostAbi": args.host_abi, "protocol": PROTOCOL,
         "toolInventory": inventory["identity"], "pythonImage": PYTHON_IMAGE, "upstreamArchives": upstream,
         "language": args.language, "ownerIssue": LANGUAGES[args.language], "qualification": "assembly-only", "publicRelease": False}))
     version = tomllib.loads((ROOT / "Cargo.toml").read_text())["workspace"]["package"]["version"]
     value = assemble(payload, output / "candidate", commit=commit, version=version, target="linux-x86_64", epoch=epoch,
-                     executables=executables, archive_name="latent-dev-linux-x86_64-" + args.language + "-tools.zip")
+                     executables=executables, host_abi=args.host_abi,
+                     archive_name="latent-dev-linux-x86_64-" + args.language + "-tools.zip")
     print(encode({"archive": value["archive"], "sourceCommit": commit, "publisherAuthenticated": False}).decode(), end="")
     return 0
 

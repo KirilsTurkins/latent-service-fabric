@@ -9,6 +9,20 @@ use tonic::Status;
 use super::io::ConnectionInfo;
 use super::TransportConfig;
 
+pub(in crate::standalone) fn credential_principal<'a>(
+    config: &'a TransportConfig,
+    token: &str,
+) -> Option<&'a latent_core::InvocationPrincipal> {
+    if token.is_empty() || token.len() > 512 {
+        return None;
+    }
+    config
+        .credentials
+        .iter()
+        .find(|credential| credential.token == token)
+        .map(|credential| &credential.principal)
+}
+
 pub(super) fn authenticate(
     request: &mut Request<Body>,
     config: &TransportConfig,

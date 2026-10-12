@@ -65,6 +65,20 @@ class Dependencies(unittest.TestCase):
         self.assertNotIn("outside-private-library", public)
         self.assertEqual(trust_inputs(self.project)["applicationLock"], digest((self.project / LOCK).read_bytes()))
 
+    def test_empty_captured_directory_is_materialized_offline_and_rechecked(self):
+        (self.library / "pure.c").unlink()
+        self.lock()
+        self.library.rmdir()
+        with patch("tools.application_dependencies.fetch", side_effect=AssertionError("network called")):
+            closure = self.build()
+            destination = closure.work / "dependencies/unknown"
+            self.assertTrue(destination.is_dir())
+            self.assertEqual(list(destination.iterdir()), [])
+            closure.check_unchanged()
+        (destination / "uncaptured.c").write_bytes(b"int changed;\n")
+        with self.assertRaisesRegex(DependencyError, "unobserved-materialized-input"):
+            closure.check_unchanged()
+
     def test_selected_feature_runtime_or_lock_change_invalidates(self):
         self.lock()
         self.manifest["selection"]["runtimeProfile"] = "changed-v2"

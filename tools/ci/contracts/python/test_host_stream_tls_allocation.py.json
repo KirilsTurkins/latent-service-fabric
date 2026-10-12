@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "NativeTlsAllocationReplay.test_bad_free_missing_completion_and_unknown_versions_never_produce_observation",
+    "NativeTlsAllocationReplay.test_shared_allocation_indices_preserve_real_highs_and_each_original_free",
+    "NativeTlsAllocationReplay.test_unattributed_and_unretired_allocations_remain_visible"
+  ],
+  "guards": {
+    "NativeTlsAllocationReplay.test_bad_free_missing_completion_and_unknown_versions_never_produce_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b46edf95db9e066467714d8099c777c4a2e0c32da5e8b25db685ce88784769e",
+        "class:setup-sha256:f14b8ec702b51725f638ab189bab730fc65544b3cdec61d654ef807f39b1da30"
+      ],
+      "skipSites": []
+    },
+    "NativeTlsAllocationReplay.test_shared_allocation_indices_preserve_real_highs_and_each_original_free": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b46edf95db9e066467714d8099c777c4a2e0c32da5e8b25db685ce88784769e",
+        "class:setup-sha256:f14b8ec702b51725f638ab189bab730fc65544b3cdec61d654ef807f39b1da30"
+      ],
+      "skipSites": []
+    },
+    "NativeTlsAllocationReplay.test_unattributed_and_unretired_allocations_remain_visible": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5b46edf95db9e066467714d8099c777c4a2e0c32da5e8b25db685ce88784769e",
+        "class:setup-sha256:f14b8ec702b51725f638ab189bab730fc65544b3cdec61d654ef807f39b1da30"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_host_stream_tls_allocation.py",
+  "reviewReason": "Native trace attribution retains unmatched live bytes and original shared-allocation frees; missing termination and unknown formats fail without qualification",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

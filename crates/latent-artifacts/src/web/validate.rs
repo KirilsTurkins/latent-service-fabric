@@ -250,6 +250,31 @@ fn static_routing(manifest: &WebApplicationManifest) -> Result<(), PlatformError
         }
         _ => return Err(invalid("web-static-fallback")),
     }
+    if let Some(error) = &routing.error_document {
+        error_document_path(&error.document)?;
+        document(manifest, &error.document)?;
+    }
+    Ok(())
+}
+
+fn error_document_path(value: &str) -> Result<(), PlatformError> {
+    for (index, part) in value.trim_start_matches('/').split('/').enumerate() {
+        let part = part.to_ascii_lowercase();
+        if part.starts_with('.')
+            || (index == 0 && part == "_lsf")
+            || matches!(
+                part.as_str(),
+                "server" | "ssr" | "private" | "secrets" | "credentials" | "node_modules"
+            )
+            || part.starts_with("server.")
+            || part.starts_with("server-")
+            || part.starts_with("credentials.")
+            || part.starts_with("secret.")
+            || part.contains(".server.")
+        {
+            return Err(invalid("web-static-error-document-path"));
+        }
+    }
     Ok(())
 }
 

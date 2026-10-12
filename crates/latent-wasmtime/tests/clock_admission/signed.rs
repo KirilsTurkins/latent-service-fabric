@@ -32,8 +32,14 @@ pub struct Fixture {
 }
 impl Fixture {
     pub async fn new(wait: bool) -> Self {
+        Self::with_component(wait, &component::bytes()).await
+    }
+
+    /// The signer belongs to this protocol fixture; it does not qualify the
+    /// external compiler driver or turn this fixture into release evidence.
+    pub async fn with_component(wait: bool, bytes: &[u8]) -> Self {
         let root = tempfile::tempdir().unwrap();
-        let bundle = bundle();
+        let bundle = bundle(bytes);
         let release = bundle.layout().component_release().unwrap();
         let signers = package::Signers::new(latent_signing::PROVENANCE_BUILD_TYPE);
         let mut observation = provenance::observation();
@@ -106,16 +112,25 @@ impl Fixture {
         held
     }
 
+    pub fn hold_before_session(&self) -> Arc<Mutex<Option<Fence>>> {
+        let held = Arc::new(Mutex::new(None));
+        let keep = Arc::clone(&held);
+        let eligibility = self.eligibility.clone();
+        *self.guest.plan_lookup_hook.lock().unwrap() = Some(Box::new(move || {
+            *keep.lock().unwrap() = Some(Fence::hold(&eligibility));
+        }));
+        held
+    }
+
     pub fn expire_original_lease(&self) {
         self.clock.0.fetch_add(6, Ordering::AcqRel);
     }
 }
 
-fn bundle() -> latent_packaging::PackageBundle {
+fn bundle(bytes: &[u8]) -> latent_packaging::PackageBundle {
     use latent_artifacts::package::{
         artifact_blob_digest, encode_wit_lock, WitLock, WitLockedPackage,
     };
-    let bytes = component::bytes();
     let source = format!("package tests:broker@0.1.0; interface api {{ read: func() -> u64; }} world service {{ import {}; export api; }}", component::CAP).into_bytes();
     let function = json!({"id":"read","name":"read","asynchronous":false,"parameters":[],
         "results":[{"name":"result","value_type":"U64","documentation":null}],"documentation":null,"attributes":{}});
@@ -128,7 +143,7 @@ fn bundle() -> latent_packaging::PackageBundle {
         json!(artifact_blob_digest(&serde_json::to_vec(&contract).unwrap()).as_str());
     let contracts =
         serde_json::to_vec(&json!({"format_version":1,"contracts":[contract]})).unwrap();
-    let mut artifact = support::artifact_bytes(bytes.clone(), &[component::CONTRACT]);
+    let mut artifact = support::artifact_bytes(bytes.to_vec(), &[component::CONTRACT]);
     artifact.manifest.world = ContractId("tests:broker/service@0.1.0".into());
     artifact
         .manifest
@@ -163,7 +178,7 @@ fn bundle() -> latent_packaging::PackageBundle {
     input.version = artifact.manifest.semantic_version.clone();
     for layer in &mut input.layers {
         layer.bytes = match layer.path.as_str() {
-            "component.wasm" => bytes.clone(),
+            "component.wasm" => bytes.to_vec(),
             "capsule.json" => manifest.clone(),
             "contracts.json" => contracts.clone(),
             "wit-lock.json" => encode_wit_lock(&lock, Default::default()).unwrap(),

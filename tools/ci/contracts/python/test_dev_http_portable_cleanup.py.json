@@ -1,0 +1,106 @@
+{
+  "cases": [
+    "NativeTemporaryCleanup.test_actual_windows_file_mapping_is_released_before_owned_directory_retirement",
+    "NativeTemporaryCleanup.test_comparison_success_does_not_publish_success_before_fixture_retirement",
+    "NativeTemporaryCleanup.test_foreign_or_relative_root_refuses_before_any_recursive_cleanup",
+    "NativeTemporaryCleanup.test_persistent_lock_has_fixed_attempt_bound_and_original_cutoff",
+    "NativeTemporaryCleanup.test_successful_file_removal_after_original_cutoff_is_non_success",
+    "NativeTemporaryCleanup.test_transient_sharing_violations_retry_only_owned_cleanup",
+    "NativeTemporaryCleanup.test_unrelated_permission_failure_and_non_windows_fail_without_retry"
+  ],
+  "guards": {
+    "NativeTemporaryCleanup.test_actual_windows_file_mapping_is_released_before_owned_directory_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'nt', 'actual Windows sharing violation required')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:7463ddbbabfacffb7704024d1f06b09da44b452bc66767d56712f4cc3a2097e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:2200d7612eabeae1520142bb7bc19d77adfde24fae6758da6033b6c6c719352a",
+        "unittest.skipUnless(os.name == 'nt', 'actual Windows sharing violation required')"
+      ]
+    },
+    "NativeTemporaryCleanup.test_comparison_success_does_not_publish_success_before_fixture_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7463ddbbabfacffb7704024d1f06b09da44b452bc66767d56712f4cc3a2097e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeTemporaryCleanup.test_foreign_or_relative_root_refuses_before_any_recursive_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7463ddbbabfacffb7704024d1f06b09da44b452bc66767d56712f4cc3a2097e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeTemporaryCleanup.test_persistent_lock_has_fixed_attempt_bound_and_original_cutoff": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7463ddbbabfacffb7704024d1f06b09da44b452bc66767d56712f4cc3a2097e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeTemporaryCleanup.test_successful_file_removal_after_original_cutoff_is_non_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7463ddbbabfacffb7704024d1f06b09da44b452bc66767d56712f4cc3a2097e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeTemporaryCleanup.test_transient_sharing_violations_retry_only_owned_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7463ddbbabfacffb7704024d1f06b09da44b452bc66767d56712f4cc3a2097e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeTemporaryCleanup.test_unrelated_permission_failure_and_non_windows_fail_without_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:7463ddbbabfacffb7704024d1f06b09da44b452bc66767d56712f4cc3a2097e3",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_http_portable_cleanup.py",
+  "reviewReason": "Add seven meaningful cleanup cases with actual Windows locked-file handle retirement and bounded source refusal assertions. No historical case, skip guard, original run program or guest/provider ceiling is removed or weakened. The Windows-only file-operation case was actually executed locally and does not claim capsule qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

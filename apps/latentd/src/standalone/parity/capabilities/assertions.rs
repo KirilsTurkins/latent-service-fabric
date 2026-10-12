@@ -1,6 +1,6 @@
 use serde_json::{json, Value};
 
-use super::{FUEL, LOG, MEMORY, PARENT, ROOT, WALL};
+use super::{FUEL, LOG, MEMORY, WALL};
 
 pub fn check(function: &str, call: &Value, before: u64, after: u64) {
     let output = &call["decoded"][0];
@@ -23,8 +23,8 @@ pub fn check(function: &str, call: &Value, before: u64, after: u64) {
 fn snapshot(call: &Value, before: u64, after: u64) {
     let value = &call["decoded"][0];
     assert_eq!(value["activation"], call["activation_id"]);
-    assert_eq!(value["root"], ROOT);
-    assert_eq!(value["parent"], json!({"some":PARENT}));
+    assert_eq!(value["root"], call["activation_id"]);
+    assert_eq!(value["parent"], json!({"none":null}));
     assert_eq!(value["principal"]["subject"], "parity-tests");
     assert_eq!(value["principal"]["tenant"], json!({"some":"tests"}));
     assert_eq!(value["principal"]["claims"], json!([]));

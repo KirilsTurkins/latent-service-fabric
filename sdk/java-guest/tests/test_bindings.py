@@ -21,6 +21,38 @@ HEADER = "void exports_examples_sample_api_run(uint64_t value, sample_result_t *
 
 
 class Bindings(unittest.TestCase):
+    def test_reused_shallow_types_cannot_hide_an_excessive_graph_depth(self):
+        data = document()
+        data["types"] = [{"name": None, "owner": None, "kind": {"list": index + 1 if index < 34 else "string"}}
+                         for index in range(35)]
+        data["interfaces"][0]["functions"] = {
+            "shallow": {"name": "shallow", "kind": "freestanding", "params": [], "result": 31},
+            "deep": {"name": "deep", "kind": "freestanding", "params": [], "result": 0},
+        }
+        with self.assertRaisesRegex(ValueError, "excessively nested"):
+            Graph.preflight(data, "service")
+
+    def test_c_bridge_expansion_of_a_shared_type_graph_is_bounded(self):
+        data = document()
+        data["types"] = [{"name": None, "owner": None, "kind": {"record": {"fields": [
+            {"name": "left", "type": index + 1 if index < 16 else "string"},
+            {"name": "right", "type": index + 1 if index < 16 else "string"}]}}} for index in range(17)]
+        graph = Graph(data, "service", HEADER)
+        with self.assertRaisesRegex(ValueError, "C bridge traversal"):
+            c.generate(graph)
+
+    def test_documented_interface_reference_preserves_semantics_and_validates_identity(self):
+        original = document()
+        expected = java.generate(Graph(original, "service", HEADER))
+        annotated = deepcopy(original)
+        reference = annotated["worlds"][0]["exports"]["interface-0"]["interface"]
+        reference["docs"] = {"contents": "Authoritative principal, trace and deadline are host context."}
+        self.assertEqual(java.generate(Graph(annotated, "service", HEADER)), expected)
+        for field, value in (("id", True), ("id", 999), ("docs", {"contents": 7}), ("authority", "public")):
+            changed = deepcopy(annotated)
+            changed["worlds"][0]["exports"]["interface-0"]["interface"][field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError): Graph(changed, "service", HEADER)
+
     def test_shared_imported_resource_alias_uses_one_owner_class(self):
         data = document()
         data["interfaces"].extend([

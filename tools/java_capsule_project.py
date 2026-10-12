@@ -6,7 +6,7 @@ import re
 import tomllib
 
 from tools.java_guest.compiler import sdk_snapshot
-from tools.rust_capsule_project import (ROOT, TEMPLATES, TUTORIALS, decode_json, digest,
+from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TUTORIALS, decode_json, digest,
     fresh, inventory, read_file, snapshot)
 
 
@@ -22,7 +22,7 @@ def runtime_wit(source: bytes, world: str) -> bytes:
 
 
 def create(directory: Path, template: str, name: str | None = None) -> Path:
-    if template not in TEMPLATES:
+    if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown Java capsule template")
     name = name or "my-" + template
     if not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", name) or len(name) > 64:
@@ -36,6 +36,10 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     files = {"vendor/lsf/" + path: data for path, data in vendor.items()}
     files.update({"src/dev/latent/app/Capsule.java": read_file(ROOT / "sdk/java-guest/templates" / (template + ".java")),
                   "wit/world.wit": runtime_wit(read_file(source / "world.wit"), "service"), ".gitignore": b"/target/\n"})
+    # The declared TeaVM clocks must resolve in the captured authored world,
+    # before a compiler adds its generated runtime-support world. Carry the
+    # same captured bytes; this declaration supplies no runtime capability.
+    files["wit/deps/clock/package.wit"] = vendor["wit/platform/clock/package.wit"]
     limits = json.loads(read_file(ROOT / "examples/echo-contract/capsule.json"))["execution"]["limits"]
     limits.update(cpuFuel=1_000_000_000, memoryBytes=67_108_864, wallTimeLimitMillis=120000, logBytes=0)
     if template == "http-status": limits.update(outboundRequests=1)
@@ -46,6 +50,13 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
             "template": {"name": template, "sourceDigest": digest(files["src/dev/latent/app/Capsule.java"]),
                          "witDigest": digest(files["wit/world.wit"])}}
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
+    if template == "transactional-aggregate":
+        from tools.transaction_guest_project import augment
+        augment(files, project)
+        # The authored world explicitly imports TeaVM's runtime clocks. Carry
+        # their captured definition so the project is a closed WIT input even
+        # before the compiler stages its separate runtime-support world.
+        files["wit/deps/clock/package.wit"] = vendor["wit/platform/clock/package.wit"]
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
     files["README.md"] = (f"# {name}\n\nEdit `src/dev/latent/app/Capsule.java` and `wit/world.wit`.\n"
         "Keep `vendor/lsf` unchanged. Build with `tools/java_capsule.py` from the SDK checkout.\n"
@@ -102,18 +113,33 @@ def reviewed_local_jars(files: dict[str, bytes]) -> dict[str, str]:
 
 
 def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
-    if not {"capsule-project.json", "sdk-lock.json", "src/dev/latent/app/Capsule.java", "wit/world.wit"} <= files.keys():
+    if not {"capsule-project.json", "sdk-lock.json", "wit/world.wit"} <= files.keys():
         raise ValueError("incomplete Java capsule project")
     project, lock = (decode_json(files[name]) for name in ("capsule-project.json", "sdk-lock.json"))
-    if (not isinstance(project, dict) or set(project) != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    required = {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    if (not isinstance(project, dict) or not required <= project.keys() <= required | {"server", "httpClient"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported Java capsule project format")
+    if "httpClient" in project:
+        from tools.java_http_client import selection
+        selection(project["httpClient"])
+    if "server" in project:
+        from tools.java_server_source import selection
+        selected = selection(project["server"])
+        if (project["world"] != f"examples:{project['name']}/service@1.0.0"
+                or "src/" + selected["entryPoint"].replace(".", "/") + ".java" not in files
+                or "src/dev/latent/app/Capsule.java" in files):
+            raise ValueError("server source requires its original main and authoritative web world")
+    elif "src/dev/latent/app/Capsule.java" not in files:
+        raise ValueError("incomplete Java capsule project")
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid Java capsule name")
     if (not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "service", "world"))
             or project["tenant"] is not None and (not isinstance(project["tenant"], str) or not 0 < len(project["tenant"]) <= 128)):
         raise ValueError("invalid capsule identity")
     lock, vendor, pins = validate_sdk_inputs(files)
+    from tools.java_generator_authoring import validate_generated_inputs
+    validate_generated_inputs(files)
     allowed_jars = reviewed_local_jars(files)
     # Captured application JARs enter through the separately reviewed closure.
     # Arbitrary application Gradle/Maven executable build recipes remain denied.

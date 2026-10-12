@@ -1,0 +1,311 @@
+{
+  "archiveBackend": "disposable-local-tar-gzip-not-GitHub-cache",
+  "eligibleForDefaultPromotion": false,
+  "faults": [
+    {
+      "builtArtifactRecords": 2,
+      "elapsedMs": 264.754,
+      "exitCode": 0,
+      "freshArtifactRecords": 0,
+      "metrics": {
+        "elapsedSeconds": 0.13,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 236868.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.06,
+        "userSeconds": 0.08
+      },
+      "name": "corrupt-fingerprint",
+      "observation": "corrupt-fingerprint/observation.json",
+      "outcome": "passed"
+    },
+    {
+      "exitCode": 101,
+      "name": "corrupt-dependency-product",
+      "observation": "corrupt-dependency-product/observation.json",
+      "outcome": "clear-cargo-failure"
+    },
+    {
+      "name": "corrupt-local-archive",
+      "outcome": "rejected-before-extraction"
+    },
+    {
+      "builtArtifactRecords": 2,
+      "elapsedMs": 264.811,
+      "exitCode": 0,
+      "freshArtifactRecords": 0,
+      "metrics": {
+        "elapsedSeconds": 0.13,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 235048.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.06,
+        "userSeconds": 0.08
+      },
+      "name": "changed-flags",
+      "observation": "changed-flags/observation.json",
+      "outcome": "passed"
+    },
+    {
+      "builtArtifactRecords": 2,
+      "elapsedMs": 262.999,
+      "exitCode": 0,
+      "freshArtifactRecords": 0,
+      "metrics": {
+        "elapsedSeconds": 0.12,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 237032.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.07,
+        "userSeconds": 0.07
+      },
+      "name": "changed-features",
+      "observation": "changed-features/observation.json",
+      "outcome": "passed"
+    },
+    {
+      "builtArtifactRecords": 2,
+      "elapsedMs": 201.453,
+      "exitCode": 0,
+      "freshArtifactRecords": 0,
+      "metrics": {
+        "elapsedSeconds": 0.07,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 157004.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.04,
+        "userSeconds": 0.02
+      },
+      "name": "changed-target",
+      "observation": "changed-target/observation.json",
+      "outcome": "passed"
+    },
+    {
+      "builtArtifactRecords": 2,
+      "elapsedMs": 273.821,
+      "exitCode": 0,
+      "freshArtifactRecords": 0,
+      "metrics": {
+        "elapsedSeconds": 0.14,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 234808.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.07,
+        "userSeconds": 0.08
+      },
+      "name": "changed-toolchain",
+      "observation": "changed-toolchain/observation.json",
+      "outcome": "passed"
+    },
+    {
+      "builtArtifactRecords": 2,
+      "elapsedMs": 258.194,
+      "exitCode": 0,
+      "freshArtifactRecords": 0,
+      "metrics": {
+        "elapsedSeconds": 0.12,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 237160.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.06,
+        "userSeconds": 0.07
+      },
+      "name": "changed-dependency",
+      "observation": "changed-dependency/observation.json",
+      "outcome": "passed"
+    },
+    {
+      "builtArtifactRecords": 2,
+      "elapsedMs": 288.631,
+      "exitCode": 0,
+      "freshArtifactRecords": 0,
+      "metrics": {
+        "elapsedSeconds": 0.15,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 239012.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.09,
+        "userSeconds": 0.08
+      },
+      "name": "absent-cache",
+      "observation": "absent-cache/observation.json",
+      "outcome": "passed"
+    }
+  ],
+  "fixtureDigest": "5dd91b4b9220a68e00c4b2998446fbf4f8d9a001f2519a90a3ac50c6c6ea4e41",
+  "networkTransferSeconds": null,
+  "passed": true,
+  "samples": [
+    {
+      "builtArtifactRecords": 2,
+      "configuration": "current",
+      "elapsedMs": 1776.441,
+      "exitCode": 0,
+      "freshArtifactRecords": 0,
+      "metrics": {
+        "elapsedSeconds": 0.23,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 237012.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.09,
+        "userSeconds": 0.09
+      },
+      "name": "current-cold",
+      "observation": "current-cold/observation.json",
+      "outcome": "passed",
+      "pruneSeconds": 0.05560627500000237,
+      "restore": null,
+      "save": {
+        "archiveBytes": 3668,
+        "files": 7,
+        "seconds": 0.003289229000003502,
+        "sha256": "5dc89886845c1ce571080f5bc19b5b53d045bec2dc9da7bc75a068d630b4e42d",
+        "uncompressedBytes": 9774
+      },
+      "state": "cold"
+    },
+    {
+      "archiveSavedOnce": true,
+      "builtArtifactRecords": 1,
+      "configuration": "current",
+      "elapsedMs": 245.501,
+      "exitCode": 0,
+      "freshArtifactRecords": 1,
+      "metrics": {
+        "elapsedSeconds": 0.11,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 237508.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.06,
+        "userSeconds": 0.06
+      },
+      "name": "current-warm-1",
+      "observation": "current-warm-1/observation.json",
+      "outcome": "passed",
+      "restore": {
+        "archiveBytes": 3668,
+        "files": 7,
+        "seconds": 0.002676637999996956,
+        "uncompressedBytes": 9774
+      },
+      "save": null,
+      "state": "warm"
+    },
+    {
+      "archiveSavedOnce": true,
+      "builtArtifactRecords": 1,
+      "configuration": "current",
+      "elapsedMs": 248.682,
+      "exitCode": 0,
+      "freshArtifactRecords": 1,
+      "metrics": {
+        "elapsedSeconds": 0.11,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 237012.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.05,
+        "userSeconds": 0.07
+      },
+      "name": "current-warm-2",
+      "observation": "current-warm-2/observation.json",
+      "outcome": "passed",
+      "restore": {
+        "archiveBytes": 3668,
+        "files": 7,
+        "seconds": 0.0025967579999957024,
+        "uncompressedBytes": 9774
+      },
+      "save": null,
+      "state": "warm"
+    },
+    {
+      "builtArtifactRecords": 2,
+      "configuration": "ci-correctness",
+      "elapsedMs": 292.314,
+      "exitCode": 0,
+      "freshArtifactRecords": 0,
+      "metrics": {
+        "elapsedSeconds": 0.15,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 234976.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.1,
+        "userSeconds": 0.07
+      },
+      "name": "ci-correctness-cold",
+      "observation": "ci-correctness-cold/observation.json",
+      "outcome": "passed",
+      "pruneSeconds": 0.05642139399999735,
+      "restore": null,
+      "save": {
+        "archiveBytes": 3649,
+        "files": 7,
+        "seconds": 0.002445565000002148,
+        "sha256": "7d6f142376d0122395f548f3f09c25f7bf1fcf6895db08d522e950fcee281f32",
+        "uncompressedBytes": 9738
+      },
+      "state": "cold"
+    },
+    {
+      "archiveSavedOnce": true,
+      "builtArtifactRecords": 1,
+      "configuration": "ci-correctness",
+      "elapsedMs": 241.373,
+      "exitCode": 0,
+      "freshArtifactRecords": 1,
+      "metrics": {
+        "elapsedSeconds": 0.1,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 236864.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.05,
+        "userSeconds": 0.07
+      },
+      "name": "ci-correctness-warm-1",
+      "observation": "ci-correctness-warm-1/observation.json",
+      "outcome": "passed",
+      "restore": {
+        "archiveBytes": 3649,
+        "files": 7,
+        "seconds": 0.002536645000006388,
+        "uncompressedBytes": 9738
+      },
+      "save": null,
+      "state": "warm"
+    },
+    {
+      "archiveSavedOnce": true,
+      "builtArtifactRecords": 1,
+      "configuration": "ci-correctness",
+      "elapsedMs": 242.243,
+      "exitCode": 0,
+      "freshArtifactRecords": 1,
+      "metrics": {
+        "elapsedSeconds": 0.11,
+        "exitCode": 0.0,
+        "maximumChildRssKiB": 235024.0,
+        "rssDefinition": "GNU time maximum child RSS; not simultaneous process-tree RSS",
+        "systemSeconds": 0.05,
+        "userSeconds": 0.07
+      },
+      "name": "ci-correctness-warm-2",
+      "observation": "ci-correctness-warm-2/observation.json",
+      "outcome": "passed",
+      "restore": {
+        "archiveBytes": 3649,
+        "files": 7,
+        "seconds": 0.00255713299999627,
+        "uncompressedBytes": 9738
+      },
+      "save": null,
+      "state": "warm"
+    }
+  ],
+  "schemaVersion": "latent.ci.cargo-cache-probe.v1",
+  "scope": "synthetic-three-test-workspace-real-compiler",
+  "sharedCacheWrites": false,
+  "toolchains": {
+    "msrv": "rustc 1.94.1 (e408947bf 2026-03-25)\nbinary: rustc\ncommit-hash: e408947bfd200af42db322daf0fadfe7e26d3bd1\ncommit-date: 2026-03-25\nhost: x86_64-unknown-linux-gnu\nrelease: 1.94.1\nLLVM version: 21.1.8",
+    "pinned": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6"
+  }
+}

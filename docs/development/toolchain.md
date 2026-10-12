@@ -24,7 +24,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `tonic-prost-build` |                               0.14.6 | Build-time Rust generation from every authoritative `.proto` |
 | `protoc-bin-vendored` |                                3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
 | Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
-| Wasmtime |                               48.0.3 | Generic Component Model runtime and retained Phase 0 compatibility facade |
+| Wasmtime |                               48.0.4 | Generic Component Model runtime and retained Phase 0 compatibility facade |
 | `wasmparser` |                               0.259.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
 | `wasm-encoder` |                               0.259.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
 | `wit-parser` |                               0.259.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
@@ -36,7 +36,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `wasm-tools` |                              1.254.0 | WIT parsing, validation, componentization, and interface extraction |
 | Buf |                               1.72.0 | Protobuf linting and independent descriptor-set generation |
 | Python / `jsonschema` |                      3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
-| Go / Node / TypeScript / .NET |   1.27.1 / 24.19.0 / 7.0.2 / 8.0.425 | Cross-language interfaces and bounded native clients |
+| Go / Node / TypeScript / .NET |   1.27.2 / 24.19.0 / 7.0.2 / 8.0.425 | Cross-language interfaces and bounded native clients |
 | Eclipse Temurin JDK |                           25.0.4.1+1 | Java SDK build and runtime qualification; Java 25 minimum runtime |
 | Gradle (optional Java build) |                                9.1.0 | Java 25-compatible Gradle path; distribution SHA-256 pinned in `tools/toolchain.toml` |
 | Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
@@ -175,7 +175,7 @@ The retained August 30 Phase 0 receipt records an authorized pass for its canoni
 
 ## Generated-output policy
 
-The [Wasmtime security baseline](wasmtime-security-update.md) records the 48.0.3
+The [Wasmtime security baseline](wasmtime-security-update.md) records the 48.0.4
 advisory scan, native-loader review and runtime/compiler upgrade requirements.
 
 Handwritten Rust, WIT, Protobuf, JSON Schema, examples, and SDK sources remain authoritative. Generated build products normally live in Cargo `OUT_DIR`, `target/contracts/`, `target/capsules/`, and SDK compiler directories. The type-only codec fixture described below is an explicit checked-in exception:

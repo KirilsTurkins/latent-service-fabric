@@ -225,3 +225,104 @@ fn final_admission_checks_real_catalog_owner_publication_and_every_narrowing() {
     assert_eq!(started, 1);
     other.check_current().unwrap();
 }
+
+#[test]
+fn known_policy_denial_does_not_request_positive_publication_authority() {
+    let fixture = Fixture::new();
+    let publication = publish(&fixture, "denial-currentness");
+    let proof = fixture
+        .catalog
+        .execution_eligibility_selected(
+            &publication.operation.record.as_ref().unwrap().release,
+            Some(&publication.publication.id),
+        )
+        .unwrap()
+        .unwrap();
+    let store = fixture.store(PolicyStoreLimits::default());
+    let mut document = policy();
+    document["rules"][0]["publications"] = serde_json::json!([proof.publication().as_str()]);
+    mutate(
+        &store,
+        "p",
+        "policy",
+        0,
+        Some(&serde_json::to_vec(&document).unwrap()),
+    )
+    .unwrap();
+    let bytes = serde_json::to_vec(&binding()).unwrap();
+    store
+        .mutate(
+            MutationRequest {
+                tenant: "a",
+                actor: "operator",
+                kind: RecordKind::ProviderBinding,
+                id: "binding",
+                operation_id: "binding",
+                expected_revision: 0,
+                document: Some(&bytes),
+            },
+            deadline(),
+            |_| Ok(()),
+        )
+        .unwrap();
+    let snapshot = store
+        .snapshot(&TenantId("a".into()), &["p".into()], "binding", deadline())
+        .unwrap();
+    let actor = principal();
+    let contract = "latent:secrets/reader@0.1.0";
+    let inherited = GrantRestriction::parse(br#"{"operations":[]}"#, contract).unwrap();
+    let imported = vec!["read".into()];
+    let digest = format!("sha256:{}", "2".repeat(64));
+    let restrictions = CallRestrictions {
+        imported_operations: &imported,
+        deployment: &inherited,
+        provider_configuration: &inherited,
+        provider_profile: "local-secrets-v1",
+        configuration_digest: &digest,
+        configuration_epoch: 1,
+        remaining: CapabilityCeiling {
+            operations: 1,
+            input_bytes: 64,
+            output_bytes: 128,
+            wall_time_millis: 50,
+        },
+        input_bytes: 0,
+        output_bytes: 32,
+    };
+    let input = |reference| EvaluationInput {
+        principal: &actor,
+        service: "echo",
+        publication: proof.publication().as_str(),
+        capability: contract,
+        operation: "read",
+        resource: ResourceTarget::Secrets { reference },
+    };
+    snapshot
+        .authorize(input("test-key"), &restrictions, &proof)
+        .unwrap();
+    // Retire the real catalogue owner. It now cannot provide positive authority;
+    // this is neither permission to use a stale grant nor a provider retry.
+    drop(fixture.catalog);
+    assert_eq!(
+        proof.check_current().unwrap_err().code,
+        PlatformErrorCode::Unavailable
+    );
+    assert_eq!(
+        snapshot
+            .authorize(input("different-key"), &restrictions, &proof)
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::PermissionDenied
+    );
+    assert_eq!(
+        snapshot
+            .authorize(input("test-key"), &restrictions, &proof)
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::Unavailable
+    );
+    drop(snapshot);
+    assert_eq!(store.retained_read_owners(), 0);
+}

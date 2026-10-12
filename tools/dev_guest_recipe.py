@@ -78,6 +78,8 @@ def compile_rust(payload: Path, project: Path, output: Path, check, *, executabl
                           timeout_seconds=10, max_output_bytes=1024).stdout.decode().strip()
     require(version == ZIG_VERSION, "guest-linker-version")
     check()
+    # Captured compiler isolation must select this validated private Zig copy.
+    os.environ["PATH"] = str(zig.parent) + os.pathsep + os.environ["PATH"]
     build(project, output, sdk / "bin/capsule-contracts", None,
           "https://github.com/KirilsTurkins/latent-service-fabric", offline=True,
           host_linker=linker(zig, cache), rust_bin=sdk / "rust/bin", executable_approval=executable_approval)

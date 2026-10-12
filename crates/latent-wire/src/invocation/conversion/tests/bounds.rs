@@ -4,6 +4,37 @@ use tonic::Code;
 use super::*;
 
 #[test]
+fn operator_diagnostics_remain_outside_public_and_browser_errors() {
+    use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
+    for (stage, reason, code) in [
+        (
+            DiagnosticStage::Preparation,
+            DiagnosticReason::SignatureAllocationLimit,
+            PlatformErrorCode::ResourceExhausted,
+        ),
+        (
+            DiagnosticStage::Execution,
+            DiagnosticReason::ValueAllocationLimit,
+            PlatformErrorCode::GuestTrap,
+        ),
+    ] {
+        let mut diagnostic = ActivationDiagnostic::new(stage, reason);
+        diagnostic.profile_digest = Some([0xff; 32]);
+        diagnostic.configured_bound = Some(0);
+        diagnostic.calculated_requirement = Some(u64::MAX);
+        let error = diagnostic.attach(PlatformError {
+            code,
+            message: "private type/function/path".into(),
+            retryable: false,
+            details: vec![],
+        });
+        let public = public_platform_error(error, &InvocationLimits::default());
+        assert!(public.details.is_empty());
+        assert!(!public.message.contains("private"));
+    }
+}
+
+#[test]
 fn owned_public_conversion_moves_payload_effect_and_metadata_allocations() {
     let value = response(success());
     validate_runtime_response(&value, &InvocationLimits::default()).unwrap();

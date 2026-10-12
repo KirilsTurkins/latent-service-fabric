@@ -1,0 +1,8 @@
+{
+  "bom-1.6.schema.json": {
+    "encoding": "gzip",
+    "path": "bom-1.6.schema.json.gz",
+    "bytes": 43716,
+    "sha256": "d738dcbd8051109c07e50679037072a97b5a5447dbbcba09531b88442915b3d9"
+  }
+}

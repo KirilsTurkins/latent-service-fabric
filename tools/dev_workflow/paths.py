@@ -36,6 +36,11 @@ def excluded(value: str, exclusions: tuple[str, ...] = ()) -> bool:
 
 
 def regular(metadata) -> None:
+    # An atomic replacement can unlink the file after open but before fstat.
+    # Keep rejecting that retired reader, with the same source-change reason
+    # used after a guarded read; a live hardlink remains an unsafe input.
+    require(not (stat.S_ISREG(metadata.st_mode) and metadata.st_nlink == 0),
+            "source-changed-during-read")
     require(stat.S_ISREG(metadata.st_mode) and metadata.st_nlink == 1, "single-link-regular-file-required")
     require(not getattr(metadata, "st_file_attributes", 0) & 0x400, "reparse-point-rejected")
 

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve every historical qualification command and require explicit entropy declaration, missing-grant denial and bounded bytes-only authority solely for the dotnet application dependency fixture.",
+  "reviewReason": "Preserve explicit CLR hash entropy declaration and original zero-execution missing-grant control for standard resource qualification",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "2a0d07989501827cdb86a0abc8095dd1107f4217a57b14d1c58af0233befa554"
+  "sha256": "73742b5c603bc17956603878c553b736fda34c323c88cc132418b629fa1ebc31"
 }

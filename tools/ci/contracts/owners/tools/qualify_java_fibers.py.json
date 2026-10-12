@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_fibers.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "independent-actual-field-model-closure-original-181-body-guard-preserved",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "0ab7d4274db229a945b03b3b0f8ab1fd32644e44e0a76b6fdc8d973d92cdf4d8"
+}

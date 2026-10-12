@@ -228,6 +228,10 @@ impl LifecycleStore {
     /// receipt is diagnostic history and does not pin obsolete raw evidence.
     pub(crate) fn reclaim_evidence(&self) -> Result<(), PlatformError> {
         let _fence = self.owner.write()?;
+        self.reclaim_evidence_rows()
+    }
+
+    fn reclaim_evidence_rows(&self) -> Result<(), PlatformError> {
         let state = self.state.try_read().map_err(lock_error)?;
         let mut evidence = self.evidence.try_lock().map_err(lock_error)?;
         let Some(digest) = evidence.unreferenced.clone() else {
@@ -253,7 +257,10 @@ impl LifecycleStore {
         evidence.unreferenced = None;
         Ok(())
     }
-    pub(super) fn recover_evidence(&self) -> Result<(), PlatformError> {
+    // Constructor-only recovery holds exclusive, unpublished store custody.
+    // No lifecycle handle or eligibility exists yet. Do not invoke a public
+    // operation that seals observer registration before returning that owner.
+    pub(super) fn recover_evidence(&mut self) -> Result<(), PlatformError> {
         let state = self.state.try_read().map_err(lock_error)?;
         let mut evidence = EvidenceState::default();
         let mut references = BTreeMap::new();
@@ -312,7 +319,7 @@ impl LifecycleStore {
         }
         drop(state);
         *self.evidence.try_lock().map_err(lock_error)? = evidence;
-        self.reclaim_evidence()
+        self.reclaim_evidence_rows()
     }
     pub(super) fn evidence_cutover(
         &self,

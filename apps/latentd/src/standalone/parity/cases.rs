@@ -14,8 +14,8 @@ pub const NAMES: [&str; 8] = [
 pub fn request(index: usize, id: &str) -> proto::InvokeRequest {
     let mut value = proto::InvokeRequest {
         activation_id: Some(id.to_owned()),
-        root_activation_id: Some("parity-root".to_owned()),
-        parent_activation_id: Some("parity-parent".to_owned()),
+        // Both public boundaries admit roots; only the trusted local broker
+        // may attach a parent and an existing root identity.
         target: Some(proto::InvocationTarget {
             tenant: "examples".to_owned(),
             service: super::fixture::SHARED.to_owned(),

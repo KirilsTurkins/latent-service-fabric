@@ -1,0 +1,38 @@
+"""Materialize one complete actual Git tree and read-only fork retired caches."""
+from pathlib import Path
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+
+identity = json.loads(Path('/inputs/source-identity.json').read_bytes())
+source = Path('/source')
+assert not list(source.iterdir())
+pack = Path('/inputs/source-objects.pack')
+with pack.open('rb') as stream:
+    assert hashlib.file_digest(stream, 'sha256').hexdigest() == identity['packSha256']
+subprocess.run(['git', 'init', str(source)], check=True)
+os.chdir(source)
+subprocess.run(['git', 'config', 'core.autocrlf', 'false'], check=True)
+with pack.open('rb') as stream:
+    subprocess.run(['git', 'index-pack', '--stdin'], stdin=stream, check=True)
+Path('.git/shallow').write_text(identity['commit'] + '\n')
+subprocess.run(['git', 'checkout', '--detach', identity['commit']], check=True)
+assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == identity['commit']
+assert subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip() == identity['tree']
+assert not subprocess.check_output(['git', 'status', '--porcelain'])
+assert Path('benchmarks').is_dir() or Path('bench').is_dir()
+for old, new in (('/old-target', '/build/target'), ('/old-cargo', '/cargo')):
+    destination = Path(new)
+    assert not list(destination.iterdir())
+    shutil.copytree(old, destination, dirs_exist_ok=True, symlinks=True)
+for root in ('/source', '/build/target', '/cargo', '/fixtures'):
+    for directory, children, files in os.walk(root):
+        os.chown(directory, 10001, 10001)
+        for name in children + files:
+            os.chown(Path(directory) / name, 10001, 10001, follow_symlinks=False)
+print(json.dumps({'sourceCommit': identity['commit'], 'sourceTree': identity['tree'],
+                  'allTrackedGitAndBenchmarkBytesPreserved': True,
+                  'retiredParentCachesMountedReadOnly': True,
+                  'oldExecutionResultsUsedAsPass': False}), flush=True)

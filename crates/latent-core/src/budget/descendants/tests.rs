@@ -240,6 +240,28 @@ fn parent_cancellation_and_terminal_state_cancel_children_without_early_refunds(
 }
 
 #[test]
+fn explicit_scope_cancellation_signals_children_without_finalization_or_refund() {
+    let (parent, _, sample) = root(DelegationLimits::default());
+    let child = accept(
+        reserve(&parent, &request(100, 100, 1), sample).unwrap(),
+        sample,
+    );
+    let retained = child.accounting().clone();
+    let before = parent.snapshot_at(sample.monotonic());
+    parent.cancel_descendants().unwrap();
+    assert!(child.accounting().descendant_is_cancelled());
+    assert!(reserve(&parent, &request(1, 1, 0), sample).is_err());
+    assert!(parent.finalized().is_none());
+    assert_eq!(parent.snapshot_at(sample.monotonic()), before);
+    assert_eq!(parent.outstanding_reservations(), 1);
+    let _ = child.finish(None, sample.monotonic());
+    assert_eq!(parent.outstanding_reservations(), 1);
+    drop(retained);
+    assert_eq!(parent.outstanding_reservations(), 0);
+    assert!(parent.finalized().is_none());
+}
+
+#[test]
 fn retained_ancestry_stays_charged_through_late_grandchild_completion() {
     let (parent, _, sample) = root(DelegationLimits::default());
     let child = accept(
@@ -511,4 +533,43 @@ fn terminal_notification_wakes_waiting_descendant_without_releasing_ownership() 
     drop(waiting);
     drop(ledger);
     assert_eq!(parent.outstanding_reservations(), 0);
+}
+
+#[test]
+fn retained_completion_ignores_only_own_terminal_and_never_reopens_execution() {
+    let (budget, signal, sample) = root(DelegationLimits::default());
+    let _ = budget.finalize_at(None, sample.monotonic());
+    assert!(budget.descendant_is_cancelled());
+    assert!(!budget.retained_authority_is_cancelled_at(sample.monotonic()));
+    assert!(budget.reserve_host_memory(1).is_err());
+    assert!(reserve(&budget, &request(1, 1, 0), sample).is_err());
+    assert!(budget.retained_authority_is_cancelled_at(
+        sample.monotonic() + std::time::Duration::from_secs(2)
+    ));
+    signal.0.store(true, Ordering::Release);
+    assert!(budget.retained_authority_is_cancelled_at(sample.monotonic()));
+}
+
+#[test]
+fn retained_completion_keeps_original_cancelled_and_terminal_ancestor_fences() {
+    for cancelled in [false, true] {
+        let (parent, signal, sample) = root(DelegationLimits::default());
+        let child = accept(
+            reserve(&parent, &request(100, 100, 0), sample).unwrap(),
+            sample,
+        );
+        let ledger = child.accounting().clone();
+        let _ = ledger.finalize_at(None, sample.monotonic());
+        assert!(!ledger.retained_authority_is_cancelled_at(sample.monotonic()));
+        if cancelled {
+            signal.0.store(true, Ordering::Release);
+        } else {
+            let _ = parent.finalize_at(None, sample.monotonic());
+        }
+        assert!(ledger.retained_authority_is_cancelled_at(sample.monotonic()));
+        assert_eq!(parent.outstanding_reservations(), 1);
+        drop(child);
+        drop(ledger);
+        assert_eq!(parent.outstanding_reservations(), 0);
+    }
 }

@@ -237,14 +237,14 @@ def isolation(compiler, workspace: Path):
     javac = jdk / 'bin/javac'
     selected = ProcessorIsolation(workspace,
         {'javac': javac, 'java': compiler.paths['java'], 'jvm-library': jdk / 'lib/server/libjvm.so'},
-        {'pinned-jdk': jdk, 'pinned-java-compiler-dependencies': compiler.directory / 'gradle-home/caches/modules-2'})
+        {'pinned-jdk': jdk, 'pinned-java-compiler-dependencies': compiler.dependency_cache.parent})
     return selected
 
 
 def compiler_classpath(compiler) -> tuple[Path, ...]:
     from tools.java_guest.compiler import source_module
     dependencies = source_module(compiler.sdk / 'tools/dependencies.py')
-    cache = compiler.directory / 'gradle-home/caches/modules-2/files-2.1'
+    cache = compiler.dependency_cache
     observed = dependencies.cache_inventory(cache)
     dependencies.verify_inventory(observed, json.loads(read_bytes(compiler.sdk / 'feasibility/dependencies.lock.json')),
                                   compiler.sdk / 'feasibility/gradle/verification-metadata.xml')

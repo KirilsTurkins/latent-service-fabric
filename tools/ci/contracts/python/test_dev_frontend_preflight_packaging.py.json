@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "FrontendPreflightPackagingTests.test_helper_preserves_all_four_canonical_resources_and_deterministic_identity",
+    "FrontendPreflightPackagingTests.test_isolated_zip_declarations_reject_context_and_headers_without_state",
+    "FrontendPreflightPackagingTests.test_missing_zip_policy_fails_finitely_without_checkout_fallback",
+    "FrontendPreflightPackagingTests.test_packaged_smoke_never_accepts_authority_claim_as_structural_evidence",
+    "FrontendPreflightPackagingTests.test_snapshot_rejects_missing_empty_or_oversized_canonical_contract_before_packaging"
+  ],
+  "guards": {
+    "FrontendPreflightPackagingTests.test_helper_preserves_all_four_canonical_resources_and_deterministic_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:22d0021c487596cb37bfe94096821e4256925c60ccb31403f21c35e431cec9e8",
+        "class:setup-sha256:4582b84dd90a58878e23143e0e50387f96d86fa3afcb957752011a44e4ade68f"
+      ],
+      "skipSites": []
+    },
+    "FrontendPreflightPackagingTests.test_isolated_zip_declarations_reject_context_and_headers_without_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:22d0021c487596cb37bfe94096821e4256925c60ccb31403f21c35e431cec9e8",
+        "class:setup-sha256:4582b84dd90a58878e23143e0e50387f96d86fa3afcb957752011a44e4ade68f"
+      ],
+      "skipSites": []
+    },
+    "FrontendPreflightPackagingTests.test_missing_zip_policy_fails_finitely_without_checkout_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:22d0021c487596cb37bfe94096821e4256925c60ccb31403f21c35e431cec9e8",
+        "class:setup-sha256:4582b84dd90a58878e23143e0e50387f96d86fa3afcb957752011a44e4ade68f"
+      ],
+      "skipSites": []
+    },
+    "FrontendPreflightPackagingTests.test_packaged_smoke_never_accepts_authority_claim_as_structural_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:22d0021c487596cb37bfe94096821e4256925c60ccb31403f21c35e431cec9e8",
+        "class:setup-sha256:4582b84dd90a58878e23143e0e50387f96d86fa3afcb957752011a44e4ade68f"
+      ],
+      "skipSites": []
+    },
+    "FrontendPreflightPackagingTests.test_snapshot_rejects_missing_empty_or_oversized_canonical_contract_before_packaging": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:22d0021c487596cb37bfe94096821e4256925c60ccb31403f21c35e431cec9e8",
+        "class:setup-sha256:4582b84dd90a58878e23143e0e50387f96d86fa3afcb957752011a44e4ade68f"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_frontend_preflight_packaging.py",
+  "reviewReason": "Register five meaningful byte-exact canonical data, isolated ZIP, missing policy, bounded snapshot and false authority packaging regressions for issue 710 with no skips or historical guard changes.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

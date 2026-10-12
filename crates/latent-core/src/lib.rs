@@ -2,16 +2,21 @@
 
 #![forbid(unsafe_code)]
 
+pub mod activation_runtime;
+
+pub mod authority_rejection;
 pub mod budget;
 pub mod clock;
 pub mod deadline_diagnostic_observer;
 pub mod deadline_wait_observer;
+pub mod diagnostic;
 pub mod digest;
 pub mod error;
 pub mod host_profile;
 pub mod identity;
 pub mod ids;
 pub mod lifecycle;
+pub mod native_capacity;
 pub mod publication;
 #[cfg(feature = "test-support")]
 pub mod test_support;
@@ -21,8 +26,8 @@ pub use budget::{
     ActivationBudget, BudgetCancellationProbe, BudgetConsumption, BudgetDimension, BudgetError,
     BudgetFinalization, BudgetProfile, BudgetReservation, BudgetReservationGroup,
     ChildBudgetDelegation, ChildBudgetOwner, ClockSample, DelegationLimits,
-    DescendantBudgetSnapshot, EffectiveActivationBudget, EffectiveDeadline, IncomingDeadline,
-    ResourceBudget, RuntimeMemoryReservation,
+    DescendantBudgetSnapshot, EffectiveActivationBudget, EffectiveDeadline, HostMemoryReservation,
+    IncomingDeadline, ResourceBudget, RuntimeMemoryReservation,
 };
 pub use clock::{ActivationClock, SystemActivationClock};
 pub use deadline_diagnostic_observer::{
@@ -36,7 +41,7 @@ pub use error::{DeclaredError, ErrorDetail, PlatformError, PlatformErrorCode};
 pub use host_profile::{
     HostAbiProfile, HostInterfaceBinding, HostInterfaceSpec, PHASE3_HOST_ABI_CURRENT,
     PHASE3_HOST_ABI_V1, PHASE3_HOST_ABI_V2, PHASE3_HOST_ABI_V3, PHASE3_HOST_ABI_V4,
-    PHASE4_HOST_ABI_V1,
+    PHASE3_HOST_ABI_V5, PHASE4_HOST_ABI_V1,
 };
 pub use identity::{InvocationPrincipal, PrincipalKind};
 pub use ids::*;

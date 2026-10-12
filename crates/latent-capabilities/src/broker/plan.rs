@@ -279,12 +279,7 @@ impl ActivationCapabilityBroker {
             local_targets,
             route_fence.is_some(),
         )?;
-        if self.inner.clock.monotonic_now() >= deadline {
-            return Err(super::error(
-                latent_core::PlatformErrorCode::DeadlineExceeded,
-                "capability-plan-deadline",
-            ));
-        }
+        check_plan_deadline(&self.inner, deadline)?;
         let slot = self.inner.counters.acquire(Kind::Plan, 1)?;
         let bytes = metadata_bytes(
             &self.inner,
@@ -323,25 +318,10 @@ impl ActivationCapabilityBroker {
             });
         }
         publication.check_for_catalog(&self.inner.catalog)?;
-        if self.inner.clock.monotonic_now() >= deadline {
-            return Err(super::error(
-                latent_core::PlatformErrorCode::DeadlineExceeded,
-                "capability-plan-deadline",
-            ));
-        }
+        check_plan_deadline(&self.inner, deadline)?;
         Ok(Arc::new(CompiledCapabilityPlan {
             owner: Arc::clone(&self.inner),
-            target: Target {
-                deployment: deployment
-                    .map(|id| checked_text(&id.0).map(latent_core::DeploymentId))
-                    .transpose()?,
-                tenant: TenantId(checked_text(&revision.target.tenant.0)?),
-                service: ServiceId(checked_text(&revision.target.service.0)?),
-                revision: RevisionId(checked_text(&revision.revision.0)?),
-                release: revision.release.clone(),
-                publication: publication.publication().clone(),
-                generation: revision.route_generation,
-            },
+            target: checked_plan_target(revision, deployment, publication)?,
             publication: publication.clone(),
             bindings,
             dependencies: dependencies.to_vec(),
@@ -350,6 +330,34 @@ impl ActivationCapabilityBroker {
             _slot: slot,
         }))
     }
+}
+
+fn check_plan_deadline(owner: &Inner, deadline: Instant) -> Result<(), PlatformError> {
+    if owner.clock.monotonic_now() >= deadline {
+        return Err(super::error(
+            latent_core::PlatformErrorCode::DeadlineExceeded,
+            "capability-plan-deadline",
+        ));
+    }
+    Ok(())
+}
+
+fn checked_plan_target(
+    revision: &ResolvedRevision,
+    deployment: Option<&latent_core::DeploymentId>,
+    publication: &ReleaseUseEligibility,
+) -> Result<Target, PlatformError> {
+    Ok(Target {
+        deployment: deployment
+            .map(|id| checked_text(&id.0).map(latent_core::DeploymentId))
+            .transpose()?,
+        tenant: TenantId(checked_text(&revision.target.tenant.0)?),
+        service: ServiceId(checked_text(&revision.target.service.0)?),
+        revision: RevisionId(checked_text(&revision.revision.0)?),
+        release: revision.release.clone(),
+        publication: publication.publication().clone(),
+        generation: revision.route_generation,
+    })
 }
 
 fn validate_local_targets(

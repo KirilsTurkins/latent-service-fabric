@@ -17,7 +17,9 @@ import threading
 import time
 from collections.abc import Mapping, Sequence
 
-MAX_OUTPUT_BYTES = 64 * 1024 * 1024
+# Source archives reserve 8 MiB of framing above the 64 MiB file-byte budget.
+# Each caller still supplies its independent, bounded output allowance.
+MAX_OUTPUT_BYTES = 72 * 1024 * 1024
 MAX_TIMEOUT_SECONDS = 3600
 _CLEANUP_SECONDS = 5.0
 _CHUNK_BYTES = 16 * 1024
@@ -84,7 +86,13 @@ def _capture(owner, deadline: float, maximum: int, cancellation) -> tuple[bytes,
     used = 0
     finished = False
     while open_streams or not finished:
-        cancellation.check()
+        if finished:
+            # The owner has positively reaped the leader and its process group.
+            # Keep signal cancellation during bounded pipe draining, without
+            # reentering an expensive active-work observer after retirement.
+            getattr(cancellation, "check_after_exit", cancellation.check)()
+        else:
+            cancellation.check()
         if time.monotonic() >= deadline:
             raise BuildProcessError("command-deadline")
         progressed = False

@@ -46,19 +46,24 @@ def inputs(language="rust"):
         helpers += ("c_capsule.py", "c_capsule_project.py", "c_capsule_build.py",
                     "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
-                    "c_application_dependencies.py", "captured_compiler_isolation.py", "c_dependency_fixture.py")
+                    "c_application_dependencies.py", "c_static_symbols.py", "c_static_archive_build.py",
+                    "captured_compiler_isolation.py", "c_dependency_fixture.py", "c_dependency_controls.py",
+                    "c_generator_authoring.py", "c_generator_fixture.py", "c_dependency_authoring.py")
     elif language == "go":
         helpers += ("go_capsule.py", "go_capsule_project.py", "go_capsule_build.py",
                     "qualify_go_capsules.py", "build_go_guest_capsules.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "go_application_dependencies.py", "captured_compiler_isolation.py",
-                    "go_dependency_fixture.py")
+                    "go_dependency_fixture.py", "go_dependency_authoring.py", "guest_authoring_frontend.py")
     elif language == "typescript":
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
                     "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
                     "typescript_guest/probe.py", "typescript_guest/componentize.mjs", "typescript_guest/bundle.mjs",
-                    "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "../.cargo/managed-guest.toml")
+                    "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "../.cargo/managed-guest.toml",
+                    "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
+                    "application_dependency_approval.py", "typescript_application_dependencies.py", "captured_compiler_isolation.py",
+                    "typescript_dependency_fixture.py", "typescript_dependency_authoring.py", "guest_authoring_frontend.py")
     elif language == "dotnet":
         helpers += ("dotnet_capsule.py", "build_dotnet_guest_capsules.py", "qualify_dotnet_capsules.py",
                     "dotnet_guest/project.py", "dotnet_guest/build.py", "dotnet_guest/compiler.py", "dotnet_guest/composer.py", "dotnet_guest/compatibility.py", "dotnet_guest/outputs.py", "dotnet_guest/sdk.py",
@@ -67,6 +72,7 @@ def inputs(language="rust"):
                     'application_dependencies.py', 'application_dependency_store.py', 'application_dependency_tools.py',
                     'application_dependency_approval.py', 'captured_compiler_isolation.py', 'dotnet_compiler_isolation.py',
                     'dotnet_application_dependencies.py', 'dotnet_dependency_fixture.py',
+                    'dotnet_resource_fixture.py', 'dotnet_guest/resources.py', 'guest_resources.py',
                     "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
@@ -109,9 +115,13 @@ def guide(output: Path, environment: dict[str, str], language="rust"):
 
 
 def qualify(output: Path, *, offline=False, language="rust", typescript_tools=None, dotnet_tools=None,
-            application_dependencies=False):
+            application_dependencies=False, static_application_dependencies=False, approved_generator=False):
     if language not in {"rust", "c", "go", "typescript", "dotnet"}:
         raise ValueError("unsupported authoring qualification language")
+    if static_application_dependencies and (language != "c" or not application_dependencies):
+        raise ValueError("static application qualification requires captured C source qualification")
+    if approved_generator and (language != "c" or not application_dependencies):
+        raise ValueError("approved generator qualification requires captured C source qualification")
     if language == "typescript" and typescript_tools is None:
         raise ValueError("explicit pinned TypeScript compiler installation required")
     creator, builder = create, build
@@ -171,6 +181,20 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         binaries = {name: target / "debug" / name for name in ("latent", "latentd", "examples/package", "examples/capsule_contracts", "examples/capsule_authoring")}
         if language == "go":
             binaries["examples/go_runtime_probe"] = target / "debug/examples/go_runtime_probe"
+        # Shared Cargo targets can be rebuilt by another qualification. Keep
+        # the exact completed products owned by this immutable observation.
+        owned_binaries = output / "native-binaries"
+        owned_binaries.mkdir(mode=0o700)
+        frozen = {}
+        for name, binary in binaries.items():
+            expected = file_identity(binary, 512 * 1024 * 1024)
+            owned = owned_binaries / name.replace("/", "-")
+            shutil.copyfile(binary, owned)
+            owned.chmod(0o700)
+            if file_identity(owned, 512 * 1024 * 1024) != expected or file_identity(binary, 512 * 1024 * 1024) != expected:
+                raise ValueError("completed native product changed during qualification capture")
+            frozen[name] = owned
+        binaries = frozen
         result["binaries"] = {name: file_identity(path) for name, path in binaries.items()}
         stage = "standalone-builds"
         built = []
@@ -180,6 +204,16 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         for template in TEMPLATES:
             project = creator(output / "projects" / template, template)
             executable_approval = None
+            if language == "dotnet" and template == "greeting":
+                from tools.dotnet_resource_fixture import install as install_resources
+                result["embeddedResources"] = install_resources(project)
+                if not application_dependencies:
+                    # This standard lookup fixture uses CLR string hashing.
+                    # Its seed needs the existing explicit noncrypto port;
+                    # dependency qualification declares the same port itself.
+                    from tools.dotnet_guest.entropy_grants import declare
+                    declare(project)
+                write_json(output / "embedded-resource-fixture.json", result["embeddedResources"])
             if language == "rust" and application_dependencies and template == "greeting":
                 from tools.rust_dependency_fixture import install
                 stage = "application-dependency-capture"
@@ -204,6 +238,16 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                 stage = "standalone-builds"
             if language == "c" and application_dependencies and template == "greeting":
                 from tools.c_dependency_fixture import install
+                stage = "application-dependency-capture"
+                result["applicationDependencies"] = install(project, output / "outside-project-dependencies")
+                write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
+                if approved_generator:
+                    from tools.c_generator_fixture import install as install_generator
+                    stage = "approved-c-generator"
+                    result["approvedGenerator"] = install_generator(project, output / "outside-project-generator")
+                stage = "standalone-builds"
+            if language == "typescript" and application_dependencies and template == "greeting":
+                from tools.typescript_dependency_fixture import install
                 stage = "application-dependency-capture"
                 result["applicationDependencies"] = install(project, output / "outside-project-dependencies")
                 write_json(output / "application-dependency-fixture.json", result["applicationDependencies"])
@@ -247,6 +291,22 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
                     "executable_approval": executable_approval} if language == "dotnet" else {}))
             built.append(artifact)
             result["builds"][template] = read_json(artifact / "BUILD-COMPLETE.json")
+            if approved_generator and template == "greeting":
+                stage = "generated-source-offline-rebuild"
+                rebuilt = builder(project, output / "builds/greeting-offline-rebuild",
+                    binaries["examples/capsule_contracts"], binaries["examples/package"],
+                    "https://github.com/KirilsTurkins/latent-service-fabric")
+                original_complete, rebuilt_complete = result["builds"][template], read_json(rebuilt / "BUILD-COMPLETE.json")
+                if any(original_complete[key] != rebuilt_complete[key] for key in ("sourceDigest", "sdkBindingDigest")):
+                    raise ValueError("generated C offline rebuild changed captured source or SDK identity")
+                for candidate in (artifact, rebuilt):
+                    material = next(item for item in read_json(candidate / "build-observation.json")["materials"]
+                                    if item["name"] == "c-generator-inputs")
+                    if set(material) != {"name", "digest", "size"} or material["digest"] != result["approvedGenerator"]["generatedInputsDigest"]:
+                        raise ValueError("generated C provenance does not bind the signable captured inputs")
+                result["builds"]["greeting-offline-rebuild"] = rebuilt_complete
+                result["approvedGenerator"]["offlineRebuild"] = "same-captured-source-and-sdk"
+                stage = "standalone-builds"
             if language == 'dotnet' and application_dependencies and template == 'greeting':
                 receipt = read_json(artifact / 'executable-input-outputs.json')
                 outputs = receipt['outputs']
@@ -322,7 +382,34 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
-            language=language, noncrypto_entropy=language == "dotnet" and application_dependencies)
+            language=language, noncrypto_entropy=language == "dotnet")
+        if language == "dotnet":
+            result["embeddedResources"]["runtimeExecution"] = "signed-admitted-component"
+        if approved_generator:
+            result["approvedGenerator"]["runtimeExecution"] = "signed-admitted-component"
+        if static_application_dependencies:
+            from tools.c_static_archive_build import build as build_archive
+            from tools.c_dependency_fixture import use_static_archive
+            project = output / "projects/greeting"
+            stage = "static-library-source-build"
+            archive_output = build_archive(project, output / "static-library", "https://github.com/KirilsTurkins/latent-service-fabric")
+            result["staticArchive"] = read_json(archive_output / "STATIC-ARCHIVE-COMPLETE.json")
+            stage = "static-library-explicit-capture"
+            result["staticApplicationDependencies"] = use_static_archive(project, archive_output / "library.a",
+                read_json(archive_output / "archive-profile.json"), output / "outside-static-library-inputs",
+                library_identity="outside-c-catalogue/library/2026.10")
+            write_json(output / "static-application-dependency-fixture.json", result["staticApplicationDependencies"])
+            stage = "static-library-component-build"
+            static_artifact = builder(project, output / "builds/greeting-static", binaries["examples/capsule_contracts"],
+                binaries["examples/package"], "https://github.com/KirilsTurkins/latent-service-fabric")
+            result["builds"]["greeting-static"] = read_json(static_artifact / "BUILD-COMPLETE.json")
+            stage = "static-library-sign-demo"
+            source_greeting = output / "builds/greeting"
+            static_builds = [static_artifact if path == source_greeting else path for path in built]
+            commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases-static", *static_builds)
+            stage = "static-library-enforced-node"
+            static_node = node_workflow(binaries["latent"], binaries["latentd"], output / "releases-static", output / "node-static", language="c")
+            result["staticNode"] = {"status": static_node["status"], "receiptDigest": file_identity(output / "node-static/workflow.json")["sha256"]}
         stage = "printed-guide"
         result["guide"] = guide(output / "guide", environment, language)
         stage = "final-integrity"

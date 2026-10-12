@@ -1,5 +1,8 @@
 """Capture, compile and package actual Java source; never sign or grant authority."""
 from __future__ import annotations
+
+from tools import guest_compatibility_context_build
+from tools.transaction_guest_project import packaging_arguments
 import json
 from pathlib import Path
 import tempfile
@@ -7,7 +10,8 @@ import time
 
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
-from tools import guest_compatibility_build, guest_resources, guest_dependency_inputs, guest_authoring_frontend
+from tools import (guest_compatibility_build, guest_resources, guest_dependency_inputs,
+                   guest_authoring_frontend, java_http_client, java_server_source, server_source)
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.java_guest import resources as java_resources
@@ -23,22 +27,28 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
                                         read_file, read_json, snapshot, write_json)
 
 BUILD_TYPE = "https://latent.dev/build/java-capsule/v1"
+ACTIVATION_PROFILE = "teavm-activation-fibers-v1"
 RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_capsule_build.py",
           "tools/application_dependencies.py", "tools/application_dependency_store.py",
           "tools/application_dependency_tools.py", "tools/java_application_dependencies.py", "tools/java_dependency_resolution.py",
-          "tools/application_dependency_approval.py", "tools/captured_compiler_isolation.py", "tools/java_annotation_processors.py",
           "tools/java_registry_tls.py",
           "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
-          "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
+          "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/class_origin.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
           "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
-          "examples/echo-contract/deployment.json")
+          "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py", "tools/java_guest/sdk.py",
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
+RECIPE += java_server_source.RECIPE
+RECIPE += ("tools/java_generator_authoring.py",)
+RECIPE += java_http_client.RECIPE
+RECIPE += ("tools/application_dependency_approval.py", "tools/captured_compiler_isolation.py", "tools/java_annotation_processors.py")
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -54,9 +64,14 @@ def retain_logs(source: Path, output: Path) -> None:
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, wasi_sdk: Path, *, gradle="gradle", timeout=900,
-          offline_cache: Path | None = None, executable_approval: str | None = None) -> Path:
+          offline_cache: Path | None = None, read_only_cache: Path | None = None,
+          runtime_profile: str | None = None, executable_approval: str | None = None) -> Path:
     if type(timeout) not in {int, float} or not 0 < timeout <= 900:
         raise ValueError("Java build deadline must be positive and at most 900 seconds")
+    if runtime_profile is not None and (type(runtime_profile) is not str or runtime_profile != ACTIVATION_PROFILE):
+        raise ValueError("unsupported Java runtime profile")
+    if offline_cache is not None and read_only_cache is not None:
+        raise ValueError("Java dependency cache selections are mutually exclusive")
     project_path = guest_dependency_inputs.application_root(checked_path(project_path), 'java')
     output = checked_path(output)
     if output == project_path or output in project_path.parents or (
@@ -64,14 +79,15 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         raise ValueError("build output must be outside source or beneath its target directory")
     repository = public_repository(repository)
     output = fresh(output)
-    commands, compiler, stage = None, None, "capture"
+    commands, compiler, stage, files = None, None, "capture", None
     started, start = int(time.time()), time.monotonic()
     try:
         observed = guest_dependency_inputs.capture_source(project_path, 'java')
         files = observed.files
         project, _lock, pins = validate(files)
         source_inputs = inventory(files)
-        recipe_inputs = inventory({path: read_file(ROOT / path) for path in RECIPE})
+        recipe_files = {path: read_file(ROOT / path) for path in RECIPE}
+        recipe_inputs = inventory(recipe_files)
         (output / "source-inputs.json").write_bytes(source_inputs)
         (output / "recipe-inputs.json").write_bytes(recipe_inputs)
         with tempfile.TemporaryDirectory(prefix="lsf-java-capsule-") as owned:
@@ -90,14 +106,16 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands = Commands(work, output, build_environment(temporary))
                 commands.deadline = start + timeout
                 stage = "application-dependencies"
-                approval, processor_stage, processor_inventory = None, None, None
+                approval, processor_stage = None, None
+                cache_selection = {"read_only_cache": read_only_cache} if read_only_cache is not None else {}
                 if has_processors:
-                    if offline_cache is None:
+                    if offline_cache is None and read_only_cache is None:
                         raise DependencyError('java-annotation-processors-require-captured-compiler-cache')
                     stage = 'processor-compiler-inputs'
                     compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
                         sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
-                        config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache)
+                        config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache,
+                        **cache_selection)
                     isolated = java_annotation_processors.isolation(compiler, processor_workspace)
                     compiler_jars = java_annotation_processors.compiler_classpath(compiler)
                     recipe_identity = digest(canonical({'recipe': digest(recipe_inputs), 'sourceSnapshot': digest(source_inputs)}))
@@ -109,26 +127,33 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                         raise DependencyError('java-annotation-processors-require-exact-executable-approval')
                     approval = approve_execution(verified, isolated, recipe_identity, executable_approval)
                 closure = prepare(observed.dependency_root, work, output, "java", execution_approval=approval)
-                if closure is not None and offline_cache is None:
+                if closure is not None and offline_cache is None and read_only_cache is None:
                     raise ValueError("captured Java builds require the verified offline compiler cache")
-                selected_inputs = processor_workspace / 'inputs' if has_processors else temporary
-                application_jars, application_inventory = classpath(closure, selected_inputs / "selected-application-jars")
+                input_root = processor_workspace / 'inputs' if has_processors else temporary
+                application_jars, application_inventory = classpath(closure, input_root / "selected-application-jars")
                 if has_processors:
                     processor_jars, processor_names, processor_inventory = java_annotation_processors.classpath(
-                        closure, selected_inputs / 'selected-processor-jars')
-                    processor_stage = (isolated, processor_jars, processor_names,
-                                       processor_workspace / 'outputs', compiler_jars)
+                        closure, input_root / 'selected-processor-jars')
                     write_json(output / 'java-processor-classpath.json', processor_inventory)
+                    processor_stage = (isolated, processor_jars, processor_names, processor_workspace / 'outputs', compiler_jars)
                 write_json(output / "java-classpath.json", application_inventory)
                 additional_resources, resource_sources = packaged_resources(closure, application_inventory, files)
                 application_resources = java_resources.materialize({**files, **resource_sources}, source_inputs,
                     additional_resources, temporary / "selected-application-resources")
                 stage = "compiler-inputs"
+                cache_selection = {"read_only_cache": read_only_cache} if read_only_cache is not None else {}
                 if compiler is None:
                     compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
                         sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
-                        config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache)
+                        config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache,
+                        **cache_selection)
                 (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
+                server_plan, automatic_bridge = None, None
+                if "server" in project:
+                    stage = "server-source-analysis"
+                    server_plan = java_server_source.analyze(compiler, work / "src", project["server"], application_jars, output)
+                    automatic_bridge = java_server_source.bridge(compiler.sdk, project["server"], server_plan)
+                    (output / "server-profile.json").write_bytes(java_server_source.profile(compiler, recipe_inputs))
                 materials = list(compiler.materials)
                 paths = {"contracts-tool": checked_path(contracts_tool)}
                 if packager is not None:
@@ -138,9 +163,17 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 write_json(output / "diagnostic-source.json", {
                     "capturedSource": str(temporary / "compiled/project/src/main/java"),
                     "requestedSource": str(project_path / "src")})
+                profile_selection = {"activation_profile": True} if runtime_profile == ACTIVATION_PROFILE else {}
+                if server_plan is not None:
+                    profile_selection.update(server_profile=True, server_bridge=automatic_bridge)
+                if application_resources is not None:
+                    profile_selection["application_resources"] = application_resources
+                if "httpClient" in project:
+                    profile_selection["http_client_profile"] = True
+                if processor_stage is not None:
+                    profile_selection["processor_stage"] = processor_stage
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
-                    application_classpath=application_jars, application_resources=application_resources,
-                    processor_stage=processor_stage)
+                    application_classpath=application_jars, **profile_selection)
                 component = read_file(component_path, 64 * 1024 * 1024)
                 (output / "component.wasm").write_bytes(component)
                 write_json(output / "bindings.json", generated)
@@ -148,6 +181,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 bindings_dir.mkdir()
                 for path in sorted((temporary / "compiled/bindings").iterdir()):
                     (bindings_dir / path.name).write_bytes(read_file(path))
+                if runtime_profile == ACTIVATION_PROFILE:
+                    for name in ("runtime-profile.json", "source-origins.json"):
+                        (output / name).write_bytes(read_file(temporary / "compiled" / name))
+                    recorded_profile = read_json(output / "runtime-profile.json")
+                    if recorded_profile.get("profile") != runtime_profile:
+                        raise ValueError("Java compiler runtime profile mismatch")
                 stage = "contracts"
                 # Include the selected world, closed adapter world and the exact
                 # staged dependency sources used by the compiler/ABI generator.
@@ -168,14 +207,28 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     package_files.update({'derived/annotation-processors/' + name: data for name, data in processor_sources.items()})
                     write_json(output / 'java-annotation-processors.json', generated['annotationProcessors'])
                 surface = read_json(derived / "surface.json")
+                recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
                 stage = "compatibility"
-                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface)
+                guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
+                    host_abi_profile=guest_compatibility_build.declared_host_abi(surface), files=files)
+                additional_assets = []
+                if "httpClient" in project:
+                    (output / "http-client-profile.json").write_bytes(java_http_client.profile(
+                        compiler.sdk, recipe_inputs, source_inputs, component))
+                    additional_assets.append(("http-client-profile.json", "asset", "application/vnd.latent.java.http.profile.v1+json"))
+                if server_plan is not None:
+                    actual_web = server_source.inspect(commands, compiler.paths["wasm-tools"], component_path,
+                                                       temporary / "compiled/wit", world=project["world"])
+                    declaration = server_source.emit(files, component, read_file(output / "server-profile.json"), server_plan,
+                                                     actual_web, source_inputs=source_inputs)
+                    additional_assets.extend([server_source.package(output, declaration),
+                        ("server-profile.json", "asset", "application/vnd.latent.server.source.profile.v1+json")])
                 package_inputs(output, project, surface, package_files, component,
-                               additional_resources=additional_resources)
+                               additional_resources=additional_resources, additional_assets=additional_assets)
                 if packager is not None:
                     stage = "package"
-                    commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                    commands.run("inspect", paths["packager"], "inspect", output / "package")
+                    commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                    commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
                 stage = "recheck"
                 observed.check_unchanged()
                 if snapshot(work, exclude=("dependencies", "application-vendor")) != files:
@@ -185,7 +238,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for path, item in zip(application_jars, application_inventory["artifacts"]):
                         if digest(read_file(path, 64 * 1024 * 1024)) != item["selectedDigest"]:
                             raise ValueError("selected Java classpath changed during compilation")
-                if inventory({path: read_file(ROOT / path) for path in RECIPE}) != recipe_inputs:
+                if inventory({path: read_file(ROOT / path) for path in recipe_files}) != recipe_inputs:
                     raise ValueError("Java authoring recipe changed during the build")
                 compiler.check_unchanged()
                 for name, path in paths.items():
@@ -201,16 +254,23 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"]), ("compiler-closure", compiler.compiler_inputs),
                     ("dependency-lock", files["vendor/lsf/sdk/java-guest/feasibility/dependencies.lock.json"]),
                     ("generated-bindings", read_file(output / "bindings.json"))))
+                if 'java-generated-inputs.json' in files:
+                    data = files['java-generated-inputs.json']
+                    materials.append({"name": "java-generator-inputs",
+                                      "digest": digest(data), "size": len(data)})
+                if runtime_profile == ACTIVATION_PROFILE:
+                    materials.extend({"name": name, "digest": digest(data), "size": len(data)} for name, data in (
+                        ("java-runtime-profile", read_file(output / "runtime-profile.json")),
+                        ("java-source-origins", read_file(output / "source-origins.json"))))
                 if closure is not None:
                     data = read_file(output / "application-dependencies.json", 8 * 1024 * 1024)
                     materials.extend([{"name": "application-dependency-closure", "digest": digest(data), "size": len(data)},
                                       {"name": "java-classpath-selection", "digest": digest(read_file(output / "java-classpath.json", 8 * 1024 * 1024)),
-                                      "size": (output / "java-classpath.json").stat().st_size}])
+                                       "size": (output / "java-classpath.json").stat().st_size}])
                 if has_processors:
-                    for name, path in [('java-processor-classpath', output / 'java-processor-classpath.json'),
-                                       ('java-annotation-processors', output / 'java-annotation-processors.json')]:
-                        data = read_file(path, 8 * 1024 * 1024)
-                        materials.append({'name': name, 'digest': digest(data), 'size': len(data)})
+                    for name in ('java-processor-classpath', 'java-annotation-processors'):
+                        data = read_file(output / (name + '.json'), 8 * 1024 * 1024)
+                        materials.append({"name": name, "digest": digest(data), "size": len(data)})
                 finished = int(time.time())
                 if finished < started or finished - started > 900 or time.monotonic() - start > timeout:
                     raise ValueError("Java build clock or overall deadline invalid")
@@ -222,11 +282,15 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                    "bindings": "lsf-java-wit-v1", "optimization": "O2", "javaHeapBytes": 4_194_304},
                     "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                     "dependencyCompleteness": "declared-inputs-incomplete"})
-                write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
+                guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
+                marker = {"formatVersion": 1,
                     "packageAssembled": packager is not None,
                     "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                     "componentDigest": digest(component), "sdkBindingDigest": generated["bindings"]["digest"],
-                    "buildSeconds": round(time.monotonic() - start, 6), "commands": compiler.records + commands.records})
+                    "buildSeconds": round(time.monotonic() - start, 6), "commands": compiler.records + commands.records}
+                if runtime_profile == ACTIVATION_PROFILE:
+                    marker["javaRuntimeProfile"] = runtime_profile
+                write_json(output / "BUILD-COMPLETE.json", marker)
             finally:
                 if compiler_dir.is_dir(): retain_logs(compiler_dir, output)
         return output
@@ -234,5 +298,5 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": (compiler.records if compiler else []) + (commands.records if commands else [])})
-        guest_compatibility_build.failure_report(output, "java", stage)
+        guest_compatibility_build.failure_report(output, "java", stage, files=files)
         raise

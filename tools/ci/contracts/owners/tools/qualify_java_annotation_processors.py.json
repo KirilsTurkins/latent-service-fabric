@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_annotation_processors.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "New maintained actual unlisted processor helper generation containment and signed-node qualification owner with exact native identities",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "f515307350daf4d6919a31e1cfa2e4bb72939c8a49ce400a2954f05dc6f1a516"
+}

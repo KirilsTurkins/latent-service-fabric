@@ -447,7 +447,7 @@ def full_queue(inventory: Any) -> None:
 def verify_fair_queue(observations: Any, report: dict[str, Any]) -> None:
     fields(observations, "holdersRunning queued full overflow overflowStatus unchangedFull firstHandoff secondHandoff cancelled holderResults queuedResults queuedStatuses idleSample fairnessOracle overflowBoundary")
     require(observations["fairnessOracle"] == "other-tenant-completes-before-uncancelled-same-tenant-spin"
-            and observations["overflowBoundary"] == "standalone-active-owner-ceiling-before-extra-journal-registration",
+            and observations["overflowBoundary"] == "standalone-active-owner-ceiling-with-retained-refusal-before-guest-admission",
             "invalid-fairness-witness")
     holders = ("queue-holder-first", "queue-holder-second")
     queued = ("queued-tests-first", "queued-tests-second", "queued-examples")
@@ -459,16 +459,10 @@ def verify_fair_queue(observations: Any, report: dict[str, Any]) -> None:
     full_queue(observations["full"])
     full_queue(observations["unchangedFull"])
     overflow = observations["overflow"]
-    fields(overflow, "schemaVersion command category data error requestDispatched outcomeKnown")
-    require(overflow["schemaVersion"] == "latent.cli.result.v1" and overflow["command"] == "invoke"
-            and overflow["category"] == "transport-failure" and overflow["requestDispatched"] is True
-            and overflow["outcomeKnown"] is False and isinstance(overflow["error"], dict)
-            and overflow["error"].get("grpcCode") == "resource-exhausted", "missing-queue-overflow-rejection")
-    absent = observations["overflowStatus"]
-    fields(absent, "schemaVersion command category data error requestDispatched outcomeKnown")
-    require(absent["schemaVersion"] == "latent.cli.result.v1" and absent["command"] == "activation get"
-            and absent["category"] == "not-found" and absent["requestDispatched"] is True
-            and absent["outcomeKnown"] is True, "missing-overflow-status-proof")
+    refused = invocation_failure(overflow, "queue-overflow", "resource-exhausted", "resource_exhausted")
+    require(all(value == 0 for value in cli_consumption(refused["consumption"]).values()),
+            "queue-overflow-started-guest-work")
+    terminal_status(observations["overflowStatus"], "queue-overflow", "resource_exhausted", refused["consumption"])
     phase_status(observations["firstHandoff"], queued[0], "running")
     handoff = fields(observations["secondHandoff"], "examplesResult secondHolderRunning secondQueuedRunning")
     phase_status(handoff["secondHolderRunning"], holders[1], "running")
@@ -634,12 +628,14 @@ def parity_trace(value: Any) -> None:
 def telemetry_correlation(call: Any, tenant: str, activation: str, expected_logs: int) -> None:
     require(call["activation_id"] == activation and call["tenant"] == tenant and call["service"] == "shared",
             "wrong-telemetry-tenant-owner")
-    root, parent = (("parity-root", "parity-parent") if tenant == "examples" else ("capability-root", "capability-parent"))
-    require(call["root_activation_id"] == root and call["parent_activation_id"] == parent, "wrong-telemetry-lineage")
+    # Both compared public boundaries create roots. Existing ancestry belongs
+    # exclusively to the trusted broker and cannot be supplied by this caller.
+    require(call["root_activation_id"] == activation and call["parent_activation_id"] is None,
+            "wrong-telemetry-lineage")
     digest(call["release_digest"])
     text(call["revision_id"], 512)
     require(uint(call["route_generation"]) > 0, "missing-telemetry-pin")
-    correlation = {"activation_id": activation, "root_activation_id": root, "parent_activation_id": parent,
+    correlation = {"activation_id": activation, "root_activation_id": activation,
                    "tenant": tenant, "service": "shared", "release": call["release_digest"],
                    "revision": call["revision_id"], "route_generation": call["route_generation"]}
     correlation["contract"] = "examples:echo/api@0.1.0" if tenant == "examples" else "tests:capabilities/api@0.1.0"
@@ -654,6 +650,7 @@ def telemetry_correlation(call: Any, tenant: str, activation: str, expected_logs
         attributes = row["attributes"] if isinstance(row, dict) and "attributes" in row else None
         require(isinstance(attributes, dict) and all(attributes.get(key) == item for key, item in correlation.items()),
                 "telemetry-correlation-mismatch")
+        require("parent_activation_id" not in attributes, "wrong-telemetry-lineage")
         require(not any(key.startswith("guest.") for key in attributes)
                 and "private-context-marker" not in canonical_json(row).decode(), "private-telemetry-field")
     for log in logs:
@@ -707,8 +704,8 @@ def capability_call(call: Any, name: str, direct: bool, before: int, after: int)
     output = decoded[0]
     if name == "snapshot":
         fields(output, "activation root parent principal trace deadline metadata remaining")
-        require(output["activation"] == identifier and output["root"] == "capability-root"
-                and output["parent"] == {"some": "capability-parent"} and output["metadata"] == [["guest.visible", "paired"]],
+        require(output["activation"] == identifier and output["root"] == identifier
+                and output["parent"] == {"none": None} and output["metadata"] == [["guest.visible", "paired"]],
                 "capability-context-owner-mismatch")
         principal = fields(output["principal"], "subject kind tenant service claims")
         require(principal["subject"] == "parity-tests" and principal["tenant"] == {"some": "tests"}

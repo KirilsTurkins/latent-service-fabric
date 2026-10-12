@@ -111,8 +111,8 @@ bool latent_transport_create(const latent_transport_config *config, latent_trans
         || config->connect_timeout_millis == 0 || config->connect_timeout_millis > LSF_MAX_TIMEOUT
         || config->maximum_in_flight == 0 || config->maximum_in_flight > 32
         || config->maximum_queued > 128 || config->maximum_retained_calls == 0 || config->maximum_retained_calls > 256
-        || config->maximum_request_bytes == 0 || config->maximum_request_bytes > 1048576
-        || config->maximum_response_bytes == 0 || config->maximum_response_bytes > 1048576
+        || config->maximum_request_bytes == 0 || config->maximum_request_bytes > 2097152
+        || config->maximum_response_bytes == 0 || config->maximum_response_bytes > 2097152
         || config->maximum_decoded_bytes == 0 || config->maximum_decoded_bytes > 8388608
         || config->maximum_owned_bytes < sizeof(latent_transport) || config->maximum_owned_bytes > 134217728
         || !ascii(config->tenant, 256, true)
@@ -135,6 +135,7 @@ bool latent_transport_create(const latent_transport_config *config, latent_trans
     owner->config.endpoint = (latent_string){NULL, 0};
     owner->config.bearer_token = (latent_bytes){NULL, 0};
     owner->profile.owner = owner;
+    owner->transaction.owner = owner;
     owner->usage.owned_bytes = sizeof(*owner);
     owner->usage.peak_owned_bytes = sizeof(*owner);
     *output = owner;
@@ -158,6 +159,8 @@ static void failure_fields(latent_profile_call *call, latent_profile_failure_cat
     call->failure.identity = call->metadata.identity;
     call->failure.outcome = call->dispatched ? LATENT_PROFILE_OUTCOME_KNOWLEDGE_UNKNOWN
                                            : LATENT_PROFILE_OUTCOME_KNOWLEDGE_NOT_DISPATCHED;
+    if (lsf_is_transaction(call->operation) && call->transaction_known)
+        call->failure.outcome = LATENT_PROFILE_OUTCOME_KNOWLEDGE_OBSERVED;
     call->failure.has_grpc_status = call->has_grpc_status;
     call->failure.grpc_status = call->grpc_status;
     call->failure.has_audit_ack = call->metadata.has_audit_ack;
@@ -177,15 +180,28 @@ void lsf_fail(latent_profile_call *call, latent_profile_failure_category categor
 static void dispatch(latent_profile_call *call) {
     ++call->owner->callback_depth;
     const latent_profile_client_failure *failure = call->failure.category == 0 ? NULL : &call->failure;
+    latent_transaction_client_failure tx_failure = {.transport = call->failure,
+        .identity = call->transaction_identity, .observed = call->transaction_observed};
+    latent_transaction_response_metadata tx_metadata = {.transport = call->metadata,
+        .identity = call->transaction_identity, .observed = call->transaction_observed};
     switch (call->operation) {
         case LSF_INVOKE: call->callback.invoke(failure == NULL ? &call->result.invoke : NULL, failure, call->user_data); break;
         case LSF_CANCEL: call->callback.cancel(failure == NULL ? &call->result.cancel : NULL, failure, call->user_data); break;
         case LSF_GET_ACTIVATION: call->callback.get_activation(failure == NULL ? &call->result.get_activation : NULL, failure, call->user_data); break;
+        case LSF_INSPECT_ACTIVATION_TREE: call->callback.inspect_activation_tree(failure == NULL ? &call->result.inspect_activation_tree : NULL, failure, call->user_data); break;
+        case LSF_INSPECT_HTTP_TARGET: call->callback.inspect_http_target(failure == NULL ? &call->result.inspect_http_target : NULL, failure, call->user_data); break;
         case LSF_GET_POLICY: call->callback.get_policy(failure == NULL ? &call->result.get_policy : NULL, failure, call->user_data); break;
         case LSF_LIST_POLICIES: call->callback.list_policies(failure == NULL ? &call->result.list_policies : NULL, failure, call->user_data); break;
         case LSF_LIST_CAPABILITIES: call->callback.list_capabilities(failure == NULL ? &call->result.list_capabilities : NULL, failure, call->user_data); break;
         case LSF_APPLY_POLICY: call->callback.apply_policy(failure == NULL ? &call->result.apply_policy : NULL, failure, call->user_data); break;
         case LSF_GET_POLICY_OPERATION: call->callback.get_policy_operation(failure == NULL ? &call->result.get_policy_operation : NULL, failure, call->user_data); break;
+#define LSF_TX_DISPATCH(method, request, response) \
+        case LSF_TX_##method: \
+            call->result.tx_##method.metadata = tx_metadata; \
+            call->callback.tx_##method(failure == NULL ? &call->result.tx_##method : NULL, \
+                failure == NULL ? NULL : &tx_failure, call->user_data); break;
+        LATENT_TRANSACTION_METHODS(LSF_TX_DISPATCH)
+#undef LSF_TX_DISPATCH
     }
     --call->owner->callback_depth;
 }
@@ -252,12 +268,15 @@ latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation,
     temporary.metadata.identity = identity(operation, request);
     temporary.failure = simple_failure(LATENT_PROFILE_FAILURE_CATEGORY_INVALID_REQUEST);
     temporary.failure.identity = temporary.metadata.identity;
+    if (lsf_is_transaction(operation) && request != NULL) lsf_transaction_identity(&temporary, request);
     uint64_t started = lsf_now();
     uint64_t timeout = options != NULL && options->has_timeout_millis ? options->timeout_millis : owner->config.timeout_millis;
     if (timeout > LSF_MAX_TIMEOUT || request == NULL) { dispatch(&temporary); return NULL; }
     if (timeout > owner->config.timeout_millis) timeout = owner->config.timeout_millis;
-    if (operation == LSF_INVOKE) {
-        const latent_profile_invoke_request *invoke = request;
+    if (operation == LSF_INVOKE || operation == LSF_TX_invoke_command || operation == LSF_TX_query) {
+        const latent_profile_invoke_request *invoke = operation == LSF_INVOKE ? request
+            : operation == LSF_TX_invoke_command ? &((const latent_transaction_invoke_command_request *)request)->invocation
+            : &((const latent_transaction_query_request *)request)->invocation;
         if (invoke->has_deadline_unix_millis) {
             struct timespec current;
             if (clock_gettime(CLOCK_REALTIME, &current) != 0) { dispatch(&temporary); return NULL; }
@@ -287,7 +306,9 @@ latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation,
     call->deadline = started + timeout;
     call->arena = (lsf_arena){.owner = owner, .maximum = owner->config.maximum_decoded_bytes};
     call->maximum_response = owner->config.maximum_response_bytes;
+    if (!lsf_is_transaction(operation) && call->maximum_response > 1048576) call->maximum_response = 1048576;
     if (operation == LSF_LIST_CAPABILITIES && call->maximum_response > 131072) call->maximum_response = 131072;
+    if ((operation == LSF_INSPECT_ACTIVATION_TREE || operation == LSF_INSPECT_HTTP_TARGET) && call->maximum_response > 65536) call->maximum_response = 65536;
     call->next = owner->calls;
     owner->calls = call;
     ++owner->usage.retained_calls;
@@ -296,8 +317,10 @@ latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation,
     if (call->active) ++owner->usage.in_flight;
     else ++owner->usage.queued;
     size_t maximum_request = owner->config.maximum_request_bytes;
-    if (operation >= LSF_GET_POLICY && maximum_request > 131072) maximum_request = 131072;
+    if (!lsf_is_transaction(operation) && maximum_request > 1048576) maximum_request = 1048576;
+    if (operation >= LSF_GET_POLICY && !lsf_is_transaction(operation) && maximum_request > 131072) maximum_request = 131072;
     if (operation == LSF_LIST_CAPABILITIES && maximum_request > 8192) maximum_request = 8192;
+    if ((operation == LSF_INSPECT_ACTIVATION_TREE || operation == LSF_INSPECT_HTTP_TARGET) && maximum_request > 8192) maximum_request = 8192;
     if (!lsf_request_valid(call, request)) lsf_fail(call, LATENT_PROFILE_FAILURE_CATEGORY_INVALID_REQUEST);
     else {
         call->request = lsf_allocate(owner, maximum_request + 5);
@@ -313,6 +336,8 @@ latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation,
                 call->request[0] = 0;
                 for (unsigned index = 0; index < 4; ++index) call->request[index + 1] = (uint8_t)(length >> (24 - 8 * index));
                 call->request_length = length + 5;
+                if (lsf_is_transaction(operation) && !lsf_transaction_snapshot(call))
+                    lsf_fail(call, LATENT_PROFILE_FAILURE_CATEGORY_LIMIT);
                 if (lsf_now() >= call->deadline) lsf_fail(call, LATENT_PROFILE_FAILURE_CATEGORY_DEADLINE);
             }
         }
@@ -323,6 +348,7 @@ latent_profile_call *lsf_start(latent_transport *owner, lsf_operation operation,
         call->in_callback = false;
         call->notified = true;
         --owner->usage.callbacks_pending;
+        lsf_arena_clear(&call->arena);
         lsf_deallocate(owner, call->request);
         lsf_deallocate(owner, call->response);
         lsf_release(call);
@@ -341,11 +367,13 @@ static latent_profile_call *method(latent_profile_client *client, const request_
 LSF_METHOD(invoke, LSF_INVOKE, latent_profile_invoke_request, latent_profile_invoke_callback)
 LSF_METHOD(cancel, LSF_CANCEL, latent_profile_cancel_request, latent_profile_cancel_callback)
 LSF_METHOD(get_activation, LSF_GET_ACTIVATION, latent_profile_get_activation_request, latent_profile_get_activation_callback)
+LSF_METHOD(inspect_activation_tree, LSF_INSPECT_ACTIVATION_TREE, latent_profile_inspect_activation_tree_request, latent_profile_inspect_activation_tree_callback)
 LSF_METHOD(get_policy, LSF_GET_POLICY, latent_profile_get_policy_request, latent_profile_get_policy_callback)
 LSF_METHOD(list_policies, LSF_LIST_POLICIES, latent_profile_list_policies_request, latent_profile_list_policies_callback)
 LSF_METHOD(list_capabilities, LSF_LIST_CAPABILITIES, latent_profile_list_capabilities_request, latent_profile_list_capabilities_callback)
 LSF_METHOD(apply_policy, LSF_APPLY_POLICY, latent_profile_apply_policy_request, latent_profile_apply_policy_callback)
 LSF_METHOD(get_policy_operation, LSF_GET_POLICY_OPERATION, latent_profile_get_policy_operation_request, latent_profile_get_policy_operation_callback)
+LSF_METHOD(inspect_http_target, LSF_INSPECT_HTTP_TARGET, latent_profile_inspect_http_target_request, latent_profile_inspect_http_target_callback)
 
 static void cancel_local(latent_profile_call *call) {
     if (call == NULL || call->completed) return;
@@ -361,8 +389,31 @@ static void destroy_profile(latent_profile_client *client) {
 
 const latent_profile_client_vtable *latent_transport_profile_vtable(void) {
     static const latent_profile_client_vtable vtable = {
-        invoke, cancel, get_activation, get_policy, list_policies, list_capabilities,
-        apply_policy, get_policy_operation, cancel_local, lsf_release, destroy_profile
+        invoke, cancel, get_activation, inspect_activation_tree, get_policy, list_policies, list_capabilities,
+        apply_policy, get_policy_operation, inspect_http_target, cancel_local, lsf_release, destroy_profile
+    };
+    return &vtable;
+}
+
+#define LSF_TX_METHOD(method, request, response) \
+static latent_profile_call *tx_##method(latent_transaction_client *client, \
+        const latent_transaction_##request *value, const latent_profile_call_options *options, \
+        latent_transaction_##method##_callback callback, void *user_data) { \
+    if (client == NULL || callback == NULL) return NULL; \
+    return lsf_start(client->owner, LSF_TX_##method, value, options, (lsf_callback){.tx_##method = callback}, user_data); \
+}
+LATENT_TRANSACTION_METHODS(LSF_TX_METHOD)
+#undef LSF_TX_METHOD
+
+latent_transaction_client *latent_transport_transaction(latent_transport *owner) {
+    return owner == NULL ? NULL : &owner->transaction;
+}
+const latent_transaction_client_vtable *latent_transport_transaction_vtable(void) {
+    static const latent_transaction_client_vtable vtable = {
+#define LSF_TX_ENTRY(method, request, response) tx_##method,
+        LATENT_TRANSACTION_METHODS(LSF_TX_ENTRY)
+#undef LSF_TX_ENTRY
+        cancel_local, lsf_release
     };
     return &vtable;
 }
