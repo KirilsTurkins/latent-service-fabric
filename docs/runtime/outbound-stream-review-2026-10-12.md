@@ -109,6 +109,17 @@ whole-process allocations and the trace identity. This extends the finite
 native observation; it does not establish adversarial coverage for every valid
 certificate/extension/root combination or stack/kernel memory.
 
+The private [component controls](../testing/evidence/outbound-host-tls-private-component-controls-2026-10-12.json)
+then execute the real canonical resource guest against a TLS peer, followed by
+a genuinely signed/admitted package through normal deployment binding, manager
+admission, quotas and cells. Both perform three fresh TLS 1.3 exchanges, assert
+the negotiated version and check actual Store, broker, pool, socket and original
+budget retirement. The [canonical](../../sdk/host-stream-tls/rustls-bounds/canonical-component-reference.rs)
+and [signed](../../sdk/host-stream-tls/rustls-bounds/signed-component-reference.rs)
+references retain their executed private source. These are synthetic host
+conformance fixtures; they do not qualify unchanged standard-language libraries,
+external packaged operators, or production installation.
+
 The first reconciliation CI head exposed a carried peer restriction that
 refused nonempty GET/HEAD bodies. The existing signed guest HTTP contract sends
 `payload` for GET, HEAD and POST. The peer now accepts explicitly framed bodies
