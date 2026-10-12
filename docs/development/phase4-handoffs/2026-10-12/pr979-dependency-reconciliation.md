@@ -18,11 +18,17 @@ after Cargo built an unoptimized libtest with debug symbols. Smoke now declares
 a finite symbol-free test recipe while explicitly retaining debug assertions
 and overflow checks. It preserves the artifact bound, workload, process-group
 cleanup, deadlines and all required cases. Full release measurement recipes and
-qualification requirements remain unchanged. 43 focused runner/evidence controls
-pass, including the original two Linux-only controls that still need the Linux
-rerun; no full scale, soak or calibration campaign was run.
+qualification requirements remain unchanged. All 95 combined Linux source
+controls pass without skips, including both original process ownership controls.
+Native packaging/parser 78, audit 48 and Wasmtime 354 tests pass; the two existing
+explicit measurement ignores remain. The maintained real smoke runner completes
+scale, soak and benchmark cases on a clean source tree with all clean shutdown
+reports. Its actual 212953848-byte libtest has no debug symbols and retains debug
+assertions and overflow checks. [Exact source and bounded receipt identities](../../../testing/evidence/rust-dependency-smoke-control-2026-10-13.json)
+preserve this evidence. No full scale, soak or calibration campaign was run.
 
 The preceding Java processor delivery and the additive floor-release SDK repair
-were merged normally. Current-head hosted checks and native parser/packaging plus
-actual smoke validation remain required before merge. The original failed CI
+were merged normally. The subsequent .NET protobuf receipt repair changes only
+two client metadata hashes; these native receipts retain their actual earlier
+source identity. Current-head hosted checks remain required before merge. The original failed CI
 artifacts and all dependency branches remain preserved.

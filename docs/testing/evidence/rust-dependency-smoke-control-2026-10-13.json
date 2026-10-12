@@ -1,0 +1,122 @@
+{
+  "schemaVersion": "latent.dependency-reconciliation.native-controls.v1",
+  "source": {
+    "commit": "65166f1cc9dfcf9df57bdc6c4df394eefa3e7c62",
+    "tree": "5328fd3b6a8d094745efd7d9fbd93013f7076f60",
+    "dirty": false,
+    "cargo_lock_sha256": "sha256:d5ad9b4fbfd85d10b5690307431071438cb513d736992a7eeff64b850284863d"
+  },
+  "build": {
+    "profile": "debug",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "wasmtime": "48.0.5",
+    "target": "x86_64-unknown-linux-gnu",
+    "overrides": {
+      "collector_surface": "libtest",
+      "recipe": "cargo-test-debug-without-symbols",
+      "debug": "0",
+      "debug_assertions": "true",
+      "overflow_checks": "true"
+    }
+  },
+  "binary": {
+    "sha256": "sha256:0c18956760303ce0da5c971130815419dbbaa85dfcdc5e200d53b9a66eea4c33",
+    "bytes": "212953848"
+  },
+  "observedCargoTestProfile": {
+    "opt_level": "0",
+    "debuginfo": 0,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "test": true
+  },
+  "fixtures": [
+    {
+      "name": "echo",
+      "sha256": "sha256:5a6663e17e8d204fe903c57f6f317cda2bbc45cc59f2739598c136722452d221",
+      "bytes": "24754"
+    },
+    {
+      "name": "generic",
+      "sha256": "sha256:0a0c562a3d9d59b24cd4fb2fce9fd29661059e13f44b4caab7d6ad506c18823e",
+      "bytes": "28056"
+    },
+    {
+      "name": "capabilities",
+      "sha256": "sha256:de6543beea9a62eb612400fbf96e6e62ceb302f4f855f19e92249f3f565b0e28",
+      "bytes": "40670"
+    }
+  ],
+  "smokeRuns": [
+    {
+      "kind": "scale",
+      "status": "passed",
+      "work": {
+        "budget_exhausted": false,
+        "commands": "38",
+        "invoke_attempts": "0"
+      },
+      "shutdownClean": true,
+      "raw": {
+        "bytes": "27548",
+        "path": "scale-01/measurements.jsonl",
+        "sha256": "sha256:530f71b46a655f4a90cfa8405accbb3f9518ba157e50d11886bfaf2822713a49"
+      }
+    },
+    {
+      "kind": "soak",
+      "status": "passed",
+      "work": {
+        "budget_exhausted": false,
+        "commands": "57",
+        "invoke_attempts": "24"
+      },
+      "shutdownClean": true,
+      "raw": {
+        "bytes": "41443",
+        "path": "soak-01/measurements.jsonl",
+        "sha256": "sha256:e188eed015fdcf160eeb3a7f909eaf745ba0fbbe5e61378651f3f3e49367f4df"
+      }
+    },
+    {
+      "kind": "benchmark",
+      "status": "passed",
+      "work": {
+        "budget_exhausted": false,
+        "commands": "220",
+        "invoke_attempts": "85"
+      },
+      "shutdownClean": true,
+      "raw": {
+        "bytes": "152800",
+        "path": "benchmark-01/measurements.jsonl",
+        "sha256": "sha256:d7d360b8290cbc966b98bf5cdfe8beb8fdb775677d7bf2c90e28fa500a4b145e"
+      }
+    }
+  ],
+  "sourceControls": {
+    "pythonLinuxPassed": 95,
+    "pythonLinuxSkipped": 0,
+    "packagingPassed": 78,
+    "auditPassed": 48,
+    "wasmtimePassed": 354,
+    "wasmtimeExistingIgnored": 2
+  },
+  "rawReceiptIdentities": {
+    "identity.json": "sha256:f618b87a592783a6e973894c2b88ec52de5d46a3ca5bedba54857cfca14015f0",
+    "suite.json": "sha256:f1c8c00c0f69291178aed9fc9835e018ae1aafdcfa2d260b837e69b319a1b0fd",
+    "aggregate.json": "sha256:ce19247ece212524ed07015a2ef60f6d51812f67e38494a535c3231bf6d0f690",
+    "build.log": "sha256:8defc63e7610b0c267a2336ec09b4fa64fd8c18ca8db1950a6309457915714ed",
+    "validation.log": "sha256:f145d79af91fea24033f31846e82a961989bb7e753a5c770bfa6babcb233bc13"
+  },
+  "fullScaleQualified": false,
+  "fullSoakQualified": false,
+  "nativeCalibrationQualified": false,
+  "fullPhaseQualification": "incomplete",
+  "packagedDistributionQualified": false,
+  "laterSourceChanges": [
+    "The later protobuf receipt repair changes only two .NET client metadata hashes."
+  ],
+  "issuesClosed": []
+}
