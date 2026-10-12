@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from tools import guest_compatibility_context_build
+from tools.transaction_guest_project import packaging_arguments
 import json
 from pathlib import Path
 import tempfile
@@ -125,8 +126,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
             stage = "recheck"
             observed.check_unchanged()
             if snapshot(work, exclude=('dependencies', 'application-vendor') if closure else ()) != files:

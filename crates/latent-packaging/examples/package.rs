@@ -16,20 +16,29 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let args = std::env::args().skip(1).collect::<Vec<_>>();
-    let limits = PackagingLimits::default();
+    let mut args = std::env::args().skip(1).collect::<Vec<_>>();
+    let mut limits = PackagingLimits::default();
+    if args.last().is_some_and(|argument| argument == "--phase4") {
+        args.pop();
+        limits.manifest_profile = latent_manifest::ManifestValidationProfile::phase4(
+            latent_core::BudgetProfile::Phase4,
+            latent_core::PHASE4_HOST_ABI_V1,
+            &latent_manifest::phase4_host_abi_digest(),
+        )
+        .map_err(|_| "unsupported transaction packaging profile")?;
+    }
     match args.as_slice() {
         [command, recipe, root, output] if command == "build" => {
-            build(recipe, root, output, None, limits)?;
+            build(recipe, root, output, None, &limits)?;
         }
         [command, recipe, inventory, root, output] if command == "build-with-sbom" => {
-            build(recipe, root, output, Some(inventory), limits)?;
+            build(recipe, root, output, Some(inventory), &limits)?;
         }
         [command, directory] if command == "inspect" => {
             let bundle = read_package_directory(Path::new(directory), limits).map_err(|error| error.message)?;
             print(&bundle);
         }
-        _ => return Err("usage: package build <recipe.json> <input-root> <new-output-dir> | build-with-sbom <recipe.json> <sbom-inputs.json> <input-root> <new-output-dir> | inspect <package-dir>".into()),
+        _ => return Err("usage: package build <recipe.json> <input-root> <new-output-dir> [--phase4] | build-with-sbom <recipe.json> <sbom-inputs.json> <input-root> <new-output-dir> [--phase4] | inspect <package-dir> [--phase4]".into()),
     }
     Ok(())
 }
@@ -39,19 +48,19 @@ fn build(
     root: &str,
     output: &str,
     inventory: Option<&str>,
-    limits: PackagingLimits,
+    limits: &PackagingLimits,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let bytes = read(recipe, limits.package.max_document_bytes)?;
-    let source = decode_package_source(&bytes, limits).map_err(|error| error.message)?;
+    let source = decode_package_source(&bytes, *limits).map_err(|error| error.message)?;
     let input =
-        read_package_input(Path::new(root), &source, limits).map_err(|error| error.message)?;
+        read_package_input(Path::new(root), &source, *limits).map_err(|error| error.message)?;
     let bundle = if let Some(path) = inventory {
         let bytes = read(path, limits.sbom.max_document_bytes)?;
         let inventory =
             decode_sbom_inventory(&bytes, limits.sbom).map_err(|error| error.message)?;
-        build_package_with_sbom(input, inventory, limits)
+        build_package_with_sbom(input, inventory, *limits)
     } else {
-        build_package(input, limits)
+        build_package(input, *limits)
     }
     .map_err(|error| error.message)?;
     write_package_directory(&bundle, Path::new(output)).map_err(|error| error.message)?;

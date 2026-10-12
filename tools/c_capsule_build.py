@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from tools import guest_compatibility_context_build, guest_runtime_receipts
+from tools.transaction_guest_project import packaging_arguments
 
 import json
 from pathlib import Path
@@ -134,8 +135,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
             stage = "recheck"
             if build_inputs(project_path) != (files, dependency_root) or snapshot(work, exclude=("dependencies", "application-vendor")) != files:
                 raise ValueError("project changed during the observed C build")
