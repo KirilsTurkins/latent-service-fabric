@@ -1,0 +1,55 @@
+{
+  "checks": {
+    "cancellationsPerKind": 65,
+    "ciCoverage": {
+      "baselineBlocks": 88,
+      "currentBlocks": 283,
+      "delegatedOwners": 150,
+      "passed": true
+    },
+    "clippyExitCode": 0,
+    "clippyWarnings": 42,
+    "existingStreamingIntegrationCasesPassed": 9,
+    "foundation": "passed",
+    "ignoredCasesUnchanged": [
+      "cache::measurement::cache_lookup_collector",
+      "values::tests::measurement::codec_collector"
+    ],
+    "libraryListedCases": 359,
+    "newCases": 3,
+    "originalCapacity": 64,
+    "ownedWarning": "large enum variant in unchanged Value enum",
+    "priorCasesRetained": 356,
+    "tableCasesPassed": 5
+  },
+  "evidence": {
+    "clippy.jsonl": "b529dfe06fef306cc726e01cd07080c56f65b56e9dfbf200bfc95e8133a29adc",
+    "library-ignored-list.log": "4c6206a43ce84840679945b20c5f2ef890b7fcaa5b938eea2f86396a16013f9c",
+    "library-list.log": "c5ccd5bca8a535d94483d7f948e3a0590d40bcc26cae4b69e22b6336baac81bf",
+    "streaming-build.jsonl": "6a4a558fb4c029375b87ccc63d883502f2b5d96956f16303c37681af022e0f9c",
+    "table-build-r3.jsonl": "473d986beb03a198ee1c23dc3cedb0d37f88d48c3c117cd474e5344ec527d5e5"
+  },
+  "nativeProducts": {
+    "library": {
+      "custody": "/work/pr923-fetch-native-frozen-20261013/library",
+      "sha256": "9e69c24333bdfc45dbf020bbf13615f56660d6b871fedae8505b68857e06bc38"
+    },
+    "streamingHttp": {
+      "custody": "/work/pr923-fetch-native-frozen-20261013/streaming-http",
+      "sha256": "4c0e725788bd993ec7e047ce3fb19d6d90b95a0b0378ba3b087ea13a63e5f11a"
+    }
+  },
+  "retainedFailures": [
+    "missing workspace member setup",
+    "missing external contract setup",
+    "disk-full and read-only Docker500 interruption"
+  ],
+  "schemaVersion": "latent.http-streaming-slot-cancellation.v1",
+  "scope": "native unpublished-slot rollback and existing provider controls only; not signed TypeScript fetch qualification",
+  "sourceBase": "4c32ee5519310d40731326792306e0b7dca0936d",
+  "sourceFiles": {
+    "crates/latent-wasmtime/src/host/streaming_http/body.rs": "8555c32f66ed0c2d67b14899bf3b788c20c4a0fdf05ec376afa22f7abe311c27",
+    "crates/latent-wasmtime/src/host/streaming_http/table.rs": "6d8f47bd4bc0cc653ca034c78a0ddafacaf8b97de82602457187f467fda2c09d",
+    "crates/latent-wasmtime/src/host/streaming_http/upload.rs": "616d2568b1bcfe1696688a500d83be890f57023fad18b7e0ab660af387feccaa"
+  }
+}
