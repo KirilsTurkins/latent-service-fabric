@@ -12,8 +12,9 @@ mod state_management;
 pub use local_transaction::projection::response as project_transaction_completion;
 pub use local_transaction::{LocalTransactionRuntime, LocalTransactionServices};
 pub use state_management::{
-    StateManagementAdmission, StateManagementBackend, StateManagementBinding,
-    StateManagementRecoveryAdmission, StateManagementReservation, StateManagementServices,
+    DisabledStateMaintenanceClock, StateMaintenanceClock, StateManagementAdmission,
+    StateManagementBackend, StateManagementBinding, StateManagementRecoveryAdmission,
+    StateManagementReservation, StateManagementServices,
 };
 #[cfg(test)]
 mod tests;

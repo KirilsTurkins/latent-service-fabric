@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "lsf.private.standard-rust-socket-negative.v1",
+  "sourceHead": "df38933fb37a22b3d7f7e8d8e2cdedc184d89992",
+  "target": "wasm32-unknown-unknown",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "api": "unchanged std::net::TcpStream::connect with literal SocketAddr",
+  "passedNegativeControl": true,
+  "returnedErrorKind": "Unsupported",
+  "moduleImports": [],
+  "moduleSha256": "932d1128eb9d28deb803a68081260031d3b9d90a5ea09ff611fbe4c87dd06299",
+  "moduleBytes": 1563502,
+  "sourceSha256": "e2f409bc807ea387eab752b63ae16581027c4f78306758650df9d80874e55f0e",
+  "hostSourceSha256": "b82d9e252fefcf65aca904065da6c6d77b02e15a1c07a8cd371c0e29961072b4",
+  "hostBinarySha256": "fe6071c60cf25a471ee6ccb63e651a8e92bace3589ec8f60584922e05cdffcda",
+  "hostCargoLockSha256": "17593d288ce7a98c256965a4447d4381ad1009085a62ac7c291be74693211c6c",
+  "stdlibIdentity": {
+    "name": "libstd-30fc09a4fa755135.rlib",
+    "sha256": "c3ec3ebfa10dcbd039ada1e1af42bc5352842ff969e44a6d2fec7039854fe2d9"
+  },
+  "observedFuelConsumed": 2,
+  "productionEnabled": false,
+  "ordinarySocketCompatibilityQualified": false,
+  "limits": [
+    "bounded core-Wasm execution is a standard-library feasibility blocker, not an admitted LSF component receipt",
+    "zero host imports means no socket effect can be implemented by merely granting the LSF stream profile",
+    "Rust runtime owner743 must implement the standard API port; canonical resource components do not supply it",
+    "other language standard-socket and guest-TLS entries remain independently unqualified"
+  ],
+  "standardSourceReference": "sdk/host-stream-tls/rustls-bounds/standard-rust-socket-reference.rs",
+  "standardSourceReferenceSha256": "e2f409bc807ea387eab752b63ae16581027c4f78306758650df9d80874e55f0e",
+  "hostSourceReference": "sdk/host-stream-tls/rustls-bounds/standard-rust-socket-host-reference.rs",
+  "hostSourceReferenceSha256": "b82d9e252fefcf65aca904065da6c6d77b02e15a1c07a8cd371c0e29961072b4"
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Add explicit direct development TLS trust/schema denials; retain all original TCP/refusal checks; no node readiness claim",
+  "module":"tools/tests/test_outbound_stream_tls_schema.py",
+  "cases":["StreamTlsSchema.test_explicit_host_tls_accepts_only_named_protected_pinned_trust","StreamTlsSchema.test_raw_root_bytes_keys_unknown_digest_and_null_policy_are_rejected","StreamTlsSchema.test_tcp_cannot_silently_use_tls_policy_and_host_tls_without_trust_is_denied"],
+  "guards":{
+    "StreamTlsSchema.test_explicit_host_tls_accepts_only_named_protected_pinned_trust":
+      "6ccd7c1676bde9339bed0dd6c950ebe7b0b6649bf1a15eb2b5e1434a64c24c1c",
+    "StreamTlsSchema.test_tcp_cannot_silently_use_tls_policy_and_host_tls_without_trust_is_denied":
+      "6ccd7c1676bde9339bed0dd6c950ebe7b0b6649bf1a15eb2b5e1434a64c24c1c",
+    "StreamTlsSchema.test_raw_root_bytes_keys_unknown_digest_and_null_policy_are_rejected":
+      "6ccd7c1676bde9339bed0dd6c950ebe7b0b6649bf1a15eb2b5e1434a64c24c1c"
+  },
+  "guardDefinitions":{
+    "6ccd7c1676bde9339bed0dd6c950ebe7b0b6649bf1a15eb2b5e1434a64c24c1c":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:7375c4e1caf56c424332f29c8706053ccc053004d839f83db9a6552608be08a1","class:setup-sha256:c092c8fee38aa100bdd80d95510cb85fb24e738612afe8982b7ef26bc4a63e14"]}
+  }
+}

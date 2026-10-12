@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "RestoreInstallationCustody.test_copied_catalog_hardlinks_are_independent_and_state_checkpoint_are_excluded",
+    "RestoreInstallationCustody.test_external_link_is_refused_before_creating_destination",
+    "RestoreInstallationCustody.test_source_change_during_copy_refuses_and_retains_failed_destination",
+    "RestoreInstallationCustody.test_v2_selection_changes_only_roots_and_creation_and_refuses_overlap"
+  ],
+  "guards": {
+    "RestoreInstallationCustody.test_copied_catalog_hardlinks_are_independent_and_state_checkpoint_are_excluded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a7e8133611b6a13343fa6ecdafc4127fa1ee74cc54624ecf8ea9a918cfce43ff",
+        "class:setup-sha256:f8902e75a7bf0c3a2a615884274f4bde86fcf32fa255aa17ff5559f1bbf2411a"
+      ],
+      "skipSites": []
+    },
+    "RestoreInstallationCustody.test_external_link_is_refused_before_creating_destination": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a7e8133611b6a13343fa6ecdafc4127fa1ee74cc54624ecf8ea9a918cfce43ff",
+        "class:setup-sha256:f8902e75a7bf0c3a2a615884274f4bde86fcf32fa255aa17ff5559f1bbf2411a"
+      ],
+      "skipSites": []
+    },
+    "RestoreInstallationCustody.test_source_change_during_copy_refuses_and_retains_failed_destination": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a7e8133611b6a13343fa6ecdafc4127fa1ee74cc54624ecf8ea9a918cfce43ff",
+        "class:setup-sha256:f8902e75a7bf0c3a2a615884274f4bde86fcf32fa255aa17ff5559f1bbf2411a"
+      ],
+      "skipSites": []
+    },
+    "RestoreInstallationCustody.test_v2_selection_changes_only_roots_and_creation_and_refuses_overlap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a7e8133611b6a13343fa6ecdafc4127fa1ee74cc54624ecf8ea9a918cfce43ff",
+        "class:setup-sha256:f8902e75a7bf0c3a2a615884274f4bde86fcf32fa255aa17ff5559f1bbf2411a"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_transaction_restore_installation.py",
+  "reviewReason": "Add actual stopped catalog hardlink custody, source mutation refusal and explicit v2 root selection controls without native qualification claims",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

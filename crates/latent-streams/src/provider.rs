@@ -34,6 +34,7 @@ pub(crate) struct Inner {
     pub installed: InstalledProvider,
     pub pools: Arc<ProviderPools>,
     pub resolvers: Vec<Option<Resolver>>,
+    pub tls: Vec<Option<Arc<crate::tls::InstalledTls>>>,
     pub connections: Mutex<[Weak<Connection>; 32]>,
     _configuration: ProviderMetadata,
 }
@@ -79,7 +80,21 @@ impl StreamProvider {
             "resources":{"kind":"stream","endpoints":config.destinations.iter().map(|d| &d.endpoint).collect::<Vec<_>>()}
         })).map_err(|_| error(StreamErrorCode::InvalidInput))?;
         let mut resolvers = Vec::with_capacity(config.destinations.len());
+        let mut tls = Vec::with_capacity(config.destinations.len());
         for destination in &config.destinations {
+            tls.push(match &destination.tls {
+                Some(input) => {
+                    if !crate::tls::ACCOUNTING_QUALIFIED {
+                        return Err(error(StreamErrorCode::Unsupported));
+                    }
+                    let metadata = pools.reserve_protocol_metadata(crate::tls::ROOT_ALLOWANCE)?;
+                    Some(Arc::new(crate::tls::InstalledTls {
+                        config: crate::tls::configure(input)?,
+                        _metadata: metadata,
+                    }))
+                }
+                None => None,
+            });
             resolvers.push(match &destination.resolution {
                 StreamResolution::Static { .. } => None,
                 StreamResolution::Dns {
@@ -122,6 +137,7 @@ impl StreamProvider {
                 installed,
                 pools,
                 resolvers,
+                tls,
                 connections: Mutex::new(std::array::from_fn(|_| Weak::new())),
                 _configuration: configuration,
             }),
