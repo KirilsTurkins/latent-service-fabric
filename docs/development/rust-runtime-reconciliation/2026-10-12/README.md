@@ -7,6 +7,10 @@ from #907 (`0114e05a6a5c0a08f4e0729b00bbd3da414f2767`) is preserved here. Unrela
 SDK/frontend changes already reconciled in development stay with their current
 owners. Both source snapshots retain their historical branches.
 
+The branch then incorporates PR #851's current `cc440c89` head by a normal
+merge, preserving the requested PR chain before #851's CI/admin merge. Its
+canonical trigger-digest and validator changes remain intact.
+
 The live bodies and comments of #743, #689 and #683 were reviewed on
 2026-10-12. Their cleanup comments explicitly record incomplete ordinary Rust
 thread/default-runtime/client qualification. This reconciliation closes none of
