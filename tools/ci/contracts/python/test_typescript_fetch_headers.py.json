@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Reviewed two added bounded header controls: native Node reference comparison for normalization/iteration/mutation and exact rejected-value/entry/immutable-header boundaries. Source-only controls use the existing Node availability predicate, owned temporary module files and a 30-second subprocess timeout; no existing test or command changed.",
+  "module": "tools/tests/test_typescript_fetch_headers.py",
+  "cases": [
+    "TypeScriptFetchHeadersTests.test_normalization_iteration_and_mutation_match_native_headers",
+    "TypeScriptFetchHeadersTests.test_profile_limits_and_response_guard_retain_existing_values"
+  ],
+  "guards": {
+    "TypeScriptFetchHeadersTests.test_normalization_iteration_and_mutation_match_native_headers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "skipSites": [
+        "skip-control-sha256:e76024c17a5f83f419edbff81c2c23d3e17035f5ef1c9c215d95dd7c49b20fbe",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:40a321d1ae4cc3c54a8e676844ec61f662846886ed00e613cb862bfd26138509",
+        "class:setup-sha256:09c3e61d3dc1401f340c9d5a60abafe5980898b0ab22236a6a34d51a472f8e77"
+      ]
+    },
+    "TypeScriptFetchHeadersTests.test_profile_limits_and_response_guard_retain_existing_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "skipSites": [
+        "skip-control-sha256:91dd2b57c6a7312397642c563387d56575d9ae7d74d016e684ceba809739857a",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:40a321d1ae4cc3c54a8e676844ec61f662846886ed00e613cb862bfd26138509",
+        "class:setup-sha256:09c3e61d3dc1401f340c9d5a60abafe5980898b0ab22236a6a34d51a472f8e77"
+      ]
+    }
+  }
+}
