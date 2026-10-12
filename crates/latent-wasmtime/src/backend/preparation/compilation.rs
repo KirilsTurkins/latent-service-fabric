@@ -151,29 +151,32 @@ impl super::super::PreparationContext {
         key: &PreparationKey,
         input: Compilation,
         job: &PreparationJob,
+        wait: Option<&WorkerWindow>,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        self.check_eligibility(
-            input.eligibility.as_ref(),
-            &key.release,
-            key.publication.as_ref(),
-        )?;
-        checked.check()?;
+        WorkerWindow::check(wait, || {
+            self.check_eligibility(
+                input.eligibility.as_ref(),
+                &key.release,
+                key.publication.as_ref(),
+            )
+        })?;
+        WorkerWindow::check(wait, || checked.check())?;
         self.validate_renderer_component(checked.artifact())?;
         let service = self
             .native_aot
             .as_ref()
             .ok_or_else(crate::backend::admission_association_error)?;
         let code = service.load(checked, &self.engine)?;
-        checked.check()?;
+        WorkerWindow::check(wait, || checked.check())?;
         let runtime = self.link_runtime(
             checked.artifact(),
             key,
             input,
             job,
             CompiledCode::Native(code),
-            None,
+            wait,
         )?;
-        checked.check()?;
+        WorkerWindow::check(wait, || checked.check())?;
         Ok(runtime)
     }
 

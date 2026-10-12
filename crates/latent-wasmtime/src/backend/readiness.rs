@@ -219,8 +219,10 @@ impl WasmtimeBackend {
                         _ => None,
                     };
                     let worker_wait = if read_wait.is_some()
-                        && matches!(&input, input::ArtifactInput::Source { .. })
-                    {
+                        && matches!(
+                            &input,
+                            input::ArtifactInput::Source { .. } | input::ArtifactInput::Native(_)
+                        ) {
                         Some(worker_wait::WorkerWindow::new(future.control()?))
                     } else {
                         None

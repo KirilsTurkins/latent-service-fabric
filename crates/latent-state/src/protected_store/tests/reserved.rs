@@ -323,6 +323,11 @@ fn protected_recovery_reads_use_reserved_worker_while_native_writer_reader_and_q
     .unwrap()
     .unwrap();
     assert_eq!(status, Some(b"original".to_vec()));
+    // Result delivery can precede the recovery worker's physical retirement.
+    // Keep the blocked ordinary reader and writer in place while it retires.
+    owner.ready.wait_for_snapshot(WATCHDOG, |snapshot| {
+        snapshot.active_recovery_reads == 0 && snapshot.recovery_accepted == 0
+    });
     let active = owner.snapshot().unwrap();
     assert_eq!((active.active_writes, active.active_reads), (1, 1));
     rendezvous.release(writer_ticket).unwrap();
