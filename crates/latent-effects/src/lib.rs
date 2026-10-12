@@ -7,7 +7,6 @@ pub mod dispatch;
 pub mod dispatch_store;
 mod effect_identity;
 pub mod payload;
-pub mod recovery_close;
 pub mod runtime;
 
 use latent_core::{

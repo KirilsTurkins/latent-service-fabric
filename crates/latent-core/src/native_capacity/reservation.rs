@@ -94,6 +94,23 @@ impl NativeReservation {
     /// Original deadline and node-close fence. The action must be short, must
     /// not await or perform I/O, and must not recursively acquire this owner.
     pub fn with_live<T>(&self, action: impl FnOnce() -> T) -> Result<T, NativeCapacityError> {
+        self.with_live_until(self.original_deadline(), action)
+    }
+
+    /// The original trusted clock, used before observing a separate retention
+    /// clock so the resulting delivery bound cannot gain the sampling delay.
+    #[must_use]
+    pub fn monotonic_now(&self) -> Instant {
+        self.lease.owner.clock.monotonic_now()
+    }
+
+    /// Further restrict an already prepaid reservation. This never extends its
+    /// original deadline or creates a slot, buffer allowance or execution grant.
+    pub fn with_live_until<T>(
+        &self,
+        deadline: Instant,
+        action: impl FnOnce() -> T,
+    ) -> Result<T, NativeCapacityError> {
         let state = self
             .lease
             .owner
@@ -102,7 +119,7 @@ impl NativeReservation {
             .map_err(|_| NativeCapacityError::Poisoned)?;
         self.lease
             .owner
-            .check(&state, self.lease.class, self.lease.deadline)?;
+            .check(&state, self.lease.class, self.lease.deadline.min(deadline))?;
         Ok(action())
     }
 

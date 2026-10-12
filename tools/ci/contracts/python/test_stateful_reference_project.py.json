@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Review installed qualified HTTP profile capture and original reference-app scope/drift refusals. Preserve every case, platform/skip guard and original immutable SDK/runtime identity; add refusal of obsolete descriptors and malformed profile inputs.",
+  "module": "tools/tests/test_stateful_reference_project.py",
+  "cases": [
+    "StatefulReferenceProject.test_application_world_refuses_unreviewed_auxiliary_and_immediate_authority",
+    "StatefulReferenceProject.test_draft_identity_is_bounded_before_the_language_creator_can_write",
+    "StatefulReferenceProject.test_notification_packaging_refuses_payload_scope_media_and_count_drift",
+    "StatefulReferenceProject.test_notification_selector_requires_exact_namespace_and_command_query_contract",
+    "StatefulReferenceProject.test_six_notification_captures_package_exact_profile_bytes_without_grants",
+    "StatefulReferenceProject.test_six_real_creators_keep_exact_sdk_closures_and_language_runtime_worlds",
+    "StatefulReferenceProject.test_unconfigured_http_emits_no_obsolete_descriptor_and_invalid_profile_writes_nothing"
+  ],
+  "guards": {
+    "StatefulReferenceProject.test_six_real_creators_keep_exact_sdk_closures_and_language_runtime_worlds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a323b3495a986c13d4d184c2128c4e1619384d6f0bc43373509fa1fd5b38e67a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "StatefulReferenceProject.test_six_notification_captures_package_exact_profile_bytes_without_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a323b3495a986c13d4d184c2128c4e1619384d6f0bc43373509fa1fd5b38e67a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "StatefulReferenceProject.test_notification_packaging_refuses_payload_scope_media_and_count_drift": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a323b3495a986c13d4d184c2128c4e1619384d6f0bc43373509fa1fd5b38e67a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "StatefulReferenceProject.test_notification_selector_requires_exact_namespace_and_command_query_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a323b3495a986c13d4d184c2128c4e1619384d6f0bc43373509fa1fd5b38e67a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "StatefulReferenceProject.test_unconfigured_http_emits_no_obsolete_descriptor_and_invalid_profile_writes_nothing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a323b3495a986c13d4d184c2128c4e1619384d6f0bc43373509fa1fd5b38e67a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "StatefulReferenceProject.test_draft_identity_is_bounded_before_the_language_creator_can_write": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a323b3495a986c13d4d184c2128c4e1619384d6f0bc43373509fa1fd5b38e67a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "StatefulReferenceProject.test_application_world_refuses_unreviewed_auxiliary_and_immediate_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a323b3495a986c13d4d184c2128c4e1619384d6f0bc43373509fa1fd5b38e67a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    }
+  }
+}

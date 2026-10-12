@@ -86,7 +86,13 @@ def _capture(owner, deadline: float, maximum: int, cancellation) -> tuple[bytes,
     used = 0
     finished = False
     while open_streams or not finished:
-        cancellation.check()
+        if finished:
+            # The owner has positively reaped the leader and its process group.
+            # Keep signal cancellation during bounded pipe draining, without
+            # reentering an expensive active-work observer after retirement.
+            getattr(cancellation, "check_after_exit", cancellation.check)()
+        else:
+            cancellation.check()
         if time.monotonic() >= deadline:
             raise BuildProcessError("command-deadline")
         progressed = False

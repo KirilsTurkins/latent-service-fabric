@@ -249,13 +249,57 @@ fn blocked_ordinary_native_destructor_cannot_occupy_reserved_recovery_worker() {
     assert!(finish(&owner).clean);
 }
 
-fn legacy_recovery_limits() -> StoreIoLimits {
-    let mut config = limits();
-    config.workers = 2;
-    config.active_reads = 1;
-    config.queued_jobs = 6;
-    config.recovery = Some(capacity());
-    config
+#[test]
+fn recovery_native_owner_retires_on_reserved_worker_when_ordinary_capacity_is_full() {
+    struct Native(mpsc::Sender<String>);
+    impl Drop for Native {
+        fn drop(&mut self) {
+            self.0
+                .send(std::thread::current().name().unwrap().to_owned())
+                .unwrap();
+        }
+    }
+    let (store, _, _) = store();
+    let mut config = recovery_limits();
+    config.accepted_jobs = 2;
+    config.queued_jobs = 2;
+    let owner = StoreIoOwner::new(store, config, |_| Ok(())).unwrap();
+    let rendezvous = Rendezvous::new(2);
+    let (notice, receiver) = mpsc::channel();
+    let mut jobs = Vec::new();
+    let mut tickets = Vec::new();
+    for kind in [StoreIoKind::Read, StoreIoKind::Write] {
+        let worker = rendezvous.clone();
+        let notice = notice.clone();
+        jobs.push(
+            owner
+                .submit(kind, 32, move |_| pause(&worker, &notice, ()))
+                .unwrap(),
+        );
+        tickets.push(ready(&receiver).1);
+    }
+    assert!(matches!(
+        owner.reserve_retained::<Native>(32),
+        Err(StoreIoError::AcceptedFull)
+    ));
+    let (destroyed, receiver) = mpsc::channel();
+    let mut recovery = owner.reserve_recovery_retained::<Native>(32).unwrap();
+    assert!(recovery.attach(Native(destroyed)).is_ok());
+    let retired = recovery.retire();
+    assert!(receiver
+        .recv_timeout(WATCHDOG)
+        .unwrap()
+        .starts_with("latent-store-recovery-"));
+    wait(retired);
+    assert_eq!(owner.snapshot().unwrap().recovery_accepted, 0);
+    assert_eq!(owner.snapshot().unwrap().physical_owners, 0);
+    for ticket in tickets {
+        rendezvous.release(ticket).unwrap();
+    }
+    for job in jobs {
+        wait(job).unwrap();
+    }
+    assert!(finish(&owner).clean);
 }
 
 fn capacity() -> StoreIoRecoveryCapacity {
@@ -266,6 +310,15 @@ fn capacity() -> StoreIoRecoveryCapacity {
         retained_bytes: 8_000,
         job_bytes: 4_000,
     }
+}
+
+fn legacy_recovery_limits() -> StoreIoLimits {
+    let mut config = limits();
+    config.active_reads -= capacity().workers;
+    config.queued_jobs -= capacity().queued_jobs;
+    config.accepted_jobs -= capacity().accepted_jobs;
+    config.recovery = Some(capacity());
+    config
 }
 
 #[test]
@@ -305,6 +358,9 @@ fn reserved_read_runs_with_ordinary_writer_and_queue_saturated() {
         17
     );
     assert_eq!(owner.snapshot().unwrap().active_writes, 1);
+    owner.wait_for_snapshot(WATCHDOG, |snapshot| {
+        snapshot.active_recovery_reads == 0 && snapshot.recovery_accepted == 0
+    });
     assert_eq!(owner.recovery_snapshot().unwrap().accepted, 0);
     rendezvous.release(ticket).unwrap();
     wait(write).unwrap();
@@ -387,7 +443,7 @@ fn lost_recovery_waiter_retains_live_work_and_bytes_until_physical_retirement() 
 #[test]
 fn recovery_capacity_is_finite_and_cannot_be_installed_over_live_owners() {
     let (store, _, _) = store();
-    let owner = StoreIoOwner::new(store, legacy_recovery_limits(), |_| Ok(())).unwrap();
+    let owner = StoreIoOwner::new(store, limits(), |_| Ok(())).unwrap();
     let retained = owner.reserve_retained::<u64>(100).unwrap();
     assert_eq!(
         owner.install_recovery_capacity(capacity()),
@@ -425,58 +481,5 @@ fn recovery_reconfiguration_and_oversized_jobs_fail_without_new_work() {
     );
     assert_eq!(owner.recovery_snapshot().unwrap().accepted, 0);
     assert_eq!(owner.snapshot().unwrap().retained_bytes, 0);
-    assert!(finish(&owner).clean);
-}
-
-#[test]
-fn recovery_native_owner_retires_on_reserved_worker_when_ordinary_capacity_is_full() {
-    struct Native(mpsc::Sender<String>);
-    impl Drop for Native {
-        fn drop(&mut self) {
-            self.0
-                .send(std::thread::current().name().unwrap().to_owned())
-                .unwrap();
-        }
-    }
-    let (store, _, _) = store();
-    let mut config = recovery_limits();
-    config.accepted_jobs = 2;
-    config.queued_jobs = 2;
-    let owner = StoreIoOwner::new(store, config, |_| Ok(())).unwrap();
-    let rendezvous = Rendezvous::new(2);
-    let (notice, receiver) = mpsc::channel();
-    let mut jobs = Vec::new();
-    let mut tickets = Vec::new();
-    for kind in [StoreIoKind::Read, StoreIoKind::Write] {
-        let worker = rendezvous.clone();
-        let notice = notice.clone();
-        jobs.push(
-            owner
-                .submit(kind, 32, move |_| pause(&worker, &notice, ()))
-                .unwrap(),
-        );
-        tickets.push(ready(&receiver).1);
-    }
-    assert!(matches!(
-        owner.reserve_retained::<Native>(32),
-        Err(StoreIoError::AcceptedFull)
-    ));
-    let (destroyed, receiver) = mpsc::channel();
-    let mut recovery = owner.reserve_recovery_retained::<Native>(32).unwrap();
-    assert!(recovery.attach(Native(destroyed)).is_ok());
-    let retired = recovery.retire();
-    assert!(receiver
-        .recv_timeout(WATCHDOG)
-        .unwrap()
-        .starts_with("latent-store-recovery-"));
-    wait(retired);
-    assert_eq!(owner.snapshot().unwrap().recovery_accepted, 0);
-    assert_eq!(owner.snapshot().unwrap().physical_owners, 0);
-    for ticket in tickets {
-        rendezvous.release(ticket).unwrap();
-    }
-    for job in jobs {
-        wait(job).unwrap();
-    }
     assert!(finish(&owner).clean);
 }

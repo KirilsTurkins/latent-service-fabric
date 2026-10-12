@@ -9,15 +9,15 @@ use std::sync::Arc;
 mod preparation_inspection;
 mod preparation_read_wait;
 mod prepared_activation;
+mod transaction_input;
+pub use transaction_input::CanonicalTransactionInput;
 mod prepared_readiness;
 mod prepared_use;
-mod transaction_input;
 pub use preparation_inspection::PreparationInspection;
 pub use preparation_read_wait::PreparationReadWait;
 pub use prepared_activation::PreparedActivation;
 pub use prepared_readiness::PreparedReadiness;
 pub use prepared_use::PreparedUse;
-pub use transaction_input::CanonicalTransactionInput;
 
 use latent_activation::ActivationEnvelope;
 use latent_artifacts::{ArtifactRepository, CapsuleArtifact};
@@ -76,6 +76,9 @@ pub struct GuestTrap {
     pub message: String,
     pub guest_backtrace: Vec<String>,
     pub metadata: Metadata,
+    /// Closed host-producer observation. Guest messages/metadata never derive
+    /// this field; it does not change the trap or assert an effect disposition.
+    pub diagnostic: Option<latent_core::diagnostic::ActivationDiagnostic>,
 }
 
 /// Stable reason why non-cooperative guest execution was stopped.
@@ -98,6 +101,14 @@ impl GuestInterruptionKind {
             BudgetDimension::CpuFuel => Some(Self::FuelExhausted),
             BudgetDimension::MemoryBytes => Some(Self::MemoryExhausted),
             BudgetDimension::WallTime => Some(Self::DeadlineExceeded),
+            BudgetDimension::ChildCalls
+            | BudgetDimension::OutboundRequests
+            | BudgetDimension::StateReadBytes
+            | BudgetDimension::StateWriteBytes
+            | BudgetDimension::BlobReadBytes
+            | BudgetDimension::BlobWriteBytes
+            | BudgetDimension::LogBytes
+            | BudgetDimension::EffectCount => None,
             _ => None,
         }
     }
@@ -249,11 +260,11 @@ pub trait ExecutionBackend: Send + Sync {
     /// A backend may retain this owned repository during bounded background work.
     /// The compatibility default wraps the original prepared owner intact; it
     /// cannot promise that an external backend defers instance reservations.
-    fn prepare_ready_from_repository(
-        &self,
+    fn prepare_ready_from_repository<'a>(
+        &'a self,
         repository: Arc<dyn ArtifactRepository>,
         key: PreparationKey,
-    ) -> BoxFuture<'_, Result<PreparedReadiness, PlatformError>> {
+    ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
         Box::pin(async move {
             self.prepare_from_repository(repository.as_ref(), &key)
                 .await
@@ -378,7 +389,10 @@ pub trait ExecutionBackend: Send + Sync {
         })
     }
 
-    fn release(&self, prepared: PreparedComponent) -> BoxFuture<'_, Result<(), PlatformError>>;
+    fn release<'a>(
+        &'a self,
+        prepared: PreparedComponent,
+    ) -> BoxFuture<'a, Result<(), PlatformError>>;
 }
 
 fn owned_preparation_unsupported() -> PlatformError {

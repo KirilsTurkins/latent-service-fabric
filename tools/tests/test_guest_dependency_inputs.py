@@ -96,6 +96,32 @@ class FrontendDependencyInputs(unittest.TestCase):
         self.assertEqual(receipt['manifestDigest'], digest(observed.files[dependencies.MANIFEST]))
         self.assertFalse(receipt['networkResolution'])
 
+    def test_controller_snapshot_preserves_outer_capture_for_application_recipe(self):
+        from tools.dev_workflow import snapshot as frontend_snapshot
+        self.capture('c', native=())
+        selected, _ = project.load(self.owner)
+        record, content = frontend_snapshot.observe(self.owner, selected['inputRoots'], tuple(selected['exclude']))
+        copied = self.root / 'controller-build-source'
+        frontend_snapshot.materialize(copied, record, content)
+        observed = inputs.capture_source(copied / 'app', 'c')
+        self.assertEqual(observed.dependency_root, copied)
+        self.assertEqual(content[inputs.DESCRIPTOR], (self.owner / inputs.DESCRIPTOR).read_bytes())
+        self.assertEqual(observed.files[dependencies.LOCK], (self.owner / dependencies.LOCK).read_bytes())
+        work, output = self.materialize(observed)
+        shutil.rmtree(self.library)
+        with patch.object(dependencies, 'fetch', side_effect=AssertionError('controller build contacted original feed')):
+            closure = dependencies.prepare(observed.dependency_root, work, output, 'c')
+        self.assertIsNotNone(closure)
+        self.assertEqual((work / 'dependencies/selected/library.txt').read_bytes(), b'actual selected library bytes')
+        self.assertEqual(closure.project, copied)
+
+    def test_captured_frontend_cannot_exclude_descriptor_from_recipe_snapshot(self):
+        value, _declaration, _lock = self.capture('c', native=())
+        value['exclude'].append(inputs.DESCRIPTOR)
+        (self.owner / inputs.DESCRIPTOR).write_bytes(common.encode(value))
+        with self.assertRaisesRegex(common.DevError, 'dependency-input-excluded'):
+            project.load(self.owner)
+
     def test_standalone_source_inventory_and_native_read_preserve_existing_layout(self):
         before = snapshot(self.app)
         observed = inputs.capture_source(self.app, 'rust')

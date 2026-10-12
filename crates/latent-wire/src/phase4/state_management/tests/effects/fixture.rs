@@ -56,6 +56,43 @@ pub(super) fn mutation(fixture: &Fixture, plan: c::EffectManagementPlan) -> c::M
     }
 }
 impl FixtureEffect {
+    pub async fn related_command(&self) -> (latent_rpc::transaction::v1::CommandSelector, String) {
+        let binding = &self.fixture.backend.0.bindings[0];
+        let authority = EffectAuthorityOwner::new(16, 4, 100).unwrap();
+        authority.publish(rule(binding)).unwrap();
+        let mut input = admission(binding);
+        input.key.client_key = "related-effect-command".into();
+        let command = latent_rpc::transaction::v1::CommandSelector {
+            namespace: self.fixture.target().namespace,
+            operation: input.key.operation.clone(),
+            entity: None,
+            client_key: input.key.client_key.clone(),
+            shared_recovery_scope: None,
+        };
+        let (effect, _) = publish(&self.fixture, input, authority).await;
+        (command, effect)
+    }
+
+    pub async fn rows(&self) -> Vec<(latent_state::embedded::RowKey, Vec<u8>)> {
+        self.fixture
+            .store
+            .with_store(StoreIoKind::RecoveryRead, 1024 * 1024, |engine| {
+                let view = engine.snapshot()?;
+                let mut rows = Vec::new();
+                for family in [
+                    latent_state::embedded::Family::Command,
+                    latent_state::embedded::Family::Outbox,
+                ] {
+                    rows.extend(view.scan(family, &[], 128, 1024 * 1024)?);
+                }
+                Ok(rows)
+            })
+            .unwrap()
+            .await
+            .unwrap()
+            .unwrap()
+    }
+
     pub fn request(&self, operation: &str) -> c::PlanEffectMutationRequest {
         c::PlanEffectMutationRequest {
             effect: Some(latent_rpc::transaction::v1::GetEffectRequest {
@@ -98,7 +135,7 @@ impl FixtureEffect {
     pub async fn settle_original(&mut self) {
         let expected = self.provider.as_ref().unwrap().original;
         self.dispatcher.resume().unwrap();
-        let settled = tokio::time::timeout(Duration::from_secs(5), async {
+        tokio::time::timeout(Duration::from_secs(5), async {
             loop {
                 let effect = self.effect.clone();
                 let (disposition, version) = self
@@ -133,15 +170,8 @@ impl FixtureEffect {
                 tokio::task::yield_now().await;
             }
         })
-        .await;
-        if settled.is_err() {
-            let disposition = self.disposition().await;
-            let physical = self.dispatcher.snapshot().unwrap();
-            eprintln!("original effect did not settle: disposition={disposition:?}, expected={expected:?}, active_jobs={}, physical_owners={}, paused={}, failure={:?}, sends={}",
-                physical.active_jobs, physical.physical_owners, physical.paused, physical.failure,
-                self.provider.as_ref().unwrap().sends.load(Ordering::SeqCst));
-        }
-        settled.unwrap();
+        .await
+        .unwrap();
         self.dispatcher.pause();
         assert_eq!(
             self.provider.as_ref().unwrap().sends.load(Ordering::SeqCst),
@@ -166,7 +196,6 @@ pub(super) async fn setup_with_provider(
             rule.profile.clone(),
             Arc::clone(&time),
             original,
-            super::dispatch_policy::DispatchPolicy::install(&fixture, &rule),
         ))
     });
     authority.publish(rule).unwrap();

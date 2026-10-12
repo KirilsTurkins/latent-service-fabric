@@ -338,7 +338,7 @@ fn transaction_delivery_owns_fixed_media_head_length_and_no_historical_headers()
 fn retry_requires_explicit_complete_original_fence_and_separate_request_identity() {
     let wire = json!({
         "command-id": "a".repeat(64),
-        "attempt-id": "b".repeat(64),
+        "attempt-id": "1",
         "transaction-id": "c".repeat(64),
         "owner-fence": STANDARD.encode([7;32])
     });

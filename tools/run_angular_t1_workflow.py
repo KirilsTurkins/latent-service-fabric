@@ -23,6 +23,7 @@ from tools.phase2_operator_process import (
 )
 from tools.phase2_operator_scenario import audit_pages, connect, stop
 from tools.phase3_web_assets import immutable_assets, revoked_assets
+from tools.phase3_web_failure import failed_web_call, failure_observation
 from tools.phase3_web_qualification import (
     admission, failure_recovery, http_rendering, independent_publications,
     native_cache_audit, renewal, tenant_denial,
@@ -43,6 +44,9 @@ class QualificationClient(Client):
         ("trigger", "list"), ("trigger", "delete"), ("trigger", "operation"), ("rollout", "start"),
     })
 
+    def observe_failed_call(self, value, call, status):
+        return failed_web_call(value, call, status)
+
     def call(self, *arguments, **options):
         operation = next((family + "-" + action for family, action in zip(arguments, arguments[1:])
                           if (family, action) in self.operations), "unclassified")
@@ -52,7 +56,8 @@ class QualificationClient(Client):
             raise WorkflowError(operation + ":" + str(failure)) from None
 
 
-def report_stage(name):
+def report_stage(name, client):
+    client.workflow_stage = name
     print("Angular T1: " + name, file=sys.stderr, flush=True)
 
 
@@ -93,7 +98,7 @@ def run(args):
         before = tree_inventory(node_root, client)
         profile = command(client, args.node, config, "check-config", True)
         require(tree_inventory(node_root, client) == before, "angular-check-config-created-storage")
-        report_stage("protected-configuration-checked")
+        report_stage("protected-configuration-checked", client)
         node = None
         shutdown = []
         try:
@@ -102,33 +107,34 @@ def run(args):
             foreign = foreign_profile(client, operator)
             publications = admission(client, args.fixture_root)
             tenant_denial(client, foreign, publications["angular"])
-            report_stage("signed-admission-and-tenant-checks-complete")
+            report_stage("signed-admission-and-tenant-checks-complete", client)
             assets = {name: immutable_assets(client, node, records[name], publications[name])
                       for name in ("angular", "alternate")}
-            report_stage("immutable-assets-before-renderer-preparation-checked")
+            report_stage("immutable-assets-before-renderer-preparation-checked", client)
             dormant = idle_inventory(client)
             require(dormant["cache"]["entries"] == "0", "publication-eagerly-prepared-renderer")
             started = time.monotonic()
+            client.preparation_phase = "cold"
             prepare(client, publications["angular"], 1)
             preparation_millis = int((time.monotonic() - started) * 1000)
             prepared = idle_inventory(client)
             require(prepared["cache"]["entries"] == "1"
                     and int(prepared["cache"]["compiledImageBytes"]) > 0, "angular-native-cache-empty")
             cold_native = native_cache_audit(client, records["angular"], "cache-miss")
-            report_stage("isolated-cold-preparation-complete")
+            report_stage("isolated-cold-preparation-complete", client)
             deployment = deploy(client, records["angular"], publications["angular"], "deploy-angular")
-            report_stage("selected-deployment-applied")
+            report_stage("selected-deployment-applied", client)
             invoke(client, records["angular"], publications["angular"], "angular-cold")
             invoke(client, records["angular"], publications["angular"], "angular-warm")
             cancellations = failure_recovery(client, records["angular"], publications["angular"])
-            report_stage("render-failure-and-cancellation-recovery-complete")
+            report_stage("render-failure-and-cancellation-recovery-complete", client)
             deployment, renewed = renewal(client, args.fixture_root, records["angular"], publications["angular"], deployment)
-            report_stage("evidence-renewal-and-stale-grant-checks-complete")
+            report_stage("evidence-renewal-and-stale-grant-checks-complete", client)
             deployment, revision, revoked = independent_publications(client, records, publications, deployment)
-            report_stage("independent-publication-revocation-and-cas-rollback-checked")
+            report_stage("independent-publication-revocation-and-cas-rollback-checked", client)
             assets["revoked"] = revoked_assets(client, node, records["alternate"], publications["alternate"])
             http = http_rendering(client, node, records["angular"], publications["angular"], deployment, revision)
-            report_stage("selected-lifecycle-and-http-checks-complete")
+            report_stage("selected-lifecycle-and-http-checks-complete", client)
             audit_pages(client, {"publish-angular", "publish-alternate", "renew-angular", "revoke-alternate"})
             before_restart = idle_inventory(client)
             previous_hits = native_cache_audit(client, records["angular"], "cache-hit")
@@ -139,6 +145,7 @@ def run(args):
             native_before = {name: tree_inventory(node_root / name, client)
                              for name in ("native-blobs", "native-receipts")}
             node = restarted(client, args, node_root, config, original)
+            client.preparation_phase = "restart"
             prepare(client, publications["angular"], 2)
             invoke(client, records["angular"], publications["angular"], "angular-restarted")
             warm_native = native_cache_audit(client, records["angular"], "cache-hit")
@@ -156,7 +163,7 @@ def run(args):
             native_after = {name: tree_inventory(node_root / name, client)
                             for name in ("native-blobs", "native-receipts")}
             require(native_before == native_after, "native-cache-restart-identity")
-            report_stage("authenticated-cache-and-restart-checks-complete")
+            report_stage("authenticated-cache-and-restart-checks-complete", client)
             require(tree_inventory(args.fixture_root, client) == original_fixture, "actual-angular-fixture-mutated")
             require(client.calls <= 256, "angular-cli-call-bound")
             result = {"schemaVersion": "latent.angular.t1.workflow.v1", "passed": True,
@@ -176,8 +183,15 @@ def run(args):
                       "shutdown": shutdown, "temporaryOutputsRemoved": True}
         finally:
             client.node = None
-            if node is not None:
-                node.close()
+            try:
+                if node is not None:
+                    node.close()
+            finally:
+                # Observational failure cannot replace the original refusal.
+                try:
+                    args.failure_observation = failure_observation(client, identity, shutdown, node)
+                except Exception:
+                    pass
     cancellation.check()
     return bounded_receipt(result)
 
@@ -190,7 +204,23 @@ def main():
     for name in ("cli", "node", "compiler", "fixture_root"):
         setattr(args, name, getattr(args, name).resolve(strict=True))
     require(sys.platform == "linux", "angular-t1-linux-required")
-    print(run(args))
+    try:
+        result = run(args)
+    except BaseException:
+        # This failed observation is emitted only after the original owner and
+        # temporary-root contexts unwind. It is never a successful receipt.
+        try:
+            failure = getattr(args, "failure_observation", {
+                "schemaVersion": "latent.angular.t1.workflow.v1", "passed": False,
+                "lastCompletedStage": "acquire", "failedCall": None,
+                "identityRechecked": False, "failedNodeGroupRetired": None,
+                "failedNodeCleanShutdown": None,
+            })
+            print(bounded_receipt(failure))
+        except Exception:
+            pass
+        raise
+    print(result)
 
 
 if __name__ == "__main__":

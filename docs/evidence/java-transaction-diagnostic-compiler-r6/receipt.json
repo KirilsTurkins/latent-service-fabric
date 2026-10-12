@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "latent.java.transaction-diagnostic-compiler-process.v2",
+  "attempt": "new-exported-r6",
+  "sourceCommit": "aab172ba3df2c4d7c6f6335b074400432055f174",
+  "originalToolProducer": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "originalToolArchive": "sha256:37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+  "originalToolPolicy": "sha256:ce36420661807326255232c0542f334045af5a637a157ad3c99b7e77328ffcba",
+  "compilerOnly": true,
+  "signedNodeExecutionQualified": false,
+  "compiled": true,
+  "componentExportAvailable": true,
+  "verificationReceiptRepresentation": {
+    "originalBytes": 1181,
+    "originalSha256": "sha256:f4e528173509e0aad277de76aa53b4d601ba8558be01b710aa2699446d72a5ae",
+    "gitBytes": 1159,
+    "gitSha256": "sha256:3ba2ffc81dfe10a163bac5d449d6930ae5bd9ec6340a2d11c3f15a5c714f5d26",
+    "onlyWindowsCrLfDifference": true
+  },
+  "guestToolInventoryDigest": "sha256:8272c08516a0369fee607f59a7befda340ca0f90462f394d2aa2d01928662a84",
+  "bundleHostAbi": "lsf-host-abi-phase3-v4",
+  "managedToolInventoryDigest": "sha256:f92cc6702378994e69d1da3bed423d5be72a569bb77702d33064a359901f73c2",
+  "seconds": 176.109151,
+  "compilerClosure": {
+    "bytes": 2902802,
+    "sha256": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b"
+  },
+  "componentDigest": "sha256:0640b1bb0a28a7cc80b785efd6c1a3c8d55612e0a70759be2f2a400268dec20f",
+  "componentBytes": 1013874,
+  "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+  "deferredHttpRequirementsDigest": "sha256:f9c50d3923dea8e7973946c87d0a9b08abe5a7b1af67acbbc3709d7e37cdc205"
+}

@@ -1,10 +1,13 @@
-use super::RECIPE;
-use crate::embedded::StoreError;
+use crate::{embedded::StoreError, namespace::compatibility::SchemaId};
 use sha2::{Digest, Sha256};
 
-/// Closed installed recipes. Selecting one describes data only; the original
-/// checkpoint, reviewed schema, quiescence and current writer fence still apply.
-/// Requests cannot provide an arbitrary key or transformer.
+const V1: &[u8] =
+    include_bytes!("../../../../../contracts/state/application-aggregate-v1.schema.json");
+const V2: &[u8] =
+    include_bytes!("../../../../../contracts/state/application-aggregate-v2.schema.json");
+
+/// Closed installed transformers, not a key, script, plugin or provider supplied
+/// by a management client. Original v1 recipe artifacts remain historical bytes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AggregateMigrationRecipe {
     Count,
@@ -15,18 +18,20 @@ impl AggregateMigrationRecipe {
     #[must_use]
     pub fn bytes(self) -> &'static [u8] {
         match self {
-            Self::Count => RECIPE,
+            Self::Count => include_bytes!(
+                "../../../../../contracts/state/aggregate-v1-to-v2-protected-migration.json"
+            ),
             Self::JavaAggregate => include_bytes!(
-                "../../../../../contracts/state/java-aggregate-v1-to-v2-migration.json"
+                "../../../../../contracts/state/java-aggregate-v1-to-v2-protected-migration.json"
             ),
         }
     }
 
     #[must_use]
-    pub fn identity(self) -> &'static str {
+    pub const fn identity(self) -> &'static str {
         match self {
-            Self::Count => "lsf.aggregate-migration.v1",
-            Self::JavaAggregate => "lsf.java-aggregate-migration.v1",
+            Self::Count => "lsf.aggregate-migration.v2",
+            Self::JavaAggregate => "lsf.java-aggregate-migration.v2",
         }
     }
 
@@ -35,7 +40,7 @@ impl AggregateMigrationRecipe {
         Sha256::digest(self.bytes()).into()
     }
 
-    pub(crate) fn key(self) -> &'static [u8] {
+    pub(crate) const fn key(self) -> &'static [u8] {
         match self {
             Self::Count => b"count",
             Self::JavaAggregate => b"aggregate/count",
@@ -48,4 +53,18 @@ impl AggregateMigrationRecipe {
             .find(|recipe| recipe.digest() == digest)
             .ok_or(StoreError::UnsupportedFormat)
     }
+}
+
+pub(super) fn schema_ids() -> Result<(SchemaId, SchemaId), StoreError> {
+    Ok((
+        SchemaId::from_definition(V1).map_err(|_| StoreError::Invalid)?,
+        SchemaId::from_definition(V2).map_err(|_| StoreError::Invalid)?,
+    ))
+}
+
+pub(super) fn schema_definitions() -> [(&'static [u8], [u8; 32]); 2] {
+    [
+        (V1, Sha256::digest(V1).into()),
+        (V2, Sha256::digest(V2).into()),
+    ]
 }

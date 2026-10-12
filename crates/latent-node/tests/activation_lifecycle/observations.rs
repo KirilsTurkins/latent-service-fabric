@@ -17,6 +17,44 @@ use super::support::{finish, pending, tenant, Harness};
 
 #[derive(Default)]
 struct Collector(Mutex<Vec<(ActivationObservationContext, ActivationObservation)>>);
+
+#[tokio::test]
+async fn pre_child_grant_denial_reaches_the_real_root_journal_without_new_owners() {
+    use super::backend::GRANT_DENIED;
+    use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
+    let harness = Harness::standard();
+    harness.backend.mode.store(GRANT_DENIED, Ordering::Release);
+    let receipt = finish(harness.manager.start(request("grant-denied-root")).unwrap()).await;
+    let ActivationOutcome::Failed { error, .. } = receipt.outcome else {
+        panic!("typed producer grant failure must fail the root");
+    };
+    let expected =
+        ActivationDiagnostic::new(DiagnosticStage::Binding, DiagnosticReason::GrantDenied);
+    assert_eq!(
+        ActivationDiagnostic::from_error(&error),
+        Some(expected.clone())
+    );
+    let page = harness
+        .manager
+        .journal()
+        .inspect_tree(
+            &tenant(),
+            &ActivationId("grant-denied-root".into()),
+            8,
+            None,
+        )
+        .unwrap();
+    assert_eq!(page.nodes.len(), 1);
+    assert!(page.nodes[0].parent_activation_id.is_none());
+    assert_eq!(page.nodes[0].diagnostic, Some(expected));
+    assert!(page.nodes[0].diagnostic_is_terminal);
+    assert_eq!(
+        page.nodes[0].terminal_state,
+        Some(ActivationTerminalState::Rejected)
+    );
+    assert!(!format!("{page:?}").contains("controlled binding denied"));
+    harness.assert_idle();
+}
 impl ActivationObserver for Collector {
     fn on_observation(
         &self,

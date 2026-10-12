@@ -27,8 +27,8 @@ pub use store::{
     PolicySnapshot, PolicySnapshotState, SealedPolicyDecision,
 };
 pub use store::{
-    MutationRequest, OperationReceipt, PolicyPage, PolicyPageRequest, PolicyRead, PolicyReadLease,
-    PolicyStore, PolicyStoreLimits, RecordKind, RecordView,
+    MutationRequest, OperationReceipt, PolicyControlGeneration, PolicyPage, PolicyPageRequest,
+    PolicyRead, PolicyReadLease, PolicyStore, PolicyStoreLimits, RecordKind, RecordView,
 };
 
 use latent_core::{PlatformError, PlatformErrorCode};
@@ -208,15 +208,8 @@ fn operation(contract: &str, name: &str) -> bool {
             "effect-terminate",
             "state-checkpoint",
             "purge-expired-payload",
-            "namespace-snapshot",
-            "namespace-inspect-restore",
-            "namespace-restore",
-            "namespace-schema-migrate",
-            "namespace-review-recovery",
-            "namespace-resume",
         ],
-        // Dispatch is a native current-purpose operation, not a guest import.
-        "latent:intents/staging@0.1.0" => &["stage", "dispatch"],
+        "latent:intents/staging@0.1.0" => &["stage"],
         _ => return false,
     };
     operations.contains(&name)

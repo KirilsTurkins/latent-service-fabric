@@ -45,7 +45,7 @@ public sealed partial class BoundedClient
         string[] statuses = HeaderValues(response, "grpc-status");
         if (statuses.Length == 1 && int.TryParse(statuses[0], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out int status) &&
             status.ToString(CultureInfo.InvariantCulture) == statuses[0]) state.GrpcStatus = status;
-        ReadAudit(response, state);
+        if (!state.Transactional) ReadAudit(response, state);
         if (bodyFailure is GraphLimitException) throw state.Error(Profile.FailureCategory.Limit, "encoded response exceeds client limit");
         if (bodyFailure is FormatException) throw state.Error(Profile.FailureCategory.Decode, "invalid unary response framing");
         if (bodyFailure is not null) throw bodyFailure;
@@ -57,24 +57,31 @@ public sealed partial class BoundedClient
             throw state.Error(Profile.FailureCategory.Decode, "invalid bounded RPC response headers");
         if (state.GrpcStatus != 0)
         {
+            if (state.Transactional) ReadAudit(response, state);
             Profile.ClientFailure failure = state.Failure(state.GrpcStatus == 4 ? Profile.FailureCategory.Deadline : Profile.FailureCategory.Rpc,
                 "remote RPC failed; recover by the original identity");
             failure = ReadPlatformError(response, state, failure, cancellationToken);
             bool observed = state.GrpcStatus is 3 or 5 or 6 or 7 or 9 or 10 or 12 or 16 &&
                 !(state.GrpcStatus == 5 && state.RecoveryRead) && state.AuditStatus is not ("outcome-unknown" or "audit-unavailable");
-            throw new Profile.ClientException(failure with { Outcome = observed ? Profile.OutcomeKnowledge.Observed : Profile.OutcomeKnowledge.Unknown });
+            throw state.Wrap(failure with { Outcome = !state.Transactional && observed ? Profile.OutcomeKnowledge.Observed : Profile.OutcomeKnowledge.Unknown });
         }
         if (payload is null) throw state.Error(Profile.FailureCategory.Decode, "unary response message is missing");
         var message = (IMessage)Activator.CreateInstance(typeof(Response))!;
-        Decode(payload, message, cancellationToken);
+        Decode(payload, message, cancellationToken, transactional: state.Transactional);
+        if (state.Transactional)
+        {
+            state.ValidateTransactionResponse!(message);
+            ReadAudit(response, state);
+        }
         return (Response)message;
     }
 
-    private void Decode(byte[] payload, IMessage message, CancellationToken cancellationToken, int? nodeLimit = null)
+    private void Decode(byte[] payload, IMessage message, CancellationToken cancellationToken, int? nodeLimit = null, bool transactional = false)
     {
-        var budget = new GraphBudget(config.MaxGraphBytes - 3L * payload.Length, nodeLimit ?? config.MaxGraphNodes, cancellationToken);
+        var budget = new GraphBudget(Math.Min(config.MaxGraphBytes, transactional ? 8 * 1024 * 1024 : config.MaxGraphBytes) - 3L * payload.Length,
+            nodeLimit ?? (transactional ? Math.Min(config.MaxGraphNodes, 4096) : config.MaxGraphNodes), cancellationToken);
         budget.Spend(0);
-        WireShape.Validate(payload, message.Descriptor, budget);
+        WireShape.Validate(payload, message.Descriptor, budget, transactional: transactional);
         using var memory = new MemoryStream(payload, writable: false);
         using CodedInputStream input = CodedInputStream.CreateWithLimits(memory, Math.Max(1, payload.Length), 16);
         message.MergeFrom(input);

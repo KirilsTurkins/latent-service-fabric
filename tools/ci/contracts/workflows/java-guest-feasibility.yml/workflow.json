@@ -1,6 +1,20 @@
 {
   "kind": "workflow",
   "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "java-guest-feasibility-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
     "name": "Java guest authoring",
     "on": {
       "pull_request": {
@@ -10,6 +24,8 @@
         "paths": [
           "sdk/java-guest/**",
           "examples/java-http-composition/**",
+          "examples/java-transaction-schema/**",
+          "contracts/state/application-aggregate-*.schema.json",
           "sdk/transaction-contract/**",
           "tools/**",
           "apps/**",
@@ -26,26 +42,12 @@
     },
     "permissions": {
       "contents": "read"
-    },
-    "concurrency": {
-      "group": "java-guest-feasibility-${{ github.ref }}",
-      "cancel-in-progress": true
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "compiler-component"
   ],
-  "reviewReason": "Preserve both transaction compiler/schema diagnostics and current separately signed Java HTTP composition qualification; all original commands, artifact paths, triggers and deadlines remain.",
+  "reviewReason": "Preserve the original Java workflow jobs and controls; expand source triggers for the explicit diagnostic fixture and schema helpers.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

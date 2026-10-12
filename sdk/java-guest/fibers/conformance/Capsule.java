@@ -10,6 +10,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 public final class Capsule {
     private static volatile boolean ready;
     private static final ThreadLocal<String> local = new ThreadLocal<>();
@@ -34,9 +36,14 @@ public final class Capsule {
         }
         static synchronized void release() { released = true; ClassMonitor.class.notifyAll(); }
     }
+    private static final class Resettable extends FutureTask<Integer> {
+        Resettable(java.util.concurrent.Callable<Integer> task) { super(task); }
+        boolean again() { return runAndReset(); }
+    }
     public Long run(Long mode) {
         if (mode == 1) return pools();
         if (mode == 2) return rootReturns();
+        if (mode == 3) return cachedAndStandardWaits();
         local.set("root");
         Thread worker = new Thread(() -> {
             if (local.get() != null) throw new IllegalStateException("thread-local-leaked");
@@ -166,5 +173,62 @@ public final class Capsule {
         // The activation retires idle pools and drains the accepted pending task
         // after this return. The application supplies no shutdown hook.
         return 42L;
+    }
+
+    private static Long cachedAndStandardWaits() {
+        try {
+            require(TimeUnit.NANOSECONDS.convert(Duration.ofSeconds(-1, 999_999_999)) == -1);
+            require(TimeUnit.MICROSECONDS.convert(Duration.ofSeconds(-1, 999_999_999)) == 0);
+            require(TimeUnit.SECONDS.convert(Duration.ofSeconds(-2, 500_000_000)) == -1);
+            require(TimeUnit.NANOSECONDS.convert(Duration.ofSeconds(Long.MAX_VALUE)) == Long.MAX_VALUE);
+            require(TimeUnit.NANOSECONDS.convert(Duration.ofSeconds(Long.MIN_VALUE)) == Long.MIN_VALUE);
+            for (TimeUnit unit : TimeUnit.values()) require(TimeUnit.of(unit.toChronoUnit()) == unit);
+            try { TimeUnit.of(ChronoUnit.MONTHS); throw new IllegalStateException("unsupported-time-unit-missing"); }
+            catch (IllegalArgumentException expected) { }
+
+            int[] repetitions = {0};
+            Resettable repeated = new Resettable(() -> ++repetitions[0]);
+            require(repeated.again() && repeated.again() && !repeated.isDone());
+            repeated.run();
+            require(repeated.get() == 3 && !repeated.again());
+            Resettable failed = new Resettable(() -> { throw new IllegalArgumentException("reset-cause"); });
+            require(!failed.again() && failed.isDone());
+            try { failed.get(); throw new IllegalStateException("reset-error-missing"); }
+            catch (ExecutionException error) { require(error.getCause() instanceof IllegalArgumentException); }
+
+            Thread unstarted = new Thread(() -> { });
+            Thread.currentThread().interrupt();
+            unstarted.join();
+            require(Thread.currentThread().isInterrupted());
+            try { Thread.sleep(-1); throw new IllegalStateException("negative-sleep-missing"); }
+            catch (IllegalArgumentException expected) { require(Thread.currentThread().isInterrupted()); }
+            try { Thread.sleep(0); throw new IllegalStateException("interrupted-sleep-missing"); }
+            catch (InterruptedException expected) { require(!Thread.currentThread().isInterrupted()); }
+            Thread.sleep(0, 1);
+            Object validation = new Object();
+            try { validation.wait(-1, 0); throw new IllegalStateException("negative-wait-missing"); }
+            catch (IllegalArgumentException expected) { }
+            synchronized (validation) {
+                try { validation.wait(0, 1_000_000); throw new IllegalStateException("nanos-wait-missing"); }
+                catch (IllegalArgumentException expected) { }
+            }
+
+            Object rendezvous = new Object();
+            boolean[] release = {false};
+            ExecutorService cached = Executors.newCachedThreadPool();
+            referencePools.add(cached);
+            Future<Integer> first = cached.submit(() -> {
+                synchronized (rendezvous) { while (!release[0]) rendezvous.wait(); }
+                return 20;
+            });
+            Future<Integer> second = cached.submit(() -> {
+                synchronized (rendezvous) { release[0] = true; rendezvous.notifyAll(); }
+                return 22;
+            });
+            require(first.get() + second.get() == 42);
+            // The activation retires idle cached workers. This unchanged source
+            // intentionally supplies no application shutdown hook.
+            return 42L;
+        } catch (InterruptedException | ExecutionException error) { throw new IllegalStateException(error); }
     }
 }

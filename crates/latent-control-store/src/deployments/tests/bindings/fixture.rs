@@ -54,8 +54,52 @@ impl Fixture {
         limits: latent_capabilities::broker::CapabilityBrokerLimits,
         structural_values: bool,
     ) -> Self {
+        Self::create_selected(local, limits, false, structural_values)
+    }
+    pub fn transactional() -> Self {
+        Self::create_selected(
+            false,
+            latent_capabilities::broker::CapabilityBrokerLimits::default(),
+            true,
+            false,
+        )
+    }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "One explicit package, catalog, policy and provider owner composition for boundary tests"
+    )]
+    fn create_selected(
+        local: bool,
+        limits: latent_capabilities::broker::CapabilityBrokerLimits,
+        transactional: bool,
+        structural_values: bool,
+    ) -> Self {
         let roots = [TempRoot::new(), TempRoot::new(), TempRoot::new()];
-        let bundle = consumer_package_with_values(structural_values);
+        let manifest_profile = if transactional {
+            package_fixture::transaction_profile()
+        } else {
+            latent_manifest::ManifestValidationProfile::default()
+        };
+        let bundle = if transactional {
+            let mut input = package_fixture::transactional_capsule();
+            package_fixture::mutate_json(&mut input, "capsule.json", |manifest| {
+                manifest["metadata"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("tenant");
+                manifest["metadata"]["name"] = json!("packaging");
+            });
+            latent_packaging::build_package(
+                input,
+                latent_packaging::PackagingLimits {
+                    manifest_profile,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
+        } else {
+            consumer_package_with_values(structural_values)
+        };
         let mut bundles = vec![bundle];
         if local {
             bundles.push(super::local::package());
@@ -69,7 +113,10 @@ impl Fixture {
         let releases = Arc::new(
             DirectoryArtifactRepository::open_enforced(
                 &roots[0].0,
-                Default::default(),
+                latent_artifacts::DirectoryArtifactRepositoryConfig {
+                    manifest_profile,
+                    ..Default::default()
+                },
                 Default::default(),
                 authority.clone(),
             )
@@ -91,7 +138,7 @@ impl Fixture {
             ))
             .unwrap();
         }
-        let store = open(&roots[1], &releases);
+        let store = open_selected(&roots[1], &releases, manifest_profile);
         if let Some(local_release) = local_release {
             let mut provider = fixtures::deployment("clock-provider", "tests", &local_release);
             provider.service = latent_core::ServiceId("clock-host".into());
@@ -235,15 +282,29 @@ fn policy(publication: &str) -> serde_json::Value {
     json!({"formatVersion":1,"tenant":"tests","rules":[{"id":"allow","effect":"allow","principals":[{"kind":"user","subject":"alice"}],"services":["packaging"],"publications":[publication],"capability":CAP,"operations":["now-nanos"],"resources":{"kind":"clock"},"ceiling":{"operations":4,"inputBytes":128,"outputBytes":256,"wallTimeMillis":5000}}]})
 }
 pub(super) fn open(root: &TempRoot, releases: &Arc<DirectoryArtifactRepository>) -> Store {
+    open_selected(
+        root,
+        releases,
+        latent_manifest::ManifestValidationProfile::default(),
+    )
+}
+pub(super) fn open_selected(
+    root: &TempRoot,
+    releases: &Arc<DirectoryArtifactRepository>,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
+) -> Store {
     run(Store::open_with_catalog(
         &root.0,
         releases.clone(),
-        Default::default(),
+        crate::DirectoryDeploymentRepositoryConfig {
+            manifest_profile,
+            ..Default::default()
+        },
         releases.lifecycle_authority(),
         Arc::new(
             latent_manifest::RuntimeCompatibilityProfile::new(
                 "wasmtime",
-                "48.0.4",
+                "48.0.5",
                 "x86_64-unknown-linux-gnu",
                 &["x86_64.sse2"],
                 64 * 1024 * 1024,
