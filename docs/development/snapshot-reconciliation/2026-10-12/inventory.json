@@ -160,7 +160,7 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 856,
-      "currentDeliveryHead": "5b0829c57751bb5c0cf8417d4ddbb4b195757476",
+      "currentDeliveryHead": "8d20925f8ab73d5af95be1e2541068239a62d299",
       "currentTitle": "Reconcile .NET standard resources and explicit wall clock"
     },
     {
@@ -1363,7 +1363,7 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 895,
-      "currentDeliveryHead": "e2824447b087d03dced34fd89d470aa73dd3ef37",
+      "currentDeliveryHead": "6252eec29c72ff5127e933332f1bacdb7bfc880e",
       "currentTitle": "Qualify ordinary Java server revision lifecycle"
     },
     {
@@ -3049,13 +3049,18 @@
         850
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
+      "disposition": "reconciled-merged",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
+      "closed": true,
       "currentDeliveryPr": 958,
       "currentDeliveryHead": "6ddace407529db9a9581f0e7f167937e8428df58",
-      "currentTitle": "Preserve original effect association refusals on current RPC owners"
+      "currentTitle": "Preserve original effect association refusals on current RPC owners",
+      "deliveredHead": "6ddace407529db9a9581f0e7f167937e8428df58",
+      "mergeCommit": "f3b72608f3584c37812923cd8dfe95aa3a47a522",
+      "mergedAt": "2026-10-12T19:39:27Z",
+      "exactHeadChecks": 51,
+      "reconciliation": "Actual wrong-command association refused without changing original Command/Outbox rows; merged after all51 exact-head checks passed. Issue400 remains open."
     },
     {
       "pullRequest": 959,
@@ -3458,13 +3463,13 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "active-current-owner-reconciliation",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 970,
-      "currentDeliveryHead": "8016f37f48d66fd6f87bdcf9ee0cf5655dc7a4d7",
-      "currentTitle": "WIP cleanup snapshot: fb2-pending-recovery-current53-r1"
+      "currentDeliveryHead": "84be0ce3202c2a95fbf4687de76871e5638dc899",
+      "currentTitle": "Reconcile restored-effect closure on current recovery owners"
     },
     {
       "pullRequest": 971,
@@ -3617,10 +3622,13 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "active-current-owner-reconciliation",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 974,
+      "currentDeliveryHead": "ac4b7f29ed3a56c00fef89998321943908fa3061",
+      "currentTitle": "WIP cleanup snapshot: fb2-state823-resume10"
     },
     {
       "pullRequest": 975,
@@ -3737,5 +3745,5 @@
     }
   ],
   "remainingOpenCount": 13,
-  "lastVerifiedOpenCount": 11
+  "lastVerifiedOpenCount": 10
 }
