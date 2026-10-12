@@ -191,7 +191,7 @@ fn metadata(name: &str, tenant: Option<&str>) -> ObjectMetadata {
     }
 }
 
-pub(super) fn artifact(marker: &str) -> CapsuleArtifact {
+pub(in crate::deployments) fn artifact(marker: &str) -> CapsuleArtifact {
     let digest = content_digest(marker.as_bytes());
     CapsuleArtifact {
         descriptor: ArtifactDescriptor {

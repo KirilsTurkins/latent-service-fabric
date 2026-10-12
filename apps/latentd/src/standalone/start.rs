@@ -16,6 +16,7 @@ use latent_wire::management::{
     LocalManagementPolicy, ManagementServiceAdapter, ManagementServices,
 };
 
+use super::startup_observation::{platform, record_platform, Stage};
 use super::{
     error, load, observations, transport, ActivationClock, Arc, LocalActivationManager,
     LocalQuotaProvider, LocalScheduler, PlatformError, PlatformErrorCode, RuntimeThreads,
@@ -40,6 +41,7 @@ pub(super) struct Catalogs {
     capabilities: Option<Arc<latent_capabilities::broker::ActivationCapabilityRuntime>>,
     providers: Option<Box<super::providers::ProviderRuntime>>,
     telemetry: Option<Box<super::telemetry::TelemetryOwner>>,
+    state: Option<super::state::StateBootstrap>,
     clock: Arc<dyn ActivationClock>,
 }
 
@@ -66,6 +68,30 @@ impl Catalogs {
         settings: &NodeSettings,
         clock: &Arc<dyn ActivationClock>,
     ) -> Result<(), PlatformError> {
+        if settings.state.is_some() != self.state.is_some() {
+            return Err(mode_error());
+        }
+        if let Some(state) = &self.state {
+            let observer = state.authority.rejection_observer();
+            if settings
+                .state
+                .as_ref()
+                .is_none_or(|settings| !state.matches(settings))
+                || !self
+                    .artifacts
+                    .lifecycle_authority()
+                    .rejection_observer_matches(&observer)
+                || self.policies.as_ref().is_none_or(|policies| {
+                    !policies
+                        .handle()
+                        .store()
+                        .rejection_observer_matches(&observer)
+                })
+            {
+                return Err(mode_error());
+            }
+            state.check_live()?;
+        }
         if let Some(capabilities) = &self.capabilities {
             capabilities.check_catalog(&self.artifacts.lifecycle_authority())?;
             capabilities.check_clock(clock)?;
@@ -152,6 +178,13 @@ impl Catalogs {
             settings.data_directory.join("releases"),
             settings.artifacts,
         )?);
+        let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
+        super::state::require_stateless_mode(
+            &settings.data_directory,
+            Arc::clone(&clock),
+            Arc::clone(&artifacts),
+        )
+        .await?;
         let deployments = Arc::new(
             DirectoryDeploymentRepository::open_observed_with_catalog(
                 settings.data_directory.join("deployments"),
@@ -175,7 +208,8 @@ impl Catalogs {
             capabilities: None,
             providers: None,
             telemetry: None,
-            clock: Arc::new(SystemActivationClock),
+            state: None,
+            clock,
         })
     }
 
@@ -215,8 +249,15 @@ impl Catalogs {
         runtime: Option<&tokio::runtime::Handle>,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
-        let profile = settings.check_config()?;
-        settings.persist_execution_profile()?;
+        let profile = platform(Stage::Configuration, settings.check_config())?;
+        let state = platform(
+            Stage::NativeCapacity,
+            super::state::StateBootstrap::new(settings, &clock),
+        )?;
+        platform(
+            Stage::ExecutionProfile,
+            settings.persist_execution_profile(),
+        )?;
         let audit = super::audit::AuditRuntime::open(
             settings.data_directory.join("audit"),
             settings.audit,
@@ -224,10 +265,15 @@ impl Catalogs {
                 .cloned()
                 .unwrap_or_else(tokio::runtime::Handle::current),
         )
-        .await?;
-        let supply_chain = match settings.supply_chain.open(
-            &settings.data_directory,
-            Arc::clone(&settings.runtime_profile),
+        .await
+        .inspect_err(|error| record_platform(Stage::AuditCatalog, error))?;
+        let supply_chain = match platform(
+            Stage::SupplyChainCatalog,
+            settings.supply_chain.open(
+                &settings.data_directory,
+                Arc::clone(&settings.runtime_profile),
+                settings.manifest_profile,
+            ),
         ) {
             Ok(authority) => authority,
             Err(failure) => {
@@ -250,33 +296,54 @@ impl Catalogs {
         let mut providers = None;
         let mut telemetry = None;
         let opened = async {
-            let artifacts = Arc::new(if let Some(authority) = &supply_chain {
-                let authority: Arc<dyn latent_artifacts::AdmissionAuthority> =
-                    if let Some(audit) = &audit {
-                        Arc::new(latent_artifacts::AuditedAdmissionAuthority::new(
-                            authority.clone(),
-                            audit.handle(),
-                        ))
-                    } else {
-                        authority.clone()
-                    };
-                DirectoryArtifactRepository::open_enforced(
-                    settings.data_directory.join("releases"),
-                    settings.artifacts,
-                    latent_artifacts::AdmissionStorageLimits::default(),
-                    authority,
-                )?
+            let artifacts = Arc::new(platform(
+                Stage::ArtifactCatalog,
+                if let Some(authority) = &supply_chain {
+                    let authority: Arc<dyn latent_artifacts::AdmissionAuthority> =
+                        if let Some(audit) = &audit {
+                            Arc::new(latent_artifacts::AuditedAdmissionAuthority::new(
+                                authority.clone(),
+                                audit.handle(),
+                            ))
+                        } else {
+                            authority.clone()
+                        };
+                    DirectoryArtifactRepository::open_enforced(
+                        settings.data_directory.join("releases"),
+                        settings.artifacts,
+                        latent_artifacts::AdmissionStorageLimits::default(),
+                        authority,
+                    )
+                } else {
+                    DirectoryArtifactRepository::open(
+                        settings.data_directory.join("releases"),
+                        settings.artifacts,
+                    )
+                },
+            )?);
+            if let Some(state) = &state {
+                artifacts
+                    .lifecycle_authority()
+                    .install_rejection_observer(state.authority.rejection_observer())?;
             } else {
-                DirectoryArtifactRepository::open(
-                    settings.data_directory.join("releases"),
-                    settings.artifacts,
-                )?
-            });
-            policies = super::policies::PolicyRuntime::open(
-                &settings.data_directory.join("capability-policies"),
-                settings.capability_policies,
-                artifacts.lifecycle_authority(),
-                runtime,
+                super::state::require_stateless_mode(
+                    &settings.data_directory,
+                    Arc::clone(&clock),
+                    Arc::clone(&artifacts),
+                )
+                .await?;
+            }
+            policies = platform(
+                Stage::PolicyCatalog,
+                super::policies::PolicyRuntime::open_with_rejection(
+                    &settings.data_directory.join("capability-policies"),
+                    settings.capability_policies,
+                    artifacts.lifecycle_authority(),
+                    runtime,
+                    state
+                        .as_ref()
+                        .map(|state| state.authority.rejection_observer()),
+                ),
             )?;
             let deployments = DirectoryDeploymentRepository::open_with_catalog_and_rollout_limits(
                 settings.data_directory.join("deployments"),
@@ -289,7 +356,8 @@ impl Catalogs {
                     |value| value.store,
                 ),
             )
-            .await?;
+            .await
+            .inspect_err(|error| record_platform(Stage::DeploymentCatalog, error))?;
             let deployments = if let Some(config) = settings.rollouts.and_then(|value| value.canary)
             {
                 deployments.with_canary(
@@ -306,11 +374,14 @@ impl Catalogs {
                 return Err(mode_error());
             }
             if let Some(settings) = settings.rollouts {
-                rollouts = Some(super::rollouts::RolloutRuntime::start(
-                    deployments.clone(),
-                    audit.as_ref().ok_or_else(mode_error)?.handle(),
-                    settings.coordinator,
-                    runtime.ok_or_else(mode_error)?,
+                rollouts = Some(platform(
+                    Stage::RolloutCatalog,
+                    super::rollouts::RolloutRuntime::start(
+                        deployments.clone(),
+                        audit.as_ref().ok_or_else(mode_error)?.handle(),
+                        settings.coordinator,
+                        runtime.ok_or_else(mode_error)?,
+                    ),
                 )?);
                 rollouts
                     .as_ref()
@@ -344,7 +415,8 @@ impl Catalogs {
                     artifacts.as_ref(),
                     std::time::Instant::now() + std::time::Duration::from_secs(30),
                 )
-                .await?;
+                .await
+                .inspect_err(|error| record_platform(Stage::CatalogAuditReconciliation, error))?;
             }
             if settings.providers.is_some() {
                 if settings
@@ -372,7 +444,8 @@ impl Catalogs {
                             telemetry: telemetry.as_ref().map(|owner| owner.handle.clone()),
                         },
                     )
-                    .await?,
+                    .await
+                    .inspect_err(|error| record_platform(Stage::ProviderCatalog, error))?,
                 ));
             }
             Ok::<_, PlatformError>((artifacts, deployments))
@@ -417,6 +490,7 @@ impl Catalogs {
             capabilities: providers.as_ref().map(|owner| owner.runtime.clone()),
             providers,
             telemetry,
+            state,
             clock,
         })
     }
@@ -470,7 +544,10 @@ impl StandaloneNode {
         threads: RuntimeThreads,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
-        let mut node = match Self::compose(&mut settings, &mut catalogs, clock) {
+        let mut node = match platform(
+            Stage::NodeComposition,
+            Self::compose(&mut settings, &mut catalogs, clock),
+        ) {
             Ok(node) => node,
             Err(failure) => {
                 if let Some(providers) = &catalogs.providers {
@@ -505,7 +582,9 @@ impl StandaloneNode {
         node.policies = catalogs.policies.take();
         node.providers = catalogs.providers.take();
         if let Err(failure) =
-            Box::pin(node.start_services(&settings, catalogs, control_runtime, threads)).await
+            Box::pin(node.start_services(&settings, catalogs, control_runtime, threads))
+                .await
+                .inspect_err(|error| record_platform(Stage::NodeServices, error))
         {
             // Keep every created async owner inside the startup lifetime. The
             // original startup failure remains a failure even if cleanup joins.
@@ -542,10 +621,44 @@ impl StandaloneNode {
     async fn start_services(
         &mut self,
         settings: &NodeSettings,
-        catalogs: Catalogs,
+        mut catalogs: Catalogs,
         control_runtime: tokio::runtime::Handle,
         threads: RuntimeThreads,
     ) -> Result<(), PlatformError> {
+        match (settings.state.as_ref(), catalogs.state.take()) {
+            (Some(state), Some(bootstrap)) => {
+                let supply_chain = catalogs.supply_chain.as_ref().ok_or_else(mode_error)?;
+                let policy = Arc::clone(
+                    self.policies
+                        .as_ref()
+                        .ok_or_else(mode_error)?
+                        .handle()
+                        .store(),
+                );
+                let (state, effects) = super::state::StandaloneStateRuntime::start(
+                    bootstrap,
+                    state,
+                    Arc::clone(supply_chain),
+                    policy,
+                    Some(super::state::InstalledStateServices {
+                        artifacts: catalogs.artifacts.clone(),
+                        deployments: catalogs.deployments.clone(),
+                        clock: Arc::clone(&self.clock),
+                        audit: self.audit.as_ref().map(super::audit::AuditRuntime::handle),
+                        http: super::state::InstalledHttpEffects::new(
+                            self.providers.as_deref(),
+                            settings.providers.as_ref().and_then(|p| p.http.as_ref()),
+                        )?,
+                    }),
+                    control_runtime.clone(),
+                )
+                .await?;
+                self.state = Some(state);
+                self.effects = Some(effects);
+            }
+            (None, None) => {}
+            _ => return Err(mode_error()),
+        }
         if let Some(capabilities) = &catalogs.capabilities {
             capabilities
                 .broker()
@@ -588,6 +701,20 @@ impl StandaloneNode {
         let management = self
             .policy_management(management, &catalogs)?
             .with_activation_journal(self.manager.journal());
+        let phase4 = self
+            .state
+            .as_ref()
+            .map(|state| {
+                state.transaction_rpc(
+                    self.manager.clone(),
+                    cleanup.clone(),
+                    settings.invocation.clone(),
+                    Arc::clone(&self.clock),
+                )
+            })
+            .transpose()?
+            .flatten()
+            .map(|runtime| management.phase4_adapter(runtime));
         if self.sampler.is_none() {
             self.sampler = Some(load::LoadSampler::start(
                 Arc::clone(&self.load),
@@ -601,6 +728,7 @@ impl StandaloneNode {
             settings.transport.clone(),
             invocation,
             management,
+            phase4,
             Arc::clone(&self.clock),
             control_runtime,
         )
@@ -651,11 +779,15 @@ impl StandaloneNode {
                     clock: Arc::clone(&self.clock),
                 },
             )?))?;
+        if let Some(state) = &mut self.state {
+            state.publish_ready(self.effects.as_ref().ok_or_else(mode_error)?)?;
+        }
         self.load.start_accepting();
         transport.handle().start_accepting()?;
         if let Some(http) = &self.http {
             http.handle().start_accepting()?;
         }
+        self.startup_deadline = None;
         Ok(())
     }
 
@@ -694,6 +826,10 @@ impl StandaloneNode {
                         .handle(),
                     clock: self.clock.clone(),
                     budget: settings.admission.budget_ceiling.clone(),
+                    transactions: self
+                        .state
+                        .as_ref()
+                        .and_then(super::state::StandaloneStateRuntime::transaction_http),
                 },
             )?);
         }
@@ -773,6 +909,8 @@ impl StandaloneNode {
             audit: None,
             rollouts: None,
             effects: None,
+            state: None,
+            startup_deadline: catalogs.state.as_ref().map(|state| state.deadline),
             policies: None,
             providers: None,
             supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),

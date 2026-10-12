@@ -19,9 +19,16 @@ impl LocalScheduler {
         }
         let id = request.permit.activation_id().clone();
         let (sender, mut receiver) = oneshot::channel();
-        let sequence = self.register_request(class, request, sender)?;
+        // The publication batch predates the dispatch guard so unwinding
+        // releases the fair turn before reclaiming any unaccepted assignment.
+        let mut publications = Vec::new();
+        let (sequence, dispatch) = self.register_owned_request(class, request, sender, true)?;
         let mut registration = WaitRegistration::new(Arc::clone(&self.inner), id, sequence);
-        self.inner.pump(class);
+        self.inner.pump_owned(
+            class,
+            dispatch.expect("immediate registration owns its fair turn"),
+            &mut publications,
+        );
         match receiver.try_recv() {
             Ok(result) => {
                 registration.disarm();
@@ -29,9 +36,8 @@ impl LocalScheduler {
             }
             Err(oneshot::error::TryRecvError::Empty) => {
                 registration.remove(PlatformErrorCode::ResourceExhausted);
-                // A racing pump can still own a selected, unaccepted handoff.
-                // Closing its receiver reclaims that exact lease and permit via
-                // PendingAssignment; it cannot create an executing activation.
+                // This bounded original pass found no fair capacity. Closing
+                // the receiver leaves no executing activation or pool waiter.
                 Err(error(
                     PlatformErrorCode::ResourceExhausted,
                     "immediate-capacity-unavailable",

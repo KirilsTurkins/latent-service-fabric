@@ -71,7 +71,7 @@ internal static class ProfileVectors
             Check(value.FromUnixMillis!.Value == 18446744073709551615UL, "activation-roots-service-time-selector.from_unix_millis");
         }
         {
-            var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {new Profile.ActivationTreeNode("host-generated-root", null, "host-generated-root", "running", null, 0UL, null, "trigger", null, null, null, false, "examples/java-http-adapter", 18446744073709551615UL)}, new Profile.PageResponse(null), true, false, true);
+            var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {new Profile.ActivationTreeNode("host-generated-root", null, "host-generated-root", "running", null, 0UL, null, "trigger", null, null, null, false, "examples/java-http-adapter", 18446744073709551615UL, null)}, new Profile.PageResponse(null), true, false, true);
             Check(value.SchemaVersion == 1U, "activation-root-real-ingress-identity.schema_version");
             Check(value.Nodes.Count == 1, "activation-root-real-ingress-identity.nodes.count");
             Check(value.Nodes[0].ActivationId == "host-generated-root", "activation-root-real-ingress-identity.nodes.0.activation_id");
@@ -88,6 +88,7 @@ internal static class ProfileVectors
             Check(value.Nodes[0].DiagnosticIsTerminal == false, "activation-root-real-ingress-identity.nodes.0.diagnostic_is_terminal");
             Check(value.Nodes[0].TargetService == "examples/java-http-adapter", "activation-root-real-ingress-identity.nodes.0.target_service");
             Check(value.Nodes[0].ReceivedAtUnixMillis == 18446744073709551615UL, "activation-root-real-ingress-identity.nodes.0.received_at_unix_millis");
+            Check(!(value.Nodes[0].TransactionStaging is not null), "activation-root-real-ingress-identity.nodes.0.transaction_staging.presence");
             Check(value.Page is not null, "activation-root-real-ingress-identity.page.presence");
             Check(!(value.Page!.NextPageToken is not null), "activation-root-real-ingress-identity.page.next_page_token.presence");
             Check(value.HistoryAvailable == true, "activation-root-real-ingress-identity.history_available");
@@ -105,7 +106,7 @@ internal static class ProfileVectors
             Check(value.RetainedHistoryOnly == true, "activation-tree-expired-is-not-absence-proof.retained_history_only");
         }
         {
-            var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {new Profile.ActivationTreeNode("child-a", "root-a", "root-a", "received", "resource_exhausted", 18446744073709551615UL, new Profile.ActivationDiagnostic(1U, new Profile.DiagnosticStage(3), new Profile.DiagnosticReason(1), new Profile.DiagnosticProfile(1), null, 16777216UL, 67108864UL, null, null, null), "service", "adapter", null, null, true, "", 0UL)}, new Profile.PageResponse("opaque-scoped-cursor"), true, false, true);
+            var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {new Profile.ActivationTreeNode("child-a", "root-a", "root-a", "received", "resource_exhausted", 18446744073709551615UL, new Profile.ActivationDiagnostic(1U, new Profile.DiagnosticStage(3), new Profile.DiagnosticReason(1), new Profile.DiagnosticProfile(1), null, 16777216UL, 67108864UL, null, null, null), "service", "adapter", null, null, true, "", 0UL, null)}, new Profile.PageResponse("opaque-scoped-cursor"), true, false, true);
             Check(value.SchemaVersion == 1U, "activation-tree-failed-preparation-before-guest.schema_version");
             Check(value.Nodes.Count == 1, "activation-tree-failed-preparation-before-guest.nodes.count");
             Check(value.Nodes[0].ActivationId == "child-a", "activation-tree-failed-preparation-before-guest.nodes.0.activation_id");
@@ -138,6 +139,7 @@ internal static class ProfileVectors
             Check(value.Nodes[0].DiagnosticIsTerminal == true, "activation-tree-failed-preparation-before-guest.nodes.0.diagnostic_is_terminal");
             Check(value.Nodes[0].TargetService == "", "activation-tree-failed-preparation-before-guest.nodes.0.target_service");
             Check(value.Nodes[0].ReceivedAtUnixMillis == 0UL, "activation-tree-failed-preparation-before-guest.nodes.0.received_at_unix_millis");
+            Check(!(value.Nodes[0].TransactionStaging is not null), "activation-tree-failed-preparation-before-guest.nodes.0.transaction_staging.presence");
             Check(value.Page is not null, "activation-tree-failed-preparation-before-guest.page.presence");
             Check(value.Page!.NextPageToken is not null, "activation-tree-failed-preparation-before-guest.page.next_page_token.presence");
             Check(value.Page!.NextPageToken! == "opaque-scoped-cursor", "activation-tree-failed-preparation-before-guest.page.next_page_token");
@@ -1228,6 +1230,52 @@ internal static class ProfileVectors
             Check(!(value.SelectedRevisionId is not null), "target-inspection-future-states-remain-descriptive.selected_revision_id.presence");
             Check(value.LiveGrantsChecked == false, "target-inspection-future-states-remain-descriptive.live_grants_checked");
         }
+        {
+            var value = new Profile.InspectActivationTreeResponse(1U, new Profile.ActivationTreeNode[] {new Profile.ActivationTreeNode("original-command", null, "original-command", "running", null, 0UL, null, "user", null, new Profile.ResourceBudget(0UL, 0UL, 0U, 0U, 0UL, 18446744073709551615UL, 0UL, 0UL, 0UL, 2U, null), null, false, "examples/aggregate", 1000UL, new Profile.TransactionStagingWitness(1U, 18446744073709551615UL, "1111111111111111111111111111111111111111111111111111111111111111", "2222222222222222222222222222222222222222222222222222222222222222", "3333333333333333333333333333333333333333333333333333333333333333", "publication:sha256:4444444444444444444444444444444444444444444444444444444444444444", 2U, 2U, 18446744073709551615UL, 18446744073709551615UL))}, new Profile.PageResponse(null), true, false, true);
+            Check(value.SchemaVersion == 1U, "activation-tree-original-captured-intent-witness.schema_version");
+            Check(value.Nodes.Count == 1, "activation-tree-original-captured-intent-witness.nodes.count");
+            Check(value.Nodes[0].ActivationId == "original-command", "activation-tree-original-captured-intent-witness.nodes.0.activation_id");
+            Check(!(value.Nodes[0].ParentActivationId is not null), "activation-tree-original-captured-intent-witness.nodes.0.parent_activation_id.presence");
+            Check(value.Nodes[0].RootActivationId == "original-command", "activation-tree-original-captured-intent-witness.nodes.0.root_activation_id");
+            Check(value.Nodes[0].Phase == "running", "activation-tree-original-captured-intent-witness.nodes.0.phase");
+            Check(!(value.Nodes[0].TerminalState is not null), "activation-tree-original-captured-intent-witness.nodes.0.terminal_state.presence");
+            Check(value.Nodes[0].LastUpdatedUnixMillis == 0UL, "activation-tree-original-captured-intent-witness.nodes.0.last_updated_unix_millis");
+            Check(!(value.Nodes[0].Diagnostic is not null), "activation-tree-original-captured-intent-witness.nodes.0.diagnostic.presence");
+            Check(value.Nodes[0].PrincipalKind == "user", "activation-tree-original-captured-intent-witness.nodes.0.principal_kind");
+            Check(!(value.Nodes[0].CallerService is not null), "activation-tree-original-captured-intent-witness.nodes.0.caller_service.presence");
+            Check(value.Nodes[0].GrantedBudget is not null, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.presence");
+            Check(value.Nodes[0].GrantedBudget!.CpuFuel == 0UL, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.cpu_fuel");
+            Check(value.Nodes[0].GrantedBudget!.MemoryBytes == 0UL, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.memory_bytes");
+            Check(value.Nodes[0].GrantedBudget!.ChildCalls == 0U, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.child_calls");
+            Check(value.Nodes[0].GrantedBudget!.OutboundRequests == 0U, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.outbound_requests");
+            Check(value.Nodes[0].GrantedBudget!.StateReadBytes == 0UL, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.state_read_bytes");
+            Check(value.Nodes[0].GrantedBudget!.StateWriteBytes == 18446744073709551615UL, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.state_write_bytes");
+            Check(value.Nodes[0].GrantedBudget!.BlobReadBytes == 0UL, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.blob_read_bytes");
+            Check(value.Nodes[0].GrantedBudget!.BlobWriteBytes == 0UL, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.blob_write_bytes");
+            Check(value.Nodes[0].GrantedBudget!.LogBytes == 0UL, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.log_bytes");
+            Check(value.Nodes[0].GrantedBudget!.EffectCount == 2U, "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.effect_count");
+            Check(!(value.Nodes[0].GrantedBudget!.WallTimeLimitMillis is not null), "activation-tree-original-captured-intent-witness.nodes.0.granted_budget.wall_time_limit_millis.presence");
+            Check(!(value.Nodes[0].EffectiveDeadlineUnixMillis is not null), "activation-tree-original-captured-intent-witness.nodes.0.effective_deadline_unix_millis.presence");
+            Check(value.Nodes[0].DiagnosticIsTerminal == false, "activation-tree-original-captured-intent-witness.nodes.0.diagnostic_is_terminal");
+            Check(value.Nodes[0].TargetService == "examples/aggregate", "activation-tree-original-captured-intent-witness.nodes.0.target_service");
+            Check(value.Nodes[0].ReceivedAtUnixMillis == 1000UL, "activation-tree-original-captured-intent-witness.nodes.0.received_at_unix_millis");
+            Check(value.Nodes[0].TransactionStaging is not null, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.presence");
+            Check(value.Nodes[0].TransactionStaging!.SchemaVersion == 1U, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.schema_version");
+            Check(value.Nodes[0].TransactionStaging!.ActivationSerial == 18446744073709551615UL, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.activation_serial");
+            Check(value.Nodes[0].TransactionStaging!.CommandId == "1111111111111111111111111111111111111111111111111111111111111111", "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.command_id");
+            Check(value.Nodes[0].TransactionStaging!.AttemptId == "2222222222222222222222222222222222222222222222222222222222222222", "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.attempt_id");
+            Check(value.Nodes[0].TransactionStaging!.TransactionId == "3333333333333333333333333333333333333333333333333333333333333333", "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.transaction_id");
+            Check(value.Nodes[0].TransactionStaging!.PublicationId == "publication:sha256:4444444444444444444444444444444444444444444444444444444444444444", "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.publication_id");
+            Check(value.Nodes[0].TransactionStaging!.StagedMutations == 2U, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.staged_mutations");
+            Check(value.Nodes[0].TransactionStaging!.CapturedIntents == 2U, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.captured_intents");
+            Check(value.Nodes[0].TransactionStaging!.StateWriteBytes == 18446744073709551615UL, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.state_write_bytes");
+            Check(value.Nodes[0].TransactionStaging!.ObservedAtUnixMillis == 18446744073709551615UL, "activation-tree-original-captured-intent-witness.nodes.0.transaction_staging.observed_at_unix_millis");
+            Check(value.Page is not null, "activation-tree-original-captured-intent-witness.page.presence");
+            Check(!(value.Page!.NextPageToken is not null), "activation-tree-original-captured-intent-witness.page.next_page_token.presence");
+            Check(value.HistoryAvailable == true, "activation-tree-original-captured-intent-witness.history_available");
+            Check(value.CursorExpired == false, "activation-tree-original-captured-intent-witness.cursor_expired");
+            Check(value.RetainedHistoryOnly == true, "activation-tree-original-captured-intent-witness.retained_history_only");
+        }
         Check(Profile.UnsignedDecimal.Format(Profile.UnsignedDecimal.Parse("0")) == "0", "uint64 roundtrip");
         Check(Profile.UnsignedDecimal.Format(Profile.UnsignedDecimal.Parse("9007199254740993")) == "9007199254740993", "uint64 roundtrip");
         Check(Profile.UnsignedDecimal.Format(Profile.UnsignedDecimal.Parse("9223372036854775808")) == "9223372036854775808", "uint64 roundtrip");
@@ -1244,6 +1292,6 @@ internal static class ProfileVectors
         Rejects(() => Profile.UnsignedDecimal.Parse("1\u0000"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\n"));
         Rejects(() => Profile.UnsignedDecimal.Parse("1\r\n"));
-        Console.WriteLine("shared profile vectors: 77");
+        Console.WriteLine("shared profile vectors: 78");
     }
 }

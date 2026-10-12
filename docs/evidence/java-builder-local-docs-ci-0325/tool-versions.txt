@@ -1,0 +1,4 @@
+{"uid": 23001, "python": "3.13.5 (main, Jul 22 2025, 01:46:07) [GCC 12.2.0]", "paths": {"python3": "/usr/local/bin/python3", "cargo": "/usr/local/cargo/bin/cargo", "rustc": "/usr/local/cargo/bin/rustc", "node": "/usr/local/bin/node", "docker": "/usr/bin/docker"}}
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+cargo 1.97.1 (c980f4866 2026-06-30)
+v24.19.0

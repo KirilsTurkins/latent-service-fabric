@@ -15,9 +15,10 @@ mod lifecycle;
 mod model;
 mod pool;
 mod target;
+pub mod transaction;
 
 pub use context::TrustedContext;
-pub use delivery::{Delivered, Delivery, DeliveryCause, Outcome};
+pub use delivery::{Delivered, Delivery, DeliveryCause, DeliveryFence, Outcome};
 pub use lifecycle::{Collector, Invocation, Request};
 pub use model::{HeaderView, HttpVersion, Method, RawHead, Scheme};
 pub use pool::{Cancellation, HttpPool, PoolSnapshot};
@@ -31,6 +32,9 @@ pub const MAX_REQUEST_BODY: usize = 64 * 1024;
 pub const MAX_RESPONSE_BODY: usize = 256 * 1024;
 pub const MAX_HEADERS: usize = 64;
 pub const MAX_HEADER_BYTES: usize = 16 * 1024;
+pub const MAX_HEADER_NAME_BYTES: usize = 64;
+pub const MAX_HEADER_VALUE_BYTES: usize = 4096;
+pub const MAX_MEDIA_TYPE_BYTES: usize = 256;
 pub const MAX_TARGET_BYTES: usize = 8192;
 pub const MAX_CONTEXT_BYTES: usize = 8192;
 pub const MAX_WIRE_BYTES: usize = 2 * 1024 * 1024;
@@ -52,6 +56,7 @@ pub enum HttpError {
     InvalidFraming,
     BodyTooLarge,
     InvalidContext,
+    Forbidden,
     InvalidResponse,
     Disconnected,
     DeadlineExceeded,
@@ -69,6 +74,7 @@ impl HttpError {
             Self::HeadersTooLarge => Some(431),
             Self::BodyTooLarge => Some(413),
             Self::InvalidResponse => Some(502),
+            Self::Forbidden => Some(403),
             Self::InvalidLimits | Self::InvalidContext => Some(500),
             Self::Disconnected | Self::DeadlineExceeded | Self::IncompleteDelivery => None,
             Self::InvalidTarget | Self::InvalidHeaders | Self::InvalidFraming => Some(400),

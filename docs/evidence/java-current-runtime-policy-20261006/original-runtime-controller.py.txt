@@ -1,0 +1,76 @@
+"""Launch only a new owned isolated current-source runtime qualification."""
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+import time
+
+out = Path(__file__).resolve().parent
+repo = Path('C:/Users/turkins/Desktop/latent-fabric-fb2-java717')
+commit = 'e6209fcd4e36627a25b5a4fde16a31b053080027'
+tree = 'eeaba464c03a9d800d7a1fae2ab5702d4de0635d'
+image = 'sha256:ea20dd3d8a7ffc13c5abbea462c1bfa75dd61c0b8bbffe2aac9f30fb9a2483e1'
+stem = 'lsf-fb2-java-current-runtime-e6209fcd-20261006-r1'
+def git(*args):
+    return subprocess.check_output(['git', *args], cwd=repo)
+assert git('rev-parse', 'HEAD').decode().strip() == commit
+assert git('rev-parse', 'HEAD^{tree}').decode().strip() == tree
+assert not git('status', '--porcelain')
+objects = [row.split(b' ', 1)[0] for row in git('rev-list', '--objects', '--no-walk', commit).splitlines()]
+pack = out / 'source-objects.pack'
+with pack.open('xb') as stream:
+    subprocess.run(['git', 'pack-objects', '--stdout'], cwd=repo,
+                   input=b'\n'.join(objects) + b'\n', stdout=stream, check=True, timeout=240)
+with pack.open('rb') as stream:
+    digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+identity = {'commit': commit, 'tree': tree, 'image': image, 'packSha256': digest,
+            'packBytes': pack.stat().st_size, 'actualGitObjectCount': len(objects),
+            'sourceHistoryAttested': False, 'allCurrentTrackedFilesPreserved': True,
+            'oldExecutionResultsBorrowed': False,
+            'collectorSha256': {name: hashlib.sha256((out / name).read_bytes()).hexdigest()
+                                for name in ('setup.py', 'runner.py', 'controller.py')}}
+(out / 'source-identity.json').write_text(json.dumps(identity, indent=2) + '\n')
+volumes = {kind: stem + '-' + kind for kind in ('source', 'target', 'cargo', 'fixtures')}
+for volume in volumes.values():
+    assert subprocess.run(['docker', 'volume', 'inspect', volume], capture_output=True, timeout=30).returncode != 0
+    subprocess.run(['docker', 'volume', 'create', '--label', 'latent.owner=feedback2-java',
+                    '--label', 'latent.source=' + commit, volume], capture_output=True, check=True, timeout=30)
+results = out / 'results'
+results.mkdir(exist_ok=False)
+base = ['docker', 'run', '--name', stem + '-setup', '--network', 'none', '--cpus', '1',
+        '--memory', '1g', '--pids-limit', '128']
+for kind, destination in (('source', '/source'), ('target', '/build/target'), ('cargo', '/cargo'), ('fixtures', '/fixtures')):
+    base += ['--mount', 'type=volume,src=' + volumes[kind] + ',dst=' + destination]
+for kind in ('target', 'cargo'):
+    base += ['--mount', 'type=volume,src=lsf-fb2-java708-native-aot-6c0e6c1f-20261006-r1-' + kind
+             + ',dst=/old-' + kind + ',readonly']
+base += ['--mount', 'type=bind,src=' + str(out) + ',dst=/inputs,readonly',
+         '--entrypoint', 'python3', image, '-B', '/inputs/setup.py']
+(out / 'setup-launch.json').write_text(json.dumps({'argv': base, 'timeoutSeconds': 240}, indent=2) + '\n')
+started = time.monotonic()
+with (out / 'setup.log').open('xb') as log:
+    setup = subprocess.run(base, stdout=log, stderr=subprocess.STDOUT, timeout=240)
+(out / 'setup-receipt.json').write_text(json.dumps({'exitCode': setup.returncode,
+            'elapsedSeconds': time.monotonic() - started, 'readOnlyParentCacheFork': True}, indent=2) + '\n')
+setup.check_returncode()
+argv = ['docker', 'run', '-d', '--name', stem, '--init', '--user', '10001:10001',
+        '--cpus', '2', '--memory', '8g', '--pids-limit', '1024', '--ulimit', 'core=0', '--workdir', '/source']
+for kind, destination in (('source', '/source'), ('target', '/build/target'), ('cargo', '/cargo'), ('fixtures', '/fixtures')):
+    argv += ['--mount', 'type=volume,src=' + volumes[kind] + ',dst=' + destination
+             + (',readonly' if kind == 'source' else '')]
+argv += ['--mount', 'type=bind,src=' + str(out) + ',dst=/inputs,readonly',
+         '--mount', 'type=bind,src=' + str(results) + ',dst=/results']
+for name, value in {'CARGO_TARGET_DIR': '/build/target', 'CARGO_HOME': '/cargo', 'CARGO_BUILD_JOBS': '2',
+                    'CARGO_INCREMENTAL': '0', 'CARGO_PROFILE_DEV_DEBUG': '0', 'CARGO_PROFILE_TEST_DEBUG': '0',
+                    'CARGO_PROFILE_DEV_DEBUG_ASSERTIONS': 'true', 'CARGO_PROFILE_TEST_DEBUG_ASSERTIONS': 'true',
+                    'CARGO_PROFILE_DEV_OVERFLOW_CHECKS': 'true', 'CARGO_PROFILE_TEST_OVERFLOW_CHECKS': 'true',
+                    'TMPDIR': '/fixtures', 'CC': 'clang-18', 'CXX': 'clang++-18', 'PYTHONUTF8': '1',
+                    'PYTHONDONTWRITEBYTECODE': '1', 'LSF_REQUIRE_NATIVE_PROCESS_TESTS': '1'}.items():
+    argv += ['--env', name + '=' + value]
+argv += ['--entrypoint', 'python3', image, '-B', '/inputs/runner.py']
+(out / 'launch.json').write_text(json.dumps({'argv': argv, 'source': identity, 'wholeSuitesSelected': True,
+                       'original900SecondSuiteLimitsPreserved': True}, indent=2) + '\n')
+identifier = subprocess.check_output(argv, timeout=60).decode().strip()
+(out / 'container-launch.json').write_text(json.dumps({'containerId': identifier, 'name': stem}, indent=2) + '\n')
+print(json.dumps({'container': stem, 'source': commit, 'sourceTree': tree,
+                  'evidence': str(out), 'launchedDetached': True}), flush=True)

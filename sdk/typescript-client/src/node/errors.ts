@@ -1,10 +1,13 @@
 import { inspect } from "node:util";
 import * as profile from "../management.js";
+import type { RecoveryIdentity, ObservedOutcome } from "../transaction-client.js";
 import { decode } from "./protocol/codec.js";
 import { registry } from "./protocol/schema.js";
 
 export type Failure = profile.ClientFailure & {
   readonly unsupportedWireValue?: { readonly field: string; readonly value: string };
+  readonly transactionIdentity?: RecoveryIdentity;
+  readonly observedTransaction?: ObservedOutcome;
 };
 
 export class RpcError extends profile.ClientError {

@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "guest/transactional-aggregate",
+  "title": "Update a transactional aggregate and stage an event",
+  "audience": "guest-author",
+  "target": "guest",
+  "variants": [
+    {"language": "rust", "kind": "maintained", "source": "examples/rust-capsules/transactional-aggregate/component.rs", "regions": ["capsule"], "validation": {"target": "tools/rust_capsule.py", "instructions": "docs/component-development/transactional-authoring.md", "evidence": null}},
+    {"language": "c", "kind": "maintained", "source": "sdk/c-guest/templates/transactional-aggregate.c", "regions": ["capsule"], "validation": {"target": "tools/c_capsule.py", "instructions": "docs/component-development/transactional-authoring.md", "evidence": null}},
+    {"language": "typescript", "kind": "maintained", "source": "sdk/typescript-guest/templates/transactional-aggregate.ts", "regions": ["capsule"], "validation": {"target": "tools/typescript_capsule.py", "instructions": "docs/component-development/transactional-authoring.md", "evidence": null}},
+    {"language": "go", "kind": "maintained", "source": "sdk/go-guest/templates/transactional-aggregate.go", "regions": ["capsule"], "validation": {"target": "tools/go_capsule.py", "instructions": "docs/component-development/transactional-authoring.md", "evidence": null}},
+    {"language": "java", "kind": "maintained", "source": "sdk/java-guest/templates/transactional-aggregate.java", "regions": ["capsule"], "validation": {"target": "tools/java_capsule.py", "instructions": "docs/component-development/transactional-authoring.md", "evidence": null}},
+    {"language": "csharp", "kind": "maintained", "source": "sdk/dotnet-guest/templates/transactional-aggregate.cs", "regions": ["capsule"], "validation": {"target": "tools/dotnet_capsule.py", "instructions": "docs/component-development/transactional-authoring.md", "evidence": null}}
+  ]
+}

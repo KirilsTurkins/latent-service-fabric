@@ -1,0 +1,17 @@
+package dev.latent.guest;
+
+import dev.latent.generated.Bindings;
+
+/** Logical binding and payload; host policy selects provider and finite delivery. */
+public final class Intent {
+    private final Bindings.LatentIntentsStagingIntent value;
+    public Intent(String binding, String operation, Bindings.LatentStateKeyValueValue payload) {
+        this(binding, operation, payload, Option.none());
+    }
+    public Intent(String binding, String operation, Bindings.LatentStateKeyValueValue payload, Option<Unsigned64> expiresAt) {
+        value = new Bindings.LatentIntentsStagingIntent(binding, operation, payload, expiresAt);
+    }
+    public Result<Bindings.LatentIntentsStagingStagedIntent, Bindings.LatentIntentsStagingIntentError> stage(State.Command command) {
+        return Bindings.LatentIntentsStaging.stage(command.intentBorrow(), value);
+    }
+}

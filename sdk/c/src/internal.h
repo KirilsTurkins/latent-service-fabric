@@ -14,7 +14,10 @@
 
 typedef enum lsf_operation {
     LSF_INVOKE, LSF_CANCEL, LSF_GET_ACTIVATION, LSF_INSPECT_ACTIVATION_TREE, LSF_GET_POLICY,
-    LSF_LIST_POLICIES, LSF_LIST_CAPABILITIES, LSF_APPLY_POLICY, LSF_GET_POLICY_OPERATION, LSF_INSPECT_HTTP_TARGET
+    LSF_LIST_POLICIES, LSF_LIST_CAPABILITIES, LSF_APPLY_POLICY, LSF_GET_POLICY_OPERATION, LSF_INSPECT_HTTP_TARGET,
+#define LSF_TX_OPERATION(method, request, response) LSF_TX_##method,
+    LATENT_TRANSACTION_METHODS(LSF_TX_OPERATION)
+#undef LSF_TX_OPERATION
 } lsf_operation;
 
 typedef union lsf_callback {
@@ -28,6 +31,9 @@ typedef union lsf_callback {
     latent_profile_apply_policy_callback apply_policy;
     latent_profile_get_policy_operation_callback get_policy_operation;
     latent_profile_inspect_http_target_callback inspect_http_target;
+#define LSF_TX_CALLBACK(method, request, response) latent_transaction_##method##_callback tx_##method;
+    LATENT_TRANSACTION_METHODS(LSF_TX_CALLBACK)
+#undef LSF_TX_CALLBACK
 } lsf_callback;
 
 typedef union lsf_result {
@@ -41,9 +47,13 @@ typedef union lsf_result {
     latent_profile_apply_policy_result apply_policy;
     latent_profile_get_policy_operation_result get_policy_operation;
     latent_profile_inspect_http_target_result inspect_http_target;
+#define LSF_TX_RESULT(method, request, response) latent_transaction_##method##_result tx_##method;
+    LATENT_TRANSACTION_METHODS(LSF_TX_RESULT)
+#undef LSF_TX_RESULT
 } lsf_result;
 
 struct latent_profile_client { latent_transport *owner; };
+struct latent_transaction_client { latent_transport *owner; };
 
 struct latent_profile_call {
     latent_transport *owner;
@@ -69,6 +79,11 @@ struct latent_profile_call {
     lsf_result result;
     latent_profile_client_failure failure;
     latent_profile_response_metadata metadata;
+    void *transaction_original;
+    latent_transaction_recovery_identity transaction_identity;
+    latent_transaction_observed_outcome transaction_observed;
+    bool transaction_known;
+    bool transaction_audit_invalid;
     char identity[LSF_MAX_ID + 1];
     char policy_id[LSF_MAX_ID + 1];
     size_t policy_id_length;
@@ -99,6 +114,7 @@ struct latent_transport {
     latent_transport_config config;
     latent_transport_allocator allocator;
     latent_profile_client profile;
+    latent_transaction_client transaction;
     latent_profile_call *calls;
     latent_transport_usage usage;
     struct sockaddr_storage address;
@@ -139,5 +155,12 @@ bool lsf_target_request_valid(latent_profile_call *call, const latent_profile_in
 bool lsf_target_response_valid(const latent_profile_call *call, const latent_profile_inspect_http_target_response *response);
 void lsf_finish_response(latent_profile_call *call);
 void lsf_unsupported(latent_profile_call *call, const char *field, latent_string value);
+bool lsf_transaction_request_valid(latent_profile_call *call, const void *request);
+bool lsf_transaction_response_valid(latent_profile_call *call);
+void lsf_transaction_identity(latent_profile_call *call, const void *request);
+bool lsf_transaction_snapshot(latent_profile_call *call);
+bool lsf_transaction_wire(const lsf_message *message, const uint8_t *data, size_t length,
+                          uint64_t deadline, bool *limit);
+static inline bool lsf_is_transaction(lsf_operation operation) { return operation >= LSF_TX_invoke_command; }
 
 #endif

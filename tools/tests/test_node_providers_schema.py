@@ -7,13 +7,16 @@ import tempfile
 import unittest
 
 import jsonschema
+from referencing import Registry, Resource
 
 from tools.phase2_operator_process import write_json
 from tools.phase3_management_scenario import configure_provider_node
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = json.loads((ROOT / "schemas/node-providers.schema.json").read_text(encoding="utf-8"))
-VALIDATOR = jsonschema.Draft202012Validator(SCHEMA)
+STREAM_SCHEMA = json.loads((ROOT / "schemas/outbound-stream-provider.schema.json").read_text(encoding="utf-8"))
+REGISTRY = Registry().with_resource(STREAM_SCHEMA["$id"], Resource.from_contents(STREAM_SCHEMA))
+VALIDATOR = jsonschema.Draft202012Validator(SCHEMA, registry=REGISTRY)
 
 
 class NodeProvidersSchema(unittest.TestCase):
@@ -95,6 +98,31 @@ class NodeProvidersSchema(unittest.TestCase):
             changed["localService"][key] = invalid
             self.assertFalse(VALIDATOR.is_valid(changed))
 
+    def test_documented_development_streams_have_closed_bounded_configuration_without_secrets(self):
+        jsonschema.Draft202012Validator.check_schema(STREAM_SCHEMA)
+        guide = (ROOT / "docs/reference/standalone-streams.md").read_text(encoding="utf-8")
+        value = json.loads(re.findall(r"```json\n(.*?)\n```", guide, re.S)[0])["providers"]
+        VALIDATOR.validate(value)
+        for field, invalid in (("trustRoots", "/private/roots"), ("clientKey", "/private/key"),
+                               ("credential", "DO-NOT-ECHO"), ("environment", ["HOME"]),
+                               ("profile", "future-profile"), ("destinations", [])):
+            changed = copy.deepcopy(value)
+            changed["outboundStreams"]["configuration"][field] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        for field, invalid in (("maximumTransferBytes", 1048577), ("idleTimeoutMillis", 2001),
+                               ("absoluteTimeoutMillis", 10001), ("maximumTransferBytes", True)):
+            changed = copy.deepcopy(value)
+            changed["outboundStreams"]["configuration"]["limits"][field] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        for field, invalid in (("port", 0), ("transport", "host-tls"), ("host", "")):
+            changed = copy.deepcopy(value)
+            changed["outboundStreams"]["configuration"]["destinations"][0]["endpoint"][field] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        for invalid in (None, {"credential": "DO-NOT-ECHO"}):
+            changed = copy.deepcopy(value)
+            changed["outboundStreams"] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed))
+
     def test_core_context_and_log_installations_are_explicit_and_closed(self):
         for field, contract in (("context", "latent:context/context@0.1.0"),
                                 ("log", "latent:log/log@0.1.0")):
@@ -114,6 +142,56 @@ class NodeProvidersSchema(unittest.TestCase):
                 invalid = copy.deepcopy(value)
                 invalid[field]["identity"][key] = replacement
                 self.assertFalse(VALIDATOR.is_valid(invalid))
+
+
+class ActivationRuntimeProviderSchema(unittest.TestCase):
+    def example(self):
+        guide = (ROOT / "docs/reference/standalone-providers.md").read_text(encoding="utf-8")
+        documents = [json.loads(raw) for raw in re.findall(r"```json\n(.*?)\n```", guide, re.S)]
+        return next(item["providers"] for item in documents if "activationRuntime" in item.get("providers", {}))
+
+    def test_documented_runtime_has_exact_interface_and_explicit_separate_limits(self):
+        value = self.example()
+        VALIDATOR.validate(value)
+        self.assertEqual(value["bindings"][0]["contract"], "latent:runtime/activation@0.1.0")
+        self.assertEqual(sum(value["activationRuntime"]["limits"].values()), 58)
+        self.assertEqual(set(value["activationRuntime"]["limits"]),
+                         {"tasks", "executors", "queuedWork", "waits", "timers", "results", "nativeOwners"})
+        disabled = NodeProvidersSchema().example()
+        VALIDATOR.validate(disabled)
+        self.assertNotIn("activationRuntime", disabled)
+
+    def test_runtime_rejects_missing_null_noninteger_and_unbounded_categories(self):
+        value = self.example()
+        for field in ("activationRuntime", "limits"):
+            changed = copy.deepcopy(value)
+            (changed if field == "activationRuntime" else changed["activationRuntime"])[field] = None
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        for category in value["activationRuntime"]["limits"]:
+            for invalid in (True, -1, 8193, "8", None):
+                changed = copy.deepcopy(value)
+                changed["activationRuntime"]["limits"][category] = invalid
+                self.assertFalse(VALIDATOR.is_valid(changed), (category, invalid))
+            changed = copy.deepcopy(value)
+            del changed["activationRuntime"]["limits"][category]
+            self.assertFalse(VALIDATOR.is_valid(changed), category)
+        changed = copy.deepcopy(value)
+        changed["activationRuntime"]["limits"] = {key: 0 for key in value["activationRuntime"]["limits"]}
+        self.assertFalse(VALIDATOR.is_valid(changed))
+
+    def test_runtime_cannot_override_profile_authority_executor_or_contract_version(self):
+        value = self.example()
+        for field, invalid in (("profile", "future-profile"), ("grants", ["implicit"]),
+                               ("executor", "ambient-threadpool"), ("configurationDigest", "forged")):
+            changed = copy.deepcopy(value)
+            changed["activationRuntime"][field] = invalid
+            self.assertFalse(VALIDATOR.is_valid(changed), field)
+        changed = copy.deepcopy(value)
+        changed["activationRuntime"]["limits"]["memoryBytes"] = 1
+        self.assertFalse(VALIDATOR.is_valid(changed))
+        changed = copy.deepcopy(value)
+        changed["bindings"][0]["contract"] = "latent:runtime/activation@0.2.0"
+        self.assertFalse(VALIDATOR.is_valid(changed))
 
 
 class StreamingProviderSchema(unittest.TestCase):

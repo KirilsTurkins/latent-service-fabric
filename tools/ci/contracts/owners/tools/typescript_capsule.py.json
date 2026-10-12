@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/typescript_capsule.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review explicit approved source-generator CLI commands while retaining pinned compiler installation and default package-script denial","schemaVersion":"latent.ci.contracts.v1","sha256":"0576d2d5e3a954ed0e2ec5b14299aedbc7872343a05ead4706cc01879d5707d5"}
+{
+  "kind": "owner",
+  "path": "tools/typescript_capsule.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reconcile captured-input transfer, approved generators and conservative diagnostics with current transaction/native owners. Preserve all original cases, skip guards, historical commands, isolation requirements and receipt paths.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "a8105e0c679fdd6229f99a827e507c4641901cccf4bbf264b12ad759fc582b6b"
+}

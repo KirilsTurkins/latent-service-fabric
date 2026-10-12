@@ -11,12 +11,16 @@ from __future__ import annotations
 import argparse
 import base64
 import hashlib
+import http.client
 import io
 import json
 from pathlib import Path, PurePosixPath
 import re
+import ssl
 import tarfile
 import tempfile
+import time
+import urllib.error
 import urllib.request
 
 HERE = Path(__file__).resolve().parent
@@ -26,6 +30,8 @@ EXPANDED_LIMIT = 64 * 1024 * 1024
 PROFILE = "npm-11.19.1-lsf-bundle-v4"
 OUTPUT = ROOT / "target/website-package-manager" / (PROFILE + ".tar")
 CACHE = OUTPUT.parent / "inputs"
+NETWORK_TIMEOUT = 30.0
+NETWORK_ATTEMPTS = 3
 
 
 def integrity(raw: bytes) -> str:
@@ -35,6 +41,61 @@ def integrity(raw: bytes) -> str:
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         raise ValueError("unexpected registry redirect")
+
+
+def transient_transport(error: BaseException) -> bool:
+    if isinstance(error, urllib.error.HTTPError):
+        return False
+    if isinstance(error, urllib.error.URLError):
+        error = error.reason
+    # Protocol/certificate failures and HTTP responses never become retries.
+    return isinstance(error, (ConnectionResetError, TimeoutError, ssl.SSLEOFError,
+                              http.client.IncompleteRead, http.client.RemoteDisconnected))
+
+
+def download(opener, url: str) -> bytes:
+    deadline = time.monotonic() + NETWORK_TIMEOUT
+    transferred = 0
+
+    def remaining() -> float:
+        value = deadline - time.monotonic()
+        if value <= 0:
+            raise TimeoutError("registry acquisition deadline")
+        return min(value, NETWORK_TIMEOUT / NETWORK_ATTEMPTS)
+
+    for attempt in range(NETWORK_ATTEMPTS):
+        try:
+            with opener.open(url, timeout=remaining()) as response:
+                raw = bytearray()
+                # HTTPResponse.read1 performs at most one underlying read. Keep
+                # its socket timeout inside the original shared network budget.
+                connection = response.fp.raw._sock
+                while response.length != 0:
+                    connection.settimeout(remaining())
+                    allowance = LIMIT + 1 - transferred
+                    if allowance <= 0:
+                        raise ValueError("archive cumulative download bound")
+                    part = response.read1(min(64 * 1024, allowance))
+                    transferred += len(part)
+                    raw.extend(part)
+                    remaining()
+                    if transferred > LIMIT:
+                        raise ValueError("archive cumulative download bound")
+                    if not part:
+                        if response.length is not None and response.length > 0:
+                            raise http.client.IncompleteRead(b"", response.length)
+                        break
+                remaining()
+                return bytes(raw)
+        except Exception as error:
+            if isinstance(error, http.client.IncompleteRead):
+                transferred += len(error.partial)
+                if transferred > LIMIT:
+                    raise ValueError("archive cumulative download bound") from error
+            if (not transient_transport(error) or attempt + 1 == NETWORK_ATTEMPTS
+                    or time.monotonic() >= deadline):
+                raise
+    raise AssertionError("unreachable registry acquisition")
 
 
 def acquire(pin: dict, cache: Path, offline: bool) -> bytes:
@@ -50,8 +111,7 @@ def acquire(pin: dict, cache: Path, offline: bool) -> bytes:
         if offline:
             raise ValueError(f"offline input missing: {filename}")
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
-        with opener.open(f"https://registry.npmjs.org/{name}/-/{filename}", timeout=30) as response:
-            raw = response.read(LIMIT + 1)
+        raw = download(opener, f"https://registry.npmjs.org/{name}/-/{filename}")
     if len(raw) > LIMIT or integrity(raw) != pin["integrity"]:
         raise ValueError(f"archive integrity/size mismatch: {filename}")
     cache.mkdir(parents=True, exist_ok=True)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from tools import guest_compatibility_context_build, guest_runtime_receipts
+from tools.transaction_guest_project import packaging_arguments
 import json
 from pathlib import Path
 import tempfile
@@ -25,7 +26,8 @@ RECIPE = ("tools/typescript_capsule.py", "tools/typescript_guest/project.py", "t
     "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
     "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py",
     "tools/phase3_resource_identity.py", "tools/phase3_resource_profile.py", "tools/phase2_operator_process.py",
-    "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json")
+    "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py",
+    "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/typescript_application_dependencies.py",
            "tools/typescript_dependency_authoring.py", "tools/captured_compiler_isolation.py")
@@ -88,6 +90,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands.run("contracts", paths["contracts-tool"], wit_input, derived)
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
+            surface = read_json(derived / "surface.json")
+            recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             stage = "compiler-inputs"
             compiler = Compiler(tools, commands, {name: files["vendor/lsf/sdk/typescript-guest/tools/" + name]
                                                  for name in ("package.json", "package-lock.json")},
@@ -107,16 +111,14 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             if closure is not None:
                 (output / "bundle-selected-inputs.json").write_bytes(read_file(temporary / "compiled/application.mjs.inputs.json", 8 * 1024 * 1024))
                 (output / "application.mjs.map").write_bytes(read_file(temporary / "compiled/application.mjs.map", 32 * 1024 * 1024))
-            surface = read_json(derived / "surface.json")
             stage = "compatibility"
-            recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             guest_compatibility_build.inspect(commands, compiler.wasm, output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
             stage = "recheck"
             captured_after = {name: data for name, data in snapshot(work, exclude=("dependencies", "application-vendor")).items()
                               if not name.startswith("generated/") and name != "tsconfig.json"}

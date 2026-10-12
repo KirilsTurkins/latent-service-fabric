@@ -31,6 +31,13 @@ pub struct DispatcherControlReceipt {
 }
 
 impl DispatcherControlReceipt {
+    /// Digest of the exact bounded durable bytes, without any authority meaning.
+    pub fn digest(&self) -> Result<[u8; 32], StoreError> {
+        let mut hash = Sha256::new();
+        hash.update(b"lsf-dispatch-control-receipt-v1\0");
+        hash.update(self.encode()?);
+        Ok(hash.finalize().into())
+    }
     #[must_use]
     pub const fn request(&self) -> &DispatcherControlRequest {
         &self.request
@@ -152,40 +159,43 @@ impl ControlCatalog {
         };
         let encoded = receipt.encode()?;
         let receipt_key = receipt_key(request);
+        let mut batch = AtomicBatch {
+            expectations: vec![
+                ExpectedRow {
+                    key: owner_key.clone(),
+                    value: Some(owner_bytes),
+                },
+                ExpectedRow {
+                    key: state_key.clone(),
+                    value: state_bytes,
+                },
+                ExpectedRow {
+                    key: receipt_key.clone(),
+                    value: None,
+                },
+            ],
+            mutations: vec![
+                RowMutation {
+                    key: owner_key,
+                    value: Some(owner.encode()?),
+                },
+                RowMutation {
+                    key: state_key,
+                    value: Some(encoded.clone()),
+                },
+                RowMutation {
+                    key: receipt_key,
+                    value: Some(encoded),
+                },
+            ],
+        };
+        latent_state::tenant::prepare_global_metadata_update(
+            &view,
+            &mut batch,
+            Self::validate_row,
+        )?;
         drop(view);
-        Ok(PlannedControl::Write {
-            batch: AtomicBatch {
-                expectations: vec![
-                    ExpectedRow {
-                        key: owner_key.clone(),
-                        value: Some(owner_bytes),
-                    },
-                    ExpectedRow {
-                        key: state_key.clone(),
-                        value: state_bytes,
-                    },
-                    ExpectedRow {
-                        key: receipt_key.clone(),
-                        value: None,
-                    },
-                ],
-                mutations: vec![
-                    RowMutation {
-                        key: owner_key,
-                        value: Some(owner.encode()?),
-                    },
-                    RowMutation {
-                        key: state_key,
-                        value: Some(encoded.clone()),
-                    },
-                    RowMutation {
-                        key: receipt_key,
-                        value: Some(encoded),
-                    },
-                ],
-            },
-            receipt,
-        })
+        Ok(PlannedControl::Write { batch, receipt })
     }
 
     /// The exact original actor/ID/action/precondition must match. Knowing an
@@ -300,3 +310,6 @@ fn receipt_key(request: &DispatcherControlRequest) -> RowKey {
         key,
     }
 }
+
+#[cfg(test)]
+mod tests;

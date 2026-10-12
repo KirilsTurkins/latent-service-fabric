@@ -59,6 +59,21 @@ class BuildContext(unittest.TestCase):
         with self.assertRaisesRegex(DevError, 'stale-or-unbound-receipt'): self.finish()
         self.assertEqual((self.output / 'compatibility-report.json').read_bytes(), self.original)
 
+    def test_current_java_material_binds_runtime_bytes_without_certifying_execution(self):
+        raw = self.receipt('runtime-profile.json', 'java-runtime-profile', {'profile': 'teavm-activation-fibers-v1'})
+        value = self.finish()
+        self.assertEqual(value['standardRuntime']['receiptDigest'], digest(raw))
+        self.assertEqual(value['standardRuntime']['state'], 'selected-unqualified')
+        (self.output / 'runtime-profile.json').write_bytes(encode({'profile': 'changed'}))
+        with self.assertRaisesRegex(DevError, 'stale-or-unbound-receipt'):
+            self.finish()
+
+    def test_java_runtime_material_cannot_be_ambiguous(self):
+        self.receipt('runtime-profile.json', 'java-runtime-profile', {'profile': 'teavm-activation-fibers-v1'})
+        self.materials.append({'name': 'runtime-profile', 'digest': digest(b'other'), 'size': 5})
+        with self.assertRaisesRegex(DevError, 'ambiguous-runtime-material'):
+            self.finish()
+
     def test_unbound_runtime_receipt_is_denied(self):
         (self.output / 'runtime-profile.json').write_bytes(encode({'profile': 'unbound'}))
         with self.assertRaisesRegex(DevError, 'unbound'): self.finish()

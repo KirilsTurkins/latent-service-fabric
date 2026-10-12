@@ -56,6 +56,7 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 wasmtime = { workspace = true, features = ["gc", "gc-drc"] }
+wasmparser.workspace = true
 zeroize = { version = "=1.9.0", features = ["alloc"] }
 
 [target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
@@ -67,6 +68,7 @@ seccompiler = "=0.5.0"
 
 [dev-dependencies]
 getrandom = "=0.4.3"
+latent-audit = { path = "../latent-audit", features = ["test-support"] }
 latent-ingress = { path = "../latent-ingress" }
 base64.workspace = true
 latent-signing = { path = "../latent-signing" }
@@ -76,6 +78,8 @@ latent-vault = { path = "../latent-vault" }
 latent-secrets = { path = "../latent-secrets" }
 latent-blobs = { path = "../latent-blobs" }
 latent-http = { path = "../latent-http" }
+latent-streams = { path = "../latent-streams", features = ["development-outbound"] }
+latent-network = { path = "../latent-network" }
 latent-admission = { path = "../latent-admission" }
 latent-control-store = { path = "../latent-control-store" }
 tempfile.workspace = true

@@ -31,7 +31,7 @@ async fn indexed_hot_tenant_backlog_does_not_starve_cold_tenant_or_allocate_back
     assert_eq!(snapshot.durable.acknowledged, 1);
     assert_eq!(snapshot.accepted_effects, 1);
     assert_eq!(snapshot.live_tenants, 1);
-    assert_eq!(snapshot.live_workers, 2);
+    assert_eq!(snapshot.live_workers, 3);
     assert!(snapshot.retained_attempt_bytes < 2 * DispatcherConfig::ATTEMPT_BYTES);
     dispatcher.close();
     adapter.gates.release(hot.ticket.unwrap()).unwrap();

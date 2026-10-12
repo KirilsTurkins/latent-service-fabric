@@ -234,6 +234,39 @@ fn original_monotonic_deadline_and_close_fence_never_refund_retained_response_by
 }
 
 #[test]
+fn linked_expiry_fences_delivery_without_renewing_or_refunding_original_frames() {
+    let (owner, clock, deadline) = fixture();
+    let reservation = Arc::new(
+        owner
+            .reserve(NativeAdmissionClass::Ordinary, request(), deadline)
+            .unwrap(),
+    );
+    let expiry = reservation.monotonic_now() + Duration::from_millis(5);
+    let frame = reservation
+        .allocate_bytes(NativeBufferClass::Response, 1024)
+        .unwrap();
+    reservation.with_live_until(expiry, || ()).unwrap();
+    clock.advance(Duration::from_millis(5));
+    reservation.with_live(|| ()).unwrap();
+    assert!(matches!(
+        reservation.with_live_until(expiry, || panic!("expired linked payload")),
+        Err(NativeCapacityError::DeadlineExceeded)
+    ));
+    assert_eq!(owner.snapshot().unwrap().ordinary.slots, 1);
+    clock.advance(Duration::from_secs(10));
+    assert!(matches!(
+        reservation.with_live_until(deadline + Duration::from_secs(10), || panic!(
+            "original reservation renewed"
+        )),
+        Err(NativeCapacityError::DeadlineExceeded)
+    ));
+    drop(reservation);
+    assert_eq!(owner.snapshot().unwrap().ordinary.slots, 1);
+    drop(frame);
+    assert!(owner.snapshot().unwrap().physically_retired());
+}
+
+#[test]
 fn concurrent_aliases_have_one_global_native_limit_and_no_recovery_permit_loan() {
     let (owner, _, deadline) = fixture();
     assert!(owner.is_same_owner(&owner.clone()));

@@ -8,15 +8,47 @@ from tools.dev_workflow.common import decode, encode, digest, require
 from tools.rust_capsule_project import ROOT, inventory, read_file, read_json, write_json
 
 RECIPE = ("tools/guest_compatibility.py", "tools/guest_compatibility_build.py",
-          "tools/dev_workflow/common.py", "wit/host-abi-phase3-v4.json")
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py",
+          "wit/host-abi-phase3-v4.json", "wit/host-abi-phase4-v1.json",
+          "sdk/profile/transaction-requirements-v1.json")
 
 DEFAULT_PROFILE = "lsf-host-abi-phase3-v4"
 HOST_MANIFESTS = {
     DEFAULT_PROFILE: "wit/host-abi-phase3-v4.json",
     "lsf-host-abi-phase3-v5": "wit/host-abi-phase3-v5.json",
+    "lsf-host-abi-phase4-v1": "wit/host-abi-phase4-v1.json",
 }
 V5_INTERFACES = frozenset({
     "latent:runtime/activation@0.1.0", "latent:network/streams@0.1.0"})
+TRANSACTION_INTERFACES = frozenset({"latent:state/key-value@0.2.0", "latent:intents/staging@0.1.0"})
+
+
+def host_abi(files: dict[str, bytes] | None = None) -> dict:
+    """Validate the original captured transaction profile; supply no authority."""
+    if files is None or not {"transaction-profile.json", "transaction-binding.json"} & files.keys():
+        return host_manifest(DEFAULT_PROFILE)
+    require({"transaction-profile.json", "transaction-binding.json", "capsule-project.json", "state-schema.json"}
+            <= files.keys(), "compatibility-transaction-captured-inputs-required")
+    profile = read_file(ROOT / "sdk/profile/transaction-requirements-v1.json")
+    require(files["transaction-profile.json"] == profile, "compatibility-transaction-profile-drift")
+    requirements = decode(profile, 128 * 1024)
+    project = decode(files["capsule-project.json"], 128 * 1024)
+    require(isinstance(project, dict) and {"service", "name"} <= project.keys(),
+            "compatibility-transaction-project-links-required")
+    from tools.dev_workflow.transaction_binding import validate
+    binding = validate(files["transaction-binding.json"], capsule=project["service"],
+                       deployment=project["name"], binding=project["name"])
+    require(binding["stateSchema"] == digest(files["state-schema.json"]),
+            "compatibility-transaction-schema-drift")
+    for row in requirements["guest"]["requiredInterfaces"]:
+        source = read_file(ROOT / row["source"])
+        captured = row["source"].replace("wit/platform/", "wit/deps/")
+        require(digest(source) == row["sourceSha256"] and files.get(captured) == source,
+                "compatibility-transaction-wit-drift")
+    selected = host_manifest("lsf-host-abi-phase4-v1")
+    require(selected["digest"] == requirements["hostAbiDigest"] == binding["hostAbiDigest"],
+            "compatibility-transaction-host-abi-drift")
+    return selected
 
 
 def declared_host_abi(surface: dict) -> str:
@@ -32,6 +64,8 @@ def declared_host_abi(surface: dict) -> str:
     for name in imports:
         compatibility.token(name)
     require(len(set(imports)) == len(imports), "compatibility-declared-import-limit")
+    if TRANSACTION_INTERFACES.intersection(imports):
+        return "lsf-host-abi-phase4-v1"
     return "lsf-host-abi-phase3-v5" if V5_INTERFACES.intersection(imports) else DEFAULT_PROFILE
 
 
@@ -64,7 +98,12 @@ def capture_host_recipe(output: Path, files: dict[str, bytes], recorded: bytes, 
     return updated
 
 
-def inspection_manifest(output: Path, inspection: dict | None) -> dict:
+def inspection_manifest(output: Path, inspection: dict | None, files: dict[str, bytes] | None = None) -> dict:
+    captured = host_abi(files)
+    if captured["id"] != DEFAULT_PROFILE:
+        require(inspection is None or inspection.get("hostAbiProfile", captured["id"]) == captured["id"],
+                "compatibility-transaction-host-profile-mismatch")
+        return captured
     if inspection is not None:
         profile = inspection.get("hostAbiProfile", DEFAULT_PROFILE)
     else:
@@ -73,7 +112,73 @@ def inspection_manifest(output: Path, inspection: dict | None) -> dict:
     return host_manifest(profile)
 
 
-def interface_names(graph: dict, world: str | None = None) -> dict:
+def _structural_type_checker(indexed):
+    """Prove finite value-only types; opaque resources never become providers."""
+    primitives = frozenset("bool u8 s8 u16 s16 u32 s32 u64 s64 f32 f64 char string".split())
+    remaining, active, memo = [32768], set(), {}
+
+    def value(item, depth=0):
+        remaining[0] -= 1
+        require(remaining[0] >= 0 and depth <= 32, "compatibility-structural-type-work-bound")
+        if item is None:
+            return True, 0
+        if isinstance(item, str):
+            return item in primitives, 0
+        require(type(item) is int and item not in active, "compatibility-structural-type-cycle-or-index")
+        definition = indexed("types", item)
+        if item in memo:
+            safe, height = memo[item]
+            require(depth + height <= 32, "compatibility-structural-type-depth")
+            return safe, height
+        require(isinstance(definition, dict) and "kind" in definition, "compatibility-structural-type-definition")
+        kind = definition["kind"]
+        # Resource, own/borrow, future/stream and unknown forms stay callable
+        # unknown imports. The authoritative runtime rejects them separately.
+        if not isinstance(kind, dict) or len(kind) != 1:
+            return False, 0
+        form, body = next(iter(kind.items()))
+        children = []
+        if form in {"type", "list", "option"}:
+            require(body is not None, "compatibility-structural-type-child")
+            children = [body]
+        elif form in {"record", "variant"}:
+            key = "fields" if form == "record" else "cases"
+            require(isinstance(body, dict) and set(body) == {key} and isinstance(body[key], list)
+                and len(body[key]) <= 4096, "compatibility-structural-type-members")
+            for member in body[key]:
+                require(isinstance(member, dict) and set(member) == {"name", "type"}
+                    and isinstance(member["name"], str) and (form == "variant" or member["type"] is not None),
+                    "compatibility-structural-type-member")
+                children.append(member["type"])
+        elif form == "tuple":
+            require(isinstance(body, dict) and set(body) == {"types"} and isinstance(body["types"], list)
+                and len(body["types"]) <= 4096 and all(child is not None for child in body["types"]),
+                "compatibility-structural-type-tuple")
+            children = body["types"]
+        elif form == "result":
+            require(isinstance(body, dict) and set(body) == {"ok", "err"}, "compatibility-structural-type-result")
+            children = list(body.values())
+        elif form in {"enum", "flags"}:
+            key = "cases" if form == "enum" else "flags"
+            require(isinstance(body, dict) and set(body) == {key} and isinstance(body[key], list)
+                and len(body[key]) <= 4096 and all(isinstance(member, dict) and set(member) == {"name"}
+                    and isinstance(member["name"], str) for member in body[key]), "compatibility-structural-type-tags")
+            remaining[0] -= len(body[key])
+            require(remaining[0] >= 0, "compatibility-structural-type-work-bound")
+        else:
+            return False, 0
+        active.add(item)
+        checked = [value(child, depth + 1) for child in children]
+        active.remove(item)
+        safe, height = all(child[0] for child in checked), 1 + max((child[1] for child in checked), default=0)
+        require(depth + height <= 32, "compatibility-structural-type-depth")
+        memo[item] = safe, height
+        return safe, height
+
+    return value
+
+
+def interface_names(graph: dict, world: str | None = None, *, host_interfaces=()) -> dict:
     """Read bounded wasm-tools JSON; do not match import names in source text."""
     require(isinstance(graph, dict) and set(graph) == {"worlds", "interfaces", "types", "packages"}, "compatibility-wit-graph")
     require(all(isinstance(graph[name], list) for name in graph), "compatibility-wit-tables")
@@ -91,30 +196,51 @@ def interface_names(graph: dict, world: str | None = None) -> dict:
 
     worlds = [item for item in graph["worlds"] if world is None or world in (item["name"], identity(item))]
     require(len(worlds) == 1, "compatibility-selected-world")
-    result = {}
+    check_type = _structural_type_checker(indexed)
+    result = {"typeImports": []}
     for direction in ("imports", "exports"):
         items = worlds[0][direction]
         require(isinstance(items, dict) and len(items) <= 128, "compatibility-wit-item-limit")
         result[direction] = []
         for item in items.values():
             require(isinstance(item, dict) and set(item) == {"interface"}, "compatibility-unqualified-world-item")
-            result[direction].append(identity(indexed("interfaces", item["interface"]["id"])))
+            interface = indexed("interfaces", item["interface"]["id"])
+            name = identity(interface)
+            target = direction
+            if direction == "imports" and name not in host_interfaces and interface.get("functions") == {}:
+                types = interface.get("types")
+                require(isinstance(types, dict) and len(types) <= 4096, "compatibility-structural-interface-types")
+                if all(check_type(index)[0] for index in types.values()):
+                    target = "typeImports"
+            require(name not in result[direction] and (direction != "imports" or name not in result["typeImports"]),
+                    "compatibility-wit-duplicate-interface")
+            result[target].append(name)
         require(len(set(result[direction])) == len(result[direction]), "compatibility-wit-duplicate-interface")
         result[direction].sort()
+    result["typeImports"].sort()
     return result
 
 
 def inspect(commands, wasm: Path, output: Path, declared: dict,
-            *, host_abi_profile: str = DEFAULT_PROFILE) -> dict:
+            *, host_abi_profile: str = DEFAULT_PROFILE, files: dict[str, bytes] | None = None) -> dict:
+    host = host_manifest(host_abi_profile)
+    captured = host_abi(files)
+    if captured["id"] != DEFAULT_PROFILE:
+        require(host_abi_profile in (DEFAULT_PROFILE, captured["id"]), "compatibility-transaction-host-profile-mismatch")
+        host_abi_profile = captured["id"]
     host = host_manifest(host_abi_profile)
     raw = commands.run("compatibility-final-wit", wasm, "component", "wit", output / "component.wasm", "--json")
-    names = interface_names(decode(raw, 4 * 1024 * 1024))
+    names = interface_names(decode(raw, 4 * 1024 * 1024),
+                            host_interfaces={row["interface"] for row in host["interfaces"]})
     findings = compatibility.import_findings(names["imports"], list(declared["imports"]), host)
     expected_exports = list(declared["exports"])
     if set(names["exports"]) != set(expected_exports):
         findings.append(compatibility.finding("surface-mismatch", "link", "final-component"))
     result = {"componentDigest": digest(read_file(output / "component.wasm", 64 * 1024 * 1024)),
-              "hostAbiDigest": digest(encode(host)), "imports": names["imports"], "findings": findings}
+              "hostAbiDigest": digest(encode(host)), "imports": names["imports"],
+              "findings": findings}
+    if names["typeImports"]:
+        result["typeImports"] = names["typeImports"]
     if host_abi_profile != DEFAULT_PROFILE:
         result["hostAbiProfile"] = host_abi_profile
     write_json(output / "compatibility-inspection.json", result)
@@ -128,7 +254,7 @@ def package_report(output: Path, files: dict[str, bytes], component: bytes) -> N
     language = lock.get("language", "rust" if "Cargo.toml" in files else None)
     inspection_path = output / "compatibility-inspection.json"
     inspection = read_json(inspection_path) if inspection_path.exists() else None
-    host = inspection_manifest(output, inspection)
+    host = inspection_manifest(output, inspection, files)
     if inspection is not None:
         require(inspection["componentDigest"] == digest(component)
                 and inspection["hostAbiDigest"] == digest(encode(host)), "compatibility-stale-inspection")
@@ -147,10 +273,10 @@ def package_report(output: Path, files: dict[str, bytes], component: bytes) -> N
     write_json(output / "compatibility-report.json", value)
 
 
-def failure_report(output: Path, language: str, stage: str) -> None:
+def failure_report(output: Path, language: str, stage: str, *, files: dict[str, bytes] | None = None) -> None:
     """Retain safe known observations when captured inputs exist; never guess errors."""
     try:
-        _failure_report(output, language, stage)
+        _failure_report(output, language, stage, files)
     except Exception:
         # Reporting runs while the compiler exception is already propagating.
         # A stale/unreadable report input must never replace that original error.
@@ -174,7 +300,7 @@ def retain_report(output: Path, value: dict, *, kind: str) -> None:
     write_json(target, value)
 
 
-def _failure_report(output: Path, language: str, stage: str) -> None:
+def _failure_report(output: Path, language: str, stage: str, files: dict[str, bytes] | None = None) -> None:
     source_path = output / "source-inputs.json"
     if not source_path.exists():
         return  # Source identity is unavailable; do not fabricate a snapshot.
@@ -182,7 +308,7 @@ def _failure_report(output: Path, language: str, stage: str) -> None:
     findings = [compatibility.finding("unresolved-behavior", phase, "not-evaluated")]
     inspection_path = output / "compatibility-inspection.json"
     inspection = read_json(inspection_path) if inspection_path.exists() else None
-    host = inspection_manifest(output, inspection)
+    host = inspection_manifest(output, inspection, files)
     component_path = output / "component.wasm"
     component = read_file(component_path, 64 * 1024 * 1024) if component_path.exists() else None
     if inspection is not None:

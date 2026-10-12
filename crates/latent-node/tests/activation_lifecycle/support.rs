@@ -152,12 +152,39 @@ impl Harness {
         pool: Option<Arc<dyn latent_scheduler::CellPool>>,
         canary: Option<latent_telemetry::CanaryCapture>,
     ) -> Self {
+        Self::with_profile_options(
+            parallelism,
+            maximum_terminal,
+            observer,
+            pool,
+            canary,
+            latent_core::BudgetProfile::Phase1,
+        )
+    }
+
+    pub fn transaction_profile() -> Self {
+        Self::with_profile_options(1, 8, None, None, None, latent_core::BudgetProfile::Phase4)
+    }
+
+    fn with_profile_options(
+        parallelism: u32,
+        maximum_terminal: usize,
+        observer: Option<Arc<dyn latent_telemetry::ActivationObserver>>,
+        pool: Option<Arc<dyn latent_scheduler::CellPool>>,
+        canary: Option<latent_telemetry::CanaryCapture>,
+        profile: latent_core::BudgetProfile,
+    ) -> Self {
         let clock = Arc::new(Clock(Mutex::new(ClockSample::system_now())));
         let ids = Arc::new(Ids::default());
         let catalog = Arc::new(CatalogSource::default());
         let artifacts = Arc::new(Artifacts::default());
         let backend = Arc::new(Backend::default());
-        let quotas = LocalQuotaProvider::new(model::node_policy(parallelism)).expect("quotas");
+        let quotas = LocalQuotaProvider::with_profile(
+            model::node_policy(parallelism),
+            profile,
+            latent_core::DelegationLimits::default(),
+        )
+        .expect("quotas");
         let load = Arc::new(
             NodeLoadState::new(NodeLoadSnapshot {
                 accepting: true,

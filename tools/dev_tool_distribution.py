@@ -14,7 +14,7 @@ from tools import go_capsule_build, go_capsule_project, guest_compatibility_buil
 from tools.typescript_guest import build as typescript_build, project as typescript_project
 from tools.dev_distribution import file_digest
 from tools.dev_workflow import paths, project, scenarios, snapshot, tool_inventory
-from tools.dev_workflow.common import HOST_ABI, digest, encode, require
+from tools.dev_workflow.common import HOST_ABI, TRANSACTION_HOST_ABI, decode, digest, encode, guest_host_abi, require
 from tools.install_guest_bindgen import ARCHIVE_SHA256, VERSION as BINDGEN_VERSION
 from tools.rust_capsule_cases import TUTORIAL_CASES
 from tools.guest_dependency_inputs import RECIPE as FRONTEND_DEPENDENCY_RECIPE
@@ -118,6 +118,7 @@ def recipe(payload: Path, language: str) -> None:
     names = {*owner.RECIPE, *FRONTEND_DEPENDENCY_RECIPE, *AUTHORING_FRONTEND_RECIPE,
              "tools/dev_guest_recipe.py", "tools/dev_guest_tools.py",
              "tools/dev_workflow/__init__.py", "tools/dev_workflow/common.py", "tools/dev_workflow/paths.py",
+             "tools/dev_workflow/transaction_binding.py",
              "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"}
     names.add(guest_compatibility_build.HOST_MANIFESTS[HOST_ABI])
     if language in {"java", "dotnet", "go", "typescript"}:
@@ -127,7 +128,8 @@ def recipe(payload: Path, language: str) -> None:
     (payload / "recipe/tools/__init__.py").write_bytes(b"")
 
 
-def compiler_inventory(payload: Path, commit: str, language: str) -> dict:
+def compiler_inventory(payload: Path, commit: str, language: str, *, host_abi: str = HOST_ABI) -> dict:
+    guest_host_abi(host_abi)
     files = []
     for directory in (payload / "sdk", payload / "recipe"):
         for path in sorted(directory.rglob("*")):
@@ -135,14 +137,18 @@ def compiler_inventory(payload: Path, commit: str, language: str) -> dict:
                 sha, size = file_digest(path)
                 files.append({"path": path.relative_to(payload).as_posix(), "sha256": sha, "size": size})
     value = {"schemaVersion": "latent.dev.guest-tools.v1", "language": language, "ownerIssue": project.LANGUAGES[language],
-        "sourceCommit": commit, "hostAbi": HOST_ABI, "host": "linux-x86_64", "files": files}
+        "sourceCommit": commit, "hostAbi": host_abi, "host": "linux-x86_64", "files": files}
     value["identity"] = digest(encode(value))
-    tool_inventory.validate(value, language, project.LANGUAGES[language], "linux-x86_64")
+    tool_inventory.validate(value, language, project.LANGUAGES[language], "linux-x86_64", host_abi=host_abi)
     (payload / "guest-tools.json").write_bytes(encode(value))
     return value
 
 
-def templates(payload: Path, commit: str, language: str) -> dict:
+def templates(payload: Path, commit: str, language: str, *, host_abi: str = HOST_ABI) -> dict:
+    guest_host_abi(host_abi)
+    inventory = tool_inventory.validate(decode(paths.read(payload, "guest-tools.json", tool_inventory.MAX_DOCUMENT), tool_inventory.MAX_DOCUMENT),
+        language, project.LANGUAGES[language], "linux-x86_64", host_abi=host_abi)
+    require(inventory["sourceCommit"] == commit, "guest-template-tool-source-mismatch")
     creator = {"rust": rust_capsule_project, "c": c_capsule_project, "java": java_capsule_project,
                "dotnet": dotnet_project, "go": go_capsule_project, "typescript": typescript_project}[language]
     tools = [("python", "sdk/bin/python", "3.13.5"), ("recipe", "recipe/tools/dev_guest_recipe.py", "1"),
@@ -155,7 +161,9 @@ def templates(payload: Path, commit: str, language: str) -> dict:
             for name, path, version in tools]
     selected = {"path": "guest-tools.json", "sha256": file_digest(payload / "guest-tools.json")[0]}
     result = {}
-    for name, (function, cases) in TUTORIAL_CASES.items():
+    examples = ({"transactional-aggregate": ("query", [([], None, 0)])}
+                if host_abi == TRANSACTION_HOST_ABI else TUTORIAL_CASES)
+    for name, (function, cases) in examples.items():
         directory = payload / "templates" / language / name
         directory.mkdir(mode=0o700, parents=True)
         app = creator.create(directory / "app", name)
@@ -171,6 +179,12 @@ def templates(payload: Path, commit: str, language: str) -> dict:
                 "input": f"tests/{ordinal}-input.json", "mediaType": "application/vnd.latent.wit-values.v1+json",
                 "expect": {"category": "success" if code == 0 else "declared-error", "payload": f"tests/{ordinal}-expected.json"},
                 "requires": [], "timeoutMillis": 5000, "required": True, "fixtures": []})
+            if host_abi == TRANSACTION_HOST_ABI:
+                # This profile requires the real node's admitted namespace and
+                # query boundary. Portable/stateless adapters fail closed until
+                # that node fixture is explicitly initialized and supported.
+                entries[-1]["requires"].append("transactional-state")
+                del entries[-1]["expect"]["payload"]
             if language in {"java", "dotnet", "go", "typescript"}:
                 # A cold node charges compilation to the accepted activation.
                 # Match the maintained language deployment's finite ceiling;
@@ -184,7 +198,8 @@ def templates(payload: Path, commit: str, language: str) -> dict:
                     clocks.append("latent:clock/wall@0.1.0")
                 if language == "go":
                     clocks.append("latent:random/random@0.1.0")
-                entries[-1].update(requires=["clock"], execution={"grants": clocks})
+                entries[-1]["requires"].append("clock")
+                entries[-1]["execution"] = {"grants": clocks}
                 if language == "go":
                     entries[-1]["requires"].append("random")
         if language in {"java", "dotnet", "go"}:
@@ -202,7 +217,7 @@ def templates(payload: Path, commit: str, language: str) -> dict:
         (directory / "tests/scenarios.json").write_bytes(encode(document))
         record, _ = snapshot.observe(directory, ["app", "tests"])
         descriptor = {"schemaVersion": "latent.dev.project.v1", "name": owner["name"], "tenant": owner["tenant"],
-            "service": owner["service"], "language": language, "hostAbi": HOST_ABI,
+            "service": owner["service"], "language": language, "hostAbi": host_abi,
             "template": {"ownerIssue": project.LANGUAGES[language], "revision": commit, "sha256": record["identity"]},
             "inputRoots": ["app", "tests"], "exclude": [],
             "build": {"argv": ["python", "-I", "-B", "@tool:recipe", "--language", language, "--project", ".", "--output", "../output"],
@@ -213,6 +228,8 @@ def templates(payload: Path, commit: str, language: str) -> dict:
                 "contracts": "output/contracts.json", "deployment": "output/deployment.json",
                 "packageSource": "output/package-source.json", "packageRoot": "output/package",
                 "evidence": "output/build-observation.json"}, "scenarios": ["tests/scenarios.json"]}
+        if host_abi == TRANSACTION_HOST_ABI:
+            descriptor["artifacts"]["transactionBinding"] = "output/transaction-binding.json"
         project.validate(descriptor)
         manifest = {"schemaVersion": "latent.dev.template.v1", "project": descriptor, "snapshot": record}
         (directory / "template.json").write_bytes(encode(manifest))

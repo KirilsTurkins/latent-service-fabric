@@ -29,6 +29,7 @@ impl Cli {
             Command::Capability(command) => command.validate(),
             Command::State(command) => command.validate(),
             Command::Transaction(command) => command.validate(),
+            Command::Dispatcher(command) => command.validate(),
             Command::Policy(command) => command.validate(),
             Command::Rollout(command) => rollout(command),
             Command::Audit(super::audit::AuditCommand::Query(args)) => {
