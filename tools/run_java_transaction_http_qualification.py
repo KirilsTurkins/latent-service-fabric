@@ -210,10 +210,15 @@ def prepare_environment(client, args, work, signed):
             with (tls / name).open("xb") as target:
                 target.write(read_file(args.current_http_tls / name, 65536))
             (tls / name).chmod(0o600)
-    native(client, args.signer, "fixture-clock", "fixture-state-clock", work / "clock", lifecycle.NODE_ID)
-    clock = read_json(work / "clock/clock-bootstrap.json")
-    checkpoint = work / "clock/state-clock.json"
-    client.evidence.record("fresh-native-clock", clock)
+    if endpoint is None:
+        native(client, args.signer, "fixture-clock", "fixture-state-clock", work / "clock", lifecycle.NODE_ID)
+        clock = read_json(work / "clock/clock-bootstrap.json")
+        checkpoint = work / "clock/state-clock.json"
+        client.evidence.record("fresh-native-clock", clock)
+    else:
+        checkpoint = None
+        client.evidence.record("current-protected-state-clock-selection", {
+            "owner": "native-version-2-protected-state-owner", "collectorGeneratedCheckpoint": False})
     credential_root = work / "credentials"
     credential_root.mkdir(mode=0o700)
     token = os.urandom(32).hex().encode()

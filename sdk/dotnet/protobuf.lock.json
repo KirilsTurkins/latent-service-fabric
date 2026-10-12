@@ -15,7 +15,7 @@
                    "latent/control/v1/node.proto":  "203e6e92a48aa53c83cab1b14c24f916602e996564a9b6a3c4ab18c9c2154471",
                    "latent/invocation/v1/invocation.proto":  "6f803e8aa8d126b98b2e9b2ae285f97a6387c4d3b677230f0383f6854bf927aa",
                    "latent/control/v1/release.proto":  "320f945a9711ca5a55cf64c80ba87ad9c6d4c622a0d51cb8eefaa2d133801518",
-                   "latent/control/v1/state.proto":  "92a7e12495b9bafb17d0d97ed417ece33ce7ea9041fbea17ed79bdf0151cdb34",
+                   "latent/control/v1/state.proto":  "6abb06d94f25b0d69f58cb224fc45731b156fa70ef02f8f8107ecc8a65b7f1b0",
                    "latent/transaction/v1/transaction.proto":  "d6ec8c0bc77c032933a0d2bf01807f3bc91bed360197e371a739ecc90b8b4620",
                    "latent/control/v1/dispatcher.proto":  "ce665aedc04693b05562e716d73b3e5942367dbd13b218c78246198fdffbe4f6"
                },
@@ -30,7 +30,7 @@
                     "latent/control/v1/Policy.cs":  "afdbede1cf73ab98f40f15d5405248794fce162ce0bcfdfa10ad47d4c63f8a3e",
                     "latent/control/v1/PolicyGrpc.cs":  "96a0983965db1176c453b87e3d6caded46a8d59feb6ca373ccbae124788fcf0d",
                     "latent/control/v1/Release.cs":  "8c6ba41485fede76287919db6584f16fbe901f8c86e9f7db02be859dcdd99d17",
-                    "latent/control/v1/State.cs":  "d94476f1aaf02ed10086d24af8c2544a9a788f5e451a4760c124871e202a03dc",
+                    "latent/control/v1/State.cs":  "8720d772518aa2cfb4421c7398c6a1cc6655f3c17c43de477ebe1e44f4a88853",
                     "latent/control/v1/StateGrpc.cs":  "afcf7c68d269abb2b94edcfbbfee0e847e29b66f016f2acc4da9d3822dc08224",
                     "latent/invocation/v1/Invocation.cs":  "6e03900f7e253812e0c5b86c5f7fd1064b2eeed3ac241535dcb6a990b382a581",
                     "latent/invocation/v1/InvocationGrpc.cs":  "a118a7ea78a30e86b1632af4857a94dd8c7beaf6f93a0a4cf4f483d4d6f4639d",
