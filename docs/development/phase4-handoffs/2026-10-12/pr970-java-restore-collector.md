@@ -41,3 +41,14 @@ synthetic policy sequencing, not installed schema migration or restore
 qualification. Installed HTTP captures and the actual signed campaign still
 require the combined native gateway and peer.
 No ticket closes and no authority is inferred from copied data or inspection.
+
+The constructor also binds the complete HTTP configuration, tenant and logical
+credential reference. Current mode therefore requires the original
+`--current-http-installation` and `--current-http-tls` inputs. It copies the exact
+private test TLS bytes into an owned root, retains the declared 27/2048-byte
+limits and `java-current-http` reference, and creates fresh credential bytes.
+Credential file paths and secret bytes are outside that constructor's profile
+identity. A fresh native read-only preview must match every captured HTTP profile
+before the collector publishes or applies authority. Input identities are
+rechecked after the campaign. 122 focused controls pass; the fixture-signing
+command's implementation gap is being reconciled separately before execution.
