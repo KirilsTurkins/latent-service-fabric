@@ -207,6 +207,12 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
             if language == "dotnet" and template == "greeting":
                 from tools.dotnet_resource_fixture import install as install_resources
                 result["embeddedResources"] = install_resources(project)
+                if not application_dependencies:
+                    # This standard lookup fixture uses CLR string hashing.
+                    # Its seed needs the existing explicit noncrypto port;
+                    # dependency qualification declares the same port itself.
+                    from tools.dotnet_guest.entropy_grants import declare
+                    declare(project)
                 write_json(output / "embedded-resource-fixture.json", result["embeddedResources"])
             if language == "rust" and application_dependencies and template == "greeting":
                 from tools.rust_dependency_fixture import install
@@ -376,7 +382,7 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
-            language=language, noncrypto_entropy=language == "dotnet" and application_dependencies)
+            language=language, noncrypto_entropy=language == "dotnet")
         if language == "dotnet":
             result["embeddedResources"]["runtimeExecution"] = "signed-admitted-component"
         if approved_generator:

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Capture immutable completed host executables and qualify signed .NET resource fixture",
+  "reviewReason": "Preserve explicit CLR hash entropy declaration and original zero-execution missing-grant control for standard resource qualification",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "940d61f396d4b724568f861d59e44ddc0b05c4bbf3d2ecdf54de093185d3b9c5"
+  "sha256": "73742b5c603bc17956603878c553b736fda34c323c88cc132418b629fa1ebc31"
 }
