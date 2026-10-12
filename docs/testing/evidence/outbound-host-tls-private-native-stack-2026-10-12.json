@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "lsf.private.host-tls-stack-observation.v1",
+  "qualificationOnly": true,
+  "productionEnabled": false,
+  "fullAccountingQualified": false,
+  "binarySha256": "de95f88ff7ef000a99b5fee0d95cb8e8220b291e9aabbbf32fee063faa905ea7",
+  "tool": "valgrind-3.19.0",
+  "method": "Massif --stacks=yes; actual process stack snapshots include fixture and test/runtime threads",
+  "executions": [
+    {
+      "case": "tests::tls::private_maximum_valid_chain_roots_and_stapled_extension_retire_actual_owners",
+      "label": "maximum-valid",
+      "exitCode": 0,
+      "passed": true,
+      "traceSha256": "915d83e908a09132a420747f6a258787804703a83f01df7e639352054ef8a455",
+      "traceBytes": 14098640,
+      "outputSha256": "29b288464be33b9f6aa26de09401e6c75fccc58d87a9755a7b0b400610ee5e37",
+      "snapshotCount": 191,
+      "observedProcessStackPeakBytes": 189952,
+      "finalSnapshot": {
+        "time": 1036142864,
+        "mem_heap_B": 49069,
+        "mem_heap_extra_B": 7787,
+        "mem_stacks_B": 3976
+      }
+    },
+    {
+      "case": "tests::tls::malformed_truncated_and_oversized_tls_wire_retire_original_physical_owners",
+      "label": "hostile-wire",
+      "exitCode": 0,
+      "passed": true,
+      "traceSha256": "c6d7f07b73987fde2b7b80ec083899d6b62dd386b8ce7119c803bbf5393fa909",
+      "traceBytes": 5707354,
+      "outputSha256": "984c60f882ce4d6ad4da76d638dc7705217920e6bc91ee94f9c84b1020259616",
+      "snapshotCount": 118,
+      "observedProcessStackPeakBytes": 164432,
+      "finalSnapshot": {
+        "time": 748886064,
+        "mem_heap_B": 177937,
+        "mem_heap_extra_B": 14047,
+        "mem_stacks_B": 114080
+      }
+    }
+  ],
+  "limits": [
+    "retained snapshots are an observed process peak, not a per-connection upper bound",
+    "fixed original peer/provider/activation deadlines and allowances are unchanged",
+    "TLS client, synthetic server, certificate generation and profiler overhead share this process",
+    "heap source attribution and kernel owners remain separate observations"
+  ],
+  "sourceProvenance": {
+    "path": "docs/testing/evidence/outbound-host-tls-private-maximum-valid-2026-10-12.json",
+    "sha256": "fd45fa00a389bc553e92bf5f06a3552166b9975927b9a627a64814a6326e586a"
+  },
+  "connectionAllowanceBytes": 262144,
+  "trustAllowanceBytes": 65536
+}

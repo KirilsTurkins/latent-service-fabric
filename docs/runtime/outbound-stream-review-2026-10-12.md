@@ -133,6 +133,41 @@ and receipt preserve exact private source, executable and trace identities.
 This finite maximum-shape witness supplies no general allocation bound and
 does not infer stack/kernel costs or qualify ordinary clients and operators.
 
+The [native stack observation](../testing/evidence/outbound-host-tls-private-native-stack-2026-10-12.json)
+uses Valgrind 3.19.0 Massif with explicit
+[`--stacks=yes`](https://valgrind.org/docs/manual/ms-manual.html).
+Both the maximum valid two-version case and the five hostile wire controls pass
+under their unchanged original deadlines. Retained process snapshots peak at
+189,952 and 164,432 stack bytes respectively. These include the synthetic peer,
+certificate generator, test harness and runtime threads; they are observed
+process peaks and do not establish a connection-specific stack upper bound.
+
+The [kernel owner observation](../testing/evidence/outbound-host-tls-private-kernel-owners-2026-10-12.json)
+adds private checkpoints on the original transport. Actual Linux socket options
+report 32,768 send and 65,536 receive bytes, exactly the unchanged 96 KiB logical
+kernel reservation. `ss` rows match each actual socket inode before processing.
+The maximum valid controls observe 33,579 receive-memory bytes and 966 queued
+send-memory bytes; the hostile controls observe 1,097 receive-memory bytes.
+After actual provider cleanup, `/proc/self/fd` contains none of the two positive
+or five hostile socket owners. The
+[observer reference](../../sdk/host-stream-tls/rustls-bounds/kernel-observer-reference.rs)
+and receipt retain the exact private instrumentation and executable identities.
+Checkpoints do not prove all-time kernel peaks or TCP metadata bounds; a missing
+`ss` row after shutdown is never treated as descriptor retirement.
+
+The [external development operator observation](../testing/evidence/outbound-stream-development-operator-2026-10-12.json)
+packages source-built node and CLI debug executables locally and exercises them
+as separate processes with synthetic protected credentials. Sixteen stages pass:
+authenticated inspection and wrong-token/foreign-tenant denial; protected epoch
+rotation and repeated-epoch refusal; live credential and overbroad input refusal;
+explicit stream drain and clean stop; protected credential restart, old-token
+refusal, fresh authenticated inspection and explicit binding publication. Both
+actual processes report clean shutdown and are reaped. The dormant stream peer
+receives zero contacts. This is a local development artifact with the explicit
+TCP feature; it is not a released artifact or an admitted ordinary standard-API
+guest workflow. The receipt retains three harness/environment failures without
+turning them into product failures or erasing the original outcomes.
+
 The first reconciliation CI head exposed a carried peer restriction that
 refused nonempty GET/HEAD bodies. The existing signed guest HTTP contract sends
 `payload` for GET, HEAD and POST. The peer now accepts explicitly framed bodies
@@ -144,8 +179,8 @@ All original framing cases remain, with one added frozen-contract regression.
 | Owner | Remaining requirement |
 | --- | --- |
 | #737 | Independent architecture and security approval, including proposed TLS/secret placement and production enablement. An agent source audit cannot fabricate that signoff. |
-| #738 | Full encrypted transport/parser/allocator/trust/native peak proof under the unchanged 256 KiB connection and 64 KiB trust reservations; real component host-TLS positive and adversarial execution before candidate installation can be enabled. |
-| #739 | External authenticated packaged-node workflow with ordinary standard API, protected credential/trust failure, live rotation/revocation, stop/restart, actual quarantine diagnostics and fresh authorized work. Current internal node controls supply only their recorded subset. |
+| #738 | Complete allocator/stack/kernel upper-bound proof under the unchanged reservations and real-component adversarial host-TLS execution. Tagged heap peaks, process stack snapshots and finite kernel checkpoints supply only their recorded subset. |
+| #739 | Admitted ordinary standard-API guest workflow with live owners, application credential/trust failure and rotation, revocation, quota/quarantine diagnostics and fresh authorized invocation on a supported packaged node. The external development process observation covers dormant configuration/authentication/rotation/drain/restart only. |
 | #740 | Every promised ordinary Rust/C/Go/Java/TypeScript/.NET socket and guest-TLS entry, unchanged default client factories, private/catalogue-absent dependency, transitive worker/timer and actual physical/native measurements. Canonical TCP and native SMTP fixtures cannot replace these cells. |
 | #680 | The useful positive closed WASI HTTP composition slice remains separate from the exact negative WASI socket/resource recognition controls. Unknown socket imports remain denied; import renaming supplies no adapter. |
 
