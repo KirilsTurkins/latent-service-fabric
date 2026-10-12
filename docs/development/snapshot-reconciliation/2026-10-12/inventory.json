@@ -1,0 +1,3640 @@
+{
+  "reviewBase": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+  "initialOpenCount": 128,
+  "entries": [
+    {
+      "pullRequest": 850,
+      "title": "Phase 4 cleanup handoff and preserved worktree index",
+      "branch": "docs/phase4-cleanup-handoff-20261008",
+      "snapshotHead": "752720b767920355251501c8e9af966048c81b5d",
+      "referencedNumbers": [
+        391,
+        825,
+        851,
+        852,
+        853,
+        879,
+        956,
+        957,
+        958,
+        959,
+        966,
+        978
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 851,
+      "title": "Draft: preserve Phase 4 manifest conjunction and strict profile checkpoint",
+      "branch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-manifest-conjunction-20261007-v1",
+      "snapshotHead": "0d922003389e8f0d44423bc46c5047359390c335",
+      "referencedNumbers": [
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "source-incorporated-through-accepted-current-pr",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "currentDeliveryPr": 852,
+      "currentDeliveryHead": "aef33b8f66a28e5bb38f14cf024b017b94db3db7",
+      "mergeCommit": "55b8f257ec346689b53012dddd6606572bc18f8b",
+      "owningIssues": [
+        409,
+        387,
+        388
+      ],
+      "reconciliation": "All manifest/boundary/CI/website-wait changes are byte-identical in development after exact-head50checkadminmerge852. Original851JavaCIcapacityfailure is retained and separatelyinvestigated; no claim that its failedheadpassed."
+    },
+    {
+      "pullRequest": 852,
+      "title": "Draft WIP: preserve native currentness edits before cleanup",
+      "branch": "checkpoint/phase4-cleanup-20261008/phase4/lf-p4-native-currentness787-20261006-v11",
+      "snapshotHead": "e0d03b14fd724f2e9218beb00ceea843262cc6bd",
+      "referencedNumbers": [
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "merged-after-all-exact-head-checks",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "currentDeliveryPr": 852,
+      "currentDeliveryHead": "aef33b8f66a28e5bb38f14cf024b017b94db3db7",
+      "mergeCommit": "55b8f257ec346689b53012dddd6606572bc18f8b",
+      "completedChecks": 50,
+      "owningIssues": [
+        709,
+        679,
+        707
+      ]
+    },
+    {
+      "pullRequest": 853,
+      "title": "Draft WIP: preserve interrupted command deduplication merge",
+      "branch": "checkpoint/phase4-cleanup-20261008/phase4/lf-p4-abi-dedup387-execution-20261006",
+      "snapshotHead": "6dbbf49f6bcf61bee863b9c00b2513e29f884bd3",
+      "referencedNumbers": [
+        787,
+        790,
+        791,
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        791,
+        790
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:30:44.103154+00:00"
+    },
+    {
+      "pullRequest": 854,
+      "title": "[SDK cleanup draft] sdk-rust-authoring-20261002",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-authoring-20261002",
+      "snapshotHead": "08a429e2479974bc61494d4dad8221ed63cd4456",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        769
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:30:47.726701+00:00"
+    },
+    {
+      "pullRequest": 855,
+      "title": "[SDK cleanup draft] audit-abandonment-wakeup-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/audit-abandonment-wakeup-20261007-r1",
+      "snapshotHead": "2f40228aad59ee12c7f530dbaad80698757adac3",
+      "referencedNumbers": [
+        677,
+        715,
+        758,
+        774,
+        798,
+        842
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        805
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:30:51.266777+00:00"
+    },
+    {
+      "pullRequest": 856,
+      "title": "[SDK cleanup draft] dotnet-resource-runtime-union-20261002",
+      "branch": "handoff/sdk-cleanup-20261008/dotnet-resource-runtime-union-20261002",
+      "snapshotHead": "ccb449a91f9a82c7373c43b89488279ec9e64b71",
+      "referencedNumbers": [
+        677,
+        771
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 857,
+      "title": "[SDK cleanup draft] networking-http-closed-trap-20261002",
+      "branch": "handoff/sdk-cleanup-20261008/networking-http-closed-trap-20261002",
+      "snapshotHead": "b22062583d01b821e050a5aab40f1c4f2c0993c9",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          858
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:30:54.471089+00:00"
+    },
+    {
+      "pullRequest": 858,
+      "title": "[SDK cleanup draft] networking-http-public-wire-20261002",
+      "branch": "handoff/sdk-cleanup-20261008/networking-http-public-wire-20261002",
+      "snapshotHead": "c187cf0595c494ed0155c630bb25bd403e23d692",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        679,
+        680
+      ],
+      "currentSourcePaths": [
+        "crates/latent-core/src/error/guest_trap_kind.rs",
+        "crates/latent-wire/src/invocation/conversion/public_error.rs"
+      ],
+      "reviewedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reconciliation": "Public trap and wire mappings are byte-identical. Current trap tests preserve the cases with the current activation identity argument.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:14:53.263986+00:00"
+    },
+    {
+      "pullRequest": 859,
+      "title": "[SDK cleanup draft] networking-provider-chunk-framing",
+      "branch": "handoff/sdk-cleanup-20261008/networking-provider-chunk-framing",
+      "snapshotHead": "30d361a244c414f76ecb8132e6e915ddda1bc410",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "reconciled-into-current-delivery-pr",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        680,
+        693
+      ],
+      "currentDeliveryPr": 912,
+      "currentDeliveryHead": "336154c972678c14d989c7828cbca34db79c6969",
+      "identicalSourcePaths": [
+        "docs/testing/evidence/dotnet-http-framing-windows-reference-2026-10-02.json"
+      ],
+      "reconciliation": "The exact historical Windows receipt is retained; the useful bounded chunked HTTP peer and16real-socket controls are reconciled with current port/held-GET behavior in #912. Historical evidence stays historical.",
+      "closureObservedUtc": "2026-10-12T15:22:51.917983+00:00"
+    },
+    {
+      "pullRequest": 860,
+      "title": "[SDK cleanup draft] networking-v5-normal-current-20261004-r1",
+      "branch": "handoff/sdk-cleanup-20261008/networking-v5-normal-current-20261004-r1",
+      "snapshotHead": "af6d0c9cea5bf05bbf2e16267922ef21bab6d21b",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:30:58.434843+00:00"
+    },
+    {
+      "pullRequest": 861,
+      "title": "[SDK cleanup draft] networking-v5-normal-http-20261003-r1",
+      "branch": "handoff/sdk-cleanup-20261008/networking-v5-normal-http-20261003-r1",
+      "snapshotHead": "1ff2b8313ee18c91acc7996033a70c49f8200470",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        679,
+        680,
+        693
+      ],
+      "currentSourcePaths": [
+        "tools/dotnet_guest/http_errors.py",
+        "tools/tests/test_dotnet_http_errors.py"
+      ],
+      "reviewedDiffSha256": "11ffe2ccac0ea6bd5e4843ae1daa1cdae51365064ef88a9485bccc4c690dbd04",
+      "reconciliation": "HTTP error implementation is byte-identical. The current fixture names its actual imported functions for structural type checking; all previous cases remain.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:14:57.110769+00:00"
+    },
+    {
+      "pullRequest": 862,
+      "title": "[SDK cleanup draft] pr761-standard-dotnet-resources-20261002",
+      "branch": "handoff/sdk-cleanup-20261008/pr761-standard-dotnet-resources-20261002",
+      "snapshotHead": "ea1788e89dff169aebac56d5bfa6be2ec3a9bf8b",
+      "referencedNumbers": [
+        677,
+        832
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          856
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:01.927586+00:00"
+    },
+    {
+      "pullRequest": 863,
+      "title": "[SDK cleanup draft] runtime-ci-shared-guards-union-20261004-r1",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-ci-shared-guards-union-20261004-r1",
+      "snapshotHead": "fdf1e8334feb2d20f85435b70e200de751c5c676",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:05.721930+00:00"
+    },
+    {
+      "pullRequest": 864,
+      "title": "[SDK cleanup draft] runtime-java-activation-authoring",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-activation-authoring",
+      "snapshotHead": "38e8a91b50a6b4ee91a288c0a843f8ad8b9b9296",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          894
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:08.896585+00:00"
+    },
+    {
+      "pullRequest": 865,
+      "title": "[SDK cleanup draft] runtime-java-completable-advanced-model",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-advanced-model",
+      "snapshotHead": "3834d866ba88dd5a68326e4f5c170acfc9aba23c",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 866,
+      "title": "[SDK cleanup draft] runtime-java-completable-candidate",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-candidate",
+      "snapshotHead": "5c4a32822db9a313a0bd8e60f63d9471c24af6b0",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          865
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:11.957048+00:00"
+    },
+    {
+      "pullRequest": 867,
+      "title": "[SDK cleanup draft] runtime-java-completable-current-20261004-r1",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-current-20261004-r1",
+      "snapshotHead": "c4bfe20b10b4033a225284681011ac28c8c2c7b5",
+      "referencedNumbers": [
+        677,
+        716,
+        778,
+        788,
+        841
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          894
+        ],
+        [
+          895
+        ],
+        [
+          889
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:16.855894+00:00"
+    },
+    {
+      "pullRequest": 868,
+      "title": "[SDK cleanup draft] runtime-java-completable-delayed",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-delayed",
+      "snapshotHead": "0efed9eaa6154664147f8d4f2e69edcd7b87a510",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          865
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:20.150834+00:00"
+    },
+    {
+      "pullRequest": 869,
+      "title": "[SDK cleanup draft] runtime-java-completable-timed",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-timed",
+      "snapshotHead": "a560bf82b2d37c8ccc66fa54442f7671074eca07",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          865
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:23.328124+00:00"
+    },
+    {
+      "pullRequest": 870,
+      "title": "[SDK cleanup draft] runtime-java-executor-acceptance",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-executor-acceptance",
+      "snapshotHead": "a03316ba5fa7ffda5d9b9a6bb7ca9e1580330f0b",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          894
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:26.202078+00:00"
+    },
+    {
+      "pullRequest": 871,
+      "title": "[SDK cleanup draft] runtime-wait-frames",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-wait-frames",
+      "snapshotHead": "8344afee83c6e3bb88efe5e9eb0fff11818e1f89",
+      "referencedNumbers": [
+        677,
+        819
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        681,
+        741
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 8344afee83c6e3bb88efe5e9eb0fff11818e1f89 Store current first-party schemas without changing their ordered models",
+        "COMMIT 359b2d9da50b3555af4153306db5fdb7b5075e1a fix(java): pass optional compiler profiles only when selected",
+        "COMMIT 4e12ff83d596b97dd477bb1382cad609db167ee1 Compact current generated locks without changing dependency graphs",
+        "COMMIT 77dfca853c7ec64e94be70bd2f295bb429759797 Compact current runtime CI inventories without changing obligations",
+        "COMMIT 5d79197b7b0d1b78912b21164e1a89abf842f2de Check current V5 ABI while retaining frozen V4 transaction boundaries"
+      ],
+      "identicalSourcePaths": [
+        "schemas/angular-build.schema.json",
+        "schemas/build-observation.schema.json",
+        "schemas/builder-policy.schema.json",
+        "schemas/builder-revocations.schema.json",
+        "schemas/capability-policy-config.schema.json",
+        "schemas/capability-policy-resource.schema.json",
+        "schemas/capsule-manifest.schema.json",
+        "schemas/cli-registry-credentials.schema.json",
+        "schemas/cli-registry-profile.schema.json",
+        "schemas/deployment.schema.json",
+        "schemas/host-abi-profile.schema.json",
+        "schemas/node-audit.schema.json",
+        "schemas/node-http-ingress.schema.json",
+        "schemas/node-http-response-cache.schema.json",
+        "schemas/node-isolated-aot.schema.json",
+        "schemas/node-renderer-profile.schema.json",
+        "schemas/node-rollouts.schema.json",
+        "schemas/node-security-profile.schema.json",
+        "schemas/node-supply-chain.schema.json",
+        "schemas/package-admission-receipt.schema.json",
+        "schemas/package-admission-upload.schema.json",
+        "schemas/package-build-inputs.schema.json",
+        "schemas/package-config.schema.json",
+        "schemas/package-evidence-index.schema.json",
+        "schemas/package-evidence.schema.json",
+        "schemas/package-manifest.schema.json",
+        "schemas/package-provenance-statement.schema.json",
+        "schemas/package-provenance.schema.json",
+        "schemas/package-sbom-inputs.schema.json",
+        "schemas/package-sbom-policy.schema.json",
+        "schemas/package-sbom.schema.json",
+        "schemas/package-signature-claims.schema.json",
+        "schemas/package-signature.schema.json",
+        "schemas/package-source.schema.json",
+        "schemas/package-wit-lock.schema.json",
+        "schemas/publication-ref.schema.json",
+        "schemas/publisher-policy.schema.json",
+        "schemas/publisher-revocations.schema.json",
+        "schemas/release-lifecycle-api.schema.json",
+        "schemas/release-lifecycle-record.schema.json",
+        "schemas/release-operation-receipt.schema.json",
+        "schemas/rollout-canary-policy.schema.json",
+        "schemas/supply-chain-policy.schema.json",
+        "schemas/transaction-api.schema.json",
+        "schemas/transaction-binding.schema.json",
+        "schemas/transaction-durable-record.schema.json",
+        "schemas/web-admission-receipt.schema.json",
+        "schemas/web-build-observation.schema.json",
+        "schemas/web-provenance-statement.schema.json",
+        "tools/ci/contracts/python/test_fixed_result_boundary.py.json",
+        "tools/optimization_kubernetes/schemas/aggregate.schema.json",
+        "tools/optimization_kubernetes/schemas/bootstrap.schema.json",
+        "tools/optimization_kubernetes/schemas/cluster-cleanup.schema.json",
+        "tools/optimization_kubernetes/schemas/suite.schema.json",
+        "tools/static_api/package-lock.json",
+        "tools/tests/test_transaction_contracts.py"
+      ],
+      "reviewedChangedPaths": [
+        "examples/framework-compatibility/package-lock.json",
+        "examples/renderer-profile/package-lock.json",
+        "schemas/capability-policy.schema.json",
+        "schemas/capability-provider-binding.schema.json",
+        "schemas/node-budget-profile.schema.json",
+        "schemas/node-config-check.schema.json",
+        "schemas/node-providers.schema.json",
+        "schemas/trigger.schema.json",
+        "schemas/web-application.schema.json",
+        "tools/ci/contracts/owners/tools/qualify_java_fibers.py.json",
+        "tools/ci/contracts/python/test_transaction_contracts.py.json",
+        "tools/java_guest/compiler.py"
+      ],
+      "reviewedDiffSha256": "18c605c51eaa6d55f7f3fec3b99be48e0bdc006c9fe0021667cb7a60c691d931",
+      "reconciliation": "Compact ordered first-party schema/lock storage and optional Java compiler profile selection are incorporated. Current schemas add installed Phase4 contracts and later authenticated lock inputs; source ordering and guards remain.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:49:56.913668+00:00"
+    },
+    {
+      "pullRequest": 872,
+      "title": "[SDK cleanup draft] runtime-website-acquire-retry",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-website-acquire-retry",
+      "snapshotHead": "6e5a8baf32039e92746fcf24c5c9a9b2076d4451",
+      "referencedNumbers": [
+        677,
+        832
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        679,
+        681
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 6e5a8baf32039e92746fcf24c5c9a9b2076d4451 Bound website archive transport retries to the original acquisition budget",
+        "COMMIT 37137a341d2beeba07ca00a19a4c3a93cfe963eb fix(ci): bound read-only inspection after uncertain deployment apply",
+        "COMMIT f0fe7cfe27d6e2c6138f9bd886996b62a9a98334 fix(ci): authenticate Echo WIT remnants retained by Rust cache",
+        "COMMIT 2bb6b0143d44edca576728164acfdf8881b25ba9 fix(ci): reset empty echo skeletons retained by dependency caching",
+        "COMMIT b1f11fcc89e0ea36f6850d43d16563bcb8a15656 Review the exact fixed-result canonical lowering exception"
+      ],
+      "identicalSourcePaths": [
+        "tools/phase2_operator_scenario.py",
+        "tools/reset_validation_echo.py",
+        "tools/run_phase2_operator_workflow.py",
+        "tools/tests/fixtures/validation_echo_cache/context.wit",
+        "tools/tests/fixtures/validation_echo_cache/echo.wit",
+        "tools/tests/fixtures/validation_echo_cache/log.wit",
+        "tools/tests/test_fixed_result_boundary.py",
+        "tools/tests/test_reset_validation_echo.py"
+      ],
+      "reviewedChangedPaths": [
+        "tools/ci/contracts/owners/tools/reset_validation_echo.py.json",
+        "tools/ci/contracts/owners/tools/run_phase2_operator_workflow.py.json",
+        "tools/ci/contracts/python/test_fixed_result_boundary.py.json",
+        "tools/ci/contracts/python/test_phase2_operator_workflow.py.json",
+        "tools/ci/contracts/python/test_reset_validation_echo.py.json",
+        "tools/native_loader_boundary.py",
+        "tools/phase2_operator_process.py",
+        "tools/tests/test_phase2_operator_workflow.py",
+        "website/toolchain/prepare.py",
+        "website/toolchain/tests/test_prepare.py"
+      ],
+      "reviewedDiffSha256": "c8ba282f8fb4c5f3967008c9d69913e0be1c3fd798614b7fb1f02b360d7b2595",
+      "reconciliation": "Original-budget authenticated website acquisition retries are incorporated. Current native loader retains the same review with Wasmtime48.0.5; operator failed-call observation extends the original bounded uncertain-apply inspection.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:02.763572+00:00"
+    },
+    {
+      "pullRequest": 873,
+      "title": "[SDK cleanup draft] sdk-c-approved-generators-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-c-approved-generators-20261007-r1",
+      "snapshotHead": "b99da32a4c7fc989fe1d028359b926027f044d81",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "implemented-source-identical-to-development",
+      "incorporatingMergedPrs": [
+        843
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "currentSourcePaths": [
+        "tools/c_generator_authoring.py",
+        "tools/tests/test_c_generator_authoring.py"
+      ]
+    },
+    {
+      "pullRequest": 874,
+      "title": "[SDK cleanup draft] sdk-c-authoring-current-20261007-r2",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-c-authoring-current-20261007-r2",
+      "snapshotHead": "120ceab09a2c4a96d4e13ce8a5b3363983b06999",
+      "referencedNumbers": [
+        677,
+        785
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        679,
+        684
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT ce0a317391cbff4727d9b9d65dba2530be73ef66 fix(sdk): preserve empty frozen inspection envelopes with structural type imports",
+        "COMMIT df5d2cc1cc8783c3099695abee067b0bb257e79c fix(dev): use authenticated HTTPS for pinned Ubuntu snapshot indexes",
+        "COMMIT ee3b22a292dae63767cf5b2ab5ff769afcc2cde4 test(sdk): supply controlled generated C in Java composition fixture",
+        "COMMIT ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b Keep mocked DotNet compiler fixtures inside their reviewed contract boundary",
+        "COMMIT 0d7124fef2a6e240aabeee482ccf109a5ea6ef59 Preserve existing CI fragment layout around new helper guards"
+      ],
+      "identicalSourcePaths": [
+        "tools/tests/test_dotnet_frontend_dependencies.py",
+        "tools/tests/test_dotnet_noncrypto_entropy.py"
+      ],
+      "reviewedChangedPaths": [
+        "packaging/dev/wsl.Dockerfile",
+        "tools/ci/contracts/python/test_dev_tools.py.json",
+        "tools/guest_compatibility_build.py",
+        "tools/tests/test_java_server_source.py"
+      ],
+      "reviewedDiffSha256": "cc0423f8e953682737ff751e8fc5c0846d5abbe44b36a1279cc7e562951d4d62",
+      "reconciliation": "Controlled .NET compiler fixtures are identical. Current compatibility code preserves empty frozen inspection envelopes and adds captured transaction/structural type checks. Current Java server controls add bounded original-delete observation.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:06.837250+00:00"
+    },
+    {
+      "pullRequest": 875,
+      "title": "[SDK cleanup draft] sdk-c-current-complete-qualification-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-c-current-complete-qualification-20261007-r1",
+      "snapshotHead": "1269a0d82e838de12c7cc970c32687deca46f05f",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          874
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:28.845925+00:00"
+    },
+    {
+      "pullRequest": 876,
+      "title": "[SDK cleanup draft] sdk-captured-runtime-receipts-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-captured-runtime-receipts-20261007-r1",
+      "snapshotHead": "f742d3d8dce8754e36c0821af48a81c82305872e",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [
+        [
+          907
+        ],
+        [
+          902
+        ],
+        [
+          874
+        ],
+        [
+          882
+        ],
+        [
+          916
+        ],
+        [
+          883
+        ],
+        [
+          955
+        ],
+        [
+          923
+        ],
+        [
+          886
+        ],
+        [
+          884
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:34.117444+00:00"
+    },
+    {
+      "pullRequest": 877,
+      "title": "[SDK cleanup draft] sdk-ci-observed-failures",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-ci-observed-failures",
+      "snapshotHead": "c3b5cee5951ecbb49748395b88b225325cda2837",
+      "referencedNumbers": [
+        677,
+        832
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        679
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT ba11ceb2ebe2a163f90dfe7c48694e76fc80d655 fix(ci): authenticate Echo WIT remnants retained by Rust cache",
+        "COMMIT 28ab2ece22740c23842487b8c88d96f863b2c467 fix(ci): reset empty echo skeletons retained by dependency caching",
+        "COMMIT 44f62f0962ab49c5e6bb1ed4cd176ef02d31e929 fix(ci): register the forced .NET entropy example harness",
+        "COMMIT d1e78b8c4ef5de14a96f505e32daf6ba7aabdc0b test(testing): isolate missing fixture tool preflight from cached output",
+        "COMMIT 3b051f3b68ac07cacec279add83c75a4df8616d1 fix(dotnet): isolate reviewed library preparation in its owned workspace"
+      ],
+      "identicalSourcePaths": [
+        "tools/ci/suites.d/dotnet-runtime.json",
+        "tools/dotnet_dependency_fixture.py",
+        "tools/reset_validation_echo.py",
+        "tools/tests/fixtures/validation_echo_cache/context.wit",
+        "tools/tests/fixtures/validation_echo_cache/echo.wit",
+        "tools/tests/fixtures/validation_echo_cache/log.wit",
+        "tools/tests/test_ci_suite_fragments.py",
+        "tools/tests/test_reset_validation_echo.py"
+      ],
+      "reviewedChangedPaths": [
+        "tools/ci/contracts/owners/tools/reset_validation_echo.py.json",
+        "tools/ci/contracts/python/test_ci_suite_fragments.py.json",
+        "tools/ci/contracts/python/test_dotnet_application_dependencies.py.json",
+        "tools/ci/contracts/python/test_local_tests.py.json",
+        "tools/ci/contracts/python/test_reset_validation_echo.py.json",
+        "tools/tests/test_dotnet_application_dependencies.py",
+        "tools/tests/test_local_tests.py"
+      ],
+      "reviewedDiffSha256": "f362d18caecc2dce1f0c2522d00834b64ca59d2a93e71e4edddb57f55d6ee160",
+      "reconciliation": "Forced .NET entropy harness, current suite fragments and authenticated Echo cache reset controls remain incorporated. Current tests add deterministic selected frontend and bounded failed-call controls.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:12.254039+00:00"
+    },
+    {
+      "pullRequest": 878,
+      "title": "[SDK cleanup draft] sdk-compatibility-context-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-compatibility-context-20261007-r1",
+      "snapshotHead": "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [
+        [
+          907
+        ],
+        [
+          902
+        ],
+        [
+          874
+        ],
+        [
+          882
+        ],
+        [
+          916
+        ],
+        [
+          883
+        ],
+        [
+          955
+        ],
+        [
+          923
+        ],
+        [
+          886
+        ],
+        [
+          884
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:36.730788+00:00"
+    },
+    {
+      "pullRequest": 879,
+      "title": "WIP: qualify signed Java query and unresolved recovery workflows",
+      "branch": "test/phase4-current-query-witness-union-v39",
+      "snapshotHead": "1fcc6d0fa6ec8e19c3ffc11ca02dd9242d0a10e6",
+      "referencedNumbers": [
+        388,
+        398,
+        399,
+        400,
+        409,
+        718,
+        823,
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          959
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:41.851981+00:00"
+    },
+    {
+      "pullRequest": 880,
+      "title": "[SDK cleanup draft] sdk-completable-idle-timer-repair-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-completable-idle-timer-repair-20261006-r1",
+      "snapshotHead": "18cf123686b7beb0e09fcd767ad5845aa558e4d4",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:44.428611+00:00"
+    },
+    {
+      "pullRequest": 881,
+      "title": "[SDK cleanup draft] sdk-controlled-stream-peer-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-controlled-stream-peer-20261007-r1",
+      "snapshotHead": "83880e1e843daa0b0d087be5e10dbf9f552fa989",
+      "referencedNumbers": [
+        677,
+        774,
+        798,
+        842
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "reconciled-into-current-delivery-pr",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        680,
+        737,
+        738,
+        740
+      ],
+      "currentDeliveryPr": 912,
+      "currentDeliveryHead": "336154c972678c14d989c7828cbca34db79c6969",
+      "identicalSourcePaths": [
+        "tools/outbound_stream_fixture.py",
+        "tools/tests/test_outbound_stream_fixture.py"
+      ],
+      "reconciliation": "The exact bounded SMTP peer and submitted-versus-confirmed controls are retained in the reviewed current networking PR.",
+      "closureObservedUtc": "2026-10-12T15:22:47.738751+00:00"
+    },
+    {
+      "pullRequest": 882,
+      "title": "[SDK cleanup draft] sdk-dotnet-ci-contract-fixtures-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-dotnet-ci-contract-fixtures-20261007-r1",
+      "snapshotHead": "53bf7d0e83cf3ef97d7d3a24ce91932c328c8d70",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        687
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 53bf7d0e83cf3ef97d7d3a24ce91932c328c8d70 Keep mocked DotNet compiler fixtures inside their reviewed contract boundary",
+        "COMMIT 0d7124fef2a6e240aabeee482ccf109a5ea6ef59 Preserve existing CI fragment layout around new helper guards",
+        "COMMIT a7d3300c39b7379a1543ca93226098f7737725c5 Capture actual Rust guest SDK runtime source in diagnostics",
+        "COMMIT f4989eb19c306f5445749832e80bd8235291fbdc fix(sdk): retain signable generator provenance and qualify generated C",
+        "COMMIT b652b88a1713d531f1cd0b852d3ff674a638464b fix(dev): stop source callbacks after compiler group retirement"
+      ],
+      "identicalSourcePaths": [
+        "tools/build_process.py",
+        "tools/c_generator_fixture.py",
+        "tools/ci/contracts/owners/tools/qualify_c_capsules.py.json",
+        "tools/ci/contracts/owners/tools/qualify_rust_capsules.py.json",
+        "tools/ci/contracts/python/test_build_provenance_schemas.py.json",
+        "tools/ci/contracts/python/test_guest_runtime_receipts.py.json",
+        "tools/ci/contracts/python/test_watch_completed_process.py.json",
+        "tools/dev_workflow/process.py",
+        "tools/guest_runtime_receipts.py",
+        "tools/qualify_c_capsules.py",
+        "tools/qualify_rust_capsules.py",
+        "tools/tests/test_build_provenance_schemas.py",
+        "tools/tests/test_dotnet_frontend_dependencies.py",
+        "tools/tests/test_dotnet_noncrypto_entropy.py",
+        "tools/tests/test_guest_runtime_receipts.py",
+        "tools/tests/test_watch_completed_process.py"
+      ],
+      "reviewedChangedPaths": [
+        ".github/workflows/c-guest-authoring.yml",
+        "tools/c_capsule_build.py",
+        "tools/ci/contracts/python/test_dev_tools.py.json",
+        "tools/ci/contracts/workflows/c-guest-authoring.yml/jobs/runtime.json",
+        "tools/go_capsule_build.py",
+        "tools/java_capsule_build.py",
+        "tools/typescript_guest/build.py"
+      ],
+      "reviewedDiffSha256": "c821d7c9acd48b8fb03386a391eb9a6055eb9889de0cf678699b10eb3aa61c24",
+      "reconciliation": "Mocked .NET frontend/entropy fixtures, runtime source capture and their core helpers are incorporated. Current compiler recipes add approved generators and installed Phase4 packaging; current CI retains the original assertions.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:19.960176+00:00"
+    },
+    {
+      "pullRequest": 883,
+      "title": "[SDK cleanup draft] sdk-emitted-reachability-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-emitted-reachability-20261007-r1",
+      "snapshotHead": "5f016c54535924909e2a7ae3080ea4c5562f3944",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        679
+      ],
+      "currentSourcePaths": [
+        "tools/guest_emitted_code.py",
+        "tools/tests/test_guest_emitted_code.py"
+      ],
+      "reviewedDiffSha256": "21c8e98798be4ea325202bce97e65ba07ad3f51c7b5cd8cbbd58583b847b17d3",
+      "reconciliation": "Analyzer is byte-identical; development adds one capture-domain identity case and removes no previous test.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:15:00.316535+00:00"
+    },
+    {
+      "pullRequest": 884,
+      "title": "[SDK cleanup draft] sdk-emitted-reachability-graph-domain-followup-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-emitted-reachability-graph-domain-followup-20261007-r1",
+      "snapshotHead": "8a5af03b38df168f9e47a5157f977f1f1d43c869",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        679
+      ],
+      "currentSourcePaths": [
+        "tools/guest_emitted_code.py",
+        "tools/tests/test_guest_emitted_code.py"
+      ],
+      "reviewedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reconciliation": "Analyzer and its tests are byte-identical to development.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:15:03.677045+00:00"
+    },
+    {
+      "pullRequest": 885,
+      "title": "[SDK cleanup draft] sdk-final-runtime-qualification-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-final-runtime-qualification-20261007-r1",
+      "snapshotHead": "e7a555111676792f87d05359ee2e7b56d9dce6ea",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:47.589194+00:00"
+    },
+    {
+      "pullRequest": 886,
+      "title": "[SDK cleanup draft] sdk-frontend-dependency-descriptor-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-frontend-dependency-descriptor-20261006-r1",
+      "snapshotHead": "7ce730c92ecff0eb694d4d0466dfe76e9be9cb8b",
+      "referencedNumbers": [
+        677,
+        785
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:50.254029+00:00"
+    },
+    {
+      "pullRequest": 887,
+      "title": "[SDK cleanup draft] sdk-frontend-followup-af6d-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-frontend-followup-af6d-20261006-r1",
+      "snapshotHead": "66bda98056d3c2e64ca45731eb47e2942e6355ea",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:53.334338+00:00"
+    },
+    {
+      "pullRequest": 888,
+      "title": "[SDK cleanup draft] sdk-generator-host-sandbox-discovery-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-generator-host-sandbox-discovery-20261007-r1",
+      "snapshotHead": "6f3ac39e064f6616c3642ba067b57a069fda654b",
+      "referencedNumbers": [
+        677,
+        842
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:55.994885+00:00"
+    },
+    {
+      "pullRequest": 889,
+      "title": "[SDK cleanup draft] sdk-go-service-retirement-diagnostics-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-go-service-retirement-diagnostics-20261007-r1",
+      "snapshotHead": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+      "referencedNumbers": [
+        677,
+        785
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        679,
+        686,
+        742
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6 test(sdk): observe physical scheduler retirement and closed capacity failures",
+        "COMMIT 757ccd6d5cefaaa793f8b0f3376759f17b7db148 fix(dev): use authenticated HTTPS for pinned Ubuntu snapshot indexes",
+        "COMMIT 53f01e43e6c764098f638f9a3c0162a84effb527 fix(sdk): preserve empty frozen inspection envelopes with structural type imports",
+        "COMMIT 14f182b894402a7c163ee4005bfa0b445edc5a71 test(sdk): declare empty imports in controlled DotNet build surfaces",
+        "COMMIT 048853c6cae42f0a9e7ba77c62c1e909f077b531 test(runtime): require the current quarantine diagnostic"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-wasmtime/tests/local_service/runtime.rs",
+        "tools/tests/test_dotnet_frontend_dependencies.py"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-wasmtime/tests/local_service/diagnostics/reason.rs",
+        "crates/latent-wasmtime/tests/local_service/fixture.rs",
+        "crates/latent-wasmtime/tests/local_service_diagnostics.rs",
+        "packaging/dev/wsl.Dockerfile",
+        "tools/ci/suites.json",
+        "tools/guest_compatibility_build.py",
+        "tools/tests/test_dotnet_noncrypto_entropy.py"
+      ],
+      "reviewedDiffSha256": "2c3c11b80bffec00973f4695e9e3628f57977767254d1ce951cc36990ef33ff6",
+      "reconciliation": "Actual local-service runtime controls and .NET frontend fixtures are identical. The current closed diagnostic owner adds preparation-capacity reasons and retains physical scheduler retirement and quarantine observations.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:25.289281+00:00"
+    },
+    {
+      "pullRequest": 890,
+      "title": "[SDK cleanup draft] sdk-java-approved-source-generators-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-approved-source-generators-20261007-r1",
+      "snapshotHead": "302168448a60ba04652764fc4060173ed6c3009d",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:31:58.787271+00:00"
+    },
+    {
+      "pullRequest": 891,
+      "title": "[SDK cleanup draft] sdk-java-httpserver-body-decoding-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-httpserver-body-decoding-20261007-r1",
+      "snapshotHead": "21031d9c53b69590a997951f48ee2fd4d5e10c1e",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        682,
+        688,
+        741
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 21031d9c53b69590a997951f48ee2fd4d5e10c1e perf(java): validate UTF-8 before decoding without re-encoding",
+        "COMMIT 6f3ac39e064f6616c3642ba067b57a069fda654b Resolve trusted generator host sandbox before byte verification",
+        "COMMIT b0283780547a54e777456a163a433986ab1ecfc5 Add generator host discovery and untrusted-link regression controls",
+        "COMMIT 89b8d9833d1309667a4aa6da31b5daa40ccabb79 Register reviewed Java timer controls with their CI owner",
+        "COMMIT 568ece73b042fd1d07567cb3ed42079df4b67d8d Reuse charged Java timers in the event pump"
+      ],
+      "identicalSourcePaths": [
+        "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
+        "sdk/java-guest/fibers/conformance/compiler/QueueDeadlineModelControl.java",
+        "sdk/java-guest/fibers/conformance/compiler/timer-source-control/TimerReadinessSourceControl.java",
+        "sdk/java-guest/fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java",
+        "sdk/java-guest/fibers/dev/latent/guest/runtime/Activation.java",
+        "sdk/java-guest/fibers/dev/latent/guest/runtime/Monitors.java",
+        "sdk/java-guest/runtime/dev/latent/guest/Wire.java",
+        "sdk/java-guest/tests/test_wire.py",
+        "sdk/java-guest/tests/wire/WireUtf8Control.java",
+        "tools/application_dependency_tools.py",
+        "tools/ci/contracts/owners/tools/qualify_java_fibers.py.json",
+        "tools/ci/contracts/python/test_application_dependency_tools.py.json",
+        "tools/qualify_java_fibers.py",
+        "tools/tests/test_application_dependency_tools.py"
+      ],
+      "reviewedChangedPaths": [],
+      "reviewedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reconciliation": "All14 reviewed source/control files are byte-identical, including allocation-preserving Java UTF-8 validation, source generator containment and charged timer reuse.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:31.923967+00:00"
+    },
+    {
+      "pullRequest": 892,
+      "title": "[SDK cleanup draft] sdk-java-owned-timer-readiness-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-owned-timer-readiness-20261006-r1",
+      "snapshotHead": "89b8d9833d1309667a4aa6da31b5daa40ccabb79",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:01.926860+00:00"
+    },
+    {
+      "pullRequest": 893,
+      "title": "[SDK cleanup draft] sdk-java-pr807-coherent-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-pr807-coherent-20261007-r1",
+      "snapshotHead": "10f1c9e7652d903e0f8cf835862c21c323f31d6e",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          894
+        ],
+        [
+          895
+        ],
+        [
+          889
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:04.863843+00:00"
+    },
+    {
+      "pullRequest": 894,
+      "title": "[SDK cleanup draft] sdk-java-pr807-wire-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-pr807-wire-20261007-r1",
+      "snapshotHead": "406f9e4075f1804051ff831c9395e15a9d1cdee4",
+      "referencedNumbers": [
+        677,
+        785
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:07.540145+00:00"
+    },
+    {
+      "pullRequest": 895,
+      "title": "[SDK cleanup draft] sdk-java-server-lifecycle-qualification-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-server-lifecycle-qualification-20261007-r1",
+      "snapshotHead": "9e66fccb1cf991ebf11dc69f65a34077a5ba377d",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 896,
+      "title": "[SDK cleanup draft] sdk-java-server-maximum-body-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-server-maximum-body-20261007-r1",
+      "snapshotHead": "7a7a0e664df442f6e7f13fa332a00c7dc9dce03d",
+      "referencedNumbers": [
+        677,
+        780
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          894
+        ],
+        [
+          895
+        ],
+        [
+          889
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:10.262255+00:00"
+    },
+    {
+      "pullRequest": 897,
+      "title": "[SDK cleanup draft] sdk-nats-cold-secret-ci-repair-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-nats-cold-secret-ci-repair-20261006-r1",
+      "snapshotHead": "fb82e51144715a873635c42a95455825c0f91658",
+      "referencedNumbers": [
+        677,
+        716,
+        766,
+        778,
+        788,
+        794
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        805,
+        795,
+        775
+      ],
+      "preservedDescendantTips": [
+        [
+          912
+        ],
+        [
+          874
+        ],
+        [
+          954
+        ],
+        [
+          952
+        ],
+        [
+          924
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:13.274506+00:00"
+    },
+    {
+      "pullRequest": 898,
+      "title": "[SDK cleanup draft] sdk-runtime-diagnostic-context-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-runtime-diagnostic-context-20261007-r1",
+      "snapshotHead": "c38043fa9c81180a79e50ad11c3a7f6c156126d4",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        679,
+        741
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT c38043fa9c81180a79e50ad11c3a7f6c156126d4 Stop active source checks after process-group retirement",
+        "COMMIT 49c6f190814a4f61ddcbb64a78fbe32d3fa7fbe7 Add actual child completion observer regressions",
+        "COMMIT 6f3ac39e064f6616c3642ba067b57a069fda654b Resolve trusted generator host sandbox before byte verification",
+        "COMMIT b0283780547a54e777456a163a433986ab1ecfc5 Add generator host discovery and untrusted-link regression controls",
+        "COMMIT 89b8d9833d1309667a4aa6da31b5daa40ccabb79 Register reviewed Java timer controls with their CI owner"
+      ],
+      "identicalSourcePaths": [
+        "tools/application_dependency_tools.py",
+        "tools/build_process.py",
+        "tools/ci/contracts/owners/tools/qualify_java_fibers.py.json",
+        "tools/ci/contracts/python/test_application_dependency_tools.py.json",
+        "tools/ci/contracts/python/test_watch_completed_process.py.json",
+        "tools/dev_workflow/process.py",
+        "tools/tests/test_application_dependency_tools.py",
+        "tools/tests/test_watch_completed_process.py"
+      ],
+      "reviewedChangedPaths": [],
+      "reviewedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reconciliation": "All8 reviewed source/control files are byte-identical, including actual child completion observation, process-group retirement and contained generator host discovery.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:36.375493+00:00"
+    },
+    {
+      "pullRequest": 899,
+      "title": "[SDK cleanup draft] sdk-runtime-owner-attribution-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-runtime-owner-attribution-20261007-r1",
+      "snapshotHead": "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [
+        [
+          907
+        ],
+        [
+          902
+        ],
+        [
+          874
+        ],
+        [
+          882
+        ],
+        [
+          916
+        ],
+        [
+          883
+        ],
+        [
+          955
+        ],
+        [
+          923
+        ],
+        [
+          886
+        ],
+        [
+          884
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:15.856592+00:00"
+    },
+    {
+      "pullRequest": 900,
+      "title": "[SDK cleanup draft] sdk-runtime-receipt-ci-repair-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-runtime-receipt-ci-repair-20261007-r1",
+      "snapshotHead": "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [
+        [
+          902
+        ],
+        [
+          874
+        ],
+        [
+          882
+        ],
+        [
+          916
+        ],
+        [
+          955
+        ],
+        [
+          923
+        ],
+        [
+          886
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:18.726470+00:00"
+    },
+    {
+      "pullRequest": 901,
+      "title": "[SDK cleanup draft] sdk-rust-canonical-stack-port-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-canonical-stack-port-20261007-r1",
+      "snapshotHead": "a7851c29eb65a48a1e8547c2bbb173a21a57fc68",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          902
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:21.586937+00:00"
+    },
+    {
+      "pullRequest": 902,
+      "title": "[SDK cleanup draft] sdk-rust-canonical-thread-bootstrap-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-canonical-thread-bootstrap-20261007-r1",
+      "snapshotHead": "0be99712751a4b67830914cba42d060f091219db",
+      "referencedNumbers": [
+        677,
+        743
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false,
+      "currentDeliveryPr": 902,
+      "currentDeliveryHead": "cac1f208dafe48896655a01192e5e3dd4bee0941"
+    },
+    {
+      "pullRequest": 903,
+      "title": "[SDK cleanup draft] sdk-rust-captured-staged-zig-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-captured-staged-zig-20261006-r1",
+      "snapshotHead": "aa5886b81f6438f8d33216484955279a1ab57a35",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:24.245396+00:00"
+    },
+    {
+      "pullRequest": 904,
+      "title": "[SDK cleanup draft] sdk-rust-frontend-closure-decoder-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-frontend-closure-decoder-20261006-r1",
+      "snapshotHead": "a26f7cba7433d24966bdcfb6c4cedbad2c4dc35d",
+      "referencedNumbers": [
+        677,
+        715,
+        758
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:26.911210+00:00"
+    },
+    {
+      "pullRequest": 905,
+      "title": "[SDK cleanup draft] sdk-rust-logical-tls-port-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-logical-tls-port-20261007-r1",
+      "snapshotHead": "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          902
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:29.482960+00:00"
+    },
+    {
+      "pullRequest": 906,
+      "title": "[SDK cleanup draft] sdk-rust-runtime-receipt-source-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-runtime-receipt-source-20261007-r1",
+      "snapshotHead": "a7d3300c39b7379a1543ca93226098f7737725c5",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [
+        [
+          907
+        ],
+        [
+          902
+        ],
+        [
+          874
+        ],
+        [
+          882
+        ],
+        [
+          916
+        ],
+        [
+          955
+        ],
+        [
+          923
+        ],
+        [
+          886
+        ],
+        [
+          884
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:34.481975+00:00"
+    },
+    {
+      "pullRequest": 907,
+      "title": "[SDK cleanup draft] sdk-rust-standard-clock-port-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-standard-clock-port-20261007-r1",
+      "snapshotHead": "0114e05a6a5c0a08f4e0729b00bbd3da414f2767",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "reconciled-into-current-delivery-pr",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        681,
+        683,
+        743
+      ],
+      "currentDeliveryPr": 902,
+      "currentDeliveryHead": "cac1f208dafe48896655a01192e5e3dd4bee0941",
+      "identicalSourcePaths": [
+        "sdk/rust-standard-runtime/clock.rs",
+        "sdk/rust-standard-runtime/tests/clock_native.rs",
+        "sdk/rust-standard-runtime/upstream/std/src/sys/sync/mutex/no_threads.rs",
+        "sdk/rust-standard-runtime/upstream/std/src/sys/thread/unsupported.rs",
+        "sdk/rust-standard-runtime/upstream/std/src/sys/time/mod.rs",
+        "sdk/rust-standard-runtime/upstream/std/src/sys/time/unsupported.rs",
+        "tools/ci/contracts/python/test_rust_standard_clock_profile.py.json",
+        "tools/rust_standard_clock_profile.py",
+        "tools/tests/test_rust_standard_clock_profile.py"
+      ],
+      "reconciliation": "Nine introduced source/control files are byte-identical in #902; its README extends the preserved clock profile. Actual rebuilt std and signed current-host clock execution are new bounded evidence, not thread/default-runtime gate completion.",
+      "closureObservedUtc": "2026-10-12T15:22:57.984927+00:00"
+    },
+    {
+      "pullRequest": 908,
+      "title": "[SDK cleanup draft] sdk-security-20261004",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-security-20261004",
+      "snapshotHead": "8810e5d99784da6ca5239587e05605915b6b4651",
+      "referencedNumbers": [
+        677,
+        782,
+        793,
+        816,
+        820
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 909,
+      "title": "[SDK cleanup draft] sdk-stream-operator-controls-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-operator-controls-20261007-r1",
+      "snapshotHead": "9320471d260e49ecbdd5ca87516393299c164ee6",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        775
+      ],
+      "preservedDescendantTips": [
+        [
+          912
+        ],
+        [
+          874
+        ],
+        [
+          954
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "pullRequest": 910,
+      "title": "[SDK cleanup draft] sdk-stream-operator-current-development-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-operator-current-development-20261007-r1",
+      "snapshotHead": "9320471d260e49ecbdd5ca87516393299c164ee6",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        775
+      ],
+      "preservedDescendantTips": [
+        [
+          912
+        ],
+        [
+          874
+        ],
+        [
+          954
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:36.946955+00:00"
+    },
+    {
+      "pullRequest": 911,
+      "title": "[SDK cleanup draft] sdk-stream-operator-current-development-20261007-r2",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-operator-current-development-20261007-r2",
+      "snapshotHead": "55906321f5bd7e9cf156674945d808cda91f18b2",
+      "referencedNumbers": [
+        677,
+        803,
+        805,
+        826
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        775
+      ],
+      "preservedDescendantTips": [
+        [
+          912
+        ],
+        [
+          874
+        ],
+        [
+          954
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:41.044002+00:00"
+    },
+    {
+      "pullRequest": 912,
+      "title": "[SDK cleanup draft] sdk-stream-tls-captured-parser-bounds-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-tls-captured-parser-bounds-20261007-r1",
+      "snapshotHead": "067491d87f8fd4f233114ac93db260d5fc2514b2",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false,
+      "currentDeliveryPr": 912,
+      "currentDeliveryHead": "0800b333ce5d89512c38e5dfb8f29466d489c376"
+    },
+    {
+      "pullRequest": 913,
+      "title": "[SDK cleanup draft] sdk-stream-tls-protected-credentials-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-tls-protected-credentials-20261007-r1",
+      "snapshotHead": "3fa3313911390233f26e7b911a2458cf6f055d94",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          912
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:43.712165+00:00"
+    },
+    {
+      "pullRequest": 914,
+      "title": "[SDK cleanup draft] sdk-typescript-approved-generators-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-approved-generators-20261007-r1",
+      "snapshotHead": "f80b48250c89a1294a42d5f5c8e0d52e7aefe2f7",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "implemented-source-identical-to-development",
+      "incorporatingMergedPrs": [
+        843
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "currentSourcePaths": [
+        "tools/typescript_generator_authoring.py",
+        "tools/tests/test_typescript_generator_authoring.py"
+      ]
+    },
+    {
+      "pullRequest": 915,
+      "title": "[SDK cleanup draft] sdk-typescript-async-clock-profile-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-clock-profile-20261008-r1",
+      "snapshotHead": "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          916
+        ],
+        [
+          923
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:49.643089+00:00"
+    },
+    {
+      "pullRequest": 916,
+      "title": "[SDK cleanup draft] sdk-typescript-async-imports-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-imports-20261008-r1",
+      "snapshotHead": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 917,
+      "title": "[SDK cleanup draft] sdk-typescript-async-owned-events-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-owned-events-20261007-r1",
+      "snapshotHead": "ab77366903fe21c970cf6fa1f3491166417c3c95",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          916
+        ],
+        [
+          923
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:52.827397+00:00"
+    },
+    {
+      "pullRequest": 918,
+      "title": "[SDK cleanup draft] sdk-typescript-async-profile-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-profile-20261007-r1",
+      "snapshotHead": "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+      "referencedNumbers": [
+        677,
+        826
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          916
+        ],
+        [
+          923
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:55.561848+00:00"
+    },
+    {
+      "pullRequest": 919,
+      "title": "[SDK cleanup draft] sdk-typescript-async-runtime-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-runtime-20261007-r1",
+      "snapshotHead": "a6c3e1472c622abfd8f5515e31301b08940c88b2",
+      "referencedNumbers": [
+        677,
+        774,
+        798,
+        842
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 920,
+      "title": "[SDK cleanup draft] sdk-typescript-import-profile-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-import-profile-20261008-r1",
+      "snapshotHead": "faa08263570b3748d1be7918a3271e321c6adeea",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          923
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:32:58.283785+00:00"
+    },
+    {
+      "pullRequest": 921,
+      "title": "[SDK cleanup draft] sdk-typescript-import-selection-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-import-selection-20261008-r1",
+      "snapshotHead": "6abd7a1d58f8db15648abe9613967d25690f1796",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          923
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:00.881675+00:00"
+    },
+    {
+      "pullRequest": 922,
+      "title": "[SDK cleanup draft] sdk-typescript-import-splicer-contract-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-import-splicer-contract-20261008-r1",
+      "snapshotHead": "50495c4fb24bf3b05d01e2a03bc13c6b3958138f",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          923
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:03.981805+00:00"
+    },
+    {
+      "pullRequest": 923,
+      "title": "[SDK cleanup draft] sdk-typescript-runtime-materials-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-runtime-materials-20261008-r1",
+      "snapshotHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 924,
+      "title": "[SDK cleanup draft] sdk-wasi-stream-reproducers-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-wasi-stream-reproducers-20261007-r1",
+      "snapshotHead": "ea485b568d63b126b1721febe1fb673e6c94eb9b",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        680,
+        737,
+        738
+      ],
+      "currentSourcePaths": [
+        "crates/latent-wasmtime/tests/generic_backend/host_abi.rs",
+        "research/standard-outbound/streams.wit"
+      ],
+      "reviewedDiffSha256": "d830efb8093c4364429fe66c014efe8e2267e00a57d63c94eea329fa14b6143e",
+      "reconciliation": "WASI sockets upstream reproducers and host ABI controls are byte-identical. Only the streams comment now describes the development-only V5 installation.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:15:06.893117+00:00"
+    },
+    {
+      "pullRequest": 925,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-c-authoring-lifecycle",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-c-authoring-lifecycle",
+      "snapshotHead": "7069e537200a11375c326f9f291b371d7cf8ac94",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        684
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 7069e537200a11375c326f9f291b371d7cf8ac94 test(sdk): select canonical frontend interpreter fixture",
+        "COMMIT 81088ff2e5603f5ac4d84c01f094cab9211861f5 feat(c): delegate authoring through the selected standalone frontend",
+        "COMMIT f902d4f076c51be88c2a5f913492dfc349c44e23 fix(sdk): bind authoring delegates to selected frontend bytes",
+        "COMMIT 3b39ef7f6183101ede6bc8635bc59d7bc10ec50a fix(c-sdk): reject project shadows at authoring and build entries",
+        "COMMIT 9c0ad9bee00ff01f8465ec041817364765a6a9a4 fix(dev): reject nested project descriptor shadows"
+      ],
+      "identicalSourcePaths": [
+        "tools/guest_authoring_frontend.py",
+        "tools/tests/test_c_authoring_frontend.py",
+        "tools/tests/test_guest_authoring_frontend.py"
+      ],
+      "reviewedChangedPaths": [
+        ".github/workflows/c-guest-authoring.yml",
+        ".github/workflows/developer-tools.yml",
+        "tools/c_capsule.py",
+        "tools/c_capsule_build.py",
+        "tools/c_dependency_authoring.py",
+        "tools/ci/contracts/python/test_c_authoring_frontend.py.json",
+        "tools/ci/contracts/python/test_c_dependency_authoring.py.json",
+        "tools/ci/contracts/python/test_guest_authoring_frontend.py.json",
+        "tools/ci/contracts/python/test_guest_dependency_inputs.py.json",
+        "tools/ci/contracts/workflows/c-guest-authoring.yml/jobs/runtime.json",
+        "tools/ci/contracts/workflows/developer-tools.yml/jobs/contracts.json",
+        "tools/dev_tool_distribution.py",
+        "tools/guest_dependency_inputs.py",
+        "tools/tests/test_c_dependency_authoring.py",
+        "tools/tests/test_guest_dependency_inputs.py"
+      ],
+      "reviewedDiffSha256": "6a0e98347885d2de896b4d50ccbcf1ceedde6d01936c31d4e029732464e4add3",
+      "reconciliation": "Selected standalone authoring frontend and its controls are identical. Current C authoring additionally supports approved generators, transactional templates and captured dependency-domain checks while retaining frontend-byte binding and project-shadow rejection.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:40.179910+00:00"
+    },
+    {
+      "pullRequest": 926,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-c-completion",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-c-completion",
+      "snapshotHead": "2f0a6e1a4424b1cdd360fb15ca42e301951a8722",
+      "referencedNumbers": [
+        677,
+        783,
+        819
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        824
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:06.753193+00:00"
+    },
+    {
+      "pullRequest": 927,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-ci",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-ci",
+      "snapshotHead": "131b1e3358a567b0527f28c48ea40926e8bc8806",
+      "referencedNumbers": [
+        677,
+        756,
+        770,
+        789
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        771
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:09.509258+00:00"
+    },
+    {
+      "pullRequest": 928,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-control-lease",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-control-lease",
+      "snapshotHead": "10d419cd6d81b9977d0aeeb13829afd2a3102ea5",
+      "referencedNumbers": [
+        677,
+        760,
+        770,
+        789
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        820
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:12.169585+00:00"
+    },
+    {
+      "pullRequest": 929,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-diagnostics",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-diagnostics",
+      "snapshotHead": "a90d39b115a6e586ea96af8519ef327dbec7166f",
+      "referencedNumbers": [
+        677,
+        756
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        776
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:14.834112+00:00"
+    },
+    {
+      "pullRequest": 930,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-dotnet-peer",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-dotnet-peer",
+      "snapshotHead": "0ffad44a7409e65a58cdfb4473a7d2147976b6d2",
+      "referencedNumbers": [
+        677,
+        760,
+        789
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        806
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:17.700382+00:00"
+    },
+    {
+      "pullRequest": 931,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-foundations",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-foundations",
+      "snapshotHead": "68d39106911a5221898ae7d170b4f00bda64a3e0",
+      "referencedNumbers": [
+        677,
+        756,
+        770
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        761
+      ],
+      "preservedDescendantTips": [
+        [
+          856
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:20.408375+00:00"
+    },
+    {
+      "pullRequest": 932,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-host-profiles",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-host-profiles",
+      "snapshotHead": "a4211b1717eed64eed4ad908fb2fdbe19fe46466",
+      "referencedNumbers": [
+        677,
+        756
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        679,
+        680
+      ],
+      "currentSourcePaths": [
+        "tools/guest_compatibility_build.py",
+        "tools/tests/test_guest_compatibility_recipes.py"
+      ],
+      "reviewedDiffSha256": "a498bd3750a2fed21acc0c60a49ac0937d9da01de7a237bf8279340811195e1a",
+      "reconciliation": "Current compatibility owner retains V4/V5 profile selection, adds captured Phase4 ABI checks and bounded structural value-type inspection, and preserves reports. Current recipe fixture includes its required frontend distributions.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:15:10.198257+00:00"
+    },
+    {
+      "pullRequest": 933,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-http-client-node",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-http-client-node",
+      "snapshotHead": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+      "referencedNumbers": [
+        677,
+        832
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          859
+        ],
+        [
+          858
+        ],
+        [
+          856
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:23.464563+00:00"
+    },
+    {
+      "pullRequest": 934,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-expanded-timeunit-compile",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-expanded-timeunit-compile",
+      "snapshotHead": "45dd0c316e901b5666edda527f406a302c00cf98",
+      "referencedNumbers": [
+        677,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          865
+        ],
+        [
+          894
+        ],
+        [
+          871
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:26.301474+00:00"
+    },
+    {
+      "pullRequest": 935,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-resources-recovery",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-resources-recovery",
+      "snapshotHead": "7f6fd0832b6b0af73b15889343ecdfb4142314c7",
+      "referencedNumbers": [
+        677,
+        782
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 936,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-review",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-review",
+      "snapshotHead": "6c493ea1ebdaee81023e5c9cc533253aaf0d1980",
+      "referencedNumbers": [
+        677,
+        756
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        809,
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          894
+        ],
+        [
+          935
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:28.760317+00:00"
+    },
+    {
+      "pullRequest": 937,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-spills",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-spills",
+      "snapshotHead": "27af27b8bab9edcfad4e85af1a676c16e969cc03",
+      "referencedNumbers": [
+        677,
+        756,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        827
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:32.161478+00:00"
+    },
+    {
+      "pullRequest": 938,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-spills-compile",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-spills-compile",
+      "snapshotHead": "bed5c4d6d61a0feb36d0da57df03a994d9347432",
+      "referencedNumbers": [
+        677,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:33:35.010822+00:00"
+    },
+    {
+      "pullRequest": 939,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-timeunit-compile",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-timeunit-compile",
+      "snapshotHead": "8943a364bfa53480d001b4d82353dc0ef576c6a0",
+      "referencedNumbers": [
+        677,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:01.068087+00:00"
+    },
+    {
+      "pullRequest": 940,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java807-warm",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java807-warm",
+      "snapshotHead": "ec0430f56af46c4d5b80e1a8ae35fdc34311d430",
+      "referencedNumbers": [
+        677,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          865
+        ],
+        [
+          894
+        ],
+        [
+          871
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:03.807913+00:00"
+    },
+    {
+      "pullRequest": 941,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-networking",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-networking",
+      "snapshotHead": "21e7532446e7453ad7a9e0be3ae57d8c1df906e4",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        795,
+        775
+      ],
+      "preservedDescendantTips": [
+        [
+          912
+        ],
+        [
+          874
+        ],
+        [
+          954
+        ],
+        [
+          952
+        ],
+        [
+          924
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:06.947146+00:00"
+    },
+    {
+      "pullRequest": 942,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime",
+      "snapshotHead": "16e89a79a5df3e6b9d476ad2f57e130c6eafb829",
+      "referencedNumbers": [
+        677,
+        747,
+        750,
+        754
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807,
+        798,
+        781
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          865
+        ],
+        [
+          894
+        ],
+        [
+          872
+        ],
+        [
+          871
+        ],
+        [
+          947
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:09.950907+00:00"
+    },
+    {
+      "pullRequest": 943,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-ci",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-ci",
+      "snapshotHead": "829dfced3201b502781ecf84b4ef594acb01b9f7",
+      "referencedNumbers": [
+        677,
+        756
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        810
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:13.195465+00:00"
+    },
+    {
+      "pullRequest": 944,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-contracts",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-contracts",
+      "snapshotHead": "415c36e5a4bc7095e6a16398f8b2b9c1aab47b6d",
+      "referencedNumbers": [
+        677,
+        813,
+        817,
+        818,
+        829
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        781
+      ],
+      "preservedDescendantTips": [
+        [
+          872
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:16.033964+00:00"
+    },
+    {
+      "pullRequest": 945,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-integration",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-integration",
+      "snapshotHead": "99b6d567c6435c6f1d643bf9d4caf2470e212578",
+      "referencedNumbers": [
+        677,
+        770
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:18.729968+00:00"
+    },
+    {
+      "pullRequest": 946,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-pump",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump",
+      "snapshotHead": "1cce4f749486e0e102dc764b2efda2c0ccd4c79c",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:21.141278+00:00"
+    },
+    {
+      "pullRequest": 947,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-pump-ci",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump-ci",
+      "snapshotHead": "9327aeed95f76f80b22cb622c7fa17ded74cc7cc",
+      "referencedNumbers": [
+        677,
+        817,
+        818,
+        829
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:23.565375+00:00"
+    },
+    {
+      "pullRequest": 948,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-pump-native",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump-native",
+      "snapshotHead": "38d08fd2bdc2c9631377de228bc9719e0193303a",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:26.078446+00:00"
+    },
+    {
+      "pullRequest": 949,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-timeunit",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-timeunit",
+      "snapshotHead": "ec0430f56af46c4d5b80e1a8ae35fdc34311d430",
+      "referencedNumbers": [
+        677,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          865
+        ],
+        [
+          894
+        ],
+        [
+          871
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "pullRequest": 950,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-trace",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-trace",
+      "snapshotHead": "99b6d567c6435c6f1d643bf9d4caf2470e212578",
+      "referencedNumbers": [
+        677,
+        770
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "pullRequest": 951,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-v5-ci",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-v5-ci",
+      "snapshotHead": "404de7a41a6dac391b9211ebd2cadca595acc21f",
+      "referencedNumbers": [
+        677,
+        756
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        759
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:28.497397+00:00"
+    },
+    {
+      "pullRequest": 952,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-stream-authority-controls",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-stream-authority-controls",
+      "snapshotHead": "27cc15565c0219c8a7f1307ae9543b92a368ccea",
+      "referencedNumbers": [
+        677,
+        785
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        795
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:35.443924+00:00"
+    },
+    {
+      "pullRequest": 953,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-trust-integration",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-trust-integration",
+      "snapshotHead": "88e73b3ba8f2b51289a84f180c3995ea973d9453",
+      "referencedNumbers": [
+        677,
+        770
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        678,
+        684,
+        694
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 6bcd0aca811955b07336f8f7189ecadf2f23a45a test(sdk): execute shared package assembly for all six recipes",
+        "COMMIT b68d7312d66ca566f2c650d4d5b6e032b2132c3f fix(dev): isolate Rust graph imports from shared package helpers",
+        "COMMIT f11e4a89618657df29c886f7088e196adcd6a183 fix(ci): scope compiler cache runner context to steps",
+        "COMMIT 37e12eccd13b2377f3071a6f7792ad60d4e2bd53 Forward exact captured-executable approval through the maintained Rust frontend",
+        "COMMIT 5c32036d29ec77c5fa91330d21edb3e837332946 feat(sdk): bind captured child executables and Go namespace policy"
+      ],
+      "identicalSourcePaths": [],
+      "reviewedChangedPaths": [
+        ".github/workflows/developer-tools.yml",
+        "tools/application_dependency_store.py",
+        "tools/captured_compiler_isolation.py",
+        "tools/ci/contracts/python/test_captured_compiler_isolation.py.json",
+        "tools/ci/contracts/python/test_dev_tools.py.json",
+        "tools/ci/contracts/python/test_guest_compatibility.py.json",
+        "tools/ci/contracts/workflows/developer-tools.yml/jobs/guest-tools.json",
+        "tools/dev_guest_recipe.py",
+        "tools/rust_capsule_build.py",
+        "tools/tests/test_captured_compiler_isolation.py",
+        "tools/tests/test_dev_tools.py",
+        "tools/tests/test_guest_compatibility.py"
+      ],
+      "reviewedDiffSha256": "b0b8439354286a71cb2a162e32126719f572f52fc843e9c366e18e573161718b",
+      "reconciliation": "Shared six-recipe packaging and scoped compiler cache controls are incorporated. Current assembly adds installed transaction assets and exact dependency-plan transfer; contained compiler ownership additionally captures selected loader library directories. No ticket gate completion is inferred.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:43.571802+00:00"
+    },
+    {
+      "pullRequest": 954,
+      "title": "[SDK cleanup draft] latent-fabric-streams-integration",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-streams-integration",
+      "snapshotHead": "222ab1ac51336cb6548cf82e10ef58eaa53acb4f",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        775
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "closureObservedUtc": "2026-10-12T13:44:37.977228+00:00"
+    },
+    {
+      "pullRequest": 955,
+      "title": "[SDK cleanup draft] latent-sdk-analyzer-current",
+      "branch": "handoff/sdk-cleanup-20261008/latent-sdk-analyzer-current",
+      "snapshotHead": "63d98926d23d3c61ef9e66c55a53b35f96eaf4ec",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "implemented-source-identical-to-development",
+      "incorporatingMergedPrs": [
+        843
+      ],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "currentSourcePaths": [
+        "tools/guest_emitted_code.py",
+        "tools/tests/test_guest_emitted_code.py"
+      ]
+    },
+    {
+      "pullRequest": 957,
+      "title": "WIP: preserve restored read-fence retirement and original receipt recovery",
+      "branch": "test/phase4-restore-reader-retirement-v67",
+      "snapshotHead": "6a7bfa58acf4e396fbc4dde372b471bb4ea8cd53",
+      "referencedNumbers": [
+        398,
+        399,
+        808,
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        399
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-scheduler/src/local/immediate.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/immediate_contention.rs",
+        "crates/latent-scheduler/src/local/mod.rs",
+        "crates/latent-scheduler/src/local/state.rs",
+        "crates/latent-state/src/protected_store/restore_input.rs",
+        "crates/latent-state/src/protected_store/restore_stage/receipt.rs",
+        "crates/latent-state/src/protected_store/tests/migration.rs",
+        "crates/latent-state/src/protected_store/tests/migration/fixture/restore.rs",
+        "crates/latent-state/src/protected_store/tests/migration/restore_receipt.rs"
+      ],
+      "reconciliation": "Original restore input/receipt implementation and abandoned-reader/native-retirement controls are byte-identical. Current stage orchestration splits bounded review/import/seal work and retains original currentness fences. Full signed backup/reconciliation acceptance remains open."
+    },
+    {
+      "pullRequest": 958,
+      "title": "Archival draft: preserve private effect-status RPC test wrapper",
+      "branch": "checkpoint/phase4-cleanup-20261008/integration/lf-p4-effect-status-rpc-v12",
+      "snapshotHead": "dee4232bbfd8e12cc119a0e095fa198cfd20a009",
+      "referencedNumbers": [
+        400,
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 959,
+      "title": "Phase 4 integration preservation and exact validation handoff",
+      "branch": "docs/phase4-integration-preservation-20261008",
+      "snapshotHead": "f50062d5eb0256987179d27b79f5f61c095dd783",
+      "referencedNumbers": [
+        823,
+        828,
+        850,
+        879
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        718,
+        389,
+        409
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr959.zip",
+      "historicalArchiveSha256": "59309dc5d5d256118d39d4229b95ff8a992331c1fe5ea11197fed71d3de3bb4a",
+      "historicalFiles": 345,
+      "closureObservedUtc": "2026-10-12T16:02:21.320123+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
+    },
+    {
+      "pullRequest": 960,
+      "title": "docs(sdk): preserve stopped work and cleanup handoff",
+      "branch": "handoff/sdk-library-cleanup-20261008",
+      "snapshotHead": "3d241cbe11af65335cc3e744f849cab03d1ff0ab",
+      "referencedNumbers": [
+        677,
+        695,
+        696
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        677,
+        694
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr960.zip",
+      "historicalArchiveSha256": "55ecccedbf93e6c38cef02349a32f63e11db4de8f30c2e53a5f40cc8f36994bd",
+      "historicalFiles": 123,
+      "closureObservedUtc": "2026-10-12T16:02:24.460893+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
+    },
+    {
+      "pullRequest": 961,
+      "title": "WIP cleanup snapshot: fb2-ci-repairs-811",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-ci-repairs-811",
+      "snapshotHead": "d362f803330211e70a1b8ea80a9d8f475f7aa237",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "d362f803330211e70a1b8ea80a9d8f475f7aa237",
+        "4d8936aac1dace72072bd352250ec522d961647f",
+        "ae45e9610d628675215a7d6c53a86f92a8df7285",
+        "47876214fdbc73af187b6a42c53d08bad0572429",
+        "912fd7ad5cae810af7235bdaf6fc1cf28d678a2f"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-policy/src/capability/store/authority/owned.rs",
+        "crates/latent-state/src/protected_store/tests/opening_owner.rs",
+        "crates/latent-wire/src/phase4/state_management/authorization.rs",
+        "crates/latent-wire/src/phase4/state_management/inspection.rs"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-wire/src/management/activations.rs"
+      ],
+      "reviewedDiffSha256": "89e6a8fefe2901ff65046681c408f1b6b7d05dd0629aa0fad99dbb5ead437c0c",
+      "reconciliation": "Owned capability currentness, opening-owner controls and state-management authorization/inspection are identical. Activation projection differs only in its explanation of an absent captured-intent observer.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:43:36.543208+00:00"
+    },
+    {
+      "pullRequest": 962,
+      "title": "WIP cleanup snapshot: fb2-ci-repairs-823",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-ci-repairs-823",
+      "snapshotHead": "8bca9fa6138f050a9f576838b42168113ee8f8bd",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "169f47485f5bbe4159b57d309b043d1bf5d3d95f",
+        "174b305cc21ef4181a37232a3e3bb3cc571fdebd",
+        "e9822190dbe48599d439081137a8fd3caf7bfb10",
+        "a01855634fc4c561f05e5597c3a1675e59806650",
+        "307092e5ab930522fd1345e9422841cd200a24c4"
+      ],
+      "identicalSourcePaths": [
+        "tools/ci/contracts/owners/tools/run_phase3_management_workflow.py.json",
+        "tools/ci/contracts/python/test_phase3_management_workflow.py.json",
+        "tools/dev_watch_fixture_probe.py",
+        "tools/run_phase3_management_workflow.py",
+        "tools/tests/test_phase3_management_workflow.py"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-wasmtime/tests/capabilities_backend/rejection.rs",
+        "tools/ci/contracts/python/test_phase1_conformance.py.json",
+        "tools/tests/test_phase1_conformance.py",
+        "tools/validate_phase1_conformance.py"
+      ],
+      "reviewedDiffSha256": "e9ff03b4d1e044fd070956ac9584f57eb4a2e299c7ddc6f4fdf1f580eeba0335",
+      "reconciliation": "The old unresolved integration checkpoint is superseded by merged #823 and current source. Watch/management implementation and controls are identical; current capability rejection preserves its case with the structural-value-type diagnostic. Current conformance retains the lineage cases and the actual retained-refusal queue result.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:43:41.257848+00:00"
+    },
+    {
+      "pullRequest": 963,
+      "title": "WIP cleanup snapshot: fb2-conformance-lineage-20261005-r2",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-conformance-lineage-20261005-r2",
+      "snapshotHead": "2dd5af8d3e11194e6687d02a867add5bcc849a44",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "2dd5af8d3e11194e6687d02a867add5bcc849a44",
+        "c68a946babfd66996454a05c69ea7764ab9461d5",
+        "977a1b404cf964a88dd6d92f04a4911456202622",
+        "889ec06fd741a55ff26e5f3fc8b0606a5675c5ce",
+        "9c27fd17bbacaacd23bf5ef815087a2e93f4d00a"
+      ],
+      "identicalSourcePaths": [
+        "tools/dev_watch_fixture_probe.py"
+      ],
+      "reviewedChangedPaths": [
+        ".github/workflows/ci.yml",
+        "tools/ci/contracts/python/test_phase1_conformance.py.json",
+        "tools/ci/contracts/workflows/ci.yml/jobs/rust.json",
+        "tools/tests/test_ci_contracts.py",
+        "tools/tests/test_phase1_conformance.py",
+        "tools/validate_phase1_conformance.py"
+      ],
+      "reviewedDiffSha256": "a0f03adae182a72c997875314779cd39244bd781c470443ee1f21b5f5faff305",
+      "reconciliation": "Public-root lineage and absent-parent conformance checks and original-deadline watch polling are retained in development. Later conformance changes require retained refusal with zero guest consumption; current CI adds shared contract storage controls without dropping those guards.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:43:44.765077+00:00"
+    },
+    {
+      "pullRequest": 964,
+      "title": "WIP cleanup snapshot: fb2-effect393-repair-r2",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-effect393-repair-r2",
+      "snapshotHead": "b54abd0b8504b889a21c121939b6f0f41ec93a10",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "b54abd0b8504b889a21c121939b6f0f41ec93a10",
+        "ab6d9107faf32892db571727f5438f6a6c2c9eb2",
+        "baaa9b5f77c501146ac952f99886fd6ada0cd5ef",
+        "0e1898556a8cc5a707d90ec6809628b3bc1ff53c",
+        "2e4598a397d21389c7c4193de8892762c95a2abc"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-scheduler/src/local/immediate.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/immediate_contention.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/publication.rs",
+        "crates/latent-scheduler/src/local/mod.rs",
+        "crates/latent-scheduler/src/local/state.rs"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-wasmtime/tests/local_service/runtime.rs",
+        "packaging/dev/wsl.Dockerfile",
+        "tools/ci/suites.json"
+      ],
+      "reviewedDiffSha256": "6f262bd230410aa8e200c210854e0921047ab63106891f63621dc8044747523a",
+      "reconciliation": "The historical HTTP effect repair is superseded by merged #821/#828. Immediate fair-dispatch implementation and ownership controls are identical; development retains the HTTPS WSL package correction and expands real Java runtime fixtures.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:43:49.877179+00:00"
+    },
+    {
+      "pullRequest": 965,
+      "title": "WIP cleanup snapshot: fb2-go-current785-repro-resume11-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-go-current785-repro-resume11-r1",
+      "snapshotHead": "86cdf314881cdba375838a1724ef4d71f0e79136",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 966,
+      "title": "Phase 4 entity, storage and restore preservation handoff",
+      "branch": "docs/phase4-entity-preservation-20261008",
+      "snapshotHead": "0b0d19e331715138eb327af0ffa02bdec7e12168",
+      "referencedNumbers": [
+        808,
+        850,
+        879,
+        957
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        394,
+        397,
+        398,
+        399
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr966.zip",
+      "historicalArchiveSha256": "6456f7d354c2ab2c548d650e5f338652aa713d929843472c226436b61fdc246b",
+      "historicalFiles": 3,
+      "closureObservedUtc": "2026-10-12T16:02:28.665971+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
+    },
+    {
+      "pullRequest": 967,
+      "title": "WIP cleanup snapshot: fb2-immediate-scheduler-20261007-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-immediate-scheduler-20261007-r1",
+      "snapshotHead": "5900922172f34e804279941a4a56396a0330181b",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "5900922172f34e804279941a4a56396a0330181b",
+        "83a2a0063b5793381dbe3c847df258fdd68571b4",
+        "8517f8701adeb272c6366e999120afb74131a415",
+        "c9ef4e31d2c4cc6d78ee995b2e7caf9c634dcb37",
+        "0da6c84787a3cbd59e927b392b57c821bc8cdbb7"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-scheduler/src/local/immediate.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/immediate_contention.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/publication.rs",
+        "crates/latent-scheduler/src/local/mod.rs",
+        "crates/latent-scheduler/src/local/state.rs",
+        "tools/ci/contracts/python/test_dotnet_http_errors.py.json",
+        "tools/tests/test_dotnet_application_dependencies.py",
+        "tools/tests/test_dotnet_http_errors.py"
+      ],
+      "reviewedChangedPaths": [
+        "tools/ci/contracts/python/test_dev_node_policies.py.json",
+        "tools/ci/contracts/python/test_dotnet_application_dependencies.py.json",
+        "tools/ci/suites.json"
+      ],
+      "reviewedDiffSha256": "ddd117cc4084c92e22f5b7f35bb2ebcb0358e277725b490a672eb482a4d859cd",
+      "reconciliation": "Immediate fair-dispatch publication, contention and physical ownership implementation/tests are byte-identical. Current CI contracts retain the related .NET fixtures and additional cases.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:43:55.245923+00:00"
+    },
+    {
+      "pullRequest": 968,
+      "title": "WIP cleanup snapshot: fb2-java718-captures-20261007-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-java718-captures-20261007-r1",
+      "snapshotHead": "939183aa4f62c113420c1c0a1e39d90ef990031f",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 969,
+      "title": "WIP cleanup snapshot: fb2-npm-v4-fixtures-resume7",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-npm-v4-fixtures-resume7",
+      "snapshotHead": "6d6dbb8ce97a0a497bd16a653ff42fb9f127678b",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "6d6dbb8ce97a0a497bd16a653ff42fb9f127678b",
+        "8242b8f2b2f7c9de510cc1f4a580a8e2e9c0bf72",
+        "8aa20a520c9320497235cd685a9327307ab4e71c",
+        "df6cc462a884fc1c050377646c5516b55da74149",
+        "f1ea95dc63dca86a2aef0430f19b2a7524ecd9c1"
+      ],
+      "identicalSourcePaths": [
+        "examples/framework-compatibility/package.json",
+        "tools/dev_watch_fixture_probe.py",
+        "tools/security_inventory.py",
+        "tools/security_npm_sources.py",
+        "tools/tests/test_security_npm_sources.py",
+        "website/content/toolchain.json",
+        "website/package.json",
+        "website/scripts/check-package-manager.mjs",
+        "website/tests/package-manager-security.test.mjs",
+        "website/toolchain/package.json",
+        "website/toolchain/source.json"
+      ],
+      "reviewedChangedPaths": [
+        ".github/security/inventory.json",
+        ".github/security/npm-source-repairs.json",
+        "crates/latent-wasmtime/tests/capabilities_backend/rejection.rs",
+        "examples/framework-compatibility/package-lock.json",
+        "tools/ci/contracts/python/test_security_npm_sources.py.json",
+        "website/README.md",
+        "website/package-lock.json",
+        "website/toolchain/package-lock.json",
+        "website/toolchain/prepare.py",
+        "website/toolchain/tests/test_prepare.py"
+      ],
+      "reviewedDiffSha256": "7876dbb6106dd8af01d5527588834f6706c96482d7af8537fee6a383dcff5ef9",
+      "reconciliation": "Authenticated npm source owner, selector bundle controls, repaired package-manager identity, website manifests and package-manager security cases are identical. Development adds bounded transient acquisition retries and later authenticated lockfile inputs.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:44:01.809942+00:00"
+    },
+    {
+      "pullRequest": 970,
+      "title": "WIP cleanup snapshot: fb2-pending-recovery-current53-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-pending-recovery-current53-r1",
+      "snapshotHead": "fd8853fd0e51235d17661079720faf4c810cd6bb",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 971,
+      "title": "WIP cleanup snapshot: fb2-provider-blob-diagnostic-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-provider-blob-diagnostic-r1",
+      "snapshotHead": "b771b7329607e92fc4642faadaaa0cd513ccf95d",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "b771b7329607e92fc4642faadaaa0cd513ccf95d",
+        "3e80225119d8656214c140d99080033bd00040ec",
+        "80b8f416f6e53e9d39fe6319beb3113a772c723f",
+        "b6982e7afbca213af039a935faf667535e8bbfc7",
+        "3e98d1e13dc44702b0d3edd7ea1a1a3a107a0234"
+      ],
+      "identicalSourcePaths": [
+        "tools/ci/contracts/owners/tools/run_phase3_management_workflow.py.json",
+        "tools/dev_watch_fixture_probe.py",
+        "tools/run_phase3_management_workflow.py",
+        "tools/tests/test_phase3_management_workflow.py"
+      ],
+      "reviewedChangedPaths": [
+        "tools/ci/contracts/python/test_phase1_conformance.py.json",
+        "tools/ci/contracts/python/test_phase3_management_workflow.py.json",
+        "tools/tests/test_ci_contracts.py",
+        "tools/tests/test_phase1_conformance.py",
+        "tools/validate_phase1_conformance.py"
+      ],
+      "reviewedDiffSha256": "b3d4bc3fec06a7245f464f67cb4d4204548a019b60cd1f6f83c4e321b110e529",
+      "reconciliation": "Closed blob-error decoding, original-deadline watch polling and management fixtures are identical. Public lineage/absent-parent conformance cases remain, with the current retained-refusal queue contract and zero guest-work controls.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:44:06.225374+00:00"
+    },
+    {
+      "pullRequest": 972,
+      "title": "WIP cleanup snapshot: fb2-schema808-clippy-20261007-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-schema808-clippy-20261007-r1",
+      "snapshotHead": "504048f7d3f7078bac02bf0009de45eb805a6717",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "504048f7d3f7078bac02bf0009de45eb805a6717",
+        "461e3510d94af94acd5613fea29fbaa114626383",
+        "0b92361c866113198092aafe4c347a7b49988fe0",
+        "af4d00dff6921867ca0fcd7d6e87e9e837066925",
+        "0b92584a35a85111946ee8f859a040559ad86ac7"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-scheduler/src/local/immediate.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/immediate_contention.rs",
+        "crates/latent-scheduler/src/local/mod.rs",
+        "crates/latent-scheduler/src/local/state.rs",
+        "crates/latent-state/src/protected_store/checkpoint.rs",
+        "crates/latent-state/src/protected_store/checkpoint/native.rs",
+        "crates/latent-state/src/protected_store/restore_adoption.rs",
+        "crates/latent-state/src/protected_store/restore_adoption/prepare.rs",
+        "crates/latent-state/src/protected_store/restore_adoption/startup.rs",
+        "crates/latent-state/src/protected_store/resume.rs",
+        "crates/latent-state/src/protected_store/snapshot.rs",
+        "crates/latent-state/src/protected_store/snapshot/native.rs",
+        "crates/latent-state/src/recovery/migration/plan.rs",
+        "crates/latent-state/src/recovery/migration/progress.rs",
+        "crates/latent-state/src/recovery/resume/plan.rs",
+        "crates/latent-state/src/recovery/snapshot.rs",
+        "crates/latent-state/src/recovery/v1.rs",
+        "crates/latent-state/src/session/entities.rs",
+        "crates/latent-state/src/store_io/custody.rs"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-http/src/network.rs",
+        "crates/latent-state/src/protected_store.rs",
+        "crates/latent-state/src/protected_store/restore_stage.rs",
+        "crates/latent-state/src/store_io/startup.rs",
+        "tools/ci/suites.json"
+      ],
+      "reviewedDiffSha256": "30018770b647785749f0d8917adba8102843cde5c579c72669f29804252acd27",
+      "reconciliation": "The useful bounded checkpoint/snapshot/migration/restore/entity ownership refactors are identical. Development uses the current deferred-HTTP connection owner, staged restore receipt verifier, pre-startup recovery partition and state-mode/startup-memory ownership; the old layout is superseded.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:44:14.942908+00:00"
+    },
+    {
+      "pullRequest": 973,
+      "title": "WIP cleanup snapshot: fb2-schema808-repair-r2",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-schema808-repair-r2",
+      "snapshotHead": "62477b295b257166fb12b394dafb3c4f19a26894",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "62477b295b257166fb12b394dafb3c4f19a26894",
+        "697413838b3caf179b322746f85d60f8f2ba2d78",
+        "f2e09dcb419e8673a4b2f5755511c374221f49c7",
+        "c99a623c57c1bcdafdf543ce48c94a6b6d266c1d",
+        "913e03d454282c7f60b39d8a1850f25eb4bbdef6"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-policy/src/capability/store/authority/owned.rs",
+        "crates/latent-wasmtime/src/host/accounting/tests/runtime_observation.rs",
+        "crates/latent-wasmtime/src/host/service.rs",
+        "crates/latent-wire/src/phase4/state_management/authorization.rs",
+        "crates/latent-wire/src/phase4/state_management/inspection.rs"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-state/src/store_io/tests/recovery.rs",
+        "crates/latent-wire/src/management/activations.rs",
+        "tools/ci/suites.json"
+      ],
+      "reviewedDiffSha256": "b05de13887bf4317d38fe4b4bc218f0c1fde1f8cf72bdd6bca80e73f7cf5a9de",
+      "reconciliation": "Host runtime accounting observation, local service owner, authority and state-management inspection are identical. Development preserves the reserved recovery-native-retirement case using the current limits helper; activation projection retains an explicit absent observation.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:44:21.077408+00:00"
+    },
+    {
+      "pullRequest": 974,
+      "title": "WIP cleanup snapshot: fb2-state823-resume10",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-state823-resume10",
+      "snapshotHead": "d24ff1ac37c52d1d611235033bdd345ae7551d76",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 975,
+      "title": "WIP: preserve Feedback2 diagnostic qualification handoff",
+      "branch": "handoff/feedback2-709-cleanup-20261008",
+      "snapshotHead": "8b704735c10fb2487653f011f775da35573c66ca",
+      "referencedNumbers": [
+        707,
+        709,
+        768
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707,
+        709
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr975.zip",
+      "historicalArchiveSha256": "7426013f70e2552554738d56c5f8b5416ebde99129520c986d4b546d8fb25753",
+      "historicalFiles": 52,
+      "closureObservedUtc": "2026-10-12T16:02:31.673236+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
+    },
+    {
+      "pullRequest": 976,
+      "title": "WIP: preserve approved Feedback2 packaged preflight handoff",
+      "branch": "handoff/feedback2-710-cleanup-20261008",
+      "snapshotHead": "9f828b6d56f0f218efbdbc8d8092b9b69f2b37c0",
+      "referencedNumbers": [
+        707,
+        710,
+        786,
+        848,
+        849
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707,
+        710
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr976.zip",
+      "historicalArchiveSha256": "d68af1f6cabd2ef4f014c489b6a799e2c4e61a98661fead45684cce90fc86342",
+      "historicalFiles": 22,
+      "closureObservedUtc": "2026-10-12T16:02:34.609384+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
+    },
+    {
+      "pullRequest": 977,
+      "title": "WIP: preserve consolidated dependency and renderer build work",
+      "branch": "fix/feedback2-dependencies-802-20261008",
+      "snapshotHead": "ba36021771f7e3c808723db9f584446e0ceb64d5",
+      "referencedNumbers": [
+        707,
+        718,
+        802,
+        845
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        707,
+        718
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr977.zip",
+      "historicalArchiveSha256": "9ddadbf9ee28cab439c4beadb70cc96e40169ba11ce23222a614ca43f2ea99f3",
+      "historicalFiles": 5,
+      "closureObservedUtc": "2026-10-12T16:02:37.737885+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
+    },
+    {
+      "pullRequest": 978,
+      "title": "Phase 4 Portable source and CI preservation handoff",
+      "branch": "docs/phase4-portable-cleanup-handoff-20261008",
+      "snapshotHead": "973e60ae686cb3be2c584b402cf94721a8acc9ab",
+      "referencedNumbers": [
+        825,
+        850,
+        956
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "historical-preservation-consolidated-into-current-handoff",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": true,
+      "owningIssues": [
+        389,
+        401,
+        405,
+        406
+      ],
+      "currentDeliveryPr": 850,
+      "currentDeliveryHead": "2e30f89b125520828ecfe2b8b5a3f7693a2040f2",
+      "historicalArchive": "docs/development/snapshot-reconciliation/2026-10-12/historical/pr978.zip",
+      "historicalArchiveSha256": "e4e934f302a8f0c5e4ae6096df36e06c5cd8271ec89a4f1caf4e225a9c692d73",
+      "historicalFiles": 5,
+      "closureObservedUtc": "2026-10-12T16:02:40.822190+00:00",
+      "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
+    }
+  ]
+}
