@@ -215,3 +215,20 @@ def installed(items: tuple[ComponentInput, ...], publications: dict[str, str],
     require(len(result) == count and len({(row["publication"], row["function"]) for row in result}) == count,
             "exact-original-twelve-operation-set")
     return result
+
+
+def active_operations(operations: list[dict], publication: str, component_digest: str) -> list[dict]:
+    """Select one actual publication's three operations; create no authority."""
+    import copy
+    import re
+    require(isinstance(operations, list) and 0 < len(operations) <= 15
+            and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", publication or "")
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", component_digest or ""),
+            "explicit-active-publication-and-component")
+    selected = [row for row in operations if row["publication"] == publication]
+    require(len(selected) == 3 and {row["function"] for row in selected} == {"update", "query", "scan"}
+            and all(row["componentDigest"] == component_digest and row["tenant"] == TENANT
+                    and row["contract"] == CONTRACT and row["binding"] == DEPLOYMENT
+                    and row["deployment"] == DEPLOYMENT and row["incarnation"] == 1
+                    for row in selected), "exact-one-current-runtime-operation-set")
+    return copy.deepcopy(selected)

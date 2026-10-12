@@ -33,6 +33,25 @@ FAILURE_REASONS = {
 }
 
 
+def decoder_sources(items, publications):
+    """Explicit signed byte identities, never old deployment or decoder grants."""
+    names = ("put-once-legacy-v1", "put-once-compatible-v2", "put-once-writer-v2", "put-once-diagnostics")
+    require(isinstance(publications, dict) and set(names) <= set(publications),
+            "four-explicit-current-decoder-publications")
+    selected = []
+    for name in names:
+        require(name in items, "original-current-decoder-item-required")
+        component, publication = items[name].component_digest, publications[name]
+        original_digest(component)
+        require(isinstance(publication, str) and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", publication),
+                "current-decoder-publication-identity")
+        selected.append({"componentDigest": component, "publication": publication})
+    require(len({row["componentDigest"] for row in selected}) == 4
+            and len({row["publication"] for row in selected}) == 4,
+            "distinct-current-decoder-byte-identities")
+    return selected
+
+
 def byte_array(value, maximum):
     require(isinstance(value, list) and len(value) <= maximum
             and all(type(byte) is int and 0 <= byte <= 255 for byte in value),
@@ -124,9 +143,10 @@ class Recovery:
     current purpose, package, schema, namespace, checkpoint and physical fences.
     Nothing here derives a grant, native profile, schema review or continuity.
     """
-    def __init__(self, client, helper: Path, configuration, directory: Path, node):
+    def __init__(self, client, helper: Path, configuration, directory: Path, node, *, sources=None):
         self.client, self.helper, self.configuration = client, helper, configuration
         self.node = node
+        self.sources = sources
         directory.mkdir(mode=0o700)
         self.directory, self.calls = directory, 0
         callers = [entry for entry in configuration.value["credentials"]
@@ -149,7 +169,21 @@ class Recovery:
                 and isinstance(request, dict) and request.get("action") in ACTIONS
                 and not ({"approved", "grant", "deadline", "continuity"} & set(request)),
                 "closed-native-recovery-action-data")
-        raw = encoded({"publication": publication, "request": request})
+        envelope = {"publication": publication, "request": request}
+        if self.sources is not None:
+            require(isinstance(self.sources, list) and len(self.sources) == 4
+                    and all(isinstance(row, dict) and set(row) == {"componentDigest", "publication"}
+                            for row in self.sources)
+                    and len({row["publication"] for row in self.sources}) == 4
+                    and publication in {row["publication"] for row in self.sources},
+                    "closed-four-current-decoder-source-selectors")
+            for row in self.sources:
+                original_digest(row["componentDigest"])
+                require(isinstance(row["publication"], str)
+                        and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", row["publication"]),
+                        "current-decoder-publication-identity")
+            envelope["decoderSources"] = self.sources
+        raw = encoded(envelope)
         require(len(raw) <= 16384, "original-native-recovery-input-bound")
         self.calls += 1
         stage = f"native-recovery-{self.calls:02d}"
