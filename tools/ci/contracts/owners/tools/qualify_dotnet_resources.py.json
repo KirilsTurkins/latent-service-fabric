@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_resources.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Register bounded standard resource lookup and native compiler observations separately from guest evidence",
+  "reviewReason": "Write exact100 SDK selection before checking version on runners with multiple installed SDKs",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "04c75d3aace68a702652457531584326b1a1eb6adc231a8188154100ee1be9c0"
+  "sha256": "7892b5b5484b2a09bf0d60406b86c9c53811eb9e85ca56a9aa17fa68ab921374"
 }
