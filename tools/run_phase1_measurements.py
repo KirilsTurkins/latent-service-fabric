@@ -20,7 +20,7 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from tools.phase1_measurement_environment import capture, host
+from tools.phase1_measurement_environment import SMOKE_CARGO_CONFIGURATION, capture, host
 from tools.run_phase1_conformance import ROOT, bounded_run, digest
 
 COLLECTOR = "standalone::measurements::phase1_measurement_collector"
@@ -96,7 +96,10 @@ def build(profile: str, target: Path, output: Path, env: dict[str, str]) -> Path
         command = ["bash", "-c", 'source tools/phase0_build_environment.sh; phase0_release_cargo "$@"',
                    "phase1-build", *arguments, "--release"]
     else:
-        command = ["cargo", *arguments]
+        # Collector smoke retains unoptimized test execution and all runtime
+        # checks. Symbols are unnecessary for its finite artifact/driver checks.
+        command = ["cargo", *(argument for setting in SMOKE_CARGO_CONFIGURATION
+                               for argument in ("--config", setting)), *arguments]
     data = bounded_run(command, output / "build.log", 3600, env)
     matches = []
     for line in data.splitlines():

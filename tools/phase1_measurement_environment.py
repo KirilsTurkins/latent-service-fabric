@@ -10,6 +10,11 @@ import tomllib
 
 from tools.run_phase1_conformance import ROOT, digest, git, identity
 
+SMOKE_CARGO_CONFIGURATION = (
+    "profile.dev.debug=0", "profile.test.debug=0",
+    "profile.test.debug-assertions=true", "profile.test.overflow-checks=true",
+)
+
 
 def command(*arguments: str) -> str:
     return subprocess.run(arguments, cwd=ROOT, check=True, capture_output=True,
@@ -86,7 +91,8 @@ def build_configuration(profile: str) -> dict:
             "collector_surface": "libtest",
         }
     else:
-        overrides = {"collector_surface": "libtest", "recipe": "cargo-test-debug"}
+        overrides = {"collector_surface": "libtest", "recipe": "cargo-test-debug-without-symbols",
+                     "debug": "0", "debug_assertions": "true", "overflow_checks": "true"}
     manifest = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
     wasmtime = manifest["workspace"]["dependencies"]["wasmtime"]["version"].removeprefix("=")
     return {"profile": "release" if profile == "full" else "debug", "rustc": rustc,

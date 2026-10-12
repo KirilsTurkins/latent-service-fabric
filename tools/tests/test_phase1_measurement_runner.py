@@ -14,6 +14,29 @@ import run_phase1_measurements as runner
 
 
 class MeasurementRunnerTests(unittest.TestCase):
+    def test_smoke_symbol_recipe_preserves_assertions_and_full_release_recipe(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            binary = root / 'latentd-collector'
+            artifact = json.dumps({'reason': 'compiler-artifact', 'executable': str(binary),
+                                   'profile': {'test': True}, 'target': {'name': 'latentd'}}).encode()
+            for profile in ('smoke', 'full'):
+                with patch.object(runner, 'bounded_run', side_effect=[b'', artifact]) as run:
+                    self.assertEqual(runner.build(profile, root, root, {}), binary)
+                arguments = run.call_args.args[0]
+                self.assertIn('--no-run', arguments)
+                self.assertIn('--locked', arguments)
+                if profile == 'smoke':
+                    self.assertEqual(arguments[0], 'cargo')
+                    self.assertIn('profile.test.debug=0', arguments)
+                    self.assertIn('profile.test.debug-assertions=true', arguments)
+                    self.assertIn('profile.test.overflow-checks=true', arguments)
+                    self.assertNotIn('--release', arguments)
+                else:
+                    self.assertIn('source tools/phase0_build_environment.sh; phase0_release_cargo "$@"', arguments)
+                    self.assertIn('--release', arguments)
+                    self.assertNotIn('--config', arguments)
+
     @unittest.skipUnless(sys.platform == "linux", "actual Linux process-group ownership")
     def test_group_cleanup_precedes_reaping_even_after_success(self):
         events = []
