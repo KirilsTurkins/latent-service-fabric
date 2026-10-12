@@ -20,9 +20,9 @@ The qualification application bodies, tenant/service identities, runtime owner
 ceilings and declared invocation limits remain unchanged. The source-built engine
 used one CPU, 2 GiB memory and the original finite compiler deadline. The current
 engine SHA-256 is
-`6655200c457ac1b75763ba6fa661271379cbb7a4e6bcb49e0cebc7bc425f9692`;
+`ec7f1a8f6f599ec5283357ebd79e90d833d88291570e10c1a3a353557c6d33d0`;
 its exact engine input envelope SHA-256 is
-`bf4d9d65cebbc1375f18f50537687475b15ad8bf96e2e0ec9c4a09e02fe6e783`.
+`4b581e005948db7dc99f2cedc0e3cb08307c446c93f1f4aac0f882e31cbb81ad`.
 
 The ordinary, clock and service caller/callee components have genuine maintained
 CLI builds, exact selected WIT sources, packages and build observations. Their
@@ -62,8 +62,8 @@ all historical commands, cases, ignore guards, limits and qualification contract
 The unchanged four-case clock application also passes signed node execution:
 actual wall/monotonic progress, stable activation time origin, default/explicit
 Date constructor behavior and AbortSignal timeout. The two-case actual service
-import fixture is retained as a separate explicit prepared-component test; its
-first run exposed a guest failure before child admission and is not qualified.
+import fixture also passes both original cases, with actual child admission and
+invocation, original sibling progress assertions and complete physical cleanup.
 
 The native-lock npm application also has a fresh maintained resolve/review,
 offline dependency verification and compiler/package build. Its original direct
@@ -101,24 +101,37 @@ arithmetic while retaining the sample binding. The source-owned splicer now
 locates the actual sample function in its table and selects the corresponding
 getter operand. Missing and ambiguous shapes are rejected. Eight native compiler
 tests pass, including existing ABI layouts and pointers below and above the old
-range. The updated compiler tool rebuild and signed service acceptance remain in
-progress; source controls do not qualify that import implementation.
+range. The exact source-owned compiler rebuild and upstream component-new/transpile
+recipe complete within the original bounds. Its WASI core SHA-256 is
+`ea1e45684324106a3df4ef813ba5c70cfba73ee09e756c129ba4e5fd89e6f275`;
+the source-splicer input envelope SHA-256 is
+`c4cb8e9e425f365dfd596ff6bb6d537389514adee1140ab56041451f6e453467`.
+
+The complete original 26-case signed matrix now passes on the current production
+engine, rebuilt splicer and merged delivery chain: ordinary 15, clock four,
+service two and unchanged npm five, plus the extra fresh-after-failure control.
+All four required ordinary failure cases still fail with the expected guest trap.
+Both service cases execute one actual child. No diagnostic exception reporter,
+host instrumentation or application-body modification participates in these runs.
+An [identity packet](typescript-runtime-reconciliation/2026-10-12-production.json)
+records exact inputs, evidence digests and remaining acceptance boundaries.
 
 Local evidence is retained under the isolated worktree's `target/pr923`, including
 all earlier failed builds, the pending-Promise diagnostic, forbidden post-return
 import, strict host lifecycle failure and the original Abort failure. Diagnostic
 components are separate from the production evidence. The successful production
-campaign is `signed-production-r13.log`; source-bound engine build and exact reused
-link inputs are in `abort-engine-build.json`. Source-built link inputs are preserved
+campaign is `signed-production-r18.log`, with separate clock/service/npm logs;
+source-bound engine build and exact reused link inputs are in
+`import-production-engine-build.json`. Source-built link inputs are preserved
 independently from these tests.
 
 The input classification remains `qualification: unknown`,
 `apiSupport: not-evaluated`, `inputTrust: operator-asserted`. These bounded signed
 controls do not establish the entire standard runtime or clean installed toolkit
-qualification. Clock/service/npm runtime controls, exhaustion/cancellation/late
-wake acceptance, automatic runtime selection and packaged distribution remain
-separate requirements of #745. The clock controls above cover their bounded
-original fixture only. Default global fetch, body ownership and unchanged
+qualification. Broader exhaustion/cancellation/late-wake acceptance, automatic
+runtime selection and packaged distribution remain separate requirements of #745.
+The controls above cover their bounded original fixtures. Default global fetch,
+body ownership and unchanged
 default-fetch consumers remain #691. Complete private/local/offline/update/watch
 native npm workflow acceptance remains #685. Historical source/Wizer/broker-only
 controls retain their original qualification boundaries.
