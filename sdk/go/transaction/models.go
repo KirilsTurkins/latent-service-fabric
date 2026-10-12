@@ -114,12 +114,13 @@ const (
 type StateMutationKind int32
 
 const (
-	StateMutationKindUnspecified            StateMutationKind = 0
-	StateMutationKindRetryKnownFailedEffect StateMutationKind = 1
-	StateMutationKindTerminateEffect        StateMutationKind = 2
-	StateMutationKindPurgeExpiredPayload    StateMutationKind = 3
-	StateMutationKindCheckpointNamespace    StateMutationKind = 4
-	StateMutationKindReconcileEffect        StateMutationKind = 5
+	StateMutationKindUnspecified                StateMutationKind = 0
+	StateMutationKindRetryKnownFailedEffect     StateMutationKind = 1
+	StateMutationKindTerminateEffect            StateMutationKind = 2
+	StateMutationKindPurgeExpiredPayload        StateMutationKind = 3
+	StateMutationKindCheckpointNamespace        StateMutationKind = 4
+	StateMutationKindReconcileEffect            StateMutationKind = 5
+	StateMutationKindReleaseExpiredCommandFloor StateMutationKind = 6
 )
 
 type StateOperationDisposition int32
