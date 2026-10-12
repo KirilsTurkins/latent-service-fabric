@@ -31,6 +31,11 @@ The locked, all-feature, all-target latent-manifest suite passed 75 cases across
 schema, deployment, composition-contract and Java transaction-schema Python
 checks passed 25 cases. Foundation and CI coverage validation passed. Formatting
 and latent-manifest Clippy passed with the existing validator length warning.
+A scoped pinned Gitleaks scan passed all eight changed files with no findings
+or exceptions. Hosted CI also exposed an unchanged remembered-language browser
+assertion racing React's storage restoration on a new page. That assertion now
+waits for the same selected tab using Playwright's bounded attribute assertion;
+it retains the selection, language, clipboard and browser error checks.
 
 This PR supplies a shared route-boundary correction. It does not close #409,
 #387 or #388: their full installed consumer, recovery and qualification matrices
