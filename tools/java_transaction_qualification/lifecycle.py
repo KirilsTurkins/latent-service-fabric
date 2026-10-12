@@ -29,9 +29,22 @@ class Node:
         self.client, self.executable, self.directory = client, executable, directory
         self.process, self.ordinal = None, 0
         self.shutdown = []
+        self.restore_authority_sessions = 0
 
-    def start(self, configuration: Path):
-        require(self.process is None and self.ordinal < 6, "bounded-exclusive-node-session")
+    def start(self, configuration: Path, *, restore_authority=False):
+        require(type(restore_authority) is bool, "explicit-restore-authority-session")
+        if restore_authority:
+            settings = read_json(configuration)
+            state = settings.get("state")
+            require(self.process is None and self.restore_authority_sessions == 0
+                    and isinstance(state, dict) and type(state.get("formatVersion")) is int
+                    and state.get("formatVersion") == 2
+                    and state.get("operations") == [] and state.get("createIfMissing") is False,
+                    "bounded-current-restore-authority-session")
+            self.restore_authority_sessions += 1
+        else:
+            require(self.process is None and self.ordinal - self.restore_authority_sessions < 6,
+                    "bounded-exclusive-node-session")
         self.ordinal += 1
         process = Process([str(self.executable), "serve", "--config", str(configuration)], self.directory,
             dict(self.client.environment, HOME=str(self.directory)), self.client.cancellation, maximum=262144)
@@ -112,24 +125,43 @@ class Node:
 
 
 class Peer:
-    def __init__(self, client, directory: Path, tls: Path, credential: Path, incarnation: str, *, session=1, port=0):
+    def __init__(self, client, directory: Path, tls: Path, credential: Path, incarnation: str, *, session=1, port=0,
+                 current_declaration: Path | None = None):
         require(type(session) is int and 1 <= session <= 3 and type(port) is int and 0 <= port <= 65535,
                 "original-counted-recipient-session")
         self.client, self.directory, self.incarnation = client, directory, incarnation
+        self.current_http = current_declaration is not None
         self.session = session
         self.prefix = "recipient" if session == 1 else f"recipient-{session}"
         environment = dict(client.environment, PYTHONPATH=str(Path(__file__).resolve().parents[2]))
-        self.process = Process([sys.executable, "-m", "tools.java_transaction_qualification.provider",
+        arguments = [sys.executable, "-m", "tools.java_transaction_qualification.provider",
             "--root", str(directory), "--tls", str(tls), "--token-file", str(credential),
             "--incarnation", incarnation, "--deadline", str(client.deadline),
-            "--session", str(session), "--port", str(port)], client.directory,
+            "--session", str(session), "--port", str(port)]
+        if self.current_http:
+            from .current_recipient import endpoint
+            require(current_declaration.is_absolute() and current_declaration.is_file()
+                    and not current_declaration.is_symlink(), "owned-current-recipient-declaration")
+            declaration = decode(read_file(current_declaration, 8192), 8192)
+            require(declaration == endpoint(declaration["origin"], incarnation)
+                    and declaration["origin"]["port"] == port, "exact-current-recipient-listener")
+            arguments = [sys.executable, "-m", "tools.java_transaction_qualification.current_recipient",
+                         "--root", str(directory), "--tls", str(tls), "--credential-file", str(credential),
+                         "--declaration", str(current_declaration), "--deadline", str(client.deadline),
+                         "--session", str(session)]
+        self.process = Process(arguments, client.directory,
             environment, client.cancellation, maximum=262144)
         self.shutdown = None
         try:
             started = self.process.line(min(client.deadline, time.monotonic() + 10))
-            require(set(started) == {"port", "providerIncarnation"}
+            fields = {"port", "providerIncarnation"} if not self.current_http else {
+                "schemaVersion", "port", "endpointIncarnation"}
+            require(set(started) == fields
                     and type(started["port"]) is int and 1 <= started["port"] <= 65535
-                    and started["providerIncarnation"] == incarnation and (port == 0 or started["port"] == port),
+                    and started["endpointIncarnation" if self.current_http else "providerIncarnation"] == incarnation
+                    and (not self.current_http or started["schemaVersion"] ==
+                         "latent.synthetic.current-post-recipient-started.v1")
+                    and (port == 0 or started["port"] == port),
                     "actual-owned-recipient-listener")
             self.port = started["port"]
             client.evidence.record(self.prefix + "-started", started)
@@ -144,7 +176,10 @@ class Peer:
             lines = bytes(self.process.buffers[0]).splitlines()
             require(len(lines) == 1, "original-recipient-stopped-record")
             observed = decode(lines[0], 8192)
-            from .provider import stopped_observation
+            if self.current_http:
+                from .current_recipient import stopped_observation
+            else:
+                from .provider import stopped_observation
             stopped_observation(observed, self.incarnation)
             require(self.process.closed and self.process.owner.finished
                     and self.process.owner.process.returncode == 0, "actual-recipient-retirement")
@@ -200,11 +235,13 @@ def publish(client, signed: Path, items) -> dict[str, str]:
     return result
 
 
-def inspect(client, node: Path, configuration: Path, operations, *, stage="transaction-host-inspection"):
+def inspect(client, node: Path, configuration: Path, operations, *, stage="transaction-host-inspection",
+            intent_operation="put-once"):
     from .policies import ObservedHosts
     value = decode(native(client, node, stage, "inspect-transaction-hosts",
                           "--config", configuration, timeout=120), 262144)
-    return ObservedHosts.read(value, operations, diagnostic=len(operations) == 15)
+    return ObservedHosts.read(value, operations, diagnostic=len(operations) == 15,
+                              intent_operation=intent_operation)
 
 
 def namespace_arguments(publication: str):

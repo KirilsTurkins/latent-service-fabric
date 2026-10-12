@@ -16,6 +16,29 @@ def observed():
 
 
 class NativeRecoveryOracle(unittest.TestCase):
+    def test_current_report_keeps_original_failure_retryability_and_separate_retirement(self):
+        value = observed()
+        value.update(schemaVersion='latent.native-transaction-recovery.v2', operationSucceeded=False,
+                     result=None, failure={'code': 'unavailable', 'message': 'storage:commitUncertain', 'retryable': True})
+        actual = recovery.report(json.dumps(value).encode())
+        self.assertEqual(actual, value)
+        self.assertNotIn('knownNotCommitted', actual)
+        with self.assertRaises(ValueError):
+            recovery.require_success(actual)
+
+    def test_current_report_refuses_extra_approval_unbounded_message_and_historical_failure_alias(self):
+        value = observed()
+        value.update(schemaVersion='latent.native-transaction-recovery.v2', operationSucceeded=False,
+                     result=None, failure={'code': 'unavailable', 'message': 'storage:commitUncertain', 'retryable': False})
+        for field, changed in (('approved', True), ('retryable', 0), ('message', 'x' * 1025), ('code', 'unknown')):
+            invalid = copy.deepcopy(value)
+            invalid['failure'][field] = changed
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                recovery.report(json.dumps(invalid).encode())
+        value['failure'] = {'stage': 'target', 'failure': {'owner': 'storage', 'reason': 'commitUncertain'}}
+        with self.assertRaises(ValueError):
+            recovery.report(json.dumps(value).encode())
+
     def test_absent_client_node_and_elapsed_time_do_not_prove_native_retirement(self):
         from types import SimpleNamespace
         client = SimpleNamespace(node=None)

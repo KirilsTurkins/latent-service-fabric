@@ -67,7 +67,7 @@ class Configuration:
 
 
 def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
-              checkpoint: Path, recipient_port: int, credential: Path) -> Configuration:
+              checkpoint: Path, recipient_port: int, credential: Path, *, deferred_endpoint=None) -> Configuration:
     require(type(recipient_port) is int and 1 <= recipient_port <= 65535,
             "actual-recipient-listener-port")
     require(checkpoint.is_file() and not checkpoint.is_symlink()
@@ -87,7 +87,7 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
     value.update(securityProfile="external-capsule-v1",
         limits={"maximumComponentBytes": 32 * 1024 * 1024, "maximumPayloadBytes": 2 * 1024 * 1024},
         budgetProfile={"mode": "phase4", "maximumStateReadBytes": 4194304,
-                       "maximumStateWriteBytes": 2097152, "maximumEffects": 1},
+                       "maximumStateWriteBytes": 2097152, "maximumEffectCount": 1},
         capabilityPolicies={"formatVersion": 1, "maximumControlJobs": 2,
             "store": {"maximumRecords": 64, "maximumOutcomes": 256, "maximumCatalogBytes": 4194304,
                       "maximumReadOwners": 64, "maximumPageRecords": POLICY_PAGE_RECORDS}})
@@ -138,6 +138,12 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
         "credentials": [{"reference": RECIPIENT_CREDENTIAL, "file": credential.name,
                          "destination": 0, "header": "authorization"}]}
     value["providers"] = providers
+    if deferred_endpoint is not None:
+        from .current_recipient import endpoint
+        require(isinstance(deferred_endpoint, dict)
+                and deferred_endpoint == endpoint(origin, deferred_endpoint["endpointIncarnation"]),
+                "exact-current-configured-http-endpoint")
+        providers["http"]["deferred"] = [deferred_endpoint]
     from .state_configuration import declaration
     checkpoint_root = checkpoint.parent / "installed-state-checkpoint"
     checkpoint_root.mkdir(mode=0o700)

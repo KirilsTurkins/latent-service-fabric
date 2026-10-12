@@ -45,7 +45,10 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/current_inputs.py",
     "tools/java_transaction_qualification/current_campaign.py")
 COLLECTORS += ("tools/java_transaction_qualification/refusal_observation.py",
-               "tools/java_transaction_qualification/state_configuration.py")
+               "tools/java_transaction_qualification/state_configuration.py",
+               "tools/java_transaction_qualification/restore_installation.py",
+               "tools/java_transaction_qualification/restore_authority.py",
+               "tools/java_transaction_qualification/current_recipient.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
@@ -65,6 +68,8 @@ def parse():
     parser.add_argument("--candidate-digest", help="Exact retained candidate digest supplied after review")
     parser.add_argument("--current-selections", type=Path, help="Separate explicit current six-component material selections")
     parser.add_argument("--current-selections-digest", help="Exact selection-document digest; historical r3 pins remain unchanged")
+    parser.add_argument("--current-http-endpoint", type=Path,
+                        help="Explicit current endpoint declaration matching the fresh six-component captures")
     for name in diagnostic_inputs.ARGUMENTS:
         parser.add_argument("--" + name.replace("_", "-"), type=Path if name in
                             {"diagnostic_capture", "diagnostic_receipt"} else str,
@@ -92,12 +97,30 @@ def current_mode(args):
     selected = getattr(args, "current_selections", None)
     selected_digest = getattr(args, "current_selections_digest", None)
     inputs.require((selected is None) == (selected_digest is None), "paired-current-java-campaign-inputs")
+    if getattr(args, "current_http_endpoint", None) is not None:
+        inputs.require(selected is not None, "current-http-requires-explicit-current-captures")
+        current_endpoint(args)
     if selected is not None:
         inputs.require(args.resume_candidate is None and not args.prepare_authority_only
                        and all(getattr(args, name, None) is None for name in diagnostic_inputs.ARGUMENTS),
                        "current-campaign-cannot-adopt-historical-candidate-or-diagnostic")
         from tools.java_transaction_qualification import current_campaign
         current_campaign.selections(args.portable, selected, selected_digest)
+
+
+def current_endpoint(args):
+    path = getattr(args, "current_http_endpoint", None)
+    if path is None:
+        return None
+    from tools.java_transaction_qualification.current_recipient import endpoint
+    inputs.require(path.is_absolute() and path.is_file() and not path.is_symlink(),
+                   "explicit-current-http-endpoint-file")
+    from tools.rust_capsule_project import read_file
+    value = inputs.decode(read_file(path, 8192), 8192)
+    inputs.require(isinstance(value, dict)
+                   and value == endpoint(value["origin"], value["endpointIncarnation"]),
+                   "closed-current-http-endpoint")
+    return value
 
 
 def recovery_input(args):
@@ -144,10 +167,19 @@ def prepare_environment(client, args, work, signed):
     recipient_root, node_root = work / "recipient", work / "node"
     recipient_root.mkdir(mode=0o700)
     node_root.mkdir(mode=0o700)
-    peer = lifecycle.Peer(client, recipient_root, work / "tls", peer_token, os.urandom(32).hex())
+    endpoint = current_endpoint(args)
+    if endpoint is None:
+        peer = lifecycle.Peer(client, recipient_root, work / "tls", peer_token, os.urandom(32).hex())
+    else:
+        declaration = work / "current-http-endpoint.json"
+        write_json(declaration, endpoint)
+        declaration.chmod(0o600)
+        peer = lifecycle.Peer(client, recipient_root, work / "tls", credential, endpoint["endpointIncarnation"],
+                              port=endpoint["origin"]["port"], current_declaration=declaration)
     try:
+        selection = {} if endpoint is None else {"deferred_endpoint": endpoint}
         configuration = cfg.configure(node_root, signed, args.aot_compiler, work / "tls", checkpoint,
-                                      peer.port, credential)
+                                      peer.port, credential, **selection)
         client.evidence.record("bootstrap-configuration", configuration.value)
         return peer, configuration, lifecycle.Node(client, args.node, node_root)
     except BaseException:
@@ -164,7 +196,8 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
     operations = cfg.installed(items, publications, peer.incarnation)
     diagnostic = any(item.name == diagnostic_inputs.NAME for item in items)
     full_path = configuration.selected(configuration.path.parent / "installed-node.json", operations, diagnostic=diagnostic)
-    hosts = lifecycle.inspect(client, args.node, full_path, operations)
+    selection = {} if not getattr(peer, "current_http", False) else {"intent_operation": "http"}
+    hosts = lifecycle.inspect(client, args.node, full_path, operations, **selection)
     proposals = policies.documents(hosts, publications, diagnostic=diagnostic)
     client.evidence.record("actual-native-hosts", hosts.value)
     client.evidence.record("reviewed-policy-proposals", proposals)
@@ -180,11 +213,15 @@ def admit_authority(client, signed, items, configuration, node, full_path, publi
     node.start(configuration.path)
     actual_receipts = policies.apply(client, proposals)
     client.evidence.record("authenticated-policy-receipts", actual_receipts)
+    legacy = next(item for item in items if item.name == "put-once-legacy-v1")
+    current_v2 = configuration.value["state"]["formatVersion"] == 2
+    if current_v2:
+        lifecycle.create_namespace(client, legacy, publications[legacy.name])
     node.stop()
     lifecycle.admission_lease_interval(client)
     node.start(full_path)
-    legacy = next(item for item in items if item.name == "put-once-legacy-v1")
-    lifecycle.create_namespace(client, legacy, publications[legacy.name])
+    if not current_v2:
+        lifecycle.create_namespace(client, legacy, publications[legacy.name])
     return full_path, publications, proposals, actual_receipts
 
 
@@ -237,7 +274,16 @@ def failure(record, stage, error):
 def loaded_inputs(args, work):
     if getattr(args, "current_selections", None) is not None:
         from tools.java_transaction_qualification import current_campaign
-        return current_campaign.load(args)
+        selected = current_campaign.load(args)
+        if current_endpoint(args) is not None:
+            from tools.rust_capsule_project import read_file
+            from tools.transaction_guest_project import CURRENT_HTTP_PROFILE
+            for item in selected[0]:
+                if item.requirements_digest:
+                    marker = inputs.decode(read_file(item.directory / "project" / CURRENT_HTTP_PROFILE, 8192), 8192)
+                    inputs.require(marker["schemaVersion"] == "latent.java.current-http-source-input.v1",
+                                   "all-mutating-current-http-captures-required")
+        return selected
     original = inputs.load(args.portable)
     diagnostic = diagnostic_inputs.load(args, work / "diagnostic-input")
     if diagnostic is not None:
@@ -262,6 +308,11 @@ def recheck_inputs(args, work, record):
     inputs.require(observed["originalInputs"] == record["originalInputs"]
                    and observed.get("diagnosticInput") == record.get("diagnosticInput"),
                    "qualification-input-changed")
+    if current_endpoint(args) is not None:
+        inputs.require(record["currentHttpEndpoint"] == current_endpoint(args)
+                       and record["currentHttpEndpointInput"] ==
+                       file_identity(args.current_http_endpoint, "endpoint-declaration", 8192),
+                       "current-http-endpoint-input-changed")
 
 
 def run(args):
@@ -290,6 +341,10 @@ def run(args):
             record["compilerSourceCommit"] = items[0].compiler_source
             record.update(nativeTools=tools, collectorDigests=collectors)
             input_identity(record, items, diagnostic)
+            endpoint = current_endpoint(args)
+            if endpoint is not None:
+                record["currentHttpEndpoint"] = endpoint
+                record["currentHttpEndpointInput"] = file_identity(args.current_http_endpoint, "endpoint-declaration", 8192)
             client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence)
             try:
                 stage = "package"

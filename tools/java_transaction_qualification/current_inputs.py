@@ -109,8 +109,24 @@ def validate_materials(files: dict[str, bytes], selected: CurrentSelection) -> d
         requirements = project.get("deferred-http-requirements.json")
         require(requirements is not None and digest(requirements) == report.get("deferredHttpRequirementsDigest"),
                 "current-java-original-effect-requirements")
-        require(decode(requirements).get("authority") == {"installed": False, "ruleGranted": False, "executionQualified": False},
-                "current-java-requirements-create-no-authority")
+        from tools.transaction_guest_project import CURRENT_HTTP_PROFILE, current_java_http_requirements
+        if CURRENT_HTTP_PROFILE in project:
+            marker = decode(project[CURRENT_HTTP_PROFILE], 8192)
+            require(set(marker) == {"schemaVersion", "idempotencyProfile"}
+                    and marker["schemaVersion"] == "latent.java.current-http-source-input.v1"
+                    and report.get("nativeEffectProfile") == "current-v2-http"
+                    and report.get("nativeEffectOperation") == "http"
+                    and report.get("currentHttpProfileInputDigest") == digest(project[CURRENT_HTTP_PROFILE]),
+                    "explicit-current-java-http-source-and-report")
+            descriptor = decode(project["capsule-project.json"])
+            expected = current_java_http_requirements(descriptor, project["transaction-binding.json"],
+                                                     marker["idempotencyProfile"])
+            require(decode(requirements, 8192) == expected, "exact-current-java-http-requirements")
+        else:
+            require(report.get("nativeEffectProfile") is None and report.get("nativeEffectOperation") is None
+                    and report.get("currentHttpProfileInputDigest") is None
+                    and decode(requirements).get("authority") == {"installed": False, "ruleGranted": False, "executionQualified": False},
+                    "current-java-requirements-create-no-authority")
     return report
 
 

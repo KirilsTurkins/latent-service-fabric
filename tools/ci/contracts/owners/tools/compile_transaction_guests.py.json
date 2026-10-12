@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_transaction_guests.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve current authored Java value and forbidden-child modes alongside actual namespace recovery work",
+  "reviewReason": "Forward explicit current Java read-only compiler cache through its existing identity owner while keeping all compiler selections and workflow commands",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9c24e537f73745520165fe3f21c6f5476b7faf08c9c8d792532da97b777ecb98"
+  "sha256": "0b1f3e21af8fe53dbe87c235854550a18fd38576b09f3a8784f8a5662922d77e"
 }

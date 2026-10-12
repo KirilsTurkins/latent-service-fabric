@@ -56,7 +56,8 @@ class ObservedHosts:
     effects: tuple[dict, ...]
 
     @classmethod
-    def read(cls, value: dict, operations: list[dict], *, diagnostic=False):
+    def read(cls, value: dict, operations: list[dict], *, diagnostic=False, intent_operation="put-once"):
+        require(intent_operation in {"put-once", "http"}, "explicit-native-effect-operation")
         require(isinstance(value, dict) and set(value) == INSPECTION_FIELDS
                 and value["schemaVersion"] == "latent.transaction-host-inspection.v1", "actual-native-host-inspection")
         identifier(value["stateProviderProfile"])
@@ -108,7 +109,7 @@ class ObservedHosts:
             require(effect["tenant"] == TENANT and effect["service"] == SERVICE
                     and effect["namespace"] == NAMESPACE and effect["incarnation"] == configured["incarnation"]
                     and effect["resultPolicy"] == RESULT_POLICY and effect["logicalBinding"] == "qualified-http"
-                    and effect["operation"] == "put-once"
+                    and effect["operation"] == intent_operation
                     and effect["stagingBinding"] == deferred["stagingBinding"]
                     and effect["dispatchBinding"] == deferred["dispatchBinding"]
                     and effect["dispatchRecoveryKind"] == "service-integration", "same-native-effect-scope-and-purpose")
