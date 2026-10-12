@@ -66,11 +66,13 @@ class OfflineCampaign:
     def __init__(self, campaign, helper, directory):
         self.campaign, self.directory = campaign, directory
         self.client, self.node = campaign.client, campaign.node
-        self.native = recovery.Recovery(self.client, helper, campaign.configuration, directory, self.node)
+        self.current_v2 = read_json(campaign.full_path)["state"]["formatVersion"] == 2
+        selection = {} if not self.current_v2 else {
+            "sources": recovery.decoder_sources(campaign.items, campaign.publications)}
+        self.native = recovery.Recovery(self.client, helper, campaign.configuration, directory, self.node, **selection)
         self.writer = "put-once-writer-v2"
         self.publication = campaign.publications[self.writer]
         self.configuration = campaign.full_path
-        self.current_v2 = read_json(self.configuration)["state"]["formatVersion"] == 2
 
     def action(self, request, *, action=None):
         original = self.native.run(self.configuration, self.publication, request)
