@@ -178,7 +178,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Keep current transaction diagnostic shapes and all original Java gates plus actual default-node lifecycle suite after reviewed normal merge",
+  "reviewReason": "Preserve all current Java typed inputs diagnostics and lifecycle gates during recovery chain merge",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

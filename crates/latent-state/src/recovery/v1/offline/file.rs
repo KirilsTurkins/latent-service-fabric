@@ -10,6 +10,7 @@ pub(super) struct ProtectedSnapshotFile {
     root: ProtectedRoot,
     fence: ProtectedMutableFile,
     file: File,
+    maximum_bytes: u64,
 }
 
 impl ProtectedSnapshotFile {
@@ -40,7 +41,11 @@ impl ProtectedSnapshotFile {
         path: &SnapshotFile,
         source_root: (u64, u64),
         create: bool,
+        maximum_bytes: u64,
     ) -> Result<Self, OfflineRecoveryError> {
+        if maximum_bytes == 0 || maximum_bytes > SNAPSHOT_FILE_BYTES {
+            return Err(OfflineRecoveryError::InvalidConfiguration);
+        }
         let root =
             ProtectedRoot::open(&path.root).map_err(|_| OfflineRecoveryError::UnsafeDestination)?;
         if root.identity() == source_root
@@ -52,14 +57,19 @@ impl ProtectedSnapshotFile {
             return Err(OfflineRecoveryError::UnsafeDestination);
         }
         let (file, fence) = if create {
-            root.create_mutable_file(&path.file_name, SNAPSHOT_FILE_BYTES)
+            root.create_mutable_file(&path.file_name, maximum_bytes)
         } else {
-            root.open_mutable_file(&path.file_name, SNAPSHOT_FILE_BYTES, false)
+            root.open_mutable_file(&path.file_name, maximum_bytes, false)
         }
         .map_err(|_| OfflineRecoveryError::UnsafeDestination)?;
         file.try_lock()
             .map_err(|_| OfflineRecoveryError::UnsafeDestination)?;
-        Ok(Self { root, fence, file })
+        Ok(Self {
+            root,
+            fence,
+            file,
+            maximum_bytes,
+        })
     }
 
     pub fn identity(&self) -> (u64, u64) {
@@ -97,6 +107,13 @@ impl Read for ProtectedSnapshotFile {
 impl Write for ProtectedSnapshotFile {
     fn write(&mut self, input: &[u8]) -> io::Result<usize> {
         self.check()?;
+        let end = self.file.stream_position()?.checked_add(input.len() as u64);
+        if end.is_none_or(|end| end > self.maximum_bytes) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "snapshot byte limit",
+            ));
+        }
         let count = self.file.write(input)?;
         self.check()?;
         Ok(count)

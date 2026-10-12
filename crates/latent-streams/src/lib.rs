@@ -6,8 +6,13 @@ mod connection;
 mod lifecycle;
 mod maintenance;
 mod provider;
+mod tls;
+mod transport;
 
-pub use config::{StreamDestination, StreamLimits, StreamProviderConfig, StreamResolution};
+pub use config::{
+    StreamDestination, StreamLimits, StreamProviderConfig, StreamResolution, StreamTlsConfig,
+    StreamTrustRoot,
+};
 pub use latent_capabilities::broker::network::{StreamError, StreamErrorCode};
 pub use lifecycle::{StreamLifecycle, StreamStatus};
 pub use maintenance::{StreamMaintenance, StreamMaintenanceStop};
