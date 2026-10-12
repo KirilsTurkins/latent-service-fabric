@@ -76,7 +76,7 @@
     },
     "revision-identity": {
       "path": "crates/latent-manifest/src/schema.rs",
-      "digest": "sha256:fc38c39293090654994d5b9e3f999d1650679dd1650729206a9e2f95a74dbe46",
+      "digest": "sha256:2d827db985d7e224252195cfe4eb5a1c073f4b69361eea2d5ec17d2a0e100612",
       "commit": "015560c556f3867238bd47fd236646d55f2c92e3"
     },
     "static-trigger-owner": {
