@@ -34,6 +34,11 @@ AOT catalog/compiler/negative-admission controls passed. The isolated AOT suite
 does not load or invoke native output. Formatting and affected-library Clippy
 passed with the 41 existing library warnings.
 
+Hosted CI exposed a reserved-store test reading its counters after result
+delivery but before the recovery worker's physical retirement. The test now
+uses the existing bounded retirement observation while the ordinary reader,
+writer and full queue stay blocked. The original `(1, 1)` assertion remains.
+
 The original signed/current source and native owner tests retain their denial,
 expiry, cancellation, coalescing, physical-capacity and destruction assertions.
 These local tests do not establish #709's authenticated current-publisher input
