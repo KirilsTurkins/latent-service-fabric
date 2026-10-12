@@ -67,11 +67,14 @@ class Configuration:
 
 
 def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
-              checkpoint: Path, recipient_port: int, credential: Path, *, deferred_endpoint=None) -> Configuration:
+              checkpoint: Path | None, recipient_port: int, credential: Path, *, deferred_endpoint=None,
+              current_http_installation=None) -> Configuration:
     require(type(recipient_port) is int and 1 <= recipient_port <= 65535,
             "actual-recipient-listener-port")
-    require(checkpoint.is_file() and not checkpoint.is_symlink()
-            and compiler.is_file() and not compiler.is_symlink(), "native-owned-configuration-inputs")
+    require(compiler.is_file() and not compiler.is_symlink()
+            and ((checkpoint is None and current_http_installation is not None)
+                 or isinstance(checkpoint, Path) and checkpoint.is_file() and not checkpoint.is_symlink()),
+            "native-owned-configuration-inputs")
     original = configure_node(directory, signed, TENANT)
     value = read_json(original)
     # Provision private empty directories only. The native protected owner must
@@ -144,8 +147,20 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
                 and deferred_endpoint == endpoint(origin, deferred_endpoint["endpointIncarnation"]),
                 "exact-current-configured-http-endpoint")
         providers["http"]["deferred"] = [deferred_endpoint]
+    if current_http_installation is not None:
+        require(deferred_endpoint is not None
+                and current_http_installation["deferred"] == [deferred_endpoint],
+                "exact-current-installation-endpoint")
+        selected = decode(json.dumps(current_http_installation).encode(), 65536)
+        require(selected["identity"] == providers["http"]["identity"]
+                and selected["configuration"]["extraRoots"] == [list(read_file(tls / "ca.der", 65536))],
+                "same-current-provider-identity-and-tls-root")
+        selected["credentialDirectory"] = str(credential.parent)
+        selected["credentials"][0]["file"] = credential.name
+        providers["http"] = selected
     from .state_configuration import declaration
-    checkpoint_root = checkpoint.parent / "installed-state-checkpoint"
+    checkpoint_root = (directory / "installed-state-checkpoint" if checkpoint is None
+                       else checkpoint.parent / "installed-state-checkpoint")
     checkpoint_root.mkdir(mode=0o700)
     value["state"] = declaration(checkpoint_root.resolve())
     value["state"]["tenantQuotas"] = [{"tenant": TENANT, "limits": dict(TENANT_QUOTA_PROFILE)}]
@@ -155,9 +170,11 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
 
 
 def installed(items: tuple[ComponentInput, ...], publications: dict[str, str],
-              recipient_incarnation: str) -> list[dict]:
+              recipient_incarnation: str, *, credential_reference=RECIPIENT_CREDENTIAL) -> list[dict]:
     import re
     require(re.fullmatch(r"[0-9a-f]{64}", recipient_incarnation), "actual-recipient-incarnation")
+    require(credential_reference in {RECIPIENT_CREDENTIAL, "java-current-http"},
+            "explicit-current-recipient-credential-reference")
     result = []
     accepted = tuple(item for item in items if item.name != "forbidden-http")
     from .diagnostic_inputs import NAME
@@ -190,7 +207,7 @@ def installed(items: tuple[ComponentInput, ...], publications: dict[str, str],
             if name == "update" and item.requirements_digest:
                 row["deferredHttp"] = {"requirementsDigest": item.requirements_digest,
                     "providerId": "http", "providerIncarnation": recipient_incarnation,
-                    "credentialReference": RECIPIENT_CREDENTIAL, "stagingBinding": "java-staging-installed",
+                    "credentialReference": credential_reference, "stagingBinding": "java-staging-installed",
                     "stagingPolicies": [STAGING_POLICY], "dispatchBinding": "java-dispatch-installed",
                     "dispatchPolicies": [DISPATCH_POLICY]}
             result.append(row)

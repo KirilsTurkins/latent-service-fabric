@@ -126,9 +126,11 @@ class OfflineCampaign:
             "expectedView": recovery.original_view(observed["view"]),
             "checkpointDigest": checkpoint["snapshotDigest"],
             "checkpointManifestDigest": checkpoint["manifestDigest"]}
-        staged = self.action(dict(migration, action="stage-migration"), action="migration")
+        staged = self.action(dict(migration, action="stage-migration"),
+                             action="stage-migration" if self.current_v2 else "migration")
         require(staged["completed"] is False, "actual-native-migration-staged")
-        completed = self.action(dict(migration, action="complete-migration"), action="migration")
+        completed = self.action(dict(migration, action="complete-migration"),
+                                action="complete-migration" if self.current_v2 else "migration")
         require(completed["completed"] is True, "actual-native-migration-completed")
         after = self.inspect()
         epoch_advanced(observed["view"], after["view"], "schema")

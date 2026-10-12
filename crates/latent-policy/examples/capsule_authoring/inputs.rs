@@ -1,17 +1,17 @@
 use std::{collections::BTreeMap, path::Path};
 
-use latent_artifacts::package::{artifact_blob_digest, decode_wit_lock, LayerRole, PackageLimits};
+use latent_artifacts::package::{LayerRole, PackageLimits, artifact_blob_digest, decode_wit_lock};
 use latent_packaging::{
-    build_package_with_sbom, decode_package_source, read_package_file, read_package_input,
     PackageBundle, PackageInput, PackagingLimits, SbomDependencyCompleteness, SbomDigestScope,
-    SbomEntryKind, SbomEntryOrigin, SbomInventory, SbomInventoryEntry,
+    SbomEntryKind, SbomEntryOrigin, SbomInventory, SbomInventoryEntry, build_package_with_sbom,
+    decode_package_source, read_package_file, read_package_input,
 };
 use latent_signing::{
-    decode_build_observation, BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE,
-    DOTNET_CAPSULE_BUILD_TYPE, GO_CAPSULE_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE,
-    RUST_CAPSULE_BUILD_TYPE, TYPESCRIPT_CAPSULE_BUILD_TYPE,
+    BuildObservation, BuildRecipe, C_GUEST_BUILD_TYPE, DOTNET_CAPSULE_BUILD_TYPE,
+    GO_CAPSULE_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE, ProvenanceLimits, RUST_CAPSULE_BUILD_TYPE,
+    TYPESCRIPT_CAPSULE_BUILD_TYPE, decode_build_observation,
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use super::{Result, TENANT};
 
@@ -44,13 +44,41 @@ pub(super) fn load(root: &Path) -> Result<Build> {
     {
         return Err("completed standalone build observation required".into());
     }
+    load_observed(
+        root,
+        observation,
+        PackagingLimits::default(),
+        Some(&marker["sourceDigest"]),
+    )
+}
+
+pub(super) fn load_current_java(root: &Path, raw: &[u8]) -> Result<Build> {
+    let observation = decode_build_observation(raw, ProvenanceLimits::default())?;
+    if observation.build_type != JAVA_CAPSULE_BUILD_TYPE {
+        return Err("current Java fixture requires the exact Java build observation".into());
+    }
+    let mut limits = PackagingLimits::default();
+    limits.manifest_profile = latent_manifest::ManifestValidationProfile::phase4(
+        latent_core::BudgetProfile::Phase4,
+        latent_core::PHASE4_HOST_ABI_V1,
+        &latent_manifest::phase4_host_abi_digest(),
+    )
+    .map_err(|_| "unsupported current Java transaction packaging profile")?;
+    load_observed(root, observation, limits, None)
+}
+
+fn load_observed(
+    root: &Path,
+    observation: BuildObservation,
+    limits: PackagingLimits,
+    marker_source: Option<&Value>,
+) -> Result<Build> {
     let snapshot = read(root, "source-inputs.json", 4 * 1024 * 1024)?;
     if observation.source.snapshot_digest != artifact_blob_digest(&snapshot).as_str()
-        || marker["sourceDigest"] != observation.source.snapshot_digest
+        || marker_source.is_some_and(|source| *source != observation.source.snapshot_digest)
     {
         return Err("build source snapshot association mismatch".into());
     }
-    let limits = PackagingLimits::default();
     let source_bytes = read(root, "package-source.json", 65536)?;
     let source = decode_package_source(&source_bytes, limits).map_err(|error| error.message)?;
     let input = read_package_input(root, &source, limits).map_err(|error| error.message)?;
