@@ -40,3 +40,13 @@ unchanged. These bounded checks establish the dependency update's renderer
 behavior; they do not replace hosted publication/runtime lanes or reopen any
 historical qualification claim. Close #983/#984 as superseded only after #982
 is accepted and its combined source is retained. This PR closes no issue.
+
+The subsequent normal merge of #935 at
+`f8f6b9e7be94559bd5c81f0d019bd5f3299aa56f` retains the regenerated command-floor
+descriptor golden, all six client models and the Node descriptor. The 25
+descriptor/transaction-surface controls, pinned Buf 1.72.0 golden validation,
+current six-language generation check, foundation and CI command coverage
+passed on the merged source. The Java workflow and its reviewed contract
+already agree; all processor, lifecycle, value and diagnostic commands remain.
+The renderer/browser packet above records the earlier Angular qualification
+source and was preserved unchanged; it is not a rerun of this later merge.
