@@ -30,6 +30,14 @@ receipt checks use the current canonical OriginalCaller actor framing.
 The compiler/authoring source suite passed 29 cases; collector/privacy/origin/
 provisioning controls passed 58 cases. Required command coverage keeps all 88
 baseline blocks and adds one explicit compiler block, for 281 current blocks.
-Actual new component compilation and current signed HTTP/query/recovery execution
-remain separate work. #718 and its complete retained-state/lifecycle matrix stay
+The value fixture compiled and packaged through pinned JDK 25.0.4.1, Gradle
+9.1.0, TeaVM and WASI SDK 29; component digest is
+`sha256:57a5f071bca76da695c99e533b311b6e6444a551b1487544f29b0bdd5cfc8edb`.
+The actual child component compiled with digest
+`sha256:4013c9f4f0347b60af9e84ca8607f5b78876bbc50de05b54f1423f05386978bf`;
+its final compatibility check correctly reports `unknown-import` for
+`latent:service/invoke@0.1.0` under the frozen Phase 4 ABI. This is retained
+negative evidence, not an admitted child-call or signed-state pass. The ABI and
+build rejection remain enforced. Current signed HTTP/query/recovery execution
+remains separate work. #718 and its complete retained-state/lifecycle matrix stay
 open; this checkpoint does not close a ticket.
