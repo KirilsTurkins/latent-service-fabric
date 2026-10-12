@@ -21,6 +21,8 @@ latent-core = { path = "../latent-core" }
 latent-network = { path = "../latent-network" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }
+latent-protected-files = { path = "../latent-protected-files" }
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
@@ -29,6 +31,8 @@ tokio = { workspace = true, features = ["net", "io-util"] }
 
 [dev-dependencies]
 hickory-proto = "=0.26.3"
+rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring"] }
+tokio-rustls = { version = "=0.26.5", default-features = false, features = ["ring", "tls12"] }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-manifest = { path = "../latent-manifest" }
 latent-executor = { path = "../latent-executor" }

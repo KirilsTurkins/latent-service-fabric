@@ -1,0 +1,224 @@
+{
+  "schemaVersion": "latent.dotnet.http-framing.windows-reference.v1",
+  "testedAt": "2026-10-02T04:26:54.904193+00:00",
+  "status": "passed-windows-host-reference-only",
+  "sdkVersion": "10.0.303",
+  "runtimeVersion": "10.0.11",
+  "application": {
+    "size": 748,
+    "sha256": "77a90ce137454808a119bb89e50a855dc007b17560432d290c34d900f1eda6af"
+  },
+  "originalPeer": {
+    "revision": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+    "size": 7830,
+    "sha256": "5f6339e874f7835bd511cc24cbf230fe273692107daefdc6622592332f5b3e2a"
+  },
+  "repairedPeer": {
+    "revision": "f31aa964234658af6396d83afeac6f9813f2a4fe",
+    "size": 11412,
+    "sha256": "0d5fed1d58ed847a3956385f6ea552183d74cf2528fa5f59aa628c8e6f06f433"
+  },
+  "hostScalarEntryWrapper": {
+    "size": 2827,
+    "sha256": "a2f18d98732f9f36fb93768480728f98a4e82890784bacad115e3b8e30cb5ecf"
+  },
+  "hostFrameworkReferenceCount": 167,
+  "frameworkInputReceipt": {
+    "size": 39702,
+    "sha256": "3f9c9fe480d585ddbc800a6e3a754560a866a5181948b88e9b066f43bbfc811a"
+  },
+  "toolsBeforeAfter": {
+    "C:\\Program Files\\dotnet\\dotnet.exe": {
+      "size": 167208,
+      "sha256": "ab1b71fd3dd71062e074c9fab8312081a81b7f2b3e0327c48c4d249c8d1a3135"
+    },
+    "C:\\Program Files\\dotnet\\sdk\\10.0.303\\MSBuild.dll": {
+      "size": 702248,
+      "sha256": "e3fe8e0f5474b6acdc7baa82bbbdc8813af802088035bc53e546d1b69ba07911"
+    },
+    "C:\\Program Files\\dotnet\\sdk\\10.0.303\\Roslyn\\bincore\\csc.dll": {
+      "size": 145232,
+      "sha256": "c2cc1908c15c2cf793ae51d84e73a07826855011233795af9f64b880abf29d9c"
+    },
+    "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\10.0.11\\System.Net.Http.dll": {
+      "size": 1746728,
+      "sha256": "8ae9f649d43f1f3fb635170784bcb753d305bc36a42703b4b0bedb15a29729f0"
+    },
+    "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\10.0.11\\System.Private.CoreLib.dll": {
+      "size": 16033616,
+      "sha256": "ed80a1a5dd066c0407ad59686f9af90a4f3e55dbf3e4c973b53cc8c9d0706f82"
+    }
+  },
+  "results": {
+    "original-main-original": {
+      "mode": "original-main",
+      "result": {
+        "kind": "ok",
+        "value": "403:denied",
+        "unchangedApplication": true,
+        "unknownContentLength": false
+      },
+      "requests": [
+        {
+          "methodIsGet": true,
+          "contentLengthPresent": false,
+          "transferCoding": "none",
+          "wireBodyBytes": 0,
+          "wireBodyHex": "",
+          "decodedBodyBytes": 0,
+          "rawHeadersRecorded": false,
+          "closedRejectionReason": null,
+          "parserAccepted": true
+        }
+      ],
+      "peerThreadJoined": true,
+      "listenerAndAcceptedSocketsClosed": true,
+      "clientProcessReaped": true
+    },
+    "original-main-repaired": {
+      "mode": "original-main",
+      "result": {
+        "kind": "ok",
+        "value": "403:denied",
+        "unchangedApplication": true,
+        "unknownContentLength": false
+      },
+      "requests": [
+        {
+          "methodIsGet": true,
+          "contentLengthPresent": false,
+          "transferCoding": "none",
+          "wireBodyBytes": 0,
+          "wireBodyHex": "",
+          "decodedBodyBytes": 0,
+          "rawHeadersRecorded": false,
+          "closedRejectionReason": null,
+          "parserAccepted": true
+        }
+      ],
+      "peerThreadJoined": true,
+      "listenerAndAcceptedSocketsClosed": true,
+      "clientProcessReaped": true
+    },
+    "unknown-empty-content-original": {
+      "mode": "unknown-empty-content",
+      "result": {
+        "kind": "http-error",
+        "value": null,
+        "unchangedApplication": false,
+        "unknownContentLength": true
+      },
+      "requests": [
+        {
+          "methodIsGet": true,
+          "contentLengthPresent": false,
+          "transferCoding": "chunked",
+          "wireBodyBytes": 5,
+          "wireBodyHex": "300d0a0d0a",
+          "decodedBodyBytes": 0,
+          "rawHeadersRecorded": false,
+          "closedRejectionReason": "unsupported-request-framing",
+          "parserAccepted": false
+        }
+      ],
+      "peerThreadJoined": true,
+      "listenerAndAcceptedSocketsClosed": true,
+      "clientProcessReaped": true
+    },
+    "unknown-empty-content-repaired": {
+      "mode": "unknown-empty-content",
+      "result": {
+        "kind": "ok",
+        "value": "403:denied",
+        "unchangedApplication": false,
+        "unknownContentLength": true
+      },
+      "requests": [
+        {
+          "methodIsGet": true,
+          "contentLengthPresent": false,
+          "transferCoding": "chunked",
+          "wireBodyBytes": 5,
+          "wireBodyHex": "300d0a0d0a",
+          "decodedBodyBytes": 0,
+          "rawHeadersRecorded": false,
+          "closedRejectionReason": null,
+          "parserAccepted": true
+        }
+      ],
+      "peerThreadJoined": true,
+      "listenerAndAcceptedSocketsClosed": true,
+      "clientProcessReaped": true
+    }
+  },
+  "sourceAndToolsUnchanged": true,
+  "allPhysicalOwnersRetired": true,
+  "unchangedApplicationUsesOrdinaryDefaultHttpClient": true,
+  "unknownContentControlUsesStandardStreamContentAndGZipStream": true,
+  "transportHandlerOrApplicationPumpInjected": false,
+  "nativeAotOrPinnedLinuxGuestInvoked": false,
+  "originalGuestWireCauseEstablished": false,
+  "normalDefaultHttpClientGuestReplayPassed": false,
+  "dockerOrNativeCompilerInvoked": false,
+  "originalGuestGrantsOrQuotasChanged": false,
+  "retainedSourceClosure": {
+    "Main.cs": {
+      "bytes": 748,
+      "sha256": "77a90ce137454808a119bb89e50a855dc007b17560432d290c34d900f1eda6af"
+    },
+    "Program.cs": {
+      "bytes": 2827,
+      "sha256": "a2f18d98732f9f36fb93768480728f98a4e82890784bacad115e3b8e30cb5ecf"
+    },
+    "FramingReference.csproj": {
+      "bytes": 541,
+      "sha256": "43106ba070b5a76f8c41a241d80dc26415ba6eb0fd435cc643fceaa9b6796d64"
+    },
+    "global.json": {
+      "bytes": 55,
+      "sha256": "7b2ee02ae1b375a1dfb4767d5b8def389634df083a10b7501765b907dcc23ea1"
+    },
+    "NuGet.Config": {
+      "bytes": 95,
+      "sha256": "a8d7d6b691e46f36ca06f8837d551e75a5e938c40fa43fbf674b153f1bce1782"
+    }
+  },
+  "retainedHostOutputs": {
+    "FramingReference.dll": {
+      "bytes": 11264,
+      "sha256": "f0fa3c6d0be77d6f43e803490c481406610ecd1c6141b168702d92df9f7773d9"
+    },
+    "FramingReference.deps.json": {
+      "bytes": 442,
+      "sha256": "6007e406af64ff8c903abec9f2ab2088c580b0730a687b7a7685821952fdf71d"
+    },
+    "FramingReference.runtimeconfig.json": {
+      "bytes": 342,
+      "sha256": "c230a317a54dd960bcbeb5f347f52e18dc665a26f7efda2159fced9a5ac7e097"
+    }
+  },
+  "boundedHarness": {
+    "totalDeadlineSeconds": 180,
+    "clientCommandDeadlineSeconds": 15,
+    "peerOwnerDeadlineSeconds": 20,
+    "originalPeerRequestCeiling": 32,
+    "actualRequests": 4,
+    "originalPeerReadDeadlineSeconds": 2,
+    "receiptByteCeiling": 65536,
+    "packageSourcesCleared": true,
+    "packageReferencesAdded": false
+  },
+  "toolIdentityTiming": "The tools were hashed after the small SDK build, before the four TCP cases, then rechecked after those cases. This is not a pre-compilation tool-attestation claim.",
+  "independentEvidence": {
+    "rawReceipt": {
+      "bytes": 5408,
+      "sha256": "b0a1429e4d4b785a336b51122ee31e40093666e1d6b2b573bd78cd9c6273d95e"
+    },
+    "driver": {
+      "bytes": 16959,
+      "sha256": "7c27dc9e61691486b933771ef4184d1fb95dd542411261574017991cbbc79739"
+    },
+    "sourceClosureAndOutputReadbackAt": "2026-10-02T05:24:47.055779+00:00",
+    "sourceClosureAndOutputReadbackIsNewExecution": false
+  }
+}
