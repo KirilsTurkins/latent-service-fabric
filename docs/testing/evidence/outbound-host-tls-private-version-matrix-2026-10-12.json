@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "lsf.private.host-tls-version-matrix.v1",
+  "originalPrHead": "336154c972678c14d989c7828cbca34db79c6969",
+  "qualificationOnly": true,
+  "productionEnabled": false,
+  "fullAccountingQualified": false,
+  "connectionAllowanceBytes": 262144,
+  "trustAllowanceBytes": 65536,
+  "hostileReference": "sdk/host-stream-tls/rustls-bounds/hostile-connection-reference.rs",
+  "hostileReferenceSha256": "0f559110e73c35b95a797163c3b7658bedcf0ce4ca2f40332545db5e65f4059c",
+  "negotiatedVersionsAssertedInPositiveTransferAndRotation": true,
+  "versions": [
+    {
+      "version": "TLS1.2",
+      "binarySha256": "685f5ed0a88c00cd44f1185f1ab1465ad746cee697964282c18b01cbf0fd784b",
+      "sourceChanges": [
+        {
+          "path": "Cargo.toml",
+          "beforeSha256": "c2e6cc2fda9d99df90a3919f51ce9a96850c69bc3de575f1a7c7fe2bbaf1ce9f",
+          "afterSha256": "20f1af0211d6b17464d54ed7c14b07835358e3dda99a821a72637c44c57cfff6"
+        },
+        {
+          "path": "crates/latent-streams/src/tls.rs",
+          "beforeSha256": "ad9cceab3849aaba106cc20b1bd034cd579489008d47801c1d7385a7c2c02bc7",
+          "afterSha256": "038d6a1f12b962d0d699c634f88cdcb0fdce3ab4ba74aa99e2f2ea51f5f29b14"
+        },
+        {
+          "path": "crates/latent-streams/src/tests/tls.rs",
+          "beforeSha256": "f1af91cdbd4b5aa61c661eca5100febe4cc123cd18a3bcf83380dfc18c657d6b",
+          "afterSha256": "d4c05390fa50a5b8f03b6fa5f407eb08d5b0a8d1cd54f2725a08ded95934676d"
+        }
+      ],
+      "additionalSourceChanges": [
+        {
+          "path": "crates/latent-streams/src/tests/tls.rs",
+          "beforeSha256": "d4c05390fa50a5b8f03b6fa5f407eb08d5b0a8d1cd54f2725a08ded95934676d",
+          "afterSha256": "43c45db08725ed7094ae1fecb7eda1cdb3bd9947df25eed179470926c79b08cd"
+        },
+        {
+          "path": "crates/latent-streams/src/tests/tls.rs",
+          "beforeSha256": "43c45db08725ed7094ae1fecb7eda1cdb3bd9947df25eed179470926c79b08cd",
+          "afterSha256": "18e9a0fed1202bd91f789a3c7f90386557fe147acb3fb3f1aa37828359f0beb5"
+        }
+      ],
+      "selectedTests": [
+        "tests::tls::direct_host_tls_validates_peer_transfers_and_retires_original_charges",
+        "tests::tls::wrong_tls_hostname_fails_closed_without_cleartext_fallback",
+        "tests::tls::stalled_tls_handshake_uses_original_deadline_and_physical_owner",
+        "tests::tls::tls_rotation_preserves_pending_original_owner_until_peer_socket_retires",
+        "tests::tls::malformed_truncated_and_oversized_tls_wire_retire_original_physical_owners"
+      ],
+      "executions": [
+        {
+          "case": "tests::tls::direct_host_tls_validates_peer_transfers_and_retires_original_charges",
+          "exitCode": 0,
+          "passed": true,
+          "outputSha256": "dccbaf46c430fbaed22418b471fc5df1538b267e3faa985e2a3743c50658ca99"
+        },
+        {
+          "case": "tests::tls::wrong_tls_hostname_fails_closed_without_cleartext_fallback",
+          "exitCode": 0,
+          "passed": true,
+          "outputSha256": "4476989fc522427947917f39622c4b3701ec7cae668ab4332b3e2217d24c3d9d"
+        },
+        {
+          "case": "tests::tls::stalled_tls_handshake_uses_original_deadline_and_physical_owner",
+          "exitCode": 0,
+          "passed": true,
+          "outputSha256": "1aa80b52ff016d79afb4c1ada90527b53b21eeee4faaa245613f45b7ec267d5f"
+        },
+        {
+          "case": "tests::tls::tls_rotation_preserves_pending_original_owner_until_peer_socket_retires",
+          "exitCode": 0,
+          "passed": true,
+          "outputSha256": "8950d9ae68011698d05e6117280cccfe50f0c5879446ea4446dd2692cd693859"
+        },
+        {
+          "case": "tests::tls::malformed_truncated_and_oversized_tls_wire_retire_original_physical_owners",
+          "exitCode": 0,
+          "passed": true,
+          "outputSha256": "986ef15b1c673cc330c6dce197a0615548d605890b11048176a1cb82fcdf4414"
+        }
+      ]
+    },
+    {
+      "version": "TLS1.3",
+      "binarySha256": "a3f018b8b92de46df7b5950571caa06fff35ea815e7f092d823da83bcd8adeb7",
+      "sourceChanges": [
+        {
+          "path": "Cargo.toml",
+          "beforeSha256": "c2e6cc2fda9d99df90a3919f51ce9a96850c69bc3de575f1a7c7fe2bbaf1ce9f",
+          "afterSha256": "20f1af0211d6b17464d54ed7c14b07835358e3dda99a821a72637c44c57cfff6"
+        },
+        {
+          "path": "crates/latent-streams/src/tls.rs",
+          "beforeSha256": "ad9cceab3849aaba106cc20b1bd034cd579489008d47801c1d7385a7c2c02bc7",
+          "afterSha256": "038d6a1f12b962d0d699c634f88cdcb0fdce3ab4ba74aa99e2f2ea51f5f29b14"
+        },
+        {
+          "path": "crates/latent-streams/src/tests/tls.rs",
+          "beforeSha256": "f1af91cdbd4b5aa61c661eca5100febe4cc123cd18a3bcf83380dfc18c657d6b",
+          "afterSha256": "d4c05390fa50a5b8f03b6fa5f407eb08d5b0a8d1cd54f2725a08ded95934676d"
+        }
+      ],
+      "additionalSourceChanges": [
+        {
+          "path": "crates/latent-streams/src/tests/tls.rs",
+          "beforeSha256": "d4c05390fa50a5b8f03b6fa5f407eb08d5b0a8d1cd54f2725a08ded95934676d",
+          "afterSha256": "43c45db08725ed7094ae1fecb7eda1cdb3bd9947df25eed179470926c79b08cd"
+        },
+        {
+          "path": "crates/latent-streams/src/tests/tls.rs",
+          "beforeSha256": "43c45db08725ed7094ae1fecb7eda1cdb3bd9947df25eed179470926c79b08cd",
+          "afterSha256": "18e9a0fed1202bd91f789a3c7f90386557fe147acb3fb3f1aa37828359f0beb5"
+        },
+        {
+          "path": "crates/latent-streams/src/tests/tls.rs",
+          "beforeSha256": "18e9a0fed1202bd91f789a3c7f90386557fe147acb3fb3f1aa37828359f0beb5",
+          "afterSha256": "d794be1a4163c8c782644b7076570b1a282e5dc8e4f455dc2f6120c0a2b719e0"
+        }
+      ],
+      "selectedTests": [
+        "tests::tls::direct_host_tls_validates_peer_transfers_and_retires_original_charges",
+        "tests::tls::wrong_tls_hostname_fails_closed_without_cleartext_fallback",
+        "tests::tls::stalled_tls_handshake_uses_original_deadline_and_physical_owner",
+        "tests::tls::tls_rotation_preserves_pending_original_owner_until_peer_socket_retires",
+        "tests::tls::malformed_truncated_and_oversized_tls_wire_retire_original_physical_owners"
+      ],
+      "executions": [
+        {
+          "case": "tests::tls::direct_host_tls_validates_peer_transfers_and_retires_original_charges",
+          "exitCode": 0,
+          "passed": true,
+          "outputSha256": "dccbaf46c430fbaed22418b471fc5df1538b267e3faa985e2a3743c50658ca99"
+        },
+        {
+          "case": "tests::tls::wrong_tls_hostname_fails_closed_without_cleartext_fallback",
+          "exitCode": 0,
+          "passed": true,
+          "outputSha256": "cdb73a4e47e52bcce17e8c5bdbf41a50bf25efbe94764562e9b83844c97f2acc"
+        },
+        {
+          "case": "tests::tls::stalled_tls_handshake_uses_original_deadline_and_physical_owner",
+          "exitCode": 0,
+          "passed": true,
+          "outputSha256": "1aa80b52ff016d79afb4c1ada90527b53b21eeee4faaa245613f45b7ec267d5f"
+        },
+        {
+          "case": "tests::tls::tls_rotation_preserves_pending_original_owner_until_peer_socket_retires",
+          "exitCode": 0,
+          "passed": true,
+          "outputSha256": "e0eb97b52b37388a569037705963ec8992062495e23666c4bbeca3a8a20f28a0"
+        },
+        {
+          "case": "tests::tls::malformed_truncated_and_oversized_tls_wire_retire_original_physical_owners",
+          "exitCode": 0,
+          "passed": true,
+          "outputSha256": "d60fc240f15575c7521733924d3da63e4b27de6cdd5358df2621ba5a31719557"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "private source gates only; shipped installation unchanged",
+    "five hostile wire inputs are finite controls, not full cryptographic fuzzing",
+    "hostile allocator/kernel/stack peak and full guest/operator matrix remain open"
+  ]
+}

@@ -87,8 +87,19 @@ peak remains 283,785 bytes with 46,808 bytes remaining; unmatched allocations
 are not erased. The [limited attribution reader](../../tools/host_stream_tls_allocation.py)
 preserves every original free, unmatched memory and completion/version refusal.
 Mangled-symbol attribution, one benign exchange and profiler-inclusive RSS
-cannot qualify hostile full-connection, stack or kernel memory. TLS 1.2, full
+cannot qualify hostile full-connection, stack or kernel memory. Full
 component/operator and ordinary language matrices remain open.
+
+The subsequent [private version matrix](../testing/evidence/outbound-host-tls-private-version-matrix-2026-10-12.json)
+passes five exact controls with TLS 1.2-only and TLS 1.3-only peers. Positive
+transfer/rotation cases assert the actually negotiated version. Each version
+also runs five hostile wire vectors: invalid record type, oversized record
+length, truncated handshake, huge declared handshake length, and 33 handshake
+fragment spans. The peer observes actual closure before original memory/owner
+cleanup succeeds. The retained [hostile reference](../../sdk/host-stream-tls/rustls-bounds/hostile-connection-reference.rs)
+matches the executed private test body. These are real finite failure controls;
+hostile allocation/stack/kernel peaks and complete component qualification are
+still required before changing the shipped gate.
 
 The first reconciliation CI head exposed a carried peer restriction that
 refused nonempty GET/HEAD bodies. The existing signed guest HTTP contract sends
