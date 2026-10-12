@@ -19,9 +19,17 @@ pub use local_service::LocalServiceInstallation;
 #[path = "providers/events.rs"]
 mod events;
 pub use events::EventInstallation;
+#[path = "providers/streams.rs"]
+mod streams;
+pub use streams::StreamInstallation;
+#[path = "providers/http.rs"]
+mod http;
 #[path = "providers/http_streaming.rs"]
 mod http_streaming;
 pub use http_streaming::HttpStreamingInstallation;
+#[path = "providers/activation_runtime.rs"]
+mod activation_runtime;
+pub use activation_runtime::{ActivationRuntimeInstallation, ActivationRuntimeLimits};
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -30,7 +38,11 @@ pub struct ConfiguredProviders {
     #[serde(default, deserialize_with = "present")]
     pub http: Option<HttpInstallation>,
     #[serde(default, deserialize_with = "present")]
+    pub outbound_streams: Option<StreamInstallation>,
+    #[serde(default, deserialize_with = "present")]
     pub http_streaming: Option<HttpStreamingInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub activation_runtime: Option<ActivationRuntimeInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub blob: Option<BlobInstallation>,
     #[serde(default, deserialize_with = "present")]
@@ -80,6 +92,8 @@ pub struct HttpInstallation {
     pub credential_directory: Option<PathBuf>,
     #[serde(default)]
     pub credentials: Vec<ProviderSecretFile>,
+    #[serde(default)]
+    pub deferred: Vec<latent_http::deferred::QualifiedHttpEndpoint>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -120,57 +134,36 @@ pub(super) fn present<'de, Document: Deserialize<'de>, Input: Deserializer<'de>>
 pub(super) fn derive(
     config: &NodeConfig,
 ) -> Result<Option<Box<ConfiguredProviders>>, PlatformError> {
-    let empty;
-    let providers = match &config.providers {
-        Some(providers) => providers,
-        None if config.transactional_triggers.is_some() => {
-            empty = ConfiguredProviders {
-                format_version: 1,
-                http: None,
-                http_streaming: None,
-                blob: None,
-                secrets: None,
-                metrics: None,
-                local_service: None,
-                events: None,
-                clock_monotonic: None,
-                clock_wall: None,
-                random: None,
-                context: None,
-                log: None,
-                bindings: Vec::new(),
-            };
-            &empty
-        }
-        None => return Ok(None),
+    let Some(providers) = &config.providers else {
+        return Ok(None);
     };
     if !config.credentials_from_protected_file
         || !cfg!(all(target_os = "linux", target_arch = "x86_64"))
         || config.capability_policies.is_none()
         || config.audit.is_none()
-        || !provider_budget(config.budget_profile.profile())
+        || config.budget_profile.profile() != BudgetProfile::Phase3
         || providers.format_version != 1
-        || (providers.no_installations() && config.transactional_triggers.is_none())
-        || (providers.bindings.is_empty()
-            && !(providers.no_installations() && config.transactional_triggers.is_some()))
+        || providers.no_installations()
+        || providers.bindings.is_empty()
         || providers.bindings.capacity() > 16
     {
         return Err(invalid("providers"));
     }
+    if let Some(streams) = &providers.outbound_streams {
+        streams.validate_installation(providers)?;
+    }
     if let Some(http) = &providers.http {
-        http.identity.validate()?;
-        http.configuration
-            .validate()
-            .map_err(|_| invalid("providers.http"))?;
-        validate_http_credentials(
-            &http.configuration,
-            http.credential_directory.is_some(),
-            &http.credentials,
-            "providers.http.credentials",
-        )?;
+        http.validate_installation()?;
     }
     if let Some(http) = &providers.http_streaming {
         http.validate_installation(providers)?;
+    }
+    if let Some(runtime) = &providers.activation_runtime {
+        if config.security_profile != latent_wasmtime::ExecutionIsolationProfile::LocalExperimental
+        {
+            return Err(invalid("providers.activationRuntime.securityProfile"));
+        }
+        runtime.validate_installation(providers)?;
     }
     if let Some(blob) = &providers.blob {
         blob.identity.validate()?;
@@ -246,7 +239,10 @@ impl ProviderIdentity {
 impl ConfiguredProviders {
     fn no_installations(&self) -> bool {
         self.http.is_none()
+            && self.activation_runtime.is_none()
+            && self.outbound_streams.is_none()
             && self.http_streaming.is_none()
+            && self.activation_runtime.is_none()
             && self.blob.is_none()
             && self.secrets.is_none()
             && self.metrics.is_none()
@@ -273,7 +269,9 @@ impl ConfiguredProviders {
             }
             let installed = match binding.contract.as_str() {
                 "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
+                "latent:network/streams@0.1.0" => self.outbound_streams.as_ref().map(|v| &v.identity),
                 "latent:http/streaming@0.3.0" => self.http_streaming.as_ref().map(|http| &http.identity),
+                latent_core::activation_runtime::CAPABILITY => self.activation_runtime.as_ref().map(|runtime| &runtime.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
                 "latent:secrets/reader@0.1.0" => self.secrets.as_ref().map(|v| &v.identity),
                 "latent:telemetry/custom@0.1.0" => self.metrics.as_ref().map(|v| &v.identity),
@@ -345,10 +343,6 @@ pub(super) fn anchor(config: &mut ConfiguredProviders, parent: &Path) -> Result<
         }
     }
     Ok(())
-}
-
-fn provider_budget(profile: BudgetProfile) -> bool {
-    matches!(profile, BudgetProfile::Phase3 | BudgetProfile::Phase4)
 }
 
 fn validate_http_credentials(

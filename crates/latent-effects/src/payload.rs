@@ -28,6 +28,13 @@ pub struct PayloadRecord {
 }
 
 impl PayloadRecord {
+    /// Format owned by this fully decoded retained payload record. The caller
+    /// must still validate its original envelope/link and installed decoder.
+    #[must_use]
+    pub const fn durable_format(&self) -> (&'static str, u32) {
+        ("latent.effect-payload.v1", 1)
+    }
+
     pub fn new(
         authority: &DurableEffectAuthority,
         mut value: Value,

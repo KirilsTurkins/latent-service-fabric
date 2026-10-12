@@ -14,12 +14,16 @@ use super::{
     SchedulerSnapshot, SchedulingCancellation,
 };
 
+type AssignmentPublication = (
+    oneshot::Sender<Result<PendingAssignment, PlatformError>>,
+    Result<PendingAssignment, PlatformError>,
+);
+
 pub(super) struct Inner {
     pub config: LocalSchedulerConfig,
     pub quotas: LocalQuotaProvider,
     pub pools: BTreeMap<CellClass, Arc<dyn CellPool>>,
     pub state: Mutex<State>,
-    pub dispatch: Mutex<()>,
 }
 
 pub(super) struct State {
@@ -51,6 +55,7 @@ pub(super) struct ClassState {
     #[cfg(test)]
     pub work: super::work::Work,
     pub depth: u32,
+    pub dispatching: bool,
     pub counters: SchedulerSnapshot,
     pub active_since: BTreeSet<(Instant, u64)>,
 }
@@ -62,6 +67,7 @@ impl ClassState {
             #[cfg(test)]
             work: super::work::Work::default(),
             depth: 0,
+            dispatching: false,
             counters: SchedulerSnapshot::default(),
             active_since: BTreeSet::new(),
         }
@@ -333,11 +339,47 @@ impl Inner {
     }
 
     pub fn pump(self: &Arc<Self>, class: CellClass) -> bool {
-        // Only one synchronous pump runs at a time. Reentrant callers simply
-        // leave work to it; this mutex is never awaited or acquired blocking.
-        let Ok(_dispatch) = self.dispatch.try_lock() else {
-            return false;
+        // Construct the bounded batch before the guard, so unwinding drops the
+        // dispatcher before disposing any retained unaccepted assignment.
+        let mut publications = Vec::new();
+        let dispatch = {
+            let mut state = self.lock();
+            let queue = state.classes.get_mut(&class).expect("configured class");
+            if queue.dispatching {
+                return false;
+            }
+            // An empty observer has no fair turn and must not make a real
+            // immediate request contend with unrelated dispatch bookkeeping.
+            if queue.depth == 0 {
+                return true;
+            }
+            queue.dispatching = true;
+            DispatchTurn::new(Arc::clone(self), class)
         };
+        self.pump_owned(class, dispatch, &mut publications)
+    }
+
+    pub(super) fn pump_owned(
+        self: &Arc<Self>,
+        class: CellClass,
+        dispatch: DispatchTurn,
+        publications: &mut Vec<AssignmentPublication>,
+    ) -> bool {
+        let dispatched = self.pump_guarded(class, publications);
+        drop(dispatch);
+        // Waking a caller may synchronously attempt a descendant's nonqueueing
+        // dispatch. Publish only after the original fair pass has unlocked.
+        for (sender, outcome) in publications.drain(..) {
+            let _ = sender.send(outcome);
+        }
+        dispatched
+    }
+
+    fn pump_guarded(
+        self: &Arc<Self>,
+        class: CellClass,
+        publications: &mut Vec<AssignmentPublication>,
+    ) -> bool {
         let Some(pool) = self.pools.get(&class) else {
             return true;
         };
@@ -350,17 +392,22 @@ impl Inner {
                 return true;
             };
             if entry.sender.is_closed() || entry.request.cancellation.is_cancelled() {
-                self.finish_error(entry, error(PlatformErrorCode::Cancelled, "cancelled"));
+                self.finish_error(
+                    entry,
+                    error(PlatformErrorCode::Cancelled, "cancelled"),
+                    publications,
+                );
                 continue;
             }
             if let Err(error) = entry.request.permit.ensure_schedulable_at(now()) {
-                self.finish_error(entry, error);
+                self.finish_error(entry, error, publications);
                 continue;
             }
             if snapshot.quarantined == snapshot.capacity {
                 self.finish_error(
                     entry,
                     error(PlatformErrorCode::Unavailable, "all-cells-quarantined"),
+                    publications,
                 );
                 continue;
             }
@@ -402,15 +449,16 @@ impl Inner {
                         } else {
                             error(PlatformErrorCode::Cancelled, "cancelled")
                         },
+                        publications,
                     );
                     continue;
                 }
                 Err(error) => {
-                    self.finish_error(entry, error);
+                    self.finish_error(entry, error, publications);
                     continue;
                 }
             };
-            self.deliver_assignment(class, entry, lease);
+            self.deliver_assignment(class, entry, lease, publications);
         }
         false // bounded pass exhausted; caller yields with cancellation enabled
     }
@@ -420,6 +468,7 @@ impl Inner {
         class: CellClass,
         entry: Entry,
         lease: crate::CellLease,
+        publications: &mut Vec<AssignmentPublication>,
     ) {
         let id = entry.request.permit.activation_id().clone();
         if lease.activation_id != id
@@ -432,6 +481,7 @@ impl Inner {
             self.finish_error(
                 entry,
                 error(PlatformErrorCode::Internal, "pool-lease-mismatch"),
+                publications,
             );
             return;
         }
@@ -463,19 +513,27 @@ impl Inner {
         );
         if !registered {
             drop(pending);
-            let _ = entry.sender.send(Err(if shutting_down {
-                error(PlatformErrorCode::Unavailable, "shutdown")
-            } else {
-                error(PlatformErrorCode::Cancelled, "cancelled")
-            }));
+            publications.push((
+                entry.sender,
+                Err(if shutting_down {
+                    error(PlatformErrorCode::Unavailable, "shutdown")
+                } else {
+                    error(PlatformErrorCode::Cancelled, "cancelled")
+                }),
+            ));
             return;
         }
         // A receiver which disappears now drops the unaccepted capability,
         // synchronously returning the untouched cell and quota reservation.
-        let _ = entry.sender.send(Ok(pending));
+        publications.push((entry.sender, Ok(pending)));
     }
 
-    fn finish_error(&self, entry: Entry, error: PlatformError) {
+    fn finish_error(
+        &self,
+        entry: Entry,
+        error: PlatformError,
+        publications: &mut Vec<AssignmentPublication>,
+    ) {
         let retired = {
             let mut state = self.lock();
             let id = entry.request.permit.activation_id();
@@ -500,7 +558,7 @@ impl Inner {
         };
         drop(entry.request);
         drop(retired);
-        let _ = entry.sender.send(Err(error));
+        publications.push((entry.sender, Err(error)));
     }
 
     pub fn record_grant(&self, class: CellClass, enqueued: Instant) {
@@ -545,9 +603,39 @@ impl Inner {
             (entries, retired)
         };
         for entry in entries {
-            self.finish_error(entry, error(PlatformErrorCode::Unavailable, "shutdown"));
+            let mut publications = Vec::new();
+            self.finish_error(
+                entry,
+                error(PlatformErrorCode::Unavailable, "shutdown"),
+                &mut publications,
+            );
+            for (sender, outcome) in publications {
+                let _ = sender.send(outcome);
+            }
         }
         drop(retired);
+    }
+}
+
+pub(super) struct DispatchTurn {
+    owner: Arc<Inner>,
+    class: CellClass,
+}
+
+impl DispatchTurn {
+    pub(super) fn new(owner: Arc<Inner>, class: CellClass) -> Self {
+        Self { owner, class }
+    }
+}
+
+impl Drop for DispatchTurn {
+    fn drop(&mut self) {
+        self.owner
+            .lock()
+            .classes
+            .get_mut(&self.class)
+            .expect("configured class")
+            .dispatching = false;
     }
 }
 

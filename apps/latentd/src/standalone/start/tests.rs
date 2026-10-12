@@ -71,6 +71,43 @@ async fn local_and_observed_open_reject_enforced_mode_before_creating_storage() 
 }
 
 #[tokio::test]
+async fn persisted_state_refuses_omitted_configuration_before_catalog_exposure() {
+    let directory = TempDir::new().unwrap();
+    let settings = settings(&directory);
+    assert!(settings.state.is_none());
+    let state = settings.data_directory.join("state");
+    std::fs::create_dir_all(&state).unwrap();
+    let marker = state.join(latent_state::protected_store::STATE_MODE_FILE);
+    let bytes = b"opaque original marker; never a stateless grant";
+    std::fs::write(&marker, bytes).unwrap();
+    assert_eq!(
+        Catalogs::open(&settings).await.err().unwrap().code,
+        PlatformErrorCode::InvalidArgument
+    );
+    assert_eq!(std::fs::read(&marker).unwrap(), bytes);
+    assert!(!settings.data_directory.join("deployments").exists());
+    assert!(!settings.data_directory.join("capability-policies").exists());
+    assert_eq!(
+        Catalogs::open_observed(
+            &settings,
+            latent_control_store::CatalogWorkObserver::default(),
+        )
+        .await
+        .err()
+        .unwrap()
+        .code,
+        PlatformErrorCode::InvalidArgument
+    );
+    assert_eq!(std::fs::read(&marker).unwrap(), bytes);
+    assert!(!settings.data_directory.join("deployments").exists());
+    assert!(!settings.data_directory.join("capability-policies").exists());
+    assert!(!settings
+        .data_directory
+        .join("transaction-checkpoint")
+        .exists());
+}
+
+#[tokio::test]
 async fn compose_rejects_local_catalogs_under_enforced_settings() {
     let directory = TempDir::new().unwrap();
     let mut settings = settings(&directory);

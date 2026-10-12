@@ -19,10 +19,7 @@ fn typed_function_references_are_explicit_in_native_policy_identity() {
     assert_ne!(declared_digest(&stale, limits).unwrap(), policy);
 
     let java = WasmtimeConfig {
-        guest_languages: crate::GuestLanguageProfiles {
-            java_guest: true,
-            ..Default::default()
-        },
+        java_guest: true,
         fuel_async_yield_interval: Some(10_000),
         ..config
     };

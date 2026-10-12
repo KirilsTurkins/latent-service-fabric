@@ -106,7 +106,8 @@ impl ActivationCancellationRegistry {
 
     /// Cancels a registered activation. Repeated requests are accepted and do
     /// not replace the first reason.
-    #[must_use = "Observe the finite cancellation disposition before reporting cancellation"]
+    /// Accepted commit I/O remains unavailable until its actual disposition is
+    /// published; callers must recover through current-authorized durable lookup.
     pub fn cancel(
         &self,
         activation_id: &ActivationId,
@@ -212,6 +213,13 @@ impl CancellationRegistration {
     ) -> TerminalPublication {
         self.state.publish_terminal(proposed)
     }
+
+    pub(crate) fn commit_accepted(&self) -> bool {
+        matches!(
+            &*self.state.lock_lifecycle(),
+            CancellationLifecycle::CommitAccepted
+        )
+    }
 }
 
 impl fmt::Debug for CancellationRegistration {
@@ -241,51 +249,6 @@ pub struct CancellationHandle {
 
 impl CancellationHandle {
     #[must_use]
-    pub(crate) fn token(&self) -> CancellationToken {
-        CancellationToken {
-            state: Arc::clone(&self.state),
-        }
-    }
-    pub(crate) fn bind_commit_gate(
-        &self,
-        gate: latent_capabilities::namespace::CommitCancellation,
-    ) -> Result<(), PlatformError> {
-        let lifecycle = self.state.lock_lifecycle();
-        let mut installed = self
-            .state
-            .commit_gate
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if installed
-            .as_ref()
-            .is_some_and(|original| !original.is_same_instance(&gate))
-            || matches!(&*lifecycle, CancellationLifecycle::Terminal { .. })
-        {
-            return Err(registry_error(
-                PlatformErrorCode::PermissionDenied,
-                "original command cancellation owner required",
-                "activation.command-cancellation-owner-mismatch",
-                Metadata::new(),
-            ));
-        }
-        if matches!(
-            &*lifecycle,
-            CancellationLifecycle::CancellationAccepted { .. }
-        ) && gate.request_disposition()
-            == latent_capabilities::namespace::CommitCancellationDisposition::CommitIoAccepted
-        {
-            return Err(registry_error(
-                PlatformErrorCode::Unavailable,
-                "commit acceptance observed; durable command lookup required",
-                "activation.command-commit-acceptance-observed",
-                Metadata::new(),
-            ));
-        }
-        *installed = Some(gate);
-        Ok(())
-    }
-
-    #[must_use]
     pub fn activation_id(&self) -> &ActivationId {
         &self.state.activation_id
     }
@@ -293,7 +256,6 @@ impl CancellationHandle {
     /// Returns `true` only for the request that installed the retained reason.
     /// A terminal activation and an already-accepted cancellation both return
     /// `false` without changing the retained state.
-    #[must_use]
     pub fn cancel(&self, reason: &str) -> bool {
         let reason = if reason.trim().is_empty() {
             DEFAULT_REASON
@@ -305,6 +267,21 @@ impl CancellationHandle {
                 .request_cancellation(bounded_text(reason, self.maximum_reason_bytes,)),
             CancellationRequest::Installed
         )
+    }
+
+    /// Last metadata-only CAS at actual protected writer acceptance. The
+    /// original registry remains live until physical disposition is published.
+    pub(crate) fn accept_commit(
+        &self,
+        _proposed: ActivationTerminalState,
+        current: impl FnOnce() -> bool,
+    ) -> bool {
+        let mut lifecycle = self.state.lock_lifecycle();
+        if !matches!(*lifecycle, CancellationLifecycle::Live) || !current() {
+            return false;
+        }
+        *lifecycle = CancellationLifecycle::CommitAccepted;
+        true
     }
 }
 
@@ -413,6 +390,7 @@ enum CancellationLifecycle {
     CancellationAccepted {
         reason: String,
     },
+    CommitAccepted,
     Terminal {
         state: ActivationTerminalState,
         cancellation_reason: Option<String>,
@@ -436,7 +414,6 @@ pub(crate) struct TerminalPublication {
 struct CancellationState {
     activation_id: ActivationId,
     lifecycle: Mutex<CancellationLifecycle>,
-    commit_gate: Mutex<Option<latent_capabilities::namespace::CommitCancellation>>,
     signal: watch::Sender<bool>,
 }
 
@@ -446,7 +423,6 @@ impl CancellationState {
         Self {
             activation_id,
             lifecycle: Mutex::new(CancellationLifecycle::Live),
-            commit_gate: Mutex::new(None),
             signal,
         }
     }
@@ -456,12 +432,6 @@ impl CancellationState {
             let mut lifecycle = self.lock_lifecycle();
             match &*lifecycle {
                 CancellationLifecycle::Live => {
-                    if self.commit_gate.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
-                        .as_ref().is_some_and(|gate| gate.request_disposition()
-                            == latent_capabilities::namespace::CommitCancellationDisposition::CommitIoAccepted)
-                    {
-                        return CancellationRequest::CommitIoAccepted;
-                    }
                     *lifecycle = CancellationLifecycle::CancellationAccepted { reason };
                     CancellationRequest::Installed
                 }
@@ -471,6 +441,7 @@ impl CancellationState {
                 CancellationLifecycle::Terminal { state, .. } => {
                     CancellationRequest::AlreadyTerminal(*state)
                 }
+                CancellationLifecycle::CommitAccepted => CancellationRequest::CommitIoAccepted,
             }
         };
         if transition == CancellationRequest::Installed {
@@ -493,6 +464,17 @@ impl CancellationState {
                         cancellation_reason: None,
                     };
                     (publication, proposed == ActivationTerminalState::Cancelled)
+                }
+                CancellationLifecycle::CommitAccepted => {
+                    let publication = TerminalPublication {
+                        state: proposed,
+                        cancellation_reason: None,
+                    };
+                    *lifecycle = CancellationLifecycle::Terminal {
+                        state: proposed,
+                        cancellation_reason: None,
+                    };
+                    (publication, false)
                 }
                 CancellationLifecycle::CancellationAccepted { reason } => {
                     let reason = reason.clone();
@@ -542,16 +524,16 @@ impl CancellationState {
                 cancellation_reason,
                 ..
             } => cancellation_reason.clone(),
-            CancellationLifecycle::Live => None,
+            CancellationLifecycle::Live | CancellationLifecycle::CommitAccepted => None,
         }
     }
 
     fn terminal_state(&self) -> Option<ActivationTerminalState> {
         match &*self.lock_lifecycle() {
             CancellationLifecycle::Terminal { state, .. } => Some(*state),
-            CancellationLifecycle::Live | CancellationLifecycle::CancellationAccepted { .. } => {
-                None
-            }
+            CancellationLifecycle::Live
+            | CancellationLifecycle::CancellationAccepted { .. }
+            | CancellationLifecycle::CommitAccepted => None,
         }
     }
 
@@ -612,20 +594,78 @@ mod tests {
     use super::*;
 
     #[test]
+    fn commit_acceptance_keeps_registration_live_and_preserves_actual_disposition() {
+        let registry = ActivationCancellationRegistry::default();
+        let id = ActivationId("commit-original-owner".into());
+        let registration = registry.register(id.clone()).unwrap();
+        let handle = registration.handle();
+        assert!(!handle.accept_commit(ActivationTerminalState::Completed, || false));
+        assert!(!registration.commit_accepted());
+        assert!(handle.accept_commit(ActivationTerminalState::Completed, || true));
+        assert!(registration.commit_accepted());
+        assert_eq!(handle.state.terminal_state(), None);
+        assert_eq!(registry.snapshot().active_registrations, 1);
+        let pending = registry.cancel(&id, "late").unwrap_err();
+        assert_eq!(pending.code, PlatformErrorCode::Unavailable);
+        assert!(!pending.retryable);
+        assert_eq!(registry.snapshot().active_registrations, 1);
+        assert_eq!(handle.state.terminal_state(), None);
+        // Accepted physical I/O can still report unknown. Acceptance alone must
+        // not publish success, and late cancellation cannot disguise unknown.
+        let terminal = registration.publish_terminal(ActivationTerminalState::PlatformFailed);
+        assert_eq!(terminal.state, ActivationTerminalState::PlatformFailed);
+        assert_eq!(terminal.cancellation_reason, None);
+        assert_eq!(
+            registry.cancel(&id, "after actual publication").unwrap(),
+            CancelDisposition::AlreadyTerminal(ActivationTerminalState::PlatformFailed)
+        );
+    }
+
+    #[test]
+    fn original_commit_acceptance_and_cancellation_have_one_winner() {
+        for index in 0..128 {
+            let registry = ActivationCancellationRegistry::default();
+            let id = ActivationId(format!("commit-cancel-race-{index}"));
+            let registration = registry.register(id.clone()).unwrap();
+            let gate = Arc::new(Barrier::new(2));
+            let handle = registration.handle();
+            let worker_gate = gate.clone();
+            let commit = thread::spawn(move || {
+                worker_gate.wait();
+                handle.accept_commit(ActivationTerminalState::Completed, || true)
+            });
+            gate.wait();
+            let cancelled = registry.cancel(&id, "original cancellation");
+            let accepted = commit.join().unwrap();
+            assert_eq!(
+                accepted,
+                cancelled
+                    .as_ref()
+                    .is_err_and(|error| error.code == PlatformErrorCode::Unavailable)
+            );
+            let terminal = registration.publish_terminal(ActivationTerminalState::Completed);
+            assert_eq!(
+                terminal.state,
+                if accepted {
+                    ActivationTerminalState::Completed
+                } else {
+                    ActivationTerminalState::Cancelled
+                }
+            );
+        }
+    }
+
+    #[test]
     fn cancellation_is_idempotent_and_first_reason_wins() {
         let registry = ActivationCancellationRegistry::new(12).expect("valid registry");
         let id = ActivationId("activation-cancel".to_owned());
         let registration = registry.register(id.clone()).expect("registered");
         assert_eq!(
-            registry
-                .cancel(&id, "first-reason")
-                .expect("finite cancellation response"),
+            registry.cancel(&id, "first-reason").unwrap(),
             CancelDisposition::Accepted
         );
         assert_eq!(
-            registry
-                .cancel(&id, "second-reason")
-                .expect("finite cancellation response"),
+            registry.cancel(&id, "second-reason").unwrap(),
             CancelDisposition::Accepted
         );
         assert_eq!(
@@ -666,16 +706,12 @@ mod tests {
         assert_eq!(publication.state, ActivationTerminalState::Completed);
         assert_eq!(publication.cancellation_reason, None);
         assert_eq!(
-            registry
-                .cancel(&id, "too late")
-                .expect("finite cancellation response"),
+            registry.cancel(&id, "too late").unwrap(),
             CancelDisposition::AlreadyTerminal(ActivationTerminalState::Completed)
         );
         drop(registration);
         assert_eq!(
-            registry
-                .cancel(&id, "removed")
-                .expect("finite cancellation response"),
+            registry.cancel(&id, "removed").unwrap(),
             CancelDisposition::NotFound
         );
     }
@@ -709,9 +745,7 @@ mod tests {
                 cancellation_first.then_some("scheduler cancellation")
             );
             assert_eq!(
-                registry
-                    .cancel(&id, "after terminal publication")
-                    .expect("finite cancellation response"),
+                registry.cancel(&id, "after terminal publication").unwrap(),
                 CancelDisposition::AlreadyTerminal(publication.state)
             );
         }
@@ -732,7 +766,7 @@ mod tests {
                 cancel_barrier.wait();
                 cancel_registry
                     .cancel(&cancel_id, "race cancellation")
-                    .expect("finite cancellation response")
+                    .unwrap()
             });
 
             let publish_registration = Arc::clone(&registration);
@@ -760,9 +794,7 @@ mod tests {
                 other => panic!("unexpected cancellation race disposition: {other:?}"),
             }
             assert_eq!(
-                registry
-                    .cancel(&id, "after publication")
-                    .expect("finite cancellation response"),
+                registry.cancel(&id, "after publication").unwrap(),
                 CancelDisposition::AlreadyTerminal(publication.state)
             );
         }
@@ -794,9 +826,7 @@ mod tests {
         drop(registration);
         assert_eq!(registry.snapshot().active_registrations, 0);
         assert_eq!(
-            registry
-                .cancel(&id, "too late")
-                .expect("finite cancellation response"),
+            registry.cancel(&id, "too late").unwrap(),
             CancelDisposition::NotFound
         );
     }
@@ -807,9 +837,7 @@ mod tests {
         let id = ActivationId("activation-utf8".to_owned());
         let registration = registry.register(id.clone()).expect("registered");
         assert_eq!(
-            registry
-                .cancel(&id, "ééé")
-                .expect("finite cancellation response"),
+            registry.cancel(&id, "ééé").unwrap(),
             CancelDisposition::Accepted
         );
         assert_eq!(registration.token().reason().as_deref(), Some("éé"));

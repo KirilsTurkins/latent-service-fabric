@@ -4,7 +4,10 @@ use latent_core::{HostInterfaceBinding, PHASE3_HOST_ABI_V2};
 use wasmtime::component::Component;
 use wasmtime::{Config, Engine};
 
-use crate::test_fixtures::{host as host_fixture, packaging::component as fixture};
+#[path = "../../../latent-packaging/tests/fixtures/component.rs"]
+mod fixture;
+#[path = "../../../latent-packaging/tests/fixtures/host.rs"]
+mod host_fixture;
 
 fn engine() -> Engine {
     let mut config = Config::new();

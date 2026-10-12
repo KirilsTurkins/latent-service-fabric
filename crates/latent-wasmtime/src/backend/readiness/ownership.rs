@@ -147,15 +147,12 @@ impl WasmtimeBackend {
             .resolved_revision
             .as_ref()
             .ok_or_else(invalid_owner)?;
-        let imports = &pending.owner.runtime.surface.imports;
         if budget.profile() != latent_core::BudgetProfile::Phase4
             || envelope.budget != *budget.granted()
             || !self.config.transactional_state
             || envelope.input_media_type != crate::values::MEDIA_TYPE
             || pending.descriptor.key.release != revision.release
             || pending.descriptor.key.publication != revision.publication
-            || (!imports.contains(crate::surface::transaction::STATE)
-                && !imports.contains(crate::surface::transaction::INTENTS))
         {
             return Err(invalid_owner());
         }

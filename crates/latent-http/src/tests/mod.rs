@@ -1,6 +1,5 @@
 mod audit;
 mod dns;
-mod effects;
 mod fixture;
 mod http;
 mod ownership;

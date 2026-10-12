@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "inclusion-Bindings.java.txt",
+      "bytes": 3885,
+      "sha256": "56a74a138be14006e09b073d3e0481992e1c4638b61eee98786dd4b6df39fa00"
+    },
+    {
+      "path": "inclusion-bridge.c.txt",
+      "bytes": 1081,
+      "sha256": "42e5a88e2a6a3dfd7a67877757a3e9cd25afeea818ce22edc83624bef1d66e4d"
+    },
+    {
+      "path": "original-retained-bridge.json",
+      "bytes": 9387,
+      "sha256": "3e9c73eb706fafb77265eec7510a79fd989a2c4ed564d0b8a98131d81a05e707"
+    },
+    {
+      "path": "original-review.py.txt",
+      "bytes": 5222,
+      "sha256": "ebb6dfde3146049dd3633c0d096ebfa0df9923ad7611c51de06ddf24034bda85"
+    },
+    {
+      "path": "shared-types-Bindings.java.txt",
+      "bytes": 4828,
+      "sha256": "d610553479e736baa8ad845f90e7668a2d7b3f8a2189b95e659e56992c2e5993"
+    },
+    {
+      "path": "shared-types-bridge.c.txt",
+      "bytes": 1424,
+      "sha256": "a2910e0a81450d22c4069ed82adbc0f0a3f5db0c681a4f271b7cd47c81dd8780"
+    },
+    {
+      "path": "verified-current-model-bridge.json",
+      "bytes": 9098,
+      "sha256": "6ea58430b5c515de25f4618a81f18ea843e766a8c906d33ea188d2d385ee87d5"
+    }
+  ],
+  "originalBytesCopiedExactly": true
+}

@@ -1,0 +1,36 @@
+..............................................................................................................................................................................................................................................+ cargo build --workspace --all-targets --all-features --locked
+.+ cargo check -p latent-rpc --all-targets --all-features --locked
+...+ cargo build --workspace --all-targets --all-features --locked
++ cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics
++ cargo build --workspace --all-targets --all-features --locked
++ cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics
++ cargo build --workspace --all-targets --all-features --locked
++ cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics
++ cargo build --workspace --all-targets --all-features --locked
++ cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics
++ cargo build --workspace --all-targets --all-features --locked
++ cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics
++ cargo build --workspace --all-targets --all-features --locked
++ cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics
++ cargo build --workspace --all-targets --all-features --locked
++ cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics
++ cargo build --workspace --all-targets --all-features --locked
++ cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics
+.....+ cargo test --workspace --all-targets --all-features --locked
++ cargo test -p latent-admission -p latent-scheduler --doc --locked
++ cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests
+...+ cargo build --workspace --all-targets --all-features --locked
++ cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics
+.+ cargo check --workspace --all-targets --all-features --locked
+.+ cargo build --workspace --all-targets --all-features --locked
++ cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics
+.................................
+----------------------------------------------------------------------
+Ran 285 tests in 89.052s
+
+OK
+...............................s......................................
+----------------------------------------------------------------------
+Ran 70 tests in 5.522s
+
+OK (skipped=1)

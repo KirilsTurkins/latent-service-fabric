@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 
 if __package__ in {None, ""}: sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.java_capsule_project import ROOT, TEMPLATES, create
+from tools.java_capsule_project import ROOT, AUTHORING_TEMPLATES, create
 from tools.java_capsule_build import build
 
 
@@ -16,7 +16,7 @@ def parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     new = commands.add_parser("new", help="Create an independent Java project")
     new.add_argument("directory", type=Path)
-    new.add_argument("--template", choices=TEMPLATES, default="greeting")
+    new.add_argument("--template", choices=AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
     add = commands.add_parser('add', help='Declare an exact Maven coordinate for explicit resolution and review')
     add.add_argument('project', type=Path)
@@ -52,6 +52,20 @@ def parser() -> argparse.ArgumentParser:
     review.add_argument('--expect', required=True, help='sha256:<64 hex> of the reviewed candidate bytes')
     status = commands.add_parser('dependencies', help='Verify captured Java inputs offline')
     status.add_argument('project', type=Path)
+    generator = commands.add_parser('generator-request', help='Request explicit approval for a contained Java source generator or processor launcher')
+    generator.add_argument('project', type=Path)
+    generator.add_argument('--candidate', type=Path, required=True)
+    generator.add_argument('--tool', type=Path, required=True)
+    generator.add_argument('--tool-version', required=True)
+    generator.add_argument('--inputs', type=Path, required=True)
+    generator.add_argument('--arg', action='append', default=[])
+    generator.add_argument('--destination', default='src/generated')
+    generator.add_argument('--timeout', type=float, default=60)
+    generator.add_argument('--maximum-output-bytes', type=int, default=1024 * 1024)
+    generate = commands.add_parser('generate', help='Run only the exact explicitly approved request and capture fresh Java source')
+    generate.add_argument('project', type=Path)
+    generate.add_argument('--candidate', type=Path, required=True)
+    generate.add_argument('--expect', required=True)
     for operation in ('test', 'watch'):
         command = commands.add_parser(operation, help='Delegate reviewed Java inputs to the authenticated maintained frontend')
         command.add_argument('project', type=Path)
@@ -72,6 +86,9 @@ def parser() -> argparse.ArgumentParser:
     compile_.add_argument("--wasi-sdk", type=Path, default=os.environ.get("WASI_SDK_PATH"))
     compile_.add_argument("--gradle", default="gradle")
     compile_.add_argument("--offline-cache", type=Path, help="Captured immutable Gradle compiler dependency cache")
+    compile_.add_argument("--read-only-cache", type=Path, help="Verified immutable Gradle module cache; updates stay in the owned compiler home")
+    compile_.add_argument("--runtime-profile", choices=("teavm-activation-fibers-v1",),
+                          help="Explicit SDK activation runtime profile; WIT imports and operator grants remain required")
     compile_.add_argument("--contracts-tool", type=Path, default=ROOT / "target/debug/examples/capsule_contracts")
     compile_.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
     return parser
@@ -101,7 +118,15 @@ def main(argv: list[str] | None = None) -> int:
                 except (ValueError, OSError):
                     print('Java dependency frontend receipt unavailable; inspect workspace status.', file=sys.stderr)
                 return outcome.exit_code
-            if args.command == 'resolve':
+            if args.command in {'generator-request', 'generate'}:
+                from tools import java_generator_authoring as generator
+                result = (generator.request(args.project, args.candidate, tool=args.tool,
+                            arguments=args.arg, inputs=args.inputs, destination=args.destination,
+                            tool_version=args.tool_version, timeout_seconds=args.timeout,
+                            maximum_output_bytes=args.maximum_output_bytes)
+                          if args.command == 'generator-request'
+                          else generator.run(args.project, args.candidate, args.expect))
+            elif args.command == 'resolve':
                 from tools.java_dependency_resolution import resolve
                 candidate = dependencies.candidate_location(args.project, args.candidate)
                 if any(os.path.lexists(candidate.with_name(candidate.name + suffix)) for suffix in ('.receipt.json', '.failed.json')):
@@ -134,8 +159,11 @@ def main(argv: list[str] | None = None) -> int:
             result = create_server(args.directory, args.name)
         else:
             if args.wasi_sdk is None: raise ValueError("provide --wasi-sdk or WASI_SDK_PATH for pinned WASI-SDK 29")
+            selection = {}
+            if args.runtime_profile is not None: selection["runtime_profile"] = args.runtime_profile
+            if args.read_only_cache is not None: selection["read_only_cache"] = args.read_only_cache
             result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository,
-                           args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache)
+                           args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache, **selection)
         print(result)
         return 0
     except (ValueError, OSError, RuntimeError, KeyError, TypeError) as error:

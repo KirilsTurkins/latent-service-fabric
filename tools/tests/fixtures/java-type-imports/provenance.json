@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "latent.testing.captured-wit.v1",
+  "repository": "KirilsTurkins/latent-service-fabric",
+  "run": "36824350733",
+  "job": "110246581952",
+  "pullRequest": 777,
+  "sourceRevision": "102f61b1d08bc58c468cf302f5e2b8c643cbcb3b",
+  "artifact": "java-guest-feasibility-102f61b1d08bc58c468cf302f5e2b8c643cbcb3b",
+  "capturedPath": "java-http-composition/builds/domain/logs/01-compatibility-final-wit.stdout.txt",
+  "fixture": "final-wit-102f61b1.json",
+  "fixtureBytes": 6478,
+  "fixtureDigest": "sha256:fa52df37a921a12fcfed9fc1fb499ee9848291daa01de04bdce572e0f7a0cf4d",
+  "componentDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+  "originalOutcome": "final-component-compatibility-failed",
+  "evidence": "captured-wit-reanalysis",
+  "executionQualified": false,
+  "authority": "none"
+}

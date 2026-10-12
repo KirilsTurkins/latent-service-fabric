@@ -8,7 +8,6 @@ use super::*;
 mod bounds;
 mod fairness;
 mod lifecycle;
-mod wake;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Command {

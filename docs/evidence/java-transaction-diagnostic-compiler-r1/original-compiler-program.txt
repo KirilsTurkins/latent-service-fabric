@@ -1,0 +1,36 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,sys,time
+work=Path('/diagnostic-work');source=work/'source'
+inputs=json.loads(Path('/controller/inputs.json').read_bytes())
+assert os.geteuid()==23001 and sys.version_info[:3]==(3,13,5)
+assert subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD']).decode().strip()==inputs['sourceCommit']
+assert not subprocess.check_output(['git','-C',str(source),'status','--porcelain'])
+os.chdir(source);sys.path.insert(0,str(source))
+from tools.java_guest.compiler import tool_inventory
+from tools.compile_transaction_guests import compile_guests
+tools=inputs['originalMaterialPaths']
+jdk=Path(tools['java-version']).parent.parent
+gradle=Path(tools['gradle-version']).parent.parent
+wasi=Path(tools['clang-version']).parent.parent
+roots={'jdk':jdk,'gradle':gradle,'wasi-sdk':wasi}
+before=tool_inventory(roots)
+expected=inputs['originalR4ToolClosure']
+assert len(before)==expected['size'] and 'sha256:'+hashlib.sha256(before).hexdigest()==expected['digest']
+(work/'original-compiler-inputs.json').write_bytes(before)
+os.environ['JAVA_HOME']=str(jdk)
+os.environ['PATH']=':'.join([str(jdk/'bin'),str(gradle/'bin'),str(Path(tools['wasm-tools-version']).parent),os.environ['PATH']])
+record={'schemaVersion':'latent.java.transaction-diagnostic-compiler-process.v1','sourceCommit':inputs['sourceCommit'],
+    'originalToolProducer':inputs['originalToolProducer'],'originalToolArchive':inputs['originalToolArchive'],
+    'originalToolClosure':expected,'compilerOnly':True,'signedNodeExecutionQualified':False,'compiled':False}
+started=time.monotonic()
+try:
+    compile_guests('java',work/'capture',wasi_sdk=wasi,java_post_stage_diagnostic=True)
+    assert tool_inventory(roots)==before
+    report=json.loads((work/'capture/put-once-diagnostics/report.json').read_bytes())
+    assert report['compiled'] is True and report['signedNodeExecutionQualified'] is False
+    assert report['sourceRevision']==inputs['sourceCommit'] and report['workingTreeChanged'] is False
+    record.update(compiled=True,componentDigest=report['componentDigest'],componentBytes=report['componentBytes'])
+finally:
+    record['seconds']=round(time.monotonic()-started,6)
+    (work/'compiler-process-receipt.json').write_bytes(json.dumps(record,indent=2).encode()+b'\n')
+print(json.dumps(record))

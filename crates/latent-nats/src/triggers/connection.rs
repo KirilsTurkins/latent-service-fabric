@@ -32,11 +32,7 @@ impl NatsTriggers {
             &client,
             &self.config.bindings[index].tenant,
             deadline,
-            if self.config.bindings[index].transaction.is_some() {
-                6
-            } else {
-                3
-            },
+            3,
             65536 + 2 * self.config.maximum_payload_bytes,
         )?;
         let auth = network::current(credential)?;

@@ -15,9 +15,6 @@ mod provider;
 mod proxy;
 #[path = "nats_triggers/recovery.rs"]
 mod recovery;
-#[path = "generic_backend/support.rs"]
-#[allow(dead_code)]
-mod support;
 use fixture::Fixture;
 use latent_nats::triggers::{Acknowledgement, TriggerTerminal};
 

@@ -11,8 +11,10 @@ description = "Schema-backed declarative manifest codecs and Phase 1 validation.
 workspace = true
 
 [dependencies]
-base64.workspace = true
 sha2.workspace = true
 latent-core = { path = "../latent-core" }
 serde.workspace = true
 serde_json = { workspace = true, features = ["arbitrary_precision"] }
+
+[dev-dependencies]
+base64.workspace = true

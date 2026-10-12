@@ -3,7 +3,6 @@ use super::{row_charge, TenantCensusContribution, TenantRecord, TenantUsage};
 use crate::{
     embedded::{Family, ReadView, RowKey, StoreError},
     namespace::catalog::NamespaceCatalog,
-    recovery::{migration::AggregateMigrationProgress, resume::NamespaceResumeReceipt},
 };
 use latent_core::TenantId;
 
@@ -20,6 +19,23 @@ pub fn census_contribution(
         crate::recovery::RecoveryGuard::validate_row(key, bytes)?;
         return Ok(TenantCensusContribution::Global);
     }
+    if *key == crate::store_identity::StoreIdentity::row_key() {
+        crate::store_identity::StoreIdentity::validate_row(key, bytes)?;
+        return Ok(TenantCensusContribution::Global);
+    }
+    // Original offline-v1 histories remain decodable in their selected profile.
+    // Their writers supplied no v2 aggregate quota envelope, so installed v2
+    // accounting refuses this upgrade rather than inventing a contribution.
+    if key.family == Family::Maintenance
+        && (key
+            .key
+            .starts_with(crate::recovery::v1::migration::PROGRESS_PREFIX)
+            || key
+                .key
+                .starts_with(crate::recovery::v1::resume::RECEIPT_PREFIX))
+    {
+        return Err(StoreError::UnsupportedFormat);
+    }
     if key.family == Family::Maintenance && key.key.starts_with(super::QUOTA_PREFIX) {
         super::validate_row(view, key, bytes)?;
         return metadata(TenantRecord::decode(bytes)?.quota.tenant, key, bytes);
@@ -32,32 +48,19 @@ pub fn census_contribution(
         return metadata(tenant, key, bytes);
     }
     if key.family == Family::Maintenance
-        && key.key.starts_with(crate::recovery::resume::RECEIPT_PREFIX)
-    {
-        NamespaceResumeReceipt::validate_row(key, bytes)?;
-        return metadata(
-            NamespaceResumeReceipt::decode(bytes)?
-                .namespace()
-                .tenant
-                .clone(),
-            key,
-            bytes,
-        );
-    }
-    if key.family == Family::Maintenance
         && key
             .key
             .starts_with(crate::recovery::migration::PROGRESS_PREFIX)
     {
-        AggregateMigrationProgress::validate_row(key, bytes)?;
-        return metadata(
-            AggregateMigrationProgress::decode(bytes)?
-                .source_namespace()?
-                .tenant,
-            key,
-            bytes,
-        );
+        return crate::recovery::migration::census_contribution(view, key, bytes);
     }
+    if key.family == Family::Maintenance
+        && key.key.starts_with(crate::recovery::resume::RECEIPT_PREFIX)
+    {
+        return crate::recovery::resume::census_contribution(view, key, bytes);
+    }
+    // Unsupported recovery producers remain outside this closed profile. A
+    // prefix or historical label cannot supply a tenant or fabricate counters.
     let tenant = crate::session::tenant_for_row(view, key, bytes)?;
     if key.family == Family::State {
         return Ok(TenantCensusContribution::Usage {

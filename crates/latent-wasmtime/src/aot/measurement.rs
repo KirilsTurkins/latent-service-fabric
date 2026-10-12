@@ -11,12 +11,10 @@ pub(super) struct Span {
     observation: Option<(&'static str, Instant)>,
 }
 impl Span {
-    pub(super) fn new(stage: &'static str) -> Self {
-        #[cfg(not(feature = "aot-test-timings"))]
-        let _ = stage;
+    pub(super) fn new(_stage: &'static str) -> Self {
         Self {
             #[cfg(feature = "aot-test-timings")]
-            observation: std::env::var_os("LSF_AOT_TEST_TIMINGS").map(|_| (stage, Instant::now())),
+            observation: std::env::var_os("LSF_AOT_TEST_TIMINGS").map(|_| (_stage, Instant::now())),
         }
     }
 }

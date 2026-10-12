@@ -81,12 +81,9 @@ impl Comparison<'_> {
                         let actual = resource_identity(self.right, right_id)?;
                         if self.resources.is_empty()
                             || expected != actual
-                            || self
-                                .host_profile
-                                .interface(&expected.0)
-                                .is_none_or(|profile| {
-                                    !profile.resource_types().contains(&expected.1)
-                                })
+                            || crate::semantics::host::specification(&expected.0).is_none_or(
+                                |profile| !profile.resource_types().contains(&expected.1),
+                            )
                             || !self.resources.contains(&expected.1)
                         {
                             return Err(incompatible("unsupported-resource-identity"));

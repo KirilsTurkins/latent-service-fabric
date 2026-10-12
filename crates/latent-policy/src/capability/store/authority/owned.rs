@@ -39,8 +39,8 @@ pub struct OwnedPolicyDecision {
     require_audit: bool,
 }
 impl OwnedPolicyDecision {
-    /// Original bounded document identities. Observing these revisions cannot
-    /// renew a replaced policy or bypass the retained currentness fence.
+    /// Original sealed row stamps only; these descriptions grant no authority
+    /// and do not recheck or renew the retained policy decision.
     pub fn policy_revisions(&self) -> impl Iterator<Item = super::CapabilityPolicyRevision<'_>> {
         self.snapshot.policy_revisions()
     }
@@ -53,6 +53,40 @@ impl OwnedPolicyDecision {
     #[must_use]
     pub const fn requires_audit(&self) -> bool {
         self.require_audit
+    }
+
+    /// Descriptive digest of the original configured rows and exact consumer
+    /// publication. Operation, payload and remaining budget are excluded so a
+    /// current inspection and approved action share a configuration precondition.
+    /// This does not recheck currentness, acquire a lease, or supply a grant.
+    #[must_use]
+    pub fn configuration_digest(&self) -> [u8; 32] {
+        let mut hash = blake3::Hasher::new();
+        hash.update(b"lsf-retained-policy-configuration-v1\0");
+        let mut field = |bytes: &[u8]| {
+            hash.update(&(bytes.len() as u64).to_be_bytes());
+            hash.update(bytes);
+        };
+        for text in [
+            &self.snapshot.tenant.0,
+            &self.input.service,
+            &self.input.publication,
+            &self.input.capability,
+        ] {
+            field(text.as_bytes());
+        }
+        let mut rows: Vec<_> = self.snapshot.policy_revisions().collect();
+        rows.sort_by(|left, right| left.id.cmp(right.id));
+        field(&(rows.len() as u64).to_be_bytes());
+        for row in rows
+            .into_iter()
+            .chain(std::iter::once(self.snapshot.binding_revision()))
+        {
+            field(row.id.as_bytes());
+            field(&row.revision.to_be_bytes());
+            field(row.digest.as_bytes());
+        }
+        *hash.finalize().as_bytes()
     }
 
     fn borrowed(&self) -> SealedPolicyDecision<'_> {
@@ -81,7 +115,6 @@ impl PolicyStore {
                     tenant: original.tenant.clone(),
                     policies: original.policies.clone(),
                     binding: original.binding.clone(),
-                    generation: original.generation,
                     lease,
                 },
                 publication: decision.publication.clone(),
@@ -113,28 +146,7 @@ impl PolicyStore {
         operation: &SealedPolicyDecision<'_>,
         action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        self.with_captured_decisions(&[captured], operation, action)
-    }
-
-    /// Intersect original sealed purposes and a current operation in the same
-    /// policy/publication fence. Additional captured grants can only narrow the
-    /// accepted action; replaced snapshots cannot revive their original stamps.
-    pub fn with_captured_decisions(
-        &self,
-        captured: &[&OwnedPolicyDecision],
-        operation: &SealedPolicyDecision<'_>,
-        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
-    ) -> Result<(), PlatformError> {
-        if captured.is_empty() || captured.len() > 8 {
-            return Err(denied());
-        }
-        let borrowed: Vec<_> = captured
-            .iter()
-            .map(|original| original.borrowed())
-            .collect();
-        let mut decisions: Vec<_> = borrowed.iter().collect();
-        decisions.push(operation);
-        self.with_current_decisions(&decisions, action)
+        self.with_current_decisions(&[&captured.borrowed(), operation], action)
     }
 
     /// Recheck the original retained owner, row stamps and publication under the

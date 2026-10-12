@@ -157,6 +157,51 @@ class WitContractTests(unittest.TestCase):
             self.assertFalse((destination / "stale.txt").exists())
             self.assertTrue((destination / "deps" / "context" / "package.wit").is_file())
 
+    def test_type_use_selector_stages_the_real_intents_state_dependency(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            destination = Path(temporary) / "intents"
+            stager.stage(destination, ROOT / "wit/platform/intents")
+            self.assertEqual(
+                {path.name for path in (destination / "deps").iterdir()}, {"state"}
+            )
+            self.assertEqual(
+                (destination / "deps/state/package.wit").read_bytes(),
+                (ROOT / "wit/platform/state/package.wit").read_bytes(),
+            )
+
+    def test_type_use_preserves_dotted_prerelease_and_build_version_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            source.mkdir()
+            platform = root / "platform"
+            for directory, version in (
+                ("selected", "2.3.4-rc.2+build.9"), ("unselected", "2.3.4")
+            ):
+                package = platform / directory
+                package.mkdir(parents=True)
+                (package / "package.wit").write_text(
+                    f"package example:values@{version};\n"
+                    "interface items { type value = u32; }\n", encoding="utf-8"
+                )
+            (source / "package.wit").write_text(
+                "package example:source@1.0.0;\n"
+                "interface use-values {\n"
+                "    use example:values/items@2.3.4-rc.2+build.9.{value};\n"
+                "}\n", encoding="utf-8"
+            )
+            destination = root / "staged"
+            with mock.patch.object(stager, "PLATFORM_WIT", platform):
+                stager.stage(destination, source)
+            self.assertEqual(
+                {path.name for path in (destination / "deps").iterdir()}, {"selected"}
+            )
+            self.assertEqual(
+                (destination / "deps/selected/package.wit").read_bytes(),
+                (platform / "selected/package.wit").read_bytes(),
+            )
+
+
     def test_type_use_selector_stages_the_exact_state_dependency(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             platform = Path(temporary) / "platform"
@@ -253,6 +298,42 @@ class WitContractTests(unittest.TestCase):
             stager.stage(Path(temporary) / "transitive", source)
             deps = Path(temporary) / "transitive/deps"
             self.assertEqual({path.name for path in deps.iterdir()}, {"intents", "state"})
+
+    def test_captured_versioned_dependencies_keep_their_original_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "consumer"
+            source.mkdir()
+            (source / "package.wit").write_text(
+                "package fixture:provided@1.0.0;\ninterface api {\n"
+                "use latent:intents/staging@0.1.0.{intent};\n}\n"
+                "world service { import latent:http/client@0.2.0; export api; }\n",
+                encoding="utf-8",
+            )
+            originals = {}
+            for platform, captured in [("intents", "captured-intents"),
+                                       ("state", "captured-state"),
+                                       ("http-v2", "forbidden-http")]:
+                raw = (ROOT / "wit/platform" / platform / "package.wit").read_bytes()
+                path = source / "deps" / captured / "package.wit"
+                path.parent.mkdir(parents=True)
+                path.write_bytes(raw)
+                originals[captured] = raw
+            destination = root / "staged"
+            stager.stage(destination, source)
+            self.assertEqual({path.name for path in (destination / "deps").iterdir()}, set(originals))
+            for captured, raw in originals.items():
+                self.assertEqual((destination / "deps" / captured / "package.wit").read_bytes(), raw)
+            # A missing transitive package is still supplied. The original HTTP
+            # and intents definitions remain captured under their selected names.
+            state = source / "deps/captured-state/package.wit"
+            state.unlink()
+            state.parent.rmdir()
+            stager.stage(destination, source)
+            self.assertEqual({path.name for path in (destination / "deps").iterdir()},
+                             {"captured-intents", "forbidden-http", "state"})
+            self.assertEqual((destination / "deps/state/package.wit").read_bytes(), originals["captured-state"])
+            self.assertEqual((destination / "deps/forbidden-http/package.wit").read_bytes(), originals["forbidden-http"])
 
 
 if __name__ == "__main__":

@@ -1,0 +1,2 @@
+package examples:shared@2.0.0;
+interface types { type count = u64; }

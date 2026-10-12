@@ -87,11 +87,17 @@ enumeration!(AuditControlAction {
     NamespaceDestroy,
     NamespaceRecreate,
     NamespaceInspect,
-    CommandFloorRelease,
     DispatcherInspect,
     DispatcherPause,
     DispatcherResume,
-    DispatcherOperationRead
+    DispatcherOperationRead,
+    EffectPlan,
+    EffectReconcile,
+    EffectRedrive,
+    EffectTerminate,
+    StateOperationRead,
+    StateCheckpoint,
+    PayloadPurge
 });
 enumeration!(AuditOperationResult {
     Committed,
@@ -587,7 +593,7 @@ mod tests {
                 4 => changed.action = AuditControlAction::Publish,
                 _ => {
                     changed.identities.component =
-                        Some(latent_core::ReleaseDigest("unrelated".into()))
+                        Some(latent_core::ReleaseDigest("unrelated".into()));
                 }
             }
             assert!(codec::attempt(&changed).is_err(), "case {case}");

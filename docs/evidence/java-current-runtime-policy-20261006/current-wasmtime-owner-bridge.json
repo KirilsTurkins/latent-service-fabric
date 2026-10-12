@@ -1,0 +1,74 @@
+{
+  "executedSource": "e6209fcd4e36627a25b5a4fde16a31b053080027",
+  "paths": [
+    "crates/latent-wasmtime/src",
+    "crates/latent-wasmtime/tests/native_aot_cache.rs",
+    "crates/latent-wasmtime/tests/native_aot_cache",
+    "crates/latent-wasmtime/Cargo.toml",
+    "Cargo.lock",
+    ".cargo/managed-guest.toml"
+  ],
+  "branches": [
+    {
+      "pr": 748,
+      "head": "ca013d3440dc8f278e17c269359eb00b3f1527ba",
+      "sameWholeExecutedWasmtimeClosure": false,
+      "differentPaths": [
+        "crates/latent-wasmtime/src/config/tests/security_advisories.rs"
+      ]
+    },
+    {
+      "pr": 762,
+      "head": "70b435095675e93da1c47cacf9609134a9c80c85",
+      "sameWholeExecutedWasmtimeClosure": false,
+      "differentPaths": [
+        "crates/latent-wasmtime/src/config/tests/security_advisories.rs"
+      ]
+    },
+    {
+      "pr": 777,
+      "head": "59a9025fa70c80282915fbe33bf3978944d8aef8",
+      "sameWholeExecutedWasmtimeClosure": false,
+      "differentPaths": [
+        "crates/latent-wasmtime/src/config/tests/security_advisories.rs"
+      ]
+    },
+    {
+      "pr": 785,
+      "head": "e6209fcd4e36627a25b5a4fde16a31b053080027",
+      "sameWholeExecutedWasmtimeClosure": true,
+      "differentPaths": []
+    },
+    {
+      "pr": 786,
+      "head": "1c05e210aa91a7e4c2b7c1c731462c6a8e6c8a76",
+      "sameWholeExecutedWasmtimeClosure": false,
+      "differentPaths": [
+        "crates/latent-wasmtime/src/config/tests/security_advisories.rs"
+      ]
+    },
+    {
+      "pr": 802,
+      "head": "8179673559d51acc4bad0d031ef4f2d2cef5f90f",
+      "sameWholeExecutedWasmtimeClosure": false,
+      "differentPaths": [
+        "Cargo.lock",
+        "crates/latent-wasmtime/src/aot/profile.rs",
+        "crates/latent-wasmtime/src/backend.rs",
+        "crates/latent-wasmtime/src/backend/preparation_context.rs",
+        "crates/latent-wasmtime/src/bindings/tests.rs",
+        "crates/latent-wasmtime/src/config.rs",
+        "crates/latent-wasmtime/src/config/profile.rs",
+        "crates/latent-wasmtime/src/config/tests/security_advisories.rs",
+        "crates/latent-wasmtime/src/host.rs",
+        "crates/latent-wasmtime/src/host/transaction.rs",
+        "crates/latent-wasmtime/src/host/transaction/convert.rs",
+        "crates/latent-wasmtime/src/host/transaction/state.rs",
+        "crates/latent-wasmtime/src/host/transaction/table.rs",
+        "crates/latent-wasmtime/src/surface.rs",
+        "crates/latent-wasmtime/src/surface/transaction.rs"
+      ]
+    }
+  ],
+  "fullCurrentCIClaimed": false
+}

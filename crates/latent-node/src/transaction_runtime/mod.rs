@@ -1,14 +1,26 @@
 //! Activation-scoped native state sessions over the existing protected owner.
 mod authorization;
-pub mod command_completion;
-mod entity;
+mod capacity;
+mod command_role;
+mod completion;
+mod factory;
 mod host;
 mod initialization;
 mod io;
-pub mod query;
-mod staging;
-pub use authorization::{IntentPolicyBinding, PolicyCallBinding, StateAuthorization};
-pub use entity::{default_entity_limits, EntityCommandLanes};
+mod observation;
+mod response;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod tests;
+pub use authorization::{PolicyCallBinding, StateAuthorization};
+pub use capacity::TransactionRetention;
+pub use command_role::PendingCommandAdmission;
+pub use completion::{CommandCompletion, CommandCompletionDisposition};
+pub use factory::{
+    NativeTransactionAdmission, TransactionAdmissionOwners, TransactionAdmissionResult,
+    TransactionCompletionResult, TransactionInstallation, TransactionInstallationSelection,
+    TransactionOutcomeValidator, TransactionRetrySelection, TransactionSelection,
+};
+pub use response::{OwnedTransactionCompletion, TransactionResponseAuthority};
 
 use latent_commit::atomic::{
     AdmittedCommand, CapturedIntent, CommandTime, IntentCaptureContext, PhysicalAttemptWork,
@@ -30,40 +42,6 @@ use std::sync::{
 /// time alone cannot assert continuity after an older restore or process loss.
 pub trait CommandTimeSource: Send + Sync {
     fn sample(&self) -> CommandTime;
-
-    /// Normal composition reserves its original ordinary native capacity from
-    /// the actual admitted envelope and budget before accepting metadata work.
-    fn retain_admission(
-        &self,
-        _envelope: &latent_activation::ActivationEnvelope,
-        _budget: &latent_core::ActivationBudget,
-    ) -> Result<(), latent_core::PlatformError> {
-        Ok(())
-    }
-
-    /// Retained physical response owner; no guest accounting is consumed.
-    fn with_delivery(
-        &self,
-        action: &mut dyn FnMut() -> Result<(), latent_core::PlatformError>,
-    ) -> Result<(), latent_core::PlatformError> {
-        action()
-    }
-
-    /// Managed composition retains the original protected command-role guard
-    /// through this short acceptance callback. No callback performs I/O.
-    fn with_acceptance(
-        &self,
-        action: &mut dyn FnMut(CommandTime) -> Result<(), latent_core::PlatformError>,
-    ) -> Result<(), latent_core::PlatformError> {
-        action(self.sample())
-    }
-
-    /// Only a positively retired original attempt can retire its role owner.
-    fn retire_attempt(&self, _original: &latent_commit::atomic::AttemptRetirement) {}
-
-    /// The coordinator invokes this only after an actual unclaimed native
-    /// operation has retired, or positive refusal before worker acceptance.
-    fn retire_without_claim(&self) {}
 }
 
 pub struct CommandHostSelection {
@@ -72,7 +50,6 @@ pub struct CommandHostSelection {
     work: PhysicalAttemptWork,
     key: latent_core::transaction_contract::CommandKey,
     publication: String,
-    staging_identity: latent_executor::transaction::TransactionStagingIdentity,
 }
 impl CommandHostSelection {
     pub fn from_claim(
@@ -90,12 +67,6 @@ impl CommandHostSelection {
             context: claim.intent_capture_context(),
             key: record.key().clone(),
             publication: record.source().publication.clone(),
-            staging_identity: latent_executor::transaction::TransactionStagingIdentity {
-                command_id: record.id().hex(),
-                attempt_id: record.attempt_id().hex(),
-                transaction_id: record.transaction_id().hex(),
-                publication_id: record.source().publication.clone(),
-            },
             info: CommandInfo {
                 view,
                 command_id: record.id().hex(),
@@ -108,6 +79,7 @@ impl CommandHostSelection {
 }
 struct SessionPayload {
     session: StateSession,
+    view_token: Vec<u8>,
     intents: Vec<CapturedIntent>,
     memory: Arc<HostMemoryReservation>,
 }
@@ -124,7 +96,7 @@ pub struct StateTransactionHost {
     activation: ActivationId,
     mode: Mode,
     scope: StateScope,
-    view_identity: latent_state::session::version::ViewIdentity,
+    view_token: Vec<u8>,
     authorization: Arc<StateAuthorization>,
     store: Arc<ProtectedStoreOwner>,
     session: Mutex<Option<OwnedSession>>,
@@ -136,13 +108,10 @@ pub struct StateTransactionHost {
     technical_fault: AtomicBool,
     context: Option<IntentCaptureContext>,
     command: Option<CommandInfo>,
-    staging_identity: Option<latent_executor::transaction::TransactionStagingIdentity>,
-    staging_observer:
-        Mutex<Option<Arc<dyn latent_executor::transaction::TransactionStagingObserver>>>,
     effects: Option<EffectAuthorityOwner>,
     time: Arc<dyn CommandTimeSource>,
     retained_bytes: u64,
-    entity: Mutex<Option<entity::EntityOwner>>,
+    memory: Arc<HostMemoryReservation>,
 }
 
 /// Only host coordination receives the affine view and staged state/intent
@@ -154,37 +123,6 @@ pub struct StateHandoff {
     pub memory: Arc<HostMemoryReservation>,
 }
 impl StateTransactionHost {
-    pub(super) fn retain_entity(&self) -> Result<Option<entity::EntityOwner>, StateFailure> {
-        self.entity
-            .lock()
-            .map(|owner| owner.clone())
-            .map_err(|_| StateFailure::Unavailable)
-    }
-
-    pub(super) fn release_entity(&self) -> Result<(), StateFailure> {
-        if !self.guest_closed.load(std::sync::atomic::Ordering::Acquire)
-            || !self.witness.has_retired()
-            || self
-                .physical
-                .lock()
-                .map_err(|_| StateFailure::Unavailable)?
-                .is_some()
-        {
-            return Err(StateFailure::Unavailable);
-        }
-        self.entity
-            .lock()
-            .map_err(|_| StateFailure::Unavailable)?
-            .take();
-        Ok(())
-    }
-    /// Descriptive identity captured from this session's actual native view.
-    /// It grants no read permission and never refreshes during the activation.
-    #[must_use]
-    pub fn retained_view_identity(&self) -> latent_state::session::version::ViewIdentity {
-        self.view_identity
-    }
-
     #[must_use]
     pub fn authority(&self) -> &StateAuthorization {
         &self.authorization
@@ -197,11 +135,6 @@ impl StateTransactionHost {
         use std::sync::atomic::Ordering;
         if !self.guest_closed.load(Ordering::Acquire) {
             return Err(StateFailure::HandleClosed);
-        }
-        if let Some(entity) = self.retain_entity()? {
-            entity
-                .begin_cleanup()
-                .map_err(|_| StateFailure::Unavailable)?;
         }
         let owned = self
             .session
@@ -219,13 +152,34 @@ impl StateTransactionHost {
             .physical
             .lock()
             .map_err(|_| StateFailure::Unavailable)?
-            .take()
-            .ok_or(StateFailure::HandleClosed)?;
+            .take();
+        let Some(physical) = physical else {
+            // The issued witness is positive and the affine physical owner was
+            // already retired. Re-observation cannot refund a second charge.
+            return Ok(());
+        };
         physical.operation.retire().await;
         if let Some(work) = physical.work {
             work.retire();
         }
         Ok(())
+    }
+
+    pub(super) fn retire_command_role(&self) -> Result<(), latent_commit::atomic::AtomicError> {
+        if !self.guest_closed.load(std::sync::atomic::Ordering::Acquire)
+            || !self.witness.has_retired()
+            || self
+                .physical
+                .lock()
+                .map_err(|_| latent_commit::atomic::AtomicError::RecoveryRequired)?
+                .is_some()
+        {
+            return Err(latent_commit::atomic::AtomicError::RecoveryRequired);
+        }
+        self.authorization
+            .role
+            .as_ref()
+            .map_or(Ok(()), |role| role.retire())
     }
 
     /// Seal only after actual guest references are severed. The returned native
@@ -239,7 +193,7 @@ impl StateTransactionHost {
             return Err(StateFailure::WrongMode);
         }
         self.authorization
-            .authorize("commit", 0, 0, || Ok(()))
+            .authorize_completion(|| Ok(()))
             .map_err(|_| StateFailure::PermissionDenied)?;
         let owned = self
             .session
@@ -253,7 +207,7 @@ impl StateTransactionHost {
             .store
             .with_view(owned.view, self.retained_bytes, move |view| {
                 let plan = payload.session.seal(view, |_, _| {
-                    auth.authorize("commit", 0, 0, || Ok(()))
+                    auth.authorize_completion(|| Ok(()))
                         .map_err(|_| latent_state::session::StateError::PermissionDenied)
                 });
                 if let Err(error) = &plan {

@@ -2,23 +2,23 @@
   "cases":["ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution","ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement","ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed","ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough","ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source","ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt"],
   "guards":{
     "ExactCompositionTests.test_changed_binary_or_graph_is_rejected_before_composer_execution":
-      "662146e5bb746e88e641885c7e7973c894e1e7bcad7dd4b989ec7fb8634fb2e8",
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
     "ExactCompositionTests.test_compatible_version_is_not_an_exact_replacement":
-      "662146e5bb746e88e641885c7e7973c894e1e7bcad7dd4b989ec7fb8634fb2e8",
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
     "ExactCompositionTests.test_duplicate_exports_and_missing_or_wrong_adapter_receipts_fail_closed":
-      "662146e5bb746e88e641885c7e7973c894e1e7bcad7dd4b989ec7fb8634fb2e8",
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
     "ExactCompositionTests.test_exact_versions_have_one_named_edge_and_host_authority_is_passthrough":
-      "662146e5bb746e88e641885c7e7973c894e1e7bcad7dd4b989ec7fb8634fb2e8",
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
     "ExactCompositionTests.test_original_composer_failure_keeps_raw_bytes_and_retained_source":
-      "662146e5bb746e88e641885c7e7973c894e1e7bcad7dd4b989ec7fb8634fb2e8",
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb",
     "ExactCompositionTests.test_process_mutation_is_rejected_without_a_completed_receipt":
-      "662146e5bb746e88e641885c7e7973c894e1e7bcad7dd4b989ec7fb8634fb2e8"
+      "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb"
   },
   "kind":"python",
   "module":"tools/tests/test_dotnet_exact_composition.py",
-  "reviewReason":"Add six exact-interface composition controls after the actual pinned WAC semver duplicate-argument failure; preserve all historical authoring and entropy cases.",
+  "reviewReason":"Retain both parent case sets and every execution, decorator and skip guard; review the merged helper/import setup identities. Incoming reviewed obligation: Add six exact-interface composition controls after the actual pinned WAC semver duplicate-argument failure; preserve all historical authoring and entropy cases. Store identical case-owned guards using the authenticated shared v2 representation; retain every original case and execution control.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
-    "662146e5bb746e88e641885c7e7973c894e1e7bcad7dd4b989ec7fb8634fb2e8":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:f82a0460f52654ebdb98c05c942967e7dd4669408525d6cb61817101cbb0c0c7","class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"],"skipSites":[]}
+    "10623e75a520d6a70336978057596db02c7eddf52a09c88823b41a347ba8c0eb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:a5b5b87702a6df9d8d991735aedb90e6613b2f5b4ab3bb0adf7b030da04b0bbc","class:setup-sha256:1d2c94f16ab3e17c34c7fbbee51b2283849512a580882cdd9222dc910ab961b3"],"skipSites":[]}
   }
 }

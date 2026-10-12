@@ -3,37 +3,8 @@ use crate::embedded::{EmbeddedStore, FencedStoreError, StoreLimits};
 use crate::namespace::NamespaceQuota;
 use std::fs::OpenOptions;
 
+mod entities;
 mod history;
-mod inspection;
-
-#[test]
-fn staged_mutation_observation_counts_real_distinct_changes_without_publishing_state() {
-    let fixture = Fixture::new();
-    let (view, mut session) = fixture.session();
-    assert_eq!(session.staged_mutation_count(), 0);
-    assert!(session.get(&view, b"count", allow).unwrap().is_none());
-    assert_eq!(session.staged_mutation_count(), 0);
-    session
-        .put(&view, b"count".to_vec(), value(b"one"), allow)
-        .unwrap();
-    assert_eq!(session.staged_mutation_count(), 1);
-    session
-        .put(&view, b"count".to_vec(), value(b"two"), allow)
-        .unwrap();
-    session.delete(&view, b"count".to_vec(), allow).unwrap();
-    assert_eq!(session.staged_mutation_count(), 1);
-    session.delete(&view, b"other".to_vec(), allow).unwrap();
-    assert_eq!(session.staged_mutation_count(), 2);
-    assert!(session
-        .put(&view, Vec::new(), value(b"invalid"), allow)
-        .is_err());
-    assert_eq!(session.staged_mutation_count(), 2);
-    drop(session);
-    drop(view);
-    let (view, mut fresh) = fixture.session();
-    assert!(fresh.get(&view, b"count", allow).unwrap().is_none());
-    assert_eq!(fresh.staged_mutation_count(), 0);
-}
 
 struct Fixture {
     store: EmbeddedStore,
@@ -387,6 +358,13 @@ fn byte_limited_pages_require_continuation_and_never_omit_an_entry() {
     let fixture = Fixture::new();
     fixture.write(&[(b"a", Some(b"1")), (b"b", Some(b"2")), (b"c", Some(b"3"))]);
     let (view, mut session) = fixture.session();
+    // The same unchanged row now carries both original 8-byte history epochs.
+    // The old SV1 framing allowance must still refuse; session/API ceilings stay
+    // unchanged and the original qualified SV2 fixture allowance is 136 bytes.
+    assert_eq!(
+        session.scan(&view, b"", None, 128, 120, allow),
+        Err(StateError::Limit)
+    );
     let mut cursor = None;
     let mut keys = vec![];
     loop {

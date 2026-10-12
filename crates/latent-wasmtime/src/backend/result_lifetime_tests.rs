@@ -160,9 +160,9 @@ fn ownership() -> (
             .runtime_ledger()
             .unwrap()
             .register(PreparedRuntimeCost {
-                source: 7,
-                metadata: 5,
-                compiled_image: 13,
+                source_bytes: 7,
+                metadata_bytes: 5,
+                compiled_image_bytes: 13,
             })
             .unwrap(),
     };

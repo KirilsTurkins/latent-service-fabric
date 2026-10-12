@@ -9,6 +9,13 @@ It creates an independent project and walks through WIT, compilation, packaging,
 signing, enforced admission, publication, deployment, invocation and cleanup.
 This guest SDK is separate from the external C control-plane client in `../c`.
 
+The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
+uses `lsf/state.h` and `lsf/intents.h` with generated state 0.2 owners and the
+canonical shared transaction type. Callback frames retain borrowed inputs and
+leases until physical retirement, returned buffers have explicit deep close,
+and pages retain their original view. The host owns commitment. The separately
+admitted Phase 4 profile and signed Linux-node matrix are tracked by #389.
+
 The maintained toolchain is Zig 0.16.0 (`zig cc`, C11, `wasm32-wasi`, `-O2`),
 wit-bindgen 0.62.0 and wasm-tools 1.254.0. Generated bindings preserve WIT
 identity, async imports, `uint64_t`, UTF-8 strings, records, lists, options,

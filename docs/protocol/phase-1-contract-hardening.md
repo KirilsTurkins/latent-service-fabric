@@ -578,16 +578,83 @@ their separate meanings. Live grant checks are explicitly absent; an inspection
 does not grant execution or mutation authority. Public invocation and browser
 error projections retain their existing disclosure rules.
 
-## Additive Phase 4 transaction definitions
+## Phase 4 transaction and management descriptor additions
 
-The descriptor baseline includes `latent/transaction/v1/transaction.proto` and
-`latent/control/v1/state.proto`, plus `AuditCapabilityResourceClass` value 11
-for state resources. The Buf-generated descriptor was reviewed against every
-existing file: all previous field numbers, types, enum values, messages and RPC
-signatures remain unchanged. The exhaustive descriptor oracle includes both
-new files and still rejects unreviewed semantic changes.
+The Buf 1.72.0 descriptor baseline adds `latent/transaction/v1/transaction.proto`,
+`latent/control/v1/state.proto` and `latent/control/v1/dispatcher.proto`. The seven
+transaction, six state and three dispatcher methods use independent bounded
+messages. Every prior file, field, enum value and service signature is preserved.
+The audit descriptor adds state and dispatcher targets at fields 25 and 26,
+state resource class 11 and control actions 13 through 29; all prior audit rows
+remain exact.
 
 These definitions describe [transaction and recovery contracts](transactions.md).
 They do not establish that a host implements the profile or grant access from
 a namespace, command, effect or receipt identifier. WIT guest ABI versions and
 durable storage formats retain their separate compatibility boundaries.
+
+## Additive immutable target inspection
+
+Issue #716 adds the unary `NodeService.InspectHttpTarget` method, eight bounded
+inspection messages and three observation enums. The descriptor contract
+preserves every existing file, message, field number, enum value and RPC. The
+node descriptor additionally imports the existing release descriptor for exact
+publication identities.
+
+The authenticated tenant administrator receives coherent, stale or unavailable
+observations of the selected catalog and policy owners. Optional preparation
+inspects the same admitted readiness owner without materialization or guest and
+provider execution. The reply reports actual provider imports and validated
+structural type imports separately, and preserves numeric option presence and
+future enum values. See [target inspection](../reference/target-inspection.md).
+
+Engine configuration digests and internal sealed metadata fingerprints retain
+their separate meanings. Live grant checks are explicitly absent; an inspection
+does not grant execution or mutation authority. Public invocation and browser
+error projections retain their existing disclosure rules.
+The additive baseline also includes the three `DispatcherService` management
+methods and their typed request, response, generation, snapshot and operation
+receipt messages, together with the typed audit state and dispatcher targets.
+The 2026-10-03 regeneration used Buf 1.72.0 and retained all field names, numbers,
+types, nested messages, oneof membership, enum values and service signatures
+from both the earlier transaction source and current development. These are
+contract definitions; they do not qualify installed dispatch or transport
+execution.
+`PlanEffectMutation` prepares a finite descriptive plan. Effect redrive,
+reconciliation and termination require that complete original plan when calling
+`MutateState`. Receipt recovery preserves the original action, record version,
+policy digest and operation ID while requesting a separately current read
+publication. An expired historical plan can describe an already completed
+operation. It supplies neither a grant nor provider proof. Provider confirmation,
+administrator declaration and scheduled redrive remain separate typed facts.
+Historical effect records without the new record version remain readable and
+cannot authorize a new mutation.
+
+The golden matches the frozen sixteen-operation client descriptor and was
+reviewed against every prior named row using actual Buf output. The
+[transaction reference](transactions.md) describes the separate guest ABI,
+durable-format, authority and production qualification boundaries.
+
+## Captured transaction staging observation
+
+`TransactionStagingWitness` adds a host observation to privileged activation
+inspection. `ActivationTreeNode.transaction_staging` uses the previously unused
+optional field 15; existing field numbers and meanings remain unchanged. The
+witness records the captured activation, command, attempt, transaction and
+publication identities, mutation and intent counts, state bytes, and observation
+time. It appears only after the original host captures an intent and grants no
+persistence, cancellation, retry or cleanup authority. Older clients may ignore
+the added field; absence does not prove that no intent was captured.
+
+## Captured namespace policy observation
+
+`NamespaceInspection.policy_digest` adds optional string field 12. It describes
+the exact captured policy/binding revision and supplies no permission, renewed
+grant or mutation proof. Existing namespace-policy field 11, field numbers,
+presence rules and historical meanings remain unchanged. Older clients can
+ignore the addition; absence is an unavailable observation.
+
+The October 11, 2026 descriptor regeneration uses pinned Buf 1.72.0 and verifies
+every prior descriptor semantic before admitting only this field and its
+synthetic optional oneof. All six transaction client models and maintained
+Protobuf producers follow the same authoritative source.

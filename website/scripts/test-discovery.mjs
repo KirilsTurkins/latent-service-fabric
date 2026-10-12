@@ -156,7 +156,11 @@ try {
         await page.setViewportSize({width: 1280, height: 900});
       }
       await page.goto(`${prefix}docs/component-development/creating-a-capsule/`, {waitUntil: 'networkidle'});
-      assert.equal(await page.locator('.theme-doc-sidebar-menu a[href*="-authoring/"]').count(), 0);
+      await page.goto(`${prefix}docs/component-development/transactional-authoring/`, {waitUntil: 'networkidle'});
+      const learnAuthoring = page.locator('.theme-doc-sidebar-menu a[href*="-authoring/"]');
+      assert.deepEqual(await learnAuthoring.evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname)),
+        [new URL(`${prefix}docs/component-development/transactional-authoring/`).pathname]);
+      await page.goto(`${prefix}docs/component-development/creating-a-capsule/`, {waitUntil: 'networkidle'});
       const greeting = page.locator('[data-example="guest/tutorial-greeting"]');
       assert.equal(await greeting.getByRole('tab').count(), 6);
       await greeting.getByRole('tab', {name: 'Go', exact: true}).click();
@@ -183,7 +187,11 @@ try {
         applicationGuides: applicationPages.map(([slug]) => slug),
         setupDownloads,
         mobileWidth: 390, reflowWidth: 640, reducedMotion: true, externalRequests: 0, browserErrors: 0, accessibility});
-    } finally { await context.close(); await server.close(); }
+    } finally {
+      await context.unrouteAll({behavior: 'wait'});
+      await context.close();
+      await server.close();
+    }
   }
 } finally { await browser.close(); }
 fs.writeFileSync(path.join(output, 'evidence.json'), JSON.stringify({schema: 1, browser: browser.version(), results}, null, 2) + '\n');

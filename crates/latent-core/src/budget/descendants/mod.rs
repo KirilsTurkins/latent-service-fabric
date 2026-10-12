@@ -129,6 +129,12 @@ pub struct DescendantBudgetSnapshot {
     pub closed: bool,
 }
 impl ActivationBudget {
+    pub(in crate::budget) fn has_budget_parent(&self) -> bool {
+        self.inner
+            .lineage
+            .get()
+            .is_some_and(|lineage| lineage.parent.is_some())
+    }
     /// Cancel delegation and accepted descendant work under this original
     /// ledger. This only closes authority and wakes its bounded owner signals;
     /// it does not finalize consumption, refund capacity or retire any owner.
@@ -139,12 +145,6 @@ impl ActivationBudget {
         Ok(())
     }
 
-    pub(in crate::budget) fn has_budget_parent(&self) -> bool {
-        self.inner
-            .lineage
-            .get()
-            .is_some_and(|lineage| lineage.parent.is_some())
-    }
     /// Wait on at most seventeen original owner signals (root plus depth limit).
     /// The caller owns this future; no task or waiter is retained by the tree.
     pub async fn descendant_cancelled(&self) {
@@ -212,6 +212,33 @@ impl ActivationBudget {
                 return true;
             };
             if cursor.inner.closed.load(Ordering::Acquire) || lineage.cancellation.is_cancelled() {
+                return true;
+            }
+            let Some(parent) = &lineage.parent else {
+                return false;
+            };
+            cursor = parent.parent();
+        }
+        true
+    }
+
+    /// Observe original cancellation for already-owned completion/response data.
+    /// Only this ledger's terminal accounting flag is ignored: the original
+    /// deadline, real cancellation probe and every terminal/cancelled ancestor
+    /// still deny use. This grants no spending, allocation or delegation.
+    #[must_use]
+    pub fn retained_authority_is_cancelled_at(&self, now: Instant) -> bool {
+        if self.deadline().is_expired_at(now) {
+            return true;
+        }
+        let mut cursor = self;
+        for depth in 0..=16 {
+            let Some(lineage) = cursor.inner.lineage.get() else {
+                return true;
+            };
+            if (depth != 0 && cursor.inner.closed.load(Ordering::Acquire))
+                || lineage.cancellation.is_cancelled()
+            {
                 return true;
             }
             let Some(parent) = &lineage.parent else {

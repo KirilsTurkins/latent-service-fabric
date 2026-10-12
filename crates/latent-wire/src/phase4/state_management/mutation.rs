@@ -29,59 +29,60 @@ pub(super) async fn mutate(
     let job = inner
         .services
         .store
-        .with_store(StoreIoKind::RecoveryWrite, 131_072, move |engine| {
-            let mut pending = pending;
-            let result = write(
-                &worker,
-                engine,
-                &request,
-                &mutation,
-                &WriteAccess {
-                    access: &access,
-                    permit: retained.as_ref(),
-                    deadline,
-                },
-                &mut pending,
-            );
-            let (disposition, reason, digest, replay) = match &result {
-                Ok(Ok((_, receipt, replay))) => (
-                    AuditOperationResult::Committed,
-                    AuditReason::Committed,
-                    Some(receipt.digest().map_err(inspection::native_namespace)?),
-                    *replay,
-                ),
-                Ok(Err(_)) => (
-                    AuditOperationResult::Rejected,
-                    AuditReason::Rejected,
-                    None,
-                    false,
-                ),
-                Err(StoreError::CommitUncertain | StoreError::Unavailable) => (
-                    AuditOperationResult::Unknown,
-                    AuditReason::MutationUncertain,
-                    None,
-                    false,
-                ),
-                Err(_) => (
-                    AuditOperationResult::NotStarted,
-                    AuditReason::NotStarted,
-                    None,
-                    false,
-                ),
-            };
-            let finish = pending.finish(disposition, reason, digest, replay);
-            Ok((result, access.inspect, finish, retained))
-        })
+        .with_store_retaining(
+            StoreIoKind::RecoveryWrite,
+            131_072,
+            Arc::new(Arc::clone(&permit)),
+            move |engine| {
+                let mut pending = pending;
+                let result = write(
+                    &worker,
+                    engine,
+                    &request,
+                    &mutation,
+                    &WriteAccess {
+                        access: &access,
+                        permit: retained.as_ref(),
+                        deadline,
+                    },
+                    &mut pending,
+                );
+                let (disposition, reason, digest, replay) = match &result {
+                    Ok(Ok((_, receipt, replay))) => (
+                        AuditOperationResult::Committed,
+                        AuditReason::Committed,
+                        Some(receipt.digest().map_err(inspection::native_namespace)?),
+                        *replay,
+                    ),
+                    Ok(Err(_)) => (
+                        AuditOperationResult::Rejected,
+                        AuditReason::Rejected,
+                        None,
+                        false,
+                    ),
+                    Err(StoreError::CommitUncertain | StoreError::Unavailable) => (
+                        AuditOperationResult::Unknown,
+                        AuditReason::MutationUncertain,
+                        None,
+                        false,
+                    ),
+                    Err(_) => (
+                        AuditOperationResult::NotStarted,
+                        AuditReason::NotStarted,
+                        None,
+                        false,
+                    ),
+                };
+                let finish = pending.finish(disposition, reason, digest, replay);
+                result.map(|value| (value, access.inspect, finish, retained))
+            },
+        )
         .map_err(protected_error)?;
     let (result, inspect, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
-    let ack = audit::ack(finish).await;
-    let (read, receipt, replayed) = result.map_err(|error| {
-        protected_error(latent_state::protected_store::ProtectedStoreError::Store(
-            error,
-        ))
-    })??;
+    let (read, receipt, replayed) = result?;
     let public = receipt_to_proto(&receipt).map_err(namespace_error)?;
+    let ack = audit::ack(finish).await;
     response::owned(
         inner,
         worker_permit,
@@ -119,22 +120,6 @@ fn write(
         return Ok(Err(error));
     }
     let decision = access.mutation.as_ref().ok_or(StoreError::Invalid)?;
-    let context = latent_state::namespace::catalog::NamespaceOperationContext {
-        tenant: access
-            .binding
-            .publication
-            .scope
-            .tenant()
-            .ok_or(StoreError::Invalid)?
-            .clone(),
-        actor: format!("{}:{}", access.caller.owner_kind, access.caller.scope),
-        operation_id: request.operation_id.clone(),
-    };
-    let view = engine.snapshot()?;
-    if super::state_receipt::read(&view, &context)?.is_some() {
-        return Ok(Err(namespace_error(NamespaceError::Conflict)));
-    }
-    drop(view);
     let prepared = NamespaceControl::prepare_retained(
         &inner.services.policy,
         decision,
@@ -151,13 +136,7 @@ fn write(
         Ok(value) => value,
         Err(error) => return Ok(Err(error)),
     };
-    let (mut batch, receipt, replayed, fence) = prepared.into_parts();
-    batch
-        .expectations
-        .push(latent_state::embedded::ExpectedRow {
-            key: super::state_receipt::key(&context),
-            value: None,
-        });
+    let (batch, receipt, replayed, fence) = prepared.into_parts();
     if let Err(error) = pending.started() {
         return Ok(Err(error));
     }
@@ -165,12 +144,36 @@ fn write(
     let committed = engine.apply_fenced(batch, || {
         fence
             .accept_with(|| {
-                if inner.services.clock.monotonic_now() >= deadline {
-                    return Err(NamespaceError::Cancelled);
+                let accept = || {
+                    if inner.services.clock.monotonic_now() >= deadline {
+                        return Err(NamespaceError::Cancelled);
+                    }
+                    permit
+                        .with_live(&mut || {})
+                        .map_err(|_| NamespaceError::Cancelled)
+                };
+                if let (Some(dispatcher), NamespaceMutation::Transition { id, expected, .. }) =
+                    (&inner.dispatcher, mutation)
+                {
+                    dispatcher
+                        .prepare_namespace_close(
+                            &receipt.record.tenant.0,
+                            &id.0,
+                            expected.incarnation,
+                        )
+                        .map_err(|error| match error {
+                            latent_effects::authority::AuthorityError::Capacity => {
+                                NamespaceError::Capacity
+                            }
+                            latent_effects::authority::AuthorityError::Unavailable => {
+                                NamespaceError::Unavailable
+                            }
+                            _ => NamespaceError::PermissionDenied,
+                        })?
+                        .accept(accept)
+                } else {
+                    accept()
                 }
-                permit
-                    .with_live(&mut || {})
-                    .map_err(|_| NamespaceError::Cancelled)
             })
             .map(|value| completion = value)
     });

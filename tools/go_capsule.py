@@ -8,7 +8,7 @@ import sys
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.go_capsule_project import ROOT, TEMPLATES, create
+from tools.go_capsule_project import ROOT, AUTHORING_TEMPLATES, create
 from tools.go_capsule_build import build
 
 
@@ -17,7 +17,7 @@ def parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     new = commands.add_parser("new", help="Create an independent Go project")
     new.add_argument("directory", type=Path)
-    new.add_argument("--template", choices=TEMPLATES, default="greeting")
+    new.add_argument("--template", choices=AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
     resolve_ = commands.add_parser("resolve", help="Explicitly fetch and capture a locked native module graph")
     resolve_.add_argument("project", type=Path)

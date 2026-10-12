@@ -24,6 +24,8 @@ use latent_policy::capability::PolicyStore;
 
 use crate::config::{NodeSettings, ProviderIdentity};
 
+#[path = "http/runtime.rs"]
+mod deferred_http;
 #[path = "events.rs"]
 mod events;
 #[path = "http.rs"]
@@ -36,24 +38,36 @@ mod scalar;
 mod secrets;
 #[path = "startup.rs"]
 mod startup;
-#[path = "triggers.rs"]
-mod triggers;
+#[cfg(feature = "development-outbound-streams")]
+#[path = "stream_control.rs"]
+mod stream_control;
+#[path = "streams.rs"]
+mod streams;
+#[cfg(feature = "development-outbound-streams")]
+pub use stream_control::StreamControlStatus;
 
 pub(in crate::standalone) struct ProviderRuntime {
     pub runtime: Arc<ActivationCapabilityRuntime>,
     pools: Arc<ProviderPools>,
     io: Arc<IoRuntime>,
-    pub(super) secrets: Option<latent_secrets::LocalSecretStore>,
-    pub(super) native_http: Option<(ProviderIdentity, Arc<latent_http::HttpProvider>)>,
+    secrets: Option<latent_secrets::LocalSecretStore>,
     streaming_secrets: Option<latent_secrets::LocalSecretStore>,
     guest_secrets: Option<latent_secrets::LocalSecretStore>,
     event_secrets: Option<latent_secrets::LocalSecretStore>,
-    trigger_secrets: Option<latent_secrets::LocalSecretStore>,
+    http: Option<latent_http::HttpProvider>,
     events: Option<latent_nats::NatsPublisher>,
     metrics: Option<Arc<latent_capabilities::broker::metrics::MetricProvider>>,
+    streams: Option<Arc<latent_streams::StreamLifecycle>>,
+    stream_driver: Option<streams::Driver>,
     blobs: Option<Arc<LocalBlobStore>>,
     registrations: Vec<ProviderRegistration>,
     descriptors: Vec<ProviderDescriptor>,
+    #[cfg(feature = "development-outbound-streams")]
+    stream_binding_reference: Option<ProviderReference>,
+    #[cfg(feature = "development-outbound-streams")]
+    stream_catalog: Option<Arc<DirectoryDeploymentRepository>>,
+    #[cfg(feature = "development-outbound-streams")]
+    stream_reload_binding: Option<[u8; 32]>,
 }
 
 impl ProviderRuntime {
@@ -79,6 +93,7 @@ impl ProviderRuntime {
             .with_audit(services.audit, true)?,
         );
         let io = Arc::new(IoRuntime::new(IoLimits::default())?);
+        let stream_control = services.control.clone();
         let pools = Arc::new(ProviderPools::new(
             broker.clone(),
             io.clone(),
@@ -94,20 +109,32 @@ impl ProviderRuntime {
             pools,
             io,
             secrets: None,
-            native_http: None,
             streaming_secrets: None,
             guest_secrets: None,
             event_secrets: None,
-            trigger_secrets: None,
+            http: None,
             events: None,
             metrics: None,
+            streams: None,
+            stream_driver: None,
             blobs: None,
-            registrations: Vec::with_capacity(5),
-            descriptors: Vec::with_capacity(12),
+            registrations: Vec::with_capacity(6),
+            descriptors: Vec::with_capacity(14),
+            #[cfg(feature = "development-outbound-streams")]
+            stream_binding_reference: None,
+            #[cfg(feature = "development-outbound-streams")]
+            stream_catalog: None,
+            #[cfg(feature = "development-outbound-streams")]
+            stream_reload_binding: settings.stream_reload_binding,
         };
         let deadline = Instant::now() + Duration::from_secs(30);
         let installed = tokio::time::timeout_at(deadline.into(), async {
-            let mut providers = Vec::with_capacity(12);
+            let mut providers = Vec::with_capacity(14);
+            if let Some(installation) = &config.activation_runtime {
+                let registration = scalar::activation_runtime(&broker, installation)?;
+                providers.push(owner.record(&installation.identity, registration.reference()));
+                owner.registrations.push(registration);
+            }
             for (installation, logging) in [(&config.context, false), (&config.log, true)] {
                 if let Some(installation) = installation {
                     let registration = scalar::core(&broker, installation.identity.epoch, logging)?;
@@ -138,10 +165,26 @@ impl ProviderRuntime {
                 let (provider, secrets) = http::install(&owner.pools, http, deadline).await?;
                 owner.secrets = secrets;
                 providers.push(owner.record(&http.identity, provider.reference()));
-                let provider = Arc::new(provider);
-                let invocation = Arc::clone(&provider);
-                owner.runtime.install_http(invocation)?;
-                owner.native_http = Some((http.identity.clone(), provider));
+                owner.http = Some(provider.clone());
+                owner.runtime.install_http(Arc::new(provider))?;
+            }
+            if let Some(config) = &config.outbound_streams {
+                let provider = Arc::new(streams::install(&owner.pools, config)?);
+                #[cfg(feature = "development-outbound-streams")]
+                {
+                    owner.stream_binding_reference =
+                        Some(provider.reference().map_err(|_| unavailable())?);
+                    owner.stream_catalog = Some(Arc::clone(deployments));
+                }
+                providers.push(owner.record(
+                    &config.identity,
+                    provider.reference().map_err(|_| unavailable())?,
+                ));
+                owner.runtime.install_outbound_streams(provider.clone())?;
+                // Retain the concrete manager before driver admission so an
+                // admission failure explicitly retires it during rollback.
+                owner.streams = Some(provider.clone());
+                owner.stream_driver = Some(streams::Driver::start(&provider, &stream_control)?);
             }
             if let Some(http) = &config.http_streaming {
                 let (references, secrets) = http::credential_references(
@@ -254,42 +297,6 @@ impl ProviderRuntime {
         Ok(owner)
     }
 
-    /// Install the sole incoming owner after the same node StateRuntime opens.
-    pub async fn install_triggers(
-        &mut self,
-        settings: &crate::config::triggers::TriggerSettings,
-        state: Arc<crate::standalone::state::StateRuntime>,
-        deadline: Instant,
-    ) -> Result<latent_nats::triggers::NatsTriggers, PlatformError> {
-        if self.trigger_secrets.is_some() {
-            return Err(unavailable());
-        }
-        let store = latent_secrets::LocalSecretStore::open_before(
-            Arc::clone(&self.pools),
-            settings.installation.credential_directory.clone(),
-            latent_secrets::SecretLimits::default(),
-            Vec::new(),
-            Arc::new(latent_secrets::SystemSecretClock),
-            deadline,
-        )
-        .map_err(|_| unavailable())?
-        .await
-        .map_err(|_| unavailable())?;
-        // Retain the real store even if a later read/binding/install step fails.
-        // Existing startup rollback drains the same shared I/O/pool owners.
-        self.trigger_secrets = Some(store);
-        triggers::install(
-            &self.pools,
-            self.trigger_secrets
-                .as_ref()
-                .expect("retained input secrets"),
-            settings,
-            state,
-            deadline,
-        )
-        .await
-    }
-
     fn record(
         &mut self,
         identity: &ProviderIdentity,
@@ -343,10 +350,15 @@ impl ProviderRuntime {
                     .map_err(|_| unavailable())
             })
             .collect();
-        // Each returned adapter retains this same clock owner. The constructor
-        // consumes its incoming Arc only after every adapter is constructed.
+        // Each adapter retains the same original clock owner.
         drop(time);
         adapters
+    }
+
+    /// Read-only test observation of the actual provider I/O owner after stop.
+    #[cfg(test)]
+    pub(in crate::standalone) fn io_observer(&self) -> Arc<IoRuntime> {
+        Arc::clone(&self.io)
     }
 
     pub fn descriptors(&self) -> &[ProviderDescriptor] {
@@ -365,6 +377,12 @@ impl ProviderRuntime {
 
     pub fn retire(&self) {
         self.runtime.retire();
+        if let Some(driver) = &self.stream_driver {
+            driver.stop();
+        }
+        if let Some(streams) = &self.streams {
+            streams.retire();
+        }
         for registration in &self.registrations {
             registration.retire();
         }
@@ -381,9 +399,6 @@ impl ProviderRuntime {
         if let Some(secrets) = &self.event_secrets {
             secrets.close();
         }
-        if let Some(secrets) = &self.trigger_secrets {
-            secrets.close();
-        }
         if let Some(metrics) = &self.metrics {
             metrics.retire();
         }
@@ -397,6 +412,10 @@ impl ProviderRuntime {
         deadline: Instant,
     ) -> Result<ProviderShutdownReport, PlatformError> {
         self.retire();
+        let stream_driver_clean = match &self.stream_driver {
+            Some(driver) => driver.join(deadline).await,
+            None => true,
+        };
         let pools = self.pools.shutdown(deadline).await?;
         let mut secret_generations = 0;
         let mut secret_references = 0;
@@ -406,7 +425,6 @@ impl ProviderRuntime {
             &self.streaming_secrets,
             &self.guest_secrets,
             &self.event_secrets,
-            &self.trigger_secrets,
         ]
         .into_iter()
         .flatten()
@@ -419,6 +437,15 @@ impl ProviderRuntime {
         }
         let broker = self.runtime.broker().snapshot();
         let io = self.io.snapshot();
+        let streams = self
+            .streams
+            .as_ref()
+            .map(|owner| owner.status())
+            .transpose()
+            .map_err(|_| unavailable())?
+            .map(|status| (status.usage, status.maintenance_owners))
+            .unwrap_or_default();
+        let (streams, stream_maintenance_owners) = streams;
         let blob = self
             .blobs
             .as_ref()
@@ -427,6 +454,9 @@ impl ProviderRuntime {
             .map_err(|_| unavailable())?
             .unwrap_or_default();
         let clean = pools.is_clean()
+            && stream_driver_clean
+            && stream_maintenance_owners == 0
+            && streams.owners == 0
             && secrets_closed
             && secret_generations == 0
             && secret_references == 0
@@ -464,6 +494,11 @@ impl ProviderRuntime {
             blob_work: blob.active_work,
             secret_generations,
             secret_references,
+            stream_owners: streams.owners,
+            stream_connections: streams.connections,
+            stream_pending_operations: streams.pending_operations,
+            stream_retained_chunks: streams.retained_chunks,
+            stream_maintenance_owners,
         })
     }
 }

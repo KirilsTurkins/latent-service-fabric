@@ -9,6 +9,7 @@ pub struct IoBuffer {
     position: usize,
     length: usize,
     charge: Charge,
+    _host: Option<latent_core::budget::HostMemoryReservation>,
     _metadata: Charge,
     _slot: Charge,
     pub(super) stream: Option<Arc<StreamLifetime>>,
@@ -20,6 +21,21 @@ impl IoBuffer {
         capacity: usize,
         metadata: usize,
     ) -> Result<Self, PlatformError> {
+        Self::allocate_inner(op, capacity, metadata, false)
+    }
+    pub(super) fn allocate_host(
+        op: &Arc<Operation>,
+        capacity: usize,
+        metadata: usize,
+    ) -> Result<Self, PlatformError> {
+        Self::allocate_inner(op, capacity, metadata, true)
+    }
+    fn allocate_inner(
+        op: &Arc<Operation>,
+        capacity: usize,
+        metadata: usize,
+        host: bool,
+    ) -> Result<Self, PlatformError> {
         op.check()?;
         if capacity == 0 || capacity > op.runtime.limits.maximum_chunk_bytes {
             return Err(super::capacity());
@@ -30,17 +46,29 @@ impl IoBuffer {
             metadata.checked_add(512).ok_or_else(super::capacity)?,
         )?;
         let charge = op.runtime.counters.acquire(Kind::Staged, capacity)?;
+        let mut native = if host {
+            Some(
+                op.with_session(|session| session.core.budget.reserve_host_memory(capacity as u64))
+                    .map_err(|_| super::capacity())?,
+            )
+        } else {
+            None
+        };
         // Vec repetition requests exactly its length as capacity. No reserve,
         // push, extension, shrink or realloc is exposed after construction.
         let bytes = Zeroizing::new(vec![0; capacity]);
         if bytes.capacity() != capacity {
             return Err(super::capacity());
         }
+        if let Some(guard) = &mut native {
+            guard.confirm();
+        }
         Ok(Self {
             bytes,
             position: 0,
             length: 0,
             charge,
+            _host: native,
             _metadata: meta,
             _slot: slot,
             stream: None,

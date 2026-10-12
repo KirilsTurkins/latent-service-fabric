@@ -7,7 +7,7 @@ verifies an explicit review and builds from the offline closure. Module names
 describe provenance and never determine application eligibility.
 
 Use the prerequisites in the [toolchain guide](../development/toolchain.md) and
-the pinned `go1.27.1` module resolver. Capsule execution uses the separately
+the pinned `go1.27.2` module resolver. Capsule execution uses the separately
 reviewed `go-component-async-v1` component compiler, runtime patches and tools.
 Native Go execution cannot replace that component qualification.
 

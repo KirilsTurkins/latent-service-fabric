@@ -22,18 +22,17 @@ fn http_configuration_is_opt_in_closed_and_rejects_unsafe_limits_or_identity() {
         2 * 1024 * 1024
     );
     assert_eq!(
+        settings.wasmtime.value_codec_limits.max_string_bytes,
+        256 * 1024
+    );
+    assert_eq!(
         settings
             .wasmtime
             .buffered_web_value_profile
-            .as_ref()
-            .expect("explicit buffered HTTP value profile")
+            .expect("HTTP ingress requires its separate buffered value profile")
             .limits
             .max_string_bytes,
         512 * 1024
-    );
-    assert_eq!(
-        settings.wasmtime.value_codec_limits.max_string_bytes,
-        256 * 1024
     );
     let web = settings
         .wasmtime

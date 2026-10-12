@@ -8,7 +8,7 @@ use crate::session::version::{
     capture_view, capture_view_identity, ViewIdentity, VIEW_TOKEN_BYTES,
 };
 
-fn change_history(fixture: &Fixture, epochs: HistoryEpochs, status: HistoryStatus) {
+pub(super) fn change_history(fixture: &Fixture, epochs: HistoryEpochs, status: HistoryStatus) {
     let view = fixture.store.snapshot().unwrap();
     let namespace = NamespaceRecord::decode(
         &view

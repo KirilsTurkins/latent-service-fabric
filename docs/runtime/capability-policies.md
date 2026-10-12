@@ -6,7 +6,12 @@ The closed language is `lsf-capability-policy-v1`; provider selection metadata u
 `lsf-provider-binding-v1`. These are authorization building blocks for the broker
 and [exact binding compiler](capability-bindings.md). Creating a policy does not install a
 provider, extend the current guest linker, or make a descriptive DTO executable.
-The [host ABI profile](host-abi-profile.md) remains the operation authority.
+The [host ABI profile](host-abi-profile.md) defines the guest operations.
+Native transaction management also uses the closed host labels `effect-plan`,
+`effect-reconcile`, `effect-redrive`, `effect-terminate`, `state-checkpoint` and
+`purge-expired-payload` under an exact state resource policy. Recognizing these
+labels does not add guest imports or supply the current operator, publication,
+namespace or provider authority required by the host.
 
 ## Policy language
 
@@ -141,6 +146,16 @@ are rejected. A typed explanation resource file contains actual descriptive fiel
 ```json
 {"kind": "secrets", "reference": "application-key"}
 ```
+
+Transactional intents distinguish the guest's `stage` operation from the native
+`dispatch` purpose under `latent:intents/staging@0.1.0`. Dispatch is a policy
+purpose only; it adds no guest WIT operation or immediate HTTP capability.
+Production dispatch derives the principal from the retained source service and
+requires an explicit service-integration state scope, exact publication and
+installed native provider binding. It rechecks the actual policy owner before
+the one native acceptance callback. Caller staging authority is retained through
+effect-bearing command commit; service dispatch authority cannot replace it.
+Configuration and signed input declarations confer neither permission.
 
 ## Durable owner and finite retention
 

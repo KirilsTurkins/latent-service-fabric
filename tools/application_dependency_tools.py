@@ -40,6 +40,7 @@ def execute(executable: Path, arguments: list[str], inputs: Path, outputs: Path,
         raise DependencyError("dependency-generator-approval-mismatch")
     if sys.platform != "linux" or not (sandbox := shutil.which("bwrap")):
         raise DependencyError("dependency-generator-isolation-host-unsupported")
+    sandbox = str(Path(sandbox).resolve())
     executable, inputs, outputs = map(regular_path, (executable, inputs, outputs))
     if inputs == outputs or inputs in outputs.parents or outputs in inputs.parents or outputs.exists():
         raise DependencyError("dependency-generator-output-owner")

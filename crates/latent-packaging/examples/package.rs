@@ -16,8 +16,17 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let args = std::env::args().skip(1).collect::<Vec<_>>();
-    let limits = PackagingLimits::default();
+    let mut args = std::env::args().skip(1).collect::<Vec<_>>();
+    let mut limits = PackagingLimits::default();
+    if args.last().is_some_and(|argument| argument == "--phase4") {
+        args.pop();
+        limits.manifest_profile = latent_manifest::ManifestValidationProfile::phase4(
+            latent_core::BudgetProfile::Phase4,
+            latent_core::PHASE4_HOST_ABI_V1,
+            &latent_manifest::phase4_host_abi_digest(),
+        )
+        .map_err(|_| "unsupported transaction packaging profile")?;
+    }
     match args.as_slice() {
         [command, recipe, root, output] if command == "build" => {
             build(recipe, root, output, None, &limits)?;
@@ -29,7 +38,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             let bundle = read_package_directory(Path::new(directory), limits).map_err(|error| error.message)?;
             print(&bundle);
         }
-        _ => return Err("usage: package build <recipe.json> <input-root> <new-output-dir> | build-with-sbom <recipe.json> <sbom-inputs.json> <input-root> <new-output-dir> | inspect <package-dir>".into()),
+        _ => return Err("usage: package build <recipe.json> <input-root> <new-output-dir> [--phase4] | build-with-sbom <recipe.json> <sbom-inputs.json> <input-root> <new-output-dir> [--phase4] | inspect <package-dir> [--phase4]".into()),
     }
     Ok(())
 }

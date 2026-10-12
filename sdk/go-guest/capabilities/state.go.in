@@ -1,0 +1,91 @@
+package state
+
+import (
+	"sync/atomic"
+	raw "wit_component/@raw@"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+	"wit_component/lsf/ownership"
+)
+
+// Owners expose no constructor, raw handle, commit, replay or fresh snapshot.
+type access struct { pages atomic.Uint32 }
+type Command struct { owner ownership.Owner[*raw.Transaction]; access *access }
+type Query struct { owner ownership.Owner[*raw.QueryView]; access *access }
+type Page struct {
+	owner ownership.Owner[*raw.Page]
+	parentBorrow func() func()
+	parent *access
+}
+
+func AcquireCommand() wit.Result[*Command, StateError] {
+	r := raw.AcquireCommand()
+	if r.IsErr() { return wit.Err[*Command, StateError](r.Err()) }
+	return wit.Ok[*Command, StateError](&Command{ownership.New(r.Ok()), &access{}})
+}
+func AcquireQuery() wit.Result[*Query, StateError] {
+	r := raw.AcquireQuery()
+	if r.IsErr() { return wit.Err[*Query, StateError](r.Err()) }
+	return wit.Ok[*Query, StateError](&Query{ownership.New(r.Ok()), &access{}})
+}
+func (c *Command) Info() wit.Result[CommandInfo, StateError] {
+	v, release := c.owner.Borrow(); defer release()
+	return raw.Info(v)
+}
+func (c *Command) Get(key []byte) wit.Result[wit.Option[VersionedValue], StateError] {
+	v, release := c.owner.Borrow(); defer release()
+	return raw.Get(v, key)
+}
+func (c *Command) Put(key []byte, value Value) wit.Result[wit.Unit, StateError] {
+	v, release := c.owner.Borrow(); defer release()
+	return raw.Put(v, key, value)
+}
+func (c *Command) Delete(key []byte) wit.Result[wit.Unit, StateError] {
+	v, release := c.owner.Borrow(); defer release()
+	return raw.Delete(v, key)
+}
+func (c *Command) borrowPage() func() { _, release := c.owner.Borrow(); return release }
+func (c *Command) Scan(prefix []byte, limit uint32, cursor wit.Option[[]byte]) wit.Result[*Page, StateError] {
+	v, release := c.owner.Borrow(); defer release()
+	r := raw.Scan(v, prefix, limit, cursor)
+	if r.IsErr() { return wit.Err[*Page, StateError](r.Err()) }
+	c.access.pages.Add(1)
+	return wit.Ok[*Page, StateError](&Page{ownership.New(r.Ok()), c.borrowPage, c.access})
+}
+// Close drops access only. Host ownership of accepted work never transfers back.
+func (c *Command) Close() {
+	if c.access == nil || c.access.pages.Load() != 0 { panic("lsf: state pages remain open") }
+	c.owner.Close(func(v *raw.Transaction) { v.Drop() })
+}
+func (q *Query) Info() wit.Result[ViewIdentity, StateError] {
+	v, release := q.owner.Borrow(); defer release()
+	return raw.QueryInfo(v)
+}
+func (q *Query) Get(key []byte) wit.Result[wit.Option[VersionedValue], StateError] {
+	v, release := q.owner.Borrow(); defer release()
+	return raw.GetQuery(v, key)
+}
+func (q *Query) borrowPage() func() { _, release := q.owner.Borrow(); return release }
+func (q *Query) Scan(prefix []byte, limit uint32, cursor wit.Option[[]byte]) wit.Result[*Page, StateError] {
+	v, release := q.owner.Borrow(); defer release()
+	r := raw.ScanQuery(v, prefix, limit, cursor)
+	if r.IsErr() { return wit.Err[*Page, StateError](r.Err()) }
+	q.access.pages.Add(1)
+	return wit.Ok[*Page, StateError](&Page{ownership.New(r.Ok()), q.borrowPage, q.access})
+}
+func (q *Query) Close() {
+	if q.access == nil || q.access.pages.Load() != 0 { panic("lsf: state pages remain open") }
+	q.owner.Close(func(v *raw.QueryView) { v.Drop() })
+}
+func (p *Page) Info() wit.Result[PageInfo, StateError] {
+	parentRelease := p.parentBorrow(); defer parentRelease()
+	v, release := p.owner.Borrow(); defer release()
+	return raw.DescribePage(v)
+}
+func (p *Page) Next() wit.Result[wit.Option[Entry], StateError] {
+	parentRelease := p.parentBorrow(); defer parentRelease()
+	v, release := p.owner.Borrow(); defer release()
+	return raw.PageNext(v)
+}
+func (p *Page) Close() {
+	p.owner.Close(func(v *raw.Page) { defer p.parent.pages.Add(^uint32(0)); v.Drop() })
+}

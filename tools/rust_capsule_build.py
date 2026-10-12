@@ -1,6 +1,9 @@
 """Bounded actual-source compiler recipe for standalone Rust capsules."""
 from __future__ import annotations
 
+from tools import guest_compatibility_context_build, guest_runtime_receipts
+from tools.transaction_guest_project import packaging_arguments
+
 import json
 import re
 from pathlib import Path
@@ -20,16 +23,20 @@ BUILD_TYPE = "https://latent.dev/build/rust-capsule/v1"
 RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
           "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
           "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py",
-          "tools/stage_runtime_wit.py")
+          "tools/stage_runtime_wit.py", "tools/transaction_guest_project.py",
+          "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
 RECIPE += ("tools/rust_dependency_authoring.py", "tools/rust_capsule.lock") + guest_authoring_frontend.RECIPE
 RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
-           "tools/dev_workflow/common.py", "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
+           "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
            "tools/dev_workflow/resource_inputs.py",
            "tools/dev_workflow/snapshot.py", "tools/dev_workflow/paths.py", "tools/dev_workflow/state.py",
            "tools/dev_workflow/windows.py")
+RECIPE += ("tools/transaction_guest_project.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
+RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
@@ -118,6 +125,8 @@ def validate_project(files: dict[str, bytes]) -> tuple[dict, dict]:
         raise ValueError("dependency patches and replacements cannot override the pinned SDK")
     expected = {"wit-bindgen": "=" + pins["toolchain"]["rust"]["dependencies"]["wit-bindgen"],
                 "latent-guest": {"path": "vendor/lsf/sdk/rust-guest"}}
+    if pins["template"]["name"] == "transactional-aggregate":
+        expected["latent-guest"]["features"] = ["transaction"]
     maintained = cargo.get("target", {}).get('cfg(target_arch = "wasm32")', {}).get("dependencies", {})
     if (not isinstance(maintained, dict) or any(maintained.get(name) != value for name, value in expected.items())
             or not captured and maintained != expected):
@@ -211,6 +220,13 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
             layers.append((name, "asset", "text/plain"))
+    from tools.transaction_guest_project import package_companion, package_effect_requirements
+    companion = package_companion(output, project, files)
+    if companion is not None:
+        layers.append(companion)
+    effect_requirements = package_effect_requirements(output, project, files)
+    if effect_requirements is not None:
+        layers.append(effect_requirements)
     write_json(output / "package-source.json", {
         "formatVersion": 1, "kind": "capsule", "name": project["name"], "version": project["version"],
         "entrypoint": "component.wasm", "annotations": {},
@@ -375,13 +391,15 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
                 (output / name).write_bytes(read_file(derived / name))
             surface = read_json(derived / "surface.json")
+            recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
             stage = "compatibility"
-            guest_compatibility_build.inspect(commands, paths["wasm-tools"], output, surface)
+            guest_compatibility_build.inspect(commands, paths["wasm-tools"], output, surface,
+                host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
             stage = "recheck"
             captured_files = snapshot(work, exclude=("dependencies", "application-vendor"))
             if adapted_manifest is not None:
@@ -414,6 +432,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for name in ("executable-input-approval-request.json", "executable-input-outputs.json"):
                         data = read_file(output / name, 8 * 1024 * 1024)
                         materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            runtime_profile = closure.lock['selection']['runtimeProfile'] if closure is not None else 'wasm32-unknown-unknown-panic-abort-v1'
+            materials.append(guest_runtime_receipts.emit(output, 'rust', runtime_profile, files,
+                source_inputs, component, materials, graph=closure.lock if closure is not None else None,
+                binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],
+                    "target": "wasm32-unknown-unknown", "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or time.monotonic() - start > 900 or finished - started > 900:
                 raise ValueError("build clock or overall deadline invalid")
@@ -426,6 +449,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"}
             write_json(output / "build-observation.json", observation)
+            guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1, "observationDigest": digest(read_file(output / "build-observation.json")),
                 "packageAssembled": packager is not None,
                 "sourceDigest": digest(source_inputs), "componentDigest": digest(component), "sdkBindingDigest": binding_digest,
