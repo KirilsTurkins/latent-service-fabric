@@ -1,0 +1,53 @@
+{
+  "buildCommand": [
+    "cargo",
+    "+1.97.1",
+    "test",
+    "-p",
+    "latent-http",
+    "--lib",
+    "--locked",
+    "--offline",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "buildExitCode": 0,
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+  },
+  "sourceFiles": {
+    "crates/latent-http/src/deferred.rs": "085b1f81cd877cd30ec85330b6818fa9a3e8a0ae16995cb8eea85903ea95f5de",
+    "crates/latent-http/src/deferred/tests/fixture.rs": "0fb66124c67e4330f4dc259b4cefc41349b4cc58db562f8cb181164bafee3da9",
+    "crates/latent-http/src/deferred/tests/campaign.rs": "55a2ec3f92efadd1186cdd69412145b414538fc5996045d6156bae86b8d16f59"
+  },
+  "buildOutputSha256": "f086ac8bf6984234cd864abaa709b905d9192dda51465c56f3b5d5b8426466fb",
+  "buildErrorsSha256": "25cc74575befe081039ea2d981ebf9c6f5df778733eb5d5b93148e8f706da5f0",
+  "features": [],
+  "profile": {
+    "opt_level": "0",
+    "debuginfo": 0,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "test": true
+  },
+  "binarySha256": "1b299d36edac0aa5a805da9ace51dc5fdec7f39907f928607ed1f8830b63d4ba",
+  "testExitCode": 0,
+  "testOutputSha256": "021b80062d50d2c4b1eaf05428363c3acfd07a26b8044b9169bf6fc397f89853",
+  "scope": "actual bounded native HTTP controls only; signed gateway campaign remains pending",
+  "sourceBoundary": {
+    "baseHead": "8a6ade3e",
+    "nativeAtExecution": "explicit uncommitted three-file overlay hashes above; no committed tuple claim",
+    "postExecutionFormattingOnly": {
+      "path": "crates/latent-http/src/deferred/tests/campaign.rs",
+      "executedSha256": "55a2ec3f92efadd1186cdd69412145b414538fc5996045d6156bae86b8d16f59",
+      "formattedSha256": "236f2ec9d1cca99fc0ca8db723219ba2ff3474643856d1b5e96330acc09bd729",
+      "change": "rustfmt wraps one assertion and one await without changing their expressions"
+    }
+  }
+}

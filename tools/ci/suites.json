@@ -2459,6 +2459,7 @@
         "deferred::tests::campaign::provider_cancellation_during_tls_or_reply_retires_actual_socket_before_refund",
         "deferred::tests::campaign::qualified_endpoint_equal_key_replay_is_one_mutation_and_changed_body_is_conflict",
         "deferred::tests::campaign::qualified_remote_rejection_is_known_failure_without_counter_mutation",
+        "deferred::tests::campaign::two_kib_encoded_reply_keeps_the_complete_physical_provider_reservation",
         "deferred::tests::campaign::unsafe_or_generic_endpoint_profiles_cannot_open_a_provider_connection",
         "deferred::tests::locks::synchronous_acceptance_does_not_reverse_actual_role_and_effect_lock_order",
         "deferred::tests::lookup::fresh_lookup_absence_recreation_and_status_retention_expiry_never_authorize_execution",
@@ -2512,7 +2513,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-http/Cargo.toml",
-      "minimumCases": 61,
+      "minimumCases": 62,
       "mode": "libtest",
       "package": "latent-http",
       "platforms": [

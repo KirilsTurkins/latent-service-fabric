@@ -83,6 +83,13 @@ The existing Java declaration remains 96 MiB native recovery capacity with a
 same package/evidence/current-publication verification with stricter document
 and decoded-metadata ceilings. Broad capture behavior remains available.
 
+Signed HTTP response authorization remains 2048 encoded reply bytes. The adapter
+separately prepays the unchanged 22,528-byte reply/header/codec envelope against
+the existing physical provider ledger. An actual TLS held-response control
+passes with the 2048-byte declaration, rejects 2047, observes the retained
+physical charge, and retires after one acknowledged mutation. All 62 HTTP
+library controls pass; this does not substitute for signed gateway execution.
+
 The original gateway reservation is 32 KiB request, 9.5 MiB plus the configured
 cache for Work, and 14 MiB response. The response separately charges 2 MiB result
 metadata and its 2 MiB eventual stdout frame before shutdown. A frame retains

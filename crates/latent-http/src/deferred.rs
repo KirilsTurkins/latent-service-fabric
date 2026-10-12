@@ -229,7 +229,7 @@ impl HttpEffectAdapter {
         if scope.tenant != self.tenant
             || scope.operation != "http"
             || ceiling.maximum_payload_bytes > self.endpoint.maximum_payload_bytes as u64
-            || ceiling.maximum_response_bytes < qualification::RESPONSE_RESERVATION_BYTES
+            || ceiling.maximum_response_bytes < qualification::MAXIMUM_REPLY_BYTES as u64
             || ceiling.maximum_age_millis > self.endpoint.retention_millis
         {
             return Err(AuthorityError::PolicyBlocked);
@@ -274,7 +274,10 @@ impl HttpEffectAdapter {
         {
             return Err(AuthorityError::Invalid);
         }
-        if grant.ceiling().maximum_response_bytes < qualification::RESPONSE_RESERVATION_BYTES {
+        // The signed ceiling authorizes encoded reply bytes. Header, codec and
+        // retained allocation ownership is prepaid independently by the same
+        // provider ledger in accept_operation; it is never refunded or reduced.
+        if grant.ceiling().maximum_response_bytes < qualification::MAXIMUM_REPLY_BYTES as u64 {
             return Err(AuthorityError::Capacity);
         }
         let retained_until = grant
