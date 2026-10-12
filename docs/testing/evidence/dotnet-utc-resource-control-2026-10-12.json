@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "latent.dotnet.utc-resource-control.v1",
+  "evidenceKind": "actual-built-signed-admitted-resource-guest-with-explicit-private-wall-grant",
+  "status": "passed",
+  "componentDigest": "sha256:2ca2e70b5f865695c2319af6788ec55dbe971a46fe364975f38106f147944bde",
+  "component": {
+    "sha256": "sha256:2ca2e70b5f865695c2319af6788ec55dbe971a46fe364975f38106f147944bde",
+    "bytes": 2799480
+  },
+  "buildComplete": {
+    "sha256": "sha256:7d8fc9779b7c88fa76928445721409d85ea6a7d616a025e3dc04e08900554156",
+    "bytes": 3652
+  },
+  "applicationSource": "using ServiceWorld;\nusing Lsf.Guest;\nnamespace ServiceWorld.wit.Exports.examples.greeting;\n\n// lsf-example-begin: capsule\npublic class ApiExportsImpl : IApiExports\n{\n    public static Result<string, string> Greet(string name)\n    {\n        ResourceControls.Check();\n        var utc = global::System.DateTime.UtcNow;\n        if (utc.Kind != global::System.DateTimeKind.Utc || utc.Year < 2020 || utc.Year > 2100)\n            throw new global::System.Exception(\"actual-utc-wall-clock-required\");\n        if (name == \"wall-probe\") return Result<string, string>.Ok(\"wall:\" + utc.Ticks.ToString(global::System.Globalization.CultureInfo.InvariantCulture));\n        string clean = Text.Trim(name);\n        if (clean.Length == 0) return Result<string, string>.Err(\"Please enter a name.\");\n        if (Text.Utf8Length(clean) > 100) return Result<string, string>.Err(\"Use a name of at most 100 bytes.\");\n        return Result<string, string>.Ok($\"Hello, {clean}!\");\n    }\n}\n// lsf-example-end: capsule\n",
+  "applicationSourceIdentity": {
+    "sha256": "sha256:a13374ac0d79125caed246f9ed5b76b6292a94835a3ed0faa296546857dc1566",
+    "bytes": 991
+  },
+  "authoritativeWorld": "package examples:greeting@1.0.0;\n\ninterface api {\n    greet: func(name: string) -> result<string, string>;\n}\n\nworld service {\n    import latent:clock/wall@0.1.0;\n    import latent:random/random@0.1.0;\n    import latent:clock/monotonic@0.1.0;\n    export api;\n}\n",
+  "authoritativeWorldIdentity": {
+    "sha256": "sha256:56854b61da1fb2870ba448c4c92742ec608cf88379e059f6f73e8702994f039a",
+    "bytes": 260
+  },
+  "resourceHelper": {
+    "sha256": "sha256:1bcc7d6e2ea290f54f4ebbe7f57502081b7464ef9225f9df69c1a86346419027",
+    "bytes": 2058
+  },
+  "privateFixtureRecipe": {
+    "sha256": "sha256:e7b4132f99d7c5d4471e8f534dab2bb582fe0d12341bd5cf1ef29db067c69104",
+    "bytes": 6805
+  },
+  "nativeBinaries": {
+    "latent": {
+      "sha256": "sha256:11da5d52b9ee90e05482dd01abd3ed7bd997f6041a55aee820ed4bcade4909f9",
+      "bytes": 65105880
+    },
+    "latentd": {
+      "sha256": "sha256:b3dda30aa23d7502febd2a1f8a4986736f3f99de9e14bb403afd0595ece5a7f5",
+      "bytes": 176036216
+    },
+    "examples/package": {
+      "sha256": "sha256:82eae160c6cb0e166efec4e05330a47a00a90981a37ad95916dae44d48ce065c",
+      "bytes": 14236104
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:08f7bd7eafb298c15935c1cc884a3b5ef72edbf39005a9786e2b59e363a31c42",
+      "bytes": 7112176
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:de471b289feaffc23236b6e0641662278fb69402d2d52649c65463222af6b989",
+      "bytes": 20037944
+    }
+  },
+  "wallProvider": {
+    "id": "wall-fixture",
+    "tenant": "examples",
+    "service": "wall-host",
+    "capability": "latent:clock/wall@0.1.0",
+    "profile": "activation-wall-v1",
+    "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+    "configurationEpoch": "1"
+  },
+  "dateTimeTicks": "639274302532370000",
+  "observedUnixMillis": "1791833453237",
+  "hostBeforeUnixMillis": "1791833453196",
+  "hostAfterUnixMillis": "1791833453249",
+  "wallIntervalToleranceMillis": 1000,
+  "positiveConsumption": {
+    "blobReadBytes": "0",
+    "blobWriteBytes": "0",
+    "childCalls": 0,
+    "cpuFuel": "53504911",
+    "effectCount": 0,
+    "logBytes": "0",
+    "outboundRequests": 0,
+    "peakMemoryBytes": "56557568",
+    "stateReadBytes": "0",
+    "stateWriteBytes": "0",
+    "wallTimeMicros": "37647"
+  },
+  "wallGrantRemoved": {
+    "otherClockAndNoncryptoGrantsRetained": true,
+    "code": "permission-denied",
+    "cpuFuel": "0",
+    "peakMemoryBytes": "0",
+    "guestExecutionStarted": false
+  },
+  "maintainedOriginalWorkflowStatus": "passed",
+  "maintainedOriginalInvocationCount": 27,
+  "workflowReceipt": {
+    "sha256": "sha256:247ef6ca518b1cfe21130b776af795d51e41b96f9f43c1444140737b45f516a1",
+    "bytes": 255102
+  },
+  "ordinaryDateTimeUtcNowQualified": true,
+  "scope": "separate-private-ephemeral-native-package-fixture",
+  "productionDistributionQualified": false,
+  "wholeSdkClockMatrixQualified": false,
+  "privateConfigurationFailuresRetained": [
+    "exclusive-original-config",
+    "original-config-owner-name"
+  ]
+}

@@ -8,6 +8,7 @@ const browser = await chromium.launch({executablePath: chrome, headless: true,
   args: process.platform === 'linux' && process.getuid() === 0 ? ['--no-sandbox'] : []});
 const watchdog = setTimeout(() => { process.exitCode = 1; void browser.close(); }, 150000);
 const receipt = {schemaVersion: 'latent.framework.browser.v1', browser: browser.version(), pages: []};
+let currentPage;
 
 function policy(response, hashes) {
   assert.equal(response.status(), 200);
@@ -46,6 +47,7 @@ try {
     const context = await browser.newContext();
     const page = await context.newPage();
     const errors = [], badResponses = [], failedRequests = [], violations = [], scripts = new Set(), rejectedStyleHashes = new Set();
+    currentPage = {kind, mount: mount || '/', badResponses, failedRequests};
     let documents = 0;
     await page.exposeFunction('lsfRecordCsp', event => { if (violations.length < 64) violations.push(event); });
     await page.addInitScript(() => { globalThis.lsfViolations = []; document.addEventListener('securitypolicyviolation', event => {
@@ -151,4 +153,7 @@ try {
   }
   receipt.passed = true;
   await writeFile(output, JSON.stringify(receipt), {flag: 'wx', mode: 0o600});
+} catch (error) {
+  console.error('framework-browser-observation: ' + JSON.stringify(currentPage));
+  throw error;
 } finally { clearTimeout(watchdog); await browser.close(); }
