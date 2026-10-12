@@ -141,6 +141,30 @@ class TransactionGuestCompilerTests(unittest.TestCase):
                     compile_guests("java", output, java_schema_put_once=value)
                 self.assertFalse(output.exists())
 
+    def test_state_acceptance_mode_is_separate_and_requires_the_actual_child_call_shape(self):
+        from tools.transaction_guest_variants import CHILD
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "uncreated"
+            for value in (1, 0, None, "true"):
+                with self.assertRaisesRegex(ValueError, "exclusive explicit Java"):
+                    compile_guests("java", output, java_state_acceptance=value)
+                self.assertFalse(output.exists())
+            for language in ("c", "go", "rust", "dotnet", "typescript"):
+                with self.assertRaisesRegex(ValueError, "exclusive explicit Java"):
+                    compile_guests(language, output, java_state_acceptance=True)
+                self.assertFalse(output.exists())
+        expected = contract()
+        expected["imports"][CHILD] = {"types": {}, "functions": {"call": {"kind": "async-freestanding", "params": [], "result": "outcome"}}}
+        check_surface(expected, copy.deepcopy(expected), "forbidden-child")
+        missing = copy.deepcopy(expected)
+        del missing["imports"][CHILD]
+        with self.assertRaisesRegex(ValueError, "child call missing"):
+            check_surface(expected, missing, "forbidden-child")
+        changed = copy.deepcopy(expected)
+        changed["imports"][CHILD]["functions"]["call"]["result"] = "changed-outcome"
+        with self.assertRaises(ValueError):
+            check_surface(expected, changed, "forbidden-child")
+
 
 if __name__ == "__main__":
     unittest.main()
