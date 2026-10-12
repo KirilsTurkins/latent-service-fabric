@@ -164,5 +164,43 @@
     "private source gates only; shipped installation unchanged",
     "five hostile wire inputs are finite controls, not full cryptographic fuzzing",
     "hostile allocator/kernel/stack peak and full guest/operator matrix remain open"
-  ]
+  ],
+  "hostileNativeAllocationObservation": {
+    "schemaVersion": "lsf.private.host-tls-native-allocation-replay.v1",
+    "qualificationOnly": true,
+    "fullAccountingQualified": false,
+    "traceSha256": "e1709702ac9a4d5f98e868a3128a8aba2a12d26f885578f7d35cd0a9f47f90f4",
+    "interpretedBytes": 1468677,
+    "allAllocations": {
+      "heaptrack_version": "1.4.0",
+      "format_version": "3",
+      "allocation_count": "45234",
+      "deallocation_count": "44781",
+      "allocated_bytes": "6807687",
+      "peak_live_bytes": "308665",
+      "remaining_live_bytes": "46808",
+      "remaining_allocations": "453"
+    },
+    "transport": {
+      "peakBytes": 10389,
+      "remainingBytes": 0,
+      "allocationCalls": 150,
+      "originalAllowanceBytes": 262144
+    },
+    "trustConfiguration": {
+      "peakBytes": 16058,
+      "remainingBytes": 0,
+      "allocationCalls": 155,
+      "originalAllowanceBytes": 65536
+    },
+    "attribution": "allocation trace ancestry containing pinned mangled-symbol markers for latent_streams transport or tls::configure",
+    "limits": [
+      "five real malformed/truncated/oversized host TLS wire controls",
+      "unattributed allocations retain whole-process counts",
+      "kernel and stack memory not inferred from malloc",
+      "hostile full connection matrix pending"
+    ]
+  },
+  "observerSource": "tools/host_stream_tls_allocation.py",
+  "observerSourceSha256": "3b1fae4e5ed23edc26c738ae98de54be4416ed1dda85acfaa8c833ac91acb26e"
 }

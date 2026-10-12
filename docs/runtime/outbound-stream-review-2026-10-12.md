@@ -101,6 +101,14 @@ matches the executed private test body. These are real finite failure controls;
 hostile allocation/stack/kernel peaks and complete component qualification are
 still required before changing the shipped gate.
 
+The five hostile wire controls were also replayed from a bounded native
+Heaptrack capture. Tagged transport allocations peaked at 10,389 bytes and
+tagged trust configuration at 16,058 bytes; both retained zero bytes after the
+actual controls completed. The version packet retains original unmatched
+whole-process allocations and the trace identity. This extends the finite
+native observation; it does not establish adversarial coverage for every valid
+certificate/extension/root combination or stack/kernel memory.
+
 The first reconciliation CI head exposed a carried peer restriction that
 refused nonempty GET/HEAD bodies. The existing signed guest HTTP contract sends
 `payload` for GET, HEAD and POST. The peer now accepts explicitly framed bodies
