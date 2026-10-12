@@ -37,6 +37,13 @@ pub enum ValidationError {
     Association,
 }
 
+pub fn namespace_view_generation(
+    version: &[u8],
+    namespace: &transaction::NamespaceSelector,
+) -> Result<u64, ValidationError> {
+    request::namespace_view_generation(version, namespace)
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Request {
     InspectDispatcher(Box<control::InspectDispatcherRequest>),

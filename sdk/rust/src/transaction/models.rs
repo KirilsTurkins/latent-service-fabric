@@ -127,6 +127,7 @@ impl StateMutationKind {
     pub const PURGE_EXPIRED_PAYLOAD: Self = Self(3);
     pub const CHECKPOINT_NAMESPACE: Self = Self(4);
     pub const RECONCILE_EFFECT: Self = Self(5);
+    pub const RELEASE_EXPIRED_COMMAND_FLOOR: Self = Self(6);
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]

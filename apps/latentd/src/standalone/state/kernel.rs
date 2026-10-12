@@ -26,6 +26,7 @@ pub(super) struct StateKernel {
     pub(super) namespaces: Arc<NamespaceCatalog>,
     pub(super) clock: Arc<ProtectedEffectClock>,
     pub(super) native: NativeCapacityOwner,
+    pub(super) maintenance: Arc<latent_commit::atomic::ResultMaintenanceOwner>,
     // LAST: actual root/engine and metadata keepers also retain this original
     // admission through native destruction, even if this startup waiter drops.
     bootstrap: Option<StateBootstrap>,
@@ -180,6 +181,7 @@ impl StateKernel {
             namespaces,
             clock,
             native: bootstrap.native.clone(),
+            maintenance: Arc::new(latent_commit::atomic::ResultMaintenanceOwner::default()),
             bootstrap: Some(bootstrap),
         };
         // Adapters retain only a once-bound projection of this exact admitted
@@ -240,6 +242,7 @@ impl StateKernel {
             clock: _,
             native: capacity,
             bootstrap,
+            maintenance: _,
         } = self;
         capacity.close();
         namespaces

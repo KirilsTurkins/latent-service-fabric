@@ -107,6 +107,7 @@ export const StateMutationKind = {
   PurgeExpiredPayload: 3,
   CheckpointNamespace: 4,
   ReconcileEffect: 5,
+  ReleaseExpiredCommandFloor: 6,
 } as const;
 
 export type StateOperationDisposition = number;

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "lsf.recovery970.native-reconciliation.v1",
+  "originalSnapshot": "fd8853fd0e51235d17661079720faf4c810cd6bb",
+  "integrationHead": "e650d9c9023fefb64cdbb17a223ea9fda1cdc0a4",
+  "acceptedMain": "fec1092b4d9cc6c2b73aaac9e92acb1c307802cb",
+  "sourceMilestone": "8016f37f48d66fd6f87bdcf9ee0cf5655dc7a4d7",
+  "originalDistinctFeature": "dd4951b1485bba1eabe6e9100c0a209ab7a07064",
+  "originalFeaturePathCount": 27,
+  "originalMergeConflictCount": 325,
+  "originalConflictIndexSha256": "466c5ea46e28267a24fa19e09756594df0c6caff4b7a9434e2a47247399504ae",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "cargoLockSha256": "322da1092cae448c779c5b0fafcc8ce2876042d54ff020776c4b5faa40694ad6",
+  "baselineArchiveSha256": "868af7032c5ec2155ac0219a2206e72bbe6c5d866cf90b074b9f901bd23de5dc",
+  "sourceOverlaySha256": "cece75ab880ca892fac09ab23ed20e04d19f51dbc33e8511c5b5532466e4b33c",
+  "nativeExecutions": [
+    {
+      "target": "latent_effects",
+      "passed": true,
+      "exitCode": 0,
+      "binarySha256": "7fc39c493e3aa92a1472ce720c97227aca865bf18b45f28abb811a84e78a5519",
+      "outputSha256": "e00aeb92052c50e79f1f330cb1d9afbd27acb44996fbb3d6f80b27b636af8072",
+      "summary": "test result: ok. 150 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.61s"
+    },
+    {
+      "target": "latent_state",
+      "passed": true,
+      "exitCode": 0,
+      "binarySha256": "7a95b8ea2da8d9122c82cae324312ecbd78b66122fa5ac0b4d1b2ab6397f8be3",
+      "outputSha256": "5f86ef51103dd95c6f5d8064033fdbcae324ebaf13de888394f691a7fd731a9e",
+      "summary": "test result: ok. 362 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 17.77s"
+    },
+    {
+      "target": "latent_http",
+      "passed": true,
+      "exitCode": 0,
+      "binarySha256": "be5b032b148d19176d7fbb25d3c6aaa5dd366c1914c52dd3c7d2a293a3daf069",
+      "outputSha256": "485a8e57cfdb1964cb6d5aa74660e93dc9fa682d7dba9343f6e1b48058e2eb0f",
+      "summary": "test result: ok. 61 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.30s"
+    }
+  ],
+  "boundedActualHttpRecovery": {
+    "case": "deferred::tests::recovery::actual_tls_mutation_restored_pending_closes_without_redrive_under_current_dispatcher",
+    "actualProtectedLogicalBackup": true,
+    "actualFreshRootRestore": true,
+    "remoteMutations": 1,
+    "postAttempts": 1,
+    "originalStableEffectIdentity": true,
+    "restoredPendingBeforeExplicitClose": true,
+    "closeReceiptReplayWithoutMutation": true,
+    "remainsClosedAfterReviewResumeAndDispatcherRestart": true,
+    "syntheticNativeCodecsAndApplicationAssociation": true,
+    "signedGuestQualified": false,
+    "installedCurrentGatewayQualified": false
+  },
+  "earlierHttpExecutionFailures": [
+    {
+      "case": "deferred::tests::recovery::actual_tls_mutation_restored_pending_closes_without_redrive_under_current_dispatcher",
+      "attempt": 1,
+      "passed": false,
+      "exitCode": 101,
+      "binarySha256": "3e9df5b8bccc7efd9b5741c70abe44719f2cddc118d98552c1040d13991ff089",
+      "outputSha256": "109abcb62a184a86454c042db14edbf2cb7275654a4bf93302ddd9772ffd11f1"
+    },
+    {
+      "case": "deferred::tests::recovery::actual_tls_mutation_restored_pending_closes_without_redrive_under_current_dispatcher",
+      "attempt": 2,
+      "passed": false,
+      "exitCode": 124,
+      "timedOut": true,
+      "binarySha256": "2545c62f5137d5754571a1b3531f3e53dcb4be7903c0d950dc6cc3a66cba4104",
+      "outputSha256": "63f0c5d3fa50b2294e658bb8b7bfaf3428d6e15b29918cbca5ec224be74d9c0b"
+    },
+    {
+      "case": "deferred::tests::recovery::actual_tls_mutation_restored_pending_closes_without_redrive_under_current_dispatcher",
+      "attempt": 3,
+      "passed": false,
+      "exitCode": 101,
+      "timedOut": false,
+      "binarySha256": "c670152affc8748a44d95d0746f90813c1810023205ffb9657ba65a402180893",
+      "outputSha256": "dd121a76bc5c2080c8eee0c00d622a764b6280ec908f40c90ea1fe0e378d68e1"
+    },
+    {
+      "case": "deferred::tests::recovery::actual_tls_mutation_restored_pending_closes_without_redrive_under_current_dispatcher",
+      "attempt": 4,
+      "passed": false,
+      "exitCode": 101,
+      "timedOut": false,
+      "binarySha256": "d79d06d1f291c8e552bbd858d399660b7899ccefa28861f623969c4907c4de68",
+      "outputSha256": "d335060dfd604f082bb637e54405af132982867d72db245598829a39a8e9ce6f"
+    }
+  ],
+  "compileFailures": [
+    {
+      "attempt": 1,
+      "publicCodes": [
+        "E0599",
+        "E0599"
+      ],
+      "cause": "current adapter trait import and unsupported direct namespace activation variant"
+    }
+  ],
+  "clippy": {
+    "warningsAsErrorsPolicyAppliesToDifferentMaintainedPackages": true,
+    "scopedLogSha256": "afe133ebed4d259f4f50bcc770b83c1af15f68446e7496edb6d675d950865a7b",
+    "additionalStrictProbes": "preserved baseline warning findings; no lint policy weakened",
+    "passedScopedRepositoryLintPolicy": true
+  },
+  "limits": [
+    "all native tests use controlled local peers and private synthetic state/credentials",
+    "old v1 offline profile is not protected-v2 or installed-node compatibility",
+    "original gateway remains in immutable ancestry, without demonstrated current-owner equivalence",
+    "no complete399/388/391/709 acceptance, six-language, release or operator qualification claim",
+    "no sensitive snapshot rows or credentials are included in public evidence"
+  ],
+  "sourceTreeIdentityManifestSha256": "331591b681dd6eed85634459775c53d14de95d14b36baca0d949893207a35912",
+  "sourceTreeIdentityCount": 3185,
+  "sourceTreeScope": "identity superset of the source tree; actual executed targets are listed separately",
+  "scope": {
+    "completeIssueAcceptance": false,
+    "productionOperatorEnabled": false,
+    "sensitiveDataPublished": false,
+    "hostedCiAndMergeSeparate": true
+  }
+}

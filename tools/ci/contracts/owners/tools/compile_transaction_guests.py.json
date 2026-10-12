@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_transaction_guests.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reconcile exact Java value/child compiler captures and current version-2 collector, preserving all prior required cases and refusal oracles",
+  "reviewReason": "Reconcile accepted Java capture squash ancestry with all current lifecycle and diagnostic commands retained",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "9c24e537f73745520165fe3f21c6f5476b7faf08c9c8d792532da97b777ecb98"
 }
