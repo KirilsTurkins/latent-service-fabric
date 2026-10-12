@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/transaction_client_rust_shapes.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Generate allocation-bounded exact-owner Rust wire schema and model visitors",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "bba307e8338b4e981d59b019263e9829cb421c21b5368bdd1a74cedba238365f"
+}

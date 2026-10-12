@@ -1,86 +1,7 @@
 use super::*;
-mod dispatch_policy;
 mod fixture;
 mod provider;
 use fixture::{mutation, operator, setup};
-
-#[tokio::test]
-async fn controlled_dispatch_requires_the_actual_current_policy_and_source_before_provider_acceptance(
-) {
-    let mut effect =
-        fixture::setup_with_provider(Some(latent_effects::dispatch::Disposition::KnownFailed))
-            .await;
-    let id = effect.effect.clone();
-    let authority = effect
-        .fixture
-        .store
-        .with_store(
-            latent_state::store_io::StoreIoKind::RecoveryRead,
-            4096,
-            move |engine| {
-                let bytes = engine
-                    .snapshot()?
-                    .get(&latent_effects::dispatch_store::effect_row_key(&id).unwrap())?
-                    .unwrap();
-                Ok(latent_effects::dispatch::EffectRecord::decode(&bytes)
-                    .unwrap()
-                    .authority()
-                    .unwrap())
-            },
-        )
-        .unwrap()
-        .await
-        .unwrap()
-        .unwrap();
-    let provider = effect.provider.as_ref().unwrap();
-    let mut calls = 0;
-    let mut accept = || {
-        calls += 1;
-        Err(latent_effects::authority::AuthorityError::Unavailable)
-    };
-    assert_eq!(
-        provider
-            .dispatch
-            .with_current(&authority, deadline(), &mut accept)
-            .err()
-            .unwrap(),
-        latent_effects::authority::AuthorityError::Unavailable
-    );
-    assert_eq!(calls, 1);
-    effect
-        .fixture
-        .policy
-        .mutate(
-            latent_policy::capability::MutationRequest {
-                tenant: "a",
-                actor: "fixture-operator",
-                kind: latent_policy::capability::RecordKind::Policy,
-                id: "controlled-dispatch",
-                operation_id: "withdraw-controlled-dispatch",
-                expected_revision: provider.dispatch.policy_revision,
-                document: None,
-            },
-            deadline(),
-            |_| Ok(()),
-        )
-        .unwrap();
-    let mut denied_calls = 0;
-    let mut denied_accept = || {
-        denied_calls += 1;
-        Err(latent_effects::authority::AuthorityError::Unavailable)
-    };
-    assert_eq!(
-        provider
-            .dispatch
-            .with_current(&authority, deadline(), &mut denied_accept)
-            .err()
-            .unwrap(),
-        latent_effects::authority::AuthorityError::PolicyBlocked
-    );
-    assert_eq!(denied_calls, 0);
-    assert_eq!(provider.sends.load(std::sync::atomic::Ordering::SeqCst), 0);
-    effect.finish().await;
-}
 
 fn planned(value: &OwnedPhase4Response) -> c::EffectManagementPlan {
     let contract::Response::PlanEffectMutation(value) = &value.response else {
@@ -97,6 +18,52 @@ fn applied(value: &OwnedPhase4Response) -> &c::MutateStateResponse {
         panic!("expected mutation receipt");
     };
     value
+}
+
+#[tokio::test]
+async fn foreign_command_effect_associations_are_denied_without_rewriting_original_rows() {
+    let mut effect = setup().await;
+    let (other_command, other_effect) = effect.related_command().await;
+    let rows = effect.rows().await;
+    let response = effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), effect.request("original-link").into())
+        .await
+        .unwrap();
+    assert_eq!(
+        planned(&response)
+            .original
+            .as_ref()
+            .unwrap()
+            .effect
+            .as_ref()
+            .unwrap()
+            .effect_id,
+        effect.effect
+    );
+    drop(response);
+
+    let mut foreign_command = effect.request("foreign-command-link");
+    foreign_command.effect.as_mut().unwrap().command = Some(other_command);
+    let mut foreign_effect = effect.request("foreign-effect-link");
+    foreign_effect.effect.as_mut().unwrap().effect_id = other_effect;
+    for request in [foreign_command, foreign_effect] {
+        let error = effect
+            .fixture
+            .backend
+            .execute_state(operator("alice"), request.into())
+            .await
+            .err()
+            .unwrap();
+        assert_eq!(error.code, PlatformErrorCode::PermissionDenied);
+        assert_eq!(effect.rows().await, rows);
+    }
+    assert_eq!(
+        effect.disposition().await,
+        latent_effects::dispatch::Disposition::Pending
+    );
+    effect.finish().await;
 }
 
 #[tokio::test]

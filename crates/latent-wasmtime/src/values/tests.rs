@@ -7,7 +7,6 @@ use wasmtime::{Config, Engine};
 use super::*;
 
 mod bounds;
-mod canonical;
 mod composites;
 mod differential;
 #[cfg(target_os = "linux")]
@@ -72,3 +71,5 @@ fn rejects(ty: &Type, json: &str) {
     .expect_err("invalid input");
     assert_eq!(error.code, PlatformErrorCode::InvalidArgument, "{json}");
 }
+
+mod canonical;

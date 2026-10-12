@@ -5,7 +5,7 @@ use super::{
     },
     Result, MAX_REQUEST_BYTES,
 };
-use latent_manifest::{validate_deployment_document, DeploymentManifest};
+use latent_manifest::{DeploymentManifest, ManifestValidationProfile, ManifestValidator};
 pub(crate) fn token(value: &str, maximum: usize) -> Result<()> {
     if value.is_empty()
         || value.len() > maximum
@@ -148,6 +148,13 @@ impl RolloutRequest {
         }
     }
     pub fn validate(&self, limits: RolloutLimits) -> Result<()> {
+        self.validate_with_profile(limits, ManifestValidationProfile::default())
+    }
+    pub fn validate_with_profile(
+        &self,
+        limits: RolloutLimits,
+        profile: ManifestValidationProfile,
+    ) -> Result<()> {
         limits.validate()?;
         if self.retained_bytes() > MAX_REQUEST_BYTES {
             return Err(capacity());
@@ -180,7 +187,9 @@ impl RolloutRequest {
                 if spec.candidate.route_weight != spec.candidate_weights[0] {
                     return Err(invalid());
                 }
-                validate_deployment_document(&spec.candidate).map_err(|_| invalid())?;
+                profile
+                    .validate_deployment(&spec.candidate)
+                    .map_err(|_| invalid())?;
             }
             Self::Change { command, .. } => {
                 if c.operation.expected_revision == 0 {

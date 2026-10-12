@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Qualify preserved signed Java guests using actual already-built Phase 4 owners.
 
+The current version-2 startup declaration is explicit; HTTP installation and
+offline recovery observations still require the current installed owners.
+A refusal remains failed evidence.
+
 Linux/Python 3.13. This creates one private disposable root and retains every
 failed attempt. It invokes no compiler, installs no inferred grant and cannot
 qualify a packaged developer distribution or the full Phase 4 completion gate.
@@ -37,7 +41,11 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/recovery.py", "tools/java_transaction_qualification/offline_campaign.py",
     "tools/java_transaction_qualification/staging.py", "tools/java_transaction_qualification/native_store.py",
     "tools/java_transaction_qualification/diagnostic_inputs.py",
-    "tools/java_transaction_qualification/diagnostic_campaign.py")
+    "tools/java_transaction_qualification/diagnostic_campaign.py",
+    "tools/java_transaction_qualification/current_inputs.py",
+    "tools/java_transaction_qualification/current_campaign.py")
+COLLECTORS += ("tools/java_transaction_qualification/refusal_observation.py",
+               "tools/java_transaction_qualification/state_configuration.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
@@ -55,6 +63,8 @@ def parse():
     parser.add_argument("--prepare-authority-only", action="store_true", help="Stop before candidate policy mutations")
     parser.add_argument("--resume-candidate", type=Path, help="Consume the exact stopped original candidate once")
     parser.add_argument("--candidate-digest", help="Exact retained candidate digest supplied after review")
+    parser.add_argument("--current-selections", type=Path, help="Separate explicit current six-component material selections")
+    parser.add_argument("--current-selections-digest", help="Exact selection-document digest; historical r3 pins remain unchanged")
     for name in diagnostic_inputs.ARGUMENTS:
         parser.add_argument("--" + name.replace("_", "-"), type=Path if name in
                             {"diagnostic_capture", "diagnostic_receipt"} else str,
@@ -74,7 +84,20 @@ def parse():
     recovery_input(args)
     diagnostic_inputs.selection(args)
     staging.mode(args)
+    current_mode(args)
     return args
+
+
+def current_mode(args):
+    selected = getattr(args, "current_selections", None)
+    selected_digest = getattr(args, "current_selections_digest", None)
+    inputs.require((selected is None) == (selected_digest is None), "paired-current-java-campaign-inputs")
+    if selected is not None:
+        inputs.require(args.resume_candidate is None and not args.prepare_authority_only
+                       and all(getattr(args, name, None) is None for name in diagnostic_inputs.ARGUMENTS),
+                       "current-campaign-cannot-adopt-historical-candidate-or-diagnostic")
+        from tools.java_transaction_qualification import current_campaign
+        current_campaign.selections(args.portable, selected, selected_digest)
 
 
 def recovery_input(args):
@@ -212,6 +235,9 @@ def failure(record, stage, error):
 
 
 def loaded_inputs(args, work):
+    if getattr(args, "current_selections", None) is not None:
+        from tools.java_transaction_qualification import current_campaign
+        return current_campaign.load(args)
     original = inputs.load(args.portable)
     diagnostic = diagnostic_inputs.load(args, work / "diagnostic-input")
     if diagnostic is not None:
@@ -261,14 +287,22 @@ def run(args):
             deadline = staging.deadline(original_clock, args.timeout)
             tools, collectors = tool_identity(args), collector_identity()
             items, diagnostic = loaded_inputs(args, work)
+            record["compilerSourceCommit"] = items[0].compiler_source
             record.update(nativeTools=tools, collectorDigests=collectors)
             input_identity(record, items, diagnostic)
             client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence)
             try:
                 stage = "package"
-                signed = packaging.package(args.portable, work / "packages", args.contracts_tool, args.signer,
-                    timeout=max(1, int(min(600, deadline - time.monotonic()))),
-                    diagnostic=None if diagnostic is None else diagnostic.item)
+                package_timeout = max(1, int(min(600, deadline - time.monotonic())))
+                if getattr(args, "current_selections", None) is not None:
+                    from tools.java_transaction_qualification import current_campaign
+                    selected = current_campaign.selections(args.portable, args.current_selections,
+                                                           args.current_selections_digest)
+                    signed = packaging.package_current(selected, work / "packages", args.contracts_tool,
+                                                       args.signer, timeout=package_timeout)
+                else:
+                    signed = packaging.package(args.portable, work / "packages", args.contracts_tool, args.signer,
+                        timeout=package_timeout, diagnostic=None if diagnostic is None else diagnostic.item)
                 evidence.record("actual-package-fixture", read_json(work / "packages/package-fixture-receipt.json"))
                 stage = "bootstrap"
                 peer, configuration, node = prepare_environment(client, args, work, signed)

@@ -1,0 +1,27 @@
+.........................{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "download"}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "failed", "bytes": 0, "elapsedSeconds": 600}
+.{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "download"}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "failed", "bytes": 0, "elapsedSeconds": 600}
+.{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "failed", "bytes": 0, "elapsedSeconds": 0.0}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "failed", "bytes": 0, "elapsedSeconds": 0.0}
+..{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "download"}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "failed", "bytes": 0, "elapsedSeconds": 300}
+.{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "download"}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "failed", "bytes": 0, "elapsedSeconds": 0.0}
+.{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "download"}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "failed", "bytes": 24, "elapsedSeconds": 0}
+.{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "download"}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "verified", "bytes": 23, "elapsedSeconds": 120}
+.{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "download"}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "verified", "bytes": 23, "elapsedSeconds": 89}
+.{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "download"}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "failed", "bytes": 22, "elapsedSeconds": 0}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "download"}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "failed", "bytes": 23, "elapsedSeconds": 0}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "download"}
+{"compilerArchive": "sha256:1a2816752360f351ab27a693b7edaabbfb9ff73a8e7996d217120c244a3311c6", "phase": "failed", "bytes": 0, "elapsedSeconds": 0}
+..........
+----------------------------------------------------------------------
+Ran 44 tests in 6.446s
+
+OK

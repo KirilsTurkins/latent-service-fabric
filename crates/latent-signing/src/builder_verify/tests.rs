@@ -1,4 +1,5 @@
 mod authorization;
+mod concurrent;
 mod currentness;
 mod support;
 mod web;
@@ -48,7 +49,7 @@ fn contended_owner_rejects_without_queuing_and_preserves_observed_time() {
     let verifier =
         Arc::new(BuilderVerifier::new(deny_all(1), ProvenanceLimits::default(), 10).unwrap());
     let expected = verifier.state_id().unwrap();
-    let guard = verifier.state.lock().unwrap();
+    let guard = verifier.state.read().unwrap();
     let worker_verifier = verifier.clone();
     let worker_expected = expected.clone();
     let (sender, receiver) = mpsc::sync_channel(1);

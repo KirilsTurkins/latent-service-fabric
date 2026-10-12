@@ -1,0 +1,31 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "module":"tools/tests/test_c_generator_authoring.py",
+  "cases":["CGeneratorApproval.test_cli_request_and_wrong_approval_preserve_the_source","CGeneratorApproval.test_destination_collisions_and_nonfinite_limits_reject_without_adoption","CGeneratorApproval.test_request_binds_source_sdk_tool_arguments_inputs_and_finite_limits_without_execution","CGeneratorApproval.test_source_tool_and_input_drift_reject_before_execution","CGeneratorApproval.test_wrong_or_modified_approval_never_dispatches","CGeneratorNative.test_binary_outputs_and_failed_tools_never_adopt_generated_inputs","CGeneratorNative.test_failed_manifest_adoption_rolls_back_only_the_fresh_subtree","CGeneratorNative.test_generated_header_drift_is_rejected_by_normal_project_and_dependency_validation","CGeneratorNative.test_real_header_generation_keeps_sdk_and_reuses_offline_without_original_tool"],
+  "guards":{
+    "CGeneratorApproval.test_cli_request_and_wrong_approval_preserve_the_source":
+      "febf02aaa4ad655e2c5989e5e09d867526f8465b7ac07702c95e9c34fd1fbd4f",
+    "CGeneratorApproval.test_request_binds_source_sdk_tool_arguments_inputs_and_finite_limits_without_execution":
+      "febf02aaa4ad655e2c5989e5e09d867526f8465b7ac07702c95e9c34fd1fbd4f",
+    "CGeneratorApproval.test_wrong_or_modified_approval_never_dispatches":
+      "febf02aaa4ad655e2c5989e5e09d867526f8465b7ac07702c95e9c34fd1fbd4f",
+    "CGeneratorApproval.test_source_tool_and_input_drift_reject_before_execution":
+      "febf02aaa4ad655e2c5989e5e09d867526f8465b7ac07702c95e9c34fd1fbd4f",
+    "CGeneratorApproval.test_destination_collisions_and_nonfinite_limits_reject_without_adoption":
+      "febf02aaa4ad655e2c5989e5e09d867526f8465b7ac07702c95e9c34fd1fbd4f",
+    "CGeneratorNative.test_real_header_generation_keeps_sdk_and_reuses_offline_without_original_tool":
+      "ae292217ee3afb420ef06bfd2335b09c4ddf7e3a93470ac868dc70154055f75e",
+    "CGeneratorNative.test_generated_header_drift_is_rejected_by_normal_project_and_dependency_validation":
+      "ae292217ee3afb420ef06bfd2335b09c4ddf7e3a93470ac868dc70154055f75e",
+    "CGeneratorNative.test_failed_manifest_adoption_rolls_back_only_the_fresh_subtree":
+      "ae292217ee3afb420ef06bfd2335b09c4ddf7e3a93470ac868dc70154055f75e",
+    "CGeneratorNative.test_binary_outputs_and_failed_tools_never_adopt_generated_inputs":
+      "ae292217ee3afb420ef06bfd2335b09c4ddf7e3a93470ac868dc70154055f75e"
+  },
+  "reviewReason":"Exact approved C source and header generation; unchanged rejection, finite process limits, actual namespace retirement and offline integrity controls.",
+  "guardDefinitions":{
+    "febf02aaa4ad655e2c5989e5e09d867526f8465b7ac07702c95e9c34fd1fbd4f":{"bases":["CGeneratorFixture"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:1912dae01ef11029160731782242496559b6a454c57d62fa75c4ce0265061ac8","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]},
+    "ae292217ee3afb420ef06bfd2335b09c4ddf7e3a93470ac868dc70154055f75e":{"bases":["CGeneratorFixture"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:1912dae01ef11029160731782242496559b6a454c57d62fa75c4ce0265061ac8","class:raise:raise unittest.SkipTest('C source generator execution requires Linux Bubblewrap')","class:setup-sha256:11b4d77b961eaf0f18c9153a26005015ff1067bf7568f1ee1624718b3b0d9770","class:skip:unittest.SkipTest('C source generator execution requires Linux Bubblewrap')"]}
+  }
+}

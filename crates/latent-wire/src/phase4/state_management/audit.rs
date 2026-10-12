@@ -191,29 +191,24 @@ fn operation(
         if value.mutation != c::StateMutationKind::ReleaseExpiredCommandFloor as i32 {
             return Err(unsupported());
         }
-        let scope = latent_state::session::StateScope {
+        let selector = latent_rpc::transaction::v1::NamespaceSelector {
             tenant: access
                 .binding
                 .publication
                 .scope
                 .tenant()
                 .ok_or_else(denied)?
+                .0
                 .clone(),
-            namespace: access.binding.namespace.clone(),
-            incarnation: access.binding.incarnation,
-            state_schema: access.binding.state_schema.clone(),
-            entity: None,
-            mode: latent_state::session::StateMode::Query,
+            namespace: access.binding.namespace.0.clone(),
+            incarnation: access.binding.incarnation.to_string(),
         };
-        let view = latent_state::session::version::ViewIdentity::from_token(
-            &scope,
-            &value.expected_version,
-        )
-        .map_err(|_| invalid())?;
+        let generation = contract::namespace_view_generation(&value.expected_version, &selector)
+            .map_err(|_| invalid())?;
         return Ok((
             value.operation_id.clone(),
             AuditControlAction::CommandFloorRelease,
-            Some(view.namespace.generation),
+            Some(generation),
         ));
     }
     if matches!(request, contract::Request::SelectEntity(_)) {

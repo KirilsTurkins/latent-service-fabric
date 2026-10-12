@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "module": "latent.dev/sdk/go",
-  "goVersion": "1.27.1",
-  "manifestSha256": "51a43e5fdbe87ce84c10119f45fe2df2abad23d0582324ad8128ce7d0c3d1948",
+  "goVersion": "1.27.2",
+  "manifestSha256": "93e9c951988e104f8320bd9fd8cad055327959824f39f14e60f188ae7131cd0a",
   "sumSha256": "1f2f73a8538b16f694bb68f2e305a0e974434d3cbb8c5a795a864cc6b15357bc",
   "modules": [
     {

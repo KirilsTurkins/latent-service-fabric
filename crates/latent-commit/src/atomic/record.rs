@@ -160,6 +160,12 @@ pub struct CommandRecord {
     pub(super) abort_proof: Option<Identity>,
 }
 impl CommandRecord {
+    /// Actual supported decoded command format. This metadata supplies no
+    /// replay, recovery, mutation or result-read authority.
+    #[must_use]
+    pub const fn durable_format(&self) -> (&'static str, u32) {
+        ("latent.command.v1", if self.accounted { 4 } else { 3 })
+    }
     #[must_use]
     pub fn key(&self) -> &CommandKey {
         &self.key
@@ -175,6 +181,12 @@ impl CommandRecord {
     #[must_use]
     pub fn source(&self) -> &SourceIdentity {
         &self.source
+    }
+    /// Original immutable subscription/message identity. Describing this field
+    /// never authorizes consumer delivery, replay or a replacement binding.
+    #[must_use]
+    pub fn inbox_identity(&self) -> Option<&InboxIdentity> {
+        self.inbox.as_ref()
     }
     #[must_use]
     pub fn result_read_policy(&self) -> &str {
@@ -507,6 +519,11 @@ pub struct DurableResult {
     pub(super) value: Option<Value>,
 }
 impl DurableResult {
+    /// Independently versioned durable result bytes, not a command-row version.
+    #[must_use]
+    pub const fn durable_format(&self) -> (&'static str, u32) {
+        ("latent.result.v1", 3)
+    }
     pub(super) fn new(
         record: &CommandRecord,
         outcome: Outcome,

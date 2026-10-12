@@ -16,13 +16,7 @@ pub(super) fn batch_delta(
         if row.key.family != Family::Namespace
             && row.key.family != Family::State
             && !(row.key.family == Family::Maintenance
-                && [
-                    b"state-usage-v1\0".as_slice(),
-                    crate::recovery::resume::RECEIPT_PREFIX,
-                    crate::recovery::migration::PROGRESS_PREFIX,
-                ]
-                .iter()
-                .any(|prefix| row.key.key.starts_with(prefix)))
+                && row.key.key.starts_with(b"state-usage-v1\0"))
         {
             continue;
         }
@@ -45,16 +39,7 @@ pub(super) fn batch_delta(
                 let contribution = if row.key.family == Family::State {
                     crate::session::tenant_row_usage(tenant, &row.key, value)?
                 } else {
-                    let maximum = if row
-                        .key
-                        .key
-                        .starts_with(crate::recovery::migration::PROGRESS_PREFIX)
-                    {
-                        crate::recovery::migration::PROGRESS_BYTES
-                    } else {
-                        8192
-                    };
-                    if value.len() > maximum {
+                    if value.len() > 8192 {
                         return Err(StoreError::Capacity);
                     }
                     TenantUsage {

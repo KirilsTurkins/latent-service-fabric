@@ -15,3 +15,10 @@ pub trait StateMaintenanceClock: Send + Sync {
     /// process clock observation cannot be represented within the finite bounds.
     fn sample(&self) -> Result<MaintenanceClock, PlatformError>;
 }
+
+pub struct DisabledStateMaintenanceClock;
+impl StateMaintenanceClock for DisabledStateMaintenanceClock {
+    fn sample(&self) -> Result<MaintenanceClock, PlatformError> {
+        Err(super::unsupported())
+    }
+}

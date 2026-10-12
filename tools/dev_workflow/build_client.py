@@ -3,6 +3,7 @@ import base64
 from pathlib import Path
 import secrets
 import sys
+import tempfile
 import time
 
 from . import diagnostics, project, snapshot, state
@@ -82,8 +83,16 @@ def _run(workspace: Path, connection, source: Path, tool_root: str | None, *, ed
     record, content = snapshot.observe(source, descriptor["inputRoots"], tuple(descriptor["exclude"]))
     expected = identity, record["identity"]
     require(selected is None or selected == expected, "guest-build-superseded")
-    connection.call("snapshot", {"snapshot": record, "project": descriptor, "trustedRecipe": identity,
-                    "content": {name: base64.b64encode(raw).decode() for name, raw in content.items()}}, timeout=120)
+    arguments = {"snapshot": record, "project": descriptor, "trustedRecipe": identity,
+                 "content": {name: base64.b64encode(raw).decode() for name, raw in content.items()}}
+    if 'capturedInputs' in record:
+        from . import assets, captured_inputs
+        with tempfile.TemporaryDirectory(prefix='lsf-captured-transfer-') as temporary:
+            sources = captured_inputs.pack(source, record['capturedInputs'], Path(temporary) / 'inputs')
+            completed = assets.transfer(connection, sources, domain=captured_inputs.DOMAIN)
+            arguments['captureAsset'] = completed['identity']
+        require(selection(source) == expected, 'captured-inputs-changed-before-association')
+    connection.call("snapshot", arguments, timeout=120)
     build_id = secrets.token_hex(16)
     observer = Observer(source, expected, connection, build_id) if selected is not None else None
     try:

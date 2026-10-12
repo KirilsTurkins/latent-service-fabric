@@ -83,21 +83,18 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         host_operations = {"commit", "read-result", "inspect-effect", "cancel-command",
                            "namespace-create", "namespace-inspect", "namespace-list",
                            "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate",
-                           "namespace-snapshot", "namespace-inspect-restore", "namespace-restore",
-                           "namespace-schema-migrate", "namespace-review-recovery", "namespace-resume",
                            "effect-plan", "effect-reconcile", "effect-redrive", "effect-terminate",
                            "state-checkpoint", "purge-expired-payload"}
         self.assertTrue(expected["latent:state/key-value@0.2.0"].isdisjoint(host_operations))
         expected["latent:state/key-value@0.2.0"].update(host_operations)
-        # Dispatch is a separately authorized native purpose. The frozen guest
-        # staging interface still exposes only stage; it grants no dispatch.
-        intent_host_operations = {"dispatch"}
-        self.assertTrue(expected["latent:intents/staging@0.1.0"].isdisjoint(intent_host_operations))
-        expected["latent:intents/staging@0.1.0"].update(intent_host_operations)
         self.assertEqual(actual, expected)
         constraints = SCHEMAS["capability-policy"]["$defs"]["rule"]["allOf"]
         self.assertEqual({v["if"]["properties"]["capability"]["const"]:
                           set(v["then"]["properties"]["operations"]["items"]["enum"]) for v in constraints}, expected)
+        bindings = SCHEMAS["capability-provider-binding"]["allOf"]
+        self.assertEqual({v["if"]["properties"]["capability"]["const"]:
+                          set(v["then"]["properties"]["restriction"]["properties"]["operations"]["items"]["enum"])
+                          for v in bindings}, expected)
 
     def test_state_scopes_require_explicit_entity_and_bounded_exact_policy_tuple(self):
         scope = {"namespace": "orders", "incarnation": 1, "entity": None,

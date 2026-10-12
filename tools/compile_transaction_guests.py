@@ -24,15 +24,23 @@ from tools.java_guest.surface import surface
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 from tools.transaction_guest_project import TEMPLATE
-from tools.transaction_guest_variants import HTTP, LANGUAGES, SOURCES, create as variant_project
+from tools.transaction_guest_variants import CHILD, HTTP, LANGUAGES, SOURCES, create as variant_project
 
 WORLD = "examples:transactional-aggregate/service@1.0.0"
-VARIANTS = ("aggregate", "forbidden-http")
+VARIANTS = ("aggregate", "forbidden-http", "result-boundary")
 JAVA_SCHEMA_VARIANTS = ("put-once-legacy-v1", "put-once-compatible-v2", "put-once-writer-v2")
 JAVA_DIAGNOSTIC_VARIANT = "put-once-diagnostics"
+JAVA_ACCEPTANCE_VARIANTS = ("put-once-values", "forbidden-child")
 
 
 def authored_project(language: str, variant: str, output: Path) -> Path:
+    if variant in JAVA_ACCEPTANCE_VARIANTS:
+        if language != "java":
+            raise ValueError("Java state value and child-refusal inputs require the Java compiler")
+        if variant == "forbidden-child":
+            return variant_project(output, language, variant)
+        from tools.java_transaction_values import create
+        return create(output)
     if variant == JAVA_DIAGNOSTIC_VARIANT:
         if language != "java":
             raise ValueError("Java post-stage diagnostics require the Java compiler")
@@ -43,8 +51,9 @@ def authored_project(language: str, variant: str, output: Path) -> Path:
             raise ValueError("Java schema qualification requires the Java compiler")
         from tools.java_transaction_schema import create
         return create(output, variant.removeprefix("put-once-"), effect="put-once")
-    if variant == "forbidden-http":
-        return variant_project(output, language, variant)
+    if variant in {"forbidden-http", "result-boundary"}:
+        name = "transaction-rust-aggregate" if variant == "result-boundary" else None
+        return variant_project(output, language, variant, name)
     if variant != "aggregate":
         raise ValueError("unknown authored transaction variant")
     if language == "rust":
@@ -65,11 +74,13 @@ def authored_project(language: str, variant: str, output: Path) -> Path:
 
 
 def check_surface(expected: dict, actual: dict, variant: str) -> None:
-    if variant not in VARIANTS or actual["exports"] != expected["exports"]:
+    if variant not in (*VARIANTS, "forbidden-child") or actual["exports"] != expected["exports"]:
         raise ValueError("authored transaction export or variant changed")
     mandatory = {"latent:state/key-value@0.2.0", "latent:intents/staging@0.1.0"}
     if not mandatory <= actual["imports"].keys() or (HTTP in actual["imports"]) != (variant == "forbidden-http"):
         raise ValueError("authored transaction or forbidden effect import missing")
+    if (CHILD in actual["imports"]) != (variant == "forbidden-child"):
+        raise ValueError("actual forbidden synchronous child call missing or unexpected")
     for name, imported in actual["imports"].items():
         declared = expected["imports"].get(name)
         if declared is None:
@@ -157,16 +168,22 @@ def compile_project(language: str, work: Path, output: Path, command: Commands,
 
 
 def compile_guests(language: str, output: Path, *, tools: Path | None = None, wasi_sdk: Path | None = None,
-                   java_schema_put_once: bool = False, java_post_stage_diagnostic: bool = False) -> None:
+                   java_schema_put_once: bool = False, java_post_stage_diagnostic: bool = False,
+                   java_state_acceptance: bool = False) -> None:
     if type(java_schema_put_once) is not bool or (java_schema_put_once and language != "java"):
         raise ValueError("Java schema qualification requires an explicit Java compiler selection")
     if (type(java_post_stage_diagnostic) is not bool
             or (java_post_stage_diagnostic and (language != "java" or java_schema_put_once))):
         raise ValueError("post-stage diagnostic qualification requires the exclusive explicit Java compiler")
+    if type(java_state_acceptance) is not bool or (java_state_acceptance and
+            (language != "java" or java_schema_put_once or java_post_stage_diagnostic)):
+        raise ValueError("state acceptance inputs require the exclusive explicit Java compiler selection")
     output = fresh(output)
-    variants = ((JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
+    variants = (JAVA_ACCEPTANCE_VARIANTS if java_state_acceptance else (JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
                 else (*VARIANTS, *JAVA_SCHEMA_VARIANTS) if java_schema_put_once else VARIANTS)
     for variant in variants:
+        if variant == "result-boundary" and language != "rust":
+            continue
         current = fresh(output / variant)
         report = {"schemaVersion": "latent.transaction-guest.compiler.v1", "language": language,
             "variant": variant, "evidenceKind": "authored-component-compiler", "status": "running",
@@ -183,7 +200,7 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
                      "go": "tools.go_capsule_build", "java": "tools.java_capsule_build", "dotnet": "tools.dotnet_guest.build"}[language]
             import importlib
             recipe = (*importlib.import_module(owner).RECIPE, "tools/compile_transaction_guests.py", "tools/transaction_guest_variants.py")
-            if variant in JAVA_SCHEMA_VARIANTS or variant == JAVA_DIAGNOSTIC_VARIANT:
+            if variant in JAVA_SCHEMA_VARIANTS or variant in {JAVA_DIAGNOSTIC_VARIANT, "put-once-values"}:
                 recipe += ("tools/java_transaction_schema.py", "examples/java-transaction-schema/AggregateCodec.java",
                            "contracts/state/application-aggregate-v1.schema.json",
                            "contracts/state/application-aggregate-v2.schema.json")
@@ -193,6 +210,9 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             if variant == JAVA_DIAGNOSTIC_VARIANT:
                 recipe += ("tools/java_transaction_diagnostics.py", "examples/java-transaction-schema/TransactionDiagnostics.java")
                 report["diagnosticInputDigest"] = digest(captured["transaction-diagnostic-inputs.json"])
+            if variant == "put-once-values":
+                recipe += ("tools/java_transaction_values.py",)
+                report["valueInputDigest"] = digest(captured["transaction-value-inputs.json"])
             recipe_inputs = inventory({name: read_file(ROOT / name) for name in recipe})
             (current / "recipe-inputs.json").write_bytes(recipe_inputs)
             report["recipeDigest"] = digest(recipe_inputs)
@@ -219,7 +239,7 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             command.run("validate-authored-component", wasm, "validate", "--features", "all", component)
             actual = surface(json.loads(command.run("actual-component-wit", wasm, "component", "wit", component, "--json")))
             check_surface(expected, actual, "aggregate" if variant in JAVA_SCHEMA_VARIANTS
-                          or variant == JAVA_DIAGNOSTIC_VARIANT else variant)
+                          or variant in {JAVA_DIAGNOSTIC_VARIANT, "put-once-values"} else variant)
             if any(read_file(work / name) != raw for name, raw in captured.items()):
                 raise ValueError("captured guest source changed during compilation")
             if inventory({name: read_file(ROOT / name) for name in recipe}) != recipe_inputs:
@@ -246,10 +266,13 @@ def main() -> None:
                         help="also compile all three captured Java schema/deferred-HTTP variants without node-execution claims")
     parser.add_argument("--java-post-stage-diagnostic", action="store_true",
                         help="compile only the separate captured Java post-stage fault variant without node-execution claims")
+    parser.add_argument("--java-state-acceptance", action="store_true",
+                        help="compile separate unsigned-value/UTF-8 state and typed forbidden-child inputs")
     arguments = parser.parse_args()
     compile_guests(arguments.language, arguments.output, tools=arguments.tools, wasi_sdk=arguments.wasi_sdk,
                    java_schema_put_once=arguments.java_schema_put_once,
-                   java_post_stage_diagnostic=arguments.java_post_stage_diagnostic)
+                   java_post_stage_diagnostic=arguments.java_post_stage_diagnostic,
+                   java_state_acceptance=arguments.java_state_acceptance)
 
 
 if __name__ == "__main__":

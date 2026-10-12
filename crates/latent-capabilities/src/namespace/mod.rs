@@ -5,7 +5,6 @@
 mod control;
 mod gate;
 mod page;
-mod result_history;
 mod scope;
 #[cfg(test)]
 mod tests;
@@ -15,11 +14,8 @@ pub use control::{
     PreparedRetainedNamespaceControl, RetainedNamespaceControlFence,
     RetainedNamespaceControlRequest,
 };
-pub use gate::{
-    AcceptedCommit, CommitCancellation, CommitCancellationDisposition, CommitIoAcceptance,
-};
+pub use gate::{AcceptedCommit, CommitCancellation, CommitIoAcceptance};
 pub use page::ScopedPage;
-pub use result_history::ReviewedResultHistory;
 pub use scope::{CallerScope, RecoverySelection};
 
 use latent_core::{ActivationId, PlatformError, PlatformErrorCode, TenantId};
@@ -52,7 +48,7 @@ pub struct ResultOwnership {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Mode {
+enum Mode {
     Command,
     Query,
     Inspection,
@@ -62,7 +58,7 @@ pub enum Mode {
 /// publication and policy generations; public copied descriptors cannot revive
 /// it after current policy/publication revocation or namespace reincarnation.
 pub struct NamespaceAuthority {
-    initial: Arc<OwnedPolicyDecision>,
+    initial: OwnedPolicyDecision,
     ownership: ResultOwnership,
     publication: String,
     version: NamespaceVersion,
@@ -72,8 +68,7 @@ pub struct NamespaceAuthority {
     deadline: Instant,
     gate: Arc<gate::Gate>,
     selection: RecoverySelection,
-    lifecycle: Arc<latent_state::namespace::lifecycle::NamespaceLifecycleHandle>,
-    result_history: Option<Box<ReviewedResultHistory>>,
+    lifecycle: latent_state::namespace::lifecycle::NamespaceLifecycleHandle,
 }
 
 /// Trusted activation/binding facts, without permission or storage ownership.
@@ -182,7 +177,7 @@ impl NamespaceAuthority {
         let deadline =
             deadline.min(Instant::now() + Duration::from_millis(ceiling.wall_time_millis));
         Ok(Self {
-            initial: Arc::new(initial),
+            initial,
             ownership,
             publication,
             version: namespace.record().version,
@@ -192,86 +187,14 @@ impl NamespaceAuthority {
             deadline,
             gate: gate::Gate::new(),
             selection: selection.clone(),
-            lifecycle: Arc::new(lifecycle),
-            result_history: None,
-        })
-    }
-
-    /// An independently authorized historical result read. The original
-    /// publication remains live and its current read-result decision is retained.
-    /// The reviewed observation cannot become command, query or stage authority.
-    pub fn seal_result_retained(
-        store: &PolicyStore,
-        initial: OwnedPolicyDecision,
-        namespace: &NamespaceRead,
-        admission: NamespaceAdmission<'_>,
-        lifecycle: latent_state::namespace::lifecycle::NamespaceLifecycleHandle,
-        history: ReviewedResultHistory,
-    ) -> Result<Self, PlatformError> {
-        history.check_selection(namespace, admission.state_schema)?;
-        let mut authority = Self::seal_retained(
-            store,
-            initial,
-            namespace,
-            NamespaceAdmission {
-                state_schema: &namespace.record().state_schema,
-                ..admission
-            },
             lifecycle,
-        )?;
-        if authority.mode != Mode::Inspection {
-            return Err(denied());
-        }
-        let original = history.original();
-        let key = original.key();
-        let ownership = &authority.ownership;
-        if key.tenant != ownership.tenant.0
-            || key.namespace != ownership.namespace
-            || key.incarnation != ownership.incarnation.to_string()
-            || key.entity != ownership.entity
-            || key.recovery_scope != ownership.caller.scope
-            || original.result_read_policy() != ownership.result_policy
-            || original.source().publication != authority.publication
-        {
-            return Err(denied());
-        }
-        store.with_retained_decision(&authority.initial, &mut |actual, _| {
-            authority.check_target(actual, "read-result")
-        })?;
-        authority.result_history = Some(Box::new(history));
-        Ok(authority)
-    }
-
-    /// Descriptive original result identity. Access still requires the retained
-    /// current-purpose fence, including the original caller and publication.
-    #[must_use]
-    pub fn original_result(&self) -> Option<&latent_commit::atomic::CommandRecord> {
-        self.result_history
-            .as_ref()
-            .map(|history| history.original())
-    }
-
-    pub fn require_result_history(
-        &self,
-        view: &latent_state::embedded::ReadView,
-        namespace: &NamespaceRead,
-        record: &latent_commit::atomic::CommandRecord,
-    ) -> Result<(), latent_state::embedded::StoreError> {
-        self.result_history
-            .as_ref()
-            .ok_or(latent_state::embedded::StoreError::Unavailable)?
-            .require_current(view, namespace, record)
+        })
     }
 
     /// Descriptive sealed activation identity; it creates no budget or access.
     #[must_use]
     pub const fn activation_id(&self) -> &ActivationId {
         &self.activation
-    }
-
-    #[must_use]
-    pub const fn mode(&self) -> Mode {
-        self.mode
     }
 
     /// Original admitted deadline narrowed by the original policy ceiling.
@@ -284,168 +207,6 @@ impl NamespaceAuthority {
     #[must_use]
     pub fn ownership(&self) -> &ResultOwnership {
         &self.ownership
-    }
-
-    /// Consume only the actual host claim's one namespace advance. The original
-    /// retained decision, gate, caller and deadline survive unchanged. Raw rows
-    /// or decoded receipts cannot supply the affine claim required here.
-    pub fn rebind_command_after_claim(
-        &self,
-        store: &PolicyStore,
-        claim: &latent_commit::atomic::AdmittedCommand,
-        original: &NamespaceRead,
-        namespace: &NamespaceRead,
-    ) -> Result<Self, PlatformError> {
-        use latent_commit::atomic::Outcome;
-        let command = claim.record();
-        let ownership = &self.ownership;
-        let mut expected = original.record().clone();
-        if self.mode != Mode::Command
-            || expected.version != self.version
-            || expected.tenant != ownership.tenant
-            || expected.id.0 != ownership.namespace
-            || expected.version.incarnation != ownership.incarnation
-            || expected.status != NamespaceStatus::Active
-            || Instant::now() >= self.deadline
-            || command.outcome() != Outcome::Pending
-            || command.key().tenant != ownership.tenant.0
-            || command.key().namespace != ownership.namespace
-            || command.key().incarnation != ownership.incarnation.to_string()
-            || command.key().entity != ownership.entity
-            || command.key().recovery_scope != ownership.caller.scope
-            || command.result_read_policy() != ownership.result_policy
-            || command.source().publication != self.publication
-            || command.source().state_schema != expected.state_schema
-        {
-            return Err(denied());
-        }
-        self.gate.check()?;
-        expected.version.generation = expected
-            .version
-            .generation
-            .checked_add(1)
-            .ok_or_else(denied)?;
-        expected.pins.retained_results = expected
-            .pins
-            .retained_results
-            .checked_add(1)
-            .ok_or_else(denied)?;
-        if &expected != namespace.record() {
-            return Err(denied());
-        }
-        store.with_retained_decision(&self.initial, &mut |actual, _| {
-            self.check_target(actual, "acquire-command")?;
-            self.lifecycle
-                .with_current(namespace, true, || Ok(()))
-                .map_err(|_| denied())
-        })?;
-        Ok(Self {
-            initial: Arc::clone(&self.initial),
-            ownership: self.ownership.clone(),
-            publication: self.publication.clone(),
-            version: expected.version,
-            activation: self.activation.clone(),
-            mode: Mode::Command,
-            ceiling: self.ceiling,
-            deadline: self.deadline,
-            gate: Arc::clone(&self.gate),
-            selection: self.selection.clone(),
-            lifecycle: Arc::clone(&self.lifecycle),
-            result_history: None,
-        })
-    }
-
-    /// Reobserve the current row for an originally sealed read-result owner.
-    /// This preserves its actual retained decision, scope and original deadline;
-    /// it cannot acquire command authority or reopen an accepted command gate.
-    pub fn rebind_result_read(
-        &self,
-        store: &PolicyStore,
-        namespace: &NamespaceRead,
-    ) -> Result<Self, PlatformError> {
-        let record = namespace.record();
-        if self.mode != Mode::Inspection
-            || Instant::now() >= self.deadline
-            || record.tenant != self.ownership.tenant
-            || record.id.0 != self.ownership.namespace
-            || record.version.incarnation != self.ownership.incarnation
-            || record.status == NamespaceStatus::Tombstone
-        {
-            return Err(denied());
-        }
-        self.gate.check()?;
-        store.with_retained_decision(&self.initial, &mut |actual, _| {
-            self.check_target(actual, "read-result")?;
-            self.lifecycle
-                .with_current(namespace, false, || Ok(()))
-                .map_err(|_| denied())
-        })?;
-        Ok(Self {
-            initial: Arc::clone(&self.initial),
-            ownership: self.ownership.clone(),
-            publication: self.publication.clone(),
-            version: record.version,
-            activation: self.activation.clone(),
-            mode: Mode::Inspection,
-            ceiling: self.ceiling,
-            deadline: self.deadline,
-            gate: Arc::clone(&self.gate),
-            selection: self.selection.clone(),
-            lifecycle: Arc::clone(&self.lifecycle),
-            result_history: self
-                .result_history
-                .as_ref()
-                .map(|history| history.rebind(namespace).map(Box::new))
-                .transpose()?,
-        })
-    }
-
-    /// Retain the original query authority while checking a freshly read
-    /// lifecycle row for delivery. Ordinary business generation changes do not
-    /// replace the original query snapshot. History checks belong to the same
-    /// protected read that supplied `current` before this short policy fence.
-    pub fn rebind_query_delivery(
-        &self,
-        store: &PolicyStore,
-        original: &NamespaceRead,
-        current: &NamespaceRead,
-    ) -> Result<Self, PlatformError> {
-        let before = original.record();
-        let after = current.record();
-        if self.mode != Mode::Query
-            || before.version != self.version
-            || before.tenant != self.ownership.tenant
-            || before.id.0 != self.ownership.namespace
-            || after.tenant != before.tenant
-            || after.id != before.id
-            || after.version.incarnation != before.version.incarnation
-            || after.state_schema != before.state_schema
-            || after.status != NamespaceStatus::Active
-            || Instant::now() >= self.deadline
-        {
-            return Err(denied());
-        }
-        self.gate.check()?;
-        store.with_retained_decision(&self.initial, &mut |actual, _| {
-            self.check_target(actual, "acquire-query")?;
-            self.lifecycle
-                .with_current(current, false, || Ok(()))
-                .map_err(|_| denied())
-        })?;
-        Ok(Self {
-            initial: Arc::clone(&self.initial),
-            ownership: self.ownership.clone(),
-            publication: self.publication.clone(),
-            version: after.version,
-            activation: self.activation.clone(),
-            mode: Mode::Query,
-            ceiling: self.ceiling,
-            deadline: self.deadline,
-            gate: Arc::clone(&self.gate),
-            selection: self.selection.clone(),
-            lifecycle: Arc::clone(&self.lifecycle),
-            result_history: None,
-        })
     }
     #[must_use]
     pub fn version(&self) -> NamespaceVersion {
@@ -460,7 +221,7 @@ impl NamespaceAuthority {
     /// The transaction/audit owner must honor this captured requirement and any
     /// stricter fresh operation requirement. This getter allocates no audit slot.
     #[must_use]
-    pub fn requires_audit(&self) -> bool {
+    pub const fn requires_audit(&self) -> bool {
         self.initial.requires_audit()
     }
     #[must_use]
@@ -481,30 +242,59 @@ impl NamespaceAuthority {
         expected_operation: &str,
         action: impl FnOnce() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        self.with_operation_retained(store, operation, namespace, expected_operation, &[], action)
+        self.with_operation_fenced(
+            store,
+            operation,
+            namespace,
+            expected_operation,
+            false,
+            action,
+        )
     }
 
-    /// Extra original sealed purposes are intersected under the same fence.
-    /// They cannot replace the namespace grant or the current operation grant.
-    pub fn with_operation_retained(
+    /// Current data permission for the original retained command/query response.
+    /// An accepted commit closes execution, while these two read operations
+    /// remain fenced by the original publication, scope and deadline. This port
+    /// cannot stage work, accept another commit or renew execution authority.
+    pub fn with_retained_response(
         &self,
         store: &PolicyStore,
         operation: &SealedPolicyDecision<'_>,
         namespace: &NamespaceRead,
         expected_operation: &str,
-        retained: &[&OwnedPolicyDecision],
         action: impl FnOnce() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        if retained.len() > 7 {
+        if !matches!(expected_operation, "read-result" | "query-info") {
             return Err(denied());
         }
-        let mut captures = Vec::with_capacity(1 + retained.len());
-        captures.push(self.initial.as_ref());
-        captures.extend_from_slice(retained);
+        self.with_operation_fenced(
+            store,
+            operation,
+            namespace,
+            expected_operation,
+            true,
+            action,
+        )
+    }
+
+    fn with_operation_fenced(
+        &self,
+        store: &PolicyStore,
+        operation: &SealedPolicyDecision<'_>,
+        namespace: &NamespaceRead,
+        expected_operation: &str,
+        retained_response: bool,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
         let mut action = Some(action);
-        store.with_captured_decisions(&captures, operation, &mut |inputs| {
-            self.check_namespace(namespace, expected_operation)?;
-            let actual = inputs.last().ok_or_else(denied)?;
+        store.with_captured(&self.initial, operation, &mut |inputs| {
+            if retained_response {
+                self.gate.check_retained_response()?;
+                self.check_namespace_scope(namespace, expected_operation)?;
+            } else {
+                self.check_namespace(namespace, expected_operation)?;
+            }
+            let actual = inputs.get(1).ok_or_else(denied)?;
             self.check_target(actual, expected_operation)?;
             let mut action_error = None;
             let write = matches!(expected_operation, "put" | "delete" | "stage" | "commit");
@@ -572,51 +362,7 @@ impl NamespaceAuthority {
             store,
             operation,
             namespace,
-            retained: Vec::new(),
         })
-    }
-
-    /// Accept only the namespace expectation from an actual prepared complete
-    /// envelope. The original policy/lifecycle/cancellation fence still applies.
-    pub fn prepare_envelope_commit_io<'owner>(
-        &'owner self,
-        store: &'owner PolicyStore,
-        operation: &'owner SealedPolicyDecision<'owner>,
-        namespace: &'owner NamespaceRead,
-        envelope: &latent_commit::atomic::EnvelopeNamespaceExpectation,
-    ) -> Result<CommitIoAcceptance<'owner>, PlatformError> {
-        if self.mode != Mode::Command
-            || envelope.is_technical_abort()
-            || !envelope.matches(&namespace.expectation())
-        {
-            return Err(denied());
-        }
-        Ok(CommitIoAcceptance {
-            authority: self,
-            store,
-            operation,
-            namespace,
-            retained: Vec::new(),
-        })
-    }
-
-    /// Terminal technical metadata requires the lower owner's positive physical
-    /// retirement proof and explicit current command-control permission. This
-    /// read/control owner never reopens or accepts the original command gate.
-    pub fn accept_terminal_abort(
-        &self,
-        store: &PolicyStore,
-        operation: &SealedPolicyDecision<'_>,
-        namespace: &NamespaceRead,
-        envelope: &latent_commit::atomic::EnvelopeNamespaceExpectation,
-    ) -> Result<(), PlatformError> {
-        if self.mode != Mode::Inspection
-            || !envelope.is_technical_abort()
-            || !envelope.matches(&namespace.expectation())
-        {
-            return Err(denied());
-        }
-        self.with_operation(store, operation, namespace, "cancel-command", || Ok(()))
     }
 
     fn same_result_scope(&self, historical: &ResultOwnership) -> bool {
@@ -638,14 +384,20 @@ impl NamespaceAuthority {
         operation: &str,
     ) -> Result<(), PlatformError> {
         self.gate.check()?;
+        self.check_namespace_scope(namespace, operation)
+    }
+
+    fn check_namespace_scope(
+        &self,
+        namespace: &NamespaceRead,
+        operation: &str,
+    ) -> Result<(), PlatformError> {
         let current = namespace.record();
         if Instant::now() >= self.deadline
             || current.tenant != self.ownership.tenant
             || current.id.0 != self.ownership.namespace
             || current.version != self.version
             || current.status == NamespaceStatus::Tombstone
-            || (self.result_history.is_some()
-                && (operation != "read-result" || current.status != NamespaceStatus::Active))
             || (matches!(operation, "put" | "delete" | "stage" | "commit")
                 && (self.mode != Mode::Command || current.status != NamespaceStatus::Active))
             || (self.mode == Mode::Inspection

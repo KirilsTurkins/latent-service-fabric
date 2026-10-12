@@ -1,4 +1,8 @@
 use super::fixture::*;
+use latent_core::{
+    diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage},
+    ActivationTerminalState, ServiceId, TenantId,
+};
 use latent_ingress::http::browser;
 use serde_json::json;
 use tempfile::TempDir;
@@ -12,33 +16,12 @@ async fn actual_http_component_browser_policy_rejects_unsafe_output_without_refl
     value["httpIngress"]["browserOrigins"] = json!([{"authority":AUTHORITY, "tenant":"tests"}]);
     let bytes = std::fs::read(std::env::var_os("LSF_WEB_COMPONENT").unwrap()).unwrap();
     let fixture = Fixture::start(root, value, Some(bytes.clone())).await;
-    for path in [
-        "/browser-crlf",
-        "/browser-header-bound",
-        "/browser-csp",
-        "/browser-cors",
-        "/browser-compressed",
-        "/browser-cookie",
-        "/browser-redirect",
-        "/browser-charset",
-        "/browser-utf8",
-    ] {
-        let reply = call(&fixture, path).await;
-        assert_eq!(reply.0, 502, "{path}");
-        assert_eq!(reply.1.matches("HTTP/1.1").count(), 1);
-        assert!(reply
-            .1
-            .contains(&format!("content-security-policy: {}\r\n", browser::CSP)));
-        assert!(!reply.1.contains("x-injected:"));
-        assert!(!reply.1.contains("attacker.invalid"));
-        assert!(!reply.1.contains("access-control-allow-origin:"));
-        assert!(!reply.1.contains("set-cookie:"));
-        assert!(reply.1.contains("cache-control: no-store\r\n"));
-        fixture.idle().await;
-    }
+    assert_rejected_outputs(&fixture).await;
     let safe = call(&fixture, "/browser-relative").await;
     assert_eq!(safe.0, 303);
     assert!(safe.1.contains("location: /next?from=fixture\r\n"));
+    fixture.idle().await;
+    assert_output_observation(&fixture, OutputObservation::Accepted);
     fixture.shutdown().await;
     let root = TempDir::new().unwrap();
     let mut value = config(&root);
@@ -79,4 +62,119 @@ async fn actual_http_component_browser_policy_rejects_unsafe_output_without_refl
     assert_eq!(fixture.node.manager.journal().snapshot().begun, 0);
     assert_eq!(fixture.node.backend.resource_snapshot().stores_created, 0);
     fixture.shutdown().await;
+}
+
+async fn assert_rejected_outputs(fixture: &Fixture) {
+    for path in [
+        "/browser-crlf",
+        "/browser-header-bound",
+        "/browser-header-count",
+        "/browser-csp",
+        "/browser-referrer",
+        "/browser-security-case",
+        "/browser-header-case",
+        "/browser-location-duplicate",
+        "/browser-encoding-duplicate",
+        "/browser-cors",
+        "/browser-compressed",
+        "/browser-cookie",
+        "/browser-redirect",
+        "/browser-charset",
+        "/browser-utf8",
+    ] {
+        let before = fixture.node.manager.journal().snapshot().begun;
+        let reply = call(fixture, path).await;
+        assert_eq!(reply.0, 502, "{path}");
+        assert_eq!(reply.2, b"Bad gateway\n", "{path}");
+        assert!(reply.1.contains("Content-Length: 12\r\n"));
+        assert_eq!(reply.1.matches("HTTP/1.1").count(), 1);
+        assert!(reply
+            .1
+            .contains(&format!("content-security-policy: {}\r\n", browser::CSP)));
+        assert!(!reply.1.contains("x-injected:"));
+        assert!(!reply.1.contains("attacker.invalid"));
+        assert!(!reply.1.contains("access-control-allow-origin:"));
+        assert!(!reply.1.contains("set-cookie:"));
+        assert!(reply.1.contains("cache-control: no-store\r\n"));
+        for private in [
+            "HttpResponseRejected",
+            "OutputValidation",
+            "synthetic-private-token",
+            TOKEN,
+        ] {
+            assert!(!reply.1.contains(private));
+        }
+        fixture.idle().await;
+        assert_eq!(fixture.node.manager.journal().snapshot().begun, before + 1);
+        assert_output_observation(
+            fixture,
+            if path == "/browser-header-bound" {
+                OutputObservation::CodecLimit
+            } else {
+                OutputObservation::HeaderRejected
+            },
+        );
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+enum OutputObservation {
+    Accepted,
+    HeaderRejected,
+    // The unchanged 4096-item WIT codec ceiling rejects this byte-list before
+    // HTTP validation. Its guest trap must not gain a false HTTP observation.
+    CodecLimit,
+}
+
+fn assert_output_observation(fixture: &Fixture, observation: OutputObservation) {
+    let journal = fixture.node.manager.journal();
+    let tenant = TenantId("tests".into());
+    let service = ServiceId("web".into());
+    let page = journal
+        .inspect_roots(&tenant, &service, None, 32, None)
+        .unwrap();
+    assert!(page.next_page_token.is_none());
+    let node = page.nodes.last().unwrap();
+    assert_eq!(
+        node.terminal_state,
+        Some(match observation {
+            OutputObservation::CodecLimit => ActivationTerminalState::GuestTrap,
+            OutputObservation::Accepted | OutputObservation::HeaderRejected => {
+                ActivationTerminalState::Completed
+            }
+        }),
+        "{observation:?}"
+    );
+    assert_eq!(
+        node.diagnostic_is_terminal,
+        matches!(observation, OutputObservation::CodecLimit),
+        "HTTP output acceptance and producer-owned execution failure stay distinct"
+    );
+    assert_eq!(
+        node.diagnostic,
+        match observation {
+            OutputObservation::Accepted => None,
+            OutputObservation::HeaderRejected => Some(ActivationDiagnostic::new(
+                DiagnosticStage::OutputValidation,
+                DiagnosticReason::HttpResponseRejected,
+            )),
+            OutputObservation::CodecLimit => Some(ActivationDiagnostic::new(
+                DiagnosticStage::Execution,
+                DiagnosticReason::ValueAllocationLimit,
+            )),
+        },
+        "{observation:?}"
+    );
+    assert_eq!(
+        journal
+            .inspect_tree(&tenant, &node.activation_id, 32, None)
+            .unwrap()
+            .nodes[0],
+        *node
+    );
+    assert!(journal
+        .inspect_roots(&TenantId("other".into()), &service, None, 32, None)
+        .unwrap()
+        .nodes
+        .is_empty());
 }

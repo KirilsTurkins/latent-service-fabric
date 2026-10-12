@@ -15,7 +15,7 @@ async fn finite_startup_trace_preserves_original_failure_and_excludes_private_er
             fields: Metadata::from([("credential".into(), "secret-value".into())]),
         }],
     };
-    let (result, trace) = capture(async {
+    let (result, report) = observe_startup(async {
         record(
             Stage::EffectDispatcher,
             DispatcherError::Store(DispatchStoreError::Storage(StoreError::Corrupt)),
@@ -24,14 +24,13 @@ async fn finite_startup_trace_preserves_original_failure_and_excludes_private_er
     })
     .await;
     assert_eq!(result, Err(original));
-    let report = StartupFailureReport {
-        schema_version: "latent.startup-failure-observation.v1",
-        startup_succeeded: false,
-        terminal_failure: result.as_ref().err().map(Failure::from),
-        observations: trace.observations.into_iter().flatten().collect(),
-        truncated: trace.truncated,
-        shutdown: None,
-    };
+    let report = report.unwrap();
+    assert!(!report.startup_succeeded);
+    assert!(report.shutdown.is_none());
+    let (successful, successful_report) =
+        observe_startup(async { Ok::<_, PlatformError>(7) }).await;
+    assert_eq!(successful, Ok(7));
+    assert!(successful_report.is_none());
     let encoded = serde_json::to_string(&report).unwrap();
     let json: serde_json::Value = serde_json::from_str(&encoded).unwrap();
     assert_eq!(json["observations"][0]["failure"]["owner"], "storage");

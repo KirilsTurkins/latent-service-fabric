@@ -37,6 +37,7 @@ impl ActivationRuntimeInstallation {
             .map_err(|_| invalid("providers.activationRuntime.limits"))?;
         for identity in [
             providers.http.as_ref().map(|v| &v.identity),
+            providers.outbound_streams.as_ref().map(|v| &v.identity),
             providers.http_streaming.as_ref().map(|v| &v.identity),
             providers.blob.as_ref().map(|v| &v.identity),
             providers.secrets.as_ref().map(|v| &v.identity),

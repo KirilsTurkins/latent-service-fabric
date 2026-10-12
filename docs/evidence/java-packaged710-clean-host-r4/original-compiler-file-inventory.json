@@ -1,0 +1,1147 @@
+{
+  "schemaVersion": "latent.java.packaged-r4.original-components.v1",
+  "conductorSource": "676fa4072e669b655f526b06879dd0955c7a41c5",
+  "compilerOnly": true,
+  "components": {
+    "adapter": {
+      "component": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+      "componentBytes": 1809129,
+      "attempt": "12f9e42c298d5dc9112a0450899f2923",
+      "logs": [
+        {
+          "path": "build-cache/compiler-stderr.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 0
+        },
+        {
+          "path": "build-cache/compiler-stdout.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 121
+        },
+        {
+          "path": "output/compiler-logs/0-java-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 239
+        },
+        {
+          "path": "output/compiler-logs/0-java-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 201
+        },
+        {
+          "path": "output/compiler-logs/1-gradle-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 247
+        },
+        {
+          "path": "output/compiler-logs/1-gradle-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 873
+        },
+        {
+          "path": "output/compiler-logs/10-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 457
+        },
+        {
+          "path": "output/compiler-logs/10-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 3063
+        },
+        {
+          "path": "output/compiler-logs/11-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 436
+        },
+        {
+          "path": "output/compiler-logs/11-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 19268
+        },
+        {
+          "path": "output/compiler-logs/12-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 736
+        },
+        {
+          "path": "output/compiler-logs/12-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 559
+        },
+        {
+          "path": "output/compiler-logs/13-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 463
+        },
+        {
+          "path": "output/compiler-logs/13-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 3063
+        },
+        {
+          "path": "output/compiler-logs/14-java-to-c.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 279
+        },
+        {
+          "path": "output/compiler-logs/14-java-to-c.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1102
+        },
+        {
+          "path": "output/compiler-logs/15-c-to-wasm.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 2431
+        },
+        {
+          "path": "output/compiler-logs/15-c-to-wasm.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 417661
+        },
+        {
+          "path": "output/compiler-logs/16-closed-runtime.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 857
+        },
+        {
+          "path": "output/compiler-logs/16-closed-runtime.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/17-component-new.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 819
+        },
+        {
+          "path": "output/compiler-logs/17-component-new.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/18-component-validate.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 430
+        },
+        {
+          "path": "output/compiler-logs/18-component-validate.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/19-component-surface.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 441
+        },
+        {
+          "path": "output/compiler-logs/19-component-surface.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 2840
+        },
+        {
+          "path": "output/compiler-logs/2-clang-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 247
+        },
+        {
+          "path": "output/compiler-logs/2-clang-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 457
+        },
+        {
+          "path": "output/compiler-logs/20-expected-wit.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 439
+        },
+        {
+          "path": "output/compiler-logs/20-expected-wit.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 19268
+        },
+        {
+          "path": "output/compiler-logs/21-compiled-wit.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 450
+        },
+        {
+          "path": "output/compiler-logs/21-compiled-wit.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 12116
+        },
+        {
+          "path": "output/compiler-logs/3-wit-bindgen-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 266
+        },
+        {
+          "path": "output/compiler-logs/3-wit-bindgen-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 24
+        },
+        {
+          "path": "output/compiler-logs/4-wasm-tools-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 264
+        },
+        {
+          "path": "output/compiler-logs/4-wasm-tools-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 43
+        },
+        {
+          "path": "output/compiler-logs/5-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 450
+        },
+        {
+          "path": "output/compiler-logs/5-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 41883
+        },
+        {
+          "path": "output/compiler-logs/6-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 745
+        },
+        {
+          "path": "output/compiler-logs/6-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 583
+        },
+        {
+          "path": "output/compiler-logs/7-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 472
+        },
+        {
+          "path": "output/compiler-logs/7-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 8431
+        },
+        {
+          "path": "output/compiler-logs/8-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 436
+        },
+        {
+          "path": "output/compiler-logs/8-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 19268
+        },
+        {
+          "path": "output/compiler-logs/9-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 730
+        },
+        {
+          "path": "output/compiler-logs/9-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 541
+        }
+      ],
+      "logCount": 46,
+      "logBytes": 563702
+    },
+    "adapter-next": {
+      "component": "sha256:4344aa85da161e33b8906ee4a5c2db272358ca52116f191e5d9ce61eb041d562",
+      "componentBytes": 1809177,
+      "attempt": "8cddcef3ba177d28e149e355d019d6a0",
+      "logs": [
+        {
+          "path": "build-cache/compiler-stderr.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 0
+        },
+        {
+          "path": "build-cache/compiler-stdout.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 121
+        },
+        {
+          "path": "output/compiler-logs/0-java-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 239
+        },
+        {
+          "path": "output/compiler-logs/0-java-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 201
+        },
+        {
+          "path": "output/compiler-logs/1-gradle-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 247
+        },
+        {
+          "path": "output/compiler-logs/1-gradle-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 873
+        },
+        {
+          "path": "output/compiler-logs/10-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 458
+        },
+        {
+          "path": "output/compiler-logs/10-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 3063
+        },
+        {
+          "path": "output/compiler-logs/11-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 436
+        },
+        {
+          "path": "output/compiler-logs/11-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 19268
+        },
+        {
+          "path": "output/compiler-logs/12-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 735
+        },
+        {
+          "path": "output/compiler-logs/12-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 559
+        },
+        {
+          "path": "output/compiler-logs/13-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 464
+        },
+        {
+          "path": "output/compiler-logs/13-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 3063
+        },
+        {
+          "path": "output/compiler-logs/14-java-to-c.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 280
+        },
+        {
+          "path": "output/compiler-logs/14-java-to-c.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1105
+        },
+        {
+          "path": "output/compiler-logs/15-c-to-wasm.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 2431
+        },
+        {
+          "path": "output/compiler-logs/15-c-to-wasm.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 417661
+        },
+        {
+          "path": "output/compiler-logs/16-closed-runtime.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 857
+        },
+        {
+          "path": "output/compiler-logs/16-closed-runtime.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/17-component-new.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 819
+        },
+        {
+          "path": "output/compiler-logs/17-component-new.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/18-component-validate.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 430
+        },
+        {
+          "path": "output/compiler-logs/18-component-validate.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/19-component-surface.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 440
+        },
+        {
+          "path": "output/compiler-logs/19-component-surface.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 2840
+        },
+        {
+          "path": "output/compiler-logs/2-clang-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 247
+        },
+        {
+          "path": "output/compiler-logs/2-clang-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 457
+        },
+        {
+          "path": "output/compiler-logs/20-expected-wit.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 439
+        },
+        {
+          "path": "output/compiler-logs/20-expected-wit.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 19268
+        },
+        {
+          "path": "output/compiler-logs/21-compiled-wit.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 450
+        },
+        {
+          "path": "output/compiler-logs/21-compiled-wit.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 12116
+        },
+        {
+          "path": "output/compiler-logs/3-wit-bindgen-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 266
+        },
+        {
+          "path": "output/compiler-logs/3-wit-bindgen-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 24
+        },
+        {
+          "path": "output/compiler-logs/4-wasm-tools-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 264
+        },
+        {
+          "path": "output/compiler-logs/4-wasm-tools-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 43
+        },
+        {
+          "path": "output/compiler-logs/5-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 450
+        },
+        {
+          "path": "output/compiler-logs/5-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 41883
+        },
+        {
+          "path": "output/compiler-logs/6-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 745
+        },
+        {
+          "path": "output/compiler-logs/6-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 583
+        },
+        {
+          "path": "output/compiler-logs/7-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 472
+        },
+        {
+          "path": "output/compiler-logs/7-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 8431
+        },
+        {
+          "path": "output/compiler-logs/8-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 436
+        },
+        {
+          "path": "output/compiler-logs/8-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 19268
+        },
+        {
+          "path": "output/compiler-logs/9-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 730
+        },
+        {
+          "path": "output/compiler-logs/9-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 541
+        }
+      ],
+      "logCount": 46,
+      "logBytes": 563706
+    },
+    "context-required": {
+      "component": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+      "componentBytes": 548700,
+      "attempt": "0859ad8ae3a8f050789d8762fb34a7ec",
+      "logs": [
+        {
+          "path": "build-cache/compiler-stderr.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 0
+        },
+        {
+          "path": "build-cache/compiler-stdout.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 121
+        },
+        {
+          "path": "output/compiler-logs/0-java-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 239
+        },
+        {
+          "path": "output/compiler-logs/0-java-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 201
+        },
+        {
+          "path": "output/compiler-logs/1-gradle-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 247
+        },
+        {
+          "path": "output/compiler-logs/1-gradle-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 873
+        },
+        {
+          "path": "output/compiler-logs/10-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 458
+        },
+        {
+          "path": "output/compiler-logs/10-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1729
+        },
+        {
+          "path": "output/compiler-logs/11-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 436
+        },
+        {
+          "path": "output/compiler-logs/11-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 6813
+        },
+        {
+          "path": "output/compiler-logs/12-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 745
+        },
+        {
+          "path": "output/compiler-logs/12-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 559
+        },
+        {
+          "path": "output/compiler-logs/13-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 464
+        },
+        {
+          "path": "output/compiler-logs/13-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1729
+        },
+        {
+          "path": "output/compiler-logs/14-java-to-c.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 279
+        },
+        {
+          "path": "output/compiler-logs/14-java-to-c.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1105
+        },
+        {
+          "path": "output/compiler-logs/15-c-to-wasm.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 2431
+        },
+        {
+          "path": "output/compiler-logs/15-c-to-wasm.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 106993
+        },
+        {
+          "path": "output/compiler-logs/16-closed-runtime.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 856
+        },
+        {
+          "path": "output/compiler-logs/16-closed-runtime.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/17-component-new.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 819
+        },
+        {
+          "path": "output/compiler-logs/17-component-new.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/18-component-validate.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 430
+        },
+        {
+          "path": "output/compiler-logs/18-component-validate.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/19-component-surface.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 441
+        },
+        {
+          "path": "output/compiler-logs/19-component-surface.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1577
+        },
+        {
+          "path": "output/compiler-logs/2-clang-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 247
+        },
+        {
+          "path": "output/compiler-logs/2-clang-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 457
+        },
+        {
+          "path": "output/compiler-logs/20-expected-wit.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 439
+        },
+        {
+          "path": "output/compiler-logs/20-expected-wit.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 6813
+        },
+        {
+          "path": "output/compiler-logs/21-compiled-wit.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 450
+        },
+        {
+          "path": "output/compiler-logs/21-compiled-wit.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 6197
+        },
+        {
+          "path": "output/compiler-logs/3-wit-bindgen-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 266
+        },
+        {
+          "path": "output/compiler-logs/3-wit-bindgen-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 24
+        },
+        {
+          "path": "output/compiler-logs/4-wasm-tools-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 264
+        },
+        {
+          "path": "output/compiler-logs/4-wasm-tools-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 43
+        },
+        {
+          "path": "output/compiler-logs/5-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 450
+        },
+        {
+          "path": "output/compiler-logs/5-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 41883
+        },
+        {
+          "path": "output/compiler-logs/6-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 745
+        },
+        {
+          "path": "output/compiler-logs/6-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 583
+        },
+        {
+          "path": "output/compiler-logs/7-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 472
+        },
+        {
+          "path": "output/compiler-logs/7-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 8431
+        },
+        {
+          "path": "output/compiler-logs/8-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 436
+        },
+        {
+          "path": "output/compiler-logs/8-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 6813
+        },
+        {
+          "path": "output/compiler-logs/9-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 739
+        },
+        {
+          "path": "output/compiler-logs/9-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 541
+        }
+      ],
+      "logCount": 46,
+      "logBytes": 205841
+    },
+    "domain": {
+      "component": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+      "componentBytes": 1090170,
+      "attempt": "adff96c6a5d8bf8bfb9d4b7da7df2cdd",
+      "logs": [
+        {
+          "path": "build-cache/compiler-stderr.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 0
+        },
+        {
+          "path": "build-cache/compiler-stdout.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 121
+        },
+        {
+          "path": "output/compiler-logs/0-java-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 239
+        },
+        {
+          "path": "output/compiler-logs/0-java-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 201
+        },
+        {
+          "path": "output/compiler-logs/1-gradle-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 247
+        },
+        {
+          "path": "output/compiler-logs/1-gradle-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 873
+        },
+        {
+          "path": "output/compiler-logs/10-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 457
+        },
+        {
+          "path": "output/compiler-logs/10-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1444
+        },
+        {
+          "path": "output/compiler-logs/11-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 436
+        },
+        {
+          "path": "output/compiler-logs/11-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 6952
+        },
+        {
+          "path": "output/compiler-logs/12-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 735
+        },
+        {
+          "path": "output/compiler-logs/12-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 559
+        },
+        {
+          "path": "output/compiler-logs/13-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 464
+        },
+        {
+          "path": "output/compiler-logs/13-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1444
+        },
+        {
+          "path": "output/compiler-logs/14-java-to-c.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 279
+        },
+        {
+          "path": "output/compiler-logs/14-java-to-c.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1102
+        },
+        {
+          "path": "output/compiler-logs/15-c-to-wasm.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 2431
+        },
+        {
+          "path": "output/compiler-logs/15-c-to-wasm.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 140704
+        },
+        {
+          "path": "output/compiler-logs/16-closed-runtime.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 857
+        },
+        {
+          "path": "output/compiler-logs/16-closed-runtime.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/17-component-new.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 819
+        },
+        {
+          "path": "output/compiler-logs/17-component-new.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/18-component-validate.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 430
+        },
+        {
+          "path": "output/compiler-logs/18-component-validate.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1
+        },
+        {
+          "path": "output/compiler-logs/19-component-surface.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 441
+        },
+        {
+          "path": "output/compiler-logs/19-component-surface.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 1315
+        },
+        {
+          "path": "output/compiler-logs/2-clang-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 247
+        },
+        {
+          "path": "output/compiler-logs/2-clang-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 457
+        },
+        {
+          "path": "output/compiler-logs/20-expected-wit.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 439
+        },
+        {
+          "path": "output/compiler-logs/20-expected-wit.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 6952
+        },
+        {
+          "path": "output/compiler-logs/21-compiled-wit.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 450
+        },
+        {
+          "path": "output/compiler-logs/21-compiled-wit.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 6479
+        },
+        {
+          "path": "output/compiler-logs/3-wit-bindgen-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 266
+        },
+        {
+          "path": "output/compiler-logs/3-wit-bindgen-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 24
+        },
+        {
+          "path": "output/compiler-logs/4-wasm-tools-version.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 263
+        },
+        {
+          "path": "output/compiler-logs/4-wasm-tools-version.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 43
+        },
+        {
+          "path": "output/compiler-logs/5-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 450
+        },
+        {
+          "path": "output/compiler-logs/5-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 41883
+        },
+        {
+          "path": "output/compiler-logs/6-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 745
+        },
+        {
+          "path": "output/compiler-logs/6-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 583
+        },
+        {
+          "path": "output/compiler-logs/7-bindings-metadata.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 472
+        },
+        {
+          "path": "output/compiler-logs/7-bindings-metadata.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 8431
+        },
+        {
+          "path": "output/compiler-logs/8-wit-graph.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 436
+        },
+        {
+          "path": "output/compiler-logs/8-wit-graph.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 6952
+        },
+        {
+          "path": "output/compiler-logs/9-wit-bindings.command.json",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 729
+        },
+        {
+          "path": "output/compiler-logs/9-wit-bindings.log",
+          "isFile": true,
+          "isSymlink": false,
+          "bytes": 541
+        }
+      ],
+      "logCount": 46,
+      "logBytes": 239395
+    }
+  }
+}

@@ -20,7 +20,7 @@ pub struct ShutdownReport {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub effects: Option<super::EffectShutdownReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<super::state::StateShutdownReport>,
+    pub state: Option<super::StateRetirementReport>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metrics: Option<super::providers::MetricObservation>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -104,9 +104,6 @@ impl StandaloneNode {
         reason = "one ordered teardown keeps forced cleanup, resource observations and native joins together"
     )]
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
-        if let Some(state) = &self.state {
-            state.close_ordinary();
-        }
         if let Some(effects) = &self.effects {
             effects.close();
         }
@@ -139,7 +136,10 @@ impl StandaloneNode {
         let cleanup = self.cleanup.take().expect("owned cleanup driver");
         let cleanup_handle = cleanup.handle();
         cleanup.stop_accepting();
-        let drain_deadline = tokio::time::Instant::now() + self.shutdown_grace;
+        let proposed = tokio::time::Instant::now() + self.shutdown_grace;
+        let drain_deadline = self
+            .startup_deadline
+            .map_or(proposed, |original| proposed.min(original.into()));
         while self.manager.journal().snapshot().active != 0 {
             if tokio::time::Instant::now() >= drain_deadline {
                 break;
@@ -148,8 +148,10 @@ impl StandaloneNode {
         }
         // This phase begins after natural drain. One cutoff covers all forced
         // handoffs and driver scheduling; no invocation deadline is renewed.
-        let forced_deadline =
-            forced_cleanup_deadline(tokio::time::Instant::now(), self.cleanup_grace)?;
+        let proposed = forced_cleanup_deadline(tokio::time::Instant::now(), self.cleanup_grace)?;
+        let forced_deadline = self
+            .startup_deadline
+            .map_or(proposed, |original| proposed.min(original.into()));
         // Seal compiler admission at the drain cutoff, before transport or
         // sampler cleanup can hide a native job that finishes after its grace.
         let factory = self.factory.take().expect("owned engine factory");
@@ -239,14 +241,18 @@ impl StandaloneNode {
         } else {
             None
         };
-        let state_report = if let Some(state) = &self.state {
+        // Effects have positively observed their scheduling/provider cleanup
+        // before their final metadata source releases the shared store role.
+        // Lower state retirement remains truthful if any physical owner lives.
+        drop(self.effects.take());
+        let state_report = if let Some(state) = self.state.take() {
             match state.shutdown(drain_deadline.into_std()).await {
                 Ok(report) => {
                     if !report.clean {
                         failure.get_or_insert_with(|| {
                             error(
                                 PlatformErrorCode::DeadlineExceeded,
-                                "protected state work did not stop cleanly",
+                                "state ownership did not retire cleanly",
                             )
                         });
                     }

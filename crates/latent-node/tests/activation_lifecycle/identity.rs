@@ -335,3 +335,42 @@ async fn effective_ids_drive_deterministic_selection_and_catalog_state_stays_pin
     harness.assert_idle();
     other.assert_idle();
 }
+
+#[tokio::test]
+async fn assigns_absent_identity_and_rejects_untrusted_ancestry() {
+    let harness = Harness::standard();
+    let mut input = request("unused");
+    input.activation_id = None;
+    let handle = harness.manager.start(input).expect("start generated");
+    assert_eq!(handle.activation_id().0, "generated-1");
+    assert_eq!(
+        harness.status("generated-1").phase,
+        ActivationPhase::Received
+    );
+    let receipt = finish(handle).await;
+    assert_eq!(receipt.activation_id.0, "generated-1");
+    let first = harness.backend.requests.lock().expect("requests")[0].clone();
+    assert_eq!(
+        first.activation.root_activation_id,
+        first.activation.activation_id
+    );
+    assert_eq!(first.activation.parent_activation_id, None);
+
+    for (id, parent) in [("child", Some("unknown-parent")), ("root-only", None)] {
+        let mut input = request(id);
+        input.root_activation_id = Some(ActivationId("unknown-root".to_owned()));
+        input.parent_activation_id = parent.map(|value| ActivationId(value.to_owned()));
+        assert_eq!(
+            harness
+                .manager
+                .start(input)
+                .err()
+                .expect("untrusted ancestry")
+                .code,
+            PlatformErrorCode::PermissionDenied
+        );
+    }
+    assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 1);
+    assert_eq!(harness.ids.0.load(Ordering::Relaxed), 1);
+    harness.assert_idle();
+}

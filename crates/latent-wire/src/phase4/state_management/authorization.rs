@@ -13,7 +13,6 @@ pub(super) struct Access {
     pub binding: Arc<StateManagementBinding>,
     pub caller: CallerScope,
     pub inspect: OwnedPolicyDecision,
-    pub policy_digest: String,
     pub listing: Option<OwnedPolicyDecision>,
     pub mutation: Option<OwnedPolicyDecision>,
 }
@@ -143,10 +142,9 @@ pub(super) async fn authorize(
         binding.incarnation
     };
     let inspect = original.seal("namespace-inspect", response_incarnation)?;
-    let policy_digest = captured_policy_digest(&inspect);
     if let contract::Request::MutateState(value) = request {
         if value.mutation == c::StateMutationKind::ReleaseExpiredCommandFloor as i32
-            && value.expected_policy_digest != policy_digest
+            && value.expected_policy_digest != captured_policy_digest(&inspect)
         {
             return Err(error(
                 PlatformErrorCode::StateConflict,
@@ -174,10 +172,12 @@ pub(super) async fn authorize(
         inspect,
         listing,
         mutation,
-        policy_digest,
     })
 }
-fn captured_policy_digest(decision: &OwnedPolicyDecision) -> String {
+/// Describe exactly the sealed binding/policy revisions, using the same
+/// canonical digest as current state-management clients. This is a precondition
+/// description and supplies no currentness check, replacement lease or grant.
+pub(super) fn captured_policy_digest(decision: &OwnedPolicyDecision) -> String {
     use sha2::{Digest, Sha256};
     let mut hash = Sha256::new();
     hash.update(b"lsf-state-management-policy-v1\0");

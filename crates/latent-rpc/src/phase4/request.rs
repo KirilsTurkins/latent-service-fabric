@@ -121,30 +121,6 @@ pub(super) fn validate(request: &Request) -> Result<(), ValidationError> {
     }
 }
 
-pub(super) fn namespace_view_generation(
-    token: &[u8],
-    namespace: &t::NamespaceSelector,
-) -> Result<u64, ValidationError> {
-    if token.len() != 67 || !token.starts_with(b"NV\x02") {
-        return Err(ValidationError::Shape);
-    }
-    let numbers: [u64; 4] = std::array::from_fn(|index| {
-        let offset = 35 + index * 8;
-        u64::from_le_bytes(
-            token[offset..offset + 8]
-                .try_into()
-                .expect("fixed NV2 word"),
-        )
-    });
-    if numbers.contains(&0) {
-        return Err(ValidationError::Shape);
-    }
-    if numbers[0].to_string() != namespace.incarnation {
-        return Err(ValidationError::Association);
-    }
-    Ok(numbers[1])
-}
-
 pub(super) fn tenant(request: &Request) -> Option<&str> {
     fn inspect(value: &c::InspectNamespaceRequest) -> Option<&t::NamespaceSelector> {
         value.namespace.as_ref()
@@ -426,4 +402,28 @@ fn validate_command_input(
         abort_fence(b, abort)?;
     }
     Ok(())
+}
+
+pub(super) fn namespace_view_generation(
+    token: &[u8],
+    namespace: &t::NamespaceSelector,
+) -> Result<u64, ValidationError> {
+    if token.len() != 67 || !token.starts_with(b"NV\x02") {
+        return Err(ValidationError::Shape);
+    }
+    let numbers: [u64; 4] = std::array::from_fn(|index| {
+        let offset = 35 + index * 8;
+        u64::from_le_bytes(
+            token[offset..offset + 8]
+                .try_into()
+                .expect("fixed NV2 word"),
+        )
+    });
+    if numbers.contains(&0) {
+        return Err(ValidationError::Shape);
+    }
+    if numbers[0].to_string() != namespace.incarnation {
+        return Err(ValidationError::Association);
+    }
+    Ok(numbers[1])
 }

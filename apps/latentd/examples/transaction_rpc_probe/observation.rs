@@ -1,4 +1,5 @@
-use latent_wire::{invocation::proto as i, phase4::transaction as t};
+use latent_rpc::transaction::v1 as t;
+use latent_wire::invocation::proto as i;
 use serde::Deserialize;
 
 pub(super) struct Aggregate {

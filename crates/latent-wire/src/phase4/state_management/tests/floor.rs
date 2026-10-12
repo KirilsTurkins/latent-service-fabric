@@ -17,7 +17,7 @@ fn observation(now: u64, elapsed: u64) -> MaintenanceClock {
         monotonic_millis: elapsed,
     }
 }
-struct TestMaintenanceClock;
+pub(super) struct TestMaintenanceClock;
 impl StateMaintenanceClock for TestMaintenanceClock {
     fn sample(&self) -> Result<MaintenanceClock, PlatformError> {
         Ok(observation(2304, 204))
@@ -276,7 +276,15 @@ fn linked_row(
     for result in [
         latent_state::session::validate_row(view, key, bytes),
         StateManagementBackend::validate_operation_row(view, key, bytes),
-        latent_state::recovery::resume::NamespaceResumeReceipt::validate_row(key, bytes),
+        if key.family == latent_state::embedded::Family::Maintenance
+            && key
+                .key
+                .starts_with(latent_state::recovery::v1::resume::RECEIPT_PREFIX)
+        {
+            latent_state::recovery::v1::resume::NamespaceResumeReceipt::validate_row(key, bytes)
+        } else {
+            Err(StoreError::UnsupportedFormat)
+        },
         latent_state::recovery::migration::AggregateMigrationProgress::validate_row(key, bytes),
         NamespaceCatalog::validate_row(key, bytes)
             .map_err(super::super::inspection::native_namespace),
@@ -404,7 +412,11 @@ async fn floor_release_refuses_live_physical_reader_and_stale_native_view_or_pol
     let original = request(&fixture, floor, &inspect(&fixture).await);
     let physical = fixture
         .store
-        .with_store(StoreIoKind::RecoveryRead, 65536, |engine| engine.snapshot())
+        .with_store(
+            StoreIoKind::RecoveryRead,
+            65536,
+            latent_state::embedded::EmbeddedStore::snapshot,
+        )
         .unwrap()
         .await
         .unwrap()

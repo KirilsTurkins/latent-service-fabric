@@ -34,9 +34,10 @@ pub(super) async fn mutate(
     let job = inner
         .services
         .store
-        .with_store(
+        .with_store_retaining(
             StoreIoKind::RecoveryWrite,
             WORK_BYTES as u64,
+            Arc::new(Arc::clone(&permit)),
             move |engine| {
                 let mut pending = pending;
                 let result = write(
@@ -349,6 +350,6 @@ fn atomic_error(error: AtomicError) -> PlatformError {
             PlatformErrorCode::Internal,
             "state-maintenance-record-invalid",
         ),
-        _ => unsupported(),
+        AtomicError::UnsupportedFormat => unsupported(),
     }
 }

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 CLOCK = "latent:clock/monotonic@0.1.0"
+WALL = "latent:clock/wall@0.1.0"
 ACTIVATION = "latent:runtime/activation@0.1.0"
 HTTP = "latent:http/streaming@0.3.0"
 RANDOM = "latent:random/random@0.1.0"
@@ -10,6 +11,7 @@ ADAPTERS = {
     "runtime": ("dotnet-activation-runtime", "activation-runtime.wasm"),
     "http": ("dotnet-http-runtime", "http-runtime.wasm"),
     "entropy": ("dotnet-noncrypto-entropy", "noncrypto-entropy.wasm"),
+    "wall": ("dotnet-wall-clock-runtime", "wall-clock-runtime.wasm"),
 }
 EXAMPLES = tuple("tools/toolchain-smoke/examples/" + example.replace("-", "_") + ".rs"
                  for example, _binary in ADAPTERS.values())
@@ -17,6 +19,7 @@ WASI_HTTP_IMPORTS = frozenset({
     "wasi:http/types@0.2.0", "wasi:http/outgoing-handler@0.2.0"})
 WASI_INSECURE_IMPORTS = frozenset({
     "wasi:random/insecure@0.2.0", "wasi:random/insecure@0.2.6"})
+WASI_WALL = "wasi:clocks/wall-clock@0.2.6"
 WASI_IMPORTS = frozenset(
     "wasi:" + name + "@0.2.6" for name in (
         "cli/environment", "cli/exit", "cli/stdin", "cli/stdout", "cli/stderr",
@@ -53,6 +56,8 @@ def select(declared: list[str], emitted: list[str]) -> str:
             raise ValueError("dotnet-runtime-unsupported-http-version:" + name)
         if name.startswith("latent:random/random@") and name != RANDOM:
             raise ValueError("dotnet-runtime-unsupported-entropy-version:" + name)
+        if name.startswith("latent:clock/wall@") and name != WALL:
+            raise ValueError("dotnet-runtime-unsupported-wall-clock-version:" + name)
     if WASI_INSECURE_IMPORTS & actual and RANDOM not in declarations:
         raise ValueError("dotnet-runtime-noncrypto-entropy-requires-declaration")
     # Generated SDK calls already import typed HTTP directly and do not require
@@ -60,15 +65,37 @@ def select(declared: list[str], emitted: list[str]) -> str:
     # Select that adapter only for its declared authority AND the actual emitted
     # outgoing WASI HTTP graph. Declarations alone are not evidence of BCL use.
     if HTTP in declarations and ACTIVATION in declarations and WASI_HTTP_IMPORTS <= actual:
+        if WASI_WALL in actual and WALL not in declarations:
+            raise ValueError("dotnet-runtime-http-wall-clock-requires-declaration")
         return "http"
     return "runtime" if ACTIVATION in declarations else "closed"
 
 
 def additional(declared: list[str], emitted: list[str]) -> tuple[str, ...]:
-    """Only an explicit declaration can enable the separate noncrypto port.
+    """Only explicit declarations can enable the separate runtime facets.
 
     Secure WASI random is deliberately still supplied by the selected primary
     adapter's denial. This module never creates a provider or an entropy grant.
     """
     select(declared, emitted)
-    return ("entropy",) if WASI_INSECURE_IMPORTS & set(emitted) else ()
+    actual = set(emitted)
+    result = ("entropy",) if WASI_INSECURE_IMPORTS & actual else ()
+    if WALL in declared and WASI_WALL in actual:
+        result += ("wall",)
+    return result
+
+
+def wall_override(name, required, primary_exports, imports, exports) -> bool:
+    """The named wall facet can replace only the primary's closed wall port.
+
+    The compiler has already selected this facet from authoritative source
+    declarations and actual raw imports. WAC remains responsible for checking
+    the complete function and datetime type; no compatible-version fallback is
+    permitted here. All facet bytes and inspected graphs are rechecked.
+    """
+    if name != "wall":
+        return False
+    if (set(imports) != {WALL} or set(exports) != {WASI_WALL}
+            or WASI_WALL not in required or WASI_WALL not in primary_exports):
+        raise ValueError("dotnet-runtime-wall-facet-shape")
+    return True
