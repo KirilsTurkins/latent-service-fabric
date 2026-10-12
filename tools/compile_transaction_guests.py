@@ -33,24 +33,28 @@ JAVA_DIAGNOSTIC_VARIANT = "put-once-diagnostics"
 JAVA_ACCEPTANCE_VARIANTS = ("put-once-values", "forbidden-child")
 
 
-def authored_project(language: str, variant: str, output: Path) -> Path:
+def authored_project(language: str, variant: str, output: Path, *, java_current_http_profile: str | None = None) -> Path:
+    if java_current_http_profile is not None and language != "java":
+        raise ValueError("current HTTP source profile requires explicit Java compilation")
     if variant in JAVA_ACCEPTANCE_VARIANTS:
         if language != "java":
             raise ValueError("Java state value and child-refusal inputs require the Java compiler")
         if variant == "forbidden-child":
             return variant_project(output, language, variant)
         from tools.java_transaction_values import create
-        return create(output)
+        return create(output, http_profile=java_current_http_profile)
     if variant == JAVA_DIAGNOSTIC_VARIANT:
         if language != "java":
             raise ValueError("Java post-stage diagnostics require the Java compiler")
         from tools.java_transaction_diagnostics import create
-        return create(output)
+        return create(output, http_profile=java_current_http_profile)
     if variant in JAVA_SCHEMA_VARIANTS:
         if language != "java":
             raise ValueError("Java schema qualification requires the Java compiler")
         from tools.java_transaction_schema import create
-        return create(output, variant.removeprefix("put-once-"), effect="put-once")
+        return create(output, variant.removeprefix("put-once-"),
+                      effect="current-http" if java_current_http_profile is not None else "put-once",
+                      http_profile=java_current_http_profile)
     if variant in {"forbidden-http", "result-boundary"}:
         name = "transaction-rust-aggregate" if variant == "result-boundary" else None
         return variant_project(output, language, variant, name)
@@ -169,7 +173,7 @@ def compile_project(language: str, work: Path, output: Path, command: Commands,
 
 def compile_guests(language: str, output: Path, *, tools: Path | None = None, wasi_sdk: Path | None = None,
                    java_schema_put_once: bool = False, java_post_stage_diagnostic: bool = False,
-                   java_state_acceptance: bool = False) -> None:
+                   java_state_acceptance: bool = False, java_current_http_profile: str | None = None) -> None:
     if type(java_schema_put_once) is not bool or (java_schema_put_once and language != "java"):
         raise ValueError("Java schema qualification requires an explicit Java compiler selection")
     if (type(java_post_stage_diagnostic) is not bool
@@ -178,6 +182,12 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
     if type(java_state_acceptance) is not bool or (java_state_acceptance and
             (language != "java" or java_schema_put_once or java_post_stage_diagnostic)):
         raise ValueError("state acceptance inputs require the exclusive explicit Java compiler selection")
+    if java_current_http_profile is not None:
+        import re
+        if (language != "java" or not (java_schema_put_once or java_post_stage_diagnostic or java_state_acceptance)
+                or not isinstance(java_current_http_profile, str)
+                or re.fullmatch(r"qualified-http-v1:[0-9a-f]{64}", java_current_http_profile) is None):
+            raise ValueError("current HTTP profile requires a bounded explicit Java schema, diagnostic or value selection")
     output = fresh(output)
     variants = (JAVA_ACCEPTANCE_VARIANTS if java_state_acceptance else (JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
                 else (*VARIANTS, *JAVA_SCHEMA_VARIANTS) if java_schema_put_once else VARIANTS)
@@ -191,11 +201,16 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             "world": WORLD, "hostAbiDigest": json.loads(read_file(ROOT / "wit/host-abi-phase4-v1.json"))["digest"]}
         command = None
         try:
-            work = authored_project(language, variant, current / "project")
+            work = authored_project(language, variant, current / "project", **(
+                {} if java_current_http_profile is None else {"java_current_http_profile": java_current_http_profile}))
             captured = snapshot(work)
             source = inventory(captured)
             (current / "source-inputs.json").write_bytes(source)
             report["sourceDigest"] = digest(source)
+            from tools.transaction_guest_project import CURRENT_HTTP_PROFILE
+            if CURRENT_HTTP_PROFILE in captured:
+                report.update(nativeEffectProfile="current-v2-http", nativeEffectOperation="http",
+                              currentHttpProfileInputDigest=digest(captured[CURRENT_HTTP_PROFILE]))
             owner = {"rust": "tools.rust_capsule_build", "c": "tools.c_capsule_build", "typescript": "tools.typescript_guest.build",
                      "go": "tools.go_capsule_build", "java": "tools.java_capsule_build", "dotnet": "tools.dotnet_guest.build"}[language]
             import importlib
@@ -204,7 +219,8 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
                 recipe += ("tools/java_transaction_schema.py", "examples/java-transaction-schema/AggregateCodec.java",
                            "contracts/state/application-aggregate-v1.schema.json",
                            "contracts/state/application-aggregate-v2.schema.json")
-                report.update(applicationVariant=variant.removeprefix("put-once-"), effect="put-once",
+                report.update(applicationVariant=variant.removeprefix("put-once-"),
+                              effect="current-http" if CURRENT_HTTP_PROFILE in captured else "put-once",
                               applicationSchemaInputDigest=digest(captured["application-schema-inputs.json"]),
                               deferredHttpRequirementsDigest=digest(captured["deferred-http-requirements.json"]))
             if variant == JAVA_DIAGNOSTIC_VARIANT:
@@ -268,11 +284,14 @@ def main() -> None:
                         help="compile only the separate captured Java post-stage fault variant without node-execution claims")
     parser.add_argument("--java-state-acceptance", action="store_true",
                         help="compile separate unsigned-value/UTF-8 state and typed forbidden-child inputs")
+    parser.add_argument("--java-current-http-profile",
+                        help="exact constructor-derived native HTTP profile for fresh Java captures; never an approval")
     arguments = parser.parse_args()
     compile_guests(arguments.language, arguments.output, tools=arguments.tools, wasi_sdk=arguments.wasi_sdk,
                    java_schema_put_once=arguments.java_schema_put_once,
                    java_post_stage_diagnostic=arguments.java_post_stage_diagnostic,
-                   java_state_acceptance=arguments.java_state_acceptance)
+                   java_state_acceptance=arguments.java_state_acceptance,
+                   java_current_http_profile=arguments.java_current_http_profile)
 
 
 if __name__ == "__main__":

@@ -12,11 +12,12 @@ if __package__ in {None, ""}:
 
 from tools.java_capsule_project import create as author
 from tools.rust_capsule_project import ROOT, digest, read_file, read_json
-from tools.transaction_guest_project import HTTP_BODY, HTTP_REQUIREMENTS, TEMPLATE, put_once_requirements
+from tools.transaction_guest_project import (CURRENT_HTTP_PROFILE, HTTP_BODY, HTTP_REQUIREMENTS, TEMPLATE,
+                                            current_java_http_requirements, put_once_requirements)
 from tools.transaction_guest_variants import replace_once
 
 VARIANTS = ("legacy-v1", "compatible-v2", "writer-v2")
-EFFECTS = ("event", "put-once")
+EFFECTS = ("event", "put-once", "current-http")
 DEFINITIONS = {
     "v1": "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f",
     "v2": "sha256:5465983620116dc20476955ea815d665e2868421f6bed705760f12225bada6eb",
@@ -80,20 +81,28 @@ def source_variant(original: str, variant: str) -> str:
         "            byte[] bytes = AggregateCodec.encode(next, WRITE_V2);")
 
 
-def create(directory: Path, variant: str, name: str = "transaction-java-aggregate", *, effect: str = "event") -> Path:
+def create(directory: Path, variant: str, name: str = "transaction-java-aggregate", *, effect: str = "event",
+           http_profile: str | None = None) -> Path:
     if variant not in VARIANTS:
         raise ValueError("unknown Java transaction schema variant")
     if effect not in EFFECTS:
         raise ValueError("unknown Java transaction effect variant")
+    if effect != "current-http" and http_profile is not None:
+        raise ValueError("current HTTP profile requires the explicit current-http effect")
+    if effect == "current-http":
+        import re
+        if not isinstance(http_profile, str) or re.fullmatch(r"qualified-http-v1:[0-9a-f]{64}", http_profile) is None:
+            raise ValueError("explicit native current HTTP profile required")
     schema = definitions()
     original, world, recipe = recovery_recipe()
     source = source_variant(original.decode(), variant).encode()
-    if effect == "put-once":
+    if effect in {"put-once", "current-http"}:
+        operation = "http" if effect == "current-http" else "put-once"
         source = replace_once(source.decode(),
             '            new Intent("approved-event", "event", payload).stage(command).value();',
             '            var effectPayload = new Bindings.LatentStateKeyValueValue(\n'
             '                new byte[]{' + ','.join(str(value) for value in HTTP_BODY) + '}, "application/octet-stream", List.of());\n'
-            '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();').encode()
+            '            new Intent("qualified-http", "' + operation + '", effectPayload).stage(command).value();').encode()
     project = author(directory, TEMPLATE, name)
     (project / SOURCE).write_bytes(source)
     (project / "wit/world.wit").write_bytes(world)
@@ -102,7 +111,7 @@ def create(directory: Path, variant: str, name: str = "transaction-java-aggregat
         (project / CODEC).write_bytes(read_file(ROOT / "examples/java-transaction-schema/AggregateCodec.java"))
     owner = read_json(project / "capsule-project.json")
     owner["version"] = {"legacy-v1": "1.0.0", "compatible-v2": "1.1.0", "writer-v2": "2.0.0"}[variant]
-    if effect == "put-once":
+    if effect in {"put-once", "current-http"}:
         owner["limits"]["effectCount"] = 1
     (project / "capsule-project.json").write_bytes(json.dumps(owner, indent=2).encode() + b"\n")
     lock = read_json(project / "sdk-lock.json")
@@ -113,8 +122,13 @@ def create(directory: Path, variant: str, name: str = "transaction-java-aggregat
     binding = read_json(project / "transaction-binding.json")
     binding["stateSchema"] = DEFINITIONS[writer]
     (project / "transaction-binding.json").write_bytes(json.dumps(binding, indent=2).encode() + b"\n")
-    if effect == "put-once":
-        requirements = put_once_requirements(owner, read_file(project / "transaction-binding.json"))
+    if effect in {"put-once", "current-http"}:
+        requirements = (current_java_http_requirements(owner, read_file(project / "transaction-binding.json"), http_profile)
+                        if effect == "current-http" else put_once_requirements(owner, read_file(project / "transaction-binding.json")))
+        if effect == "current-http":
+            (project / CURRENT_HTTP_PROFILE).write_bytes(json.dumps({
+                "schemaVersion": "latent.java.current-http-source-input.v1",
+                "idempotencyProfile": http_profile}, indent=2).encode() + b"\n")
         (project / HTTP_REQUIREMENTS).write_bytes(json.dumps(requirements, indent=2).encode() + b"\n")
     (project / "state-schema.json").write_bytes(schema[writer])
     captured = project / "schemas"
@@ -135,8 +149,9 @@ def main() -> None:
     parser.add_argument("--variant", choices=VARIANTS, required=True)
     parser.add_argument("--name", default="transaction-java-aggregate")
     parser.add_argument("--effect", choices=EFFECTS, default="event")
+    parser.add_argument("--http-profile", help="Exact constructor-derived current native HTTP profile; no grant")
     args = parser.parse_args()
-    print(create(args.project, args.variant, args.name, effect=args.effect))
+    print(create(args.project, args.variant, args.name, effect=args.effect, http_profile=args.http_profile))
 
 
 if __name__ == "__main__":

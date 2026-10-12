@@ -12,6 +12,7 @@ INPUT_FORMAT = "lsf-wit-values-v1"
 RESULT_FORMAT = "lsf-wit-values-v1"
 HTTP_REQUIREMENTS = "deferred-http-requirements.json"
 HTTP_BODY = b"java-aggregate-put-once-v1\0"
+CURRENT_HTTP_PROFILE = "java-current-http-profile.json"
 
 
 def put_once_requirements(project: dict, companion: bytes) -> dict:
@@ -34,6 +35,27 @@ def put_once_requirements(project: dict, companion: bytes) -> dict:
                     "maximumAgeMillis": "600000", "attemptTimeoutMillis": "2000"},
         "authority": {"installed": False, "ruleGranted": False, "executionQualified": False},
     }
+
+
+def current_java_http_requirements(project: dict, companion: bytes, profile: str) -> dict:
+    """Exact current HTTP transport input, separate from historical put-once data."""
+    from tools.dev_workflow.transaction_binding import validate
+    binding = validate(companion, capsule=project["service"], deployment=project["name"], binding=project["name"])
+    if (project.get("world") != "examples:transactional-aggregate/service@1.0.0"
+            or binding["namespace"] != TEMPLATE
+            or binding["operations"] != [
+                {"operation": name, "mode": mode, "inputFormat": INPUT_FORMAT, "resultFormat": RESULT_FORMAT}
+                for name, mode in (("update", "strict-command"), ("query", "fresh-query"), ("scan", "fresh-query"))]
+            or not isinstance(profile, str)
+            or re.fullmatch(r"qualified-http-v1:[0-9a-f]{64}", profile) is None):
+        raise ValueError("explicit current Java HTTP profile and transaction binding required")
+    return {"formatVersion": 1, "protocol": "lsf-atomic-idempotent-http-v1",
+            "capsule": project["service"], "deployment": project["name"], "stateBinding": binding["binding"],
+            "namespace": binding["namespace"], "companionDigest": "sha256:" + hashlib.sha256(companion).hexdigest(),
+            "binding": "qualified-http", "operation": "http", "adapter": "qualified-http-effect-v1",
+            "payloadFormat": "http-body-value-v1", "idempotencyProfile": profile,
+            "ceiling": {"maximum_payload_bytes": 27, "maximum_response_bytes": 2048,
+                        "maximum_attempts": 3, "maximum_age_millis": 600000, "attempt_timeout_millis": 2000}}
 
 
 REFERENCE_WORLD = "examples:order-draft/service@1.0.0"
@@ -122,6 +144,13 @@ def package_effect_requirements(output: Path, project: dict, files: dict[str, by
         require("order-draft-source.json" in files, "deferred-http-source-profile-required")
         source = decode(files["order-draft-source.json"], 8192)
         expected = reference_http_requirements(project, files["transaction-binding.json"], source.get("httpProfile"))
+    elif CURRENT_HTTP_PROFILE in files:
+        selected = decode(files[CURRENT_HTTP_PROFILE], 8192)
+        require(isinstance(selected, dict)
+                and set(selected) == {"schemaVersion", "idempotencyProfile"}
+                and selected["schemaVersion"] == "latent.java.current-http-source-input.v1",
+                "closed-current-java-http-profile-input")
+        expected = current_java_http_requirements(project, files["transaction-binding.json"], selected["idempotencyProfile"])
     else:
         expected = put_once_requirements(project, files["transaction-binding.json"])
     require(encode(value) == encode(expected),

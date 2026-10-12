@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_transaction_guests.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve current authored Java value and forbidden-child modes alongside actual namespace recovery work",
+  "reviewReason": "Compile explicitly selected current native HTTP Java captures without changing legacy inputs or claiming execution",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9c24e537f73745520165fe3f21c6f5476b7faf08c9c8d792532da97b777ecb98"
+  "sha256": "ff1c7920e5fe0681bfd3a3aba64a55d42c67c80c8ff80648521008fafe3467ab"
 }
