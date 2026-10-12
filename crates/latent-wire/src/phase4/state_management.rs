@@ -1,7 +1,11 @@
 //! Actual namespace management over the node's single protected engine.
 mod audit;
 mod authorization;
+mod clock;
 mod command_result;
+mod floor_release;
+mod state_receipt;
+pub use clock::{DisabledStateMaintenanceClock, StateMaintenanceClock};
 mod dispatcher;
 mod effects;
 mod entities;
@@ -93,6 +97,8 @@ pub struct StateManagementServices {
     pub artifacts: Arc<dyn ArtifactRepository>,
     pub authorization: Arc<dyn ManagementPolicy>,
     pub admission: Arc<dyn StateManagementAdmission>,
+    pub maintenance: Arc<latent_commit::atomic::ResultMaintenanceOwner>,
+    pub maintenance_clock: Arc<dyn StateMaintenanceClock>,
     pub clock: Arc<dyn ActivationClock>,
     pub audit: Option<latent_audit::AuditHandle>,
 }
@@ -118,6 +124,23 @@ const WORK_BYTES: usize = 8 * 1024 * 1024;
 const RESPONSE_BYTES: usize = 4 * contract::MAX_RESPONSE_BYTES + 16384;
 
 impl StateManagementBackend {
+    pub fn validate_operation_row(
+        view: &latent_state::embedded::ReadView,
+        key: &latent_state::embedded::RowKey,
+        bytes: &[u8],
+    ) -> Result<(), latent_state::embedded::StoreError> {
+        state_receipt::validate_row(view, key, bytes)
+    }
+
+    pub fn tenant_metadata_contribution(
+        view: &latent_state::embedded::ReadView,
+        key: &latent_state::embedded::RowKey,
+        bytes: &[u8],
+    ) -> Result<latent_state::tenant::TenantCensusContribution, latent_state::embedded::StoreError>
+    {
+        state_receipt::tenant_contribution(view, key, bytes)
+    }
+
     pub fn new(
         services: StateManagementServices,
         bindings: Vec<StateManagementBinding>,
@@ -306,6 +329,20 @@ impl StateManagementBackend {
                 }
                 contract::Request::GetStateOperationReceipt(value) => {
                     inspection::receipt(
+                        Arc::clone(&inner),
+                        value,
+                        access,
+                        permit,
+                        deadline,
+                        pending,
+                    )
+                    .await
+                }
+                contract::Request::MutateState(value)
+                    if value.mutation
+                        == c::StateMutationKind::ReleaseExpiredCommandFloor as i32 =>
+                {
+                    floor_release::mutate(
                         Arc::clone(&inner),
                         value,
                         access,

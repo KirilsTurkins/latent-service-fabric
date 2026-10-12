@@ -220,6 +220,7 @@ impl Fixture {
             profile: latent_capabilities::broker::network::STREAM_PROFILE.into(),
             limits: StreamLimits::default(),
             destinations: vec![StreamDestination {
+                tls: None,
                 endpoint: StreamEndpoint {
                     host: "127.0.0.1".into(),
                     port,

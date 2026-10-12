@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "lsf.private.host-tls-component-controls.v1",
+  "qualificationOnly": true,
+  "productionEnabled": false,
+  "fullAccountingQualified": false,
+  "referenceSourceSha256": {
+    "signed-component-reference.rs": "bf53e190341c6c8ab50a43eff5cae89de1684defa182995d6f5d0401cd54f986",
+    "canonical-component-reference.rs": "231504f63945b4063680198253f30b92c5ff457957fcdaec1cae8c56b669b957"
+  },
+  "controls": [
+    {
+      "originalPrHead": "336154c972678c14d989c7828cbca34db79c6969",
+      "qualificationOnly": true,
+      "productionEnabled": false,
+      "fullAccountingQualified": false,
+      "changes": [
+        {
+          "path": "crates/latent-wasmtime/tests/outbound_streams/component.rs",
+          "beforeSha256": "28e71d743e905a9d6daf5655026a7638a27db06453aed5572a762e896af2a98c",
+          "afterSha256": "93564f941abfa862711a4eb85215f2f802bab086276881de30c20f24924e8206"
+        },
+        {
+          "path": "crates/latent-wasmtime/tests/outbound_streams/fixture.rs",
+          "beforeSha256": "8150e20b1a73f21c82c2fbf7af56150b27b45dce54c006ee02374410fcec753f",
+          "afterSha256": "57e5638b65d4e9704fce49a437259e718587db14c655944a3c743c0fb4f292f7"
+        },
+        {
+          "path": "crates/latent-wasmtime/tests/outbound_streams.rs",
+          "beforeSha256": "a1c21e2afc9eb7a5c5561628ad8517236a6223d635dea022db16ba9c6b52b4c1",
+          "afterSha256": "1bde5c0ac7a6dadef10aef7b34a512d5e8f28efe0f0d043ddb9068db32661ba8"
+        }
+      ],
+      "case": "private_canonical_host_tls_round_trip_and_fresh_store_retire_actual_owners",
+      "binarySha256": "ae2c3eacf0de824e095156af269cb6ee4ec73fc4fa64b7a86aac1c464ce0b876",
+      "exitCode": 0,
+      "passed": true,
+      "outputSha256": "62701bf4e2fdfc8a75c457fdce5161e034866a5295df747c10d94be74c155b01",
+      "boundary": "managed canonical component"
+    },
+    {
+      "originalPrHead": "336154c972678c14d989c7828cbca34db79c6969",
+      "qualificationOnly": true,
+      "productionEnabled": false,
+      "fullAccountingQualified": false,
+      "changes": [
+        {
+          "path": "crates/latent-wasmtime/tests/local_service/outbound.rs",
+          "beforeSha256": "a29d1838b26226444c5a82a8cb7e9226a903af5d68a3700a7842ce34ed90ed8d",
+          "afterSha256": "b92ff471b8d59bed88e28ee63dab5c01c374d776f8c223c29e93505802029fca"
+        }
+      ],
+      "case": "outbound::private_signed_host_tls_node_admission_fresh_cells_and_physical_retirement",
+      "binarySha256": "3d81e5cad8bb08f94066748424dca39c3482b38e12c599b314911cf2ad30d2a8",
+      "exitCode": 0,
+      "passed": true,
+      "outputSha256": "8a365517c69395f2f9b44850f03cd9570b21a222d390797ed48b5af52905a23e",
+      "boundary": "signed package and normal node admission"
+    }
+  ],
+  "limits": [
+    "private source gates only; shipped installation remains refused",
+    "synthetic signed host fixtures; no ordinary third-party library claim",
+    "full operator and maximum-valid-chain/root/stack/kernel qualification remain open"
+  ],
+  "derivationDependencies": [
+    "outbound-host-tls-private-version-matrix-2026-10-12.json",
+    "outbound-host-tls-private-feasibility-2026-10-12.json"
+  ]
+}

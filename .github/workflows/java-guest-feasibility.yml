@@ -133,6 +133,8 @@ jobs:
             | tee "$RUNNER_TEMP/java-aggregate-encoding/vectors.log"
       - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
         run: python3 tools/compile_transaction_guests.py --language java --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guests-java"
+      - name: Compile exact state value and forbidden child inputs
+        run: python3 tools/compile_transaction_guests.py --language java --java-state-acceptance --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guest-acceptance-java"
       - name: Check explicit post-stage diagnostic helpers without claiming transaction execution
         id: transaction-diagnostic-vectors
         shell: bash
@@ -182,12 +184,33 @@ jobs:
         run: |
           set -o pipefail
           python3 tools/qualify_java_http_composition.py --output "$RUNNER_TEMP/java-http-composition" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-http-composition.log"
+      - name: Qualify original ingress and real revision lifecycle on fresh ordinary default nodes
+        run: |
+          set -o pipefail
+          python3 tools/qualify_java_server_lifecycle_suite.py --output "$RUNNER_TEMP/java-server-lifecycle" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-server-lifecycle.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/java-server-lifecycle.log
+            ${{ runner.temp }}/java-server-lifecycle/suite.json
+            ${{ runner.temp }}/java-server-lifecycle/FAILED.json
+            ${{ runner.temp }}/java-server-lifecycle/native/native-tuple.json
+            ${{ runner.temp }}/java-server-lifecycle/logs/**
+            ${{ runner.temp }}/java-server-lifecycle/build-*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/BUILD-FAILED.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/source-inputs.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/recipe-inputs.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/server-source.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/server-profile.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/http-client-profile.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/compiler-inputs.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/compiler-logs/**
+            ${{ runner.temp }}/java-server-lifecycle/build-*/logs/**
+            ${{ runner.temp }}/java-server-lifecycle/build-*/component.wasm
+            ${{ runner.temp }}/java-server-lifecycle/execution/**/*.json
             ${{ runner.temp }}/java-aggregate-encoding/vectors.log
             ${{ runner.temp }}/java-transaction-diagnostic-schemas.tar.gz
             ${{ runner.temp }}/java-aggregate-encoding/diagnostic-vectors.log
@@ -202,6 +225,7 @@ jobs:
             ${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler/*.log
             ${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler/*.command.json
             ${{ runner.temp }}/transaction-guests-java/**/report.json
+            ${{ runner.temp }}/transaction-guest-acceptance-java/**
             ${{ runner.temp }}/transaction-guests-java/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-java/**/recipe-inputs.json
             ${{ runner.temp }}/transaction-guests-java/**/source.tar.gz

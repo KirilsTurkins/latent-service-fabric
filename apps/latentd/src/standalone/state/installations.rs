@@ -186,6 +186,12 @@ pub(super) async fn load(
                         kernel.native.clone(),
                     )),
                     clock: services.clock,
+                    maintenance: Arc::clone(&kernel.maintenance),
+                    maintenance_clock: Arc::new(
+                        super::maintenance::ProtectedMaintenanceClock::new(Arc::clone(
+                            &kernel.clock,
+                        ))?,
+                    ),
                     audit: services.audit,
                 },
                 bindings,

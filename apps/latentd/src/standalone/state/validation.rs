@@ -156,7 +156,8 @@ type Validator = fn(&ReadView, &RowKey, &[u8]) -> Result<(), StoreError>;
 fn foreign_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     // Only UnsupportedFormat delegates. A malformed owned row cannot be
     // rescued by another codec, a prefix label, or permissive opaque storage.
-    let validators: [Validator; 6] = [
+    let validators: [Validator; 7] = [
+        latent_wire::phase4::StateManagementBackend::validate_operation_row,
         tenant::validate_row,
         latent_state::session::validate_row,
         namespace_row,
@@ -187,7 +188,8 @@ fn contribution(
 ) -> Result<TenantCensusContribution, StoreError> {
     type Contributor =
         fn(&ReadView, &RowKey, &[u8]) -> Result<TenantCensusContribution, StoreError>;
-    let contributors: [Contributor; 3] = [
+    let contributors: [Contributor; 4] = [
+        latent_wire::phase4::StateManagementBackend::tenant_metadata_contribution,
         latent_commit::atomic::tenant_census_contribution,
         DispatchCatalog::tenant_census_contribution,
         tenant::census_contribution,

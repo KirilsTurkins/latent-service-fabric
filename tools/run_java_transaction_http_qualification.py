@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Qualify preserved signed Java guests using actual already-built Phase 4 owners.
 
-Preserved continuation collector: its version-1 configuration, HTTP installation
-and offline recovery modes require porting to the current version-2 owners.
-PR #823 does not supply those adapters. A refusal remains failed evidence.
+The current version-2 startup declaration is explicit; HTTP installation and
+offline recovery observations still require the current installed owners.
+A refusal remains failed evidence.
 
 Linux/Python 3.13. This creates one private disposable root and retains every
 failed attempt. It invokes no compiler, installs no inferred grant and cannot
@@ -44,6 +44,8 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/diagnostic_campaign.py",
     "tools/java_transaction_qualification/current_inputs.py",
     "tools/java_transaction_qualification/current_campaign.py")
+COLLECTORS += ("tools/java_transaction_qualification/refusal_observation.py",
+               "tools/java_transaction_qualification/state_configuration.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
