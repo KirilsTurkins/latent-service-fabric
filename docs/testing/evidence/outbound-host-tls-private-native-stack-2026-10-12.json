@@ -50,8 +50,10 @@
   ],
   "sourceProvenance": {
     "path": "docs/testing/evidence/outbound-host-tls-private-maximum-valid-2026-10-12.json",
-    "sha256": "fd45fa00a389bc553e92bf5f06a3552166b9975927b9a627a64814a6326e586a"
+    "sha256": "4f644786208d100b856cc6aa73b9a2961f60f8e6accddc7b51b16618f300094b",
+    "previousWorkingCopySerializationSha256": "fd45fa00a389bc553e92bf5f06a3552166b9975927b9a627a64814a6326e586a"
   },
   "connectionAllowanceBytes": 262144,
-  "trustAllowanceBytes": 65536
+  "trustAllowanceBytes": 65536,
+  "publishedReferenceIdentity": "SHA256 of committed UTF8 bytes after Git newline normalization; raw source/execution identities unchanged"
 }

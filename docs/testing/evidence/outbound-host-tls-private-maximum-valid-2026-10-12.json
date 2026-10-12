@@ -97,7 +97,8 @@
   "maximumValidReferenceSha256": "466a3f23d303e23b01b7360041f106d01d777811d74be90c8cae1d6c37ced2e5",
   "privatePatchProvenance": {
     "path": "docs/testing/evidence/outbound-host-tls-private-feasibility-2026-10-12.json",
-    "sha256": "63c5a2cb9cd58aba64a374b078ecea32a42cc8f216f0c899b3857f387d3ef059"
+    "sha256": "b58e045e2126da402221ff103a75f711bf31ae25b0377c543e8ab39c3cedc019",
+    "previousWorkingCopySerializationSha256": "63c5a2cb9cd58aba64a374b078ecea32a42cc8f216f0c899b3857f387d3ef059"
   },
   "sourcePreparation": [
     "existing private source applies the authenticated captured bounded rustls parser",
@@ -105,5 +106,6 @@
     "maximum valid case adds exact Ed25519 authority roots/chain and ECDSA leaf against unchanged verification",
     "failed first compile used stream after its consuming close; the qualification-only duplicate drop was removed",
     "source identities and executed reference bind the measured successful corrected source"
-  ]
+  ],
+  "publishedReferenceIdentity": "SHA256 of committed UTF8 bytes after Git newline normalization; raw source/execution identities unchanged"
 }

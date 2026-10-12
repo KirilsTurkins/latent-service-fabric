@@ -1009,8 +1009,11 @@
   ],
   "sourceProvenance": {
     "path": "docs/testing/evidence/outbound-host-tls-private-maximum-valid-2026-10-12.json",
-    "sha256": "fd45fa00a389bc553e92bf5f06a3552166b9975927b9a627a64814a6326e586a"
+    "sha256": "4f644786208d100b856cc6aa73b9a2961f60f8e6accddc7b51b16618f300094b",
+    "previousWorkingCopySerializationSha256": "fd45fa00a389bc553e92bf5f06a3552166b9975927b9a627a64814a6326e586a"
   },
   "observerReference": "sdk/host-stream-tls/rustls-bounds/kernel-observer-reference.rs",
-  "observerReferenceSha256": "66b054316e06614e845252acda00f407ae07ee0b2879577041673aaa358ba2a3"
+  "observerReferenceSha256": "7352c1130bf0724ecfbc72bf3ba67748d7426a30e4fc5a052cc8e7fe46d0c8f2",
+  "previousObserverWorkingCopySerializationSha256": "66b054316e06614e845252acda00f407ae07ee0b2879577041673aaa358ba2a3",
+  "publishedReferenceIdentity": "SHA256 of committed UTF8 bytes after Git newline normalization; raw source/execution identities unchanged"
 }

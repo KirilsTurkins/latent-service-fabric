@@ -188,3 +188,9 @@ No issue closes from this reconciliation. Historical failures, stopped-work
 records and approval requirements remain visible. The packet is ready for a
 reviewer to record a concrete decision against the maintained source and its
 explicit unqualified boundaries.
+
+The [independent decision packet](outbound-stream-independent-review-2026-10-12.md)
+maps every #737 criterion to concrete inputs and remaining decisions. It also
+records the actual pinned Rust standard-socket negative probe and the five other
+unqualified runtime-port cells, without converting source/profile limitations
+into executed client success or independent approval.
