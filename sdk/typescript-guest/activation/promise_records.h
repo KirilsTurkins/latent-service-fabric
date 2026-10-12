@@ -7,6 +7,15 @@
 
 namespace lsf::typescript::activation {
 
+template<class Checkpoint>
+bool collectNativePressure(JSContext* cx, size_t live_native, Checkpoint checkpoint) {
+  if (live_native >= 32) {
+    JS::PrepareForFullGC(cx);
+    JS::NonIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::API);
+  }
+  return checkpoint(cx);
+}
+
 class PromiseRecords final {
   struct Record {
     NativeOwner owner;

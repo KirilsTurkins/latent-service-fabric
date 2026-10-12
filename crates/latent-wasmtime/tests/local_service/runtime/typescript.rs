@@ -156,3 +156,18 @@ async fn signed_async_service_import_preserves_sibling_progress_and_actual_child
         f.idle().await;
     }
 }
+
+#[tokio::test]
+#[ignore = "requires current maintained native-lock TypeScript npm compiler outputs with actual build observations"]
+async fn signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime() {
+    let root = tempfile::tempdir().unwrap();
+    let f = fixture("typescript-npm5", root.path()).await;
+    for mode in 0..5 {
+        let mut request = f.request(&format!("typescript-npm-{mode}"), mode);
+        request.target.contract = ContractId("examples:typescript-async-npm/ordinary@1.0.0".into());
+        let receipt = f.manager.start(request).unwrap().await;
+        eprintln!("TypeScript npm mode={mode}: {:?}", receipt.outcome);
+        assert_eq!(super::value(receipt), 42);
+        f.idle().await;
+    }
+}

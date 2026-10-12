@@ -50,12 +50,21 @@ Timers timers(accounting, promise_accounting, readiness);
 Imports imports(accounting, promise_accounting, readiness);
 std::unique_ptr<JobQueue> queue;
 
+bool collect_before_native_allocation(JSContext* cx) {
+  if (!acknowledge_promise_retirement(cx)) return false;
+  // The bounded owner budget can be reached before SpiderMonkey's heap trigger.
+  // Collection only observes actual dead objects; host acknowledgement follows
+  // after the collection and cannot retire a reachable Promise or reaction.
+  return collectNativePressure(cx, promise_accounting.liveNative(),
+                               acknowledge_promise_retirement);
+}
+
 bool before_promise_allocate(JSContext* cx, void** output) {
-  return acknowledge_promise_retirement(cx) &&
+  return collect_before_native_allocation(cx) &&
          promises.beforeAllocate(cx, output);
 }
 bool before_reaction_allocate(JSContext* cx, void** output) {
-  return acknowledge_promise_retirement(cx) &&
+  return collect_before_native_allocation(cx) &&
          reactions.beforeAllocate(cx, output);
 }
 void settled_promise(JSContext* cx, JSObject* promise) {
@@ -193,6 +202,7 @@ bool start_timeout_nanoseconds(JSContext* cx, JS::HandleObject callback,
 bool has_pending_timer_work() { return timers.hasPending() || imports.hasPending(); }
 
 bool run_timer_turn(JSContext* cx) {
+  if (JS_IsExceptionPending(cx)) return false;
   if (!effects_allowed(cx) || !queue || !queue->empty() || queue->isDrainingStopped()) {
     JS_ReportErrorASCII(cx, "activation-runtime-timer-pump-with-eligible-jobs-denied");
     return false;

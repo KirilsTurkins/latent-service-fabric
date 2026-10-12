@@ -75,15 +75,22 @@ struct FixtureNative final : PromiseAccounting {
 
 static PromiseRecords* promise_records;
 static ReactionRecords* reaction_records;
+static FixtureNative* native_accounting;
 static unsigned promises_created = 0, promises_settled = 0, promises_finalized = 0;
 static unsigned reactions_created = 0, reactions_finalized = 0;
 static unsigned native_jobs_created = 0;
 static bool before_promise(JSContext* cx, void** output) {
   return promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
+         collectNativePressure(cx, native_accounting->owners, [](JSContext* context) {
+           return promise_records->checkpoint(context) && reaction_records->checkpoint(context);
+         }) &&
          promise_records->beforeAllocate(cx, output);
 }
 static bool before_reaction(JSContext* cx, void** output) {
   return promise_records->checkpoint(cx) && reaction_records->checkpoint(cx) &&
+         collectNativePressure(cx, native_accounting->owners, [](JSContext* context) {
+           return promise_records->checkpoint(context) && reaction_records->checkpoint(context);
+         }) &&
          reaction_records->beforeAllocate(cx, output);
 }
 static void created_promise(JSContext* cx, JSObject* object, void* record) {
@@ -110,6 +117,9 @@ static void collection_completed(JS::GCContext*, JSFinalizeStatus status, void*)
   if (status != JSFINALIZE_COLLECTION_END) return;
   promises_finalized += promise_records->collectionCompleted();
   reactions_finalized += reaction_records->collectionCompleted();
+}
+static void collection_phase(JSContext*, JSGCStatus status, JS::GCReason, void*) {
+  native_accounting->in_gc = status == JSGC_BEGIN;
 }
 static bool transfer_reaction(JSContext* cx, JS::HandleObject job, JobOwners& owners,
                               bool& transferred) {
@@ -149,6 +159,7 @@ int main(int argc, char** argv) {
   if (!cx) return 4;
   FixtureJobs jobs;
   FixtureNative native;
+  native_accounting = &native;
   PromiseRecords promises(native);
   ReactionRecords reactions(native, jobs);
   promise_records = &promises;
@@ -175,6 +186,7 @@ int main(int argc, char** argv) {
     if (!JS_AddWeakPointerZonesCallback(cx, weak_sweep, nullptr) ||
         !JS_AddFinalizeCallback(cx, collection_completed, nullptr) ||
         !JS::SetActivationPromiseHooks(cx, &hooks)) return 8;
+    JS_SetGCCallback(cx, collection_phase, nullptr);
     JS::RootedValue output(cx);
     const char* selected = argv[1];
     if (!std::strcmp(selected, "thenable-preallocation")) {
@@ -214,6 +226,32 @@ int main(int argc, char** argv) {
       status = !evaluated && JS_IsExceptionPending(cx) && promises_created == 0 &&
                native.owners == 0 && native.admissions == 0 ? 0 : 1;
       JS_ClearPendingException(cx);
+    } else if (!std::strcmp(selected, "reachable-native-ceiling")) {
+      if (!evaluate(cx, "globalThis.retained=[];"
+          "for(let i=0;i<64;i++)retained.push(Promise.resolve(i));", &output)) return 9;
+      bool retained = native.owners == 64 && native.admissions == 64 &&
+                      native.acknowledgements == 0 && promises_created == 64;
+      bool denied = !evaluate(cx, "Promise.resolve(99);", &output);
+      status = retained && denied && JS_IsExceptionPending(cx) &&
+               native.owners == 64 && native.admissions == 64 &&
+               native.acknowledgements == 0 && !native.hostcall_in_gc ? 0 : 1;
+      JS_ClearPendingException(cx);
+      if (!expect(cx, "retained.length===64&&retained[63] instanceof Promise")) status = 1;
+    } else if (!std::strcmp(selected, "churn-physical-retirement")) {
+      if (!evaluate(cx, "globalThis.retained=[];"
+          "for(let i=0;i<32;i++)retained.push(Promise.resolve(i));", &output)) return 9;
+      output.setUndefined();
+      if (!evaluate(cx, "globalThis.retained=null;", &output)) return 9;
+      output.setUndefined();
+      bool charged = native.owners == 32 && native.acknowledgements == 0 &&
+                     checkpoint(cx) && native.owners == 32;
+      if (!evaluate(cx, "for(let i=0;i<96;i++)Promise.resolve(i);", &output)) return 9;
+      output.setUndefined();
+      bool collected = promises_finalized >= 32 && native.acknowledgements >= 32 &&
+                       native.admissions == 128 && native.owners <= 64;
+      collect(cx, native);
+      status = charged && collected && checkpoint(cx) && native.owners == 0 &&
+               native.acknowledgements == 128 && !native.hostcall_in_gc ? 0 : 1;
     } else if (!std::strcmp(selected, "settlement-not-refund")) {
       if (!evaluate(cx, "globalThis.root=new Promise(resolve=>resolve(42));", &output)) return 9;
       status = promises_created == 1 && promises_settled == 1 &&
@@ -267,7 +305,8 @@ int main(int argc, char** argv) {
     JS_ClearPendingException(cx);
     jobs.refuse_retirement = native.refuse_retirement = false;
     output.setUndefined();
-    if (!evaluate(cx, "globalThis.root=null;globalThis.finish=null;globalThis.order=null;", &output)) return 10;
+    if (!evaluate(cx, "globalThis.root=null;globalThis.finish=null;globalThis.order=null;"
+        "globalThis.retained=null;", &output)) return 10;
     output.setUndefined();
     bool cancelled = queue.cancelQueued(cx);
     collect(cx, native);

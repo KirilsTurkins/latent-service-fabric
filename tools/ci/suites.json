@@ -8232,6 +8232,7 @@
         "runtime::typescript::signed_async_service_import_preserves_sibling_progress_and_actual_child_owners",
         "runtime::typescript::signed_pending_exports_timers_rejections_and_fresh_state_use_real_node_owners",
         "runtime::typescript::signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
+        "runtime::typescript::signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime",
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
       "expectedIgnored": [
@@ -8239,7 +8240,8 @@
         "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
         "runtime::typescript::signed_async_service_import_preserves_sibling_progress_and_actual_child_owners",
         "runtime::typescript::signed_pending_exports_timers_rejections_and_fresh_state_use_real_node_owners",
-        "runtime::typescript::signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners"
+        "runtime::typescript::signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
+        "runtime::typescript::signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime"
       ],
       "id": "latent-wasmtime.test.local-service",
       "ignoredLeaves": [
@@ -8247,11 +8249,12 @@
         "signed_java_completable_futures_use_default_activation_executor",
         "signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
         "signed_pending_exports_timers_rejections_and_fresh_state_use_real_node_owners",
-        "signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners"
+        "signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
+        "signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 36,
+      "minimumCases": 37,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

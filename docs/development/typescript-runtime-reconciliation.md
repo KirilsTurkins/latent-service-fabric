@@ -54,7 +54,7 @@ the dependent signal. These follow the
 
 ## Evidence and remaining acceptance
 
-The focused Linux source suite passes 175 tests with zero skips. The packaging
+The focused Linux source suite passes 176 tests with zero skips. The packaging
 library passes 80 tests. The signed ordinary campaign passes its complete original
 matrix and fresh-after-failure control. CI adds the new regressions while retaining
 all historical commands, cases, ignore guards, limits and qualification contracts.
@@ -64,6 +64,30 @@ actual wall/monotonic progress, stable activation time origin, default/explicit
 Date constructor behavior and AbortSignal timeout. The two-case actual service
 import fixture is retained as a separate explicit prepared-component test; its
 first run exposed a guest failure before child admission and is not qualified.
+
+The native-lock npm application also has a fresh maintained resolve/review,
+offline dependency verification and compiler/package build. Its original direct
+pins are `p-queue@9.0.0`, `p-timeout@7.0.1`, `delay@6.0.0` and
+`eventemitter3@5.0.1`; neither the application bodies nor the original limits were
+changed. A separate explicit signed fixture retains its five cases. The first
+production attempt failed at the original native owner ceiling before the heap
+collector ran.
+
+The next source milestone collects actual unreachable objects before bounded
+native admission reaches the heap collector's later trigger. Its local live-owner
+count changes only after successful native registration or settlement and controls
+collection timing, never permission or admission. Broker settlement follows the
+real weak sweep and collection end, outside GC. Twelve intrinsic engine controls
+pass, including all historical cases, 64 retained reachable Promises refusing the
+next allocation, and churn retaining its charges until physical collection and
+acknowledgement. Their fixture broker is explicitly not signed qualification.
+The unchanged five-case npm application passes a signed diagnostic-engine run;
+that engine changes only exception reporting and is kept outside production
+qualification. Current production rebuild and signed rerun remain required.
+
+The service diagnostic identifies a stopped job queue before the unchanged timer
+pump gate. The original failure and private diagnostics remain retained while its
+actual import lifecycle is investigated; no queue gate or limit is relaxed.
 
 Local evidence is retained under the isolated worktree's `target/pr923`, including
 all earlier failed builds, the pending-Promise diagnostic, forbidden post-return

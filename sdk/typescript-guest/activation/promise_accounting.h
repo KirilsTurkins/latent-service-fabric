@@ -11,6 +11,7 @@ private:
   using PhaseAccessor = Phase (*)(JSContext*);
   PhaseAccessor phase_;
   BrokerAccounting& jobs_;
+  size_t live_native_ = 0;
 
   static bool failure(JSContext* cx, const char* operation,
                       latent_runtime_activation_error_t error) {
@@ -42,6 +43,7 @@ public:
       return failure(cx, "native-register", error);
     owner.token = {token.generation, token.id};
     owner.live = true;
+    ++live_native_;
     return true;
   }
 
@@ -52,8 +54,11 @@ public:
     if (!latent_runtime_activation_settle(&token, &error))
       return failure(cx, "native-settle", error);
     owner.live = false;
+    --live_native_;
     return true;
   }
+
+  size_t liveNative() const { return live_native_; }
 };
 
 } // namespace lsf::typescript::activation
