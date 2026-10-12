@@ -160,9 +160,9 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 856,
-      "currentDeliveryHead": "f1c3e5ddb6796e4c4f38ada86b12f6e4204c8842",
+      "currentDeliveryHead": "bfe5a571f0a05b369608743fe60711e0994dc21a",
       "currentTitle": "Reconcile .NET standard resources and explicit wall clock",
-      "currentMergeability": "UNKNOWN"
+      "currentMergeability": "MERGEABLE"
     },
     {
       "pullRequest": 857,
@@ -381,7 +381,7 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryHead": "3834d866ba88dd5a68326e4f5c170acfc9aba23c",
-      "currentMergeability": "UNKNOWN",
+      "currentMergeability": "CONFLICTING",
       "currentDeliveryPr": 865
     },
     {
@@ -1367,9 +1367,9 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 895,
-      "currentDeliveryHead": "9d803f7d8fc78bb470534e56dd2ad1ade8aceb5a",
+      "currentDeliveryHead": "9aca85c2cfcfc7e507085d99d09750468fc132e5",
       "currentTitle": "Qualify ordinary Java server revision lifecycle",
-      "currentMergeability": "UNKNOWN"
+      "currentMergeability": "MERGEABLE"
     },
     {
       "pullRequest": 896,
@@ -2013,7 +2013,7 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryHead": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
-      "currentMergeability": "UNKNOWN",
+      "currentMergeability": "CONFLICTING",
       "currentDeliveryPr": 916
     },
     {
@@ -2078,7 +2078,7 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryHead": "a6c3e1472c622abfd8f5515e31301b08940c88b2",
-      "currentMergeability": "UNKNOWN",
+      "currentMergeability": "MERGEABLE",
       "currentDeliveryPr": 919
     },
     {
@@ -2152,9 +2152,9 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 923,
-      "currentDeliveryHead": "f98b0b47f5e147e40b84351132cc098826990cff",
+      "currentDeliveryHead": "4951043cdf12eace4bd85d13abf393d015b8c8ae",
       "currentTitle": "Fix signed TypeScript Promise lifecycle and reconcile runtime snapshots",
-      "currentMergeability": "UNKNOWN"
+      "currentMergeability": "MERGEABLE"
     },
     {
       "pullRequest": 924,
@@ -2474,8 +2474,8 @@
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
       "closed": false,
-      "currentDeliveryHead": "f8f6b9e7be94559bd5c81f0d019bd5f3299aa56f",
-      "currentMergeability": "UNKNOWN",
+      "currentDeliveryHead": "7dd3e774cf9b2a750999ddfb8274280f0ef0346a",
+      "currentMergeability": "MERGEABLE",
       "currentDeliveryPr": 935
     },
     {
@@ -3490,7 +3490,7 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 970,
-      "currentDeliveryHead": "1ee15a60aa6fa3852b74b81cbeb478bff81669eb",
+      "currentDeliveryHead": "67262d549ea0c2be56d8d4898cc66c568a65f3c2",
       "currentTitle": "Reconcile restored-effect closure on current recovery owners",
       "currentMergeability": "MERGEABLE"
     },
@@ -3650,9 +3650,9 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 974,
-      "currentDeliveryHead": "b23a8a8733e67a4ded60c3a9267b3c4b2e7cd0f7",
+      "currentDeliveryHead": "586db30577832f8430fc7bf6974a486a0314b3b1",
       "currentTitle": "WIP cleanup snapshot: fb2-state823-resume10",
-      "currentMergeability": "UNKNOWN"
+      "currentMergeability": "MERGEABLE"
     },
     {
       "pullRequest": 975,
@@ -3771,7 +3771,7 @@
   "remainingOpenCount": 13,
   "lastVerifiedOpenCount": 10,
   "latestRemoteObservation": {
-    "observedAtUtc": "2026-10-12T22:05:40.726403+00:00",
+    "observedAtUtc": "2026-10-12T23:19:12.852226+00:00",
     "openCount": 14,
     "snapshotPrs": [
       856,
@@ -3789,7 +3789,7 @@
         "headRefName": "dependabot/npm_and_yarn/examples/renderer-profile/development/angular/platform-server-22.2.1",
         "headRefOid": "41e518de64ec86017f5df6c4bd89da0f050664c1",
         "isDraft": false,
-        "mergeable": "UNKNOWN",
+        "mergeable": "MERGEABLE",
         "number": 984,
         "title": "chore(deps): bump @angular/platform-server from 22.2.0 to 22.2.1 in /examples/renderer-profile"
       },
@@ -3797,15 +3797,15 @@
         "headRefName": "dependabot/npm_and_yarn/examples/renderer-profile/development/angular/platform-browser-22.2.1",
         "headRefOid": "6eb07145bc67dc19ac4153273d8ceab3df8d4525",
         "isDraft": false,
-        "mergeable": "UNKNOWN",
+        "mergeable": "MERGEABLE",
         "number": 983,
         "title": "chore(deps): bump @angular/platform-browser from 22.2.0 to 22.2.1 in /examples/renderer-profile"
       },
       {
         "headRefName": "dependabot/npm_and_yarn/examples/renderer-profile/development/angular/compiler-22.2.1",
-        "headRefOid": "bfc9c8e243ee83fd53b7e6a4cad86b9ba920a998",
+        "headRefOid": "b5b46b3038914f1c1b3e9511df6893e3c91571ad",
         "isDraft": false,
-        "mergeable": "UNKNOWN",
+        "mergeable": "MERGEABLE",
         "number": 982,
         "title": "fix(deps): reconcile Angular renderer 22.2.1 patch peers"
       },
@@ -3819,7 +3819,7 @@
       },
       {
         "headRefName": "dependabot/cargo/development/wasmparser-0.261.0",
-        "headRefOid": "65166f1cc9dfcf9df57bdc6c4df394eefa3e7c62",
+        "headRefOid": "7784132aef09206eb200758e185c6f0c3a742c81",
         "isDraft": false,
         "mergeable": "MERGEABLE",
         "number": 979,
