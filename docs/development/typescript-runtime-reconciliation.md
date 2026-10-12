@@ -20,9 +20,9 @@ The qualification application bodies, tenant/service identities, runtime owner
 ceilings and declared invocation limits remain unchanged. The source-built engine
 used one CPU, 2 GiB memory and the original finite compiler deadline. The current
 engine SHA-256 is
-`0cfe249e402e11af02b29abcc0631269e27a3188ef90c1590c845d9e83a669fa`;
+`6655200c457ac1b75763ba6fa661271379cbb7a4e6bcb49e0cebc7bc425f9692`;
 its exact engine input envelope SHA-256 is
-`2998903d9ca2541f76fb602c22c6d563f180c5c87ec4d4d4e188d18be00a7475`.
+`bf4d9d65cebbc1375f18f50537687475b15ad8bf96e2e0ec9c4a09e02fe6e783`.
 
 The ordinary, clock and service caller/callee components have genuine maintained
 CLI builds, exact selected WIT sources, packages and build observations. Their
@@ -54,7 +54,7 @@ the dependent signal. These follow the
 
 ## Evidence and remaining acceptance
 
-The focused Linux source suite passes 176 tests with zero skips. The packaging
+The focused Linux source suite passes 177 tests with zero skips. The packaging
 library passes 80 tests. The signed ordinary campaign passes its complete original
 matrix and fresh-after-failure control. CI adds the new regressions while retaining
 all historical commands, cases, ignore guards, limits and qualification contracts.
@@ -73,7 +73,7 @@ changed. A separate explicit signed fixture retains its five cases. The first
 production attempt failed at the original native owner ceiling before the heap
 collector ran.
 
-The next source milestone collects actual unreachable objects before bounded
+The collection milestone collects actual unreachable objects before bounded
 native admission reaches the heap collector's later trigger. Its local live-owner
 count changes only after successful native registration or settlement and controls
 collection timing, never permission or admission. Broker settlement follows the
@@ -81,13 +81,28 @@ real weak sweep and collection end, outside GC. Twelve intrinsic engine controls
 pass, including all historical cases, 64 retained reachable Promises refusing the
 next allocation, and churn retaining its charges until physical collection and
 acknowledgement. Their fixture broker is explicitly not signed qualification.
-The unchanged five-case npm application passes a signed diagnostic-engine run;
-that engine changes only exception reporting and is kept outside production
-qualification. Current production rebuild and signed rerun remain required.
+The unchanged five-case npm application now passes signed production execution.
+The original ordinary matrix, fresh-after-failure and four clock cases also pass
+again on this exact production engine. Production host test binaries and packaging
+tools are copied to owned immutable paths before use. Earlier diagnostic runs keep
+their separate qualification boundary.
 
-The service diagnostic identifies a stopped job queue before the unchanged timer
-pump gate. The original failure and private diagnostics remain retained while its
-actual import lifecycle is investigated; no queue gate or limit is relaxed.
+The service diagnostics exposed the original Promise realm mismatch and a native
+binding selection failure. The selected import compiler captures the application
+Promise intrinsic and normalizes actual async functions and resource methods at
+module registration. A two-realm regression preserves pending ordering, rejection
+identity, receivers, constructors, name/arity and ordinary function references.
+Missing native import records now report explicit errors while preserving an
+already pending exception; 27 actual import/timer/snapshot controls pass.
+
+The original splicer guessed native pointers within 1000..5000. This engine's
+sample pointer is 532, so that guess selected instruction zero and modified stack
+arithmetic while retaining the sample binding. The source-owned splicer now
+locates the actual sample function in its table and selects the corresponding
+getter operand. Missing and ambiguous shapes are rejected. Eight native compiler
+tests pass, including existing ABI layouts and pointers below and above the old
+range. The updated compiler tool rebuild and signed service acceptance remain in
+progress; source controls do not qualify that import implementation.
 
 Local evidence is retained under the isolated worktree's `target/pr923`, including
 all earlier failed builds, the pending-Promise diagnostic, forbidden post-return

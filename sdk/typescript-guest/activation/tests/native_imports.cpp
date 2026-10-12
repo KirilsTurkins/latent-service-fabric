@@ -368,7 +368,30 @@ int main(int argc, char** argv) {
     if (!jobs.beginRoot(cx)) return 9;
     JS::RootedValue output(cx);
     const char* selected = argv[1];
-    if (!std::strcmp(selected,"real-import-Promise-pending-until-terminal")) {
+    if (!std::strcmp(selected,"missing-import-record-reports-and-preserves-error")) {
+      void* buffer = nullptr;
+      JS::RootedObject promise(cx);
+      bool reported = !imports.beginLowering(cx,999) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      reported = reported && !imports.started(cx,999,0,&promise) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      reported = reported && !imports.beginLifting(cx,999,buffer) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      reported = reported && !imports.liftValue(cx,999,&output) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      reported = reported && !imports.liftCompleted(cx,999) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      reported = reported && !imports.cancel(cx,999) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      JS::RootedValue original(cx,JS::Int32Value(42));
+      JS_SetPendingException(cx,original);
+      bool refused = !imports.liftCompleted(cx,999);
+      JS::RootedValue retained(cx);
+      status = reported && refused && JS_GetPendingException(cx,&retained) &&
+               retained.isInt32() && retained.toInt32()==42 && !imports.hasPending() &&
+               imported_starts==0 ? 0 : 1;
+      JS_ClearPendingException(cx);
+    } else if (!std::strcmp(selected,"real-import-Promise-pending-until-terminal")) {
       if(!evaluate(cx,"globalThis.answer=0;globalThis.root=ordinaryImported().then(liftImported).then(value=>{answer=value;rootDone();});",&output))return 10;
       status=imported_starts==1 && imported_lifts==0 && !expect(cx,"answer===42") &&
              shared_drain(cx,queue,timers,imports,readiness) && imported_lifts==1 && expect(cx,"answer===42")?0:1;

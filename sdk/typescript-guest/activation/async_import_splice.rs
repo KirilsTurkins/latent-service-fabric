@@ -2,9 +2,10 @@
 // The original raw SpiderMonkey argument representation is preserved exactly.
 use anyhow::{Context, Result};
 use wirm::ir::function::FunctionBuilder;
-use wirm::ir::id::{FunctionID, LocalID};
+use wirm::ir::id::{FunctionID, GlobalID, LocalID};
 use wirm::ir::module::Module;
-use wirm::ir::types::BlockType;
+use wirm::ir::module::module_globals::GlobalKind;
+use wirm::ir::types::{BlockType, ElementItems, ElementKind, InitInstr, Value};
 use wirm::module_builder::AddLocal;
 use wirm::opcode::Inject;
 use wirm::wasmparser::{MemArg, Operator};
@@ -16,6 +17,52 @@ fn exported(module:&Module<'_>,name:&str)->Result<FunctionID> {
     module.exports.get_func_by_name(name.to_owned()).with_context(||format!("private-async-engine-export-required:{name}"))
 }
 fn memory(offset:u64)->MemArg { MemArg{align:0,max_align:0,offset,memory:0} }
+
+pub fn import_getter_pointer(module:&Module<'_>, getter:FunctionID, sample:FunctionID)
+    ->Result<(usize,i32)> {
+    let table=module.tables.main_function()?.context("native-import-function-table-required")?;
+    let mut pointers=Vec::new();
+    for element in module.elements.iter() {
+        let ElementItems::Functions(functions)=&element.items else {continue};
+        let ElementKind::Active{table_index,offset_expr}=&element.kind else {continue};
+        if table_index.unwrap_or(0)!=*table {continue;}
+        for (index,function) in functions.iter().enumerate() {
+            if *function!=sample {continue;}
+            let [InitInstr::Value(Value::I32(base))]=offset_expr.instructions() else {
+                anyhow::bail!("native-import-sample-table-offset-required");
+            };
+            let offset=i32::try_from(index).context("native-import-table-index-overflow")?;
+            pointers.push(base.checked_add(offset).context("native-import-table-index-overflow")?);
+        }
+    }
+    let [pointer]=pointers.as_slice() else {
+        anyhow::bail!("native-import-unique-sample-table-pointer-required");
+    };
+    let function=module.functions.get(getter).unwrap_local()
+        .context("native-import-getter-definition-required")?;
+    let ops=function.body.instructions.get_ops();
+    let mut positions=Vec::new();
+    for (index,op) in ops.iter().enumerate() {
+        let Operator::I32Const{value}=op else {continue};
+        let mut base=*value;
+        if index>0 && matches!(ops.get(index+1),Some(Operator::I32Add)) {
+            if let Operator::GlobalGet{global_index}=&ops[index-1] {
+                let GlobalKind::Local(global)=module.globals.get_kind(GlobalID(*global_index)) else {
+                    continue;
+                };
+                let [InitInstr::Value(Value::I32(offset))]=global.init_expr.instructions() else {
+                    continue;
+                };
+                base=base.checked_add(*offset).context("native-import-table-index-overflow")?;
+            }
+        }
+        if base==*pointer {positions.push(index);}
+    }
+    let [position]=positions.as_slice() else {
+        anyhow::bail!("native-import-unique-getter-table-operand-required");
+    };
+    Ok((*position,*pointer))
+}
 
 // Identical to the original pinned splicer's JS::Value argument conversion.
 // The extra first argument is a compiler-private record identity, never WIT.
@@ -115,4 +162,70 @@ pub fn synthesize(module:&mut Module<'_>,original:&CoreFn,descriptor:&Descriptor
     function.local_get(cx);function.local_get(id);function.local_get(status);function.local_get(vp);
     function.call(started);
     Ok(function.finish_module(module))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::borrow::Cow;
+    use wasm_encoder::{CodeSection, ConstExpr, ElementSection, Elements, Function,
+        FunctionSection, GlobalSection, GlobalType, Instruction, RefType, TableSection,
+        TableType, TypeSection, ValType};
+
+    fn fixture(pointer:i32, operand:i32, duplicate_operand:bool, duplicate_sample:bool)->Vec<u8> {
+        let mut module=wasm_encoder::Module::new();
+        let mut types=TypeSection::new();
+        types.ty().function([ValType::I32;3],[ValType::I32]);
+        module.section(&types);
+        let mut functions=FunctionSection::new();
+        functions.function(0).function(0);
+        module.section(&functions);
+        let mut table=TableSection::new();
+        table.table(TableType{element_type:RefType::FUNCREF,minimum:pointer as u64+2,
+            maximum:None,table64:false,shared:false});
+        module.section(&table);
+        let mut globals=GlobalSection::new();
+        globals.global(GlobalType{val_type:ValType::I32,mutable:true,shared:false},
+            &ConstExpr::i32_const(1048576));
+        module.section(&globals);
+        let mut elements=ElementSection::new();
+        let samples=if duplicate_sample {vec![0,0]}else{vec![0]};
+        elements.active(None,&ConstExpr::i32_const(pointer),
+            Elements::Functions(Cow::Borrowed(&samples)));
+        module.section(&elements);
+        let mut code=CodeSection::new();
+        let mut sample=Function::new([]);
+        sample.instruction(&Instruction::I32Const(42)).instruction(&Instruction::End);
+        code.function(&sample);
+        let mut getter=Function::new([]);
+        getter.instruction(&Instruction::GlobalGet(0)).instruction(&Instruction::I32Const(16))
+            .instruction(&Instruction::I32Sub).instruction(&Instruction::Drop);
+        if duplicate_operand {
+            getter.instruction(&Instruction::I32Const(operand)).instruction(&Instruction::Drop);
+        }
+        getter.instruction(&Instruction::I32Const(operand)).instruction(&Instruction::End);
+        code.function(&getter);
+        module.section(&code);
+        module.finish()
+    }
+
+    #[test]
+    fn actual_table_membership_selects_small_and_large_pointers_without_stack_arithmetic() {
+        for pointer in [532,3432,8000] {
+            let bytes=fixture(pointer,pointer,false,false);
+            let module=Module::parse(&bytes,false,false).unwrap();
+            assert_eq!(import_getter_pointer(&module,FunctionID(1),FunctionID(0)).unwrap(),
+                (4,pointer));
+        }
+    }
+
+    #[test]
+    fn absent_or_ambiguous_pointer_shapes_are_rejected() {
+        for (operand,duplicate_operand,duplicate_sample) in [(7,false,false),
+            (532,true,false),(532,false,true)] {
+            let bytes=fixture(532,operand,duplicate_operand,duplicate_sample);
+            let module=Module::parse(&bytes,false,false).unwrap();
+            assert!(import_getter_pointer(&module,FunctionID(1),FunctionID(0)).is_err());
+        }
+    }
 }

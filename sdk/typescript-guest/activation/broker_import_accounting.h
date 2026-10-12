@@ -52,8 +52,11 @@ public:
     // frame. Its Task/Queued owners account that execution; the parked import
     // task owns only the original in-flight lowering until its ACK below.
     Token continuation{};
-    if (!jobs_.currentContinuation(continuation) || !work.task_live || work.queued_live)
+    if (!jobs_.currentContinuation(continuation) || !work.task_live || work.queued_live) {
+      if (!JS_IsExceptionPending(cx))
+        JS_ReportErrorASCII(cx, "activation-runtime-import-result-frame-invalid");
       return false;
+    }
     return true;
   }
   bool complete(JSContext* cx, JobOwners& work) override {

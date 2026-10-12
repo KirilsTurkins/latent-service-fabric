@@ -157,11 +157,13 @@ public:
   }
   bool beginLowering(JSContext* cx, uint32_t id) {
     auto* item = find(id);
-    return item && item->lifecycle.beginLowering(cx);
+    if (!item) return invalid(cx, "lower-record");
+    return item->lifecycle.beginLowering(cx);
   }
   bool started(JSContext* cx, uint32_t id, jobs_subtask_status_t status, JS::MutableHandleObject promise) {
     auto* item = find(id);
-    if (!item || !item->lifecycle.started(cx, status)) return false;
+    if (!item) return invalid(cx, "start-record");
+    if (!item->lifecycle.started(cx, status)) return false;
     promise.set(item->promise);
     return true;
   }
@@ -188,19 +190,21 @@ public:
   }
   bool beginLifting(JSContext* cx, uint32_t id, void*& buffer) {
     auto* item = find(id);
-    if (!item || !item->promise_settled || !item->lifecycle.beginLifting(cx)) return false;
+    if (!item || !item->promise_settled) return invalid(cx, "lift-record");
+    if (!item->lifecycle.beginLifting(cx)) return false;
     buffer = item->result;
     return true;
   }
   bool liftValue(JSContext* cx, uint32_t id, JS::MutableHandleValue value) {
     auto* item = find(id);
     void* buffer = nullptr;
-    if (!item || !beginLifting(cx,id,buffer)) return false;
+    if (!item) return invalid(cx, "lift-record");
+    if (!beginLifting(cx,id,buffer)) return false;
     return lift_raw_import(cx,buffer,item->result_size,item->raw_kind,value);
   }
   bool liftCompleted(JSContext* cx, uint32_t id) {
     auto* item = find(id);
-    if (!item) return false;
+    if (!item) return invalid(cx, "finish-record");
     if(item->lifecycle.phase()!=ImportLifecycle::Phase::Lifting)
       return item->lifecycle.cancel(cx) && collect(cx);
     if (!item->lifecycle.liftCompleted(cx)) return false;
@@ -209,7 +213,8 @@ public:
   }
   bool cancel(JSContext* cx, uint32_t id) {
     auto* item = find(id);
-    return item && rejectCancelled(cx, *item) && item->lifecycle.cancel(cx) && collect(cx);
+    if (!item) return invalid(cx, "cancel-record");
+    return rejectCancelled(cx, *item) && item->lifecycle.cancel(cx) && collect(cx);
   }
   bool cancelAll(JSContext* cx) {
     stopped_ = true;

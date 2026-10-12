@@ -10,6 +10,75 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class TypeScriptAsyncWaiterTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("node"), "requires Node")
+    def test_actual_async_imports_use_application_promises_and_preserve_resources(self):
+        source = r"""
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {applicationRealmImportPromises} from './async_waiters.mjs';
+const app = vm.createContext({});
+const ApplicationPromise = vm.runInContext('Promise', app);
+let exports;
+const initializer = vm.createContext({
+  contentGlobal: {Promise: ApplicationPromise, __lsfAsyncImportBridge: {}},
+  defineBuiltinModule(name, values) { assert.equal(name, 'fixture'); exports = values; }
+});
+const original = `const __lsfImports = contentGlobal.__lsfAsyncImportBridge;
+let calls = 0;
+const reason = {original: true};
+async function call(value) { calls++; await Promise.resolve(); return value; }
+async function reject() { throw reason; }
+function synchronous() { return 42; }
+class Resource {
+  constructor() { this.value = 40; }
+  async read(extra) { return this.value + extra; }
+  static async create() { return new this(); }
+}
+globalThis.originals = {call, reject, synchronous, Resource, reason};
+defineBuiltinModule('fixture', {call, reject, synchronous, Resource});`;
+vm.runInContext(applicationRealmImportPromises(original), initializer);
+const pending = exports.call(42);
+assert(pending instanceof ApplicationPromise);
+assert(!(pending instanceof Promise));
+assert.equal(exports.call.name, initializer.originals.call.name);
+assert.equal(exports.call.length, initializer.originals.call.length);
+assert.throws(() => new exports.call(), TypeError);
+let settled = false;
+pending.then(() => settled = true);
+assert.equal(settled, false);
+assert.equal(await pending, 42);
+assert.equal(vm.runInContext('calls', initializer), 1);
+const rejected = exports.reject();
+assert(rejected instanceof ApplicationPromise);
+await assert.rejects(rejected, error => error === initializer.originals.reason);
+assert.equal(exports.synchronous, initializer.originals.synchronous);
+assert.equal(exports.synchronous(), 42);
+assert.equal(exports.Resource, initializer.originals.Resource);
+const resource = new exports.Resource();
+const read = resource.read(2);
+assert(read instanceof ApplicationPromise);
+assert.equal(await read, 42);
+const created = exports.Resource.create();
+assert(created instanceof ApplicationPromise);
+assert((await created) instanceof exports.Resource);
+assert.throws(() => applicationRealmImportPromises(''), /shape-drift/);
+assert.throws(() => applicationRealmImportPromises(original + original), /shape-drift/);
+"""
+        with tempfile.TemporaryDirectory() as owned:
+            root = Path(owned)
+            (root / "async_waiters.mjs").write_bytes(
+                (ROOT / "tools/typescript_guest/async_waiters.mjs").read_bytes()
+            )
+            (root / "test.mjs").write_text(source, encoding="utf-8")
+            result = subprocess.run(
+                [shutil.which("node"), str(root / "test.mjs")],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    @unittest.skipUnless(shutil.which("node"), "requires Node")
     def test_idle_state_actual_shared_wait_and_successive_imports(self):
         source = r"""
 import assert from 'node:assert/strict';

@@ -37,3 +37,53 @@ export function retireGeneratedTaskSlots(source) {
   }
   return source;
 }
+
+export function applicationRealmImportPromises(source) {
+  const anchor = 'const __lsfImports = contentGlobal.__lsfAsyncImportBridge;\n';
+  if (source.split(anchor).length !== 2) {
+    throw new Error('selected-runtime-import-promise-realm-shape-drift');
+  }
+  const helper = `
+const __lsfApplicationPromise = contentGlobal.Promise;
+const __lsfAsyncFunctionPrototype = Object.getPrototypeOf(async function () {});
+function __lsfApplicationAsyncFunction(original) {
+  const callable = {
+    [original.name](...args) {
+      return __lsfApplicationPromise.resolve(Reflect.apply(original, this, args));
+    }
+  }[original.name];
+  Object.defineProperty(callable, 'length', {value: original.length});
+  return callable;
+}
+function __lsfNormalizeAsyncMethods(target) {
+  if (!target) return;
+  for (const key of Reflect.ownKeys(target)) {
+    const descriptor = Object.getOwnPropertyDescriptor(target, key);
+    if (typeof descriptor.value === 'function' &&
+        Object.getPrototypeOf(descriptor.value) === __lsfAsyncFunctionPrototype) {
+      Object.defineProperty(target, key,
+        {...descriptor, value: __lsfApplicationAsyncFunction(descriptor.value)});
+    }
+  }
+}
+function __lsfApplicationBuiltinModule(name, exports) {
+  const normalized = {};
+  for (const [key, original] of Object.entries(exports)) {
+    let value = original;
+    if (typeof original === 'function') {
+      if (Object.getPrototypeOf(original) === __lsfAsyncFunctionPrototype) {
+        value = __lsfApplicationAsyncFunction(original);
+      } else {
+        __lsfNormalizeAsyncMethods(original);
+        __lsfNormalizeAsyncMethods(original.prototype);
+      }
+    }
+    Object.defineProperty(normalized, key,
+      {value, enumerable: true, configurable: true, writable: true});
+  }
+  defineBuiltinModule(name, normalized);
+}
+`;
+  return source.replace(/^defineBuiltinModule\(/gm, '__lsfApplicationBuiltinModule(')
+    .replace(anchor, anchor + helper);
+}

@@ -203,6 +203,28 @@ pub fn splice_with_async(
             }
             // create the native JS binding function
 ''','genuine-native-Promise-trampoline')
+    source=replace_once(source,
+        b'        let arg_idx = args[0];\n',
+        b'        let arg_idx = args[0];\n'
+        b'        let sample = get_export_fid(module, &coreabi_sample_ids[0]);\n'
+        b'        let (table_instr_idx, sample_pointer) =\n'
+        b'            lsf_async_splice::import_getter_pointer(module, coreabi_get_import_fid, sample)?;\n',
+        'actual-sample-table-pointer-selection')
+    start=source.index(b'        // Find the I32Const base index and compute the delta to new base.')
+    end=source.index(b'\n    }\n\n    // remove unnecessary exports',start)
+    source=source[:start]+b'''        let Operator::I32Const { value } = builder.body.instructions.get_ops()[table_instr_idx] else {
+            anyhow::bail!("native-import-getter-table-constant-required");
+        };
+        let delta = import_fn_table_start_idx.checked_sub(sample_pointer)
+            .context("native-import-table-index-overflow")?;
+        let selected_base = value.checked_add(delta)
+            .context("native-import-table-index-overflow")?;
+        builder.inject_at(table_instr_idx, InstrumentationMode::Alternate,
+            Operator::I32Const { value: selected_base });
+        builder.inject_at(table_instr_idx, InstrumentationMode::Alternate,
+            Operator::LocalGet { local_index: *idx_local });
+        builder.inject_at(table_instr_idx, InstrumentationMode::Alternate, Operator::I32Add);
+'''+source[end:]
     receipt={'status':'private-derived-splicer-source','originalSha256':hashlib.sha256(original).hexdigest(),
         'derivedSha256':hashlib.sha256(source).hexdigest(),'originalSynchronousSpliceSignatureRetained':True,
         'actualP3SignatureAndAsyncLowerImports':True,'nativeBlockingWaitAdded':False,
