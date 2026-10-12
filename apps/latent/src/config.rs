@@ -21,6 +21,7 @@ pub struct ResolvedConfig {
     pub connect_timeout: Duration,
     pub rpc_timeout: Duration,
     pub limits: InputLimits,
+    pub manifest_profile: latent_manifest::ManifestValidationProfile,
 }
 
 pub fn resolve(cli: &Cli) -> Result<ResolvedConfig, Failure> {
@@ -71,6 +72,7 @@ pub fn resolve(cli: &Cli) -> Result<ResolvedConfig, Failure> {
         connect_timeout: Duration::from_millis(connect),
         rpc_timeout: Duration::from_millis(rpc),
         limits: selected.limits,
+        manifest_profile: cli.manifest_profile()?,
     })
 }
 

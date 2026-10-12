@@ -3,7 +3,8 @@ use std::collections::BTreeSet;
 use latent_artifacts::{content_digest, decode_contract_metadata, ContractMetadataLimits};
 use latent_control_store::VersionedDeployment;
 use latent_manifest::{
-    JsonManifestCodec, ManifestCodec, ManifestLimits, ManifestValidator, Phase1ManifestValidator,
+    JsonManifestCodec, ManifestCodec, ManifestLimits, ManifestValidationProfile, ManifestValidator,
+    Phase1ManifestValidator,
 };
 use latent_wire::management::{deployment_to_proto, proto};
 use serde_json::json;
@@ -151,7 +152,10 @@ fn activation(command: &ActivationCommand) -> Result<Operation, Failure> {
     }
 }
 
-pub fn validate(command: &ValidateCommand) -> Result<Outcome, Failure> {
+pub fn validate(
+    command: &ValidateCommand,
+    profile: ManifestValidationProfile,
+) -> Result<Outcome, Failure> {
     let (kind, bytes) = match command {
         ValidateCommand::Capsule(args) => (
             "Capsule",
@@ -166,14 +170,14 @@ pub fn validate(command: &ValidateCommand) -> Result<Outcome, Failure> {
         let manifest = codec()
             .decode_capsule(&bytes)
             .map_err(|_| invalid_manifest())?;
-        Phase1ManifestValidator
+        profile
             .validate_capsule(&manifest)
             .map_err(|_| invalid_manifest())?;
     } else {
         let manifest = codec()
             .decode_deployment(&bytes)
             .map_err(|_| invalid_manifest())?;
-        Phase1ManifestValidator
+        profile
             .validate_deployment(&manifest)
             .map_err(|_| invalid_manifest())?;
     }
@@ -352,7 +356,8 @@ fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Opera
     let manifest = codec()
         .decode_deployment(&bytes)
         .map_err(|_| invalid_manifest())?;
-    Phase1ManifestValidator
+    config
+        .manifest_profile
         .validate_deployment(&manifest)
         .map_err(|_| invalid_manifest())?;
     tenant(

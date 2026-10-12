@@ -76,7 +76,10 @@ fn execute(cli: &Cli) -> i32 {
         Err(failure) => failure.into(),
         Ok(()) => match &cli.command {
             Command::Package(command) => crate::package::execute(cli, command),
-            Command::Validate(command) => management::validate(command).unwrap_or_else(Into::into),
+            Command::Validate(command) => cli
+                .manifest_profile()
+                .and_then(|profile| management::validate(command, profile))
+                .unwrap_or_else(Into::into),
             _ => match tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()

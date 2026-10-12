@@ -90,13 +90,13 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
                 .clone();
             let value = call!(session, DeploymentServiceClient, apply_deployment, request);
             association::deployment(value.deployment.as_ref(), session.tenant(), Some(&id), None)?;
-            response::applied(value)
+            response::applied(value, session.manifest_profile())
         }
         Operation::GetDeployment(request) => {
             let id = request.id.clone();
             let value = call!(session, DeploymentServiceClient, get_deployment, request);
             association::deployment(value.deployment.as_ref(), session.tenant(), Some(&id), None)?;
-            response::got_deployment(value)
+            response::got_deployment(value, session.manifest_profile())
         }
         Operation::ListDeployments(request) => list_deployments(request, session).await,
         Operation::DeleteDeployment(request) => {
@@ -186,7 +186,7 @@ async fn list_deployments(
     for row in &value.deployments {
         association::deployment(Some(row), session.tenant(), None, service.as_deref())?;
     }
-    response::deployments(value)
+    response::deployments(value, session.manifest_profile())
 }
 
 async fn list_nodes(

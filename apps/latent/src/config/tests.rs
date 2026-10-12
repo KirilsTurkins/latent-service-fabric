@@ -46,6 +46,7 @@ fn selected_profile_defaults_and_nonsecret_overrides_are_exact() {
     assert_eq!(config.connect_timeout, Duration::from_secs(2));
     assert_eq!(config.rpc_timeout, Duration::from_secs(1));
     assert_eq!(config.limits.maximum_component_bytes, 16 * 1024 * 1024);
+    assert!(!config.manifest_profile.transactional());
     let cli = Cli::try_parse_from([
         "latent",
         "--config",
@@ -65,6 +66,28 @@ fn selected_profile_defaults_and_nonsecret_overrides_are_exact() {
     assert_eq!(overridden.tenant, "other-tenant");
     assert_eq!(overridden.rpc_timeout, Duration::from_millis(250));
     assert_eq!(overridden.token, config.token);
+}
+
+#[test]
+fn transaction_profile_is_not_inferred_from_credentials_or_package_metadata() {
+    let workspace = tempfile::tempdir().unwrap();
+    let path = workspace.path().join("client.json");
+    let mut value = document();
+    value["profiles"][0]["name"] = json!("phase4");
+    fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
+    for explicit in [false, true] {
+        let mut args = vec!["latent", "--config", path.to_str().unwrap(), "node", "list"];
+        if explicit {
+            args.push("--phase4");
+        }
+        let cli = Cli::try_parse_from(args).unwrap_or_else(|_| panic!("test command"));
+        let config = resolve(&cli).unwrap_or_else(|_| panic!("valid explicit profile"));
+        assert_eq!(config.manifest_profile.transactional(), explicit);
+        assert_eq!(config.limits.maximum_component_bytes, 16 * 1024 * 1024);
+        assert_eq!(config.rpc_timeout, Duration::from_secs(1));
+    }
+    value["profiles"][0]["phase4"] = json!(true);
+    assert!(!check(&value));
 }
 
 #[test]

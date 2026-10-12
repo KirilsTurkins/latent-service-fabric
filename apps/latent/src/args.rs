@@ -42,6 +42,10 @@ pub struct Cli {
     pub config: Option<PathBuf>,
     #[arg(long, global = true, value_name = "NAME")]
     pub profile: Option<String>,
+    /// Select the supported transaction manifest profile for local preparation
+    /// and deployment replies. This supplies no node or execution authority.
+    #[arg(long, global = true)]
+    pub phase4: bool,
     /// Override the selected profile's literal loopback HTTP endpoint.
     #[arg(long, global = true, value_name = "URL")]
     pub endpoint: Option<String>,
@@ -58,6 +62,27 @@ pub struct Cli {
     pub rpc_timeout_ms: Option<u64>,
     #[command(subcommand)]
     pub command: Command,
+}
+
+impl Cli {
+    pub(crate) fn manifest_profile(
+        &self,
+    ) -> Result<latent_manifest::ManifestValidationProfile, crate::error::Failure> {
+        if !self.phase4 {
+            return Ok(latent_manifest::ManifestValidationProfile::default());
+        }
+        latent_manifest::ManifestValidationProfile::phase4(
+            latent_core::BudgetProfile::Phase4,
+            latent_core::PHASE4_HOST_ABI_V1,
+            &latent_manifest::phase4_host_abi_digest(),
+        )
+        .map_err(|_| {
+            crate::error::Failure::local(
+                "unsupported-manifest-profile",
+                "The selected transaction manifest profile is unsupported.",
+            )
+        })
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]

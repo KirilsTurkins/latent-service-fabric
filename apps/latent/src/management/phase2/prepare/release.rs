@@ -109,7 +109,7 @@ fn publish_package(
     args: &crate::args::release::PublishPackageArgs,
     config: &ResolvedConfig,
 ) -> Result<Operation, Failure> {
-    let package = crate::package::read(&args.directory)?;
+    let package = crate::package::read_with_profile(&args.directory, config.manifest_profile)?;
     let evidence = args
         .evidence
         .as_ref()
