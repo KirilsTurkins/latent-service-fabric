@@ -1273,6 +1273,8 @@
         "durable::worker::control_tests::abandoned_started_attempt_synchronizes_and_retires_as_unknown",
         "durable::worker::control_tests::control_reservation_preserves_capacity_pending_and_closed_rejection",
         "durable::worker::control_tests::control_reservation_waits_for_memory_fence_while_hot_reservation_rejects",
+        "durable::worker::control_tests::durable_begin_notification_retires_command_but_retains_pending_record_owner",
+        "durable::worker::control_tests::query_notification_follows_command_retirement_with_response_lease_still_live",
         "durable::worker::control_tests::recovery_snapshot_and_reconciliation_wait_for_memory_fence",
         "durable::worker::control_tests::two_observations_exhaust_32k_control_queue_until_actual_writer_drain",
         "phase2::tests::capacity_rejects_new_events_without_evicting_existing_audit_history",
@@ -1288,7 +1290,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-audit/Cargo.toml",
-      "minimumCases": 46,
+      "minimumCases": 48,
       "mode": "libtest",
       "package": "latent-audit",
       "platforms": [
