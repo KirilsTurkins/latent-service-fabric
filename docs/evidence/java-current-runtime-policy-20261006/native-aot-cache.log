@@ -1,0 +1,13 @@
+   Compiling latent-wasmtime v0.1.0-alpha.5 (/source/crates/latent-wasmtime)
+    Finished `test` profile [unoptimized] target(s) in 8.23s
+     Running tests/native_aot_cache.rs (/build/target/debug/deps/native_aot_cache-0598e9e895d75a3e)
+
+running 5 tests
+test ownership::evicted_ready_handle_keeps_its_image_and_revocation_never_recovers_from_native_cache ... ok
+test reopen::buffered_web_profile_change_after_restart_cannot_reuse_a_stale_native_image ... ok
+test reopen::identical_component_after_restart_requires_its_exact_engine_before_native_reuse ... ok
+test reopen::real_miss_invokes_then_reopened_native_hit_verifies_source_without_compiling ... ok
+test tamper::replaced_bytes_with_matching_sha_and_wrong_host_key_never_reach_the_loader ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 18.69s
+

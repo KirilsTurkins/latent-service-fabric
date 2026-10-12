@@ -1,0 +1,11 @@
+Covered 88 baseline and 216 current required run blocks; 130 delegated script owners
+Validated 2 known GitHub issue-form/config file(s)
+{
+  "documents": 1043,
+  "versioned_documents": 548,
+  "svgs": 26,
+  "local_links": 3418,
+  "anchors": 161,
+  "application_commands": 67,
+  "errors": []
+}

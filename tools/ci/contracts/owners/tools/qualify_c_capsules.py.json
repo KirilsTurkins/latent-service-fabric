@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/qualify_c_capsules.py","reviewBoundary":"committed-fingerprint","reviewReason":"Review finite isolated source/static C archive production, validation of all core members and strong definitions, direct third-party and developer calls, immutable resource recapture and separate signed node qualification; retain all historical commands/cases/guards.","schemaVersion":"latent.ci.contracts.v1","sha256":"381ff7c5fdda8fe8b96c1b0a8889b3dc526da64ecb07c0701945ca7baadea63d"}
+{
+  "kind": "owner",
+  "path": "tools/qualify_c_capsules.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain original C qualifier flags and delegate explicit approved-generator source/static signed qualification",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "00fbd7cf7dd778e0aa6054d0d6eb7692089e6c69feeedf5e6f86cab4b7b6065c"
+}

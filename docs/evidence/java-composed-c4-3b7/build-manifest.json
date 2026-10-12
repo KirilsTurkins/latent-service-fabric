@@ -1,0 +1,365 @@
+{
+  "schemaVersion": "latent.java-http.original-build-inputs.v1",
+  "files": [
+    {
+      "path": "generation-cases/generation-cases.json",
+      "bytes": 1655,
+      "sha256": "sha256:16cc7dfc468938af209368052d28bbc08ce0ce1755589f9f003935c89062d52b",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/generation-cases/generation-cases.json"
+    },
+    {
+      "path": "builds/domain/BUILD-COMPLETE.json",
+      "bytes": 8815,
+      "sha256": "sha256:0ff1cdadec371c0010ee12e7559be0d80c745056df575f066d854dccd72dee20",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/BUILD-COMPLETE.json"
+    },
+    {
+      "path": "builds/domain/build-observation.json",
+      "bytes": 3131,
+      "sha256": "sha256:3eca89e3c53055c0be4ca2c396db67e19a51f8f0bf26646be0b3c46064362f53",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/build-observation.json"
+    },
+    {
+      "path": "builds/domain/source-inputs.json",
+      "bytes": 8792,
+      "sha256": "sha256:5d38bbe8a9948c03acb313d580a50bbd0f0a7295bf821fa2eeab5fffe9cd0f4e",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/source-inputs.json"
+    },
+    {
+      "path": "builds/domain/recipe-inputs.json",
+      "bytes": 2677,
+      "sha256": "sha256:3420d15b94597f64653445a4491b3e4133481b372d65b066481a6c6dc9d810e7",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/recipe-inputs.json"
+    },
+    {
+      "path": "builds/domain/bindings.json",
+      "bytes": 2590,
+      "sha256": "sha256:d7a9e805a91cca05baaf9626ba960b1857683880c2d14e26cd90d75c30778fc5",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/bindings.json"
+    },
+    {
+      "path": "builds/domain/wit-lock.json",
+      "bytes": 536,
+      "sha256": "sha256:4e4e4822759d6aece75605f0e0515a41ce92fabd5f7efbce52e27f7c1ab17b67",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/wit-lock.json"
+    },
+    {
+      "path": "builds/domain/surface.json",
+      "bytes": 204,
+      "sha256": "sha256:c01d89c17ae2ae571041d6ae22ba2cbf7cfefcf31db07a652ae909250191a638",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/surface.json"
+    },
+    {
+      "path": "builds/domain/contracts.json",
+      "bytes": 2820,
+      "sha256": "sha256:98d26e9203c10ccf3b0cac1cdad02e2e0a53e4ea0c1b4a5dd2b1dd277ebb463a",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/contracts.json"
+    },
+    {
+      "path": "builds/domain/capsule.json",
+      "bytes": 1233,
+      "sha256": "sha256:4f90d6898345b6584ceb3fed448c535f264a51a20550ecba7d17f8106774ba6e",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/capsule.json"
+    },
+    {
+      "path": "builds/domain/deployment.json",
+      "bytes": 896,
+      "sha256": "sha256:0c7b2946b8f4b5b4a2dbcbb3189c0c7634b5e235add50ffb5494c66c1eb08e5e",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/deployment.json"
+    },
+    {
+      "path": "builds/domain/package-source.json",
+      "bytes": 1115,
+      "sha256": "sha256:fa90783f35d1c73972f10743e5a114688dcd3127686064f93b5d4c973f65e177",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/package-source.json"
+    },
+    {
+      "path": "builds/domain/wit/world.wit",
+      "bytes": 1123,
+      "sha256": "sha256:47f868b02372a6a0f507a38af061a7b545cc79ba5e5447dcbf5e1eabac118240",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/wit/world.wit"
+    },
+    {
+      "path": "builds/domain/wit/deps/clock/package.wit",
+      "bytes": 139,
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/domain/wit/deps/clock/package.wit"
+    },
+    {
+      "path": "builds/adapter/BUILD-COMPLETE.json",
+      "bytes": 8819,
+      "sha256": "sha256:2c9d77066074719effa2983f2b81cdd7c4e385412c1269cabcf9bc78b11b854d",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/BUILD-COMPLETE.json"
+    },
+    {
+      "path": "builds/adapter/build-observation.json",
+      "bytes": 3132,
+      "sha256": "sha256:c581fb8c55d27e17b73e1927734a9de24af767598cc1123282ba5e60a1c2374e",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/build-observation.json"
+    },
+    {
+      "path": "builds/adapter/source-inputs.json",
+      "bytes": 9378,
+      "sha256": "sha256:13106f3ddafa80a6b41b8ea88f89024dc1220196d0e87592359e8bc7c7b0e91e",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/source-inputs.json"
+    },
+    {
+      "path": "builds/adapter/recipe-inputs.json",
+      "bytes": 2677,
+      "sha256": "sha256:3420d15b94597f64653445a4491b3e4133481b372d65b066481a6c6dc9d810e7",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/recipe-inputs.json"
+    },
+    {
+      "path": "builds/adapter/bindings.json",
+      "bytes": 2591,
+      "sha256": "sha256:77e8f12f56aa88552249c7796c97d61678521a0394c04e6f7f8e480f318a4556",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/bindings.json"
+    },
+    {
+      "path": "builds/adapter/wit-lock.json",
+      "bytes": 1122,
+      "sha256": "sha256:0b4e938fc973dea072f04300e7130ca22bff651910b57c23cc7a105086a69b40",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/wit-lock.json"
+    },
+    {
+      "path": "builds/adapter/surface.json",
+      "bytes": 233,
+      "sha256": "sha256:a75d80921c77ee121cfbf86ee8bcac0bdfe7242320f7e053690bde626623c1bb",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/surface.json"
+    },
+    {
+      "path": "builds/adapter/contracts.json",
+      "bytes": 1006,
+      "sha256": "sha256:2ced024a03f95ef6a144786dce43bf176461e3a2a7f241b9bc48a159d3ac2dee",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/contracts.json"
+    },
+    {
+      "path": "builds/adapter/capsule.json",
+      "bytes": 1315,
+      "sha256": "sha256:8e2a7b0858e3ae463baf742f9abc173369c0c6797a2af4f138be5fc1a2ad4176",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/capsule.json"
+    },
+    {
+      "path": "builds/adapter/deployment.json",
+      "bytes": 899,
+      "sha256": "sha256:a2d557d62192e37f90fe8da46e6d7569492ba977f8b9f98a9bbc59dd1143f295",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/deployment.json"
+    },
+    {
+      "path": "builds/adapter/package-source.json",
+      "bytes": 1600,
+      "sha256": "sha256:351a49a5565b79e32b63c1c362b718f583cc8351a070de0da44e1ae9b4b7fca4",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/package-source.json"
+    },
+    {
+      "path": "builds/adapter/wit/world.wit",
+      "bytes": 323,
+      "sha256": "sha256:7008db346e0d134b86a27bbdacf9dcfa7b92fd50d50b1d8b91a4af7868546804",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/wit/world.wit"
+    },
+    {
+      "path": "builds/adapter/wit/deps/invocation/package.wit",
+      "bytes": 1914,
+      "sha256": "sha256:2e9f13a01c9cf90834c53ff38f408e8e23f39cc29cbd7bc5b47d796159f61b67",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/wit/deps/invocation/package.wit"
+    },
+    {
+      "path": "builds/adapter/wit/deps/clock/package.wit",
+      "bytes": 139,
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/wit/deps/clock/package.wit"
+    },
+    {
+      "path": "builds/adapter/wit/deps/context/package.wit",
+      "bytes": 1409,
+      "sha256": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/wit/deps/context/package.wit"
+    },
+    {
+      "path": "builds/adapter/wit/deps/web/package.wit",
+      "bytes": 1858,
+      "sha256": "sha256:3ad4d3e122c839115891ba9b69c9b790245a64ecb00690e23270623ac94b1450",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter/wit/deps/web/package.wit"
+    },
+    {
+      "path": "builds/adapter-next/BUILD-COMPLETE.json",
+      "bytes": 8815,
+      "sha256": "sha256:50d8e5866c81c85ceba3bcd75f8a29a05d0c4f4fe4fc30b24c918fee7671a837",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/BUILD-COMPLETE.json"
+    },
+    {
+      "path": "builds/adapter-next/build-observation.json",
+      "bytes": 3132,
+      "sha256": "sha256:8317b0c0bbaedcf9b3715113feab5da356817a3da5c8b40c4b8cb76a293b3d58",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/build-observation.json"
+    },
+    {
+      "path": "builds/adapter-next/source-inputs.json",
+      "bytes": 8903,
+      "sha256": "sha256:39c3839e5b9b63610c28281e122bd66be289b1431dd205cac5718b1afe981dd8",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/source-inputs.json"
+    },
+    {
+      "path": "builds/adapter-next/recipe-inputs.json",
+      "bytes": 2677,
+      "sha256": "sha256:3420d15b94597f64653445a4491b3e4133481b372d65b066481a6c6dc9d810e7",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/recipe-inputs.json"
+    },
+    {
+      "path": "builds/adapter-next/bindings.json",
+      "bytes": 2591,
+      "sha256": "sha256:77e8f12f56aa88552249c7796c97d61678521a0394c04e6f7f8e480f318a4556",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/bindings.json"
+    },
+    {
+      "path": "builds/adapter-next/wit-lock.json",
+      "bytes": 1122,
+      "sha256": "sha256:0b4e938fc973dea072f04300e7130ca22bff651910b57c23cc7a105086a69b40",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/wit-lock.json"
+    },
+    {
+      "path": "builds/adapter-next/surface.json",
+      "bytes": 233,
+      "sha256": "sha256:a75d80921c77ee121cfbf86ee8bcac0bdfe7242320f7e053690bde626623c1bb",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/surface.json"
+    },
+    {
+      "path": "builds/adapter-next/contracts.json",
+      "bytes": 1006,
+      "sha256": "sha256:2ced024a03f95ef6a144786dce43bf176461e3a2a7f241b9bc48a159d3ac2dee",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/contracts.json"
+    },
+    {
+      "path": "builds/adapter-next/capsule.json",
+      "bytes": 1314,
+      "sha256": "sha256:34d7487e32480c1e0e716baf0468a22431e7ab086c008cd6efbdd658451c5e08",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/capsule.json"
+    },
+    {
+      "path": "builds/adapter-next/deployment.json",
+      "bytes": 903,
+      "sha256": "sha256:6d034ea2ea25715a8f5e0b3be95f371ce0a94639ca75a8fa4f610accd6106977",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/deployment.json"
+    },
+    {
+      "path": "builds/adapter-next/package-source.json",
+      "bytes": 1605,
+      "sha256": "sha256:0ae56958253672a806a990713a34430b79080e5b5ab173c106030a3752ab70a5",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/package-source.json"
+    },
+    {
+      "path": "builds/adapter-next/wit/world.wit",
+      "bytes": 323,
+      "sha256": "sha256:7008db346e0d134b86a27bbdacf9dcfa7b92fd50d50b1d8b91a4af7868546804",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/wit/world.wit"
+    },
+    {
+      "path": "builds/adapter-next/wit/deps/invocation/package.wit",
+      "bytes": 1914,
+      "sha256": "sha256:2e9f13a01c9cf90834c53ff38f408e8e23f39cc29cbd7bc5b47d796159f61b67",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/wit/deps/invocation/package.wit"
+    },
+    {
+      "path": "builds/adapter-next/wit/deps/clock/package.wit",
+      "bytes": 139,
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/wit/deps/clock/package.wit"
+    },
+    {
+      "path": "builds/adapter-next/wit/deps/context/package.wit",
+      "bytes": 1409,
+      "sha256": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/wit/deps/context/package.wit"
+    },
+    {
+      "path": "builds/adapter-next/wit/deps/web/package.wit",
+      "bytes": 1858,
+      "sha256": "sha256:3ad4d3e122c839115891ba9b69c9b790245a64ecb00690e23270623ac94b1450",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/adapter-next/wit/deps/web/package.wit"
+    },
+    {
+      "path": "builds/context-required/BUILD-COMPLETE.json",
+      "bytes": 8834,
+      "sha256": "sha256:ca2f924f768582576f00ca63b99bc9af2135e5a596181390408825775cac1345",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/BUILD-COMPLETE.json"
+    },
+    {
+      "path": "builds/context-required/build-observation.json",
+      "bytes": 3130,
+      "sha256": "sha256:85591a2cbe6dbe243c053d5c227c3a03e0507a6b66e65d6eeeaccfa6d4a39336",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/build-observation.json"
+    },
+    {
+      "path": "builds/context-required/source-inputs.json",
+      "bytes": 8790,
+      "sha256": "sha256:11a7c8bf0d35fdf665c865dac36d8d023a6c20146b8cf75a2ad72dbe54a4e9b2",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/source-inputs.json"
+    },
+    {
+      "path": "builds/context-required/recipe-inputs.json",
+      "bytes": 2677,
+      "sha256": "sha256:3420d15b94597f64653445a4491b3e4133481b372d65b066481a6c6dc9d810e7",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/recipe-inputs.json"
+    },
+    {
+      "path": "builds/context-required/bindings.json",
+      "bytes": 2601,
+      "sha256": "sha256:733ab4e68e4a8f3a79e9239da58465ae0be80bf0b223a36b77e82671a9ec0745",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/bindings.json"
+    },
+    {
+      "path": "builds/context-required/wit-lock.json",
+      "bytes": 754,
+      "sha256": "sha256:c6668597599b2b4a6c577553adc7db4de855cb248f00ee387ff58ce963f239ad",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/wit-lock.json"
+    },
+    {
+      "path": "builds/context-required/surface.json",
+      "bytes": 260,
+      "sha256": "sha256:c0d46aa0e0460aae205d31081f69cb5b0d53c3422940530fcbaf933267142b39",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/surface.json"
+    },
+    {
+      "path": "builds/context-required/contracts.json",
+      "bytes": 637,
+      "sha256": "sha256:0f241e4152756d6b2e01a0348aafc2a27ff5de9b2191e4760cef930dd57752b7",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/contracts.json"
+    },
+    {
+      "path": "builds/context-required/capsule.json",
+      "bytes": 1349,
+      "sha256": "sha256:a4943b00e91465085875777566952adc740518eebb57186986f28538fb6114b6",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/capsule.json"
+    },
+    {
+      "path": "builds/context-required/deployment.json",
+      "bytes": 915,
+      "sha256": "sha256:319e9e4335be925f7cf9d94b0641ba1e685ca36d70f2d0cab534716add9335cb",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/deployment.json"
+    },
+    {
+      "path": "builds/context-required/package-source.json",
+      "bytes": 1287,
+      "sha256": "sha256:80ade999cdd6cf947f0076087714217b14f2ad91b0f2a08fa98afb9bdc47f7cf",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/package-source.json"
+    },
+    {
+      "path": "builds/context-required/wit/world.wit",
+      "bytes": 357,
+      "sha256": "sha256:c8a6451f17847c508038efac74eddcd0f08dd3e2138e441c92349c602da5a304",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/wit/world.wit"
+    },
+    {
+      "path": "builds/context-required/wit/deps/clock/package.wit",
+      "bytes": 139,
+      "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/wit/deps/clock/package.wit"
+    },
+    {
+      "path": "builds/context-required/wit/deps/context/package.wit",
+      "bytes": 1409,
+      "sha256": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1",
+      "originalPath": "/store/java712-fresh-guests-c4e8c6c0-r1/builds/context-required/wit/deps/context/package.wit"
+    }
+  ]
+}

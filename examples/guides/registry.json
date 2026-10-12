@@ -13,6 +13,7 @@
     "examples/guides/angular-navigation/example.json",
     "examples/guides/tutorial-greeting/example.json",
     "examples/guides/tutorial-word-count/example.json",
-    "examples/guides/tutorial-shipping/example.json"
+    "examples/guides/tutorial-shipping/example.json",
+    "examples/guides/transactional-aggregate/example.json"
   ]
 }

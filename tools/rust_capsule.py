@@ -17,7 +17,7 @@ def parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     new = commands.add_parser("new", help="Create a new independent Cargo project")
     new.add_argument("directory", type=Path)
-    new.add_argument("--template", choices=project.TEMPLATES, default="greeting")
+    new.add_argument("--template", choices=project.AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
     resolve_ = commands.add_parser("resolve", help="Capture the locked native Cargo graph and vendor closure")
     resolve_.add_argument("project", type=Path)

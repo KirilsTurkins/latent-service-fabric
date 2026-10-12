@@ -140,9 +140,12 @@ assets remain attributed inputs; their presence does not establish reachable JNI
 compatibility. Platform/JDK/SDK class overrides and too-new or malformed bytecode
 fail concretely.
 
-TeaVM compiler extension services are host executable inputs and fail closed
-until a separately approved isolated tool stage supplies them. Ordinary guest
-service-provider resources are preserved; annotation processing is disabled.
+TeaVM compiler extension services are host executable inputs and fail closed.
+Ordinary guest service-provider resources are preserved; normal compilation
+disables annotation processing. [Explicitly approved source generators and
+processor launchers](java-generators.md) run in a separate contained stage and
+capture their output for offline compilation; they do not inject host plugins
+into the TeaVM compiler.
 
 `java-classpath.json` binds original JARs to deterministic selected JARs, every
 class/resource entry, selection rules and classpath order. Original vendor

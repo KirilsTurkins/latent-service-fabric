@@ -37,11 +37,40 @@ The default `start` accepts an empty logical store only. Namespace, state,
 command, result, outbox, inbox, payload and maintenance codecs belong to their
 contract owners and must be registered by the node. Opaque rows never establish
 production readiness. Malformed rows, unsupported schemas and engine corruption
-fail closed without replacing existing bytes. The first supported engine format
-is `latent.transaction-store.v1`; no earlier-format migration pair is supported.
-Unknown formats require an explicit operator migration/restore plan. Startup
-does not invent a migration, reset state or silently publish an intermediate
-format.
+fail closed without replacing existing data. Startup supports the original
+`latent.transaction-store.v1` and one explicit metadata transition to
+`latent.transaction-store.v2`. Both use the same `records-v1` table, closed ten
+family tags and existing bounded host codecs. Application schema, WIT, command,
+effect and publication identities do not change. Existing coherent readers keep
+their original rows across this metadata-only transition.
+
+The v2 metadata records the exact redb 4.3/immediate-sync/records-v1 decoder
+contract. Operator-tunable cache, row, value, queue and view ceilings retain their
+existing validation and are checked against the original rows before upgrading.
+No row is copied, transformed, dropped or reinterpreted. On the same fixed
+initialization worker under the exclusive root/database lock, startup first
+commits one finite `upgrade` intent alongside the original v1 schema with
+`Durability::Immediate`. A second immediate transaction atomically publishes the
+v2 schema and record-layout contract and removes that intent. Readiness follows
+the completed transition, logical codec validation and protected file fences.
+
+Reopening a valid v1 seed or the exact retained upgrade intent completes this
+same transition. A published v2 database is checked without downgrading it.
+Unsupported schemas, unknown decoder contracts, malformed or inconsistent
+progress, and metadata outside the closed three-field/128-byte limits refuse
+readiness without rewriting business rows. Decode borrows those bounded native
+metadata fields before any allocation. A failed or uncertain metadata sync gates
+startup and requires exact reopen/recovery; it does not claim that the attempted
+write was aborted.
+
+New creation first commits the original v1 schema and empty records together,
+then uses this same transition. Interruption after that durable seed or either
+upgrade phase is resumable. A real engine header interrupted before its first
+trusted schema commit remains unsupported/recovery-required: reopening never
+mistakes it for a fresh empty file or silently initializes over it. Unknown
+formats and unseeded failed databases require an explicit operator migration or
+restore plan. This is an engine-format transition, separate from application
+namespace schema migration and business-data downgrade.
 
 ## Finite ownership
 
@@ -51,9 +80,9 @@ does not implicitly enable creation.
 
 | Resource | Initial profile |
 | --- | --- |
-| Fixed workers | 3, each with an explicit 1 MiB stack |
+| Fixed workers | 4: 3 ordinary and 1 reserved recovery, each with an explicit 1 MiB stack |
 | Active native reads/writes | 2 reads, 1 writer |
-| Queued/accepted jobs and native resource reservations | 8 queued, 32 accepted |
+| Queued/accepted jobs and native resource reservations | 8 queued/32 accepted ordinary; 4 queued/8 accepted recovery |
 | Retained job/result/native-resource bytes | 128 MiB, at most 40 MiB per job |
 | Resident engine cache and baseline metadata reservation | 8 MiB + 64 KiB, until engine destruction |
 | Engine cache | 8 MiB |
@@ -104,6 +133,25 @@ owner quarantines. A live view keeps the database and last worker alive. Logical
 view expiry does not release this physical pin. Foreign owners reject a view.
 An admission failure consumes the passed view and schedules its retirement;
 the operation never runs.
+
+Node checkpoint descriptors use `reserve_recovery_resource` before opening,
+with their full native byte charge and the original global request keeper.
+`initialize_resource` opens once on the same fixed recovery writer;
+`with_resource` borrows the confined native value on a declared recovery
+read/write worker and returns its affine identity with bounded metadata.
+Uninitialized resources, foreign owners and ordinary queue substitutions reject
+before the callback runs. The native value has no public accessor.
+
+Resource drop, including a detached initialization or operation response,
+queues its pre-reserved recovery destruction. Its one retirement witness and
+receipt become positive only after the native destructor, original keeper and
+physical reservation actually retire. Recovery resource reads and destruction
+remain usable with all ordinary workers and queue slots occupied. An operation
+panic preserves sticky quarantine while actual native destruction still runs.
+All 134 registered state cases and strict all-target Clippy passed on pinned
+Linux Rust 1.97.1, including four real protected-store/file ownership schedules.
+This focused qualification does not replace complete CI or standalone startup
+and recovery integration.
 
 `apply_fenced` runs the host's short no-I/O authority/attempt/OCC acceptance fence
 inside the real abortable writer. Engine conflict, validation and quota failures
@@ -179,6 +227,16 @@ malformed/unsupported records and formats, 300-row validation continuation,
 permission and path substitution, real backend sync failure, physical file quota,
 atomic original-command recovery and clean-versus-live/quarantined drain.
 
+The additive v1-to-v2 source cases retain original rows and actual read-view
+counts, reject malformed/inconsistent/oversized progress and unchanged row
+ceilings before promotion, and terminate owned native child processes at first
+header creation, the durable v1 seed, durable upgrade intent and final v2
+publication. They also exercise an actual backend sync failure during metadata
+publication. Process termination proves only the observed process/reopen
+behavior, not power-loss durability. These new cases and the current discovered
+inventory still require exact-source Native execution; the earlier measurements
+below do not qualify them.
+
 Measured on 2026-10-01: all 66 `latent-state` tests passed on the pinned Linux
 Rust 1.97.1 image, and all 18 `latent-protected-files` cases passed, including the
 explicit privileged ownership case. Strict all-target/all-feature Clippy passed
@@ -210,6 +268,15 @@ command envelopes, retention/restore and six-language runtime conformance remain
 their Phase 4 integration tickets. This document makes no packaged-node or
 power-loss qualification claim.
 
+The current-development CI follow-up preserves the SDK dependency and compiler
+cache gates. The real concurrent child-import acceptance case that failed in
+the remote Rust job passed on pinned Linux after the reviewed session
+currentness fix. All nine signed clock/session-currentness cases also passed,
+with no ignored or filtered cases. That fix waits only before admission on the
+original currentness fence; it preserves cancellation and the original lease
+and creates the guest once. Existing child-failure diagnostics remain bounded
+and are reported only if the unchanged acceptance assertion fails.
+
 The dispatcher obtains one `ProtectedStoreDispatcher` registration from this
 same physical store. Cloned readiness handles cannot advance a new dispatch
 epoch while that registration remains live. Its bounded physical slot and
@@ -219,6 +286,22 @@ the store and preserves its pin for recovery. This protects against overlapping
 dispatcher startup without introducing another engine or process registry.
 The actual Linux registration lifecycle test and all 74 state cases passed,
 along with strict all-target/all-feature Clippy on the pinned image above.
+
+Dispatcher startup inherits the protected store's original bound
+`NativeCapacityOwner` before reserving that physical role or starting workers.
+The first dispatcher wakeup and command capture therefore use the same global
+capacity owner as storage. Reinstalling that owner is idempotent; binding a
+foreign owner fails before admission. The physical store independently checks
+the original identity even if the dispatcher projection is corrupted.
+
+An unbound store remains explicitly unbound. Starting native work seals its
+missing binding, so a late capacity counter cannot be substituted. Recovery
+reopens the same retained records and installs the trusted owner before any new
+native epoch or job. A poisoned binding fails startup rather than becoming an
+unbound observation. The existing
+[dispatcher capacity schedules](../../crates/latent-effects/src/runtime/tests/capacity.rs)
+cover both foreign-owner refusal and unbound restart without another provider
+attempt, enlarged quota or refunded live owner.
 
 Before a host moves a view through a cancellable read call, it may capture
 `view.retirement_witness()`. One non-clone status witness is issued for the
@@ -268,6 +351,9 @@ an ordinary paused native destructor. They demonstrate ordinary saturation, reta
 finite recovery caps and unavailable/invalid configuration, and read progress
 past an actual live writer without a second write. The sixth registered case
 uses the real protected Linux engine and verifies the committed row while all
+three ordinary workers and their queue are paused. Its Linux execution is pending
+the shared Docker filesystem recovery. This admission port does not by itself
+
 three ordinary workers and their queue are paused. All 113 state cases, together
 with 102 core and 70 effect cases, passed on the pinned Linux image with no
 ignored or filtered cases. Combined strict all-target/all-feature Clippy passed

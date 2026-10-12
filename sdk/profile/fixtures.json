@@ -302,6 +302,42 @@
           }
         ]
       }
+    },
+    {
+      "name": "activation-tree-original-captured-intent-witness",
+      "type": "InspectActivationTreeResponse",
+      "value": {
+        "schema_version": 1,
+        "retained_history_only": true,
+        "history_available": true,
+        "page": {},
+        "nodes": [
+          {
+            "activation_id": "original-command",
+            "root_activation_id": "original-command",
+            "phase": "running",
+            "principal_kind": "user",
+            "target_service": "examples/aggregate",
+            "received_at_unix_millis": "1000",
+            "granted_budget": {
+              "effect_count": 2,
+              "state_write_bytes": "18446744073709551615"
+            },
+            "transaction_staging": {
+              "schema_version": 1,
+              "activation_serial": "18446744073709551615",
+              "command_id": "1111111111111111111111111111111111111111111111111111111111111111",
+              "attempt_id": "2222222222222222222222222222222222222222222222222222222222222222",
+              "transaction_id": "3333333333333333333333333333333333333333333333333333333333333333",
+              "publication_id": "publication:sha256:4444444444444444444444444444444444444444444444444444444444444444",
+              "staged_mutations": 2,
+              "captured_intents": 2,
+              "state_write_bytes": "18446744073709551615",
+              "observed_at_unix_millis": "18446744073709551615"
+            }
+          }
+        ]
+      }
     }
   ]
 }

@@ -25,6 +25,14 @@ HTTP_PROBE_ERRORS = dict(enumerate((
     "request-too-large", "response-too-large", "deadline-exceeded", "cancelled",
     "budget-exhausted", "dns-failed", "tls-failed", "connection-failed", "unavailable",
 ), 10))
+BLOB_PROBE_OPERATIONS = dict(enumerate((
+    "create", "close", "write", "seal", "open", "read", "chunk-bytes",
+), 1))
+BLOB_PROBE_ERRORS = dict(enumerate((
+    "not-found", "permission-denied", "invalid-range", "invalid-state",
+    "checksum-mismatch", "budget-exhausted", "unavailable", "uncertain",
+    "deadline-exceeded", "cancelled",
+), 1))
 
 
 def probe(client, target, which, expected, text="", handle=0, *, stage="initial"):
@@ -35,9 +43,19 @@ def probe(client, target, which, expected, text="", handle=0, *, stage="initial"
         result, value = invoke_guest(client, target, which, text, handle)
     except WorkflowError as failure:
         raise WorkflowError(f"{context}-{failure}") from None
-    category = HTTP_PROBE_ERRORS.get(value) if provider == "http" and type(value) is int else None
-    require(result["outcomeKnown"] and value == expected,
-            f"{context}-http-error-{category}" if category else f"{context}-unexpected-result")
+    reason = f"{context}-unexpected-result"
+    if type(value) is int:
+        if provider == "http":
+            category = HTTP_PROBE_ERRORS.get(value)
+            if category:
+                reason = f"{context}-http-error-{category}"
+        else:
+            operation, error = divmod(value, 1000)
+            operation = BLOB_PROBE_OPERATIONS.get(operation)
+            category = BLOB_PROBE_ERRORS.get(error)
+            if operation and category:
+                reason = f"{context}-blob-operation-{operation}-error-{category}"
+    require(result["outcomeKnown"] and value == expected, reason)
     return result["data"]["activationId"]
 
 

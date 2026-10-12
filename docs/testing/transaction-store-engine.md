@@ -5,6 +5,41 @@ It qualifies the bounded storage prototype, not the complete Phase 4 node.
 The [recorded result](../evidence/transaction-store-engine-381.json) preserves
 the actual source snapshot, engine/tool/configuration and host observations.
 
+The [current finite observation](../evidence/transaction-store-current-381-c993.json)
+adds exact source `c99365fce5309f5dc215ff1b1d2dcba37e94478d`, current source
+fingerprints and the actual source archive, image, CPU, kernel and private ext4
+fixture observations. All 22 existing selected engine cases passed, including
+the original 32 sequential commits, two bounded writers, snapshots, compaction,
+closed backup/reopen and both owned child crash barriers. Original processes
+were reaped and source/head stayed unchanged. The v1/v2 format path is included;
+neither historical JSON result was rewritten. This remains a single finite
+local-engine observation, with no power-loss, complete-node or package claim.
+
+The later [integrated owner result](../evidence/transaction-store-owner-381.json)
+records the selected engine behind the protected fixed-worker owner at source
+`1d8784c21f840e9ec76ee7c4a3cc9108f1b7929a`. All 66 state cases, the 17 ordinary
+protected-file cases and the explicitly selected privileged ownership case
+passed on the same Linux local-volume profile. Strict Clippy passed for both
+crates. The historical privileged test remains ignored in an ordinary run;
+its separate disposable fixture supplies the required ownership-change check.
+Earlier measurements and failed toolchain setup attempts remain separate.
+
+Run the integrated boundary and, in a privileged disposable Linux container,
+its existing ownership case:
+
+```sh
+cargo test -p latent-state -p latent-protected-files --lib --locked -- --nocapture
+cargo clippy -p latent-state -p latent-protected-files --all-targets --locked -- -D warnings
+cargo test -p latent-protected-files --lib --locked tests::unexpected_file_and_directory_owners_are_rejected -- --ignored --exact --nocapture
+```
+
+The [shared store owner](../development/shared-state-store-owner.md) now provides
+the protected root, physical file ceiling, fixed read/write workers, bounded
+queue and retained bytes, startup record validation, affine native views and
+physical retirement after cancellation. This storage-boundary evidence does not
+qualify the later complete node, guest transactions, linked retention/restore,
+engine-bearing packages or power loss.
+
 Run the existing Rust owner, on the supported Linux local-volume profile:
 
 ```sh
@@ -13,13 +48,19 @@ cargo clippy -p latent-state --all-targets --locked -- -D warnings
 ```
 
 The source-matched suite inventory includes every new case. The process-crash
-test uses the existing `latent-testkit` owned process and output limits. It
+test uses the existing `latent-test-process` owned process and output limits. It
 terminates and reaps a child at the pre-commit and post-commit barriers, then
 reopens the same database and checks state, command and outbox together. A
 test-only barrier never enters a product build. Corrupt bytes and concurrent
 file ownership are rejected without truncation/reset. A stale expected row or
 one-over row quota changes no family. Old snapshots stay coherent; expired
 views refuse further reads while their physical pin remains owned until drop.
+
+These physical storage and owned-process tests run in the full Rust lane.
+Their existing process and resource helpers now live in the neutral
+`latent-test-process` crate. This removes the Wasmtime-bearing helper from the
+fast package graph while retaining every physical storage case and its bounds
+in the full and affected validation selections.
 
 The finite workload performs 32 immediate commits, a writer while a snapshot
 is retained, a conflicting batch, compaction after view retirement, a closed

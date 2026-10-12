@@ -17,6 +17,17 @@ only when another matching row exists. The native view must remain owned for
 all pulls of the same page. The default live registry admits at most 4096
 namespace metadata slots and 4096 actual activation/query owners.
 
+Authenticated namespace inspection derives its opaque `ViewIdentity.version`
+from the same native snapshot as the authorized namespace row and usage counts.
+The shared 67-byte `NV2` token binds tenant, namespace, incarnation, namespace-wide
+scope, schema digest, generation, schema epoch and recovery epoch. The durable
+history decoder supplies epoch1 only for its explicitly supported absent legacy
+row; present malformed, unsupported or mismatched history prevents disclosure.
+Inspection remains descriptive when history requires reconciliation. It does not
+acquire execution readiness, renew permission or make a paused history ready.
+The original current-policy, publication, response, recovery-capacity, audit and
+deadline gates still apply before disclosure.
+
 `NamespaceCatalog::validate_row` is the bounded startup decoder for the
 `Namespace` family. Register it with the protected owner's startup validation
 alongside the other families' decoders. It checks canonical framed keys,
@@ -138,3 +149,10 @@ a guest. The node's protected-store, transaction writer, authenticated managemen
 RPC/CLI, audit and tenant-cleanup integrations retain their own acceptance gates
 in #383, #385–#388, #400 and #408–#409. The schedules establish these ports'
 behavior without claiming those integrations have already passed.
+
+The Wire history-token schedules cover authenticated legacy inspection, changed
+schema/recovery epochs with unchanged business generation, inspection of paused
+reconciliation history, cross-scope token refusal and malformed history refusal
+through actual restart. These schedules are registered for native Linux
+execution; the history-token source milestone has passed formatting and source
+validators, while native execution and strict Rust lint remain pending.

@@ -115,6 +115,21 @@ pub struct StaticWebFallback {
     pub document: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StaticWebErrorDocumentProfile {
+    #[serde(rename = "html-not-found-v1")]
+    HtmlNotFoundV1,
+}
+
+/// A site-local admitted HTML representation for navigation misses. The
+/// profile fixes status 404, private no-store and no conditional success.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StaticWebErrorDocument {
+    pub profile: StaticWebErrorDocumentProfile,
+    pub document: String,
+}
+
 /// Closed, publication-signed site-local routing metadata. It contains no
 /// hostname, tenant, filesystem root, credential, proxy or mutable URL.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -125,6 +140,19 @@ pub struct StaticWebRouting {
     pub directory_index: StaticDirectoryIndexMode,
     pub directory_index_document: String,
     pub fallback: StaticWebFallback,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "present_error_document"
+    )]
+    pub error_document: Option<StaticWebErrorDocument>,
+}
+
+fn present_error_document<'de, D: serde::Deserializer<'de>>(
+    decoder: D,
+) -> Result<Option<StaticWebErrorDocument>, D::Error> {
+    // Missing preserves the old format; an explicit null is malformed.
+    StaticWebErrorDocument::deserialize(decoder).map(Some)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -253,7 +281,10 @@ impl CheckedWebLayout {
                     .fallback
                     .document
                     .as_ref()
-                    .map_or(0, String::capacity);
+                    .map_or(0, String::capacity)
+                + routing.error_document.as_ref().map_or(0, |error| {
+                    std::mem::size_of::<StaticWebErrorDocument>() + error.document.capacity()
+                });
         }
         if let Some(renderer) = &self.manifest.renderer {
             bytes += renderer.layer.capacity()

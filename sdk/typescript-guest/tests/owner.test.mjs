@@ -6,7 +6,7 @@ import { runInNewContext } from 'node:vm';
 const base = process.env.LSF_TYPESCRIPT_OWNERS;
 assert.ok(base, 'compile the exact capability owner and result modules');
 const { Owner, Scope, drop } = await import(pathToFileURL(resolve(base, 'owner.js')));
-const { call, unwrap } = await import(pathToFileURL(resolve(base, 'result.js')));
+const { call, enumCall, unwrap } = await import(pathToFileURL(resolve(base, 'result.js')));
 
 test('consumption is final on success, typed failure, and ordinary exceptions', () => {
   for (const failure of [undefined, { tag: 'uncertain' }, new Error('failure')]) {
@@ -76,4 +76,12 @@ test('only closed declared error payloads become typed errors; traps remain trap
     assert.throws(() => call(() => { throw value; }, ['uncertain']), error => error === value);
   }
   assert.equal(unwrap(call(() => (1n << 64n) - 1n, [])), (1n << 64n) - 1n);
+  const finite = Object.assign(new Error('component'), { payload: 'permission-denied' });
+  assert.deepEqual(enumCall(() => { throw finite; }, ['permission-denied']), { tag: 'err', val: 'permission-denied' });
+  const finiteForeign = runInNewContext("Object.assign(new Error('component'), { payload: 'conflict' })");
+  assert.deepEqual(enumCall(() => { throw finiteForeign; }, ['conflict']), { tag: 'err', val: 'conflict' });
+  for (const value of [new Error('trap'), 'conflict', { payload: 'conflict' },
+    Object.assign(new Error(), { payload: 'unreviewed' })]) {
+    assert.throws(() => enumCall(() => { throw value; }, ['conflict']), error => error === value);
+  }
 });

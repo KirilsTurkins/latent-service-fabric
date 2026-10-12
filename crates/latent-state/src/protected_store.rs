@@ -1,19 +1,62 @@
 //! One protected, bounded node database. All native work, initialization and
 //! affine view retirement belongs to the same fixed storage workers.
 
+mod checkpoint;
 mod config;
+mod custody;
 mod dispatcher;
+mod migration;
+mod mode;
 mod native_capacity;
 mod operation;
 mod physical;
+mod resource;
+mod restore_adoption;
+mod restore_input;
+mod restore_stage;
+mod resume;
+mod snapshot;
 mod startup;
+mod startup_memory;
 mod view;
 
+pub use checkpoint::{
+    CheckpointInspection, ProtectedCheckpoint, ProtectedCheckpointConfig, ProtectedCheckpointJob,
+    StoreInitializationWitness,
+};
 pub use config::{ProtectedStoreConfig, StoreFilesystemProfile};
 pub use dispatcher::ProtectedStoreDispatcher;
+pub use migration::{
+    AggregateMigrationOwners, MigrationCommitFence, MigrationReceipt, ProtectedMigrationJob,
+};
+pub use mode::{StateModeObservation, STATE_MODE_FILE, STATE_MODE_NATIVE_BYTES};
 pub use operation::ProtectedStoreOperation;
+pub use resource::{ProtectedResourceJob, ProtectedResourceResult, ProtectedStoreResource};
+pub use restore_adoption::{
+    ProtectedRestoreAdoptionJob, RestoreAdoptionFence, RestoreAdoptionKind, RestoreAdoptionOwners,
+    RestoreAdoptionPlan, RestoreAdoptionRequest, RestoreAdoptionStartError,
+    RESTORE_ADOPTION_RESPONSE_BYTES,
+};
+pub use restore_input::{
+    ProtectedRestoreInput, ProtectedRestoreInputJob, ProtectedRestoreWindowFrame,
+    RestoreInputOwners, RestoreInputPrecondition, RestoreReadFence, RESTORE_INPUT_RESPONSE_BYTES,
+};
+pub use restore_stage::{
+    ProtectedRestoreDestinationConfig, ProtectedRestoreStageJob, RestoreRowDisposition,
+    RestoreStageControls, RestoreStageError, RestoreStageOwners, RestoreStageReceipt,
+    RestoreStageRequest, RestoreWriteFence, RestoreWriteKind,
+};
+pub use resume::{
+    MigrationResumeCommitFence, ProtectedMigrationResumeJob, ProtectedMigrationResumeReceipt,
+};
+pub use snapshot::{
+    ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob,
+    ProtectedSnapshotManifestFrame, ProtectedSnapshotReceipt, ProtectedSnapshotReceiptJob,
+    SnapshotReceiptOwners, SnapshotReceiptReadFence, SNAPSHOT_RECEIPT_RESPONSE_BYTES,
+};
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
-pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewResult};
+pub use startup_memory::ProtectedStoreStartupMemory;
+pub use view::{ProtectedStoreView, ProtectedViewJob, ProtectedViewOpenJob, ProtectedViewResult};
 
 use std::future::Future;
 use std::sync::Arc;
@@ -51,6 +94,21 @@ pub struct ProtectedStoreOwner {
     native_capacity: Arc<native_capacity::NativeBinding>,
 }
 
+/// One original protected startup may initialize a wholly empty new database.
+/// Only its accepted native worker constructs this affine same-engine witness
+/// after exclusive creation of both retained physical owner anchors. It cannot
+/// escape that borrowed worker or certify a reopened, replaced or restored file.
+pub struct FreshStoreInitialization<'a> {
+    store: &'a crate::embedded::EmbeddedStore,
+}
+
+impl FreshStoreInitialization<'_> {
+    #[must_use]
+    pub fn matches_store(&self, store: &crate::embedded::EmbeddedStore) -> bool {
+        std::ptr::eq(self.store, store)
+    }
+}
+
 impl Clone for ProtectedStoreOwner {
     fn clone(&self) -> Self {
         Self {
@@ -63,6 +121,88 @@ impl Clone for ProtectedStoreOwner {
 }
 
 impl ProtectedStoreOwner {
+    /// Trusted one-time dispatcher initialization on the original storage
+    /// writer. Ordinary reopening receives no fresh witness, even when the
+    /// configured create option is true or the dispatch owner row is missing.
+    pub fn with_initializing_store<T: Send + 'static>(
+        &self,
+        retained_payload_bytes: u64,
+        operation: impl FnOnce(
+                &crate::embedded::EmbeddedStore,
+                Option<FreshStoreInitialization<'_>>,
+            ) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit(StoreIoKind::Write, retained_payload_bytes, move |store| {
+                store.with_initialization(operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    /// Validate the immutable recovery partition configured before physical
+    /// startup. This creates no worker, result-read or mutation authority.
+    pub fn install_recovery_capacity(
+        &self,
+        reserve: crate::store_io::StoreIoRecoveryCapacity,
+    ) -> Result<(), ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .install_recovery_capacity(reserve)
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    pub fn recovery_snapshot(
+        &self,
+    ) -> Result<crate::store_io::StoreIoRecoverySnapshot, ProtectedStoreError> {
+        self.ready
+            .recovery_snapshot()
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    /// Use only after current purpose-specific policy authorization. A bounded
+    /// read can use the reserved worker while ordinary jobs saturate admission;
+    /// a blocked physical writer remains owned and cannot be bypassed.
+    pub fn with_recovery_store<T: Send + 'static>(
+        &self,
+        kind: StoreIoKind,
+        retained_payload_bytes: u64,
+        operation: impl FnOnce(&crate::embedded::EmbeddedStore) -> Result<T, StoreError>
+            + Send
+            + 'static,
+    ) -> Result<StoreIoJob<Result<T, ProtectedStoreError>>, ProtectedStoreError> {
+        self.available()?;
+        self.ready
+            .submit_recovery(kind, retained_payload_bytes, move |store| {
+                store.with_store(kind, operation)
+            })
+            .map_err(ProtectedStoreError::Io)
+    }
+
+    /// Describes this actual selected engine/configuration. The digest binds
+    /// native limits and the current format; it is not a qualification receipt.
+    #[must_use]
+    pub fn inspection_profile(&self) -> (&'static str, [u8; 32]) {
+        use sha2::{Digest, Sha256};
+        let mut digest = Sha256::new();
+        digest.update(b"lsf-protected-redb-4.3.0-immediate-ext4-v1\0");
+        digest.update(b"latent.transaction-store.v1\0");
+        for value in [
+            self.limits.cache_bytes,
+            self.limits.maximum_rows,
+            self.limits.maximum_logical_bytes,
+            self.limits.maximum_key_bytes,
+            self.limits.maximum_value_bytes,
+            self.limits.maximum_batch_rows,
+            self.limits.maximum_read_views,
+        ] {
+            digest.update((value as u64).to_le_bytes());
+        }
+        digest.update(self.limits.maximum_view_age.as_nanos().to_le_bytes());
+        ("protected-redb-immediate-ext4-v1", digest.finalize().into())
+    }
     /// Compares sealed physical ownership, including clones of this same owner.
     /// Paths, epochs and caller descriptions cannot establish this identity.
     #[must_use]

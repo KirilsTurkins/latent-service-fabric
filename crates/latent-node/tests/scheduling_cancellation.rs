@@ -39,7 +39,7 @@ fn scheduler_request_reaches_the_original_registration_and_executor_token() {
     assert!(registry_token.is_cancelled());
     assert_eq!(registry_token.reason(), token.reason());
     assert_eq!(
-        registry.cancel(&id, "upstream retry"),
+        registry.cancel(&id, "upstream retry").unwrap(),
         CancelDisposition::Accepted
     );
     assert_eq!(token.reason().as_deref(), Some("scheduler"));
@@ -63,7 +63,7 @@ fn upstream_cancellation_wakes_the_scheduler_waiter_and_preserves_its_reason() {
 
     assert!(waiting.as_mut().poll(&mut context).is_pending());
     assert_eq!(
-        registry.cancel(&id, "caller cancelled"),
+        registry.cancel(&id, "caller cancelled").unwrap(),
         CancelDisposition::Accepted
     );
     assert!(wake_count.0.load(Ordering::Relaxed) > 0);

@@ -1,0 +1,253 @@
+{
+  "schemaVersion": "latent.dotnet.http-compiler-observation.v1",
+  "sourceRevision": "fe448a66b4c3f8b153c50a9e451c863c020b0ebf",
+  "scope": {
+    "nativeAotReferenceBinding": true,
+    "componentComposition": true,
+    "signedNodeExecution": false,
+    "defaultClientQualified": false,
+    "runtimeTasksQualified": false
+  },
+  "environment": {
+    "image": "sha256:52830a1053284351a14e1b4fa3c7b6cf1f82cca6dc94f120184755b698dc5fe2",
+    "cpus": 2,
+    "memoryBytes": 4294967296,
+    "network": "none",
+    "privateTemporaryBytes": 536870912,
+    "buildDeadlineSeconds": 900,
+    "commandDeadlineSeconds": 600
+  },
+  "application": {
+    "construction": "new System.Net.Http.HttpClient()",
+    "calls": [
+      "GetAsync(address, HttpCompletionOption.ResponseHeadersRead)",
+      "Content.ReadAsStringAsync()",
+      "GetAwaiter().GetResult()",
+      "Dispose()"
+    ],
+    "customHandlerOrScheduler": false,
+    "capturedFiles": 85,
+    "retainedInputInventory": {
+      "digest": "sha256:95bcfcefb99d31676985ccf243d601d7771e1a596408608165cddb60ca5385e9",
+      "size": 13819
+    }
+  },
+  "recipeInputs": {
+    "digest": "sha256:97324f3556002026d1e68a7c1cef7360a260f57738306133494e4cee511a1d7e",
+    "size": 2965
+  },
+  "compilerInputs": {
+    "digest": "sha256:808c21a56d899d99c8b65a85a5f065a20b4f0abe2a6af180772c27303144fd5a",
+    "size": 3458252
+  },
+  "framework": {
+    "originalDigest": "sha256:3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587",
+    "derived": {
+      "name": "dotnet-http-errors-derived",
+      "digest": "sha256:645ffa33c7062b94511f4394f27e4ae3a5c3631e0abd51937abc00f277808d52",
+      "size": 311808
+    },
+    "cecilDigest": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+    "tool": {
+      "name": "dotnet-http-errors-tool",
+      "digest": "sha256:a9546f79f25888272d1c939464d248435f60448dc4de990c0d66cfe7958102b0",
+      "size": 16896
+    },
+    "sourceCaptureDigest": "sha256:cf91beb400fdc1d1f1c05501bef79599d82124367853a27ff478c2716232dd0a",
+    "targetsDigest": "sha256:5bd732ddfa67329d6ff7a63d18f3337a3f1308f820531f3de41644a2e0995a2b",
+    "nativeAotReferenceBinding": {
+      "referenceListDigest": "sha256:373db5089056138211f9621c692c01f807df22a31f701c6085acce912b3b628a",
+      "responseFiles": [
+        {
+          "digest": "sha256:774648b7ac2156cc00182ebb0bd004a67005aee80eaa75ee954f413bd19d91b2",
+          "size": 70458
+        }
+      ]
+    }
+  },
+  "runtime": {
+    "profile": "http",
+    "rawComponent": {
+      "name": "raw-native-aot-component",
+      "digest": "sha256:d87a56c56eb29259d2b8e997c98e929ced0eb2e3f6daa110e30ab21d4d4a9204",
+      "size": 6042140
+    },
+    "adapter": {
+      "name": "http-runtime",
+      "digest": "sha256:63936d9dd83de3a3914d659a20be0519974f02eb6a24f92d011a381d28f865bb",
+      "size": 226137
+    },
+    "declaredImports": [
+      "latent:clock/monotonic@0.1.0",
+      "latent:http/streaming@0.3.0",
+      "latent:runtime/activation@0.1.0"
+    ],
+    "emittedImports": [
+      "wasi:cli/environment@0.2.6",
+      "wasi:cli/exit@0.2.6",
+      "wasi:cli/stderr@0.2.6",
+      "wasi:cli/stdin@0.2.6",
+      "wasi:cli/stdout@0.2.6",
+      "wasi:cli/terminal-input@0.2.6",
+      "wasi:cli/terminal-output@0.2.6",
+      "wasi:cli/terminal-stderr@0.2.6",
+      "wasi:cli/terminal-stdin@0.2.6",
+      "wasi:cli/terminal-stdout@0.2.6",
+      "wasi:clocks/monotonic-clock@0.2.6",
+      "wasi:clocks/wall-clock@0.2.6",
+      "wasi:filesystem/preopens@0.2.6",
+      "wasi:filesystem/types@0.2.6",
+      "wasi:http/outgoing-handler@0.2.0",
+      "wasi:http/types@0.2.0",
+      "wasi:io/error@0.2.6",
+      "wasi:io/poll@0.2.6",
+      "wasi:io/streams@0.2.6",
+      "wasi:random/random@0.2.6"
+    ],
+    "finalImports": [
+      "latent:clock/monotonic@0.1.0",
+      "latent:http/streaming@0.3.0",
+      "latent:runtime/activation@0.1.0"
+    ]
+  },
+  "component": {
+    "name": "actual-http-client-component",
+    "digest": "sha256:52a730258fe942ddb97fcf4e0de5fc4d8abc283c47cd33478f85740a565b7cbc",
+    "size": 6270883
+  },
+  "commands": [
+    {
+      "stage": "dotnet-version",
+      "exitCode": 0,
+      "seconds": 0.193045
+    },
+    {
+      "stage": "wasm-tools-version",
+      "exitCode": 0,
+      "seconds": 0.012049
+    },
+    {
+      "stage": "wit-bindgen-version",
+      "exitCode": 0,
+      "seconds": 0.01191
+    },
+    {
+      "stage": "dotnet-sdks",
+      "exitCode": 0,
+      "seconds": 0.011652
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.289273
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.333305
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.073445
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.114928
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.104709
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.07365
+    },
+    {
+      "stage": "nuget-content-hash",
+      "exitCode": 0,
+      "seconds": 0.115025
+    },
+    {
+      "stage": "declared-runtime-wit",
+      "exitCode": 0,
+      "seconds": 0.011725
+    },
+    {
+      "stage": "bindings",
+      "exitCode": 0,
+      "seconds": 0.196293
+    },
+    {
+      "stage": "bindings-drift",
+      "exitCode": 0,
+      "seconds": 0.206774
+    },
+    {
+      "stage": "canonical-wit",
+      "exitCode": 0,
+      "seconds": 0.011267
+    },
+    {
+      "stage": "http-errors-rewrite",
+      "exitCode": 0,
+      "seconds": 0.247125
+    },
+    {
+      "stage": "locked-restore",
+      "exitCode": 0,
+      "seconds": 1.434164
+    },
+    {
+      "stage": "native-aot",
+      "exitCode": 0,
+      "seconds": 22.785958
+    },
+    {
+      "stage": "native-runtime-wit",
+      "exitCode": 0,
+      "seconds": 0.011423
+    },
+    {
+      "stage": "closed-runtime-composition",
+      "exitCode": 0,
+      "seconds": 0.041949
+    },
+    {
+      "stage": "validate",
+      "exitCode": 0,
+      "seconds": 0.021443
+    },
+    {
+      "stage": "runtime-final-wit",
+      "exitCode": 0,
+      "seconds": 0.021862
+    },
+    {
+      "stage": "surface",
+      "exitCode": 0,
+      "seconds": 0.011252
+    }
+  ],
+  "checks": [
+    "independent-binding-drift",
+    "locked-offline-restore",
+    "exact-native-aot-framework-reference",
+    "exact-http-composition",
+    "wasm-tools-validation",
+    "final-import-subset",
+    "no-ambient-wasi",
+    "application-source-recheck",
+    "compiler-recipe-recheck",
+    "compiler-input-recheck",
+    "original-framework-and-derived-recheck"
+  ],
+  "priorAttempt": {
+    "result": "setup-failed-before-native-compilation",
+    "cause": "private-tmpfs-noexec-denied-trusted-binding-wrapper",
+    "retained": true
+  }
+}

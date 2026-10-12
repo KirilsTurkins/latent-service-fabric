@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Reviewed actual greeting creator/capture checks: select only the exact transaction Cargo feature while every other captured SDK/lock/project/runtime byte remains identical; wrong SDK mapping and repeated selection refuse without rewriting. These two Source cases do not replace the20actual wasm32 positive/negative ownership compiles.",
+  "module": "tools/tests/test_rust_ownership_profile.py",
+  "cases": [
+    "RustOwnershipProfile.test_feature_selection_preserves_every_other_captured_byte_and_project_limit",
+    "RustOwnershipProfile.test_manifest_drift_and_second_selection_refuse_without_rewriting_source"
+  ],
+  "guards": {
+    "RustOwnershipProfile.test_feature_selection_preserves_every_other_captured_byte_and_project_limit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba932a3570b0a289476a8ba5872285b475a1d2ec160e32de76a9aeab226f9c5a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "RustOwnershipProfile.test_manifest_drift_and_second_selection_refuse_without_rewriting_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ba932a3570b0a289476a8ba5872285b475a1d2ec160e32de76a9aeab226f9c5a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    }
+  }
+}

@@ -9,6 +9,12 @@ Its API is available on `wasm32`, uses the authoritative generated
 `latent-component-bindings` profile, and adds no executor, provider, grant or
 retry policy. The external Rust client interfaces live in `../rust`.
 
+The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
+uses `state::{Command, Query, Page}` and `intents::Intent`. Mutable borrows exclude
+overlapping asynchronous calls and tie a page to its original command/query.
+The host alone commits; close/drop releases access. These modules use the
+separately admitted Phase 4 profile, with execution qualification tracked by #389.
+
 Start with [the standalone project guide](../../docs/component-development/rust-authoring.md)
 to create, build, sign, deploy and invoke an independently editable application.
 

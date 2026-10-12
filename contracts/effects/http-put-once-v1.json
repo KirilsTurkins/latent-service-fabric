@@ -1,0 +1,62 @@
+{
+  "contract": "latent.http-effect.put-once.v1",
+  "adapter": "qualified-http-put-once-v1",
+  "intentFormat": 1,
+  "payloadFormat": "http-put-once-bytes-v1",
+  "idempotencyProfile": "retained-put-once-v1",
+  "installation": "trusted-native-operator-approved",
+  "operation": "put-once",
+  "transport": {
+    "scheme": "https",
+    "origins": 1,
+    "resolution": "static-approved-addresses",
+    "redirects": 0,
+    "guestHeaders": 0,
+    "methods": ["PUT", "GET"],
+    "path": "/latent-effects/v1/{effect}",
+    "authentication": "current-protected-provider-reference-bearer-token",
+    "requestContentType": "application/octet-stream",
+    "requestMetadataPairs": 0,
+    "maximumBodyBytes": 65536,
+    "maximumReceiptBytes": 1024,
+    "minimumSealedResponseBudgetBytes": 2048,
+    "lookupsPerAttempt": 1,
+    "receiptContentType": "application/json",
+    "receiptCacheControl": "no-store",
+    "receiptForbiddenHeaders": ["location", "content-encoding", "set-cookie", "www-authenticate"]
+  },
+  "identity": {
+    "effect": "original-committed-effect-lowercase-hex-64",
+    "bodySha256": "exact-immutable-request-body-lowercase-hex-64",
+    "providerIncarnation": "operator-qualified-deduplication-incarnation-lowercase-hex-64",
+    "retainUntilUnixMillis": "min(original-commit-plus-approved-horizon,original-effect-expiry)-canonical-u64-decimal"
+  },
+  "retention": {
+    "minimumHorizonMillis": 1,
+    "maximumHorizonMillis": 604800000,
+    "minimumRetryDelayMillis": 1,
+    "maximumRetryDelayMillis": 60000,
+    "refreshOnRetry": false,
+    "mutationAfterHorizon": false
+  },
+  "endpointObligations": [
+    "Authenticate-and-check-original-horizon-before-reserving-or-mutating",
+    "Atomically-commit-stable-effect-identity-body-hash-incarnation-horizon-mutation-and-receipt",
+    "Equal-key-equal-body-within-original-horizon-returns-original-receipt-without-another-mutation",
+    "Changed-body-incarnation-or-horizon-for-an-existing-key-is-409-without-mutation",
+    "GET-is-read-only-and-binds-the-same-effect-body-hash-incarnation-and-original-horizon",
+    "Reserved-means-a-durable-exclusive-same-body-reservation-and-no-completed-mutation",
+    "Absent-expired-or-ambiguous-history-never-certifies-nonexecution",
+    "Expired-record-removal-never-permits-a-late-request-to-mutate"
+  ],
+  "receipt": {
+    "closedFields": ["contract", "effect", "bodySha256", "providerIncarnation", "retainUntilUnixMillis", "state", "receipt"],
+    "appliedStatuses": [200, 201],
+    "appliedState": "applied",
+    "appliedReceipt": "opaque-lowercase-hex-64",
+    "reservedStatuses": [200, 202, 503],
+    "reservedState": "reserved",
+    "reservedReceipt": "null-or-absent"
+  },
+  "evidenceBoundary": "Synthetic-local-TLS-conformance-does-not-certify-arbitrary-commercial-endpoints"
+}

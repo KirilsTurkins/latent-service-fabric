@@ -1,0 +1,57 @@
+{
+  "status": "passed",
+  "sourceCommit": "e6209fcd4e36627a25b5a4fde16a31b053080027",
+  "sourceTree": "eeaba464c03a9d800d7a1fae2ab5702d4de0635d",
+  "image": "sha256:ea20dd3d8a7ffc13c5abbea462c1bfa75dd61c0b8bbffe2aac9f30fb9a2483e1",
+  "containerState": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-06T18:46:19.300545407Z",
+    "FinishedAt": "2026-10-06T18:48:10.360435975Z"
+  },
+  "wholeSourceReadOnly": true,
+  "debugAssertions": true,
+  "overflowChecks": true,
+  "requireNativeProcessTests": true,
+  "totalDefaultTestsPassed": 350,
+  "originalIgnoredCollectors": 2,
+  "filtered": 0,
+  "suites": [
+    {
+      "suite": "latent-wasmtime.lib.latent-wasmtime",
+      "actualPassed": 345,
+      "actualOriginalIgnored": 2,
+      "filtered": 0,
+      "originalTimeoutSeconds": 900,
+      "elapsedSeconds": 75.82919788399886,
+      "executedElfSha256": "d2795998ab723a27549865ec5666dc1161a4deb1072cab8d4c3015f233c3de37",
+      "executedElfBytes": 93811720,
+      "originalLogSha256": "9fbd1b3c2671883d1ab05075f36cfa8e67e3b59ccb00ca64b3addf5a22843519",
+      "registeredCaseNamesExactlyMatched": true,
+      "retiredTargetReadOnlyRehashed": true
+    },
+    {
+      "suite": "latent-wasmtime.test.native-aot-cache",
+      "actualPassed": 5,
+      "actualOriginalIgnored": 0,
+      "filtered": 0,
+      "originalTimeoutSeconds": 900,
+      "elapsedSeconds": 26.987783488999412,
+      "executedElfSha256": "90912df477a8084861eeb20ddb600f2973f60df1b6dce75b6e827627f0130ae2",
+      "executedElfBytes": 84072104,
+      "originalLogSha256": "ef30295f3b508414bbb8456fa4701fceb375d23c27b8b25435917c864289fd87",
+      "registeredCaseNamesExactlyMatched": true,
+      "retiredTargetReadOnlyRehashed": true
+    }
+  ],
+  "fullCurrentCIClaimed": false,
+  "currentTrustPolicySuiteCovered": false,
+  "signedJava718ExecutionClaimed": false
+}

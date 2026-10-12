@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "aab172ba3df2c4d7c6f6335b074400432055f174",
+  "originalToolProducer": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "originalToolArchive": "sha256:37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9",
+  "originalR4ToolClosure": {
+    "digest": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+    "name": "compiler-closure",
+    "size": 2902802
+  },
+  "originalMaterialPaths": {
+    "java-version": "/retained-home/.lsf-dev/test-java-composition-710/builds/adff96c6a5d8bf8bfb9d4b7da7df2cdd/source/build-cache/managed/jdk/bin/java",
+    "gradle-version": "/retained-home/.lsf-dev/test-java-composition-710/builds/adff96c6a5d8bf8bfb9d4b7da7df2cdd/source/build-cache/managed/gradle/bin/gradle",
+    "clang-version": "/retained-home/.lsf-dev/test-java-composition-710/builds/adff96c6a5d8bf8bfb9d4b7da7df2cdd/source/build-cache/managed/wasi-sdk/bin/clang",
+    "wit-bindgen-version": "/retained-home/.lsf-dev/test-java-composition-710/tools/37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9/payload/sdk/bin/wit-bindgen",
+    "wasm-tools-version": "/retained-home/.lsf-dev/test-java-composition-710/tools/37e7225616c22665f39b2c50348be402cafb5cf087189eac77bef73ed70721c9/payload/sdk/bin/wasm-tools"
+  },
+  "compilerOnly": true,
+  "signedNodeExecutionQualified": false
+}

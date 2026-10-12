@@ -15,7 +15,7 @@ impl WasmtimeBackend {
         cancellation: &dyn ExecutionCancellation,
         stop: &StopControl,
     ) -> Result<Result<ExecutionEligibility, GuestOutcome>, PlatformError> {
-        self.read_before_store(request, cancellation, stop, || {
+        self.before_guest_currentness(request, cancellation, stop, || {
             self.shared
                 .preparation_context
                 .start_execution(runtime, request)
@@ -25,30 +25,42 @@ impl WasmtimeBackend {
 
     pub(super) async fn capability_session(
         &self,
-        owner: &latent_capabilities::broker::ActivationCapabilityRuntime,
+        runtime: &PreparedRuntime,
         request: &ExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
-        publication: &latent_artifacts::ReleaseUseEligibility,
-        deadline: &latent_core::EffectiveDeadline,
         stop: &StopControl,
-    ) -> Result<Result<latent_capabilities::broker::CapabilitySession, GuestOutcome>, PlatformError>
-    {
-        // The exact admission.currentness busy error can arise only during
-        // plan/publication observations, before the broker allocates a session.
-        // Successful session opening is never repeated. Capacity, revocation,
-        // provider publication, policy and all other errors remain immediate.
-        self.read_before_store(request, cancellation, stop, || {
-            owner.open_session(request, cancellation, publication, deadline)
+        deadline: &latent_core::EffectiveDeadline,
+    ) -> Result<
+        Result<Option<latent_capabilities::broker::CapabilitySession>, GuestOutcome>,
+        PlatformError,
+    > {
+        let Some(owner) = &self.shared.capabilities else {
+            return Ok(Ok(None));
+        };
+        let publication = runtime.eligibility.as_ref().ok_or_else(|| {
+            crate::containment::platform_error(
+                latent_core::PlatformErrorCode::PermissionDenied,
+                "capability publication owner required",
+                false,
+            )
+        })?;
+        // All admission-currentness checks in open_session precede the session
+        // registration and its allocation. A successful original session is
+        // returned once; no guest call or accepted provider operation is here.
+        self.before_guest_currentness(request, cancellation, stop, || {
+            owner
+                .open_session(request, cancellation, publication, deadline)
+                .map(Some)
         })
         .await
     }
 
-    async fn read_before_store<T>(
+    async fn before_guest_currentness<T>(
         &self,
         request: &ExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
         stop: &StopControl,
-        mut read: impl FnMut() -> Result<T, PlatformError>,
+        mut check: impl FnMut() -> Result<T, PlatformError>,
     ) -> Result<Result<T, GuestOutcome>, PlatformError> {
         let window =
             super::readiness::wait::Window::new(self.shared.currentness_read_wait.as_deref());
@@ -70,7 +82,7 @@ impl WasmtimeBackend {
                         BudgetConsumption::default(),
                     )));
                 }
-                read().map(Ok)
+                check().map(Ok)
             })
             .await;
         // The original stop wins even when the finite read window expires at

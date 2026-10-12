@@ -81,6 +81,13 @@ impl WasmtimeConfig {
         ]);
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
+        if let Some(limits) = self.activation_runtime {
+            fields.insert(
+                "activation-runtime-profile".into(),
+                latent_core::activation_runtime::PROFILE.into(),
+            );
+            fields.insert("activation-runtime-limits".into(), format!("{limits:?}"));
+        }
         if mode == DispatchMode::Generic {
             if self.angular_renderer {
                 fields.insert(
@@ -101,6 +108,16 @@ impl WasmtimeConfig {
                     latent_core::digest::HexDigest(crate::bindings::host_abi_digest())
                 ),
             );
+            if self.transactional_state {
+                fields.insert(
+                    "transaction-host-profile".into(),
+                    latent_core::PHASE4_HOST_ABI_V1.id.into(),
+                );
+                fields.insert(
+                    "transaction-host-digest".into(),
+                    latent_manifest::phase4_host_abi_digest(),
+                );
+            }
             for (name, value) in [
                 ("compiler-workers", self.effective_compiler_workers()),
                 (

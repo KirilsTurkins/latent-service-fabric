@@ -1,12 +1,14 @@
-use super::{HeaderView, MAX_COOKIES, MAX_COOKIE_BYTES};
+use super::{
+    HeaderView, MAX_COOKIES, MAX_COOKIE_BYTES, MAX_COOKIE_NAME_BYTES, MAX_COOKIE_VALUE_BYTES,
+};
 
 fn pair(value: &[u8]) -> Option<&[u8]> {
     let separator = value.iter().position(|byte| *byte == b'=')?;
     let (name, value) = (&value[..separator], &value[separator + 1..]);
     (!name.is_empty()
-        && name.len() <= 64
+        && name.len() <= MAX_COOKIE_NAME_BYTES
         && name.iter().copied().all(super::super::headers::token)
-        && value.len() <= 1024
+        && value.len() <= MAX_COOKIE_VALUE_BYTES
         && value.iter().all(
             |byte| matches!(*byte, 0x21 | 0x23..=0x2b | 0x2d..=0x3a | 0x3c..=0x5b | 0x5d..=0x7e),
         ))

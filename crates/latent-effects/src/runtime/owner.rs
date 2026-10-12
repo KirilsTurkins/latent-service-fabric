@@ -79,6 +79,7 @@ impl DispatcherOwner {
         {
             return Err(DispatcherError::InvalidAdapter);
         }
+        let native_capacity = store.native_capacity_if_bound()?;
         let role = store.reserve_dispatcher()?.await??;
         let startup_time = time.observe();
         let epoch = match store::startup(&store, startup_time, minimum_checkpoint).await {
@@ -105,6 +106,7 @@ impl DispatcherOwner {
         ));
         let (receipts, receiver) = tokio::sync::mpsc::channel(config.accepted_jobs);
         let services = Arc::new(Services {
+            config: config.clone(),
             store,
             authority,
             adapters: adapters.into(),
@@ -112,9 +114,10 @@ impl DispatcherOwner {
             epoch,
             runtime: runtime.clone(),
             shared,
-            native_capacity: std::sync::Mutex::new(
-                super::admission::NativeCapacityBinding::default(),
-            ),
+            native_capacity: std::sync::Mutex::new(super::admission::NativeCapacityBinding {
+                owner: native_capacity,
+                admissions_started: false,
+            }),
             receipts,
         });
         let jobs =
@@ -128,7 +131,7 @@ impl DispatcherOwner {
                     return Err(error.reason.into());
                 }
             };
-        let workers = config.workers;
+        let workers = config.worker_limits().workers;
         let driver = runtime.spawn(super::driver::drive(
             Arc::clone(&services),
             jobs.clone(),

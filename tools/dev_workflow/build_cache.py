@@ -21,7 +21,8 @@ MAX_BYTES = 4 * 1024 * 1024 * 1024
 
 def identity(record: dict, descriptor: dict, recipe: str, host: str, packager: str) -> str:
     return digest(encode({"observationProfile": "compiler-and-controller-v1", "source": record["identity"], "recipe": recipe, "tools": descriptor["build"]["tools"],
-        "hostAbi": HOST_ABI, "host": host, "target": descriptor["build"]["target"], "packager": packager}))
+        "hostAbi": descriptor["hostAbi"], "controllerHostAbi": HOST_ABI,
+        "host": host, "target": descriptor["build"]["target"], "packager": packager}))
 
 
 def owner(directory: Path) -> dict:
@@ -95,7 +96,12 @@ def allocate(root: Path, source: Path, record: dict, descriptor: dict, recipe: s
     state.atomic(attempt, "attempt.json", {"id": attempt.name, "key": key, "source": record["identity"],
         "recipe": recipe, "state": "created"})
     content = {item["path"]: paths.read(source, item["path"]) for item in record["files"]}
-    snapshot.materialize(attempt / "source", record, content)
+    separate = 'capturedInputs' in record
+    snapshot.materialize(attempt / "source", record, content, commit=not separate)
+    if separate:
+        from . import captured_inputs
+        captured_inputs.copy(source, attempt / 'source', record['capturedInputs'])
+        snapshot.commit(attempt / 'source', record)
     return attempt, attempt / "source", None
 
 

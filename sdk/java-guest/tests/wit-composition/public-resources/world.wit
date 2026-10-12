@@ -1,0 +1,6 @@
+package examples:public-resources@1.0.0;
+interface api {
+    resource item;
+    run: func(value: borrow<item>) -> string;
+}
+world service { export api; }

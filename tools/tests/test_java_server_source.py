@@ -14,6 +14,52 @@ from tools.tests.test_server_source import fixture
 
 
 class JavaServerSource(unittest.TestCase):
+    def test_rejected_delete_records_original_reply_and_sanitized_summary_with_one_request(self):
+        import json
+        import time
+        from unittest.mock import patch
+        from tools.dev_workflow.client import Client
+        from tools.java_server_node import ObservedRouteClient
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            observed = ObservedRouteClient(root / "binary", root / "config", root,
+                evidence=root / "evidence", deadline=time.monotonic() + 30)
+            reply = {"category": "platform-failure", "outcomeKnown": False,
+                "requestDispatched": True, "data": {"originalOperation": "operation-a"},
+                "error": {"code": "outcome-unknown", "message": "private provider detail"}}
+            arguments = ("trigger", "delete", "original-trigger", "--expected-generation",
+                "18446744073709551615", "--expected-state-version", "9007199254740993")
+            with patch.object(Client, "call", return_value=reply) as original:
+                self.assertIs(observed.call(*arguments, timeout=7), reply)
+                original.assert_called_once_with(*arguments, timeout=7, check=None)
+            self.assertEqual(json.loads((root / "evidence/route-control/001.json").read_bytes()), reply)
+            self.assertEqual(json.loads((root / "evidence/route-delete-rejection.json").read_bytes()), {
+                "schemaVersion": "lsf.java.server.route-rejection.v1", "command": "trigger delete",
+                "category": "platform-failure", "errorCode": "outcome-unknown",
+                "outcomeKnown": False, "requestDispatched": True,
+                "expectedGeneration": "18446744073709551615", "expectedStateVersion": "9007199254740993"})
+            self.assertEqual(observed.record_count, 1)
+
+    def test_refused_and_uncertain_route_results_remain_in_evidence_without_retry(self):
+        import json
+        import time
+        from unittest.mock import patch
+        from tools.dev_workflow.client import Client
+        from tools.java_server_node import RecordedRouteClient
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            recorded = RecordedRouteClient(root / "binary", root / "config", root,
+                evidence=root / "evidence", deadline=time.monotonic() + 30)
+            for number, known in enumerate((True, False), 1):
+                reply = {"category": "conflict" if known else "uncertain", "outcomeKnown": known,
+                    "command": "trigger delete", "data": {"originalOperation": "operation-a"},
+                    "error": {"code": "refused" if known else "outcome-unknown"}}
+                with patch.object(Client, "call", return_value=reply) as original:
+                    self.assertIs(recorded.call("trigger", "delete", "original-trigger", timeout=7), reply)
+                    original.assert_called_once_with("trigger", "delete", "original-trigger", timeout=7, check=None)
+                self.assertEqual(json.loads((root / "evidence" / f"{number:03}.json").read_bytes()), reply)
+            self.assertEqual(recorded.record_count, 2)
+
     def test_new_project_uses_ordinary_source_and_no_application_adapter(self):
         with tempfile.TemporaryDirectory() as temporary:
             project = create_server(Path(temporary) / "outside", "independent-server")
@@ -99,6 +145,73 @@ class JavaServerSource(unittest.TestCase):
             project_value["world"] = "unrelated:world/service@1.0.0"
             changed = {**files, "capsule-project.json": canonical(project_value)}
             with self.assertRaisesRegex(ValueError, "authoritative web world"): validate(changed)
+
+    def test_server_and_http_client_profiles_preserve_trusted_services_before_compilation(self):
+        from unittest.mock import patch
+        from tools.java_guest import compiler as java_compiler
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            sources = root / 'source'; sources.mkdir()
+            (sources / 'Main.java').write_text('final class Main {}\n', encoding='utf-8')
+            wit = root / 'wit'; wit.mkdir()
+            (wit / 'world.wit').write_text('package outside:fixture; world service {}\n', encoding='utf-8')
+            owner = java_compiler.Compiler.__new__(java_compiler.Compiler)
+            owner.sdk, owner.platform, owner.offline = ROOT / 'sdk/java-guest', ROOT / 'wit/platform', True
+
+            def generated(_run, _wit, _world, destination):
+                destination.mkdir()
+                (destination / 'Bindings.java').write_bytes(b'// controlled binding boundary\n')
+                (destination / 'probe.c').write_bytes(b'/* controlled empty-world canonical bridge: no transaction imports */\n')
+                return {'source': 'controlled-binding'}
+
+            class CompileBoundary(Exception):
+                pass
+
+            invoked = []
+            def stop(stage, tool, *arguments, cwd=None):
+                invoked.append((stage, tool, arguments, cwd))
+                raise CompileBoundary()
+
+            owner.run = stop
+            destination = root / 'compiled'
+            with patch.object(java_compiler, 'generate', side_effect=generated):
+                with self.assertRaises(CompileBoundary):
+                    owner.compile(sources, wit, 'outside:fixture/service', destination,
+                                  server_profile=True, http_client_profile=True)
+            self.assertEqual(len(invoked), 1)
+            self.assertEqual(invoked[0][:2], ('java-to-c', 'gradle'))
+            self.assertIn('--offline', invoked[0][2])
+            project = destination / 'project'
+            self.assertEqual(invoked[0][3], project)
+            names = set(snapshot(owner.sdk / 'server/services')) | set(snapshot(owner.sdk / 'client/services'))
+            for name in names:
+                expected = []
+                for profile in ('server', 'client'):
+                    path = owner.sdk / profile / 'services' / name
+                    if path.is_file(): expected.extend(path.read_bytes().splitlines())
+                self.assertEqual((project / 'src/main/resources' / name).read_bytes().splitlines(), expected)
+            self.assertTrue((project / 'src/main/java/dev/latent/guest/server/http/HttpServer.java').is_file())
+            self.assertTrue((project / 'src/main/java/dev/latent/guest/client/Connection.java').is_file())
+            self.assertEqual((project / 'build.gradle').read_text(encoding='utf-8').count("compileOnly 'org.teavm:teavm-core:0.15.0'"), 1)
+
+    def test_trusted_sdk_service_union_preserves_resources_and_rejects_duplicate_or_unowned_providers(self):
+        from tools.java_guest.compiler import stage_sdk_service
+
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary) / 'org.teavm.vm.spi.TeaVMPlugin'
+            name = 'META-INF/services/org.teavm.vm.spi.TeaVMPlugin'
+            profiles = (b'dev.latent.guest.resources.compiler.ImmutableResourcePlugin\n',
+                        b'dev.latent.guest.server.compiler.ServerPlugin\n',
+                        b'dev.latent.guest.client.compiler.HttpPlugin\n')
+            for selected in profiles: stage_sdk_service(target, name, selected)
+            original = target.read_bytes()
+            self.assertEqual(original, b''.join(profiles))
+            with self.assertRaisesRegex(ValueError, 'duplicate'):
+                stage_sdk_service(target, name, profiles[-1])
+            with self.assertRaisesRegex(ValueError, 'invalid Java SDK'):
+                stage_sdk_service(target, 'META-INF/services/outside.application.Plugin', b'outside.application.Plugin\n')
+            self.assertEqual(target.read_bytes(), original)
 
 
 if __name__ == "__main__": unittest.main()

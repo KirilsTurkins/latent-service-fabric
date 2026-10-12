@@ -2,6 +2,7 @@ use super::{
     check_time, current_ceiling, Arc, AuthorityError, DispatchCeiling, DispatchContext,
     DispatchProfile, DurableEffectAuthority, Duration, EffectScope, EffectTime, Instant, Owner,
 };
+use latent_core::authority_rejection::AuthorityRejectionToken;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Sealed, owned delegation to one reviewed adapter acceptance. Contains only
@@ -10,6 +11,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 pub struct DispatchGrant {
     pub(super) owner: Arc<Owner>,
     pub(super) live: Arc<AtomicBool>,
+    pub(super) rejection: AuthorityRejectionToken,
     pub(super) scope: EffectScope,
     pub(super) profile: DispatchProfile,
     pub(super) effect: String,
@@ -73,6 +75,9 @@ impl DispatchGrant {
         }
         if time.unix_millis >= expiry || Instant::now() >= self.deadline {
             return Err(AuthorityError::Expired);
+        }
+        if !self.rejection.is_current() {
+            return Err(AuthorityError::Stale);
         }
         Ok(())
     }
@@ -200,6 +205,9 @@ impl DispatchContext {
             .state
             .lock()
             .map_err(|_| AuthorityError::Unavailable)?;
+        if !self.live.load(Ordering::Acquire) {
+            return Err(AuthorityError::Stale);
+        }
         check_time(&mut state, time)?;
         let (ceiling, expiry) = current_ceiling(&state, authority, time)?;
         let ceiling = self.ceiling.intersection(ceiling);
@@ -229,9 +237,13 @@ impl DispatchContext {
         self.reference
             .clone_from(&rule.protected_credential_reference);
         self.grant_issued = true;
+        if !self.rejection.is_current() {
+            return Err(AuthorityError::Stale);
+        }
         let result = accept(DispatchGrant {
             owner: Arc::clone(&self.owner),
             live: Arc::clone(&self.live),
+            rejection: self.rejection.clone(),
             scope: self.scope.clone(),
             profile: self.profile.clone(),
             effect: self.effect.clone(),

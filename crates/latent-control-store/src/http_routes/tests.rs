@@ -22,6 +22,51 @@ fn manifest() -> TriggerManifest {
 }
 
 #[test]
+fn direct_transaction_routes_roundtrip_with_fixed_scope_and_reject_method_widening() {
+    let mut value = manifest();
+    let target = value.target.application_mut().unwrap();
+    target.contract.0 = "examples:transactions/api@1.0.0".into();
+    target.function = "update".into();
+    value.configuration.extend([
+        ("profile".into(), json::json!("transaction-http-v1")),
+        ("method".into(), json::json!("POST")),
+        ("transactionMode".into(), json::json!("command")),
+        ("namespace".into(), json::json!("orders")),
+        ("incarnation".into(), json::json!("1")),
+        (
+            "stateSchema".into(),
+            json::json!(format!("sha256:{}", "1".repeat(64))),
+        ),
+        (
+            "companionDigest".into(),
+            json::json!(format!("sha256:{}", "2".repeat(64))),
+        ),
+        ("stateBinding".into(), json::json!("state")),
+        ("resultPolicy".into(), json::json!("owner")),
+    ]);
+    let (value, _) = normalize(value).unwrap();
+    let bytes = JsonManifestCodec::default().encode_trigger(&value).unwrap();
+    assert_eq!(
+        JsonManifestCodec::default().decode_trigger(&bytes).unwrap(),
+        value
+    );
+    for method in ["GET", "HEAD"] {
+        let mut changed = value.clone();
+        changed
+            .configuration
+            .insert("method".into(), json::json!(method));
+        assert!(normalize(changed).is_err());
+    }
+    for mode in ["query", "result"] {
+        let mut changed = value.clone();
+        changed
+            .configuration
+            .insert("transactionMode".into(), json::json!(mode));
+        assert!(normalize(changed).is_err());
+    }
+}
+
+#[test]
 fn exact_publication_selector_survives_manifest_codec_and_canonical_matching() {
     let (value, matcher) = normalize(manifest()).unwrap();
     let bytes = JsonManifestCodec::default().encode_trigger(&value).unwrap();

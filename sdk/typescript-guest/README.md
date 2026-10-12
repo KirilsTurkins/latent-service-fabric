@@ -9,6 +9,14 @@ for an editable project, package/sign/admit/deploy/invoke/cleanup path.
 This guest SDK is separate from the external Node client and closed Angular
 renderer. It does not embed Node, a browser, or application-owned host threads.
 
+The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
+adds `state.Command`, `state.Query`, `state.Page` and the logical `intents.Intent`
+builder. Versions remain `Uint8Array`, full-width sequences remain `bigint`,
+and declared enum errors remain typed results. Shared owner cells retain the
+original view during page calls and exclude close while calls/pages remain live.
+The separately admitted Phase 4 profile and signed Linux-node execution matrix
+are tracked by #389.
+
 ## Contract and compiler
 
 `tools/typescript_capsule.py new` copies authoritative WIT and the immutable
@@ -67,6 +75,8 @@ local-service callee.
 | `service` | Returned, domain-error and platform-failure outcomes; host-controlled descendant budgets. |
 | `random` | Host-authorized bounded bytes/full-width integers, never ambient entropy. |
 | `metrics` | Exact instrument kind/attributes; no guest exporter or provider. |
+| `state` (Phase 4) | Command/fresh-query owners, typed get/put/delete/scan, bounded pages and explicit close. |
+| `intents` (Phase 4) | Logical intent builder stages through the canonical command owner; host-owned commitment. |
 
 Owners reject use after close/consume and reentrant borrow. Aliases share live
 state. Consuming calls invalidate before uncertain effects; destructors are
