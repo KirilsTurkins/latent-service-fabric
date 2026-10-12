@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "latent.rust.std-tls-canonical-layout.v1",
+  "target": "wasm32-unknown-unknown",
+  "runtimeWitDigest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+  "generator": {
+    "version": "wit-bindgen-cli 0.62.0",
+    "executableDigest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+    "referenceDigest": "sha256:db25004036734ab8ac707962a5c5e3467b437b8780f3544c00630806b55a7833",
+    "worldAppendix": "\nworld tls-profile { import activation; }\n"
+  },
+  "ownerKindNative": 7,
+  "register": {
+    "importModule": "latent:runtime/activation@0.1.0",
+    "importName": "register",
+    "flatParameters": ["i32", "i32", "i64", "i64", "pointer32"],
+    "returnBytes": 24,
+    "returnAlignment": 8,
+    "discriminantOffset": 0,
+    "generationOffset": 8,
+    "idOffset": 16,
+    "errorOffset": 8
+  },
+  "settle": {
+    "importModule": "latent:runtime/activation@0.1.0",
+    "importName": "settle",
+    "flatParameters": ["i64", "i64", "pointer32"],
+    "returnBytes": 2,
+    "returnAlignment": 1,
+    "discriminantOffset": 0,
+    "errorOffset": 1
+  },
+  "qualification": "source-binding-generation-only",
+  "rebuiltSysrootOrGuestQualified": false
+}

@@ -15,6 +15,26 @@ from tools.security_sdk_graphs import c_packages, go_packages, legacy_c_tree, le
 
 
 class SdkGraphTests(unittest.TestCase):
+    def test_standard_rust_transform_graph_is_pinned_and_missing_directory_cannot_hide_orphans(self) -> None:
+        from tools.security_common import POLICY, read_file, tracked_paths
+        root = Path(__file__).resolve().parents[2]
+        owned = "sdk/rust-standard-runtime/stack-transform/"
+        configuration = json.loads(read_file(POLICY, "inventory.json"))
+        entry = next(row for row in configuration["manifests"] if row["path"] == owned + "Cargo.toml")
+        covered, record = cargo_inventory(root, entry)
+        self.assertEqual(covered, {owned + "Cargo.toml", owned + "Cargo.lock"})
+        self.assertEqual(record["coverage"], "RustSec")
+        self.assertGreater(record["packages"], 0)
+        with self.assertRaisesRegex(SecurityError, "unreviewed-isolated-cargo-manifest"):
+            cargo_inventory(root, {**entry, "manifest_sha256": "0" * 64})
+        legacy = [path for path in tracked_paths(root) if not path.startswith(owned)]
+        with patch("tools.security_inventory.tracked_paths", return_value=legacy):
+            _, records = inventory(root)
+        self.assertTrue(any(row["path"] == entry["path"] and row["coverage"] == "not-shipped-at-source-revision" for row in records))
+        for orphan in (owned + "Cargo.lock", owned + "README.md"):
+            with self.subTest(orphan=orphan), patch("tools.security_inventory.tracked_paths", return_value=[*legacy, orphan]), self.assertRaises(SecurityError):
+                inventory(root)
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
