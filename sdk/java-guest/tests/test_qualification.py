@@ -411,6 +411,8 @@ class CompletableModelIntegrity(unittest.TestCase):
             "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
             "actual-coroutine-monitors=24;owned-callback-bodies=25;bodies=181;"
             "actual-generated-callbacks=23;application-identity")
+        fields = ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
+            "closed-read-write-references;absent-no-fallback;models=6")
         variants = [reviewed, reviewed.replace("bodies=181;", "bodies=180;"),
             reviewed.replace("bodies=181;", "bodies=182;"),
             reviewed.replace("actual-coroutine-monitors=24;", "actual-coroutine-monitors=23;"),
@@ -423,7 +425,7 @@ class CompletableModelIntegrity(unittest.TestCase):
             with self.subTest(observed=observed), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
-                compiler.run.side_effect = ["", observed]
+                compiler.run.side_effect = ["", observed, fields]
                 if observed == reviewed:
                     report = fibers.completable_model_control(compiler, root / "model")
                     self.assertEqual(report["modelFingerprintVersion"], 2)
@@ -431,10 +433,33 @@ class CompletableModelIntegrity(unittest.TestCase):
                     self.assertEqual(report["coroutineMonitorBodies"], 24)
                     self.assertEqual(report["ownedCallbackBodies"], 25)
                     self.assertEqual(report["actualGeneratedCallbacks"], 23)
+                    self.assertEqual(report["fieldReferences"], "actual-declared-and-inherited-types-passed")
+                    self.assertEqual(compiler.run.call_args.args[-1],
+                        "dev.latent.guest.runtime.compiler.CompletableFutureFieldModelControl")
                 else:
                     with self.assertRaisesRegex(ValueError, "model control did not complete"):
                         fibers.completable_model_control(compiler, root / "model")
-                self.assertEqual(compiler.run.call_count, 2)
+                self.assertEqual(compiler.run.call_count, 3 if observed == reviewed else 2)
+
+    def test_valid_original_model_cannot_qualify_partial_or_changed_field_closure(self):
+        reviewed = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
+            "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
+            "actual-coroutine-monitors=24;owned-callback-bodies=25;bodies=181;"
+            "actual-generated-callbacks=23;application-identity")
+        fields = ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
+            "closed-read-write-references;absent-no-fallback;models=6")
+        for observed in ("", reviewed, fields.replace("models=6", "models=5"),
+                         fields.replace("models=6", "models=7"),
+                         fields.replace("declared-and-inherited-types;", "declared-types;"),
+                         fields.replace("closed-read-write-references;", ""),
+                         fields.replace("absent-no-fallback;", "")):
+            with self.subTest(observed=observed), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+                compiler.run.side_effect = ["", reviewed, observed]
+                with self.assertRaisesRegex(ValueError, "field model control did not complete"):
+                    fibers.completable_model_control(compiler, root / "model")
+                self.assertEqual(compiler.run.call_count, 3)
 
     def test_changed_locked_tooling_cannot_enter_class_identity_or_coroutine_inspection(self):
         with tempfile.TemporaryDirectory() as directory:

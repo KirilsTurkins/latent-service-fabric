@@ -133,6 +133,8 @@ jobs:
             | tee "$RUNNER_TEMP/java-aggregate-encoding/vectors.log"
       - name: Compile the authored transaction aggregate and forbidden immediate HTTP variant
         run: python3 tools/compile_transaction_guests.py --language java --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guests-java"
+      - name: Compile exact state value and forbidden child inputs
+        run: python3 tools/compile_transaction_guests.py --language java --java-state-acceptance --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" --output "$RUNNER_TEMP/transaction-guest-acceptance-java"
       - name: Check explicit post-stage diagnostic helpers without claiming transaction execution
         id: transaction-diagnostic-vectors
         shell: bash
@@ -182,12 +184,62 @@ jobs:
         run: |
           set -o pipefail
           python3 tools/qualify_java_http_composition.py --output "$RUNNER_TEMP/java-http-composition" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-http-composition.log"
+      - name: Qualify original ingress and real revision lifecycle on fresh ordinary default nodes
+        run: |
+          set -o pipefail
+          python3 tools/qualify_java_server_lifecycle_suite.py --output "$RUNNER_TEMP/java-server-lifecycle" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-server-lifecycle.log"
+      - name: Qualify exact-approved contained processors and signed generated Java source
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          python3 tools/qualify_java_annotation_processors.py \
+            --output "$RUNNER_TEMP/java-annotation-processors" \
+            --native-directory "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
+            --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-annotation-processors.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/java-annotation-processors.log
+            ${{ runner.temp }}/java-annotation-processors/qualification.json
+            ${{ runner.temp }}/java-annotation-processors/FAILED.json
+            ${{ runner.temp }}/java-annotation-processors/containment.json
+            ${{ runner.temp }}/java-annotation-processors/source-ownership-negatives.json
+            ${{ runner.temp }}/java-annotation-processors/logs/**
+            ${{ runner.temp }}/java-annotation-processors/unapproved/executable-input-approval-request.json
+            ${{ runner.temp }}/java-annotation-processors/approved/BUILD-COMPLETE.json
+            ${{ runner.temp }}/java-annotation-processors/approved/BUILD-FAILED.json
+            ${{ runner.temp }}/java-annotation-processors/approved/source-inputs.json
+            ${{ runner.temp }}/java-annotation-processors/approved/recipe-inputs.json
+            ${{ runner.temp }}/java-annotation-processors/approved/build-observation.json
+            ${{ runner.temp }}/java-annotation-processors/approved/compiler-inputs.json
+            ${{ runner.temp }}/java-annotation-processors/approved/java-annotation-processors.json
+            ${{ runner.temp }}/java-annotation-processors/approved/java-processor-classpath.json
+            ${{ runner.temp }}/java-annotation-processors/approved/compiler-logs/**
+            ${{ runner.temp }}/java-annotation-processors/approved/component.wasm
+            ${{ runner.temp }}/java-annotation-processors/node/**/*.json
+            ${{ runner.temp }}/java-server-lifecycle.log
+            ${{ runner.temp }}/java-server-lifecycle/suite.json
+            ${{ runner.temp }}/java-server-lifecycle/FAILED.json
+            ${{ runner.temp }}/java-server-lifecycle/native/native-tuple.json
+            ${{ runner.temp }}/java-server-lifecycle/logs/**
+            ${{ runner.temp }}/java-server-lifecycle/build-*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/BUILD-FAILED.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/source-inputs.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/recipe-inputs.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/server-source.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/server-profile.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/http-client-profile.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/compiler-inputs.json
+            ${{ runner.temp }}/java-server-lifecycle/build-*/compiler-logs/**
+            ${{ runner.temp }}/java-server-lifecycle/build-*/logs/**
+            ${{ runner.temp }}/java-server-lifecycle/build-*/component.wasm
+            ${{ runner.temp }}/java-server-lifecycle/execution/**/*.json
             ${{ runner.temp }}/java-aggregate-encoding/vectors.log
             ${{ runner.temp }}/java-transaction-diagnostic-schemas.tar.gz
             ${{ runner.temp }}/java-aggregate-encoding/diagnostic-vectors.log
@@ -202,6 +254,7 @@ jobs:
             ${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler/*.log
             ${{ runner.temp }}/transaction-guest-diagnostic-java/**/compiler/*.command.json
             ${{ runner.temp }}/transaction-guests-java/**/report.json
+            ${{ runner.temp }}/transaction-guest-acceptance-java/**
             ${{ runner.temp }}/transaction-guests-java/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-java/**/recipe-inputs.json
             ${{ runner.temp }}/transaction-guests-java/**/source.tar.gz

@@ -114,6 +114,7 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
         for subject, token in TOKENS.items()]
     value["httpIngress"] = {"formatVersion": 1, "bind": f"127.0.0.1:{port}",
         "transport": {"mode": "loopback"}, "authentication": {"mode": "bearer"},
+        "browserOrigins": [{"authority": authority, "tenant": TENANT}],
         "limits": {"maximumConnections": 16, "maximumExchanges": 4,
                    "maximumBufferBytes": 50331648, "maximumRequestsPerConnection": 8}}
     providers = {"formatVersion": 1, "bindings": []}
@@ -137,10 +138,11 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
         "credentials": [{"reference": RECIPIENT_CREDENTIAL, "file": credential.name,
                          "destination": 0, "header": "authorization"}]}
     value["providers"] = providers
-    value["state"] = {"formatVersion": 1, "createIfMissing": True, "configurationEpoch": 1,
-                      "clockCheckpoint": str(checkpoint.resolve()), "operations": [],
-                      "recoverySelections": [],
-                      "tenantQuotas": [{"tenant": TENANT, "limits": dict(TENANT_QUOTA_PROFILE)}]}
+    from .state_configuration import declaration
+    checkpoint_root = checkpoint.parent / "installed-state-checkpoint"
+    checkpoint_root.mkdir(mode=0o700)
+    value["state"] = declaration(checkpoint_root.resolve())
+    value["state"]["tenantQuotas"] = [{"tenant": TENANT, "limits": dict(TENANT_QUOTA_PROFILE)}]
     path = directory / "bootstrap-node.json"
     write_json(path, value)
     return Configuration(path, value, authority, origin)

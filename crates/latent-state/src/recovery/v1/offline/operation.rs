@@ -1,7 +1,7 @@
 use super::file::ProtectedSnapshotFile;
 use super::{
     OfflineRecoveryError, OfflineRecoverySource, OfflineRestoreInspection, OfflineRestoreReceipt,
-    OfflineRestoreRequest, RecoveryCodecs, SnapshotFile, OPERATION_SCRATCH_BYTES,
+    OfflineRestoreRequest, RecoveryCodecs, RestoreFence, SnapshotFile, OPERATION_SCRATCH_BYTES,
 };
 use crate::{
     embedded::{AtomicBatch, EmbeddedStore, ReadView, RowKey, StoreError},
@@ -111,7 +111,12 @@ pub(super) fn backup(
                 .and_then(|()| {
                     let root = ProtectedRoot::open(&source_root)
                         .map_err(|_| OfflineRecoveryError::UnsafeDestination)?;
-                    let mut file = ProtectedSnapshotFile::open(&output, root.identity(), true)?;
+                    let mut file = ProtectedSnapshotFile::open(
+                        &output,
+                        root.identity(),
+                        true,
+                        codecs.snapshot_file_bytes(),
+                    )?;
                     let receipt = export_snapshot(
                         store,
                         metadata,
@@ -256,6 +261,9 @@ fn restore_worker(
         .map_err(OfflineRecoveryError::Target)?;
     input.rewind()?;
     validate_deadline(deadline).map_err(OfflineRecoveryError::Input)?;
+    codecs
+        .accept_restore(request, RestoreFence::Write)
+        .map_err(OfflineRecoveryError::Review)?;
     let mut destination =
         Destination::create(&request.destination, [root.identity(), input.identity()])?;
     let guard = plan
@@ -266,12 +274,18 @@ fn restore_worker(
             RestoreChecks {
                 row: |key: &RowKey, value: &[u8]| codecs.validate_row(current, key, value),
                 view: |view: &ReadView| codecs.validate_view(view),
-                fence: || destination.check().map_err(|_| StoreError::Unavailable),
+                fence: || {
+                    destination.check().map_err(|_| StoreError::Unavailable)?;
+                    codecs.accept_restore(request, RestoreFence::Write)
+                },
             },
         )
         .map_err(OfflineRecoveryError::Target)?;
     let destination_identity = destination.root.identity();
-    destination.finish()?;
+    destination.finish(|| {
+        validate_deadline(deadline)?;
+        codecs.accept_restore(request, RestoreFence::Publication)
+    })?;
     Ok(OfflineRestoreReceipt {
         guard,
         snapshot_digest,
@@ -293,7 +307,12 @@ fn inspect_worker(
         .map_err(OfflineRecoveryError::Review)?;
     let root =
         ProtectedRoot::open(source_root).map_err(|_| OfflineRecoveryError::UnsafeDestination)?;
-    let mut input = ProtectedSnapshotFile::open(&request.input, root.identity(), false)?;
+    let mut input = ProtectedSnapshotFile::open(
+        &request.input,
+        root.identity(),
+        false,
+        codecs.snapshot_file_bytes(),
+    )?;
     let snapshot = inspect_snapshot(&mut input, deadline, |key, value| {
         if key.key.len() > request.destination.engine.maximum_key_bytes
             || value.len() > request.destination.engine.maximum_value_bytes
@@ -366,21 +385,30 @@ impl Destination {
             status,
         })
     }
-    fn finish(&mut self) -> Result<(), OfflineRecoveryError> {
+    fn finish(
+        &mut self,
+        mut accept: impl FnMut() -> Result<(), StoreError>,
+    ) -> Result<(), OfflineRecoveryError> {
+        // Completed rows already exist. A later authority loss must not produce
+        // a successful publication receipt or imply rollback of those rows.
+        accept().map_err(|_| OfflineRecoveryError::Target(StoreError::CommitUncertain))?;
         self.engine
             .as_ref()
             .expect("live selected engine")
             .apply(AtomicBatch::default())
             .map_err(OfflineRecoveryError::Target)?;
         self.check()?;
+        accept().map_err(|_| OfflineRecoveryError::Target(StoreError::CommitUncertain))?;
         drop(self.engine.take());
         if self.status.close_failed() || !self.status.close_observed() {
             return Err(OfflineRecoveryError::Target(StoreError::CommitUncertain));
         }
         self.check()?;
+        accept().map_err(|_| OfflineRecoveryError::Target(StoreError::CommitUncertain))?;
         self.lock
             .unlock()
-            .map_err(|_| OfflineRecoveryError::Target(StoreError::CommitUncertain))
+            .map_err(|_| OfflineRecoveryError::Target(StoreError::CommitUncertain))?;
+        accept().map_err(|_| OfflineRecoveryError::Target(StoreError::CommitUncertain))
     }
     fn check(&self) -> Result<(), OfflineRecoveryError> {
         self.root

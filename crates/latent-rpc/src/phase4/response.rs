@@ -197,6 +197,18 @@ fn state_receipt(
             | c::StateMutationKind::CheckpointNamespace
             | c::StateMutationKind::ReconcileEffect,
         ) => Ok(()),
+        Ok(c::StateMutationKind::ReleaseExpiredCommandFloor) => {
+            let before = request::namespace_view_generation(&value.before_version, namespace)?;
+            let after = request::namespace_view_generation(&value.after_version, namespace)?;
+            if value.disposition != c::StateOperationDisposition::Committed as i32
+                || value.before_version[..43] != value.after_version[..43]
+                || value.before_version[51..] != value.after_version[51..]
+                || before.checked_add(1) != Some(after)
+            {
+                return Err(ValidationError::Association);
+            }
+            Ok(())
+        }
         _ => Err(ValidationError::Shape),
     }
 }

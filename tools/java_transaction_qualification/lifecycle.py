@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 from contextlib import contextmanager
 import os
 from pathlib import Path
@@ -219,6 +220,17 @@ def schema(item) -> str:
     return value["stateSchema"]
 
 
+def operator_actor():
+    """Describe the same OriginalCaller identity; this grants no authority."""
+    framed = bytearray(b"latent.host-recovery-scope.v1\0\x01")
+    for value in (cfg.TENANT, "administrator", cfg.OPERATOR):
+        raw = value.encode("utf-8")
+        require(0 < len(raw) <= 256, "bounded-original-operator-identity")
+        framed.extend(len(raw).to_bytes(2, "little"))
+        framed.extend(raw)
+    return "administrator:recovery:sha256:" + hashlib.sha256(framed).hexdigest()
+
+
 def create_namespace(client, item, publication):
     quotas = {name: "8388608" for name in ("stateBytes", "resultBytes", "effectBytes", "payloadBytes")}
     quotas.update(stateKeys="4096", resultRows="4096", effectRows="4096", recoveryBytes="1048576")
@@ -228,7 +240,7 @@ def create_namespace(client, item, publication):
                          "--expected-generation", "0", "--configuration", path)
     actual = result["data"]["receipt"]
     require(result["outcomeKnown"] and actual["operationId"] == "java-create"
-            and actual["authenticatedOperator"] == cfg.OPERATOR
+            and actual["authenticatedOperator"] == operator_actor()
             and actual["stateSchema"] == schema(item)
             and result["data"]["auditAcknowledgement"] is not None, "actual-authorized-namespace-create")
     client.evidence.passed("namespace-create", result["data"])

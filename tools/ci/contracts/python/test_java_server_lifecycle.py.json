@@ -1,0 +1,192 @@
+{
+  "cases": [
+    "ServerLifecycleInputs.test_explicit_http_binding_precedes_first_publication_and_policy_refresh_has_its_own_cas",
+    "ServerLifecycleInputs.test_gate_request_is_a_separate_exact_declaration_and_preserves_all_original_other_limits",
+    "ServerLifecycleInputs.test_journal_pin_uses_actual_catalog_generation_independently_of_deployment_stamp",
+    "ServerLifecycleInputs.test_native_capture_rejects_development_graph_and_changed_executable_bytes",
+    "ServerLifecycleInputs.test_node_configuration_keeps_existing_limits_and_requires_exact_http_owner",
+    "ServerLifecycleInputs.test_original_helper_routes_and_every_body_case_are_retained_with_exact_revision_delta",
+    "ServerLifecycleInputs.test_outside_source_declares_http_explicitly_without_sdk_or_budget_changes",
+    "ServerLifecycleInputs.test_qualifier_rejects_development_tuple_and_changed_native_product_before_node",
+    "ServerLifecycleInputs.test_qualifier_requires_all_original_cases_before_a_distinct_fresh_lifecycle_node",
+    "ServerLifecycleInputs.test_repeatable_fixture_recipe_keeps_original_baseline_and_exact_two_gate_revisions",
+    "ServerLifecycleInputs.test_unreviewed_revision_and_peer_are_rejected_before_project_write",
+    "ServerLifecyclePeer.test_explicit_release_sends_one_reply_without_claiming_receipt",
+    "ServerLifecyclePeer.test_owned_stop_reaps_pending_listener_without_accepted_work",
+    "ServerLifecyclePeer.test_remote_disconnect_retires_original_peer_without_reply_or_retry"
+  ],
+  "guards": {
+    "ServerLifecycleInputs.test_explicit_http_binding_precedes_first_publication_and_policy_refresh_has_its_own_cas": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecycleInputs.test_gate_request_is_a_separate_exact_declaration_and_preserves_all_original_other_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecycleInputs.test_journal_pin_uses_actual_catalog_generation_independently_of_deployment_stamp": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecycleInputs.test_native_capture_rejects_development_graph_and_changed_executable_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecycleInputs.test_node_configuration_keeps_existing_limits_and_requires_exact_http_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecycleInputs.test_original_helper_routes_and_every_body_case_are_retained_with_exact_revision_delta": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecycleInputs.test_outside_source_declares_http_explicitly_without_sdk_or_budget_changes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecycleInputs.test_qualifier_rejects_development_tuple_and_changed_native_product_before_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecycleInputs.test_qualifier_requires_all_original_cases_before_a_distinct_fresh_lifecycle_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecycleInputs.test_repeatable_fixture_recipe_keeps_original_baseline_and_exact_two_gate_revisions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecycleInputs.test_unreviewed_revision_and_peer_are_rejected_before_project_write": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecyclePeer.test_explicit_release_sends_one_reply_without_claiming_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:4834a35c8b414486f226069c34adabeb3942c4a1bd491930f24cd9f8f674e60c"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecyclePeer.test_owned_stop_reaps_pending_listener_without_accepted_work": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:4834a35c8b414486f226069c34adabeb3942c4a1bd491930f24cd9f8f674e60c"
+      ],
+      "skipSites": []
+    },
+    "ServerLifecyclePeer.test_remote_disconnect_retires_original_peer_without_reply_or_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c255330045b4f88ae68bcc4e1cc449a057ae977a92ef0cc47547dc3d6844a474",
+        "class:setup-sha256:4834a35c8b414486f226069c34adabeb3942c4a1bd491930f24cd9f8f674e60c"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_server_lifecycle.py",
+  "reviewReason": "Preserve original controls plus actual recipe baseline requirement and strict final Cargo graph immutable product capture negatives",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
