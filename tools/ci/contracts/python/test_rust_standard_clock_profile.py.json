@@ -1,0 +1,28 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Own exact authenticated Rust1.97.1 std platform clock source transformation and units/arithmetic/preimage checks; preserve unsupported thread/sleep and no-threads Cell mutex as unqualified, reject other targets/compilers and never install an unqualified sysroot or require application runtime glue.",
+  "module":"tools/tests/test_rust_standard_clock_profile.py",
+  "cases":["StandardClockSource.test_changed_upstream_selector_or_thread_or_mutex_preimage_is_rejected","StandardClockSource.test_clock_pal_keeps_exact_host_units_and_every_original_arithmetic_method","StandardClockSource.test_missing_originals_cannot_create_a_partial_preimage_receipt","StandardClockSource.test_no_threads_cell_mutex_is_not_advertised_as_concurrent_synchronization","StandardClockSource.test_real_pinned_originals_remain_exact_and_only_clock_selector_and_module_are_transformed","StandardClockSource.test_thread_creation_and_sleep_are_never_replaced_by_inline_or_completed_stubs","StandardClockSource.test_unapproved_archive_hash_fails_without_an_overlay_or_installed_sysroot","StandardClockSource.test_unmaintained_targets_and_compilers_reject_before_reading_or_writing"],
+  "guards":{
+    "StandardClockSource.test_real_pinned_originals_remain_exact_and_only_clock_selector_and_module_are_transformed":
+      "f6b1c473f32934394d861c38d961252ec3c67541c954b8b297803115f907520e",
+    "StandardClockSource.test_changed_upstream_selector_or_thread_or_mutex_preimage_is_rejected":
+      "f6b1c473f32934394d861c38d961252ec3c67541c954b8b297803115f907520e",
+    "StandardClockSource.test_missing_originals_cannot_create_a_partial_preimage_receipt":
+      "f6b1c473f32934394d861c38d961252ec3c67541c954b8b297803115f907520e",
+    "StandardClockSource.test_clock_pal_keeps_exact_host_units_and_every_original_arithmetic_method":
+      "f6b1c473f32934394d861c38d961252ec3c67541c954b8b297803115f907520e",
+    "StandardClockSource.test_thread_creation_and_sleep_are_never_replaced_by_inline_or_completed_stubs":
+      "f6b1c473f32934394d861c38d961252ec3c67541c954b8b297803115f907520e",
+    "StandardClockSource.test_no_threads_cell_mutex_is_not_advertised_as_concurrent_synchronization":
+      "f6b1c473f32934394d861c38d961252ec3c67541c954b8b297803115f907520e",
+    "StandardClockSource.test_unmaintained_targets_and_compilers_reject_before_reading_or_writing":
+      "f6b1c473f32934394d861c38d961252ec3c67541c954b8b297803115f907520e",
+    "StandardClockSource.test_unapproved_archive_hash_fails_without_an_overlay_or_installed_sysroot":
+      "f6b1c473f32934394d861c38d961252ec3c67541c954b8b297803115f907520e"
+  },
+  "guardDefinitions":{
+    "f6b1c473f32934394d861c38d961252ec3c67541c954b8b297803115f907520e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:b6b8b3b1f25f2ca3ad63ab2348e7b5b78ac408cf7a4fb4ab1723a607df6c7ea6","class:setup-sha256:93b61d55da724a6992cef87a7361a0f25fa800dc207eae660a48dba27cf6a874"]}
+  }
+}
