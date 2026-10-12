@@ -2,8 +2,8 @@
 
 This private direct TLS candidate retains the original rustls 0.23.45 archive
 identity, exact original/modified file identities, upstream license texts and
-the four-file patch in `PATCH.json`. `tools/host_stream_tls_patch.py` verifies
-the upstream archive before applying only those four modified files to a fresh
+the five-file patch in `PATCH.json`. `tools/host_stream_tls_patch.py` verifies
+the upstream archive before applying only those five modified files to a fresh
 owned tree. It neither edits nor adopts a shared Cargo source/target directory.
 
 The captured profile bounds certificate lists to eight entries, certificate
@@ -30,3 +30,19 @@ and admit the reviewed normal chain/name vectors without exceeding the same
 ceiling. Huge declared lengths and truncation are separate rejection cases.
 Parser measurements alone do not prove a live encrypted TLS connection's full
 allocation, native peak or physical owner retirement.
+
+Run the maintained reference with explicit pinned tools and a fresh owned output:
+
+```sh
+python3.13 -m tools.qualify_host_stream_tls_parser \
+  --archive /owned/public/rustls-0.23.45.crate --output /owned/reference \
+  --cargo /pinned/bin/cargo --rustc /pinned/bin/rustc
+```
+
+The runner authenticates upstream bytes before creating either private source,
+builds offline with captured locks, retains the original over-allocation failure,
+and checks every bounded vector and post-drop allocation. Its receipt explicitly
+leaves full TLS accounting and provider installation unqualified. The QUIC
+deframer call site propagates the same new rejection result so this private
+crate compiles without discarding the object bound; QUIC remains unavailable
+in the LSF outbound profile.

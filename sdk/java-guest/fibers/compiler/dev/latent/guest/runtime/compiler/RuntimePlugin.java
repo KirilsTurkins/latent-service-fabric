@@ -15,9 +15,14 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.ClassRefsRenamer;
 import org.teavm.platform.plugin.PlatformPlugin;
@@ -68,11 +73,15 @@ public final class RuntimePlugin implements TeaVMPlugin {
             SynchronizedMethods.lower(cls.getName(), method);
             if (thread) threadMethod(method, program);
             if (monotonic) {
+                boolean queuePump = cls.getName().equals("org.teavm.runtime.EventQueue")
+                    && method.getDescriptor().equals(new MethodDescriptor("processSingle", ValueType.LONG));
+                if (queuePump) verifyQueueClock(program);
                 for (var block : program.getBasicBlocks()) for (Instruction instruction : block) {
                     if (instruction instanceof InvokeInstruction invoke
                             && invoke.getMethod().getClassName().equals("java.lang.System")
                             && invoke.getMethod().getName().equals("currentTimeMillis")) {
-                        invoke.setMethod(new MethodReference(RUNTIME, "monotonicMillis", ValueType.LONG));
+                        invoke.setMethod(new MethodReference(RUNTIME,
+                            queuePump ? "queueMonotonicMillis" : "monotonicMillis", ValueType.LONG));
                     }
                 }
             }
@@ -89,6 +98,42 @@ public final class RuntimePlugin implements TeaVMPlugin {
                 if (first != null) first.insertPrevious(call("checkpoint", ValueType.VOID));
             }
         }
+    }
+
+    private static void verifyQueueClock(Program program) {
+        var clocks = new java.util.ArrayList<InvokeInstruction>();
+        for (var block : program.getBasicBlocks()) for (var instruction : block) {
+            if (instruction instanceof InvokeInstruction invoke
+                    && invoke.getMethod().equals(new MethodReference("java.lang.System", "currentTimeMillis", ValueType.LONG)))
+                clocks.add(invoke);
+        }
+        if (clocks.size() != 2) throw new IllegalStateException("unreviewed-maintained-queue-clock");
+        var first = aliases(program, clocks.get(0).getReceiver());
+        var second = aliases(program, clocks.get(1).getReceiver());
+        int delays = 0;
+        int comparisons = 0;
+        for (var block : program.getBasicBlocks()) for (var instruction : block) {
+            if (!(instruction instanceof BinaryInstruction binary)
+                    || binary.getOperandType() != NumericOperandType.LONG) continue;
+            if (binary.getOperation() == BinaryOperation.SUBTRACT && first.contains(binary.getSecondOperand())) delays++;
+            if ((binary.getOperation() == BinaryOperation.COMPARE_GREATER || binary.getOperation() == BinaryOperation.COMPARE_LESS)
+                    && second.contains(binary.getSecondOperand())) comparisons++;
+        }
+        if (delays != 2 || comparisons != 1) throw new IllegalStateException("unreviewed-maintained-queue-delay");
+    }
+
+    private static Set<Variable> aliases(Program program, Variable original) {
+        var values = new HashSet<Variable>();
+        values.add(original);
+        boolean changed;
+        do {
+            changed = false;
+            for (var block : program.getBasicBlocks()) for (var instruction : block) {
+                if (instruction instanceof AssignInstruction assign && values.contains(assign.getAssignee()))
+                    changed |= values.add(assign.getReceiver());
+            }
+        } while (changed);
+        return values;
     }
 
     private static boolean privateConcurrentHelper(String suffix) {

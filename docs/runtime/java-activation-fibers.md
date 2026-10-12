@@ -7,6 +7,14 @@ closed ambient effects and original 64 MiB Java activation ceiling. The complete
 standard concurrency profile remains unqualified; default Java projects retain
 their current supported profile.
 
+The October 10 [PR #807 reconciliation](../development/phase4-handoffs/2026-10-10/pr807-reconciliation.md)
+records fresh signed local-service fixture execution: four ordinary-thread modes
+and four default-CompletableFuture modes, each repeated three times. All 24 calls
+return 42 under the original limits and pass the bounded physical idle checks.
+The complete unchanged-library matrix and ordinary installed-node qualification
+remain open in #741 and #736; earlier observations below retain their source and
+completion boundaries.
+
 The SDK-owned TeaVM compiler plugin reserves a shared-runtime task owner before
 `Thread.start` queues its event. Actual thread completion settles that owner.
 The original TeaVM continuation transformation saves GC roots and restores
@@ -32,6 +40,11 @@ future keeps its pending-result owner until the callable's physical `finally`
 finishes. Completed results and returned queued tasks stay inside the accounted
 Java heap. All logical ceilings come from the explicit host runtime configuration.
 
+The activation-owned default `CompletableFuture` facility grows workers lazily
+under those same task and queue ceilings. Its idle workers use untimed waits
+and retire during root drain, leaving finite timer slots for application waits.
+Explicit cached executors retain their standard 60-second idle expiration.
+
 `FutureTask` supports runnable/callable construction, pending get, timed get,
 completion/error/cancellation, readable result state, subclass `done` callbacks,
 and protected `runAndReset` without completing a successfully reset future.
@@ -53,6 +66,14 @@ before returning or throwing to application code. Standard wait argument
 validation precedes monitor ownership checks; interruption clears the current
 thread's flag at the standard throwing boundary. Absolute deadlines saturate
 without shortening a large requested timeout.
+
+Each timed Java frame holds one host timer created through `timer-start`. Its
+captured monotonic deadline also controls the maintained TeaVM queue entry.
+The pump uses `timer-next` only for an exact queue-deadline match and keeps the
+timer charged until the resumed frame confirms `timer-stop`. Unmatched queue
+waits retain their separately charged `wait-for` path. The pump pairs a queue
+delay with its first clock sample; the second sample still checks whether an
+event is due.
 
 Root completion closes independent admission, while accepted application threads
 and running callbacks may still submit necessary continuations. Idle pool workers

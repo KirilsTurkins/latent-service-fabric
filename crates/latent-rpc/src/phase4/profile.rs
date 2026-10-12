@@ -3,4 +3,4 @@ pub const PROFILE: &str = "lsf-transaction-v1";
 pub const HOST_ABI_DIGEST: &str =
     "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35";
 pub const PREPARATION_PROFILE_DIGEST: &str =
-    "sha256:bdbee56b5dcf47e878cdb0af97239a6c15afa6b4e880512117b7c275aa79309f";
+    "sha256:635bbdbb5b3a1f91ed9d9bfe53f843a0c7cfb7bae389daad8c0f138531ea4c17";

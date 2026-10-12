@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "latent.java.compiler.capture-verification.v1",
+  "componentDigest": "sha256:0640b1bb0a28a7cc80b785efd6c1a3c8d55612e0a70759be2f2a400268dec20f",
+  "componentBytes": 1013874,
+  "archiveDigest": "sha256:0d531424e87984b835c20a97d75af9050b0985a5b7f94ce133720a8697e77903",
+  "archiveBytes": 1561244,
+  "fileCount": 736,
+  "rawBytes": 8729652,
+  "allArchivedFilesMatchOriginalInventory": true,
+  "originalSource": "aab172ba3df2c4d7c6f6335b074400432055f174",
+  "signedNodeExecutionQualified": false
+}

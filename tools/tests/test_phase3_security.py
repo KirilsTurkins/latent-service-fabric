@@ -203,6 +203,24 @@ class ChildFailureSnapshotTests(unittest.TestCase):
         self.assertEqual(value["reasonCodes"], [])
         self.assertEqual(value["platformCodes"], [])
 
+    def test_fixture_busy_snapshot_keeps_the_closed_reason_and_discards_malformed_variants(self):
+        result = self.capture([("ChildFailure", "PermissionDenied", "FixtureCurrentnessBusy")])
+        value = diagnostics.extract(result, security.ROOT, security.ROOT)
+        self.assertEqual(value["platformCodes"], ["PermissionDenied"])
+        self.assertEqual(value["reasonCodes"], ["fixture-busy"])
+        self.assertEqual(value["childFailureSnapshot"], {
+            "records": [{"stage": "child-failure", "code": "PermissionDenied", "reason": "fixture-busy"}],
+            "incomplete": False, "recordedCount": 1, "omittedCount": 0,
+        })
+        for reason in (b"FixtureCurrentnessBusyPrivate", b"fixtureCurrentnessBusy", b"private-token"):
+            with self.subTest(reason=reason):
+                malformed = subprocess.CompletedProcess([], 101,
+                    result.stdout.replace(b"FixtureCurrentnessBusy", reason), b"")
+                rejected = diagnostics.extract(malformed, security.ROOT, security.ROOT)
+                self.assertNotIn("childFailureSnapshot", rejected)
+                self.assertEqual(rejected["reasonCodes"], [])
+                self.assertNotIn("private-token", json.dumps(rejected))
+
     def test_native_and_receipt_bounds_preserve_explicit_truncation(self):
         rows = [("Start", "Unavailable", "AdmissionAuthorityBusy")] * 32
         value = diagnostics.extract(self.capture(rows), security.ROOT, security.ROOT)
@@ -626,7 +644,10 @@ class WorkflowTests(unittest.TestCase):
                   "sameOriginPostReachedMethodPolicy": True, "errors": 0,
                   "publicApplicationQualified": False, "applicationComponentInvoked": False,
                   "managementRpcAbsent": False, "browserFetchCredentialsOmitted": False,
-                  "cookiesDoNotAuthenticate": False}
+                  "cookiesDoNotAuthenticate": False, "fixedSameOriginReferrerPolicy": True,
+                  "buildTimeNoReferrerBeforeResources": True, "syntheticTokenNavigationAndFetchDoNotBecomeReferrers": True,
+                  "consumedTokenRemovedBeforeApplicationFetch": True, "unsafeSameOriginNoReferrerOriginRejected": False,
+                  "applicationCacheInputQualified": False, "reservedHeadersRejectedAndRecoveryQualified": False}
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             path = directory / "browser/browser-receipt.json"
@@ -637,7 +658,10 @@ class WorkflowTests(unittest.TestCase):
             for changed in ({"componentRenderClaimed": True}, {"errors": False}, {"originalDomReused": 1},
                             {"navigationHydrated": False}, {"browser": "opaque-text"}, {"extra": True},
                             {"publicApplicationQualified": True}, {"applicationComponentInvoked": True},
-                            {"browserFetchCredentialsOmitted": 0}):
+                            {"browserFetchCredentialsOmitted": 0}, {"fixedSameOriginReferrerPolicy": False},
+                            {"syntheticTokenNavigationAndFetchDoNotBecomeReferrers": 1},
+                            {"buildTimeNoReferrerBeforeResources": False},
+                            {"reservedHeadersRejectedAndRecoveryQualified": True}):
                 path.write_text(json.dumps({**report, **changed}))
                 with self.subTest(changed=changed), self.assertRaises(artifacts.SecurityError):
                     manual.browser_output(directory, time.monotonic() + 5)
@@ -656,7 +680,10 @@ class WorkflowTests(unittest.TestCase):
                   "sameOriginPostReachedMethodPolicy": True, "errors": 0,
                   "publicApplicationQualified": True, "applicationComponentInvoked": True,
                   "managementRpcAbsent": True, "browserFetchCredentialsOmitted": True,
-                  "cookiesDoNotAuthenticate": True}
+                  "cookiesDoNotAuthenticate": True, "fixedSameOriginReferrerPolicy": True,
+                  "buildTimeNoReferrerBeforeResources": True, "syntheticTokenNavigationAndFetchDoNotBecomeReferrers": True,
+                  "consumedTokenRemovedBeforeApplicationFetch": True, "unsafeSameOriginNoReferrerOriginRejected": True,
+                  "applicationCacheInputQualified": True, "reservedHeadersRejectedAndRecoveryQualified": True}
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             path = directory / "browser/browser-application-receipt.json"
@@ -665,7 +692,9 @@ class WorkflowTests(unittest.TestCase):
             path.write_bytes(raw)
             self.assertEqual(manual.browser_output(directory, time.monotonic() + 5, application=True), raw)
             for field in ("publicApplicationQualified", "applicationComponentInvoked", "managementRpcAbsent",
-                          "browserFetchCredentialsOmitted", "cookiesDoNotAuthenticate"):
+                          "browserFetchCredentialsOmitted", "cookiesDoNotAuthenticate",
+                          "unsafeSameOriginNoReferrerOriginRejected", "applicationCacheInputQualified",
+                          "reservedHeadersRejectedAndRecoveryQualified"):
                 path.write_text(json.dumps({**report, field: False}))
                 with self.subTest(field=field), self.assertRaises(artifacts.SecurityError):
                     manual.browser_output(directory, time.monotonic() + 5, application=True)

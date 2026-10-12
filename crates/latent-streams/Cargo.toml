@@ -36,6 +36,7 @@ tokio-rustls = { version = "=0.26.5", default-features = false, features = ["rin
 latent-artifacts = { path = "../latent-artifacts" }
 latent-manifest = { path = "../latent-manifest" }
 latent-executor = { path = "../latent-executor" }
+latent-http = { path = "../latent-http" }
 latent-activation = { path = "../latent-activation" }
 latent-routing = { path = "../latent-routing" }
 latent-audit = { path = "../latent-audit" }

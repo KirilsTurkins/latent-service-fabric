@@ -1,6 +1,10 @@
 # Outbound stream implementation and qualification status
 
 The shared implementation remains restricted to explicit development features.
+
+The [October 12 review packet](outbound-stream-review-2026-10-12.md) records
+fresh bounded TCP/component/owner controls, the captured TLS parser allocation
+reference and its remaining independent approval and full TLS accounting gates.
 [ADR-0061](../../adr/0061-bound-standard-outbound-streams.md) and the
 [profile](outbound-stream-profile.md) remain subject to #737 architecture/security
 review. The maintained suites define canonical TCP and physical-ownership controls.
@@ -22,7 +26,7 @@ application credentials or host key paths.
 | Existing broker behavior | Maintained `latent-capabilities` library suite; current complete execution remains pending. | The focused provider controls below are distinct. |
 | Canonical and signed TCP components | Exact source `55906321f5bd7e9cf156674945d808cda91f18b2`: four actual signed TCP tests passed through normal node admission and physical retirement; [native report](outbound-stream-current-native-2026-10-07.json). | Ordinary language clients and packaged operator workflows remain pending. |
 | Protected configuration and owner lifecycle | Twelve protected reload/physical-owner controls, five activation installation controls, three stream configuration controls and the original 32-repeat stream startup test passed on that exact source; [native report](outbound-stream-current-native-2026-10-07.json). | Future source joins require fresh checks and keep this receipt's original attribution. |
-| Full local service and ABI negatives | All 33 local-service cases retained: 31 passed and two existing Java cases ignored. All 48 generic cases retained: nine passed and 39 existing ignores; four exact host ABI negatives passed, including the official full WASI TCP/network/lookup/stream/poll type graph; [native report](outbound-stream-current-native-2026-10-07.json). | A negative import rejection supplies no ambient adapter or production authorization. |
+| Historical local service and ABI negatives | At `55906321`, 33 local-service cases had 31 passes and two Java ignores. All 48 generic cases had nine passes and 39 ignores; four exact host ABI negatives passed, including the official full WASI TCP/network/lookup/stream/poll type graph; [native report](outbound-stream-current-native-2026-10-07.json). | Current PR reconciliation retains development's original Java case/ignore and four signed TCP additions; the extra Java proposal remains in its SDK snapshots. Negative import rejection supplies no ambient adapter or production authorization. |
 | Authenticated management and schema | Twenty-one operator source controls and thirteen schema controls passed on Linux; real native reload/publish/drain controls use actual node owners. | Full external CLI/rotation/grant/standard-API acceptance remains pending. |
 
 The earlier narrative named Rust 1.97.1 image

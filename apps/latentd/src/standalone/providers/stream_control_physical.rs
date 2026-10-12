@@ -166,7 +166,7 @@ pub(super) async fn session(
             "id":"physical","effect":"allow","principals":[{"kind":"user","subject":"alice"}],
             "services":["guest-stream"],"publications":[publication.publication().as_str()],"capability":CAPABILITY,
             "operations":OPERATIONS,"resources":{"kind":"stream","endpoints":[endpoint]},"requireAudit":true,
-            "ceiling":{"operations":128,"inputBytes":1048576,"outputBytes":1048576,"wallTimeMillis":10000}}]}),
+            "ceiling":{"operations":128,"inputBytes":1_048_576,"outputBytes":1_048_576,"wallTimeMillis":10_000}}]}),
         ),
         (
             "physical-binding",

@@ -17,6 +17,7 @@ use super::{
 
 pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformError> {
     super::security::validate(config)?;
+    let state = super::state::derive_optional(config)?;
     let capacity = validation::validate(config)?;
     let admission = policy::admission(config, &capacity)?;
     let delegation_limits = config.budget_profile.limits()?;
@@ -36,10 +37,21 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     };
     telemetry.validate().map_err(|_| invalid("telemetry"))?;
     let wasmtime = runtime::wasmtime(config, &capacity)?;
+    let manifest_profile = if state.is_some() && wasmtime.transactional_state {
+        latent_manifest::ManifestValidationProfile::phase4(
+            config.budget_profile.profile(),
+            latent_core::PHASE4_HOST_ABI_V1,
+            &latent_manifest::phase4_host_abi_digest(),
+        )
+        .map_err(|_| invalid("state.preparationProfile"))?
+    } else {
+        latent_manifest::ManifestValidationProfile::default()
+    };
     let http = super::http::derive(config, capacity.reservations as usize)?;
     let providers = super::providers::derive(config)?;
     let runtime_profile = std::sync::Arc::new(wasmtime.detected_runtime_profile()?);
-    let artifacts = artifact_limits(config, management.max_page_size);
+    let mut artifacts = artifact_limits(config, management.max_page_size);
+    artifacts.manifest_profile = manifest_profile;
     let isolated_aot = config
         .isolated_aot
         .as_ref()
@@ -61,18 +73,13 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         rollouts: super::rollouts::derive(config.rollouts.as_ref(), config.audit.is_some())?,
         capability_policies: super::capability_policies::derive(config.capability_policies)?,
         providers,
+        state,
+        manifest_profile,
         node,
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,
         artifacts,
-        deployments: DirectoryDeploymentRepositoryConfig {
-            max_deployments: config.catalogs.deployments,
-            max_state_bytes: config.catalogs.deployment_state_bytes,
-            max_identifier_bytes: IDENTIFIER_BYTES,
-            max_page_size: management.max_page_size,
-            max_page_bytes: MIB,
-            ..DirectoryDeploymentRepositoryConfig::default()
-        },
+        deployments: deployment_limits(config, management.max_page_size, manifest_profile),
         admission,
         budget_profile: config.budget_profile.profile(),
         delegation_limits,
@@ -106,6 +113,22 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         shutdown_grace: Duration::from_millis(config.shutdown_grace_millis),
         load_sample_interval: Duration::from_millis(250),
     })
+}
+
+fn deployment_limits(
+    config: &NodeConfig,
+    page_size: u32,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
+) -> DirectoryDeploymentRepositoryConfig {
+    DirectoryDeploymentRepositoryConfig {
+        manifest_profile,
+        max_deployments: config.catalogs.deployments,
+        max_state_bytes: config.catalogs.deployment_state_bytes,
+        max_identifier_bytes: IDENTIFIER_BYTES,
+        max_page_size: page_size,
+        max_page_bytes: MIB,
+        ..DirectoryDeploymentRepositoryConfig::default()
+    }
 }
 
 fn artifact_limits(config: &NodeConfig, page_size: u32) -> DirectoryArtifactRepositoryConfig {

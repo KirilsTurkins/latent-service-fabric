@@ -420,6 +420,19 @@ type ActivationDiagnostic struct {
 	LiftMultiplier        *uint64
 }
 
+type TransactionStagingWitness struct {
+	SchemaVersion        uint32
+	ActivationSerial     uint64
+	CommandId            string
+	AttemptId            string
+	TransactionId        string
+	PublicationId        string
+	StagedMutations      uint32
+	CapturedIntents      uint32
+	StateWriteBytes      uint64
+	ObservedAtUnixMillis uint64
+}
+
 type ActivationTreeNode struct {
 	ActivationId                string
 	ParentActivationId          *string
@@ -435,6 +448,7 @@ type ActivationTreeNode struct {
 	DiagnosticIsTerminal        bool
 	TargetService               string
 	ReceivedAtUnixMillis        uint64
+	TransactionStaging          *TransactionStagingWitness
 }
 
 type InspectActivationTreeRequest struct {

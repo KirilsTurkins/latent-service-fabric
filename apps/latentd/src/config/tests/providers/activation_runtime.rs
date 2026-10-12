@@ -63,11 +63,11 @@ fn input_requires_explicit_finite_categories_without_authority_overrides() {
         ("/providers/activationRuntime/limits/timers", json!(-1)),
         (
             "/providers/activationRuntime/limits/nativeOwners",
-            json!(4294967296_u64),
+            json!(4_294_967_296_u64),
         ),
         (
             "/providers/activationRuntime/limits/cpuFuel",
-            json!(1000000),
+            json!(1_000_000),
         ),
         (
             "/providers/activationRuntime/profile",

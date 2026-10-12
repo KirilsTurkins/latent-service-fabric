@@ -22,7 +22,7 @@ impl StoreIoKind {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct StoreIoRecoveryLimits {
     /// Included in total fixed workers; ordinary jobs cannot occupy these workers.
     pub workers: usize,
@@ -98,6 +98,12 @@ pub enum StoreIoError {
     InvalidLimits,
     AdmissionClosed,
     RecoveryUnavailable,
+    /// Exclusive recovery cannot begin until actual accepted/native work retires.
+    CustodyBusy,
+    /// A custody resource belongs to a different owner or retired reservation.
+    CustodyMismatch,
+    /// The original absolute recovery deadline has elapsed; cleanup still runs.
+    CustodyExpired,
     QueueFull,
     AcceptedFull,
     ByteBudget,
@@ -166,6 +172,8 @@ pub struct StoreIoSnapshot {
     pub live_workers: usize,
     pub physical_owners: usize,
     pub queued_retirements: usize,
+    /// Descriptive only; the affine resource, never this flag, admits custody work.
+    pub custody_active: bool,
     pub admission_closed: bool,
     pub engine_phase: StoreIoEnginePhase,
     pub quarantined: bool,

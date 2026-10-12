@@ -151,3 +151,8 @@
              self.hs_deframer.coalesce(buffer)?;
  
              self.common_state.aligned_handshake = self.hs_deframer.is_aligned();
+--- a/src/quic.rs
++++ b/src/quic.rs
+@@ -415 +415 @@
+-            );
++            )?;

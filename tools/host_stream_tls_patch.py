@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 from pathlib import Path
 import tarfile
@@ -25,15 +26,18 @@ def apply(archive: Path, destination: Path) -> dict:
                 or any(token in name for token in ("\\", ":")) or name in names:
             raise ValueError("host-tls-captured-patch-path")
         names.append(name)
-    with archive.open("rb") as source:
-        identity = hashlib.file_digest(source, "sha256").hexdigest()
+    archive_bytes = read_file(archive, 8 * 1024 * 1024)
+    identity = hashlib.sha256(archive_bytes).hexdigest()
     if identity != manifest["upstream"]["archiveSha256"]:
         raise ValueError("host-tls-captured-public-archive-mismatch")
+    if "patchSha256" in manifest and hashlib.sha256(read_file(
+            PATCH_ROOT / "rustls-0.23.45-lsf-bounds.patch", 65536)).hexdigest() != manifest["patchSha256"]:
+        raise ValueError("host-tls-captured-patch-identity")
     destination = fresh(destination)
     prefix = "rustls-0.23.45/"
     before = {}
     total = 0
-    with tarfile.open(archive, "r:gz") as source:
+    with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:gz") as source:
         members = source.getmembers()
         if len(members) > 1024:
             raise ValueError("host-tls-captured-archive-entry-bound")

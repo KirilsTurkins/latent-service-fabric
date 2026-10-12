@@ -1145,5 +1145,15 @@ fn shared_vectors_roundtrip_through_actual_protobuf() {
             "target-inspection-future-states-remain-descriptive"
         );
     }
-    println!("shared protobuf model vectors: 61");
+    {
+        let value = InspectActivationTreeResponse{schema_version: 1_u32, nodes: vec![ActivationTreeNode{activation_id: "original-command".into(), root_activation_id: "original-command".into(), phase: "running".into(), last_updated_unix_millis: 0_u64, principal_kind: "user".into(), granted_budget: Some(ResourceBudget{cpu_fuel: 0_u64, memory_bytes: 0_u64, child_calls: 0_u32, outbound_requests: 0_u32, state_read_bytes: 0_u64, state_write_bytes: 18_446_744_073_709_551_615_u64, blob_read_bytes: 0_u64, blob_write_bytes: 0_u64, log_bytes: 0_u64, effect_count: 2_u32, ..Default::default()}), diagnostic_is_terminal: false, target_service: "examples/aggregate".into(), received_at_unix_millis: 1_000_u64, transaction_staging: Some(TransactionStagingWitness{schema_version: 1_u32, activation_serial: 18_446_744_073_709_551_615_u64, command_id: "1111111111111111111111111111111111111111111111111111111111111111".into(), attempt_id: "2222222222222222222222222222222222222222222222222222222222222222".into(), transaction_id: "3333333333333333333333333333333333333333333333333333333333333333".into(), publication_id: "publication:sha256:4444444444444444444444444444444444444444444444444444444444444444".into(), staged_mutations: 2_u32, captured_intents: 2_u32, state_write_bytes: 18_446_744_073_709_551_615_u64, observed_at_unix_millis: 18_446_744_073_709_551_615_u64}), ..Default::default()}], page: Some(PageResponse{..Default::default()}), history_available: true, cursor_expired: false, retained_history_only: true};
+        let encoded = control::InspectActivationTreeResponse::from(value.clone()).encode_to_vec();
+        let decoded = control::InspectActivationTreeResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            InspectActivationTreeResponse::from(decoded),
+            value,
+            "activation-tree-original-captured-intent-witness"
+        );
+    }
+    println!("shared protobuf model vectors: 62");
 }

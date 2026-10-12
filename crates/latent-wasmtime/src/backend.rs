@@ -635,6 +635,7 @@ impl WasmtimeBackend {
                         message: "runtime-lifecycle-unproven".into(),
                         guest_backtrace: Vec::new(),
                         metadata: Metadata::new(),
+                        diagnostic: None,
                     },
                     consumption,
                 })
@@ -897,6 +898,25 @@ impl ExecutionBackend for WasmtimeBackend {
         Box::pin(self.prepare_ready_repository(repository, key, Some(wait)))
     }
 
+    fn canonicalize_transaction_input<'a>(
+        &'a self,
+        ready: latent_executor::PreparedReadiness,
+        envelope: &'a latent_activation::ActivationEnvelope,
+        budget: &'a latent_core::ActivationBudget,
+        wait: &'a dyn latent_executor::PreparationReadWait,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            (
+                latent_executor::PreparedReadiness,
+                latent_executor::CanonicalTransactionInput,
+            ),
+            PlatformError,
+        >,
+    > {
+        Box::pin(self.canonicalize_readiness_input(ready, envelope, budget, wait))
+    }
+
     fn materialize_ready(
         &self,
         ready: latent_executor::PreparedReadiness,
@@ -1122,6 +1142,7 @@ fn classify_call_result(
         drop(call_result);
         return Ok(GuestOutcome::Trapped {
             trap: latent_executor::GuestTrap {
+                diagnostic: latent_core::diagnostic::ActivationDiagnostic::from_error(&error),
                 code: "budget-accounting-failed".to_owned(),
                 message: bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
                 guest_backtrace: Vec::new(),
@@ -1142,6 +1163,7 @@ fn classify_call_result(
             }
             Err(error) => Ok(GuestOutcome::Trapped {
                 trap: latent_executor::GuestTrap {
+                    diagnostic: latent_core::diagnostic::ActivationDiagnostic::from_error(&error),
                     code: if error.code == PlatformErrorCode::ResourceExhausted {
                         "result-limit-exceeded"
                     } else {

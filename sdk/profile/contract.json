@@ -1089,6 +1089,58 @@
         "optional": true
       }
     ],
+    "TransactionStagingWitness": [
+      {
+        "name": "schema_version",
+        "type": "uint32",
+        "number": 1
+      },
+      {
+        "name": "activation_serial",
+        "type": "uint64",
+        "number": 2
+      },
+      {
+        "name": "command_id",
+        "type": "string",
+        "number": 3
+      },
+      {
+        "name": "attempt_id",
+        "type": "string",
+        "number": 4
+      },
+      {
+        "name": "transaction_id",
+        "type": "string",
+        "number": 5
+      },
+      {
+        "name": "publication_id",
+        "type": "string",
+        "number": 6
+      },
+      {
+        "name": "staged_mutations",
+        "type": "uint32",
+        "number": 7
+      },
+      {
+        "name": "captured_intents",
+        "type": "uint32",
+        "number": 8
+      },
+      {
+        "name": "state_write_bytes",
+        "type": "uint64",
+        "number": 9
+      },
+      {
+        "name": "observed_at_unix_millis",
+        "type": "uint64",
+        "number": 10
+      }
+    ],
     "ActivationTreeNode": [
       {
         "name": "activation_id",
@@ -1165,6 +1217,12 @@
         "name": "received_at_unix_millis",
         "type": "uint64",
         "number": 14
+      },
+      {
+        "name": "transaction_staging",
+        "type": "TransactionStagingWitness",
+        "number": 15,
+        "optional": true
       }
     ],
     "InspectActivationTreeRequest": [

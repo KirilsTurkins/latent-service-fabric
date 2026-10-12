@@ -11,6 +11,7 @@ pub(crate) struct Transport {
     tls: Option<Mutex<TlsState>>,
     _tls_configuration: Option<Arc<crate::tls::InstalledTls>>,
 }
+
 struct TlsState {
     connection: rustls::ClientConnection,
     handshake_read: usize,
@@ -43,7 +44,9 @@ impl Write for LimitedWrite<'_> {
 impl Read for LimitedRead<'_> {
     fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
         let maximum = output.len().min(self.remaining);
-        self.tcp.try_read(&mut output[..maximum])
+        let count = self.tcp.try_read(&mut output[..maximum])?;
+        self.remaining -= count;
+        Ok(count)
     }
 }
 impl Read for SocketIo<'_> {
@@ -255,5 +258,38 @@ impl Transport {
             .process_new_packets()
             .map_err(|_| failure())?;
         Ok(observed.plaintext_bytes_to_read() != 0 || observed.peer_has_closed())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::LimitedRead;
+    use std::io::Read;
+    use tokio::{io::AsyncWriteExt, net::TcpListener};
+
+    #[tokio::test]
+    async fn repeated_handshake_reads_share_one_original_encrypted_input_ceiling() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let (client, (mut peer, _)) = tokio::try_join!(
+            tokio::net::TcpStream::connect(listener.local_addr().unwrap()),
+            listener.accept()
+        )
+        .unwrap();
+        peer.write_all(b"ABCDEFGH").await.unwrap();
+        client.readable().await.unwrap();
+        let mut limited = LimitedRead {
+            tcp: &client,
+            remaining: 4,
+        };
+        let mut first = [0; 2];
+        assert_eq!(limited.read(&mut first).unwrap(), 2);
+        assert_eq!(&first, b"AB");
+        let mut second = [0; 4];
+        assert_eq!(limited.read(&mut second).unwrap(), 2);
+        assert_eq!(&second[..2], b"CD");
+        assert_eq!(limited.remaining, 0);
+        assert_eq!(limited.read(&mut second).unwrap(), 0);
+        assert_eq!(client.try_read(&mut second).unwrap(), 4);
+        assert_eq!(&second, b"EFGH");
     }
 }

@@ -33,7 +33,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             Executor selected;
             synchronized (this) {
                 if (pool == null) {
-                    try { pool = Executors.newCachedThreadPool(); }
+                    try { pool = Executors.newDefaultAsyncPool(); }
                     catch (Throwable error) { rejectedBeforeAcceptance(command); throw error; }
                 }
                 selected = pool;

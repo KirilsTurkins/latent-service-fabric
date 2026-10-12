@@ -67,6 +67,27 @@ pub(super) fn decode_metadata(
     Ok((ArtifactDescriptor::from(stored.descriptor), contracts))
 }
 
+pub(super) fn decode_control_metadata(
+    bytes: &[u8],
+    maximum_document_bytes: usize,
+    maximum_retained_bytes: usize,
+) -> Result<(ArtifactDescriptor, Vec<ContractDescriptor>), PlatformError> {
+    let value = super::contract_metadata::parse_control_document(
+        bytes,
+        maximum_document_bytes,
+        maximum_retained_bytes,
+    )?;
+    let stored: StoredMetadata =
+        serde_json::from_value(value).map_err(|_| corrupt("invalid catalog metadata"))?;
+    let contracts: Vec<_> = stored
+        .contracts
+        .into_iter()
+        .map(ContractDescriptor::from)
+        .collect();
+    validate_contracts(&contracts)?;
+    Ok((ArtifactDescriptor::from(stored.descriptor), contracts))
+}
+
 pub(super) fn validate_contracts(contracts: &[ContractDescriptor]) -> Result<(), PlatformError> {
     let mut remaining = MAX_CONTRACT_TYPE_NODES;
     for contract in contracts {

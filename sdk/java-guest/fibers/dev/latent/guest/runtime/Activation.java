@@ -15,6 +15,7 @@ import org.teavm.runtime.Fiber;
 public final class Activation {
     private static final IdentityHashMap<Thread, Work> threads = new IdentityHashMap<>();
     private static final ArrayList<ManagedPool> pools = new ArrayList<>();
+    private static final ArrayList<TimerLease> timers = new ArrayList<>();
     private static boolean entered;
     private static boolean rootComplete;
     private static boolean closing;
@@ -23,6 +24,8 @@ public final class Activation {
     private static Throwable failure;
     private static Work root;
     private static java.util.concurrent.Executor defaultAsyncExecutor;
+    private static boolean queueClockCaptured;
+    private static long queueClock;
 
     private Activation() { }
 
@@ -31,6 +34,7 @@ public final class Activation {
         boolean complete;
         boolean prepared;
         boolean managed;
+        TimerLease timer;
         Work(Bindings.LatentRuntimeActivationToken token) { this.token = token; }
     }
 
@@ -96,7 +100,7 @@ public final class Activation {
     }
 
     /** Linear logical ownership; payloads remain in the accounted Java heap. */
-    public static final class Lease implements AutoCloseable {
+    public static class Lease implements AutoCloseable {
         private Bindings.LatentRuntimeActivationToken token;
         private Lease(Bindings.LatentRuntimeActivationToken token) { this.token = token; }
         @Override public void close() {
@@ -110,6 +114,75 @@ public final class Activation {
     public static Lease owner(Bindings.LatentRuntimeActivationOwnerKind kind) {
         if (!entered) throw new IllegalStateException("activation-runtime-entry-required");
         return new Lease(register(kind));
+    }
+
+    private static final class TimerLease extends Lease {
+        final Work work;
+        final long deadline;
+        boolean fired;
+        boolean closing;
+        boolean rawFrame;
+        TimerLease(Bindings.LatentRuntimeActivationToken token, Work work, long deadline) {
+            super(token);
+            this.work = work;
+            this.deadline = deadline;
+        }
+        @Override public void close() {
+            if (super.token == null) return;
+            closing = true;
+            var stopped = Bindings.LatentRuntimeActivation.timerStop(super.token);
+            if (stopped.isError()) throw new IllegalStateException("activation-runtime-timer-stop-" + stopped.error());
+            super.token = null;
+            if (work.timer == this) work.timer = null;
+            timers.remove(this);
+        }
+    }
+
+    /** One host-owned timer also accounts the corresponding logical Java wait. */
+    public static Lease timer(long deadline) {
+        Work work = threads.get(Thread.currentThread());
+        if (!entered || work == null || work.complete || work.timer != null)
+            throw new IllegalStateException("activation-runtime-timer-frame");
+        long now = monotonicMillis();
+        long remaining = deadline <= now ? 0 : deadline - now;
+        long nanos = remaining < 0 || remaining > Long.MAX_VALUE / 1_000_000
+            ? Long.MAX_VALUE : remaining * 1_000_000;
+        var started = Bindings.LatentRuntimeActivation.timerStart(new Unsigned64(nanos), Option.none(), Option.some(work.token));
+        if (started.isError()) throw new IllegalStateException("activation-runtime-timer-start-" + started.error());
+        try {
+            TimerLease timer = new TimerLease(started.value(), work, deadline);
+            timers.add(timer);
+            work.timer = timer;
+            return timer;
+        } catch (Throwable error) {
+            var stopped = Bindings.LatentRuntimeActivation.timerStop(started.value());
+            if (stopped.isError()) throw new IllegalStateException("activation-runtime-timer-start-rollback-" + stopped.error(), error);
+            throw error;
+        }
+    }
+
+    /** The retained raw TeaVM body schedules the already captured wait deadline. */
+    public static long timerDeadline(long otherwise) {
+        if (!entered) return otherwise;
+        Work work = threads.get(Thread.currentThread());
+        return work != null && work.timer != null && work.timer.rawFrame && !work.timer.closing
+            ? work.timer.deadline : otherwise;
+    }
+
+    public static void beginTimedFrame(Lease lease) {
+        if (lease == null) return;
+        TimerLease timer = (TimerLease)lease;
+        if (threads.get(Thread.currentThread()) != timer.work || timer.work.timer != timer || timer.closing || timer.rawFrame)
+            throw new IllegalStateException("activation-runtime-timer-frame");
+        timer.rawFrame = true;
+    }
+
+    public static void endTimedFrame(Lease lease) {
+        if (lease == null) return;
+        TimerLease timer = (TimerLease)lease;
+        if (threads.get(Thread.currentThread()) != timer.work || !timer.rawFrame)
+            throw new IllegalStateException("activation-runtime-timer-frame");
+        timer.rawFrame = false;
     }
 
     /** Runs after the original Thread finally block has restored identity. */
@@ -149,6 +222,13 @@ public final class Activation {
 
     /** Internal event deadlines use monotonic time; application wall time stays wall time. */
     public static long monotonicMillis() { return System.nanoTime() / 1_000_000; }
+
+    /** processSingle subtracts its first sample, not its second due-time check. */
+    public static long queueMonotonicMillis() {
+        long now = monotonicMillis();
+        if (!queueClockCaptured) { queueClock = now; queueClockCaptured = true; }
+        return now;
+    }
 
     /** TeaVM inserts this at verified application/dependency loop headers. */
     public static void checkpoint() {
@@ -193,8 +273,21 @@ public final class Activation {
             ? Long.MAX_VALUE : millis * 1_000_000;
         var parked = Bindings.LatentRuntimeActivation.park(root.token);
         if (parked.isError()) throw new IllegalStateException("activation-runtime-park-" + parked.error());
-        var waited = Bindings.LatentRuntimeActivation.waitFor(new Unsigned64(nanos), Option.some(root.token));
-        if (waited.isError()) throw new IllegalStateException("activation-runtime-wait-" + waited.error());
+        TimerLease selected = null;
+        if (millis >= 0 && queueClockCaptured && queueClock <= Long.MAX_VALUE - millis) {
+            long deadline = queueClock + millis;
+            for (TimerLease timer : timers) {
+                if (!timer.fired && !timer.closing && timer.deadline == deadline) { selected = timer; break; }
+            }
+        }
+        if (selected != null) {
+            var waited = Bindings.LatentRuntimeActivation.timerNext(((Lease)selected).token);
+            if (waited.isError()) throw new IllegalStateException("activation-runtime-timer-next-" + waited.error());
+            selected.fired = true;
+        } else {
+            var waited = Bindings.LatentRuntimeActivation.waitFor(new Unsigned64(nanos), Option.some(root.token));
+            if (waited.isError()) throw new IllegalStateException("activation-runtime-wait-" + waited.error());
+        }
         var awake = Bindings.LatentRuntimeActivation.wake(root.token);
         if (awake.isError()) throw new IllegalStateException("activation-runtime-wake-" + awake.error());
     }
@@ -222,6 +315,7 @@ public final class Activation {
                 closeCompletedRoot();
                 retireIdlePools();
                 if (!pending()) break;
+                queueClockCaptured = false;
                 long delay = EventQueue.processSingle();
                 // The queue may become empty because that event completed the
                 // last accepted task. Establish quiescence before parking.
@@ -244,6 +338,8 @@ public final class Activation {
             // Store and keeps the original reservations until physical drop.
             threads.clear();
             pools.clear();
+            timers.clear();
+            queueClockCaptured = false;
             defaultAsyncExecutor = null;
             root = null;
             failure = null;

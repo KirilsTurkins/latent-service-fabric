@@ -254,6 +254,10 @@ pub(crate) async fn connect(
     Ok(Box::new(Handle { connection }))
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "one original reservation owns DNS, socket, TLS handshaking and retirement"
+)]
 async fn create_socket(
     inner: &Inner,
     scope: &StreamScope,
@@ -305,7 +309,9 @@ async fn create_socket(
         .as_ref()
         .map(|_| {
             Ok::<_, StreamError>((
-                scope.reserve_host_memory(crate::tls::CONNECTION_ALLOWANCE)?,
+                scope.reserve_host_memory(
+                    u64::try_from(crate::tls::CONNECTION_ALLOWANCE).expect("fixed TLS allowance"),
+                )?,
                 inner
                     .pools
                     .reserve_protocol_metadata(crate::tls::CONNECTION_ALLOWANCE)?,

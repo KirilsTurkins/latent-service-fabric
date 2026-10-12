@@ -58,6 +58,15 @@ impl StateManagementReservation for Reservation {
     fn with_live(&self, action: &mut dyn FnMut()) -> Result<(), PlatformError> {
         self.native.with_live(action).map_err(native_error)
     }
+    fn with_live_until(
+        &self,
+        deadline: Instant,
+        action: &mut dyn FnMut(),
+    ) -> Result<(), PlatformError> {
+        self.native
+            .with_live_until(deadline, action)
+            .map_err(native_error)
+    }
 }
 fn native_error(value: NativeCapacityError) -> PlatformError {
     match value {

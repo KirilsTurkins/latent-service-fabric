@@ -91,7 +91,7 @@ async fn dispatch(request: Request, session: &Session) -> Result<Response, Failu
         }
     })
 }
-fn project_outcome(response: &Response) -> Outcome {
+pub(super) fn project_outcome(response: &Response) -> Outcome {
     let data = projection::response(response);
     let mut outcome = match response {
         Response::LookupCommand(value) => {
@@ -104,6 +104,22 @@ fn project_outcome(response: &Response) -> Outcome {
             command_outcome(value.command.as_ref().expect("validated command"), data)
         }
         Response::MutateNamespace(value) => state_outcome(
+            value
+                .receipt
+                .as_ref()
+                .expect("validated receipt")
+                .disposition,
+            data,
+        ),
+        Response::ControlDispatcher(value) => state_outcome(
+            value
+                .receipt
+                .as_ref()
+                .expect("validated receipt")
+                .disposition,
+            data,
+        ),
+        Response::GetDispatcherOperation(value) => state_outcome(
             value
                 .receipt
                 .as_ref()
@@ -132,7 +148,14 @@ fn project_outcome(response: &Response) -> Outcome {
             ),
             data,
         ),
-        _ => Outcome::success(data),
+        Response::InspectDispatcher(_)
+        | Response::InspectNamespace(_)
+        | Response::SelectEntity(_)
+        | Response::PlanEffectMutation(_)
+        | Response::Query(_)
+        | Response::GetEffect(_)
+        | Response::ListEffectHistory(_)
+        | Response::CancelCommand(_) => Outcome::success(data),
     };
     if let Response::CancelCommand(value) = response {
         outcome.outcome_known = matches!(

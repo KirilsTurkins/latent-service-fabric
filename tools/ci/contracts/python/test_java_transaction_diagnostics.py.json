@@ -1,0 +1,18 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Preserve every original case, base, decorator and skip site. Reviewed fixture setup adds explicit Java schema/diagnostic inputs or substitutes only the current Wasmtime 48.0.5 baseline; execution predicates, deadlines and bounds stay intact.",
+  "module":"tools/tests/test_java_transaction_diagnostics.py",
+  "cases":["JavaTransactionDiagnosticTests.test_new_fault_capture_preserves_original_abi_payload_companion_and_limits","JavaTransactionDiagnosticTests.test_original_staging_drift_is_rejected_and_an_existing_capture_is_never_replaced","JavaTransactionDiagnosticTests.test_post_stage_faults_reject_a_missing_duplicate_or_reordered_original_state_put"],
+  "guards":{
+    "JavaTransactionDiagnosticTests.test_new_fault_capture_preserves_original_abi_payload_companion_and_limits":
+      "7c24e941d9e60f197887bb73dfc18c789d4eb978ac8fce84cf524df9aab1c03d",
+    "JavaTransactionDiagnosticTests.test_post_stage_faults_reject_a_missing_duplicate_or_reordered_original_state_put":
+      "7c24e941d9e60f197887bb73dfc18c789d4eb978ac8fce84cf524df9aab1c03d",
+    "JavaTransactionDiagnosticTests.test_original_staging_drift_is_rejected_and_an_existing_capture_is_never_replaced":
+      "7c24e941d9e60f197887bb73dfc18c789d4eb978ac8fce84cf524df9aab1c03d"
+  },
+  "guardDefinitions":{
+    "7c24e941d9e60f197887bb73dfc18c789d4eb978ac8fce84cf524df9aab1c03d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:067060a2a5fecd2ea145d2d34afdbf9739d1b4e8a6f0a012099d50ef3621c126","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+  }
+}

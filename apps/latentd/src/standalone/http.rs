@@ -8,6 +8,7 @@ mod state;
 #[cfg(test)]
 mod tests;
 pub(crate) mod tls;
+pub(in crate::standalone) mod transaction;
 mod write;
 
 use crate::config::http::HttpSettings;
@@ -25,6 +26,7 @@ pub(crate) struct HttpServices {
     pub cleanup: latent_wire::invocation::ActivationCleanupHandle,
     pub clock: Arc<dyn ActivationClock>,
     pub budget: ResourceBudget,
+    pub(in crate::standalone) transactions: Option<transaction::Services>,
 }
 struct Shared {
     settings: HttpSettings,

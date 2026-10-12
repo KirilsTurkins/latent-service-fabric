@@ -14,6 +14,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private final int parallelism;
     private final ThreadFactory factory;
     private final boolean cached;
+    private final boolean expireIdle;
     private final ArrayDeque<Item> queue = new ArrayDeque<>();
     private final ArrayList<Thread> workers = new ArrayList<>();
     private Activation.Lease owner;
@@ -33,10 +34,14 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         this(parallelism, factory, false);
     }
     ManagedExecutor(int parallelism, ThreadFactory factory, boolean cached) {
+        this(parallelism, factory, cached, cached);
+    }
+    ManagedExecutor(int parallelism, ThreadFactory factory, boolean cached, boolean expireIdle) {
         if (parallelism <= 0) throw new IllegalArgumentException();
         this.parallelism = parallelism;
         this.factory = Objects.requireNonNull(factory);
         this.cached = cached;
+        this.expireIdle = expireIdle;
         owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
         try { Activation.manage(this); }
         catch (Throwable error) { owner.close(); owner = null; throw error; }
@@ -88,7 +93,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                     long idleStart = System.nanoTime();
                     while (queue.isEmpty() && !shutdown && !retiring) {
                         try {
-                            if (cached) {
+                            if (expireIdle) {
                                 long remaining = 60_000_000_000L - (System.nanoTime() - idleStart);
                                 if (remaining <= 0) return;
                                 wait(remaining / 1_000_000, (int)(remaining % 1_000_000));

@@ -51,6 +51,12 @@ plaintext/ciphertext/errors and actual allocator/native peaks. These controls
 must reject before excess allocation under the same reservations; raising
 logical allowances or measuring only a benign handshake is insufficient.
 
+The October 12 [review packet](outbound-stream-review-2026-10-12.md) now records
+actual execution of the captured bounded parser, the unchanged hostile original
+failure and repaired private compilation closure. Every parser allocation
+retires after Drop. Full encrypted connection/native/component accounting and
+independent approval remain open, so direct TLS installation stays refused.
+
 Guest TLS, application credentials and client authentication remain owned by
 their selected language profile. Stream authority never grants secret reads.
 Use the existing protected secrets provider with independently scoped tenant,

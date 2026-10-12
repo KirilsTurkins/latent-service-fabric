@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "latent.java.compiler.environment-inputs.v1",
+  "actualNewOsImage": "sha256:b51d18e284913bc2c9aee690508b14b8572b654f4f82aa720f955aacfd83b777",
+  "originalDockerfileSha256": "sha256:0e7f2fefad0c1796a9184f6e9a22620a2328c4dd2b9c13d4f35c0479a9e9b1a1",
+  "originalOsBuildReceiptSha256": "sha256:f59f5c9afd8152a2aa5d673e87a67fe0c2c4035708bd8054e9d7cf3e8eae35e2",
+  "uid": 23001,
+  "cpuLimit": 1,
+  "memoryLimitBytes": 4294967296,
+  "pidsLimit": 256,
+  "sourceReadOnly": true,
+  "authenticatedToolInputsReadOnly": true,
+  "outputsPreservedOutsideWorktrees": true,
+  "nativeRuntimeRebuilt": false
+}

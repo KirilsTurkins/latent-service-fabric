@@ -1,0 +1,83 @@
+# Outbound stream architecture and security review packet
+
+This packet reconciles snapshots #912, #881 and #859 against development
+`ab4e174c0599d178074e70a91947bae514eaf2f5`. It supplies concrete implementation
+and evidence for [#737](https://github.com/KirilsTurkins/latent-service-fabric/issues/737),
+[#738](https://github.com/KirilsTurkins/latent-service-fabric/issues/738),
+[#739](https://github.com/KirilsTurkins/latent-service-fabric/issues/739) and
+[#740](https://github.com/KirilsTurkins/latent-service-fabric/issues/740).
+Their bodies and comments, including the October 8 stopped-work handoffs, were
+reviewed. No independent architecture/security approval is recorded here.
+
+## Decision submitted for independent approval
+
+Review [ADR-0061](../../adr/0061-bound-standard-outbound-streams.md) and the
+[finite profile](outbound-stream-profile.md) against ADR-0005, ADR-0028,
+ADR-0031, ADR-0059 and ADR-0060. Approve or reject the explicit supersession
+scope, TLS placement, secret exposure, endpoint authority, finite limits,
+unsupported operations and physical cleanup requirements. Preparatory source
+and measurements do not amend the ADR's proposed status.
+
+The default node still refuses stream installation. The explicit development
+provider is TCP only. Direct host TLS remains refused by
+`latent-streams::tls::ACCOUNTING_QUALIFIED`; a parsed TLS configuration grants
+neither readiness nor permission. No test, package identity or generated
+requirement may turn an HTTP method/path grant into opaque-byte authority.
+Strict transactions continue to deny immediate stream effects.
+
+## Source and security findings
+
+| Boundary | Current implementation and review result |
+| --- | --- |
+| Endpoint and address authority | Broker stream grants select canonical host, port and transport. Existing DNS/address policy checks occur before contact and at dispatch; one selected address, no fallback or ambient proxy. Canonical and signed component denial controls exercise the actual provider. |
+| Physical ownership | Original provider pools, `IoCall`, `IoTransfer`, activation budget, socket reservations and node maintenance remain the owners. No extra executor, ledger, retry, session pool or application listener is added. Cancellation acknowledgement cannot refund a pending socket. |
+| TLS input | Candidate host TLS uses 1–8 protected SHA-pinned DER roots and exact configured hostname. No ambient trust, keys, certificate decompression, insecure verification, STARTTLS, resumption, 0-RTT or plaintext fallback. Protected digest/link/mode failures precede contact. |
+| Allocation amplification | Genuine rustls 0.23.45 accepts 5,000 tiny certificate entries with a 393,216-byte parser peak. The captured object-count patch rejects the same input with a 384-byte peak under the unchanged 65,536-byte parser ceiling. This is parser evidence, not full connection accounting. |
+| Captured patch closure | Exact public archive and original/modified source identities are retained. The previously missing QUIC call site now propagates the deframer rejection, so the five-file private crate compiles. LSF exposes no QUIC operation. Verification consumes the same bounded archive bytes it authenticated and verifies the patch document identity. Shared registry sources remain unchanged. |
+| Mutation uncertainty | The bounded SMTP peer records accepted DATA mutations separately from submitted replies and never infers client confirmation. Actual stream tests retain lost-reply uncertainty and prohibit host replay. Library retry behavior remains independently observable work. |
+| Shared HTTP peer | The preserved #856/#859 framing parser bounds chunked and Content-Length input, rejects ambiguous framing/headers/trailers and keeps original deadlines and byte/chunk caps. Development's later fixed-port and held-GET observation controls remain intact. No typed HTTP grant becomes raw-stream authority. |
+| Protected lifecycle | Existing epoch/limit reload, durable policy revocation, exact binding adoption/publication, drain and shutdown owners remain unchanged. Trust changes still require an explicit protected restart; no authenticated session migration or silent trust adoption is introduced. |
+
+## Current bounded execution
+
+The pinned Linux Rust 1.97.1 helper ran 18 native stream cases, 22 daemon
+stream/configuration/physical-owner cases, seven canonical component cases,
+four signed component/node cases and four exact host ABI controls. All passed.
+Strict Clippy passed for `latent-streams` and `latentd`, all targets/features.
+The suite inventory retains all original cases and adds four TLS input/refusal/wire-limit
+controls; no existing ignore or execution gate changes.
+
+The [parser execution receipt](../testing/evidence/outbound-tls-parser-reference-2026-10-12.json)
+binds the exact archive, modified sources, patch, reference, compiler, locks and
+executables. It preserves the original failing allocation witness, all eight
+bounded vector outcomes and zero live parser allocations after Drop. The
+[maintained runner](../../tools/qualify_host_stream_tls_parser.py) builds in fresh
+private directories with offline Cargo; it enables no provider.
+
+The [SMTP fixture](outbound-stream-fixtures.md) is an independently bounded
+controlled peer. Its native standard-library tests do not qualify an emitted
+guest networking port. The retained
+[Windows HTTP framing observation](../testing/evidence/dotnet-http-framing-windows-reference-2026-10-02.json)
+keeps its original source/date and is not current Linux or .NET guest evidence.
+
+The full Python regression ran 4,013 cases with 24 skips and no failures.
+After incorporating the additional 16 framing cases, 37 shared HTTP
+framing/lifetime/rendezvous/scenario/matrix controls passed on both Windows and
+Linux. Their [original framing source receipt](../testing/evidence/sdk-provider-peer-framing-source-2026-10-02.json)
+retains its historical identity; the new focused execution does not qualify
+ordinary guest libraries or a six-language provider campaign.
+
+## Acceptance still requiring completion
+
+| Owner | Remaining requirement |
+| --- | --- |
+| #737 | Independent architecture and security approval, including proposed TLS/secret placement and production enablement. An agent source audit cannot fabricate that signoff. |
+| #738 | Full encrypted transport/parser/allocator/trust/native peak proof under the unchanged 256 KiB connection and 64 KiB trust reservations; real component host-TLS positive and adversarial execution before candidate installation can be enabled. |
+| #739 | External authenticated packaged-node workflow with ordinary standard API, protected credential/trust failure, live rotation/revocation, stop/restart, actual quarantine diagnostics and fresh authorized work. Current internal node controls supply only their recorded subset. |
+| #740 | Every promised ordinary Rust/C/Go/Java/TypeScript/.NET socket and guest-TLS entry, unchanged default client factories, private/catalogue-absent dependency, transitive worker/timer and actual physical/native measurements. Canonical TCP and native SMTP fixtures cannot replace these cells. |
+| #680 | The useful positive closed WASI HTTP composition slice remains separate from the exact negative WASI socket/resource recognition controls. Unknown socket imports remain denied; import renaming supplies no adapter. |
+
+No issue closes from this reconciliation. Historical failures, stopped-work
+records and approval requirements remain visible. The packet is ready for a
+reviewer to record a concrete decision against the maintained source and its
+explicit unqualified boundaries.

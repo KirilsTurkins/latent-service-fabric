@@ -15,6 +15,7 @@ mod publication;
 mod publication_management;
 mod raw_cache;
 mod retained_package;
+mod selected_transaction_asset;
 mod verification_statistics;
 mod verified_metadata;
 #[cfg(feature = "development-test-host")]
@@ -23,6 +24,10 @@ pub mod web;
 pub use publication::PublicationRef;
 pub use publication_management::PublicationOperationReceipt;
 pub use retained_package::{RetainedPackageParts, RetainedPackageSource};
+pub use selected_transaction_asset::{
+    SelectedTransactionAsset, SelectedTransactionAssetParts, TRANSACTION_ASSET_RESPONSE_BYTES,
+    TRANSACTION_ASSET_WORK_BYTES,
+};
 
 pub use audit::{
     reconcile_release_audit, AuditedAdmissionAuthority, ReleaseAuditAck, ReleaseAuditGuard,

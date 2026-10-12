@@ -11,6 +11,9 @@ pub(in crate::standalone::http) fn select(
     accepted: &AcceptedHttpRoute,
     raw: &[u8],
 ) -> Result<Option<Request>, u16> {
+    if accepted.transaction().is_some() {
+        return Ok(None);
+    }
     let Some(revision) = accepted.revision() else {
         return Ok(None);
     };

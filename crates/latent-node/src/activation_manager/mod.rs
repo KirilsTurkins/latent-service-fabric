@@ -45,7 +45,7 @@ pub use inbound::InboundActivationReservation;
 use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
-pub use transaction::TransactionActivationAdmission;
+pub use transaction::{TransactionActivationAdmission, TransactionCommitControl};
 pub use transport_stop::ActivationTransportInterruption;
 use transport_stop::TransportStop;
 
@@ -163,7 +163,11 @@ fn handle(
     let transport_stop = lifecycle.transport_stop.clone();
     let completion = Box::pin(async move {
         let mut lifecycle = lifecycle;
-        let result = CatchPanic::new(inner.drive(envelope, &mut lifecycle)).await;
+        let result = CatchPanic::new(async {
+            let outcome = inner.drive(envelope, &mut lifecycle).await;
+            lifecycle.complete_transaction(outcome).await
+        })
+        .await;
         let outcome = match result {
             Ok(outcome) => outcome,
             Err(()) => failure_for_platform_error(

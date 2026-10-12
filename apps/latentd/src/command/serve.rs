@@ -101,9 +101,16 @@ async fn serve(
         .and_then(|duration| duration.checked_add(settings.telemetry.shutdown_timeout))
         .and_then(|duration| duration.checked_add(Duration::from_secs(1)))
         .ok_or_else(|| Failure::new("configuration", PlatformErrorCode::InvalidArgument))?;
-    let mut node = StandaloneNode::start(settings, control, threads)
-        .await
-        .map_err(|error| Failure::new("startup", error.code))?;
+    let (started, observation) = Box::pin(crate::standalone::observe_startup(Box::pin(
+        StandaloneNode::start(settings, control, threads),
+    )))
+    .await;
+    if let Some(observation) = observation {
+        if let Ok(encoded) = serde_json::to_string(&observation) {
+            eprintln!("{encoded}");
+        }
+    }
+    let mut node = started.map_err(|error| Failure::new("startup", error.code))?;
     let ready = node
         .inventory()
         .is_ok_and(|inventory| inventory.health.ready);

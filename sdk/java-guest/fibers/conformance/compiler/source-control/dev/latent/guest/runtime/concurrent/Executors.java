@@ -12,6 +12,7 @@ public final class Executors {
         pools.add(pool);
         return pool;
     }
+    static ExecutorService newDefaultAsyncPool() { return newCachedThreadPool(); }
     public static synchronized int pools() { return pools.size(); }
     public static java.util.concurrent.Executor rejected() {
         return command -> {

@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "lsf.host-tls-parser-reference.v1",
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "upstream": {
+    "crate": "rustls",
+    "version": "0.23.45",
+    "archiveSha256": "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634",
+    "license": "Apache-2.0 OR ISC OR MIT"
+  },
+  "files": [
+    {
+      "path": "src/msgs/codec.rs",
+      "beforeSha256": "fa53201ef4387a453c626c37138a6a2de2d2ff13d85c0ec34f8b13ee20daeeaf",
+      "afterSha256": "b2dc9c497a91b50a17daf21f6ffec7d5b181311d87fac9e7d273ca255e2f08c5",
+      "beforeBytes": 12999,
+      "afterBytes": 13497
+    },
+    {
+      "path": "src/msgs/handshake.rs",
+      "beforeSha256": "9f9d9d4686e4a3f4433edf5fcc17c224155fa3eef747363bfa53802fd67dda7d",
+      "afterSha256": "fbad994e7492a6b49471d61cbd8fb372f4bead0e558c60e37cf02afef00e24e3",
+      "beforeBytes": 102660,
+      "afterBytes": 102848
+    },
+    {
+      "path": "src/msgs/deframer/handshake.rs",
+      "beforeSha256": "8b72e2864ef0de161b47c23c1c7bd50d4d39c2354813be920af66f13139b638d",
+      "afterSha256": "d5062691e3c7addd5c853d553836d8ec92a888cfbf06be212e427a1306f6934f",
+      "beforeBytes": 17568,
+      "afterBytes": 17954
+    },
+    {
+      "path": "src/conn.rs",
+      "beforeSha256": "a8866f067c993bc5591b36c1428ee529764eda77ec486b9740f4b3d811fc18cd",
+      "afterSha256": "edd12934adc078a8ae1076430b556de1a90a2214af01ad350ec6143974c57142",
+      "beforeBytes": 50053,
+      "afterBytes": 50054
+    },
+    {
+      "path": "src/quic.rs",
+      "beforeSha256": "d84b2a42a37a0286966eaadfc716578697a515100c31a0d8814e006b3a80c6d7",
+      "afterSha256": "cca0ff78d436f96cc96669e9a8526b790dce42c60a6e7a63de0bf52c8d40b092",
+      "beforeBytes": 36601,
+      "afterBytes": 36602
+    }
+  ],
+  "patchSha256": "38a9b2112f5948ba01d668cc62a86f7ea6c02b0d10d8234fc38c191029ebcc45",
+  "referenceSha256": "f7c520e37baf8b743d61d962386c93882b0afd6336e922bedf082946d23fdfe0",
+  "parserCeilingBytes": 65536,
+  "executions": {
+    "old": {
+      "binarySha256": "3ee514c98960ab3ab2db55133a95205135c86d40473ed723bea5a51cc8c5721b",
+      "lockSha256": "2f257b5218366128b05d4bf87594d575741984bd7226dfc68fb775ab8e6a97d4",
+      "exitCode": 101,
+      "observations": [
+        {
+          "case": "tls13-five-thousand-tiny-certificates-old",
+          "inputBytes": 30008,
+          "accepted": true,
+          "expectedAccepted": true,
+          "peakAllocationBytes": 393216,
+          "cumulativeAllocationBytes": 786240,
+          "liveAfterDropBytes": 0
+        }
+      ]
+    },
+    "new": {
+      "binarySha256": "78c6ab03a18c3dd562fe90fe21cdd946cd72c453574ac4106f25c910839e4713",
+      "lockSha256": "2f257b5218366128b05d4bf87594d575741984bd7226dfc68fb775ab8e6a97d4",
+      "exitCode": 0,
+      "observations": [
+        {
+          "case": "allowed-tls13-eight-small-certificates",
+          "inputBytes": 304,
+          "accepted": true,
+          "expectedAccepted": true,
+          "peakAllocationBytes": 384,
+          "cumulativeAllocationBytes": 576,
+          "liveAfterDropBytes": 0
+        },
+        {
+          "case": "allowed-tls12-eight-small-certificates",
+          "inputBytes": 287,
+          "accepted": true,
+          "expectedAccepted": true,
+          "peakAllocationBytes": 192,
+          "cumulativeAllocationBytes": 288,
+          "liveAfterDropBytes": 0
+        },
+        {
+          "case": "allowed-tls12-sixteen-authorities",
+          "inputBytes": 60,
+          "accepted": true,
+          "expectedAccepted": true,
+          "peakAllocationBytes": 424,
+          "cumulativeAllocationBytes": 712,
+          "liveAfterDropBytes": 0
+        },
+        {
+          "case": "huge-declared-truncated-handshake",
+          "inputBytes": 5,
+          "accepted": false,
+          "expectedAccepted": false,
+          "peakAllocationBytes": 0,
+          "cumulativeAllocationBytes": 0,
+          "liveAfterDropBytes": 0
+        },
+        {
+          "case": "tls13-nine-certificates",
+          "inputBytes": 62,
+          "accepted": false,
+          "expectedAccepted": false,
+          "peakAllocationBytes": 384,
+          "cumulativeAllocationBytes": 576,
+          "liveAfterDropBytes": 0
+        },
+        {
+          "case": "tls12-seventeen-authorities",
+          "inputBytes": 63,
+          "accepted": false,
+          "expectedAccepted": false,
+          "peakAllocationBytes": 424,
+          "cumulativeAllocationBytes": 712,
+          "liveAfterDropBytes": 0
+        },
+        {
+          "case": "tls13-owned-extension-over4096",
+          "inputBytes": 5022,
+          "accepted": false,
+          "expectedAccepted": false,
+          "peakAllocationBytes": 0,
+          "cumulativeAllocationBytes": 0,
+          "liveAfterDropBytes": 0
+        },
+        {
+          "case": "tls13-five-thousand-tiny-certificates",
+          "inputBytes": 30008,
+          "accepted": false,
+          "expectedAccepted": false,
+          "peakAllocationBytes": 384,
+          "cumulativeAllocationBytes": 576,
+          "liveAfterDropBytes": 0
+        }
+      ]
+    }
+  },
+  "parserReferenceExecuted": true,
+  "accountingQualified": false,
+  "hostTlsInstalled": false,
+  "sharedRegistryModified": false
+}

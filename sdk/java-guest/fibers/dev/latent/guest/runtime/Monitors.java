@@ -47,7 +47,7 @@ public final class Monitors {
         // The original event queue represents absolute instants as signed
         // milliseconds. Saturate at that boundary instead of wrapping into an
         // already elapsed instant; the original activation deadline still wins.
-        return now > Long.MAX_VALUE - millis ? Long.MAX_VALUE : now + millis;
+        return Activation.timerDeadline(now > Long.MAX_VALUE - millis ? Long.MAX_VALUE : now + millis);
     }
 
     public static long absoluteWaitDeadline(long now, long millis, int nanos) {
@@ -69,8 +69,10 @@ public final class Monitors {
         // the actual Java wait frame, resumed by the maintained callback, rather
         // than invoking it from an EventQueue callback outside that frame.
         try (Activation.Lease wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait);
-             Activation.Lease timer = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Timer)) {
-            rawSleep(millis);
+             Activation.Lease timer = Activation.timer(absoluteSleepDeadline(Activation.monotonicMillis(), millis))) {
+            Activation.beginTimedFrame(timer);
+            try { rawSleep(millis); }
+            finally { Activation.endTimedFrame(timer); }
         }
     }
 
@@ -78,10 +80,12 @@ public final class Monitors {
         validateWait(millis, nanos);
         try (Activation.Lease wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait);
              Activation.Lease timer = millis != 0 || nanos != 0
-                 ? Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Timer) : null) {
+                 ? Activation.timer(absoluteWaitDeadline(Activation.monotonicMillis(), millis, nanos)) : null) {
             // The original notify/timeout/interrupt callback reacquires the
             // monitor before this frame resumes and releases its owned leases.
-            rawWait(object, millis, nanos);
+            Activation.beginTimedFrame(timer);
+            try { rawWait(object, millis, nanos); }
+            finally { Activation.endTimedFrame(timer); }
         }
     }
 

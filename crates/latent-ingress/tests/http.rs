@@ -6,3 +6,5 @@ mod mapping;
 mod negative;
 #[path = "http/ownership.rs"]
 mod ownership;
+#[path = "http/transaction.rs"]
+mod transaction;

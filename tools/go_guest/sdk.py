@@ -22,6 +22,39 @@ CAPABILITIES = {
 }
 
 
+def export_declarations(text: str) -> str:
+    """Keep the pinned export package's canonical types when replacing stubs.
+
+    Componentize-go places business records and enums beside the empty export
+    implementations. Removing that entire file also removes their real WIT
+    owners. Only exact generated panic functions are replaced; generated type
+    declarations remain intact, with imports used by those declarations.
+    """
+    stub = re.compile(r'(?m)^func [A-Z][A-Za-z0-9_]*\([^\n]*\)[^\n{]* \{\n'
+                      r'\tpanic\("not implemented"\)\n\}\n')
+    count = text.count('panic("not implemented")')
+    if count == 0 or len(list(stub.finditer(text))) != count:
+        raise ValueError("generated-Go-export-stub-drift")
+    result = stub.sub("", text)
+    blocks = list(re.finditer(r'(?ms)^import \(\n(.*?)^\)\n', result))
+    if len(blocks) > 1:
+        raise ValueError("generated-Go-export-import-drift")
+    if blocks:
+        block = blocks[0]
+        declarations = result[:block.start()] + result[block.end():]
+        imports = []
+        for line in block[1].splitlines():
+            match = re.fullmatch(r'\s*(?:([A-Za-z][A-Za-z0-9_]*)\s+)?"([^"\n]+)"\s*', line)
+            if match is None:
+                raise ValueError("generated-Go-export-import-drift")
+            alias = match[1] or match[2].rsplit("/", 1)[-1]
+            if re.search(r"\b" + re.escape(alias) + r"\.", declarations):
+                imports.append(line)
+        replacement = "import (\n" + "\n".join(imports) + "\n)\n" if imports else ""
+        result = result[:block.start()] + replacement + result[block.end():]
+    return result
+
+
 def explicit_resource_owners(text: str) -> str:
     """Remove only the pinned generator's GC drops, never an explicit Drop.
 

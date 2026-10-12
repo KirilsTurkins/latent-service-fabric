@@ -1,0 +1,2134 @@
+{
+  "originalObservation": {
+    "bytes": 547924,
+    "sha256": "sha256:3bc5f9d85d5b0445f41a976c1a2ede895c17b9b5d0baaf8f901ad59d2b2ec73b"
+  },
+  "profiles": {
+    "currentProfile": {
+      "afterExplicitRebind": {
+        "direct": {
+          "category": "success",
+          "data": {
+            "activationId": "java-packaged-after-rebind",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "4930272",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "9175040",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "9438"
+            },
+            "effectIds": [],
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:bee442399841de726f4ba4ce44530f98704a05a9e283298ac3a35d18d3986b3b",
+              "releaseDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+              "revisionId": "revision-v1:sha256:a7a8888fe57340800cfe277957ae4dd0b2a29cd7f319391ff884ecfd579b4570",
+              "routeGeneration": "6"
+            }
+          },
+          "errorCode": null,
+          "outcomeKnown": true,
+          "requestDispatched": true
+        },
+        "httpStatus": 200,
+        "responseBytes": 146
+      },
+      "authority": {
+        "invoke-only": {
+          "category": "platform-failure",
+          "data": {},
+          "errorCode": "permission-denied",
+          "outcomeKnown": true,
+          "requestDispatched": true
+        },
+        "wrong-tenant": {
+          "category": "success",
+          "data": {
+            "bindingGeneration": "4",
+            "candidates": [],
+            "catalogTransaction": "8",
+            "contract": "latent:web/application@0.1.0",
+            "function": "handle",
+            "liveGrantsChecked": false,
+            "policyStoreGeneration": "7",
+            "route": "java-http-adapter",
+            "routeGeneration": "4",
+            "schemaVersion": 1,
+            "selectedRevisionId": null,
+            "service": "examples/java-http-adapter",
+            "state": 1,
+            "stateName": "coherent",
+            "tenant": "other-examples"
+          }
+        }
+      },
+      "configuration": {
+        "bounds": {
+          "budgetProfile": {
+            "maximumBlobReadBytes": 0,
+            "maximumBlobWriteBytes": 0,
+            "maximumChildCalls": 4,
+            "maximumDepth": 2,
+            "maximumLiveChildren": 1,
+            "maximumLiveDescendants": 2,
+            "maximumOutboundRequests": 0,
+            "mode": "phase3"
+          },
+          "cells": [
+            {
+              "capacity": 2,
+              "class": "standard",
+              "maximumMemoryBytes": 134217728,
+              "queueCapacity": 4
+            }
+          ],
+          "execution": {
+            "maximumCpuFuel": 10000000000,
+            "maximumLogBytes": 16384,
+            "maximumWallTimeMillis": 120000
+          },
+          "limits": {
+            "maximumComponentBytes": 33554432,
+            "maximumPayloadBytes": 2097152
+          }
+        },
+        "installerScopePreserved": true,
+        "nodeId": "lsf-062711e7e3cfc957",
+        "originalConfigurationDigest": "sha256:e7d616ea6abf768b5eebc520fe7bc0a8d0b8afc3d7c153f50e464e5081b50cf4",
+        "profile": "local-experimental-v1",
+        "selectedConfigurationDigest": "sha256:4190d0ec979140702c5f4b15bda2696cfd08af582f94bbde3c71c75a1f4269d4"
+      },
+      "down": {
+        "build": {
+          "attempt": "5a453227261ec2986c10cd0d5f2ed3ff",
+          "guestInstance": {
+            "bootId": "d80aec34-5000-462f-a2ca-741934597e2c",
+            "initStartTicks": "587228",
+            "pidNamespace": "4026532930"
+          },
+          "id": "8dff4c41eadff73f0f7d71e5e24e4e1c",
+          "reason": "build-complete",
+          "state": "reaped"
+        },
+        "cleanShutdown": true,
+        "dataRetained": true,
+        "guestInstance": {
+          "bootId": "d80aec34-5000-462f-a2ca-741934597e2c",
+          "initStartTicks": "587228",
+          "pidNamespace": "4026532930"
+        },
+        "node": "lsf-062711e7e3cfc957",
+        "profile": "local-experimental-v1",
+        "providerShutdown": {
+          "blobHandles": 0,
+          "blobStages": 0,
+          "blobWork": 0,
+          "calls": 0,
+          "clean": true,
+          "cleanupJobs": 0,
+          "connections": 0,
+          "controlOwners": 0,
+          "failedCleanup": 0,
+          "handles": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "pendingRequests": 0,
+          "results": 0,
+          "runningRequests": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "sessions": 0,
+          "workers": 0
+        },
+        "providers": [
+          {
+            "capability": "latent:clock/monotonic@0.1.0",
+            "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+            "configurationEpoch": "1",
+            "id": "clockMonotonic",
+            "profile": "activation-monotonic-v1",
+            "service": "runtime-host",
+            "tenant": "examples"
+          },
+          {
+            "capability": "latent:clock/wall@0.1.0",
+            "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+            "configurationEpoch": "1",
+            "id": "clockWall",
+            "profile": "activation-wall-v1",
+            "service": "runtime-host",
+            "tenant": "examples"
+          },
+          {
+            "capability": "latent:service/invoke@0.1.0",
+            "configurationDigest": "sha256:b8416566cc5a30f8c5ba4453079aa956472d52dfa27d68d700ffa8c80e306025",
+            "configurationEpoch": "1",
+            "id": "localService",
+            "profile": "lsf-local-service-invocation-v1",
+            "service": "examples/java-http-domain",
+            "tenant": "examples"
+          }
+        ],
+        "readiness": {
+          "activationReady": true,
+          "authenticated": true,
+          "profile": "local-experimental-v1",
+          "schemaVersion": "latent.native-readiness.v1"
+        },
+        "reaped": true,
+        "state": "stopped"
+      },
+      "explicitNewDeployment": {
+        "adapter": {
+          "currentGeneration": "6",
+          "previousGeneration": "4",
+          "publication": "publication:sha256:0a325372530f8bfa5ddc301a3393a8f863fae0deec21006ba309a3d59330c3f4"
+        }
+      },
+      "freshComposedExecution": {
+        "direct": {
+          "category": "success",
+          "data": {
+            "activationId": "java-packaged-fresh-success",
+            "committedStateVersion": null,
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "4930272",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "9175040",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "27997"
+            },
+            "effectIds": [],
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:bee442399841de726f4ba4ce44530f98704a05a9e283298ac3a35d18d3986b3b",
+              "releaseDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+              "revisionId": "revision-v1:sha256:a7a8888fe57340800cfe277957ae4dd0b2a29cd7f319391ff884ecfd579b4570",
+              "routeGeneration": "4"
+            }
+          },
+          "errorCode": null,
+          "outcomeKnown": true,
+          "requestDispatched": true
+        },
+        "httpStatus": 200,
+        "responseBytes": 146
+      },
+      "idle": {
+        "cacheEntries": [],
+        "cacheSummary": {
+          "available": true,
+          "compiledImageBytes": "7508624",
+          "entries": "3",
+          "evictions": "0",
+          "hits": "66",
+          "invalidations": "0",
+          "maximumCompiledImageBytes": "134217728",
+          "maximumConcurrentPreparations": "1",
+          "maximumEntries": "4",
+          "maximumMetadataBytes": "8388608",
+          "maximumSourceBytes": "134217728",
+          "metadataBytes": "133680",
+          "misses": "3",
+          "preparing": "0",
+          "preparingMetadataBytes": "0",
+          "preparingSourceBytes": "0",
+          "sourceBytes": "3447999"
+        },
+        "cellCapacity": [
+          {
+            "accepting": true,
+            "active": 0,
+            "available": 2,
+            "cancellations": "0",
+            "class": "standard",
+            "expired": "0",
+            "granted": "11",
+            "maxWaitMicros": "59",
+            "observationAvailable": true,
+            "oldestLeaseAgeMicros": "0",
+            "quarantined": 0,
+            "queueCapacity": 4,
+            "queueDepth": 0,
+            "queuedTenants": 0,
+            "rejected": "0",
+            "total": 2,
+            "totalWaitMicros": "429"
+          }
+        ],
+        "health": {
+          "healthy": true,
+          "observedAtUnixMillis": "1790877742933",
+          "ready": true,
+          "reasons": [
+            "topology-incomplete"
+          ],
+          "status": "degraded"
+        },
+        "memoryPressureMilli": 5,
+        "node": {
+          "architecture": "x86_64",
+          "attributes": {
+            "lsf.host-abi": "lsf-host-abi-phase3-v4",
+            "lsf.http.endpoint": "http://127.0.0.1:38757",
+            "lsf.http.profile": "buffered-http1-v1",
+            "lsf.security.admission": "enforced",
+            "lsf.security.compiler": "in-process",
+            "lsf.security.guest-boundary": "in-process-wasmtime",
+            "lsf.security.profile": "local-experimental-v1"
+          },
+          "cpuFeatures": [
+            "x86_64.avx",
+            "x86_64.avx2",
+            "x86_64.avx512bitalg",
+            "x86_64.avx512dq",
+            "x86_64.avx512f",
+            "x86_64.avx512vbmi",
+            "x86_64.avx512vl",
+            "x86_64.bmi1",
+            "x86_64.bmi2",
+            "x86_64.cmpxchg16b",
+            "x86_64.fma",
+            "x86_64.lzcnt",
+            "x86_64.popcnt",
+            "x86_64.sse2",
+            "x86_64.sse3",
+            "x86_64.sse4.1",
+            "x86_64.sse4.2",
+            "x86_64.ssse3"
+          ],
+          "endpoint": "http://127.0.0.1:18090",
+          "id": "lsf-062711e7e3cfc957",
+          "identity": "lsf-062711e7e3cfc957",
+          "operatingSystem": "linux",
+          "region": null,
+          "trustClasses": [
+            "internal"
+          ],
+          "zone": null
+        },
+        "observedAtUnixMillis": "1790877742933",
+        "pressure": {
+          "cachePressureMilli": 750,
+          "cpuPressureMilli": 1,
+          "loadAvailable": true,
+          "loadSampleAgeMillis": "234",
+          "memoryPressureMilli": 5,
+          "queuePressureMilli": 0
+        },
+        "queueDepth": "0",
+        "quotas": {
+          "limits": {
+            "maximumConcurrentActivations": 6,
+            "maximumQueuedActivations": 6,
+            "maximumReservedCpuFuel": "60000000000",
+            "maximumReservedMemoryBytes": "805306368"
+          },
+          "retainedTenants": "0",
+          "usage": {
+            "activeActivations": 0,
+            "queuedActivations": 0,
+            "reservedCpuFuel": "0",
+            "reservedMemoryBytes": "0"
+          }
+        },
+        "retainedBytes": "70178",
+        "routeGeneration": "6",
+        "topology": {
+          "available": true,
+          "complete": false,
+          "entries": [
+            {
+              "activeCount": "1",
+              "attributes": {
+                "chargedStorageBytes": "10755595",
+                "contentIndexBytes": "169376",
+                "incompleteFileBytes": "0",
+                "indexedPublications": "4",
+                "maximumContentIndexBytes": "67108864",
+                "maximumFilesPerPublication": "1024",
+                "maximumPublications": "8",
+                "maximumRecoveryDirectories": "24",
+                "maximumReleaseIndexBytes": "67108864",
+                "maximumSharedBlobs": "1000000",
+                "maximumStorageBytes": "4294967296",
+                "measurementStatus": "available",
+                "publicationLinkBytes": "5384528",
+                "releaseDirectories": "4",
+                "releaseIndexBytes": "159324",
+                "sharedBlobBytes": "5371067",
+                "sharedBlobs": "70",
+                "webControlBytes": "0"
+              },
+              "configuredCount": "1",
+              "kind": "store",
+              "name": "publication-catalog",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "listener",
+              "name": "http-listener",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "task",
+              "name": "http-owner",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "8",
+              "kind": "connection",
+              "name": "http-connections",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "exchange",
+              "name": "http-exchanges",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "25165824",
+              "kind": "byte",
+              "name": "http-buffer-reservations",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "process",
+              "name": "standalone-node",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "thread",
+              "name": "invocation-runtime",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "3",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "thread",
+              "name": "control-runtime",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": null,
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "thread",
+              "name": "wasmtime-epoch",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "thread",
+              "name": "wasmtime-compiler",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": null,
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "listener",
+              "name": "grpc-listener",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "32",
+              "kind": "connection",
+              "name": "accepted-connections",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "11",
+              "kind": "rpc",
+              "name": "in-flight-rpcs",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "job",
+              "name": "control-jobs",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "task",
+              "name": "invocation-cleanup-driver",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "6",
+              "kind": "continuation",
+              "name": "invocation-cleanup-slots",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "cell",
+              "name": "execution-cell-leases",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "reservation",
+              "name": "prepared-instance-reservations",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "invocation",
+              "name": "guest-invocations",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "store",
+              "name": "guest-stores",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "host-state",
+              "name": "guest-host-states",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "component-instance",
+              "name": "guest-component-instances",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "buffer-group",
+              "name": "guest-value-buffers",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "probe",
+              "name": "guest-cancellation-probes",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "0",
+              "kind": "process",
+              "name": "resident-service-processes",
+              "ownership": "service-resident"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "0",
+              "kind": "thread",
+              "name": "resident-service-threads",
+              "ownership": "service-resident"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "0",
+              "kind": "listener",
+              "name": "resident-service-listeners",
+              "ownership": "service-resident"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "command",
+              "name": "capability-policy-control-jobs",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "5",
+              "attributes": {},
+              "configuredCount": "68",
+              "kind": "response-or-snapshot",
+              "name": "capability-policy-read-owners",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "blocking-task",
+              "name": "rollout-coordinator",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "3",
+              "kind": "command",
+              "name": "rollout-control-commands",
+              "ownership": "node-fixed"
+            }
+          ]
+        }
+      },
+      "missingGrant": {
+        "httpStatus": 403,
+        "observedFromUnixMillis": 1790877687185,
+        "tree": {
+          "cursorExpired": false,
+          "externalCompletion": "unknown",
+          "historyAvailable": true,
+          "nextPageToken": null,
+          "nodes": [
+            {
+              "activationId": "activation-18694ddee0447b3e-0000000000000001",
+              "callerService": null,
+              "diagnostic": null,
+              "diagnosticIsTerminal": false,
+              "effectiveDeadlineUnixMillis": "1790877747234",
+              "grantedBudget": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 4,
+                "cpuFuel": "10000000000",
+                "effectCount": 0,
+                "logBytes": "0",
+                "memoryBytes": "134217728",
+                "outboundRequests": 0,
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeLimitMillis": "120000"
+              },
+              "lastUpdatedUnixMillis": "1790877693589",
+              "parentActivationId": null,
+              "phase": "running",
+              "principalKind": "trigger",
+              "receivedAtUnixMillis": "1790877687236",
+              "rootActivationId": "activation-18694ddee0447b3e-0000000000000001",
+              "targetService": "examples/java-http-adapter",
+              "terminalState": "rejected"
+            }
+          ],
+          "retainedHistoryOnly": true,
+          "schemaVersion": 1
+        }
+      },
+      "ordinaryContext": {
+        "contextInstallationProfile": "ordinary-installed-clocks-and-local-service-v1",
+        "deployment": {
+          "category": "success",
+          "command": "deployment apply",
+          "data": {
+            "auditAck": {
+              "attemptSequence": "29",
+              "status": "AUDIT_ACK_STATUS_DURABLE"
+            },
+            "deployment": {
+              "generation": "5",
+              "manifest": {
+                "apiVersion": "latent.dev/v1alpha1",
+                "kind": "Deployment",
+                "metadata": {
+                  "name": "java-http-context-required",
+                  "tenant": "examples"
+                },
+                "spec": {
+                  "availability": {
+                    "minimumCachedCopies": 1,
+                    "minimumZones": 1
+                  },
+                  "grants": [
+                    {
+                      "capability": "latent:clock/monotonic@0.1.0",
+                      "policy": "clockMonotonic-allow"
+                    },
+                    {
+                      "capability": "latent:clock/wall@0.1.0",
+                      "policy": "clockWall-allow"
+                    }
+                  ],
+                  "placement": {
+                    "architectures": [
+                      "aarch64",
+                      "x86_64"
+                    ],
+                    "trustClass": "internal"
+                  },
+                  "publication": "publication:sha256:03501adc59c0799e352370f0063cd41ac5eff5eb3bcd0c3165a481185fc80362",
+                  "release": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+                  "resources": {
+                    "blobReadBytes": 0,
+                    "blobWriteBytes": 0,
+                    "childCalls": 0,
+                    "cpuFuel": 1000000000,
+                    "effectCount": 0,
+                    "logBytes": 0,
+                    "memoryBytes": 67108864,
+                    "outboundRequests": 0,
+                    "stateReadBytes": 0,
+                    "stateWriteBytes": 0,
+                    "wallTimeLimitMillis": 120000
+                  },
+                  "route": {
+                    "weight": 10000
+                  },
+                  "service": "examples/java-http-context-required"
+                }
+              },
+              "publication": {
+                "id": "publication:sha256:03501adc59c0799e352370f0063cd41ac5eff5eb3bcd0c3165a481185fc80362",
+                "tenant": "examples"
+              }
+            },
+            "durability": "confirmed",
+            "receipt": {
+              "action": "DEPLOYMENT_OPERATION_ACTION_APPLY",
+              "actor": {
+                "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+                "subject": "workflow-operator"
+              },
+              "completedAtUnixMillis": "1790877733849",
+              "componentDigest": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+              "deploymentId": "java-http-context-required",
+              "expectedGeneration": "0",
+              "expectedStateVersion": "8",
+              "formatVersion": 1,
+              "manifestDigest": "sha256:04151afa3248baad13514b1844cb75e95d1f52ff64348dc141d7a0fc38d75b4e",
+              "objectGeneration": "5",
+              "operationId": "java-context-required-deploy",
+              "publication": {
+                "id": "publication:sha256:03501adc59c0799e352370f0063cd41ac5eff5eb3bcd0c3165a481185fc80362",
+                "tenant": "examples"
+              },
+              "receiptDigest": "sha256:9bb66657df9149ebc6afb3db064765559052714a5f37561e69a9e90ec1d3cf2c",
+              "requestDigest": "sha256:25924ea348459369f36a785c078ac23506a27559a93c178c8bb0169ab4169cc2",
+              "routeGeneration": "5",
+              "stateVersion": "9",
+              "tenant": "examples"
+            },
+            "recovery": {
+              "deploymentId": "java-http-context-required",
+              "expectedGeneration": "0",
+              "expectedStateVersion": "8",
+              "family": "deployment",
+              "operationId": "java-context-required-deploy",
+              "tenant": "examples"
+            },
+            "replayed": false,
+            "warnings": []
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "expectedStateVersion": "8",
+        "invocation": {
+          "category": "platform-failure",
+          "data": {
+            "activationId": "java-context-required",
+            "consumption": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "0",
+              "effectCount": 0,
+              "logBytes": "0",
+              "outboundRequests": 0,
+              "peakMemoryBytes": "0",
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeMicros": "1821711"
+            },
+            "resolvedRevision": {
+              "publicationId": "publication:sha256:03501adc59c0799e352370f0063cd41ac5eff5eb3bcd0c3165a481185fc80362",
+              "releaseDigest": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+              "revisionId": "revision-v1:sha256:c7c8d03f656b7b388b6528d24201d6930ab1c0554a4f3ec130e6901d9f0f687d",
+              "routeGeneration": "5"
+            },
+            "terminalState": "rejected"
+          },
+          "errorCode": "permission-denied",
+          "outcomeKnown": true,
+          "requestDispatched": true
+        },
+        "originalDeploymentOperation": {
+          "category": "success",
+          "command": "deployment operation",
+          "data": {
+            "disposition": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_FOUND",
+            "durability": "DEPLOYMENT_DURABILITY_CONFIRMED",
+            "highWatermark": "0",
+            "receipt": {
+              "action": "DEPLOYMENT_OPERATION_ACTION_APPLY",
+              "actor": {
+                "kind": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+                "subject": "workflow-operator"
+              },
+              "completedAtUnixMillis": "1790877733849",
+              "componentDigest": "sha256:25143aaf14f88708bfdf662ba04bba38fceab61402d1457b8016b2525f91982d",
+              "deploymentId": "java-http-context-required",
+              "expectedGeneration": "0",
+              "expectedStateVersion": "8",
+              "formatVersion": 1,
+              "manifestDigest": "sha256:04151afa3248baad13514b1844cb75e95d1f52ff64348dc141d7a0fc38d75b4e",
+              "objectGeneration": "5",
+              "operationId": "java-context-required-deploy",
+              "publication": {
+                "id": "publication:sha256:03501adc59c0799e352370f0063cd41ac5eff5eb3bcd0c3165a481185fc80362",
+                "tenant": "examples"
+              },
+              "receiptDigest": "sha256:9bb66657df9149ebc6afb3db064765559052714a5f37561e69a9e90ec1d3cf2c",
+              "requestDigest": "sha256:25924ea348459369f36a785c078ac23506a27559a93c178c8bb0169ab4169cc2",
+              "routeGeneration": "5",
+              "stateVersion": "9",
+              "tenant": "examples"
+            },
+            "retainedFloor": "0"
+          },
+          "error": null,
+          "outcomeKnown": true,
+          "requestDispatched": true,
+          "schemaVersion": "latent.cli.result.v1"
+        },
+        "publication": "publication:sha256:03501adc59c0799e352370f0063cd41ac5eff5eb3bcd0c3165a481185fc80362",
+        "stage": "invocation",
+        "status": "rejected",
+        "tree": {
+          "cursorExpired": false,
+          "externalCompletion": "unknown",
+          "historyAvailable": true,
+          "nextPageToken": null,
+          "nodes": [
+            {
+              "activationId": "java-context-required",
+              "callerService": null,
+              "diagnostic": null,
+              "diagnosticIsTerminal": false,
+              "effectiveDeadlineUnixMillis": "1790877855322",
+              "grantedBudget": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 0,
+                "cpuFuel": "1000000000",
+                "effectCount": 0,
+                "logBytes": "0",
+                "memoryBytes": "67108864",
+                "outboundRequests": 0,
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeLimitMillis": "120000"
+              },
+              "lastUpdatedUnixMillis": "1790877737145",
+              "parentActivationId": null,
+              "phase": "running",
+              "principalKind": "administrator",
+              "receivedAtUnixMillis": "1790877735323",
+              "rootActivationId": "java-context-required",
+              "targetService": "examples/java-http-context-required",
+              "terminalState": "rejected"
+            }
+          ],
+          "retainedHistoryOnly": true,
+          "schemaVersion": 1
+        },
+        "trustedGuestContextValuesReturned": false
+      },
+      "ordinaryHttpBinding": {
+        "after": {
+          "durability": "confirmed",
+          "routeGeneration": "4",
+          "stateVersion": "8",
+          "trigger": null
+        },
+        "denied": {
+          "category": "local-error",
+          "data": {},
+          "errorCode": "invalid-http-trigger",
+          "outcomeKnown": true,
+          "requestDispatched": false
+        },
+        "originalOperation": null
+      },
+      "restoredOriginalPlanStale": {
+        "bindingGeneration": "5",
+        "candidates": [
+          {
+            "componentDigest": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+            "dependencies": [
+              {
+                "binding": {
+                  "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                  "id": "clockMonotonic-installed",
+                  "revision": "2"
+                },
+                "capability": "latent:clock/monotonic@0.1.0",
+                "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                "policies": [
+                  {
+                    "digest": "sha256:6b6419ee24096887fced8f3b0912c9dce4f5f87b5d53405b8ad8e0a299bff2ba",
+                    "id": "clockMonotonic-allow",
+                    "revision": "3"
+                  }
+                ],
+                "policyIdentityDigest": "e592b5f716c9f875429a2a04cb57d097c6130e8f98709162aeac035cb8757bbe",
+                "providerConfigurationEpoch": "1",
+                "providerProfile": "activation-monotonic-v1",
+                "state": "configured-current"
+              },
+              {
+                "binding": {
+                  "digest": "sha256:d6905f0957622b125c47271491f10c6346d41f61b7f92ba91ff02b354512909e",
+                  "id": "clockWall-installed",
+                  "revision": "4"
+                },
+                "capability": "latent:clock/wall@0.1.0",
+                "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+                "policies": [
+                  {
+                    "digest": "sha256:db33dc81ae4bf0d3b8e59c4a124f437000af4f27fc856ccf22ff1b578462c3e2",
+                    "id": "clockWall-allow",
+                    "revision": "5"
+                  }
+                ],
+                "policyIdentityDigest": "2c770dc823ae4236c9259413b0d4814b686a02ab1be76575aaa3f9d516cd44c7",
+                "providerConfigurationEpoch": "1",
+                "providerProfile": "activation-wall-v1",
+                "state": "configured-current"
+              },
+              {
+                "binding": {
+                  "digest": "sha256:7d46f79595a36f064eb5447b57f80185bb8d81d751afb450545c1eff0a59c2c0",
+                  "id": "java-domain-installed",
+                  "revision": "6"
+                },
+                "capability": "latent:service/invoke@0.1.0",
+                "configurationDigest": "sha256:b8416566cc5a30f8c5ba4453079aa956472d52dfa27d68d700ffa8c80e306025",
+                "policies": [
+                  {
+                    "digest": "sha256:61830a2fc8683fe19be7ef793713127c4522262598673eb0aac5556ac63123d3",
+                    "id": "java-domain-allow",
+                    "revision": "7"
+                  }
+                ],
+                "policyIdentityDigest": "8295d14e6f650f89c7539dac5037233f1319eb5ca6d7e002669a6425389ceff2",
+                "providerConfigurationEpoch": "1",
+                "providerProfile": "lsf-local-service-invocation-v1",
+                "state": "policy-changed-or-revoked"
+              }
+            ],
+            "deploymentGeneration": "4",
+            "deploymentId": "java-http-adapter",
+            "eligible": false,
+            "exportCompatible": true,
+            "httpBindings": [
+              {
+                "generation": "7",
+                "id": "java-api-get",
+                "selectedDeploymentGeneration": "4",
+                "state": "configured-current"
+              },
+              {
+                "generation": "8",
+                "id": "java-api-post",
+                "selectedDeploymentGeneration": "4",
+                "state": "configured-current"
+              }
+            ],
+            "httpCompatible": true,
+            "packageDigest": "sha256:fde66661f1a1cfb975b65840ee236f8cfe5bef12363ed95d7822580de77b6484",
+            "preparation": {
+              "cpuFeatureSet": null,
+              "declaredBudget": null,
+              "diagnostic": null,
+              "engineConfigurationDigest": null,
+              "engineVersion": null,
+              "exports": [],
+              "functionCount": null,
+              "hostcallFuel": null,
+              "importCount": null,
+              "imports": [],
+              "maximumLiftedBytes": null,
+              "maximumTypeNodes": null,
+              "profile": null,
+              "profileName": null,
+              "sealedMetadataFingerprint": null,
+              "state": 4,
+              "stateName": "not-requested",
+              "targetTriple": null,
+              "typeImports": []
+            },
+            "publication": {
+              "id": "publication:sha256:0a325372530f8bfa5ddc301a3393a8f863fae0deec21006ba309a3d59330c3f4",
+              "tenant": "examples"
+            },
+            "publicationGeneration": "1",
+            "publicationKind": "capsule",
+            "reasonNames": [
+              "policy-changed-or-revoked"
+            ],
+            "reasons": [
+              6
+            ],
+            "requestedPublication": {
+              "id": "publication:sha256:0a325372530f8bfa5ddc301a3393a8f863fae0deec21006ba309a3d59330c3f4",
+              "tenant": "examples"
+            },
+            "revisionId": "revision-v1:sha256:3aff1df5b7a1677d4f7f128f64125587d0e316b0c063f031714f6cac70b8cdab",
+            "routingWeight": 10000
+          }
+        ],
+        "catalogTransaction": "9",
+        "contract": "latent:web/application@0.1.0",
+        "function": "handle",
+        "liveGrantsChecked": false,
+        "policyStoreGeneration": "9",
+        "route": "java-http-adapter",
+        "routeGeneration": "5",
+        "schemaVersion": 1,
+        "selectedRevisionId": null,
+        "service": "examples/java-http-adapter",
+        "state": 2,
+        "stateName": "stale",
+        "tenant": "examples"
+      },
+      "revokedHttp": {
+        "httpStatus": 403,
+        "observedFromUnixMillis": 1790877737294,
+        "tree": {
+          "cursorExpired": false,
+          "externalCompletion": "unknown",
+          "historyAvailable": true,
+          "nextPageToken": null,
+          "nodes": [
+            {
+              "activationId": "activation-18694ddee0447b3e-0000000000000006",
+              "callerService": null,
+              "diagnostic": null,
+              "diagnosticIsTerminal": false,
+              "effectiveDeadlineUnixMillis": "1790877797293",
+              "grantedBudget": {
+                "blobReadBytes": "0",
+                "blobWriteBytes": "0",
+                "childCalls": 4,
+                "cpuFuel": "10000000000",
+                "effectCount": 0,
+                "logBytes": "0",
+                "memoryBytes": "134217728",
+                "outboundRequests": 0,
+                "stateReadBytes": "0",
+                "stateWriteBytes": "0",
+                "wallTimeLimitMillis": "120000"
+              },
+              "lastUpdatedUnixMillis": "1790877737295",
+              "parentActivationId": null,
+              "phase": "running",
+              "principalKind": "trigger",
+              "receivedAtUnixMillis": "1790877737294",
+              "rootActivationId": "activation-18694ddee0447b3e-0000000000000006",
+              "targetService": "examples/java-http-adapter",
+              "terminalState": "rejected"
+            }
+          ],
+          "retainedHistoryOnly": true,
+          "schemaVersion": 1
+        }
+      },
+      "targetInspection": {
+        "adapter": {
+          "bindingGeneration": "4",
+          "candidates": [
+            {
+              "componentDigest": "sha256:f39fc1a4f5ad77f44a663dd9059c9df21edf64a3e0761a5afccb5cf431c0c78b",
+              "dependencies": [
+                {
+                  "binding": {
+                    "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                    "id": "clockMonotonic-installed",
+                    "revision": "2"
+                  },
+                  "capability": "latent:clock/monotonic@0.1.0",
+                  "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                  "policies": [
+                    {
+                      "digest": "sha256:6b6419ee24096887fced8f3b0912c9dce4f5f87b5d53405b8ad8e0a299bff2ba",
+                      "id": "clockMonotonic-allow",
+                      "revision": "3"
+                    }
+                  ],
+                  "policyIdentityDigest": "e592b5f716c9f875429a2a04cb57d097c6130e8f98709162aeac035cb8757bbe",
+                  "providerConfigurationEpoch": "1",
+                  "providerProfile": "activation-monotonic-v1",
+                  "state": "configured-current"
+                },
+                {
+                  "binding": {
+                    "digest": "sha256:d6905f0957622b125c47271491f10c6346d41f61b7f92ba91ff02b354512909e",
+                    "id": "clockWall-installed",
+                    "revision": "4"
+                  },
+                  "capability": "latent:clock/wall@0.1.0",
+                  "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+                  "policies": [
+                    {
+                      "digest": "sha256:db33dc81ae4bf0d3b8e59c4a124f437000af4f27fc856ccf22ff1b578462c3e2",
+                      "id": "clockWall-allow",
+                      "revision": "5"
+                    }
+                  ],
+                  "policyIdentityDigest": "2c770dc823ae4236c9259413b0d4814b686a02ab1be76575aaa3f9d516cd44c7",
+                  "providerConfigurationEpoch": "1",
+                  "providerProfile": "activation-wall-v1",
+                  "state": "configured-current"
+                },
+                {
+                  "binding": {
+                    "digest": "sha256:7d46f79595a36f064eb5447b57f80185bb8d81d751afb450545c1eff0a59c2c0",
+                    "id": "java-domain-installed",
+                    "revision": "6"
+                  },
+                  "capability": "latent:service/invoke@0.1.0",
+                  "configurationDigest": "sha256:b8416566cc5a30f8c5ba4453079aa956472d52dfa27d68d700ffa8c80e306025",
+                  "policies": [
+                    {
+                      "digest": "sha256:61830a2fc8683fe19be7ef793713127c4522262598673eb0aac5556ac63123d3",
+                      "id": "java-domain-allow",
+                      "revision": "7"
+                    }
+                  ],
+                  "policyIdentityDigest": "8295d14e6f650f89c7539dac5037233f1319eb5ca6d7e002669a6425389ceff2",
+                  "providerConfigurationEpoch": "1",
+                  "providerProfile": "lsf-local-service-invocation-v1",
+                  "state": "configured-current"
+                }
+              ],
+              "deploymentGeneration": "4",
+              "deploymentId": "java-http-adapter",
+              "eligible": true,
+              "exportCompatible": true,
+              "httpBindings": [
+                {
+                  "generation": "7",
+                  "id": "java-api-get",
+                  "selectedDeploymentGeneration": "4",
+                  "state": "configured-current"
+                },
+                {
+                  "generation": "8",
+                  "id": "java-api-post",
+                  "selectedDeploymentGeneration": "4",
+                  "state": "configured-current"
+                }
+              ],
+              "httpCompatible": true,
+              "packageDigest": "sha256:fde66661f1a1cfb975b65840ee236f8cfe5bef12363ed95d7822580de77b6484",
+              "preparation": {
+                "cpuFeatureSet": "host-baseline",
+                "declaredBudget": {
+                  "blobReadBytes": "0",
+                  "blobWriteBytes": "0",
+                  "childCalls": 4,
+                  "cpuFuel": "10000000000",
+                  "effectCount": 0,
+                  "logBytes": "0",
+                  "memoryBytes": "134217728",
+                  "outboundRequests": 0,
+                  "stateReadBytes": "0",
+                  "stateWriteBytes": "0",
+                  "wallTimeLimitMillis": "120000"
+                },
+                "diagnostic": null,
+                "engineConfigurationDigest": "blake3:a6acfe95e50eac2cc441e59c77c6f24fb1d6db36db73cbad670c6e380551b3a6",
+                "engineVersion": "48.0.3",
+                "exports": [
+                  {
+                    "contract": "latent:web/application@0.1.0",
+                    "function": "handle"
+                  }
+                ],
+                "functionCount": "1",
+                "hostcallFuel": "2097152",
+                "importCount": "3",
+                "imports": [
+                  "latent:clock/monotonic@0.1.0",
+                  "latent:clock/wall@0.1.0",
+                  "latent:service/invoke@0.1.0"
+                ],
+                "maximumLiftedBytes": "67108864",
+                "maximumTypeNodes": "4096",
+                "profile": 2,
+                "profileName": "wasmtime-buffered-web-values-v1",
+                "sealedMetadataFingerprint": "6775f4e9a804ba872ccc9f1534bff025f1438b608c45471df48d7a12c813023b",
+                "state": 1,
+                "stateName": "ready",
+                "targetTriple": "x86_64-unknown-linux-gnu",
+                "typeImports": []
+              },
+              "publication": {
+                "id": "publication:sha256:0a325372530f8bfa5ddc301a3393a8f863fae0deec21006ba309a3d59330c3f4",
+                "tenant": "examples"
+              },
+              "publicationGeneration": "1",
+              "publicationKind": "capsule",
+              "reasonNames": [
+                "current"
+              ],
+              "reasons": [
+                1
+              ],
+              "requestedPublication": {
+                "id": "publication:sha256:0a325372530f8bfa5ddc301a3393a8f863fae0deec21006ba309a3d59330c3f4",
+                "tenant": "examples"
+              },
+              "revisionId": "revision-v1:sha256:3aff1df5b7a1677d4f7f128f64125587d0e316b0c063f031714f6cac70b8cdab",
+              "routingWeight": 10000
+            }
+          ],
+          "catalogTransaction": "8",
+          "contract": "latent:web/application@0.1.0",
+          "function": "handle",
+          "liveGrantsChecked": false,
+          "policyStoreGeneration": "7",
+          "route": "java-http-adapter",
+          "routeGeneration": "4",
+          "schemaVersion": 1,
+          "selectedRevisionId": null,
+          "service": "examples/java-http-adapter",
+          "state": 1,
+          "stateName": "coherent",
+          "tenant": "examples"
+        },
+        "domain": {
+          "bindingGeneration": "4",
+          "candidates": [
+            {
+              "componentDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+              "dependencies": [
+                {
+                  "binding": {
+                    "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                    "id": "clockMonotonic-installed",
+                    "revision": "2"
+                  },
+                  "capability": "latent:clock/monotonic@0.1.0",
+                  "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                  "policies": [
+                    {
+                      "digest": "sha256:6b6419ee24096887fced8f3b0912c9dce4f5f87b5d53405b8ad8e0a299bff2ba",
+                      "id": "clockMonotonic-allow",
+                      "revision": "3"
+                    }
+                  ],
+                  "policyIdentityDigest": "e592b5f716c9f875429a2a04cb57d097c6130e8f98709162aeac035cb8757bbe",
+                  "providerConfigurationEpoch": "1",
+                  "providerProfile": "activation-monotonic-v1",
+                  "state": "configured-current"
+                },
+                {
+                  "binding": {
+                    "digest": "sha256:d6905f0957622b125c47271491f10c6346d41f61b7f92ba91ff02b354512909e",
+                    "id": "clockWall-installed",
+                    "revision": "4"
+                  },
+                  "capability": "latent:clock/wall@0.1.0",
+                  "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+                  "policies": [
+                    {
+                      "digest": "sha256:db33dc81ae4bf0d3b8e59c4a124f437000af4f27fc856ccf22ff1b578462c3e2",
+                      "id": "clockWall-allow",
+                      "revision": "5"
+                    }
+                  ],
+                  "policyIdentityDigest": "2c770dc823ae4236c9259413b0d4814b686a02ab1be76575aaa3f9d516cd44c7",
+                  "providerConfigurationEpoch": "1",
+                  "providerProfile": "activation-wall-v1",
+                  "state": "configured-current"
+                }
+              ],
+              "deploymentGeneration": "2",
+              "deploymentId": "java-http-domain",
+              "eligible": true,
+              "exportCompatible": true,
+              "httpBindings": [],
+              "httpCompatible": false,
+              "packageDigest": "sha256:26c71eb68e2f82a542d08e5af76f4829bdef7629e8a7c2d285bc5da767088e41",
+              "preparation": {
+                "cpuFeatureSet": "host-baseline",
+                "declaredBudget": {
+                  "blobReadBytes": "0",
+                  "blobWriteBytes": "0",
+                  "childCalls": 0,
+                  "cpuFuel": "10000000000",
+                  "effectCount": 0,
+                  "logBytes": "0",
+                  "memoryBytes": "67108864",
+                  "outboundRequests": 0,
+                  "stateReadBytes": "0",
+                  "stateWriteBytes": "0",
+                  "wallTimeLimitMillis": "120000"
+                },
+                "diagnostic": null,
+                "engineConfigurationDigest": "blake3:a6acfe95e50eac2cc441e59c77c6f24fb1d6db36db73cbad670c6e380551b3a6",
+                "engineVersion": "48.0.3",
+                "exports": [
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "echo"
+                  },
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "echo-nested"
+                  },
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "fail"
+                  },
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "items"
+                  },
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "private-admin"
+                  },
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "provider-event"
+                  },
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "publishing"
+                  },
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "spin"
+                  },
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "status"
+                  },
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "text"
+                  },
+                  {
+                    "contract": "examples:java-http-domain/api@1.0.0",
+                    "function": "throw-error"
+                  }
+                ],
+                "functionCount": "11",
+                "hostcallFuel": "131072",
+                "importCount": "3",
+                "imports": [
+                  "latent:clock/monotonic@0.1.0",
+                  "latent:clock/wall@0.1.0"
+                ],
+                "maximumLiftedBytes": "16777216",
+                "maximumTypeNodes": "4096",
+                "profile": 1,
+                "profileName": "wasmtime-service-values-v1",
+                "sealedMetadataFingerprint": "63fea84f74164771fcbece786072a8a2cf034145fd040018e2925ef7491c1aa5",
+                "state": 1,
+                "stateName": "ready",
+                "targetTriple": "x86_64-unknown-linux-gnu",
+                "typeImports": [
+                  "examples:java-http-domain/types@1.0.0"
+                ]
+              },
+              "publication": {
+                "id": "publication:sha256:bee442399841de726f4ba4ce44530f98704a05a9e283298ac3a35d18d3986b3b",
+                "tenant": "examples"
+              },
+              "publicationGeneration": "1",
+              "publicationKind": "capsule",
+              "reasonNames": [
+                "current"
+              ],
+              "reasons": [
+                1
+              ],
+              "requestedPublication": {
+                "id": "publication:sha256:bee442399841de726f4ba4ce44530f98704a05a9e283298ac3a35d18d3986b3b",
+                "tenant": "examples"
+              },
+              "revisionId": "revision-v1:sha256:a7a8888fe57340800cfe277957ae4dd0b2a29cd7f319391ff884ecfd579b4570",
+              "routingWeight": 10000
+            }
+          ],
+          "catalogTransaction": "8",
+          "contract": "examples:java-http-domain/api@1.0.0",
+          "function": "status",
+          "liveGrantsChecked": false,
+          "policyStoreGeneration": "7",
+          "route": "java-http-domain",
+          "routeGeneration": "4",
+          "schemaVersion": 1,
+          "selectedRevisionId": null,
+          "service": "examples/java-http-domain",
+          "state": 1,
+          "stateName": "coherent",
+          "tenant": "examples"
+        }
+      }
+    },
+    "formerProfile": {
+      "authorizedTree": {
+        "cursorExpired": false,
+        "externalCompletion": "unknown",
+        "historyAvailable": true,
+        "nextPageToken": null,
+        "nodes": [
+          {
+            "activationId": "java-former-http-profile",
+            "callerService": null,
+            "diagnostic": {
+              "calculatedRequirement": "159384064",
+              "configuredBound": "67108864",
+              "fixedBytes": "512",
+              "liftMultiplier": "76",
+              "liftingFuel": "2097152",
+              "profile": 1,
+              "profileDigest": "b51a2759041b40b873273d72a444fe21ac4679054d26a79fd756d3515ab4660d",
+              "reason": 1,
+              "reasonName": "DIAGNOSTIC_REASON_SIGNATURE_ALLOCATION_LIMIT",
+              "schemaVersion": 1,
+              "stage": 3,
+              "stageName": "DIAGNOSTIC_STAGE_PREPARATION"
+            },
+            "diagnosticIsTerminal": true,
+            "effectiveDeadlineUnixMillis": "1790877763550",
+            "grantedBudget": {
+              "blobReadBytes": "0",
+              "blobWriteBytes": "0",
+              "childCalls": 0,
+              "cpuFuel": "10000000000",
+              "effectCount": 0,
+              "logBytes": "0",
+              "memoryBytes": "67108864",
+              "outboundRequests": 0,
+              "stateReadBytes": "0",
+              "stateWriteBytes": "0",
+              "wallTimeLimitMillis": "120000"
+            },
+            "lastUpdatedUnixMillis": "1790877647433",
+            "parentActivationId": null,
+            "phase": "queued",
+            "principalKind": "administrator",
+            "receivedAtUnixMillis": "1790877643551",
+            "rootActivationId": "java-former-http-profile",
+            "targetService": "examples/java-http-domain",
+            "terminalState": "resource_exhausted"
+          }
+        ],
+        "retainedHistoryOnly": true,
+        "schemaVersion": 1
+      },
+      "configuration": {
+        "bounds": {
+          "budgetProfile": {
+            "maximumBlobReadBytes": 0,
+            "maximumBlobWriteBytes": 0,
+            "maximumChildCalls": 4,
+            "maximumDepth": 2,
+            "maximumLiveChildren": 1,
+            "maximumLiveDescendants": 2,
+            "maximumOutboundRequests": 0,
+            "mode": "phase3"
+          },
+          "cells": [
+            {
+              "capacity": 2,
+              "class": "standard",
+              "maximumMemoryBytes": 134217728,
+              "queueCapacity": 4
+            }
+          ],
+          "execution": {
+            "maximumCpuFuel": 10000000000,
+            "maximumLogBytes": 16384,
+            "maximumWallTimeMillis": 120000
+          },
+          "limits": {
+            "maximumComponentBytes": 33554432,
+            "maximumPayloadBytes": 1048576
+          }
+        },
+        "installerScopePreserved": true,
+        "nodeId": "lsf-d48d5b349a90773c",
+        "originalConfigurationDigest": "sha256:d3a9260a5d224490c988ab5aa55b96777581f83b53f4884aa84249ecb9fb177b",
+        "profile": "local-experimental-v1",
+        "selectedConfigurationDigest": "sha256:35c92a0c58f89d3b3f885454e6ef0835ee398380f75c87a059521021fe54bbed"
+      },
+      "down": {
+        "build": {
+          "state": "idle"
+        },
+        "cleanShutdown": true,
+        "dataRetained": true,
+        "guestInstance": {
+          "bootId": "d80aec34-5000-462f-a2ca-741934597e2c",
+          "initStartTicks": "587228",
+          "pidNamespace": "4026532930"
+        },
+        "node": "lsf-d48d5b349a90773c",
+        "profile": "local-experimental-v1",
+        "providerShutdown": {
+          "blobHandles": 0,
+          "blobStages": 0,
+          "blobWork": 0,
+          "calls": 0,
+          "clean": true,
+          "cleanupJobs": 0,
+          "connections": 0,
+          "controlOwners": 0,
+          "failedCleanup": 0,
+          "handles": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "pendingRequests": 0,
+          "results": 0,
+          "runningRequests": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "sessions": 0,
+          "workers": 0
+        },
+        "providers": [
+          {
+            "capability": "latent:clock/monotonic@0.1.0",
+            "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+            "configurationEpoch": "1",
+            "id": "clockMonotonic",
+            "profile": "activation-monotonic-v1",
+            "service": "runtime-host",
+            "tenant": "examples"
+          },
+          {
+            "capability": "latent:clock/wall@0.1.0",
+            "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+            "configurationEpoch": "1",
+            "id": "clockWall",
+            "profile": "activation-wall-v1",
+            "service": "runtime-host",
+            "tenant": "examples"
+          },
+          {
+            "capability": "latent:service/invoke@0.1.0",
+            "configurationDigest": "sha256:b8416566cc5a30f8c5ba4453079aa956472d52dfa27d68d700ffa8c80e306025",
+            "configurationEpoch": "1",
+            "id": "localService",
+            "profile": "lsf-local-service-invocation-v1",
+            "service": "examples/java-http-domain",
+            "tenant": "examples"
+          }
+        ],
+        "readiness": {
+          "activationReady": true,
+          "authenticated": true,
+          "profile": "local-experimental-v1",
+          "schemaVersion": "latent.native-readiness.v1"
+        },
+        "reaped": true,
+        "state": "stopped"
+      },
+      "failure": {
+        "category": "platform-failure",
+        "data": {
+          "activationId": "java-former-http-profile",
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "0",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "0",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "3881558"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:bee442399841de726f4ba4ce44530f98704a05a9e283298ac3a35d18d3986b3b",
+            "releaseDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+            "revisionId": "revision-v1:sha256:a7a8888fe57340800cfe277957ae4dd0b2a29cd7f319391ff884ecfd579b4570",
+            "routeGeneration": "3"
+          },
+          "terminalState": "resource_exhausted"
+        },
+        "errorCode": "resource-exhausted",
+        "outcomeKnown": true,
+        "requestDispatched": true
+      },
+      "idle": {
+        "cacheEntries": [],
+        "cacheSummary": {
+          "available": true,
+          "compiledImageBytes": "0",
+          "entries": "0",
+          "evictions": "0",
+          "hits": "0",
+          "invalidations": "0",
+          "maximumCompiledImageBytes": "134217728",
+          "maximumConcurrentPreparations": "1",
+          "maximumEntries": "4",
+          "maximumMetadataBytes": "8388608",
+          "maximumSourceBytes": "134217728",
+          "metadataBytes": "0",
+          "misses": "6",
+          "preparing": "0",
+          "preparingMetadataBytes": "0",
+          "preparingSourceBytes": "0",
+          "sourceBytes": "0"
+        },
+        "cellCapacity": [
+          {
+            "accepting": true,
+            "active": 0,
+            "available": 2,
+            "cancellations": "0",
+            "class": "standard",
+            "expired": "0",
+            "granted": "0",
+            "maxWaitMicros": "0",
+            "observationAvailable": true,
+            "oldestLeaseAgeMicros": "0",
+            "quarantined": 0,
+            "queueCapacity": 4,
+            "queueDepth": 0,
+            "queuedTenants": 0,
+            "rejected": "0",
+            "total": 2,
+            "totalWaitMicros": "0"
+          }
+        ],
+        "health": {
+          "healthy": true,
+          "observedAtUnixMillis": "1790877667655",
+          "ready": true,
+          "reasons": [],
+          "status": "healthy"
+        },
+        "memoryPressureMilli": 14,
+        "node": {
+          "architecture": "x86_64",
+          "attributes": {
+            "lsf.host-abi": "lsf-host-abi-phase3-v4",
+            "lsf.security.admission": "enforced",
+            "lsf.security.compiler": "in-process",
+            "lsf.security.guest-boundary": "in-process-wasmtime",
+            "lsf.security.profile": "local-experimental-v1"
+          },
+          "cpuFeatures": [
+            "x86_64.avx",
+            "x86_64.avx2",
+            "x86_64.avx512bitalg",
+            "x86_64.avx512dq",
+            "x86_64.avx512f",
+            "x86_64.avx512vbmi",
+            "x86_64.avx512vl",
+            "x86_64.bmi1",
+            "x86_64.bmi2",
+            "x86_64.cmpxchg16b",
+            "x86_64.fma",
+            "x86_64.lzcnt",
+            "x86_64.popcnt",
+            "x86_64.sse2",
+            "x86_64.sse3",
+            "x86_64.sse4.1",
+            "x86_64.sse4.2",
+            "x86_64.ssse3"
+          ],
+          "endpoint": "http://127.0.0.1:18091",
+          "id": "lsf-d48d5b349a90773c",
+          "identity": "lsf-d48d5b349a90773c",
+          "operatingSystem": "linux",
+          "region": null,
+          "trustClasses": [
+            "internal"
+          ],
+          "zone": null
+        },
+        "observedAtUnixMillis": "1790877667655",
+        "pressure": {
+          "cachePressureMilli": 0,
+          "cpuPressureMilli": 4,
+          "loadAvailable": true,
+          "loadSampleAgeMillis": "154",
+          "memoryPressureMilli": 14,
+          "queuePressureMilli": 0
+        },
+        "queueDepth": "0",
+        "quotas": {
+          "limits": {
+            "maximumConcurrentActivations": 6,
+            "maximumQueuedActivations": 6,
+            "maximumReservedCpuFuel": "60000000000",
+            "maximumReservedMemoryBytes": "805306368"
+          },
+          "retainedTenants": "0",
+          "usage": {
+            "activeActivations": 0,
+            "queuedActivations": 0,
+            "reservedCpuFuel": "0",
+            "reservedMemoryBytes": "0"
+          }
+        },
+        "retainedBytes": "67029",
+        "routeGeneration": "3",
+        "topology": {
+          "available": true,
+          "complete": true,
+          "entries": [
+            {
+              "activeCount": "1",
+              "attributes": {
+                "chargedStorageBytes": "10755595",
+                "contentIndexBytes": "169376",
+                "incompleteFileBytes": "0",
+                "indexedPublications": "4",
+                "maximumContentIndexBytes": "67108864",
+                "maximumFilesPerPublication": "1024",
+                "maximumPublications": "8",
+                "maximumRecoveryDirectories": "24",
+                "maximumReleaseIndexBytes": "67108864",
+                "maximumSharedBlobs": "1000000",
+                "maximumStorageBytes": "4294967296",
+                "measurementStatus": "available",
+                "publicationLinkBytes": "5384528",
+                "releaseDirectories": "4",
+                "releaseIndexBytes": "159324",
+                "sharedBlobBytes": "5371067",
+                "sharedBlobs": "70",
+                "webControlBytes": "0"
+              },
+              "configuredCount": "1",
+              "kind": "store",
+              "name": "publication-catalog",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "process",
+              "name": "standalone-node",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "thread",
+              "name": "invocation-runtime",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "2",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "thread",
+              "name": "control-runtime",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": null,
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "thread",
+              "name": "wasmtime-epoch",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "thread",
+              "name": "wasmtime-compiler",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": null,
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "listener",
+              "name": "grpc-listener",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "32",
+              "kind": "connection",
+              "name": "accepted-connections",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "11",
+              "kind": "rpc",
+              "name": "in-flight-rpcs",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "job",
+              "name": "control-jobs",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "task",
+              "name": "invocation-cleanup-driver",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "6",
+              "kind": "continuation",
+              "name": "invocation-cleanup-slots",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "cell",
+              "name": "execution-cell-leases",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "reservation",
+              "name": "prepared-instance-reservations",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "invocation",
+              "name": "guest-invocations",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "store",
+              "name": "guest-stores",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "host-state",
+              "name": "guest-host-states",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "component-instance",
+              "name": "guest-component-instances",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "buffer-group",
+              "name": "guest-value-buffers",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "probe",
+              "name": "guest-cancellation-probes",
+              "ownership": "activation-scoped"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "0",
+              "kind": "process",
+              "name": "resident-service-processes",
+              "ownership": "service-resident"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "0",
+              "kind": "thread",
+              "name": "resident-service-threads",
+              "ownership": "service-resident"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "0",
+              "kind": "listener",
+              "name": "resident-service-listeners",
+              "ownership": "service-resident"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "2",
+              "kind": "command",
+              "name": "capability-policy-control-jobs",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "2",
+              "attributes": {},
+              "configuredCount": "68",
+              "kind": "response-or-snapshot",
+              "name": "capability-policy-read-owners",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "1",
+              "attributes": {},
+              "configuredCount": "1",
+              "kind": "blocking-task",
+              "name": "rollout-coordinator",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "3",
+              "kind": "command",
+              "name": "rollout-control-commands",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "4",
+              "kind": "window",
+              "name": "canary-observation-windows",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "128",
+              "kind": "sample",
+              "name": "canary-retained-samples",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "8",
+              "kind": "sample",
+              "name": "canary-live-samples",
+              "ownership": "node-fixed"
+            },
+            {
+              "activeCount": "0",
+              "attributes": {},
+              "configuredCount": "4",
+              "kind": "snapshot",
+              "name": "canary-snapshot-owners",
+              "ownership": "node-fixed"
+            }
+          ]
+        }
+      },
+      "targetInspection": {
+        "bindingGeneration": "3",
+        "candidates": [
+          {
+            "componentDigest": "sha256:32c0f308257ca2abdb3cf3458d28dc7e7bd7e9e0aa08491dc42f570213372832",
+            "dependencies": [
+              {
+                "binding": {
+                  "digest": "sha256:761ad3830dbf36b894b2ec6f105f294596852d91851c4e30e6eb14792e5aa781",
+                  "id": "clockMonotonic-installed",
+                  "revision": "2"
+                },
+                "capability": "latent:clock/monotonic@0.1.0",
+                "configurationDigest": "sha256:d071e86b2dc9e4af59121794102bde1b06f69071fbba6178896bbc5c5ad056b0",
+                "policies": [
+                  {
+                    "digest": "sha256:6b6419ee24096887fced8f3b0912c9dce4f5f87b5d53405b8ad8e0a299bff2ba",
+                    "id": "clockMonotonic-allow",
+                    "revision": "3"
+                  }
+                ],
+                "policyIdentityDigest": "e592b5f716c9f875429a2a04cb57d097c6130e8f98709162aeac035cb8757bbe",
+                "providerConfigurationEpoch": "1",
+                "providerProfile": "activation-monotonic-v1",
+                "state": "configured-current"
+              },
+              {
+                "binding": {
+                  "digest": "sha256:d6905f0957622b125c47271491f10c6346d41f61b7f92ba91ff02b354512909e",
+                  "id": "clockWall-installed",
+                  "revision": "4"
+                },
+                "capability": "latent:clock/wall@0.1.0",
+                "configurationDigest": "sha256:612ecae604c724b431f79fcf330e97d7be6fde82165e000c88c3de3d441ba618",
+                "policies": [
+                  {
+                    "digest": "sha256:db33dc81ae4bf0d3b8e59c4a124f437000af4f27fc856ccf22ff1b578462c3e2",
+                    "id": "clockWall-allow",
+                    "revision": "5"
+                  }
+                ],
+                "policyIdentityDigest": "2c770dc823ae4236c9259413b0d4814b686a02ab1be76575aaa3f9d516cd44c7",
+                "providerConfigurationEpoch": "1",
+                "providerProfile": "activation-wall-v1",
+                "state": "configured-current"
+              }
+            ],
+            "deploymentGeneration": "2",
+            "deploymentId": "java-http-domain",
+            "eligible": false,
+            "exportCompatible": true,
+            "httpBindings": [],
+            "httpCompatible": false,
+            "packageDigest": "sha256:26c71eb68e2f82a542d08e5af76f4829bdef7629e8a7c2d285bc5da767088e41",
+            "preparation": {
+              "cpuFeatureSet": null,
+              "declaredBudget": null,
+              "diagnostic": {
+                "calculatedRequirement": "159384064",
+                "configuredBound": "67108864",
+                "fixedBytes": "512",
+                "liftMultiplier": "76",
+                "liftingFuel": "2097152",
+                "profile": 1,
+                "profileDigest": "b51a2759041b40b873273d72a444fe21ac4679054d26a79fd756d3515ab4660d",
+                "reason": 1,
+                "reasonName": "DIAGNOSTIC_REASON_SIGNATURE_ALLOCATION_LIMIT",
+                "schemaVersion": 1,
+                "stage": 3,
+                "stageName": "DIAGNOSTIC_STAGE_PREPARATION"
+              },
+              "engineConfigurationDigest": null,
+              "engineVersion": null,
+              "exports": [],
+              "functionCount": null,
+              "hostcallFuel": null,
+              "importCount": null,
+              "imports": [],
+              "maximumLiftedBytes": null,
+              "maximumTypeNodes": null,
+              "profile": null,
+              "profileName": null,
+              "sealedMetadataFingerprint": null,
+              "state": 2,
+              "stateName": "rejected",
+              "targetTriple": null,
+              "typeImports": []
+            },
+            "publication": {
+              "id": "publication:sha256:bee442399841de726f4ba4ce44530f98704a05a9e283298ac3a35d18d3986b3b",
+              "tenant": "examples"
+            },
+            "publicationGeneration": "1",
+            "publicationKind": "capsule",
+            "reasonNames": [
+              "inspection-unavailable"
+            ],
+            "reasons": [
+              8
+            ],
+            "requestedPublication": {
+              "id": "publication:sha256:bee442399841de726f4ba4ce44530f98704a05a9e283298ac3a35d18d3986b3b",
+              "tenant": "examples"
+            },
+            "revisionId": "revision-v1:sha256:a7a8888fe57340800cfe277957ae4dd0b2a29cd7f319391ff884ecfd579b4570",
+            "routingWeight": 10000
+          }
+        ],
+        "catalogTransaction": "3",
+        "contract": "examples:java-http-domain/api@1.0.0",
+        "function": "status",
+        "liveGrantsChecked": false,
+        "policyStoreGeneration": "5",
+        "route": "java-http-domain",
+        "routeGeneration": "3",
+        "schemaVersion": 1,
+        "selectedRevisionId": null,
+        "service": "examples/java-http-domain",
+        "state": 1,
+        "stateName": "coherent",
+        "tenant": "examples"
+      }
+    }
+  },
+  "schemaVersion": "latent.java.packaged710.original-runtime-projection.v1"
+}
