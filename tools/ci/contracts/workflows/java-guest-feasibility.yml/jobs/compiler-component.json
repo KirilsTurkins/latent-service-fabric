@@ -164,7 +164,7 @@
       },
       {
         "name": "Qualify exact-approved contained processors and signed generated Java source",
-        "run": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\npython3 tools/qualify_java_annotation_processors.py \\\n  --output \"$RUNNER_TEMP/java-annotation-processors\" \\\n  --native-directory \"$RUNNER_TEMP/java-server-lifecycle/selected-native\" \\\n  --native-tuple \"$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json\" \\\n  --read-only-cache \"$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" 2>&1 | tee \"$RUNNER_TEMP/java-annotation-processors.log\"\n"
+        "run": "set -euo pipefail\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 tools/qualify_java_annotation_processors.py \\\n  --output \"$RUNNER_TEMP/java-annotation-processors\" \\\n  --native-directory \"$RUNNER_TEMP/java-server-lifecycle/selected-native\" \\\n  --native-tuple \"$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json\" \\\n  --read-only-cache \"$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2\" \\\n  --wasi-sdk \"$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux\" 2>&1 | tee \"$RUNNER_TEMP/java-annotation-processors.log\"\n"
       },
       {
         "if": "always()",
@@ -182,7 +182,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Preserve every processor lifecycle value and diagnostic command while resolving combined reviewed fingerprints",
+  "reviewReason": "Retain the destination current Java workflow and add only its disposable Ubuntu compiler namespace prerequisite; preserve all commands and bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }
