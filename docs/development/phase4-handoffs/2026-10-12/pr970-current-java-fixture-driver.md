@@ -27,10 +27,32 @@ protected clock and checkpoint. Historical paths remain separate.
 
 Initial default Cargo example tests passed all eight cases, including the six
 original signing/TLS controls and two new current-source/material refusals.
-The new cases are explicitly registered without changing ignore guards. Actual
-five-package signing, admission/refusal and the combined node campaign remain
-required validation after a fresh source-matched metadata helper is available.
-This implementation milestone is not runtime qualification or ticket closure.
+The new cases are explicitly registered without changing ignore guards.
+
+The later actual control used freshly built, frozen ordinary default products
+from committed source `a37aa97780a15aee55b049cdb23833b0474386d6`, tree
+`b195ad41fcc31c84144b3610bc60afafd7236ed3`, archive
+`4c0174a1cbad834aba6693b7bb1f7fd209095604f852971d11ae98c8f66c0d44`.
+The Cargo artifact graph reports empty feature lists for both selected examples.
+Their exact executable, manifest and command identities are in
+[the bounded signing receipt](pr970-current-java-signing-evidence.json).
+The immutable Python source from that same archive revalidated all six current
+capture materials and prepared the five positive packages. The actual driver
+generated ephemeral keys, signed both package and provenance, and passed the
+maintained package verifier for all five. Its real TLS command also completed.
+Wrong source, incomplete input set and changed compiler-report bytes each
+returned exit code 1 without creating output; the tampered-material refusal
+required the exact fixed digest-mismatch reason. No historical receipt or old
+executable placeholder was used.
+
+This is real package/proof verification. It does not establish node publication
+or Java execution. The combined signed node command/query/effect/recovery
+campaign remains required, and #718/#682 remain open. The maintained Clippy
+warning policy passed. An extra broad warnings-as-errors attempt stopped on
+existing dependency warnings and remains separate evidence; no policy or lint
+exception changed. Full receipts, candidate packages and failed attempts stay
+in the owned helper volume and `target/pr970-sign`; private keys, TLS credentials
+and generated binaries/packages are excluded from Git.
 
 Build the selected driver with pinned Rust 1.97.1:
 
