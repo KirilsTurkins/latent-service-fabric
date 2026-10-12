@@ -383,6 +383,17 @@ def require_retirement(report):
                  "liveHostStates", "liveInstances", "liveTemporaryBuffers", "liveCancellationProbes"):
         require(type(report[name]) is int and report[name] == 0, "actual-node-retired-owner-counter")
     state = report.get("state")
+    if isinstance(state, dict) and "storePhysicallyRetired" in state:
+        counts = {"liveStorageWorkers", "liveStorageOwners", "queuedStorageRetirements",
+                  "acceptedStorageJobs", "storageRetainedBytes", "ordinaryNativeReservations",
+                  "recoveryNativeReservations", "ordinaryNativeBytes", "recoveryNativeBytes", "namespaceOwners"}
+        require(set(state) == counts | {"clean", "quarantined", "storePhysicallyRetired", "nativePhysicallyRetired"}
+                and state["clean"] is True and state["quarantined"] is False
+                and state["storePhysicallyRetired"] is True and state["nativePhysicallyRetired"] is True,
+                "actual-current-state-physical-retirement")
+        require(all(type(state[name]) is int and state[name] == 0 for name in counts),
+                "actual-current-state-retired-owner-counters")
+        return
     require(isinstance(state, dict) and state["clean"] is True
             and state["nativeQuarantined"] is False and state["storeQuarantined"] is False
             and state["storeEngine"] == "closed" and state["storeThreadsJoined"] > 0,

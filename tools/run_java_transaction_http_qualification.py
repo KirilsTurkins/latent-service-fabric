@@ -434,7 +434,8 @@ def run(args):
                 record["currentHttpEndpoint"] = endpoint
                 record["currentHttpEndpointInput"] = file_identity(args.current_http_endpoint, "endpoint-declaration", 8192)
                 record["currentHttpInstallationInputs"] = current_installation_identity(args)
-            client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence)
+            selection = {} if current_endpoint(args) is None else {"phase4": True}
+            client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence, **selection)
             try:
                 stage = "package"
                 package_timeout = max(1, int(min(600, deadline - time.monotonic())))
