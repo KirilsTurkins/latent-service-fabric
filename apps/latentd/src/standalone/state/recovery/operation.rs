@@ -112,6 +112,10 @@ pub(in crate::standalone) async fn recover(
     ))
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "Original checkpoint, signed selections, installed clock and purpose decisions remain one admission construction"
+)]
 async fn prepare(
     state: &crate::config::state::StateSettings,
     principal: &InvocationPrincipal,

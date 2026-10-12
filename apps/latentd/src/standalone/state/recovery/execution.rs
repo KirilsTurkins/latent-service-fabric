@@ -35,7 +35,7 @@ pub struct NativeRecoveryReport {
     retirement: Retirement,
     pub(in crate::standalone) catalogs_retired: bool,
     #[serde(skip)]
-    _pins: Option<Arc<Codecs>>,
+    pins: Option<Arc<Codecs>>,
     #[serde(skip)]
     _response: NativeBufferPermit,
     #[serde(skip)]
@@ -59,7 +59,7 @@ struct Failure {
 }
 impl NativeRecoveryReport {
     pub(in crate::standalone) fn retire_catalog_pins(&mut self) {
-        self._pins.take();
+        self.pins.take();
     }
     pub(super) fn new(
         result: Result<serde_json::Value, PlatformError>,
@@ -95,7 +95,7 @@ impl NativeRecoveryReport {
                 threads_joined: joined,
             },
             catalogs_retired: false,
-            _pins: pins,
+            pins,
             _response: response,
             encoded,
         }
@@ -130,6 +130,10 @@ impl std::io::Write for BoundedOutput {
     }
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "The affine snapshot and staged input stay in one action scope through exact acknowledgement, writer acceptance and physical retirement"
+)]
 pub(super) async fn execute(
     store: &ProtectedStoreOwner,
     codecs: Arc<Codecs>,

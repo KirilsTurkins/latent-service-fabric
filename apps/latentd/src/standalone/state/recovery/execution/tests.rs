@@ -6,7 +6,7 @@ use latent_core::native_capacity::{
 
 fn report() -> (NativeCapacityOwner, NativeRecoveryReport) {
     let owner = NativeCapacityOwner::with_clock(
-        Default::default(),
+        latent_core::native_capacity::NativeCapacityLimits::default(),
         Arc::new(latent_core::SystemActivationClock),
     )
     .unwrap();
@@ -45,7 +45,7 @@ fn report() -> (NativeCapacityOwner, NativeRecoveryReport) {
                 threads_joined: None,
             },
             catalogs_retired: false,
-            _pins: None,
+            pins: None,
             _response: metadata,
             encoded,
         },

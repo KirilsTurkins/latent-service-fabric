@@ -16,6 +16,7 @@ use latent_state::{
 };
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
+type Validator = fn(&RowKey, &[u8]) -> Result<(), StoreError>;
 
 pub(super) struct Codecs {
     pub catalog: Catalog,
@@ -143,7 +144,6 @@ impl Codecs {
             Err(StoreError::UnsupportedFormat) => {}
             result => return result,
         }
-        type Validator = fn(&RowKey, &[u8]) -> Result<(), StoreError>;
         let validators: [Validator; 8] = [
             latent_wire::phase4::StateManagementBackend::validate_operation_bytes,
             |key, bytes| {

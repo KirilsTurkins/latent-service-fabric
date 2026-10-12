@@ -23,6 +23,10 @@ pub(super) struct SchemaEvidence {
     pub artifacts: Vec<RequiredArtifact>,
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "All exact signed layer, source, schema, marker and recipe associations remain one review construction"
+)]
 pub(super) fn capture(
     repository: &Arc<DirectoryArtifactRepository>,
     operation: Arc<InstalledTransactionOperation>,
@@ -51,20 +55,20 @@ pub(super) fn capture(
     )?;
     let source = source.get();
     let (manifest, configuration, layers) = source.parts();
-    let package = package_digest(&manifest);
+    let package = package_digest(manifest);
     if Some(&package) != publication.package() {
         return Err(super::denied());
     }
-    let config = decode_config(&configuration, PackageLimits::default())?;
+    let config = decode_config(configuration, PackageLimits::default())?;
     let declaration = asset(
         &config,
-        &layers,
+        layers,
         "application-schema-inputs.json",
         "application/json",
     )?;
     let capsule = asset(
         &config,
-        &layers,
+        layers,
         "src/dev/latent/app/Capsule.java",
         "text/plain",
     )?;
@@ -73,7 +77,7 @@ pub(super) fn capture(
     } else {
         Some(asset(
             &config,
-            &layers,
+            layers,
             "src/dev/latent/app/AggregateCodec.java",
             "text/plain",
         )?)
@@ -86,14 +90,14 @@ pub(super) fn capture(
             super::profile::RECIPE,
         ),
     ] {
-        if asset(&config, &layers, path, "application/json")? != expected {
+        if asset(&config, layers, path, "application/json")? != expected {
             return Err(super::denied());
         }
     }
     let marker = if profile.current_http() {
         Some(asset(
             &config,
-            &layers,
+            layers,
             "java-current-http-profile.json",
             "application/json",
         )?)

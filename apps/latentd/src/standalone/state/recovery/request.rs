@@ -123,6 +123,10 @@ impl Action {
             Self::Snapshot { .. } | Self::InspectRestore { .. } | Self::Restore { .. }
         )
     }
+    #[expect(
+        clippy::too_many_lines,
+        reason = "The closed action grammar retains every original field, digest, path and byte bound in one validator"
+    )]
     fn validate(&self) -> Result<(), PlatformError> {
         let identity = |value: &str| {
             latent_core::transaction_contract::identity(value).map_err(|_| super::denied())

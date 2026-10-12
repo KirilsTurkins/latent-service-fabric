@@ -92,6 +92,10 @@ impl StandaloneNode {
         Ok(report)
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Signed capture and actual ordered catalog retirement keep their original owners in one visible scope"
+    )]
     pub async fn inspect_transaction_hosts(
         settings: NodeSettings,
         control_runtime: tokio::runtime::Handle,
@@ -274,7 +278,7 @@ impl StandaloneNode {
         );
         let result = state::recover(
             &settings,
-            &principal,
+            principal,
             request,
             state::RecoveryOwners {
                 artifacts: &catalogs.artifacts,

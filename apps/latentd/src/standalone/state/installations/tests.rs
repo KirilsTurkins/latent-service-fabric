@@ -56,14 +56,14 @@ impl Setup {
         Self::configured(document, false).await
     }
 
-    #[expect(
-        clippy::too_many_lines,
-        reason = "The real signed fixture composes each independent original owner before admission"
-    )]
     async fn configured(document: Option<Vec<u8>>, executable: bool) -> Self {
         Self::configured_profile(document, executable, false).await
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "The real signed fixture composes each independent original owner before admission"
+    )]
     async fn configured_profile(
         document: Option<Vec<u8>>,
         executable: bool,

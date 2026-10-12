@@ -1,6 +1,7 @@
 use super::Failure;
 use crate::{config::NodeConfig, standalone::StandaloneNode};
 use latent_core::PlatformErrorCode;
+use std::io::Write;
 
 pub(super) fn run(path: &std::path::Path) -> Result<(), Failure> {
     run_mode(path, false)
@@ -25,19 +26,18 @@ fn run_mode(path: &std::path::Path, preview: bool) -> Result<(), Failure> {
                 settings,
                 runtime.handle().clone(),
             ))
-            .and_then(|value| value.encode())
+            .and_then(crate::standalone::ConfiguredHttpEffectInspection::encode)
     } else {
         runtime
             .block_on(StandaloneNode::inspect_transaction_hosts(
                 settings,
                 runtime.handle().clone(),
             ))
-            .and_then(|value| value.encode())
+            .and_then(crate::standalone::NativeTransactionHostInspection::encode)
     };
     runtime.shutdown_timeout(grace);
     let encoded =
         encoded.map_err(|error| Failure::new("transaction-host-inspection", error.code))?;
-    use std::io::Write;
     let mut output = std::io::stdout().lock();
     output
         .write_all(encoded.get())
