@@ -71,6 +71,14 @@ HTTP recovery case. Inventory discovery is separate from execution; exact passin
 counts, source/lock/compiler/executable identities and limitations belong to the
 execution receipt. A 105-case scope was not established and is not asserted.
 
+The [fresh native receipt](evidence/recovery970-native-reconciliation-2026-10-12.json)
+also binds accepted Main `fec1092b`, including the delivered Rust and outbound
+reconciliations. All 150 effect, 362 state and 61 HTTP cases pass on that source
+with no failures or ignored cases. Formatting, documentation, repository and CI
+coverage checks pass. Scoped Clippy passes under the maintained repository lint
+policy; additional stricter probes retain baseline warnings rather than changing
+that policy or presenting them as clean warnings-as-errors execution.
+
 [#399](https://github.com/KirilsTurkins/latent-service-fabric/issues/399) still
 requires complete backup/payload/format/clock/result-access and installed paused
 restore qualification. [#388](https://github.com/KirilsTurkins/latent-service-fabric/issues/388)

@@ -119,7 +119,10 @@ async fn reopen(fixture: &mut Fixture) {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-#[expect(clippy::too_many_lines, reason = "one bounded backup, remote apply, restore, close and resume ownership schedule")]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one bounded backup, remote apply, restore, close and resume ownership schedule"
+)]
 async fn actual_tls_mutation_restored_pending_closes_without_redrive_under_current_dispatcher() {
     let mut fixture = Fixture::new(Fault::LosePostReply).await;
     let schema = codecs::schema_artifact().identity;

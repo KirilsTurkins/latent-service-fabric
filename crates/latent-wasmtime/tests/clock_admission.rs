@@ -243,3 +243,64 @@ async fn legacy_session_without_timer_fails_closed_before_store_or_guest() {
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
     f.idle();
 }
+
+#[tokio::test]
+#[ignore = "requires explicitly rebuilt std clock guest from the pinned infrastructure source"]
+async fn ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores() {
+    use sha2::{Digest, Sha256};
+    let directory = std::path::PathBuf::from(
+        std::env::var_os("LSF_RUST_STD_CLOCK_GUEST")
+            .expect("prepare the ordinary std clock component"),
+    );
+    let marker: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(directory.join("clock-guest.json")).unwrap())
+            .unwrap();
+    assert_eq!(marker["profile"], "lsf-rust-std-clock-built-source-v1");
+    assert_eq!(marker["compiler"], "1.97.1");
+    assert_eq!(marker["target"], "wasm32-unknown-unknown");
+    assert_eq!(marker["applicationClockSdkCalled"], false);
+    let bytes = std::fs::read(directory.join("component.wasm")).unwrap();
+    assert!(!bytes.is_empty() && bytes.len() < 4 * 1024 * 1024);
+    assert_eq!(
+        marker["componentDigest"],
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(&bytes))
+        )
+    );
+    // Cryptographic test publisher/builder admission and actual production
+    // broker execution. The separate build marker is an input witness, not
+    // proof of production builder trust or std/thread runtime qualification.
+    let signed = signed::Fixture::with_component(true, &bytes).await;
+    let f = &signed.guest;
+    for id in ["ordinary-clock-first", "ordinary-clock-fresh"] {
+        let (request, control) = f.request(id);
+        let report = f.backend.invoke_contained(request, &control).await;
+        assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+        let GuestOutcome::Returned {
+            output,
+            consumption,
+            ..
+        } = report.outcome.unwrap()
+        else {
+            panic!("ordinary std::time::SystemTime must return through the current clock host");
+        };
+        let values: serde_json::Value = serde_json::from_slice(&output).unwrap();
+        assert!(values[0].as_str().unwrap().parse::<u64>().unwrap() > 0);
+        assert!(control
+            .budget
+            .finalize_at(Some(&consumption), Instant::now())
+            .violation()
+            .is_none());
+        f.idle();
+    }
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 4);
+    assert_eq!(f.backend.resource_snapshot().stores_created, 2);
+    fixture::revoke(&f.policies);
+    let (request, control) = f.request("ordinary-clock-denied");
+    let report = f.backend.invoke_contained(request, &control).await;
+    assert!(!matches!(report.outcome, Ok(GuestOutcome::Returned { .. })));
+    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 4);
+    f.idle();
+}

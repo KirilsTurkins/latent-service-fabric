@@ -1,6 +1,10 @@
 # Outbound stream implementation and qualification status
 
 The shared implementation remains restricted to explicit development features.
+
+The [October 12 review packet](outbound-stream-review-2026-10-12.md) records
+fresh bounded TCP/component/owner controls, the captured TLS parser allocation
+reference and its remaining independent approval and full TLS accounting gates.
 [ADR-0061](../../adr/0061-bound-standard-outbound-streams.md) and the
 [profile](outbound-stream-profile.md) remain subject to #737 architecture/security
 review. The maintained suites define canonical TCP and physical-ownership controls.

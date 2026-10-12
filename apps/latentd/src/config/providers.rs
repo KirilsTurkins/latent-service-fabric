@@ -318,6 +318,9 @@ impl ConfiguredProviders {
 }
 
 pub(super) fn anchor(config: &mut ConfiguredProviders, parent: &Path) -> Result<(), PlatformError> {
+    if let Some(streams) = &mut config.outbound_streams {
+        streams.anchor(parent)?;
+    }
     if let Some(http) = &mut config.http_streaming {
         http.anchor(parent)?;
     }

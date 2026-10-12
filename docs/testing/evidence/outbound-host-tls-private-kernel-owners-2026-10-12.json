@@ -1,0 +1,1019 @@
+{
+  "schemaVersion": "lsf.private.host-tls-kernel-owner-observation.v1",
+  "originalPrHead": "af52431f16331d9f210b13f67a33e1b4513f93a1",
+  "qualificationOnly": true,
+  "productionEnabled": false,
+  "fullAccountingQualified": false,
+  "binarySha256": "347f7ae7bd20f96432fd364cd5af183c5762687e5f211819589899b0d63e05c3",
+  "source": {
+    "qualificationOnly": true,
+    "productionEnabled": false,
+    "fullAccountingQualified": false,
+    "preservedMaximumBinarySha256": "de95f88ff7ef000a99b5fee0d95cb8e8220b291e9aabbbf32fee063faa905ea7",
+    "changes": [
+      {
+        "path": "crates/latent-streams/src/transport.rs",
+        "beforeSha256": "bf5bc50e70f138428810567200dcbca2d3939068a1e60044694046b57b8a839f",
+        "afterSha256": "5ef9a5065e71536eae85d68c9120863a86f1dd0d78c40077b1937d7eb72807e7"
+      },
+      {
+        "path": "crates/latent-streams/src/tests/tls.rs",
+        "beforeSha256": "f046b226469af1c14995f27a681364e9975a96f30cd86671aaf4ad9ecf5cab4f",
+        "afterSha256": "1d3a14df2b65ef5075842be3be081795442b8b03678141a47c04d1ea483ed963"
+      }
+    ],
+    "method": "private socket2 size and Linux ss skmem checkpoints on actual original TLS owner"
+  },
+  "kernel": "Linux 6.18.33.2-microsoft-standard-WSL2",
+  "tool": "ss utility, iproute2-6.1.0",
+  "kernelAllowanceBytes": 98304,
+  "executions": [
+    {
+      "case": "tests::tls::private_maximum_valid_chain_roots_and_stapled_extension_retire_actual_owners",
+      "label": "maximum-valid",
+      "exitCode": 0,
+      "passed": true,
+      "outputSha256": "3dd1224f33b43dfe27b42a936172710b0485b915e42c13542921e5d58399f92f",
+      "socketOwnerCount": 2,
+      "observations": [
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "tls-created",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 33579,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3285,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 33579,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3285,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 33579,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 2319,
+            "w": 966,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 33579,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 2319,
+            "w": 966,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 16235,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3279,
+            "w": 966,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 16235,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3279,
+            "w": 966,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 16235,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3279,
+            "w": 966,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 16235,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3279,
+            "w": 966,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 16235,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3279,
+            "w": 966,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3130,
+            "w": 966,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "before-physical-drop",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "tls-created",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 33465,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3399,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 33465,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3399,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 33465,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3399,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 33465,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3399,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 16121,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 263,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 16121,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 263,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 16121,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 263,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 16121,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 263,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 16121,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 263,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 1011,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3085,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "before-physical-drop",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        }
+      ],
+      "physicalDescriptorRetirement": [
+        {
+          "remainingDescriptors": 0,
+          "trackedSocketCount": 1
+        },
+        {
+          "remainingDescriptors": 0,
+          "trackedSocketCount": 2
+        }
+      ],
+      "observedReceiveMemoryPeakBytes": 33579,
+      "observedTransmitMemoryPeakBytes": 0,
+      "observedQueuedSendMemoryPeakBytes": 966
+    },
+    {
+      "case": "tests::tls::malformed_truncated_and_oversized_tls_wire_retire_original_physical_owners",
+      "label": "hostile-wire",
+      "exitCode": 0,
+      "passed": true,
+      "outputSha256": "99177c56977ad956ed03c650c8ed7399a75a858c6dfcca17445f0c2a5ba10e66",
+      "socketOwnerCount": 5,
+      "observations": [
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "tls-created",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 965,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3131,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "before-physical-drop",
+          "socketOwner": 1,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "tls-created",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 965,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3131,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "before-physical-drop",
+          "socketOwner": 2,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "tls-created",
+          "socketOwner": 3,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 3,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 3,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 966,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3130,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 3,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "before-physical-drop",
+          "socketOwner": 3,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "tls-created",
+          "socketOwner": 4,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 4,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 4,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 969,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 3127,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "before-physical-drop",
+          "socketOwner": 4,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "tls-created",
+          "socketOwner": 5,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 5,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "handshake-step",
+          "socketOwner": 5,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 1097,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 2999,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        },
+        {
+          "logicalKernelAllowanceBytes": 98304,
+          "receiveBufferBytes": 65536,
+          "sendBufferBytes": 32768,
+          "stage": "before-physical-drop",
+          "socketOwner": 5,
+          "socketInodeMatchedInSs": true,
+          "kernelSkmem": {
+            "r": 0,
+            "rb": 65536,
+            "t": 0,
+            "tb": 32768,
+            "f": 0,
+            "w": 0,
+            "o": 0,
+            "bl": 0,
+            "d": 0
+          }
+        }
+      ],
+      "physicalDescriptorRetirement": [
+        {
+          "remainingDescriptors": 0,
+          "trackedSocketCount": 1
+        },
+        {
+          "remainingDescriptors": 0,
+          "trackedSocketCount": 2
+        },
+        {
+          "remainingDescriptors": 0,
+          "trackedSocketCount": 3
+        },
+        {
+          "remainingDescriptors": 0,
+          "trackedSocketCount": 4
+        },
+        {
+          "remainingDescriptors": 0,
+          "trackedSocketCount": 5
+        }
+      ],
+      "observedReceiveMemoryPeakBytes": 1097,
+      "observedTransmitMemoryPeakBytes": 0,
+      "observedQueuedSendMemoryPeakBytes": 0
+    }
+  ],
+  "limits": [
+    "socket2 reports actual configured SO_SNDBUF/SO_RCVBUF; Linux values include doubling",
+    "ss skmem snapshots are bound to the original live socket inode, not global RSS or logical charges",
+    "finite checkpoints observe usage; they are not all-time kernel allocation peaks or a TCP overhead proof",
+    "before-physical-drop snapshots may lack an ss row after TCP shutdown while the descriptor remains live",
+    "post-cleanup proc descriptor checks prove those exact original socket owners no longer exist",
+    "synthetic fixture/probe is not ordinary guest-library or packaged operator qualification"
+  ],
+  "sourceProvenance": {
+    "path": "docs/testing/evidence/outbound-host-tls-private-maximum-valid-2026-10-12.json",
+    "sha256": "4f644786208d100b856cc6aa73b9a2961f60f8e6accddc7b51b16618f300094b",
+    "previousWorkingCopySerializationSha256": "fd45fa00a389bc553e92bf5f06a3552166b9975927b9a627a64814a6326e586a"
+  },
+  "observerReference": "sdk/host-stream-tls/rustls-bounds/kernel-observer-reference.rs",
+  "observerReferenceSha256": "7352c1130bf0724ecfbc72bf3ba67748d7426a30e4fc5a052cc8e7fe46d0c8f2",
+  "previousObserverWorkingCopySerializationSha256": "66b054316e06614e845252acda00f407ae07ee0b2879577041673aaa358ba2a3",
+  "publishedReferenceIdentity": "SHA256 of committed UTF8 bytes after Git newline normalization; raw source/execution identities unchanged"
+}
