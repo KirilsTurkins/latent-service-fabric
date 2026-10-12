@@ -531,6 +531,8 @@ impl Fixture {
                 artifacts: self.catalog.clone(),
                 authorization: Arc::new(LocalManagementPolicy),
                 admission: Arc::new(StateManagementRecoveryAdmission::new(self.native.clone())),
+                maintenance: Arc::new(latent_commit::atomic::ResultMaintenanceOwner::default()),
+                maintenance_clock: Arc::new(crate::phase4::DisabledStateMaintenanceClock),
                 clock: Arc::new(SystemActivationClock),
                 audit: None,
             },

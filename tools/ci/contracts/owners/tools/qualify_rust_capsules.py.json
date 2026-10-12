@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Capture the actual TypeScript adapter module dependency closure in qualification inputs; keep all existing compiler, signing, source and qualification gates.",
+  "reviewReason": "Reconciled both reviewed changes: exact TypeScript source splicer and async waiter input closure, and explicit CLR hash entropy/resource qualification with owned immutable native binaries. All compiler, signing, source checks and original missing-grant zero-execution control remain intact.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "097909603dc23b8d9caf23650aef7a60934444ff9c229868bea531a51fa92077"
+  "sha256": "bd7f4c1cfba1685be674dcd3767e0b39a724ddf30ed81b4c98bab6a6d6ce5477"
 }

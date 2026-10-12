@@ -75,11 +75,12 @@ pub(super) async fn begin(
         component: Some(access.binding.component.clone()),
         ..Default::default()
     };
-    let (operation_id, action, expected) = operation(request)?;
+    let (operation_id, action, expected) = operation(request, access)?;
     let mut hash = Sha256::new();
     hash.update(b"lsf-state-management-request-v1\0");
     match request {
         contract::Request::MutateNamespace(value) => hash.update(value.encode_to_vec()),
+        contract::Request::MutateState(value) => hash.update(value.encode_to_vec()),
         contract::Request::InspectNamespace(value) => hash.update(value.encode_to_vec()),
         contract::Request::SelectEntity(value) => hash.update(value.encode_to_vec()),
         contract::Request::GetStateOperationReceipt(value) => hash.update(value.encode_to_vec()),
@@ -177,12 +178,37 @@ pub(super) async fn begin_operation(
 }
 fn operation(
     request: &contract::Request,
+    access: &Access,
 ) -> Result<(String, AuditControlAction, Option<u64>), PlatformError> {
     if let contract::Request::MutateNamespace(value) = request {
         return Ok((
             value.operation_id.clone(),
             action(value.mutation)?,
             value.expected_generation,
+        ));
+    }
+    if let contract::Request::MutateState(value) = request {
+        if value.mutation != c::StateMutationKind::ReleaseExpiredCommandFloor as i32 {
+            return Err(unsupported());
+        }
+        let selector = latent_rpc::transaction::v1::NamespaceSelector {
+            tenant: access
+                .binding
+                .publication
+                .scope
+                .tenant()
+                .ok_or_else(denied)?
+                .0
+                .clone(),
+            namespace: access.binding.namespace.0.clone(),
+            incarnation: access.binding.incarnation.to_string(),
+        };
+        let generation = contract::namespace_view_generation(&value.expected_version, &selector)
+            .map_err(|_| invalid())?;
+        return Ok((
+            value.operation_id.clone(),
+            AuditControlAction::CommandFloorRelease,
+            Some(generation),
         ));
     }
     if matches!(request, contract::Request::SelectEntity(_)) {

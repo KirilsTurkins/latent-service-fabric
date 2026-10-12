@@ -1,6 +1,6 @@
 use super::{
     critical, increment, Arc, AuditAttempt, AuditOperationConclusion, AuditPage, AuditRecordData,
-    Command, DurableAuditAck, Finish, Ordering, Pending, Result, Shared, State, Store,
+    Command, DurableAuditAck, Finish, Ordering, Pending, Reply, Result, Shared, State, Store,
 };
 enum Work {
     Command(Command),
@@ -8,10 +8,18 @@ enum Work {
     Abandon(Arc<Pending>),
     Stop,
 }
-#[expect(
-    clippy::too_many_lines,
-    reason = "One bounded worker state machine keeps reservation refunds and completion ordering visible together"
-)]
+enum Completion {
+    Begin(Reply<AuditAttempt>, Result<AuditAttempt>),
+    Query(Reply<AuditPage>, Result<AuditPage>),
+}
+impl Completion {
+    fn publish(self) {
+        match self {
+            Self::Begin(reply, result) => reply.send(result),
+            Self::Query(reply, result) => reply.send(result),
+        }
+    }
+}
 pub(super) fn run(shared: Arc<Shared>, mut store: Store) {
     loop {
         let work = {
@@ -89,79 +97,96 @@ pub(super) fn run(shared: Arc<Shared>, mut store: Store) {
             }
             Work::Command(command) => {
                 let cost = command.cost();
-                match command {
-                    Command::Observe(o) => {
-                        let was_unhealthy = store.unhealthy;
-                        let result = store.append(
-                            o.scope.clone(),
-                            o.actor.clone(),
-                            AuditRecordData::Observation(o),
-                        );
-                        let mut s = shared
-                            .state
-                            .lock()
-                            .unwrap_or_else(std::sync::PoisonError::into_inner);
-                        if result.is_ok() || was_unhealthy || !store.unhealthy {
-                            refund(&shared, &mut s, 1);
-                        }
-                        if result.is_err() {
-                            increment(&shared.dropped);
-                        }
-                        update(&mut s, &store);
-                    }
-                    Command::Begin(p, reply) => {
-                        let result = store.append(
-                            p.attempt.scope.clone(),
-                            p.attempt.actor.clone(),
-                            AuditRecordData::Attempt(p.attempt.clone()),
-                        );
-                        let mut s = shared
-                            .state
-                            .lock()
-                            .unwrap_or_else(std::sync::PoisonError::into_inner);
-                        update(&mut s, &store);
-                        if let Ok(ack) = &result {
-                            refund(&shared, &mut s, 1);
-                            p.sequence.store(ack.sequence, Ordering::Release);
-                        } else {
-                            p.abandoned.store(true, Ordering::Release);
-                        }
-                        drop(s);
-                        reply.send(result.map(|_| AuditAttempt::new(p)));
-                    }
-                    Command::Query(q, deadline, lease, reply) => {
-                        let result = store
-                            .query(&q, deadline, shared.dropped.load(Ordering::Relaxed))
-                            .map(|(records, coverage, next)| AuditPage {
-                                records,
-                                coverage,
-                                next,
-                                lease,
-                            });
-                        if result.as_ref().err().is_some_and(|e| {
-                            e.code == latent_core::PlatformErrorCode::CorruptArtifact
-                        }) {
-                            store.unhealthy = true;
-                            let mut s = shared
-                                .state
-                                .lock()
-                                .unwrap_or_else(std::sync::PoisonError::into_inner);
-                            update(&mut s, &store);
-                        }
-                        reply.send(result);
-                    }
-                }
+                let completion = execute_command(&shared, &mut store, command);
+                // execute_command has consumed the command and retired its
+                // inputs and I/O temporaries. Pending attempts and returned
+                // pages retain their separate record/response reservations.
                 let mut s = shared
                     .state
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner);
                 s.queued_bytes -= cost;
+                drop(s);
+                if let Some(completion) = completion {
+                    completion.publish();
+                }
             }
         }
     }
     // The real filesystem owner retires before publishing actual completion.
     drop(store);
     drop(shared);
+}
+fn execute_command(shared: &Shared, store: &mut Store, command: Command) -> Option<Completion> {
+    match command {
+        Command::Observe(o) => {
+            let was_unhealthy = store.unhealthy;
+            let result = store.append(
+                o.scope.clone(),
+                o.actor.clone(),
+                AuditRecordData::Observation(o),
+            );
+            let mut s = shared
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if result.is_ok() || was_unhealthy || !store.unhealthy {
+                refund(shared, &mut s, 1);
+            }
+            if result.is_err() {
+                increment(&shared.dropped);
+            }
+            update(&mut s, store);
+            None
+        }
+        Command::Begin(p, reply) => {
+            let result = store.append(
+                p.attempt.scope.clone(),
+                p.attempt.actor.clone(),
+                AuditRecordData::Attempt(p.attempt.clone()),
+            );
+            let mut s = shared
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            update(&mut s, store);
+            if let Ok(ack) = &result {
+                refund(shared, &mut s, 1);
+                p.sequence.store(ack.sequence, Ordering::Release);
+            } else {
+                p.abandoned.store(true, Ordering::Release);
+            }
+            drop(s);
+            Some(Completion::Begin(
+                reply,
+                result.map(|_| AuditAttempt::new(p)),
+            ))
+        }
+        Command::Query(q, deadline, lease, reply) => {
+            let result = store
+                .query(&q, deadline, shared.dropped.load(Ordering::Relaxed))
+                .map(|(records, coverage, next)| AuditPage {
+                    records,
+                    coverage,
+                    next,
+                    lease,
+                });
+            drop(q);
+            if result
+                .as_ref()
+                .err()
+                .is_some_and(|e| e.code == latent_core::PlatformErrorCode::CorruptArtifact)
+            {
+                store.unhealthy = true;
+                let mut s = shared
+                    .state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                update(&mut s, store);
+            }
+            Some(Completion::Query(reply, result))
+        }
+    }
 }
 fn complete(
     shared: &Shared,

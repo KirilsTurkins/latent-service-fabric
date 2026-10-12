@@ -232,6 +232,8 @@ impl Fixture {
                 artifacts: catalog.clone(),
                 authorization: Arc::new(crate::management::LocalManagementPolicy),
                 admission: admission.clone(),
+                maintenance: Arc::new(latent_commit::atomic::ResultMaintenanceOwner::default()),
+                maintenance_clock: Arc::new(super::floor::TestMaintenanceClock),
                 clock: Arc::new(SystemActivationClock),
                 audit: audit.as_ref().map(|(handle, _)| handle.clone()),
             },

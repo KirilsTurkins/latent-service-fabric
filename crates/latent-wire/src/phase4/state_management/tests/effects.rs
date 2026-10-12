@@ -21,6 +21,52 @@ fn applied(value: &OwnedPhase4Response) -> &c::MutateStateResponse {
 }
 
 #[tokio::test]
+async fn foreign_command_effect_associations_are_denied_without_rewriting_original_rows() {
+    let mut effect = setup().await;
+    let (other_command, other_effect) = effect.related_command().await;
+    let rows = effect.rows().await;
+    let response = effect
+        .fixture
+        .backend
+        .execute_state(operator("alice"), effect.request("original-link").into())
+        .await
+        .unwrap();
+    assert_eq!(
+        planned(&response)
+            .original
+            .as_ref()
+            .unwrap()
+            .effect
+            .as_ref()
+            .unwrap()
+            .effect_id,
+        effect.effect
+    );
+    drop(response);
+
+    let mut foreign_command = effect.request("foreign-command-link");
+    foreign_command.effect.as_mut().unwrap().command = Some(other_command);
+    let mut foreign_effect = effect.request("foreign-effect-link");
+    foreign_effect.effect.as_mut().unwrap().effect_id = other_effect;
+    for request in [foreign_command, foreign_effect] {
+        let error = effect
+            .fixture
+            .backend
+            .execute_state(operator("alice"), request.into())
+            .await
+            .err()
+            .unwrap();
+        assert_eq!(error.code, PlatformErrorCode::PermissionDenied);
+        assert_eq!(effect.rows().await, rows);
+    }
+    assert_eq!(
+        effect.disposition().await,
+        latent_effects::dispatch::Disposition::Pending
+    );
+    effect.finish().await;
+}
+
+#[tokio::test]
 async fn authenticated_effect_terminal_plan_and_expired_original_receipt_preserve_separate_facts() {
     let mut effect = setup().await;
     let response = effect

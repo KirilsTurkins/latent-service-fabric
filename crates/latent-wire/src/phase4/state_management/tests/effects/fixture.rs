@@ -56,6 +56,43 @@ pub(super) fn mutation(fixture: &Fixture, plan: c::EffectManagementPlan) -> c::M
     }
 }
 impl FixtureEffect {
+    pub async fn related_command(&self) -> (latent_rpc::transaction::v1::CommandSelector, String) {
+        let binding = &self.fixture.backend.0.bindings[0];
+        let authority = EffectAuthorityOwner::new(16, 4, 100).unwrap();
+        authority.publish(rule(binding)).unwrap();
+        let mut input = admission(binding);
+        input.key.client_key = "related-effect-command".into();
+        let command = latent_rpc::transaction::v1::CommandSelector {
+            namespace: self.fixture.target().namespace,
+            operation: input.key.operation.clone(),
+            entity: None,
+            client_key: input.key.client_key.clone(),
+            shared_recovery_scope: None,
+        };
+        let (effect, _) = publish(&self.fixture, input, authority).await;
+        (command, effect)
+    }
+
+    pub async fn rows(&self) -> Vec<(latent_state::embedded::RowKey, Vec<u8>)> {
+        self.fixture
+            .store
+            .with_store(StoreIoKind::RecoveryRead, 1024 * 1024, |engine| {
+                let view = engine.snapshot()?;
+                let mut rows = Vec::new();
+                for family in [
+                    latent_state::embedded::Family::Command,
+                    latent_state::embedded::Family::Outbox,
+                ] {
+                    rows.extend(view.scan(family, &[], 128, 1024 * 1024)?);
+                }
+                Ok(rows)
+            })
+            .unwrap()
+            .await
+            .unwrap()
+            .unwrap()
+    }
+
     pub fn request(&self, operation: &str) -> c::PlanEffectMutationRequest {
         c::PlanEffectMutationRequest {
             effect: Some(latent_rpc::transaction::v1::GetEffectRequest {

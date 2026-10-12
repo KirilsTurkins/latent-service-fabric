@@ -68,6 +68,7 @@ def compose_exact(compiler, raw: Path, component: Path, coverage: dict, *, addit
     from tools.dev_workflow.common import decode, require
     from tools.guest_compatibility_build import interface_names
     from tools.rust_capsule_project import write_json
+    from tools.dotnet_guest.runtime import WASI_WALL, wall_override
 
     maximum_graph = 4 * 1024 * 1024
     require(1 <= len(additional_adapters) <= 4, 'dotnet-composition-adapter-limit')
@@ -92,10 +93,15 @@ def compose_exact(compiler, raw: Path, component: Path, coverage: dict, *, addit
                 'dotnet-composition-adapter-receipt')
         graphs.append(observe(path, row['witSource'], row['componentDigest'], row['witDigest']))
         adapters.append((name, path))
-    supplied = {}
+    supplied, overrides = {}, []
     for ordinal, graph in enumerate(graphs):
+        replace_wall = ordinal > 0 and wall_override(adapters[ordinal][0], raw_names['imports'],
+            graphs[0]['exports'], graph['imports'], graph['exports'])
         for name in graph['exports']:
-            require(name not in supplied, 'dotnet-composition-duplicate-export')
+            if name in supplied:
+                require(replace_wall and name == WASI_WALL and supplied[name] == 0,
+                        'dotnet-composition-duplicate-export')
+                overrides.append({'interface': name, 'fromAdapter': 'primary', 'toAdapter': 'wall'})
             supplied[name] = ordinal
     require(len(supplied) <= 256, 'dotnet-composition-interface-limit')
     lines = ['package lsf:dotnet-composition;']
@@ -140,6 +146,8 @@ def compose_exact(compiler, raw: Path, component: Path, coverage: dict, *, addit
         'composer': file_identity(compiler.wac, 'component-composer', SIZE),
         'component': file_identity(component, 'exact-runtime-composition', 64 * 1024 * 1024),
         'ordinaryLibraryExecutionQualified': False}
+    if overrides:
+        result['explicitFacetOverrides'] = overrides
     write_json(output / 'runtime-composition.json', result)
     compiler.generated_materials.extend((file_identity(retained, 'runtime-composition-source', 64 * 1024),
         file_identity(output / 'runtime-composition.json', 'runtime-composition', maximum_graph)))

@@ -73,6 +73,7 @@ def inputs(language="rust"):
                     'application_dependencies.py', 'application_dependency_store.py', 'application_dependency_tools.py',
                     'application_dependency_approval.py', 'captured_compiler_isolation.py', 'dotnet_compiler_isolation.py',
                     'dotnet_application_dependencies.py', 'dotnet_dependency_fixture.py',
+                    'dotnet_resource_fixture.py', 'dotnet_guest/resources.py', 'guest_resources.py',
                     "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
             "wit": directory_identity(ROOT / "wit/platform"), "schemas": directory_identity(ROOT / "schemas"),
@@ -181,6 +182,20 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         binaries = {name: target / "debug" / name for name in ("latent", "latentd", "examples/package", "examples/capsule_contracts", "examples/capsule_authoring")}
         if language == "go":
             binaries["examples/go_runtime_probe"] = target / "debug/examples/go_runtime_probe"
+        # Shared Cargo targets can be rebuilt by another qualification. Keep
+        # the exact completed products owned by this immutable observation.
+        owned_binaries = output / "native-binaries"
+        owned_binaries.mkdir(mode=0o700)
+        frozen = {}
+        for name, binary in binaries.items():
+            expected = file_identity(binary, 512 * 1024 * 1024)
+            owned = owned_binaries / name.replace("/", "-")
+            shutil.copyfile(binary, owned)
+            owned.chmod(0o700)
+            if file_identity(owned, 512 * 1024 * 1024) != expected or file_identity(binary, 512 * 1024 * 1024) != expected:
+                raise ValueError("completed native product changed during qualification capture")
+            frozen[name] = owned
+        binaries = frozen
         result["binaries"] = {name: file_identity(path) for name, path in binaries.items()}
         stage = "standalone-builds"
         built = []
@@ -190,6 +205,16 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         for template in TEMPLATES:
             project = creator(output / "projects" / template, template)
             executable_approval = None
+            if language == "dotnet" and template == "greeting":
+                from tools.dotnet_resource_fixture import install as install_resources
+                result["embeddedResources"] = install_resources(project)
+                if not application_dependencies:
+                    # This standard lookup fixture uses CLR string hashing.
+                    # Its seed needs the existing explicit noncrypto port;
+                    # dependency qualification declares the same port itself.
+                    from tools.dotnet_guest.entropy_grants import declare
+                    declare(project)
+                write_json(output / "embedded-resource-fixture.json", result["embeddedResources"])
             if language == "rust" and application_dependencies and template == "greeting":
                 from tools.rust_dependency_fixture import install
                 stage = "application-dependency-capture"
@@ -358,7 +383,9 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
-            language=language, noncrypto_entropy=language == "dotnet" and application_dependencies)
+            language=language, noncrypto_entropy=language == "dotnet")
+        if language == "dotnet":
+            result["embeddedResources"]["runtimeExecution"] = "signed-admitted-component"
         if approved_generator:
             result["approvedGenerator"]["runtimeExecution"] = "signed-admitted-component"
         if static_application_dependencies:
