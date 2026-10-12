@@ -191,10 +191,21 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-into-current-delivery-pr",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        680,
+        693
+      ],
+      "currentDeliveryPr": 912,
+      "currentDeliveryHead": "336154c972678c14d989c7828cbca34db79c6969",
+      "identicalSourcePaths": [
+        "docs/testing/evidence/dotnet-http-framing-windows-reference-2026-10-02.json"
+      ],
+      "reconciliation": "The exact historical Windows receipt is retained; the useful bounded chunked HTTP peer and16real-socket controls are reconciled with current port/held-GET behavior in #912. Historical evidence stays historical.",
+      "closureObservedUtc": "2026-10-12T15:22:51.917983+00:00"
     },
     {
       "pullRequest": 860,
@@ -912,10 +923,24 @@
         842
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-into-current-delivery-pr",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        680,
+        737,
+        738,
+        740
+      ],
+      "currentDeliveryPr": 912,
+      "currentDeliveryHead": "336154c972678c14d989c7828cbca34db79c6969",
+      "identicalSourcePaths": [
+        "tools/outbound_stream_fixture.py",
+        "tools/tests/test_outbound_stream_fixture.py"
+      ],
+      "reconciliation": "The exact bounded SMTP peer and submitted-versus-confirmed controls are retained in the reviewed current networking PR.",
+      "closureObservedUtc": "2026-10-12T15:22:47.738751+00:00"
     },
     {
       "pullRequest": 882,
@@ -1670,10 +1695,30 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-into-current-delivery-pr",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        681,
+        683,
+        743
+      ],
+      "currentDeliveryPr": 902,
+      "currentDeliveryHead": "cac1f208dafe48896655a01192e5e3dd4bee0941",
+      "identicalSourcePaths": [
+        "sdk/rust-standard-runtime/clock.rs",
+        "sdk/rust-standard-runtime/tests/clock_native.rs",
+        "sdk/rust-standard-runtime/upstream/std/src/sys/sync/mutex/no_threads.rs",
+        "sdk/rust-standard-runtime/upstream/std/src/sys/thread/unsupported.rs",
+        "sdk/rust-standard-runtime/upstream/std/src/sys/time/mod.rs",
+        "sdk/rust-standard-runtime/upstream/std/src/sys/time/unsupported.rs",
+        "tools/ci/contracts/python/test_rust_standard_clock_profile.py.json",
+        "tools/rust_standard_clock_profile.py",
+        "tools/tests/test_rust_standard_clock_profile.py"
+      ],
+      "reconciliation": "Nine introduced source/control files are byte-identical in #902; its README extends the preserved clock profile. Actual rebuilt std and signed current-host clock execution are new bounded evidence, not thread/default-runtime gate completion.",
+      "closureObservedUtc": "2026-10-12T15:22:57.984927+00:00"
     },
     {
       "pullRequest": 908,
