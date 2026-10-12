@@ -130,6 +130,8 @@ class RevisionControls:
         require(type(peer_port) is int and 1 <= peer_port <= 65535,
                 "server-lifecycle-explicit-peer-port")
         self.fixture, self.build, self.second_body, self.peer_port = fixture, build, second_body, peer_port
+        self.initial_http_grant = False
+        self.http_policy_generation = None
 
     def configure(self, settings: dict, service: str):
         providers = settings["providers"]
@@ -144,22 +146,30 @@ class RevisionControls:
                 "maximumEncodedResponseBytes": 8192, "maximumHeaderBytes": 1024,
                 "maximumHeaders": 8, "maximumRedirects": 0}, "extraRoots": [], "publicRoots": False},
             "limits": {"maximumInputBytes": 4096, "maximumOutputBytes": 4096,
-                "maximumChunkBytes": 1024, "maximumOutstandingChunks": 2}}
+                "maximumChunkBytes": 4096, "maximumOutstandingChunks": 2}}
         providers["bindings"].append({"name": "server-gate-http", "tenant": "examples",
             "consumerService": service, "providerService": "server-gate-host", "contract": HTTP,
             "providerBinding": "server-gate-http-installed"})
+
+    def grant_initial_http(self, client, node, service, publication):
+        require(not self.initial_http_grant, "server-lifecycle-http-initialization-once")
+        grant = self.grant_http(client, node, service, [publication])
+        self.initial_http_grant = True
+        return grant
 
     def grant_http(self, client, node, service, publications):
         descriptor = next(row for row in node.startup_record["providers"] if row["id"] == "server-gate-http")
         require(descriptor["capability"] == HTTP and descriptor["profile"] == "bounded-streaming-http-identity-v1"
                 and descriptor["tenant"] == "examples", "server-lifecycle-actual-http-provider")
-        binding = client.directory / "server-gate-http-binding.json"
-        write_json(binding, {"formatVersion": 1, "tenant": "examples", "capability": HTTP,
-            "providerProfile": descriptor["profile"], "configurationDigest": descriptor["configurationDigest"],
-            "configurationEpoch": 1, "restriction": {"operations": HTTP_OPERATIONS}})
-        client.call("policy", "--kind", "provider-binding", "apply", "--id", "server-gate-http-installed",
-                    "--file", binding, "--operation-id", "install-server-gate-http", "--expected-generation", "0")
-        policy = client.directory / "server-gate-http-policy.json"
+        if not self.initial_http_grant:
+            binding = client.directory / "server-gate-http-binding.json"
+            write_json(binding, {"formatVersion": 1, "tenant": "examples", "capability": HTTP,
+                "providerProfile": descriptor["profile"], "configurationDigest": descriptor["configurationDigest"],
+                "configurationEpoch": 1, "restriction": {"operations": HTTP_OPERATIONS}})
+            client.call("policy", "--kind", "provider-binding", "apply", "--id", "server-gate-http-installed",
+                        "--file", binding, "--operation-id", "install-server-gate-http", "--expected-generation", "0")
+        phase = "refresh" if self.initial_http_grant else "grant"
+        policy = client.directory / (phase + "-server-gate-http-policy.json")
         write_json(policy, {"formatVersion": 1, "tenant": "examples", "rules": [{"id": "one-controlled-peer",
             "effect": "allow", "principals": [{"kind": "trigger", "subject": "server-caller"}],
             "services": [service], "publications": publications, "capability": HTTP,
@@ -167,8 +177,13 @@ class RevisionControls:
                 "origins": [{"scheme": "http", "host": "127.0.0.1", "port": self.peer_port}],
                 "methods": ["GET"], "paths": ["/gate"], "pathPrefixes": []},
             "ceiling": {"operations": 32, "inputBytes": 4096, "outputBytes": 16384, "wallTimeMillis": 120000}}]})
-        client.call("policy", "apply", "--id", "server-gate-http-allow", "--file", policy,
-                    "--operation-id", "grant-server-gate-http", "--expected-generation", "0")
+        result = client.call("policy", "apply", "--id", "server-gate-http-allow", "--file", policy,
+                    "--operation-id", phase + "-server-gate-http", "--expected-generation",
+                    self.http_policy_generation or "0")
+        applied = server_routes.known(result)["policy"]
+        require(applied["id"] == "server-gate-http-allow" and applied["tenant"] == "examples"
+                and not applied["revoked"], "server-lifecycle-http-policy-confirmation")
+        self.http_policy_generation = str(server_routes.counter(applied["generation"], positive=True))
         return {"capability": HTTP, "policy": "server-gate-http-allow"}
 
     def configure_ingress(self, settings):
@@ -222,7 +237,7 @@ class RevisionControls:
 
         def case(name, value):
             observed["cases"].append({"case": name, **value})
-            write_json(evidence / "lifecycle-current.json", observed)
+            write_json(evidence / ("lifecycle-case-" + str(len(observed["cases"])) + ".json"), observed)
 
         # Corruption is rejected by the shipped planner before catalog mutation.
         before = routes.read()
@@ -248,6 +263,14 @@ class RevisionControls:
         second_publication = result["data"]["operation"]["publication"]["id"]
         require(second_publication != publication, "server-lifecycle-distinct-publication-required")
         case("second-real-source-publication", {"publication": second_publication})
+        second_manifest = read_json(self.fixture / second["name"] / "deployment.json")
+        require(second_manifest["metadata"]["tenant"] == original_manifest["metadata"]["tenant"]
+                and second_manifest["spec"]["service"] == original_manifest["spec"]["service"]
+                and second_manifest["spec"]["release"] == second["componentDigest"],
+                "server-lifecycle-second-deployment-association")
+        second_manifest["metadata"] = copy.deepcopy(original_manifest["metadata"])
+        second_deployment = client.directory / "server-lifecycle-second-deployment.json"
+        write_json(second_deployment, second_manifest)
 
         # Grant each current runtime operation explicitly to the two exact
         # publications. Existing provider bindings and original ceilings remain.
@@ -279,6 +302,19 @@ class RevisionControls:
         with state.lock(routes.root, "server-routes.lock"):
             routes.apply(initial_routes)
         check("GET", "/hey", 200, b"Hey!")
+        with GatePeer(min(client.deadline, time.monotonic() + 125), port=self.peer_port) as peer:
+            pending = HeldIngress(node.startup_record["httpEndpoint"], tls_context, client.deadline)
+            try:
+                peer.wait(peer.started)
+                peer.release.set()
+                response = pending.finish()
+                write_json(evidence / "lifecycle-gate-without-cutover.json", {
+                    "response": response, "peer": peer.snapshot()})
+                require(response == {"status": 200, "body": b"Hey!".hex()},
+                        "server-lifecycle-ordinary-client-gate-response")
+            finally:
+                pending.close()
+        case("ordinary-client-gate-response-without-redeployment", {})
         prior_roots = {row["activationId"] for row in roots(client, record["service"])}
         initial_execution_pin = execution_pin(client, initial_pin)
         with GatePeer(min(client.deadline, time.monotonic() + 125), port=self.peer_port) as peer:
@@ -288,7 +324,7 @@ class RevisionControls:
                 activation = one_new_root(client, record["service"], prior_roots)
                 before_cutover = status(client, activation, initial_execution_pin)
                 require(before_cutover["terminalState"] is None, "server-lifecycle-inflight-not-live")
-                changed = deploy(client, self.fixture / second["name"] / "deployment.json", second_publication,
+                changed = deploy(client, second_deployment, second_publication,
                                  generation=str(current["generation"]), grants=second_grants)
                 selected = server_routes.observed_pin(route_client, "examples", changed["name"], second["componentDigest"])
                 configuration = {**mounts, "profileDigest": digest(profile)}
@@ -299,6 +335,9 @@ class RevisionControls:
                 after_cutover = status(client, activation, initial_execution_pin)
                 peer.release.set()
                 response = pending.finish()
+                write_json(evidence / "lifecycle-inflight-response.json", {
+                    "response": response, "before": before_cutover, "after": after_cutover,
+                    "peer": peer.snapshot(), "originalPin": initial_execution_pin, "newPin": selected})
                 require(response == {"status": 200, "body": b"Hey!".hex()},
                         "server-lifecycle-old-inflight-response-changed")
             finally:
@@ -449,12 +488,16 @@ class RevisionControls:
                 pending = HeldIngress(node.startup_record["httpEndpoint"], tls_context, client.deadline)
                 try:
                     peer.wait(peer.started)
+                    deadline_response = None
                     try:
-                        pending.finish()
+                        deadline_response = pending.finish()
                     except (OSError, http.client.HTTPException):
                         pass
                     else:
-                        raise RuntimeError("server-lifecycle-deadline-returned-successful-http-response")
+                        require(deadline_response["status"] == 504,
+                                "server-lifecycle-deadline-returned-successful-http-response")
+                    write_json(evidence / "lifecycle-deadline-http.json", {
+                        "response": deadline_response, "transportClosed": deadline_response is None})
                     peer.wait(peer.closed)
                 finally:
                     pending.close()
@@ -463,6 +506,7 @@ class RevisionControls:
             case("narrower-root-deadline-closes-original-peer", {
                 "explicitWallTimeMillis": 750, "originalWallTimeMillis": deployment["budget"]["wallTimeLimitMillis"],
                 "terminal": expired, "peer": peer.snapshot(),
+                "httpResponse": deadline_response,
                 "retirement": observe_idle(client, evidence, "lifecycle-deadline-retired")})
             restored = deploy(client, original, publication, generation=str(limited["generation"]), grants=second_grants)
             restored_pin = server_routes.observed_pin(route_client, "examples", restored["name"], record["componentDigest"])

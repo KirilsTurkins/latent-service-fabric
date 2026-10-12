@@ -14,6 +14,107 @@ from tools.rust_capsule_project import snapshot
 
 
 class ServerLifecycleInputs(unittest.TestCase):
+    def test_repeatable_fixture_recipe_keeps_original_baseline_and_exact_two_gate_revisions(self):
+        from tools.java_capsule_project import ROOT
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for invalid in (True, 0, 65536):
+                selected = root / ("invalid-" + str(invalid))
+                with self.assertRaises(ValueError):
+                    project.create_fixtures(selected, invalid)
+                self.assertFalse(selected.exists())
+            fixtures = project.create_fixtures(root / "sources", 32195)
+            files = {label: snapshot(path) for label, path in fixtures.items()}
+            baseline = files["baseline"]
+            self.assertEqual(baseline["src/dev/latent/app/Server.java"],
+                             (ROOT / "sdk/java-guest/tests/server/Server.java").read_bytes())
+            self.assertEqual(baseline["src/outside/developer/routes/Router.java"],
+                             (ROOT / "sdk/java-guest/tests/server/Router.java").read_bytes())
+            self.assertNotIn("src/outside/developer/routes/LifecycleRoutes.java", baseline)
+            declarations = {label: validate(source)[0] for label, source in files.items()}
+            self.assertEqual(declarations["baseline"]["limits"]["outboundRequests"], 0)
+            for label in ("first", "second"):
+                self.assertEqual(declarations[label]["limits"],
+                                 {**declarations["baseline"]["limits"], "outboundRequests": 1})
+                self.assertEqual(declarations[label]["service"], "examples/lifecycle-server")
+                self.assertEqual({name: value for name, value in files[label].items() if name.startswith("vendor/")},
+                                 {name: value for name, value in baseline.items() if name.startswith("vendor/")})
+            self.assertEqual(len({value["name"] for value in declarations.values()}), 3)
+            self.assertEqual(files["second"]["src/outside/developer/routes/LifecycleRoutes.java"],
+                files["first"]["src/outside/developer/routes/LifecycleRoutes.java"].replace(b'"Hey!"', b'"Revision-two"'))
+
+    def test_native_capture_rejects_development_graph_and_changed_executable_bytes(self):
+        import json
+        import shutil
+        from unittest.mock import patch
+        from tools.qualify_java_server_lifecycle_suite import PRODUCTS, native
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            rows = []
+            for name, (target, kind) in PRODUCTS.items():
+                binary = root / name
+                binary.write_bytes(b"source-test executable fixture, not runtime proof")
+                rows.append({"reason": "compiler-artifact", "target": {"name": target, "kind": [kind]},
+                             "features": [], "executable": str(binary)})
+            rows.append({"reason": "build-finished", "success": True})
+            class Commands:
+                environment = {}
+                def run(self, stage, *arguments):
+                    if stage in {"source-head", "source-tree"}:
+                        return b"1" * 40
+                    if stage == "default-native-build":
+                        self.command = arguments
+                        return "\n".join(map(json.dumps, rows)).encode()
+                    return b""
+            commands = Commands()
+            with patch("tools.qualify_java_server_lifecycle_suite.source_identity", return_value={"test": "source-only"}), \
+                    patch("tools.qualify_java_server_lifecycle_suite.resolve_tools", return_value=({"cargo": "cargo", "rustc": "rustc"}, [])):
+                passed = root / "passed"
+                passed.mkdir()
+                directory, receipt = native(commands, passed, {})
+                self.assertNotIn("--features", commands.command)
+                value = json.loads(receipt.read_text())
+                self.assertEqual(set(value["binaries"]), set(PRODUCTS))
+                for name in PRODUCTS:
+                    self.assertEqual((directory / name).read_bytes(), (root / name).read_bytes())
+                rows[1]["features"] = ["development-test-node"]
+                denied = root / "denied"
+                denied.mkdir()
+                with self.assertRaisesRegex(ValueError, "native-default-product"):
+                    native(commands, denied, {})
+                self.assertFalse((denied / "native/native-tuple.json").exists())
+                rows[1]["features"] = []
+                changed = root / "changed"
+                changed.mkdir()
+                copy = shutil.copyfile
+                def change_after_copy(source, destination):
+                    result = copy(source, destination)
+                    source.write_bytes(b"different shared-target build")
+                    return result
+                with patch("tools.qualify_java_server_lifecycle_suite.shutil.copyfile", side_effect=change_after_copy):
+                    with self.assertRaisesRegex(ValueError, "native-capture-changed"):
+                        native(commands, changed, {})
+                self.assertFalse((changed / "native/native-tuple.json").exists())
+
+    def test_gate_request_is_a_separate_exact_declaration_and_preserves_all_original_other_limits(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original = snapshot(project.create(root / "zero", name="lifecycle-server", revision="Hey!", peer_port=32195))
+            gate = snapshot(project.create(root / "gate", name="lifecycle-server", revision="Hey!", peer_port=32195,
+                                           service="examples/lifecycle-server", outbound_requests=1))
+            selected, _lock, _pins = validate(gate)
+            baseline, _lock, _pins = validate(original)
+            self.assertEqual(baseline["limits"]["outboundRequests"], 0)
+            self.assertEqual(selected["limits"], {**baseline["limits"], "outboundRequests": 1})
+            self.assertEqual({name: value for name, value in original.items() if name != "capsule-project.json"},
+                             {name: value for name, value in gate.items() if name != "capsule-project.json"})
+            for invalid in (True, -1, 2):
+                destination = root / ("invalid-" + str(invalid))
+                with self.assertRaises(ValueError):
+                    project.create(destination, name="lifecycle-server", revision="Hey!", peer_port=32195,
+                                   outbound_requests=invalid)
+                self.assertFalse(destination.exists())
+
     def test_outside_source_declares_http_explicitly_without_sdk_or_budget_changes(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -112,6 +213,7 @@ class ServerLifecycleInputs(unittest.TestCase):
         self.assertEqual(http["configuration"]["destinations"][0]["origin"],
                          {"scheme": "http", "host": "127.0.0.1", "port": 32123})
         self.assertEqual(http["configuration"]["destinations"][0]["redirectDestinations"], [])
+        self.assertEqual(http["limits"]["maximumChunkBytes"], 4096)
         self.assertEqual(settings["providers"]["bindings"][-1]["contract"], "latent:http/streaming@0.3.0")
         self.assertEqual(settings["httpIngress"]["authentication"]["origins"],
                          [{"authority": "competing.server.test", "subject": "server-caller", "tenant": "examples"}])
@@ -147,6 +249,89 @@ class ServerLifecycleInputs(unittest.TestCase):
             executable.write_bytes(b"changed")
             with self.assertRaisesRegex(ValueError, "native-product-mismatch"):
                 ordinary_tuple(tuple_path, {"latentd": executable})
+
+    def test_explicit_http_binding_precedes_first_publication_and_policy_refresh_has_its_own_cas(self):
+        import json
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            calls = []
+            class Client:
+                directory = Path(temporary)
+                def call(self, *arguments):
+                    path = Path(arguments[arguments.index("--file") + 1])
+                    calls.append((arguments, json.loads(path.read_text())))
+                    return {"category": "success", "outcomeKnown": True, "data": {"policy": {
+                        "id": "server-gate-http-allow", "tenant": "examples", "revoked": False,
+                        "generation": "9" if len(calls) == 2 else "17"}}}
+            node = SimpleNamespace(startup_record={"providers": [{"id": "server-gate-http",
+                "capability": "latent:http/streaming@0.3.0", "profile": "bounded-streaming-http-identity-v1",
+                "tenant": "examples", "configurationDigest": "sha256:" + "1" * 64}]})
+            observer = RevisionControls(Path("signed-two"), Path("build-two"),
+                                        second_body=b"Revision-two", peer_port=32195)
+            client = Client()
+            observer.grant_initial_http(client, node, "examples/lifecycle-server", "publication:first")
+            self.assertEqual(len(calls), 2)
+            self.assertIn("install-server-gate-http", calls[0][0])
+            self.assertEqual(calls[1][1]["rules"][0]["publications"], ["publication:first"])
+            self.assertEqual(calls[1][1]["rules"][0]["resources"]["methods"], ["GET"])
+            self.assertEqual(calls[1][1]["rules"][0]["resources"]["paths"], ["/gate"])
+            observer.grant_http(client, node, "examples/lifecycle-server", ["publication:first", "publication:second"])
+            self.assertEqual(len(calls), 3, "the installed provider binding is not submitted again")
+            arguments = calls[2][0]
+            self.assertEqual(arguments[arguments.index("--expected-generation") + 1], "9")
+            self.assertIn("refresh-server-gate-http", arguments)
+            self.assertEqual(calls[2][1]["rules"][0]["publications"], ["publication:first", "publication:second"])
+            with self.assertRaisesRegex(ValueError, "initialization-once"):
+                observer.grant_initial_http(client, node, "examples/lifecycle-server", "publication:first")
+            self.assertEqual(len(calls), 3)
+
+    def test_qualifier_requires_all_original_cases_before_a_distinct_fresh_lifecycle_node(self):
+        import contextlib
+        import io
+        import json
+        from unittest.mock import patch
+        from tools.qualify_java_server_lifecycle import main
+        from tools.rust_capsule_project import inventory
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = create_server(root / "source", "baseline")
+            build = root / "baseline-build"
+            build.mkdir()
+            (build / "source-inputs.json").write_bytes(inventory(snapshot(source)))
+            for label in ("first", "second"):
+                selected = root / (label + "-build")
+                selected.mkdir()
+                (selected / "http-client-profile.json").write_text(json.dumps({
+                    "profile": "lsf.java.httpurlconnection.streaming.v1", "limits": {"chunkBytes": 4096}}))
+            arguments = []
+            for name in ("binary", "node", "tls-tool", "native-tuple", "baseline-fixture",
+                         "first-fixture", "second-fixture"):
+                arguments.extend(["--" + name, str(root / name)])
+            arguments += ["--baseline-source", str(source), "--baseline-build", str(build),
+                "--first-build", str(root / "first-build"), "--second-build", str(root / "second-build"),
+                "--peer-port", "32195"]
+            baseline = {"status": "passed", "http": [None] * 52}
+            lifecycle = {"status": "passed", "http": [], "lifecycle": {"cases": []}}
+            with patch("tools.qualify_java_server_lifecycle.ordinary_tuple", return_value={"test": "source-only"}), \
+                    patch("tools.qualify_java_server_lifecycle.run", side_effect=[baseline, lifecycle]) as run, \
+                    contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(main([*arguments, "--output", str(root / "passed")]), 0)
+            self.assertEqual(len(run.call_args_list), 2)
+            first, second = run.call_args_list
+            self.assertEqual(first.args[-1], root / "passed/baseline")
+            self.assertEqual(second.args[-1], root / "passed/lifecycle")
+            self.assertNotIn("lifecycle", first.kwargs)
+            self.assertIsInstance(second.kwargs["lifecycle"], RevisionControls)
+            receipt = json.loads((root / "passed/lifecycle-qualified.json").read_text())
+            self.assertEqual(len(receipt["baseline"]["http"]), 52)
+            for status, count in (("failed", 52), ("passed", 51), ("passed", 53)):
+                output = root / (status + str(count))
+                with patch("tools.qualify_java_server_lifecycle.ordinary_tuple", return_value={"test": "source-only"}), \
+                        patch("tools.qualify_java_server_lifecycle.run", return_value={"status": status, "http": [None] * count}) as run:
+                    with self.assertRaisesRegex(ValueError, "complete-original-ingress"):
+                        main([*arguments, "--output", str(output)])
+                self.assertEqual(run.call_count, 1)
+                self.assertFalse((output / "lifecycle-qualified.json").exists())
 
 
 class ServerLifecyclePeer(unittest.TestCase):

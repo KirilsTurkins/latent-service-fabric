@@ -157,17 +157,56 @@ own receipt and audit observations. A passing native/source check or the additio
 of this lane is not evidence that the complete signed-node lane passed; use the
 actual `node-my-server*/conformance.json` artifacts from that exact CI source.
 
-The separate `tools/qualify_java_server_lifecycle.py` gate consumes two signed
-ordinary-source builds and a recorded ordinary-default native tuple. It checks
+The separate `tools/qualify_java_server_lifecycle.py` gate consumes the original
+helper and two signed ordinary-source revision builds with a recorded default
+native tuple. It checks
 explicit redeployment/rollback, an in-flight request's actual journal revision
 pin, a competing route CAS, fresh static state, real disconnect retirement,
 fuel exhaustion and a separately narrowed root deadline. Its fixture's outbound
 `HttpURLConnection` rendezvous has its own explicit typed HTTP provider and grant;
-it adds no ambient network authority. Its first source fixture retains the
-complete ordinary helper and runs all 52 original ingress vectors before the
-extra lifecycle cases. Source/socket tests and a prepared command do not establish
+it adds no ambient network authority. It first requires all 52 original ingress
+vectors on a fresh zero-egress node, then runs the revision checks on another
+fresh node. Both keep the original 256-record journal, 32 KiB audit queue and
+eight queued operations; the long combined history cannot silently exceed or
+evict that bounded journal. Source/socket tests and a prepared command do not establish
 that these lifecycle gates passed; retain the actual `lifecycle-conformance.json`
 and the enclosing node receipt, including failed attempts, before qualification.
+
+The ordinary 52-case helper lane retains its zero outbound-request budget.
+The separate gate lane explicitly declares one outbound request for its single
+`HttpURLConnection` rendezvous, with the same 64 MiB memory, one-billion-fuel and
+120-second wall bounds. It installs the exact provider binding and first
+publication's GET `/gate` policy before dispatch, then refreshes that policy
+using the confirmed generation when the second publication is admitted. Two
+unique package identities can target the same service; the operator supplies
+the original deployment name for the new revision. Neither package signing nor
+deployment identity supplies egress permission.
+
+The gate provider accepts the exact captured `HttpURLConnection` 4096-byte
+chunk profile. A smaller provider read bound fails; changing the fixture profile
+does not change the normal library quantum or IO accounting.
+
+Run the maintained build/sign/execute suite with pinned JDK 25, Gradle 9.1.0,
+WASI SDK 29 and wasm-tools installed:
+
+```bash
+python3 tools/qualify_java_server_lifecycle_suite.py \
+  --output /tmp/java-server-lifecycle \
+  --wasi-sdk /opt/wasi-sdk-29.0-x86_64-linux
+```
+
+Use a fresh output directory. The suite freezes actual default Cargo products,
+builds three distinct ordinary sources, signs only those isolated test fixtures,
+and executes both nodes. It is discovered by the maintained Java feasibility
+workflow, alongside every original Java gate. The prebuilt-input command remains
+available for exact-product qualification; its mandatory baseline source,
+fixture and build arguments prevent replacing the original ingress lane with
+only revision tests. Neither command publishes a runtime release.
+
+Each lifecycle case has an immutable numbered receipt. The final
+`lifecycle-qualified.json` adds the native tuple observation without replacing
+the node's existing `conformance.json`. Failed zero-egress and signer/configuration
+attempts remain separate from successful qualification.
 
 A literal `ServerSocket.accept` loop returns a byte connection, not a handler
 registration. This profile cannot identify an arbitrary protocol boundary or

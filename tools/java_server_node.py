@@ -214,7 +214,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
     record = read_json(fixture / "release-set.json")["releases"][0]
     result = {"schemaVersion": "lsf.java.server.node-conformance.v1", "status": "in-progress", "http": [],
               "componentDigest": record["componentDigest"], "sourceSnapshotDigest": record["sourceSnapshotDigest"],
-              "profile": "lsf.java.httpserver.buffered.v1", "helperSource": helper}
+              "profile": "lsf.java.httpserver.buffered.v1", "helperSource": helper,
+              "lane": "original-ingress" if lifecycle is None else "revision-lifecycle"}
     observed_paths = {"cli": binary, "node": node_binary, "workflow": Path(__file__),
         "declaration": build / "server-source.json", "profile": build / "server-profile.json",
         "sourceInputs": build / "source-inputs.json", "component": build / "component.wasm"}
@@ -327,6 +328,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
                 "cellLeasesAfter": [row["granted"] for row in after_denial["cells"]],
                 "retirement": after_denial, "storeCreation": "not-observed"}
             grants = grant_runtime(client, node, record, publication)
+            if lifecycle is not None:
+                grants.append(lifecycle.grant_initial_http(client, node, record["service"], publication))
             deployed = deploy(client, fixture / record["name"] / "deployment.json", publication,
                 generation=str(deployed["generation"]), grants=grants)
             result["deployment"] = deployed
@@ -334,49 +337,51 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             manifests = server_routes.plan(declaration, json.dumps(mounts, separators=(",", ":")).encode(), selected,
                 source_digest=digest(source), profile_digest=digest(profile))
             with state.lock(root / "routes", "server-routes.lock"): result["routes"] = routes.apply(manifests)
-            denied_without_cell("GET", "/hey", 403, authority="unconfigured.server.test")
-            denied_without_cell("GET", "/hey", 403, authority="foreign.server.test")
-            denied_without_cell("DELETE", "/hey", 403)
-            denied_without_cell("DELETE", "/hey", 404, headers={"Origin": scheme + "://java.server.test"})
-            denied_without_cell("GET", "/hey", 401, headers={"Authorization": "Bearer qualification-only"})
-            for path in ("/hey/%2Fsecret", "/hey/%252fsecret", "/hey/../case", "/hey//child"):
-                denied_without_cell("GET", path, 400)
-            for path, expected in (("/hey", 200), ("/hey/child", 201 if helper else 200), ("/heyday", 200),
-                                   ("/hey?x=1", 200), ("/hey/", 201 if helper else 200), ("/HEY", 404), ("/absent", 404)):
-                check("GET", path, expected, b"Hey!" if expected == 200 else b"L" if expected == 201 else None)
-            if helper:
-                head = check("HEAD", "/hey", 200, b"")
-                require([value for name, value in head["headers"] if name.lower() == "content-length"] == ["4"],
-                        "java-server-head-representation-length")
-                raw = check("GET", "/case?raw", 200, bytes((0, 1, 128, 255)))
-                require([value for name, value in raw["headers"] if name.lower() == "set-cookie"]
-                    == ["__Host-a=1; Secure; HttpOnly; SameSite=Strict; Path=/",
-                        "__Host-b=2; Secure; HttpOnly; SameSite=Strict; Path=/"], "java-server-repeated-response-cookies")
-                check("GET", "/case?query&x=%2F&x=+", 200, b"query&x=%2F&x=+")
-                check("POST", "/case?input", 200, bytes((255, 0, 128)), body=bytes((255, 0, 128)),
-                      headers={"Content-Type": "application/octet-stream", "Origin": scheme + "://java.server.test"})
-                # This is the declared accepted body boundary, distinct from
-                # the existing 65,537-byte pre-dispatch denial below. Exercise
-                # ordinary HttpExchange streams with arbitrary binary bytes
-                # under the unchanged guest/host limits and observe retirement.
-                maximum_body = bytes(range(256)) * 256
-                check("POST", "/case?input", 200, maximum_body, body=maximum_body,
-                      headers={"Content-Type": "application/octet-stream", "Origin": scheme + "://java.server.test"})
-                check("GET", "/hey", 200, b"Hey!")
-                check("GET", "/case?error", 500, b"E")
-                check("GET", "/case?no-body", 204, b"")
-                for case in ("throw", "over", "under", "double", "before", "closed", "flush", "chunk", "forbidden", "unsafe-cookie", "oversize", "memory"):
-                    check("GET", "/case?" + case, 502)
+            if lifecycle is None:
+                denied_without_cell("GET", "/hey", 403, authority="unconfigured.server.test")
+                denied_without_cell("GET", "/hey", 403, authority="foreign.server.test")
+                denied_without_cell("DELETE", "/hey", 403)
+                denied_without_cell("DELETE", "/hey", 404, headers={"Origin": scheme + "://java.server.test"})
+                denied_without_cell("GET", "/hey", 401, headers={"Authorization": "Bearer qualification-only"})
+                for path in ("/hey/%2Fsecret", "/hey/%252fsecret", "/hey/../case", "/hey//child"):
+                    denied_without_cell("GET", path, 400)
+                for path, expected in (("/hey", 200), ("/hey/child", 201 if helper else 200), ("/heyday", 200),
+                                       ("/hey?x=1", 200), ("/hey/", 201 if helper else 200), ("/HEY", 404), ("/absent", 404)):
+                    check("GET", path, expected, b"Hey!" if expected == 200 else b"L" if expected == 201 else None)
+                if helper:
+                    head = check("HEAD", "/hey", 200, b"")
+                    require([value for name, value in head["headers"] if name.lower() == "content-length"] == ["4"],
+                            "java-server-head-representation-length")
+                    raw = check("GET", "/case?raw", 200, bytes((0, 1, 128, 255)))
+                    require([value for name, value in raw["headers"] if name.lower() == "set-cookie"]
+                        == ["__Host-a=1; Secure; HttpOnly; SameSite=Strict; Path=/",
+                            "__Host-b=2; Secure; HttpOnly; SameSite=Strict; Path=/"], "java-server-repeated-response-cookies")
+                    check("GET", "/case?query&x=%2F&x=+", 200, b"query&x=%2F&x=+")
+                    check("POST", "/case?input", 200, bytes((255, 0, 128)), body=bytes((255, 0, 128)),
+                          headers={"Content-Type": "application/octet-stream", "Origin": scheme + "://java.server.test"})
+                    # This is the declared accepted body boundary, distinct from
+                    # the existing 65,537-byte pre-dispatch denial below. Exercise
+                    # ordinary HttpExchange streams with arbitrary binary bytes
+                    # under the unchanged guest/host limits and observe retirement.
+                    maximum_body = bytes(range(256)) * 256
+                    check("POST", "/case?input", 200, maximum_body, body=maximum_body,
+                          headers={"Content-Type": "application/octet-stream", "Origin": scheme + "://java.server.test"})
                     check("GET", "/hey", 200, b"Hey!")
-                # The original ingress cap rejects excess bytes before dispatch.
-                # Guest-side rejection is exercised by ServerConformance instead.
-                denied_without_cell("POST", "/case?input", 413, body=b"x" * 65537,
-                      headers={"Content-Type": "application/octet-stream", "Origin": scheme + "://java.server.test"})
-                check("GET", "/hey", 200, b"Hey!")
+                    check("GET", "/case?error", 500, b"E")
+                    check("GET", "/case?no-body", 204, b"")
+                    for case in ("throw", "over", "under", "double", "before", "closed", "flush", "chunk", "forbidden", "unsafe-cookie", "oversize", "memory"):
+                        check("GET", "/case?" + case, 502)
+                        check("GET", "/hey", 200, b"Hey!")
+                    # The original ingress cap rejects excess bytes before dispatch.
+                    # Guest-side rejection is exercised by ServerConformance instead.
+                    denied_without_cell("POST", "/case?input", 413, body=b"x" * 65537,
+                          headers={"Content-Type": "application/octet-stream", "Origin": scheme + "://java.server.test"})
+                    check("GET", "/hey", 200, b"Hey!")
             if lifecycle is not None:
-                # The extra observer consumes actual signed build inputs and the
-                # live authenticated node. Original HTTP vectors/bounds above
-                # remain unchanged; no synthetic HTTP RPC substitutes for ingress.
+                # The qualifier first requires the complete original ingress lane
+                # on its own fresh zero-egress node. Keep this distinct lifecycle
+                # journal within the same 256-record bound, without repeating it.
+                check("GET", "/hey", 200, b"Hey!")
                 result["lifecycle"] = lifecycle(client=client, node=node, record=record,
                     publication=publication, deployment=deployed, build=build,
                     routes=routes, manifests=manifests, mounts=mounts, route_client=route_cli,
@@ -415,6 +420,20 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
                         if token is None: break
                     result["failureAuditComplete"] = token is None
                 except Exception as failure: result["auditObservationFailure"] = type(failure).__name__
+                if lifecycle is not None:
+                    try:
+                        from tools.java_server_lifecycle import roots
+                        retained = roots(client, record["service"])
+                        write_json(evidence / "failure-roots.json", retained)
+                        for ordinal, row in enumerate(retained[-4:]):
+                            write_json(evidence / ("failure-root-" + str(ordinal) + ".json"),
+                                       client.call("activation", "get", row["activationId"])["data"])
+                        if retained:
+                            recent = client.call("audit", "query", "--scope", "tenant", "--page-size", "64",
+                                "--from-unix-millis", str(retained[-1]["receivedAtUnixMillis"]))["data"]
+                            write_json(evidence / "failure-recent-audit.json", recent)
+                    except Exception as failure:
+                        result["rootObservationFailure"] = type(failure).__name__
             raise
         finally:
             client.node = None
