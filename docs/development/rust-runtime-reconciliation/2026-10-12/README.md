@@ -57,6 +57,25 @@ execution and is retained with that original status.
 - Actual locked offline std build: fourteen emitted target libraries; current
   graph/source/recipe/compiler/component identities are retained by the driver.
 
+The isolated stack transform's manifest and lock are registered in the security
+inventory, with the existing RustSec scan still covering every tracked Cargo
+lock. Sixty-two focused security controls pass, including new exact graph pins
+and rejection of partial or orphaned copies of that directory.
+
+The current verified state retirement changes are incorporated. Two additional
+state tests now observe the initial or reserved native read's actual retirement
+before asserting the independently blocked read count. Their original assertions
+and limits remain intact. Both cases passed three times, and the complete
+356-case state library suite passed as an unprivileged user on the qualified
+Linux test volume.
+
+The complete Python suite passed all 4,028 cases with its 24 existing prerequisite
+skips. The first local full-suite attempt ran as root without zstd and therefore
+failed environment/ownership controls; its result was retained before correcting
+those inputs. The corrected execution used an unprivileged owner, real zstd and
+the complete tracked evidence files. Scoped Gitleaks scanning of all 42 changed
+text files found no findings or exceptions.
+
 These finite controls measure actual execution or source behavior only within
 their stated boundaries. They establish no allocator/RSS sizing, no 100,000-scale
 campaign, and no broader runtime fairness or publication claim. Raw compiler

@@ -405,6 +405,9 @@ fn reserved_status_read_runs_while_ordinary_read_slots_and_queue_are_saturated()
         .unwrap(),
         23
     );
+    owner.wait_for_snapshot(WATCHDOG, |snapshot| {
+        snapshot.active_recovery_reads == 0 && snapshot.recovery_accepted == 0
+    });
     assert_eq!(owner.snapshot().unwrap().active_reads, 1);
     rendezvous.release(ticket).unwrap();
     wait(read).unwrap();

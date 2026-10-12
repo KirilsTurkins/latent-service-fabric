@@ -21,6 +21,9 @@ fn detached_view_response_witness_waits_for_actual_native_retirement_after_close
         Err(mpsc::TryRecvError::Empty)
     ));
     let mut view = wait(opening).unwrap().unwrap();
+    owner
+        .ready
+        .wait_for_snapshot(WATCHDOG, |snapshot| snapshot.active_reads == 0);
     assert!(view.retirement_witness().is_none());
     let gates = Rendezvous::new(1);
     let worker_gates = gates.clone();
