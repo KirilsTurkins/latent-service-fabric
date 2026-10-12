@@ -120,6 +120,19 @@ references retain their executed private source. These are synthetic host
 conformance fixtures; they do not qualify unchanged standard-language libraries,
 external packaged operators, or production installation.
 
+The [maximum valid private control](../testing/evidence/outbound-host-tls-private-maximum-valid-2026-10-12.json)
+adds eight protected 4,096-byte DER roots (32 KiB aggregate), a verified leaf,
+six intermediate CAs and root (eight entries), and the full 4,096-byte TLS 1.3
+encoded stapled-extension allowance. Both TLS versions negotiate successfully,
+transfer data and retire their original owners. Heaptrack transport-tagged
+allocations peak at 100,796 bytes and trust-tagged allocations at 16,760 bytes;
+both return to zero under the unchanged 256 KiB connection and 64 KiB trust
+reservations. Whole-process peak is 390,912 bytes with 46,808 bytes remaining.
+The [executed reference](../../sdk/host-stream-tls/rustls-bounds/maximum-valid-reference.rs)
+and receipt preserve exact private source, executable and trace identities.
+This finite maximum-shape witness supplies no general allocation bound and
+does not infer stack/kernel costs or qualify ordinary clients and operators.
+
 The first reconciliation CI head exposed a carried peer restriction that
 refused nonempty GET/HEAD bodies. The existing signed guest HTTP contract sends
 `payload` for GET, HEAD and POST. The peer now accepts explicitly framed bodies

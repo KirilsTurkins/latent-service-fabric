@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "lsf.private.host-tls-maximum-native-allocation.v1",
+  "originalPrHead": "8533581d6e65e89f45c6bbbe7cd37dd7fb7a61ef",
+  "qualificationOnly": true,
+  "productionEnabled": false,
+  "fullAccountingQualified": false,
+  "case": "tests::tls::private_maximum_valid_chain_roots_and_stapled_extension_retire_actual_owners",
+  "exitCode": 0,
+  "passed": true,
+  "versions": [
+    "TLS1.3",
+    "TLS1.2"
+  ],
+  "negotiatedVersionsAsserted": true,
+  "protectedRoots": {
+    "count": 8,
+    "bytesEach": 4096,
+    "aggregateBytes": 32768
+  },
+  "certificateEntries": {
+    "count": 8,
+    "leafBytes": 3300,
+    "intermediateCount": 6,
+    "intermediateBytesEach": 3300,
+    "rootBytes": 4096
+  },
+  "stapledExtension": {
+    "ocspPayloadBytes": 4088,
+    "tls13EncodedEntryExtensionBytes": 4096
+  },
+  "connectionAllowanceBytes": 262144,
+  "trustAllowanceBytes": 65536,
+  "binarySha256": "de95f88ff7ef000a99b5fee0d95cb8e8220b291e9aabbbf32fee063faa905ea7",
+  "traceSha256": "e9911b7394a41ca5ab60cf74a25212eef9b43321e1d3759c10a8993d267f9c54",
+  "traceBytes": 297276,
+  "interpretedBytes": 1371152,
+  "executionOutputSha256": "329862fff757882ec17964b0b2435a4d52aaf246ebcc9b8528be1efc52f9e141",
+  "sourceIdentities": [
+    {
+      "path": "Cargo.toml",
+      "sha256": "20f1af0211d6b17464d54ed7c14b07835358e3dda99a821a72637c44c57cfff6"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "cfb499a84cc7f3f06dd4b07a86cd3e4a87b55abf80ba0704a3e8d43518a522c5"
+    },
+    {
+      "path": "crates/latent-streams/src/tls.rs",
+      "sha256": "038d6a1f12b962d0d699c634f88cdcb0fdce3ab4ba74aa99e2f2ea51f5f29b14"
+    },
+    {
+      "path": "crates/latent-streams/src/tests/tls.rs",
+      "sha256": "f046b226469af1c14995f27a681364e9975a96f30cd86671aaf4ad9ecf5cab4f"
+    }
+  ],
+  "readerIdentities": [
+    {
+      "path": "tools/host_stream_tls_allocation.py",
+      "sha256": "3b1fae4e5ed23edc26c738ae98de54be4416ed1dda85acfaa8c833ac91acb26e"
+    },
+    {
+      "path": "tools/artifact_identity_evidence/heaptrack.py",
+      "sha256": "8731e80de84c3f07a221dc0a9460aa27733851a9ffa94cffd670e5e87eb9b21a"
+    }
+  ],
+  "nativeAllocations": {
+    "allAllocations": {
+      "heaptrack_version": "1.4.0",
+      "format_version": "3",
+      "allocation_count": "23250",
+      "deallocation_count": "22797",
+      "allocated_bytes": "5264143",
+      "peak_live_bytes": "390912",
+      "remaining_live_bytes": "46808",
+      "remaining_allocations": "453"
+    },
+    "transport": {
+      "peakBytes": 100796,
+      "remainingBytes": 0,
+      "allocationCalls": 199
+    },
+    "trustConfiguration": {
+      "peakBytes": 16760,
+      "remainingBytes": 0,
+      "allocationCalls": 246
+    },
+    "fullAccountingQualified": false
+  },
+  "limits": [
+    "maximum valid profile fixture on both versions is a bounded local witness",
+    "symbol marker attribution is incomplete; unmatched whole-process allocations remain",
+    "stack and kernel bytes are not inferred from heap allocations",
+    "synthetic peer and credentials do not qualify ordinary guest libraries or packaged operators",
+    "shipped production and TLS accounting gates remain disabled"
+  ],
+  "maximumValidReference": "sdk/host-stream-tls/rustls-bounds/maximum-valid-reference.rs",
+  "maximumValidReferenceSha256": "466a3f23d303e23b01b7360041f106d01d777811d74be90c8cae1d6c37ced2e5",
+  "privatePatchProvenance": {
+    "path": "docs/testing/evidence/outbound-host-tls-private-feasibility-2026-10-12.json",
+    "sha256": "63c5a2cb9cd58aba64a374b078ecea32a42cc8f216f0c899b3857f387d3ef059"
+  },
+  "sourcePreparation": [
+    "existing private source applies the authenticated captured bounded rustls parser",
+    "existing private source alone enables ACCOUNTING_QUALIFIED and exposes candidate TLS controls",
+    "maximum valid case adds exact Ed25519 authority roots/chain and ECDSA leaf against unchanged verification",
+    "failed first compile used stream after its consuming close; the qualification-only duplicate drop was removed",
+    "source identities and executed reference bind the measured successful corrected source"
+  ]
+}
