@@ -36,8 +36,19 @@ bool finish(JSContext* cx,unsigned argc,JS::Value* vp) {
 }
 bool cancel(JSContext* cx,unsigned argc,JS::Value* vp) {
   auto args=JS::CallArgsFromVp(argc,vp);uint32_t id=0;
-  if(!identity(cx,args,id)||!cancel_import(cx,id))return false;
+  if(!identity(cx,args,id))return false;
+  if(argc>=2) {
+    if(!args[1].isObject()) { JS_ReportErrorASCII(cx,"activation-runtime-import-retirement-Promise-required");return false; }
+    JS::RootedObject retirement(cx,&args[1].toObject());
+    if(!cancel_import_with_retirement(cx,id,retirement))return false;
+  } else if(!cancel_import(cx,id))return false;
   args.rval().setUndefined();return true;
+}
+bool retired(JSContext* cx,unsigned argc,JS::Value* vp) {
+  auto args=JS::CallArgsFromVp(argc,vp);uint32_t id;
+  JS::RootedObject promise(cx);
+  if(!identity(cx,args,id)||!import_retirement(cx,id,&promise))return false;
+  args.rval().setObject(*promise);return true;
 }
 }
 bool install_import_bridge(JSContext* cx,JS::HandleObject global) {
@@ -45,7 +56,8 @@ bool install_import_bridge(JSContext* cx,JS::HandleObject global) {
   if(!bridge || !JS_DefineFunction(cx,bridge,"reserve",reserve,3,0) ||
      !JS_DefineFunction(cx,bridge,"lift",lift,1,0) ||
      !JS_DefineFunction(cx,bridge,"finish",finish,1,0) ||
-     !JS_DefineFunction(cx,bridge,"cancel",cancel,1,0))return false;
+     !JS_DefineFunction(cx,bridge,"cancel",cancel,1,0)||
+     !JS_DefineFunction(cx,bridge,"retired",retired,1,0))return false;
   return JS_DefineProperty(cx,global,"__lsfAsyncImportBridge",bridge,0);
 }
 } // namespace lsf::typescript::activation

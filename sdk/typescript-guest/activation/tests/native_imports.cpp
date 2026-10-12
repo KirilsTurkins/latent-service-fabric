@@ -407,6 +407,39 @@ int main(int argc, char** argv) {
       if(!evaluate(cx,"globalThis.root=ordinaryImported();",&output) || !jobs.settleRoot(cx))return 10;
       status=!shared_drain(cx,queue,timers,imports,readiness) && imports.hasPending() &&
              imported_lifts==0 && counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1?0:1;
+    } else if (!std::strcmp(selected,"retirement-completion-follows-typed-lift-and-native-acks")) {
+      if(!evaluate(cx,"globalThis.answer=0;globalThis.root=ordinaryImported().then(liftImported).then(value=>{answer=value;rootDone();});",&output))return 10;
+      JS::RootedObject retirement(cx),same(cx);
+      if(!imports.retirementPromise(cx,1,&retirement)||!imports.retirementPromise(cx,1,&same))return 10;
+      const bool pending=retirement==same && JS::GetPromiseState(retirement)==JS::PromiseState::Pending &&
+                         counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1;
+      status=pending && shared_drain(cx,queue,timers,imports,readiness) && imported_lifts==1 &&
+             JS::GetPromiseState(retirement)==JS::PromiseState::Fulfilled &&
+             JS::GetPromiseResult(retirement).isInt32() && JS::GetPromiseResult(retirement).toInt32()==1 &&
+             !imports.hasPending()?0:1;
+    } else if (!std::strcmp(selected,"logical-cancel-does-not-complete-physical-retirement")) {
+      defer_cancel=true;
+      if(!evaluate(cx,"globalThis.root=ordinaryImported().catch(()=>rootDone());",&output))return 10;
+      JS::RootedObject retirement(cx);
+      if(!imports.retirementPromise(cx,1,&retirement)||!imports.cancelWithRetirement(cx,1,retirement))return 10;
+      const bool retained=JS::GetPromiseState(retirement)==JS::PromiseState::Pending &&
+                          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1 &&
+                          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==1;
+      status=retained && shared_drain(cx,queue,timers,imports,readiness) && imported_lifts==0 &&
+             JS::GetPromiseState(retirement)==JS::PromiseState::Fulfilled &&
+             imports.cancelWithRetirement(cx,1,retirement) && !imports.hasPending()?0:1;
+    } else if (!std::strcmp(selected,"retirement-identity-and-unissued-id-cannot-cancel-live-import")) {
+      if(!evaluate(cx,"globalThis.root=ordinaryImported().then(liftImported).then(()=>rootDone());",&output))return 10;
+      JS::RootedObject retirement(cx),wrong(cx,JS::NewPromiseObject(cx,nullptr));
+      if(!wrong||!imports.retirementPromise(cx,1,&retirement))return 10;
+      JS::RootedValue forged(cx,JS::Int32Value(999));
+      if(!JS::ResolvePromise(cx,wrong,forged))return 10;
+      const bool wrong_identity=!imports.cancelWithRetirement(cx,1,wrong) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      const bool unissued=!imports.cancelWithRetirement(cx,999,wrong) && JS_IsExceptionPending(cx);
+      JS_ClearPendingException(cx);
+      status=wrong_identity && unissued && shared_drain(cx,queue,timers,imports,readiness) &&
+             imported_lifts==1 && JS::GetPromiseState(retirement)==JS::PromiseState::Fulfilled?0:1;
     } else if (!std::strcmp(selected,"cancel-keeps-import-buffer-until-terminal")) {
       defer_cancel=true;
       if(!evaluate(cx,"globalThis.root=ordinaryImported().catch(()=>rootDone());",&output))return 10;

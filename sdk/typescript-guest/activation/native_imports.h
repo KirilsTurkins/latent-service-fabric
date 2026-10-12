@@ -20,6 +20,7 @@ class Imports final {
     NativeOwner record_owner{};
     ImportLifecycle lifecycle;
     JS::PersistentRootedObject promise;
+    JS::PersistentRootedObject retirement;
     JS::PersistentRootedValue captures;
     void* result = nullptr;
     size_t result_size = 0;
@@ -33,7 +34,7 @@ class Imports final {
     JSContext* cx;
     Record(JSContext* cx, BrokerAccounting& jobs, BrokerPromiseAccounting& native,
            ReadinessSet& readiness)
-        : accounting(jobs, native), lifecycle(accounting, readiness), promise(cx), captures(cx), cx(cx) {}
+        : accounting(jobs, native), lifecycle(accounting, readiness), promise(cx), retirement(cx), captures(cx), cx(cx) {}
     ~Record() { JS_free(cx, parameters); JS_free(cx, result); }
   };
   BrokerAccounting& jobs_;
@@ -57,6 +58,8 @@ class Imports final {
       ImportLifecycle::Retirement retirement;
       if (!item->lifecycle.releaseAfterPhysicalDestruction(cx, retirement)) return false;
       NativeOwner record_owner = item->record_owner;
+      const uint32_t id = item->id;
+      JS::RootedObject retirement_promise(cx, item->retirement);
       auto physical = std::move(*link);
       *link = std::move(physical->following);
       physical.reset(); // JS roots/captures/result and C++ record are gone first
@@ -67,6 +70,12 @@ class Imports final {
         failed_record_owner_ = record_owner;
         stopped_ = true;
         return false;
+      }
+      // Only actual destruction and both native acknowledgements permit this
+      // separate completion. Logical cancellation/result rejection does not.
+      if (retirement_promise) {
+        JS::RootedValue identity(cx, JS::NumberValue(id));
+        if (!JS::ResolvePromise(cx, retirement_promise, identity)) return false;
       }
     }
     return true;
@@ -215,6 +224,38 @@ public:
     auto* item = find(id);
     if (!item) return invalid(cx, "cancel-record");
     return rejectCancelled(cx, *item) && item->lifecycle.cancel(cx) && collect(cx);
+  }
+  bool retirementPromise(JSContext* cx, uint32_t id, JS::MutableHandleObject promise) {
+    auto* item = find(id);
+    if (!item || item->lifecycle.phase() == ImportLifecycle::Phase::Retiring ||
+        item->lifecycle.phase() == ImportLifecycle::Phase::Retired)
+      return invalid(cx, "retirement-record");
+    // Ordinary imports allocate no extra Promise. The compiler-owned fetch
+    // seam captures this one before dispatch and retains its exact identity.
+    if (!item->retirement) item->retirement = JS::NewPromiseObject(cx, nullptr);
+    if (!item->retirement) return false;
+    promise.set(item->retirement);
+    return true;
+  }
+  bool cancelWithRetirement(JSContext* cx, uint32_t id, JS::HandleObject retirement) {
+    auto* item = find(id);
+    if (item) {
+      if (!item->retirement || item->retirement.get() != retirement.get())
+        return invalid(cx, "cancel-retirement-identity");
+      return cancel(cx, id);
+    }
+    // IDs are issued monotonically and records disappear only through collect.
+    // A vanished issued ID with no failed acknowledgements is native evidence
+    // of retirement; a fulfilled JS Promise by itself is insufficient.
+    if (!id || (next_id_ != 0 && id >= next_id_) || failed_record_owner_.live ||
+        failed_retirement_.native.live || failed_retirement_.result.live ||
+        !JS::IsPromiseObject(retirement) ||
+        JS::GetPromiseState(retirement) != JS::PromiseState::Fulfilled)
+      return invalid(cx, "cancel-retirement-completion");
+    const auto identity = JS::GetPromiseResult(retirement);
+    if (!identity.isNumber() || identity.toNumber() != id)
+      return invalid(cx, "cancel-retirement-completion");
+    return true;
   }
   bool cancelAll(JSContext* cx) {
     stopped_ = true;

@@ -63,3 +63,24 @@ changes, plus the real #680 provider and cancellation/ownership matrix. The
 successful original 26-case runtime tuple and all earlier failures remain retained
 under the PR #923 worktree; this follow-up does not amend those receipts or close
 #691, #745 or #685.
+
+The private C++ bridge now stages `retired(id)` as a lazy intrinsic Promise for
+the accepted import record. It resolves only after the record, JS captures and
+lowered buffers are destroyed and both native retirement acknowledgements
+succeed. Ordinary imports allocate no additional Promise. Cancellation with the
+captured retirement identity preserves logical rejection separately from this
+completion; the idempotent retired path also verifies native issued-id and
+failed-acknowledgement state instead of trusting a fulfilled JS value alone.
+The original 64-object/resource ceilings and original one-argument cancellation
+path remain intact.
+
+Three additional native fixture cases cover typed-lift retirement, cancellation
+with a physically pending borrow, and identity/unissued-id rejection. The 19
+existing import-source controls and strict syntax-only compilation against the
+pinned actual SpiderMonkey/WASI headers passed. Disk recovery currently keeps
+native linking paused, so these new cases have not yet executed. This source
+checkpoint is not a new engine tuple and cannot reuse the earlier signed runtime
+receipts. Before installation, the compiler still must bind the operation's exact
+id/result/retirement handle into the SDK-owned streaming module, select its
+separate fetch world, rebuild the source-bound engine, and execute all original
+runtime controls plus signed borrowed-read/cancel/drop/reuse cases.
