@@ -87,6 +87,14 @@ impl Profile {
             _ => Err(super::denied()),
         }
     }
+    pub fn require_companion(self, schema: &str) -> Result<(), PlatformError> {
+        let (_, writers) = self.schemas()?;
+        if writers.iter().any(|writer| writer.as_str() == schema) {
+            Ok(())
+        } else {
+            Err(super::denied())
+        }
+    }
     pub fn review(
         self,
         package: [u8; 32],
@@ -332,6 +340,18 @@ mod tests {
             Profile::CurrentDiagnostic,
         ] {
             assert_ne!(profile.conformance().unwrap(), [0; 32]);
+            let (readers, writers) = profile.schemas().unwrap();
+            for schema in &writers {
+                assert!(profile.require_companion(schema.as_str()).is_ok());
+            }
+            for schema in readers.iter().filter(|schema| !writers.contains(schema)) {
+                assert!(profile.require_companion(schema.as_str()).is_err());
+            }
+            assert!(profile
+                .require_companion(
+                    "sha256:e7e054b08ffb740e2b5859747a6efc7086aad826bd11e638f5b3c5dce09253ee"
+                )
+                .is_err());
             for value in [0, 1, u64::MAX] {
                 let bytes = profile.encode(value);
                 let media = if profile.base() == Profile::Writer {

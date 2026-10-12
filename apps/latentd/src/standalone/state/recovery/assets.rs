@@ -1,6 +1,6 @@
 //! Exact admitted package layers retained before any fixed-worker review.
 use super::profile::{Profile, V1, V2};
-use super::selection::InstalledTransactionOperation;
+use super::selection::RecoverySource;
 use latent_artifacts::{
     package::{
         artifact_blob_digest, decode_config, package_digest, LayerRole, PackageConfig,
@@ -17,7 +17,7 @@ use sha2::{Digest, Sha256};
 use std::sync::Arc;
 
 pub(super) struct SchemaEvidence {
-    pub operation: Arc<InstalledTransactionOperation>,
+    pub operation: Arc<RecoverySource>,
     pub schema: ReviewedSchema,
     pub profile: Profile,
     pub artifacts: Vec<RequiredArtifact>,
@@ -29,11 +29,12 @@ pub(super) struct SchemaEvidence {
 )]
 pub(super) fn capture(
     repository: &Arc<DirectoryArtifactRepository>,
-    operation: Arc<InstalledTransactionOperation>,
+    operation: Arc<RecoverySource>,
 ) -> Result<SchemaEvidence, PlatformError> {
     let publication = operation.publication();
     publication.check_current()?;
     let profile = Profile::installed(&publication.release().0)?;
+    profile.require_companion(&operation.asset.get().declaration().state_schema)?;
     let mut names = vec![
         "application-schema-inputs.json",
         "src/dev/latent/app/Capsule.java",
@@ -147,7 +148,7 @@ pub(super) fn capture(
 }
 
 fn required(
-    operation: &InstalledTransactionOperation,
+    operation: &RecoverySource,
     schema: &ReviewedSchema,
 ) -> Result<Vec<RequiredArtifact>, PlatformError> {
     let package = operation

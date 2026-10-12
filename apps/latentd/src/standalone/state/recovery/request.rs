@@ -7,7 +7,17 @@ use std::path::PathBuf;
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct NativeRecoveryRequest {
     pub(super) publication: String,
+    #[serde(default)]
+    pub(super) decoder_sources: Vec<DecoderSource>,
     pub(super) request: Action,
+}
+
+/// Descriptive signed bytes for retained rows, never another current grant.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(super) struct DecoderSource {
+    pub component_digest: String,
+    pub publication: String,
 }
 
 #[derive(Deserialize)]
@@ -96,6 +106,23 @@ impl NativeRecoveryRequest {
             .publication
             .parse::<PublicationId>()
             .map_err(|_| super::denied())?;
+        if request.decoder_sources.len() > 3 {
+            return Err(super::capacity());
+        }
+        for (index, source) in request.decoder_sources.iter().enumerate() {
+            super::assets::digest_bytes(&source.component_digest)?;
+            source
+                .publication
+                .parse::<PublicationId>()
+                .map_err(|_| super::denied())?;
+            if source.publication == request.publication
+                || request.decoder_sources[..index]
+                    .iter()
+                    .any(|prior| prior.publication == source.publication)
+            {
+                return Err(super::denied());
+            }
+        }
         request.request.validate()?;
         Ok(request)
     }
@@ -341,6 +368,48 @@ mod tests {
         ] {
             let mut rejected = valid.clone();
             rejected[key] = value;
+            assert!(decode(rejected).is_err());
+        }
+    }
+
+    #[test]
+    fn native_decoder_sources_are_descriptive_unique_and_bounded_with_the_current_source() {
+        let publication = format!("publication:sha256:{}", "1".repeat(64));
+        let component = format!("sha256:{}", "a".repeat(64));
+        let selector = |digit: char| {
+            serde_json::json!({"componentDigest":component,
+                "publication":format!("publication:sha256:{}", digit.to_string().repeat(64))})
+        };
+        let decode = |sources| {
+            NativeRecoveryRequest::decode(
+                &serde_json::to_vec(&serde_json::json!({"publication":publication,
+                    "decoderSources":sources,"request":{"action":"review"}}))
+                .unwrap(),
+            )
+        };
+        let accepted = decode(serde_json::json!([
+            selector('2'),
+            selector('3'),
+            selector('4')
+        ]))
+        .unwrap();
+        assert_eq!(accepted.decoder_sources.len(), 3);
+        assert_eq!(accepted.request.purposes(), &["namespace-review-recovery"]);
+        let mut authority = selector('2');
+        authority["approved"] = true.into();
+        let mut upper = selector('2');
+        upper["componentDigest"] = format!("sha256:{}", "A".repeat(64)).into();
+        let mut zero = selector('2');
+        zero["componentDigest"] = format!("sha256:{}", "0".repeat(64)).into();
+        for rejected in [
+            serde_json::json!([selector('1')]),
+            serde_json::json!([selector('2'), selector('2')]),
+            serde_json::json!([selector('2'), selector('3'), selector('4'), selector('5')]),
+            serde_json::json!([authority]),
+            serde_json::json!([upper]),
+            serde_json::json!([zero]),
+            serde_json::json!([{"componentDigest":component,"publication":"not-a-publication"}]),
+        ] {
             assert!(decode(rejected).is_err());
         }
     }

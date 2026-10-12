@@ -161,34 +161,28 @@ async fn prepare(
         Some(&floor),
     )?;
     checkpoint.retire().await;
-    let mut selections = Vec::new();
-    for operation in &state.operations {
-        if Some(&operation.tenant) != principal.tenant.as_ref()
-            || super::profile::Profile::installed(&operation.component.0).is_err()
-            || selections.iter().any(
-                |(existing, _): &(
-                    crate::config::state::OperationSettings,
-                    latent_manifest::DeploymentManifest,
-                )| existing.publication == operation.publication,
-            )
-        {
-            continue;
-        }
-        if selections.len() == 4 {
-            return Err(super::capacity());
-        }
-        let deployment = tokio::time::timeout_at(
-            bootstrap.deadline.into(),
-            owners.deployments.get_versioned(
-                &operation.tenant,
-                &latent_core::DeploymentId(operation.deployment.clone()),
-            ),
-        )
-        .await
-        .map_err(|_| super::denied())??
+    // Only the requested, configured current publication supplies authority.
+    // Descriptive historical sources never become competing installations.
+    let input = state
+        .operations
+        .iter()
+        .find(|operation| {
+            Some(&operation.tenant) == principal.tenant.as_ref()
+                && operation.publication.as_str() == request.publication
+        })
+        .cloned()
         .ok_or_else(super::denied)?;
-        selections.push((operation.clone(), deployment.manifest));
-    }
+    super::profile::Profile::installed(&input.component.0)?;
+    let deployment = tokio::time::timeout_at(
+        bootstrap.deadline.into(),
+        owners.deployments.get_versioned(
+            &input.tenant,
+            &latent_core::DeploymentId(input.deployment.clone()),
+        ),
+    )
+    .await
+    .map_err(|_| super::denied())??
+    .ok_or_else(super::denied)?;
     let repository = Arc::clone(owners.artifacts);
     let configuration = state.clone();
     let native = bootstrap.native.clone();
@@ -213,26 +207,30 @@ async fn prepare(
             keeper,
             move |engine| {
                 let result = (|| {
-                    let mut installed = Vec::new();
-                    let mut profiles = Vec::new();
-                    for (input, deployment) in selections {
-                        let operation = super::selection::capture(
+                    let current = super::selection::capture_current(
+                        &repository,
+                        &configuration,
+                        input,
+                        &deployment.manifest,
+                        native,
+                        Arc::clone(&original),
+                    )?;
+                    let mut sources = vec![Arc::clone(&current)];
+                    for selector in &request.decoder_sources {
+                        sources.push(super::selection::capture_decoder(
                             &repository,
-                            &configuration,
-                            input.clone(),
-                            &deployment,
-                            native.clone(),
-                            Arc::clone(&original),
-                        )?;
-                        if let Some(profile) =
-                            super::selection::profile(&operation, &input, &adapters)?
-                        {
+                            &current,
+                            selector,
+                        )?);
+                    }
+                    let mut profiles = Vec::new();
+                    for source in &sources {
+                        if let Some(profile) = super::selection::profile(source, &adapters)? {
                             profiles.push(profile);
                         }
-                        installed.push(operation);
                     }
                     let catalog =
-                        Catalog::capture(&repository, &installed, profiles, &request.publication)?;
+                        Catalog::capture(&repository, &sources, profiles, &request.publication)?;
                     let (profile, digest) = configuration
                         .store
                         .inspection_profile()

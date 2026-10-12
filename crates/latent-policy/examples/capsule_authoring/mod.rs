@@ -15,14 +15,14 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use latent_artifacts::package::{PackageLimits, artifact_blob_digest, package_digest};
+use latent_artifacts::package::{artifact_blob_digest, package_digest, PackageLimits};
 use latent_artifacts::{AdmissionEvidence, ReleaseEvidenceUpload};
 use latent_core::{PublisherId, TenantId};
 use latent_packaging::{write_package_directory, write_package_evidence};
-use latent_policy::supply_chain::{PackageVerificationRequest, verify_package_once};
+use latent_policy::supply_chain::{verify_package_once, PackageVerificationRequest};
 use latent_signing::{
-    LocalBuilderSigner, LocalSigner, PackageSigningSubject, ProvenanceLimits, SignatureLimits,
-    SignatureValidity, generate_signing_key,
+    generate_signing_key, LocalBuilderSigner, LocalSigner, PackageSigningSubject, ProvenanceLimits,
+    SignatureLimits, SignatureValidity,
 };
 use serde_json::json;
 

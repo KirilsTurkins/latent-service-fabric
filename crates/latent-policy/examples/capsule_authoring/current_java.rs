@@ -5,7 +5,7 @@ use latent_artifacts::package::artifact_blob_digest;
 use latent_packaging::read_package_file;
 use serde_json::Value;
 
-use super::{Result, inputs, sign_checked};
+use super::{inputs, sign_checked, Result};
 
 const SOURCE: &str = "9bae83952d9513c965a88d375b2a533916a98473";
 const WORLD: &str = "examples:transactional-aggregate/service@1.0.0";

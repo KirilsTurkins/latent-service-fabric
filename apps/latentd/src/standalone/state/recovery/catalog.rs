@@ -1,5 +1,5 @@
 //! Bounded native decoder closure over actual retained signed package sources.
-use super::selection::{InstalledTransactionOperation, RecoveryProfile};
+use super::selection::{RecoveryProfile, RecoverySource};
 use super::{
     assets::{self, SchemaEvidence},
     profile::Profile,
@@ -28,20 +28,23 @@ pub(super) struct Catalog {
 impl Catalog {
     pub fn capture(
         repository: &Arc<DirectoryArtifactRepository>,
-        installed: &[Arc<InstalledTransactionOperation>],
-        mut effects: Vec<RecoveryProfile>,
+        sources: &[Arc<RecoverySource>],
+        effects: Vec<RecoveryProfile>,
         publication: &str,
     ) -> Result<Self, PlatformError> {
-        if installed.len() > 128 || effects.len() > 128 {
+        if sources.len() > 4 || effects.len() > sources.len() {
             return Err(super::capacity());
         }
-        let original = installed
+        let original = sources
             .iter()
-            .find(|operation| operation.publication().publication().as_str() == publication)
+            .find(|operation| {
+                operation.supplies_current_authority()
+                    && operation.publication().publication().as_str() == publication
+            })
             .ok_or_else(super::denied)?;
         Profile::installed(&original.publication().release().0)?;
         let mut schemas: Vec<SchemaEvidence> = Vec::new();
-        for operation in installed {
+        for operation in sources {
             if operation.target().tenant != original.target().tenant
                 || operation.namespace() != original.namespace()
                 || operation.incarnation() != original.incarnation()
@@ -51,7 +54,7 @@ impl Catalog {
                         == operation.publication().publication()
                 })
             {
-                continue;
+                return Err(super::denied());
             }
             if schemas.len() == latent_state::namespace::compatibility::REVISIONS_PER_COMPOSITION {
                 return Err(super::capacity());
@@ -62,20 +65,23 @@ impl Catalog {
             .iter()
             .position(|schema| schema.operation.publication().publication().as_str() == publication)
             .ok_or_else(super::denied)?;
-        effects.retain(|effect| {
-            effect.scope.tenant == original.target().tenant.0
+        if effects.iter().any(|effect| {
+            !(effect.scope.tenant == original.target().tenant.0
                 && effect.scope.namespace == original.namespace()
                 && effect.scope.incarnation == original.incarnation()
                 && schemas.iter().any(|schema| {
                     schema.operation.publication().publication().as_str()
                         == effect.scope.publication
-                })
-        });
+                }))
+        }) {
+            return Err(super::denied());
+        }
+        let artifacts = required_artifacts(&schemas)?;
         let mut catalog = Self {
             selected,
             schemas,
             effects,
-            artifacts: Vec::new(),
+            artifacts,
             formats: formats(),
         };
         catalog.formats.extend([
@@ -83,26 +89,6 @@ impl Catalog {
             latent_state::recovery::resume::retained_format(),
             latent_state::recovery::namespace_resume::retained_format(),
         ]);
-        for evidence in &catalog.schemas {
-            for artifact in &evidence.artifacts {
-                if let Some(prior) = catalog
-                    .artifacts
-                    .iter()
-                    .find(|prior| prior.identity == artifact.identity)
-                {
-                    if prior != artifact {
-                        return Err(super::denied());
-                    }
-                } else {
-                    if catalog.artifacts.len()
-                        == latent_state::recovery::snapshot::SNAPSHOT_ARTIFACTS
-                    {
-                        return Err(super::capacity());
-                    }
-                    catalog.artifacts.push(artifact.clone());
-                }
-            }
-        }
         for effect in &catalog.effects {
             for (kind, identity) in [
                 (RetainedKind::EffectPayload, &effect.profile.payload_format),
@@ -125,9 +111,6 @@ impl Catalog {
         RetainedInventory::default()
             .require_decoders(&catalog.formats)
             .map_err(|_| super::denied())?;
-        catalog
-            .artifacts
-            .sort_by(|one, two| one.identity.cmp(&two.identity));
         catalog.formats.sort();
         Ok(catalog)
     }
@@ -398,18 +381,35 @@ impl Catalog {
                     && operation.publication().release().0 == source.release_digest
                     && operation.publication().release().0 == source.component_digest
                     && operation.contract_digest == source.contract_digest
-                    && evidence
-                        .schema
-                        .declaration()
-                        .readers
-                        .iter()
-                        .any(|schema| schema.as_str() == source.state_schema)
+                    && operation.asset.get().declaration().state_schema == source.state_schema
             })
         {
             return Err(StoreError::UnsupportedFormat);
         }
         Ok(())
     }
+}
+fn required_artifacts(schemas: &[SchemaEvidence]) -> Result<Vec<RequiredArtifact>, PlatformError> {
+    let mut artifacts: Vec<RequiredArtifact> = Vec::new();
+    for evidence in schemas {
+        for artifact in &evidence.artifacts {
+            if let Some(prior) = artifacts
+                .iter()
+                .find(|prior| prior.identity == artifact.identity)
+            {
+                if prior != artifact {
+                    return Err(super::denied());
+                }
+            } else {
+                if artifacts.len() == latent_state::recovery::snapshot::SNAPSHOT_ARTIFACTS {
+                    return Err(super::capacity());
+                }
+                artifacts.push(artifact.clone());
+            }
+        }
+    }
+    artifacts.sort_by(|one, two| one.identity.cmp(&two.identity));
+    Ok(artifacts)
 }
 fn observe(
     inventory: &mut RetainedInventory,

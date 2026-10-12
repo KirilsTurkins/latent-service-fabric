@@ -38,7 +38,8 @@ impl Authority {
         host: &NativeProfile<'_>,
     ) -> Result<Self, PlatformError> {
         let op = &evidence.operation;
-        if principal.kind != PrincipalKind::Administrator
+        if !op.supplies_current_authority()
+            || principal.kind != PrincipalKind::Administrator
             || principal.tenant.as_ref() != Some(&op.target.tenant)
         {
             return Err(super::denied());

@@ -40,10 +40,29 @@ impl Codecs {
         runtime.update(serde_json::to_vec(&catalog.formats).map_err(|_| StoreError::Invalid)?);
         let runtime: [u8; 32] = runtime.finalize().into();
         let mut review = Sha256::new();
-        review.update(b"latent.current.native-schema-review.v2\0");
+        review.update(b"latent.current.native-schema-review.v3\0");
         review.update(runtime);
         review.update(catalog.primary().schema.proof_digest());
         review.update(catalog.primary().schema.declaration_digest());
+        let mut sources = catalog.schemas.iter().collect::<Vec<_>>();
+        sources.sort_by(|one, two| {
+            one.operation
+                .publication()
+                .publication()
+                .as_str()
+                .cmp(two.operation.publication().publication().as_str())
+        });
+        for source in sources {
+            for identity in [
+                source.operation.publication().publication().as_str(),
+                &source.operation.publication().release().0,
+            ] {
+                review.update((identity.len() as u64).to_le_bytes());
+                review.update(identity.as_bytes());
+            }
+            review.update(source.schema.proof_digest());
+            review.update(source.schema.declaration_digest());
+        }
         review.update((actor.len() as u64).to_le_bytes());
         review.update(actor.as_bytes());
         Ok((runtime, review.finalize().into()))

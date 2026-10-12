@@ -18,7 +18,11 @@ state-mode file; offline requests cannot create a missing source store.
 
 Invoke `transaction_recovery --config CONFIG --credential-file FILE --tenant
 TENANT --request-file REQUEST`. The protected request is at most 16 KiB and has
-exactly `publication` and `request`. Neither digests nor paths convey authority.
+`publication`, `request`, and optional `decoderSources`. Neither digests nor
+paths convey authority. Decoder selectors are closed objects containing only
+`componentDigest` and `publication`; at most three extra publications are
+accepted, and neither duplicates nor the requested current publication may
+appear in that list.
 Current action fields are:
 
 | Action | Fields in `request`, in addition to `action` |
@@ -42,6 +46,23 @@ encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.
 Generic resume refuses a retained current migration and cannot replace its
 protected checkpoint and activation owner. Old v1 recipes and bytes retain
 their own approval boundary.
+
+The requested publication must match a configured current operation and its
+actual current deployment. Each extra source independently captures eligible
+signed package bytes and the reviewed component, companion, contract, schema,
+Java source and current HTTP marker. It must match the current tenant, capsule,
+logical deployment, binding, namespace and incarnation. These sources install
+no operation, grant or dispatch rule. Only the requested current source supplies
+purpose-specific policy decisions. Every selected publication remains subject
+to the final currentness fences; unknown or incomplete retained sources refuse.
+The review digest includes all selected signed source identities and proofs.
+Retained command source schemas must equal their exact signed companion schema;
+a compatible reader cannot relabel its original execution source, and the
+distinct generic aggregate schema remains unsupported by this reviewed closure.
+
+Ordinary runtime configuration selects one publication's three operations.
+Historical decoder sources cannot bypass the runtime's current deployment and
+publication checks, and a descriptive source cannot become an authority source.
 
 The output schema is `latent.native-transaction-recovery.v2`. Its six fields
 are `schemaVersion`, `operationSucceeded`, `failure`, `result`, `retirement`,
@@ -107,8 +128,22 @@ public synthetic trust policy. It produced
 for `https://localhost:52027/effect`, the `e` repeated 64 times incarnation,
 27-byte request/payload, 2048-byte response/encoded response, 8192 header bytes,
 32 headers and zero redirects. Neither business nor checkpoint files were
-created. Private exact evidence is `target/recovery970/current-http-preview-r4`
-and binary build attempt 2; only descriptive evidence is publishable.
+created. The earlier r4 preview binds an uncommitted all-features product.
+The later r5 preview independently passed with frozen committed source
+`a37aa97780a15aee55b049cdb23833b0474386d6`, its exact Cargo default-feature
+artifact graph, node digest
+`1ef7ae4c3782a417a6bc61ff8f01c52e76f8c32de7994d24d022885a46362983`,
+the same profile and no business/checkpoint files. These are constructor
+controls, not a signed recovery campaign.
+
+The raw default debug node, helper, CLI and AOT products exceed the existing
+256 MiB conductor material ceiling. That refusal is retained. Separate copied
+products remove only nonallocated debug sections with GNU strip 2.40 and record
+both original and transformed byte identities. Every allocated ELF section and
+program-header byte compares identical; original Cargo artifacts remain
+unchanged. All transformed products fit the same ceiling, while the bounded
+contracts and signer products retain their original bytes. The recipe and
+products are fixture evidence, separate from production operator qualification.
 
 ## Qualification boundaries
 
@@ -118,6 +153,9 @@ preserved broad-profile refusal. Eight actual custody controls, five actual
 adoption controls and three current NRS2 accounting/final-fence/immutable replay
 controls passed. Encoded row/manifest limits refuse before reading the declared
 body. Original failed attempts remain retained in the private evidence root.
+The decoder-selector update passed all 326 active `latentd` library controls
+with 30 existing ignored qualification cases retained, plus the maintained
+strict Clippy policy. The complete signed Java gateway campaign remains pending.
 
 These physical controls use explicit native codec/authority fixtures. They do
 not replace the complete authenticated signed Java backup/restore/close campaign,

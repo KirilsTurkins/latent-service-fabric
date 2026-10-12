@@ -1,17 +1,17 @@
 use std::{collections::BTreeMap, path::Path};
 
-use latent_artifacts::package::{LayerRole, PackageLimits, artifact_blob_digest, decode_wit_lock};
+use latent_artifacts::package::{artifact_blob_digest, decode_wit_lock, LayerRole, PackageLimits};
 use latent_packaging::{
+    build_package_with_sbom, decode_package_source, read_package_file, read_package_input,
     PackageBundle, PackageInput, PackagingLimits, SbomDependencyCompleteness, SbomDigestScope,
-    SbomEntryKind, SbomEntryOrigin, SbomInventory, SbomInventoryEntry, build_package_with_sbom,
-    decode_package_source, read_package_file, read_package_input,
+    SbomEntryKind, SbomEntryOrigin, SbomInventory, SbomInventoryEntry,
 };
 use latent_signing::{
-    BuildObservation, BuildRecipe, C_GUEST_BUILD_TYPE, DOTNET_CAPSULE_BUILD_TYPE,
-    GO_CAPSULE_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE, ProvenanceLimits, RUST_CAPSULE_BUILD_TYPE,
-    TYPESCRIPT_CAPSULE_BUILD_TYPE, decode_build_observation,
+    decode_build_observation, BuildObservation, BuildRecipe, ProvenanceLimits, C_GUEST_BUILD_TYPE,
+    DOTNET_CAPSULE_BUILD_TYPE, GO_CAPSULE_BUILD_TYPE, JAVA_CAPSULE_BUILD_TYPE,
+    RUST_CAPSULE_BUILD_TYPE, TYPESCRIPT_CAPSULE_BUILD_TYPE,
 };
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use super::{Result, TENANT};
 
