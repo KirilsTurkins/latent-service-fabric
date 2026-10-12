@@ -29,9 +29,22 @@ class Node:
         self.client, self.executable, self.directory = client, executable, directory
         self.process, self.ordinal = None, 0
         self.shutdown = []
+        self.restore_authority_sessions = 0
 
-    def start(self, configuration: Path):
-        require(self.process is None and self.ordinal < 6, "bounded-exclusive-node-session")
+    def start(self, configuration: Path, *, restore_authority=False):
+        require(type(restore_authority) is bool, "explicit-restore-authority-session")
+        if restore_authority:
+            settings = read_json(configuration)
+            state = settings.get("state")
+            require(self.process is None and self.restore_authority_sessions == 0
+                    and isinstance(state, dict) and type(state.get("formatVersion")) is int
+                    and state.get("formatVersion") == 2
+                    and state.get("operations") == [] and state.get("createIfMissing") is False,
+                    "bounded-current-restore-authority-session")
+            self.restore_authority_sessions += 1
+        else:
+            require(self.process is None and self.ordinal - self.restore_authority_sessions < 6,
+                    "bounded-exclusive-node-session")
         self.ordinal += 1
         process = Process([str(self.executable), "serve", "--config", str(configuration)], self.directory,
             dict(self.client.environment, HOME=str(self.directory)), self.client.cancellation, maximum=262144)
@@ -200,11 +213,13 @@ def publish(client, signed: Path, items) -> dict[str, str]:
     return result
 
 
-def inspect(client, node: Path, configuration: Path, operations, *, stage="transaction-host-inspection"):
+def inspect(client, node: Path, configuration: Path, operations, *, stage="transaction-host-inspection",
+            intent_operation="put-once"):
     from .policies import ObservedHosts
     value = decode(native(client, node, stage, "inspect-transaction-hosts",
                           "--config", configuration, timeout=120), 262144)
-    return ObservedHosts.read(value, operations, diagnostic=len(operations) == 15)
+    return ObservedHosts.read(value, operations, diagnostic=len(operations) == 15,
+                              intent_operation=intent_operation)
 
 
 def namespace_arguments(publication: str):

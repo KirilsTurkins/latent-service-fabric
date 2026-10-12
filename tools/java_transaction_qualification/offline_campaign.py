@@ -10,7 +10,8 @@ from pathlib import Path
 
 from tools.phase2_operator_process import read_json, write_json
 
-from . import configuration as cfg, http, lifecycle, provider, recovery
+from . import configuration as cfg, http, lifecycle, policies, provider, recovery
+from . import restore_authority, restore_installation
 from .campaign import command_input, precondition, rpc_result
 from .inputs import require
 
@@ -69,6 +70,7 @@ class OfflineCampaign:
         self.writer = "put-once-writer-v2"
         self.publication = campaign.publications[self.writer]
         self.configuration = campaign.full_path
+        self.current_v2 = read_json(self.configuration)["state"]["formatVersion"] == 2
 
     def action(self, request, *, action=None):
         original = self.native.run(self.configuration, self.publication, request)
@@ -134,8 +136,14 @@ class OfflineCampaign:
         # Capture the quiesced V2 state before any later command. All effects in
         # this profile were already positively acknowledged by the base campaign.
         snapshot_file, snapshot = self.snapshot("restore-checkpoint-v2.snapshot", "java-restore-checkpoint")
-        resumed = self.action({"action": "resume", "operationId": "java-schema-resume",
-            "expectedView": recovery.original_view(after["view"])})
+        resume_request = {"action": "resume", "operationId": "java-schema-resume",
+                          "expectedView": recovery.original_view(after["view"])}
+        if self.current_v2:
+            resume_request.update(action="resume-migration", migrationOperationId=migration["operationId"],
+                                  file=file, migrationExpectedView=migration["expectedView"],
+                                  checkpointDigest=migration["checkpointDigest"],
+                                  checkpointManifestDigest=migration["checkpointManifestDigest"])
+        resumed = self.action(resume_request)
         self.node.start(self.configuration)
         lifecycle.deploy(self.client, self.campaign.signed, self.campaign.items[self.writer], self.publication,
             self.campaign.proposals["deploymentGrants"], self.campaign.configuration.authority)
@@ -162,10 +170,23 @@ class OfflineCampaign:
         self.quiesce(self.publication, "java-restore-quiesce")
         original_settings = read_json(self.configuration)
         destination = self.directory / "restored-state"
+        checkpoint_destination = None
+        data_destination = None
+        if self.current_v2:
+            data_destination = self.directory / "restored-data"
+            copied = restore_installation.catalogs(self.client, self.node,
+                Path(original_settings["dataDirectory"]), data_destination,
+                Path(original_settings["state"]["checkpointRoot"]))
+            self.client.evidence.record("stopped-catalog-custody-copy", copied)
+            destination = data_destination / "state"
+            checkpoint_destination = self.directory / "restored-checkpoint"
         require(destination.is_absolute() and not destination.exists() and not destination.is_symlink(),
                 "fresh-native-restore-destination")
         request = {"file": file, "destinationRoot": str(destination),
             "operationId": "java-explicit-restore", "snapshotDigest": snapshot["snapshotDigest"]}
+        if self.current_v2:
+            request.update(destinationCheckpointRoot=str(checkpoint_destination),
+                           manifestDigest=snapshot["manifestDigest"])
         window = self.action(dict(request, action="inspect-restore"))
         require(window["snapshot"]["snapshotDigest"] == snapshot["snapshotDigest"]
                 and window["snapshot"]["manifestDigest"] == snapshot["manifestDigest"],
@@ -175,7 +196,8 @@ class OfflineCampaign:
         require(restored["snapshotDigest"] == snapshot["snapshotDigest"]
                 and restored["manifestDigest"] == snapshot["manifestDigest"], "original-native-restored-snapshot")
         require(self.recipient("restored-before-review") == recipient, "restored-history-does-not-redrive-before-review")
-        settings = restored_configuration(original_settings, destination)
+        settings = (restore_installation.selection(original_settings, data_destination, checkpoint_destination)
+                    if self.current_v2 else restored_configuration(original_settings, destination))
         self.configuration = self.campaign.full_path.parent / "restored-node.json"
         write_json(self.configuration, settings)
         self.configuration.chmod(0o600)
@@ -184,6 +206,8 @@ class OfflineCampaign:
             "originalDestinationIdentity": restored["destinationIdentity"],
             "originalDataDirectory": original_settings["dataDirectory"],
             "creationNarrowed": True, "currentAuthorityInferred": False})
+        if self.current_v2:
+            self.refresh_authority(settings)
         reviewed = self.action({"action": "review"})
         observed = self.inspect()
         requested = recovery.original_view(observed["view"])
@@ -206,6 +230,33 @@ class OfflineCampaign:
             "review": reviewed, "resume": resumed, "freshQuery": recovered,
             "postBackupOriginal": changed, "postBackupResultStatus": lost["status"],
             "originalCommandRerun": False, "pendingEffectRestoreQualified": False})
+
+    def refresh_authority(self, settings):
+        require(settings["state"]["formatVersion"] == 2 and not settings["state"]["createIfMissing"],
+                "current-restored-configuration-required")
+        operations = settings["state"]["operations"]
+        hosts = lifecycle.inspect(self.client, self.node.executable, self.configuration, operations,
+                                  stage="restored-transaction-host-inspection", intent_operation="http")
+        diagnostic = len(operations) == 15
+        proposals = policies.documents(hosts, self.campaign.publications, diagnostic=diagnostic)
+        paused = copy.deepcopy(settings)
+        paused["state"]["operations"] = []
+        path = self.configuration.parent / "restored-authority-node.json"
+        write_json(path, paused)
+        path.chmod(0o600)
+        self.node.start(path, restore_authority=True)
+        try:
+            directory = self.directory / "restored-authority-inputs"
+            directory.mkdir(mode=0o700)
+            program = restore_authority.prepare(self.client, proposals, directory)
+            self.client.evidence.record("restored-current-authority-program", program)
+            receipts = restore_authority.apply(self.client, proposals, directory, program)
+            self.campaign.proposals = proposals
+            self.campaign.policy_receipts = receipts
+            self.client.evidence.passed("restored-current-authority-mutations", receipts)
+        finally:
+            self.node.stop()
+        lifecycle.admission_lease_interval(self.client)
 
     def execute(self):
         count = 2**32 + 3

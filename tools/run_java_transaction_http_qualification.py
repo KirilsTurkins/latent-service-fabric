@@ -45,7 +45,9 @@ COLLECTORS = ("tools/run_java_transaction_http_qualification.py", "tools/phase2_
     "tools/java_transaction_qualification/current_inputs.py",
     "tools/java_transaction_qualification/current_campaign.py")
 COLLECTORS += ("tools/java_transaction_qualification/refusal_observation.py",
-               "tools/java_transaction_qualification/state_configuration.py")
+               "tools/java_transaction_qualification/state_configuration.py",
+               "tools/java_transaction_qualification/restore_installation.py",
+               "tools/java_transaction_qualification/restore_authority.py")
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",

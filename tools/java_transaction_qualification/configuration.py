@@ -87,7 +87,7 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
     value.update(securityProfile="external-capsule-v1",
         limits={"maximumComponentBytes": 32 * 1024 * 1024, "maximumPayloadBytes": 2 * 1024 * 1024},
         budgetProfile={"mode": "phase4", "maximumStateReadBytes": 4194304,
-                       "maximumStateWriteBytes": 2097152, "maximumEffects": 1},
+                       "maximumStateWriteBytes": 2097152, "maximumEffectCount": 1},
         capabilityPolicies={"formatVersion": 1, "maximumControlJobs": 2,
             "store": {"maximumRecords": 64, "maximumOutcomes": 256, "maximumCatalogBytes": 4194304,
                       "maximumReadOwners": 64, "maximumPageRecords": POLICY_PAGE_RECORDS}})
