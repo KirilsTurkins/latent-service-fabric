@@ -155,10 +155,13 @@
         771
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 856,
+      "currentDeliveryHead": "5b0829c57751bb5c0cf8417d4ddbb4b195757476",
+      "currentTitle": "Reconcile .NET standard resources and explicit wall clock"
     },
     {
       "pullRequest": 857,
@@ -1355,10 +1358,13 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 895,
+      "currentDeliveryHead": "e2824447b087d03dced34fd89d470aa73dd3ef37",
+      "currentTitle": "Qualify ordinary Java server revision lifecycle"
     },
     {
       "pullRequest": 896,
@@ -1587,12 +1593,17 @@
         743
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
+      "disposition": "reconciled-merged",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
+      "closed": true,
       "currentDeliveryPr": 902,
-      "currentDeliveryHead": "cac1f208dafe48896655a01192e5e3dd4bee0941"
+      "currentDeliveryHead": "cac1f208dafe48896655a01192e5e3dd4bee0941",
+      "deliveredHead": "eb8b43aee9c506b8633e15d3a1cef9500edb4adc",
+      "mergeCommit": "b9ae12dccfcab257c5dc5db04418016e5fe1157a",
+      "mergedAt": "2026-10-12T17:35:39Z",
+      "exactHeadChecks": 51,
+      "reconciliation": "Current source and bounded qualification reconciled; accepted after every exact-head hosted check passed or skipped. Whole-ticket acceptance remains open."
     },
     {
       "pullRequest": 903,
@@ -1910,12 +1921,17 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
+      "disposition": "reconciled-merged",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
+      "closed": true,
       "currentDeliveryPr": 912,
-      "currentDeliveryHead": "0800b333ce5d89512c38e5dfb8f29466d489c376"
+      "currentDeliveryHead": "0800b333ce5d89512c38e5dfb8f29466d489c376",
+      "deliveredHead": "1ff8f1d02f3f104fb057680bb0882e56cddee4b5",
+      "mergeCommit": "fec1092b4d9cc6c2b73aaac9e92acb1c307802cb",
+      "mergedAt": "2026-10-12T18:43:45Z",
+      "exactHeadChecks": 51,
+      "reconciliation": "Current source and bounded qualification reconciled; accepted after every exact-head hosted check passed or skipped. Whole-ticket acceptance remains open."
     },
     {
       "pullRequest": 913,
@@ -2120,10 +2136,13 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 923,
+      "currentDeliveryHead": "821910a60e0923e94582a3a34a50f58fd3960717",
+      "currentTitle": "Fix signed TypeScript Promise lifecycle and reconcile runtime snapshots"
     },
     {
       "pullRequest": 924,
@@ -3030,10 +3049,13 @@
         850
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 958,
+      "currentDeliveryHead": "6ddace407529db9a9581f0e7f167937e8428df58",
+      "currentTitle": "Preserve original effect association refusals on current RPC owners"
     },
     {
       "pullRequest": 959,
@@ -3364,10 +3386,13 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 968,
+      "currentDeliveryHead": "4cf4dbc7567a38a4a2ab89702c94bade56e02556",
+      "currentTitle": "Reconcile Java transaction value captures and finite refusal observations"
     },
     {
       "pullRequest": 969,
@@ -3433,10 +3458,13 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "active-current-owner-reconciliation",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 970,
+      "currentDeliveryHead": "8016f37f48d66fd6f87bdcf9ee0cf5655dc7a4d7",
+      "currentTitle": "WIP cleanup snapshot: fb2-pending-recovery-current53-r1"
     },
     {
       "pullRequest": 971,
@@ -3708,5 +3736,6 @@
       "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     }
   ],
-  "remainingOpenCount": 13
+  "remainingOpenCount": 13,
+  "lastVerifiedOpenCount": 11
 }
