@@ -6,8 +6,11 @@
 //! result-read authority. No default permissive runtime is supplied.
 
 mod lease;
+mod local_transaction;
 mod public_error;
 mod state_management;
+pub use local_transaction::projection::response as project_transaction_completion;
+pub use local_transaction::{LocalTransactionRuntime, LocalTransactionServices};
 pub use state_management::{
     StateManagementAdmission, StateManagementBackend, StateManagementBinding,
     StateManagementRecoveryAdmission, StateManagementReservation, StateManagementServices,
@@ -68,6 +71,11 @@ impl OwnedPhase4Response {
     #[must_use]
     pub fn new(response: contract::Response, owner: Arc<dyn Phase4ResponseOwner>) -> Self {
         Self { response, owner }
+    }
+    /// Keep the original current-purpose owner beside any transport projection.
+    #[must_use]
+    pub fn into_parts(self) -> (contract::Response, Arc<dyn Phase4ResponseOwner>) {
+        (self.response, self.owner)
     }
 }
 
@@ -177,15 +185,25 @@ impl Phase4ServiceAdapter {
                 .max_encoding_message_size(output),
         )
     }
-    fn context<T>(
+    fn context<T: ArrivingCall>(
         &self,
         request: &mut Request<T>,
     ) -> Result<AuthenticatedInvocationContext, Status> {
-        take_context(
+        let context = take_context(
             request,
             &self.limits.auth,
             self.services.principals.as_ref(),
-        )
+        )?;
+        match request.get_ref().invocation() {
+            Some(invocation) => crate::invocation::pin_transaction_arrival(
+                request,
+                invocation,
+                context,
+                self.services.clock.as_ref(),
+                &self.limits.auth,
+            ),
+            None => Ok(context),
+        }
     }
     async fn execute(
         &self,
@@ -279,6 +297,41 @@ fn fence_error() -> PlatformError {
         details: Vec::new(),
     }
 }
+
+trait ArrivingCall {
+    fn invocation(&self) -> Option<&latent_rpc::invocation::v1::InvokeRequest> {
+        None
+    }
+}
+impl ArrivingCall for t::InvokeCommandRequest {
+    fn invocation(&self) -> Option<&latent_rpc::invocation::v1::InvokeRequest> {
+        self.invocation.as_ref()
+    }
+}
+impl ArrivingCall for t::QueryRequest {
+    fn invocation(&self) -> Option<&latent_rpc::invocation::v1::InvokeRequest> {
+        self.invocation.as_ref()
+    }
+}
+macro_rules! management_arrival {
+    ($($request:ty),+ $(,)?) => { $(impl ArrivingCall for $request {})+ };
+}
+management_arrival!(
+    c::InspectNamespaceRequest,
+    c::MutateNamespaceRequest,
+    c::SelectEntityRequest,
+    c::MutateStateRequest,
+    c::PlanEffectMutationRequest,
+    c::GetStateOperationReceiptRequest,
+    c::InspectDispatcherRequest,
+    c::ControlDispatcherRequest,
+    c::GetDispatcherOperationRequest,
+    t::LookupCommandRequest,
+    t::LookupCommitRequest,
+    t::GetEffectRequest,
+    t::ListEffectHistoryRequest,
+    t::CancelCommandRequest,
+);
 
 macro_rules! service {
     ($service:path; $(($name:ident,$request:ty,$response:ty,$variant:ident)),+ $(,)?) => {

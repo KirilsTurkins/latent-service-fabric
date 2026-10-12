@@ -3,6 +3,7 @@
 mod capacity;
 mod fixture;
 mod history;
+mod response;
 
 use super::*;
 use crate::TransactionActivationAdmission;

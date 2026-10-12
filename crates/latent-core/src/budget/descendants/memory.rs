@@ -8,8 +8,8 @@ impl ActivationBudget {
         let occupied = state
             .own_memory_peak
             .max(state.pending_runtime_memory.unwrap_or(0))
-            + state.host_reserved_memory
-            + state.child_reserved_memory;
+            + state.child_reserved_memory
+            + state.host_reserved_memory;
         let limit = self.granted().memory_bytes;
         if bytes > limit - occupied {
             return Err(BudgetError::Exhausted {
@@ -29,14 +29,16 @@ impl ActivationBudget {
     ) -> Result<(), BudgetError> {
         let limit = self.granted().memory_bytes;
         if bytes.max(state.pending_runtime_memory.unwrap_or(0))
-            > limit.saturating_sub(state.child_reserved_memory + state.host_reserved_memory)
+            > limit
+                .saturating_sub(state.child_reserved_memory)
+                .saturating_sub(state.host_reserved_memory)
         {
             return Err(BudgetError::Exhausted {
                 dimension: BudgetDimension::MemoryBytes,
                 limit,
                 consumed: state.own_memory_peak
-                    + state.host_reserved_memory
-                    + state.child_reserved_memory,
+                    + state.child_reserved_memory
+                    + state.host_reserved_memory,
                 requested: bytes,
             });
         }

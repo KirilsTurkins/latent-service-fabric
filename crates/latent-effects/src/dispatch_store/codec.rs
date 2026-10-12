@@ -169,6 +169,13 @@ pub struct HistoryRecord {
 }
 
 impl HistoryRecord {
+    /// Original durable attempt receipt codec, never provider confirmation or
+    /// permission to resend an effect after recovery.
+    #[must_use]
+    pub const fn durable_format(&self) -> (&'static str, u32) {
+        ("latent.effect-attempt.v1", 1)
+    }
+
     pub fn key(&self) -> Result<RowKey, StoreError> {
         history_key(&self.effect, self.sequence)
     }

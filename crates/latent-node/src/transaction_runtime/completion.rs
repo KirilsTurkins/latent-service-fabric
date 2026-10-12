@@ -270,7 +270,7 @@ fn publish_fenced(
         _ => {
             return PreparedDisposition::RecoveryRequired {
                 identity: Box::new(envelope.command().clone()),
-            }
+            };
         }
     };
     // Copy only the already-owned namespace expectation, never the potentially

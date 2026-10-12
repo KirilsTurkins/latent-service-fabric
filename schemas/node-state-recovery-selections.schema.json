@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/node-state-recovery-selections.schema.json",
+  "title": "Named management effect recovery selection constraints",
+  "description": "Value of state.recoverySelections. Omission in protected node configuration defaults to an empty table. Selecting a name grants no read, execution or action authority; current authenticated principal, publication and state policy must approve the exact tuple. Application command/query admission remains original-caller. Rust additionally enforces UTF-8 byte limits and unique selector identities.",
+  "type": "array",
+  "maxItems": 128,
+  "uniqueItems": true,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "selector",
+      "selection"
+    ],
+    "properties": {
+      "selector": {
+        "$ref": "#/$defs/identity"
+      },
+      "selection": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "original-caller"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "service-integration"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "name"
+            ],
+            "properties": {
+              "kind": {
+                "const": "shared"
+              },
+              "name": {
+                "$ref": "#/$defs/identity"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "delegation",
+              "service"
+            ],
+            "properties": {
+              "kind": {
+                "const": "delegated"
+              },
+              "delegation": {
+                "$ref": "#/$defs/identity"
+              },
+              "service": {
+                "$ref": "#/$defs/identity"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$(?![\\s\\S])"
+    }
+  }
+}

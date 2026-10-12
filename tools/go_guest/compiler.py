@@ -8,7 +8,7 @@ import re
 import shutil
 
 from tools.build_observation import file_identity
-from tools.go_guest.runtime import overlay
+from tools.go_guest.runtime import PREIMAGES, checked_sources, overlay
 from tools.go_guest.sdk import export_declarations, install
 from tools.rust_capsule_project import digest, inventory, read_file, snapshot, write_json
 
@@ -69,6 +69,7 @@ class Compiler:
         if self.run("validator-version", "wasm-tools", "--version").split()[:2] != ["wasm-tools", "1.254.0"]:
             raise ValueError("unreviewed-go-component-validator")
         self.goroot = Path(self.run("go-root", "go", "env", "GOROOT").strip())
+        checked_sources(self.goroot, PREIMAGES)
         if application_closure is not None:
             from tools.captured_compiler_isolation import Isolation
             selected_tools = dict(self.paths)

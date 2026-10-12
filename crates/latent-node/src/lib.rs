@@ -7,6 +7,8 @@ mod activation_runner;
 mod budgeted_activation;
 mod budgeted_execution;
 mod cancellation;
+/// Finite delivery notifications; durable command outcomes remain in `latent-commit`.
+pub mod command_waiters;
 mod currentness_read_timer;
 mod inventory;
 mod journal;

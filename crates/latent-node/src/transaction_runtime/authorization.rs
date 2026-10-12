@@ -1,4 +1,5 @@
 //! Fresh policy intersection with the original captured namespace decision.
+mod recovery;
 use latent_artifacts::ReleaseUseEligibility;
 use latent_capabilities::namespace::{NamespaceAuthority, INTENT_CONTRACT, STATE_CONTRACT};
 use latent_core::{ActivationBudget, InvocationPrincipal, PlatformError, PlatformErrorCode};
@@ -150,6 +151,22 @@ impl StateAuthorization {
 
     pub(super) fn authorize_query_completion(&self) -> Result<(), PlatformError> {
         self.evaluate("query-info", 0, 0, true, |_| Ok(()))
+    }
+
+    pub(super) fn with_response_current(
+        &self,
+        operation: &str,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        self.evaluate(operation, 0, 0, true, |decision| {
+            self.authority.with_retained_response(
+                &self.policy,
+                decision,
+                &self.namespace,
+                operation,
+                action,
+            )
+        })
     }
 
     fn evaluate<T>(

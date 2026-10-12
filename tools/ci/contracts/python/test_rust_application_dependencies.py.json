@@ -1,5 +1,5 @@
 {
-  "cases":["CargoDependencies.test_build_macros_need_explicit_separate_isolated_stage","CargoDependencies.test_external_path_not_selected_by_native_resolver_fails","CargoDependencies.test_native_graph_must_include_every_selected_dependency","CargoDependencies.test_native_root_manifest_cannot_silently_ignore_edits","CargoDependencies.test_native_vendor_configuration_is_owned_offline_and_attributable","CargoDependencies.test_normal_path_declarations_require_reviewed_capture_extension","CargoDependencies.test_package_coordinates_are_provenance_without_catalogue_membership","CargoDependencies.test_selected_native_paths_relocate_without_changing_source_bytes","DirectFixtureLibraries.test_ambiguous_root_or_forged_artifact_cannot_claim_native_selection","DirectFixtureLibraries.test_dependency_unselected_for_actual_target_cannot_claim_application_selection","DirectFixtureLibraries.test_transitive_presence_cannot_replace_independent_application_selection","DirectFixtureLibraries.test_two_ordinary_application_libraries_bind_exact_native_artifacts"],
+  "cases":["CargoDependencies.test_build_macros_need_explicit_separate_isolated_stage","CargoDependencies.test_external_path_not_selected_by_native_resolver_fails","CargoDependencies.test_native_graph_must_include_every_selected_dependency","CargoDependencies.test_native_root_manifest_cannot_silently_ignore_edits","CargoDependencies.test_native_vendor_configuration_is_owned_offline_and_attributable","CargoDependencies.test_normal_path_declarations_require_reviewed_capture_extension","CargoDependencies.test_package_coordinates_are_provenance_without_catalogue_membership","CargoDependencies.test_selected_native_paths_relocate_without_changing_source_bytes","DirectFixtureLibraries.test_ambiguous_root_or_forged_artifact_cannot_claim_native_selection","DirectFixtureLibraries.test_dependency_unselected_for_actual_target_cannot_claim_application_selection","DirectFixtureLibraries.test_transitive_presence_cannot_replace_independent_application_selection","DirectFixtureLibraries.test_two_ordinary_application_libraries_bind_exact_native_artifacts","StagedRustLinker.test_captured_compiler_discovers_staged_zig_without_inherited_tool_paths","StagedRustLinker.test_wrong_staged_zig_version_fails_before_linker_or_compiler_selection"],
   "guards":{
     "CargoDependencies.test_build_macros_need_explicit_separate_isolated_stage":
       "bb5dbdf7f67fea6d1bc50dccd968d71d903641b99e9612025a237b3b1ef683a9",
@@ -24,14 +24,19 @@
     "DirectFixtureLibraries.test_transitive_presence_cannot_replace_independent_application_selection":
       "33909e1da222f213e81a13e464e1751e3f557a83f7f7dcf41effce07f78a75ed",
     "DirectFixtureLibraries.test_two_ordinary_application_libraries_bind_exact_native_artifacts":
-      "33909e1da222f213e81a13e464e1751e3f557a83f7f7dcf41effce07f78a75ed"
+      "33909e1da222f213e81a13e464e1751e3f557a83f7f7dcf41effce07f78a75ed",
+    "StagedRustLinker.test_captured_compiler_discovers_staged_zig_without_inherited_tool_paths":
+      "ac81c61d2dee514e93d2c628dbdbf0049c1fbee1e3fcb15fbb4a08a8dd96eccb",
+    "StagedRustLinker.test_wrong_staged_zig_version_fails_before_linker_or_compiler_selection":
+      "ac81c61d2dee514e93d2c628dbdbf0049c1fbee1e3fcb15fbb4a08a8dd96eccb"
   },
   "kind":"python",
   "module":"tools/tests/test_rust_application_dependencies.py",
-  "reviewReason":"Require two independent native application root edges in library qualification",
+  "reviewReason":"Require two independent native application root edges in library qualification Two additive staged-Zig discovery and pin-denial witnesses execute in the original maintained Rust library suite.",
   "schemaVersion":"latent.ci.contracts.v2",
   "guardDefinitions":{
     "bb5dbdf7f67fea6d1bc50dccd968d71d903641b99e9612025a237b3b1ef683a9":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],"skipSites":[]},
-    "33909e1da222f213e81a13e464e1751e3f557a83f7f7dcf41effce07f78a75ed":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310","class:setup-sha256:9e57af693a3742bc550bcbfd02971cba9ddd55d281d4f4b9c2b221424222a054"],"skipSites":[]}
+    "33909e1da222f213e81a13e464e1751e3f557a83f7f7dcf41effce07f78a75ed":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"fixtureGuards":["module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310","class:setup-sha256:9e57af693a3742bc550bcbfd02971cba9ddd55d281d4f4b9c2b221424222a054"],"skipSites":[]},
+    "ac81c61d2dee514e93d2c628dbdbf0049c1fbee1e3fcb15fbb4a08a8dd96eccb":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:344fea3c4f6ed0a72a7cf29b146d6f65b5b62e92dc62090d1c6c9b83939bf310","class:raise:raise unittest.SkipTest('Maintained Rust compiler discovery requires Linux')","class:setup-sha256:bee7cb5448f37d7a17f838d0e2e9f6b58a7ed819344c116db3ca8ebc7d23baf6","class:skip:unittest.SkipTest('Maintained Rust compiler discovery requires Linux')"]}
   }
 }

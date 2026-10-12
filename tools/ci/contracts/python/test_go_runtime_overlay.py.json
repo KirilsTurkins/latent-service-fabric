@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "GoRuntimeOverlayTests.test_compiler_assembly_preserves_upstream_and_verifies_all_derived_sources",
+    "GoRuntimeOverlayTests.test_each_upstream_source_drift_refuses_before_any_overlay_is_written",
+    "GoRuntimeOverlayTests.test_protected_roots_and_existing_output_refuse_without_modifying_sources",
+    "GoRuntimeOverlayTests.test_scheduler_and_lsf_overlays_preserve_sources_and_separate_wasi_authority",
+    "GoRuntimeOverlayTests.test_wrong_compiler_version_and_source_drift_refuse_before_assembly"
+  ],
+  "guards": {
+    "GoRuntimeOverlayTests.test_compiler_assembly_preserves_upstream_and_verifies_all_derived_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeOverlayTests.test_each_upstream_source_drift_refuses_before_any_overlay_is_written": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeOverlayTests.test_protected_roots_and_existing_output_refuse_without_modifying_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeOverlayTests.test_scheduler_and_lsf_overlays_preserve_sources_and_separate_wasi_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeOverlayTests.test_wrong_compiler_version_and_source_drift_refuse_before_assembly": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_runtime_overlay.py",
+  "reviewReason": "Explicit AST review: existing assertions and predicates are retained; only Go version constants become 1.27.2. New source-assembly/overlay controls verify immutable sources and exact separation of scheduler versus authority, plus refusal on drift.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

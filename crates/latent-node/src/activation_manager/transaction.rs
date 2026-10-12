@@ -12,6 +12,12 @@ use std::sync::Arc;
 /// and retains the original physical owners. Implementations cannot replace
 /// this activation's accepted source, budget or monotonic deadline.
 pub trait TransactionActivationAdmission: Send + Sync {
+    /// HTTP commands need the actual prepared component codec before claiming
+    /// a durable identity. Other trusted callers retain their existing input path.
+    fn requires_prepared_input(&self) -> bool {
+        false
+    }
+
     fn admit<'a>(
         &'a self,
         envelope: &'a ActivationEnvelope,

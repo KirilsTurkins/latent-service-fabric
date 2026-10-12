@@ -898,6 +898,25 @@ impl ExecutionBackend for WasmtimeBackend {
         Box::pin(self.prepare_ready_repository(repository, key, Some(wait)))
     }
 
+    fn canonicalize_transaction_input<'a>(
+        &'a self,
+        ready: latent_executor::PreparedReadiness,
+        envelope: &'a latent_activation::ActivationEnvelope,
+        budget: &'a latent_core::ActivationBudget,
+        wait: &'a dyn latent_executor::PreparationReadWait,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            (
+                latent_executor::PreparedReadiness,
+                latent_executor::CanonicalTransactionInput,
+            ),
+            PlatformError,
+        >,
+    > {
+        Box::pin(self.canonicalize_readiness_input(ready, envelope, budget, wait))
+    }
+
     fn materialize_ready(
         &self,
         ready: latent_executor::PreparedReadiness,

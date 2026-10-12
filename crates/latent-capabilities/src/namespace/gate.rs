@@ -25,6 +25,12 @@ impl Gate {
             Err(denied())
         }
     }
+    pub(super) fn check_retained_response(&self) -> Result<(), PlatformError> {
+        match self.0.load(Ordering::Acquire) {
+            OPEN | ACCEPTED => Ok(()),
+            _ => Err(denied()),
+        }
+    }
     fn accept(&self) -> Result<(), PlatformError> {
         self.0
             .compare_exchange(OPEN, ACCEPTED, Ordering::AcqRel, Ordering::Acquire)

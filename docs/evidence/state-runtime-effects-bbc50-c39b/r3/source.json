@@ -1,0 +1,11 @@
+{
+    "source":  "c39b7b3bc97b7a91756ce7d841a870a49aa3b6e8",
+    "sourceArchiveSha256":  "309477b1bed17733198172941de64194562203fd197adc3cd3b23007e2fc889d",
+    "toolImage":  "sha256:808682d39104dc67ea35b407841aa8ecd4d5662bb8fa8df09e78cecdf4cacde7",
+    "scope":  [
+                  "actual native dispatch decision one case",
+                  "Linux App all-feature library check and strict lint"
+              ],
+    "carriedUnchangedSource":  "bbc50 namespace-stage and missing-dispatch actual passing binaries preserved separately",
+    "remaining":  "No signed Java guest or HTTP application execution claim"
+}

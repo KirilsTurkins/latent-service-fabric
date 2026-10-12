@@ -402,6 +402,19 @@ export interface ActivationDiagnostic {
   readonly liftMultiplier?: bigint;
 }
 
+export interface TransactionStagingWitness {
+  readonly schemaVersion: number;
+  readonly activationSerial: bigint;
+  readonly commandId: string;
+  readonly attemptId: string;
+  readonly transactionId: string;
+  readonly publicationId: string;
+  readonly stagedMutations: number;
+  readonly capturedIntents: number;
+  readonly stateWriteBytes: bigint;
+  readonly observedAtUnixMillis: bigint;
+}
+
 export interface ActivationTreeNode {
   readonly activationId: string;
   readonly parentActivationId?: string;
@@ -417,6 +430,7 @@ export interface ActivationTreeNode {
   readonly diagnosticIsTerminal: boolean;
   readonly targetService: string;
   readonly receivedAtUnixMillis: bigint;
+  readonly transactionStaging?: TransactionStagingWitness;
 }
 
 export interface InspectActivationTreeRequest {

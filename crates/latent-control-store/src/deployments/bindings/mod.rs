@@ -7,7 +7,7 @@ pub(in crate::deployments) use source::Generations;
 mod startup;
 mod update;
 pub use model::{BindingDefinition, BindingLimits, ConfiguredBindingProvider};
-pub use update::PreparedBindingUpdate;
+pub use update::{PreparedBindingUpdate, PreparedProviderReferenceUpdate};
 
 use super::{compiler::CompiledCatalog, PublishedCatalog};
 use latent_capabilities::broker::{ActivationCapabilityBroker, CompiledCapabilityPlan};
@@ -20,6 +20,7 @@ pub(super) struct CompilerOwner {
     providers: Box<[ConfiguredBindingProvider]>,
     current: Weak<RwLock<PublishedCatalog>>,
     limits: BindingLimits,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
 }
 impl CompilerOwner {
     fn retained_bytes(&self) -> usize {
