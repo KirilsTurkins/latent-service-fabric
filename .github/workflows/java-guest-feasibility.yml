@@ -209,6 +209,7 @@ jobs:
             ${{ runner.temp }}/java-annotation-processors/qualification.json
             ${{ runner.temp }}/java-annotation-processors/FAILED.json
             ${{ runner.temp }}/java-annotation-processors/containment.json
+            ${{ runner.temp }}/java-annotation-processors/source-ownership-negatives.json
             ${{ runner.temp }}/java-annotation-processors/logs/**
             ${{ runner.temp }}/java-annotation-processors/unapproved/executable-input-approval-request.json
             ${{ runner.temp }}/java-annotation-processors/approved/BUILD-COMPLETE.json

@@ -154,16 +154,25 @@ def node_control(root,native,native_identity):
 
 def ownership_negatives(root,commands):
     """Run the actual parse-only owner against source identities, not filenames."""
-    control=ROOT/'sdk/java-guest/processors/SourceOwnership.java'
+    control=root/'source-owner/dev/latent/compiler/SourceOwnership.java'
+    control.parent.mkdir(parents=True)
+    shutil.copyfile(ROOT/'sdk/java-guest/processors/SourceOwnership.java',control)
     cases={
-        'original-class-collision':('outside/App.java','package outside; class App {}'),
-        'original-nested-class-collision':('outside/Other.java','package outside; class App$Nested {}'),
-        'platform-package':('java/Owned.java','package java; class Owned {}'),
-        'escaped-platform-package':('java/Owned.java',r'package \u006aava; class Owned {}'),
-        'generated-package-path':('wrong/Owned.java','package outside; class Owned {}'),
-        'invalid-generated-source':('outside/Owned.java','package outside; class Owned {'),
+        'original-class-collision':('outside/App.java','package outside; class App {}',
+            'generated-source-owner-collision'),
+        'original-nested-class-collision':('outside/Other.java','package outside; class App$Nested {}',
+            'generated-source-owner-collision'),
+        'platform-package':('java/Owned.java','package java; class Owned {}',
+            'generated-source-overrides-platform'),
+        'escaped-platform-package':('java/Owned.java',r'package \u006aava; class Owned {}',
+            'generated-source-overrides-platform'),
+        'generated-package-path':('wrong/Owned.java','package outside; class Owned {}',
+            'generated-source-package-path-mismatch'),
+        'invalid-generated-source':('outside/Owned.java','package outside; class Owned {',
+            'generated-source-parse-failed'),
     }
-    for name,(relative,text) in cases.items():
+    observations=[]
+    for name,(relative,text,reason) in cases.items():
         directory=fresh(root/('ownership-'+name))
         original=directory/'original/outside'
         original.mkdir(parents=True)
@@ -178,9 +187,15 @@ def ownership_negatives(root,commands):
             commands.run('ownership-'+name,'java','-Xmx256m','--source','25',control,original.parent,generated,manifest)
         except ValueError:
             require(commands.records[-1]['exitCode']==1,'processor-source-owner-negative-incomplete')
+            ordinal=len(commands.records)-1
+            stderr=root/'logs'/f'{ordinal:02d}-ownership-{name}.stderr.txt'
+            expected='java-annotation-processor-'+reason
+            require(stderr.read_text(encoding='utf-8').strip()==expected,
+                    'processor-source-owner-negative-wrong-reason')
+            observations.append({'case':name,'reason':expected,'exitCode':1})
         else:
             raise RuntimeError('processor-source-owner-accepted-'+name)
-    write_json(root/'source-ownership-negatives.json',{'status':'passed','cases':list(cases),
+    write_json(root/'source-ownership-negatives.json',{'status':'passed','cases':observations,
         'scope':'actual pinned Javac parse-only source ownership, not guest execution'})
 
 def main(argv=None):
