@@ -193,6 +193,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           python3 tools/qualify_java_annotation_processors.py \
             --output "$RUNNER_TEMP/java-annotation-processors" \
             --native-directory "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
