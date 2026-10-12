@@ -4,6 +4,7 @@ const maximumEntries = 128;
 const maximumBytes = 32768;
 
 function byteString(value) {
+  if (typeof value === 'symbol') throw new TypeError('header-value-is-not-a-ByteString');
   const text = String(value);
   for (let index = 0; index < text.length; index++) {
     if (text.charCodeAt(index) > 255) throw new TypeError('header-value-is-not-a-ByteString');
@@ -148,5 +149,12 @@ export class Headers {
   static typed(value) {
     if (!(value instanceof Headers)) throw new TypeError('headers-required');
     return value.#list.map(([name, value]) => ({name, value}));
+  }
+
+  static clone(value) {
+    if (!(value instanceof Headers)) throw new TypeError('headers-required');
+    const result = new Headers(value);
+    result.#immutable = value.#immutable;
+    return result;
   }
 }

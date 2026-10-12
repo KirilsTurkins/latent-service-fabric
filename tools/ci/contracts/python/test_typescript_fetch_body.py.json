@@ -1,0 +1,64 @@
+{
+  "cases": [
+    "TypeScriptFetchBodyTests.test_finite_body_consumption_matches_native_reference",
+    "TypeScriptFetchBodyTests.test_native_body_seam_waits_for_retirement_before_resource_drop",
+    "TypeScriptFetchBodyTests.test_request_response_objects_match_reference_and_keep_owned_bodies"
+  ],
+  "guards": {
+    "TypeScriptFetchBodyTests.test_finite_body_consumption_matches_native_reference": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:263c54b3657836d990ae191b00730cca8815309a1390103a6fd770058cfce9b6",
+        "class:setup-sha256:59a040b51e322139928997fe60dbf353ea4f527cc4e8e503966a96c7a0c4af50"
+      ],
+      "skipSites": [
+        "skip-control-sha256:54784ce66c399eeca1d8ffdac760510eca3d0a89c0eb1bc39c09be157170d754",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ]
+    },
+    "TypeScriptFetchBodyTests.test_native_body_seam_waits_for_retirement_before_resource_drop": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:263c54b3657836d990ae191b00730cca8815309a1390103a6fd770058cfce9b6",
+        "class:setup-sha256:59a040b51e322139928997fe60dbf353ea4f527cc4e8e503966a96c7a0c4af50"
+      ],
+      "skipSites": [
+        "skip-control-sha256:39e9e930ab46e7b844b647db13afb8bf527d374700f6052426b6d24a72d03f78",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ]
+    },
+    "TypeScriptFetchBodyTests.test_request_response_objects_match_reference_and_keep_owned_bodies": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:263c54b3657836d990ae191b00730cca8815309a1390103a6fd770058cfce9b6",
+        "class:setup-sha256:59a040b51e322139928997fe60dbf353ea4f527cc4e8e503966a96c7a0c4af50"
+      ],
+      "skipSites": [
+        "skip-control-sha256:65fbddb4f8946cb4fd237cdf58e02a6f9c8bba27db78a229ab17582e8da87d20",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_fetch_body.py",
+  "reviewReason": "Add source-only finite Body Request Response references and physical retirement seam controls; retain all existing cases and guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
