@@ -22,10 +22,15 @@
         978
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-merged",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "deliveredHead": "6c5a399494e09d9bc436f808bbe3343130bdc727",
+      "mergeCommit": "2eafdc45a4c81a6cc0d1793c6701d64ddbeee64d",
+      "mergedAt": "2026-10-12T16:43:58Z",
+      "exactHeadChecks": 31,
+      "reconciliation": "Preserved 837 exact historical files in content-verified archives and merged the current reconciliation index after all 31 exact-head checks passed."
     },
     {
       "pullRequest": 851,
@@ -1753,10 +1758,65 @@
         820
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        677,
+        679
+      ],
+      "currentSourcePaths": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "apps/latentd/src/standalone/http/assets/integration.rs",
+        "crates/latent-control-store/src/deployments/tests/bindings/fixture.rs",
+        "crates/latent-control-store/src/deployments/tests/http.rs",
+        "crates/latent-control-store/src/deployments/tests/http/recovery.rs",
+        "crates/latent-control-store/src/deployments/tests/publications.rs",
+        "crates/latent-control-store/src/deployments/tests/publications/history.rs",
+        "crates/latent-control-store/src/deployments/tests/publications/operations.rs",
+        "crates/latent-control-store/src/deployments/tests/rollouts/web/fixture.rs",
+        "crates/latent-control-store/src/deployments/tests/runtime_compatibility.rs",
+        "crates/latent-manifest/src/renderer.rs",
+        "crates/latent-manifest/src/runtime_compatibility/profile.rs",
+        "crates/latent-manifest/src/runtime_compatibility/tests.rs",
+        "crates/latent-wasmtime/src/aot/loader.rs",
+        "crates/latent-wasmtime/src/config.rs",
+        "crates/latent-wasmtime/src/config/isolation.rs",
+        "crates/latent-wasmtime/src/config/layout.rs",
+        "crates/latent-wasmtime/src/values/tests/transactions.rs",
+        "crates/latent-wasmtime/tests/broker/async_io.rs",
+        "examples/framework-compatibility/package.json",
+        "examples/renderer-profile/profile.json",
+        "packaging/linux/license-sources.json",
+        "schemas/node-config-check.schema.json",
+        "sdk/profile/transaction-preparation-v1.json",
+        "tools/native_loader_boundary.py",
+        "tools/phase3_security.py",
+        "tools/renderer-profile/src/main.rs",
+        "tools/run_security_profile_workflow.py",
+        "tools/rust_capsule.lock",
+        "tools/tests/test_dev_node_policies.py",
+        "tools/tests/test_native_loader_boundary.py",
+        "tools/tests/test_native_runtime.py",
+        "tools/tests/test_node_security_profile_schema.py",
+        "tools/tests/test_testkit_dependencies.py",
+        "tools/toolchain.toml",
+        "website/content/toolchain.json",
+        "website/package.json",
+        "website/tests/package-manager-security.test.mjs",
+        "website/toolchain/package.json",
+        "website/toolchain/prepare.py",
+        "website/toolchain/source.json",
+        "website/toolchain/tests/test_prepare.py",
+        "wit/host-abi-phase3-v4.json",
+        "wit/host-abi-phase4-v1.json"
+      ],
+      "reviewedDiffSha256": "bc227739ccd6288445250ce4f5c68282ce487162251af6b1cc25a9ba3f95ab11",
+      "developmentHead": "2eafdc45a4c81a6cc0d1793c6701d64ddbeee64d",
+      "reconciliation": "Reviewed all 45 authored paths. The 48.0.4 engine/lock/profile update is superseded by current 48.0.5 with explicit engine-family lock controls; the historical V4 descriptor keeps its original tested runtime. The npm HTTP cache update and reference tests are retained in current V4 bundle and expanded website tests. No missing implementation remains in this snapshot.",
+      "closureObservedUtc": "2026-10-12T17:06:32.119716+00:00"
     },
     {
       "pullRequest": 909,
@@ -3636,5 +3696,6 @@
       "closureObservedUtc": "2026-10-12T16:02:40.822190+00:00",
       "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     }
-  ]
+  ],
+  "remainingOpenCount": 14
 }

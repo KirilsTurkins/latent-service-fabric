@@ -8825,6 +8825,7 @@
         "phase4::state_management::tests::effects::detached_revoked_lookup_keeps_original_native_owner_until_actual_provider_cleanup",
         "phase4::state_management::tests::effects::effect_identifiers_and_operator_flag_cannot_replace_exact_caller_data_read_permission",
         "phase4::state_management::tests::effects::effect_plan_full_original_semantics_and_stale_policy_are_never_refreshed",
+        "phase4::state_management::tests::effects::foreign_command_effect_associations_are_denied_without_rewriting_original_rows",
         "phase4::state_management::tests::effects::fresh_lookup_after_execution_expiry_uses_reserved_capacity_and_preserves_provider_fact",
         "phase4::state_management::tests::effects::frozen_rpc_adapter_preserves_effect_plan_receipt_and_original_recovery_association",
         "phase4::state_management::tests::effects::unknown_actual_dispatch_attempt_cannot_be_redriven_from_an_operator_declaration",
@@ -8917,7 +8918,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 213,
+      "minimumCases": 214,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

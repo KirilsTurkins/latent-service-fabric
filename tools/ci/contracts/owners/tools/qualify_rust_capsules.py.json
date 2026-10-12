@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain original six-language ownership/SDK/guide invocations and add explicitly selected C generator capture, offline rebuild and signed node coverage",
+  "reviewReason": "Preserve explicit CLR hash entropy declaration and original zero-execution missing-grant control for standard resource qualification",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8fbb10e20c08fe6a0f358449355fcf25b22d0e86ef18d85478e4fbf30e27d977"
+  "sha256": "73742b5c603bc17956603878c553b736fda34c323c88cc132418b629fa1ebc31"
 }
