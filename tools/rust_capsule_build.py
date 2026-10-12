@@ -1,6 +1,8 @@
 """Bounded actual-source compiler recipe for standalone Rust capsules."""
 from __future__ import annotations
 
+from tools import guest_compatibility_context_build, guest_runtime_receipts
+
 import json
 import re
 from pathlib import Path
@@ -32,6 +34,8 @@ RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
            "tools/dev_workflow/windows.py")
 RECIPE += ("tools/transaction_guest_project.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
+RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
@@ -427,6 +431,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     for name in ("executable-input-approval-request.json", "executable-input-outputs.json"):
                         data = read_file(output / name, 8 * 1024 * 1024)
                         materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            runtime_profile = closure.lock['selection']['runtimeProfile'] if closure is not None else 'wasm32-unknown-unknown-panic-abort-v1'
+            materials.append(guest_runtime_receipts.emit(output, 'rust', runtime_profile, files,
+                source_inputs, component, materials, graph=closure.lock if closure is not None else None,
+                binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],
+                    "target": "wasm32-unknown-unknown", "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or time.monotonic() - start > 900 or finished - started > 900:
                 raise ValueError("build clock or overall deadline invalid")
@@ -439,6 +448,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"}
             write_json(output / "build-observation.json", observation)
+            guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1, "observationDigest": digest(read_file(output / "build-observation.json")),
                 "packageAssembled": packager is not None,
                 "sourceDigest": digest(source_inputs), "componentDigest": digest(component), "sdkBindingDigest": binding_digest,

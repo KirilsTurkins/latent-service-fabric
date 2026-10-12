@@ -1,0 +1,70 @@
+{
+  "cases": [
+    "CompletedProcessObservation.test_active_source_observer_is_not_called_during_already_reaped_output_drain",
+    "CompletedProcessObservation.test_post_reap_cancellation_stays_cancellation_without_cleanup_uncertainty",
+    "CompletedProcessObservation.test_post_reap_failure_keeps_original_code_without_rechecking_reserved_pid",
+    "CompletedProcessObservation.test_running_source_failure_keeps_its_code_after_real_child_cleanup"
+  ],
+  "guards": {
+    "CompletedProcessObservation.test_active_source_observer_is_not_called_during_already_reaped_output_drain": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'actual Linux process-group retirement')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c12d9a9cc7bb9ca91ae51b9dfb5784bd60121d4dd96fb1c4f215bd4136fbde03",
+        "class:setup-sha256:e72d05ca8eb53416b044b88f2ae4da290512406f334137a30839d289390d6d5d"
+      ],
+      "skipSites": []
+    },
+    "CompletedProcessObservation.test_post_reap_cancellation_stays_cancellation_without_cleanup_uncertainty": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'actual Linux process-group retirement')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c12d9a9cc7bb9ca91ae51b9dfb5784bd60121d4dd96fb1c4f215bd4136fbde03",
+        "class:setup-sha256:e72d05ca8eb53416b044b88f2ae4da290512406f334137a30839d289390d6d5d"
+      ],
+      "skipSites": []
+    },
+    "CompletedProcessObservation.test_post_reap_failure_keeps_original_code_without_rechecking_reserved_pid": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'actual Linux process-group retirement')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c12d9a9cc7bb9ca91ae51b9dfb5784bd60121d4dd96fb1c4f215bd4136fbde03",
+        "class:setup-sha256:e72d05ca8eb53416b044b88f2ae4da290512406f334137a30839d289390d6d5d"
+      ],
+      "skipSites": []
+    },
+    "CompletedProcessObservation.test_running_source_failure_keeps_its_code_after_real_child_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [
+        "unittest.skipUnless(sys.platform == 'linux', 'actual Linux process-group retirement')"
+      ],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c12d9a9cc7bb9ca91ae51b9dfb5784bd60121d4dd96fb1c4f215bd4136fbde03",
+        "class:setup-sha256:e72d05ca8eb53416b044b88f2ae4da290512406f334137a30839d289390d6d5d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_watch_completed_process.py",
+  "reviewReason": "Add real-child post-reap observer and cancellation regressions without changing existing process ownership/cleanup cases",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

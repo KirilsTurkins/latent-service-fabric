@@ -159,6 +159,19 @@ closure, independently of resolver credentials.
 
 ## Qualification boundary
 
+The frontend keeps ordinary application snapshots within 2,048 files and
+64 MiB. Captured objects that do not fit that profile travel through a separate
+authenticated input transfer, bound to the reviewed manifest, lock and exact
+referenced object identities. The capture limits remain 1,024 artifacts,
+32,768 source files and 512 MiB; transferred object bytes also have a 512 MiB
+limit. Unreferenced cache entries are omitted. Transfer validates data and
+does not execute it or provision tools.
+
+The helper verifies every object before associating the snapshot and again
+before build reuse. Interrupted or corrupt transfers retain private evidence
+and leave the previous project association intact. Recipe trust, native
+compiler isolation, independent SDK locks and runtime grants still apply.
+
 Source controls exercise real capture, path transformations, offline review,
 tamper rejection, nested descriptors and staged recipe imports. Their Cargo
 metadata outputs and frontend dispatch boundaries are deliberately modelled.

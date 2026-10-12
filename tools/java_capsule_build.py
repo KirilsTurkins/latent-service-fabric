@@ -1,5 +1,7 @@
 """Capture, compile and package actual Java source; never sign or grant authority."""
 from __future__ import annotations
+
+from tools import guest_compatibility_context_build
 import json
 from pathlib import Path
 import tempfile
@@ -34,10 +36,12 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py", "tools/java_guest/sdk.py",
           "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += java_server_source.RECIPE
+RECIPE += ("tools/java_generator_authoring.py",)
 RECIPE += java_http_client.RECIPE
 
 
@@ -205,6 +209,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"]), ("compiler-closure", compiler.compiler_inputs),
                     ("dependency-lock", files["vendor/lsf/sdk/java-guest/feasibility/dependencies.lock.json"]),
                     ("generated-bindings", read_file(output / "bindings.json"))))
+                if 'java-generated-inputs.json' in files:
+                    data = files['java-generated-inputs.json']
+                    materials.append({"name": "java-generator-inputs",
+                                      "digest": digest(data), "size": len(data)})
                 if runtime_profile == ACTIVATION_PROFILE:
                     materials.extend({"name": name, "digest": digest(data), "size": len(data)} for name, data in (
                         ("java-runtime-profile", read_file(output / "runtime-profile.json")),
@@ -225,6 +233,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                    "bindings": "lsf-java-wit-v1", "optimization": "O2", "javaHeapBytes": 4_194_304},
                     "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                     "dependencyCompleteness": "declared-inputs-incomplete"})
+                guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
                 marker = {"formatVersion": 1,
                     "packageAssembled": packager is not None,
                     "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
