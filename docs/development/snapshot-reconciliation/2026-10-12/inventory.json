@@ -36,10 +36,12 @@
         850
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 851,
+      "currentDeliveryHead": "cc440c89cb6d36e26a022c411cb23808d0143183"
     },
     {
       "pullRequest": 852,
@@ -50,10 +52,12 @@
         850
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 852,
+      "currentDeliveryHead": "aef33b8f66a28e5bb38f14cf024b017b94db3db7"
     },
     {
       "pullRequest": 853,
@@ -1564,10 +1568,12 @@
         743
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 902,
+      "currentDeliveryHead": "cac1f208dafe48896655a01192e5e3dd4bee0941"
     },
     {
       "pullRequest": 903,
@@ -1830,10 +1836,12 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": false,
+      "currentDeliveryPr": 912,
+      "currentDeliveryHead": "0800b333ce5d89512c38e5dfb8f29466d489c376"
     },
     {
       "pullRequest": 913,
@@ -2917,10 +2925,26 @@
         850
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        399
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-scheduler/src/local/immediate.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/immediate_contention.rs",
+        "crates/latent-scheduler/src/local/mod.rs",
+        "crates/latent-scheduler/src/local/state.rs",
+        "crates/latent-state/src/protected_store/restore_input.rs",
+        "crates/latent-state/src/protected_store/restore_stage/receipt.rs",
+        "crates/latent-state/src/protected_store/tests/migration.rs",
+        "crates/latent-state/src/protected_store/tests/migration/fixture/restore.rs",
+        "crates/latent-state/src/protected_store/tests/migration/restore_receipt.rs"
+      ],
+      "reconciliation": "Original restore input/receipt implementation and abandoned-reader/native-retirement controls are byte-identical. Current stage orchestration splits bounded review/import/seal work and retains original currentness fences. Full signed backup/reconciliation acceptance remains open."
     },
     {
       "pullRequest": 958,
