@@ -36,12 +36,19 @@
         850
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
+      "disposition": "source-incorporated-through-accepted-current-pr",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
-      "currentDeliveryPr": 851,
-      "currentDeliveryHead": "cc440c89cb6d36e26a022c411cb23808d0143183"
+      "closed": true,
+      "currentDeliveryPr": 852,
+      "currentDeliveryHead": "aef33b8f66a28e5bb38f14cf024b017b94db3db7",
+      "mergeCommit": "55b8f257ec346689b53012dddd6606572bc18f8b",
+      "owningIssues": [
+        409,
+        387,
+        388
+      ],
+      "reconciliation": "All manifest/boundary/CI/website-wait changes are byte-identical in development after exact-head50checkadminmerge852. Original851JavaCIcapacityfailure is retained and separatelyinvestigated; no claim that its failedheadpassed."
     },
     {
       "pullRequest": 852,
@@ -52,12 +59,19 @@
         850
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "reconciled-current-delivery-awaiting-exact-head-ci",
+      "disposition": "merged-after-all-exact-head-checks",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
+      "closed": true,
       "currentDeliveryPr": 852,
-      "currentDeliveryHead": "aef33b8f66a28e5bb38f14cf024b017b94db3db7"
+      "currentDeliveryHead": "aef33b8f66a28e5bb38f14cf024b017b94db3db7",
+      "mergeCommit": "55b8f257ec346689b53012dddd6606572bc18f8b",
+      "completedChecks": 50,
+      "owningIssues": [
+        709,
+        679,
+        707
+      ]
     },
     {
       "pullRequest": 853,
