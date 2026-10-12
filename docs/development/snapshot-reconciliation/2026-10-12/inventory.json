@@ -477,10 +477,98 @@
         819
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        681,
+        741
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 8344afee83c6e3bb88efe5e9eb0fff11818e1f89 Store current first-party schemas without changing their ordered models",
+        "COMMIT 359b2d9da50b3555af4153306db5fdb7b5075e1a fix(java): pass optional compiler profiles only when selected",
+        "COMMIT 4e12ff83d596b97dd477bb1382cad609db167ee1 Compact current generated locks without changing dependency graphs",
+        "COMMIT 77dfca853c7ec64e94be70bd2f295bb429759797 Compact current runtime CI inventories without changing obligations",
+        "COMMIT 5d79197b7b0d1b78912b21164e1a89abf842f2de Check current V5 ABI while retaining frozen V4 transaction boundaries"
+      ],
+      "identicalSourcePaths": [
+        "schemas/angular-build.schema.json",
+        "schemas/build-observation.schema.json",
+        "schemas/builder-policy.schema.json",
+        "schemas/builder-revocations.schema.json",
+        "schemas/capability-policy-config.schema.json",
+        "schemas/capability-policy-resource.schema.json",
+        "schemas/capsule-manifest.schema.json",
+        "schemas/cli-registry-credentials.schema.json",
+        "schemas/cli-registry-profile.schema.json",
+        "schemas/deployment.schema.json",
+        "schemas/host-abi-profile.schema.json",
+        "schemas/node-audit.schema.json",
+        "schemas/node-http-ingress.schema.json",
+        "schemas/node-http-response-cache.schema.json",
+        "schemas/node-isolated-aot.schema.json",
+        "schemas/node-renderer-profile.schema.json",
+        "schemas/node-rollouts.schema.json",
+        "schemas/node-security-profile.schema.json",
+        "schemas/node-supply-chain.schema.json",
+        "schemas/package-admission-receipt.schema.json",
+        "schemas/package-admission-upload.schema.json",
+        "schemas/package-build-inputs.schema.json",
+        "schemas/package-config.schema.json",
+        "schemas/package-evidence-index.schema.json",
+        "schemas/package-evidence.schema.json",
+        "schemas/package-manifest.schema.json",
+        "schemas/package-provenance-statement.schema.json",
+        "schemas/package-provenance.schema.json",
+        "schemas/package-sbom-inputs.schema.json",
+        "schemas/package-sbom-policy.schema.json",
+        "schemas/package-sbom.schema.json",
+        "schemas/package-signature-claims.schema.json",
+        "schemas/package-signature.schema.json",
+        "schemas/package-source.schema.json",
+        "schemas/package-wit-lock.schema.json",
+        "schemas/publication-ref.schema.json",
+        "schemas/publisher-policy.schema.json",
+        "schemas/publisher-revocations.schema.json",
+        "schemas/release-lifecycle-api.schema.json",
+        "schemas/release-lifecycle-record.schema.json",
+        "schemas/release-operation-receipt.schema.json",
+        "schemas/rollout-canary-policy.schema.json",
+        "schemas/supply-chain-policy.schema.json",
+        "schemas/transaction-api.schema.json",
+        "schemas/transaction-binding.schema.json",
+        "schemas/transaction-durable-record.schema.json",
+        "schemas/web-admission-receipt.schema.json",
+        "schemas/web-build-observation.schema.json",
+        "schemas/web-provenance-statement.schema.json",
+        "tools/ci/contracts/python/test_fixed_result_boundary.py.json",
+        "tools/optimization_kubernetes/schemas/aggregate.schema.json",
+        "tools/optimization_kubernetes/schemas/bootstrap.schema.json",
+        "tools/optimization_kubernetes/schemas/cluster-cleanup.schema.json",
+        "tools/optimization_kubernetes/schemas/suite.schema.json",
+        "tools/static_api/package-lock.json",
+        "tools/tests/test_transaction_contracts.py"
+      ],
+      "reviewedChangedPaths": [
+        "examples/framework-compatibility/package-lock.json",
+        "examples/renderer-profile/package-lock.json",
+        "schemas/capability-policy.schema.json",
+        "schemas/capability-provider-binding.schema.json",
+        "schemas/node-budget-profile.schema.json",
+        "schemas/node-config-check.schema.json",
+        "schemas/node-providers.schema.json",
+        "schemas/trigger.schema.json",
+        "schemas/web-application.schema.json",
+        "tools/ci/contracts/owners/tools/qualify_java_fibers.py.json",
+        "tools/ci/contracts/python/test_transaction_contracts.py.json",
+        "tools/java_guest/compiler.py"
+      ],
+      "reviewedDiffSha256": "18c605c51eaa6d55f7f3fec3b99be48e0bdc006c9fe0021667cb7a60c691d931",
+      "reconciliation": "Compact ordered first-party schema/lock storage and optional Java compiler profile selection are incorporated. Current schemas add installed Phase4 contracts and later authenticated lock inputs; source ordering and guards remain.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:49:56.913668+00:00"
     },
     {
       "pullRequest": 872,
@@ -492,10 +580,47 @@
         832
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        679,
+        681
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 6e5a8baf32039e92746fcf24c5c9a9b2076d4451 Bound website archive transport retries to the original acquisition budget",
+        "COMMIT 37137a341d2beeba07ca00a19a4c3a93cfe963eb fix(ci): bound read-only inspection after uncertain deployment apply",
+        "COMMIT f0fe7cfe27d6e2c6138f9bd886996b62a9a98334 fix(ci): authenticate Echo WIT remnants retained by Rust cache",
+        "COMMIT 2bb6b0143d44edca576728164acfdf8881b25ba9 fix(ci): reset empty echo skeletons retained by dependency caching",
+        "COMMIT b1f11fcc89e0ea36f6850d43d16563bcb8a15656 Review the exact fixed-result canonical lowering exception"
+      ],
+      "identicalSourcePaths": [
+        "tools/phase2_operator_scenario.py",
+        "tools/reset_validation_echo.py",
+        "tools/run_phase2_operator_workflow.py",
+        "tools/tests/fixtures/validation_echo_cache/context.wit",
+        "tools/tests/fixtures/validation_echo_cache/echo.wit",
+        "tools/tests/fixtures/validation_echo_cache/log.wit",
+        "tools/tests/test_fixed_result_boundary.py",
+        "tools/tests/test_reset_validation_echo.py"
+      ],
+      "reviewedChangedPaths": [
+        "tools/ci/contracts/owners/tools/reset_validation_echo.py.json",
+        "tools/ci/contracts/owners/tools/run_phase2_operator_workflow.py.json",
+        "tools/ci/contracts/python/test_fixed_result_boundary.py.json",
+        "tools/ci/contracts/python/test_phase2_operator_workflow.py.json",
+        "tools/ci/contracts/python/test_reset_validation_echo.py.json",
+        "tools/native_loader_boundary.py",
+        "tools/phase2_operator_process.py",
+        "tools/tests/test_phase2_operator_workflow.py",
+        "website/toolchain/prepare.py",
+        "website/toolchain/tests/test_prepare.py"
+      ],
+      "reviewedDiffSha256": "c8ba282f8fb4c5f3967008c9d69913e0be1c3fd798614b7fb1f02b360d7b2595",
+      "reconciliation": "Original-budget authenticated website acquisition retries are incorporated. Current native loader retains the same review with Wasmtime48.0.5; operator failed-call observation extends the original bounded uncertain-apply inspection.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:02.763572+00:00"
     },
     {
       "pullRequest": 873,
@@ -527,10 +652,36 @@
         785
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        679,
+        684
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT ce0a317391cbff4727d9b9d65dba2530be73ef66 fix(sdk): preserve empty frozen inspection envelopes with structural type imports",
+        "COMMIT df5d2cc1cc8783c3099695abee067b0bb257e79c fix(dev): use authenticated HTTPS for pinned Ubuntu snapshot indexes",
+        "COMMIT ee3b22a292dae63767cf5b2ab5ff769afcc2cde4 test(sdk): supply controlled generated C in Java composition fixture",
+        "COMMIT ac73fcd9dd0d053d9d0a0b58d6fea5b64eaaa00b Keep mocked DotNet compiler fixtures inside their reviewed contract boundary",
+        "COMMIT 0d7124fef2a6e240aabeee482ccf109a5ea6ef59 Preserve existing CI fragment layout around new helper guards"
+      ],
+      "identicalSourcePaths": [
+        "tools/tests/test_dotnet_frontend_dependencies.py",
+        "tools/tests/test_dotnet_noncrypto_entropy.py"
+      ],
+      "reviewedChangedPaths": [
+        "packaging/dev/wsl.Dockerfile",
+        "tools/ci/contracts/python/test_dev_tools.py.json",
+        "tools/guest_compatibility_build.py",
+        "tools/tests/test_java_server_source.py"
+      ],
+      "reviewedDiffSha256": "cc0423f8e953682737ff751e8fc5c0846d5abbe44b36a1279cc7e562951d4d62",
+      "reconciliation": "Controlled .NET compiler fixtures are identical. Current compatibility code preserves empty frozen inspection envelopes and adds captured transaction/structural type checks. Current Java server controls add bounded original-delete observation.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:06.837250+00:00"
     },
     {
       "pullRequest": 875,
@@ -610,10 +761,44 @@
         832
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        679
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT ba11ceb2ebe2a163f90dfe7c48694e76fc80d655 fix(ci): authenticate Echo WIT remnants retained by Rust cache",
+        "COMMIT 28ab2ece22740c23842487b8c88d96f863b2c467 fix(ci): reset empty echo skeletons retained by dependency caching",
+        "COMMIT 44f62f0962ab49c5e6bb1ed4cd176ef02d31e929 fix(ci): register the forced .NET entropy example harness",
+        "COMMIT d1e78b8c4ef5de14a96f505e32daf6ba7aabdc0b test(testing): isolate missing fixture tool preflight from cached output",
+        "COMMIT 3b051f3b68ac07cacec279add83c75a4df8616d1 fix(dotnet): isolate reviewed library preparation in its owned workspace"
+      ],
+      "identicalSourcePaths": [
+        "tools/ci/suites.d/dotnet-runtime.json",
+        "tools/dotnet_dependency_fixture.py",
+        "tools/reset_validation_echo.py",
+        "tools/tests/fixtures/validation_echo_cache/context.wit",
+        "tools/tests/fixtures/validation_echo_cache/echo.wit",
+        "tools/tests/fixtures/validation_echo_cache/log.wit",
+        "tools/tests/test_ci_suite_fragments.py",
+        "tools/tests/test_reset_validation_echo.py"
+      ],
+      "reviewedChangedPaths": [
+        "tools/ci/contracts/owners/tools/reset_validation_echo.py.json",
+        "tools/ci/contracts/python/test_ci_suite_fragments.py.json",
+        "tools/ci/contracts/python/test_dotnet_application_dependencies.py.json",
+        "tools/ci/contracts/python/test_local_tests.py.json",
+        "tools/ci/contracts/python/test_reset_validation_echo.py.json",
+        "tools/tests/test_dotnet_application_dependencies.py",
+        "tools/tests/test_local_tests.py"
+      ],
+      "reviewedDiffSha256": "f362d18caecc2dce1f0c2522d00834b64ca59d2a93e71e4edddb57f55d6ee160",
+      "reconciliation": "Forced .NET entropy harness, current suite fragments and authenticated Echo cache reset controls remain incorporated. Current tests add deterministic selected frontend and bounded failed-call controls.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:12.254039+00:00"
     },
     {
       "pullRequest": 878,
@@ -741,10 +926,52 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        687
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 53bf7d0e83cf3ef97d7d3a24ce91932c328c8d70 Keep mocked DotNet compiler fixtures inside their reviewed contract boundary",
+        "COMMIT 0d7124fef2a6e240aabeee482ccf109a5ea6ef59 Preserve existing CI fragment layout around new helper guards",
+        "COMMIT a7d3300c39b7379a1543ca93226098f7737725c5 Capture actual Rust guest SDK runtime source in diagnostics",
+        "COMMIT f4989eb19c306f5445749832e80bd8235291fbdc fix(sdk): retain signable generator provenance and qualify generated C",
+        "COMMIT b652b88a1713d531f1cd0b852d3ff674a638464b fix(dev): stop source callbacks after compiler group retirement"
+      ],
+      "identicalSourcePaths": [
+        "tools/build_process.py",
+        "tools/c_generator_fixture.py",
+        "tools/ci/contracts/owners/tools/qualify_c_capsules.py.json",
+        "tools/ci/contracts/owners/tools/qualify_rust_capsules.py.json",
+        "tools/ci/contracts/python/test_build_provenance_schemas.py.json",
+        "tools/ci/contracts/python/test_guest_runtime_receipts.py.json",
+        "tools/ci/contracts/python/test_watch_completed_process.py.json",
+        "tools/dev_workflow/process.py",
+        "tools/guest_runtime_receipts.py",
+        "tools/qualify_c_capsules.py",
+        "tools/qualify_rust_capsules.py",
+        "tools/tests/test_build_provenance_schemas.py",
+        "tools/tests/test_dotnet_frontend_dependencies.py",
+        "tools/tests/test_dotnet_noncrypto_entropy.py",
+        "tools/tests/test_guest_runtime_receipts.py",
+        "tools/tests/test_watch_completed_process.py"
+      ],
+      "reviewedChangedPaths": [
+        ".github/workflows/c-guest-authoring.yml",
+        "tools/c_capsule_build.py",
+        "tools/ci/contracts/python/test_dev_tools.py.json",
+        "tools/ci/contracts/workflows/c-guest-authoring.yml/jobs/runtime.json",
+        "tools/go_capsule_build.py",
+        "tools/java_capsule_build.py",
+        "tools/typescript_guest/build.py"
+      ],
+      "reviewedDiffSha256": "c821d7c9acd48b8fb03386a391eb9a6055eb9889de0cf678699b10eb3aa61c24",
+      "reconciliation": "Mocked .NET frontend/entropy fixtures, runtime source capture and their core helpers are incorporated. Current compiler recipes add approved generators and installed Phase4 packaging; current CI retains the original assertions.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:19.960176+00:00"
     },
     {
       "pullRequest": 883,
@@ -900,10 +1127,39 @@
         785
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        679,
+        686,
+        742
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6 test(sdk): observe physical scheduler retirement and closed capacity failures",
+        "COMMIT 757ccd6d5cefaaa793f8b0f3376759f17b7db148 fix(dev): use authenticated HTTPS for pinned Ubuntu snapshot indexes",
+        "COMMIT 53f01e43e6c764098f638f9a3c0162a84effb527 fix(sdk): preserve empty frozen inspection envelopes with structural type imports",
+        "COMMIT 14f182b894402a7c163ee4005bfa0b445edc5a71 test(sdk): declare empty imports in controlled DotNet build surfaces",
+        "COMMIT 048853c6cae42f0a9e7ba77c62c1e909f077b531 test(runtime): require the current quarantine diagnostic"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-wasmtime/tests/local_service/runtime.rs",
+        "tools/tests/test_dotnet_frontend_dependencies.py"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-wasmtime/tests/local_service/diagnostics/reason.rs",
+        "crates/latent-wasmtime/tests/local_service/fixture.rs",
+        "crates/latent-wasmtime/tests/local_service_diagnostics.rs",
+        "packaging/dev/wsl.Dockerfile",
+        "tools/ci/suites.json",
+        "tools/guest_compatibility_build.py",
+        "tools/tests/test_dotnet_noncrypto_entropy.py"
+      ],
+      "reviewedDiffSha256": "2c3c11b80bffec00973f4695e9e3628f57977767254d1ce951cc36990ef33ff6",
+      "reconciliation": "Actual local-service runtime controls and .NET frontend fixtures are identical. The current closed diagnostic owner adds preparation-capacity reasons and retains physical scheduler retirement and quarantine observations.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:25.289281+00:00"
     },
     {
       "pullRequest": 890,
@@ -933,10 +1189,44 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        682,
+        688,
+        741
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 21031d9c53b69590a997951f48ee2fd4d5e10c1e perf(java): validate UTF-8 before decoding without re-encoding",
+        "COMMIT 6f3ac39e064f6616c3642ba067b57a069fda654b Resolve trusted generator host sandbox before byte verification",
+        "COMMIT b0283780547a54e777456a163a433986ab1ecfc5 Add generator host discovery and untrusted-link regression controls",
+        "COMMIT 89b8d9833d1309667a4aa6da31b5daa40ccabb79 Register reviewed Java timer controls with their CI owner",
+        "COMMIT 568ece73b042fd1d07567cb3ed42079df4b67d8d Reuse charged Java timers in the event pump"
+      ],
+      "identicalSourcePaths": [
+        "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
+        "sdk/java-guest/fibers/conformance/compiler/QueueDeadlineModelControl.java",
+        "sdk/java-guest/fibers/conformance/compiler/timer-source-control/TimerReadinessSourceControl.java",
+        "sdk/java-guest/fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java",
+        "sdk/java-guest/fibers/dev/latent/guest/runtime/Activation.java",
+        "sdk/java-guest/fibers/dev/latent/guest/runtime/Monitors.java",
+        "sdk/java-guest/runtime/dev/latent/guest/Wire.java",
+        "sdk/java-guest/tests/test_wire.py",
+        "sdk/java-guest/tests/wire/WireUtf8Control.java",
+        "tools/application_dependency_tools.py",
+        "tools/ci/contracts/owners/tools/qualify_java_fibers.py.json",
+        "tools/ci/contracts/python/test_application_dependency_tools.py.json",
+        "tools/qualify_java_fibers.py",
+        "tools/tests/test_application_dependency_tools.py"
+      ],
+      "reviewedChangedPaths": [],
+      "reviewedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reconciliation": "All14 reviewed source/control files are byte-identical, including allocation-preserving Java UTF-8 validation, source generator containment and charged timer reuse.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:31.923967+00:00"
     },
     {
       "pullRequest": 892,
@@ -1099,10 +1389,37 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        679,
+        741
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT c38043fa9c81180a79e50ad11c3a7f6c156126d4 Stop active source checks after process-group retirement",
+        "COMMIT 49c6f190814a4f61ddcbb64a78fbe32d3fa7fbe7 Add actual child completion observer regressions",
+        "COMMIT 6f3ac39e064f6616c3642ba067b57a069fda654b Resolve trusted generator host sandbox before byte verification",
+        "COMMIT b0283780547a54e777456a163a433986ab1ecfc5 Add generator host discovery and untrusted-link regression controls",
+        "COMMIT 89b8d9833d1309667a4aa6da31b5daa40ccabb79 Register reviewed Java timer controls with their CI owner"
+      ],
+      "identicalSourcePaths": [
+        "tools/application_dependency_tools.py",
+        "tools/build_process.py",
+        "tools/ci/contracts/owners/tools/qualify_java_fibers.py.json",
+        "tools/ci/contracts/python/test_application_dependency_tools.py.json",
+        "tools/ci/contracts/python/test_watch_completed_process.py.json",
+        "tools/dev_workflow/process.py",
+        "tools/tests/test_application_dependency_tools.py",
+        "tools/tests/test_watch_completed_process.py"
+      ],
+      "reviewedChangedPaths": [],
+      "reviewedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reconciliation": "All8 reviewed source/control files are byte-identical, including actual child completion observation, process-group retirement and contained generator host discovery.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:36.375493+00:00"
     },
     {
       "pullRequest": 899,
@@ -1717,10 +2034,47 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        684
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 7069e537200a11375c326f9f291b371d7cf8ac94 test(sdk): select canonical frontend interpreter fixture",
+        "COMMIT 81088ff2e5603f5ac4d84c01f094cab9211861f5 feat(c): delegate authoring through the selected standalone frontend",
+        "COMMIT f902d4f076c51be88c2a5f913492dfc349c44e23 fix(sdk): bind authoring delegates to selected frontend bytes",
+        "COMMIT 3b39ef7f6183101ede6bc8635bc59d7bc10ec50a fix(c-sdk): reject project shadows at authoring and build entries",
+        "COMMIT 9c0ad9bee00ff01f8465ec041817364765a6a9a4 fix(dev): reject nested project descriptor shadows"
+      ],
+      "identicalSourcePaths": [
+        "tools/guest_authoring_frontend.py",
+        "tools/tests/test_c_authoring_frontend.py",
+        "tools/tests/test_guest_authoring_frontend.py"
+      ],
+      "reviewedChangedPaths": [
+        ".github/workflows/c-guest-authoring.yml",
+        ".github/workflows/developer-tools.yml",
+        "tools/c_capsule.py",
+        "tools/c_capsule_build.py",
+        "tools/c_dependency_authoring.py",
+        "tools/ci/contracts/python/test_c_authoring_frontend.py.json",
+        "tools/ci/contracts/python/test_c_dependency_authoring.py.json",
+        "tools/ci/contracts/python/test_guest_authoring_frontend.py.json",
+        "tools/ci/contracts/python/test_guest_dependency_inputs.py.json",
+        "tools/ci/contracts/workflows/c-guest-authoring.yml/jobs/runtime.json",
+        "tools/ci/contracts/workflows/developer-tools.yml/jobs/contracts.json",
+        "tools/dev_tool_distribution.py",
+        "tools/guest_dependency_inputs.py",
+        "tools/tests/test_c_dependency_authoring.py",
+        "tools/tests/test_guest_dependency_inputs.py"
+      ],
+      "reviewedDiffSha256": "6a0e98347885d2de896b4d50ccbcf1ceedde6d01936c31d4e029732464e4add3",
+      "reconciliation": "Selected standalone authoring frontend and its controls are identical. Current C authoring additionally supports approved generators, transactional templates and captured dependency-domain checks while retaining frontend-byte binding and project-shadow rejection.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:40.179910+00:00"
     },
     {
       "pullRequest": 926,
@@ -2433,10 +2787,41 @@
         770
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        678,
+        684,
+        694
+      ],
+      "reviewedSourceCommits": [
+        "COMMIT 6bcd0aca811955b07336f8f7189ecadf2f23a45a test(sdk): execute shared package assembly for all six recipes",
+        "COMMIT b68d7312d66ca566f2c650d4d5b6e032b2132c3f fix(dev): isolate Rust graph imports from shared package helpers",
+        "COMMIT f11e4a89618657df29c886f7088e196adcd6a183 fix(ci): scope compiler cache runner context to steps",
+        "COMMIT 37e12eccd13b2377f3071a6f7792ad60d4e2bd53 Forward exact captured-executable approval through the maintained Rust frontend",
+        "COMMIT 5c32036d29ec77c5fa91330d21edb3e837332946 feat(sdk): bind captured child executables and Go namespace policy"
+      ],
+      "identicalSourcePaths": [],
+      "reviewedChangedPaths": [
+        ".github/workflows/developer-tools.yml",
+        "tools/application_dependency_store.py",
+        "tools/captured_compiler_isolation.py",
+        "tools/ci/contracts/python/test_captured_compiler_isolation.py.json",
+        "tools/ci/contracts/python/test_dev_tools.py.json",
+        "tools/ci/contracts/python/test_guest_compatibility.py.json",
+        "tools/ci/contracts/workflows/developer-tools.yml/jobs/guest-tools.json",
+        "tools/dev_guest_recipe.py",
+        "tools/rust_capsule_build.py",
+        "tools/tests/test_captured_compiler_isolation.py",
+        "tools/tests/test_dev_tools.py",
+        "tools/tests/test_guest_compatibility.py"
+      ],
+      "reviewedDiffSha256": "b0b8439354286a71cb2a162e32126719f572f52fc843e9c366e18e573161718b",
+      "reconciliation": "Shared six-recipe packaging and scoped compiler cache controls are incorporated. Current assembly adds installed transaction assets and exact dependency-plan transfer; contained compiler ownership additionally captures selected loader library directories. No ticket gate completion is inferred.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:50:43.571802+00:00"
     },
     {
       "pullRequest": 954,
