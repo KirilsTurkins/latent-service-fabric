@@ -1,0 +1,2662 @@
+{
+  "reviewBase": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+  "initialOpenCount": 128,
+  "entries": [
+    {
+      "pullRequest": 850,
+      "title": "Phase 4 cleanup handoff and preserved worktree index",
+      "branch": "docs/phase4-cleanup-handoff-20261008",
+      "snapshotHead": "752720b767920355251501c8e9af966048c81b5d",
+      "referencedNumbers": [
+        391,
+        825,
+        851,
+        852,
+        853,
+        879,
+        956,
+        957,
+        958,
+        959,
+        966,
+        978
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 851,
+      "title": "Draft: preserve Phase 4 manifest conjunction and strict profile checkpoint",
+      "branch": "checkpoint/phase4-cleanup-20261008/root/lf-p4-root-manifest-conjunction-20261007-v1",
+      "snapshotHead": "0d922003389e8f0d44423bc46c5047359390c335",
+      "referencedNumbers": [
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 852,
+      "title": "Draft WIP: preserve native currentness edits before cleanup",
+      "branch": "checkpoint/phase4-cleanup-20261008/phase4/lf-p4-native-currentness787-20261006-v11",
+      "snapshotHead": "e0d03b14fd724f2e9218beb00ceea843262cc6bd",
+      "referencedNumbers": [
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 853,
+      "title": "Draft WIP: preserve interrupted command deduplication merge",
+      "branch": "checkpoint/phase4-cleanup-20261008/phase4/lf-p4-abi-dedup387-execution-20261006",
+      "snapshotHead": "6dbbf49f6bcf61bee863b9c00b2513e29f884bd3",
+      "referencedNumbers": [
+        787,
+        790,
+        791,
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        791,
+        790
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 854,
+      "title": "[SDK cleanup draft] sdk-rust-authoring-20261002",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-authoring-20261002",
+      "snapshotHead": "08a429e2479974bc61494d4dad8221ed63cd4456",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        769
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 855,
+      "title": "[SDK cleanup draft] audit-abandonment-wakeup-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/audit-abandonment-wakeup-20261007-r1",
+      "snapshotHead": "2f40228aad59ee12c7f530dbaad80698757adac3",
+      "referencedNumbers": [
+        677,
+        715,
+        758,
+        774,
+        798,
+        842
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        805
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 856,
+      "title": "[SDK cleanup draft] dotnet-resource-runtime-union-20261002",
+      "branch": "handoff/sdk-cleanup-20261008/dotnet-resource-runtime-union-20261002",
+      "snapshotHead": "ccb449a91f9a82c7373c43b89488279ec9e64b71",
+      "referencedNumbers": [
+        677,
+        771
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 857,
+      "title": "[SDK cleanup draft] networking-http-closed-trap-20261002",
+      "branch": "handoff/sdk-cleanup-20261008/networking-http-closed-trap-20261002",
+      "snapshotHead": "b22062583d01b821e050a5aab40f1c4f2c0993c9",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          858
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 858,
+      "title": "[SDK cleanup draft] networking-http-public-wire-20261002",
+      "branch": "handoff/sdk-cleanup-20261008/networking-http-public-wire-20261002",
+      "snapshotHead": "c187cf0595c494ed0155c630bb25bd403e23d692",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 859,
+      "title": "[SDK cleanup draft] networking-provider-chunk-framing",
+      "branch": "handoff/sdk-cleanup-20261008/networking-provider-chunk-framing",
+      "snapshotHead": "30d361a244c414f76ecb8132e6e915ddda1bc410",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 860,
+      "title": "[SDK cleanup draft] networking-v5-normal-current-20261004-r1",
+      "branch": "handoff/sdk-cleanup-20261008/networking-v5-normal-current-20261004-r1",
+      "snapshotHead": "af6d0c9cea5bf05bbf2e16267922ef21bab6d21b",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 861,
+      "title": "[SDK cleanup draft] networking-v5-normal-http-20261003-r1",
+      "branch": "handoff/sdk-cleanup-20261008/networking-v5-normal-http-20261003-r1",
+      "snapshotHead": "1ff2b8313ee18c91acc7996033a70c49f8200470",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 862,
+      "title": "[SDK cleanup draft] pr761-standard-dotnet-resources-20261002",
+      "branch": "handoff/sdk-cleanup-20261008/pr761-standard-dotnet-resources-20261002",
+      "snapshotHead": "ea1788e89dff169aebac56d5bfa6be2ec3a9bf8b",
+      "referencedNumbers": [
+        677,
+        832
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          856
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 863,
+      "title": "[SDK cleanup draft] runtime-ci-shared-guards-union-20261004-r1",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-ci-shared-guards-union-20261004-r1",
+      "snapshotHead": "fdf1e8334feb2d20f85435b70e200de751c5c676",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 864,
+      "title": "[SDK cleanup draft] runtime-java-activation-authoring",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-activation-authoring",
+      "snapshotHead": "38e8a91b50a6b4ee91a288c0a843f8ad8b9b9296",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          894
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 865,
+      "title": "[SDK cleanup draft] runtime-java-completable-advanced-model",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-advanced-model",
+      "snapshotHead": "3834d866ba88dd5a68326e4f5c170acfc9aba23c",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 866,
+      "title": "[SDK cleanup draft] runtime-java-completable-candidate",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-candidate",
+      "snapshotHead": "5c4a32822db9a313a0bd8e60f63d9471c24af6b0",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          865
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 867,
+      "title": "[SDK cleanup draft] runtime-java-completable-current-20261004-r1",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-current-20261004-r1",
+      "snapshotHead": "c4bfe20b10b4033a225284681011ac28c8c2c7b5",
+      "referencedNumbers": [
+        677,
+        716,
+        778,
+        788,
+        841
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          894
+        ],
+        [
+          895
+        ],
+        [
+          889
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 868,
+      "title": "[SDK cleanup draft] runtime-java-completable-delayed",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-delayed",
+      "snapshotHead": "0efed9eaa6154664147f8d4f2e69edcd7b87a510",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          865
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 869,
+      "title": "[SDK cleanup draft] runtime-java-completable-timed",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-completable-timed",
+      "snapshotHead": "a560bf82b2d37c8ccc66fa54442f7671074eca07",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          865
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 870,
+      "title": "[SDK cleanup draft] runtime-java-executor-acceptance",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-java-executor-acceptance",
+      "snapshotHead": "a03316ba5fa7ffda5d9b9a6bb7ca9e1580330f0b",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          894
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 871,
+      "title": "[SDK cleanup draft] runtime-wait-frames",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-wait-frames",
+      "snapshotHead": "8344afee83c6e3bb88efe5e9eb0fff11818e1f89",
+      "referencedNumbers": [
+        677,
+        819
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 872,
+      "title": "[SDK cleanup draft] runtime-website-acquire-retry",
+      "branch": "handoff/sdk-cleanup-20261008/runtime-website-acquire-retry",
+      "snapshotHead": "6e5a8baf32039e92746fcf24c5c9a9b2076d4451",
+      "referencedNumbers": [
+        677,
+        832
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 873,
+      "title": "[SDK cleanup draft] sdk-c-approved-generators-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-c-approved-generators-20261007-r1",
+      "snapshotHead": "b99da32a4c7fc989fe1d028359b926027f044d81",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 874,
+      "title": "[SDK cleanup draft] sdk-c-authoring-current-20261007-r2",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-c-authoring-current-20261007-r2",
+      "snapshotHead": "120ceab09a2c4a96d4e13ce8a5b3363983b06999",
+      "referencedNumbers": [
+        677,
+        785
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 875,
+      "title": "[SDK cleanup draft] sdk-c-current-complete-qualification-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-c-current-complete-qualification-20261007-r1",
+      "snapshotHead": "1269a0d82e838de12c7cc970c32687deca46f05f",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          874
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 876,
+      "title": "[SDK cleanup draft] sdk-captured-runtime-receipts-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-captured-runtime-receipts-20261007-r1",
+      "snapshotHead": "f742d3d8dce8754e36c0821af48a81c82305872e",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [
+        [
+          907
+        ],
+        [
+          902
+        ],
+        [
+          874
+        ],
+        [
+          882
+        ],
+        [
+          916
+        ],
+        [
+          883
+        ],
+        [
+          955
+        ],
+        [
+          923
+        ],
+        [
+          886
+        ],
+        [
+          884
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 877,
+      "title": "[SDK cleanup draft] sdk-ci-observed-failures",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-ci-observed-failures",
+      "snapshotHead": "c3b5cee5951ecbb49748395b88b225325cda2837",
+      "referencedNumbers": [
+        677,
+        832
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 878,
+      "title": "[SDK cleanup draft] sdk-compatibility-context-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-compatibility-context-20261007-r1",
+      "snapshotHead": "08e23c2490385e13c6c5a2148a5f3d9ea39f3ae7",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [
+        [
+          907
+        ],
+        [
+          902
+        ],
+        [
+          874
+        ],
+        [
+          882
+        ],
+        [
+          916
+        ],
+        [
+          883
+        ],
+        [
+          955
+        ],
+        [
+          923
+        ],
+        [
+          886
+        ],
+        [
+          884
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 879,
+      "title": "WIP: qualify signed Java query and unresolved recovery workflows",
+      "branch": "test/phase4-current-query-witness-union-v39",
+      "snapshotHead": "1fcc6d0fa6ec8e19c3ffc11ca02dd9242d0a10e6",
+      "referencedNumbers": [
+        388,
+        398,
+        399,
+        400,
+        409,
+        718,
+        823,
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          959
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 880,
+      "title": "[SDK cleanup draft] sdk-completable-idle-timer-repair-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-completable-idle-timer-repair-20261006-r1",
+      "snapshotHead": "18cf123686b7beb0e09fcd767ad5845aa558e4d4",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 881,
+      "title": "[SDK cleanup draft] sdk-controlled-stream-peer-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-controlled-stream-peer-20261007-r1",
+      "snapshotHead": "83880e1e843daa0b0d087be5e10dbf9f552fa989",
+      "referencedNumbers": [
+        677,
+        774,
+        798,
+        842
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 882,
+      "title": "[SDK cleanup draft] sdk-dotnet-ci-contract-fixtures-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-dotnet-ci-contract-fixtures-20261007-r1",
+      "snapshotHead": "53bf7d0e83cf3ef97d7d3a24ce91932c328c8d70",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 883,
+      "title": "[SDK cleanup draft] sdk-emitted-reachability-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-emitted-reachability-20261007-r1",
+      "snapshotHead": "5f016c54535924909e2a7ae3080ea4c5562f3944",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 884,
+      "title": "[SDK cleanup draft] sdk-emitted-reachability-graph-domain-followup-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-emitted-reachability-graph-domain-followup-20261007-r1",
+      "snapshotHead": "8a5af03b38df168f9e47a5157f977f1f1d43c869",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 885,
+      "title": "[SDK cleanup draft] sdk-final-runtime-qualification-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-final-runtime-qualification-20261007-r1",
+      "snapshotHead": "e7a555111676792f87d05359ee2e7b56d9dce6ea",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 886,
+      "title": "[SDK cleanup draft] sdk-frontend-dependency-descriptor-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-frontend-dependency-descriptor-20261006-r1",
+      "snapshotHead": "7ce730c92ecff0eb694d4d0466dfe76e9be9cb8b",
+      "referencedNumbers": [
+        677,
+        785
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 887,
+      "title": "[SDK cleanup draft] sdk-frontend-followup-af6d-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-frontend-followup-af6d-20261006-r1",
+      "snapshotHead": "66bda98056d3c2e64ca45731eb47e2942e6355ea",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 888,
+      "title": "[SDK cleanup draft] sdk-generator-host-sandbox-discovery-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-generator-host-sandbox-discovery-20261007-r1",
+      "snapshotHead": "6f3ac39e064f6616c3642ba067b57a069fda654b",
+      "referencedNumbers": [
+        677,
+        842
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 889,
+      "title": "[SDK cleanup draft] sdk-go-service-retirement-diagnostics-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-go-service-retirement-diagnostics-20261007-r1",
+      "snapshotHead": "dbf266840c6d129873ceba9cd8dd6b77fa8a3cc6",
+      "referencedNumbers": [
+        677,
+        785
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 890,
+      "title": "[SDK cleanup draft] sdk-java-approved-source-generators-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-approved-source-generators-20261007-r1",
+      "snapshotHead": "302168448a60ba04652764fc4060173ed6c3009d",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 891,
+      "title": "[SDK cleanup draft] sdk-java-httpserver-body-decoding-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-httpserver-body-decoding-20261007-r1",
+      "snapshotHead": "21031d9c53b69590a997951f48ee2fd4d5e10c1e",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 892,
+      "title": "[SDK cleanup draft] sdk-java-owned-timer-readiness-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-owned-timer-readiness-20261006-r1",
+      "snapshotHead": "89b8d9833d1309667a4aa6da31b5daa40ccabb79",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 893,
+      "title": "[SDK cleanup draft] sdk-java-pr807-coherent-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-pr807-coherent-20261007-r1",
+      "snapshotHead": "10f1c9e7652d903e0f8cf835862c21c323f31d6e",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          894
+        ],
+        [
+          895
+        ],
+        [
+          889
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 894,
+      "title": "[SDK cleanup draft] sdk-java-pr807-wire-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-pr807-wire-20261007-r1",
+      "snapshotHead": "406f9e4075f1804051ff831c9395e15a9d1cdee4",
+      "referencedNumbers": [
+        677,
+        785
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 895,
+      "title": "[SDK cleanup draft] sdk-java-server-lifecycle-qualification-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-server-lifecycle-qualification-20261007-r1",
+      "snapshotHead": "9e66fccb1cf991ebf11dc69f65a34077a5ba377d",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 896,
+      "title": "[SDK cleanup draft] sdk-java-server-maximum-body-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-java-server-maximum-body-20261007-r1",
+      "snapshotHead": "7a7a0e664df442f6e7f13fa332a00c7dc9dce03d",
+      "referencedNumbers": [
+        677,
+        780
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          894
+        ],
+        [
+          895
+        ],
+        [
+          889
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 897,
+      "title": "[SDK cleanup draft] sdk-nats-cold-secret-ci-repair-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-nats-cold-secret-ci-repair-20261006-r1",
+      "snapshotHead": "fb82e51144715a873635c42a95455825c0f91658",
+      "referencedNumbers": [
+        677,
+        716,
+        766,
+        778,
+        788,
+        794
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        805,
+        795,
+        775
+      ],
+      "preservedDescendantTips": [
+        [
+          912
+        ],
+        [
+          874
+        ],
+        [
+          954
+        ],
+        [
+          952
+        ],
+        [
+          924
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 898,
+      "title": "[SDK cleanup draft] sdk-runtime-diagnostic-context-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-runtime-diagnostic-context-20261007-r1",
+      "snapshotHead": "c38043fa9c81180a79e50ad11c3a7f6c156126d4",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 899,
+      "title": "[SDK cleanup draft] sdk-runtime-owner-attribution-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-runtime-owner-attribution-20261007-r1",
+      "snapshotHead": "e3eab7fb844d95fda0f2007423854a8a1e77e4ed",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [
+        [
+          907
+        ],
+        [
+          902
+        ],
+        [
+          874
+        ],
+        [
+          882
+        ],
+        [
+          916
+        ],
+        [
+          883
+        ],
+        [
+          955
+        ],
+        [
+          923
+        ],
+        [
+          886
+        ],
+        [
+          884
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 900,
+      "title": "[SDK cleanup draft] sdk-runtime-receipt-ci-repair-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-runtime-receipt-ci-repair-20261007-r1",
+      "snapshotHead": "166dd6e6ad597e5ca47ad1596e2613f63536292c",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [
+        [
+          902
+        ],
+        [
+          874
+        ],
+        [
+          882
+        ],
+        [
+          916
+        ],
+        [
+          955
+        ],
+        [
+          923
+        ],
+        [
+          886
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 901,
+      "title": "[SDK cleanup draft] sdk-rust-canonical-stack-port-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-canonical-stack-port-20261007-r1",
+      "snapshotHead": "a7851c29eb65a48a1e8547c2bbb173a21a57fc68",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          902
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 902,
+      "title": "[SDK cleanup draft] sdk-rust-canonical-thread-bootstrap-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-canonical-thread-bootstrap-20261007-r1",
+      "snapshotHead": "0be99712751a4b67830914cba42d060f091219db",
+      "referencedNumbers": [
+        677,
+        743
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 903,
+      "title": "[SDK cleanup draft] sdk-rust-captured-staged-zig-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-captured-staged-zig-20261006-r1",
+      "snapshotHead": "aa5886b81f6438f8d33216484955279a1ab57a35",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 904,
+      "title": "[SDK cleanup draft] sdk-rust-frontend-closure-decoder-20261006-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-frontend-closure-decoder-20261006-r1",
+      "snapshotHead": "a26f7cba7433d24966bdcfb6c4cedbad2c4dc35d",
+      "referencedNumbers": [
+        677,
+        715,
+        758
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 905,
+      "title": "[SDK cleanup draft] sdk-rust-logical-tls-port-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-logical-tls-port-20261007-r1",
+      "snapshotHead": "9f26c65bcc57d71f368a7d8463d0fdc36037a4d5",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          902
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 906,
+      "title": "[SDK cleanup draft] sdk-rust-runtime-receipt-source-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-runtime-receipt-source-20261007-r1",
+      "snapshotHead": "a7d3300c39b7379a1543ca93226098f7737725c5",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        956,
+        843
+      ],
+      "preservedDescendantTips": [
+        [
+          907
+        ],
+        [
+          902
+        ],
+        [
+          874
+        ],
+        [
+          882
+        ],
+        [
+          916
+        ],
+        [
+          955
+        ],
+        [
+          923
+        ],
+        [
+          886
+        ],
+        [
+          884
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 907,
+      "title": "[SDK cleanup draft] sdk-rust-standard-clock-port-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-rust-standard-clock-port-20261007-r1",
+      "snapshotHead": "0114e05a6a5c0a08f4e0729b00bbd3da414f2767",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 908,
+      "title": "[SDK cleanup draft] sdk-security-20261004",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-security-20261004",
+      "snapshotHead": "8810e5d99784da6ca5239587e05605915b6b4651",
+      "referencedNumbers": [
+        677,
+        782,
+        793,
+        816,
+        820
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 909,
+      "title": "[SDK cleanup draft] sdk-stream-operator-controls-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-operator-controls-20261007-r1",
+      "snapshotHead": "9320471d260e49ecbdd5ca87516393299c164ee6",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        775
+      ],
+      "preservedDescendantTips": [
+        [
+          912
+        ],
+        [
+          874
+        ],
+        [
+          954
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "pullRequest": 910,
+      "title": "[SDK cleanup draft] sdk-stream-operator-current-development-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-operator-current-development-20261007-r1",
+      "snapshotHead": "9320471d260e49ecbdd5ca87516393299c164ee6",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        775
+      ],
+      "preservedDescendantTips": [
+        [
+          912
+        ],
+        [
+          874
+        ],
+        [
+          954
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 911,
+      "title": "[SDK cleanup draft] sdk-stream-operator-current-development-20261007-r2",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-operator-current-development-20261007-r2",
+      "snapshotHead": "55906321f5bd7e9cf156674945d808cda91f18b2",
+      "referencedNumbers": [
+        677,
+        803,
+        805,
+        826
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        775
+      ],
+      "preservedDescendantTips": [
+        [
+          912
+        ],
+        [
+          874
+        ],
+        [
+          954
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 912,
+      "title": "[SDK cleanup draft] sdk-stream-tls-captured-parser-bounds-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-tls-captured-parser-bounds-20261007-r1",
+      "snapshotHead": "067491d87f8fd4f233114ac93db260d5fc2514b2",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 913,
+      "title": "[SDK cleanup draft] sdk-stream-tls-protected-credentials-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-stream-tls-protected-credentials-20261007-r1",
+      "snapshotHead": "3fa3313911390233f26e7b911a2458cf6f055d94",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          912
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 914,
+      "title": "[SDK cleanup draft] sdk-typescript-approved-generators-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-approved-generators-20261007-r1",
+      "snapshotHead": "f80b48250c89a1294a42d5f5c8e0d52e7aefe2f7",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 915,
+      "title": "[SDK cleanup draft] sdk-typescript-async-clock-profile-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-clock-profile-20261008-r1",
+      "snapshotHead": "33a9824e793e0a8605b4b5f6463f368fa179f5b3",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          916
+        ],
+        [
+          923
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 916,
+      "title": "[SDK cleanup draft] sdk-typescript-async-imports-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-imports-20261008-r1",
+      "snapshotHead": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 917,
+      "title": "[SDK cleanup draft] sdk-typescript-async-owned-events-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-owned-events-20261007-r1",
+      "snapshotHead": "ab77366903fe21c970cf6fa1f3491166417c3c95",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          916
+        ],
+        [
+          923
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 918,
+      "title": "[SDK cleanup draft] sdk-typescript-async-profile-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-profile-20261007-r1",
+      "snapshotHead": "7fd9d6b5c79b2602315687da3beba6f044ca6ed0",
+      "referencedNumbers": [
+        677,
+        826
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          916
+        ],
+        [
+          923
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 919,
+      "title": "[SDK cleanup draft] sdk-typescript-async-runtime-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-async-runtime-20261007-r1",
+      "snapshotHead": "a6c3e1472c622abfd8f5515e31301b08940c88b2",
+      "referencedNumbers": [
+        677,
+        774,
+        798,
+        842
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 920,
+      "title": "[SDK cleanup draft] sdk-typescript-import-profile-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-import-profile-20261008-r1",
+      "snapshotHead": "faa08263570b3748d1be7918a3271e321c6adeea",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          923
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 921,
+      "title": "[SDK cleanup draft] sdk-typescript-import-selection-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-import-selection-20261008-r1",
+      "snapshotHead": "6abd7a1d58f8db15648abe9613967d25690f1796",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          923
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 922,
+      "title": "[SDK cleanup draft] sdk-typescript-import-splicer-contract-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-import-splicer-contract-20261008-r1",
+      "snapshotHead": "50495c4fb24bf3b05d01e2a03bc13c6b3958138f",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          923
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 923,
+      "title": "[SDK cleanup draft] sdk-typescript-runtime-materials-20261008-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-typescript-runtime-materials-20261008-r1",
+      "snapshotHead": "7b69ba1fd8fa2dd6e82d5964399a7e0c946a28ba",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 924,
+      "title": "[SDK cleanup draft] sdk-wasi-stream-reproducers-20261007-r1",
+      "branch": "handoff/sdk-cleanup-20261008/sdk-wasi-stream-reproducers-20261007-r1",
+      "snapshotHead": "ea485b568d63b126b1721febe1fb673e6c94eb9b",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 925,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-c-authoring-lifecycle",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-c-authoring-lifecycle",
+      "snapshotHead": "7069e537200a11375c326f9f291b371d7cf8ac94",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 926,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-c-completion",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-c-completion",
+      "snapshotHead": "2f0a6e1a4424b1cdd360fb15ca42e301951a8722",
+      "referencedNumbers": [
+        677,
+        783,
+        819
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        824
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          898
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 927,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-ci",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-ci",
+      "snapshotHead": "131b1e3358a567b0527f28c48ea40926e8bc8806",
+      "referencedNumbers": [
+        677,
+        756,
+        770,
+        789
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        771
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 928,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-control-lease",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-control-lease",
+      "snapshotHead": "10d419cd6d81b9977d0aeeb13829afd2a3102ea5",
+      "referencedNumbers": [
+        677,
+        760,
+        770,
+        789
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        820
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 929,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-diagnostics",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-diagnostics",
+      "snapshotHead": "a90d39b115a6e586ea96af8519ef327dbec7166f",
+      "referencedNumbers": [
+        677,
+        756
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        776
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 930,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-dotnet-peer",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-dotnet-peer",
+      "snapshotHead": "0ffad44a7409e65a58cdfb4473a7d2147976b6d2",
+      "referencedNumbers": [
+        677,
+        760,
+        789
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        806
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 931,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-foundations",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-foundations",
+      "snapshotHead": "68d39106911a5221898ae7d170b4f00bda64a3e0",
+      "referencedNumbers": [
+        677,
+        756,
+        770
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        761
+      ],
+      "preservedDescendantTips": [
+        [
+          856
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 932,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-host-profiles",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-host-profiles",
+      "snapshotHead": "a4211b1717eed64eed4ad908fb2fdbe19fe46466",
+      "referencedNumbers": [
+        677,
+        756
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 933,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-http-client-node",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-http-client-node",
+      "snapshotHead": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+      "referencedNumbers": [
+        677,
+        832
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "superseded-by-preserved-descendant",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [
+        [
+          859
+        ],
+        [
+          858
+        ],
+        [
+          856
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 934,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-expanded-timeunit-compile",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-expanded-timeunit-compile",
+      "snapshotHead": "45dd0c316e901b5666edda527f406a302c00cf98",
+      "referencedNumbers": [
+        677,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          865
+        ],
+        [
+          894
+        ],
+        [
+          871
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 935,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-resources-recovery",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-resources-recovery",
+      "snapshotHead": "7f6fd0832b6b0af73b15889343ecdfb4142314c7",
+      "referencedNumbers": [
+        677,
+        782
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 936,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-review",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-review",
+      "snapshotHead": "6c493ea1ebdaee81023e5c9cc533253aaf0d1980",
+      "referencedNumbers": [
+        677,
+        756
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        809,
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          894
+        ],
+        [
+          935
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 937,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-spills",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-spills",
+      "snapshotHead": "27af27b8bab9edcfad4e85af1a676c16e969cc03",
+      "referencedNumbers": [
+        677,
+        756,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        827
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 938,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-spills-compile",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-spills-compile",
+      "snapshotHead": "bed5c4d6d61a0feb36d0da57df03a994d9347432",
+      "referencedNumbers": [
+        677,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 939,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java-timeunit-compile",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java-timeunit-compile",
+      "snapshotHead": "8943a364bfa53480d001b4d82353dc0ef576c6a0",
+      "referencedNumbers": [
+        677,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 940,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-java807-warm",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-java807-warm",
+      "snapshotHead": "ec0430f56af46c4d5b80e1a8ae35fdc34311d430",
+      "referencedNumbers": [
+        677,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          865
+        ],
+        [
+          894
+        ],
+        [
+          871
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 941,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-networking",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-networking",
+      "snapshotHead": "21e7532446e7453ad7a9e0be3ae57d8c1df906e4",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        795,
+        775
+      ],
+      "preservedDescendantTips": [
+        [
+          912
+        ],
+        [
+          874
+        ],
+        [
+          954
+        ],
+        [
+          952
+        ],
+        [
+          924
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 942,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime",
+      "snapshotHead": "16e89a79a5df3e6b9d476ad2f57e130c6eafb829",
+      "referencedNumbers": [
+        677,
+        747,
+        750,
+        754
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807,
+        798,
+        781
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          865
+        ],
+        [
+          894
+        ],
+        [
+          872
+        ],
+        [
+          871
+        ],
+        [
+          947
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 943,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-ci",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-ci",
+      "snapshotHead": "829dfced3201b502781ecf84b4ef594acb01b9f7",
+      "referencedNumbers": [
+        677,
+        756
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        810
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 944,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-contracts",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-contracts",
+      "snapshotHead": "415c36e5a4bc7095e6a16398f8b2b9c1aab47b6d",
+      "referencedNumbers": [
+        677,
+        813,
+        817,
+        818,
+        829
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        781
+      ],
+      "preservedDescendantTips": [
+        [
+          872
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 945,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-integration",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-integration",
+      "snapshotHead": "99b6d567c6435c6f1d643bf9d4caf2470e212578",
+      "referencedNumbers": [
+        677,
+        770
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 946,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-pump",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump",
+      "snapshotHead": "1cce4f749486e0e102dc764b2efda2c0ccd4c79c",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 947,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-pump-ci",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump-ci",
+      "snapshotHead": "9327aeed95f76f80b22cb622c7fa17ded74cc7cc",
+      "referencedNumbers": [
+        677,
+        817,
+        818,
+        829
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 948,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-pump-native",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-pump-native",
+      "snapshotHead": "38d08fd2bdc2c9631377de228bc9719e0193303a",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": false
+    },
+    {
+      "pullRequest": 949,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-timeunit",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-timeunit",
+      "snapshotHead": "ec0430f56af46c4d5b80e1a8ae35fdc34311d430",
+      "referencedNumbers": [
+        677,
+        799
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        807
+      ],
+      "preservedDescendantTips": [
+        [
+          891
+        ],
+        [
+          865
+        ],
+        [
+          894
+        ],
+        [
+          871
+        ],
+        [
+          895
+        ],
+        [
+          898
+        ],
+        [
+          889
+        ],
+        [
+          914
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "pullRequest": 950,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-trace",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-trace",
+      "snapshotHead": "99b6d567c6435c6f1d643bf9d4caf2470e212578",
+      "referencedNumbers": [
+        677,
+        770
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        798
+      ],
+      "preservedDescendantTips": [
+        [
+          947
+        ]
+      ],
+      "closed": true
+    },
+    {
+      "pullRequest": 951,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-runtime-v5-ci",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-runtime-v5-ci",
+      "snapshotHead": "404de7a41a6dac391b9211ebd2cadca595acc21f",
+      "referencedNumbers": [
+        677,
+        756
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        759
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 952,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-stream-authority-controls",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-stream-authority-controls",
+      "snapshotHead": "27cc15565c0219c8a7f1307ae9543b92a368ccea",
+      "referencedNumbers": [
+        677,
+        785
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        795
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 953,
+      "title": "[SDK cleanup draft] latent-fabric-sdk-trust-integration",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-sdk-trust-integration",
+      "snapshotHead": "88e73b3ba8f2b51289a84f180c3995ea973d9453",
+      "referencedNumbers": [
+        677,
+        770
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 954,
+      "title": "[SDK cleanup draft] latent-fabric-streams-integration",
+      "branch": "handoff/sdk-cleanup-20261008/latent-fabric-streams-integration",
+      "snapshotHead": "222ab1ac51336cb6548cf82e10ef58eaa53acb4f",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "incorporated-in-merged-source",
+      "incorporatingMergedPrs": [
+        775
+      ],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 955,
+      "title": "[SDK cleanup draft] latent-sdk-analyzer-current",
+      "branch": "handoff/sdk-cleanup-20261008/latent-sdk-analyzer-current",
+      "snapshotHead": "63d98926d23d3c61ef9e66c55a53b35f96eaf4ec",
+      "referencedNumbers": [
+        677
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 957,
+      "title": "WIP: preserve restored read-fence retirement and original receipt recovery",
+      "branch": "test/phase4-restore-reader-retirement-v67",
+      "snapshotHead": "6a7bfa58acf4e396fbc4dde372b471bb4ea8cd53",
+      "referencedNumbers": [
+        398,
+        399,
+        808,
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 958,
+      "title": "Archival draft: preserve private effect-status RPC test wrapper",
+      "branch": "checkpoint/phase4-cleanup-20261008/integration/lf-p4-effect-status-rpc-v12",
+      "snapshotHead": "dee4232bbfd8e12cc119a0e095fa198cfd20a009",
+      "referencedNumbers": [
+        400,
+        850
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 959,
+      "title": "Phase 4 integration preservation and exact validation handoff",
+      "branch": "docs/phase4-integration-preservation-20261008",
+      "snapshotHead": "f50062d5eb0256987179d27b79f5f61c095dd783",
+      "referencedNumbers": [
+        823,
+        828,
+        850,
+        879
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 960,
+      "title": "docs(sdk): preserve stopped work and cleanup handoff",
+      "branch": "handoff/sdk-library-cleanup-20261008",
+      "snapshotHead": "3d241cbe11af65335cc3e744f849cab03d1ff0ab",
+      "referencedNumbers": [
+        677,
+        695,
+        696
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 961,
+      "title": "WIP cleanup snapshot: fb2-ci-repairs-811",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-ci-repairs-811",
+      "snapshotHead": "d362f803330211e70a1b8ea80a9d8f475f7aa237",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 962,
+      "title": "WIP cleanup snapshot: fb2-ci-repairs-823",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-ci-repairs-823",
+      "snapshotHead": "8bca9fa6138f050a9f576838b42168113ee8f8bd",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 963,
+      "title": "WIP cleanup snapshot: fb2-conformance-lineage-20261005-r2",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-conformance-lineage-20261005-r2",
+      "snapshotHead": "2dd5af8d3e11194e6687d02a867add5bcc849a44",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 964,
+      "title": "WIP cleanup snapshot: fb2-effect393-repair-r2",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-effect393-repair-r2",
+      "snapshotHead": "b54abd0b8504b889a21c121939b6f0f41ec93a10",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 965,
+      "title": "WIP cleanup snapshot: fb2-go-current785-repro-resume11-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-go-current785-repro-resume11-r1",
+      "snapshotHead": "86cdf314881cdba375838a1724ef4d71f0e79136",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 966,
+      "title": "Phase 4 entity, storage and restore preservation handoff",
+      "branch": "docs/phase4-entity-preservation-20261008",
+      "snapshotHead": "0b0d19e331715138eb327af0ffa02bdec7e12168",
+      "referencedNumbers": [
+        808,
+        850,
+        879,
+        957
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 967,
+      "title": "WIP cleanup snapshot: fb2-immediate-scheduler-20261007-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-immediate-scheduler-20261007-r1",
+      "snapshotHead": "5900922172f34e804279941a4a56396a0330181b",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 968,
+      "title": "WIP cleanup snapshot: fb2-java718-captures-20261007-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-java718-captures-20261007-r1",
+      "snapshotHead": "939183aa4f62c113420c1c0a1e39d90ef990031f",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 969,
+      "title": "WIP cleanup snapshot: fb2-npm-v4-fixtures-resume7",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-npm-v4-fixtures-resume7",
+      "snapshotHead": "6d6dbb8ce97a0a497bd16a653ff42fb9f127678b",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 970,
+      "title": "WIP cleanup snapshot: fb2-pending-recovery-current53-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-pending-recovery-current53-r1",
+      "snapshotHead": "fd8853fd0e51235d17661079720faf4c810cd6bb",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 971,
+      "title": "WIP cleanup snapshot: fb2-provider-blob-diagnostic-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-provider-blob-diagnostic-r1",
+      "snapshotHead": "b771b7329607e92fc4642faadaaa0cd513ccf95d",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 972,
+      "title": "WIP cleanup snapshot: fb2-schema808-clippy-20261007-r1",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-schema808-clippy-20261007-r1",
+      "snapshotHead": "504048f7d3f7078bac02bf0009de45eb805a6717",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 973,
+      "title": "WIP cleanup snapshot: fb2-schema808-repair-r2",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-schema808-repair-r2",
+      "snapshotHead": "62477b295b257166fb12b394dafb3c4f19a26894",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 974,
+      "title": "WIP cleanup snapshot: fb2-state823-resume10",
+      "branch": "checkpoint/feedback2-cleanup-20261008/latent-fabric-fb2-state823-resume10",
+      "snapshotHead": "d24ff1ac37c52d1d611235033bdd345ae7551d76",
+      "referencedNumbers": [
+        707,
+        823
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 975,
+      "title": "WIP: preserve Feedback2 diagnostic qualification handoff",
+      "branch": "handoff/feedback2-709-cleanup-20261008",
+      "snapshotHead": "8b704735c10fb2487653f011f775da35573c66ca",
+      "referencedNumbers": [
+        707,
+        709,
+        768
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 976,
+      "title": "WIP: preserve approved Feedback2 packaged preflight handoff",
+      "branch": "handoff/feedback2-710-cleanup-20261008",
+      "snapshotHead": "9f828b6d56f0f218efbdbc8d8092b9b69f2b37c0",
+      "referencedNumbers": [
+        707,
+        710,
+        786,
+        848,
+        849
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 977,
+      "title": "WIP: preserve consolidated dependency and renderer build work",
+      "branch": "fix/feedback2-dependencies-802-20261008",
+      "snapshotHead": "ba36021771f7e3c808723db9f584446e0ceb64d5",
+      "referencedNumbers": [
+        707,
+        718,
+        802,
+        845
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    },
+    {
+      "pullRequest": 978,
+      "title": "Phase 4 Portable source and CI preservation handoff",
+      "branch": "docs/phase4-portable-cleanup-handoff-20261008",
+      "snapshotHead": "973e60ae686cb3be2c584b402cf94721a8acc9ab",
+      "referencedNumbers": [
+        825,
+        850,
+        956
+      ],
+      "ticketAcceptance": "not inferred from snapshot or PR closure",
+      "disposition": "needs-source-and-ticket-reconciliation",
+      "incorporatingMergedPrs": [],
+      "preservedDescendantTips": [],
+      "closed": false
+    }
+  ]
+}
