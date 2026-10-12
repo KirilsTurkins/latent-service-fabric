@@ -247,7 +247,12 @@ pub(super) async fn execute(
                 let retired = retire(snapshot, &codecs).await;
                 let receipt = outcome?;
                 Ok(
-                    serde_json::json!({"action":"restore", "operationDigest":digest(receipt.operation_digest()), "checkpoint":receipt.checkpoint().encode(), "importedRows":receipt.imported_rows().to_string(), "resourcePhysicallyRetired":retired, "pausedForReconciliation":true}),
+                    serde_json::json!({"action":"restore", "operationDigest":digest(receipt.operation_digest()),
+                        "snapshotDigest":digest(receipt.input().snapshot().snapshot_digest),
+                        "manifestDigest":digest(receipt.input().snapshot().manifest_digest),
+                        "destinationIdentity":receipt.checkpoint().identity().as_str(),
+                        "checkpoint":receipt.checkpoint().encode(), "importedRows":receipt.imported_rows().to_string(),
+                        "resourcePhysicallyRetired":retired, "pausedForReconciliation":true}),
                 )
             } else {
                 let value = serde_json::json!({"action":"inspect-restore", "snapshot":snapshot_value(input.snapshot()), "windowDigest":digest(input.window().digest().map_err(storage)?), "window":input.window()});
