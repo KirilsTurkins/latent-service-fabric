@@ -29,6 +29,7 @@ struct Retained<S, T> {
     reservation: PhysicalReservation<S>,
     retired: Arc<RetirementSignal>,
     witness_issued: bool,
+    custody: Option<u64>,
 }
 
 impl<S: Send + 'static, T: Send + 'static> Retirement for Retained<S, T> {
@@ -39,11 +40,40 @@ impl<S: Send + 'static, T: Send + 'static> Retirement for Retained<S, T> {
             reservation,
             retired,
             witness_issued: _,
+            custody,
         } = *self;
+        let control = Arc::clone(&reservation.0.control);
         // Native handle destruction precedes physical ownership/byte refund.
-        drop(value);
+        if custody.is_some() {
+            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(value))).is_err() {
+                // Native retirement was not positively observed. Keep the
+                // bounded original keeper/pin charged until process loss;
+                // unwinding must not reopen custody or refund its capacity.
+                control.fail(StoreIoError::RecoveryRequired);
+                std::mem::forget(owner);
+                std::mem::forget(reservation);
+                return;
+            }
+        } else {
+            drop(value);
+        }
         drop(owner);
         drop(reservation);
+        if let Some(sequence) = custody {
+            {
+                let mut state = control
+                    .state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                if let Some(custody) = &mut state.custody {
+                    if custody.sequence == sequence {
+                        custody.physically_retired = true;
+                    }
+                }
+                state.release_retired_custody();
+            }
+            control.notify();
+        }
         retired.complete();
     }
 }
@@ -62,7 +92,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         &self,
         retained_bytes: u64,
     ) -> Result<StoreIoRetained<S, T>, StoreIoError> {
-        self.reserve_in(false, retained_bytes)
+        self.reserve_in(false, retained_bytes, None)
     }
 
     /// The same affine physical owner, admitted and retired exclusively in the
@@ -72,13 +102,22 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         &self,
         retained_bytes: u64,
     ) -> Result<StoreIoRetained<S, T>, StoreIoError> {
-        self.reserve_in(true, retained_bytes)
+        self.reserve_in(true, retained_bytes, None)
+    }
+
+    pub(crate) fn reserve_custody_retained<T: Send + 'static>(
+        &self,
+        retained_bytes: u64,
+        deadline: std::time::Instant,
+    ) -> Result<StoreIoRetained<S, T>, StoreIoError> {
+        self.reserve_in(true, retained_bytes, Some(deadline))
     }
 
     fn reserve_in<T: Send + 'static>(
         &self,
         recovery: bool,
         retained_bytes: u64,
+        custody_deadline: Option<std::time::Instant>,
     ) -> Result<StoreIoRetained<S, T>, StoreIoError> {
         let control = &self.inner.control;
         let mut state = control.state.lock().map_err(|_| StoreIoError::Poisoned)?;
@@ -90,7 +129,28 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
         let bytes = retained_bytes
             .checked_add(metadata)
             .ok_or(StoreIoError::Exhausted)?;
+        if custody_deadline.is_some() {
+            state.require_idle_custody()?;
+        }
         state.admit(recovery, bytes)?;
+        let custody = if let Some(deadline) = custody_deadline {
+            if control.clock.monotonic_now() >= deadline {
+                return Err(StoreIoError::CustodyExpired);
+            }
+            let sequence = state
+                .next_custody
+                .checked_add(1)
+                .ok_or(StoreIoError::Exhausted)?;
+            state.next_custody = sequence;
+            state.custody = Some(super::state::CustodyState {
+                sequence,
+                deadline,
+                physically_retired: false,
+            });
+            Some(sequence)
+        } else {
+            None
+        };
         state.reserve(recovery, bytes);
         state.physical_owners += 1;
         let retained = Box::new(Retained {
@@ -104,6 +164,7 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             }),
             retired: Arc::new(RetirementSignal::default()),
             witness_issued: false,
+            custody,
         });
         Ok(StoreIoRetained {
             control: Arc::clone(control),
@@ -185,6 +246,10 @@ impl<S: Send + 'static, T: Send + 'static> StoreIoRetained<S, T> {
 
     pub(crate) fn get(&self) -> Option<&T> {
         self.retained.as_ref()?.value.as_ref()
+    }
+
+    pub(crate) fn custody_sequence(&self) -> Option<u64> {
+        self.retained.as_ref()?.custody
     }
 
     pub(crate) fn belongs_to(&self, owner: &StoreIoOwner<S>) -> bool {

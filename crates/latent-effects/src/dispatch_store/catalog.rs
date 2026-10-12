@@ -13,6 +13,7 @@ use super::{
     effect_payload_key, effect_row_key, storage_error, DueRecord, DUE_PREFIX, EFFECT_PREFIX,
 };
 
+mod checkpoint;
 #[cfg(test)]
 mod tests;
 mod validation;
@@ -50,6 +51,16 @@ pub struct HistoryPage {
     pub resume: Option<Vec<u8>>,
 }
 
+/// Original exact inline dependencies from one bounded native view. These
+/// bytes grant no terminalization, payload release or provider permission.
+pub struct RetainedEffectRows {
+    pub record: EffectRecord,
+    pub expectations: Vec<ExpectedRow>,
+    pub due: Option<latent_state::embedded::RowKey>,
+    pub reclaim: Vec<latent_state::embedded::RowKey>,
+    pub additional_charge: u64,
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
 pub struct DispatchCounts {
     pub pending: u64,
@@ -70,6 +81,22 @@ pub struct DispatchCounts {
 pub struct DispatchCatalog;
 
 impl DispatchCatalog {
+    /// Finite future record, due-index and delivery-history closure. Actual
+    /// optional management rows are charged separately by their original owner.
+    pub fn retention_charge(authority: &DurableEffectAuthority) -> Result<u64, StoreError> {
+        let history = u64::from(authority.ceiling().maximum_attempts)
+            .checked_mul(
+                (super::codec::MAXIMUM_HISTORY_BYTES + super::codec::HISTORY_PREFIX.len() + 40 + 64)
+                    as u64,
+            )
+            .ok_or(StoreError::Capacity)?;
+        EffectRecord::retained_bound(authority)
+            .map_err(storage_error)?
+            .checked_add((EFFECT_PREFIX.len() + 32 + 64) as u64)
+            .and_then(|bytes| bytes.checked_add(history))
+            .and_then(|bytes| bytes.checked_add(256))
+            .ok_or(StoreError::Capacity)
+    }
     /// Only the fresh exclusive node startup owner may advance this fence.
     /// The protected root must prove the previous process physically retired.
     /// An admitted external restore checkpoint rejects epoch/clock rollback;
@@ -117,6 +144,7 @@ impl DispatchCatalog {
         maximum_rows: usize,
         maximum_bytes: usize,
     ) -> Result<DuePage, StoreError> {
+        latent_state::recovery::require_ready(view)?;
         let page = view.scan_after(
             Family::Maintenance,
             DUE_PREFIX,
@@ -132,7 +160,22 @@ impl DispatchCatalog {
                 next_due_millis = Some(row.due_millis);
                 break;
             }
-            rows.push(row);
+            let loaded = write::Loaded::read(view, &row.effect).map_err(|error| match error {
+                DispatchStoreError::Storage(error) => error,
+                _ => StoreError::Corrupt,
+            })?;
+            let authority = loaded.record.authority().map_err(storage_error)?;
+            let scope = authority.scope();
+            match latent_state::recovery::dispatch_readiness_expectations(
+                view,
+                &latent_core::TenantId(scope.tenant.clone()),
+                &latent_core::StateNamespaceId(scope.namespace.clone()),
+                scope.incarnation,
+            ) {
+                Ok(_) => rows.push(row),
+                Err(StoreError::Unavailable | StoreError::Conflict) => {}
+                Err(error) => return Err(error),
+            }
         }
         Ok(DuePage {
             rows,
@@ -174,6 +217,7 @@ impl DispatchCatalog {
         let payload_bytes = view.get(&payload_key)?.ok_or(StoreError::Corrupt)?;
         let payload = PayloadRecord::decode(&payload_bytes).map_err(storage_error)?;
         let authority = loaded.record.authority().map_err(storage_error)?;
+        writer.expect_ready_namespace(&view, authority.scope())?;
         payload.verify(&authority).map_err(storage_error)?;
         let attempt = match loaded.record.claim(epoch.0, time) {
             Ok(attempt) => attempt,
@@ -224,6 +268,10 @@ impl DispatchCatalog {
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, claim.effect())?;
+        writer.expect_ready_namespace(
+            &view,
+            loaded.record.authority().map_err(storage_error)?.scope(),
+        )?;
         loaded.record.check_claim(claim)?;
         writer.verify_attempt(&view, &loaded.record)?;
         loaded.record.begin_send(claim)?;

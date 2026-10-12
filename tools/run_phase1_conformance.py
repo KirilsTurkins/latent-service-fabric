@@ -25,6 +25,7 @@ from tools.validate_phase1_conformance import load_bounded
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_LOG = 4 * 1024 * 1024
+GIT_STATUS_TIMEOUT = 60
 PARITY_TEST = "standalone::parity::adapter_and_rpc_have_equivalent_selected_outcomes"
 PROCESS_TEST = "phase1_bounded_child_conformance"
 
@@ -116,8 +117,12 @@ def identity(name: str, path: Path, maximum: int = 1024 * 1024 * 1024) -> dict:
 
 
 def git(*args: str) -> str:
-    return subprocess.run(["git", *args], cwd=ROOT, check=True, capture_output=True,
-                          text=True, timeout=10).stdout.strip()
+    # Status inspects the full source tree after fixture/build activity. Keep
+    # its finite metadata budget separate from collector execution limits and
+    # avoid an optional index rewrite; dirty/untracked files still count.
+    timeout = GIT_STATUS_TIMEOUT if args[:1] == ("status",) else 10
+    return subprocess.run(["git", "--no-optional-locks", *args], cwd=ROOT, check=True,
+                          capture_output=True, text=True, timeout=timeout).stdout.strip()
 
 
 def build_test(package: str, selection: list[str], name: str, output: Path,

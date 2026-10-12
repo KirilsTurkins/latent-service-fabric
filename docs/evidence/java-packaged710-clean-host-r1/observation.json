@@ -1,0 +1,965 @@
+{
+  "approvedProducerSource": "761172002e4a4d02102f8c757235b888fe4859e1",
+  "bounds": {
+    "commands": 360,
+    "componentBuilds": 4,
+    "conductorSeconds": 7200,
+    "liveNodes": 1,
+    "nodeCampaignSeconds": 900
+  },
+  "cleanup": {},
+  "commands": [
+    {
+      "argv": [
+        "/qualification-work/campaign-r1/authenticated-frontend/frontend/bin/latent-dev",
+        "--state-root",
+        "/qualification-work/campaign-r1/controller/controller",
+        "dev",
+        "connect",
+        "--workspace",
+        "test-java-composition-710",
+        "--backend-config",
+        "/qualification-work/campaign-r1/controller/test-java-composition-710-backend.json"
+      ],
+      "exitCode": 0,
+      "outputLimitExceeded": false,
+      "response": {
+        "code": "success",
+        "result": {
+          "backend": "linux",
+          "workspace": "test-java-composition-710"
+        },
+        "schemaVersion": "latent.dev.result.v1"
+      },
+      "seconds": 0.303,
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 127,
+      "stdoutSha256": "73d9831312842b4dc51dd980a2bf0bc719218fb94dbd32be1e5488d4a0f1406a"
+    }
+  ],
+  "conductorSource": {
+    "checkout": "d39efecac856ad8e833479075318e461f8192008",
+    "compositionProbe": {
+      "bytes": 20779,
+      "files": [
+        {
+          "bytes": 86,
+          "path": "__init__.py",
+          "sha256": "sha256:2bbc52bc30f2774850be858ea3bc06ef0bd18aaff99a0424a100208ced0162e3"
+        },
+        {
+          "bytes": 5359,
+          "path": "frontend.py",
+          "sha256": "sha256:a65f41580a52a7c31c88ef52f821d0de9ce62965668d0b60497173022415b493"
+        },
+        {
+          "bytes": 5049,
+          "path": "schedule.py",
+          "sha256": "sha256:6c16da089828b76cf1f1cb619c5a3c4f9cf4c678b9f93526952626c1f032ae5d"
+        },
+        {
+          "bytes": 4882,
+          "path": "selection.py",
+          "sha256": "sha256:3908ef0068e6008cabb9055b21ae65a8abb8462856c515fbd04bea34f8233513"
+        },
+        {
+          "bytes": 5403,
+          "path": "source.py",
+          "sha256": "sha256:7cb2026dc749a3e0e13adda72c445acf8563807d1cacf8fb068aac71dd3eb949"
+        }
+      ],
+      "filesDigest": "sha256:77d0303b53c3ce21f03828150b9a9aaeb3eba20a2821d20858a3994273ee36f4"
+    },
+    "entrypoint": {
+      "bytes": 699,
+      "sha256": "sha256:368031298391a27098b77011245e2967bda31187160ed22d0cc5801a52a64c33"
+    },
+    "fixture": {
+      "bytes": 10623,
+      "files": [
+        {
+          "bytes": 3006,
+          "path": "adapter/Capsule.java",
+          "sha256": "sha256:1371c8187b835d2e77a2e8468e61d50ff903740bc0e8bc919a612724ac292dfc"
+        },
+        {
+          "bytes": 323,
+          "path": "adapter/world.wit",
+          "sha256": "sha256:7008db346e0d134b86a27bbdacf9dcfa7b92fd50d50b1d8b91a4af7868546804"
+        },
+        {
+          "bytes": 1509,
+          "path": "client-test.mjs",
+          "sha256": "sha256:dfbf5dbe9bf8f41e6c93cf7a0ca742474b3cb85e944b252d54772c125d2003ee"
+        },
+        {
+          "bytes": 871,
+          "path": "client.mjs",
+          "sha256": "sha256:cdc3b7b59f13761c8afc5fa29aa1335ae905e2a1393b1b6998a7383fa88f52c1"
+        },
+        {
+          "bytes": 356,
+          "path": "context-required/Capsule.java",
+          "sha256": "sha256:47878cada2e0989a23d47a1db462a2dfb3bcb981cf63d5701987810a46bd5e9b"
+        },
+        {
+          "bytes": 357,
+          "path": "context-required/world.wit",
+          "sha256": "sha256:c8a6451f17847c508038efac74eddcd0f08dd3e2138e441c92349c602da5a304"
+        },
+        {
+          "bytes": 1732,
+          "path": "domain/Capsule.java",
+          "sha256": "sha256:fe9f10ed66ed7908263ffac30e6ed763c6fb080fa1f701f5787291afc5318de5"
+        },
+        {
+          "bytes": 1123,
+          "path": "domain/world.wit",
+          "sha256": "sha256:47f868b02372a6a0f507a38af061a7b545cc79ba5e5447dcbf5e1eabac118240"
+        },
+        {
+          "bytes": 1346,
+          "path": "routes.json",
+          "sha256": "sha256:6fdc1feeac2d0f4c8b2fd6cd0203c2c7484bf5d24d71c63584995cdb6a92e646"
+        }
+      ],
+      "filesDigest": "sha256:62cd3fb47ad5998fd4b315eb2dc504241d718c29910d67f87d66b783a167d5c4"
+    },
+    "generator": {
+      "bytes": 29696,
+      "files": [
+        {
+          "bytes": 80,
+          "path": "__init__.py",
+          "sha256": "sha256:b0f73d7f86b91313761aa1624f28d068bc31f37264b350acffb3b7a2314ac4bc"
+        },
+        {
+          "bytes": 5869,
+          "path": "adapter.py",
+          "sha256": "sha256:0673f747e3b73476186b9395207d42e785ee4d2c3f353d5e08cb8af004f4a738"
+        },
+        {
+          "bytes": 5920,
+          "path": "client-runtime.mjs",
+          "sha256": "sha256:5ad4c641f4c1a585cee257d2b3a0e2952309563bb367cd36e6340eba0d80077a"
+        },
+        {
+          "bytes": 3058,
+          "path": "client.py",
+          "sha256": "sha256:45aea0cff1545474cc534c7f427c7f7605d13f26ee44f95d379540ac9d43def5"
+        },
+        {
+          "bytes": 3656,
+          "path": "probes.py",
+          "sha256": "sha256:2ebef8b147c45cd27dcdeba869c3f29d4561820cae8ddd1b9720d6f9b793a16f"
+        },
+        {
+          "bytes": 6779,
+          "path": "project.py",
+          "sha256": "sha256:35e06e03ee03cc1db5df02aaf9715ee0708e2b14899b5e1f2529cf2331321bdd"
+        },
+        {
+          "bytes": 4334,
+          "path": "selection.py",
+          "sha256": "sha256:9811ed5e03350e3416fbe905116125ec59ebc386797b50a924d841f6f2a222a5"
+        }
+      ],
+      "filesDigest": "sha256:8f90fba711690e04502dcdd2b6571bcd67b94c6cd79c6e9399eb49444a46cad6"
+    },
+    "helpers": {
+      "bytes": 115743,
+      "files": [
+        {
+          "bytes": 80,
+          "path": "__init__.py",
+          "sha256": "sha256:5b867d8b99585c27618160b2cc97e73c42ddb65762565bccbd16f35dae69bc1a"
+        },
+        {
+          "bytes": 3073,
+          "path": "build.py",
+          "sha256": "sha256:e743be5999100e92afeba1c49b1e7a7e25637c53ef7b54a10c4bdcb6899dc819"
+        },
+        {
+          "bytes": 14801,
+          "path": "context.py",
+          "sha256": "sha256:c57f193d1c0775ffe6ce516da7b35493512bf4f39cf5e74351b85fcb0182ead7"
+        },
+        {
+          "bytes": 8670,
+          "path": "inspection.py",
+          "sha256": "sha256:195563da728d4e082481e13a0181b00614faf006890c11a2a84c92203bb7327c"
+        },
+        {
+          "bytes": 14502,
+          "path": "node.py",
+          "sha256": "sha256:4b078ee042ceb0b9be957dc27be6d525b3d3966c9be1aef903d84b973391c222"
+        },
+        {
+          "bytes": 19743,
+          "path": "packaged.py",
+          "sha256": "sha256:fd854dfdc141b6592abf0670f9fdeef73bedaebbb26daf4505218a1067889263"
+        },
+        {
+          "bytes": 6573,
+          "path": "preflight.py",
+          "sha256": "sha256:4673c0a45167f22a960942f99bb5f8a536f8ddea77fb20d54dd4a4544585bef9"
+        },
+        {
+          "bytes": 29948,
+          "path": "qualify.py",
+          "sha256": "sha256:62da735a8edaf8c12876f53bac6707deb6306896f13b2776841c37a5f293f9ce"
+        },
+        {
+          "bytes": 2519,
+          "path": "revision.py",
+          "sha256": "sha256:d66cde515e93d41bc6c8c98fb43d09bb91564d46f4705614c9f84b8c42e01c34"
+        },
+        {
+          "bytes": 15834,
+          "path": "trust.py",
+          "sha256": "sha256:385e069a96640f5050ec871f38efae47357a8e2b73814f615393e544ea0ad5eb"
+        }
+      ],
+      "filesDigest": "sha256:0c6bd332d69b32aa255de23f3092ed15411f376cb4d0caadb740dc675bf10ced"
+    },
+    "javaSdk": {
+      "bytes": 211943,
+      "files": [
+        {
+          "bytes": 10460,
+          "path": "README.md",
+          "sha256": "sha256:886c05e57fa8ff394c8968d6220ec7dd7849b181e0662bea7da34748559d625a"
+        },
+        {
+          "bytes": 973,
+          "path": "bindings.lock.json",
+          "sha256": "sha256:82250bf8bc0dfd03e836f03d25b6304e5cc4e52c4825ed8983ee80af70c82966"
+        },
+        {
+          "bytes": 1311,
+          "path": "compiler.gradle",
+          "sha256": "sha256:6673d6dd1adbaf3d8b125c0678a9f807849b6a292880c8efcb07f6c61ff7c349"
+        },
+        {
+          "bytes": 3648,
+          "path": "conformance/Capsule.java",
+          "sha256": "sha256:89fda2cd74dd8953290d097ed1146e2988966f655e1eb0b8b1423059264be064"
+        },
+        {
+          "bytes": 631,
+          "path": "conformance/world.wit",
+          "sha256": "sha256:290940b6f20b5fd15488dcbe38bde3d7d215768d6dfc75783acfe669d58e8349"
+        },
+        {
+          "bytes": 2305,
+          "path": "examples/blob.java",
+          "sha256": "sha256:926cdffdd0318189985a7086967d8a5572242fa60defbbdaa703dab032a5a868"
+        },
+        {
+          "bytes": 378,
+          "path": "examples/callee.java",
+          "sha256": "sha256:3fbf1754232b3d4f2b4062da7dd77d2309cd46666e12f942b66a1bb55b411155"
+        },
+        {
+          "bytes": 1116,
+          "path": "examples/events.java",
+          "sha256": "sha256:2ea114adc1bcaca4cc28fb8601a5a2146f6a31b6dc8524a6b939080649f82084"
+        },
+        {
+          "bytes": 1025,
+          "path": "examples/http.java",
+          "sha256": "sha256:4e09ae99bc29ee215c86024c749439746fa8348e259b92959fd66a70c928cd55"
+        },
+        {
+          "bytes": 959,
+          "path": "examples/metrics.java",
+          "sha256": "sha256:9e94b7e71c99aa7638dcad202e518f8c6813608be6b58cf2bfaedc4acd3d758c"
+        },
+        {
+          "bytes": 798,
+          "path": "examples/random.java",
+          "sha256": "sha256:214efd6b32fe87bc1a3ab5dd78c5ac51209acc72025d1dd09861090414d49cb7"
+        },
+        {
+          "bytes": 1548,
+          "path": "examples/secrets.java",
+          "sha256": "sha256:36597a1cf38d7fc73505587304ad1726e6c78aea24bb8c715af7a9c91c20f24d"
+        },
+        {
+          "bytes": 1550,
+          "path": "examples/service.java",
+          "sha256": "sha256:05a4bf812b64f1dfbbc753867901c58cbfed12b3baf7c9c354b94ebc8dd7704a"
+        },
+        {
+          "bytes": 1971,
+          "path": "examples/streaming.java",
+          "sha256": "sha256:326ebca705f52d657e85e0af5b4af947be66c0de1a129ba498e1aa68049ad8b7"
+        },
+        {
+          "bytes": 18,
+          "path": "feasibility/.gitignore",
+          "sha256": "sha256:93579b58fc86ec5cba9cf7479f71821e42339affb3f040689e93d156d41f290c"
+        },
+        {
+          "bytes": 980,
+          "path": "feasibility/bridge.c",
+          "sha256": "sha256:c2d02146b56554e24dd85b5d31f2d7979464b21d3d4489722d4c15f03264c9e0"
+        },
+        {
+          "bytes": 1597,
+          "path": "feasibility/build.gradle",
+          "sha256": "sha256:ab17bfdc9cd20d51c74c57b35f64a0df70a054fa072f831e8f68701a2f550341"
+        },
+        {
+          "bytes": 1191,
+          "path": "feasibility/closed-runtime.wat",
+          "sha256": "sha256:5cc7f5b37abb698acc319a9ae1589fbbb54788abf46c0027fb0933bd2e6e0874"
+        },
+        {
+          "bytes": 16525,
+          "path": "feasibility/dependencies.lock.json",
+          "sha256": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4"
+        },
+        {
+          "bytes": 46640,
+          "path": "feasibility/gradle/verification-metadata.xml",
+          "sha256": "sha256:2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30"
+        },
+        {
+          "bytes": 480,
+          "path": "feasibility/platform.c",
+          "sha256": "sha256:d5d3662aa5def128b7858e61c5746038a26d47a409c22bb731bc72fbed336aad"
+        },
+        {
+          "bytes": 127,
+          "path": "feasibility/settings.gradle",
+          "sha256": "sha256:23755faa9365a644fa70a39f8a1ef83e99422914fc67b85d6df51e60984d7982"
+        },
+        {
+          "bytes": 738,
+          "path": "feasibility/src/main/java/dev/latent/guest/NativeEntrypoints.java",
+          "sha256": "sha256:f6f58ab9c90d59490953f167a9c38779001325f4df93e62e7eb417e2d82c5588"
+        },
+        {
+          "bytes": 1840,
+          "path": "feasibility/src/main/java/dev/latent/guest/Probe.java",
+          "sha256": "sha256:02e0a6911b72e3ba7cd1c7df651df1572a75fa409e1ba75136e04f42a161e557"
+        },
+        {
+          "bytes": 444,
+          "path": "feasibility/wit/world.wit",
+          "sha256": "sha256:d569e23879f53ca23e42fc6f5de4a703a254411c6139f09055b9e662f2994b5a"
+        },
+        {
+          "bytes": 3641,
+          "path": "runtime/bridge.h",
+          "sha256": "sha256:66428dca085509e2aa2aa543af4927949f8f1176255351a6e24b73641b078ec3"
+        },
+        {
+          "bytes": 14455,
+          "path": "runtime/dev/latent/guest/BufferedWebResponseValidator.java",
+          "sha256": "sha256:caf6a2bf912fbaadad9f673551a10d2fec20edb874216019845392e7d807323f"
+        },
+        {
+          "bytes": 949,
+          "path": "runtime/dev/latent/guest/Handle.java",
+          "sha256": "sha256:5d00dda66f7c167bd8e7f3e98d8e5be5c69225b8cd4744426f2dcabc1d63a63a"
+        },
+        {
+          "bytes": 502,
+          "path": "runtime/dev/latent/guest/Option.java",
+          "sha256": "sha256:aa45393e65f74c005bdb2e0b9ac32a5a4e8b717090bc4c1ff8b9ec7cda681468"
+        },
+        {
+          "bytes": 1231,
+          "path": "runtime/dev/latent/guest/Resource.java",
+          "sha256": "sha256:5ec05ea064c1ff25a4af8c3ff2948beef46ba3e711a956016481fb2b65449da2"
+        },
+        {
+          "bytes": 981,
+          "path": "runtime/dev/latent/guest/Result.java",
+          "sha256": "sha256:0a65cdf987fe048f3d467a090662b4ab4d340b74bdcb35598ca4f7e2c6142743"
+        },
+        {
+          "bytes": 555,
+          "path": "runtime/dev/latent/guest/SensitiveBytes.java",
+          "sha256": "sha256:27cf682fc87999875f81611c9575674e2e43bfee0e1fe55950e357ceec83f870"
+        },
+        {
+          "bytes": 992,
+          "path": "runtime/dev/latent/guest/Text.java",
+          "sha256": "sha256:0d1909cfe30b5cf0fb0a312ac03fbced5171c4c5e971d43f6d736e46872920cc"
+        },
+        {
+          "bytes": 53,
+          "path": "runtime/dev/latent/guest/Unit.java",
+          "sha256": "sha256:4fbf8085595c1c3f7c5494e3ce1efcb0a738161960863e85d24b0489a7500cf8"
+        },
+        {
+          "bytes": 2192,
+          "path": "runtime/dev/latent/guest/Unsigned64.java",
+          "sha256": "sha256:63d81a6e1bf67638e718e2eaf00565fc71ebdd1153fff23b0fafd04949ef3da6"
+        },
+        {
+          "bytes": 6322,
+          "path": "runtime/dev/latent/guest/Wire.java",
+          "sha256": "sha256:e172958b5869bbf93a8766e65f1c074cdaa9136df19b68a4d9ac5db9a64458e3"
+        },
+        {
+          "bytes": 306,
+          "path": "runtime/native.h",
+          "sha256": "sha256:cdbf1bdf723470622a1d27e8b9e6034a4781aa6787c0d80aa872f3680ceeb5a1"
+        },
+        {
+          "bytes": 571,
+          "path": "templates/greeting.java",
+          "sha256": "sha256:b3ef5de6dd9c15fc8c292112b657375b55e07722296a387bf0fe776ccbd95b62"
+        },
+        {
+          "bytes": 801,
+          "path": "templates/http-status.java",
+          "sha256": "sha256:d9fd6b5f0a8e1b2f138a1ace7bce59ef86757663184ee5b47bc5b77e98c1e9a6"
+        },
+        {
+          "bytes": 735,
+          "path": "templates/recovery.java",
+          "sha256": "sha256:93fa2fe75d40c688ed730666a4d4d4551fd398356852daf7ee0f6dea3c045b95"
+        },
+        {
+          "bytes": 445,
+          "path": "templates/shipping.java",
+          "sha256": "sha256:52c40e4a0af92515a923d0d53c2f2d5adfd712e82319206b2d4037370a5cd127"
+        },
+        {
+          "bytes": 785,
+          "path": "templates/word-count.java",
+          "sha256": "sha256:36924c01937175faa45beff0c09f716b40e85f4b3a988b207077eb434fd26334"
+        },
+        {
+          "bytes": 2708,
+          "path": "tests/Ownership.java",
+          "sha256": "sha256:7147fffbe1d700703e1035c9ba6213d35b77a2fbc504ff3477c2977a8d33dcdf"
+        },
+        {
+          "bytes": 10642,
+          "path": "tests/ResponseValidation.java",
+          "sha256": "sha256:a4d3a1f354be522723861762af06d434b52ba8d6709384ac56da346ec26da75b"
+        },
+        {
+          "bytes": 7816,
+          "path": "tests/test_bindings.py",
+          "sha256": "sha256:83703f66c83571b3b1b261ebf65f9ae783b7ba5ca052bba4186ae7096631dd86"
+        },
+        {
+          "bytes": 2194,
+          "path": "tests/test_compiler.py",
+          "sha256": "sha256:a68eb447a4c70f2f327e1ae11bab344d4f9e58ec171f37c722a480286bc516d3"
+        },
+        {
+          "bytes": 7226,
+          "path": "tests/test_dependencies.py",
+          "sha256": "sha256:148e83cb3d31c9a6cef641edde8d6ffaed39879f3ce33ec3664fc3275193644f"
+        },
+        {
+          "bytes": 6853,
+          "path": "tests/test_feasibility.py",
+          "sha256": "sha256:71a9f377ce4d1a41c38cec25a8c66883ad215caeac7f69301b16f52604b49d64"
+        },
+        {
+          "bytes": 1407,
+          "path": "tests/test_platform.py",
+          "sha256": "sha256:763fd598a9faf36a799942e895d6c2dc7b1e47630182ed9eea9a6e6e32ee4c23"
+        },
+        {
+          "bytes": 4062,
+          "path": "tests/test_projects.py",
+          "sha256": "sha256:2c9344adfd0e63766798a36fa1c4379bfdcddde1301de0baa2a94927194b9a3e"
+        },
+        {
+          "bytes": 4903,
+          "path": "tests/test_qualification.py",
+          "sha256": "sha256:7d8b33bad7ce3eb4e4c0c1190c131ae944f2f75fb2c973483a1f643bcaacdd97"
+        },
+        {
+          "bytes": 69,
+          "path": "tests/wit-composition/aliases/deps/shared/types.wit",
+          "sha256": "sha256:e068908ec20752b5623d040c46b0911f5d2cdded5af82528ddbca453578007eb"
+        },
+        {
+          "bytes": 202,
+          "path": "tests/wit-composition/aliases/world.wit",
+          "sha256": "sha256:0cf0e0a8ca2943fadaa0f163b1afbb7e1f7ef8d5bff2180bc84789eb0e4d1fd1"
+        },
+        {
+          "bytes": 117,
+          "path": "tests/wit-composition/future/world.wit",
+          "sha256": "sha256:52806f297a7e6075999a94dd7193de7937b638f875d526a6772c44f4cbc3d00f"
+        },
+        {
+          "bytes": 148,
+          "path": "tests/wit-composition/inclusion/world.wit",
+          "sha256": "sha256:f7679d0a490e330bcb20abe2b078c5518dfdbd726a45011d4aa5712a1743814e"
+        },
+        {
+          "bytes": 104,
+          "path": "tests/wit-composition/malformed/world.wit",
+          "sha256": "sha256:5e49fcb1a1a1327eeb060ca82cde749eb08f3f523492a87607bb1db51c31498d"
+        },
+        {
+          "bytes": 172,
+          "path": "tests/wit-composition/multiple-exports/world.wit",
+          "sha256": "sha256:2115fbe444ab7059f6d26e06765dfb5f8fc72b4ef23bb0184a2dbdb6215193b9"
+        },
+        {
+          "bytes": 70,
+          "path": "tests/wit-composition/names/deps/first/types.wit",
+          "sha256": "sha256:8febab9f443c98729a104f77def0432052a70b8753dfb0538d84e825f726c1c3"
+        },
+        {
+          "bytes": 70,
+          "path": "tests/wit-composition/names/deps/second/types.wit",
+          "sha256": "sha256:b16345279355b58f468b73b39cc23169b40845df823be21490909be309c63c44"
+        },
+        {
+          "bytes": 187,
+          "path": "tests/wit-composition/names/world.wit",
+          "sha256": "sha256:7bb9ebd6f660731c1fe5dae3688a0e518797e4ffaf560a6ae2017a096fee9bf7"
+        },
+        {
+          "bytes": 154,
+          "path": "tests/wit-composition/public-resources/world.wit",
+          "sha256": "sha256:fe2680a71f4a2a3035c149ac13b30aed909bbdcf66032b0ee275d98cc14e8baa"
+        },
+        {
+          "bytes": 233,
+          "path": "tests/wit-composition/shared-types/world.wit",
+          "sha256": "sha256:7395b0df03719498b41ee7097af6520908f500ce15365757df21b470d8f6d2f1"
+        },
+        {
+          "bytes": 69,
+          "path": "tests/wit-composition/versions/deps/shared-v1/types.wit",
+          "sha256": "sha256:e068908ec20752b5623d040c46b0911f5d2cdded5af82528ddbca453578007eb"
+        },
+        {
+          "bytes": 69,
+          "path": "tests/wit-composition/versions/deps/shared-v2/types.wit",
+          "sha256": "sha256:6be50e1e99488b7a601bf0061f66d07948899537f5b95a3b8df215bacc3c4987"
+        },
+        {
+          "bytes": 188,
+          "path": "tests/wit-composition/versions/world.wit",
+          "sha256": "sha256:85a62f80a2ecdaead0cbf02b4a4e4bbf501d7744f79302d718b5045e8218aa4c"
+        },
+        {
+          "bytes": 1246,
+          "path": "tools/capture.py",
+          "sha256": "sha256:99283643627ff4905a51112888994a6ed599c894824b531967cfb7e248746939"
+        },
+        {
+          "bytes": 6562,
+          "path": "tools/dependencies.py",
+          "sha256": "sha256:770a90fc706bdbe961fb25757784b8b6d0826f1a194cc95da91a6f06fd01a9b1"
+        },
+        {
+          "bytes": 12327,
+          "path": "tools/feasibility.py",
+          "sha256": "sha256:429b4e36a7628c5eb2b70eb9e04b204a9096fa94f787ee64ea2c303c33995e9c"
+        },
+        {
+          "bytes": 6713,
+          "path": "tools/teavm_platform.py",
+          "sha256": "sha256:8d244a3eadea498dec231c7fa85b1f11b49074d9e7a453f607800b5f3775797a"
+        },
+        {
+          "bytes": 663,
+          "path": "wit/world.wit",
+          "sha256": "sha256:806182a284782a4db4e5fc2e4f5f3bf47b78b04fa291d1eab8cef8f177f71882"
+        }
+      ],
+      "filesDigest": "sha256:9f1274fbe3253a62a463ea54383b6d6117ef0077c0a83595740539f06b3c4002"
+    },
+    "runtimeSources": {
+      "bytes": 14532223,
+      "files": 2276,
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested",
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "sha256": "sha256:2001064d320645d2c459a4c8825be46a3e034f77e66d85455240b57a7b8d9f7d"
+    },
+    "wit": {
+      "bytes": 20844,
+      "files": [
+        {
+          "bytes": 1406,
+          "path": "blob-v2/package.wit",
+          "sha256": "sha256:d1744403a7882fbe8bf99808ac28c26d271eb1fb26fbac2519f1c7b2840d0dcb"
+        },
+        {
+          "bytes": 867,
+          "path": "blob/package.wit",
+          "sha256": "sha256:e73a86a069223567fd782ef0e20d83a8f25a1353d39b6d2c174c31bbfb936210"
+        },
+        {
+          "bytes": 139,
+          "path": "clock/package.wit",
+          "sha256": "sha256:a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+        },
+        {
+          "bytes": 1409,
+          "path": "context/package.wit",
+          "sha256": "sha256:9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1"
+        },
+        {
+          "bytes": 1299,
+          "path": "events-v2/package.wit",
+          "sha256": "sha256:645d6373dd55afeaaa400bd27f35e55dbb9c99a9599013d8419e90b02fb911d3"
+        },
+        {
+          "bytes": 572,
+          "path": "events/package.wit",
+          "sha256": "sha256:b599d127622a47c4d763df29ca5d0907f083566645a5d882d593701f39db68c1"
+        },
+        {
+          "bytes": 1296,
+          "path": "http-v2/package.wit",
+          "sha256": "sha256:2728b8d0458a441a7dab01dde896f1cc87c453382a6f5ce35bd86718f5e6fa9d"
+        },
+        {
+          "bytes": 2915,
+          "path": "http-v3/package.wit",
+          "sha256": "sha256:6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d"
+        },
+        {
+          "bytes": 997,
+          "path": "http/package.wit",
+          "sha256": "sha256:6ae7533f6e81d6364601a12d5f533ee60342eb6ba2e897e545e10743b4e92945"
+        },
+        {
+          "bytes": 1914,
+          "path": "invocation/package.wit",
+          "sha256": "sha256:2e9f13a01c9cf90834c53ff38f408e8e23f39cc29cbd7bc5b47d796159f61b67"
+        },
+        {
+          "bytes": 418,
+          "path": "log/package.wit",
+          "sha256": "sha256:071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e"
+        },
+        {
+          "bytes": 272,
+          "path": "random/package.wit",
+          "sha256": "sha256:c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60"
+        },
+        {
+          "bytes": 551,
+          "path": "runtime-phase3-blobs/world.wit",
+          "sha256": "sha256:5a509dd87892ee54828c17d0189c034bf892afa6e47701834bd42db095244cfc"
+        },
+        {
+          "bytes": 516,
+          "path": "runtime-phase3-streaming/world.wit",
+          "sha256": "sha256:240f3e0864a5f683cacef9f70868e1d4450ab466bd7473b639e788cedbdfef7c"
+        },
+        {
+          "bytes": 704,
+          "path": "runtime-phase3/world.wit",
+          "sha256": "sha256:09dae5ca8c10761c4c8a32411942c00564884b146bebb4069fa125e8d02ec8e0"
+        },
+        {
+          "bytes": 558,
+          "path": "runtime/world.wit",
+          "sha256": "sha256:8dfb4076a53ed66f332def355a16ff35b2e01a3987db49aebbcff54de88efa09"
+        },
+        {
+          "bytes": 407,
+          "path": "secrets/package.wit",
+          "sha256": "sha256:4e0593c21ac5e3051500717fcf347cf7e23821816a9fc15945c68e93cee4ee54"
+        },
+        {
+          "bytes": 1450,
+          "path": "state/package.wit",
+          "sha256": "sha256:3f2862a27509e8d723e497ff9f6f9d416a86e54b96a7a11e2e6172040c4aee93"
+        },
+        {
+          "bytes": 505,
+          "path": "telemetry/package.wit",
+          "sha256": "sha256:c79721b703eca86c55ab04ddcb37cbc7965287db64880c0a0bb555b92baaadc6"
+        },
+        {
+          "bytes": 610,
+          "path": "timer/package.wit",
+          "sha256": "sha256:3c35d5a9078315848f86144e0f8f65cb7a4f8da1a54905098d4ff9c6e227090e"
+        },
+        {
+          "bytes": 181,
+          "path": "web-http/package.wit",
+          "sha256": "sha256:92bc3b8ca3cb5c0ec76b012d695ea6ddf962a1534eeac297dfe7b27125dc5450"
+        },
+        {
+          "bytes": 1858,
+          "path": "web/package.wit",
+          "sha256": "sha256:3ad4d3e122c839115891ba9b69c9b790245a64ecb00690e23270623ac94b1450"
+        }
+      ],
+      "filesDigest": "sha256:46039200dec313848bcd4ca65e2a985222dac70f517ca2b252b700254454c4cc"
+    },
+    "workflow": {
+      "bytes": 16127,
+      "sha256": "sha256:9972d5784ccb4639b89b80b94a9676dd6fb92685e6fd5b6d8ab4e6c62963548f"
+    }
+  },
+  "failure": "packaged-composition-real-workspace-required",
+  "freshJavaBuild": true,
+  "frontend": {
+    "authentication": {
+      "attestation": [
+        {
+          "attestation": {
+            "bundle": {
+              "dsseEnvelope": {
+                "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjEiLCJzdWJqZWN0IjpbeyJuYW1lIjoiU0hBMjU2U1VNUyIsImRpZ2VzdCI6eyJzaGEyNTYiOiIwNTA0NDU0YjQwNzY2NWJkZWIzNWM2NGZmMDgyMTA5ZmRmYWVlYjljZmY4Mzg3NzRjZDJiOWMzZWNkZmU2ZTI0In19XSwicHJlZGljYXRlVHlwZSI6Imh0dHBzOi8vc2xzYS5kZXYvcHJvdmVuYW5jZS92MSIsInByZWRpY2F0ZSI6eyJidWlsZERlZmluaXRpb24iOnsiYnVpbGRUeXBlIjoiaHR0cHM6Ly9hY3Rpb25zLmdpdGh1Yi5pby9idWlsZHR5cGVzL3dvcmtmbG93L3YxIiwiZXh0ZXJuYWxQYXJhbWV0ZXJzIjp7IndvcmtmbG93Ijp7InJlZiI6InJlZnMvaGVhZHMvZmVhdC9mZWVkYmFjazItamF2YTcxMC1pbnRlZ3JhdGlvbiIsInJlcG9zaXRvcnkiOiJodHRwczovL2dpdGh1Yi5jb20vS2lyaWxzVHVya2lucy9sYXRlbnQtc2VydmljZS1mYWJyaWMiLCJwYXRoIjoiLmdpdGh1Yi93b3JrZmxvd3MvZGV2ZWxvcGVyLXRvb2xzLnltbCJ9fSwiaW50ZXJuYWxQYXJhbWV0ZXJzIjp7ImdpdGh1YiI6eyJldmVudF9uYW1lIjoid29ya2Zsb3dfZGlzcGF0Y2giLCJyZXBvc2l0b3J5X2lkIjoiMTMzNzU5MTM2NSIsInJlcG9zaXRvcnlfb3duZXJfaWQiOiIyMzYwMjg1MTEiLCJydW5uZXJfZW52aXJvbm1lbnQiOiJnaXRodWItaG9zdGVkIn19LCJyZXNvbHZlZERlcGVuZGVuY2llcyI6W3sidXJpIjoiZ2l0K2h0dHBzOi8vZ2l0aHViLmNvbS9LaXJpbHNUdXJraW5zL2xhdGVudC1zZXJ2aWNlLWZhYnJpY0ByZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24iLCJkaWdlc3QiOnsiZ2l0Q29tbWl0IjoiNzYxMTcyMDAyZTRhNGQwMjEwMmY4Yzc1NzIzNWI4ODhmZTQ4NTllMSJ9fV19LCJydW5EZXRhaWxzIjp7ImJ1aWxkZXIiOnsiaWQiOiJodHRwczovL2dpdGh1Yi5jb20vS2lyaWxzVHVya2lucy9sYXRlbnQtc2VydmljZS1mYWJyaWMvLmdpdGh1Yi93b3JrZmxvd3MvZGV2ZWxvcGVyLXRvb2xzLnltbEByZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24ifSwibWV0YWRhdGEiOnsiaW52b2NhdGlvbklkIjoiaHR0cHM6Ly9naXRodWIuY29tL0tpcmlsc1R1cmtpbnMvbGF0ZW50LXNlcnZpY2UtZmFicmljL2FjdGlvbnMvcnVucy8zNjgwNDA5Njg5NS9hdHRlbXB0cy8xIn19fX0=",
+                "payloadType": "application/vnd.in-toto+json",
+                "signatures": [
+                  {
+                    "sig": "MEUCIQDIvwB3WL6+nvVdW4p5xtrA5trLGHNuP8YQh8dSXmq8HgIgLlnqOgHvE/b7uxsnTmp0rtBxBWjc1KMcphoAAFRJoq0="
+                  }
+                ]
+              },
+              "mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json",
+              "verificationMaterial": {
+                "certificate": {
+                  "rawBytes": "MIIIcTCCB/egAwIBAgIUIRMqgE2xq3TBy9g2osGs5ZSGqxIwCgYIKoZIzj0EAwMwNzEVMBMGA1UEChMMc2lnc3RvcmUuZGV2MR4wHAYDVQQDExVzaWdzdG9yZS1pbnRlcm1lZGlhdGUwHhcNMjYxMDAxMDMzMzE5WhcNMjYxMDAxMDM0MzE5WjAAMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAESOh83roY8ha58XjE0FKYQoCc1m/wi7NLS9bp0xTj3TBHV0Sjx2gTYFLYys7ySM2C/RHRPDhzVr06Myloi9f3SKOCBxYwggcSMA4GA1UdDwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzAdBgNVHQ4EFgQUW4DshtQu9HTY2MsNyVyREbx25pkwHwYDVR0jBBgwFoAU39Ppz1YkEZb5qNjpKFWixi4YZD8wgZsGA1UdEQEB/wSBkDCBjYaBimh0dHBzOi8vZ2l0aHViLmNvbS9LaXJpbHNUdXJraW5zL2xhdGVudC1zZXJ2aWNlLWZhYnJpYy8uZ2l0aHViL3dvcmtmbG93cy9kZXZlbG9wZXItdG9vbHMueW1sQHJlZnMvaGVhZHMvZmVhdC9mZWVkYmFjazItamF2YTcxMC1pbnRlZ3JhdGlvbjA5BgorBgEEAYO/MAEBBCtodHRwczovL3Rva2VuLmFjdGlvbnMuZ2l0aHVidXNlcmNvbnRlbnQuY29tMB8GCisGAQQBg78wAQIEEXdvcmtmbG93X2Rpc3BhdGNoMDYGCisGAQQBg78wAQMEKDc2MTE3MjAwMmU0YTRkMDIxMDJmOGM3NTcyMzViODg4ZmU0ODU5ZTEwHQYKKwYBBAGDvzABBAQPRGV2ZWxvcGVyIHRvb2xzMDEGCisGAQQBg78wAQUEI0tpcmlsc1R1cmtpbnMvbGF0ZW50LXNlcnZpY2UtZmFicmljMDsGCisGAQQBg78wAQYELXJlZnMvaGVhZHMvZmVhdC9mZWVkYmFjazItamF2YTcxMC1pbnRlZ3JhdGlvbjA7BgorBgEEAYO/MAEIBC0MK2h0dHBzOi8vdG9rZW4uYWN0aW9ucy5naXRodWJ1c2VyY29udGVudC5jb20wgZwGCisGAQQBg78wAQkEgY0MgYpodHRwczovL2dpdGh1Yi5jb20vS2lyaWxzVHVya2lucy9sYXRlbnQtc2VydmljZS1mYWJyaWMvLmdpdGh1Yi93b3JrZmxvd3MvZGV2ZWxvcGVyLXRvb2xzLnltbEByZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24wOAYKKwYBBAGDvzABCgQqDCg3NjExNzIwMDJlNGE0ZDAyMTAyZjhjNzU3MjM1Yjg4OGZlNDg1OWUxMB0GCisGAQQBg78wAQsEDwwNZ2l0aHViLWhvc3RlZDBGBgorBgEEAYO/MAEMBDgMNmh0dHBzOi8vZ2l0aHViLmNvbS9LaXJpbHNUdXJraW5zL2xhdGVudC1zZXJ2aWNlLWZhYnJpYzA4BgorBgEEAYO/MAENBCoMKDc2MTE3MjAwMmU0YTRkMDIxMDJmOGM3NTcyMzViODg4ZmU0ODU5ZTEwPQYKKwYBBAGDvzABDgQvDC1yZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24wGgYKKwYBBAGDvzABDwQMDAoxMzM3NTkxMzY1MDAGCisGAQQBg78wARAEIgwgaHR0cHM6Ly9naXRodWIuY29tL0tpcmlsc1R1cmtpbnMwGQYKKwYBBAGDvzABEQQLDAkyMzYwMjg1MTEwgZwGCisGAQQBg78wARIEgY0MgYpodHRwczovL2dpdGh1Yi5jb20vS2lyaWxzVHVya2lucy9sYXRlbnQtc2VydmljZS1mYWJyaWMvLmdpdGh1Yi93b3JrZmxvd3MvZGV2ZWxvcGVyLXRvb2xzLnltbEByZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24wOAYKKwYBBAGDvzABEwQqDCg3NjExNzIwMDJlNGE0ZDAyMTAyZjhjNzU3MjM1Yjg4OGZlNDg1OWUxMCEGCisGAQQBg78wARQEEwwRd29ya2Zsb3dfZGlzcGF0Y2gwagYKKwYBBAGDvzABFQRcDFpodHRwczovL2dpdGh1Yi5jb20vS2lyaWxzVHVya2lucy9sYXRlbnQtc2VydmljZS1mYWJyaWMvYWN0aW9ucy9ydW5zLzM2ODA0MDk2ODk1L2F0dGVtcHRzLzEwFgYKKwYBBAGDvzABFgQIDAZwdWJsaWMwfwYKKwYBBAGDvzABGARxDG9yZXBvOktpcmlsc1R1cmtpbnNAMjM2MDI4NTExL2xhdGVudC1zZXJ2aWNlLWZhYnJpY0AxMzM3NTkxMzY1OnJlZjpyZWZzL2hlYWRzL2ZlYXQvZmVlZGJhY2syLWphdmE3MTAtaW50ZWdyYXRpb24wgYkGCisGAQQB1nkCBAIEewR5AHcAdQDdPTBqxscRMmMZHhyZZzcCokpeuN48rf+HinKALynujgAAAaD1hhGlAAAEAwBGMEQCIHZjeDyEz2PCjQqqUNQtybLdDAVx/hf1lQTUcvABUev2AiB8PAo0GrWFzGFibsV7c8mJEyu2SxmR6xAmy5YiThvtcjAKBggqhkjOPQQDAwNoADBlAjAkKA25FLpq+PofVrUVy2Lo4ZiSnXcgLQsdoMSsdjVdjdgBe3M7JbmnWRAi3r/16gsCMQDDaoemA02g8GLOzAh/KfoUoBiufFFWEcYm1sZ/SFsKaf9sYpsMFNn1tki1Gv2r5IU="
+                },
+                "timestampVerificationData": {},
+                "tlogEntries": [
+                  {
+                    "canonicalizedBody": "eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoiZHNzZSIsInNwZWMiOnsiZW52ZWxvcGVIYXNoIjp7ImFsZ29yaXRobSI6InNoYTI1NiIsInZhbHVlIjoiYWUyZWFlYzAyNzI4YTBiNTZiNzZkMDFjNjk4MzBjODhiYWZkZjE2NzRjMjBmYjUyYjYxODcxN2ZmODdlNTFjMiJ9LCJwYXlsb2FkSGFzaCI6eyJhbGdvcml0aG0iOiJzaGEyNTYiLCJ2YWx1ZSI6IjUyMzU5NDJjMmFkMTU2ZGMwYzVkNjk1NGI0ZDYxYjAxNzFlZTFmYTE0ZWQ3ZDRlOGNhNDgwNTgxNjM4MGYwN2IifSwic2lnbmF0dXJlcyI6W3sic2lnbmF0dXJlIjoiTUVVQ0lRREl2d0IzV0w2K252VmRXNHA1eHRyQTV0ckxHSE51UDhZUWg4ZFNYbXE4SGdJZ0xsbnFPZ0h2RS9iN3V4c25UbXAwcnRCeEJXamMxS01jcGhvQUFGUkpvcTA9IiwidmVyaWZpZXIiOiJMUzB0TFMxQ1JVZEpUaUJEUlZKVVNVWkpRMEZVUlMwdExTMHRDazFKU1VsalZFTkRRaTlsWjBGM1NVSkJaMGxWU1ZKTmNXZEZNbmh4TTFSQ2VUbG5NbTl6UjNNMVdsTkhjWGhKZDBObldVbExiMXBKZW1vd1JVRjNUWGNLVG5wRlZrMUNUVWRCTVZWRlEyaE5UV015Ykc1ak0xSjJZMjFWZFZwSFZqSk5ValIzU0VGWlJGWlJVVVJGZUZaNllWZGtlbVJIT1hsYVV6RndZbTVTYkFwamJURnNXa2RzYUdSSFZYZElhR05PVFdwWmVFMUVRWGhOUkUxNlRYcEZOVmRvWTA1TmFsbDRUVVJCZUUxRVRUQk5la1UxVjJwQlFVMUdhM2RGZDFsSUNrdHZXa2w2YWpCRFFWRlpTVXR2V2tsNmFqQkVRVkZqUkZGblFVVlRUMmc0TTNKdldUaG9ZVFU0V0dwRk1FWkxXVkZ2UTJNeGJTOTNhVGRPVEZNNVluQUtNSGhVYWpOVVFraFdNRk5xZURKblZGbEdURmw1Y3pkNVUwMHlReTlTU0ZKUVJHaDZWbkl3TmsxNWJHOXBPV1l6VTB0UFEwSjRXWGRuWjJOVFRVRTBSd3BCTVZWa1JIZEZRaTkzVVVWQmQwbElaMFJCVkVKblRsWklVMVZGUkVSQlMwSm5aM0pDWjBWR1FsRmpSRUY2UVdSQ1owNVdTRkUwUlVablVWVlhORVJ6Q21oMFVYVTVTRlJaTWsxelRubFdlVkpGWW5neU5YQnJkMGgzV1VSV1VqQnFRa0puZDBadlFWVXpPVkJ3ZWpGWmEwVmFZalZ4VG1wd1MwWlhhWGhwTkZrS1drUTRkMmRhYzBkQk1WVmtSVkZGUWk5M1UwSnJSRU5DYWxsaFFtbHRhREJrU0VKNlQyazRkbG95YkRCaFNGWnBURzFPZG1KVE9VeGhXRXB3WWtoT1ZRcGtXRXB5WVZjMWVrd3llR2hrUjFaMVpFTXhlbHBZU2pKaFYwNXNURmRhYUZsdVNuQlplVGgxV2pKc01HRklWbWxNTTJSMlkyMTBiV0pIT1ROamVUbHJDbHBZV214aVJ6bDNXbGhKZEdSSE9YWmlTRTExWlZjeGMxRklTbXhhYmsxMllVZFdhRnBJVFhaYWJWWm9aRU01YlZwWFZtdFpiVVpxWVhwSmRHRnRSaklLV1ZSamVFMURNWEJpYmxKc1dqTkthR1JIYkhaaWFrRTFRbWR2Y2tKblJVVkJXVTh2VFVGRlFrSkRkRzlrU0ZKM1kzcHZka3d6VW5aaE1sWjFURzFHYWdwa1IyeDJZbTVOZFZveWJEQmhTRlpwWkZoT2JHTnRUblppYmxKc1ltNVJkVmt5T1hSTlFqaEhRMmx6UjBGUlVVSm5OemgzUVZGSlJVVllaSFpqYlhSdENtSkhPVE5ZTWxKd1l6TkNhR1JIVG05TlJGbEhRMmx6UjBGUlVVSm5OemgzUVZGTlJVdEVZekpOVkVVelRXcEJkMDF0VlRCWlZGSnJUVVJKZUUxRVNtMEtUMGROTTA1VVkzbE5lbFpwVDBSbk5GcHRWVEJQUkZVMVdsUkZkMGhSV1V0TGQxbENRa0ZIUkhaNlFVSkNRVkZRVWtkV01scFhlSFpqUjFaNVNVaFNkZ3BpTW5oNlRVUkZSME5wYzBkQlVWRkNaemM0ZDBGUlZVVkpNSFJ3WTIxc2MyTXhVakZqYlhSd1ltNU5kbUpIUmpCYVZ6VXdURmhPYkdOdVduQlpNbFYwQ2xwdFJtbGpiV3hxVFVSelIwTnBjMGRCVVZGQ1p6YzRkMEZSV1VWTVdFcHNXbTVOZG1GSFZtaGFTRTEyV20xV2FHUkRPVzFhVjFacldXMUdhbUY2U1hRS1lXMUdNbGxVWTNoTlF6RndZbTVTYkZvelNtaGtSMngyWW1wQk4wSm5iM0pDWjBWRlFWbFBMMDFCUlVsQ1F6Qk5TekpvTUdSSVFucFBhVGgyWkVjNWNncGFWelIxV1ZkT01HRlhPWFZqZVRWdVlWaFNiMlJYU2pGak1sWjVXVEk1ZFdSSFZuVmtRelZxWWpJd2QyZGFkMGREYVhOSFFWRlJRbWMzT0hkQlVXdEZDbWRaTUUxbldYQnZaRWhTZDJONmIzWk1NbVJ3WkVkb01WbHBOV3BpTWpCMlV6SnNlV0ZYZUhwV1NGWjVZVEpzZFdONU9YTlpXRkpzWW01UmRHTXlWbmtLWkcxc2FscFRNVzFaVjBwNVlWZE5ka3h0WkhCa1IyZ3hXV2s1TTJJelNuSmFiWGgyWkROTmRscEhWakphVjNoMlkwZFdlVXhZVW5aaU1uaDZURzVzZEFwaVJVSjVXbGRhZWt3eWFHeFpWMUo2VERKYWJGbFlVWFphYlZac1drZEthRmt5YzNsTVYzQm9aRzFGTTAxVVFYUmhWelV3V2xka2VWbFlVbkJpTWpSM0NrOUJXVXRMZDFsQ1FrRkhSSFo2UVVKRFoxRnhSRU5uTTA1cVJYaE9la2wzVFVSS2JFNUhSVEJhUkVGNVRWUkJlVnBxYUdwT2VsVXpUV3BOTVZscVp6UUtUMGRhYkU1RVp6RlBWMVY0VFVJd1IwTnBjMGRCVVZGQ1p6YzRkMEZSYzBWRWQzZE9XakpzTUdGSVZtbE1WMmgyWXpOU2JGcEVRa2RDWjI5eVFtZEZSUXBCV1U4dlRVRkZUVUpFWjAxT2JXZ3daRWhDZWs5cE9IWmFNbXd3WVVoV2FVeHRUblppVXpsTVlWaEtjR0pJVGxWa1dFcHlZVmMxZWt3eWVHaGtSMVoxQ21SRE1YcGFXRW95WVZkT2JFeFhXbWhaYmtwd1dYcEJORUpuYjNKQ1owVkZRVmxQTDAxQlJVNUNRMjlOUzBSak1rMVVSVE5OYWtGM1RXMVZNRmxVVW1zS1RVUkplRTFFU20xUFIwMHpUbFJqZVUxNlZtbFBSR2MwV20xVk1FOUVWVFZhVkVWM1VGRlpTMHQzV1VKQ1FVZEVkbnBCUWtSblVYWkVRekY1V2xkYWVncE1NbWhzV1ZkU2Vrd3lXbXhaV0ZGMldtMVdiRnBIU21oWk1uTjVURmR3YUdSdFJUTk5WRUYwWVZjMU1GcFhaSGxaV0ZKd1lqSTBkMGRuV1V0TGQxbENDa0pCUjBSMmVrRkNSSGRSVFVSQmIzaE5lazB6VGxScmVFMTZXVEZOUkVGSFEybHpSMEZSVVVKbk56aDNRVkpCUlVsbmQyZGhTRkl3WTBoTk5reDVPVzRLWVZoU2IyUlhTWFZaTWpsMFREQjBjR050YkhOak1WSXhZMjEwY0dKdVRYZEhVVmxMUzNkWlFrSkJSMFIyZWtGQ1JWRlJURVJCYTNsTmVsbDNUV3BuTVFwTlZFVjNaMXAzUjBOcGMwZEJVVkZDWnpjNGQwRlNTVVZuV1RCTloxbHdiMlJJVW5kamVtOTJUREprY0dSSGFERlphVFZxWWpJd2RsTXliSGxoVjNoNkNsWklWbmxoTW14MVkzazVjMWxZVW14aWJsRjBZekpXZVdSdGJHcGFVekZ0V1ZkS2VXRlhUWFpNYldSd1pFZG9NVmxwT1ROaU0wcHlXbTE0ZG1RelRYWUtXa2RXTWxwWGVIWmpSMVo1VEZoU2RtSXllSHBNYm14MFlrVkNlVnBYV25wTU1taHNXVmRTZWt3eVdteFpXRkYyV20xV2JGcEhTbWhaTW5ONVRGZHdhQXBrYlVVelRWUkJkR0ZYTlRCYVYyUjVXVmhTY0dJeU5IZFBRVmxMUzNkWlFrSkJSMFIyZWtGQ1JYZFJjVVJEWnpOT2FrVjRUbnBKZDAxRVNteE9SMFV3Q2xwRVFYbE5WRUY1V21wb2FrNTZWVE5OYWsweFdXcG5ORTlIV214T1JHY3hUMWRWZUUxRFJVZERhWE5IUVZGUlFtYzNPSGRCVWxGRlJYZDNVbVF5T1hrS1lUSmFjMkl6WkdaYVIyeDZZMGRHTUZreVozZGhaMWxMUzNkWlFrSkJSMFIyZWtGQ1JsRlNZMFJHY0c5a1NGSjNZM3B2ZGt3eVpIQmtSMmd4V1drMWFncGlNakIyVXpKc2VXRlhlSHBXU0ZaNVlUSnNkV041T1hOWldGSnNZbTVSZEdNeVZubGtiV3hxV2xNeGJWbFhTbmxoVjAxMldWZE9NR0ZYT1hWamVUbDVDbVJYTlhwTWVrMHlUMFJCTUUxRWF6SlBSR3N4VERKR01HUkhWblJqU0ZKNlRIcEZkMFpuV1V0TGQxbENRa0ZIUkhaNlFVSkdaMUZKUkVGYWQyUlhTbk1LWVZkTmQyWjNXVXRMZDFsQ1FrRkhSSFo2UVVKSFFWSjRSRWM1ZVZwWVFuWlBhM1J3WTIxc2MyTXhVakZqYlhSd1ltNU9RVTFxVFRKTlJFazBUbFJGZUFwTU1uaG9aRWRXZFdSRE1YcGFXRW95WVZkT2JFeFhXbWhaYmtwd1dUQkJlRTE2VFROT1ZHdDRUWHBaTVU5dVNteGFhbkI1V2xkYWVrd3lhR3haVjFKNkNrd3lXbXhaV0ZGMldtMVdiRnBIU21oWk1uTjVURmR3YUdSdFJUTk5WRUYwWVZjMU1GcFhaSGxaV0ZKd1lqSTBkMmRaYTBkRGFYTkhRVkZSUWpGdWEwTUtRa0ZKUldWM1VqVkJTR05CWkZGRVpGQlVRbkY0YzJOU1RXMU5Xa2hvZVZwYWVtTkRiMnR3WlhWT05EaHlaaXRJYVc1TFFVeDViblZxWjBGQlFXRkVNUXBvYUVkc1FVRkJSVUYzUWtkTlJWRkRTVWhhYW1WRWVVVjZNbEJEYWxGeGNWVk9VWFI1WWt4a1JFRldlQzlvWmpGc1VWUlZZM1pCUWxWbGRqSkJhVUk0Q2xCQmJ6QkhjbGRHZWtkR2FXSnpWamRqT0cxS1JYbDFNbE40YlZJMmVFRnRlVFZaYVZSb2RuUmpha0ZMUW1kbmNXaHJhazlRVVZGRVFYZE9iMEZFUW13S1FXcEJhMHRCTWpWR1RIQnhLMUJ2WmxaeVZWWjVNa3h2TkZwcFUyNVlZMmRNVVhOa2IwMVRjMlJxVm1ScVpHZENaVE5OTjBwaWJXNVhVa0ZwTTNJdk1RbzJaM05EVFZGRVJHRnZaVzFCTURKbk9FZE1UM3BCYUM5TFptOVZiMEpwZFdaR1JsZEZZMWx0TVhOYUwxTkdjMHRoWmpseldYQnpUVVpPYmpGMGEya3hDa2QyTW5JMVNWVTlDaTB0TFMwdFJVNUVJRU5GVWxSSlJrbERRVlJGTFMwdExTMEsifV19fQ==",
+                    "inclusionPromise": {
+                      "signedEntryTimestamp": "MEUCIEcKqNO4PkznMoTsyvsVIXl2OkdztFpmt42EUqy5SqBBAiEAvIDAXw7Ahf7IwegZWWHJjb4kOkS1nWat4kIDEcIv4vU="
+                    },
+                    "inclusionProof": {
+                      "checkpoint": {
+                        "envelope": "rekor.sigstore.dev - 1193050959916656506\n2907796042\n4ZXyY2nfRq8BHMfQTNICginAMQUaPZ63frpZdfKCDCM=\n\n— rekor.sigstore.dev wNI9ajBGAiEA6YMElm5e0iAbtP9LtV/fw+XZlyPwYPKA/7Nl9oI3CF8CIQDmCL8y8QSGRWWNtEliOXIcqwSK+x1j9NaQ1+v73LYinA==\n"
+                      },
+                      "hashes": [
+                        "ehp/xxc5s4VjNTW0t6y2Zm0xHfRUsl2v3G8Wax15VKo=",
+                        "bLeDmJB0TxByMKErJ58+h2GzhFyj45yMii0MGskYqVU=",
+                        "fHUy0yzECVBZG6oR/Z7XDcHVsTIwjNAEYxb8wUwiPb8=",
+                        "pWaXx+klM8Ex/te5FctM2cxDaWjSXbR5qd3lJh4e2n8=",
+                        "MwWSGjR68RN5vh6+njL2lEPIAvPaXSXuBAkn2YMD/UQ=",
+                        "+p23EAXm5maUIpiA8qVLyVn4UzhS/oEcaVuEjuhLKuI=",
+                        "wtMw1AKl7ekMqHN5gHeVeBNeU0XoW7SB3yIwAYu/wns=",
+                        "Pt78Ug6I9b80ykEa1cL2oPXl8cTEvdp0jQEWjCTUoOQ=",
+                        "CTg5mNZSpThTjxS2Q8U/UDNUU6cmJhxSwO3wb7NMtbY=",
+                        "urXW9nCMN3EoNy07gjFK71lEJlne9NGlE6AKGeCuNkQ=",
+                        "K0qTJzoKtBGMr+FBxRwatOFsZMsA4KtqWEuudGOLb4E=",
+                        "7S+svDvYU7NG4E7MIACc717y17BLwp3WXnLDWY+ZIog=",
+                        "cIz1OY2tO8cVEgp0TmAffPApps2hJuAcAN+pESrpHHY=",
+                        "4lYk7cX8PszZLoyQMWjMDB1BOBn4f7hehtFiHo92e5Y=",
+                        "ttpxd0TJprOUtb/8Wf5DeIzwNtUw72Q0YnXE2LFMIZo=",
+                        "qxzHanAzz57SDdmJe0B7bJK72NTIBbwEMGBBKvDOROw=",
+                        "xH/DCseLHr9eKoYT8qsORZK7zVdEGYWHuVtsVrD95wY="
+                      ],
+                      "logIndex": "2907796038",
+                      "rootHash": "4ZXyY2nfRq8BHMfQTNICginAMQUaPZ63frpZdfKCDCM=",
+                      "treeSize": "2907796042"
+                    },
+                    "integratedTime": "1790825599",
+                    "kindVersion": {
+                      "kind": "dsse",
+                      "version": "0.0.1"
+                    },
+                    "logId": {
+                      "keyId": "wNI9atQGlz+VWfO6LRygH4QUfY/8W4RFwiT5i5WRgB0="
+                    },
+                    "logIndex": "3029700300"
+                  }
+                ]
+              }
+            },
+            "bundle_url": "",
+            "initiator": ""
+          },
+          "verificationResult": {
+            "mediaType": "application/vnd.dev.sigstore.verificationresult+json;version=0.1",
+            "signature": {
+              "certificate": {
+                "buildConfigDigest": "761172002e4a4d02102f8c757235b888fe4859e1",
+                "buildConfigURI": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration",
+                "buildSignerDigest": "761172002e4a4d02102f8c757235b888fe4859e1",
+                "buildSignerURI": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration",
+                "buildTrigger": "workflow_dispatch",
+                "certificateIssuer": "CN=sigstore-intermediate,O=sigstore.dev",
+                "githubWorkflowName": "Developer tools",
+                "githubWorkflowRef": "refs/heads/feat/feedback2-java710-integration",
+                "githubWorkflowRepository": "KirilsTurkins/latent-service-fabric",
+                "githubWorkflowSHA": "761172002e4a4d02102f8c757235b888fe4859e1",
+                "githubWorkflowTrigger": "workflow_dispatch",
+                "issuer": "https://token.actions.githubusercontent.com",
+                "runInvocationURI": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36804096895/attempts/1",
+                "runnerEnvironment": "github-hosted",
+                "sourceRepositoryDigest": "761172002e4a4d02102f8c757235b888fe4859e1",
+                "sourceRepositoryIdentifier": "1337591365",
+                "sourceRepositoryOwnerIdentifier": "236028511",
+                "sourceRepositoryOwnerURI": "https://github.com/KirilsTurkins",
+                "sourceRepositoryRef": "refs/heads/feat/feedback2-java710-integration",
+                "sourceRepositoryURI": "https://github.com/KirilsTurkins/latent-service-fabric",
+                "sourceRepositoryVisibilityAtSigning": "public",
+                "subjectAlternativeName": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration"
+              }
+            },
+            "statement": {
+              "_type": "https://in-toto.io/Statement/v1",
+              "predicate": {
+                "buildDefinition": {
+                  "buildType": "https://actions.github.io/buildtypes/workflow/v1",
+                  "externalParameters": {
+                    "workflow": {
+                      "path": ".github/workflows/developer-tools.yml",
+                      "ref": "refs/heads/feat/feedback2-java710-integration",
+                      "repository": "https://github.com/KirilsTurkins/latent-service-fabric"
+                    }
+                  },
+                  "internalParameters": {
+                    "github": {
+                      "event_name": "workflow_dispatch",
+                      "repository_id": "1337591365",
+                      "repository_owner_id": "236028511",
+                      "runner_environment": "github-hosted"
+                    }
+                  },
+                  "resolvedDependencies": [
+                    {
+                      "digest": {
+                        "gitCommit": "761172002e4a4d02102f8c757235b888fe4859e1"
+                      },
+                      "uri": "git+https://github.com/KirilsTurkins/latent-service-fabric@refs/heads/feat/feedback2-java710-integration"
+                    }
+                  ]
+                },
+                "runDetails": {
+                  "builder": {
+                    "id": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration"
+                  },
+                  "metadata": {
+                    "invocationId": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/36804096895/attempts/1"
+                  }
+                }
+              },
+              "predicateType": "https://slsa.dev/provenance/v1",
+              "subject": [
+                {
+                  "digest": {
+                    "sha256": "0504454b407665bdeb35c64ff082109fdfaeeb9cff838774cd2b9c3ecdfe6e24"
+                  },
+                  "name": "SHA256SUMS"
+                }
+              ]
+            },
+            "verifiedIdentity": {
+              "issuer": {
+                "issuer": "",
+                "regexp": ".*"
+              },
+              "runnerEnvironment": "github-hosted",
+              "subjectAlternativeName": {
+                "subjectAlternativeName": "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration"
+              }
+            },
+            "verifiedTimestamps": [
+              {
+                "timestamp": "2026-10-01T03:33:19Z",
+                "type": "Tlog",
+                "uri": "https://rekor.sigstore.dev"
+              }
+            ]
+          }
+        }
+      ],
+      "verifier": {
+        "argv": [
+          "/qualification-work/verification/gh-linux",
+          "attestation",
+          "verify",
+          "/approved/frontend/SHA256SUMS",
+          "--bundle",
+          "/approved/frontend/attestation.json",
+          "--custom-trusted-root",
+          "/qualification-work/verification/trusted_root.jsonl",
+          "--repo",
+          "KirilsTurkins/latent-service-fabric",
+          "--hostname",
+          "github.com",
+          "--cert-identity",
+          "https://github.com/KirilsTurkins/latent-service-fabric/.github/workflows/developer-tools.yml@refs/heads/feat/feedback2-java710-integration",
+          "--cert-oidc-issuer",
+          "https://token.actions.githubusercontent.com",
+          "--source-ref",
+          "refs/heads/feat/feedback2-java710-integration",
+          "--source-digest",
+          "761172002e4a4d02102f8c757235b888fe4859e1",
+          "--signer-digest",
+          "761172002e4a4d02102f8c757235b888fe4859e1",
+          "--deny-self-hosted-runners",
+          "--predicate-type",
+          "https://slsa.dev/provenance/v1",
+          "--digest-alg",
+          "sha256",
+          "--format",
+          "json"
+        ],
+        "exitCode": 0,
+        "outputLimitExceeded": false,
+        "seconds": 0.42,
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 15609,
+        "stdoutSha256": "54a6b7282b1afcd5b814c3f6900c747d920d2cfd127fd8c59f64d26d86e0a218"
+      }
+    },
+    "executionQualified": false,
+    "frontend": {
+      "bytes": 2200344,
+      "sha256": "sha256:15b61742c90b58192c9af748c6036c93be9d34d0078361d6746f8fac609113d8"
+    },
+    "originalArchive": {
+      "bytes": 34949774,
+      "sha256": "sha256:b6d96ae6f4672975791d207c166848f0582e8b4461ee201ac4262c861e8b35a6"
+    },
+    "originalManifest": {
+      "bytes": 101568,
+      "sha256": "sha256:227a6b126fd42f0a48879090f237b3666155914313830b88f37cef2908975df9"
+    },
+    "preflightResources": [
+      {
+        "path": "schemas/dev-composition-input.schema.json",
+        "sha256": "sha256:b12ad0f9b4fd89105c1d9002eefd608932992fdde18c40c5ebb6e81403ff38b1",
+        "size": 10965
+      },
+      {
+        "path": "schemas/static-site-budget.schema.json",
+        "sha256": "sha256:64f43e465f875650958c2f563427b5c3f024f487f808eaa90742ec23f2e9eaa8",
+        "size": 5786
+      },
+      {
+        "path": "contracts/dev/composition-support-v1.json",
+        "sha256": "sha256:13b43cbd26d4b1500c4e03c90800bd8a66a804cac541dbaa3ea4fe11f75df7f6",
+        "size": 16181
+      },
+      {
+        "path": "contracts/http/browser-response-ownership-v1.json",
+        "sha256": "sha256:b00795bf709c37d153af0bd6d445415ba6bd2fb47310b4c47ee1c3d2d951e2a3",
+        "size": 5873
+      }
+    ],
+    "publisherAuthenticated": true,
+    "schemaVersion": "latent.java-http.authenticated-frontend.v1",
+    "sourceCommit": "761172002e4a4d02102f8c757235b888fe4859e1",
+    "target": "linux-x86_64"
+  },
+  "nativeRuntimeRebuilt": false,
+  "originalCompilerLogs": [],
+  "passed": false,
+  "retainedC4ArtifactsReused": false,
+  "schemaVersion": "latent.dev.packaged-java-composition.v1"
+}

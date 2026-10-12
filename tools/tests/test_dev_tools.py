@@ -270,7 +270,7 @@ class DotnetRuntimeDistribution(unittest.TestCase):
                 self.assertEqual((source / filename).read_bytes(), filename.encode())
             self.assertIn("tools/component-composer/input", {row["path"] for row in record["files"]})
             self.assertEqual((target / "tools/component-composer/input").read_bytes(), b"component-composer")
-            self.assertEqual(len(ADAPTERS), 4)
+            self.assertEqual(len(ADAPTERS), 5)
 
     def test_missing_selected_composer_fails_before_a_distribution_can_be_published(self):
         from tools.dev_managed_distribution import retain_dotnet_support
@@ -386,7 +386,7 @@ class CompilerDownloadBounds(unittest.TestCase):
         with patch.object(self.builder.urllib.request, "urlopen", return_value=incoming) as opened, \
                 patch.object(self.builder.time, "monotonic", side_effect=lambda: self.clock):
             self.builder.download(self.path, self.source)
-        opened.assert_called_once_with(self.source["url"], timeout=min(30, self.source.get("timeoutSeconds", self.builder.DOWNLOAD_TIMEOUT_SECONDS)))
+        opened.assert_called_once_with(self.source["url"], timeout=min(60, self.source.get("timeoutSeconds", self.builder.DOWNLOAD_TIMEOUT_SECONDS)))
         self.assertTrue(all(0 < call.args[0] <= len(self.data) + 1 for call in incoming.read1.call_args_list))
 
     def test_small_default_transfer_accepts_only_pinned_bytes(self):
@@ -469,6 +469,86 @@ class CompilerDownloadBounds(unittest.TestCase):
             self.assertIs(caught.exception, failure)
             self.assertEqual(opened.call_count, 1)
 
+    def test_zig_opening_timeouts_retry_only_the_same_pinned_source(self):
+        import io
+        self.source["connectionAttempts"] = self.builder.SOURCES["zig"]["connectionAttempts"]
+        failures = [TimeoutError("first response"),
+                    self.builder.urllib.error.URLError(TimeoutError("second response"))]
+        with patch.object(self.builder.urllib.request, "urlopen",
+                          side_effect=[*failures, io.BytesIO(self.data)]) as opened, \
+                patch.object(self.builder.time, "monotonic", return_value=0):
+            self.builder.download(self.path, self.source)
+        self.assertEqual(self.path.read_bytes(), self.data)
+        self.assertEqual(opened.call_count, 3)
+        for call in opened.call_args_list:
+            self.assertEqual(call.args, (self.source["url"],))
+            self.assertEqual(call.kwargs, {"timeout": 60})
+
+    def test_zig_connection_exhaustion_keeps_the_failure_and_discards_output(self):
+        self.source["connectionAttempts"] = 3
+        failure = TimeoutError("unavailable peer")
+        with patch.object(self.builder.urllib.request, "urlopen", side_effect=failure) as opened, \
+                patch.object(self.builder.time, "monotonic", return_value=0):
+            with self.assertRaises(TimeoutError) as caught:
+                self.builder.download(self.path, self.source)
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(opened.call_count, 3)
+        self.assertFalse(self.path.exists())
+
+    def test_connection_retries_share_the_original_deadline(self):
+        self.source.update(connectionAttempts=3, timeoutSeconds=70)
+        self.clock = 0
+        def unavailable(*args, **kwargs):
+            self.clock += min(40, kwargs["timeout"])
+            raise TimeoutError("busy peer")
+        with patch.object(self.builder.urllib.request, "urlopen", side_effect=unavailable) as opened, \
+                patch.object(self.builder.time, "monotonic", side_effect=lambda: self.clock):
+            with self.assertRaisesRegex(common.DevError, "compiler-download-deadline"):
+                self.builder.download(self.path, self.source)
+        self.assertEqual([call.kwargs["timeout"] for call in opened.call_args_list], [60, 30])
+        self.assertEqual(self.clock, 70)
+        self.assertFalse(self.path.exists())
+
+    def test_enabled_connection_retries_do_not_retry_http_or_other_transport_errors(self):
+        self.source["connectionAttempts"] = 3
+        errors = [self.builder.urllib.error.HTTPError(self.source["url"], 403, "denied", {}, None),
+                  self.builder.urllib.error.URLError(ConnectionResetError("reset"))]
+        for failure in errors:
+            with self.subTest(failure=failure), \
+                    patch.object(self.builder.urllib.request, "urlopen", side_effect=failure) as opened:
+                with self.assertRaises(self.builder.urllib.error.URLError) as caught:
+                    self.builder.download(self.path, self.source)
+                self.assertIs(caught.exception, failure)
+                self.assertEqual(opened.call_count, 1)
+                self.assertFalse(self.path.exists())
+
+    def test_partial_body_timeout_is_not_retried_or_cached(self):
+        from unittest.mock import Mock
+        self.source["connectionAttempts"] = 3
+        failure = TimeoutError("partial archive")
+        incoming = Mock()
+        incoming.__enter__ = Mock(return_value=incoming)
+        incoming.__exit__ = Mock(return_value=False)
+        incoming.read1.side_effect = [self.data[:3], failure]
+        cache = self.path.with_name("cache")
+        with patch.object(self.builder.urllib.request, "urlopen", return_value=incoming) as opened:
+            with self.assertRaises(TimeoutError) as caught:
+                self.builder.download(self.path, self.source, cache=cache)
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(opened.call_count, 1)
+        incoming.__exit__.assert_called_once()
+        self.assertFalse(self.path.exists())
+        self.assertEqual(list(cache.iterdir()), [])
+
+    def test_invalid_connection_attempts_fail_before_network_or_output(self):
+        for attempts in (0, -1, 4, True, 3.0, "3"):
+            with self.subTest(attempts=attempts), \
+                    patch.object(self.builder.urllib.request, "urlopen") as opened:
+                with self.assertRaisesRegex(common.DevError, "compiler-download-attempts-invalid"):
+                    self.builder.download(self.path, dict(self.source, connectionAttempts=attempts))
+                opened.assert_not_called()
+                self.assertFalse(self.path.exists())
+
 
 class SelectedRecipeImports(unittest.TestCase):
     def stage(self, language):
@@ -517,6 +597,61 @@ print('selected-recipe-imports-owned')
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(b"guest_compatibility_build", result.stderr)
         self.assertNotIn(b"selected-recipe-imports-owned", result.stdout)
+
+
+class HelperRuntimeImports(unittest.TestCase):
+    def archive(self):
+        from tools import build_dev_frontend as builder
+        owned = tempfile.TemporaryDirectory(); self.addCleanup(owned.cleanup)
+        root = Path(owned.name); helper = root / 'helper.pyz'
+        builder.helper(helper)
+        return root, helper
+
+    def probe(self, root, helper, *, dispatch=False):
+        import subprocess
+        script = '''import importlib,pathlib,sys
+archive=pathlib.Path(sys.argv[1]).resolve();sys.path.insert(0,str(archive))
+module=importlib.import_module('tools.dev_workflow.node_scenarios')
+from tools.dev_workflow.common import DevError
+if sys.argv[2]=='dispatch':
+ try:
+  module.run(pathlib.Path.cwd(),{'environment':'invalid','selection':[]})
+ except DevError as error:
+  assert error.code=='linux-test-cannot-fallback-to-portable',error.code
+ else:raise AssertionError('original scenario admission fence missing')
+for name in ('tools.guest_compatibility_outcomes','tools.guest_compatibility','tools.guest_compatibility_context','tools.guest_runtime_receipts'):
+ importlib.import_module(name)
+for name,loaded in tuple(sys.modules.items()):
+ if name.startswith('tools.') and getattr(loaded,'__file__',None):
+  assert str(pathlib.Path(loaded.__file__)).startswith(str(archive)),name
+print('real-helper-runtime-imports-owned')
+'''
+        return subprocess.run([sys.executable, '-I', '-B', '-c', script, str(helper), 'dispatch' if dispatch else 'imports'],
+            cwd=root, capture_output=True, timeout=30, check=False)
+
+    def test_actual_built_helper_imports_runtime_closure_without_checkout_or_node_fallback(self):
+        root, helper = self.archive(); result = self.probe(root, helper)
+        self.assertEqual(result.returncode, 0, result.stderr.decode('utf-8', 'replace')[:4096])
+        self.assertEqual(result.stdout.splitlines(), [b'real-helper-runtime-imports-owned'])
+        self.assertEqual(result.stderr, b'')
+
+    @unittest.skipUnless(os.name == 'posix', 'Linux helper dispatch requires the real pwd module')
+    def test_linux_helper_dispatch_reaches_original_scenario_fence_without_node_work(self):
+        root, helper = self.archive(); result = self.probe(root, helper, dispatch=True)
+        self.assertEqual(result.returncode, 0, result.stderr.decode('utf-8', 'replace')[:4096])
+        self.assertEqual(result.stdout.splitlines(), [b'real-helper-runtime-imports-owned'])
+        self.assertEqual(result.stderr, b'')
+
+    def test_missing_captured_outcome_module_cannot_be_imported_from_checkout(self):
+        import zipfile
+        root, helper = self.archive(); incomplete = root / 'incomplete.pyz'
+        with zipfile.ZipFile(helper) as source, zipfile.ZipFile(incomplete, 'x') as target:
+            for row in source.infolist():
+                if row.filename != 'tools/guest_compatibility_outcomes.py':
+                    target.writestr(row, source.read(row.filename))
+        result = self.probe(root, incomplete)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b'guest_compatibility_outcomes', result.stderr)
 
 
 if __name__ == "__main__":

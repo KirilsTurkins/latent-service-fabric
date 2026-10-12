@@ -1,5 +1,8 @@
 """Observe the actual editable C# project, compiler closure and package inputs."""
 from __future__ import annotations
+
+from tools import guest_compatibility_context_build
+from tools.transaction_guest_project import packaging_arguments
 import json
 from pathlib import Path
 import tempfile
@@ -20,7 +23,7 @@ BUILD_TYPE = "https://latent.dev/build/dotnet-capsule/v1"
 RECIPE = ("tools/dotnet_capsule.py", "tools/dotnet_guest/project.py", "tools/dotnet_guest/build.py",
     "tools/dotnet_guest/compiler.py", "tools/dotnet_guest/runtime.py", "tools/dotnet_guest/composer.py",
     "tools/dotnet_guest/compatibility.py", "tools/dotnet_guest/entropy.py", "tools/dotnet_guest/outputs.py",
-    "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
+    "tools/dotnet_guest/http_errors.py", "tools/dotnet_guest/resources.py", "tools/dotnet_guest/sdk.py", "tools/dotnet_guest_bindings.py",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py", "tools/build_observation.py",
     "tools/build_process.py", "tools/build_process_linux.py", "tools/build_process_windows.py",
     "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
@@ -30,6 +33,7 @@ RECIPE += ('tools/application_dependencies.py', 'tools/application_dependency_st
            'tools/application_dependency_approval.py', 'tools/captured_compiler_isolation.py', 'tools/dotnet_compiler_isolation.py',
            'tools/dotnet_application_dependencies.py')
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 
@@ -50,6 +54,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         observed = guest_dependency_inputs.capture_source(project_path, 'dotnet')
         files = observed.files
         project, lock, pins = validate(files)
+        stage = "resource-inputs"
+        guest_resources.select(files)
         source_inputs = inventory(files)
         recipe_files = {name: read_file(ROOT / name) for name in RECIPE}
         recipe = inventory(recipe_files)
@@ -122,8 +128,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
             stage = "recheck"
             observed.check_unchanged()
             if snapshot(work, exclude=('dependencies', 'application-vendor') if closure else ()) != files:
@@ -168,6 +174,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                "target": "wasi-wasm", "runtime": "native-aot", "locked": True, "ambientWasi": False},
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
+            guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
                 "packageAssembled": packager is not None,
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),

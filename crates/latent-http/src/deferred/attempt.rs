@@ -22,6 +22,7 @@ pub(super) struct AcceptedOperation {
     pub transport: ProtocolTransport,
     pub endpoint: Arc<QualifiedHttpEndpoint>,
     pub time: Arc<dyn EffectTimeSource>,
+    pub authorization: Option<Arc<dyn super::DeferredHttpAuthorization>>,
     pub value: Value,
     pub body_digest: String,
     pub attempt: AttemptIdentity,
@@ -117,6 +118,11 @@ impl AcceptedOperation {
         self.checkpoint()?;
         self.request.begin_operation().map_err(HttpError::from)?;
         let data = request::build(self, operation)?;
+        let method = data.request.method.clone();
+        let path = data.request.path_and_query.clone();
+        if let Some(authorization) = &self.authorization {
+            authorization.check_current(self.request.grant(), &method, &path)?;
+        }
         let mut bytes = Vec::with_capacity(MAXIMUM_REPLY_BYTES);
         let response = self
             .transport
@@ -137,6 +143,9 @@ impl AcceptedOperation {
                 },
                 &mut || {
                     self.checkpoint()?;
+                    if let Some(authorization) = &self.authorization {
+                        authorization.check_current(self.request.grant(), &method, &path)?;
+                    }
                     request::check_credential(self, &data.credential_stamp)
                 },
             )

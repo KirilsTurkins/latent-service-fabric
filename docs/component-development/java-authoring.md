@@ -96,6 +96,11 @@ projects are rejected. Reachable JNI, reflection-based loading and dynamic class
 loading still require compatible compiler/runtime support and emitted-component
 evidence.
 
+Each Java project captures the SDK's exact `latent:clock@0.1.0` definition in
+`wit/deps/clock`, so WIT inspection can resolve the declared monotonic and wall
+clock imports before compiler staging. The operator grants those clocks when
+deploying the capsule.
+
 The `word-count` and `shipping` templates provide equivalent Java implementations
 of [Creating a capsule](creating-a-capsule.md). Choose another project directory
 and replace `greeting` in the creation command with either template name.
@@ -115,6 +120,12 @@ execution and current host validation; a declared safe header list does not
 qualify an application or change the shipped `same-origin` referrer policy.
 
 Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers canonical imported owners, `Unsigned64`, try-with-resources and the captured profile, schema and binding companion. The host owns commitment. The signed transaction and HTTP recovery matrix is tracked by #389 and required Java slice #718. The tutorial below retains its existing stateless profile.
+
+The compiler selects the Phase 4 compatibility catalogue only after checking the
+captured profile, binding links, schema and exact State and intents WIT. This
+recognizes their declared ABI in the report; provider installation, current
+grants and signed execution remain separate checks. Ordinary projects retain
+the Phase 3 catalogue.
 
 ## 2. Build and package the project
 

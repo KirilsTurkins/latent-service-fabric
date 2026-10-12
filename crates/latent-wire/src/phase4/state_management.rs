@@ -1,6 +1,7 @@
 //! Actual namespace management over the node's single protected engine.
 mod audit;
 mod authorization;
+mod command_result;
 mod dispatcher;
 mod effects;
 mod entities;
@@ -62,6 +63,14 @@ pub trait StateManagementReservation: Send + Sync {
     fn reserved_response_bytes(&self) -> usize;
     /// The real owner's short currentness/cancellation fence, without I/O.
     fn with_live(&self, action: &mut dyn FnMut()) -> Result<(), PlatformError>;
+    /// Further narrow the original reservation by the durable result cutoff.
+    fn with_live_until(
+        &self,
+        _deadline: Instant,
+        _action: &mut dyn FnMut(),
+    ) -> Result<(), PlatformError> {
+        Err(unsupported())
+    }
 }
 
 /// Trusted installed target constraints. Descriptive configuration grants no
@@ -92,6 +101,8 @@ struct Inner {
     bindings: Vec<Arc<StateManagementBinding>>,
     dispatcher: Option<latent_effects::runtime::DispatcherManagementPort>,
     recovery_bindings: Option<Vec<StateManagementRecoveryBinding>>,
+    command_source: Option<latent_effects::runtime::CommandAdmissionSource>,
+    resident_metadata: Vec<Arc<latent_core::native_capacity::NativeBufferPermit>>,
 }
 struct AdmittedRequest {
     context: AuthenticatedInvocationContext,
@@ -135,6 +146,8 @@ impl StateManagementBackend {
             bindings: bindings.into_iter().map(Arc::new).collect(),
             dispatcher: None,
             recovery_bindings: None,
+            resident_metadata: Vec::new(),
+            command_source: None,
         })))
     }
 
@@ -150,6 +163,55 @@ impl StateManagementBackend {
             return Err(invalid());
         }
         Arc::get_mut(&mut self.0).ok_or_else(invalid)?.dispatcher = Some(dispatcher);
+        Ok(self)
+    }
+
+    /// Retain prepaid installation metadata through the last worker and frame.
+    /// The permits grant no policy, publication or caller authority.
+    pub fn with_resident_metadata(
+        mut self,
+        memory: Vec<Arc<latent_core::native_capacity::NativeBufferPermit>>,
+    ) -> Result<Self, PlatformError> {
+        use latent_core::native_capacity::NativeAdmissionClass;
+        let native = self.0.services.admission.native_capacity();
+        if memory.is_empty()
+            || memory.len() > 16
+            || memory.iter().any(|permit| {
+                !permit.is_from_owner(&native)
+                    || permit.class() != NativeAdmissionClass::Recovery
+                    || permit.bytes() == 0
+            })
+        {
+            return Err(invalid());
+        }
+        let inner = Arc::get_mut(&mut self.0).ok_or_else(invalid)?;
+        if !inner.resident_metadata.is_empty() {
+            return Err(invalid());
+        }
+        inner.resident_metadata = memory;
+        Ok(self)
+    }
+
+    /// Recovery reads use the installed store's original continuity clock.
+    pub fn with_command_recovery(
+        mut self,
+        source: latent_effects::runtime::CommandAdmissionSource,
+    ) -> Result<Self, PlatformError> {
+        if !source.uses_store(&self.0.services.store)
+            || !source.uses_native_capacity(&self.0.services.admission.native_capacity())
+            || !self
+                .0
+                .services
+                .policy
+                .rejection_observer_matches(&source.effect_authority().rejection_observer())
+        {
+            return Err(invalid());
+        }
+        let inner = Arc::get_mut(&mut self.0).ok_or_else(invalid)?;
+        if inner.command_source.is_some() {
+            return Err(invalid());
+        }
+        inner.command_source = Some(source);
         Ok(self)
     }
 
@@ -175,8 +237,9 @@ impl StateManagementBackend {
         &self,
         context: AuthenticatedInvocationContext,
         request: contract::Request,
-    ) -> BoxFuture<'_, Result<OwnedPhase4Response, PlatformError>> {
+    ) -> BoxFuture<'static, Result<OwnedPhase4Response, PlatformError>> {
         let admission = self.admit(context, request);
+        let inner = Arc::clone(&self.0);
         Box::pin(async move {
             let AdmittedRequest {
                 context,
@@ -188,7 +251,7 @@ impl StateManagementBackend {
             } = admission?;
             if request.is_node_management() {
                 return dispatcher::execute(
-                    Arc::clone(&self.0),
+                    Arc::clone(&inner),
                     context,
                     request,
                     node_decision.ok_or_else(invalid)?,
@@ -198,12 +261,23 @@ impl StateManagementBackend {
                 .await;
             }
             let binding = binding.ok_or_else(invalid)?;
+            if command_result::handles(&request) {
+                return command_result::execute(
+                    Arc::clone(&inner),
+                    context,
+                    request,
+                    binding,
+                    deadline,
+                    permit,
+                )
+                .await;
+            }
             let access =
-                authorization::authorize(&self.0.services, &binding, &context, &request, deadline)
+                authorization::authorize(&inner.services, &binding, &context, &request, deadline)
                     .await?;
             if effects::handles(&request) {
                 return effects::execute(
-                    Arc::clone(&self.0),
+                    Arc::clone(&inner),
                     context,
                     request,
                     access,
@@ -213,22 +287,15 @@ impl StateManagementBackend {
                 )
                 .await;
             }
-            let pending = audit::begin(&self.0, &access, &context, &request).await?;
+            let pending = audit::begin(&inner, &access, &context, &request).await?;
             match request {
                 contract::Request::SelectEntity(value) => {
-                    entities::select(
-                        Arc::clone(&self.0),
-                        value,
-                        access,
-                        permit,
-                        deadline,
-                        pending,
-                    )
-                    .await
+                    entities::select(Arc::clone(&inner), value, access, permit, deadline, pending)
+                        .await
                 }
                 contract::Request::InspectNamespace(value) => {
                     inspection::inspect(
-                        Arc::clone(&self.0),
+                        Arc::clone(&inner),
                         value,
                         access,
                         permit,
@@ -239,7 +306,7 @@ impl StateManagementBackend {
                 }
                 contract::Request::GetStateOperationReceipt(value) => {
                     inspection::receipt(
-                        Arc::clone(&self.0),
+                        Arc::clone(&inner),
                         value,
                         access,
                         permit,
@@ -249,15 +316,8 @@ impl StateManagementBackend {
                     .await
                 }
                 contract::Request::MutateNamespace(value) => {
-                    mutation::mutate(
-                        Arc::clone(&self.0),
-                        value,
-                        access,
-                        permit,
-                        deadline,
-                        pending,
-                    )
-                    .await
+                    mutation::mutate(Arc::clone(&inner), value, access, permit, deadline, pending)
+                        .await
                 }
                 _ => Err(unsupported()),
             }
@@ -354,10 +414,14 @@ impl StateManagementBackend {
         {
             return Err(denied());
         }
-        self.0
-            .services
-            .authorization
-            .authorize(principal, ManagementOperation::Tenant)?;
+        // Original-result lookup is a scoped application read. Namespace and
+        // effect administration retain their independent operator gate.
+        if !command_result::handles(request) {
+            self.0
+                .services
+                .authorization
+                .authorize(principal, ManagementOperation::Tenant)?;
+        }
         let publication = target.publication;
         let binding = self
             .0
@@ -392,6 +456,27 @@ struct RequestedTarget<'a> {
     publication: &'a c::PublicationRef,
 }
 fn target(request: &contract::Request) -> Result<RequestedTarget<'_>, PlatformError> {
+    let lookup = match request {
+        contract::Request::LookupCommand(value) => Some((
+            value.command.as_ref(),
+            value.authorization_publication.as_ref(),
+        )),
+        contract::Request::LookupCommit(value) => Some((
+            value.command.as_ref(),
+            value.authorization_publication.as_ref(),
+        )),
+        _ => None,
+    };
+    if let Some((command, publication)) = lookup {
+        return Ok(RequestedTarget {
+            namespace: command
+                .ok_or_else(invalid)?
+                .namespace
+                .as_ref()
+                .ok_or_else(invalid)?,
+            publication: publication.ok_or_else(invalid)?,
+        });
+    }
     if let contract::Request::PlanEffectMutation(value) = request {
         let effect = value.effect.as_ref().ok_or_else(invalid)?;
         return Ok(RequestedTarget {

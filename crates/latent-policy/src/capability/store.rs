@@ -1,5 +1,6 @@
 mod authority;
 mod codec;
+mod control_generation;
 mod ledger;
 mod model;
 mod mutation;
@@ -13,6 +14,7 @@ pub use authority::{
     CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, OwnedPolicyDecision,
     PolicySnapshot, PolicySnapshotState, SealedPolicyDecision,
 };
+pub use control_generation::PolicyControlGeneration;
 use latent_artifacts::LifecycleAuthorityHandle;
 use latent_core::PlatformError;
 use model::Image;

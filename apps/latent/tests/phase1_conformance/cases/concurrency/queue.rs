@@ -85,5 +85,5 @@ pub async fn queue_admission(harness: &mut Harness, evidence: &mut Evidence, fix
         "holderResults":[first_result,second_result],
         "queuedResults":[first_queued_result,second_queued_result,examples_result],"queuedStatuses":queued_statuses,"idleSample":idle_sample,
         "fairnessOracle":"other-tenant-completes-before-uncancelled-same-tenant-spin",
-        "overflowBoundary":"standalone-active-owner-ceiling-before-extra-journal-registration"}));
+        "overflowBoundary":"standalone-active-owner-ceiling-with-retained-refusal-before-guest-admission"}));
 }

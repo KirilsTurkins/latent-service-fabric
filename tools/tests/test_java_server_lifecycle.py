@@ -128,7 +128,7 @@ class ServerLifecycleInputs(unittest.TestCase):
             tuple_path = root / "tuple.json"
             value = {"status": "passed", "features": [], "tupleRole": "ordinary-defaults",
                 "head": "1" * 40, "tree": "2" * 40, "hostAbiProfile": "lsf-host-abi-phase3-v5",
-                "wasmtimeVersion": "48.0.4", "binaries": {"latentd": {
+                "wasmtimeVersion": "48.0.5", "binaries": {"latentd": {
                     "actualExecutableSha256": identity, "bytes": executable.stat().st_size, "actualFeatures": []}}}
             tuple_path.write_text(json.dumps(value), encoding="utf-8")
             actual = ordinary_tuple(tuple_path, {"latentd": executable})

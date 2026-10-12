@@ -22,7 +22,7 @@ def ordinary_tuple(path, binaries):
     require(observed.get("status") == "passed" and observed.get("features") == []
             and observed.get("tupleRole") == "ordinary-defaults"
             and observed.get("hostAbiProfile") == "lsf-host-abi-phase3-v5"
-            and observed.get("wasmtimeVersion") == "48.0.4", "server-lifecycle-genuine-default-tuple-required")
+            and observed.get("wasmtimeVersion") == "48.0.5", "server-lifecycle-genuine-default-tuple-required")
     for name, binary in binaries.items():
         product = observed["binaries"][name]
         actual = file_identity(binary, 512 * 1024 * 1024)

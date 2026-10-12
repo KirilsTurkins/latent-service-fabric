@@ -1,5 +1,6 @@
 //! Node-owned transport admission and cleanup, separate from activation quotas.
 mod auth;
+pub(in crate::standalone) use auth::credential_principal;
 mod config;
 mod dispatch;
 mod io;
@@ -35,10 +36,11 @@ impl Transport {
         config: TransportConfig,
         invocation: InvocationServiceAdapter<LocalInvocationRuntime>,
         management: ManagementServiceAdapter,
+        phase4: Option<latent_wire::phase4::Phase4ServiceAdapter>,
         clock: Arc<dyn ActivationClock>,
         control_runtime: Handle,
     ) -> Result<Self, PlatformError> {
-        let routes = tonic::service::Routes::new(invocation.into_server())
+        let mut routes = tonic::service::Routes::new(invocation.into_server())
             .add_service(management.clone().release_server())
             .add_service(management.clone().deployment_server())
             .add_service(management.clone().trigger_server())
@@ -47,8 +49,14 @@ impl Transport {
             .add_service(management.clone().rollout_server())
             .add_service(management.clone().policy_server())
             .add_service(management.clone().capability_server())
-            .add_service(management.node_server())
-            .prepare();
+            .add_service(management.node_server());
+        if let Some(phase4) = phase4 {
+            routes = routes
+                .add_service(phase4.clone().state_server())
+                .add_service(phase4.clone().dispatcher_server())
+                .add_service(phase4.transaction_server());
+        }
+        let routes = routes.prepare();
         Self::start_routes(config, routes, clock, control_runtime).await
     }
 

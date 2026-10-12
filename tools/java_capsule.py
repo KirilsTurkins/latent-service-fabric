@@ -52,6 +52,20 @@ def parser() -> argparse.ArgumentParser:
     review.add_argument('--expect', required=True, help='sha256:<64 hex> of the reviewed candidate bytes')
     status = commands.add_parser('dependencies', help='Verify captured Java inputs offline')
     status.add_argument('project', type=Path)
+    generator = commands.add_parser('generator-request', help='Request explicit approval for a contained Java source generator or processor launcher')
+    generator.add_argument('project', type=Path)
+    generator.add_argument('--candidate', type=Path, required=True)
+    generator.add_argument('--tool', type=Path, required=True)
+    generator.add_argument('--tool-version', required=True)
+    generator.add_argument('--inputs', type=Path, required=True)
+    generator.add_argument('--arg', action='append', default=[])
+    generator.add_argument('--destination', default='src/generated')
+    generator.add_argument('--timeout', type=float, default=60)
+    generator.add_argument('--maximum-output-bytes', type=int, default=1024 * 1024)
+    generate = commands.add_parser('generate', help='Run only the exact explicitly approved request and capture fresh Java source')
+    generate.add_argument('project', type=Path)
+    generate.add_argument('--candidate', type=Path, required=True)
+    generate.add_argument('--expect', required=True)
     for operation in ('test', 'watch'):
         command = commands.add_parser(operation, help='Delegate reviewed Java inputs to the authenticated maintained frontend')
         command.add_argument('project', type=Path)
@@ -104,7 +118,15 @@ def main(argv: list[str] | None = None) -> int:
                 except (ValueError, OSError):
                     print('Java dependency frontend receipt unavailable; inspect workspace status.', file=sys.stderr)
                 return outcome.exit_code
-            if args.command == 'resolve':
+            if args.command in {'generator-request', 'generate'}:
+                from tools import java_generator_authoring as generator
+                result = (generator.request(args.project, args.candidate, tool=args.tool,
+                            arguments=args.arg, inputs=args.inputs, destination=args.destination,
+                            tool_version=args.tool_version, timeout_seconds=args.timeout,
+                            maximum_output_bytes=args.maximum_output_bytes)
+                          if args.command == 'generator-request'
+                          else generator.run(args.project, args.candidate, args.expect))
+            elif args.command == 'resolve':
                 from tools.java_dependency_resolution import resolve
                 candidate = dependencies.candidate_location(args.project, args.candidate)
                 if any(os.path.lexists(candidate.with_name(candidate.name + suffix)) for suffix in ('.receipt.json', '.failed.json')):

@@ -103,6 +103,20 @@ class AuthoringSelection(unittest.TestCase):
         self.assertFalse((self.output / 'BUILD-COMPLETE.json').exists())
         self.assertEqual(json.loads((self.output / 'BUILD-FAILED.json').read_bytes())['stage'], 'capture')
 
+    def test_source_capture_failure_keeps_original_error_and_no_success_marker(self):
+        error = ValueError('source capture refused')
+        with patch.object(build.guest_dependency_inputs, 'capture_source', side_effect=error), \
+                patch.object(build, 'Compiler') as compiler:
+            with self.assertRaises(ValueError) as caught:
+                self.invoke(runtime_profile=PROFILE)
+        self.assertIs(caught.exception, error)
+        compiler.assert_not_called()
+        failed = json.loads((self.output / 'BUILD-FAILED.json').read_bytes())
+        self.assertEqual((failed['stage'], failed['reason']), ('capture', str(error)))
+        self.assertFalse((self.output / 'BUILD-COMPLETE.json').exists())
+        self.assertFalse((self.output / 'source-inputs.json').exists())
+        self.assertEqual(snapshot(self.app), self.before)
+
     def test_observed_compiler_profile_must_match_explicit_selection_before_packaging(self):
         class WrongProfile:
             def __init__(owner, directory, _wasi, **options):

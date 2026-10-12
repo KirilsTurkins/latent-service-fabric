@@ -205,6 +205,8 @@ jobs:
           python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-authoring" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
       - name: Qualify captured NuGet libraries and embedded resources
         run: |
+          python3 -m unittest tools.tests.test_dotnet_resources
+          python3 tools/qualify_dotnet_resources.py --dotnet "$(command -v dotnet)" --output "$RUNNER_TEMP/dotnet-standard-resources"
           python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-dependencies" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --application-dependencies
       - name: Retain output and failed attempts
         if: always()
@@ -212,6 +214,7 @@ jobs:
         with:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/dotnet-standard-resources/**
             ${{ runner.temp }}/transaction-guests-dotnet/**/report.json
             ${{ runner.temp }}/transaction-guests-dotnet/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-dotnet/**/recipe-inputs.json

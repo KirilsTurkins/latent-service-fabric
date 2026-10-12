@@ -6,7 +6,7 @@
 
 use crate::{PlatformError, PlatformErrorCode};
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicU64, Ordering},
     Arc, Mutex, OnceLock, Weak,
 };
 
@@ -41,6 +41,20 @@ struct Inner {
     maximum: usize,
     retired: AtomicBool,
     observer: OnceLock<Arc<WeakObserver>>,
+    generation: AtomicU64,
+}
+impl Inner {
+    fn advance_generation(&self) -> Result<(), PlatformError> {
+        self.generation
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+                value.checked_add(1)
+            })
+            .map(|_| ())
+            .map_err(|_| {
+                self.retired.store(true, Ordering::Release);
+                failure(PlatformErrorCode::ResourceExhausted)
+            })
+    }
 }
 impl Drop for Inner {
     fn drop(&mut self) {
@@ -77,7 +91,26 @@ impl AuthorityRejectionToken {
             })
     }
     pub fn reject(&self) {
-        self.current.store(false, Ordering::Release);
+        if self.current.swap(false, Ordering::AcqRel) {
+            if let Some(owner) = self.owner.upgrade() {
+                // A token can only revoke. Overflow permanently closes the
+                // registry, including every retained original token.
+                let _closed = owner.advance_generation();
+            }
+        }
+    }
+}
+
+/// Descriptive capture from the actual original rejection registry. It grants
+/// no permission and cannot keep a retired registry alive or reset its stamps.
+pub struct AuthorityRejectionGeneration {
+    owner: Weak<Inner>,
+    generation: u64,
+}
+impl AuthorityRejectionGeneration {
+    #[must_use]
+    pub const fn generation(&self) -> u64 {
+        self.generation
     }
 }
 
@@ -95,7 +128,52 @@ impl AuthorityRejectionOwner {
             maximum,
             retired: AtomicBool::new(false),
             observer: OnceLock::new(),
+            generation: AtomicU64::new(1),
         })))
+    }
+
+    /// The containing owner must prepay and retain this compact capture, and
+    /// hold its real rule/policy fence against direct token rejection. This is
+    /// the actual registry counter, including rejections with no matching row.
+    pub fn capture_control_generation(
+        &self,
+    ) -> Result<AuthorityRejectionGeneration, PlatformError> {
+        let _entries = self
+            .0
+            .entries
+            .try_lock()
+            .map_err(|_| failure(PlatformErrorCode::Unavailable))?;
+        if self.0.retired.load(Ordering::Acquire) {
+            return Err(failure(PlatformErrorCode::Unavailable));
+        }
+        Ok(AuthorityRejectionGeneration {
+            owner: Arc::downgrade(&self.0),
+            generation: self.0.generation.load(Ordering::Acquire),
+        })
+    }
+
+    /// Keep real observer rejection behind the same short metadata fence as
+    /// final acceptance. The callback must not perform I/O, await, install,
+    /// reject, or recursively acquire this registry. No approval is created.
+    pub fn with_control_generation<R>(
+        &self,
+        captured: &AuthorityRejectionGeneration,
+        action: impl FnOnce() -> R,
+    ) -> Result<R, PlatformError> {
+        if !captured.owner.ptr_eq(&Arc::downgrade(&self.0)) {
+            return Err(failure(PlatformErrorCode::PermissionDenied));
+        }
+        let _entries = self
+            .0
+            .entries
+            .try_lock()
+            .map_err(|_| failure(PlatformErrorCode::Unavailable))?;
+        if self.0.retired.load(Ordering::Acquire)
+            || self.0.generation.load(Ordering::Acquire) != captured.generation
+        {
+            return Err(failure(PlatformErrorCode::StateConflict));
+        }
+        Ok(action())
     }
 
     #[must_use]
@@ -150,6 +228,7 @@ impl AuthorityRejectionOwner {
         if replaced.is_none() && entries.len() >= self.0.maximum {
             return Err(failure(PlatformErrorCode::ResourceExhausted));
         }
+        self.0.advance_generation()?;
         if let Some(previous) = previous {
             previous.reject();
         }
@@ -191,6 +270,7 @@ impl AuthorityRejectionObserver for WeakObserver {
             .entries
             .lock()
             .map_err(|_| failure(PlatformErrorCode::Unavailable))?;
+        inner.advance_generation()?;
         if matches!(target, AuthorityRejection::OwnerRetired) {
             // The actual policy/catalog owner cannot be replaced inside this
             // registry after retirement or uncertain persistence. A new node

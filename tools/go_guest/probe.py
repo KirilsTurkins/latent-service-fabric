@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from tools.go_guest.process import run_bounded
-from tools.go_guest.runtime import overlay
+from tools.go_guest.runtime import PREIMAGES, overlay, scheduler_overlay
 from tools.build_observation import build_environment
 from tools.stage_runtime_wit import stage
 
@@ -73,8 +73,8 @@ def probe(output: Path, go: Path, componentize: Path, wasm_tools: Path) -> None:
             raise ValueError("Go compiler version differs from the pinned profile")
         goroot = Path(run("go-root", [str(go), "env", "GOROOT"]).strip())
         runtime = goroot / "src/runtime/lock_wasip1.go"
-        if "wasiOnIdle" not in runtime.read_text():
-            raise ValueError("async Go patch is absent; implicit compiler downloads are forbidden")
+        if hashlib.sha256(runtime.read_bytes()).hexdigest() != PREIMAGES["runtime/lock_wasip1.go"]:
+            raise ValueError("async Go overlay source differs from the pinned profile")
         version = run("componentize-version", [str(componentize), "--version"]).split()
         if version != ["componentize-go", lock["componentizeGo"]["version"]]:
             raise ValueError("componentize-go differs from the pinned profile")
@@ -107,6 +107,8 @@ def probe(output: Path, go: Path, componentize: Path, wasm_tools: Path) -> None:
         stub.write_bytes(implementation.read_bytes())
         report["sourceInputs"]["sdk/go-guest/probes/roundtrip.go"] = digest(implementation)
         run("module-download", [str(go), "mod", "download", "all"], module)
+        async_overlay = scheduler_overlay(goroot, output / "upstream-runtime-overlay")
+        environment["GOFLAGS"] = "-mod=readonly -overlay=" + str(async_overlay)
         component = output / "upstream-candidate.wasm"
         run("component-build", args + ["build", "--go", str(go), "-o", str(component)], module)
         run("component-validate", [str(wasm_tools), "validate", "--features", "all", str(component)])

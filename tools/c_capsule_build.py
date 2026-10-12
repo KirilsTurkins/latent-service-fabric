@@ -1,6 +1,9 @@
 """Observe one actual C source build; never sign, execute or grant authority."""
 from __future__ import annotations
 
+from tools import guest_compatibility_context_build, guest_runtime_receipts
+from tools.transaction_guest_project import packaging_arguments
+
 import json
 from pathlib import Path
 import tempfile
@@ -34,9 +37,12 @@ RECIPE = ("tools/c_capsule.py", "tools/c_capsule_project.py", "tools/c_capsule_b
           "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py",
           "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
+RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += guest_resources.RECIPE
+RECIPE += ("tools/c_generator_authoring.py",)
 
 
 def binding_check(work: Path, lock: dict, commands: Commands, generator: Path) -> str:
@@ -129,8 +135,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
             stage = "recheck"
             if build_inputs(project_path) != (files, dependency_root) or snapshot(work, exclude=("dependencies", "application-vendor")) != files:
                 raise ValueError("project changed during the observed C build")
@@ -156,6 +162,14 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
                 data = read_file(output / "compiler-inputs.json", 8 * 1024 * 1024)
                 materials.append({"name": "c-compiler-sysroot-and-isolation", "digest": digest(data), "size": len(data)})
+            if "c-generated-inputs.json" in files:
+                data = files["c-generated-inputs.json"]
+                materials.append({"name": "c-generator-inputs",
+                                  "digest": digest(data), "size": len(data)})
+            materials.append(guest_runtime_receipts.emit(output, 'c', 'closed-synchronous-v1', files,
+                source_inputs, component, materials, graph=closure.lock if closure is not None else None,
+                binding_digest=binding_digest, configuration={"profile": 'closed-synchronous-v1', "world": project['world'],
+                    "target": "wasm32-wasi", "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("C build clock or overall deadline invalid")
@@ -166,6 +180,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 "parameters": {"compiler": "zig-cc", "fixture": "application", "target": "wasm32-wasi", "optimization": "O2"},
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
+            guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1,
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                 "componentDigest": digest(component), "sdkBindingDigest": binding_digest,

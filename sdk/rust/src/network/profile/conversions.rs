@@ -931,6 +931,40 @@ impl From<model::ActivationDiagnostic> for control::ActivationDiagnostic {
     }
 }
 
+impl From<control::TransactionStagingWitness> for model::TransactionStagingWitness {
+    fn from(value: control::TransactionStagingWitness) -> Self {
+        Self {
+            schema_version: value.schema_version,
+            activation_serial: value.activation_serial,
+            command_id: value.command_id,
+            attempt_id: value.attempt_id,
+            transaction_id: value.transaction_id,
+            publication_id: value.publication_id,
+            staged_mutations: value.staged_mutations,
+            captured_intents: value.captured_intents,
+            state_write_bytes: value.state_write_bytes,
+            observed_at_unix_millis: value.observed_at_unix_millis,
+        }
+    }
+}
+
+impl From<model::TransactionStagingWitness> for control::TransactionStagingWitness {
+    fn from(value: model::TransactionStagingWitness) -> Self {
+        Self {
+            schema_version: value.schema_version,
+            activation_serial: value.activation_serial,
+            command_id: value.command_id,
+            attempt_id: value.attempt_id,
+            transaction_id: value.transaction_id,
+            publication_id: value.publication_id,
+            staged_mutations: value.staged_mutations,
+            captured_intents: value.captured_intents,
+            state_write_bytes: value.state_write_bytes,
+            observed_at_unix_millis: value.observed_at_unix_millis,
+        }
+    }
+}
+
 impl From<control::ActivationTreeNode> for model::ActivationTreeNode {
     fn from(value: control::ActivationTreeNode) -> Self {
         Self {
@@ -948,6 +982,7 @@ impl From<control::ActivationTreeNode> for model::ActivationTreeNode {
             diagnostic_is_terminal: value.diagnostic_is_terminal,
             target_service: value.target_service,
             received_at_unix_millis: value.received_at_unix_millis,
+            transaction_staging: value.transaction_staging.map(Into::into),
         }
     }
 }
@@ -969,6 +1004,7 @@ impl From<model::ActivationTreeNode> for control::ActivationTreeNode {
             diagnostic_is_terminal: value.diagnostic_is_terminal,
             target_service: value.target_service,
             received_at_unix_millis: value.received_at_unix_millis,
+            transaction_staging: value.transaction_staging.map(Into::into),
         }
     }
 }

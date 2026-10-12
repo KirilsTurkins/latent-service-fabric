@@ -110,13 +110,17 @@ fn publish(harness: &Harness, name: &str, files: &[(&str, &str, &[u8])], path: &
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires the controlled Angular browser build, Node and Chromium"]
 async fn actual_browser_boundary_hydrates_navigates_and_blocks_injection_on_live_ingress() {
-    run_browser(None).await;
+    Box::pin(run_browser(None)).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "requires the public web component, controlled Angular build, Node and Chromium"]
 async fn actual_browser_application_uses_only_the_public_shared_http_contract() {
-    run_browser(Some(read(environment("LSF_WEB_COMPONENT"), 1024 * 1024))).await;
+    Box::pin(run_browser(Some(read(
+        environment("LSF_WEB_COMPONENT"),
+        1024 * 1024,
+    ))))
+    .await;
 }
 
 async fn run_browser(component: Option<Vec<u8>>) {
@@ -205,15 +209,72 @@ async fn run_browser(component: Option<Vec<u8>>) {
     .unwrap();
     assert!(status.success(), "real browser boundary probe failed");
     let receipt: serde_json::Value = serde_json::from_slice(&read(result_path, 4096)).unwrap();
+    validate_browser_receipt(&receipt, &harness, application);
+    harness.finish().await;
+}
+
+fn validate_browser_receipt(receipt: &serde_json::Value, harness: &Harness, application: bool) {
     assert_eq!(receipt["originalDomReused"], true);
     assert_eq!(receipt["navigationHydrated"], true);
     assert_eq!(receipt["componentRenderClaimed"], false);
     assert_eq!(receipt["publicApplicationQualified"], application);
+    for field in [
+        "fixedSameOriginReferrerPolicy",
+        "buildTimeNoReferrerBeforeResources",
+        "syntheticTokenNavigationAndFetchDoNotBecomeReferrers",
+    ] {
+        assert_eq!(receipt[field], true);
+    }
+    for field in [
+        "consumedTokenRemovedBeforeApplicationFetch",
+        "noReferrerSameOriginPostQualified",
+        "applicationCacheInputQualified",
+        "reservedHeadersRejectedAndRecoveryQualified",
+    ] {
+        assert_eq!(receipt[field], application);
+    }
+    let origin = receipt["noReferrerPostOrigin"].as_str().unwrap();
+    let status = receipt["noReferrerPostStatus"].as_u64();
+    if application {
+        assert!(matches!(
+            (origin, status),
+            ("same-origin", Some(200)) | ("null", Some(403))
+        ));
+        let opaque = &receipt["opaqueOrigin"];
+        assert_eq!(opaque["documentOrigin"], "null");
+        assert!(matches!(
+            opaque["requestMethod"].as_str(),
+            Some("POST" | "OPTIONS" | "not-observed")
+        ));
+        match opaque["outcome"].as_str().unwrap() {
+            "node-denied" => {
+                assert_eq!(opaque["requestOrigin"], "null");
+                assert_eq!(opaque["status"], 403);
+            }
+            "browser-policy-blocked" => {
+                assert!(matches!(
+                    opaque["requestOrigin"].as_str(),
+                    Some("null" | "not-observed")
+                ));
+                assert!(opaque["status"].is_null());
+            }
+            _ => panic!("unexpected opaque origin observation"),
+        }
+        // Two successful public calls, eight response-policy vectors and two
+        // cache-input calls. Null-Origin traffic must never reserve a guest.
+        assert_eq!(
+            harness.node.node.manager.journal().snapshot().begun,
+            12 + u64::from(status == Some(200))
+        );
+    } else {
+        assert_eq!(origin, "not-exercised");
+        assert_eq!(status, None);
+        assert_eq!(receipt["opaqueOrigin"]["outcome"], "not-exercised");
+    }
     let stores = harness.node.node.backend.resource_snapshot().stores_created;
     if application {
         assert!(stores >= 2, "the public POST must execute real components");
     } else {
         assert_eq!(stores, 0);
     }
-    harness.finish().await;
 }

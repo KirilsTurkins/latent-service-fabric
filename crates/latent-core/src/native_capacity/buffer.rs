@@ -26,6 +26,17 @@ impl NativeBufferPermit {
         self.bytes
     }
 
+    /// Physical custody belongs to this exact node owner, independently of expiry.
+    #[must_use]
+    pub fn is_from_owner(&self, owner: &super::NativeCapacityOwner) -> bool {
+        Arc::ptr_eq(&self.lease.owner, &owner.0)
+    }
+
+    #[must_use]
+    pub fn class(&self) -> super::NativeAdmissionClass {
+        self.lease.class
+    }
+
     /// Trusted native constructors must stay within the already admitted bound.
     /// Owned value destruction precedes this permit's physical quota release.
     pub fn attach<T>(self, value: T) -> NativeBuffer<T> {

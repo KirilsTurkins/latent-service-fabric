@@ -225,6 +225,7 @@ impl EffectManagementCatalog {
                 .encode()?,
             ),
         );
+        super::accounting::append(view, loaded.authority.scope(), &mut batch)?;
         Ok(PreparedEffectPlan {
             batch,
             plan,
@@ -365,6 +366,7 @@ impl EffectManagementCatalog {
             expect(&mut batch, due.key()?, None);
             put(&mut batch, due.key()?, Some(due.encode()?));
         }
+        super::accounting::append(view, loaded.authority.scope(), &mut batch)?;
         Ok(PreparedEffectMutation {
             batch,
             receipt,

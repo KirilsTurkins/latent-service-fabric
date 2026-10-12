@@ -1,5 +1,8 @@
 """Observe actual TypeScript sources, generated bindings and compiler inputs."""
 from __future__ import annotations
+
+from tools import guest_compatibility_context_build, guest_runtime_receipts
+from tools.transaction_guest_project import packaging_arguments
 import json
 from pathlib import Path
 import tempfile
@@ -29,9 +32,12 @@ RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_st
            "tools/application_dependency_approval.py", "tools/typescript_application_dependencies.py",
            "tools/typescript_dependency_authoring.py", "tools/captured_compiler_isolation.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
+RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
+RECIPE += ("tools/typescript_generator_authoring.py",)
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path):
@@ -111,8 +117,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
-                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                commands.run("inspect", paths["packager"], "inspect", output / "package")
+                commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
             stage = "recheck"
             captured_after = {name: data for name, data in snapshot(work, exclude=("dependencies", "application-vendor")).items()
                               if not name.startswith("generated/") and name != "tsconfig.json"}
@@ -136,10 +142,19 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 ("compiler-inputs", read_file(output / "compiler-inputs.json", 8 * 1024 * 1024)),
                 ("dependency-lock", files["vendor/lsf/sdk/typescript-guest/tools/package-lock.json"]),
                 ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"])))
+            if 'typescript-generated-inputs.json' in files:
+                data = files['typescript-generated-inputs.json']
+                materials.append({"name": "typescript-generator-inputs",
+                                  "digest": digest(data), "size": len(data)})
             if closure is not None:
                 for name in ("application-dependencies.json", "npm-inputs.json", "compiler-containment.json", "bundle-selected-inputs.json", "application.mjs.map"):
                     data = read_file(output / name, 32 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            runtime_profile = closure.lock['selection']['runtimeProfile'] if closure is not None else 'spidermonkey-public-sync-v1'
+            materials.append(guest_runtime_receipts.emit(output, 'typescript', runtime_profile, files,
+                source_inputs, component, materials, graph=closure.lock if closure is not None else None,
+                binding_digest=generated['filesDigest'], configuration={"profile": runtime_profile, "world": project['world'],
+                    "target": "wasm32-component", "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
                 raise ValueError("compiler observation deadline or clock invalid")
@@ -151,6 +166,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                "target": "wasm32-component", "runtime": "spidermonkey", "ambientWasi": False},
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
+            guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
             write_json(output / "BUILD-COMPLETE.json", {"formatVersion": 1, "packageAssembled": packager is not None,
                 "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                 "componentDigest": digest(component), "sdkBindingDigest": generated["filesDigest"],

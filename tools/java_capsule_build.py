@@ -1,5 +1,8 @@
 """Capture, compile and package actual Java source; never sign or grant authority."""
 from __future__ import annotations
+
+from tools import guest_compatibility_context_build
+from tools.transaction_guest_project import packaging_arguments
 import json
 from pathlib import Path
 import tempfile
@@ -34,10 +37,12 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "examples/echo-contract/deployment.json", "tools/transaction_guest_project.py", "tools/java_guest/sdk.py",
           "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += guest_compatibility_build.RECIPE
+RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += java_server_source.RECIPE
+RECIPE += ("tools/java_generator_authoring.py",)
 RECIPE += java_http_client.RECIPE
 
 
@@ -69,7 +74,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         raise ValueError("build output must be outside source or beneath its target directory")
     repository = public_repository(repository)
     output = fresh(output)
-    commands, compiler, stage = None, None, "capture"
+    commands, compiler, stage, files = None, None, "capture", None
     started, start = int(time.time()), time.monotonic()
     try:
         observed = guest_dependency_inputs.capture_source(project_path, 'java')
@@ -161,7 +166,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
                 stage = "compatibility"
                 guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
-                    host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
+                    host_abi_profile=guest_compatibility_build.declared_host_abi(surface), files=files)
                 additional_assets = []
                 if "httpClient" in project:
                     (output / "http-client-profile.json").write_bytes(java_http_client.profile(
@@ -178,8 +183,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                additional_resources=additional_resources, additional_assets=additional_assets)
                 if packager is not None:
                     stage = "package"
-                    commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package")
-                    commands.run("inspect", paths["packager"], "inspect", output / "package")
+                    commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
+                    commands.run("inspect", paths["packager"], "inspect", output / "package", *packaging_arguments(files))
                 stage = "recheck"
                 observed.check_unchanged()
                 if snapshot(work, exclude=("dependencies", "application-vendor")) != files:
@@ -205,6 +210,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"]), ("compiler-closure", compiler.compiler_inputs),
                     ("dependency-lock", files["vendor/lsf/sdk/java-guest/feasibility/dependencies.lock.json"]),
                     ("generated-bindings", read_file(output / "bindings.json"))))
+                if 'java-generated-inputs.json' in files:
+                    data = files['java-generated-inputs.json']
+                    materials.append({"name": "java-generator-inputs",
+                                      "digest": digest(data), "size": len(data)})
                 if runtime_profile == ACTIVATION_PROFILE:
                     materials.extend({"name": name, "digest": digest(data), "size": len(data)} for name, data in (
                         ("java-runtime-profile", read_file(output / "runtime-profile.json")),
@@ -225,6 +234,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                    "bindings": "lsf-java-wit-v1", "optimization": "O2", "javaHeapBytes": 4_194_304},
                     "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                     "dependencyCompleteness": "declared-inputs-incomplete"})
+                guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)
                 marker = {"formatVersion": 1,
                     "packageAssembled": packager is not None,
                     "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
@@ -240,5 +250,5 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": (compiler.records if compiler else []) + (commands.records if commands else [])})
-        guest_compatibility_build.failure_report(output, "java", stage)
+        guest_compatibility_build.failure_report(output, "java", stage, files=files)
         raise
