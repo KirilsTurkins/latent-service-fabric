@@ -122,6 +122,9 @@ class OfflineCampaign:
         before, _ = self.campaign.query(count)
         recipient = self.recipient("schema-before")
         self.quiesce(self.campaign.publications["put-once-compatible-v2"], "java-schema-quiesce")
+        activation = getattr(self.node, 'current_activation', None)
+        if activation is not None:
+            self.configuration = activation.select_metadata(self.writer, 'writer-metadata')
         observed = self.inspect()
         file, checkpoint = self.snapshot("schema-checkpoint-v1.snapshot", "java-schema-checkpoint")
         migration = {"operationId": "java-schema-v1-to-v2", "file": file,
@@ -147,9 +150,12 @@ class OfflineCampaign:
                                   checkpointDigest=migration["checkpointDigest"],
                                   checkpointManifestDigest=migration["checkpointManifestDigest"])
         resumed = self.action(resume_request)
-        self.node.start(self.configuration)
-        lifecycle.deploy(self.client, self.campaign.signed, self.campaign.items[self.writer], self.publication,
-            self.campaign.proposals["deploymentGrants"], self.campaign.configuration.authority)
+        if activation is not None:
+            activation.start(self.campaign, self.writer, 'writer-runtime')
+        else:
+            self.node.start(self.configuration)
+            lifecycle.deploy(self.client, self.campaign.signed, self.campaign.items[self.writer], self.publication,
+                self.campaign.proposals["deploymentGrants"], self.campaign.configuration.authority)
         current, _ = self.campaign.query(count)
         self.campaign.refusal("schema-refuses-stale-query-minimum",
             self.campaign.socket("query", minimum=before["state-view"]), {409})
@@ -220,7 +226,8 @@ class OfflineCampaign:
         epoch_advanced(list(http.view_token(current["state-view"])), requested, "recovery")
         resumed = self.action({"action": "resume", "operationId": "java-restored-resume",
             "expectedView": requested})
-        self.node.start(self.configuration)
+        self.node.start(self.configuration, **({'current_session': 'restored-runtime'}
+                        if getattr(self.node, 'current_publication_program', False) else {}))
         self.campaign.full_path = self.configuration
         recovered, _ = self.campaign.query(count)
         self.campaign.refusal("restore-refuses-stale-query-minimum",
@@ -241,7 +248,16 @@ class OfflineCampaign:
         require(settings["state"]["formatVersion"] == 2 and not settings["state"]["createIfMissing"],
                 "current-restored-configuration-required")
         operations = settings["state"]["operations"]
-        hosts = lifecycle.inspect(self.client, self.node.executable, self.configuration, operations,
+        inspection = self.configuration
+        activation = getattr(self.node, 'current_activation', None)
+        if activation is not None:
+            operations = copy.deepcopy(activation.operations)
+            descriptive = copy.deepcopy(settings)
+            descriptive['state']['operations'] = operations
+            inspection = self.configuration.parent / 'restored-descriptive-hosts.json'
+            write_json(inspection, descriptive)
+            inspection.chmod(0o600)
+        hosts = lifecycle.inspect(self.client, self.node.executable, inspection, operations,
                                   stage="restored-transaction-host-inspection", intent_operation="http")
         diagnostic = len(operations) == 15
         proposals = policies.documents(hosts, self.campaign.publications, diagnostic=diagnostic)

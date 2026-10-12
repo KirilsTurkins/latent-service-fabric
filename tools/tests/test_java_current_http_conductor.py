@@ -12,6 +12,79 @@ from tools.tests.test_java_transaction_provision import observation
 
 
 class CurrentHttpConductor(unittest.TestCase):
+    def test_current_session_program_requires_explicit_profile_order_and_single_runtime(self):
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import lifecycle
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            with self.assertRaises(ValueError):
+                lifecycle.Node(SimpleNamespace(phase4=False), root / 'unused', root,
+                               current_publication_program=True)
+            node = lifecycle.Node(SimpleNamespace(phase4=True), root / 'unused', root,
+                                  current_publication_program=True)
+            path = root / 'configuration.json'
+            write_json(path, {'state': {'formatVersion': 2, 'operations': []}})
+            with patch.object(lifecycle, 'Process') as process:
+                for position, session in ((0, None), (0, 'authority'), (2, 'namespace-create'),
+                                           (14, 'restored-runtime')):
+                    node.ordinal = position
+                    with self.subTest(position=position, session=session), self.assertRaises(ValueError):
+                        node.start(path, current_session=session)
+                node.ordinal = 0
+                path = root / 'populated-configuration.json'
+                write_json(path, {'state': {'formatVersion': 2, 'operations': [{'publication': 'extra'}]}})
+                with self.assertRaises(ValueError):
+                    node.start(path, current_session='publish')
+                process.assert_not_called()
+            legacy = lifecycle.Node(SimpleNamespace(), root / 'unused', root)
+            legacy.ordinal = 6
+            with self.assertRaises(ValueError):
+                legacy.start(path)
+
+    def test_current_transition_retires_before_metadata_and_never_starts_after_uncertain_mutation(self):
+        from unittest.mock import patch
+        from tools.java_transaction_qualification.current_activation import CurrentActivation
+        from tools.java_transaction_qualification import configuration as cfg, lifecycle
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            names = ('aggregate', 'put-once-legacy-v1', 'put-once-compatible-v2',
+                     'put-once-writer-v2', 'put-once-diagnostics')
+            publications = {name: 'publication:sha256:' + str(index + 1) * 64
+                            for index, name in enumerate(names)}
+            items = tuple(SimpleNamespace(name=name, component_digest='sha256:' + str(index + 5) * 64)
+                          for index, name in enumerate(names))
+            rows = [{'tenant': cfg.TENANT, 'contract': cfg.CONTRACT, 'binding': cfg.DEPLOYMENT,
+                     'deployment': cfg.DEPLOYMENT, 'incarnation': 1, 'function': function,
+                     'publication': publications[item.name], 'componentDigest': item.component_digest}
+                    for item in items for function in ('update', 'query', 'scan')]
+            full = root / 'inspected.json'
+            write_json(full, {'state': {'formatVersion': 2, 'operations': rows}})
+            configuration = cfg.Configuration(root / 'bootstrap.json',
+                {'state': {'formatVersion': 2, 'operations': []}}, 'localhost:1', {})
+            events = []
+            node = SimpleNamespace(process=None, current_publication_program=True)
+            node.start = lambda path, **kwargs: events.append(('start', path, kwargs))
+            node.stop = lambda: events.append(('stop',))
+            client = SimpleNamespace(phase4=True, evidence=SimpleNamespace(passed=lambda *_: None))
+            activation = CurrentActivation(client, configuration, node, root, items, publications,
+                                           {'deploymentGrants': ['original']}, full)
+            with patch.object(lifecycle, 'deployment_metadata', side_effect=ValueError('uncertain')) as metadata, \
+                 patch.object(lifecycle, 'admission_lease_interval') as lease:
+                with self.assertRaisesRegex(ValueError, 'uncertain'):
+                    activation.select_metadata('put-once-legacy-v1', 'legacy-metadata')
+                self.assertEqual([row[0] for row in events], ['start', 'stop'])
+                self.assertEqual(activation.metadata, {})
+                lease.assert_not_called()
+                metadata.assert_called_once()
+            events.clear()
+            with patch.object(lifecycle, 'deployment_metadata', return_value=({'generation': '1'}, {'original': True})), \
+                 patch.object(lifecycle, 'admission_lease_interval', side_effect=lambda _: events.append(('lease',))):
+                selected = activation.select_metadata('put-once-legacy-v1', 'legacy-metadata')
+            self.assertEqual([row[0] for row in events], ['start', 'stop', 'lease'])
+            from tools.phase2_operator_process import read_json
+            self.assertEqual(read_json(selected)['state']['operations'], rows[3:6])
+            self.assertEqual(configuration.value['state']['operations'], [])
+
     def test_active_runtime_selects_one_exact_publication_and_copies_original_operations(self):
         from tools.java_transaction_qualification import configuration as cfg
         rows = []

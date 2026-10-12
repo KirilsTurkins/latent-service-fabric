@@ -22,7 +22,8 @@ version-2 session with an empty operation list performs the authenticated
 policy and provider-binding updates; it installs no command target or effect
 dispatcher. Each existing generation is read once and frozen with the exact
 input bytes before any update. Changed bytes or an uncertain mutation stop
-the sequence without retry. Six ordinary node sessions remain the limit.
+the sequence without retry. The historical conductor retains six ordinary
+node sessions. Current HTTP uses the explicit publication program below.
 
 The current budget field is `maximumEffectCount`; its original ceiling remains
 one. The collector identity includes both new restore custody modules.
@@ -50,5 +51,31 @@ limits and `java-current-http` reference, and creates fresh credential bytes.
 Credential file paths and secret bytes are outside that constructor's profile
 identity. A fresh native read-only preview must match every captured HTTP profile
 before the collector publishes or applies authority. Input identities are
-rechecked after the campaign. 122 focused controls pass; the fixture-signing
-command's implementation gap is being reconciled separately before execution.
+rechecked after the campaign.
+
+Current mode forwards the explicit `--phase4` CLI selector and accepts the
+closed current native shutdown report only when both physical retirement
+witnesses are positive and every storage, namespace and native owner is zero.
+The signed fixture driver and its actual package verification are recorded in
+the separate signing packet; they do not establish guest execution.
+
+The current conductor uses fourteen named ordinary sessions: publication,
+authority, namespace creation, legacy runtime, diagnostic metadata and runtime,
+legacy metadata and runtime after diagnostics, compatible metadata and runtime,
+compatible crash restart, writer metadata and runtime, and restored runtime.
+Each metadata session installs zero runtime operations. Each runtime session
+selects exactly one publication's original update/query/scan operations, after
+its ordinary authenticated deployment metadata mutation. Namespace creation
+runs on that three-operation selection before the admitted runtime restarts.
+An uncertain metadata mutation stops without retry. The one existing restored
+authority session remains separately bounded and follows writer retirement.
+
+Offline migration selects the actual current writer deployment while stopped;
+its signed V2 decoder can read V1 without starting a V2 runtime against V1.
+Only completed migration and explicit resume permit the V2 runtime to start.
+Restored full-source inspection is descriptive; runtime configuration still
+contains only the current writer's three operations. All original native
+authorization, checkpoint, result, effect and physical retirement predicates
+remain. The 93 focused source controls passed after this wiring change. The
+combined signed runtime, migration and restore campaign is still pending.
+No ticket closes from these source controls.
