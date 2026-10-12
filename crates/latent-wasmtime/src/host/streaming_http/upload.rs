@@ -1,6 +1,7 @@
+use super::table::Reserved;
 use super::{
-    checkpoint, convert_error, convert_request, synchronize, trap, wit, Arc, AsContextMut, Error,
-    HostState, HttpError, Instant, Kind, Resource, StreamingHttpInvoker, Value,
+    Arc, AsContextMut, Error, HostState, HttpError, Instant, Kind, Resource, StreamingHttpInvoker,
+    Value, checkpoint, convert_error, convert_request, synchronize, trap, wit,
 };
 
 pub(super) fn open(
@@ -22,36 +23,42 @@ pub(super) fn open(
                         .as_ref()
                         .ok_or(HttpError::PermissionDenied)?;
                     capabilities.streams.initialize(session)?;
-                    let rep = capabilities.streams.reserve(Kind::Upload)?;
+                    let reservation = capabilities.streams.reserve_guarded(Kind::Upload)?;
                     match invoker.start(session, request) {
-                        Ok(future) => Ok((rep, future)),
-                        Err(error) => {
-                            capabilities.streams.remove(rep, Kind::Upload)?;
-                            Err(error)
-                        }
+                        Ok(future) => Ok(Reserved {
+                            value: future,
+                            reservation,
+                        }),
+                        Err(error) => Err(error),
                     }
                 })();
                 synchronize(&mut store)?;
                 Ok::<_, wasmtime::Error>(result)
             })?;
             let completion = match opening {
-                Ok((rep, future)) => Ok((rep, future.await)),
+                Ok(mut pending) => {
+                    let result = pending.value.as_mut().await;
+                    // Keep successful output ahead of the guard as well.
+                    drop(pending.value);
+                    Ok(Reserved {
+                        value: result,
+                        reservation: pending.reservation,
+                    })
+                }
                 Err(error) => Err(error),
             };
             access.with(|mut access| {
                 let mut store = access.as_context_mut();
                 checkpoint(&mut store)?;
-                let result = completion.and_then(|(rep, result)| {
+                let result = completion.and_then(|pending| {
+                    let rep = pending.reservation.rep();
                     let table = &mut store.data_mut().capabilities.streams;
-                    match result {
+                    match pending.value {
                         Ok(upload) => {
                             table.put(rep, Kind::Upload, Value::Upload(upload))?;
                             Ok(Resource::<wit::Upload>::new_own(rep))
                         }
-                        Err(error) => {
-                            table.remove(rep, Kind::Upload)?;
-                            Err(error)
-                        }
+                        Err(error) => Err(error),
                     }
                 });
                 synchronize(&mut store)?;
