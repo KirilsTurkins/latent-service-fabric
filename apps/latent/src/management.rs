@@ -24,7 +24,7 @@ use crate::error::Failure;
 fn invalid_manifest() -> Failure {
     Failure::local(
         "invalid-manifest",
-        "The manifest is not a valid Phase 1 document.",
+        "The manifest is invalid for the selected compatibility profile.",
     )
 }
 

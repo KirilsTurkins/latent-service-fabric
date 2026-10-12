@@ -24,6 +24,7 @@ pub struct Session {
     dispatched: AtomicBool,
     maximum_response: usize,
     maximum_request: usize,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
 }
 impl Session {
     pub async fn connect(
@@ -80,6 +81,7 @@ impl Session {
             deadline,
             dispatched: AtomicBool::new(false),
             maximum_response: config.limits.maximum_response_bytes,
+            manifest_profile: config.manifest_profile,
             maximum_request: config
                 .limits
                 .maximum_component_bytes
@@ -88,6 +90,9 @@ impl Session {
     }
     pub fn tenant(&self) -> &str {
         &self.tenant
+    }
+    pub const fn manifest_profile(&self) -> latent_manifest::ManifestValidationProfile {
+        self.manifest_profile
     }
     pub fn channel(&self) -> Channel {
         self.channel.clone()

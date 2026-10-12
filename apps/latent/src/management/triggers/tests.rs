@@ -27,6 +27,7 @@ fn config() -> ResolvedConfig {
         connect_timeout: Duration::from_secs(1),
         rpc_timeout: Duration::from_secs(1),
         limits: InputLimits::default(),
+        manifest_profile: latent_manifest::ManifestValidationProfile::default(),
     }
 }
 

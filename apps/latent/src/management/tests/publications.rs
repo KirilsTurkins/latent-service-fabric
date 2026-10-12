@@ -56,6 +56,7 @@ fn cli_requires_exact_publication_in_configured_scope() {
         connect_timeout: Duration::from_secs(1),
         rpc_timeout: Duration::from_secs(1),
         limits: InputLimits::default(),
+        manifest_profile: latent_manifest::ManifestValidationProfile::default(),
     };
     let expected = publication("b");
     for command in ["get", "lifecycle", "revoke", "retire"] {
