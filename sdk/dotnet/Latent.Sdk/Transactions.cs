@@ -193,6 +193,8 @@ public readonly record struct StateMutationKind(int Value)
     public static readonly StateMutationKind CheckpointNamespace = new(4);
     /// <summary>The reconcile effect value.</summary>
     public static readonly StateMutationKind ReconcileEffect = new(5);
+    /// <summary>The release expired command floor value.</summary>
+    public static readonly StateMutationKind ReleaseExpiredCommandFloor = new(6);
 }
 
 /// <summary>Open numeric StateOperationDisposition value; unknown integers are retained.</summary>

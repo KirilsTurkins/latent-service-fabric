@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "latent.dotnet.wall-adapter-control.v1",
+  "evidenceKind": "actual-component-with-explicit-private-clock-provider",
+  "status": "passed",
+  "engine": "wasmtime-48.0.5",
+  "component": {
+    "sha256": "ebeadef46330edaba95f19c1f22537babaa611f9851069d523d98eda9811bd0f",
+    "bytes": 21215
+  },
+  "frozenProbe": {
+    "sha256": "35957fe874702cab8217f798b0d5ff995b0f4e598e3fee6096c68e33a9c42c3f",
+    "bytes": 43975720
+  },
+  "adapterSource": {
+    "sha256": "ec8c7f55cd0146b87e53450bc730e5d098a8714a3a473c90f670c6a728ef93bd",
+    "bytes": 856
+  },
+  "probeSource": {
+    "sha256": "9212861e10820bf17a867a59c3538e3e229a38371523d9a4c518006968de0e23",
+    "bytes": 2806
+  },
+  "runtimeInputs": {
+    "sha256": "c4c32b6f4e04850ff28306f441b2a903e364e7fe8e76c906b8630f4edc2faf24",
+    "bytes": 4704
+  },
+  "qualificationLog": {
+    "sha256": "06055d43d098be33429681bde29aea45f1752f26be254e9a27c38600e285c6a4",
+    "bytes": 482
+  },
+  "guestMemoryCeilingBytes": 2097152,
+  "fuelPerInstance": 100000,
+  "samples": [
+    {
+      "millis": "0",
+      "seconds": "0",
+      "nanoseconds": 0,
+      "hostCalls": 1
+    },
+    {
+      "millis": "1",
+      "seconds": "0",
+      "nanoseconds": 1000000,
+      "hostCalls": 1
+    },
+    {
+      "millis": "999",
+      "seconds": "0",
+      "nanoseconds": 999000000,
+      "hostCalls": 1
+    },
+    {
+      "millis": "1000",
+      "seconds": "1",
+      "nanoseconds": 0,
+      "hostCalls": 1
+    },
+    {
+      "millis": "18446744073709551615",
+      "seconds": "18446744073709551",
+      "nanoseconds": 615000000,
+      "hostCalls": 1
+    }
+  ],
+  "missingImportDenied": true,
+  "wrongVersionDenied": true,
+  "oneMiBMemoryControl": {
+    "status": "denied-before-guest-call",
+    "requiredInitialPages": 17,
+    "privateFailedLogSha256": "c4287c4a337aa3c5a312313a38f1bbb423d302992da5fa4ebda018a26ec3171a"
+  },
+  "dateTimeUtcNowQualified": false,
+  "productionAdmissionQualified": false,
+  "wholeSdkClockMatrixQualified": false
+}
