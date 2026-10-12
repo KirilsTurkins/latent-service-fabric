@@ -123,8 +123,9 @@ def derive_async_bindgen(original: bytes) -> tuple[bytes,dict]:
             uwriteln!(self.src, "const __lsfImportId = __lsfImports.reserve({}, {}, {}, {});",
                 descriptor.result_bytes, descriptor.parameter_bytes, descriptor.raw_result,
                 (0..nparams).map(|i| format!("arg{i}")).collect::<Vec<_>>().join(", "));
-            uwriteln!(self.src, "const __lsfAwaitImport = async (...lowered) => __lsfImports.lift(await {original_callee}(__lsfImportId | 0, ...lowered));");
             uwriteln!(self.src, "try {{");
+            uwriteln!(self.src, "if (typeof __lsfObserveNativeImport === 'function') __lsfObserveNativeImport(__lsfImportId);");
+            uwriteln!(self.src, "const __lsfAwaitImport = async (...lowered) => __lsfImports.lift(await {original_callee}(__lsfImportId | 0, ...lowered));");
         }
         self.src.push_str(&f.src);
         if lsf_async_call {

@@ -84,3 +84,14 @@ receipts. Before installation, the compiler still must bind the operation's exac
 id/result/retirement handle into the SDK-owned streaming module, select its
 separate fetch world, rebuild the source-bound engine, and execute all original
 runtime controls plus signed borrowed-read/cancel/drop/reuse cases.
+
+The compiler source now observes the exact reserved ID inside the generated
+import's original `try/finally`, before typed lowering. The explicit fetch
+initializer can capture that ID, application-realm result Promise and lazy native
+retirement Promise together. Its cancel callback retains the exact native
+retirement identity. Missing capture produces a separate cleanup failure rather
+than fabricating an acknowledgement. Ordinary calls take no capture or retirement
+allocation. The source controls cover the real initializer realm transform,
+typed-finish ordering and rejection while physical retirement is still pending.
+This hook remains uninstalled until the fetch profile and a fresh engine/splicer
+tuple are built and qualified; these controlled callbacks are source evidence.
