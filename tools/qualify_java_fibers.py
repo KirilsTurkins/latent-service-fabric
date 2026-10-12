@@ -234,7 +234,8 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
     output.mkdir()
     sources = [*sorted((compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler").glob("*.java")),
-               compiler.sdk / "fibers/conformance/compiler/CompletableFutureModelControl.java"]
+               compiler.sdk / "fibers/conformance/compiler/CompletableFutureModelControl.java",
+               compiler.sdk / "fibers/conformance/compiler/CompletableFutureFieldModelControl.java"]
     sources += [compiler.sdk / ("fibers/dev/latent/guest/runtime/concurrent/" + name + ".java")
                 for name in ("CompletableFuture", "CompletionStage", "CompletionException", "Future", "TimeUnit")]
     sources += [compiler.sdk / ("fibers/conformance/compiler/source-control/" + name) for name in (
@@ -249,9 +250,16 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
                             str(output) + os.pathsep + classpath,
                             "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
     if observed != expected: raise ValueError("Java CompletableFuture model control did not complete")
+    fields = compiler.run("completable-field-model-control", "java", "-Xmx256m", "-cp",
+                          str(output) + os.pathsep + classpath,
+                          "dev.latent.guest.runtime.compiler.CompletableFutureFieldModelControl").strip()
+    if fields != ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
+                  "closed-read-write-references;absent-no-fallback;models=6"):
+        raise ValueError("Java CompletableFuture field model control did not complete")
     return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 2, "modelMethodBodies": 181,
             "coroutineMonitorBodies": 24, "ownedCallbackBodies": 25, "actualGeneratedCallbacks": 23,
             "jarDigests": identities,
+            "fieldReferences": "actual-declared-and-inherited-types-passed",
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
 
 

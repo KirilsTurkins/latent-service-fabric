@@ -6,6 +6,7 @@ mod clock;
 mod configuration;
 mod installations;
 mod kernel;
+mod maintenance;
 mod preparation;
 mod runtime;
 mod stateless;

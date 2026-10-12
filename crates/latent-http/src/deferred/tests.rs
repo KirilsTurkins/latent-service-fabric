@@ -8,6 +8,7 @@ mod locks;
 mod lookup;
 mod namespace;
 mod proxy;
+mod recovery;
 
 use latent_effects::dispatch::Disposition;
 use std::sync::atomic::Ordering;

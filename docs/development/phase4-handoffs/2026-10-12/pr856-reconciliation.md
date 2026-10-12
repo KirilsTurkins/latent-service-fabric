@@ -22,6 +22,28 @@ all other duplicate interfaces remain rejected. Milliseconds are divided before
 nanosecond conversion, preserving full-width unsigned input without overflow.
 This grants neither timers nor ambient WASI access.
 
+The actual compiled wall component also passed five private Wasmtime 48.0.5
+controls for 0, 1, 999, 1,000 and the maximum unsigned 64-bit millisecond value.
+Each fresh instance called its explicitly installed test clock exactly once.
+Missing and wrong-version host imports were refused. A separate 1 MiB control
+refused the component's 17-page initial memory before a guest call; the positive
+probe used an explicit 2 MiB ceiling and 100,000 fuel. Component and probe bytes
+were frozen and rechecked around execution. The
+[source and component identities](../../../testing/evidence/dotnet-wall-component-control-2026-10-12.json)
+retain those boundaries. This checks actual adapter conversion independently
+of managed guest execution.
+
+A separate freshly built and signed resource guest executed ordinary
+`DateTime.UtcNow` through the real node and returned ticks inside the host's
+observed interval. Removing only its wall grant, while retaining its monotonic
+and noncrypto grants, refused preparation with zero guest fuel and memory.
+The original resource helper and all 27 maintained tutorial/fault/HTTP
+invocations passed. Its
+[exact authored source, world and native identities](../../../testing/evidence/dotnet-utc-resource-control-2026-10-12.json)
+remain bound to that private ephemeral signing fixture. The two failed private
+configuration attempts are retained separately. This is focused signed guest
+evidence; production distribution and the whole SDK clock matrix remain open.
+
 The expanded source suite passed 154 cases on Linux. The additional signed
 fixture selection control passed on Windows. Pinned .NET SDK 10.0.100 compiled
 and executed the standard resource lookup profile, including independent stream
