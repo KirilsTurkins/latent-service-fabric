@@ -146,65 +146,109 @@ pub(super) async fn receipt(
     let job = inner
         .services
         .store
-        .with_store(StoreIoKind::RecoveryRead, 65536, move |engine| {
-            let result = (|| {
-                if let Err(error) = before_lookup(&worker, &access, deadline, retained.as_ref()) {
-                    return Ok(Err(error));
-                }
-                let view = engine.snapshot()?;
-                let read = read_in(&view, &access).map_err(native_namespace)?;
-                let Some(read) = read else {
-                    return Ok(Err(missing()));
-                };
-                if let Err(error) = inspection_gate(&worker, &access, &read, None) {
-                    return Ok(Err(error));
-                }
-                let context = NamespaceOperationContext {
-                    tenant: read.record().tenant.clone(),
-                    actor: format!("{}:{}", access.caller.owner_kind, access.caller.scope),
-                    operation_id: request.operation_id,
-                };
-                let receipt =
-                    NamespaceCatalog::outcome_in(&view, &context).map_err(native_namespace)?;
-                let Some(receipt) = receipt else {
-                    return Ok(Err(missing()));
-                };
-                if let Err(error) = inspection_gate(&worker, &access, &read, Some(&receipt)) {
-                    return Ok(Err(error));
-                }
-                let public = mutation::receipt_to_proto(&receipt).map_err(native_namespace)?;
-                Ok(Ok((read, receipt, public)))
-            })();
-            let finish = pending.finish(
-                if result.as_ref().is_ok_and(Result::is_ok) {
-                    AuditOperationResult::Committed
-                } else {
-                    AuditOperationResult::Rejected
-                },
-                AuditReason::Verified,
-                None,
-                true,
-            );
-            result.map(|value| (value, access.inspect, finish, retained))
-        })
+        .with_store_retaining(
+            StoreIoKind::RecoveryRead,
+            65536,
+            Arc::new(Arc::clone(&permit)),
+            move |engine| {
+                let result = (|| {
+                    if let Err(error) = before_lookup(&worker, &access, deadline, retained.as_ref())
+                    {
+                        return Ok(Err(error));
+                    }
+                    let view = engine.snapshot()?;
+                    let read = read_in(&view, &access).map_err(native_namespace)?;
+                    let Some(read) = read else {
+                        return Ok(Err(missing()));
+                    };
+                    if let Err(error) = inspection_gate(&worker, &access, &read, None) {
+                        return Ok(Err(error));
+                    }
+                    let context = NamespaceOperationContext {
+                        tenant: read.record().tenant.clone(),
+                        actor: format!("{}:{}", access.caller.owner_kind, access.caller.scope),
+                        operation_id: request.operation_id,
+                    };
+                    let state_receipt = super::state_receipt::read(&view, &context)?;
+                    let receipt =
+                        NamespaceCatalog::outcome_in(&view, &context).map_err(native_namespace)?;
+                    if let Some(state_receipt) = state_receipt {
+                        if receipt.is_some() {
+                            return Err(StoreError::Corrupt);
+                        }
+                        if state_receipt.after.tenant != read.record().tenant
+                            || state_receipt.after.id != read.record().id
+                            || state_receipt.after.version.incarnation
+                                != read.record().version.incarnation
+                        {
+                            return Ok(Err(missing()));
+                        }
+                        return Ok(Ok((
+                            read,
+                            None,
+                            c::GetStateOperationReceiptResponse {
+                                receipt: Some(state_receipt.public),
+                                namespace_receipt: None,
+                                audit_ack: None,
+                            },
+                        )));
+                    }
+                    let Some(receipt) = receipt else {
+                        return Ok(Err(missing()));
+                    };
+                    if let Err(error) = inspection_gate(&worker, &access, &read, Some(&receipt)) {
+                        return Ok(Err(error));
+                    }
+                    let public = mutation::receipt_to_proto(&receipt).map_err(native_namespace)?;
+                    Ok(Ok((
+                        read,
+                        Some(receipt),
+                        c::GetStateOperationReceiptResponse {
+                            receipt: None,
+                            namespace_receipt: Some(public),
+                            audit_ack: None,
+                        },
+                    )))
+                })();
+                let finish = pending.finish(
+                    if result.as_ref().is_ok_and(Result::is_ok) {
+                        AuditOperationResult::Committed
+                    } else {
+                        AuditOperationResult::Rejected
+                    },
+                    AuditReason::Verified,
+                    None,
+                    true,
+                );
+                Ok((result, access.inspect, finish, retained))
+            },
+        )
         .map_err(protected_error)?;
     let (result, decision, finish, worker_permit) =
         job.await.map_err(io_error)?.map_err(protected_error)?;
-    let (read, receipt, public) = result?;
-    let ack = audit::ack(finish).await;
+    let acknowledgement = audit::ack(finish).await;
+    let (read, receipt, public) = result.map_err(|error| {
+        protected_error(latent_state::protected_store::ProtectedStoreError::Store(
+            error,
+        ))
+    })??;
+    if acknowledgement.status == c::AuditAckStatus::OutcomeUnknown as i32 {
+        return Err(error(
+            PlatformErrorCode::Unavailable,
+            "namespace-audit-outcome-unknown",
+        ));
+    }
+    let ack = acknowledgement;
+    let mut public = public;
+    public.audit_ack = Some(ack);
     response::owned(
         inner,
         worker_permit,
         decision,
         read,
-        Some(receipt),
+        receipt,
         deadline,
-        c::GetStateOperationReceiptResponse {
-            receipt: None,
-            namespace_receipt: Some(public),
-            audit_ack: Some(ack),
-        }
-        .into(),
+        public.into(),
     )
 }
 pub(super) fn before_lookup(
@@ -308,6 +352,21 @@ fn inventory(
                     return Err(StoreError::Capacity);
                 }
                 if family == Family::Command {
+                    if latent_commit::atomic::RetiredCommand::is_present(&value) {
+                        let floor = latent_commit::atomic::RetiredCommand::decode(&value)
+                            .map_err(|_| StoreError::Corrupt)?;
+                        if key != command_row_key(floor.id()) {
+                            return Err(StoreError::Corrupt);
+                        }
+                        if floor.belongs_to_namespace(
+                            &namespace.tenant,
+                            &namespace.id,
+                            namespace.version.incarnation,
+                        ) {
+                            commands = commands.checked_add(1).ok_or(StoreError::Capacity)?;
+                        }
+                        continue;
+                    }
                     let record = CommandRecord::decode(&value).map_err(|_| StoreError::Corrupt)?;
                     if key != command_row_key(record.id()) {
                         return Err(StoreError::Corrupt);
@@ -380,4 +439,24 @@ fn inventory(
         }
     }
     Ok((commands, effects, retention))
+}
+
+pub(super) fn namespace_view(
+    view: &ReadView,
+    record: &NamespaceRecord,
+) -> Result<Vec<u8>, StoreError> {
+    let (history, _) = latent_state::namespace::history::NamespaceHistory::capture(view, record)?;
+    latent_state::session::version::ViewIdentity {
+        namespace: record.version,
+        epochs: history.epochs,
+    }
+    .token(&latent_state::session::StateScope {
+        tenant: record.tenant.clone(),
+        namespace: record.id.clone(),
+        incarnation: record.version.incarnation,
+        state_schema: record.state_schema.clone(),
+        entity: None,
+        mode: latent_state::session::StateMode::Query,
+    })
+    .map_err(|error| error.storage_error().unwrap_or(StoreError::Corrupt))
 }

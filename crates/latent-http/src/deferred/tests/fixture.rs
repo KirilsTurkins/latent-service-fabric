@@ -419,6 +419,13 @@ impl Fixture {
             .unwrap();
     }
     pub async fn commit(&self, key: &str) -> DurableEffectAuthority {
+        self.commit_with_state_scope(key, scope()).await
+    }
+    pub async fn commit_with_state_scope(
+        &self,
+        key: &str,
+        state_scope: StateScope,
+    ) -> DurableEffectAuthority {
         let role = self.owner.as_ref().unwrap().command_admission().unwrap();
         let epoch = role.owner_epoch();
         let effects = self.authority.clone();
@@ -427,13 +434,15 @@ impl Fixture {
         call(&self.store, StoreIoKind::Write, move |db| {
             let now = clock.observe(); let time = CommandTime { unix_millis: now.unix_millis, continuity_proven: now.continuity_proven };
             let view = db.snapshot().unwrap();
-            let AdmissionDecision::New(prepared) = PreparedAdmission::prepare(&view, input(&key, epoch), time, permission).unwrap() else { panic!("new command") };
+            let mut admitted_input = input(&key, epoch);
+            admitted_input.source.state_schema.clone_from(&state_scope.state_schema);
+            let AdmissionDecision::New(prepared) = PreparedAdmission::prepare(&view, admitted_input, time, permission).unwrap() else { panic!("new command") };
             let claim = prepared.publish(db, || role.with_current(|_, _| permission(CommandAccess::FinalClaim, None)).unwrap()).unwrap();
             drop(view);
             let view = db.snapshot().unwrap();
             let work = claim.physical_work().unwrap();
             let captured = claim.intent_capture_context().capture(0, StagedIntent { binding: "approved-http".into(), operation: "http".into(), payload: value(b"updated"), expires_at_millis: None }, &effects, time).unwrap();
-            let mut session = StateSession::open(&view, scope(), SessionLimits::default(), state_permission).unwrap();
+            let mut session = StateSession::open(&view, state_scope, SessionLimits::default(), state_permission).unwrap();
             session.put(&view, b"aggregate/count".to_vec(), value(&1u64.to_le_bytes()), state_permission).unwrap();
             let plan = session.seal(&view, state_permission).unwrap();
             let envelope = CompleteEnvelope::success_captured(&view, claim, Some(plan), vec![captured], value(b"committed"), &effects, time).unwrap();

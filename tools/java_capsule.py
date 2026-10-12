@@ -26,11 +26,15 @@ def parser() -> argparse.ArgumentParser:
     add.add_argument('--repository-id')
     add.add_argument('--repository-url')
     add.add_argument('--repository-ca', help='Project-relative public PEM certificate for the separately captured resolver truststore')
+    add.add_argument('--processor-class', action='append', default=[], help='Explicit annotation processor class; requires separate isolated execution approval')
+    add.add_argument('--processor-input', action='store_true', help='Input reachable from an explicitly selected processor; does not add a runtime root')
     local = commands.add_parser('add-local', help='Declare an explicit developer-selected local/private JAR')
     local.add_argument('project', type=Path)
     local.add_argument('--id', required=True)
     local.add_argument('--jar', type=Path, required=True)
     local.add_argument('--depends', action='append', default=[])
+    local.add_argument('--processor-class', action='append', default=[], help='Explicit annotation processor class; requires separate isolated execution approval')
+    local.add_argument('--processor-input', action='store_true', help='Input reachable from an explicitly selected processor; does not add a runtime root')
     update = commands.add_parser('update', help='Edit an exact declaration; resolve and review again before compilation')
     update.add_argument('project', type=Path)
     update.add_argument('identity', help='group:name or declared local JAR id')
@@ -86,6 +90,7 @@ def parser() -> argparse.ArgumentParser:
     compile_.add_argument("--wasi-sdk", type=Path, default=os.environ.get("WASI_SDK_PATH"))
     compile_.add_argument("--gradle", default="gradle")
     compile_.add_argument("--offline-cache", type=Path, help="Captured immutable Gradle compiler dependency cache")
+    compile_.add_argument('--executable-approval', help='Exact captured executable-input approval for an isolated annotation processor stage')
     compile_.add_argument("--read-only-cache", type=Path, help="Verified immutable Gradle module cache; updates stay in the owned compiler home")
     compile_.add_argument("--runtime-profile", choices=("teavm-activation-fibers-v1",),
                           help="Explicit SDK activation runtime profile; WIT imports and operator grants remain required")
@@ -149,6 +154,8 @@ def main(argv: list[str] | None = None) -> int:
                     jar=getattr(args, 'jar', None), dependencies=tuple(getattr(args, 'depends', [])),
                     scope=getattr(args, 'scope', 'runtime'), exclusions=tuple(getattr(args, 'exclude', [])),
                     repository=repository, repository_ca=getattr(args, 'repository_ca', None),
+                    processor_classes=tuple(getattr(args, 'processor_class', [])),
+                    processor_input=getattr(args, 'processor_input', False),
                     identity=getattr(args, 'identity', None), version=getattr(args, 'version', None))
             receipt = dependencies.record(args.project, result)
             print(canonical({**result, 'receipt': str(receipt)}).decode())
@@ -162,6 +169,7 @@ def main(argv: list[str] | None = None) -> int:
             selection = {}
             if args.runtime_profile is not None: selection["runtime_profile"] = args.runtime_profile
             if args.read_only_cache is not None: selection["read_only_cache"] = args.read_only_cache
+            if args.executable_approval is not None: selection["executable_approval"] = args.executable_approval
             result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository,
                            args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache, **selection)
         print(result)

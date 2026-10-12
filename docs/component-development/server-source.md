@@ -145,6 +145,13 @@ target, preconditions, generation and current exact manifest before settling.
 Unknown/expired receipts or changed objects retain the pending intent and do
 not cause a replay. `rollback NAME ...` is a new CAS mutation to retained
 previous manifests; the server still rejects removed/revoked old revisions.
+After explicitly redeploying the retained original publication, use
+`rollback --current-deployment NAME ...` to bind those same mounts to its current
+revision and deployment generation. The selected tenant, route, service and
+publication must match every retained mount. The command neither redeploys the
+component nor grants authority, and each trigger still uses the server's current
+catalog CAS. An installed replacement publication cannot be selected implicitly
+as the rollback target.
 `remove NAME ...` deletes only owned objects, using original operation lookup
 for its full receipt. Removed mounts must be explicitly selected before a plan
 can replace the set. There is no atomic multi-route publication promise: a

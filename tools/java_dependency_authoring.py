@@ -97,8 +97,14 @@ def edit(project: Path, operation: str, *, coordinate: str | None = None,
          local_id: str | None = None, jar: Path | None = None, dependencies: tuple[str, ...] = (),
          scope: str = 'runtime', exclusions: tuple[str, ...] = (), repository: tuple[str, str] | None = None,
          repository_ca: str | None = None,
+         processor_classes: tuple[str, ...] = (),
+         processor_input: bool = False,
          identity: str | None = None, version: str | None = None) -> dict:
     from tools.java_dependency_resolution import declarations
+    if type(processor_input) is not bool:
+        raise DependencyError('java-annotation-processor-input-declaration-invalid')
+    if processor_input and processor_classes:
+        raise DependencyError('java-annotation-processor-input-and-class-selection-conflict')
     with transaction(project) as (owner, app, private, sdk):
         previous = optional(app, DECLARATIONS)
         value = copy.deepcopy(configuration(app))
@@ -114,6 +120,10 @@ def edit(project: Path, operation: str, *, coordinate: str | None = None,
                 omitted.append(dict(zip(('group', 'name'), pair)))
             row = dict(zip(('group', 'name', 'version'), parts))
             row.update(scope=scope, exclusions=omitted)
+            if processor_classes:
+                row['processorClasses'] = list(processor_classes)
+            elif processor_input:
+                row['processorInput'] = True
             key = ':'.join(parts[:2])
             if any(item['group'] + ':' + item['name'] == key for item in value['dependencies']):
                 raise DependencyError('java-dependency-already-declared')
@@ -128,7 +138,12 @@ def edit(project: Path, operation: str, *, coordinate: str | None = None,
             if any(item['id'] == local_id for item in value['localJars']):
                 raise DependencyError('java-dependency-already-declared')
             relative = os.path.relpath(selected, app).replace('\\', '/')
-            value['localJars'].append({'id': local_id, 'path': relative, 'dependencies': list(dependencies)})
+            row = {'id': local_id, 'path': relative, 'dependencies': list(dependencies)}
+            if processor_classes:
+                row['processorClasses'] = list(processor_classes)
+            elif processor_input:
+                row['processorInput'] = True
+            value['localJars'].append(row)
         elif operation in {'update', 'remove'}:
             maven = [item for item in value['dependencies'] if item['group'] + ':' + item['name'] == identity]
             local = [item for item in value['localJars'] if item['id'] == identity]
@@ -181,7 +196,11 @@ def current_application(app: Path, lock: dict) -> None:
             or any(not isinstance(row, dict) or not isinstance(row.get('id'), str) for row in graph)
             or len({row['id'] for row in graph}) != len(graph)):
         raise DependencyError('java-native-module-selection-ambiguous')
-    jars = [row for row in lock['artifacts'] if row['role'] == 'application'
+    from tools.java_annotation_processors import verify as verify_processors
+    primary = verify_processors(config, lock['artifacts'])
+    processor_owners = {row['id']: row['metadata']['originalArtifact'] for row in lock['artifacts']
+                        if row['metadata'].get('assetType') == 'java-processor-classpath'}
+    jars = [row for row in primary if row['role'] in {'application', 'build-tool'}
             and row['metadata'].get('assetType') != 'maven-resolution-metadata']
     if (len({row['id'] for row in jars}) != len(jars) or set(identities) != {row['id'] for row in jars}
             or any(row['format'] != 'file' or not row['mount'].endswith('.jar')
@@ -195,7 +214,8 @@ def current_application(app: Path, lock: dict) -> None:
             declared = local[row['id']]
             if (row['metadata'].get('ecosystem') != 'captured-local-jar'
                     or row['metadata'].get('originalLocalPath') != declared['path']
-                    or not set(declared['dependencies']) <= set(row['dependencies'])):
+                    or not set(declared['dependencies']) <= {
+                        processor_owners.get(edge, edge) for edge in row['dependencies']}):
                 raise DependencyError('java-local-jar-declaration-drift')
             original = regular_path(app / declared['path'])
             if os.path.lexists(original) and digest(read_bytes(original)) != row['original']['digest']:
