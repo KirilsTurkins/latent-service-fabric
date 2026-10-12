@@ -1,4 +1,5 @@
 use super::super::{capacity, unavailable};
+use latent_core::authority_rejection::{AuthorityRejection, AuthorityRejectionRegistration};
 use latent_core::PlatformError;
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
@@ -13,6 +14,7 @@ pub(super) struct Owner {
     readers: AtomicUsize,
     mutation_readers: AtomicUsize,
     maximum_readers: usize,
+    pub(super) rejection: AuthorityRejectionRegistration,
 }
 impl Owner {
     pub fn new(maximum_readers: usize) -> Arc<Self> {
@@ -23,13 +25,14 @@ impl Owner {
             readers: AtomicUsize::new(0),
             mutation_readers: AtomicUsize::new(0),
             maximum_readers,
+            rejection: AuthorityRejectionRegistration::default(),
         })
     }
     pub fn check(&self) -> Result<(), PlatformError> {
         if !self.live.load(Ordering::Acquire) || !self.healthy.load(Ordering::Acquire) {
             return Err(unavailable());
         }
-        Ok(())
+        self.rejection.expose()
     }
     pub fn lease(self: &Arc<Self>) -> Result<PolicyReadLease, PlatformError> {
         self.check()?;
@@ -63,9 +66,11 @@ impl Owner {
     }
     pub fn poison(&self) {
         self.healthy.store(false, Ordering::Release);
+        let _ = self.rejection.reject(AuthorityRejection::OwnerRetired);
     }
     pub fn retire(&self) {
         self.live.store(false, Ordering::Release);
+        let _ = self.rejection.reject(AuthorityRejection::OwnerRetired);
     }
     pub fn readers(&self) -> usize {
         self.readers.load(Ordering::Acquire) + self.mutation_readers.load(Ordering::Acquire)

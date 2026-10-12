@@ -1,0 +1,69 @@
+{
+  "sourceHead": "59c03abd1fbf2bcc39430ebe9866eb5ab23ee020",
+  "job": "contracts",
+  "lane": "python",
+  "originalRunBlock": "tools/validate_contracts.sh \"$CI_CONTRACT_LANE\"",
+  "fullRepositoryCiPassed": false,
+  "image": "sha256:c19db1b2bb887c214b87d05aa7f15a6d2108758fa4f2cf04d09bddce8a627502",
+  "seccomp": "unconfined",
+  "extraCapabilities": [],
+  "missingToolsFailClosed": true,
+  "runBlockPassed": true,
+  "sharedNativeCacheUsed": false,
+  "stages": [
+    {
+      "stage": "clone",
+      "command": [
+        "git",
+        "clone",
+        "--shared",
+        "--no-checkout",
+        "/repository",
+        "/tmp/local-repository785-59-r2/source"
+      ],
+      "seconds": 5.679689,
+      "exitCode": 0
+    },
+    {
+      "stage": "checkout",
+      "command": [
+        "git",
+        "checkout",
+        "--detach",
+        "59c03abd1fbf2bcc39430ebe9866eb5ab23ee020"
+      ],
+      "seconds": 23.449649,
+      "exitCode": 0
+    },
+    {
+      "stage": "original-python-contracts",
+      "command": [
+        "bash",
+        "-e",
+        "-o",
+        "pipefail",
+        "-c",
+        "tools/validate_contracts.sh \"$CI_CONTRACT_LANE\""
+      ],
+      "seconds": 556.189669,
+      "exitCode": 0
+    }
+  ],
+  "actualOsRelease": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "actualPythonVersion": "3.13.5 (main, Jul 22 2025, 01:46:07) [GCC 12.2.0]",
+  "uid": 23001,
+  "tools": {
+    "cargo": "/usr/local/cargo/bin/cargo",
+    "rustc": "/usr/local/cargo/bin/rustc",
+    "node": "/usr/local/bin/node",
+    "javac": null,
+    "go": null,
+    "dotnet": null,
+    "wasm-tools": null,
+    "buf": null,
+    "zig": null,
+    "wit-bindgen": null
+  },
+  "seconds": 585.805004,
+  "trackedSourceUnchanged": true
+}

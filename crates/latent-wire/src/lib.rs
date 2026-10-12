@@ -4,6 +4,7 @@
 
 pub mod invocation;
 pub mod management;
+pub mod phase4;
 
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_core::{ActivationId, BoxFuture, Metadata, NodeId, PlatformError, RouteGeneration};

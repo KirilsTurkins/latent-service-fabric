@@ -13,11 +13,27 @@ from unittest.mock import Mock, patch
 from tools import prepared_test_harness as harness
 from tools import run_angular_renderer_tests as angular
 from tools import run_oci_registry_tests as oci
+from tools import ci_suite_inventory as catalog
 from tools.test_run import ProcessFailure, TestRun, contract
 from tools.owned_test_process import Result
 from tools.tests.test_owned_test_process import policy
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def copy_catalog(destination):
+    source = ROOT / 'tools/ci/suites.json'
+    # Validate the bounded catalogue and additive owners before copying any
+    # fixture bytes. Primary selections may reference a fragment-owned suite.
+    catalog.load(source)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(source.read_bytes())
+    fragments = source.with_suffix('.d')
+    if fragments.exists():
+        copied = destination.with_suffix('.d')
+        copied.mkdir()
+        for fragment in sorted(fragments.iterdir()):
+            (copied / fragment.name).write_bytes(fragment.read_bytes())
 
 
 class RunnerContractTests(unittest.TestCase):
@@ -34,6 +50,16 @@ class RunnerContractTests(unittest.TestCase):
             self.assertIn('test-manifest', selected['prerequisites']['artifacts'])
             for service in selected['prerequisites']['services']:
                 self.assertEqual(service['image'], oci.IMAGE)
+
+    def test_synthetic_catalog_retains_every_additive_suite_and_exact_selection(self):
+        destination = self.root / 'tools/ci/suites.json'
+        copy_catalog(destination)
+        self.assertEqual(catalog.load(destination), catalog.load())
+        source = ROOT / 'tools/ci/suites.d'
+        if source.exists():
+            self.assertEqual(
+                {path.name: path.read_bytes() for path in source.iterdir()},
+                {path.name: path.read_bytes() for path in destination.with_suffix('.d').iterdir()})
 
     def test_preflight_reports_no_test_execution(self):
         for module, args in ((oci, ['--preflight']), (angular, ['--preflight'])):
@@ -253,8 +279,7 @@ class NativeRunnerDemonstrations(unittest.TestCase):
             root=Path(temporary)
             policy_data, rows=contract('angular-renderer')
             inventory = root/'tools/ci/suites.json'
-            inventory.parent.mkdir(parents=True)
-            inventory.write_bytes((Path(__file__).resolve().parents[2]/'tools/ci/suites.json').read_bytes())
+            copy_catalog(inventory)
             manifest=root/'build.jsonl'
             records=[]
             children=root/'children'

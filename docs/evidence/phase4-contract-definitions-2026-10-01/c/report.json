@@ -1,0 +1,171 @@
+{
+  "schemaVersion": "latent.transaction-contract.compiler.v1",
+  "language": "c",
+  "evidenceKind": "compiler-definition",
+  "compilerDefinitionQualified": true,
+  "runtimeExecutionQualified": false,
+  "externalClientExecutionQualified": false,
+  "status": "compiler-definition-qualified",
+  "world": "tests:transaction-contract/service@1.0.0",
+  "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+  "preparationProfileDigest": "sha256:6acd7a248633dd01c9cdcbf8a1ed33fc5e6aa1d2edb09b7d89e53fda594b5507",
+  "source": {
+    "c/probe.c": {
+      "digest": "sha256:b644908162d3099dd7be0a972e110521ec369a9f59919dd5a6290600442483ba",
+      "size": 7639
+    },
+    "dotnet/Main.cs": {
+      "digest": "sha256:2115191f18b6b87cf116100d579c03126a6a33f62b430aa29052f5d43be55b86",
+      "size": 1796
+    },
+    "go/main.go": {
+      "digest": "sha256:ada4a963063afb1541cb696adca981403a906529a5b1f19e12600c3d098f3f41",
+      "size": 1804
+    },
+    "java/dev/latent/app/Capsule.java": {
+      "digest": "sha256:60b03b8ee3e866a8fd6a5db64337ed5f826cdbfba62dbd4083efc3f7e72c96b5",
+      "size": 2459
+    },
+    "rust/component.rs": {
+      "digest": "sha256:f2660d280e0c7b009da5f6443f29a0dd83ea4fa1c3321f3ce64e9e27fccaed5f",
+      "size": 2960
+    },
+    "typescript/main.ts": {
+      "digest": "sha256:4dfe19c5a0f3bfa3ac528a04bcc041c2b4ebf7913635eef7c76ed67357c49526",
+      "size": 1937
+    },
+    "wit/world.wit": {
+      "digest": "sha256:d24899947439855d4529d7b2da6819160f632f29c8ea69b8bbe4e36264f93981",
+      "size": 437
+    }
+  },
+  "sourceRevision": "29771c51dfbb83181a083f7bcc78bd99266c724d",
+  "workingTreeChanged": false,
+  "sourceArchiveDigest": "sha256:af80fff1466f574c388b83868687c792a976fc8722191b6f9bcfb34877b34f35",
+  "componentDigest": "sha256:22dc63f3c6e050e31c484964f2a1f486c867fd14756ba0da16be317d2555e5f6",
+  "componentBytes": 903388,
+  "semanticSurfaceDigest": "sha256:be5cac6219ab7f3d9ce3534c067711fe3c0ecf293f702c8c616aa99b05c6e3e5",
+  "details": {
+    "bindings": {
+      "formatVersion": 1,
+      "world": "tests:transaction-contract/service@1.0.0",
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:b80665a9a5926b08b7a4830d71f429464467368a7893fffb1d4444b6442c97ed",
+        "probe.h": "sha256:e48c3a60d70a711cb37f591a2dbc62734475425da422de1565216d187860305d",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:4a7996705de0c6ffa9b0fab820c4985e78a9c0ecba38e4b91be8b5d42b57e418"
+      }
+    },
+    "tools": {
+      "zig": {
+        "name": "zig",
+        "digest": "sha256:2317bbb91798556d9d0f38aabdac23db83f0979b25f767259ae474546724087c",
+        "size": 172641672
+      },
+      "wit-bindgen": {
+        "name": "wit-bindgen",
+        "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+        "size": 19856344
+      },
+      "wasm-tools": {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      }
+    }
+  },
+  "seconds": 15.430246,
+  "commands": [
+    {
+      "stage": "source-revision",
+      "exitCode": 0,
+      "seconds": 0.015079
+    },
+    {
+      "stage": "source-status",
+      "exitCode": 0,
+      "seconds": 0.662687
+    },
+    {
+      "stage": "retained-shared-source",
+      "exitCode": 0,
+      "seconds": 0.02428
+    },
+    {
+      "stage": "zig",
+      "exitCode": 0,
+      "seconds": 0.01433
+    },
+    {
+      "stage": "wit-bindgen",
+      "exitCode": 0,
+      "seconds": 0.014169
+    },
+    {
+      "stage": "wasm-tools",
+      "exitCode": 0,
+      "seconds": 0.014151
+    },
+    {
+      "stage": "wit-bindgen",
+      "exitCode": 0,
+      "seconds": 0.014054
+    },
+    {
+      "stage": "wit-bindgen",
+      "exitCode": 0,
+      "seconds": 0.014026
+    },
+    {
+      "stage": "zig",
+      "exitCode": 0,
+      "seconds": 14.10198
+    },
+    {
+      "stage": "wasm-tools",
+      "exitCode": 0,
+      "seconds": 0.013903
+    },
+    {
+      "stage": "wasm-tools",
+      "exitCode": 0,
+      "seconds": 0.0137
+    },
+    {
+      "stage": "wasm-tools",
+      "exitCode": 0,
+      "seconds": 0.013915
+    },
+    {
+      "stage": "wit-bindgen",
+      "exitCode": 0,
+      "seconds": 0.014025
+    },
+    {
+      "stage": "wit-bindgen",
+      "exitCode": 0,
+      "seconds": 0.01358
+    },
+    {
+      "stage": "validate-authoritative-component",
+      "exitCode": 0,
+      "seconds": 0.014059
+    },
+    {
+      "stage": "authoritative-surface",
+      "exitCode": 0,
+      "seconds": 0.013815
+    },
+    {
+      "stage": "compiled-surface",
+      "exitCode": 0,
+      "seconds": 0.016419
+    },
+    {
+      "stage": "retained-surface",
+      "exitCode": 0,
+      "seconds": 0.013727
+    }
+  ]
+}

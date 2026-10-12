@@ -144,6 +144,131 @@ class FailedCommandTests(unittest.TestCase):
             self.assertNotIn("credential-fixture", initial.decode() + diagnostic.getvalue())
 
 
+class ChildFailureSnapshotTests(unittest.TestCase):
+    @staticmethod
+    def capture(records, *, incomplete=False):
+        rows = ", ".join("FailureRecord { stage: " + stage + ", code: " + code
+                         + ", reason: " + reason + " }" for stage, code, reason in records)
+        line = ("local-service-child-failures Snapshot { records: [" + rows
+                + "], incomplete: " + str(incomplete).lower() + " }\n")
+        return subprocess.CompletedProcess([], 101, line.encode(), b"")
+
+    def test_failed_assertion_shape_keeps_child_stage_and_original_integer_values(self):
+        result = FailedCommandTests().failure()
+        result.stdout = result.stdout.replace(b"right: 42", b"right: 1563571291")
+        result.stderr = self.capture([
+            ("InvocationError", "Unavailable", "AdmissionClockLeaseUncovered"),
+            ("ChildFailure", "PermissionDenied", "Unclassified"),
+        ]).stdout
+        value = diagnostics.extract(result, security.ROOT, security.ROOT)
+        self.assertEqual(value["integerAssertions"], [
+            {"relation": "==", "left": 2004, "right": 1563571291},
+        ])
+        self.assertEqual(value["childFailureSnapshot"], {
+            "records": [
+                {"stage": "invocation-error", "code": "Unavailable",
+                 "reason": "admission-clock-lease-uncovered"},
+                {"stage": "child-failure", "code": "PermissionDenied", "reason": "unclassified"},
+            ],
+            "incomplete": False, "recordedCount": 2, "omittedCount": 0,
+        })
+        self.assertEqual(value["reasonCodes"], [
+            "fixture-busy", "admission-clock-lease-uncovered", "unclassified",
+        ])
+        for private in ("credential", "/private/", "SecretCode"):
+            self.assertNotIn(private, json.dumps(value))
+
+    def test_closed_recorder_vocabulary_is_complete_and_every_variant_is_extractable(self):
+        reason_source = (security.ROOT / "crates/latent-wasmtime/tests/local_service/diagnostics/reason.rs").read_text()
+        enum = reason_source.split("pub enum Reason {", 1)[1].split("}", 1)[0]
+        variants = [line.strip().removesuffix(",") for line in enum.splitlines() if line.strip()]
+        self.assertEqual(variants, list(diagnostics.CHILD_REASONS))
+        source = (security.ROOT / "crates/latent-wasmtime/tests/local_service/diagnostics.rs").read_text()
+        self.assertIn("pub const MAX_RECORDS: usize = 32;", source)
+        for stage in ("Start", "InvocationError", "ChildFailure"):
+            for variant, token in diagnostics.CHILD_REASONS.items():
+                with self.subTest(stage=stage, variant=variant):
+                    value = diagnostics.extract(self.capture([(stage, "Unavailable", variant)]),
+                                                security.ROOT, security.ROOT)
+                    self.assertEqual(value["reasonCodes"], [token])
+                    self.assertEqual(value["childFailureSnapshot"]["records"], [{
+                        "stage": diagnostics.CHILD_STAGES[stage], "code": "Unavailable", "reason": token,
+                    }])
+
+    def test_incomplete_empty_observation_never_claims_a_recorded_cause(self):
+        value = diagnostics.extract(self.capture([], incomplete=True), security.ROOT, security.ROOT)
+        self.assertEqual(value["childFailureSnapshot"], {
+            "records": [], "incomplete": True, "recordedCount": 0, "omittedCount": 0,
+        })
+        self.assertEqual(value["reasonCodes"], [])
+        self.assertEqual(value["platformCodes"], [])
+
+    def test_fixture_busy_snapshot_keeps_the_closed_reason_and_discards_malformed_variants(self):
+        result = self.capture([("ChildFailure", "PermissionDenied", "FixtureCurrentnessBusy")])
+        value = diagnostics.extract(result, security.ROOT, security.ROOT)
+        self.assertEqual(value["platformCodes"], ["PermissionDenied"])
+        self.assertEqual(value["reasonCodes"], ["fixture-busy"])
+        self.assertEqual(value["childFailureSnapshot"], {
+            "records": [{"stage": "child-failure", "code": "PermissionDenied", "reason": "fixture-busy"}],
+            "incomplete": False, "recordedCount": 1, "omittedCount": 0,
+        })
+        for reason in (b"FixtureCurrentnessBusyPrivate", b"fixtureCurrentnessBusy", b"private-token"):
+            with self.subTest(reason=reason):
+                malformed = subprocess.CompletedProcess([], 101,
+                    result.stdout.replace(b"FixtureCurrentnessBusy", reason), b"")
+                rejected = diagnostics.extract(malformed, security.ROOT, security.ROOT)
+                self.assertNotIn("childFailureSnapshot", rejected)
+                self.assertEqual(rejected["reasonCodes"], [])
+                self.assertNotIn("private-token", json.dumps(rejected))
+
+    def test_native_and_receipt_bounds_preserve_explicit_truncation(self):
+        rows = [("Start", "Unavailable", "AdmissionAuthorityBusy")] * 32
+        value = diagnostics.extract(self.capture(rows), security.ROOT, security.ROOT)
+        self.assertEqual(len(value["childFailureSnapshot"]["records"]), 8)
+        self.assertEqual(value["childFailureSnapshot"]["recordedCount"], 32)
+        self.assertEqual(value["childFailureSnapshot"]["omittedCount"], 24)
+        self.assertIs(value["childFailureSnapshot"]["incomplete"], False)
+        self.assertEqual(value["reasonCodes"], ["admission-authority-busy"])
+        surplus = diagnostics.extract(self.capture(rows + rows[:1]), security.ROOT, security.ROOT)
+        self.assertNotIn("childFailureSnapshot", surplus)
+        self.assertEqual(surplus["reasonCodes"], [])
+
+    def test_malformed_private_unknown_and_ambiguous_snapshot_lines_are_discarded(self):
+        original = self.capture([("Start", "Unavailable", "AdmissionAuthorityBusy")]).stdout
+        for raw in (
+            original.replace(b"Start", b"SecretStage"),
+            original.replace(b"Unavailable", b"SecretCode"),
+            original.replace(b"AdmissionAuthorityBusy", b"private-token"),
+            original.replace(b"reason: AdmissionAuthorityBusy", b'reason: "AdmissionAuthorityBusy"'),
+            original.replace(b", code:", b', private: "credential-fixture-never-log", code:'),
+            original.replace(b"Snapshot {", b"PlatformError {"),
+            b'private-message: "' + original.rstrip() + b'"\n',
+            original + original,
+        ):
+            with self.subTest(raw=raw):
+                value = diagnostics.extract(subprocess.CompletedProcess([], 101, raw, b""),
+                                            security.ROOT, security.ROOT)
+                self.assertNotIn("childFailureSnapshot", value)
+                self.assertEqual(value["reasonCodes"], [])
+                self.assertNotIn("private", json.dumps(value))
+
+    def test_snapshot_schema_rejects_unknown_fields_mismatched_counts_and_false_flags(self):
+        value = diagnostics.extract(self.capture([("Start", "Unavailable", "AdmissionAuthorityBusy")]),
+                                    security.ROOT, security.ROOT)
+        original = value["childFailureSnapshot"]
+        for snapshot in (
+            dict(original, private="credential-fixture-never-log"),
+            dict(original, incomplete="false"), dict(original, recordedCount=True),
+            dict(original, recordedCount=33), dict(original, recordedCount=2),
+            dict(original, omittedCount=1), dict(original, records=[]),
+            dict(original, records=[dict(original["records"][0], stage="SecretStage")]),
+            dict(original, records=[dict(original["records"][0], reason="private-token")]),
+            dict(original, records=[dict(original["records"][0], code="SecretCode")]),
+        ):
+            with self.subTest(snapshot=snapshot), self.assertRaises(artifacts.SecurityError):
+                diagnostics.validate(dict(value, childFailureSnapshot=snapshot))
+
+
 class InventoryTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
@@ -519,7 +644,10 @@ class WorkflowTests(unittest.TestCase):
                   "sameOriginPostReachedMethodPolicy": True, "errors": 0,
                   "publicApplicationQualified": False, "applicationComponentInvoked": False,
                   "managementRpcAbsent": False, "browserFetchCredentialsOmitted": False,
-                  "cookiesDoNotAuthenticate": False}
+                  "cookiesDoNotAuthenticate": False, "fixedSameOriginReferrerPolicy": True,
+                  "buildTimeNoReferrerBeforeResources": True, "syntheticTokenNavigationAndFetchDoNotBecomeReferrers": True,
+                  "consumedTokenRemovedBeforeApplicationFetch": True, "unsafeSameOriginNoReferrerOriginRejected": False,
+                  "applicationCacheInputQualified": False, "reservedHeadersRejectedAndRecoveryQualified": False}
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             path = directory / "browser/browser-receipt.json"
@@ -530,7 +658,10 @@ class WorkflowTests(unittest.TestCase):
             for changed in ({"componentRenderClaimed": True}, {"errors": False}, {"originalDomReused": 1},
                             {"navigationHydrated": False}, {"browser": "opaque-text"}, {"extra": True},
                             {"publicApplicationQualified": True}, {"applicationComponentInvoked": True},
-                            {"browserFetchCredentialsOmitted": 0}):
+                            {"browserFetchCredentialsOmitted": 0}, {"fixedSameOriginReferrerPolicy": False},
+                            {"syntheticTokenNavigationAndFetchDoNotBecomeReferrers": 1},
+                            {"buildTimeNoReferrerBeforeResources": False},
+                            {"reservedHeadersRejectedAndRecoveryQualified": True}):
                 path.write_text(json.dumps({**report, **changed}))
                 with self.subTest(changed=changed), self.assertRaises(artifacts.SecurityError):
                     manual.browser_output(directory, time.monotonic() + 5)
@@ -549,7 +680,10 @@ class WorkflowTests(unittest.TestCase):
                   "sameOriginPostReachedMethodPolicy": True, "errors": 0,
                   "publicApplicationQualified": True, "applicationComponentInvoked": True,
                   "managementRpcAbsent": True, "browserFetchCredentialsOmitted": True,
-                  "cookiesDoNotAuthenticate": True}
+                  "cookiesDoNotAuthenticate": True, "fixedSameOriginReferrerPolicy": True,
+                  "buildTimeNoReferrerBeforeResources": True, "syntheticTokenNavigationAndFetchDoNotBecomeReferrers": True,
+                  "consumedTokenRemovedBeforeApplicationFetch": True, "unsafeSameOriginNoReferrerOriginRejected": True,
+                  "applicationCacheInputQualified": True, "reservedHeadersRejectedAndRecoveryQualified": True}
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             path = directory / "browser/browser-application-receipt.json"
@@ -558,7 +692,9 @@ class WorkflowTests(unittest.TestCase):
             path.write_bytes(raw)
             self.assertEqual(manual.browser_output(directory, time.monotonic() + 5, application=True), raw)
             for field in ("publicApplicationQualified", "applicationComponentInvoked", "managementRpcAbsent",
-                          "browserFetchCredentialsOmitted", "cookiesDoNotAuthenticate"):
+                          "browserFetchCredentialsOmitted", "cookiesDoNotAuthenticate",
+                          "unsafeSameOriginNoReferrerOriginRejected", "applicationCacheInputQualified",
+                          "reservedHeadersRejectedAndRecoveryQualified"):
                 path.write_text(json.dumps({**report, field: False}))
                 with self.subTest(field=field), self.assertRaises(artifacts.SecurityError):
                     manual.browser_output(directory, time.monotonic() + 5, application=True)

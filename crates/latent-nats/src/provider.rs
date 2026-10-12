@@ -31,17 +31,17 @@ pub struct NatsCredential {
 }
 #[derive(Clone)]
 pub struct NatsPublisher {
-    inner: Arc<Inner>,
+    pub(crate) inner: Arc<Inner>,
 }
 pub(crate) struct Inner {
     pub config: NatsConfig,
     pub tls: Arc<rustls::ClientConfig>,
-    credentials: Vec<NatsCredential>,
+    pub(crate) credentials: Vec<NatsCredential>,
     pub pools: Arc<ProviderPools>,
-    installed: InstalledProvider,
-    inbox_namespace: String,
-    next: AtomicU64,
-    active: AtomicUsize,
+    pub(crate) installed: InstalledProvider,
+    pub(crate) inbox_namespace: String,
+    pub(crate) next: AtomicU64,
+    pub(crate) active: AtomicUsize,
     pub connection_attempts: AtomicU64,
     pub connection_reuses: AtomicU64,
     acknowledged: AtomicU64,
@@ -180,7 +180,7 @@ struct RequestOwner {
     event: Event,
     _input: IoMemory,
 }
-struct Active(Arc<Inner>);
+pub(crate) struct Active(pub(crate) Arc<Inner>);
 impl Drop for Active {
     fn drop(&mut self) {
         self.0.active.fetch_sub(1, Ordering::AcqRel);
@@ -284,7 +284,7 @@ impl EventPublisher for NatsPublisher {
     }
 }
 impl Inner {
-    fn observe(
+    pub(crate) fn observe(
         &self,
         result: &Result<latent_capabilities::broker::events::PublishReceipt>,
         wrote: bool,

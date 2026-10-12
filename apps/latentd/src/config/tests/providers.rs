@@ -28,6 +28,8 @@ fn provider_input_rejects_null_unknown_and_raw_secret_fields() {
         ("/providers/clockMonotonic", Value::Null),
         ("/providers/clockWall", Value::Null),
         ("/providers/random", Value::Null),
+        ("/providers/context", Value::Null),
+        ("/providers/log", Value::Null),
         ("/providers/blob/profile", json!("future-profile")),
         ("/providers/blob/identity/credential", json!("DO-NOT-ECHO")),
     ] {
@@ -154,6 +156,8 @@ fn scalar_provider_definitions_require_the_exact_installed_identity_and_contract
         ("clockMonotonic", "latent:clock/monotonic@0.1.0"),
         ("clockWall", "latent:clock/wall@0.1.0"),
         ("random", "latent:random/random@0.1.0"),
+        ("context", "latent:context/context@0.1.0"),
+        ("log", "latent:log/log@0.1.0"),
     ] {
         let mut value = document();
         value["providers"][field] = json!({"identity": {

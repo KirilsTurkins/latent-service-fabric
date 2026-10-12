@@ -1,0 +1,19 @@
+package tests:transaction-contract@1.0.0;
+
+interface api {
+    run: async func(mode: u32) -> u64;
+}
+
+world service {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    import latent:random/random@0.1.0;
+    import latent:state/key-value@0.2.0;
+    import latent:intents/staging@0.1.0;
+    export api;
+}
+
+world runtime-support {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+}

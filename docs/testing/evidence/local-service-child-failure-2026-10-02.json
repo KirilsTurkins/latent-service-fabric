@@ -1,0 +1,77 @@
+{
+  "boundaries": {
+    "acceptedEffectsRetried": false,
+    "causeQualified": false,
+    "compatibilityReportsReplaced": false,
+    "githubChecksWaived": false,
+    "nativeRegressionReplayed": false
+  },
+  "observedAt": "2026-10-02",
+  "originalFailure": {
+    "actualChildPlatformErrorKnown": false,
+    "artifactBytes": 1639,
+    "artifactId": 11210885012,
+    "artifactSha256": "81058eebfdc6d6a7d0983ab38014cb55c72173eaa6a827f99788ac4ffbb9ce85",
+    "case": "guest-local_service:acceptance::concurrent_imports_reserve_distinct_children_and_cannot_reuse_a_spent_call_grant",
+    "childCallsAssertedBeforeFailure": 2,
+    "classification": "command-exit",
+    "failedCommand": {
+      "exitCode": 101,
+      "integerAssertions": [
+        {
+          "left": 2004,
+          "relation": "==",
+          "right": 1563571291
+        }
+      ],
+      "panicLocations": [
+        {
+          "column": 5,
+          "file": "crates/latent-wasmtime/tests/local_service/acceptance.rs",
+          "line": 137
+        }
+      ],
+      "platformCodes": [],
+      "reasonCodes": []
+    },
+    "jobId": 110676914726,
+    "logBytes": 106717,
+    "logSha256": "2ba4a17b91dd3042166dbc449a58b4d079121c4c67d920bd769178423eb378ac",
+    "postFailureQuiescenceObserved": false,
+    "pullRequest": 822,
+    "pullRequestHead": "a1c47b2ba43a272865191d4d07248eb6486f8220",
+    "runId": 36943843270,
+    "spentCallGrantLegExecuted": false,
+    "testedCommit": "ba6328ba85fbe63f47fcfc1c7f6ef7daf0628cbb"
+  },
+  "qualification": "source-controls; native replay pending",
+  "schemaVersion": "lsf.sdk.source-observation.v1",
+  "sourceCommit": "44fbc7167b34f594cdd2e1f096db11101ecc74cc",
+  "sourceControls": {
+    "durationSeconds": 4.517271700024139,
+    "existingPlatformSkips": 1,
+    "exitCode": 0,
+    "nativeDiagnosticCasesExecuted": 0,
+    "nativeRecorderLimit": 32,
+    "newPythonCases": 6,
+    "oldNativeDiagnosticBodiesUnchanged": 7,
+    "oldPythonBodiesAndGuardsUnchanged": true,
+    "oldPythonCasesUnchanged": 45,
+    "originalBudgetsAndIdleAssertionsPreserved": true,
+    "originalChildCalls": [
+      2,
+      1
+    ],
+    "originalExpectedValue": 1563571291,
+    "originalStartCounts": [
+      3,
+      5
+    ],
+    "platform": "Windows x86_64",
+    "pythonVersion": "3.13.5",
+    "receiptCaptureBytes": 1048576,
+    "receiptRecordLimit": 8,
+    "registeredNativeDiagnosticCases": 8,
+    "testsRun": 58
+  }
+}

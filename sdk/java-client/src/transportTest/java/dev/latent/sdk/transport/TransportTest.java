@@ -7,6 +7,7 @@ import io.grpc.Status;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -96,6 +97,26 @@ public final class TransportTest {
             check(get(client.getPolicyOperation(new Management.GetPolicyOperationRequest("create"), OPTIONS)).value().receipt().orElseThrow().operationId().equals("create"), "operation recovery");
             check(get(client.getPolicyOperation(new Management.GetPolicyOperationRequest("missing"), OPTIONS)).metadata().outcome().equals(Management.OutcomeKnowledge.UNKNOWN), "missing receipt remains unknown");
             check(peer.connections.size() == 1, "all eight reuse one physical channel");
+        }
+    }
+
+    static void targetInspection() throws Exception {
+        try (var peer = new TestPeer(); var client = peer.client()) {
+            var wire = latent.control.v1.Node.InspectHttpTargetRequest.newBuilder().setService("service-a").setContract("domain:api/contract@1.0.0")
+                .setFunction("get").setRevisionId("revision-a").setIncludePreparation(true)
+                .setPublication(latent.control.v1.Release.PublicationRef.newBuilder().setTenant("tenant-a").setId(TestPeer.PUBLICATION));
+            var value = get(client.inspectHttpTarget(Wire.fromWire(wire.build()),OPTIONS));
+            check(value.value().catalogTransaction() == -1 && value.value().candidates().getFirst().reasons().getFirst().value() == 777, "target exact u64 and open reason enum");
+            check(value.metadata().identity().operationId().isEmpty() && !value.value().liveGrantsChecked(), "target fabricated mutation identity or caller authority");
+            for (String function : List.of("foreign","drift","unmeasured")) {
+                var error = failure(client.inspectHttpTarget(Wire.fromWire(wire.setFunction(function).build()),OPTIONS));
+                check(error.category().equals(Management.FailureCategory.DECODE) && error.dispatched(), "unassociated target response accepted");
+            }
+            value=get(client.inspectHttpTarget(Wire.fromWire(wire.setFunction("future").build()),OPTIONS));
+            check(value.value().state().value()==777 && value.value().candidates().getFirst().preparation().orElseThrow().state().value()==779 && !value.value().candidates().getFirst().eligible(), "future target states established authority");
+            var error=failure(client.inspectHttpTarget(Wire.fromWire(wire.setMaximumWaitMillis(30001).build()),OPTIONS));
+            check(error.category().equals(Management.FailureCategory.INVALID_REQUEST) && !error.dispatched(), "unbounded target wait dispatched");
+            check(peer.connections.size()==1 && peer.invocations.get()==0 && peer.mutations.isEmpty(), "target created business execution or extra connection");
         }
     }
 
@@ -363,6 +384,7 @@ public final class TransportTest {
     public static void main(String[] args) throws Exception {
         FixtureCodecTest.run();
         allOperationsAndSnapshots();
+        targetInspection();
         localLimitsAndDeadlines();
         unsignedDeadlineWireAndTimeoutLimits();
         resetGoAwayAndUnavailableNeverReplay();
@@ -373,6 +395,6 @@ public final class TransportTest {
         profileIdentityAndConfiguration();
         blockedCallbackShutdownReportsRealOwners();
         concurrentShutdownAndClose();
-        System.out.println("Java transport: eleven bounded TCP/protocol suites passed");
+        System.out.println("Java transport: twelve bounded TCP/protocol suites passed");
     }
 }

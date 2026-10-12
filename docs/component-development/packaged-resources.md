@@ -49,7 +49,7 @@ A package name alone cannot make an unobserved file a trusted resource.
 | TypeScript | Captured bundled asset modules | Dynamic asset lookup still requires component evidence |
 | Go | Captured `//go:embed` data | Exact embedded lookup APIs still require component evidence |
 | Java | Captured selected classpath resource bytes | `getResourceAsStream` integration and emitted component tests pending |
-| .NET | Compiler-owned `EmbeddedResource` items from the captured selection | Signed NativeAOT and installed component evidence pending |
+| .NET | Captured selected embedded resource inputs | `GetManifestResourceStream` integration and emitted component tests pending |
 
 This table identifies the ingestion paths and outstanding runtime acceptance;
 package assembly does not prove those APIs execute. The index records
@@ -58,25 +58,6 @@ must execute the unchanged standard API in a signed admitted component, includin
 transitive data, outside-checkout/offline and lifecycle cases, before advertising
 that path as supported. A runtime lookup cannot resolve dependencies or fall
 back to the host filesystem.
-
-The .NET builder validates the selection before invoking compiler tools and
-embeds those same bytes in its generated project. Use the declared logical name
-with `Assembly.GetExecutingAssembly().GetManifestResourceStream(name)`; the
-compiler keeps names literal through MSBuild evaluation and disables implicit
-resource selection. Equal payloads can have separate logical names. The
-`embeddedResourceInputs` entry in `bindings.json` records the exact selection and
-generated project identity; both are rechecked after compilation. Application
-MSBuild overrides remain outside this profile. The maintained
-`tools/qualify_dotnet_resources.py` probe exercises standard lookup, original
-binary/UTF-8 bytes, independent streams, closure and missing names using the
-pinned host CLR. Its receipt explicitly distinguishes that evidence from a
-signed NativeAOT capsule invocation and does not qualify other languages.
-The [Windows reference receipt](../development/dotnet-standard-resources-windows-reference-2026-10-02.json)
-records actual MSBuild/CLR execution on source `40339a34` using the existing
-.NET SDK `10.0.303`: 12 literal resource names, original binary/UTF-8/empty
-payloads, and eight independent-stream/closure repetitions passed. This is a
-reference run on that recorded SDK; the pinned Linux SDK `10.0.100` and signed
-NativeAOT component gates remain open.
 
 Scratch storage is separate and currently unsupported by this resource profile.
 It grants no writable filesystem, temporary directory, durable state, ambient

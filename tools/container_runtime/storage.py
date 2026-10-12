@@ -23,22 +23,36 @@ MAX_ENTRIES = 16384
 MAX_BYTES = 1024 * 1024 * 1024
 
 
-def scan(root: Path, deadline: float) -> dict:
+def scan(root: Path, deadline: float, *, roots=ROOTS, owner=(10001, 10001),
+         retain_identity=False) -> dict:
+    """Capture a stopped owner's complete protected roots, including coupled links.
+
+    The container snapshot retains its fixed defaults. Other stopped preparation
+    owners must select both their roots and their actual unprivileged uid/gid.
+    """
+    require(roots and all(isinstance(name, str) and name not in ('', '.', '..')
+                          and '/' not in name and '\\' not in name for name in roots)
+            and len(set(roots)) == len(roots), 'snapshot-explicit-roots-required')
+    require(len(owner) == 2 and all(type(value) is int and value > 0 for value in owner),
+            'snapshot-explicit-owner-required')
     rows, hardlinks = {}, {}
     total = 0
-    pending = [Path(name) for name in ROOTS]
+    pending = [Path(name) for name in roots]
     while pending:
         relative = pending.pop()
         require(time.monotonic() < deadline and len(rows) < MAX_ENTRIES, 'snapshot-entry-or-time-bound')
         source = root / relative
-        with files.directory(source.parent, {0, 10001}) as parent:
+        with files.directory(source.parent, {0, owner[0]}) as parent:
             fd = os.open(source.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC, dir_fd=parent)
         try:
             info = os.fstat(fd)
-            require(info.st_uid == 10001 and info.st_gid == 10001 and not info.st_mode & 0o022,
+            require((info.st_uid, info.st_gid) == owner and not info.st_mode & 0o022,
                     'snapshot-requires-node-owned-protected-layout')
             files.no_acl(fd)
             record = {'mode': stat.S_IMODE(info.st_mode), 'uid': info.st_uid, 'gid': info.st_gid}
+            if retain_identity:
+                record.update(device=info.st_dev, inode=info.st_ino,
+                              modifiedNanos=info.st_mtime_ns, changedNanos=info.st_ctime_ns)
             if stat.S_ISDIR(info.st_mode):
                 record['kind'] = 'directory'
                 names = os.listdir(fd)
@@ -46,17 +60,19 @@ def scan(root: Path, deadline: float) -> dict:
                 for name in sorted(names, reverse=True):
                     require(len(name.encode()) <= 240 and name not in {'.', '..'}, 'snapshot-path-bound')
                     pending.append(relative / name)
+                require(sorted(os.listdir(fd)) == sorted(names), 'snapshot-source-changed')
             else:
                 require(stat.S_ISREG(info.st_mode) and info.st_size <= MAX_BYTES, 'snapshot-regular-file-required')
                 total += info.st_size
                 require(total <= MAX_BYTES, 'snapshot-byte-bound')
-                digest, size = files.digest_fd(fd, MAX_BYTES)
+                digest, size = files.digest_fd(fd, MAX_BYTES, deadline=deadline)
                 inode = (info.st_dev, info.st_ino)
                 record.update(kind='file', size=size, sha256=digest,
                               linkGroup=hardlinks.setdefault(inode, relative.as_posix()), links=info.st_nlink)
             after = os.fstat(fd)
             require(all(getattr(after, field) == getattr(info, field)
-                        for field in ('st_size', 'st_mtime_ns', 'st_ctime_ns', 'st_mode', 'st_nlink')),
+                        for field in ('st_dev', 'st_ino', 'st_uid', 'st_gid', 'st_size',
+                                      'st_mtime_ns', 'st_ctime_ns', 'st_mode', 'st_nlink')),
                     'snapshot-source-changed')
             rows[relative.as_posix()] = record
         finally:

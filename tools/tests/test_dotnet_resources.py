@@ -35,6 +35,22 @@ class DotnetResourceTests(unittest.TestCase):
             b'<TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>')
         return project
 
+    def test_signed_fixture_uses_same_exact_manifest_selection_as_embedding(self):
+        from tools.dotnet_resource_fixture import install as install_fixture
+        project = create(self.root / "application", "greeting")
+        observed = install_fixture(project)
+        files = snapshot(project)
+        selected = guest_resources.select(files)
+        self.assertEqual(observed["count"], 5)
+        self.assertEqual(len(selected.objects), 4)
+        self.assertEqual(observed["resources"], {
+            row["path"]: {"digest": row["digest"], "size": row["size"]} for row in selected.rows})
+        self.assertIn(b"ResourceControls.Check();", files["src/Main.cs"])
+        with self.assertRaisesRegex(ValueError, "source hook changed"):
+            other = create(self.root / "changed-application", "greeting")
+            (other / "src/Main.cs").write_bytes(b"class Changed {}")
+            install_fixture(other)
+
     def test_compiler_and_package_select_same_binary_bytes_and_deduplicate_payloads(self):
         files = inputs([declaration("data/first.bin"), declaration("data/second.bin")])
         project = self.project()

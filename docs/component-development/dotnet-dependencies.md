@@ -18,6 +18,17 @@ The reviewed composer is checksum-pinned WAC 0.10.1 and includes the [upstream i
 
 Application builds with captures require Linux x86-64 and bubblewrap. The maintained NativeAOT distribution, BCL/reference assemblies, WASI SDK, closed runtime adapter, child tools, Python standard library and observed loader files are captured and rechecked. A fresh compiler-owned package cache receives only the exact SDK packages and verified application closure. Compilation runs with network, home and credentials unavailable; source and package inputs are read-only. A finite SDK-owned account entry supplies compiler identity without importing the host's account database. The compiler host uses invariant globalization and disabled diagnostics; the optional SDK LTTng provider remains hashed but its unavailable ABI is not enabled. Offline NuGet keeps signature verification enabled with the captured SDK's certificate bundles and offline revocation mode; it does not claim current online certificate revocation evidence. [NuGet's signature verification documentation](https://learn.microsoft.com/en-us/dotnet/core/tools/nuget-signed-package-verification) describes the SDK certificate bundles. These are compiler settings and do not grant application runtime behavior. Receipts target a trusted single-user build host and retain `hermetic: false`.
 
+The loader uses the captured Python library directory for both dependency observation and compiler execution, including hosted CPython executables with an absolute RUNPATH. Its receipt binds the hashed distribution owner and relative directory, so a fresh output location preserves the exact approval identity. The [focused loader qualification](../testing/evidence/dotnet-captured-python-loader-2026-10-01.json) reproduces the CI rejection with its original executable and library, then executes those same bytes in the namespace after deleting the original-path library.
+
+The maintained outside-library fixture builds its reviewed library from that
+library's owned preparation tree. This keeps the selected sources visible when
+application projects live in a sibling `projects/` directory and excludes the
+application and enclosing output tree from the preparation namespace. The
+[nested-workspace controls](../testing/evidence/dotnet-nested-library-namespace-2026-10-01.json)
+retain the original missing-source failure, exercise source reads and ambient
+read denials through bubblewrap, and pass all 48 namespace/NuGet source controls.
+Actual managed and NativeAOT compilation requires separate qualification.
+
 Use literal `EmbeddedResource Include="resources/prefix.txt" LogicalName="example.prefix"` declarations for captured application data. The maintained compiler preserves those bytes and ordinary managed assembly resource lookup. Resources inside captured managed package assemblies retain their assembly ownership. Embedding grants no host filesystem access. Resource names, bytes, selected package ownership and final component identity must remain consistent with signed package/resource evidence; inclusion alone does not establish every resource-reader implementation.
 
 `TrimmerRootDescriptor` items must refer to captured literal paths. The actual NativeAOT compiler performs reflection/trimming analysis; unsupported JIT, dynamic loading, native/PInvoke assets and missing runtime members remain concrete incompatibilities. An assembly's managed PE header is a capture preflight, not proof of its complete AOT compatibility. `Task`, `ThreadPool` or timer references do not imply blanket package rejection and do not establish their execution: #746 owns those runtime ports, and #693 owns ordinary `HttpClient`.
@@ -95,5 +106,44 @@ fuel, memory and effects before an explicit grant. The declared-error path,
 shutdown reported clean provider, compiler, Store and activation ownership.
 The persisted-node restart then failed with `startup-unavailable`, before the
 recovery invocation or original dormant-growth samples. That failure is retained
-in the same observation; full recovery, resource-limit and ticket acceptance
-remain open.
+in the same observation.
+
+The [fresh normal recovery run](../testing/evidence/dotnet-memorypack-entropy-recovery-2026-10-01.json)
+passed eight recorded invocations, a separate entropy-grant denial, persisted
+recovery and the original dormant-service counters. Its component, application,
+captured MemoryPack bytes and developer resource assembly remain unchanged.
+Normal source `907e8fa` CLI, signer and node binaries were rebuilt from the full
+tracked tree after the previous cache was removed. That new setup retains its
+original cold-build deadline failure and later successful bounded build. The
+node mounts no compiler, package feed, original developer source or CLR.
+
+A separate private replay of the immediate-restart protocol retained the exact
+`admission-restart-clock-floor` refusal. This is the existing
+[trusted-clock lease contract](../reference/package-admission.md#clock-leases-retries-and-fresh-admission):
+an enforced node can refuse restart until its previously persisted future floor
+passes. The successful fixture waits for its configured five-second lease after
+physically reaping the cleanly stopped node, then attempts one normal startup.
+The wait checks cancellation and stays within the original 900-second workflow
+deadline. It changes no authority, policy, signed bytes, grant or guest budget,
+and retries no failed startup or accepted operation. The
+[retained driver](../testing/evidence/dotnet-memorypack-entropy-recovery-2026-10-01-driver.txt)
+records the exact experiment; the private observer supplies diagnostic evidence
+separately from normal admission.
+
+Recovery returns `Hello, Ada!` under the original one-billion-fuel, 128 MiB,
+120-second invocation budget. All 19 owner samples report idle cells and quotas,
+zero activation-scoped owners and zero resident service processes, threads or
+listeners. Adding four and twelve dormant deployments produces populations of
+five and thirteen, with three samples each. Those six Linux scans retain one
+process, seven threads, one listener, three sockets, 23 handles and no UDP
+sockets; RSS is 233,443,328 bytes in each scan. Both shutdowns physically reap
+the node and report zero Stores, instances and provider calls, with the compiler
+worker joined. Node-owned metadata may remain, and these finite non-atomic
+observations do not establish production sizing or complete GC behavior. The
+second shutdown also preserves the audit's `previousSessionLossUnknown` marker;
+no general audit-loss reconciliation claim is made.
+
+Supported reflection/trimming, general resource-index ownership, private-feed
+authentication and identity variation, update/remove/watch, and broader memory,
+cancellation, exception/disposal/GC qualification remain required for #687.
+Task/ThreadPool and ordinary HttpClient retain their separate runtime tickets.

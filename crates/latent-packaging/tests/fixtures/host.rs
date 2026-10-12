@@ -9,17 +9,44 @@ use wasm_encoder::{
 use wit_parser::{FunctionKind, Resolve, Type, TypeDefKind, TypeId};
 
 pub fn interface(source: &str, name: &str, asynchronous: Option<bool>) -> InstanceType {
+    interface_with_dependencies(&[("host.wit", source)], name, asynchronous)
+}
+
+pub fn interface_with_dependencies(
+    sources: &[(&str, &str)],
+    name: &str,
+    asynchronous: Option<bool>,
+) -> InstanceType {
     let mut resolve = Resolve::default();
-    resolve.push_source("host.wit", source).unwrap();
+    for (path, source) in sources {
+        resolve.push_source(path, source).unwrap();
+    }
+    encode_interface(&resolve, name, asynchronous)
+}
+
+/// Parse one exact committed package directory and its own declared WIT deps.
+/// This is an unexecuted type fixture, not an installed WASI implementation.
+pub fn interface_from_directory(
+    directory: &std::path::Path,
+    name: &str,
+    asynchronous: Option<bool>,
+) -> InstanceType {
+    let mut resolve = Resolve::default();
+    resolve.push_dir(directory).unwrap();
+    encode_interface(&resolve, name, asynchronous)
+}
+
+fn encode_interface(resolve: &Resolve, name: &str, asynchronous: Option<bool>) -> InstanceType {
     let (_, interface) = resolve
         .interfaces
         .iter()
         .find(|(id, _)| resolve.id_of(*id).as_deref() == Some(name))
         .unwrap();
     let mut encoder = Encoder {
-        resolve: &resolve,
+        resolve,
         host: InstanceType::new(),
         types: BTreeMap::new(),
+        names: BTreeMap::new(),
     };
     for id in interface.types.values() {
         encoder.value(Type::Id(*id));
@@ -50,6 +77,7 @@ struct Encoder<'a> {
     resolve: &'a Resolve,
     host: InstanceType,
     types: BTreeMap<TypeId, Value>,
+    names: BTreeMap<String, Value>,
 }
 
 impl Encoder<'_> {
@@ -105,6 +133,10 @@ impl Encoder<'_> {
                 ComponentTypeRef::Type(TypeBounds::SubResource),
             );
             let value = Value::Type(index);
+            assert!(self
+                .names
+                .insert(def.name.clone().unwrap(), value)
+                .is_none());
             self.types.insert(id, value);
             return value;
         }
@@ -176,10 +208,19 @@ impl Encoder<'_> {
             _ => panic!("unsupported fixture shape"),
         };
         let value = if let Some(name) = &def.name {
-            let alias = self.host.type_count();
-            self.host
-                .export(name.as_str(), ComponentTypeRef::Type(TypeBounds::Eq(index)));
-            Value::Type(alias)
+            if let Some(existing) = self.names.get(name) {
+                // WIT `use` aliases can reuse the original exported spelling.
+                // Preserve that one type identity, not a second resource.
+                assert_eq!(*existing, Value::Type(index));
+                *existing
+            } else {
+                let alias = self.host.type_count();
+                self.host
+                    .export(name.as_str(), ComponentTypeRef::Type(TypeBounds::Eq(index)));
+                let value = Value::Type(alias);
+                self.names.insert(name.clone(), value);
+                value
+            }
         } else {
             Value::Type(index)
         };

@@ -14,6 +14,19 @@ from .common import DevError, decode, digest, encode, members, require, sha
 OBJECTS = "dependency-inputs/objects"
 
 
+def capture_document(raw: bytes) -> dict:
+    # These already-bounded native capture documents use the same parser as
+    # resolution and offline verification. Control documents retain their own
+    # smaller depth/item profile; it does not bound a complete package closure.
+    require(0 < len(raw) <= capture.MAX_LOCK, "document-byte-limit")
+    try:
+        value = capture.decode_json(raw)
+    except ValueError as error:
+        raise DevError("invalid-json") from error
+    require(isinstance(value, dict), "document-object-required")
+    return value
+
+
 def validate(value: dict) -> dict:
     members(value, {"applicationManifest", "applicationLock", "selection", "executableInputs"})
     sha(value["applicationManifest"])
@@ -45,8 +58,8 @@ def selected(root: Path, language: str) -> tuple[dict, list[str]]:
     manifest_bytes = paths.read(root, capture.MANIFEST, capture.MAX_LOCK)
     lock_bytes = paths.read(root, capture.LOCK, capture.MAX_LOCK)
     try:
-        manifest = capture.validate_manifest(decode(manifest_bytes, capture.MAX_LOCK), language)
-        lock = decode(lock_bytes, capture.MAX_LOCK)
+        manifest = capture.validate_manifest(capture_document(manifest_bytes), language)
+        lock = capture_document(lock_bytes)
         members(lock, {"formatVersion", "language", "manifestDigest", "selection", "nativeLocks", "artifacts",
                        "transformations", "completeness", "executableInputs"})
         require(type(lock["formatVersion"]) is int and lock["formatVersion"] == 1
@@ -59,7 +72,9 @@ def selected(root: Path, language: str) -> tuple[dict, list[str]]:
                             "selection": manifest["selection"], "executableInputs": executables})
     except DependencyError as error:
         raise DevError(str(error)) from None
-    inputs = [capture.MANIFEST, capture.LOCK, *manifest["nativeLocks"]]
+    # The application recipe must retain its authenticated outer association.
+    # Otherwise an app/ compiler invocation silently misses the reviewed lock.
+    inputs = ["latent.project.json", capture.MANIFEST, capture.LOCK, *manifest["nativeLocks"]]
     if manifest["artifacts"] or manifest["nativeLocks"]:
         inputs.append(OBJECTS)
     for name in inputs:

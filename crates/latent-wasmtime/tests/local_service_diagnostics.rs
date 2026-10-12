@@ -18,6 +18,55 @@ use std::{
 use support::{detail_error, error, failed, FakeCompletion, FakeInvoker};
 
 #[test]
+fn preparation_capacity_reasons_require_exact_closed_error_shapes() {
+    for (message, expected) in [
+        (
+            "prepared-source-association",
+            Reason::PreparationSourceAssociation,
+        ),
+        (
+            "preparation metadata exceeds its configured bound",
+            Reason::PreparationMetadataBound,
+        ),
+        (
+            "prepared metadata accounting overflowed",
+            Reason::PreparationMetadataOverflow,
+        ),
+        (
+            "component artifact exceeds the configured byte limit",
+            Reason::PreparationComponentBound,
+        ),
+        (
+            "component exceeds the bounded prepared-cache byte capacity",
+            Reason::PreparationCacheBound,
+        ),
+        (
+            "capsule-declared resource limits exceed the engine profile",
+            Reason::PreparationDeclaredBudget,
+        ),
+        ("release-lifecycle-limit", Reason::ReleaseLifecycleCapacity),
+    ] {
+        let mut failure = error(message);
+        failure.code = PlatformErrorCode::ResourceExhausted;
+        failure.retryable = false;
+        support::assert_reason(failure.clone(), expected);
+
+        let mut wrong_code = failure.clone();
+        wrong_code.code = PlatformErrorCode::Unavailable;
+        support::assert_reason(wrong_code, Reason::Unclassified);
+        let mut retryable = failure.clone();
+        retryable.retryable = true;
+        support::assert_reason(retryable, Reason::Unclassified);
+        let mut extended = failure.clone();
+        extended.message.push_str(" private");
+        support::assert_reason(extended, Reason::Unclassified);
+        let mut malformed = failure;
+        malformed.details = detail_error("private-kind", "private-reason").details;
+        support::assert_reason(malformed, Reason::Unclassified);
+    }
+}
+
+#[test]
 #[expect(
     clippy::too_many_lines,
     reason = "one explicit closed vocabulary matrix covers every supported constructor"
@@ -127,6 +176,10 @@ fn closed_constructor_shapes_have_distinct_safe_reasons() {
         failure.retryable = false;
         support::assert_reason(failure, expected);
     }
+    let mut fixture_busy = error("fixture-busy");
+    fixture_busy.code = PlatformErrorCode::PermissionDenied;
+    fixture_busy.retryable = false;
+    support::assert_reason(fixture_busy, Reason::FixtureCurrentnessBusy);
 }
 
 #[test]
@@ -155,6 +208,14 @@ fn unknown_malformed_and_missing_details_are_explicitly_unclassified() {
     wrong_currentness_retry.retryable = false;
     let mut wrong_scheduler_retry = detail_error("scheduler.limit", "handoff-closed");
     wrong_scheduler_retry.retryable = false;
+    let mut wrong_fixture_code = error("fixture-busy");
+    wrong_fixture_code.retryable = false;
+    let mut wrong_fixture_retry = error("fixture-busy");
+    wrong_fixture_retry.code = PlatformErrorCode::PermissionDenied;
+    let mut extra_fixture_detail = error("fixture-busy");
+    extra_fixture_detail.code = PlatformErrorCode::PermissionDenied;
+    extra_fixture_detail.retryable = false;
+    extra_fixture_detail.details = extra_field.details.clone();
     for failure in [
         missing_reason,
         extra_field,
@@ -165,6 +226,9 @@ fn unknown_malformed_and_missing_details_are_explicitly_unclassified() {
         wrong_currentness_code,
         wrong_currentness_retry,
         wrong_scheduler_retry,
+        wrong_fixture_code,
+        wrong_fixture_retry,
+        extra_fixture_detail,
         error(support::PRIVATE),
         error("admission-authority-busy"), // not a currentness constructor without its detail
         error("compiler-job-panicked private-token"),
@@ -373,4 +437,60 @@ fn dropping_unpolled_or_pending_invocations_preserves_inner_ownership() {
         assert!(recorder.snapshot().records.is_empty());
         assert!(!recorder.snapshot().incomplete);
     }
+}
+
+#[test]
+fn failure_snapshot_format_preserves_closed_codes_stages_and_incompleteness() {
+    let recorder = Arc::new(Recorder::default());
+    let mut original = error(support::PRIVATE);
+    original.code = PlatformErrorCode::PermissionDenied;
+    let message = original.message.as_ptr();
+    let mut invoker = FakeInvoker::rejected(original);
+    let returned = invoker.observed(recorder.clone()).err().unwrap();
+    assert_eq!(returned.message.as_ptr(), message);
+    assert_eq!(invoker.starts, 1);
+    assert_eq!(
+        format!("local-service-child-failures {:?}", recorder.snapshot()),
+        "local-service-child-failures Snapshot { records: [FailureRecord { stage: Start, code: PermissionDenied, reason: Unclassified }], incomplete: false }"
+    );
+    let guard = recorder.storage.lock().unwrap();
+    assert_eq!(
+        format!("local-service-child-failures {:?}", recorder.snapshot()),
+        "local-service-child-failures Snapshot { records: [], incomplete: true }"
+    );
+    drop(guard);
+    assert!(recorder.snapshot().incomplete);
+    assert_eq!(recorder.snapshot().records.len(), 1);
+}
+
+#[test]
+fn scheduler_capacity_reasons_require_exact_public_shape_code_and_retryability() {
+    for (reason, expected) in [
+        (
+            "immediate-capacity-unavailable",
+            Reason::SchedulerImmediateCapacityUnavailable,
+        ),
+        ("queue-full", Reason::SchedulerQueueFull),
+    ] {
+        let mut capacity = detail_error("scheduler.limit", reason);
+        capacity.code = PlatformErrorCode::ResourceExhausted;
+        support::assert_reason(capacity.clone(), expected);
+        let mut wrong_code = capacity.clone();
+        wrong_code.code = PlatformErrorCode::Unavailable;
+        support::assert_reason(wrong_code, Reason::Unclassified);
+        let mut wrong_retry = capacity.clone();
+        wrong_retry.retryable = false;
+        support::assert_reason(wrong_retry, Reason::Unclassified);
+        let mut extra = capacity.clone();
+        extra.details[0]
+            .fields
+            .insert("private".into(), support::PRIVATE.into());
+        support::assert_reason(extra, Reason::Unclassified);
+        let mut duplicate = capacity;
+        duplicate.details.push(duplicate.details[0].clone());
+        support::assert_reason(duplicate, Reason::Unclassified);
+    }
+    let mut unknown = detail_error("scheduler.limit", support::PRIVATE);
+    unknown.code = PlatformErrorCode::ResourceExhausted;
+    support::assert_reason(unknown, Reason::Unclassified);
 }

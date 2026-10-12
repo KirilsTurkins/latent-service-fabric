@@ -5,17 +5,19 @@ import re
 import stat
 
 from . import paths
-from .common import HOST_ABI, decode, digest, encode, members, require, sha
+from .common import HOST_ABI, decode, digest, encode, guest_host_abi, members, require, sha
 
 MAX_DOCUMENT = 2 * 1024 * 1024
 MAX_FILES = 4096
 MAX_BYTES = 2 * 1024**3
 
 
-def validate(value: dict, language: str, owner: int, host: str) -> dict:
+def validate(value: dict, language: str, owner: int, host: str, *, host_abi: str = HOST_ABI) -> dict:
+    guest_host_abi(host_abi)
     members(value, {"schemaVersion", "language", "ownerIssue", "sourceCommit", "hostAbi", "host", "files", "identity"})
     require(value["schemaVersion"] == "latent.dev.guest-tools.v1" and value["language"] == language
-            and value["ownerIssue"] == owner and value["host"] == host and value["hostAbi"] == HOST_ABI,
+            and value["ownerIssue"] == owner and value["host"] == host
+            and value["hostAbi"] == host_abi,
             "guest-tool-inventory-owner-or-target")
     require(isinstance(value["sourceCommit"], str) and re.fullmatch(r"[a-f0-9]{40}", value["sourceCommit"]),
             "guest-tool-inventory-source")
@@ -41,7 +43,8 @@ def check(root: Path, descriptor: dict, host: str, *, observe=None) -> str | Non
         return None
     raw = paths.read(root, selected["path"], MAX_DOCUMENT)
     require(digest(raw) == selected["sha256"], "guest-tool-inventory-digest")
-    value = validate(decode(raw, MAX_DOCUMENT), descriptor["language"], descriptor["template"]["ownerIssue"], host)
+    value = validate(decode(raw, MAX_DOCUMENT), descriptor["language"], descriptor["template"]["ownerIssue"], host,
+                     host_abi=descriptor["hostAbi"])
     require(value["sourceCommit"] == descriptor["template"]["revision"], "guest-tool-template-revision-mismatch")
     files = {entry["path"]: entry for entry in value["files"]}
     directories = {"/".join(name.split("/")[:index]) for name in files for index in range(1, len(name.split("/")))}

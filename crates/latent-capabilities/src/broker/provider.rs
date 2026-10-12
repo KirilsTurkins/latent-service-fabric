@@ -52,6 +52,13 @@ pub struct ProviderReference {
     pub(super) entry: Arc<Provider>,
 }
 impl ProviderReference {
+    /// Compare actual installed owners. Equal public descriptors alone cannot
+    /// identify an installation or authorize replacing its catalog reference.
+    #[must_use]
+    pub fn same_installation(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.entry, &other.entry)
+    }
+
     #[must_use]
     pub fn capability(&self) -> &str {
         &self.entry.capability
@@ -90,6 +97,13 @@ impl Drop for ProviderRegistration {
     }
 }
 impl ActivationCapabilityBroker {
+    /// Trusted control compares the actual broker owner, including when no
+    /// consumer plans exist yet. Public configuration equality grants nothing.
+    #[must_use]
+    pub fn provider_owner_matches(&self, reference: &ProviderReference) -> bool {
+        Arc::ptr_eq(&self.inner, &reference.entry.owner)
+    }
+
     pub fn register_provider(
         &self,
         input: ProviderConfiguration<'_>,

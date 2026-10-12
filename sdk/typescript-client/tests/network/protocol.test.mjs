@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { BinaryWriter, WireType } from "@bufbuild/protobuf/wire";
 import { encode, decode } from "../../dist/node/protocol/codec.js";
 import { method, registry } from "../../dist/node/protocol/schema.js";
+import { preflight } from "../../dist/node/protocol/preflight.js";
 import { sourceDigest } from "../../dist/node/protocol/generated.js";
 import { RpcClient } from "../../dist/node/index.js";
 import { audit, rpcFailure } from "../../dist/node/errors.js";
@@ -57,6 +58,24 @@ test("provider usage maps retain full-width unsigned counters and reject lossy i
   for (const invalid of [-1n, 18446744073709551616n, Number.MAX_SAFE_INTEGER, "1"]) {
     assert.throws(() => encode(schema, { tenantUsage: { ...usage, counters: { invalid } } }, 65536));
   }
+});
+
+test("packed repeated target reasons retain unknown numbers and share bounded segment accounting", () => {
+  const schema = registry.getMessage("latent.control.v1.TargetCandidate");
+  const field = schema.field.reasons.number;
+  const packed = new BinaryWriter().int32(-73).int32(777).finish();
+  const mixed = new BinaryWriter().tag(field, WireType.LengthDelimited).bytes(packed).tag(field, WireType.Varint).int32(1).finish();
+  assert.deepEqual(decode(schema, mixed, 65536).reasons, [-73, 777, 1]);
+  assert.doesNotThrow(() => preflight(schema, mixed, true));
+  const overflowing = new BinaryWriter().tag(field, WireType.LengthDelimited)
+    .bytes(Uint8Array.of(255, 255, 255, 255, 255, 255, 255, 255, 255, 2)).finish();
+  assert.throws(() => preflight(schema, overflowing, true));
+  const full = new BinaryWriter();
+  for (let index = 0; index < 128; index++) full.int32(1);
+  const exhausted = new BinaryWriter().tag(field, WireType.LengthDelimited).bytes(full.finish()).tag(field, WireType.Varint).int32(1).finish();
+  assert.throws(() => decode(schema, exhausted, 65536));
+  const malformed = new BinaryWriter().tag(field, WireType.LengthDelimited).bytes(Uint8Array.of(0x80)).finish();
+  assert.throws(() => decode(schema, malformed, 65536));
 });
 
 test("policy and capability pages preserve their different authoritative defaults", () => {

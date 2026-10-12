@@ -1,0 +1,59 @@
+{
+  "formatVersion": 1,
+  "scope": "Reviewed outer/application dependency binding and staged recipe import closure",
+  "source": {
+    "head": "053e0282bbe24fe87f14c186d2a4970eae8f0269",
+    "dirty": true,
+    "inputFiles": 2373,
+    "archiveDigest": "sha256:0dc5ab6e00f1905d789d4b2cb8e6bb69e1cc667a0995936d121b9cae409f719c",
+    "allInputBytesVerifiedBeforeAndAfter": true,
+    "note": "Selected Python/SDK/WIT source archive included the common helper and Rust consumer source under development. This is source-control evidence, not a clean compiler build."
+  },
+  "environment": {
+    "image": "sha256:d768696e60b519fbc34e3c1f483ad7c2602f7480f74c1637597c59606909e952",
+    "python": "3.13.5",
+    "network": "none",
+    "cpus": 1,
+    "memoryBytes": 1073741824,
+    "testDeadlineSeconds": 180,
+    "container": "9b049fea067c9c91ca1cb9bbb1359cac67844c9f702acf09897b0ee132b38972",
+    "exitCode": 0,
+    "oomKilled": false
+  },
+  "results": {
+    "tests": 33,
+    "skips": 0,
+    "testSeconds": 11.685,
+    "modules": [
+      "tools.tests.test_guest_dependency_inputs",
+      "tools.tests.test_rust_application_dependencies",
+      "tools.tests.test_dev_tools.SelectedRecipeImports"
+    ],
+    "stagedLanguages": ["rust", "c", "java", "dotnet", "go", "typescript"],
+    "stagedExecution": "Actual isolated Python subprocesses verified reviewed outer descriptors and native locks, materialized real captured library bytes after original source deletion, read exact native projections and acquired authoring-state locks without importing the checkout.",
+    "negativeControls": [
+      "missing reviewed lock or stale declared trust",
+      "changed native original or missing/tampered CAS",
+      "descriptor, SDK or application-source mutation",
+      "inner capture ambiguity and wrong selected application",
+      "native projection collision, alias or reserved paths",
+      "changed native projection, descriptor or reviewed-lock mapping",
+      "missing staged descriptor module and checkout fallback",
+      "staged tampered CAS before materialization",
+      "reviewed executable inputs without isolated-stage approval"
+    ]
+  },
+  "retainedPriorAttempt": {
+    "container": "7e456f9ad4eb2462086bf94cd3a091536ccf468cf1c69047976ff96544b1c0d7",
+    "exitCode": 1,
+    "tests": 33,
+    "errors": 1,
+    "cause": "The source archive omitted crates/latent-component-bindings required by one unchanged Rust project-creation control. The second archive added that exact fixture and rust-toolchain.toml; no product behavior, test or deadline was changed."
+  },
+  "qualificationPending": [
+    "Each installed language compiler consumer on the integrated source",
+    "C authoring import/control replay on its newer integrated recipe",
+    "Actual signed normal-node library invocation and watch lifecycle",
+    "Complete acceptance for issues 678 and 682 through 687"
+  ]
+}

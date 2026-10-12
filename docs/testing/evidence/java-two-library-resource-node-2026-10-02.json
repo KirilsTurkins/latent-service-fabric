@@ -1,0 +1,534 @@
+{
+  "application": {
+    "capturedInputIdentity": "sha256:f865fe2e0b9ac6dcb77e50ee4b25879291785ea22dcb7728b23ebf6bb7e94b8e",
+    "capturedProjectAndCas": {
+      "bytes": 1525281,
+      "sha256": "eb2c0532b7665e222f2592131b38bc2358d8964367286516ff53f43e5fd7410a"
+    },
+    "capturedProjectAndCasFiles": 197,
+    "independentApplicationSelections": [
+      "org.apache.commons:commons-text:1.12.0",
+      "commons-codec:commons-codec:1.17.1"
+    ],
+    "nativeDependencyGraphDigest": "sha256:c209f738d31c8be36d143406b52816a9a33a44ef531c56f41a3eaf1a5709542f",
+    "newDeveloperOwnedSelection": {
+      "bytes": 1351,
+      "classInitializedOnBuildHost": false,
+      "coordinate": "outside.owner:arithmetic-proof:2026.10.02",
+      "javacRelease": 17,
+      "librarySourceChangedForLSF": false,
+      "originalDigest": "sha256:7691bfe7fbedf689b587fb360c047ec3c8b3bd401eb23d5b8e00ad8e5ce3e2be",
+      "sourceDigest": "sha256:553f0b88e2aceb70b1b04bba272a1eb7353fc62d1b6a9bd456fc510560410e8f"
+    },
+    "originalLocalJarDeletedBeforeOfflineBuild": true,
+    "resourceNames": 135,
+    "reviewedLockDigest": "sha256:7cf1fe0bf533185fe04504a83a029b56615257339851b5c23920b66ff33097d2",
+    "sdkLockDigest": "sha256:3055d6f61c2ff04eaffe1b30e51edf1084de0e9effcb2318375d105addfa53b2",
+    "selectedJars": {
+      "commons-codec:commons-codec:1.17.1": {
+        "bytes": 372687,
+        "digest": "sha256:f9f6cb103f2ddc3c99a9d80ada2ae7bf0685111fd6bffccb72033d1da4e6ff23"
+      },
+      "org.apache.commons:commons-lang3:3.14.0": {
+        "bytes": 657952,
+        "digest": "sha256:7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c"
+      },
+      "org.apache.commons:commons-text:1.12.0": {
+        "bytes": 251227,
+        "digest": "sha256:de023257ff166044a56bd1aa9124e843cd05dac5806cc705a9311f3556d5a15f"
+      },
+      "outside.owner:arithmetic-proof:2026.10.02": {
+        "bytes": 1351,
+        "digest": "sha256:7691bfe7fbedf689b587fb360c047ec3c8b3bd401eb23d5b8e00ad8e5ce3e2be"
+      }
+    },
+    "sourceChangedForLSF": false,
+    "sourceDigest": "sha256:bf90e50f9c2130f45f3062340c80fac505ecb758dc9c2938c9675cb057d0f6c5",
+    "transitiveSelection": "org.apache.commons:commons-lang3:3.14.0",
+    "unchangedCalls": [
+      "LevenshteinDistance.getDefaultInstance().apply",
+      "Hex.encodeHexString",
+      "StringUtils.reverse",
+      "Arithmetic.increment",
+      "Arithmetic.class.getResourceAsStream(\"badge.txt\")"
+    ]
+  },
+  "authoringSource": {
+    "commit": "bc8ccef61d70c30adbceb7ec32b116de6ba04b18",
+    "tree": "6b0d36a86dcae0265be7e2fdbfbe2c04e27f520a"
+  },
+  "build": {
+    "buildMarker": {
+      "bytes": 8706,
+      "sha256": "39cd83c119e1b65076994f4cf1955867aba09c55f74b28d9782e843210c87888"
+    },
+    "buildObservation": {
+      "bytes": 3474,
+      "sha256": "076eb5811fb322c6c4b3cfd78f020c967f5b7f1565c4451a4c84717d85d3e332"
+    },
+    "commandMaximumSeconds": 600,
+    "componentBytes": 2276453,
+    "componentDigest": "sha256:c8378485135f66d7489f3b510991959019b6dea146fc45a54c48ecf946aa8e21",
+    "contractsTool": {
+      "bytes": 4472456,
+      "digest": "sha256:746001d4681fd1b246faf23183c18e3d0db8187c9d86c26301c3fcb2e99070a4",
+      "sourceCommit": "ad84943bc54212404272a9707d9fda2b499ac26d"
+    },
+    "fullRecipeMaximumSeconds": 900,
+    "fullRecipeSeconds": 46.55703,
+    "immutableResourceIdentity": "sha256:78b00b48ecf9a7625eb0ea2f0736b73db92e2bd9fb85ad4915a8b5d9d9b4d77c",
+    "immutableResourceProfile": "java-immutable-classloader-v1",
+    "network": "none",
+    "originalDependencyCompleteness": "declared-inputs-incomplete",
+    "originalUnsignedHermeticClaim": false,
+    "packageAssembled": true,
+    "packager": {
+      "bytes": 14133128,
+      "digest": "sha256:9cbc5d4df321d67aad292ffb422cbb20667c99bd7b00a2d0d15d58945c886c9c",
+      "sourceCommit": "acb79889ff1ec6448fc33f9911203fafa21529d8"
+    },
+    "realPackageBuildAndInspect": true
+  },
+  "date": "2026-10-02",
+  "executionImage": "sha256:4b6db7a7c996a9a3d3fac8481858674a32fb958db6856b046bd5459bf6441e2c",
+  "inputSeals": {
+    "applicationFiles": 197,
+    "buildFiles": 294,
+    "nativeBinaries": 5,
+    "nodeHelperFiles": 734,
+    "rawResult": {
+      "bytes": 191420,
+      "sha256": "7ab0b6f0fd42b66f12b8627fcee586094b443957d4c9dbc395b13f579ba7fabd"
+    },
+    "signingInputsVerifiedAfter": true,
+    "terminalResult": {
+      "bytes": 707,
+      "sha256": "8e573b801d9b00338dbb4763c673470867b38248d5e0d31df84267ee7fc15b52"
+    },
+    "verifiedBeforeAndAfter": true
+  },
+  "language": "java",
+  "nativeAndNodeHelperSource": {
+    "binaries": {
+      "capsule_authoring": {
+        "bytes": 19342776,
+        "sha256": "7bddb57cd549eba58bd123306329d38cea3030ae69a6333b5f4e17999d9e73f7"
+      },
+      "capsule_contracts": {
+        "bytes": 7092904,
+        "sha256": "126823c1e61399838268d1fef6af420ed6926069d99567bf334fa3300be30000"
+      },
+      "latent": {
+        "bytes": 58818504,
+        "sha256": "ef3a3b8a7d33e382df7ec1bd816f0a4161b90b1a05d18a9d58785612c463de72"
+      },
+      "latentd": {
+        "bytes": 145996024,
+        "sha256": "5ff1a8f9495c2a9d689fab19e4bb3ad63ca4b4c89bf441eb28c21ce70da356ee"
+      },
+      "package": {
+        "bytes": 14133128,
+        "sha256": "9cbc5d4df321d67aad292ffb422cbb20667c99bd7b00a2d0d15d58945c886c9c"
+      }
+    },
+    "commit": "acb79889ff1ec6448fc33f9911203fafa21529d8",
+    "image": "sha256:8f7c460350512f11d0205403f34bbf78fac7a8c9b425bbf1e34510585edb04c5",
+    "producer": "latent-sdk-networking-acb-normal-native-20261002-r4",
+    "tree": "3d688b010d5a4217801d65ee3f85e3cbc957bc15"
+  },
+  "node": {
+    "authorityDenials": [
+      {
+        "activation": "java-library-grant-denied",
+        "cpuFuel": 0,
+        "decoded": null,
+        "elapsedNanos": "2866279549",
+        "exitCode": 4,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 0,
+        "physicalProcessReaped": true,
+        "platformCode": "permission-denied",
+        "retryable": false,
+        "wallTimeMicros": 2732574
+      },
+      {
+        "activation": "java-resource-grant-withdrawn",
+        "cpuFuel": 0,
+        "decoded": null,
+        "elapsedNanos": "155706526",
+        "exitCode": 4,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 0,
+        "physicalProcessReaped": true,
+        "platformCode": "permission-denied",
+        "retryable": false,
+        "wallTimeMicros": 1185
+      }
+    ],
+    "automaticGrants": false,
+    "capabilities": [
+      "latent:clock/monotonic@0.1.0",
+      "latent:clock/wall@0.1.0"
+    ],
+    "cleanNormalShutdown": true,
+    "containerExitCode": 0,
+    "containerSeconds": 35.479817,
+    "dormantAndReclamationObservations": 14,
+    "effectsOutboundChildStateBlobAndLogBytes": 0,
+    "freshSuccessAfterDenial": true,
+    "guestBudget": {
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "childCalls": 0,
+      "cpuFuel": 1000000000,
+      "effectCount": 0,
+      "logBytes": 0,
+      "memoryBytes": 67108864,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "wallTimeLimitMillis": 120000
+    },
+    "normalDeleteAndZeroDeployments": true,
+    "normalStrictSignerAndAdmission": true,
+    "oomKilled": false,
+    "physicalNodeAndInvocationReaping": true,
+    "providerIdleObservations": 11,
+    "qualificationSeconds": 26.847431,
+    "requiredRetiredProviderCounters": [
+      "broker_sessions",
+      "broker_handles",
+      "broker_calls",
+      "broker_results",
+      "broker_buffer_bytes",
+      "pool_active_connections",
+      "pool_connecting_connections",
+      "pool_pending_requests",
+      "pool_running_requests",
+      "pool_workers",
+      "pool_cleanup_jobs",
+      "io_calls",
+      "io_occupied_running_slots",
+      "io_queued_calls",
+      "io_staged_bytes",
+      "io_result_bytes",
+      "io_buffers",
+      "io_streams"
+    ],
+    "serviceResidentApplicationOwners": 0,
+    "shutdownReport": {
+      "activeActivations": 0,
+      "activeBackendInvocations": 0,
+      "activeConnections": 0,
+      "activeControlJobs": 0,
+      "activeLeases": 0,
+      "activeRpcs": 0,
+      "audit": {
+        "pendingAttempts": 0,
+        "previousSessionLossUnknown": false,
+        "queryBytes": 0,
+        "queryOwners": 0,
+        "queuedOperations": 0,
+        "recoveryPending": false,
+        "reservedRecords": 0,
+        "stageBytes": 0,
+        "unknownOutcomes": 0,
+        "workerJoined": true
+      },
+      "cancellationRegistrations": 0,
+      "clean": true,
+      "cleanup": {
+        "accepting": false,
+        "capacity": 3,
+        "completed": 0,
+        "driverAlive": false,
+        "driverJoined": true,
+        "failed": false,
+        "fallbacks": 0,
+        "handoffs": 0,
+        "panicked": 0,
+        "queued": 0,
+        "reserved": 0,
+        "running": 0,
+        "timedOut": 0
+      },
+      "compiler": {
+        "accepting": false,
+        "assigned_jobs": 0,
+        "cancelled_waiters": 0,
+        "coalesced_waiters": 0,
+        "discarded_results": 0,
+        "failed": false,
+        "jobs_abandoned": 0,
+        "jobs_completed": 1,
+        "jobs_failed": 0,
+        "jobs_started": 1,
+        "maximum_document_bytes": 5308416,
+        "maximum_jobs": 1,
+        "maximum_queued_jobs": 0,
+        "maximum_ready_preparations": 3,
+        "maximum_waiters": 3,
+        "maximum_waiters_per_job": 3,
+        "maximum_workers": 1,
+        "queue_rejected": 0,
+        "queued_jobs": 0,
+        "ready_compiled_image_bytes": 0,
+        "ready_metadata_bytes": 0,
+        "ready_preparations": 0,
+        "ready_rejected": 0,
+        "reserved_document_bytes": 0,
+        "running_jobs": 0,
+        "waiter_rejected": 0,
+        "waiting_callers": 0,
+        "workers_joined": 1,
+        "workers_live": 0,
+        "workers_quiescent": 1
+      },
+      "epochHelperJoined": true,
+      "instanceReservations": 0,
+      "liveCancellationProbes": 0,
+      "liveHostStates": 0,
+      "liveInstances": 0,
+      "liveStores": 0,
+      "liveTemporaryBuffers": 0,
+      "observerCorrelations": 0,
+      "policies": {
+        "activeJobs": 0,
+        "retainedReadOwners": 0,
+        "workCompleted": true
+      },
+      "preparingComponents": 0,
+      "preparingMetadataBytes": 0,
+      "preparingSourceBytes": 0,
+      "providers": {
+        "blobHandles": 0,
+        "blobStages": 0,
+        "blobWork": 0,
+        "calls": 0,
+        "clean": true,
+        "cleanupJobs": 0,
+        "connections": 0,
+        "controlOwners": 0,
+        "failedCleanup": 0,
+        "handles": 0,
+        "ioCalls": 0,
+        "ioRetainedBytes": 0,
+        "pendingRequests": 0,
+        "results": 0,
+        "runningRequests": 0,
+        "secretGenerations": 0,
+        "secretReferences": 0,
+        "sessions": 0,
+        "workers": 0
+      },
+      "quarantinedCells": 0,
+      "queuedActivations": 0,
+      "queuedReservations": 0,
+      "quotaReservations": 0,
+      "reservedCpuFuel": 0,
+      "reservedMemoryBytes": 0,
+      "rollouts": {
+        "activeCommands": 0,
+        "canary": {
+          "liveSamples": 0,
+          "retainedSamples": 0,
+          "retainedWindows": 0,
+          "snapshotOwners": 0
+        },
+        "failed": false,
+        "queuedCommands": 0,
+        "responseBytes": 0,
+        "responseOwners": 0,
+        "retainedRequestBytes": 0,
+        "workerJoined": true,
+        "workerLive": false
+      },
+      "telemetryFlushed": true,
+      "telemetryRetainedEntries": 425
+    },
+    "signedPackageDigest": "sha256:38b4c8cf9a8c46bff30bffaad15faab0bfeb850b85c5bb073cde0a51c1ed890b",
+    "successfulInvocations": [
+      {
+        "activation": "java-library-0-0",
+        "cpuFuel": 9574838,
+        "decoded": [
+          {
+            "ok": "42/53444b/KDS"
+          }
+        ],
+        "elapsedNanos": "208055696",
+        "exitCode": 0,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 10616832,
+        "physicalProcessReaped": true,
+        "wallTimeMicros": 31894
+      },
+      {
+        "activation": "java-library-0-1",
+        "cpuFuel": 9574838,
+        "decoded": [
+          {
+            "ok": "42/416461/adA"
+          }
+        ],
+        "elapsedNanos": "255004454",
+        "exitCode": 0,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 10616832,
+        "physicalProcessReaped": true,
+        "wallTimeMicros": 16434
+      },
+      {
+        "activation": "java-library-0-2",
+        "cpuFuel": 9506972,
+        "decoded": [
+          {
+            "ok": "private captured resource\n"
+          }
+        ],
+        "elapsedNanos": "171141887",
+        "exitCode": 0,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 10616832,
+        "physicalProcessReaped": true,
+        "wallTimeMicros": 12214
+      },
+      {
+        "activation": "java-library-1-0",
+        "cpuFuel": 9574838,
+        "decoded": [
+          {
+            "ok": "42/53444b/KDS"
+          }
+        ],
+        "elapsedNanos": "171430568",
+        "exitCode": 0,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 10616832,
+        "physicalProcessReaped": true,
+        "wallTimeMicros": 14264
+      },
+      {
+        "activation": "java-library-1-1",
+        "cpuFuel": 9574838,
+        "decoded": [
+          {
+            "ok": "42/416461/adA"
+          }
+        ],
+        "elapsedNanos": "192450310",
+        "exitCode": 0,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 10616832,
+        "physicalProcessReaped": true,
+        "wallTimeMicros": 17120
+      },
+      {
+        "activation": "java-library-1-2",
+        "cpuFuel": 9506972,
+        "decoded": [
+          {
+            "ok": "private captured resource\n"
+          }
+        ],
+        "elapsedNanos": "171411777",
+        "exitCode": 0,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 10616832,
+        "physicalProcessReaped": true,
+        "wallTimeMicros": 13988
+      },
+      {
+        "activation": "java-library-2-0",
+        "cpuFuel": 9574838,
+        "decoded": [
+          {
+            "ok": "42/53444b/KDS"
+          }
+        ],
+        "elapsedNanos": "160778477",
+        "exitCode": 0,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 10616832,
+        "physicalProcessReaped": true,
+        "wallTimeMicros": 11150
+      },
+      {
+        "activation": "java-library-2-1",
+        "cpuFuel": 9574838,
+        "decoded": [
+          {
+            "ok": "42/416461/adA"
+          }
+        ],
+        "elapsedNanos": "187305768",
+        "exitCode": 0,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 10616832,
+        "physicalProcessReaped": true,
+        "wallTimeMicros": 12625
+      },
+      {
+        "activation": "java-library-2-2",
+        "cpuFuel": 9506972,
+        "decoded": [
+          {
+            "ok": "private captured resource\n"
+          }
+        ],
+        "elapsedNanos": "166403675",
+        "exitCode": 0,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 10616832,
+        "physicalProcessReaped": true,
+        "wallTimeMicros": 12504
+      },
+      {
+        "activation": "java-resource-fresh-recovery",
+        "cpuFuel": 9506972,
+        "decoded": [
+          {
+            "ok": "private captured resource\n"
+          }
+        ],
+        "elapsedNanos": "176643414",
+        "exitCode": 0,
+        "outcomeKnown": true,
+        "peakMemoryBytes": 10616832,
+        "physicalProcessReaped": true,
+        "wallTimeMicros": 12185
+      }
+    ],
+    "trust": "isolated-short-lived-demo-only"
+  },
+  "publicCompilerClosure": {
+    "compilerClosureDigest": "sha256:e9e1a750e16700f4d9be37bdb876adfb39e28cb377ba2a9651f2b4a7da0e14ed",
+    "gradle": "9.1.0",
+    "jdk": "25.0.4.1+1",
+    "rootsDigest": "sha256:a64f1218076f1977961e4decec56415968d0c3514c14035cc20af027d656b0fd",
+    "teavm": "0.15.0",
+    "toolCaptureSource": "4c817c05",
+    "toolchainInputsDigest": "sha256:90084065888bd8044720b7c6c4319af94ff429d45976ab38e2730d687beb2250",
+    "wasiSdk": "29.0",
+    "wasmTools": "1.254.0",
+    "witBindgen": "0.62.0"
+  },
+  "remainingQualification": [
+    "full published and installed frontend authoring/test/watch lifecycle",
+    "private credential positive and negative controls",
+    "approved isolated processor/generator qualification",
+    "complete duplicate, multi-release, module, service, shading and hostile archive controls",
+    "full memory/fuel/exception/cancellation and unchanged library runtime matrix",
+    "other resource APIs and all six language evidence",
+    "hosted exact-head CI and squash-admin merge"
+  ],
+  "retainedEarlierAttempts": {
+    "compilerOnlyR6": "genuine packageAssembled=false receipt preserved; never signed",
+    "normalNodeR1": "known zero-work PermissionDenied; private elapsed wall time assertion incorrectly required zero",
+    "normalNodeR2Change": "private harness separates zero work counters from bounded elapsed wallTimeMicros",
+    "originalJavaResourceCompilerFailure": "unsupported TeaVM JavaScript-native ClassLoader resource methods"
+  },
+  "schemaVersion": "lsf.sdk.application-dependency.qualification.v1",
+  "scope": "source-owned contributor build with explicitly attributed independently qualified native tools",
+  "status": "passed-bounded-two-library-resource-signed-node-controls"
+}

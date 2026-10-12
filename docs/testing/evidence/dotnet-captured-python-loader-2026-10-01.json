@@ -1,0 +1,148 @@
+{
+  "formatVersion": 1,
+  "observedAt": "2026-10-01T20:28:48.546078+00:00",
+  "status": "focused-captured-loader-qualified",
+  "issue": 687,
+  "source": {
+    "base": "17f9ec9a95894455dbafc8cf62e080fa72b7db6b",
+    "commonRepairCommit": "7fedc994461bc3dd7beb43a319cfa95c52539c5c",
+    "files": {
+      "tools/captured_compiler_isolation.py": "e55d62eaa8948b154b6406b7e37f5f5fd3f6f6e6e4024b1a4d24c3a615e805e7",
+      "tools/dotnet_compiler_isolation.py": "37beb4959610d402c94f715dc559c2553875bda0ccca70d70d90da1f6f221565",
+      "tools/tests/test_captured_compiler_isolation.py": "27b4b98386f17a615c3bcea0f19debf06cf59604061f7f5ef155849a2b69074f"
+    }
+  },
+  "originalCiFailure": {
+    "runId": 36915146941,
+    "jobId": 110547175811,
+    "head": "17f9ec9a95894455dbafc8cf62e080fa72b7db6b",
+    "stage": "application-dependency-capture",
+    "code": "compiler-runtime-library-outside-system-root",
+    "logSha256": "266fbe5ba65558dee8b2acc375ab2023da2306c18c85cb81fb5db617bea035af",
+    "preserved": true
+  },
+  "artifact": {
+    "id": 11190341838,
+    "size": 1168128250,
+    "githubDigest": "sha256:c23dedf78aec0f12fb381fd9bb3b013ae873d6fc2e59813a4533661c7845b24e",
+    "inspection": "bounded authenticated ZIP range reads with per-member CRC validation",
+    "executable": {
+      "member": "dotnet-capsule-dependencies/projects/captured-dotnet-tools/python/bin/python",
+      "sha256": "9cf89c50189de85411dd34b0f0ec5daaab41bf6cd447628572defe3b3ffd0a04",
+      "size": 17752,
+      "dynamicTags": [
+        {
+          "tag": 1,
+          "kind": "NEEDED",
+          "value": "libpython3.13.so.1.0"
+        },
+        {
+          "tag": 1,
+          "kind": "NEEDED",
+          "value": "libc.so.6"
+        },
+        {
+          "tag": 29,
+          "kind": "RUNPATH",
+          "value": "/opt/hostedtoolcache/Python/3.13.5/x64/lib"
+        }
+      ]
+    },
+    "library": {
+      "member": "dotnet-capsule-dependencies/projects/captured-dotnet-tools/python/lib/libpython3.13.so.1.0",
+      "sha256": "0a7f60222bc0c8af1d5f8f629aaa43db11fca68a201e098d965efc5134e8538b",
+      "size": 30506400
+    }
+  },
+  "runtimeProbe": {
+    "observed": {
+      "artifactId": 11190341838,
+      "binarySha256": "9cf89c50189de85411dd34b0f0ec5daaab41bf6cd447628572defe3b3ffd0a04",
+      "librarySha256": "0a7f60222bc0c8af1d5f8f629aaa43db11fca68a201e098d965efc5134e8538b",
+      "libraryBytes": 30506400,
+      "baselineFailure": "compiler-runtime-library-outside-system-root",
+      "originalLibraryDeletedBeforeExecution": true,
+      "namespaceOutput": "42 (3, 13, 5)",
+      "loaderSelection": [
+        {
+          "distribution": "compiler-python-stdlib",
+          "path": "lib"
+        }
+      ],
+      "loaderLibraryCapturedByDistribution": true,
+      "sourceRecheckPassed": true
+    },
+    "execution": {
+      "image": "sha256:d768696e60b519fbc34e3c1f483ad7c2602f7480f74c1637597c59606909e952",
+      "container": "b903606a77197c2123c1f1dd9f4eaa34580cd5311ec3e7884ae0f84e49a05296",
+      "started": "2026-10-01T20:28:45.325280+00:00",
+      "completed": "2026-10-01T20:28:48.546078+00:00",
+      "originalHarnessTimeoutSeconds": 90,
+      "returnCode": 0,
+      "timedOut": false,
+      "actualExit": 0,
+      "oomKilled": false,
+      "stdoutSha256": "fb5d5cd7d554203b63d8b69122a74961bbcc88daffe88e4f12d588d0809217c5",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "driver": "dotnet-captured-python-loader-2026-10-01-driver.txt",
+    "driverSha256": "8bcc71d3c79494e1542407b26d2e81b884b967ab712757165dee70d3fc1445de",
+    "stdlib": "Captured maintained diagnostic Python3.13.5 standard library without site-packages, dist-packages or pycache",
+    "firstDiagnosticSetupFailure": {
+      "execution": {
+        "image": "sha256:d768696e60b519fbc34e3c1f483ad7c2602f7480f74c1637597c59606909e952",
+        "container": "05745f8e302ba5a24429acdefd8d21737ff4a879123c7de93df78fec10eb84c0",
+        "started": "2026-10-01T20:27:42.353501+00:00",
+        "completed": "2026-10-01T20:27:44.890695+00:00",
+        "originalHarnessTimeoutSeconds": 90,
+        "returnCode": 1,
+        "timedOut": false,
+        "actualExit": 1,
+        "oomKilled": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "baad6aa9e177fe1d57c9d73e6ee49e3b0e5b2df7527201fae0988e873a6bb9da"
+      },
+      "message": "ModuleNotFoundError: No module named linecache",
+      "reason": "Initial diagnostic fixture captured only encodings; the full SDK staging recipe already captures the complete standard library."
+    }
+  },
+  "regressions": {
+    "total": 47,
+    "capturedCompilerCases": 12,
+    "nugetCases": 35,
+    "failures": 0,
+    "skips": 0,
+    "execution": {
+      "image": "sha256:d768696e60b519fbc34e3c1f483ad7c2602f7480f74c1637597c59606909e952",
+      "container": "1c0972bbebfc1211d467dc9b3e7d5a3ec2fa819960cf1c2c88aeff96a6f20c07",
+      "sourceBase": "17f9ec9a95894455dbafc8cf62e080fa72b7db6b",
+      "started": "2026-10-01T20:23:29.811151+00:00",
+      "completed": "2026-10-01T20:23:49.447046+00:00",
+      "originalHarnessTimeoutSeconds": 180,
+      "returnCode": 0,
+      "timedOut": false,
+      "actualExit": 0,
+      "oomKilled": false,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "203dcd1c3b4840132cfe7b020d504f8a9bdf7704e19a3346abde2037f7064661"
+    },
+    "historicalNamespaceCasesPreserved": 9,
+    "historicalGuardsIdentical": true,
+    "newControls": [
+      "captured loader bytes execute through bubblewrap with caller LD_LIBRARY_PATH discarded and receipt identity preserved after relocation",
+      "uncaptured, duplicate and more than eight loader directories rejected",
+      "changed captured library bytes rejected before reuse"
+    ]
+  },
+  "policy": {
+    "maximumLoaderDirectories": 8,
+    "directoryOwners": "Only already hashed selected compiler distributions",
+    "loaderObservationMatchesNamespace": true,
+    "originalSystemRootRestrictionPreserved": true,
+    "credentialAndNetworkPoliciesPreserved": true
+  },
+  "limitations": [
+    "This qualifies loader observation and real namespace execution of the actual CI Python executable and library; full post-repair NativeAOT, signing and node CI is pending.",
+    "This does not close issue687 or qualify Task, ThreadPool or default HttpClient."
+  ]
+}

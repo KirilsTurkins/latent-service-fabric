@@ -7,13 +7,61 @@ import time
 
 from tools.phase2_operator_process import (
     write_selected_deployment,
-    Process, file_digest, read_json, require, stopped_record, write_candidate_manifest, write_json,
+    Process, failed_call_record, file_digest, read_json, require, stopped_record, write_candidate_manifest, write_json,
 )
 from tools.phase2_operator_canary import invoke, positive_canary, rollback_target
 
 TOKEN = "LSF-PUBLIC-OPERATOR-WORKFLOW-TEST-ONLY"
 DENIED_TOKEN = "LSF-PUBLIC-WRONG-NODE-TOKEN-TEST-ONLY"
 NODE_ID = "operator-workflow-test"
+
+
+def inspect_deadline_operation(client, attempted):
+    """Inspect one uncertain operation without replaying its mutation.
+
+    A cancelled apply can still own the sole control dispatch slot until its
+    future retires. Only the existing untyped capacity signature permits another
+    read; typed platform failures and other transport failures remain fatal.
+    """
+    original = failed_call_record(attempted, client.calls, client.last_exit_status)
+    observation = {"originalApply": original, "rejectedReads": [], "lookupReturned": False,
+                   "maximumReadAttempts": 64, "inspectionBudgetMillis": 5000}
+    client.deadline_inspection = observation
+    deadline = min(client.deadline, time.monotonic() + 5)
+
+    def available(condition, reason):
+        if not condition and observation["rejectedReads"] and client.failed_call is None:
+            client.failed_call = observation["rejectedReads"][-1]
+        require(condition, reason)
+
+    for _ in range(64):
+        client.cancellation.check()
+        remaining = deadline - time.monotonic()
+        available(remaining > 0, "deadline-lookup-read-budget")
+        value = client.call("deployment", "operation", "deadline-inspect", codes=(0, 5), timeout=remaining)
+        if client.last_exit_status == 0:
+            available(time.monotonic() < deadline, "deadline-lookup-read-budget")
+            require(value.get("command") == "deployment operation", "deadline-lookup-command")
+            observation["lookupReturned"] = True
+            return value
+        rejected = failed_call_record(value, client.calls, 5)
+        error = value.get("error")
+        capacity = (client.last_exit_status == 5 and value.get("command") == "deployment operation"
+                    and value["category"] == "transport-failure"
+                    and value.get("outcomeKnown") is False and value.get("requestDispatched") is True
+                    and isinstance(error, dict) and error.get("code") == "rpc-failed"
+                    and error.get("grpcCode") == "resource-exhausted"
+                    and "details" not in error and value["data"] == {})
+        if not capacity:
+            if client.failed_call is None:
+                client.failed_call = rejected
+            require(False, "deadline-lookup-not-dispatch-capacity")
+        observation["rejectedReads"].append(rejected)
+        client.cancellation.check()
+        remaining = deadline - time.monotonic()
+        available(remaining > 0, "deadline-lookup-read-budget")
+        time.sleep(min(0.025, remaining))
+    available(False, "deadline-lookup-read-attempts")
 
 
 def configure_node(directory, fixture, tenant):
@@ -236,13 +284,14 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
 
         canary_counts = positive_canary(client, metadata, input_path, green, summaries, receipt, change)
 
-        # An intentionally tiny transport deadline is not a retry policy. Inspect
-        # the exact operation afterward whether this machine completed or timed out.
+        # Apply exactly once with a tiny transport deadline, then inspect that
+        # operation whether this machine completed or timed out. Only inspection
+        # reads can wait for the cancelled control future's physical retirement.
         snapshot = client.call("deployment", "get", "blue", "--operation-snapshot")["data"]
         attempted = client.call("--rpc-timeout-ms", "1", "deployment", "apply", blue,
                                 "--operation-id", "deadline-inspect", "--expected-state-version", snapshot["stateVersion"],
                                 "--expected-generation", snapshot["deployment"]["generation"], codes=(0, 4, 5))
-        inspected = client.call("deployment", "operation", "deadline-inspect")
+        inspected = inspect_deadline_operation(client, attempted)
         require(inspected["outcomeKnown"] == (inspected["data"]["receipt"] is not None), "deadline-lookup-certainty")
         # No assertion fabricates a committed or rejected receipt for Unknown.
         require(attempted["category"] in ("success", "platform-failure", "transport-failure"), "deadline-category")
@@ -299,7 +348,8 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
                 "revocationReceipt": revoked, "revocationStatus": status,
                 "initialInvocation": initial_pin, "routeBeforeRestart": route_identity(stable_route),
                 "routeAfterRestart": route_identity(recovered_route),
-                "deadlineOperationLookup": inspected["data"], "shutdown": shutdown}
+                "deadlineOperationLookup": inspected["data"],
+                "deadlineOperationInspection": client.deadline_inspection, "shutdown": shutdown}
     finally:
         client.node = None
         if node is not None:

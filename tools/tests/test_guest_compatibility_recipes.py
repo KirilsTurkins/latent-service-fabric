@@ -111,7 +111,9 @@ class AdvertisedRecipeDistribution(unittest.TestCase):
         source, payload = root / "source", root / "payload"
         source.mkdir()
         payload.mkdir()
-        names = {*go_capsule_build.RECIPE, "tools/dev_guest_recipe.py", "tools/dev_guest_tools.py",
+        names = {*go_capsule_build.RECIPE, *dev_tool_distribution.FRONTEND_DEPENDENCY_RECIPE,
+                 *dev_tool_distribution.AUTHORING_FRONTEND_RECIPE,
+                 "tools/dev_guest_recipe.py", "tools/dev_guest_tools.py",
                  "tools/dev_workflow/__init__.py", "tools/dev_workflow/common.py", "tools/dev_workflow/paths.py",
                  "tools/dev_managed_tools.py", "examples/echo-contract/capsule.json",
                  "examples/echo-contract/deployment.json", build.HOST_MANIFESTS[profile]}

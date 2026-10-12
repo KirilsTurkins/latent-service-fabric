@@ -104,6 +104,12 @@ impl PolicyStore {
         check_deadline(deadline)?;
         let _fence = self.owner.fence.try_write().map_err(|_| unavailable())?;
         self.owner.check()?;
+        // Acceptance closes affected original installations before the first
+        // filesystem mutation. The lower-layer metadata lock is already gone
+        // when persistence starts; failed/uncertain persistence cannot reopen it.
+        self.owner.rejection.reject(
+            latent_core::authority_rejection::AuthorityRejection::PolicyTenant(request.tenant),
+        )?;
         if let Err(error) = state.persist(&bytes, revision) {
             self.owner.poison();
             return Err(error);

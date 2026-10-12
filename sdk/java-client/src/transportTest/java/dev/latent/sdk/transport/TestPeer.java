@@ -26,6 +26,8 @@ import latent.control.v1.PolicyOuterClass;
 import latent.control.v1.PolicyServiceGrpc;
 import latent.control.v1.Capability;
 import latent.control.v1.CapabilityServiceGrpc;
+import latent.control.v1.Node;
+import latent.control.v1.NodeServiceGrpc;
 
 @SuppressWarnings("deprecation")
 final class TestPeer implements AutoCloseable {
@@ -64,10 +66,22 @@ final class TestPeer implements AutoCloseable {
                 .directExecutor().maxInboundMessageSize(1048576)
                 .addService(ServerInterceptors.intercept(new Invocations(), auth))
                 .addService(ServerInterceptors.intercept(new Policies(), auth))
-                .addService(ServerInterceptors.intercept(new Capabilities(), auth)).build().start();
+                .addService(ServerInterceptors.intercept(new Capabilities(), auth))
+                .addService(ServerInterceptors.intercept(new Nodes(), auth)).build().start();
     }
 
     String endpoint() { return "http://127.0.0.1:" + server.getPort(); }
+
+    final class Nodes extends NodeServiceGrpc.NodeServiceImplBase {
+        @Override public void inspectHttpTarget(Node.InspectHttpTargetRequest request, StreamObserver<Node.InspectHttpTargetResponse> observer) {
+            var candidate = Node.TargetCandidate.newBuilder().setDeploymentId("deployment-a").setRevisionId(request.getFunction().equals("drift") ? "revision-b" : "revision-a")
+                .setComponentDigest(DIGEST).addReasonsValue(777).setPreparation(Node.TargetPreparation.newBuilder().setStateValue(request.getFunction().equals("unmeasured") ? 1 : request.getFunction().equals("future") ? 779 : request.getIncludePreparation() ? 3 : 4));
+            if (request.hasPublication()) candidate.setPublication(request.getPublication()).setRequestedPublication(request.getPublication());
+            reply(observer,Node.InspectHttpTargetResponse.newBuilder().setSchemaVersion(1).setTenant(request.getFunction().equals("foreign") ? "foreign" : "tenant-a")
+                .setService(request.getService()).setContract(request.getContract()).setFunction(request.getFunction()).setRoute(request.hasRoute() ? request.getRoute() : "default")
+                .setStateValue(request.getFunction().equals("future") ? 777 : 1).setCatalogTransaction(-1).setRouteGeneration(-1).setBindingGeneration(-1).addCandidates(candidate).build());
+        }
+    }
     RpcClient client() { return new RpcClient(ClientConfig.loopback(endpoint(), "tenant-a", "test-only-java-token")); }
 
     static <Value> void reply(StreamObserver<Value> observer, Value value) { observer.onNext(value); observer.onCompleted(); }

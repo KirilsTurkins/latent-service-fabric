@@ -15,6 +15,7 @@ mod publication;
 mod publication_management;
 mod raw_cache;
 mod retained_package;
+mod selected_transaction_asset;
 mod verification_statistics;
 mod verified_metadata;
 #[cfg(feature = "development-test-host")]
@@ -23,6 +24,10 @@ pub mod web;
 pub use publication::PublicationRef;
 pub use publication_management::PublicationOperationReceipt;
 pub use retained_package::{RetainedPackageParts, RetainedPackageSource};
+pub use selected_transaction_asset::{
+    SelectedTransactionAsset, SelectedTransactionAssetParts, TRANSACTION_ASSET_RESPONSE_BYTES,
+    TRANSACTION_ASSET_WORK_BYTES,
+};
 
 pub use audit::{
     reconcile_release_audit, AuditedAdmissionAuthority, ReleaseAuditAck, ReleaseAuditGuard,
@@ -137,6 +142,14 @@ pub struct ArtifactCatalogEntry {
     pub service: ServiceId,
     pub semantic_version: String,
     pub world: ContractId,
+}
+
+/// Fixed-size publication identity facts. No raw metadata or mutable authority.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PublicationInspectionIdentity {
+    pub component: ReleaseDigest,
+    pub package: Option<latent_core::PackageDigest>,
+    pub kind: Option<package::PackageKind>,
 }
 
 /// The tenant comes from the authenticated adapter, independently of the opaque cursor.

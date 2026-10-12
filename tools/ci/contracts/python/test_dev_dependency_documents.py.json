@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "CapturedDependencyDocuments.test_capture_byte_package_and_closure_limits_remain_enforced",
+    "CapturedDependencyDocuments.test_generic_controller_depth_and_item_limits_are_unchanged",
+    "CapturedDependencyDocuments.test_malformed_duplicate_nonfinite_and_over_nested_capture_documents_are_rejected",
+    "CapturedDependencyDocuments.test_native_rust_capture_above_control_item_limit_binds_and_verifies_offline"
+  ],
+  "guards": {
+    "CapturedDependencyDocuments.test_capture_byte_package_and_closure_limits_remain_enforced": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98e5eac7f4018029081a6cf8496eb4ac2833fa7b37f79180bb85cdeea2801a24",
+        "class:setup-sha256:be60280665a75b5e33b9d402e3217c3c65f54a78a202fbcc1cb19913a799c0be"
+      ],
+      "skipSites": []
+    },
+    "CapturedDependencyDocuments.test_generic_controller_depth_and_item_limits_are_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98e5eac7f4018029081a6cf8496eb4ac2833fa7b37f79180bb85cdeea2801a24",
+        "class:setup-sha256:be60280665a75b5e33b9d402e3217c3c65f54a78a202fbcc1cb19913a799c0be"
+      ],
+      "skipSites": []
+    },
+    "CapturedDependencyDocuments.test_malformed_duplicate_nonfinite_and_over_nested_capture_documents_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98e5eac7f4018029081a6cf8496eb4ac2833fa7b37f79180bb85cdeea2801a24",
+        "class:setup-sha256:be60280665a75b5e33b9d402e3217c3c65f54a78a202fbcc1cb19913a799c0be"
+      ],
+      "skipSites": []
+    },
+    "CapturedDependencyDocuments.test_native_rust_capture_above_control_item_limit_binds_and_verifies_offline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98e5eac7f4018029081a6cf8496eb4ac2833fa7b37f79180bb85cdeea2801a24",
+        "class:setup-sha256:be60280665a75b5e33b9d402e3217c3c65f54a78a202fbcc1cb19913a799c0be"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_dependency_documents.py",
+  "reviewReason": "Protect the maintained native capture decoder profile and its unchanged byte package closure and malformed input limits",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

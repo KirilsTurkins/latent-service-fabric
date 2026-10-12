@@ -242,7 +242,8 @@ def main():
                        "stage": stage, "failedCall": client.failed_call if client is not None else None,
                        "build": build, "collectorDigests": collectors,
                        "policyFileDigest": policy_digest, "fixtureMetadataDigest": metadata_digest,
-                       "identityRechecked": False, "nodeShutdown": "unverified"}
+                       "identityRechecked": False, "nodeShutdown": "unverified",
+                       "deadlineOperationInspection": getattr(client, "deadline_inspection", None)}
             print(bounded_receipt(failure))
         except Exception:
             # A broken receipt sink must not replace the original failure.

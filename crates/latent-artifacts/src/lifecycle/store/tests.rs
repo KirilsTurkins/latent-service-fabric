@@ -1,5 +1,7 @@
 use super::*;
 mod readers;
+#[cfg(unix)]
+mod rejection;
 
 // Small test fixtures name their single publication by component. Production
 // lifecycle access uses exact publication IDs and owns no component index.
@@ -183,9 +185,9 @@ mod durable {
     use super::*;
     use std::sync::atomic::{AtomicU64, Ordering};
     static NEXT: AtomicU64 = AtomicU64::new(0);
-    struct Root(PathBuf);
+    pub(super) struct Root(PathBuf);
     impl Root {
-        fn new() -> Self {
+        pub(super) fn new() -> Self {
             let root = std::env::temp_dir().join(format!(
                 "lsf-lifecycle-{}-{}",
                 std::process::id(),
@@ -194,7 +196,7 @@ mod durable {
             std::fs::create_dir(&root).unwrap();
             Self(root)
         }
-        fn path(&self) -> PathBuf {
+        pub(super) fn path(&self) -> PathBuf {
             self.0.join("lifecycle")
         }
     }
@@ -204,14 +206,14 @@ mod durable {
             std::fs::remove_dir_all(&self.0).unwrap();
         }
     }
-    fn open(
+    pub(super) fn open(
         root: &Root,
         baseline: &[LifecycleIdentity],
         limits: LifecycleLimits,
     ) -> LifecycleStore {
         LifecycleStore::open(&root.path(), limits, None, baseline).unwrap()
     }
-    fn commit(
+    pub(super) fn commit(
         store: &LifecycleStore,
         receipt: ReleaseOperationReceipt,
         identity: Option<LifecycleIdentity>,

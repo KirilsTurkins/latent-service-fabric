@@ -27,7 +27,7 @@ use crate::{
 };
 use assignment::PendingAssignment;
 pub use assignment::ScheduledActivation;
-use state::{ClassState, Entry, Inner, Registration, State, WaitRegistration};
+use state::{ClassState, DispatchTurn, Entry, Inner, Registration, State, WaitRegistration};
 
 /// Capability supplied by the activation lifecycle owner. Implementations must
 /// observe and request cancellation in that owner's existing registry, with
@@ -153,7 +153,6 @@ impl LocalScheduler {
                 config,
                 quotas,
                 pools,
-                dispatch: Mutex::new(()),
                 state: Mutex::new(State {
                     classes,
                     live: BTreeMap::new(),
@@ -278,6 +277,19 @@ impl LocalScheduler {
         request: AdmittedSchedulingRequest,
         sender: oneshot::Sender<Result<PendingAssignment, PlatformError>>,
     ) -> Result<u64, PlatformError> {
+        self.register_owned_request(class, request, sender, false)
+            .map(|(sequence, _)| sequence)
+    }
+
+    /// An immediate request owns its fair pass before the queue becomes
+    /// visible to another pump; no caller waits for a competing publication.
+    fn register_owned_request(
+        &self,
+        class: CellClass,
+        request: AdmittedSchedulingRequest,
+        sender: oneshot::Sender<Result<PendingAssignment, PlatformError>>,
+        immediate: bool,
+    ) -> Result<(u64, Option<DispatchTurn>), PlatformError> {
         let mut state = self.inner.lock();
         if state.shutdown {
             return Err(error(PlatformErrorCode::Unavailable, "shutdown"));
@@ -290,6 +302,13 @@ impl LocalScheduler {
             ));
         }
         let queue = state.classes.get_mut(&class).expect("configured class");
+        if immediate && queue.dispatching {
+            queue.counters.rejected = queue.counters.rejected.saturating_add(1);
+            return Err(error(
+                PlatformErrorCode::ResourceExhausted,
+                "immediate-capacity-unavailable",
+            ));
+        }
         if queue.depth >= self.inner.config.queue_capacity_per_class[&class] {
             queue.counters.rejected = queue.counters.rejected.saturating_add(1);
             return Err(error(PlatformErrorCode::ResourceExhausted, "queue-full"));
@@ -321,7 +340,14 @@ impl LocalScheduler {
                 sender,
             });
         registration.queued_at = Some(slot);
-        Ok(sequence)
+        let dispatch = immediate.then(|| {
+            classes
+                .get_mut(&class)
+                .expect("configured class")
+                .dispatching = true;
+            DispatchTurn::new(Arc::clone(&self.inner), class)
+        });
+        Ok((sequence, dispatch))
     }
 }
 

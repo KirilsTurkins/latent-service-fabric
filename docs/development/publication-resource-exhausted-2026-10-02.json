@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "latent.sdk.publication.failure-observation.v1",
+  "recordedFailedSource": "bdea79fa7346050b96fa3bcad6ed919de9d0886a",
+  "githubRun": 36972365109,
+  "githubJob": 110783897743,
+  "rawLogSha256": "a7302557ada8fd5afd94deddf58a282f07b7cf9584f71b53eca45e6e90f6b232",
+  "artifactId": 11226033236,
+  "artifactSha256": "ae14f049f1545458a199c5f11be001b52fc36dda309167c9c1c9e942c480a8c6",
+  "observedFailure": "cli-exit-call-19-status-4-code-resource-exhausted-grpc-absent",
+  "originalPublicationReceiptBytes": 0,
+  "cause": "unclassified",
+  "repair": "Retain the existing bounded failed call projections after the original ownership scopes unwind; preserve the original exception, deadlines, stage results, cleanup assertions and replay rules.",
+  "failureReceiptCleanupClassification": "unverified",
+  "controls": {
+    "previousCases": 37,
+    "newCases": 6,
+    "historicalCasesAndGuardsPreserved": true,
+    "boundedTokensOnly": true,
+    "noReplay": true,
+    "cleanupBeforeObservation": true,
+    "originalErrorPreservedIfReceiptSinkFails": true
+  },
+  "nativeProductFailureQualified": false,
+  "currentHeadHostedCiRequired": true
+}

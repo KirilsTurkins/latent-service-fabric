@@ -26,6 +26,26 @@ the closed graph, original object bytes, patch preimages and native locks offlin
 before updating the accepted project or build. Capture metadata never authorizes
 execution of package hooks or generators.
 
+For the maintained frontend layout, keep the dependency manifest, reviewed lock
+and objects alongside `latent.project.json`, with editable application sources
+under the descriptor's exact `build.workingDirectory` (normally `app/`). Native
+lock paths in the outer manifest are relative to that outer project, for example
+`app/Cargo.lock` or `app/packages.lock.json`. The build receipt preserves those
+original paths and projects their exact bytes to the application's owned build
+directory. An inner dependency manifest, lock or project descriptor is rejected
+as an ambiguous selection. A second descriptor cannot redirect the approved
+application directory.
+
+The common recipe helper verifies the descriptor association and captured graph
+before materialization. It binds the outer manifest, lock, descriptor and native
+path projection into the existing source observation, then rechecks the same
+inputs after the build. The CAS remains outside the compiler's ordinary source
+namespace; only selected materialized dependency files enter it. Staged recipes
+include the descriptor, capture and authoring-state module closure and verify
+selected bytes without importing a checkout or reopening the original source.
+These input controls do not establish language compiler, node invocation or
+watch qualification for a new library.
+
 The developer controller retains its smaller transport bounds: 64 input roots,
 2,048 files, 16 MiB per file and 64 MiB in a source snapshot. Captures exceeding
 those bounds fail explicitly; use the standalone build workflow for a larger
@@ -121,3 +141,19 @@ license metadata and provenance. Its SBOM boundary covers declared application
 inputs. It does not claim a complete runtime SBOM, hermeticity, reproducibility,
 library compatibility or runtime authority. Native/generated/tool inputs and
 compiler/sysroot/runtime locks require their own attributable inventories.
+
+Language authoring commands delegate tests and watch updates to the maintained
+frontend. A source command may use the controller only from its own observed
+source tree. A staged compiler recipe omits that controller and requires an
+explicit standalone frontend path and exact `sha256:<64 hex>` byte identity;
+it never selects a controller through `PATH` or another Python installation.
+Use the frontend from the already authenticated developer installation. The
+executable digest selects those bytes and does not grant recipe, publisher or
+application dependency trust.
+
+The standalone delegate holds protected input handles, rechecks the executable
+and pathname after execution, omits ambient production credentials, and retains
+only bounded output. Its finite wrapper deadline and local process cleanup do
+not settle a remote operation. Frontend exit 5 remains uncertain and exit 130
+remains interrupted; inspect the original workspace status before continuing.
+Receipt-write failure preserves that original outcome and never permits replay.

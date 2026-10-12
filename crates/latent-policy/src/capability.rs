@@ -19,16 +19,16 @@ pub use language::{CapabilityPolicy, PrincipalClass};
 pub use narrowing::GrantRestriction;
 pub use resource_request::ResourceRequest;
 pub use resources::{
-    CapabilityCeiling, HttpOrigin, ResourceConstraint, ResourceTarget, StreamEndpoint,
-    StreamTransport,
+    CapabilityCeiling, HttpOrigin, RecoveryScopeKind, ResourceConstraint, ResourceTarget,
+    StateResourceScope, StreamEndpoint, StreamTransport,
 };
 pub use store::{
-    CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, PolicySnapshot,
-    PolicySnapshotState, SealedPolicyDecision,
+    CallRestrictions, CapabilityPolicyRevision, EvaluationInput, Explanation, OwnedPolicyDecision,
+    PolicySnapshot, PolicySnapshotState, SealedPolicyDecision,
 };
 pub use store::{
-    MutationRequest, OperationReceipt, PolicyPage, PolicyPageRequest, PolicyRead, PolicyReadLease,
-    PolicyStore, PolicyStoreLimits, RecordKind, RecordView,
+    MutationRequest, OperationReceipt, PolicyControlGeneration, PolicyPage, PolicyPageRequest,
+    PolicyRead, PolicyReadLease, PolicyStore, PolicyStoreLimits, RecordKind, RecordView,
 };
 
 use latent_core::{PlatformError, PlatformErrorCode};
@@ -99,6 +99,19 @@ fn publication(value: &str) -> bool {
         && value.parse::<latent_core::PublicationId>().is_ok()
 }
 
+// Runtime and Phase 4 policies are explicit opt-ins. Their exact contracts and
+// typed scopes do not extend the default stateless linker or guest authority.
+fn supported_contract(value: &str) -> bool {
+    latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(value)
+        .is_some()
+        || value == latent_core::activation_runtime::CAPABILITY
+        || matches!(
+            value,
+            "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
+        )
+}
+
 fn operation(contract: &str, name: &str) -> bool {
     let operations: &[&str] = match contract {
         "latent:context/context@0.1.0" => &[
@@ -163,6 +176,40 @@ fn operation(contract: &str, name: &str) -> bool {
         ],
         "latent:telemetry/custom@0.1.0" => &["emit-metric"],
         "latent:service/invoke@0.1.0" => &["call"],
+        "latent:state/key-value@0.2.0" => &[
+            "acquire-command",
+            "acquire-query",
+            "info",
+            "query-info",
+            "get",
+            "get-query",
+            "scan",
+            "scan-query",
+            "describe-page",
+            "page-next",
+            "put",
+            "delete",
+            // Host domain operations use the same current policy intersection;
+            // these labels do not add guest WIT functions or constructors.
+            "commit",
+            "read-result",
+            "inspect-effect",
+            "cancel-command",
+            "namespace-create",
+            "namespace-inspect",
+            "namespace-list",
+            "namespace-quiesce",
+            "namespace-retire",
+            "namespace-destroy",
+            "namespace-recreate",
+            "effect-plan",
+            "effect-reconcile",
+            "effect-redrive",
+            "effect-terminate",
+            "state-checkpoint",
+            "purge-expired-payload",
+        ],
+        "latent:intents/staging@0.1.0" => &["stage"],
         _ => return false,
     };
     operations.contains(&name)

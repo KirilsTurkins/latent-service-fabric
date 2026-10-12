@@ -208,7 +208,9 @@ class SeparateEntropySelection(unittest.TestCase):
             def package(output, *arguments):
                 write_json(output / "package-source.json", {"layers": []})
             with patch.object(builder, "Commands", Commands), patch.object(builder, "Compiler", Compiler), \
-                    patch.object(builder.guest_compatibility_build, "inspect"), patch.object(builder, "package_inputs", package):
+                    patch.object(builder.guest_compatibility_build, "inspect"), \
+                    patch.object(builder.guest_compatibility_context_build, "finish"), \
+                    patch.object(builder, "package_inputs", package):
                 output = builder.build(application, root / "output", native, None,
                     "https://github.com/example/entropy-unit-boundary", tools=tools)
             preparation = (output / "compiler-patches-preparation.json").read_bytes()

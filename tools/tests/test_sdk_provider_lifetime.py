@@ -87,8 +87,7 @@ class ProviderLifetimeTests(unittest.TestCase):
     def test_request_and_physical_close_wait_are_clipped_to_owner_without_widening_local_caps(self):
         connection = Mock()
         connection.recv.return_value = b"GET /allowed HTTP/1.1\r\n\r\n"
-        with patch.object(fixture.time, "monotonic", return_value=100), \
-             patch.object(fixture.select, "select", return_value=([], [], [])):
+        with patch.object(fixture.time, "monotonic", return_value=100):
             self.assertEqual(fixture.request(connection, 100.01), (b"GET", False, True))
         self.assertAlmostEqual(connection.settimeout.call_args.args[0], 0.01)
         connection.reset_mock()

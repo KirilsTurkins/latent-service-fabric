@@ -16,7 +16,7 @@ use std::{
     fmt,
     sync::{
         atomic::{AtomicU64, Ordering},
-        Arc, Mutex, MutexGuard, TryLockError,
+        Arc, RwLock, RwLockReadGuard, RwLockWriteGuard, TryLockError,
     },
 };
 
@@ -28,7 +28,7 @@ use std::{
 /// and trust generations before adopting state across process restarts.
 pub struct BuilderVerifier {
     limits: ProvenanceLimits,
-    state: Mutex<Arc<BuilderTrust>>,
+    state: RwLock<Arc<BuilderTrust>>,
     clock: AtomicU64,
 }
 
@@ -39,13 +39,13 @@ impl BuilderVerifier {
         trust.fresh(now)?;
         Ok(Self {
             limits,
-            state: Mutex::new(Arc::new(trust)),
+            state: RwLock::new(Arc::new(trust)),
             clock: AtomicU64::new(now),
         })
     }
 
     pub fn state_id(&self) -> SignatureResult<BuilderTrustStateId> {
-        Ok(self.lock()?.state_id().clone())
+        Ok(self.read()?.state_id().clone())
     }
 
     /// Highest trusted time observed, including rejected/expired operations.
@@ -64,7 +64,7 @@ impl BuilderVerifier {
         now: u64,
     ) -> SignatureResult<VerifiedBuildProvenance> {
         self.observe(now)?;
-        let trust = Arc::clone(&*self.lock()?);
+        let trust = Arc::clone(&*self.read()?);
         trust.fresh(now)?;
         let inspected = inspect_evidence(expected, evidence, self.limits)?;
         let proof = check::authenticate(&trust, inspected, self.limits, now)?;
@@ -88,7 +88,7 @@ impl BuilderVerifier {
         now: u64,
     ) -> SignatureResult<VerifiedWebBuildProvenance> {
         self.observe(now)?;
-        let trust = Arc::clone(&*self.lock()?);
+        let trust = Arc::clone(&*self.read()?);
         trust.fresh(now)?;
         let inspected =
             crate::provenance::evidence::inspect_web_evidence(expected, evidence, self.limits)?;
@@ -127,7 +127,7 @@ impl BuilderVerifier {
         self.observe(now)?;
         next.fits(self.limits)?;
         next.fresh(now)?;
-        let mut current = self.lock()?;
+        let mut current = self.write()?;
         if current.state_id() != expected {
             return Err(SignatureFailure::TrustConflict.into());
         }
@@ -165,7 +165,7 @@ impl BuilderVerifier {
         valid_until: u64,
         now: u64,
     ) -> SignatureResult<()> {
-        let current = self.lock()?;
+        let current = self.read()?;
         if current.state_id() != state {
             return Err(SignatureFailure::StaleProof.into());
         }
@@ -179,8 +179,17 @@ impl BuilderVerifier {
         Ok(())
     }
 
-    fn lock(&self) -> SignatureResult<MutexGuard<'_, Arc<BuilderTrust>>> {
-        self.state.try_lock().map_err(|error| match error {
+    // Pure currentness readers share the same immutable trust snapshot. An
+    // active writer still refuses the read immediately; no queue or retry.
+    fn read(&self) -> SignatureResult<RwLockReadGuard<'_, Arc<BuilderTrust>>> {
+        self.state.try_read().map_err(|error| match error {
+            TryLockError::WouldBlock => SignatureFailure::ResourceLimit.into(),
+            TryLockError::Poisoned(_) => SignatureFailure::Internal.into(),
+        })
+    }
+
+    fn write(&self) -> SignatureResult<RwLockWriteGuard<'_, Arc<BuilderTrust>>> {
+        self.state.try_write().map_err(|error| match error {
             TryLockError::WouldBlock => SignatureFailure::ResourceLimit.into(),
             TryLockError::Poisoned(_) => SignatureFailure::Internal.into(),
         })

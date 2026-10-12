@@ -235,12 +235,11 @@ class Compiler:
             self.http_error_port = http_errors.prepare(self.sdk, self.http_error_tools, self.dotnet, declared, project,
                 output, command.output, self.run,
                 protect_inputs=self.isolation.protect_inputs if self.isolation else None)
-        # SDK-owned ports finalize their project imports before the resource
-        # receipt binds the generated compiler inputs. All remain immutable
-        # while application build code runs in the captured namespace.
         resources = install_resources(snapshot(work, exclude=("dependencies", "application-vendor")), project)
-        if self.isolation is not None and resources is not None and resources.objects:
-            self.isolation.protect_inputs(project / "resources")
+        if self.isolation is not None and resources is not None:
+            self.isolation.protect_inputs(project / "Capsule.csproj")
+            if resources.objects:
+                self.isolation.protect_inputs(project / "resources")
         self.run("locked-restore", self.dotnet, "restore", project / "Capsule.csproj", "--configfile",
             project / "nuget.config", "--locked-mode", "--packages", self.package_cache, "--disable-parallel",
             "-p:NuGetAudit=false", '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')

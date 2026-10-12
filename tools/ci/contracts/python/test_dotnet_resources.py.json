@@ -8,7 +8,8 @@
     "DotnetResourceTests.test_invalid_selection_is_rejected_before_contract_or_compiler_execution",
     "DotnetResourceTests.test_logical_names_cannot_expand_msbuild_properties_items_or_xml",
     "DotnetResourceTests.test_real_compiler_boundary_rechecks_resource_bytes_after_native_commands",
-    "DotnetResourceTests.test_sdk_owned_project_imports_are_bound_before_resource_receipt"
+    "DotnetResourceTests.test_sdk_owned_project_imports_are_bound_before_resource_receipt",
+    "DotnetResourceTests.test_signed_fixture_uses_same_exact_manifest_selection_as_embedding"
   ],
   "guards": {
     "DotnetResourceTests.test_alias_missing_and_limit_rejection_precedes_owned_output_writes": {
@@ -118,10 +119,22 @@
         "class:setup-sha256:dc9d464fabe6c24294f6cb5fff158e9d1a7142288cfa685b44fcf4f3ff4430fa"
       ],
       "skipSites": []
+    },
+    "DotnetResourceTests.test_signed_fixture_uses_same_exact_manifest_selection_as_embedding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:54000225ed3f8bf372d030774aa99a9afaa98bd329fbb8bfd8e7aa13da5e32ef",
+        "class:setup-sha256:dc9d464fabe6c24294f6cb5fff158e9d1a7142288cfa685b44fcf4f3ff4430fa"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_resources.py",
-  "reviewReason": "SDK #681 forward integration: preserve all seven embedding cases and guards; add actual maintained compiler-boundary regressions for SDK-owned project derivation order and post-command byte mutation without claiming real NativeAOT execution.",
+  "reviewReason": "Add signed component resource fixture selection control",
   "schemaVersion": "latent.ci.contracts.v1"
 }

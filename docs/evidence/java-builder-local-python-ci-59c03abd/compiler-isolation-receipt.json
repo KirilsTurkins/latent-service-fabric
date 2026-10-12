@@ -1,0 +1,20 @@
+{
+  "sourceHead": "59c03abd1fbf2bcc39430ebe9866eb5ab23ee020",
+  "moduleSha256": "92cf86fea0cf6df02bbe7a705c37cc8d10df8d77824582f258d1e0b8b6e19e3d",
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "tools.tests.test_captured_compiler_isolation",
+    "-v"
+  ],
+  "exitCode": 0,
+  "seconds": 1.6817993660006323,
+  "uid": 23001,
+  "image": "sha256:c19db1b2bb887c214b87d05aa7f15a6d2108758fa4f2cf04d09bddce8a627502",
+  "seccomp": "unconfined",
+  "extraCapabilities": [],
+  "missingToolsFailClosed": true,
+  "sourceChanged": false,
+  "fullCiPassed": false
+}

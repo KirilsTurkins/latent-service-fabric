@@ -41,9 +41,7 @@ impl GrantRestriction {
         Ok(value)
     }
     pub fn validate(&self, capability: &str) -> Result<(), PlatformError> {
-        if latent_core::PHASE3_HOST_ABI_CURRENT
-            .interface(capability)
-            .is_none()
+        if !super::supported_contract(capability)
             || !unique(&self.operations, |value| operation(capability, value))
         {
             return Err(invalid());

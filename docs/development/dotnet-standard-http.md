@@ -38,7 +38,7 @@ and the frozen host-ABI compatibility checks.
 
 The installer builds each adapter from pinned Rust dependencies. Runtime source
 capture includes the complete `sdk/dotnet-guest/runtime` tree, the smoke manifest,
-all five example entrypoints and the workspace manifest and lockfile. Independent
+all three example entrypoints and the workspace manifest and lockfile. Independent
 project capture includes those same sources. Installed bytes and compiler inputs
 are checked again after compilation. `runtime-profile.json` binds the selected
 profile, declared/emitted imports, raw component and actual adapter identities;
@@ -223,103 +223,3 @@ original preflight, full validator and value-graph checks with the pinned
 wasmparser 0.259.0 and Rust 1.97.1. Its complete graph spends 20,268 type nodes;
 14 focused binary/metadata controls pass. These are semantic-validation receipts,
 not a fresh successful package, default HTTP client or node qualification.
-
-The subsequent normal signed-node control at source
-`40cd44f5fe157e3ed234b996316072d55ba3b2e6` admitted the ordinary default
-`HttpClient` component with explicit HTTP, activation and monotonic-clock grants.
-Its missing-authority controls denied before provider work. The GET activation
-then trapped before any HTTP effect: 51,186,250 fuel, 54,722,560 peak bytes and
-103,338 microseconds, under the original one-billion-fuel, 128 MiB and
-120-second limits. The component's typed failure remains a failed receipt; it
-does not identify a CLR initializer or establish a successful request.
-
-The captured NuGet compiler and separate optional noncrypto entropy adapter now
-share the source with this BCL error port. The compiler stages the exact BCL
-framework preimages and trusted transformer inside its approved namespace,
-protects the derived assembly and target before restore or NativeAOT, and
-rechecks them after composition. Its final material list retains the real ILC
-reference binding and both selected adapters. Entropy still requires the exact
-`latent:random/random@0.1.0` declaration and its own provider grant; secure WASI
-random remains denied. The combined compiler control verifies this ownership
-and provenance, including mutation rejection. A fresh normal signed-node
-execution remains necessary to qualify the combined profile and diagnose the
-original default-client trap.
-
-The fresh combined-profile control at source
-`1cf21f0f4c76e0a58d16666d60373ce576653578` rebuilt all five normal node,
-CLI, signing and packaging tools with the managed Cargo profile and Rust
-1.97.1. It compiled the same 748-byte ordinary `HttpClient` application with
-explicit typed HTTP, activation, monotonic-clock and noncrypto-random
-declarations. Maintained build, demo signing and normal node admission passed;
-missing all grants, the random grant or the HTTP grant each denied before guest
-CPU or effects. The positive GET still trapped before any outbound request:
-51,271,032 fuel, 55,902,208 peak bytes and 120,675 microseconds, under the same
-one-billion-fuel, 128 MiB and 120-second limits. Node and peer were reaped.
-
-The [failed normal-node receipt](../testing/evidence/dotnet-default-http-client-node-2026-10-01.json)
-binds the exact 6,299,761-byte component, native binaries, original application,
-limits, admission, negative controls and cleanup. The normal receipt contains
-the typed failure without a stack. Adding explicit noncrypto entropy does not establish a successful
-default client, ordinary Task/ThreadPool behavior or complete HTTP conformance.
-The full private source/component/node backup is retained separately; its
-operator keys are excluded from published evidence.
-
-A subsequent [private diagnostic of the unchanged component](../testing/evidence/dotnet-default-http-client-clock-diagnostic-2026-10-01.json)
-captured 26 bounded frames before the original failure classifier. The first
-blocker is the closed `wasi:clocks/wall-clock@0.2.6#now` implementation:
-`HttpClient.SendAsync` initializes its timeout cancellation source, which reaches
-`TimerQueue`, `DateTime.UtcNow` and the denied wall clock. This run kept the
-original guest limits, admitted declarations and component bytes; it consumed
-51,271,650 fuel and 55,902,208 peak bytes, with zero HTTP effects. The private
-observer has a separate source and binary identity. Its node was reaped; its
-peer was forcibly reaped, so this receipt does not prove a clean peer shutdown.
-
-The optional `wall` facet maps that exact WASI operation through the existing
-`latent:clock/wall@0.1.0` `now-unix-millis` operation. Selection requires the
-authoritative source declaration and an actual emitted wall-clock dependency;
-an actual default-BCL HTTP profile containing that dependency rejects a missing
-declaration. The node still needs its independently installed wall-clock
-provider, configuration identity and explicit grant. The host's millisecond
-precision is retained in the WASI datetime. The composer replaces only the
-primary adapter's exact closed wall-clock edge, with the named facet's validated
-interface; all other duplicate exports remain rejected.
-
-The closed primary adapters still deny wall-clock calls, and the historical
-direct SDK HTTP path retains its independent selection. Compiler capture,
-managed distribution and private staging retain the fifth adapter and its
-source. At frozen source `1e9e7c8aead68fa478912e372a590ac79bbfcae9`, all five
-adapters were actually compiled and encoded, including the 21,215-byte wall
-facet. The five normal node/CLI/signing/packaging tools passed their managed
-native build with all 7,400 source inputs unchanged. A fresh normally signed
-component passed independent missing-all, entropy, HTTP and wall authority
-controls with zero guest fuel, memory, effects and outbound requests. Its
-fully granted default-client invocation still traps before HTTP dispatch;
-the cause requires a bounded unchanged-component diagnosis. This clock mapping
-does not qualify genuine
-CLR Task, timer callback or ThreadPool progress under #746, or the remaining
-default-client and common HTTP criteria under #693 and #680.
-
-The subsequent unchanged-application build emitted a 6,042,098-byte NativeAOT
-component, then failed before composition or signing because its HTTP reference
-assertion receipt was 65,726 bytes. A private observation confirmed 345 framework
-references and exactly one derived HTTP edge; the original 65,536-byte guard
-still denied the receipt. The complete compiler-input capture and actual native
-response file remain bound separately. The target now records the HTTP
-replacement edges in this assertion receipt and retains the original preimage,
-unknown-edge, duplicate-edge and full native-response validation. Six actual
-pinned MSBuild controls reproduce the original overflow, accept the same full
-345-reference graph with a 68-byte assertion receipt, and reject missing,
-unknown and excess HTTP inputs. The [reference-receipt evidence](../testing/evidence/dotnet-http-reference-receipt-2026-10-02.json)
-retains these distinct failed-build and target-control boundaries. It does not
-qualify the repaired full build or default-client execution.
-
-The subsequent repaired full build, composition, packaging and demo signing
-passed and produced a 6,321,069-byte component. Its normal-node invocation used
-the unchanged 748-byte application and the original one-billion-fuel,
-128 MiB, 120-second and one-outbound-request limits. The original success
-assertion remained enforced and failed on a guest trap after 51,286,884 fuel
-and 57,016,320 peak bytes, with zero effects and outbound requests. The
-[normal-node receipt](../testing/evidence/dotnet-default-http-client-wall-node-2026-10-02.json)
-retains the successful build/admission boundaries, four authority denials and
-the unresolved execution failure. Successful default GET, pending CLR work
-and the remaining #693/#680/#746 acceptance criteria remain open.

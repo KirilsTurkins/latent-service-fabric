@@ -19,6 +19,11 @@ pub use local_service::LocalServiceInstallation;
 #[path = "providers/events.rs"]
 mod events;
 pub use events::EventInstallation;
+#[path = "providers/streams.rs"]
+mod streams;
+pub use streams::StreamInstallation;
+#[path = "providers/http.rs"]
+mod http;
 #[path = "providers/http_streaming.rs"]
 mod http_streaming;
 pub use http_streaming::HttpStreamingInstallation;
@@ -32,6 +37,8 @@ pub struct ConfiguredProviders {
     pub format_version: u32,
     #[serde(default, deserialize_with = "present")]
     pub http: Option<HttpInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub outbound_streams: Option<StreamInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub http_streaming: Option<HttpStreamingInstallation>,
     #[serde(default, deserialize_with = "present")]
@@ -52,6 +59,10 @@ pub struct ConfiguredProviders {
     pub clock_wall: Option<ScalarInstallation>,
     #[serde(default, deserialize_with = "present")]
     pub random: Option<ScalarInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub context: Option<ScalarInstallation>,
+    #[serde(default, deserialize_with = "present")]
+    pub log: Option<ScalarInstallation>,
     pub bindings: Vec<HostBinding>,
 }
 
@@ -81,6 +92,8 @@ pub struct HttpInstallation {
     pub credential_directory: Option<PathBuf>,
     #[serde(default)]
     pub credentials: Vec<ProviderSecretFile>,
+    #[serde(default)]
+    pub deferred: Vec<latent_http::deferred::QualifiedHttpEndpoint>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -130,33 +143,17 @@ pub(super) fn derive(
         || config.audit.is_none()
         || config.budget_profile.profile() != BudgetProfile::Phase3
         || providers.format_version != 1
-        || (providers.http.is_none()
-            && providers.http_streaming.is_none()
-            && providers.activation_runtime.is_none()
-            && providers.blob.is_none()
-            && providers.secrets.is_none()
-            && providers.metrics.is_none()
-            && providers.local_service.is_none()
-            && providers.events.is_none()
-            && providers.clock_monotonic.is_none()
-            && providers.clock_wall.is_none()
-            && providers.random.is_none())
+        || providers.no_installations()
         || providers.bindings.is_empty()
         || providers.bindings.capacity() > 16
     {
         return Err(invalid("providers"));
     }
+    if let Some(streams) = &providers.outbound_streams {
+        streams.validate_installation(providers)?;
+    }
     if let Some(http) = &providers.http {
-        http.identity.validate()?;
-        http.configuration
-            .validate()
-            .map_err(|_| invalid("providers.http"))?;
-        validate_http_credentials(
-            &http.configuration,
-            http.credential_directory.is_some(),
-            &http.credentials,
-            "providers.http.credentials",
-        )?;
+        http.validate_installation()?;
     }
     if let Some(http) = &providers.http_streaming {
         http.validate_installation(providers)?;
@@ -212,6 +209,8 @@ pub(super) fn derive(
         &providers.clock_monotonic,
         &providers.clock_wall,
         &providers.random,
+        &providers.context,
+        &providers.log,
     ]
     .into_iter()
     .flatten()
@@ -238,6 +237,24 @@ impl ProviderIdentity {
 }
 
 impl ConfiguredProviders {
+    fn no_installations(&self) -> bool {
+        self.http.is_none()
+            && self.activation_runtime.is_none()
+            && self.outbound_streams.is_none()
+            && self.http_streaming.is_none()
+            && self.activation_runtime.is_none()
+            && self.blob.is_none()
+            && self.secrets.is_none()
+            && self.metrics.is_none()
+            && self.local_service.is_none()
+            && self.events.is_none()
+            && self.clock_monotonic.is_none()
+            && self.clock_wall.is_none()
+            && self.random.is_none()
+            && self.context.is_none()
+            && self.log.is_none()
+    }
+
     pub(crate) fn definitions(&self) -> Result<Vec<BindingDefinition>, PlatformError> {
         self.bindings.iter().enumerate().map(|(index, binding)| {
             if [&binding.name, &binding.tenant, &binding.consumer_service,
@@ -252,6 +269,7 @@ impl ConfiguredProviders {
             }
             let installed = match binding.contract.as_str() {
                 "latent:http/client@0.2.0" => self.http.as_ref().map(|http| &http.identity),
+                "latent:network/streams@0.1.0" => self.outbound_streams.as_ref().map(|v| &v.identity),
                 "latent:http/streaming@0.3.0" => self.http_streaming.as_ref().map(|http| &http.identity),
                 latent_core::activation_runtime::CAPABILITY => self.activation_runtime.as_ref().map(|runtime| &runtime.identity),
                 "latent:blob/blob@0.2.0" => self.blob.as_ref().map(|blob| &blob.identity),
@@ -262,6 +280,8 @@ impl ConfiguredProviders {
                 "latent:clock/monotonic@0.1.0" => self.clock_monotonic.as_ref().map(|v| &v.identity),
                 "latent:clock/wall@0.1.0" => self.clock_wall.as_ref().map(|v| &v.identity),
                 "latent:random/random@0.1.0" => self.random.as_ref().map(|v| &v.identity),
+                "latent:context/context@0.1.0" => self.context.as_ref().map(|v| &v.identity),
+                "latent:log/log@0.1.0" => self.log.as_ref().map(|v| &v.identity),
                 _ => None,
             }.ok_or_else(|| invalid("providers.bindings.contract"))?;
             if installed.tenant != binding.tenant || installed.service != binding.provider_service {

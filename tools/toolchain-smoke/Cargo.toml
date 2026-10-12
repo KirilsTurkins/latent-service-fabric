@@ -189,6 +189,14 @@ bench = false
 doc = false
 
 [[example]]
+name = "transaction-contract"
+path = "../../sdk/transaction-contract/rust/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
 name = "dotnet-wall-clock-runtime"
 path = "examples/dotnet_wall_clock_runtime.rs"
 crate-type = ["cdylib"]

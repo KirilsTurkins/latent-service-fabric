@@ -31,7 +31,8 @@ pub fn budget() -> latent_core::ResourceBudget {
     }
 }
 pub fn budget_json() -> Value {
-    json!({"cpuFuel":100_000_000,"memoryBytes":4_194_304,"wallTimeLimitMillis":5000,"childCalls":16,
+    let budget = budget();
+    json!({"cpuFuel":budget.cpu_fuel,"memoryBytes":budget.memory_bytes,"wallTimeLimitMillis":budget.wall_time_limit_millis,"childCalls":16,
         "outboundRequests":0,"stateReadBytes":0,"stateWriteBytes":0,"blobReadBytes":0,"blobWriteBytes":0,"logBytes":0,"effectCount":0})
 }
 pub fn caller(tenant: Option<&str>) -> PackageBundle {
@@ -79,6 +80,36 @@ pub fn activation_runtime(bytes: Vec<u8>) -> PackageBundle {
         &[ACTIVATION],
     )
 }
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub fn outbound_streams(bytes: Vec<u8>) -> PackageBundle {
+    build(
+        "caller", bytes,
+        "package tests:caller@1.0.0; interface api { run: async func(which: u32) -> u32; } world service { import latent:network/streams@0.1.0; export api; }",
+        component::CALLER,
+        vec![function("run", true,
+            vec![json!({"name":"which","value_type":"U32","documentation":null})], json!("U32"))],
+        &[latent_capabilities::broker::network::STREAM_CAPABILITY],
+    )
+}
+pub fn java_activation_runtime(bytes: Vec<u8>, source: &str) -> PackageBundle {
+    build(
+        "caller",
+        bytes,
+        source,
+        component::CALLER,
+        vec![function(
+            "run",
+            true,
+            vec![json!({"name":"which","value_type":"U32","documentation":null})],
+            json!("U32"),
+        )],
+        &[
+            ACTIVATION,
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+        ],
+    )
+}
 #[expect(
     clippy::needless_pass_by_value,
     reason = "JSON fixture builder accepts owned nested values"
@@ -123,6 +154,9 @@ fn build(
         .map(|contract| json!({"contract":contract,"optional":false}))
         .collect::<Vec<_>>());
     manifest["execution"]["limits"] = budget_json();
+    if imports.contains(&latent_capabilities::broker::network::STREAM_CAPABILITY) {
+        manifest["execution"]["limits"]["outboundRequests"] = json!(8);
+    }
     manifest["execution"]["threading"] = json!("single-threaded");
     let mut locked = vec![];
     let mut layers = vec![
@@ -154,25 +188,25 @@ fn build(
         let (package, version) = import.rsplit_once('@').unwrap();
         let package = package.split('/').next().unwrap();
         let id = format!("{package}@{version}");
-        let path = if *import == ACTIVATION {
-            "wit/activation.wit"
-        } else {
-            "wit/invocation.wit"
-        };
+        if dependencies.contains(&id) {
+            continue;
+        }
+        let path = format!("wit/{}.wit", package.replace(':', "-"));
         locked.push(WitLockedPackage {
             id: id.clone(),
-            source_path: path.into(),
+            source_path: path.clone(),
             digest: artifact_blob_digest(wit.as_bytes()),
             dependencies: vec![],
         });
         layers.push(fixture::layer(
-            path,
+            &path,
             LayerRole::Asset,
             "text/plain",
             wit.as_bytes().to_vec(),
         ));
         dependencies.push(id);
     }
+    dependencies.sort();
     locked.push(WitLockedPackage {
         id: format!("{package}@1.0.0"),
         source_path: "wit/service.wit".into(),
@@ -185,6 +219,7 @@ fn build(
         "text/plain",
         source.as_bytes().to_vec(),
     ));
+    locked.sort_by(|left, right| left.id.cmp(&right.id));
     let lock = WitLock {
         format_version: 1,
         world,

@@ -59,12 +59,19 @@ headers in `src`; the build compiles the captured `.c` files with no external
 library search paths. Includes relative to an application's source file work
 normally. Absolute includes are outside this supported captured-source recipe.
 
+For outside-project source libraries, captured public headers/resources and
+verified Wasm static archives, follow [Captured C libraries](c-dependencies.md).
+Resolve and review their immutable dependency closure before building; the
+managed compiler host provides the finite source/archive recipe.
+
 The `word-count` and `shipping` templates provide equivalent C implementations
 of [Creating a capsule](creating-a-capsule.md). Choose another project directory
 and replace `greeting` in the creation command with either template name.
 `http-status` adds a typed, asynchronous HTTP call; its import still needs an
 installed provider and an explicit deployment grant. Creating a project grants
 no network access.
+
+Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers generated C owners, callback-frame retirement, the captured profile, schema and binding companion. The host owns commitment, and signed transaction execution has its own qualification matrix. The tutorial below retains its existing stateless profile.
 
 ## 2. Build and package the project
 

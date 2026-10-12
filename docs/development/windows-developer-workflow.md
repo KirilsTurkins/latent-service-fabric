@@ -733,6 +733,14 @@ the shared scenarios, and a retained restart without redeployment. The node and
 compiler test must use the same observed packager. Interrupted or uncertain
 cleanup retains the private workspace and fails the report. These source checks
 do not authenticate a candidate or establish clean-host qualification.
+The final `probe.json` also retains at most 128 bounded diagnostic observations
+from the original invocation results. It records closed trap and admission
+currentness codes and lossless unsigned consumption values, while excluding
+payloads, provider messages, credentials and arbitrary error details. Its observed
+case count is a saturating lower bound. `processCleanup.confirmed` requires the
+node's positive reaping and clean-shutdown observations and confirmed invocation
+client reaping; a truncated diagnostic collection cannot establish that result.
+Diagnostic capture does not retry an invocation or alter scenario grading.
 The node build uses the existing `.cargo/managed-guest.toml` compiler and
 component-validation optimization overrides, records their digest and retains
 host debug assertions and checked arithmetic.

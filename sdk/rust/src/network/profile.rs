@@ -2,6 +2,7 @@ mod conversions;
 mod metadata;
 mod requests;
 mod responses;
+mod target_inspection;
 
 #[cfg(test)]
 mod vectors;
@@ -18,6 +19,12 @@ use responses::ResponseProfile;
 use std::future::Future;
 use tokio::time::Instant;
 use tonic::{Request, Response, Status};
+
+pub(super) fn response_audit(
+    value: Option<AuditAcknowledgement>,
+) -> (Option<model::AuditAck>, Option<String>, Option<u64>) {
+    metadata::audit(value)
+}
 
 macro_rules! operation {
     ($method:ident, $request:ident, $response:ident, $module:ident, $service_module:ident, $service:ident) => {
@@ -48,6 +55,14 @@ macro_rules! operation {
 
 impl model::ClientProfile for RpcClient {
     operation!(
+        inspect_http_target,
+        InspectHttpTargetRequest,
+        InspectHttpTargetResponse,
+        control,
+        node_service_client,
+        NodeServiceClient
+    );
+    operation!(
         invoke,
         InvokeRequest,
         InvokeResponse,
@@ -70,6 +85,14 @@ impl model::ClientProfile for RpcClient {
         invocation,
         invocation_service_client,
         InvocationServiceClient
+    );
+    operation!(
+        inspect_activation_tree,
+        InspectActivationTreeRequest,
+        InspectActivationTreeResponse,
+        control,
+        node_service_client,
+        NodeServiceClient
     );
     operation!(
         get_policy,

@@ -15,6 +15,28 @@ fn derive(source: &str) -> Result<CapsuleContractInputs, PlatformError> {
 }
 
 #[test]
+fn shared_type_interfaces_and_world_inclusion_preserve_shapes_without_host_authority() {
+    let wit = "package example:author@1.2.3; interface types { type sequence = u64; record row { id: sequence, text: string } } interface api { use types.{row}; run: func(value: row) -> row; } world shared { export api; } world service { include shared; }";
+    let derived = derive(wit).unwrap();
+    assert!(derived.imports().is_empty());
+    assert_eq!(derived.exports(), &["example:author/api@1.2.3"]);
+    let metadata =
+        decode_contract_metadata(derived.contracts(), ContractMetadataLimits::default()).unwrap();
+    assert_eq!(
+        metadata[0].interfaces[0].functions[0].parameters[0].value_type,
+        ValueType::Record("row".into())
+    );
+    for extra in [
+        "resource authority;",
+        "type deferred = future<string>;",
+        "hidden: func();",
+    ] {
+        let changed = wit.replace("interface types {", &format!("interface types {{ {extra}"));
+        assert!(derive(&changed).is_err(), "{extra}");
+    }
+}
+
+#[test]
 fn complete_full_width_scalar_and_result_contract_is_derived_from_source() {
     let derived = derive(WIT).unwrap();
     assert_eq!(derived.exports(), &["example:author/api@1.2.3"]);

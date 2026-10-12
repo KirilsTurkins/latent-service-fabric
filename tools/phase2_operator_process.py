@@ -295,9 +295,14 @@ class Client:
         self.config = None
         self.node = None
         self.calls = 0
+        self.last_exit_status = None
         self.failed_call = None
         self.environment = {"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(directory),
                             "LANG": "C.UTF-8", "RUST_BACKTRACE": "0"}
+
+    def observe_failed_call(self, value, call, status):
+        """Closed observation only; subclasses cannot change the error decision."""
+        return failed_call_record(value, call, status)
 
     def call(self, *arguments, codes=(0,), timeout=25):
         self.cancellation.check()
@@ -316,6 +321,7 @@ class Client:
         if self.node:
             self.node.drain()
         self.calls += 1
+        self.last_exit_status = result.returncode
         try:
             value = json.loads(result.stdout)
         except (ValueError, UnicodeError):
@@ -335,7 +341,7 @@ class Client:
             # Keep one fixed-size record, not an unbounded log or a retry plan.
             try:
                 if self.failed_call is None:
-                    self.failed_call = failed_call_record(value, self.calls, result.returncode)
+                    self.failed_call = self.observe_failed_call(value, self.calls, result.returncode)
             except Exception:
                 # Observation failure cannot replace the original CLI failure.
                 pass

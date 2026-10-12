@@ -12,6 +12,62 @@ from unittest.mock import Mock, patch
 from tools.dev_workflow import common, effects, journal, node_cancellation, node_fixtures, node_test_profile, policy_operations, scenarios, state
 
 
+class JournalRpcObservations(unittest.TestCase):
+    def test_closed_rpc_failure_codes_preserve_uncertain_original_operation_without_replay(self):
+        for code in ("cancelled", "unknown", "deadline-exceeded", "unimplemented", "internal",
+                     "unavailable", "data-loss", "out-of-range", "resource-exhausted",
+                     "invalid-argument", "not-found", "already-exists", "permission-denied",
+                     "unauthenticated", "failed-precondition", "aborted"):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                controller = journal.Journal(root, "node", "tenant")
+                response = {"category": "transport-failure", "outcomeKnown": False, "requestDispatched": True,
+                    "error": {"code": "rpc-failed", "grpcCode": code, "message": "private-fixture-value"},
+                    "data": {"secret": "private-fixture-value"}}
+                execute = Mock(return_value=response)
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    controller.execute("release", {"source": "source"}, execute)
+                original = controller.read()["pending"]
+                observed = state.load(root, "last-operation-observation.json")
+                self.assertEqual(observed["grpcCode"], code)
+                self.assertEqual((observed["id"], observed["kind"]), (original["id"], "release"))
+                self.assertFalse(observed["outcomeKnown"])
+                self.assertEqual(set(observed), {"id", "kind", "resultSha256", "outcomeKnown",
+                    "requestDispatched", "category", "code", "grpcCode"})
+                self.assertNotIn(b"private-fixture-value", (root / "last-operation-observation.json").read_bytes())
+                with self.assertRaisesRegex(common.DevError, "recover-original-operation-before-new-mutation"):
+                    controller.execute("release", {"source": "source"}, execute)
+                execute.assert_called_once()
+                self.assertEqual(controller.read()["pending"], original)
+
+    def test_unknown_malformed_and_non_string_rpc_codes_are_not_retained_or_coerced(self):
+        for code in (None, True, 3, {}, [], "ok", "UNAVAILABLE", "deadline_exceeded",
+                     " unavailable", "unavailable\nprivate-fixture-value", "x" * 101):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                controller = journal.Journal(root, "node", "tenant")
+                operation = controller.begin("release", {"source": "source"})
+                response = {"category": "transport-failure", "outcomeKnown": False,
+                    "error": {"code": "rpc-failed", "grpcCode": code}}
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    controller.finish(operation, response)
+                self.assertNotIn("grpcCode", state.load(root, "last-operation-observation.json"))
+                self.assertEqual(controller.read()["pending"], operation)
+
+    def test_rpc_token_requires_transport_failure_and_the_generic_rpc_public_code(self):
+        for category, code in (("platform-failure", "rpc-failed"), ("not-found", "rpc-failed"),
+                               ("success", "rpc-failed"), ("transport-failure", "rpc-timeout")):
+            with self.subTest(category=category, code=code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                controller = journal.Journal(root, "node", "tenant")
+                operation = controller.begin("release", {"source": "source"})
+                with self.assertRaisesRegex(common.DevError, "operation-outcome-uncertain"):
+                    controller.finish(operation, {"category": category, "outcomeKnown": False,
+                        "error": {"code": code, "grpcCode": "deadline-exceeded"}})
+                self.assertNotIn("grpcCode", state.load(root, "last-operation-observation.json"))
+                self.assertEqual(controller.read()["pending"], operation)
+
+
 class RunningCancellation(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -546,7 +602,7 @@ class NodePortableComparison(unittest.TestCase):
             "cleanup": "invocation-results-received-node-retained", "pendingOperation": None,
             "identity": {"hostAbi": common.HOST_ABI, "os": "linux", "profile": "local-experimental-v1",
                 "admission": "enforced", "artifacts": artifacts, "expectedRevision": revision,
-                "runtime": {"engine": {"wasmtimeVersion": "48.0.3"}},
+                "runtime": {"engine": {"wasmtimeVersion": "48.0.5"}},
                 "package": {"componentDigest": component}, "deployment": {"componentDigest": component}}}
         portable = {**node, "environment": "portable", "results": [{**row, "resolvedRevision": None}],
             "cleanup": "owned-native-host-reaped", "excludedChecks": sorted(scenarios.NODE_ONLY),
@@ -554,7 +610,7 @@ class NodePortableComparison(unittest.TestCase):
                 "runtime": {"execution": "actual-component-production-wasmtime", "runs": [{
                     "schemaVersion": "latent.dev.portable-result.v1", "environment": "portable",
                     "productionNode": False, "os": "windows", "architecture": "x86_64", "component": component,
-                    "wasmtime": "48.0.3"}]}}}
+                    "wasmtime": "48.0.5"}]}}}
         return node, portable
 
     def test_exact_values_match_with_explicit_node_only_exclusions(self):
@@ -633,6 +689,186 @@ class NodePortableComparison(unittest.TestCase):
 
 @unittest.skipUnless(os.name == "posix", "Actual node probe uses Linux ownership")
 class SourceNodeProbe(unittest.TestCase):
+    def test_workspace_expiry_stimulus_waits_for_both_overlap_scenarios_and_changes_only_a(self):
+        from tools import dev_workspace_isolation_probe as probe
+        from tools.dev_workflow import paths
+        from tools.tests.test_dev_contracts import descriptor
+
+        # Exercise the real probe's control flow and private configuration
+        # writes, with only compiler/node RPC boundaries modeled. Actual node
+        # qualification remains the separate unmodified 900-second CI probe.
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            owner = parent / 'owners'; owner.mkdir(mode=0o700)
+            supplied = parent / 'runtime'; supplied.mkdir()
+            payload = parent / 'payload'; payload.mkdir()
+            configuration_roots, prepared, tested = {}, {}, []
+
+            class ExpiryBoundary(Exception):
+                pass
+
+            def author(_payload, destination, side):
+                destination.mkdir(mode=0o700)
+                (destination / 'app').mkdir()
+                (destination / 'app/lib.rs').write_bytes(('// selected ' + side).encode())
+                selected = descriptor()
+                selected.update(inputRoots=['app', 'tests'], exclude=['.env'], scenarios=['tests/scenarios.json'])
+                (destination / 'tests').mkdir(mode=0o700)
+                (destination / 'tests/input.json').write_bytes(b'[]')
+                state.atomic(destination / 'tests', 'scenarios.json', {'scenarios': [{
+                    'service': selected['service'], 'contract': 'examples:greeting/api@1.0.0',
+                    'function': 'greet', 'mediaType': 'application/vnd.latent.wit-values.v1+json',
+                    'input': 'tests/input.json', 'expect': {'category': 'success'},
+                    'fixtures': [], 'execution': {'grants': []}}]})
+                return selected, {'secrets': {'references': []}}
+
+            def stage(root, _supplied):
+                configuration = root / 'runtime/config'
+                (root / 'runtime').mkdir(mode=0o700)
+                configuration.mkdir(mode=0o700)
+                (configuration / 'client').mkdir(mode=0o700)
+                state.atomic(configuration, 'node.json', {'retention': {'maximumTerminalReceipts': 64}})
+                state.atomic(configuration / 'client', 'client.json', {'profiles': [{'token': 'private-token-' + root.name}]})
+                side = root.name.split('-')[1]
+                configuration_roots[side] = root
+                return {'helperSha256': 'sha256:' + 'a' * 64}
+
+            def build(root, *_arguments, **_options):
+                return {'artifacts': {'component': common.digest(root.name.encode())}}
+
+            class Backend:
+                def __init__(self, _configuration, _name, root):
+                    self.root = root
+
+                def call(self, operation, _arguments, **_options):
+                    if operation == 'prepare-test':
+                        if self.root.name.split('-')[1] == 'expiry':
+                            self_test.assertNotIn('fixtures', _arguments)
+                        else:
+                            configuration = state.load(self.root / 'runtime/config', 'node.json')
+                            configuration['providers'] = {'secrets': {'fixture': True}}
+                            state.atomic(self.root / 'runtime/config', 'node.json', configuration)
+                        raw = paths.read(self.root / 'runtime/config', 'node.json')
+                        prepared[self.root.name] = common.digest(raw)
+                        state.atomic(self.root, 'test-profile.json', {'configurationSha256': prepared[self.root.name]})
+                        return {}
+                    if operation == 'up':
+                        self_test.assertEqual(common.digest(paths.read(self.root / 'runtime/config', 'node.json')),
+                                              prepared[self.root.name], 'prepared fixture configuration changed')
+                        state.atomic(self.root, 'lifecycle.json', {'state': 'ready'})
+                        return {'state': 'ready'}
+                    if operation == 'status': return {'state': 'ready'}
+                    if operation == 'deploy':
+                        state.atomic(self.root, 'last-deployment.json', {'deployment': 'selected',
+                            'publication': 'publication-' + self.root.name})
+                        return {}
+                    if operation == 'test':
+                        for selected_root in configuration_roots.values():
+                            node = state.load(selected_root / 'runtime/config', 'node.json')
+                            self_test.assertNotEqual(node['retention'].get('terminalTtlMillis'), probe.TTL_MILLIS)
+                        tested.append((self.root.name.split('-')[1], _arguments['selection']))
+                        return {'passed': True, 'identity': {'node': self.root.name},
+                                'results': [{'activationId': self.root.name + '-activation-' + str(index)}
+                                            for index in range(9 if not _arguments['selection'] else 1)]}
+                    if operation == 'down':
+                        state.atomic(self.root, 'lifecycle.json', {'state': 'stopped'})
+                        if self.root.name.split('-')[1] == 'expiry':
+                            return {'reaped': True, 'cleanShutdown': True, 'providers': []}
+                        return {'reaped': True, 'cleanShutdown': True, 'providers': [{'id': 'secrets'}],
+                            'providerShutdown': {'clean': True,
+                            **{name: 0 for name in (*probe.PROVIDER_COUNTERS, 'secretGenerations', 'secretReferences')}}}
+                    raise AssertionError('unexpected probe RPC boundary ' + operation)
+
+            class OwnClient:
+                binary = Path('controlled-client-boundary')
+
+                def __init__(self, root): self.root = root
+
+                def lookup(self, _kind, activation):
+                    if activation.startswith(self.root.name + '-'):
+                        return {'category': 'success', 'outcomeKnown': True, 'data': {'activationId': activation}}
+                    return {'category': 'not-found', 'outcomeKnown': True, 'data': {}}
+
+            class ForeignClient:
+                def __init__(self, *_arguments, **_options): pass
+
+                def call(self, *_arguments):
+                    return {'category': 'platform-failure', 'outcomeKnown': True, 'error': {'code': 'unauthenticated'}}
+
+            def expiry_boundary(*_arguments, **options):
+                self.assertIn(('a', []), tested)
+                self.assertIn(('b', []), tested)
+                self.assertIn(('a', ['cold-read']), tested)
+                self.assertIn(('b', ['cold-read']), tested)
+                self.assertEqual(state.load(configuration_roots['a'] / 'runtime/config', 'node.json')['retention'],
+                                 {'maximumTerminalReceipts': 64})
+                self.assertEqual(state.load(configuration_roots['b'] / 'runtime/config', 'node.json')['retention'],
+                                 {'maximumTerminalReceipts': 64})
+                self.assertEqual(state.load(configuration_roots['expiry'] / 'runtime/config', 'node.json')['retention'],
+                                 {'maximumTerminalReceipts': 64, 'terminalTtlMillis': 3000})
+                self.assertEqual(state.load(configuration_roots['a'], 'lifecycle.json')['state'], 'stopped')
+                for selected_root in configuration_roots.values():
+                    self.assertEqual(common.digest(paths.read(selected_root / 'runtime/config', 'node.json')),
+                                     prepared[selected_root.name])
+                self.assertEqual((options['timeout'], options['maximum']), (60, 262144))
+                self.assertEqual(common.decode(options['stdin'])['input'], 'W10=')
+                self.assertEqual(common.decode(options['stdin'])['function'], 'greet')
+                raise ExpiryBoundary()
+
+            self_test = self
+            host = Mock()
+            host.geteuid.return_value = os.geteuid() or 23001
+            with patch.object(probe, 'os', host), patch.object(probe.helper, 'root_directory', return_value=owner), \
+                    patch.object(probe, 'author', side_effect=author), patch.object(probe, 'stage_runtime', side_effect=stage), \
+                    patch.object(probe, 'author_expiry', side_effect=lambda payload, destination: author(payload, destination, 'expiry')[0]), \
+                    patch.object(probe.build, 'execute', side_effect=build), patch.object(probe.backend, 'Backend', Backend), \
+                    patch.object(probe.secret_fixture, 'values', return_value=[]), \
+                    patch.object(probe.helper, 'client', side_effect=lambda root, **_options: (OwnClient(root), None)), \
+                    patch.object(probe.client, 'Client', ForeignClient), patch.object(probe.process, 'run', side_effect=expiry_boundary), \
+                    self.assertRaises(ExpiryBoundary):
+                probe.run(payload, supplied, parent / 'output')
+            self.assertEqual(tested[:2], [('a', []), ('b', [])])
+            self.assertEqual(state.load(parent / 'output', 'observation.json')['maximumSeconds'], 900)
+            observation = state.load(parent / 'output', 'observation.json')
+            self.assertEqual(set(observation['shutdown']), {'a', 'b', 'expiry'})
+            self.assertNotIn('cleanupFailure', observation)
+            self.assertEqual(observation['shutdown']['expiry']['providers'], [])
+            self.assertNotIn('providerShutdown', observation['shutdown']['expiry'])
+            # Configured provider ownership still requires every actual counter;
+            # an absent report never stands in for eighteen zero values.
+            configured = configuration_roots['b']
+            pure = configuration_roots['expiry']
+            base = {'reaped': True, 'cleanShutdown': True, 'providers': []}
+            stopped = Mock()
+            for response in ({**base, 'reaped': False}, {**base, 'cleanShutdown': False},
+                             {**base, 'providers': [{'id': 'secrets'}]},
+                             {**base, 'providerShutdown': {'clean': True}}):
+                stopped.call.return_value = response
+                with self.assertRaisesRegex(common.DevError, 'overlapping-workspace-cleanup-unconfirmed'):
+                    probe.clean_stop(stopped, pure)
+            stopped.call.return_value = base
+            with self.assertRaisesRegex(common.DevError, 'overlapping-workspace-cleanup-unconfirmed'):
+                probe.clean_stop(stopped, configured)
+            complete = {'clean': True, **dict.fromkeys((*probe.PROVIDER_COUNTERS,
+                'secretGenerations', 'secretReferences'), 0)}
+            for name in complete:
+                for failure in ('missing', 'nonzero', 'bool'):
+                    counters = dict(complete)
+                    if failure == 'missing':
+                        del counters[name]
+                    elif name == 'clean':
+                        counters[name] = False if failure == 'nonzero' else 1
+                    else:
+                        counters[name] = 1 if failure == 'nonzero' else False
+                    stopped.call.return_value = {**base, 'providerShutdown': counters}
+                    with self.assertRaisesRegex(common.DevError, 'overlapping-workspace-cleanup-unconfirmed'):
+                        probe.clean_stop(stopped, configured)
+            stopped.call.return_value = base
+            self.assertEqual(probe.clean_stop(stopped, pure), base)
+            state.atomic(pure, 'lifecycle.json', {'state': 'ready'})
+            with self.assertRaisesRegex(common.DevError, 'stopped-workspace-not-durable'):
+                probe.clean_stop(stopped, pure)
+
     def test_uncertain_staging_keeps_an_explicit_private_cleanup_record(self):
         from tools import dev_node_application_probe as probe
         with tempfile.TemporaryDirectory() as temporary:
@@ -653,6 +889,52 @@ class SourceNodeProbe(unittest.TestCase):
             self.assertFalse(report["passed"])
             self.assertEqual(report["cleanup"], "unconfirmed-private-workspace-retained")
             self.assertEqual(other.read_bytes(), b"retain")
+
+
+@unittest.skipUnless(os.name == "posix", "Actual source probe imports Linux ownership helpers")
+class SourceNodeDiagnostics(unittest.TestCase):
+    def test_only_failed_original_activation_is_observed_without_invocation_retry(self):
+        from tools import dev_node_application_probe as probe
+        activation = "dev-" + "a" * 32
+        tree = {"schemaVersion": 1, "historyAvailable": True, "nodes": [{"activationId": activation,
+            "diagnostic": {"stage": 5, "reason": 11}, "consumption": {"cpuFuel": "1000"}}]}
+        client = Mock()
+        client.call.return_value = {"category": "success", "outcomeKnown": True, "data": tree}
+        scenarios = {"results": [{"status": "passed", "activationId": "dev-" + "b" * 32},
+            {"status": "failed", "activationId": activation}, {"status": "failed", "activationId": activation}]}
+        with patch.object(probe.helper, "client", return_value=(client, Mock())):
+            actual = probe.failed_diagnostics(Path("test-owned"), scenarios, time.monotonic() + 30)
+        self.assertEqual(actual, [{"activationId": activation, "state": "observed", "tree": tree}])
+        client.call.assert_called_once_with("--rpc-timeout-ms", "1500", "activation", "tree", activation,
+            "--page-size", "16", timeout=2)
+        self.assertEqual(scenarios["results"][1]["status"], "failed")
+
+    def test_unavailable_history_preserves_failure_without_raw_exception_or_retry(self):
+        from tools import dev_node_application_probe as probe
+        activation = "dev-" + "a" * 32
+        client = Mock()
+        client.call.side_effect = OSError("raw confidential producer message")
+        with patch.object(probe.helper, "client", return_value=(client, Mock())):
+            actual = probe.failed_diagnostics(Path("test-owned"), {"results": [
+                {"status": "failed", "activationId": activation}]}, time.monotonic() + 30)
+        self.assertEqual(actual, [{"activationId": activation, "state": "unavailable", "reason": "history-unavailable"}])
+        client.call.assert_called_once()
+        self.assertNotIn("confidential", str(actual))
+
+    def test_observation_deadline_bound_and_invalid_id_start_no_operator_command(self):
+        from tools import dev_node_application_probe as probe
+        rows = [{"status": "failed", "activationId": "dev-" + format(index, "032x")} for index in range(10)]
+        rows.insert(0, {"status": "failed", "activationId": "arbitrary external identity"})
+        client = Mock()
+        with patch.object(probe.helper, "client", return_value=(client, Mock())):
+            actual = probe.failed_diagnostics(Path("test-owned"), {"results": rows}, time.monotonic() - 1)
+        self.assertEqual(len(actual), 8)
+        self.assertTrue(all(row["reason"] == "observation-deadline" for row in actual))
+        client.call.assert_not_called()
+        with patch.object(probe.helper, "client") as initialize:
+            self.assertEqual(probe.failed_diagnostics(Path("test-owned"), {"results": [
+                {"status": "passed", "activationId": rows[1]["activationId"]}]}, time.monotonic() + 30), [])
+        initialize.assert_not_called()
 
 
 class InvocationRecovery(unittest.TestCase):
@@ -781,6 +1063,82 @@ class InvocationRecovery(unittest.TestCase):
                 service.wait_for_restart_lease(root, config)
             self.assertGreaterEqual(clock[0], 15)
             self.assertEqual((root / "lifecycle.json").read_bytes(), original)
+
+
+class ScenarioCurrentnessObservations(unittest.TestCase):
+    @staticmethod
+    def result(details, *, category="platform-failure"):
+        return {"category": category, "outcomeKnown": True,
+                "error": {"code": "unavailable", "details": details, "message": "private-remote-message"},
+                "data": {"activationId": "original-operation"}}
+
+    @staticmethod
+    def report(result):
+        case = {"id": "retained", "service": "examples", "contract": "examples:caller/service@1.0.0",
+                "function": "greet", "mediaType": "application/json", "timeoutMillis": 1000,
+                "required": True, "fixtures": [], "expect": {"category": "success"}}
+        adapter = Mock(return_value=result)
+        report = scenarios.run_prepared([(case, b"[]", None)], {}, "node", adapter, {})
+        adapter.assert_called_once()
+        return report
+
+    def test_failed_scenario_retains_each_closed_reason_without_replaying_or_passing(self):
+        for reason in sorted(scenarios.ADMISSION_CURRENTNESS_REASONS):
+            with self.subTest(reason=reason):
+                report = self.report(self.result([{"kind": "admission.currentness",
+                    "fields": {"reason": reason, "credential": "private-fixture-secret"},
+                    "message": "private-provider-body"}]))
+                self.assertFalse(report["passed"])
+                observed = report["results"][0]
+                self.assertEqual(observed["status"], "failed")
+                self.assertEqual(observed["category"], "platform-failure")
+                self.assertEqual(observed["platformCode"], "unavailable")
+                self.assertTrue(observed["outcomeKnown"])
+                self.assertEqual(observed["activationId"], "original-operation")
+                self.assertEqual(observed["timeoutMillis"], 1000)
+                self.assertEqual(observed["admissionReason"], reason)
+                self.assertNotIn("private-", common.encode(report).decode())
+
+    def test_unknown_private_and_non_string_reasons_never_enter_reports(self):
+        class Private:
+            def __str__(self):
+                raise AssertionError("remote object must not be coerced")
+        for reason in ("private-" + "x" * 65536, "unknown", None, 1, True, ["admission-authority-busy"],
+                       {"reason": "admission-authority-busy"}, Private()):
+            with self.subTest(kind=type(reason).__name__):
+                report = self.report(self.result([{"kind": "admission.currentness", "fields": {"reason": reason}}]))
+                self.assertNotIn("admissionReason", report["results"][0])
+                self.assertNotIn("private-", common.encode(report).decode())
+
+    def test_wrong_categories_kinds_and_shapes_do_not_add_currentness_diagnostics(self):
+        valid = {"kind": "admission.currentness", "fields": {"reason": "admission-authority-busy"}}
+        for category in ("success", "declared-error", "transport-failure"):
+            self.assertNotIn("admissionReason", self.report(self.result([valid], category=category))["results"][0])
+        for details in (None, {}, "private-remote-message", [None, 1, "private-body"],
+                        [{"kind": "private-kind", "fields": valid["fields"]}],
+                        [{"kind": "admission.currentness", "fields": "private-fields"}]):
+            self.assertNotIn("admissionReason", self.report(self.result(details))["results"][0])
+
+    def test_examined_detail_count_is_bounded(self):
+        valid = {"kind": "admission.currentness", "fields": {"reason": "admission-authority-busy"}}
+        unknown = {"kind": "private-kind", "fields": {"reason": "private-body"}}
+        beyond = self.report(self.result([unknown] * 16 + [valid]))
+        self.assertNotIn("admissionReason", beyond["results"][0])
+        last = self.report(self.result([unknown] * 15 + [valid]))
+        self.assertEqual(last["results"][0]["admissionReason"], "admission-authority-busy")
+
+    def test_conflicting_public_reasons_are_not_reported_as_one_cause(self):
+        details = [{"kind": "admission.currentness", "fields": {"reason": reason}}
+                   for reason in ("admission-authority-busy", "admission-owner-retired")]
+        self.assertNotIn("admissionReason", self.report(self.result(details))["results"][0])
+        repeated = self.report(self.result([details[0], details[0]]))
+        self.assertEqual(repeated["results"][0]["admissionReason"], "admission-authority-busy")
+
+    def test_diagnostic_vocabulary_matches_authoritative_closed_public_reasons(self):
+        import re
+        source = (Path(__file__).resolve().parents[2] / "crates/latent-core/src/error.rs").read_text()
+        declaration = source.split("pub const ADMISSION_CURRENTNESS_REASONS: &[&str] = &[", 1)[1].split("];", 1)[0]
+        self.assertEqual(scenarios.ADMISSION_CURRENTNESS_REASONS, set(re.findall(r'"([a-z-]+)"', declaration)))
 
 
 if __name__ == "__main__":

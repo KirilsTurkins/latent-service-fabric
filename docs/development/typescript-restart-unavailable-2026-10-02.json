@@ -1,0 +1,52 @@
+{
+  "sourceBefore": "9c82c0e9fc5e24c015e7dd566f27a878bd1e21ac",
+  "historicalMethodsUnchanged": 50,
+  "historicalCaseGuardsUnchanged": 41,
+  "addedCases": [
+    "ScenarioCurrentnessObservations.test_conflicting_public_reasons_are_not_reported_as_one_cause",
+    "ScenarioCurrentnessObservations.test_diagnostic_vocabulary_matches_authoritative_closed_public_reasons",
+    "ScenarioCurrentnessObservations.test_examined_detail_count_is_bounded",
+    "ScenarioCurrentnessObservations.test_failed_scenario_retains_each_closed_reason_without_replaying_or_passing",
+    "ScenarioCurrentnessObservations.test_unknown_private_and_non_string_reasons_never_enter_reports",
+    "ScenarioCurrentnessObservations.test_wrong_categories_kinds_and_shapes_do_not_add_currentness_diagnostics"
+  ],
+  "focusedSourceResult": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.02
+  },
+  "diagnosticChange": {
+    "closedPublicReasons": 12,
+    "examinedDetailsMaximum": 16,
+    "conflictingReasonsSuppressed": true,
+    "remoteObjectsCoerced": false,
+    "rawMessagesOrCredentialsRetained": false,
+    "operatorOrRpcDeadlineChanged": false,
+    "failedCasesReclassified": false,
+    "mutationReplayed": false
+  },
+  "originalHostedFailure": {
+    "run": 36972422807,
+    "job": 110729014201,
+    "testedMerge": "b812bc04927a81da99e318f77dd8dc078d828622",
+    "artifact": 11220216567,
+    "artifactSha256": "c7d189a1a5badcf81dfe42958769aaf62e43fd68826375c44e7cda7e0c913376",
+    "language": "typescript",
+    "phase": "post-restart-shipping",
+    "publicCode": "unavailable",
+    "rootCause": "Unclassified; historical scenario observation discarded bounded public admission-currentness details."
+  },
+  "allHostedCiPassed": false,
+  "wholeIssueComplete": false,
+  "windowsBroaderControlResult": {
+    "testsRun": 100,
+    "passed": 91,
+    "skipped": 3,
+    "errors": 6,
+    "seconds": 386.188,
+    "failedPlatform": "six unchanged symlink-security fixtures could not create links: WinError 1314, required privilege unavailable",
+    "allPassed": false,
+    "guardsOrCasesChanged": false
+  }
+}

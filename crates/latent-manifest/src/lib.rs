@@ -12,7 +12,9 @@ mod json_number;
 mod renderer;
 mod runtime_compatibility;
 mod schema;
+mod transaction_binding;
 mod validation;
+mod validation_profile;
 #[path = "codec.rs"]
 mod wire_codec;
 
@@ -22,7 +24,12 @@ pub use runtime_compatibility::{
     check_runtime_compatibility, RuntimeCompatibilityProfile, RuntimeRequirement,
     RuntimeRequirements, CPU_FEATURES,
 };
+pub use transaction_binding::{
+    phase4_host_abi_digest, TransactionBinding, TransactionBindingError, TransactionOperation,
+    TransactionOperationMode,
+};
 pub use validation::{Phase1ManifestValidator, MANIFEST_API_VERSION, PHASE1_FABRIC_VERSION};
+pub use validation_profile::ManifestValidationProfile;
 pub use wire_codec::{ManifestDocument, ManifestKind};
 
 #[doc(hidden)]

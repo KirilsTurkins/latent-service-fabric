@@ -6,14 +6,14 @@ from pathlib import Path
 import re
 import tomllib
 
-from tools.rust_capsule_project import (ROOT, TEMPLATES, TUTORIALS, decode_json, digest,
+from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TUTORIALS, decode_json, digest,
     fresh, inventory, read_file, snapshot)
 
 RUNTIME_IMPORTS = ("latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:random/random@0.1.0")
 
 
 def create(directory: Path, template: str, name: str | None = None) -> Path:
-    if template not in TEMPLATES:
+    if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown Go capsule template")
     name = name or "my-" + template
     if not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", name) or len(name) > 64:
@@ -50,6 +50,9 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
             "template": {"name": template, "sourceDigest": digest(files["src/main.go"]),
                          "witDigest": digest(files["wit/world.wit"])}}
     files["capsule-project.json"] = json.dumps(project, indent=2).encode() + b"\n"
+    if template == "transactional-aggregate":
+        from tools.transaction_guest_project import augment
+        augment(files, project)
     files["sdk-lock.json"] = json.dumps(lock, indent=2).encode() + b"\n"
     files["README.md"] = (f"# {name}\n\nEdit `src/main.go` and `wit/world.wit`. Keep `vendor/lsf` unchanged.\n"
         "Build with `tools/go_capsule.py` from the SDK checkout. Generated export package names follow WIT.\n"
@@ -77,12 +80,9 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         raise ValueError("invalid capsule identity")
     if project["tenant"] is not None and (not isinstance(project["tenant"], str) or not 0 < len(project["tenant"]) <= 512):
         raise ValueError("invalid capsule tenant scope")
-    if (not isinstance(lock, dict) or set(lock) != {"formatVersion", "language", "sdk", "template"}
-            or type(lock["formatVersion"]) is not int or lock["formatVersion"] != 1 or lock["language"] != "go"):
-        raise ValueError("unsupported Go SDK lock")
-    vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
-    if json.loads(inventory(vendor)) != lock["sdk"]:
-        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    lock, vendor, pins = validate_sdk_inputs(files)
+    from tools.go_generator_authoring import validate_generated_inputs
+    validate_generated_inputs(files)
     captured = "latent.dependencies.json" in files
     if captured:
         from tools.application_dependencies import validate_manifest
@@ -99,4 +99,18 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         raise ValueError("Go invocation budgets require finite unsigned full-width integers")
     if not limits["cpuFuel"] or not limits["memoryBytes"] or not limits["wallTimeLimitMillis"]:
         raise ValueError("positive fuel, memory and wall-time budgets required")
-    return project, lock, tomllib.loads(vendor["tools/toolchain.toml"].decode())
+    return project, lock, pins
+
+
+def validate_sdk_inputs(files: dict[str, bytes]) -> tuple[dict, dict[str, bytes], dict]:
+    """Validate the exact immutable SDK independently from application resolution."""
+    if "sdk-lock.json" not in files:
+        raise ValueError("incomplete Go capsule SDK")
+    lock = decode_json(files["sdk-lock.json"])
+    if (not isinstance(lock, dict) or set(lock) != {"formatVersion", "language", "sdk", "template"}
+            or type(lock["formatVersion"]) is not int or lock["formatVersion"] != 1 or lock["language"] != "go"):
+        raise ValueError("unsupported Go SDK lock")
+    vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
+    if json.loads(inventory(vendor)) != lock["sdk"]:
+        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    return lock, vendor, tomllib.loads(vendor["tools/toolchain.toml"].decode())

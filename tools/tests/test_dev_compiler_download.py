@@ -41,7 +41,29 @@ class DownloadTests(unittest.TestCase):
             self.assertLess(clock[0], builder.DOWNLOAD_TIMEOUT_SECONDS)
             self.assertEqual(builder.DOWNLOAD_TIMEOUT_SECONDS, 600)
             self.assertEqual(requests, [65536, 65536, 18, 1])
-            opened.assert_called_once_with(self.source(payload)["url"], timeout=30)
+            opened.assert_called_once_with(self.source(payload)["url"], timeout=60)
+
+    def test_transport_wait_is_capped_by_the_original_remaining_acceptance_budget(self):
+        payload = b"pinned"
+        for limit in (2, 600):
+            clock = [0.0]
+            source = {**self.source(payload), "timeoutSeconds": limit}
+
+            class DelayedResponse(io.BytesIO):
+                def read1(self, maximum):
+                    clock[0] = float(limit)
+                    return super().read1(maximum)
+
+            with self.subTest(limit=limit), tempfile.TemporaryDirectory() as temporary:
+                target = Path(temporary) / "compiler.archive"
+                response = DelayedResponse(payload)
+                with patch.object(builder.time, "monotonic", side_effect=lambda: clock[0]), \
+                        patch.object(builder.urllib.request, "urlopen", return_value=response) as opened, \
+                        self.assertRaisesRegex(DevError, "compiler-download-deadline"):
+                    builder.download(target, source)
+                opened.assert_called_once_with(source["url"], timeout=min(60, limit))
+                self.assertFalse(target.exists())
+                self.assertTrue(response.closed)
 
     def test_over_byte_ceiling_is_rejected_and_partial_file_removed(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -155,7 +177,7 @@ class CacheTests(unittest.TestCase):
             source = self.source(b"pinned compiler bytes")
             with patch.object(builder.urllib.request, "urlopen", return_value=io.BytesIO(b"pinned compiler bytes")) as opened:
                 builder.download(root / "cold.archive", source, cache=root / "cache")
-            opened.assert_called_once_with(source["url"], timeout=30)
+            opened.assert_called_once_with(source["url"], timeout=60)
             with patch.object(builder.urllib.request, "urlopen") as opened:
                 builder.download(root / "warm.archive", source, cache=root / "cache")
             opened.assert_not_called()

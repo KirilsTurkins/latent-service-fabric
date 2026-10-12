@@ -1,0 +1,65 @@
+{
+  "sourceHead": "59c03abd1fbf2bcc39430ebe9866eb5ab23ee020",
+  "job": "contracts",
+  "lane": "python",
+  "originalRunBlock": "tools/validate_contracts.sh \"$CI_CONTRACT_LANE\"",
+  "fullRepositoryCiPassed": false,
+  "runBlockPassed": false,
+  "sharedNativeCacheUsed": false,
+  "stages": [
+    {
+      "stage": "clone",
+      "command": [
+        "git",
+        "clone",
+        "--shared",
+        "--no-checkout",
+        "/repository",
+        "/tmp/local-repository785-59-r1/source"
+      ],
+      "seconds": 2.724093,
+      "exitCode": 0
+    },
+    {
+      "stage": "checkout",
+      "command": [
+        "git",
+        "checkout",
+        "--detach",
+        "59c03abd1fbf2bcc39430ebe9866eb5ab23ee020"
+      ],
+      "seconds": 10.380909,
+      "exitCode": 0
+    },
+    {
+      "stage": "original-python-contracts",
+      "command": [
+        "bash",
+        "-e",
+        "-o",
+        "pipefail",
+        "-c",
+        "tools/validate_contracts.sh \"$CI_CONTRACT_LANE\""
+      ],
+      "seconds": 340.289307,
+      "exitCode": 1
+    }
+  ],
+  "actualOsRelease": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "actualPythonVersion": "3.13.5 (main, Jul 22 2025, 01:46:07) [GCC 12.2.0]",
+  "uid": 23001,
+  "tools": {
+    "cargo": "/usr/local/cargo/bin/cargo",
+    "rustc": "/usr/local/cargo/bin/rustc",
+    "node": "/usr/local/bin/node",
+    "javac": null,
+    "go": null,
+    "dotnet": null,
+    "wasm-tools": null,
+    "buf": null,
+    "zig": null,
+    "wit-bindgen": null
+  },
+  "seconds": 353.627597,
+  "failedReason": "('original-python-contracts', '..............................................................................s...............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................\\n======================================================================\\nFAIL: test_captured_sdk_child_path_cannot_expose_unregistered_executables (test_captured_compiler_isolation.CompilerNamespace.test_captured_sdk_child_path_cannot_expose_unregistered_executables)\\n----------------------------------------------------------------------\\nTraceback (most recent call last):\\n  File \"/tmp/local-repository785-59-r1/source/tools/tests/test_captured_compiler_isolation.py\", line 124, in test_captured_sdk_child_path_cannot_expose_unregistered_executables\\n    self.assertEqual(result.stdout, b\\'captured-child\\')\\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\nAssertionError: b\\'\\' != b\\'captured-child\\'\\n\\n======================================================================\\nFAIL: test_deadline_kills_descendants_and_next_build_is_clean (test_captured_compiler_isolation.CompilerNamespace.test_deadline_kills_descendants_and_next_build_is_clean)\\n----------------------------------------------------------------------\\ntools.build_process.BuildProcessError: command-exit\\n\\nDuring handling of the above exception, another exception occurred:\\n\\nTraceback (most recent call last):\\n  File \"/tmp/local-repository785-59-r1/source/tools/tests/test_captured_compiler_isolation.py\", line 92, in test_deadline_kills_descendants_and_next_build_is_clean\\n    with self.assertRaisesRegex(BuildProcessError, \\'command-deadline\\'):\\n         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\nAssertionError: \"command-deadline\" does not match \"command-exit\"\\n\\n======================================================================\\nFAIL: test_go_compiler_policy_cannot_enable_network_cgo_or_an_ambient_toolchain (test_captured_compiler_isolation.CompilerNamespace.test_go_compiler_policy_cannot_enable_network_cgo_or_an_ambient_toolchain)\\n----------------------------------------------------------------------\\nTraceback (most recent call last):\\n  File \"/tmp/local-repository785-59-r1/source/tools/tests/test_captured_compiler_isolation.py\", line 141, in test_go_compiler_policy_cannot_enable_network_cgo_or_an_ambient_toolchain\\n    self.assertEqual(result.stdout, b\\'off|local|0\\')\\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\nAssertionError: b\\'\\' != b\\'off|local|0\\'\\n\\n======================================================================\\nFAIL: test_selected_bytes_work_but_ambient_file_and_credentials_are_absent (test_captured_compiler_isolation.CompilerNamespace.test_selected_bytes_work_but_ambient_file_and_credentials_are_absent)\\n----------------------------------------------------------------------\\nTraceback (most recent call last):\\n  File \"/tmp/local-repository785-59-r1/source/tools/tests/test_captured_compiler_isolation.py\", line 82, in test_selected_bytes_work_but_ambient_file_and_credentials_are_absent\\n    self.assertEqual(self.execute(self.cat, str(selected)).stdout, b\\'captured\\')\\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\nAssertionError: b\\'\\' != b\\'captured\\'\\n\\n======================================================================\\nFAIL: test_selected_sources_are_read_only_and_owned_outputs_remain_writable (test_captured_compiler_isolation.CompilerNamespace.test_selected_sources_are_read_only_and_owned_outputs_remain_writable)\\n----------------------------------------------------------------------\\nTraceback (most recent call last):\\n  File \"/tmp/local-repository785-59-r1/source/tools/tests/test_captured_compiler_isolation.py\", line 105, in test_selected_sources_are_read_only_and_owned_outputs_remain_writable\\n    self.assertEqual(self.execute(self.cat, str(source / \\'selected.bin\\')).stdout, b\\'original\\')\\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\nAssertionError: b\\'\\' != b\\'original\\'\\n\\n----------------------------------------------------------------------\\nRan 2932 tests in 325.878s\\n\\nFAILED (failures=5, skipped=10)\\n')"
+}

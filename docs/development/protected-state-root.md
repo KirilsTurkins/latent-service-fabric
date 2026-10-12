@@ -23,9 +23,52 @@ database locking. Filesystem qualification, persisted formats, bounded workers,
 startup readiness and uncertain-write recovery remain the storage owner's
 responsibility; a valid descriptor alone is not state readiness.
 
+`create_mutable_file` is the separate exclusive initialization operation. It
+refuses every existing leaf, including empty or malformed checkpoint files, and
+uses the same anchored descriptor, permission and named-inode checks. The new
+file and its directory are synchronized before publication. If initialization
+fails after creation, the leaf remains for explicit recovery; it is never
+removed or overwritten by a subsequent initialization. The existing
+`open_mutable_file` operation continues to open valid existing files without
+truncation.
+
+`is_separate_from` compares retained actual ancestry before opening a separate
+recovery root. It refuses equal roots and either root containing the other,
+while allowing siblings with a shared protected parent. Both chains are checked
+before and after comparison. The [transaction checkpoint](transaction-checkpoint.md)
+uses this metadata operation without exposing native descriptors.
+
+The retained startup constructor
+`ProtectedStoreOwner::start_bound_retained_validated_view_with_clock` receives
+an affine `ProtectedStoreStartupMemory` from the node's original global Recovery
+reservation. `ProtectedStoreConfig::startup_memory_bytes` checks the finite
+configuration and footprint before that reservation or native allocation. The
+initializer and resident permits are prepaid before worker creation; readiness
+already contains the same sealed global owner. Short original admission checks
+precede native open, identity acceptance and readiness, and never hold the
+global capacity mutex across file I/O.
+
+The initializer permit remains on its fixed worker through validator and
+configuration destruction. The resident keeper is the last physical-store
+field, after the engine, protected descriptors and root lock. Dropping a startup
+or drain waiter cannot release that memory or prove physical retirement. The
+configured Recovery partition must cover this retained original reservation
+and still leave usable capacity for recovery requests.
+
+`NamespaceCatalog::with_retained_capacity` constructs the protected namespace
+metadata owner on that same original Recovery reservation. Lifecycle metadata
+is prepaid before allocating its fixed entry
+vector; the checked maximum footprint is below 16 MiB. The charge follows the
+actual lifecycle owner through every retained handle and unresolved completion.
+Registry entries and handle/completion stamps are destroyed before that owner,
+so closing a catalog or losing a waiter cannot release capacity ahead of the
+last metadata destructor. This resident charge supplies no namespace permission
+and does not renew the original startup deadline. Later operations still require
+their own current policy, request and lifecycle authority.
+
 ## Validation
 
-The registered `latent-protected-files` library suite contains 18 tests. On
+The previous `latent-protected-files` library suite contained 18 tests. On
 2026-09-30 the normal Linux run passed 17 tests, and the existing privileged
 ownership test passed when selected explicitly with `--ignored`. Four new
 tests verify creation/reopen without truncation, unsafe names/types/links/modes
@@ -38,3 +81,21 @@ The source and Cargo registry were read-only mounts, and each compilation used
 a session-owned target volume. The security fixtures were created on the Linux
 container filesystem. This is descriptor-security evidence; it does not claim
 power-loss durability, disk-full behavior or complete storage-owner delivery.
+
+Three additional exclusive-create cases are registered for existing empty and
+malformed leaves, simultaneous creation with one winning inode, and unsafe
+bounds or changed ancestors before creation. Native execution and strict lint
+of these additions remain pending; compilation is paused for local disk space.
+
+Ten startup-memory cases are registered: checked limits, original owner/class
+affinity, independent real buffer permits and rollback, expired-owner retention,
+and Linux native open, cancellation, original-deadline, late-readiness and
+paused-destructor schedules. Their native execution and strict Clippy remain
+pending under the shared compiler hold; source registration is not execution
+evidence.
+
+Six resident namespace-metadata cases are registered for exact original owner
+and Recovery class, real buffer pressure, retained handles and unresolved
+completions, a paused last-stamp destructor, maximum record/owner bounds, and
+startup expiry without a new authority grant. Native execution and strict
+Clippy of these additions remain pending under the shared compiler hold.

@@ -10,6 +10,7 @@ mod limits;
 mod local;
 mod service;
 mod trace;
+mod transaction;
 mod validation;
 
 use latent_activation::{ActivationOutcome, ActivationStatus, TraceContext};
@@ -26,6 +27,7 @@ pub use cleanup::{
     ActivationCleanupHandle, ActivationCleanupOwner, ActivationCleanupReservation,
     ActivationCleanupSnapshot, RetainedActivation,
 };
+pub(crate) use conversion::sanitize_platform_error;
 pub use conversion::{
     activation_status_from_proto, activation_status_to_proto, budget_from_proto, budget_to_proto,
     cancel_disposition_from_proto, cancel_disposition_to_proto, consumption_from_proto,
@@ -34,7 +36,8 @@ pub use conversion::{
     invocation_response_to_proto, platform_error_from_proto, platform_error_to_proto,
     InvocationConversionError,
 };
-use errors::{boundary_error, platform_status};
+use errors::boundary_error;
+pub(crate) use errors::platform_status;
 pub(crate) use errors::{public_platform_message, tonic_code};
 pub use latent_rpc::invocation::v1 as proto;
 pub use limits::InvocationLimits;
@@ -43,6 +46,9 @@ pub use proto::invocation_service_client::InvocationServiceClient;
 pub use proto::invocation_service_server::{InvocationService, InvocationServiceServer};
 pub use service::{InvocationServiceAdapter, InvocationServiceServices};
 pub use trace::{InvocationTraceSource, SystemInvocationTraceSource};
+pub(crate) use transaction::{
+    pin_transaction_arrival, transaction_invocation_response, transaction_request,
+};
 
 /// Missing IDs remain absent until the activation manager accepts the request.
 #[derive(Debug, Clone, PartialEq, Eq)]

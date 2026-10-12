@@ -32,7 +32,7 @@ The exact dependency baseline is recorded in both the root `Cargo.toml` and `too
 | Tonic Prost Build | 0.14.6 |
 | Vendored `protoc` | 3.2.0 |
 | Tracing / tracing-subscriber | 0.1.44 / 0.3.23 |
-| Wasmtime | 48.0.3 |
+| Wasmtime | 48.0.4 |
 | `wit-bindgen` | 0.62.0 |
 
 The committed root `Cargo.lock` is authoritative. Local commands and CI use `--locked`; they do not silently replace the dependency graph.
@@ -81,6 +81,15 @@ Generated build products belong in ignored locations such as Cargo `OUT_DIR`, `t
 ## Dependency graph boundary
 
 `tools/validate_foundation.py` resolves all workspace path dependencies and performs cycle detection before contract compilation. A cycle is a validation error with the concrete dependency path. Missing path dependencies remain covered by the repository validator.
+
+Optional, test, build, and target-specific edges participate even when Cargo's
+selected feature graph does not activate them. Upstream storage tests use
+`latent-test-process` for child ownership and resource observations; that neutral
+crate has no workspace dependencies. `latent-testkit` re-exports its exact
+process/probe types for existing harness callers. Storage must not depend on
+testkit, whose optional node harness points back through capability authority to
+storage. The [helper graph check](../../tools/check_testkit_dependencies.py)
+enforces both unconditional topology and independently selected dependency graphs.
 
 ## Test foundation
 

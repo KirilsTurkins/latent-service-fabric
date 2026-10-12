@@ -15,7 +15,7 @@ impl ActivationBudget {
         &self,
         peak: u64,
     ) -> Result<RuntimeMemoryReservation, BudgetError> {
-        if self.profile() != super::BudgetProfile::Phase3 {
+        if !self.profile().supports_descendants() {
             return Err(BudgetError::InvalidAccountingOperation {
                 dimension: BudgetDimension::MemoryBytes,
             });

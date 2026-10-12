@@ -11,7 +11,7 @@ import shutil
 import tempfile
 from urllib.parse import urlsplit
 
-from tools.application_dependencies import MANIFEST, capture, validate_manifest
+from tools.application_dependencies import LOCK, MANIFEST, capture, validate_manifest
 from tools.application_dependency_store import (DependencyError, Store, archive_files, directory_files,
                                                read_bytes, regular_path, tree_identity)
 from tools.build_observation import build_environment, file_identity
@@ -160,9 +160,21 @@ def _mirror(source: Path, owned: Path) -> Path:
 
 def resolve(project: Path, candidate: Path, *, go: Path | None = None, selected: dict | None = None,
             proxy_config: Path | None = None) -> dict:
-    project = regular_path(project).resolve(strict=True)
-    if candidate.exists():
+    from tools.go_dependency_authoring import transaction
+    with transaction(project) as (owner, app, private, sdk):
+        return _resolve(owner, app, private, sdk, candidate, go=go, selected=selected, proxy_config=proxy_config)
+
+
+def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *, go: Path | None,
+             selected: dict | None, proxy_config: Path | None) -> dict:
+    from tools.go_dependency_authoring import candidate_location, optional, replace, source_files, unchanged
+    from tools.dev_workflow import paths
+    candidate = candidate_location(owner, candidate)
+    if os.path.lexists(candidate):
         raise DependencyError('dependency-candidate-exists')
+    previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
+    previous_graph = optional(project, 'go-resolved.lock.json')
+    source_before = source_files(project)
     selected = selection(selected)
     original = {name: read_bytes(project / name) for name in ('go.mod', 'go.sum')}
     expected_sums = sums(original['go.sum'])
@@ -170,7 +182,14 @@ def resolve(project: Path, candidate: Path, *, go: Path | None = None, selected:
     sdk_lock = json.loads(read_bytes(project / 'vendor/lsf/sdk/go-guest/runtime-deps/dependencies.lock.json'))
     recipe_before = file_identity(Path(__file__), 'go-module-capture-recipe')
     go = regular_path(go or Path(shutil.which('go') or 'missing-go')).resolve(strict=True)
-    policy = json.loads(read_bytes(proxy_config)) if proxy_config else {'proxy': 'https://proxy.golang.org', 'sumdb': 'sum.golang.org'}
+    go_before = file_identity(go, 'native-module-resolver')
+    proxy_bytes = None
+    if proxy_config is not None:
+        proxy_config = regular_path(proxy_config).resolve(strict=True)
+        if proxy_config.is_relative_to(owner):
+            raise DependencyError('go-proxy-configuration-must-stay-outside-project')
+        proxy_bytes = read_bytes(proxy_config)
+    policy = json.loads(proxy_bytes) if proxy_bytes is not None else {'proxy': 'https://proxy.golang.org', 'sumdb': 'sum.golang.org'}
     if (not isinstance(policy, dict) or set(policy) - {'proxy', 'sumdb', 'private', 'authorizationEnv', 'username'}
             or not {'proxy', 'sumdb'} <= set(policy)):
         raise DependencyError('go-proxy-policy-invalid')
@@ -179,9 +198,9 @@ def resolve(project: Path, candidate: Path, *, go: Path | None = None, selected:
         raise DependencyError('go-proxy-endpoint-invalid')
     if not isinstance(policy['sumdb'], str) or not re.fullmatch(r'(?:off|[a-zA-Z0-9.+/_=-]{1,512})', policy['sumdb']):
         raise DependencyError('go-checksum-policy-invalid')
-    private = policy.get('private', [])
-    if not isinstance(private, list) or len(private) > 32 or any(not isinstance(value, str)
-            or not re.fullmatch(r'[A-Za-z0-9_./*?\[\]-]{1,512}', value) for value in private):
+    private_modules = policy.get('private', [])
+    if not isinstance(private_modules, list) or len(private_modules) > 32 or any(not isinstance(value, str)
+            or not re.fullmatch(r'[A-Za-z0-9_./*?\[\]-]{1,512}', value) for value in private_modules):
         raise DependencyError('go-private-module-policy-invalid')
     with tempfile.TemporaryDirectory(prefix='lsf-go-module-resolve-') as temporary:
         owned = Path(temporary)
@@ -189,7 +208,9 @@ def resolve(project: Path, candidate: Path, *, go: Path | None = None, selected:
         environment.update(GOTOOLCHAIN='local', GOWORK='off', GOENV='off', CGO_ENABLED='0', GOFLAGS='-mod=readonly',
             GOCACHE=str(owned / 'cache'), GOMODCACHE=str(owned / 'modules'), HOME=str(owned / 'home'),
             USERPROFILE=str(owned / 'home'), GOPROXY=policy['proxy'], GOSUMDB=policy['sumdb'],
-            GOPRIVATE=','.join(private), GONOPROXY='none', GONOSUMDB=','.join(private), GOAUTH='netrc')
+            GOPRIVATE=','.join(private_modules), GONOPROXY='none', GONOSUMDB=','.join(private_modules), GOAUTH='netrc',
+            GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
+        (owned / 'git-empty.config').write_bytes(b'')
         if variable := policy.get('authorizationEnv'):
             username = policy.get('username', 'token')
             if (not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable)
@@ -219,8 +240,10 @@ def resolve(project: Path, candidate: Path, *, go: Path | None = None, selected:
             if target.get('Version'):
                 module_path(target['Path'])
                 continue
-            source = (project / target['Path']).resolve(strict=False)
+            source = regular_path(project / target['Path']).resolve(strict=False)
             destination = _mirror(source, owned)
+            if source != project and candidate.is_relative_to(source):
+                raise DependencyError('go-candidate-inside-captured-source')
             if source.exists():
                 regular_path(source)
                 for name, data in directory_files(source, exclude=('.git',)).items():
@@ -239,7 +262,7 @@ def resolve(project: Path, candidate: Path, *, go: Path | None = None, selected:
         edges = run_bounded([str(go), 'mod', 'graph'], work, environment, 60, 2 * 1024 * 1024).stdout.decode()
         native = graph(modules, edges, root)
         downloads_by_key = {(row['Path'], row['Version']): row for row in downloads}
-        store, artifacts = Store(project / 'dependency-inputs/objects'), []
+        store, artifacts = Store(owner / 'dependency-inputs/objects'), []
         cache, cache_files = owned / 'captured-downloads', {}
         cache.mkdir()
         selected_local = {}
@@ -329,23 +352,37 @@ def resolve(project: Path, candidate: Path, *, go: Path | None = None, selected:
                 'inputDigest': tree_identity(before), 'outputDigest': tree_identity(after),
                 'files': [{'path': 'go.mod', 'inputDigest': digest(original['go.mod']), 'source': str(store.path(reference['digest'])),
                            'outputDigest': reference['digest']}], 'tool': file_identity(go, 'go-mod-edit'), 'selection': selected})
-        native.update(selection=selected, resolverGo=file_identity(go, 'native-module-resolver'), resolverVersion=version,
+        native.update(selection=selected, resolverGo=go_before, resolverVersion=version,
             recipe=recipe_before, policyDigest=digest(canonical(policy)), originalManifestDigest=digest(original['go.mod']),
             fetchManifestDigest=digest(fetch_manifest), selectedManifestDigest=digest(transformed),
             nativeSumDigest=digest(original['go.sum']), generatedCommands='never-executed',
             downloadSourceIdentityDigest=digest(canonical([{key: row.get(key) for key in ('Path', 'Version', 'Sum', 'GoModSum', 'Origin')}
                 for row in downloads])))
-        (project / 'go-resolved.lock.json').write_bytes(canonical(native) + b'\n')
+        native_bytes = canonical(native) + b'\n'
+        prefix = project.relative_to(owner).as_posix() + '/' if owner != project else ''
         manifest = {'formatVersion': 1, 'language': 'go', 'selection': selected,
-            'nativeLocks': ['go.mod', 'go.sum', 'go-resolved.lock.json'], 'artifacts': artifacts, 'transformations': transforms}
+            'nativeLocks': [prefix + name for name in ('go.mod', 'go.sum', 'go-resolved.lock.json')],
+            'artifacts': artifacts, 'transformations': transforms}
         validate_manifest(manifest, 'go')
-        (project / MANIFEST).write_bytes(canonical(manifest) + b'\n')
-        result = capture(project)
-        if original != {name: read_bytes(project / name) for name in original} or file_identity(Path(__file__), 'go-module-capture-recipe') != recipe_before:
-            raise DependencyError('go-declaration-lock-or-capture-recipe-mutated')
+        manifest_bytes = canonical(manifest) + b'\n'
+        check = owned / 'capture-inputs'
+        check.mkdir(mode=0o700)
+        (check / MANIFEST).write_bytes(manifest_bytes)
+        for name, raw in {**original, 'go-resolved.lock.json': native_bytes}.items():
+            target = check / (prefix + name)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(raw)
+        result = capture(check, cache=owner / 'dependency-inputs/objects')
+        if (source_files(project) != source_before or file_identity(Path(__file__), 'go-module-capture-recipe') != recipe_before
+                or file_identity(go, 'native-module-resolver') != go_before
+                or (proxy_config is not None and read_bytes(proxy_config) != proxy_bytes)
+                or optional(owner, MANIFEST) != previous_manifest or optional(owner, LOCK) != previous_lock):
+            raise DependencyError('go-declaration-lock-tool-or-capture-input-mutated')
+        unchanged(owner, sdk)
+        replace(owner, private, prefix + 'go-resolved.lock.json', native_bytes, previous_graph, sdk)
+        replace(owner, private, MANIFEST, manifest_bytes, previous_manifest, sdk)
         candidate.parent.mkdir(parents=True, exist_ok=True)
-        with candidate.open('xb') as output:
-            output.write(canonical(result) + b'\n')
+        paths.write_new(candidate, canonical(result) + b'\n')
         return result
 
 

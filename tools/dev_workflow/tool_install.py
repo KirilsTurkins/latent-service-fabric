@@ -4,7 +4,7 @@ import re
 import time
 
 from . import assets, bundle, paths, project, state, tool_inventory
-from .common import HOST_ABI, decode, digest, members, require, sha
+from .common import decode, digest, guest_host_abi, members, require, sha
 
 MAX_SETS = 2
 MAX_ENTRIES = bundle.MAX_ENTRIES * 32 + 16
@@ -19,7 +19,8 @@ def selection(value: dict) -> dict:
             "authenticated-guest-tools-required")
     require(value["language"] in project.LANGUAGES and value["ownerIssue"] == project.LANGUAGES[value["language"]],
             "guest-tool-owner")
-    require(value["host"] == "linux-x86_64" and value["hostAbi"] == HOST_ABI, "guest-tool-target")
+    guest_host_abi(value["hostAbi"])
+    require(value["host"] == "linux-x86_64", "guest-tool-target")
     require(isinstance(value["sourceCommit"], str) and re.fullmatch(r"[a-f0-9]{40}", value["sourceCommit"]),
             "guest-tool-source")
     sha("sha256:" + value["bundle"])
@@ -37,6 +38,7 @@ def selected_root(workspace: Path, descriptor: dict) -> str:
     require((workspace / "tool-selection.json").exists(), "install-matching-guest-tools-or-select-tool-root")
     value = selection(state.load(workspace, "tool-selection.json"))
     require(descriptor["language"] == value["language"] and descriptor["template"]["revision"] == value["sourceCommit"]
+            and descriptor["hostAbi"] == value["hostAbi"]
             and descriptor["build"].get("inventory") == {"path": "guest-tools.json", "sha256": value["inventorySha256"]},
             "installed-tools-do-not-match-project-pins")
     return value["directory"]
@@ -64,6 +66,7 @@ def inputs(workspace: Path, connection, value: dict) -> dict:
         **{key: value[key] for key in ("version", "language", "verifierSha256", "allowCandidate", "consent")},
         "resume": value.get("resume", False)}, timeout=615))
     require(result["bundle"] == expected["archive"]["sha256"][7:] and result["version"] == value["version"]
+            and result["hostAbi"] == expected["hostAbi"]
             and result["sourceCommit"] == policy["sourceCommit"] and result["language"] == value["language"]
             and result["publisherPolicySha256"] == digest(raw_policy), "guest-tool-install-response-identity")
     entry = next((item for item in expected["files"] if item["path"] == "guest-tools.json"), None)
@@ -123,7 +126,8 @@ def install(root: Path, arguments: dict) -> dict:
     require(entry is not None, "guest-tool-inventory-required")
     raw = paths.read(payload, "guest-tools.json", tool_inventory.MAX_DOCUMENT)
     require((digest(raw), len(raw)) == (entry["sha256"], entry["size"]), "guest-tool-inventory-digest")
-    inventory = tool_inventory.validate(decode(raw, tool_inventory.MAX_DOCUMENT), language, project.LANGUAGES[language], "linux-x86_64")
+    inventory = tool_inventory.validate(decode(raw, tool_inventory.MAX_DOCUMENT), language, project.LANGUAGES[language], "linux-x86_64",
+                                        host_abi=selected["hostAbi"])
     require(inventory["sourceCommit"] == selected["sourceCommit"], "guest-tool-inventory-source")
     files = {item["path"]: item for item in selected["files"]}
     require(all(item["path"] in files and (item["sha256"], item["size"]) ==
@@ -132,7 +136,7 @@ def install(root: Path, arguments: dict) -> dict:
     check()
     result = selection({"schemaVersion": "latent.dev.tools-selection.v1", "directory": str(payload), "bundle": identity,
         "inventorySha256": entry["sha256"], "language": language, "ownerIssue": project.LANGUAGES[language],
-        "sourceCommit": selected["sourceCommit"], "version": selected["version"], "host": "linux-x86_64", "hostAbi": HOST_ABI,
+        "sourceCommit": selected["sourceCommit"], "version": selected["version"], "host": "linux-x86_64", "hostAbi": selected["hostAbi"],
         "publisherAuthenticated": True, "publisherPolicySha256": digest(paths.read(source / "trust", "publisher-policy.json"))})
     state.atomic(slot, "owner.json", {**metadata, "state": "ready"})
     state.atomic(root, "tool-selection.json", result)

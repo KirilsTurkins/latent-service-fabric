@@ -147,6 +147,7 @@ fn audit_resource_class_wire_numbers_remain_stable_and_stream_is_distinct() {
         R::Events,
         R::Telemetry,
         R::Service,
+        R::State,
         R::Stream,
     ]
     .into_iter()
@@ -160,7 +161,12 @@ fn audit_resource_class_wire_numbers_remain_stable_and_stream_is_distinct() {
             proto::AuditCapabilityContext::decode(wire.encode_to_vec().as_slice()).unwrap();
         assert_eq!(decoded.resource_class, i32::try_from(index + 1).unwrap());
     }
-    assert_eq!(proto::AuditCapabilityResourceClass::Stream as i32, 11);
+    assert_eq!(proto::AuditCapabilityResourceClass::State as i32, 11);
+    assert_eq!(proto::AuditCapabilityResourceClass::Stream as i32, 12);
+    assert_ne!(
+        proto::AuditCapabilityResourceClass::Stream,
+        proto::AuditCapabilityResourceClass::State
+    );
     assert_ne!(
         proto::AuditCapabilityResourceClass::Stream,
         proto::AuditCapabilityResourceClass::Http

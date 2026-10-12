@@ -1,0 +1,128 @@
+{
+  "bounds": {
+    "cpus": 1,
+    "memoryBytes": 1073741824,
+    "network": "none",
+    "workflowSeconds": 90
+  },
+  "correctedBoundary": {
+    "change": "Root preparation Commands at the reviewed developer-library directory; capture its owned parent without widening mounts.",
+    "container": "6ba1c7c3f9c1555f9645a4c03741ab63cf92c0a6dea741eb38683d722dca3b39",
+    "controls": [
+      "Read actual reviewed Library.csproj and prefix.txt through bubblewrap",
+      "Deny unrelated application src/Main.cs",
+      "Deny unselected credential file",
+      "Recheck exact compiler inputs before completing namespace probe",
+      "Stop before any managed compilation or package output"
+    ],
+    "exitCode": 0,
+    "logs": {
+      "stderr": {
+        "bytes": 99,
+        "sha256": "fb4e5f3218402c8ca536f38d09eb70aa0fa08577fe276a33332c436e7ed5c5d0"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "oomKilled": false,
+    "seconds": 32.575496,
+    "sourceDigests": {
+      "tools/captured_compiler_isolation.py": "e55d62eaa8948b154b6406b7e37f5f5fd3f6f6e6e4024b1a4d24c3a615e805e7",
+      "tools/dotnet_compiler_isolation.py": "37beb4959610d402c94f715dc559c2553875bda0ccca70d70d90da1f6f221565",
+      "tools/dotnet_dependency_fixture.py": "55e5b79c8a918b3f6dde4ef90b84c4a7ed426d311b0ab0d2c997814879852024",
+      "tools/tests/test_dotnet_application_dependencies.py": "cdf7d22e0460d30e1adf85a6186840443cebf90f8a0e5fd97ea1a3c186473750"
+    }
+  },
+  "image": "sha256:d768696e60b519fbc34e3c1f483ad7c2602f7480f74c1637597c59606909e952",
+  "observedAt": "2026-10-01T21:08:19.067591+00:00",
+  "originalFailure": {
+    "cause": "Application commands rooted under output/projects mounted that sibling tree; output/outside-project-dependencies/developer-library was absent.",
+    "container": "5f9c64278bf58ac13ba7691b236a4e0e05afdfc1d5ad4c3203b1a6202ce3d69d",
+    "endedAt": "2026-10-01T20:59:48.023413+00:00",
+    "exitCode": 1,
+    "logs": {
+      "stderr": {
+        "bytes": 2049,
+        "sha256": "f31431aa0acbb7627f6814acdb9aa3a866d692d8ae660e7cee21a22f78c36766"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "missingInputs": [
+      "Library.csproj",
+      "prefix.txt"
+    ],
+    "oomKilled": false,
+    "sourceDigests": {
+      "tools/captured_compiler_isolation.py": "e55d62eaa8948b154b6406b7e37f5f5fd3f6f6e6e4024b1a4d24c3a615e805e7",
+      "tools/dotnet_compiler_isolation.py": "37beb4959610d402c94f715dc559c2553875bda0ccca70d70d90da1f6f221565",
+      "tools/dotnet_dependency_fixture.py": "3aa203c5ad97659a521d4897dc07075761dd2378d159def70afdd3b20531fcb9",
+      "tools/tests/test_dotnet_application_dependencies.py": "cdf7d22e0460d30e1adf85a6186840443cebf90f8a0e5fd97ea1a3c186473750"
+    },
+    "stage": "developer-library-build namespace source reads",
+    "startedAt": "2026-10-01T20:59:30.465571+00:00"
+  },
+  "ownedLinuxReplay": {
+    "archiveBytes": 4301289,
+    "archiveDigest": "7896ade0b81e6d5b7f36f5e48b380fb7454c8f3840fc678f91aa2c62873f6092",
+    "container": "ea19ca8456b7d242bf139166d72cd29efb96e49154e26b7c729d701efaa32218",
+    "driverDigest": "f06649a2d74fcf0dc2bd642d093d5a7b748ed4802068f2c94a6a240cb11e2a60",
+    "endedAt": "2026-10-01T21:08:19.067591+00:00",
+    "exitCode": 0,
+    "seconds": 6.347763,
+    "sourceBytes": 16473216,
+    "sourceFiles": 1995,
+    "sourceManifestDigest": "a80e7718e800043b35a2a8ee3565c9d7a2ba6e808e736cda96b720f44da3b824",
+    "startedAt": "2026-10-01T21:08:12.719863+00:00"
+  },
+  "remainingQualification": [
+    "Fresh actual managed library build",
+    "Fresh NativeAOT application build/sign/normal-node run under the repaired nested fixture",
+    "Full issue #687 acceptance ledger"
+  ],
+  "retainedBindTimeout": {
+    "assertionFailureObserved": false,
+    "logs": {
+      "stderr": {
+        "bytes": 32,
+        "sha256": "2fc0f883e6c3bf1e4b68c6b5990efc5bd8be65bfac1442f8a0a7e2463fc51c4d"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "outcome": "Harness deadline; only the owned probe container was stopped; no pass or cause inference.",
+    "progressDots": 32,
+    "stage": "Combined source controls from Windows readonly bind",
+    "workflowSeconds": 90
+  },
+  "schemaVersion": "latent.sdk.dotnet.fixture-namespace.v1",
+  "scope": "Actual fixture source-read and ambient-read-denial boundary plus namespace/NuGet source controls.",
+  "validation": {
+    "casesPassed": 48,
+    "logs": {
+      "stderr": {
+        "bytes": 147,
+        "sha256": "59ce6f812d165580a73f70e24901a0ec6a519e878a3a70b081400682a7afa121"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "modules": [
+      "tools.tests.test_captured_compiler_isolation",
+      "tools.tests.test_dotnet_application_dependencies"
+    ],
+    "oldDotnetCaseAndGuardIdentitiesPreserved": 35,
+    "requiredIsolation": true,
+    "skips": 0,
+    "sourceClosureRecheckedBeforeAndAfter": true,
+    "testSeconds": 2.672
+  }
+}

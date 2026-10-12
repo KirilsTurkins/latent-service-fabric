@@ -1,6 +1,7 @@
 use super::*;
 use latent_core::{InvocationPrincipal, PrincipalKind, TenantId};
 use serde_json::{json, Value};
+mod state;
 
 pub(super) fn publication_id() -> String {
     format!("publication:sha256:{}", "1".repeat(64))

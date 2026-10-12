@@ -1,0 +1,277 @@
+"""Sign and run the actual offline MemoryPack component with normal node tools."""
+import argparse
+import copy
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import sys
+import time
+import traceback
+
+parser = argparse.ArgumentParser()
+parser.add_argument('phase', choices=('sign', 'node'))
+args = parser.parse_args()
+root = Path('/work')
+source = Path('/source')
+native = Path('/native/binaries')
+sys.path.insert(0, str(source))
+from tools.dotnet_guest.entropy_grants import configure as configure_entropy, grant as grant_entropy
+from tools.rust_capsule_project import read_json
+from tools.build_process import run_bounded_result
+from tools.build_observation import build_environment
+from tools.build_process_signals import owned_cancellation
+from tools.phase2_operator_process import require, stopped_record, write_json
+from tools.phase2_operator_scenario import connect, stop
+from tools.phase3_management_scenario import configure_provider_node
+from tools.rust_capsule_node import RecordingClient, deploy, call, assert_value, sample, delete_all
+from tools.phase3_resource_os import Probe
+from tools.phase3_resource_identity import file_identity
+
+
+def identity(path):
+    with path.open('rb') as stream:
+        size = path.stat().st_size
+        digest = 'sha256:' + hashlib.file_digest(stream, 'sha256').hexdigest()
+    return {'digest': digest, 'size': size}
+
+
+receipt = read_json(Path('/native/normal-native-r3/NATIVE-BUILD-COMPLETE.json'))
+require(receipt['status'] == 'normal-source-native-build-passed'
+        and receipt['sourceRevision'] == '907e8fa0791e85d764d7b06a716f4f238a84e05d',
+        'normal-native-receipt')
+for name in ('latent', 'latentd', 'capsule_authoring'):
+    require(identity(native / name) == receipt['files'][name], 'normal-native-bytes')
+
+if args.phase == 'sign':
+    build = Path('/capture/approved-build')
+    result = run_bounded_result([str(native / 'capsule_authoring'), 'demo-sign', str(root / 'releases'), str(build)],
+        cwd=root, env=build_environment(root), timeout_seconds=120, max_output_bytes=1024 * 1024)
+    (root / 'sign.stdout.txt').write_bytes(result.stdout)
+    (root / 'sign.stderr.txt').write_bytes(result.stderr)
+    require(result.returncode == 0, 'actual-memorypack-signing-failed')
+    records = read_json(root / 'releases/release-set.json')
+    require(len(records['releases']) == 1 and records['releases'][0]['name'] == 'memorypack-library',
+            'actual-memorypack-signed-release')
+    write_json(root / 'SIGN-COMPLETE.json', {
+        'formatVersion': 1, 'sourceRevision': receipt['sourceRevision'],
+        'signer': receipt['files']['capsule_authoring'], 'signedRelease': records,
+        'scope': 'ordinary isolated-demo publisher/builder signatures after completed observed build',
+        'productionPublication': False})
+    print(json.dumps({'phase': 'sign', 'status': 'passed', 'release': records['releases'][0]}), flush=True)
+    raise SystemExit(0)
+
+evidence = root / 'node-attempt4'
+evidence.mkdir(mode=0o700)
+result = {'schemaVersion': 'lsf.dotnet.memorypack.node-observation.v1', 'status': 'in-progress',
+    'sourceRevision': receipt['sourceRevision'],
+    'binaries': {name: receipt['files'][name] for name in ('latent', 'latentd')},
+    'nativeBuild': {'normal': True, 'sourceRevision': receipt['sourceRevision'], 'configuration': receipt['configuration'], 'compiler': receipt['compiler'], 'debug': receipt['debug'], 'incremental': receipt['incremental'], 'restoration': 'new owned normal source907 build after external cache deletion; original deadline attempt preserved'},
+    'originalAttempt': 'original signed outputs passed; persisted restart failed; original signing window expired and is not reused',
+    'compilerPayloadMounted': False, 'sdkSourceRevision': 'c7716d822132297e511ab2fc48279c93d6a94eae',
+    'adapterBuildSourceRevision': '260ca8aead1a851a873162ff1138819c21c78025', 'network': 'Docker --network none', 'invocations': [], 'samples': [],
+    'shutdown': [], 'productionPublication': False,
+    'limitations': ['Finite pure-library fixture; no default Task/ThreadPool/HttpClient qualification.',
+                    'Linux /proc samples are non-atomic; no production sizing or complete GC claim.']}
+client = node = None
+stage = 'node-input-separation'
+try:
+    require(not any(Path(name).exists() for name in ('/capture','/public','/adapters')), 'compiler-payload-must-be-unavailable-at-node-invocation')
+    require(shutil.which('dotnet') is None, 'no-external-clr-at-node-invocation')
+    release_set = read_json(root / 'releases/release-set.json')
+    require(release_set['trust'] == 'isolated-short-lived-demo-only'
+            and release_set['expiresAtUnixSeconds'] > time.time() + 180, 'current-demo-signatures')
+    signed = root / 'releases/memorypack-library'
+    node_directory, client_directory = evidence / 'node', evidence / 'client'
+    for directory in (node_directory, client_directory):
+        directory.mkdir(mode=0o700)
+    initial = configure_provider_node(node_directory, root / 'releases', 9)
+    settings = read_json(initial)
+    settings['credentials'][0]['tenant'] = 'examples'
+    settings['cells'][0]['maximumMemoryBytes'] = 134217728
+    settings['execution']['maximumWallTimeMillis'] = 120000
+    settings['cache'].update(entries=2, preparations=1)
+    settings['catalogs'].update(releaseEntries=8, deployments=16)
+    settings['shutdownGraceMillis'] = 5000
+    settings['audit'].update(records=4096, diskBytes=67108864)
+    settings['capabilityPolicies']['store'] = {'maximumRecords': 64, 'maximumOutcomes': 128,
+        'maximumCatalogBytes': 4194304, 'maximumReadOwners': 64, 'maximumPageRecords': 16}
+    settings['providers'] = {'formatVersion': 1,
+        'clockMonotonic': {'identity': {'id': 'clockMonotonic', 'tenant': 'examples',
+                                      'service': 'runtime-host', 'epoch': 1}},
+        'bindings': [{'name': 'clock-memorypack', 'tenant': 'examples',
+            'consumerService': 'examples/memorypack-library', 'providerService': 'runtime-host',
+            'contract': 'latent:clock/monotonic@0.1.0', 'providerBinding': 'clockMonotonic-installed'}]}
+    configure_entropy(settings, service='examples/memorypack-library')
+    config = node_directory / 'memorypack-node.json'
+    write_json(config, settings)
+    public_settings = copy.deepcopy(settings)
+    for credential in public_settings['credentials']:
+        credential.pop('token')
+    result['configuration'] = public_settings
+    result['signedRelease'] = release_set['releases'][0]
+
+    with owned_cancellation() as cancellation:
+        client = RecordingClient(native / 'latent', client_directory, cancellation,
+                                 time.monotonic() + 900, evidence=evidence / 'controls',
+                                 invocation_timeout_millis=120000)
+        stage = 'normal-node-start'
+        node = connect(client, native / 'latentd', node_directory, config, 'examples', 1)
+        result['startup'] = node.startup_record
+        probe = Probe(node, file_identity(native / 'latentd'))
+        result['samples'].append(sample(client, probe, 'empty', 0))
+        stage = 'unsigned-admission-denial'
+        denied = client.call('release', 'publish-package', signed / 'package',
+            '--operation-id', 'memorypack-unsigned-denied', '--expected-generation', '0', codes=(4,))
+        require(denied['error']['code'] == 'permission-denied', 'unsigned-package-denied')
+        result['unsignedDenied'] = denied
+        stage = 'signed-publication-and-deployment'
+        published = client.call('release', 'publish-package', signed / 'package',
+            '--evidence', signed / 'evidence/index.json', '--operation-id', 'memorypack-publish',
+            '--expected-generation', '0')
+        require(published['outcomeKnown'] and published['data']['release']['digest']
+                == release_set['releases'][0]['componentDigest'], 'signed-publication-component')
+        result['publication'] = published
+        publication = published['data']['operation']['publication']['id']
+        target = deploy(client, signed / 'deployment.json', publication)
+        result['samples'].append(sample(client, probe, 'signed-dormant', 1))
+        stage = 'clock-grant-denial'
+        denied = call(client, target, 'greeting', 'greet', ['Ada'], 'memorypack-clock-denied')
+        result['invocations'].append(denied)
+        require(denied['exitCode'] == 4 and denied['response']['error']['code'] == 'permission-denied',
+                'clock-import-requires-explicit-grant')
+        result['samples'].append(sample(client, probe, 'after-clock-denial', 1))
+        stage = 'ordinary-clock-provider-and-grant'
+        installed = [row for row in node.startup_record['providers'] if row['id'] == 'clockMonotonic']
+        require(len(installed) == 1 and installed[0]['capability'] == 'latent:clock/monotonic@0.1.0'
+                and installed[0]['profile'] == 'activation-monotonic-v1', 'normal-clock-provider')
+        descriptor = installed[0]
+        binding = client_directory / 'clock-binding.json'
+        write_json(binding, {'formatVersion': 1, 'tenant': 'examples',
+            'capability': descriptor['capability'], 'providerProfile': descriptor['profile'],
+            'configurationDigest': descriptor['configurationDigest'], 'configurationEpoch': 1,
+            'restriction': {'operations': ['now-nanos']}})
+        client.call('policy', '--kind', 'provider-binding', 'apply', '--id', 'clockMonotonic-installed',
+            '--file', binding, '--operation-id', 'memorypack-install-clock', '--expected-generation', '0')
+        policy = client_directory / 'clock-policy.json'
+        write_json(policy, {'formatVersion': 1, 'tenant': 'examples', 'rules': [{
+            'id': 'runtime', 'effect': 'allow',
+            'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
+            'services': [target['service']], 'publications': [publication],
+            'capability': descriptor['capability'], 'operations': ['now-nanos'],
+            'resources': {'kind': 'clock'},
+            'ceiling': {'operations': 4096, 'inputBytes': 0, 'outputBytes': 32768, 'wallTimeMillis': 5000}}]})
+        client.call('policy', 'apply', '--id', 'clockMonotonic-allow', '--file', policy,
+            '--operation-id', 'memorypack-grant-clock', '--expected-generation', '0')
+        target = deploy(client, signed / 'deployment.json', publication, generation=str(target['generation']),
+                        grants=[{'capability': descriptor['capability'], 'policy': 'clockMonotonic-allow'}])
+        stage = 'explicit-entropy-denial-provider-and-grant'
+        target = grant_entropy(client, node, signed / 'deployment.json', publication, target, result)
+        result['samples'].append(sample(client, probe, 'after-entropy-grant', 1))
+        stage = 'unchanged-library-and-embedded-resource-output'
+        for ordinal, (arguments, expected, code) in enumerate((
+                (['Ada'], [{'ok': 'Hello, Ada!'}], 0),
+                ([' Grüße '], [{'ok': 'Hello, Grüße!'}], 0),
+                ([' '], [{'err': 'Please enter a name.'}], 3),
+                (['Ada'], [{'ok': 'Hello, Ada!'}], 0))):
+            observed = call(client, target, 'greeting', 'greet', arguments, 'memorypack-library-' + str(ordinal))
+            result['invocations'].append(observed)
+            assert_value(client, observed, expected, code)
+            result['samples'].append(sample(client, probe, 'after-library-' + str(ordinal), 1))
+        stage = 'fuel-denial-and-fresh-recovery'
+        exhausted_target = {**target, 'budget': {**target['budget'], 'cpuFuel': 1000}}
+        exhausted = call(client, exhausted_target, 'greeting', 'greet', ['Ada'], 'memorypack-fuel-exhausted')
+        result['invocations'].append(exhausted)
+        require(exhausted['exitCode'] == 4 and exhausted['response']['error']['code'] == 'resource-exhausted',
+                'actual-guest-fuel-exhaustion')
+        result['samples'].append(sample(client, probe, 'after-fuel-exhaustion', 1))
+        recovered = call(client, target, 'greeting', 'greet', ['Ada'], 'memorypack-after-fuel')
+        result['invocations'].append(recovered)
+        assert_value(client, recovered, [{'ok': 'Hello, Ada!'}])
+        result['samples'].append(sample(client, probe, 'after-fuel-recovery', 1))
+        stage = 'normal-persisted-node-recovery'
+        stop(client, node)
+        result['shutdown'].append(stopped_record(node))
+        node.close()
+        node = None
+        stage = 'documented-protected-restart-floor'
+        lease = settings['supplyChain']['clockLeaseSeconds']
+        require(settings['supplyChain']['mode'] == 'enforced' and type(lease) is int
+                and 1 <= lease <= 5, 'configured-trusted-clock-lease')
+        require(result['shutdown'][-1]['reaped'] and result['shutdown'][-1]['record']['clean'],
+                'old-node-physically-stopped-before-restart-wait')
+        wait_started = time.monotonic()
+        wait_until = wait_started + lease
+        require(wait_until < client.deadline, 'original-workflow-deadline-before-restart')
+        while time.monotonic() < wait_until:
+            cancellation.check()
+            require(time.monotonic() < client.deadline, 'original-workflow-deadline-before-restart')
+            time.sleep(min(0.01, max(0, wait_until - time.monotonic())))
+        cancellation.check()
+        result['restartFloorWait'] = {
+            'configuredLeaseSeconds': lease, 'elapsedSeconds': time.monotonic() - wait_started,
+            'oldNodeReaped': True, 'existingWorkflowDeadlinePreserved': True,
+            'protocol': 'existing package-admission future clock floor; wait after clean shutdown before one fresh startup',
+            'authorityOrPolicyModified': False, 'acceptedOperationReplayed': False}
+        stage = 'normal-persisted-node-recovery'
+        node = connect(client, native / 'latentd', node_directory, config, 'examples', 2)
+        result['recoveredStartup'] = node.startup_record
+        probe = Probe(node, file_identity(native / 'latentd'))
+        result['samples'].append(sample(client, probe, 'recovered-dormant', 1))
+        recovered = call(client, target, 'greeting', 'greet', ['Ada'], 'memorypack-after-node-recovery')
+        result['invocations'].append(recovered)
+        assert_value(client, recovered, [{'ok': 'Hello, Ada!'}])
+        result['samples'].append(sample(client, probe, 'after-node-recovery', 1))
+        stage = 'dormant-original-counters'
+        names, previous = [target['name']], 0
+        for count in (4, 12):
+            for ordinal in range(previous, count):
+                name = 'memorypack-dormant-' + str(ordinal)
+                deploy(client, signed / 'deployment.json', publication, name=name)
+                names.append(name)
+            previous = count
+            for _ in range(3):
+                result['samples'].append(sample(client, probe, 'dormant-' + str(count), len(names)))
+        os_rows = [row['os']['metrics'] for row in result['samples'] if row['phase'].startswith('dormant-')]
+        require(all(row['processes'] == 1 and row['listeners'] == 1 and row['udpSockets'] == 0 for row in os_rows),
+                'dormant-process-or-listener')
+        stage = 'normal-delete-and-shutdown'
+        delete_all(client, names)
+        result['samples'].append(sample(client, probe, 'after-delete', 0))
+        stop(client, node)
+        result['shutdown'].append(stopped_record(node))
+        node.close()
+        node = None
+        result['cliCalls'] = client.calls
+        cancellation.check()
+    require(all(identity(native / name) == receipt['files'][name]
+                for name in ('latent', 'latentd', 'capsule_authoring')), 'normal-native-inputs-changed')
+    result['status'] = 'passed'
+    encoded = json.dumps(result, separators=(',', ':')).encode('utf-8')
+    require(len(encoded) <= 1024 * 1024, 'bounded-memorypack-node-receipt')
+    (evidence / 'NODE-COMPLETE.json').write_bytes(encoded)
+    print(json.dumps({'phase': 'node', 'status': 'passed', 'invocations': len(result['invocations']),
+                      'calls': result['cliCalls']}), flush=True)
+except BaseException as error:
+    result['status'], result['stage'], result['reason'] = 'failed', stage, str(error)
+    result['traceback'] = traceback.format_exc()
+    write_json(evidence / 'NODE-FAILED.json', result)
+    raise
+finally:
+    if client is not None:
+        client.node = None
+    if node is not None:
+        cleanup = {'formatVersion': 1, 'stage': stage,
+                   'scope': 'finally block after the retained original node observation'}
+        try:
+            with node.cancellation.defer():
+                node.stop()
+                cleanup['physicalShutdown'] = stopped_record(node)
+            cleanup['status'] = 'normal-shutdown-passed'
+        except BaseException as cleanup_error:
+            cleanup['status'], cleanup['reason'] = 'cleanup-unconfirmed', str(cleanup_error)
+            try:
+                node.close()
+            except BaseException as close_error:
+                cleanup['closeFailure'] = str(close_error)
+        write_json(evidence / 'PHYSICAL-CLEANUP.json', cleanup)

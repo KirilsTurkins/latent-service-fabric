@@ -3,7 +3,10 @@ use crate::streaming::wire::RequestBody;
 use crate::{destination::canonical, dns::Answers, HttpDestination, HttpError};
 use latent_capabilities::broker::{
     io::IoMemory,
-    pools::{PoolCall, PooledConnection, ProviderClient, ProviderMetadata, ProviderPools},
+    pools::{
+        ConnectionReservation, PoolCall, PooledConnection, ProviderClient, ProviderMetadata,
+        ProviderPools,
+    },
 };
 use std::{
     future::Future,
@@ -82,10 +85,7 @@ pub(crate) async fn connect_for(
     tls: &Arc<rustls::ClientConfig>,
     maximum_headers: usize,
 ) -> Result<PooledConnection<Network>, HttpError> {
-    let reused = match scope {
-        crate::protocol::ProtocolScope::Invocation(call) => client.checkout_wait(call).await?,
-        crate::protocol::ProtocolScope::Maintenance(_) => None,
-    };
+    let reused = checkout_for(client, scope).await?;
     if let Some(mut connection) = reused {
         let valid = matches!(connection.resource(), Network::Http(http) if http.driver.is_some() && answers.contains(canonical(http.peer.ip())) && destination.addresses.permits(http.peer.ip()));
         if valid {
@@ -93,14 +93,7 @@ pub(crate) async fn connect_for(
         }
         drop(connection);
     }
-    let reservation = match scope {
-        crate::protocol::ProtocolScope::Invocation(call) => {
-            client.reserve_connection_wait(call).await?
-        }
-        crate::protocol::ProtocolScope::Maintenance(request) => {
-            client.reserve_maintenance_connection(request)?
-        }
-    };
+    let reservation = reserve_for(client, scope).await?;
     // Rustls caps handshake messages at 64 KiB. This separate shared charge
     // covers its finite record/handshake state and Hyper's fixed header buffers;
     // request/body storage has its own actual owner. It is not a total RSS claim.
@@ -163,14 +156,7 @@ pub(crate) async fn connect_for(
         stream,
         wrote: Arc::clone(&wrote),
     };
-    let mut builder = hyper::client::conn::http1::Builder::new();
-    builder
-        .max_headers(maximum_headers)
-        .max_buf_size(32768)
-        .http09_responses(false)
-        .allow_spaces_after_header_name_in_responses(false)
-        .allow_obsolete_multiline_headers_in_responses(false)
-        .ignore_invalid_headers_in_responses(false);
+    let builder = connection_builder(maximum_headers);
     let (sender, driver) = scope
         .wait(builder.handshake(hyper_util::rt::TokioIo::new(tracked)))
         .await?
@@ -186,6 +172,48 @@ pub(crate) async fn connect_for(
         })))
         .map_err(Into::into)
 }
+async fn checkout_for(
+    client: &Arc<ProviderClient<Network>>,
+    scope: crate::protocol::ProtocolScope<'_>,
+) -> Result<Option<PooledConnection<Network>>, HttpError> {
+    Ok(match scope {
+        crate::protocol::ProtocolScope::Invocation(call) => client.checkout_wait(call).await?,
+        crate::protocol::ProtocolScope::Maintenance(_) => None,
+        crate::protocol::ProtocolScope::Deferred(request) => {
+            client.checkout_deferred_wait(request).await?
+        }
+    })
+}
+
+async fn reserve_for(
+    client: &Arc<ProviderClient<Network>>,
+    scope: crate::protocol::ProtocolScope<'_>,
+) -> Result<ConnectionReservation<Network>, HttpError> {
+    Ok(match scope {
+        crate::protocol::ProtocolScope::Invocation(call) => {
+            client.reserve_connection_wait(call).await?
+        }
+        crate::protocol::ProtocolScope::Maintenance(request) => {
+            client.reserve_maintenance_connection(request)?
+        }
+        crate::protocol::ProtocolScope::Deferred(request) => {
+            client.reserve_deferred_connection_wait(request).await?
+        }
+    })
+}
+
+fn connection_builder(maximum_headers: usize) -> hyper::client::conn::http1::Builder {
+    let mut builder = hyper::client::conn::http1::Builder::new();
+    builder
+        .max_headers(maximum_headers)
+        .max_buf_size(32768)
+        .http09_responses(false)
+        .allow_spaces_after_header_name_in_responses(false)
+        .allow_obsolete_multiline_headers_in_responses(false)
+        .ignore_invalid_headers_in_responses(false);
+    builder
+}
+
 /// Drive the connection and its consumer in the caller's original future. The
 /// completed driver is dropped once; a cancellation drops its actual socket.
 pub(crate) async fn drive<F: Future>(

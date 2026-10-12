@@ -73,7 +73,7 @@ fn input_rejects_null_unknown_and_inline_authority() {
         ),
         (
             "/providers/httpStreaming/limits/memoryBytes",
-            json!(18446744073709551615_u64),
+            json!(18_446_744_073_709_551_615_u64),
         ),
     ] {
         let mut value = original.clone();
@@ -139,7 +139,7 @@ fn protected_configuration_rejects_limits_scope_and_paths_before_side_effects() 
     for (pointer, changed) in [
         (
             "/providers/httpStreaming/limits/maximumInputBytes",
-            json!(66060289_u64),
+            json!(66_060_289_u64),
         ),
         (
             "/providers/httpStreaming/limits/maximumOutputBytes",

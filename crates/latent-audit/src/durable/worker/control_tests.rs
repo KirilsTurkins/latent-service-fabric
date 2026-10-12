@@ -47,6 +47,62 @@ fn control_reservation_waits_for_memory_fence_while_hot_reservation_rejects() {
 }
 
 #[test]
+fn abandoned_reservation_synchronizes_with_the_worker_wait_predicate() {
+    let directory = Directory::new();
+    let (handle, _worker) = open(directory.0.join("audit"), AuditLimits::default()).unwrap();
+    let reservation = handle.reserve_control_critical(&attempt()).unwrap();
+    while_fenced(&handle, move |_owner| {
+        drop(reservation);
+        Ok(())
+    })
+    .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while handle.snapshot().pending_attempts != 0 {
+        assert!(
+            Instant::now() < deadline,
+            "abandoned reservation must retire"
+        );
+        thread::yield_now();
+    }
+    let snapshot = handle.snapshot();
+    assert_eq!(snapshot.pending_attempts, 0);
+    assert_eq!(snapshot.reserved_records, 0);
+    assert_eq!(snapshot.reserved_bytes, 0);
+    assert_eq!(snapshot.queued_bytes, 0);
+    assert_eq!(snapshot.retained_records, 0);
+}
+
+#[test]
+fn abandoned_started_attempt_synchronizes_and_retires_as_unknown() {
+    let directory = Directory::new();
+    let (handle, _worker) = open(directory.0.join("audit"), AuditLimits::default()).unwrap();
+    let mut active = handle
+        .reserve_control_critical(&attempt())
+        .unwrap()
+        .begin()
+        .blocking_wait()
+        .unwrap();
+    active.mutation_started().unwrap();
+    while_fenced(&handle, move |_owner| {
+        drop(active);
+        Ok(())
+    })
+    .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while handle.snapshot().pending_attempts != 0 {
+        assert!(Instant::now() < deadline, "abandoned attempt must retire");
+        thread::yield_now();
+    }
+    let snapshot = handle.snapshot();
+    assert_eq!(snapshot.pending_attempts, 0);
+    assert_eq!(snapshot.reserved_records, 0);
+    assert_eq!(snapshot.reserved_bytes, 0);
+    assert_eq!(snapshot.queued_bytes, 0);
+    assert_eq!(snapshot.retained_records, 2);
+    assert_eq!(snapshot.unknown_outcomes, 1);
+}
+
+#[test]
 fn recovery_snapshot_and_reconciliation_wait_for_memory_fence() {
     let directory = Directory::new();
     let path = directory.0.join("audit");
@@ -80,13 +136,22 @@ fn recovery_snapshot_and_reconciliation_wait_for_memory_fence() {
 fn control_reservation_preserves_capacity_pending_and_closed_rejection() {
     let directory = Directory::new();
     let (handle, _worker) = open(directory.0.join("audit"), AuditLimits::default()).unwrap();
+    assert!(handle
+        .wait_until_idle_for_test(Instant::now() + Duration::from_secs(2))
+        .unwrap());
     let reservation = handle.reserve_control_critical(&attempt()).unwrap();
+    assert!(!handle
+        .wait_until_idle_for_test(Instant::now() + Duration::from_millis(20))
+        .unwrap());
     let failure = handle.reserve_control_critical(&attempt()).err().unwrap();
     assert_eq!(failure.message, "audit-critical-pending");
     assert_eq!(handle.snapshot().reserved_records, 2);
     let mut active = reservation.begin().blocking_wait().unwrap();
     active.mutation_started().unwrap();
     active.finish(conclusion()).blocking_wait().unwrap();
+    assert!(handle
+        .wait_until_idle_for_test(Instant::now() + Duration::from_secs(2))
+        .unwrap());
     {
         let mut state = handle.shared.state.lock().unwrap();
         state.reserved_records =
@@ -96,6 +161,13 @@ fn control_reservation_preserves_capacity_pending_and_closed_rejection() {
     assert_eq!(failure.message, "audit-capacity");
     handle.shared.state.lock().unwrap().reserved_records = 0;
     handle.close();
+    assert_eq!(
+        handle
+            .wait_until_idle_for_test(Instant::now() + Duration::from_secs(2))
+            .unwrap_err()
+            .message,
+        "audit-closed"
+    );
     let failure = handle.reserve_control_critical(&attempt()).err().unwrap();
     assert_eq!(failure.message, "audit-closed");
 }
@@ -116,6 +188,7 @@ fn two_observations_exhaust_32k_control_queue_until_actual_writer_drain() {
     let shared = Arc::new(Shared {
         limits,
         state: Mutex::new(State {
+            waiting: false,
             queue: VecDeque::new(),
             queued_bytes: 0,
             reserved_records: 0,

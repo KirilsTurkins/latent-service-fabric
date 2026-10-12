@@ -54,7 +54,7 @@ async fn enabled_fixture() -> Fixture {
 #[tokio::test]
 #[ignore = "requires the public web component built by contract CI"]
 async fn actual_http_component_cache_preserves_admission_revocation_and_owner_reclamation() {
-    let fixture = enabled_fixture().await;
+    let fixture = Box::pin(enabled_fixture()).await;
     let first = public_call(&fixture, "/cache", "").await;
     assert_eq!(first.0, 200);
     assert_eq!(first.2, b"public");

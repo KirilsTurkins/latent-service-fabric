@@ -54,7 +54,10 @@ public static class LibraryPrefix {
     (library / 'global.json').write_bytes((project / 'global.json').read_bytes())
     # This SDK-owned fixture builds only its reviewed pure managed library.
     # No application package, analyzer or target executes in this preparation.
-    commands = Commands(project, evidence, build_environment(outside))
+    # The maintained qualifier places application projects and this reviewed
+    # library in sibling trees. Capture the library's owned preparation tree;
+    # its build must not mount the application or the enclosing output root.
+    commands = Commands(library, evidence, build_environment(outside))
     compiler = Compiler(tools, commands, project / 'vendor/lsf', offline=True, captured=True)
     compiler.run('developer-library-build', compiler.dotnet, 'build', library / 'Library.csproj', '-c', 'Release',
         '-p:RestoreConfigFile=' + str(library / 'nuget.config'), '-p:NuGetAudit=false', '-nodeReuse:false',

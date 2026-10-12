@@ -12,6 +12,7 @@ mod differential;
 #[cfg(target_os = "linux")]
 mod measurement;
 mod scalars;
+mod transactions;
 mod web;
 
 fn types() -> &'static BTreeMap<String, Type> {
@@ -70,3 +71,5 @@ fn rejects(ty: &Type, json: &str) {
     .expect_err("invalid input");
     assert_eq!(error.code, PlatformErrorCode::InvalidArgument, "{json}");
 }
+
+mod canonical;

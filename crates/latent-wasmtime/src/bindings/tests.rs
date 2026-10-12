@@ -18,6 +18,100 @@ fn engine() -> Engine {
 }
 
 #[test]
+fn transaction_preparation_requires_exact_mixed_async_and_affine_resource_shapes() {
+    let engine = engine();
+    let cap = crate::surface::transaction::STATE;
+    let spec = latent_core::PHASE4_HOST_ABI_V1.interface(cap).unwrap();
+    let mut linker = Linker::<HostState>::new(&engine);
+    crate::host::transaction::install(&mut linker).unwrap();
+    let encode = |source: &str| {
+        fixture::with_host(
+            fixture::Options::default(),
+            cap,
+            &host_fixture::interface(source, cap, None),
+        )
+    };
+    let validate = |component: &Component| -> wasmtime::Result<()> {
+        let component_type = component.component_type();
+        let (_, item) = component_type.imports(&engine).next().unwrap();
+        let wasmtime::component::types::ComponentItem::ComponentInstance(interface) = item.ty
+        else {
+            panic!("host interface");
+        };
+        let command = crate::surface::transaction::command_resource(&component_type, &engine);
+        for (name, item) in interface.exports(&engine) {
+            if let wasmtime::component::types::ComponentItem::ComponentFunc(function) = item.ty {
+                if function.async_()
+                    != crate::surface::transaction::is_async(name)
+                        .map_err(|e| wasmtime::Error::msg(e.message))?
+                {
+                    return Err(wasmtime::Error::msg("async kind"));
+                }
+                crate::surface::transaction::validate(
+                    cap, name, &function, &interface, &engine, command,
+                )
+                .map_err(|e| wasmtime::Error::msg(e.message))?;
+            }
+        }
+        linker.instantiate_pre(component).map(|_| ())
+    };
+    validate(&Component::new(&engine, encode(spec.wit)).unwrap()).unwrap();
+    for source in [
+        spec.wit.replace(
+            "transaction: borrow<transaction>",
+            "transaction: own<transaction>",
+        ),
+        spec.wit.replace(
+            "result<own<page>, state-error>",
+            "result<own<transaction>, state-error>",
+        ),
+        spec.wit.replace("get: async func", "get: func"),
+        spec.wit.replace("info: func", "info: async func"),
+        spec.wit.replace("key: list<u8>", "key: list<u16>"),
+    ] {
+        assert_ne!(source, spec.wit);
+        assert!(validate(&Component::new(&engine, encode(&source)).unwrap()).is_err());
+    }
+}
+
+#[test]
+fn transaction_support_changes_prepared_and_native_identity_without_mutating_stateless_abi() {
+    let baseline = crate::WasmtimeConfig::default();
+    let mut installed = baseline.clone();
+    installed.transactional_state = true;
+    let old = baseline.profile(crate::config::DispatchMode::Generic);
+    let new = installed.profile(crate::config::DispatchMode::Generic);
+    assert_eq!(
+        old.configuration["host-abi-profile"],
+        new.configuration["host-abi-profile"]
+    );
+    assert!(!old.configuration.contains_key("transaction-host-profile"));
+    assert_eq!(
+        new.configuration["transaction-host-profile"],
+        latent_core::PHASE4_HOST_ABI_V1.id
+    );
+    assert_ne!(
+        old.configuration["configuration-digest"],
+        new.configuration["configuration-digest"]
+    );
+    let old_native = crate::aot::ValidatedAotProfile::from_config(
+        &baseline,
+        crate::aot::AotCompilerLimits::default(),
+    )
+    .unwrap();
+    let new_native = crate::aot::ValidatedAotProfile::from_config(
+        &installed,
+        crate::aot::AotCompilerLimits::default(),
+    )
+    .unwrap();
+    assert_ne!(
+        old_native.capability_contract_digest(),
+        new_native.capability_contract_digest()
+    );
+    assert_ne!(old_native.digest(), new_native.digest());
+}
+
+#[test]
 fn generated_builtin_linker_matches_every_exact_pinned_shape() {
     let engine = engine();
     let mut linker = Linker::<HostState>::new(&engine);

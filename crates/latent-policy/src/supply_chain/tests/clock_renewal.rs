@@ -207,3 +207,239 @@ fn retirement_waits_for_the_pending_floor_and_never_revives_held_grants() {
     )
     .unwrap();
 }
+
+struct PausedClock {
+    value: Arc<Clock>,
+    pause_next: std::sync::atomic::AtomicBool,
+    entered: mpsc::SyncSender<()>,
+    resume: Mutex<mpsc::Receiver<()>>,
+}
+
+impl SupplyChainClock for PausedClock {
+    fn now(&self) -> Result<u64, PlatformError> {
+        let sampled = self.value.now()?;
+        if self.pause_next.swap(false, Ordering::SeqCst) {
+            self.entered.send(()).unwrap();
+            self.resume
+                .lock()
+                .unwrap()
+                .recv_timeout(Duration::from_secs(10))
+                .unwrap();
+        }
+        Ok(sampled)
+    }
+}
+
+fn concurrent_current_grant_checkpoint(renewal: bool, fenced: bool) {
+    let fixture = Fixture::new();
+    let directory = tempfile::tempdir().unwrap();
+    let (entered, observed) = mpsc::sync_channel(1);
+    let (release, resume) = mpsc::sync_channel(1);
+    let clock = Arc::new(PausedClock {
+        value: fixture.clock.clone(),
+        pause_next: std::sync::atomic::AtomicBool::new(false),
+        entered,
+        resume: Mutex::new(resume),
+    });
+    let authority = Arc::new(
+        SupplyChainAuthority::open(directory.path(), fixture.approved(), clock.clone(), 5).unwrap(),
+    );
+    let admitted = authority
+        .verify(&TenantId("tests".into()), fixture.upload())
+        .unwrap();
+    fixture.clock.set(NOW + 1);
+    clock.pause_next.store(true, Ordering::SeqCst);
+    let owner = Arc::clone(&authority);
+    let grant = Arc::clone(&admitted.grant);
+    let worker = std::thread::spawn(move || {
+        if renewal {
+            owner.renew_clock_lease()
+        } else {
+            grant.check_current()
+        }
+    });
+    observed.recv_timeout(Duration::from_secs(10)).unwrap();
+    // No policy, publication, route or durable floor changes in this interval.
+    // A trusted clock sample by another reader is not authority revocation.
+    let checked = if fenced {
+        admitted.grant.with_current(&mut |checker| {
+            checker.check()?;
+            assert_eq!(
+                admitted.grant.check_current().unwrap_err().message,
+                "admission-authority-busy"
+            );
+            assert_eq!(
+                admitted
+                    .grant
+                    .with_current(&mut |check| check.check())
+                    .unwrap_err()
+                    .message,
+                "admission-authority-busy"
+            );
+            assert!(authority.renew_clock_lease().is_err());
+            checker.check()
+        })
+    } else {
+        admitted.grant.check_current()
+    };
+    release.send(()).unwrap();
+    worker.join().unwrap().unwrap();
+    assert!(
+        checked.is_ok(),
+        "current publication during read-only clock sample (renewal={renewal}, fenced={fenced}): {checked:?}"
+    );
+    admitted.grant.check_current().unwrap();
+}
+
+#[test]
+fn current_grants_remain_available_during_trusted_clock_renewal_sample() {
+    concurrent_current_grant_checkpoint(true, false);
+}
+
+#[test]
+fn current_grant_checkpoints_share_a_read_only_authority_epoch() {
+    concurrent_current_grant_checkpoint(false, false);
+}
+
+#[test]
+fn final_publication_remains_available_during_trusted_clock_renewal_sample() {
+    concurrent_current_grant_checkpoint(true, true);
+}
+
+#[test]
+fn final_publication_remains_available_during_read_only_grant_clock_sample() {
+    concurrent_current_grant_checkpoint(false, true);
+}
+
+#[test]
+fn out_of_order_readers_preserve_the_clock_high_water_mark_and_detect_later_rollback() {
+    let fixture = Fixture::new();
+    let directory = tempfile::tempdir().unwrap();
+    let (entered, observed) = mpsc::sync_channel(1);
+    let (release, resume) = mpsc::sync_channel(1);
+    let clock = Arc::new(PausedClock {
+        value: fixture.clock.clone(),
+        pause_next: std::sync::atomic::AtomicBool::new(false),
+        entered,
+        resume: Mutex::new(resume),
+    });
+    let authority =
+        SupplyChainAuthority::open(directory.path(), fixture.approved(), clock.clone(), 5).unwrap();
+    let admitted = authority
+        .verify(&TenantId("tests".into()), fixture.upload())
+        .unwrap();
+    fixture.clock.set(NOW + 1);
+    clock.pause_next.store(true, Ordering::SeqCst);
+    let grant = Arc::clone(&admitted.grant);
+    let worker = std::thread::spawn(move || grant.check_current());
+    observed.recv_timeout(Duration::from_secs(10)).unwrap();
+    fixture.clock.set(NOW + 2);
+    let later = admitted.grant.check_current();
+    release.send(()).unwrap();
+    worker.join().unwrap().unwrap();
+    later.unwrap();
+    assert_eq!(
+        authority
+            .inner
+            .read()
+            .unwrap()
+            .observed_at
+            .load(Ordering::Acquire),
+        NOW + 2
+    );
+    fixture.clock.set(NOW + 1);
+    assert_eq!(
+        admitted.grant.check_current().unwrap_err().message,
+        "admission-clock-regression"
+    );
+}
+
+#[test]
+fn failed_durable_renewal_invalidates_a_reader_paused_in_the_trusted_clock() {
+    let fixture = Fixture::new();
+    let directory = tempfile::tempdir().unwrap();
+    let (entered, observed) = mpsc::sync_channel(1);
+    let (release, resume) = mpsc::sync_channel(1);
+    let clock = Arc::new(PausedClock {
+        value: fixture.clock.clone(),
+        pause_next: std::sync::atomic::AtomicBool::new(false),
+        entered,
+        resume: Mutex::new(resume),
+    });
+    let authority =
+        SupplyChainAuthority::open(directory.path(), fixture.approved(), clock.clone(), 5).unwrap();
+    let admitted = authority
+        .verify(&TenantId("tests".into()), fixture.upload())
+        .unwrap();
+    fixture.clock.set(NOW + 1);
+    clock.pause_next.store(true, Ordering::SeqCst);
+    let grant = Arc::clone(&admitted.grant);
+    let worker = std::thread::spawn(move || grant.check_current());
+    observed.recv_timeout(Duration::from_secs(10)).unwrap();
+    authority
+        .inner
+        .ledger
+        .lock()
+        .unwrap()
+        .fault
+        .store(2, Ordering::SeqCst);
+    fixture.clock.set(NOW + 3);
+    let renewal = authority.renew_clock_lease();
+    release.send(()).unwrap();
+    let checked = worker.join().unwrap();
+    assert_eq!(
+        renewal.unwrap_err().message,
+        "admission-durability-uncertain"
+    );
+    assert_eq!(
+        checked.unwrap_err().message,
+        "admission-durability-uncertain"
+    );
+    assert_eq!(
+        admitted.grant.check_current().unwrap_err().message,
+        "admission-durability-uncertain"
+    );
+}
+
+#[test]
+fn retiring_the_owner_invalidates_a_reader_paused_in_the_trusted_clock() {
+    let fixture = Fixture::new();
+    let directory = tempfile::tempdir().unwrap();
+    let (entered, observed) = mpsc::sync_channel(1);
+    let (release, resume) = mpsc::sync_channel(1);
+    let clock = Arc::new(PausedClock {
+        value: fixture.clock.clone(),
+        pause_next: std::sync::atomic::AtomicBool::new(false),
+        entered,
+        resume: Mutex::new(resume),
+    });
+    let authority = Arc::new(
+        SupplyChainAuthority::open(directory.path(), fixture.approved(), clock.clone(), 5).unwrap(),
+    );
+    let admitted = authority
+        .verify(&TenantId("tests".into()), fixture.upload())
+        .unwrap();
+    fixture.clock.set(NOW + 1);
+    clock.pause_next.store(true, Ordering::SeqCst);
+    let grant = Arc::clone(&admitted.grant);
+    let worker = std::thread::spawn(move || grant.check_current());
+    observed.recv_timeout(Duration::from_secs(10)).unwrap();
+    let retiring = Arc::clone(&authority);
+    let retirement = std::thread::spawn(move || retiring.retire());
+    let deadline = std::time::Instant::now() + Duration::from_secs(3);
+    while !authority.inner.retired.load(Ordering::Acquire) {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "retirement must start"
+        );
+        std::thread::yield_now();
+    }
+    release.send(()).unwrap();
+    let checked = worker.join().unwrap();
+    retirement.join().unwrap();
+    assert_eq!(checked.unwrap_err().message, "admission-owner-retired");
+    assert_eq!(
+        admitted.grant.check_current().unwrap_err().message,
+        "admission-owner-retired"
+    );
+}

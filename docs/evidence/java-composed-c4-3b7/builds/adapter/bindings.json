@@ -1,0 +1,69 @@
+{
+  "bindings": {
+    "formatVersion": 1,
+    "world": "examples:java-http-adapter/service@1.0.0",
+    "generator": "lsf-java-wit-v1+wit-bindgen-0.62.0",
+    "outputs": {
+      "Bindings.java": {
+        "digest": "sha256:68e85ae84aa4e2ac74ebf09ca41a225810b0b62b5e195c371ce358b93f9d377b",
+        "size": 19906
+      },
+      "bridge.c": {
+        "digest": "sha256:ef096bdbbd87a099a6bea2578da5ace3d67f76426afcf76cacbe0d7103ef5dea",
+        "size": 26722
+      },
+      "probe.c": {
+        "digest": "sha256:c525b3d7c59faee0e1639e33ccaaa5d647abd9402d3767fd888eec95d4822813",
+        "size": 16053
+      },
+      "probe.h": {
+        "digest": "sha256:74fd079b32d5a11f6f7a06ec6c9971299cb7b43dcce30b149d100bdd9f486695",
+        "size": 9289
+      },
+      "probe_component_type.o": {
+        "digest": "sha256:6b2bc01698193b7a8cfad386e8b8db89740b8f7b31dea55d2571592c095bb807",
+        "size": 1623
+      }
+    },
+    "digest": "sha256:79cd66a93329b1bc60975a682ed6f9bf2e47a5a7ee9cfdae0be7758058db4cbe",
+    "imports": 3,
+    "exports": 1,
+    "resources": 0
+  },
+  "dependencies": {
+    "status": "checksummed-gradle-metadata",
+    "downloadedJars": 26,
+    "reviewedJars": 70,
+    "lock": {
+      "sha256": "4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+      "size": 16525
+    },
+    "metadata": {
+      "sha256": "2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30",
+      "size": 46640
+    }
+  },
+  "platform": {
+    "fiber.c": {
+      "upstreamSha256": "b7f4592776d780165154c69e75b243ad9f32df0a717eb8bd29a11924fc6bc6df",
+      "adaptedSha256": "c8484f6e4a9801f33f03197756fd92062523f8344cd9ef139cacf9a35337213f"
+    },
+    "time.c": {
+      "upstreamSha256": "9f4d0ea0a14f0786cb76172acd9bdefd4464aebf58a0372cfa66ff92dcacae2e",
+      "adaptedSha256": "685144b5e9ad8f907a455ecd546a620a1222f75179e9ecd36af12cc150809b45"
+    },
+    "memory.c": {
+      "upstreamSha256": "d685e2f0f8b3983d5886b48ece7d83298b864893f3c80701ed11cc779a51ada2",
+      "adaptedSha256": "54d8d661b7aef84a7abc04a33d6899b160aba730444eac2d33be04009c5e95f2"
+    },
+    "file.c": {
+      "upstreamSha256": "49c8a5f152eefffbe2832b607fcd40b225936fc593d1a0d53fb81ed700a30538",
+      "adaptedSha256": "6cbcbadf02ff4db88c4a8a82cf14cdc4f2ee3ee79621ecfab297c45f631c81a6"
+    },
+    "arrayclass.c": {
+      "upstreamSha256": "044dc626c36581887874d0f4cda5070be0dfdcdb703c6ef0893616e568dc0058",
+      "adaptedSha256": "a09f225c1517579640a9d0ba9483368eb0ce4d284339755c5b820aa63c85ddc0"
+    }
+  },
+  "semanticSurfaceDigest": "sha256:512b219584e65bc586ba8b7736a69c10b92eca963335abc8a0b550d5763035d8"
+}

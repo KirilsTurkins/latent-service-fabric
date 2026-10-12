@@ -19,13 +19,8 @@
     <ItemGroup>
       <IlcReference Remove="@(_LsfHttpCandidates)" />
       <IlcReference Include="$(LsfHttpErrorAssembly)" />
-      <!-- The assertion receipt covers HTTP replacement edges. The complete
-           framework graph stays captured in compiler inputs and the real ILC
-           response file; unrelated references must not exhaust this receipt. -->
-      <_LsfBoundHttpReferences Include="@(IlcReference)"
-          Condition="'%(IlcReference.Filename)' == 'System.Net.Http' And '%(IlcReference.Extension)' == '.dll'" />
     </ItemGroup>
     <WriteLinesToFile File="$(LsfHttpErrorReferenceReceipt)"
-        Lines="@(_LsfBoundHttpReferences->'%(FullPath)')" Overwrite="false" Encoding="UTF-8" />
+        Lines="@(IlcReference->'%(FullPath)')" Overwrite="false" Encoding="UTF-8" />
   </Target>
 </Project>

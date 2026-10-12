@@ -94,10 +94,13 @@ def profile(raw: bytes) -> dict:
     require(value["adapter"]["kind"] in {"automatic", "developer-extension"}, "server-source-adapter-kind")
     sha(value["adapter"]["digest"])
     require(value["initialization"] == "fresh-original-entrypoint"
-            and value["target"] == {"contract": WEB, "function": "handle", "profile": "buffered-v1"}
-            and value["limits"] == {"endpoints": MAX_ENDPOINTS, "contexts": MAX_CONTEXTS,
-                "requestBodyBytes": 65536, "responseBodyBytes": 262144,
-                "headers": 64, "headerBytes": 16384}, "server-source-runtime-contract")
+            and value["target"] == {"contract": WEB, "function": "handle", "profile": "buffered-v1"}, "server-source-runtime-contract")
+    limits = members(value["limits"], {"endpoints", "contexts", "requestBodyBytes", "responseBodyBytes", "headers", "headerBytes"})
+    integer(limits["endpoints"], 1, MAX_ENDPOINTS)
+    integer(limits["contexts"], 1, MAX_CONTEXTS)
+    require({name: number for name, number in limits.items() if name not in {"endpoints", "contexts"}}
+            == {"requestBodyBytes": 65536, "responseBodyBytes": 262144, "headers": 64, "headerBytes": 16384},
+            "server-source-runtime-contract")
     require(isinstance(value["unsupported"], list) and len(value["unsupported"]) <= 256
             and len(set(map(token, value["unsupported"]))) == len(value["unsupported"]), "server-source-unsupported")
     return value
@@ -132,7 +135,7 @@ def endpoints(rows: list, files: dict[str, bytes] | None = None) -> None:
             require(count <= MAX_CONTEXTS, "server-source-context-limit")
 
 
-def inspect(commands, wasm: Path, component: Path, reference: Path) -> dict:
+def inspect(commands, wasm: Path, component: Path, reference: Path, *, world="application-service") -> dict:
     """Compare the actual linked signature with the staged authoritative WIT.
 
     reference is a compiler-owned staged copy of wit/platform/web plus its
@@ -143,7 +146,7 @@ def inspect(commands, wasm: Path, component: Path, reference: Path) -> dict:
     actual = surface(decode(commands.run("server-final-wit", wasm, "component", "wit", component, "--json"),
                             4 * 1024 * 1024))
     expected = surface(decode(commands.run("server-reference-wit", wasm, "component", "wit", reference, "--json"),
-                              4 * 1024 * 1024), "application-service")
+                              4 * 1024 * 1024), world)
     require(WEB in actual["exports"] and actual["exports"][WEB] == expected["exports"][WEB],
             "server-source-final-web-signature")
     return actual["exports"][WEB]
@@ -158,6 +161,9 @@ def emit(files: dict[str, bytes], component: bytes, profile_raw: bytes, plan: di
     require((plan["extraction"] == "compiler-ast") == (selected["adapter"]["kind"] == "automatic"),
             "server-source-extension-cannot-claim-automatic")
     endpoints(plan["endpoints"], files)
+    require(len(plan["endpoints"]) <= selected["limits"]["endpoints"]
+            and sum(len(endpoint["contexts"]) for endpoint in plan["endpoints"]) <= selected["limits"]["contexts"],
+            "server-source-selected-profile-limit")
     require(isinstance(web_surface, dict) and set(web_surface) == {"types", "functions"}
             and set(web_surface["functions"]) == {"handle"}, "server-source-inspected-web-export-required")
     value = {"schemaVersion": SCHEMA, "authority": "none", "language": selected["language"],

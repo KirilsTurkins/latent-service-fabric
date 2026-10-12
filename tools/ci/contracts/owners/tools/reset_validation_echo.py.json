@@ -1,8 +1,1 @@
-{
-  "kind": "owner",
-  "path": "tools/reset_validation_echo.py",
-  "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reconcile development337 cache round-trip without changing its body or guards; retain exact three-WIT legacy cache recovery, require that authenticated sibling for an empty package, reject bare empty owners, and replace the synthetic all-files cache assumption with actual retained WIT bytes.",
-  "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "228cda95ca3a0f23500acde529b2d845e25bf141449c88b0688217d96fd635b3"
-}
+{"kind":"owner","path":"tools/reset_validation_echo.py","reviewBoundary":"committed-fingerprint","reviewReason":"Reconcile development337 cache round-trip without changing its body or guards; retain exact three-WIT legacy cache recovery, require that authenticated sibling for an empty package, reject bare empty owners, and replace the synthetic all-files cache assumption with actual retained WIT bytes.","schemaVersion":"latent.ci.contracts.v1","sha256":"228cda95ca3a0f23500acde529b2d845e25bf141449c88b0688217d96fd635b3"}

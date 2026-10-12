@@ -19,7 +19,7 @@
       "optional": false
     },
     {
-      "contract": "latent:state/key-value@0.1.0",
+      "contract": "latent:state/key-value@0.2.0",
       "optional": false
     },
     {

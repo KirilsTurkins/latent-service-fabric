@@ -7,6 +7,8 @@ mod capability_policies;
 mod derive;
 #[cfg(feature = "development-test-node")]
 mod development;
+#[cfg(feature = "development-test-node")]
+mod development_preparation;
 mod engine;
 pub(crate) mod http;
 mod input;
@@ -18,6 +20,8 @@ mod renderer;
 mod rollouts;
 mod runtime;
 mod security;
+pub(crate) mod state;
+mod stream_reload;
 mod supply_chain;
 #[cfg(test)]
 mod tests;
@@ -34,6 +38,8 @@ pub use budgets::BudgetConfig;
 pub use capability_policies::CapabilityPolicyConfig;
 #[cfg(feature = "development-test-node")]
 pub use development::DevelopmentTestConfig;
+#[cfg(feature = "development-test-node")]
+pub use development_preparation::DevelopmentPreparationProfile;
 pub use http::{
     HttpAuthentication, HttpIngressConfig, HttpIngressLimits, HttpOrigin, HttpTransport,
 };
@@ -46,11 +52,17 @@ pub use model::{
 pub use providers::{
     ActivationRuntimeInstallation, ActivationRuntimeLimits, BlobInstallation, ConfiguredProviders,
     HostBinding, HttpInstallation, HttpStreamingInstallation, LocalServiceInstallation,
-    ProviderIdentity, ProviderSecretFile, SecretInstallation,
+    ProviderIdentity, ProviderSecretFile, SecretInstallation, StreamInstallation,
 };
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
 pub use security::ExecutionProfileReport;
+pub use state::{
+    DeferredHttpConfig, DispatcherLimitsConfig, NativeLimitsConfig, NativePartitionConfig,
+    StateConfig, StateOperationConfig, StorageLimitsConfig, StorageRecoveryConfig,
+    StorageWorkerConfig, TenantLimitsConfig, TenantQuotaConfig,
+};
+pub use stream_reload::StreamReloadGuard;
 pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
@@ -58,6 +70,14 @@ pub(crate) use supply_chain::SupplyChainSettings;
 /// plan passed to startup. This type intentionally has no `Debug` implementation
 /// because its transport configuration contains credentials.
 pub struct NodeSettings {
+    #[cfg_attr(
+        not(feature = "development-outbound-streams"),
+        allow(
+            dead_code,
+            reason = "opaque protected startup marker is consumed only by the explicitly gated stream owner"
+        )
+    )]
+    pub(crate) stream_reload_binding: Option<[u8; 32]>,
     pub(crate) credentials_from_protected_file: bool,
     pub(crate) data_directory: PathBuf,
     pub(crate) node: latent_node::NodeDescriptor,
@@ -71,6 +91,8 @@ pub struct NodeSettings {
     pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
     pub(crate) providers: Option<Box<ConfiguredProviders>>,
+    pub(crate) state: Option<state::StateSettings>,
+    pub(crate) manifest_profile: latent_manifest::ManifestValidationProfile,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) budget_profile: latent_core::BudgetProfile,
     pub(crate) delegation_limits: latent_core::DelegationLimits,
@@ -122,6 +144,14 @@ impl NodeSettings {
 }
 
 impl NodeConfig {
+    /// Capture the exact protected startup input for an explicitly configured
+    /// development stream owner. Ordinary installations create no reload owner.
+    pub fn load_with_stream_reload(
+        path: &Path,
+    ) -> Result<(Self, Option<StreamReloadGuard>), PlatformError> {
+        input::load_with_stream_reload(path)
+    }
+
     /// Reads at most 64 KiB plus an overflow sentinel. On supported Linux `x86_64`
     /// hosts the credential-bearing file is descriptor-anchored and must satisfy
     /// the protected secret-file policy before bytes are decoded. Relative data

@@ -4,6 +4,10 @@ For application Maven/local JARs and their separately reviewed offline closure,
 follow [Java application JARs](java-dependencies.md). The source-only workflow
 below remains supported.
 
+For ordinary `HttpServer` registration with a compiler-generated web entrypoint,
+see the [selected Java server profile](java-httpserver.md). Its member boundary
+and pending real ingress qualification are separate from the typed RPC examples.
+
 For application development, use [Creating a capsule](creating-a-capsule.md).
 That shared tutorial has all six language choices and uses `dev init`, `build`,
 `deploy` and `test`. You do not need the source-build commands below for it.
@@ -11,6 +15,11 @@ That shared tutorial has all six language choices and uses `dev init`, `build`,
 This reference is for compiler integration, custom package signing and direct
 node admission. The complete source recipe is retained here for developers who
 need to work below the packaged workflow.
+
+To expose selected typed operations through shared HTTP ingress, use the
+[maintained Java adapter generator](java-http-composition.md). It keeps the
+typed domain contract, includes explicit private-operation exclusions and
+checks stale source-bound generation before building.
 
 
 Create an independent Java project, edit its typed contract, and run its signed
@@ -79,10 +88,18 @@ files and update the selected world in `capsule-project.json` when renaming
 the contract. Keep the SDK files unchanged. The build rejects SDK drift,
 path escapes and unsupported contract shapes. Put additional `.java` sources beneath `src`.
 Your entry class `dev.latent.app.Capsule` implements the generated
-`dev.latent.generated.Bindings.Exports`. The supported build captures Java source,
-not arbitrary JARs, application Gradle scripts or Maven projects. The compiler's
-70-JAR closure is version-locked and checksum-verified; downloaded application
-dependencies, JNI, reflection-based loading and dynamic class loading are not supported.
+`dev.latent.generated.Bindings.Exports`. The build captures Java source and explicitly
+reviewed [application JARs](java-dependencies.md). The compiler's 70-JAR closure
+is version-locked and checksum-verified. Application JARs have a separate
+captured lock; arbitrary unreviewed JARs, application Gradle scripts and Maven
+projects are rejected. Reachable JNI, reflection-based loading and dynamic class
+loading still require compatible compiler/runtime support and emitted-component
+evidence.
+
+Each Java project captures the SDK's exact `latent:clock@0.1.0` definition in
+`wit/deps/clock`, so WIT inspection can resolve the declared monotonic and wall
+clock imports before compiler staging. The operator grants those clocks when
+deploying the capsule.
 
 The `word-count` and `shipping` templates provide equivalent Java implementations
 of [Creating a capsule](creating-a-capsule.md). Choose another project directory
@@ -90,6 +107,25 @@ and replace `greeting` in the creation command with either template name.
 `http-status` adds a typed, asynchronous HTTP call; its import still needs an
 installed provider and an explicit deployment grant. Creating a project grants
 no network access.
+
+When authoring an inbound buffered web application, validate the actual response
+before returning the generated record with the development SDK's
+[`BufferedWebResponseValidator`](../../sdk/java-guest/runtime/dev/latent/guest/BufferedWebResponseValidator.java).
+Its fixed local reasons explain reserved host headers and bounded body/header,
+redirect, media and cookie rules before live traffic. The
+[SDK example](../../sdk/java-guest/README.md#inbound-buffered-web-responses-development)
+and [complete ownership table](../security/browser-boundary.md#response-headers)
+show the supported contract. Dynamically calculated responses still require
+execution and current host validation; a declared safe header list does not
+qualify an application or change the shipped `same-origin` referrer policy.
+
+Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers canonical imported owners, `Unsigned64`, try-with-resources and the captured profile, schema and binding companion. The host owns commitment. The signed transaction and HTTP recovery matrix is tracked by #389 and required Java slice #718. The tutorial below retains its existing stateless profile.
+
+The compiler selects the Phase 4 compatibility catalogue only after checking the
+captured profile, binding links, schema and exact State and intents WIT. This
+recognizes their declared ABI in the report; provider installation, current
+grants and signed execution remain separate checks. Ordinary projects retain
+the Phase 3 catalogue.
 
 ## 2. Build and package the project
 
@@ -112,6 +148,29 @@ The output includes `component.wasm`, `capsule.json`, `contracts.json`,
 `wit-lock.json`, `deployment.json`, `package/` and `build-observation.json`.
 Full-width WIT integers retain their original types; application errors remain
 `result` values. Unsupported WIT types fail explicitly during contract derivation.
+
+For the explicit SDK activation runtime profile, use
+`--runtime-profile teavm-activation-fibers-v1` on the build command. The selected
+world must declare `latent:runtime/activation@0.1.0` and
+`latent:clock/monotonic@0.1.0`. The compiler preserves the application's original
+Java classes and stages the SDK's runtime substitutions, continuation handling
+and owned dispatch. It records source origins and the selected checkpoint class
+index in `source-origins.json` and `runtime-profile.json`; both become signed
+build materials after the entire build succeeds. The compatibility check captures
+the frozen V5 ABI from the declared WIT surface. Operator provider installation
+and grants remain separate requirements.
+
+Keep the selected world and exported contracts in the project tenant's namespace.
+The isolated example signer uses tenant `examples`. The normal full activation
+build and its first signed execution attempt are recorded in
+[Java activation fibers](../runtime/java-activation-fibers.md); that invocation
+failed and does not establish complete CompletableFuture execution support.
+
+`--read-only-cache /path/to/modules-2` selects a verified immutable Gradle
+dependency cache. Gradle writes locks and updates to the build's private home.
+Choose one cache mode per build. Profile selection does not change invocation
+limits or establish complete Java concurrency qualification; the measured
+boundaries are described in [Java activation fibers](../runtime/java-activation-fibers.md).
 
 ## 3. Sign for this local experiment
 
@@ -362,3 +421,69 @@ SDK binding drift means the SDK and generator pins disagree; do not edit the loc
 to bypass it. A denied publication commonly means the policy expired, the exact
 source approval differs, or an evidence file is missing. A denied HTTP call
 requires checking the deployment grant, provider binding and allowed destination.
+<!-- Immutable resource compiler and bounded signed application qualification. -->
+
+Captured JAR lookup bytes and declared `capsule-resources.json` bytes select the
+SDK's `java-immutable-classloader-v1` compiler port. It changes the maintained
+`ClassLoader.getResourceAsStream(String)` method and preserves the standard
+class identity, fields and other methods. `Class.getResourceAsStream` keeps the
+class library's package-relative, leading-slash and array-class rules. The
+generated lookup index contains exactly the reviewed bytes, with no directory,
+repository or host-filesystem fallback. Names are case sensitive. A missing name
+returns `null`; a null name follows the standard null-argument failure.
+
+Each successful open owns a fresh byte array and `ByteArrayInputStream`.
+Resources use the existing guest heap and fuel budgets. Capture bounds do not
+guarantee that opening a large resource fits a particular invocation's heap.
+The original class-library JAR, SDK transformation source, generated literal
+sources and resource digests are bound to compiler evidence. Existing projects
+keep their immutable SDK locks; selecting a new SDK port requires a reviewed
+SDK snapshot rather than modifying an old vendored lock.
+
+The original actual two-library build failed at TeaVM's unsupported JavaScript
+resource methods. The [pinned class-library model control](../testing/evidence/java-immutable-resource-model-2026-10-02.json)
+preserved all nine standard ClassLoader method owners and passed fresh-stream,
+exact-byte, missing-name and changed-preimage controls. The subsequent
+[two-library signed node control](../testing/evidence/java-two-library-resource-node-2026-10-02.json)
+captured Commons Text and Commons Codec independently, Text's Commons Lang
+dependency, and a newly compiled developer-owned JAR. Its ordinary library
+calls and `Arithmetic.class.getResourceAsStream("badge.txt")` remained unchanged.
+After the original local JAR was deleted, the full offline recipe compiled,
+validated and packaged the actual component with 135 captured resource names.
+
+The strict signer and enforced node passed ten successful calls, including a
+fresh resource read after grant denial, and two missing or withdrawn clock
+grant controls. Every invocation was reaped; normal deletion, dormant owner
+observations and clean node shutdown passed. These finite checks used the
+recorded source and independently qualified native tools, with explicit
+provenance for both. They are contributor qualification; installed frontend,
+isolated processors and the full hostile-input and runtime matrix still need
+their own actual checks. Issue #682 and issue #681 remain
+open until their full acceptance evidence passes.
+
+A private Maven feed uses the environment pair
+`LSF_REGISTRY_<REPOSITORY_ID>_USERNAME` and
+`LSF_REGISTRY_<REPOSITORY_ID>_PASSWORD` only during explicit resolution. Uppercase
+the declared repository ID and replace hyphens with underscores. Both values
+must be present together; embedded URL credentials are rejected. The resolver
+passes credentials only to its acquisition task and keeps them out of its
+declarations, receipts and compiler input.
+
+For a feed with a private certificate issuer, add the repository using
+`--repository-ca registry/public-ca.pem`. This names a project-owned public PEM
+certificate, relative to the application directory. The resolver imports it
+into a fresh private copy of the pinned JDK truststore and captures both the
+certificate and trust derivation identities. It leaves the JDK and machine
+trust settings unchanged. A changed certificate invalidates the reviewed native
+inputs; resolve and review again. Private keys and uncaptured or transient paths
+are rejected, and the private truststore is destroyed with the resolution stage.
+
+[The measured private Maven fixture](../testing/evidence/java-private-maven-capture-2026-10-02.json)
+used the maintained CLI with a real authenticated HTTPS repository, the pinned
+JDK and Gradle, and a newly selected private JAR. All seven controls passed:
+wrong or missing credentials, an incomplete pair and an untrusted CA fail;
+offline verification succeeds after the peer stops; changed certificate or JAR
+bytes fail and restoring the original bytes restores the captured identity.
+The fixture preserved SDK and JDK inputs and found no credential or private TLS
+key in the captured project. This capture proof does not qualify installed
+frontend test/watch or annotation-processor execution.

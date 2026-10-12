@@ -19,6 +19,11 @@ pub(in super::super) fn validate_invoke(
     principals: &dyn PrincipalPolicy,
 ) -> Result<InvocationCommand, Status> {
     validate_request(&request, &principal, &trace, limits)?;
+    if request.parent_activation_id.is_some() || request.root_activation_id.is_some() {
+        return Err(Status::permission_denied(
+            "activation lineage requires a trusted broker",
+        ));
+    }
     let target = request.target.as_ref().expect("validated target");
     principals
         .authorize_target(&principal, &target.tenant)

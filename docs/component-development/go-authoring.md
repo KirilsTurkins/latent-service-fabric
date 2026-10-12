@@ -1,5 +1,8 @@
 # Go compiler and runtime profile
 
+For reviewed module updates and frontend test/watch, use
+[Go application module inputs](go-library-authoring.md).
+
 For application development, use [Creating a capsule](creating-a-capsule.md).
 For normal application module locks, private proxies, local replacements and offline inputs, see [Captured Go modules](go-dependencies.md).
 That shared tutorial has all six language choices and uses `dev init`, `build`,
@@ -22,18 +25,20 @@ compilation. Warm calls still start with fresh guest state. This is an explicit
 example budget, not a change to the node's default execution limits.
 
 Use Linux x86-64, Python 3.13.5, Rust 1.97.1 and the exact Go async toolchain
-below. Stock Go and TinyGo are not substitutes for the maintained
-`wasiOnIdle` compiler profile. These prerequisites install compiler tools only;
+below. The maintained source overlay applies the reviewed `wasiOnIdle` scheduler
+hook to the pinned upstream Go compiler. TinyGo and a build without this overlay
+are outside the maintained compiler profile. These prerequisites install compiler tools only;
 they do not start a guest or grant capabilities. Run from the LSF checkout:
 
 ```sh
 GO_TOOLS=$(mktemp -d "${TMPDIR:-/tmp}/lsf-go-tools.XXXXXXXX")
 curl --fail --location --max-time 180 \
-  https://github.com/dicej/go/releases/download/go1.27.1-wasi-on-idle/go-linux-amd64-bootstrap.tbz \
-  --output "$GO_TOOLS/go.tbz"
-printf '%s  %s\n' 4b4fcbbab5b5b0a45433112aa51c64a54007b24f1efd05b67018ca2cf8633e2c "$GO_TOOLS/go.tbz" | sha256sum --check --strict
-tar -xjf "$GO_TOOLS/go.tbz" -C "$GO_TOOLS"
-export PATH="$GO_TOOLS/go-linux-amd64-bootstrap/bin:$PATH"
+  https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz \
+  --output "$GO_TOOLS/go.tar.gz"
+printf '%s  %s\n' ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5 "$GO_TOOLS/go.tar.gz" | sha256sum --check --strict
+tar -xzf "$GO_TOOLS/go.tar.gz" -C "$GO_TOOLS"
+python3 tools/go_guest/runtime.py --prepare-compiler "$GO_TOOLS/go" --output "$GO_TOOLS/go-async"
+export PATH="$GO_TOOLS/go-async/bin:$PATH"
 cargo install --git https://github.com/bytecodealliance/componentize-go \
   --rev 148dba505f8c6c64ad84db777cfde5e34e25098b --locked componentize-go
 cargo install --locked wasm-tools --version 1.254.0
@@ -83,6 +88,8 @@ and replace `greeting` in the creation command with either template name.
 `http-status` adds a typed, asynchronous HTTP call; its import still needs an
 installed provider and an explicit deployment grant. Creating a project grants
 no network access.
+
+Select `transactional-aggregate` for the explicit Phase 4 transaction, fresh-query and deferred-intent recipe. Its [shared authoring guide](transactional-authoring.md) covers generated `uint64` values, explicit view/page close, narrow runtime grants and the captured profile, schema and binding companion. The host owns commitment, and signed transaction execution has its own qualification matrix. The tutorial below retains its existing stateless profile.
 
 ## 2. Build and package the project
 
@@ -351,3 +358,6 @@ SDK binding drift means the SDK and generator pins disagree; do not edit the loc
 to bypass it. A denied publication commonly means the policy expired, the exact
 source approval differs, or an evidence file is missing. A denied HTTP call
 requires checking the deployment grant, provider binding and allowed destination.
+
+
+For separately approved source generation, follow the [Go generator workflow](go-generators.md).
