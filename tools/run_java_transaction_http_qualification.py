@@ -287,7 +287,9 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
     full_path = configuration.selected(configuration.path.parent / "installed-node.json", operations, diagnostic=diagnostic)
     selection = {} if not getattr(peer, "current_http", False) else {"intent_operation": "http"}
     hosts = lifecycle.inspect(client, args.node, full_path, operations, **selection)
-    proposals = policies.documents(hosts, publications, diagnostic=diagnostic)
+    selection = {} if not getattr(peer, 'current_http', False) else {
+        'current_http_endpoint': configuration.value['providers']['http']['deferred'][0]}
+    proposals = policies.documents(hosts, publications, diagnostic=diagnostic, **selection)
     client.evidence.record("actual-native-hosts", hosts.value)
     client.evidence.record("reviewed-policy-proposals", proposals)
     mutations = policies.prepare_mutations(client, proposals) if retained else None

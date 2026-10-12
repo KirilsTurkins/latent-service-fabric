@@ -79,3 +79,18 @@ authorization, checkpoint, result, effect and physical retirement predicates
 remain. The 93 focused source controls passed after this wiring change. The
 combined signed runtime, migration and restore campaign is still pending.
 No ticket closes from these source controls.
+
+The isolated source review found missing deployment grants and a repeated
+deployment evidence name. Current HTTP proposals now include the exact state,
+intent-staging grants required by native installation, alongside both unchanged
+clock grants. The signed guests import no ordinary HTTP capability, so no
+HTTP deployment grant is invented. The native dispatcher needs a separate
+explicit service-integration owner; that reconciliation remains pending.
+Its proposed HTTP dispatch policy uses the observed ordinary HTTP
+provider identity, the current service/publication, and only the declared
+endpoint origin, effect path and receipt prefix. Its 27/2048-byte, one-call and
+2000 ms ceilings remain. Staging and namespace recovery retain their original
+purpose-specific policies. These proposals still require ordinary authenticated
+application. Historical proposal defaults remain unchanged. Returning to the
+legacy publication records a separate named transition and both deployment
+generations; evidence uniqueness and byte/count bounds stay enforced.
