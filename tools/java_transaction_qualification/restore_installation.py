@@ -63,11 +63,12 @@ def catalogs(client, node, source: Path, destination: Path, checkpoint_root: Pat
     if checkpoint.is_relative_to(source):
         excluded.append(checkpoint)
     entries, directories, pending, logical = {}, [], [source], 0
+    scanned_directories = {}
     while pending:
         current = pending.pop()
         client.cancellation.check()
         require(time.monotonic() < client.deadline, 'restore-catalog-deadline')
-        directory(current)
+        scanned_directories[current.relative_to(source)] = directory(current)
         for path in sorted(current.iterdir()):
             if any(path == prefix or path.is_relative_to(prefix) for prefix in excluded):
                 continue
@@ -127,6 +128,8 @@ def catalogs(client, node, source: Path, destination: Path, checkpoint_root: Pat
         copied[key] = target
         distinct_bytes += info.st_size
     require(identity(source.stat()) == identity(before_root)
+            and all(identity((source / relative).lstat()) == identity(info)
+                    for relative, info in scanned_directories.items())
             and all(identity((source / relative).lstat()) == identity(info)
                     for relative, info in entries.items()), 'restore-catalog-custody-changed')
     require(not (destination / 'state').exists(), 'restore-state-created-only-by-native-stage')
