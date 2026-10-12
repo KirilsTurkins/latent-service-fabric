@@ -182,7 +182,7 @@ class Recovery:
                 require(isinstance(row["publication"], str)
                         and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", row["publication"]),
                         "current-decoder-publication-identity")
-            envelope["decoderSources"] = self.sources
+            envelope["decoderSources"] = [row for row in self.sources if row["publication"] != publication]
         raw = encoded(envelope)
         require(len(raw) <= 16384, "original-native-recovery-input-bound")
         self.calls += 1
