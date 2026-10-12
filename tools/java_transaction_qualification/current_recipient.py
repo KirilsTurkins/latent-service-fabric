@@ -33,7 +33,7 @@ MAXIMUM_RECORDS = 32
 MAXIMUM_REPLY_BYTES = 2048
 DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 KEY = re.compile(r"lsf-effect-[0-9a-f]{64}\Z")
-MODES = {"reply", "accept-disconnect", "reject"}
+MODES = {"reply", "accept-disconnect", "accept-ambiguous", "reject"}
 OBSERVATION = "current-recipient-observation.json"
 COUNTERS = {"requests", "posts", "gets", "profileProbes", "originalRecords", "retainedRecords",
             "mutations", "duplicatePosts", "lostRepliesAfterAcceptance"}
@@ -98,6 +98,22 @@ def response(status: int, record: dict, incarnation: str) -> bytes:
     return head.encode("ascii") + raw
 
 
+def retained_record(path: Path, incarnation: str) -> dict:
+    require(path.is_file() and not path.is_symlink(), "current-recipient-record-file")
+    row = decode(read_file(path, 8192), 8192)
+    require(set(row) == FIELDS and type(row["formatVersion"]) is int and row["formatVersion"] == 1
+            and row["endpointIncarnation"] == incarnation and KEY.fullmatch(row["idempotencyKey"])
+            and path.name == row["idempotencyKey"] + ".json" and DIGEST.fullmatch(row["bodyDigest"])
+            and type(row["sequence"]) is int and 1 <= row["sequence"] <= MAXIMUM_RECORDS
+            and type(row["createdAtMillis"]) is int and 0 < row["createdAtMillis"] < 2**64,
+            "current-recipient-record-identity")
+    payload = base64.b64decode(row["payloadBase64"], validate=True)
+    require(len(payload) <= MAXIMUM_PAYLOAD_BYTES
+            and hashlib.sha256(payload).hexdigest() == row["bodyDigest"],
+            "current-recipient-record-payload")
+    return row
+
+
 class Recipient:
     def __init__(self, root: Path, declaration: dict, credential: bytes):
         require(root.is_absolute() and root.is_dir() and not root.is_symlink(),
@@ -135,20 +151,7 @@ class Recipient:
                 if name.startswith("lsf-effect-"):
                     paths.append(root / name)
         for path in sorted(paths):
-            require(path.is_file() and not path.is_symlink(), "current-recipient-record-file")
-            row = decode(read_file(path, 8192), 8192)
-            require(set(row) == FIELDS and type(row["formatVersion"]) is int and row["formatVersion"] == 1
-                    and row["endpointIncarnation"] == self.incarnation
-                    and KEY.fullmatch(row["idempotencyKey"])
-                    and path.name == row["idempotencyKey"] + ".json"
-                    and DIGEST.fullmatch(row["bodyDigest"])
-                    and type(row["sequence"]) is int and 1 <= row["sequence"] <= MAXIMUM_RECORDS
-                    and type(row["createdAtMillis"]) is int and 0 < row["createdAtMillis"] < 2**64,
-                    "current-recipient-record-identity")
-            payload = base64.b64decode(row["payloadBase64"], validate=True)
-            require(len(payload) <= MAXIMUM_PAYLOAD_BYTES
-                    and hashlib.sha256(payload).hexdigest() == row["bodyDigest"],
-                    "current-recipient-record-payload")
+            row = retained_record(path, self.incarnation)
             self.records[row["idempotencyKey"]] = row
         require(len(self.records) <= MAXIMUM_RECORDS
                 and {row["sequence"] for row in self.records.values()} == set(range(1, len(self.records) + 1)),
@@ -190,6 +193,12 @@ class Recipient:
                 return 400, {}, False
         else:
             return 405, {}, False
+        selected = "reply"
+        mode = self.root / "mode"
+        if mode.exists():
+            require(mode.is_file() and not mode.is_symlink(), "current-recipient-mode-file")
+            selected = read_file(mode, 64).decode("ascii")
+        require(selected in MODES, "current-recipient-mode")
         retained = self.records.get(key)
         now = time.time_ns() // 1000000
         if retained is not None:
@@ -197,16 +206,12 @@ class Recipient:
                 return 409, self.receipt(key, retained["bodyDigest"], "conflict"), False
             if now >= retained["createdAtMillis"] + RETENTION_MILLIS:
                 return 410, self.receipt(key, digest, "expired"), False
+            if method == "GET" and selected == "accept-ambiguous":
+                return 200, self.receipt(key, digest, "accepted", retained["sequence"], True), True
             self.duplicates += method == "POST"
             return 200, self.receipt(key, digest, "accepted", retained["sequence"], True), False
         if method == "GET":
             return 404, self.receipt(key, digest, "absent"), False
-        selected = "reply"
-        mode = self.root / "mode"
-        if mode.exists():
-            require(mode.is_file() and not mode.is_symlink(), "current-recipient-mode-file")
-            selected = read_file(mode, 64).decode("ascii")
-        require(selected in MODES, "current-recipient-mode")
         if selected == "reject":
             return 422, self.receipt(key, digest, "rejected"), False
         require(len(self.records) < MAXIMUM_RECORDS, "current-recipient-record-count")
@@ -216,7 +221,7 @@ class Recipient:
                "createdAtMillis": now, "payloadBase64": base64.b64encode(body).decode("ascii")}
         private_write(self.root / (key + ".json"), json.dumps(row, separators=(",", ":")).encode())
         self.records[key] = row
-        disconnected = selected == "accept-disconnect"
+        disconnected = selected in {"accept-disconnect", "accept-ambiguous"}
         self.lost += disconnected
         return 201, self.receipt(key, digest, "accepted", sequence), disconnected
 

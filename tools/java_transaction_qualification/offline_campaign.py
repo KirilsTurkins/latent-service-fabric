@@ -84,8 +84,7 @@ class OfflineCampaign:
         return result
 
     def recipient(self, label):
-        observed = provider.observed_recipient(self.campaign.peer.directory / provider.OBSERVATION,
-                                              self.campaign.peer.incarnation)
+        observed = self.campaign.recipient_observation()
         self.client.evidence.record(label + "-recipient-observation", observed)
         return observed
 
@@ -174,8 +173,11 @@ class OfflineCampaign:
         data_destination = None
         if self.current_v2:
             data_destination = self.directory / "restored-data"
+            source_data = Path(original_settings["dataDirectory"])
+            if not source_data.is_absolute():
+                source_data = (self.configuration.parent / source_data).resolve(strict=True)
             copied = restore_installation.catalogs(self.client, self.node,
-                Path(original_settings["dataDirectory"]), data_destination,
+                source_data, data_destination,
                 Path(original_settings["state"]["checkpointRoot"]))
             self.client.evidence.record("stopped-catalog-custody-copy", copied)
             destination = data_destination / "state"

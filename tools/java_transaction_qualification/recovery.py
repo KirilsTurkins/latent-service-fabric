@@ -12,7 +12,7 @@ from .inputs import decode, require
 REPORT_FIELDS = {"schemaVersion", "operationSucceeded", "failure", "result", "retirement", "catalogsRetired"}
 RETIREMENT_FIELDS = {"clean", "physicallyRetired", "liveWorkers", "acceptedJobs", "threadsJoined"}
 ACTIONS = {"snapshot", "inspect-namespace", "inspect-restore", "restore", "stage-migration",
-           "complete-migration", "review", "resume"}
+           "complete-migration", "resume-migration", "review", "resume"}
 FAILURES = {"configuration", "busy", "destination", "input", "review", "target", "protected"}
 FAILURE_REASONS = {
     "platform": {"unavailable", "deadline-exceeded", "cancelled", "resource-exhausted", "permission-denied",
@@ -57,7 +57,8 @@ def original_digest(value):
 def report(raw):
     value = decode(raw, 1048576)
     require(isinstance(value, dict) and set(value) == REPORT_FIELDS
-            and value["schemaVersion"] == "latent.native-transaction-recovery.v1"
+            and value["schemaVersion"] in {"latent.native-transaction-recovery.v1",
+                                           "latent.native-transaction-recovery.v2"}
             and type(value["operationSucceeded"]) is bool
             and type(value["catalogsRetired"]) is bool, "closed-native-recovery-report")
     if value["operationSucceeded"]:
@@ -65,11 +66,18 @@ def report(raw):
                 "native-success-keeps-original-result")
     else:
         failure = value["failure"]
-        require(value["result"] is None and isinstance(failure, dict)
+        if value["schemaVersion"] == "latent.native-transaction-recovery.v2":
+            require(value["result"] is None and isinstance(failure, dict)
+                    and set(failure) == {"code", "message", "retryable"}
+                    and failure["code"] in FAILURE_REASONS["platform"]
+                    and isinstance(failure["message"], str) and len(failure["message"]) <= 1024
+                    and type(failure["retryable"]) is bool, "closed-current-native-producer-failure")
+        else:
+            require(value["result"] is None and isinstance(failure, dict)
                 and failure.get("stage") in FAILURES
                 and set(failure) == ({"stage"} if failure.get("stage") in {"configuration", "busy", "destination"}
                                     else {"stage", "failure"}), "native-failure-is-not-success")
-        if "failure" in failure:
+        if value["schemaVersion"] == "latent.native-transaction-recovery.v1" and "failure" in failure:
             detail = failure["failure"]
             require(isinstance(detail, dict) and set(detail) == {"owner", "reason"}
                     and isinstance(detail["owner"], str) and isinstance(detail["reason"], str)

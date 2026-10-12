@@ -1,5 +1,6 @@
 {
   "cases": [
+    "CurrentRecipient.test_ambiguous_reply_and_lookup_loss_preserve_record_until_explicit_fault_removal",
     "CurrentRecipient.test_changed_declared_endpoint_cannot_reuse_recipient_installation",
     "CurrentRecipient.test_changed_input_conflicts_without_rewriting_original_acceptance",
     "CurrentRecipient.test_lost_reply_follows_durable_acceptance_and_restart_deduplicates",
@@ -11,6 +12,18 @@
     "CurrentRecipient.test_tampered_retained_payload_or_sequence_is_refused"
   ],
   "guards": {
+    "CurrentRecipient.test_ambiguous_reply_and_lookup_loss_preserve_record_until_explicit_fault_removal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a8d3758999cee699507c965d49d9f46da7174759c6396a22f278be8b1e06c3b",
+        "class:setup-sha256:037b786bea9ddbe1b87a22911075110c663926ee47da87da4c2a73eefce62d07"
+      ],
+      "skipSites": []
+    },
     "CurrentRecipient.test_changed_declared_endpoint_cannot_reuse_recipient_installation": {
       "bases": [
         "unittest.TestCase"
@@ -122,6 +135,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_current_http_recipient.py",
-  "reviewReason": "Add nine independent current POST/GET receipt controls while retaining every historical PUT case",
+  "reviewReason": "Retain nine current POST controls and add ambiguous reply plus lookup loss with immutable original acceptance",
   "schemaVersion": "latent.ci.contracts.v1"
 }

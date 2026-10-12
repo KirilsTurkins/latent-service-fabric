@@ -125,24 +125,43 @@ class Node:
 
 
 class Peer:
-    def __init__(self, client, directory: Path, tls: Path, credential: Path, incarnation: str, *, session=1, port=0):
+    def __init__(self, client, directory: Path, tls: Path, credential: Path, incarnation: str, *, session=1, port=0,
+                 current_declaration: Path | None = None):
         require(type(session) is int and 1 <= session <= 3 and type(port) is int and 0 <= port <= 65535,
                 "original-counted-recipient-session")
         self.client, self.directory, self.incarnation = client, directory, incarnation
+        self.current_http = current_declaration is not None
         self.session = session
         self.prefix = "recipient" if session == 1 else f"recipient-{session}"
         environment = dict(client.environment, PYTHONPATH=str(Path(__file__).resolve().parents[2]))
-        self.process = Process([sys.executable, "-m", "tools.java_transaction_qualification.provider",
+        arguments = [sys.executable, "-m", "tools.java_transaction_qualification.provider",
             "--root", str(directory), "--tls", str(tls), "--token-file", str(credential),
             "--incarnation", incarnation, "--deadline", str(client.deadline),
-            "--session", str(session), "--port", str(port)], client.directory,
+            "--session", str(session), "--port", str(port)]
+        if self.current_http:
+            from .current_recipient import endpoint
+            require(current_declaration.is_absolute() and current_declaration.is_file()
+                    and not current_declaration.is_symlink(), "owned-current-recipient-declaration")
+            declaration = decode(read_file(current_declaration, 8192), 8192)
+            require(declaration == endpoint(declaration["origin"], incarnation)
+                    and declaration["origin"]["port"] == port, "exact-current-recipient-listener")
+            arguments = [sys.executable, "-m", "tools.java_transaction_qualification.current_recipient",
+                         "--root", str(directory), "--tls", str(tls), "--credential-file", str(credential),
+                         "--declaration", str(current_declaration), "--deadline", str(client.deadline),
+                         "--session", str(session)]
+        self.process = Process(arguments, client.directory,
             environment, client.cancellation, maximum=262144)
         self.shutdown = None
         try:
             started = self.process.line(min(client.deadline, time.monotonic() + 10))
-            require(set(started) == {"port", "providerIncarnation"}
+            fields = {"port", "providerIncarnation"} if not self.current_http else {
+                "schemaVersion", "port", "endpointIncarnation"}
+            require(set(started) == fields
                     and type(started["port"]) is int and 1 <= started["port"] <= 65535
-                    and started["providerIncarnation"] == incarnation and (port == 0 or started["port"] == port),
+                    and started["endpointIncarnation" if self.current_http else "providerIncarnation"] == incarnation
+                    and (not self.current_http or started["schemaVersion"] ==
+                         "latent.synthetic.current-post-recipient-started.v1")
+                    and (port == 0 or started["port"] == port),
                     "actual-owned-recipient-listener")
             self.port = started["port"]
             client.evidence.record(self.prefix + "-started", started)
@@ -157,7 +176,10 @@ class Peer:
             lines = bytes(self.process.buffers[0]).splitlines()
             require(len(lines) == 1, "original-recipient-stopped-record")
             observed = decode(lines[0], 8192)
-            from .provider import stopped_observation
+            if self.current_http:
+                from .current_recipient import stopped_observation
+            else:
+                from .provider import stopped_observation
             stopped_observation(observed, self.incarnation)
             require(self.process.closed and self.process.owner.finished
                     and self.process.owner.process.returncode == 0, "actual-recipient-retirement")

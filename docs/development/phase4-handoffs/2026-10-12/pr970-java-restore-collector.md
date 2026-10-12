@@ -27,8 +27,17 @@ the sequence without retry. Six ordinary node sessions remain the limit.
 The current budget field is `maximumEffectCount`; its original ceiling remains
 one. The collector identity includes both new restore custody modules.
 
-86 focused source controls passed. They cover real filesystem custody and
+The optional `--current-http-endpoint` selects the separate finite POST/GET
+recipient only with explicit fresh current compiler captures. Its declared
+payload ceiling stays 27 bytes. The collector reads that protocol's own
+durable records and physical stop reports, preserves the actual reply-plus-
+lookup loss restart control, and accounts for the exact `http` intent framing.
+All historical PUT defaults and controls remain. Version-2 recovery failures
+retain the original wire code, bounded owner message and retryability separately
+from physical retirement; they do not alias historical version-1 failures.
+
+119 focused source controls passed. They cover real filesystem custody and
 synthetic policy sequencing, not installed schema migration or restore
-qualification. Current recovery reports, installed HTTP captures and the
-actual signed campaign still require the combined native gateway and peer.
+qualification. Installed HTTP captures and the actual signed campaign still
+require the combined native gateway and peer.
 No ticket closes and no authority is inferred from copied data or inspection.

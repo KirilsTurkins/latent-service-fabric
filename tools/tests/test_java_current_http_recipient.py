@@ -75,6 +75,21 @@ class CurrentRecipient(unittest.TestCase):
         self.assertEqual((status, receipt['sequence'], receipt['duplicate'], lost), (200, 1, True, False))
         self.assertEqual(self.peer.observation()['mutations'], 1)
 
+    def test_ambiguous_reply_and_lookup_loss_preserve_record_until_explicit_fault_removal(self):
+        mode = self.root / 'mode'
+        mode.write_text('accept-ambiguous', encoding='ascii')
+        status, receipt, lost = self.call()
+        self.assertEqual((status, receipt['sequence'], lost), (201, 1, True))
+        path = self.root / (self.key + '.json')
+        original = path.read_bytes()
+        status, receipt, lost = self.call('GET', '/receipts/' + self.key, body=b'')
+        self.assertEqual((status, receipt['sequence'], lost), (200, 1, True))
+        self.assertEqual(path.read_bytes(), original)
+        mode.write_text('reply', encoding='ascii')
+        status, receipt, lost = self.call('GET', '/receipts/' + self.key, body=b'')
+        self.assertEqual((status, receipt['sequence'], lost), (200, 1, False))
+        self.assertEqual(self.peer.observation()['mutations'], 1)
+
     def test_rejected_mutation_retains_no_acceptance_record(self):
         (self.root / 'mode').write_text('reject', encoding='ascii')
         status, receipt, lost = self.call()
