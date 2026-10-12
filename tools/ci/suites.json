@@ -2804,14 +2804,17 @@
         "model_integer_width_failures_keep_their_wire_paths",
         "optional_schema_fields_are_preserved_by_the_domain_model",
         "schema_failures_have_stable_paths_and_codes",
-        "static_web_http_target_round_trips_and_hybrids_are_rejected"
+        "static_web_http_target_round_trips_and_hybrids_are_rejected",
+        "transaction_http_conditions_enforce_each_mode_and_precondition_conjunction",
+        "transaction_http_identity_digest_incarnation_and_path_boundaries_are_closed",
+        "transaction_http_precondition_base64_preserves_padding_bits_and_key_ceiling"
       ],
       "expectedIgnored": [],
       "id": "latent-manifest.test.codec",
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-manifest/Cargo.toml",
-      "minimumCases": 11,
+      "minimumCases": 14,
       "mode": "libtest",
       "package": "latent-manifest",
       "platforms": [
