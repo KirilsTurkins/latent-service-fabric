@@ -2550,10 +2550,33 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "d362f803330211e70a1b8ea80a9d8f475f7aa237",
+        "4d8936aac1dace72072bd352250ec522d961647f",
+        "ae45e9610d628675215a7d6c53a86f92a8df7285",
+        "47876214fdbc73af187b6a42c53d08bad0572429",
+        "912fd7ad5cae810af7235bdaf6fc1cf28d678a2f"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-policy/src/capability/store/authority/owned.rs",
+        "crates/latent-state/src/protected_store/tests/opening_owner.rs",
+        "crates/latent-wire/src/phase4/state_management/authorization.rs",
+        "crates/latent-wire/src/phase4/state_management/inspection.rs"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-wire/src/management/activations.rs"
+      ],
+      "reviewedDiffSha256": "89e6a8fefe2901ff65046681c408f1b6b7d05dd0629aa0fad99dbb5ead437c0c",
+      "reconciliation": "Owned capability currentness, opening-owner controls and state-management authorization/inspection are identical. Activation projection differs only in its explanation of an absent captured-intent observer.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:43:36.543208+00:00"
     },
     {
       "pullRequest": 962,
@@ -2565,10 +2588,37 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "169f47485f5bbe4159b57d309b043d1bf5d3d95f",
+        "174b305cc21ef4181a37232a3e3bb3cc571fdebd",
+        "e9822190dbe48599d439081137a8fd3caf7bfb10",
+        "a01855634fc4c561f05e5597c3a1675e59806650",
+        "307092e5ab930522fd1345e9422841cd200a24c4"
+      ],
+      "identicalSourcePaths": [
+        "tools/ci/contracts/owners/tools/run_phase3_management_workflow.py.json",
+        "tools/ci/contracts/python/test_phase3_management_workflow.py.json",
+        "tools/dev_watch_fixture_probe.py",
+        "tools/run_phase3_management_workflow.py",
+        "tools/tests/test_phase3_management_workflow.py"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-wasmtime/tests/capabilities_backend/rejection.rs",
+        "tools/ci/contracts/python/test_phase1_conformance.py.json",
+        "tools/tests/test_phase1_conformance.py",
+        "tools/validate_phase1_conformance.py"
+      ],
+      "reviewedDiffSha256": "e9ff03b4d1e044fd070956ac9584f57eb4a2e299c7ddc6f4fdf1f580eeba0335",
+      "reconciliation": "The old unresolved integration checkpoint is superseded by merged #823 and current source. Watch/management implementation and controls are identical; current capability rejection preserves its case with the structural-value-type diagnostic. Current conformance retains the lineage cases and the actual retained-refusal queue result.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:43:41.257848+00:00"
     },
     {
       "pullRequest": 963,
@@ -2580,10 +2630,35 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "2dd5af8d3e11194e6687d02a867add5bcc849a44",
+        "c68a946babfd66996454a05c69ea7764ab9461d5",
+        "977a1b404cf964a88dd6d92f04a4911456202622",
+        "889ec06fd741a55ff26e5f3fc8b0606a5675c5ce",
+        "9c27fd17bbacaacd23bf5ef815087a2e93f4d00a"
+      ],
+      "identicalSourcePaths": [
+        "tools/dev_watch_fixture_probe.py"
+      ],
+      "reviewedChangedPaths": [
+        ".github/workflows/ci.yml",
+        "tools/ci/contracts/python/test_phase1_conformance.py.json",
+        "tools/ci/contracts/workflows/ci.yml/jobs/rust.json",
+        "tools/tests/test_ci_contracts.py",
+        "tools/tests/test_phase1_conformance.py",
+        "tools/validate_phase1_conformance.py"
+      ],
+      "reviewedDiffSha256": "a0f03adae182a72c997875314779cd39244bd781c470443ee1f21b5f5faff305",
+      "reconciliation": "Public-root lineage and absent-parent conformance checks and original-deadline watch polling are retained in development. Later conformance changes require retained refusal with zero guest consumption; current CI adds shared contract storage controls without dropping those guards.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:43:44.765077+00:00"
     },
     {
       "pullRequest": 964,
@@ -2595,10 +2670,37 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "b54abd0b8504b889a21c121939b6f0f41ec93a10",
+        "ab6d9107faf32892db571727f5438f6a6c2c9eb2",
+        "baaa9b5f77c501146ac952f99886fd6ada0cd5ef",
+        "0e1898556a8cc5a707d90ec6809628b3bc1ff53c",
+        "2e4598a397d21389c7c4193de8892762c95a2abc"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-scheduler/src/local/immediate.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/immediate_contention.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/publication.rs",
+        "crates/latent-scheduler/src/local/mod.rs",
+        "crates/latent-scheduler/src/local/state.rs"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-wasmtime/tests/local_service/runtime.rs",
+        "packaging/dev/wsl.Dockerfile",
+        "tools/ci/suites.json"
+      ],
+      "reviewedDiffSha256": "6f262bd230410aa8e200c210854e0921047ab63106891f63621dc8044747523a",
+      "reconciliation": "The historical HTTP effect repair is superseded by merged #821/#828. Immediate fair-dispatch implementation and ownership controls are identical; development retains the HTTPS WSL package correction and expands real Java runtime fixtures.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:43:49.877179+00:00"
     },
     {
       "pullRequest": 965,
@@ -2642,10 +2744,40 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "5900922172f34e804279941a4a56396a0330181b",
+        "83a2a0063b5793381dbe3c847df258fdd68571b4",
+        "8517f8701adeb272c6366e999120afb74131a415",
+        "c9ef4e31d2c4cc6d78ee995b2e7caf9c634dcb37",
+        "0da6c84787a3cbd59e927b392b57c821bc8cdbb7"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-scheduler/src/local/immediate.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/immediate_contention.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/publication.rs",
+        "crates/latent-scheduler/src/local/mod.rs",
+        "crates/latent-scheduler/src/local/state.rs",
+        "tools/ci/contracts/python/test_dotnet_http_errors.py.json",
+        "tools/tests/test_dotnet_application_dependencies.py",
+        "tools/tests/test_dotnet_http_errors.py"
+      ],
+      "reviewedChangedPaths": [
+        "tools/ci/contracts/python/test_dev_node_policies.py.json",
+        "tools/ci/contracts/python/test_dotnet_application_dependencies.py.json",
+        "tools/ci/suites.json"
+      ],
+      "reviewedDiffSha256": "ddd117cc4084c92e22f5b7f35bb2ebcb0358e277725b490a672eb482a4d859cd",
+      "reconciliation": "Immediate fair-dispatch publication, contention and physical ownership implementation/tests are byte-identical. Current CI contracts retain the related .NET fixtures and additional cases.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:43:55.245923+00:00"
     },
     {
       "pullRequest": 968,
@@ -2672,10 +2804,49 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "6d6dbb8ce97a0a497bd16a653ff42fb9f127678b",
+        "8242b8f2b2f7c9de510cc1f4a580a8e2e9c0bf72",
+        "8aa20a520c9320497235cd685a9327307ab4e71c",
+        "df6cc462a884fc1c050377646c5516b55da74149",
+        "f1ea95dc63dca86a2aef0430f19b2a7524ecd9c1"
+      ],
+      "identicalSourcePaths": [
+        "examples/framework-compatibility/package.json",
+        "tools/dev_watch_fixture_probe.py",
+        "tools/security_inventory.py",
+        "tools/security_npm_sources.py",
+        "tools/tests/test_security_npm_sources.py",
+        "website/content/toolchain.json",
+        "website/package.json",
+        "website/scripts/check-package-manager.mjs",
+        "website/tests/package-manager-security.test.mjs",
+        "website/toolchain/package.json",
+        "website/toolchain/source.json"
+      ],
+      "reviewedChangedPaths": [
+        ".github/security/inventory.json",
+        ".github/security/npm-source-repairs.json",
+        "crates/latent-wasmtime/tests/capabilities_backend/rejection.rs",
+        "examples/framework-compatibility/package-lock.json",
+        "tools/ci/contracts/python/test_security_npm_sources.py.json",
+        "website/README.md",
+        "website/package-lock.json",
+        "website/toolchain/package-lock.json",
+        "website/toolchain/prepare.py",
+        "website/toolchain/tests/test_prepare.py"
+      ],
+      "reviewedDiffSha256": "7876dbb6106dd8af01d5527588834f6706c96482d7af8537fee6a383dcff5ef9",
+      "reconciliation": "Authenticated npm source owner, selector bundle controls, repaired package-manager identity, website manifests and package-manager security cases are identical. Development adds bounded transient acquisition retries and later authenticated lockfile inputs.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:44:01.809942+00:00"
     },
     {
       "pullRequest": 970,
@@ -2702,10 +2873,37 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "b771b7329607e92fc4642faadaaa0cd513ccf95d",
+        "3e80225119d8656214c140d99080033bd00040ec",
+        "80b8f416f6e53e9d39fe6319beb3113a772c723f",
+        "b6982e7afbca213af039a935faf667535e8bbfc7",
+        "3e98d1e13dc44702b0d3edd7ea1a1a3a107a0234"
+      ],
+      "identicalSourcePaths": [
+        "tools/ci/contracts/owners/tools/run_phase3_management_workflow.py.json",
+        "tools/dev_watch_fixture_probe.py",
+        "tools/run_phase3_management_workflow.py",
+        "tools/tests/test_phase3_management_workflow.py"
+      ],
+      "reviewedChangedPaths": [
+        "tools/ci/contracts/python/test_phase1_conformance.py.json",
+        "tools/ci/contracts/python/test_phase3_management_workflow.py.json",
+        "tools/tests/test_ci_contracts.py",
+        "tools/tests/test_phase1_conformance.py",
+        "tools/validate_phase1_conformance.py"
+      ],
+      "reviewedDiffSha256": "b3d4bc3fec06a7245f464f67cb4d4204548a019b60cd1f6f83c4e321b110e529",
+      "reconciliation": "Closed blob-error decoding, original-deadline watch polling and management fixtures are identical. Public lineage/absent-parent conformance cases remain, with the current retained-refusal queue contract and zero guest-work controls.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:44:06.225374+00:00"
     },
     {
       "pullRequest": 972,
@@ -2717,10 +2915,53 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "504048f7d3f7078bac02bf0009de45eb805a6717",
+        "461e3510d94af94acd5613fea29fbaa114626383",
+        "0b92361c866113198092aafe4c347a7b49988fe0",
+        "af4d00dff6921867ca0fcd7d6e87e9e837066925",
+        "0b92584a35a85111946ee8f859a040559ad86ac7"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-scheduler/src/local/immediate.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests.rs",
+        "crates/latent-scheduler/src/local/lifetime_tests/immediate_contention.rs",
+        "crates/latent-scheduler/src/local/mod.rs",
+        "crates/latent-scheduler/src/local/state.rs",
+        "crates/latent-state/src/protected_store/checkpoint.rs",
+        "crates/latent-state/src/protected_store/checkpoint/native.rs",
+        "crates/latent-state/src/protected_store/restore_adoption.rs",
+        "crates/latent-state/src/protected_store/restore_adoption/prepare.rs",
+        "crates/latent-state/src/protected_store/restore_adoption/startup.rs",
+        "crates/latent-state/src/protected_store/resume.rs",
+        "crates/latent-state/src/protected_store/snapshot.rs",
+        "crates/latent-state/src/protected_store/snapshot/native.rs",
+        "crates/latent-state/src/recovery/migration/plan.rs",
+        "crates/latent-state/src/recovery/migration/progress.rs",
+        "crates/latent-state/src/recovery/resume/plan.rs",
+        "crates/latent-state/src/recovery/snapshot.rs",
+        "crates/latent-state/src/recovery/v1.rs",
+        "crates/latent-state/src/session/entities.rs",
+        "crates/latent-state/src/store_io/custody.rs"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-http/src/network.rs",
+        "crates/latent-state/src/protected_store.rs",
+        "crates/latent-state/src/protected_store/restore_stage.rs",
+        "crates/latent-state/src/store_io/startup.rs",
+        "tools/ci/suites.json"
+      ],
+      "reviewedDiffSha256": "30018770b647785749f0d8917adba8102843cde5c579c72669f29804252acd27",
+      "reconciliation": "The useful bounded checkpoint/snapshot/migration/restore/entity ownership refactors are identical. Development uses the current deferred-HTTP connection owner, staged restore receipt verifier, pre-startup recovery partition and state-mode/startup-memory ownership; the old layout is superseded.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:44:14.942908+00:00"
     },
     {
       "pullRequest": 973,
@@ -2732,10 +2973,36 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "needs-source-and-ticket-reconciliation",
+      "disposition": "useful-source-incorporated-or-superseded-in-development",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false
+      "closed": true,
+      "owningIssues": [
+        707
+      ],
+      "reviewedSourceCommits": [
+        "62477b295b257166fb12b394dafb3c4f19a26894",
+        "697413838b3caf179b322746f85d60f8f2ba2d78",
+        "f2e09dcb419e8673a4b2f5755511c374221f49c7",
+        "c99a623c57c1bcdafdf543ce48c94a6b6d266c1d",
+        "913e03d454282c7f60b39d8a1850f25eb4bbdef6"
+      ],
+      "identicalSourcePaths": [
+        "crates/latent-policy/src/capability/store/authority/owned.rs",
+        "crates/latent-wasmtime/src/host/accounting/tests/runtime_observation.rs",
+        "crates/latent-wasmtime/src/host/service.rs",
+        "crates/latent-wire/src/phase4/state_management/authorization.rs",
+        "crates/latent-wire/src/phase4/state_management/inspection.rs"
+      ],
+      "reviewedChangedPaths": [
+        "crates/latent-state/src/store_io/tests/recovery.rs",
+        "crates/latent-wire/src/management/activations.rs",
+        "tools/ci/suites.json"
+      ],
+      "reviewedDiffSha256": "b05de13887bf4317d38fe4b4bc218f0c1fde1f8cf72bdd6bca80e73f7cf5a9de",
+      "reconciliation": "Host runtime accounting observation, local service owner, authority and state-management inspection are identical. Development preserves the reserved recovery-native-retirement case using the current limits helper; activation projection retains an explicit absent observation.",
+      "developmentHead": "ab4e174c0599d178074e70a91947bae514eaf2f5",
+      "closureObservedUtc": "2026-10-12T14:44:21.077408+00:00"
     },
     {
       "pullRequest": 974,
