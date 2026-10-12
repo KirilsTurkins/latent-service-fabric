@@ -99,7 +99,8 @@ def check_surface(expected: dict, actual: dict, variant: str) -> None:
 
 
 def compile_project(language: str, work: Path, output: Path, command: Commands,
-                    *, tools: Path | None, wasi_sdk: Path | None) -> tuple[Path, dict]:
+                    *, tools: Path | None, wasi_sdk: Path | None,
+                    java_read_only_cache: Path | None = None) -> tuple[Path, dict]:
     vendor = work / "vendor/lsf"
     pins = (json.loads(read_file(work / "sdk-lock.json"))["toolchain"] if language == "rust"
             else tomllib.loads(read_file(vendor / "tools/toolchain.toml").decode()))
@@ -141,7 +142,9 @@ def compile_project(language: str, work: Path, output: Path, command: Commands,
         from tools.java_guest.compiler import Compiler
         if wasi_sdk is None:
             raise ValueError("authored Java requires its pinned --wasi-sdk")
-        compiler = Compiler(output / "compiler", wasi_sdk, sdk=vendor / "sdk/java-guest", platform=vendor / "wit/platform", config=pins)
+        cache_selection = {} if java_read_only_cache is None else {"read_only_cache": java_read_only_cache}
+        compiler = Compiler(output / "compiler", wasi_sdk, sdk=vendor / "sdk/java-guest",
+                            platform=vendor / "wit/platform", config=pins, **cache_selection)
         component, binding = compiler.compile(work / "src", work / "wit", WORLD, output / "compiled")
         (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
     elif language == "go":
@@ -173,7 +176,8 @@ def compile_project(language: str, work: Path, output: Path, command: Commands,
 
 def compile_guests(language: str, output: Path, *, tools: Path | None = None, wasi_sdk: Path | None = None,
                    java_schema_put_once: bool = False, java_post_stage_diagnostic: bool = False,
-                   java_state_acceptance: bool = False, java_current_http_profile: str | None = None) -> None:
+                   java_state_acceptance: bool = False, java_current_http_profile: str | None = None,
+                   java_read_only_cache: Path | None = None) -> None:
     if type(java_schema_put_once) is not bool or (java_schema_put_once and language != "java"):
         raise ValueError("Java schema qualification requires an explicit Java compiler selection")
     if (type(java_post_stage_diagnostic) is not bool
@@ -188,6 +192,11 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
                 or not isinstance(java_current_http_profile, str)
                 or re.fullmatch(r"qualified-http-v1:[0-9a-f]{64}", java_current_http_profile) is None):
             raise ValueError("current HTTP profile requires a bounded explicit Java schema, diagnostic or value selection")
+    if java_read_only_cache is not None and (
+            language != "java" or not isinstance(java_read_only_cache, Path)
+            or not java_read_only_cache.is_absolute() or not java_read_only_cache.is_dir()
+            or java_read_only_cache.is_symlink()):
+        raise ValueError("read-only Java cache requires an existing explicit absolute directory and Java compiler")
     output = fresh(output)
     variants = (JAVA_ACCEPTANCE_VARIANTS if java_state_acceptance else (JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
                 else (*VARIANTS, *JAVA_SCHEMA_VARIANTS) if java_schema_put_once else VARIANTS)
@@ -251,7 +260,9 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             if command.run("validator-version", wasm, "--version").split()[:2] != [b"wasm-tools", b"1.254.0"]:
                 raise ValueError("unreviewed authored guest validator")
             expected = surface(json.loads(command.run("authored-wit", wasm, "component", "wit", work / "wit", "--json")), WORLD)
-            component, details = compile_project(language, work, current, command, tools=tools, wasi_sdk=wasi_sdk)
+            cache_selection = {} if java_read_only_cache is None else {"java_read_only_cache": java_read_only_cache}
+            component, details = compile_project(language, work, current, command,
+                                                 tools=tools, wasi_sdk=wasi_sdk, **cache_selection)
             command.run("validate-authored-component", wasm, "validate", "--features", "all", component)
             actual = surface(json.loads(command.run("actual-component-wit", wasm, "component", "wit", component, "--json")))
             check_surface(expected, actual, "aggregate" if variant in JAVA_SCHEMA_VARIANTS
@@ -286,12 +297,15 @@ def main() -> None:
                         help="compile separate unsigned-value/UTF-8 state and typed forbidden-child inputs")
     parser.add_argument("--java-current-http-profile",
                         help="exact constructor-derived native HTTP profile for fresh Java captures; never an approval")
+    parser.add_argument("--java-read-only-cache", type=Path,
+                        help="existing pinned Java compiler cache; verify through the current read-only cache owner")
     arguments = parser.parse_args()
     compile_guests(arguments.language, arguments.output, tools=arguments.tools, wasi_sdk=arguments.wasi_sdk,
                    java_schema_put_once=arguments.java_schema_put_once,
                    java_post_stage_diagnostic=arguments.java_post_stage_diagnostic,
                    java_state_acceptance=arguments.java_state_acceptance,
-                   java_current_http_profile=arguments.java_current_http_profile)
+                   java_current_http_profile=arguments.java_current_http_profile,
+                   java_read_only_cache=arguments.java_read_only_cache)
 
 
 if __name__ == "__main__":

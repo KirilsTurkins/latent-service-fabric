@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "CurrentRecipient.test_changed_declared_endpoint_cannot_reuse_recipient_installation",
+    "CurrentRecipient.test_changed_input_conflicts_without_rewriting_original_acceptance",
+    "CurrentRecipient.test_lost_reply_follows_durable_acceptance_and_restart_deduplicates",
+    "CurrentRecipient.test_original_post_and_lookup_preserve_exact_sequence_and_record",
+    "CurrentRecipient.test_probe_and_absent_lookup_create_no_mutation",
+    "CurrentRecipient.test_put_old_keys_or_headers_and_wrong_credential_do_not_mutate",
+    "CurrentRecipient.test_record_ceiling_refuses_the_next_mutation_without_eviction",
+    "CurrentRecipient.test_rejected_mutation_retains_no_acceptance_record",
+    "CurrentRecipient.test_tampered_retained_payload_or_sequence_is_refused"
+  ],
+  "guards": {
+    "CurrentRecipient.test_changed_declared_endpoint_cannot_reuse_recipient_installation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a8d3758999cee699507c965d49d9f46da7174759c6396a22f278be8b1e06c3b",
+        "class:setup-sha256:037b786bea9ddbe1b87a22911075110c663926ee47da87da4c2a73eefce62d07"
+      ],
+      "skipSites": []
+    },
+    "CurrentRecipient.test_changed_input_conflicts_without_rewriting_original_acceptance": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a8d3758999cee699507c965d49d9f46da7174759c6396a22f278be8b1e06c3b",
+        "class:setup-sha256:037b786bea9ddbe1b87a22911075110c663926ee47da87da4c2a73eefce62d07"
+      ],
+      "skipSites": []
+    },
+    "CurrentRecipient.test_lost_reply_follows_durable_acceptance_and_restart_deduplicates": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a8d3758999cee699507c965d49d9f46da7174759c6396a22f278be8b1e06c3b",
+        "class:setup-sha256:037b786bea9ddbe1b87a22911075110c663926ee47da87da4c2a73eefce62d07"
+      ],
+      "skipSites": []
+    },
+    "CurrentRecipient.test_original_post_and_lookup_preserve_exact_sequence_and_record": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a8d3758999cee699507c965d49d9f46da7174759c6396a22f278be8b1e06c3b",
+        "class:setup-sha256:037b786bea9ddbe1b87a22911075110c663926ee47da87da4c2a73eefce62d07"
+      ],
+      "skipSites": []
+    },
+    "CurrentRecipient.test_probe_and_absent_lookup_create_no_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a8d3758999cee699507c965d49d9f46da7174759c6396a22f278be8b1e06c3b",
+        "class:setup-sha256:037b786bea9ddbe1b87a22911075110c663926ee47da87da4c2a73eefce62d07"
+      ],
+      "skipSites": []
+    },
+    "CurrentRecipient.test_put_old_keys_or_headers_and_wrong_credential_do_not_mutate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a8d3758999cee699507c965d49d9f46da7174759c6396a22f278be8b1e06c3b",
+        "class:setup-sha256:037b786bea9ddbe1b87a22911075110c663926ee47da87da4c2a73eefce62d07"
+      ],
+      "skipSites": []
+    },
+    "CurrentRecipient.test_record_ceiling_refuses_the_next_mutation_without_eviction": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a8d3758999cee699507c965d49d9f46da7174759c6396a22f278be8b1e06c3b",
+        "class:setup-sha256:037b786bea9ddbe1b87a22911075110c663926ee47da87da4c2a73eefce62d07"
+      ],
+      "skipSites": []
+    },
+    "CurrentRecipient.test_rejected_mutation_retains_no_acceptance_record": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a8d3758999cee699507c965d49d9f46da7174759c6396a22f278be8b1e06c3b",
+        "class:setup-sha256:037b786bea9ddbe1b87a22911075110c663926ee47da87da4c2a73eefce62d07"
+      ],
+      "skipSites": []
+    },
+    "CurrentRecipient.test_tampered_retained_payload_or_sequence_is_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5a8d3758999cee699507c965d49d9f46da7174759c6396a22f278be8b1e06c3b",
+        "class:setup-sha256:037b786bea9ddbe1b87a22911075110c663926ee47da87da4c2a73eefce62d07"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_current_http_recipient.py",
+  "reviewReason": "Add nine independent current POST/GET receipt controls while retaining every historical PUT case",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -99,6 +99,17 @@ class CurrentJavaHttpInputs(unittest.TestCase):
                     self.assertEqual(read_json(project / 'transaction-diagnostic-inputs.json')['selectors']['memoryAfterStage'],
                                      '4294967292')
 
+    def test_read_only_cache_selection_refuses_wrong_language_missing_and_relative_roots(self):
+        from tools.compile_transaction_guests import compile_guests
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            output = root / 'uncreated'
+            for language, cache in (('rust', root), ('java', Path('relative')),
+                                    ('java', root / 'missing'), ('java', str(root))):
+                with self.subTest(language=language, cache=cache), self.assertRaises(ValueError):
+                    compile_guests(language, output, java_read_only_cache=cache)
+                self.assertFalse(output.exists())
+
 
 if __name__ == '__main__':
     unittest.main()

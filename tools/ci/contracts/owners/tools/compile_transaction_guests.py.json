@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_transaction_guests.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Compile explicitly selected current native HTTP Java captures without changing legacy inputs or claiming execution",
+  "reviewReason": "Forward explicit current Java read-only compiler cache through its existing identity owner while keeping all compiler selections and workflow commands",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ff1c7920e5fe0681bfd3a3aba64a55d42c67c80c8ff80648521008fafe3467ab"
+  "sha256": "0b1f3e21af8fe53dbe87c235854550a18fd38576b09f3a8784f8a5662922d77e"
 }
