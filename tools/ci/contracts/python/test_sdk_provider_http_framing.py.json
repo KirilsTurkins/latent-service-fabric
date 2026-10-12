@@ -5,6 +5,7 @@
     "ProviderHttpFramingTests.test_content_length_and_absent_body_preserve_existing_results_and4096_boundary",
     "ProviderHttpFramingTests.test_content_length_numeric_ambiguity_overflow_and_truncation_reject",
     "ProviderHttpFramingTests.test_credentials_and_route_decisions_remain_independent_of_framing",
+    "ProviderHttpFramingTests.test_declared_get_head_bodies_preserve_original_typed_http_contract_for_both_framings",
     "ProviderHttpFramingTests.test_duplicate_and_ambiguous_framing_reject_case_insensitive_and_both_orders",
     "ProviderHttpFramingTests.test_fragmented_chunk_reads_keep_original_absolute_deadline_and_two_second_cap",
     "ProviderHttpFramingTests.test_framing_header_whitespace_folding_and_control_bytes_reject",
@@ -67,6 +68,18 @@
       "skipSites": []
     },
     "ProviderHttpFramingTests.test_credentials_and_route_decisions_remain_independent_of_framing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01d54b5e7a79d3e17705790f1ed35de431ae53b097dc812c5bea697bf650f3bf",
+        "class:setup-sha256:9b67bd19d95719c43638633ecd019fb971a132c2b379c0ae9d977dfc5cecc1ad"
+      ],
+      "skipSites": []
+    },
+    "ProviderHttpFramingTests.test_declared_get_head_bodies_preserve_original_typed_http_contract_for_both_framings": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -213,6 +226,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_sdk_provider_http_framing.py",
-  "reviewReason": "Add real-socket framing controls for bounded chunked requests; preserve all historical lifetime, authority and cleanup cases.",
+  "reviewReason": "Retain all16framing cases and add positive original signed typed-HTTP GET/HEAD body contract; reject undeclared bytes without inventing GET body prohibition",
   "schemaVersion": "latent.ci.contracts.v1"
 }

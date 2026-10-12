@@ -123,14 +123,23 @@ class ProviderHttpFramingTests(unittest.TestCase):
 
     def test_get_head_and_undeclared_payload_reject_for_both_framings(self):
         for method in (b"GET", b"HEAD"):
-            for framing, body in ((b"Content-Length: 1\r\n", b"a"),
-                                  (b"Transfer-Encoding: chunked\r\n", b"1\r\na\r\n0\r\n\r\n"),
-                                  (b"Content-Length: 0\r\n", b"extra"), (b"", b"extra")):
+            for framing, body in ((b"Content-Length: 0\r\n", b"extra"), (b"", b"extra"),
+                                  (b"Transfer-Encoding: chunked\r\n", b"0\r\n\r\nextra")):
                 for fragment in (1, 1024):
                     with self.subTest(method=method, framing=framing, fragment=fragment), self.assertRaises(ValueError):
                         self.check_request(self.wire(framing, body, method=method), fragment)
         with self.assertRaisesRegex(ValueError, "payload"):
             self.check_request(self.wire(b"Content-Length: 3\r\n", b"data", method=b"POST"), 1)
+
+    def test_declared_get_head_bodies_preserve_original_typed_http_contract_for_both_framings(self):
+        # The signed guest SDK controls send this payload for GET, HEAD and POST.
+        for method in (b"GET", b"HEAD"):
+            for framing, body in ((b"Content-Length: 7\r\n", b"payload"),
+                                  (b"Transfer-Encoding: chunked\r\n", b"7\r\npayload\r\n0\r\n\r\n")):
+                for fragment in (1, 7, 1024):
+                    with self.subTest(method=method, framing=framing, fragment=fragment):
+                        self.assertEqual(self.check_request(self.wire(framing, body, method=method), fragment)[0],
+                                         (method, True, True))
 
     def test_content_length_numeric_ambiguity_overflow_and_truncation_reject(self):
         for encoded in (b"", b"0,0", b"+0", b"-0", b"1.0", b"1_0", b"0x0", b"4097"):

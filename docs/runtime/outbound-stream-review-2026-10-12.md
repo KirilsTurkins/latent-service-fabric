@@ -67,6 +67,35 @@ Linux. Their [original framing source receipt](../testing/evidence/sdk-provider-
 retains its historical identity; the new focused execution does not qualify
 ordinary guest libraries or a six-language provider campaign.
 
+## Private full-transport feasibility follow-up
+
+A separately copied qualification source applied the authenticated bounded
+parser, exposed four preserved TLS controls, and enabled its TLS gate only in
+that private tree. The shipped gate remains false. All four actual
+broker/provider/protected-root/TCP controls passed: transfer/EOF/retirement,
+wrong hostname without fallback, stalled handshake under the original deadline,
+and generation rotation retaining the pending owner until peer retirement.
+The [source-labeled receipt](../testing/evidence/outbound-host-tls-private-feasibility-2026-10-12.json)
+retains the original PR head, every qualification-source change, unchanged
+allowances, actual executable and exact selected outcomes.
+
+One successful exchange was observed with Heaptrack 1.4.0 and replayed through
+the maintained format-3 validator. Allocation traces containing the pinned
+transport symbol marker peaked at 8,878 bytes; the trust-configuration marker
+peaked at 16,058 bytes. Both tagged groups retired to zero. The raw whole-process
+peak remains 283,785 bytes with 46,808 bytes remaining; unmatched allocations
+are not erased. The [limited attribution reader](../../tools/host_stream_tls_allocation.py)
+preserves every original free, unmatched memory and completion/version refusal.
+Mangled-symbol attribution, one benign exchange and profiler-inclusive RSS
+cannot qualify hostile full-connection, stack or kernel memory. TLS 1.2, full
+component/operator and ordinary language matrices remain open.
+
+The first reconciliation CI head exposed a carried peer restriction that
+refused nonempty GET/HEAD bodies. The existing signed guest HTTP contract sends
+`payload` for GET, HEAD and POST. The peer now accepts explicitly framed bodies
+under its same bounds and continues rejecting undeclared/trailing payload.
+All original framing cases remain, with one added frozen-contract regression.
+
 ## Acceptance still requiring completion
 
 | Owner | Remaining requirement |

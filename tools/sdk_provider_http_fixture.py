@@ -189,8 +189,6 @@ def request(connection, deadline):
             if not chunk:
                 raise ValueError("truncated request body")
             body += chunk
-    if method in (b"GET", b"HEAD") and length:
-        raise ValueError("unexpected request body")
     # Reject already queued bytes even when a fragmented reader left them
     # outside its buffer. Do not wait for a possible later request.
     if select.select([connection], [], [], 0)[0] and receive(1):

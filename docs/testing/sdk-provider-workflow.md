@@ -53,8 +53,9 @@ limit. Chunked input has at most 16 data chunks, 16 bytes per size line and
 1,024 framing bytes; total received chunk bytes are at most 5,120. Extensions,
 trailers, duplicated framing fields, combined `Content-Length` and
 `Transfer-Encoding`, unsupported coding chains, malformed sizes or terminators,
-truncation and unexpected payload are rejected. GET and HEAD require empty
-bodies. A final nonblocking check rejects already queued extra bytes without
+truncation and unexpected payload are rejected. Explicitly framed GET and HEAD
+bodies retain the existing typed HTTP contract and the same byte bounds. A final
+nonblocking check rejects already queued extra bytes without
 extending the original caller deadline or two-second read ceiling. Authorization,
 the exact route, the 32-request ceiling and physical-close rendezvous stay in
 the existing fixture path.
