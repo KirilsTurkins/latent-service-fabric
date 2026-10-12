@@ -106,6 +106,32 @@ class RestoreInstallationCustody(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'explicit-current-v2'):
                 restore.selection(dict(original, state={'formatVersion': 1}), data, checkpoint)
 
+    def test_new_nested_catalog_member_refuses_even_when_original_files_and_root_are_unchanged(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source = root / 'source'
+            source.mkdir(mode=0o700)
+            catalog = source / 'catalog'
+            catalog.mkdir()
+            original = catalog / 'original'
+            original.write_bytes(b'original retained record')
+            checkpoint = root / 'clock'
+            checkpoint.mkdir()
+            real_sync = os.fsync
+            added = False
+            def change(descriptor):
+                nonlocal added
+                real_sync(descriptor)
+                if not added:
+                    (catalog / 'unobserved').write_bytes(b'new record after census')
+                    added = True
+            with patch.object(restore, 'require_stopped_owner'), patch.object(restore.os, 'fsync', change):
+                with self.assertRaisesRegex(ValueError, 'custody-changed'):
+                    restore.catalogs(self.client(), object(), source, root / 'destination', checkpoint)
+            self.assertEqual(original.read_bytes(), b'original retained record')
+            self.assertEqual((root / 'destination/catalog/original').read_bytes(), original.read_bytes())
+            self.assertFalse((root / 'destination/catalog/unobserved').exists())
+
 
 if __name__ == '__main__':
     unittest.main()
