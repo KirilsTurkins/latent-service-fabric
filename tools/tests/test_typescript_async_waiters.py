@@ -13,6 +13,7 @@ class TypeScriptAsyncWaiterTests(unittest.TestCase):
     def test_idle_state_actual_shared_wait_and_successive_imports(self):
         source = r"""
 import assert from 'node:assert/strict';
+import {writeFile} from 'node:fs/promises';
 import {lazySyncImportWaiters} from './async_waiters.mjs';
 let pending = 0;
 let allocated = 0;
@@ -40,8 +41,12 @@ const generated = `class ComponentAsyncState {
   async waitForSyncImportCallEnd() {
     await this.#syncImportWait.promise;
   }
-}; ComponentAsyncState`;
-const State = eval(lazySyncImportWaiters(generated));
+};`;
+await writeFile(new URL('./generated.mjs', import.meta.url),
+  'export default function create(promiseWithResolvers) {\n' +
+  lazySyncImportWaiters(generated) + '\nreturn ComponentAsyncState;\n}');
+const {default:create} = await import('./generated.mjs');
+const State = create(promiseWithResolvers);
 const state = new State();
 assert.equal(allocated, 0);
 await state.waitForSyncImportCallEnd();
@@ -86,6 +91,7 @@ assert.throws(() => lazySyncImportWaiters('class Other {}'), /shape-drift/);
     def test_generated_task_slots_retire_after_exit_without_reordering_waiters(self):
         source = r"""
 import assert from 'node:assert/strict';
+import {writeFile} from 'node:fs/promises';
 import {retireGeneratedTaskSlots} from './async_waiters.mjs';
 const generated = `class Slots {
   #nextTaskPromise = Promise.resolve(true);
@@ -110,8 +116,10 @@ const generated = `class Slots {
       }
     }
   }
-}; Slots`;
-const Slots = eval(retireGeneratedTaskSlots(generated));
+};`;
+await writeFile(new URL('./generated.mjs', import.meta.url),
+  retireGeneratedTaskSlots(generated) + '\nexport default Slots;\n');
+const {default:Slots} = await import('./generated.mjs');
 const slots = new Slots();
 assert.equal(slots.current(), null);
 const first = Promise.withResolvers();

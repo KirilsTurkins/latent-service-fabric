@@ -59,6 +59,12 @@ library passes 80 tests. The signed ordinary campaign passes its complete origin
 matrix and fresh-after-failure control. CI adds the new regressions while retaining
 all historical commands, cases, ignore guards, limits and qualification contracts.
 
+The unchanged four-case clock application also passes signed node execution:
+actual wall/monotonic progress, stable activation time origin, default/explicit
+Date constructor behavior and AbortSignal timeout. The two-case actual service
+import fixture is retained as a separate explicit prepared-component test; its
+first run exposed a guest failure before child admission and is not qualified.
+
 Local evidence is retained under the isolated worktree's `target/pr923`, including
 all earlier failed builds, the pending-Promise diagnostic, forbidden post-return
 import, strict host lifecycle failure and the original Abort failure. Diagnostic
@@ -72,7 +78,8 @@ The input classification remains `qualification: unknown`,
 controls do not establish the entire standard runtime or clean installed toolkit
 qualification. Clock/service/npm runtime controls, exhaustion/cancellation/late
 wake acceptance, automatic runtime selection and packaged distribution remain
-separate requirements of #745. Default global fetch, body ownership and unchanged
+separate requirements of #745. The clock controls above cover their bounded
+original fixture only. Default global fetch, body ownership and unchanged
 default-fetch consumers remain #691. Complete private/local/offline/update/watch
 native npm workflow acceptance remains #685. Historical source/Wizer/broker-only
 controls retain their original qualification boundaries.

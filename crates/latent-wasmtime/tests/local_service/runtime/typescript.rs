@@ -32,7 +32,8 @@ async fn fixture(name: &str, root: &std::path::Path) -> Fixture {
     let signers = package::Signers::for_tenant(&observed.build_type, &TenantId("examples".into()));
     let caller_upload = signers.upload_for_tenant(&caller, &observed, &TenantId("examples".into()));
     let callee_observation = package::observation("typescript-service-callee");
-    let callee_upload = signers.upload_for_tenant(&callee, &callee_observation, &TenantId("examples".into()));
+    let callee_upload =
+        signers.upload_for_tenant(&callee, &callee_observation, &TenantId("examples".into()));
     let catalog = package::catalog(root, signers.policy, Some(packages::budget().memory_bytes));
     for upload in [caller_upload, callee_upload] {
         catalog
@@ -93,8 +94,11 @@ async fn signed_pending_exports_timers_rejections_and_fresh_state_use_real_node_
         let mut request = f.request(&format!("typescript-ordinary-{mode}"), mode);
         request.target.contract = ContractId("examples:typescript-async/ordinary@1.0.0".into());
         let receipt = f.manager.start(request).unwrap().await;
-        eprintln!("TypeScript mode={mode} timing={:?}; broker={:?}",
-                  f.backend.take_invocation_timing(&receipt.activation_id), f.broker.snapshot());
+        eprintln!(
+            "TypeScript mode={mode} timing={:?}; broker={:?}",
+            f.backend.take_invocation_timing(&receipt.activation_id),
+            f.broker.snapshot()
+        );
         if (9..=12).contains(&mode) {
             let ActivationOutcome::Failed { error, .. } = receipt.outcome else {
                 panic!("required rejected or opaque-work export succeeded: {receipt:?}")
@@ -121,4 +125,34 @@ async fn signed_pending_exports_timers_rejections_and_fresh_state_use_real_node_
     request.target.contract = ContractId("examples:typescript-async/ordinary@1.0.0".into());
     assert_eq!(super::value(f.manager.start(request).unwrap().await), 42);
     f.idle().await;
+}
+
+#[tokio::test]
+#[ignore = "requires current maintained TypeScript clock compiler outputs with actual build observations"]
+async fn signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners() {
+    let root = tempfile::tempdir().unwrap();
+    let f = fixture("typescript-clock4", root.path()).await;
+    for mode in 0..4 {
+        let mut request = f.request(&format!("typescript-clock-{mode}"), mode);
+        request.target.contract = ContractId("examples:typescript-async/ordinary@1.0.0".into());
+        let receipt = f.manager.start(request).unwrap().await;
+        eprintln!("TypeScript clock mode={mode}: {:?}", receipt.outcome);
+        assert_eq!(super::value(receipt), 42);
+        f.idle().await;
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires current maintained TypeScript service caller and callee compiler outputs with actual build observations"]
+async fn signed_async_service_import_preserves_sibling_progress_and_actual_child_owners() {
+    let root = tempfile::tempdir().unwrap();
+    let f = fixture("typescript-service-caller", root.path()).await;
+    for mode in 0..2 {
+        let mut request = f.request(&format!("typescript-service-{mode}"), mode);
+        request.target.contract = ContractId("examples:typescript-runtime-caller/api@1.0.0".into());
+        let receipt = f.manager.start(request).unwrap().await;
+        eprintln!("TypeScript service mode={mode}: {:?}", receipt.outcome);
+        assert_eq!(super::value(receipt), 42);
+        f.idle().await;
+    }
 }

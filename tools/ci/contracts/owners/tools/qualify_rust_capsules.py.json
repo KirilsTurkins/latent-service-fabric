@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain original six-language ownership/SDK/guide invocations and add explicitly selected C generator capture, offline rebuild and signed node coverage",
+  "reviewReason": "Capture the actual TypeScript adapter module dependency closure in qualification inputs; keep all existing compiler, signing, source and qualification gates.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8fbb10e20c08fe6a0f358449355fcf25b22d0e86ef18d85478e4fbf30e27d977"
+  "sha256": "097909603dc23b8d9caf23650aef7a60934444ff9c229868bea531a51fa92077"
 }

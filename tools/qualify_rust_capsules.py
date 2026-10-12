@@ -60,7 +60,8 @@ def inputs(language="rust"):
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
                     "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
                     "typescript_guest/probe.py", "typescript_guest/componentize.mjs", "typescript_guest/bundle.mjs",
-                    "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "../.cargo/managed-guest.toml",
+                    "typescript_guest/signed64.mjs", "typescript_guest/resources.mjs", "typescript_guest/source_splicer.mjs",
+                    "typescript_guest/async_waiters.mjs", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "typescript_application_dependencies.py", "captured_compiler_isolation.py",
                     "typescript_dependency_fixture.py", "typescript_dependency_authoring.py", "guest_authoring_frontend.py")

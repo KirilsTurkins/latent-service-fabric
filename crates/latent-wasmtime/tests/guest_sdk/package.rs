@@ -136,7 +136,8 @@ impl Signers {
             builder_public,
         )
         .unwrap();
-        let policy_document = policy_document(now, &publisher_public, &builder_public, build_type, tenant);
+        let policy_document =
+            policy_document(now, &publisher_public, &builder_public, build_type, tenant);
         Self {
             publisher,
             builder,
@@ -288,8 +289,10 @@ fn policy_document(
     .unwrap()
     .digest()
     .to_string();
-    let mut tenants = vec![json!({"tenant":"tests","publishers":["guest-publisher"]}),
-                           json!({"tenant":"tenant-a","publishers":["guest-publisher"]})];
+    let mut tenants = vec![
+        json!({"tenant":"tests","publishers":["guest-publisher"]}),
+        json!({"tenant":"tenant-a","publishers":["guest-publisher"]}),
+    ];
     if let Some(tenant) = tenant.filter(|tenant| !matches!(*tenant, "tests" | "tenant-a")) {
         tenants.push(json!({"tenant":tenant,"publishers":["guest-publisher"]}));
     }
