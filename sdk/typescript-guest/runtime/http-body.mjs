@@ -90,35 +90,25 @@ export class NativeBodyReader {
     this.#operations = operations;
   }
 
-  async #run(start) {
+  #start(start) {
     const operation = start();
     this.#current = operation;
     if (!operation || typeof operation.result?.then !== 'function' ||
         typeof operation.retired?.then !== 'function' || typeof operation.cancel !== 'function') {
       throw new TypeError('canonical-operation-and-retirement-required');
     }
-    let value;
-    let failed = false;
-    let failure;
-    try { value = await operation.result; }
-    catch (error) { failed = true; failure = error; }
-    try { await operation.retired; }
-    catch (error) {
-      this.#retainCleanup(error);
-      // Keep the current owner: retirement was not acknowledged.
-      throw failed ? failure : error;
-    }
-    this.#current = null;
-    if (failed) throw failure;
-    return value;
+    return operation;
   }
 
-  async #dropBody() {
+  #dropBody() {
     if (this.#closed) return;
     if (this.#current) throw new TypeError('native-body-operation-still-owned');
     if (this.#dropAttempted) throw this.#bodyDropFailure;
     this.#dropAttempted = true;
-    try { await this.#operations.dropBody(); }
+    try {
+      const result = this.#operations.dropBody();
+      if (result && typeof result.then === 'function') throw new TypeError('canonical-resource-drop-must-be-synchronous');
+    }
     catch (error) { this.#bodyDropFailure = error; throw error; }
     this.#closed = true;
   }
@@ -130,12 +120,29 @@ export class NativeBodyReader {
       let failed = false;
       let failure;
       try {
-        chunk = await this.#run(() => this.#operations.read(maximumChunkBytes));
+        const reading = this.#start(() => this.#operations.read(maximumChunkBytes));
+        let readFailure;
+        let readFailed = false;
+        try { chunk = await reading.result; }
+        catch (error) { readFailed = true; readFailure = error; }
+        try { await reading.retired; }
+        catch (error) { this.#retainCleanup(error); throw readFailed ? readFailure : error; }
+        this.#current = null;
+        if (readFailed) throw readFailure;
         if (this.#cancelled) throw this.#reason;
         if (chunk === undefined) {
-          await this.#dropBody();
+          this.#dropBody();
         } else {
-          const bytes = await this.#run(() => this.#operations.materialize(chunk));
+          const materializing = this.#start(() => this.#operations.materialize(chunk));
+          let bytes;
+          let materializeFailure;
+          let materializeFailed = false;
+          try { bytes = await materializing.result; }
+          catch (error) { materializeFailed = true; materializeFailure = error; }
+          try { await materializing.retired; }
+          catch (error) { this.#retainCleanup(error); throw materializeFailed ? materializeFailure : error; }
+          this.#current = null;
+          if (materializeFailed) throw materializeFailure;
           if (this.#cancelled) throw this.#reason;
           if (!isBytes(bytes) || bytes.byteLength > maximumChunkBytes) {
             throw new TypeError('native-body-chunk-profile-limit-or-type');
@@ -148,7 +155,10 @@ export class NativeBodyReader {
         failure = error;
       } finally {
         if (chunk !== undefined && !this.#current) {
-          try { await this.#operations.dropChunk(chunk); }
+          try {
+            const result = this.#operations.dropChunk(chunk);
+            if (result && typeof result.then === 'function') throw new TypeError('canonical-resource-drop-must-be-synchronous');
+          }
           catch (error) {
             this.#failedChunk = chunk;
             this.#retainCleanup(error);
@@ -158,7 +168,7 @@ export class NativeBodyReader {
       }
       if (failed) {
         if (!this.#current) {
-          try { await this.#dropBody(); }
+          try { this.#dropBody(); }
           catch (error) { this.#retainCleanup(error); }
         }
         throw failure;
@@ -192,7 +202,7 @@ export class NativeBodyReader {
           if (this.#current && !failed) { failed = true; failure = error; }
         }
       }
-      try { await this.#dropBody(); }
+      try { this.#dropBody(); }
       catch (error) {
         this.#retainCleanup(error);
         if (!failed) { failed = true; failure = error; }

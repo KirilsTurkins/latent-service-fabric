@@ -38,6 +38,14 @@ assert.deepEqual(await direct.consume(),new Uint8Array([3,4]));
 assert.equal(direct.used,true);
 assert.deepEqual(directOrder,['read','materialize','chunk-drop','read','body-drop']);
 await assert.rejects(direct.consume(),/used-or-locked/);
+let asyncDropCalls=0;
+const invalidDrop=new NativeBodyReader({
+  read(){return settled(undefined);},materialize(){throw new Error('EOF-has-no-chunk');},dropChunk(){},
+  dropBody(){asyncDropCalls++;return Promise.resolve();},
+});
+await assert.rejects(invalidDrop.pull(),/drop-must-be-synchronous/);
+await assert.rejects(invalidDrop.cancel(),/drop-must-be-synchronous/);
+assert.equal(asyncDropCalls,1); // Failed canonical destruction is never retried.
 
 const result = deferred();
 const retirement = deferred();
