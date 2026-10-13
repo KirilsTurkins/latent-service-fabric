@@ -155,14 +155,19 @@
         771
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "merged-after-all-exact-head-checks",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
+      "closed": true,
       "currentDeliveryPr": 856,
       "currentDeliveryHead": "bfe5a571f0a05b369608743fe60711e0994dc21a",
       "currentTitle": "Reconcile .NET standard resources and explicit wall clock",
-      "currentMergeability": "MERGEABLE"
+      "currentMergeability": "UNKNOWN",
+      "deliveredHead": "bfe5a571f0a05b369608743fe60711e0994dc21a",
+      "mergeCommit": "8a41e86785b5d42254a4462261884287bdecdb29",
+      "mergedAt": "2026-10-13T00:02:26Z",
+      "exactHeadChecks": 50,
+      "reconciliation": "Current Dotnet resources and actual wall-clock SDK component campaign; full SDK qualification scope remains open. Exact current-head hosted checks passed; no issue closes."
     },
     {
       "pullRequest": 857,
@@ -376,13 +381,16 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "useful-source-adopted-through-accepted-current-pr",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
-      "currentDeliveryHead": "3834d866ba88dd5a68326e4f5c170acfc9aba23c",
+      "closed": true,
+      "currentDeliveryHead": "9aca85c2cfcfc7e507085d99d09750468fc132e5",
       "currentMergeability": "CONFLICTING",
-      "currentDeliveryPr": 865
+      "currentDeliveryPr": 895,
+      "closedAt": "2026-10-12T23:59:50Z",
+      "mergeCommit": "f772fcf3aeb3708279b1c1e97ecc192f9bbfb680",
+      "reconciliation": "Six typed field-model observations adopted and executed in accepted895 alongside actual lifecycle campaign. Original snapshot branch and failed evidence remain. No ticket acceptance inferred."
     },
     {
       "pullRequest": 866,
@@ -1362,14 +1370,19 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "merged-after-all-exact-head-checks",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
+      "closed": true,
       "currentDeliveryPr": 895,
       "currentDeliveryHead": "9aca85c2cfcfc7e507085d99d09750468fc132e5",
       "currentTitle": "Qualify ordinary Java server revision lifecycle",
-      "currentMergeability": "MERGEABLE"
+      "currentMergeability": "MERGEABLE",
+      "deliveredHead": "9aca85c2cfcfc7e507085d99d09750468fc132e5",
+      "mergeCommit": "f772fcf3aeb3708279b1c1e97ecc192f9bbfb680",
+      "mergedAt": "2026-10-12T23:59:07Z",
+      "exactHeadChecks": 50,
+      "reconciliation": "Actual maintained Java lifecycle and field-model source campaign plus audit-before-wake physical retirement fix; full raw-server and executor scope remains open. No issue closes."
     },
     {
       "pullRequest": 896,
@@ -2008,13 +2021,16 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "useful-source-adopted-through-accepted-current-pr",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
-      "currentDeliveryHead": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
-      "currentMergeability": "CONFLICTING",
-      "currentDeliveryPr": 916
+      "closed": true,
+      "currentDeliveryHead": "4951043cdf12eace4bd85d13abf393d015b8c8ae",
+      "currentMergeability": "UNKNOWN",
+      "currentDeliveryPr": 923,
+      "closedAt": "2026-10-13T00:05:51Z",
+      "mergeCommit": "6b6006b7b494bc5b736395ee98a36b2a44e9bf63",
+      "reconciliation": "Original useful async runtime/import source and signed ordinary/service/npm controls adopted through accepted923. Original source branch and historical receipts remain. No issue completion inferred."
     },
     {
       "pullRequest": 917,
@@ -2073,13 +2089,16 @@
         842
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "useful-source-adopted-through-accepted-current-pr",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
-      "currentDeliveryHead": "a6c3e1472c622abfd8f5515e31301b08940c88b2",
-      "currentMergeability": "MERGEABLE",
-      "currentDeliveryPr": 919
+      "closed": true,
+      "currentDeliveryHead": "4951043cdf12eace4bd85d13abf393d015b8c8ae",
+      "currentMergeability": "UNKNOWN",
+      "currentDeliveryPr": 923,
+      "closedAt": "2026-10-13T00:05:53Z",
+      "mergeCommit": "6b6006b7b494bc5b736395ee98a36b2a44e9bf63",
+      "reconciliation": "Original useful async runtime/import source and signed ordinary/service/npm controls adopted through accepted923. Original source branch and historical receipts remain. No issue completion inferred."
     },
     {
       "pullRequest": 920,
@@ -2147,14 +2166,19 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "merged-after-all-exact-head-checks",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
+      "closed": true,
       "currentDeliveryPr": 923,
       "currentDeliveryHead": "4951043cdf12eace4bd85d13abf393d015b8c8ae",
       "currentTitle": "Fix signed TypeScript Promise lifecycle and reconcile runtime snapshots",
-      "currentMergeability": "MERGEABLE"
+      "currentMergeability": "MERGEABLE",
+      "deliveredHead": "4951043cdf12eace4bd85d13abf393d015b8c8ae",
+      "mergeCommit": "6b6006b7b494bc5b736395ee98a36b2a44e9bf63",
+      "mergedAt": "2026-10-13T00:05:19Z",
+      "exactHeadChecks": 50,
+      "reconciliation": "Actual signed maintained TypeScript ordinary clock service captured-npm and after-failure campaign with producer-owned async splicing and physical import accounting. Later fetch ownership qualification continues independently; no whole-ticket closure inferred."
     },
     {
       "pullRequest": 924,
@@ -2474,7 +2498,7 @@
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
       "closed": false,
-      "currentDeliveryHead": "7dd3e774cf9b2a750999ddfb8274280f0ef0346a",
+      "currentDeliveryHead": "aa7c0551c3a570f050b428b4d2b91a05bab4f7d7",
       "currentMergeability": "MERGEABLE",
       "currentDeliveryPr": 935
     },
@@ -3490,9 +3514,9 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 970,
-      "currentDeliveryHead": "67262d549ea0c2be56d8d4898cc66c568a65f3c2",
+      "currentDeliveryHead": "d9685b6ba2ed67f8174463a7afa41c4b959f04f9",
       "currentTitle": "Reconcile restored-effect closure on current recovery owners",
-      "currentMergeability": "MERGEABLE"
+      "currentMergeability": "CONFLICTING"
     },
     {
       "pullRequest": 971,
@@ -3645,14 +3669,19 @@
         823
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "merged-after-all-exact-head-checks",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
+      "closed": true,
       "currentDeliveryPr": 974,
       "currentDeliveryHead": "586db30577832f8430fc7bf6974a486a0314b3b1",
       "currentTitle": "WIP cleanup snapshot: fb2-state823-resume10",
-      "currentMergeability": "MERGEABLE"
+      "currentMergeability": "MERGEABLE",
+      "deliveredHead": "586db30577832f8430fc7bf6974a486a0314b3b1",
+      "mergeCommit": "4cf2cccb3e04ecbbfd724a88573f8a82806f7a2f",
+      "mergedAt": "2026-10-12T23:48:40Z",
+      "exactHeadChecks": 50,
+      "reconciliation": "Audited protected-clock command-floor release with original whole-ticket quota and qualification boundaries retained. No issue closes."
     },
     {
       "pullRequest": 975,
@@ -3771,18 +3800,11 @@
   "remainingOpenCount": 13,
   "lastVerifiedOpenCount": 10,
   "latestRemoteObservation": {
-    "observedAtUtc": "2026-10-12T23:19:12.852226+00:00",
-    "openCount": 14,
+    "observedAtUtc": "2026-10-13T00:24:26.946027+00:00",
+    "openCount": 7,
     "snapshotPrs": [
-      856,
-      865,
-      895,
-      916,
-      919,
-      923,
       935,
-      970,
-      974
+      970
     ],
     "newDependencyPrs": [
       {
@@ -3803,7 +3825,7 @@
       },
       {
         "headRefName": "dependabot/npm_and_yarn/examples/renderer-profile/development/angular/compiler-22.2.1",
-        "headRefOid": "b5b46b3038914f1c1b3e9511df6893e3c91571ad",
+        "headRefOid": "278b913d5607b92ba15a6effba95b812c80d0ec2",
         "isDraft": false,
         "mergeable": "MERGEABLE",
         "number": 982,
@@ -3819,7 +3841,7 @@
       },
       {
         "headRefName": "dependabot/cargo/development/wasmparser-0.261.0",
-        "headRefOid": "7784132aef09206eb200758e185c6f0c3a742c81",
+        "headRefOid": "9e983657d239d705cd2d3cc249e6d9bb36026d69",
         "isDraft": false,
         "mergeable": "MERGEABLE",
         "number": 979,
