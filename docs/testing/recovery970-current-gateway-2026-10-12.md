@@ -184,6 +184,28 @@ after every later role. The initial cross-filesystem hardlink refusal is retaine
 the successful node compilation was not repeated. All six products retain the
 original default features, assertion/overflow policy and material ceiling.
 
+The [audit-profile `017131dc` tuple packet](evidence/recovery970-default-tuple-017131-2026-10-13.json)
+records the same trusted selected manifest profile in managed deployment
+validation and rejection-audit identity normalization. The original default
+profile remains unchanged. All 131 wire unit cases and 48 management integration
+cases passed for that source fix. Its six fresh builds reproduce all 9420 files
+of the exact committed tree through a 1,208,320-byte Git delta and unchanged
+regular source inputs. Every original-to-copy product hash and independently
+copied inode was checked after the builds; previous products and failed signed
+attempts remain separate. This packet establishes artifact custody and preserves
+the original material ceiling. Authenticated terminal and pending-effect
+execution retain their own receipts.
+
+The [fresh signed terminal `r9` packet](evidence/recovery970-terminal-r9-017131-2026-10-13.json)
+records five publications, ten authenticated policy applications, ordinary
+deployment apply and namespace creation. Trigger apply then returned a known,
+dispatched `invalid-argument` failure at CLI call 31. The original operation was
+not retried. All four node processes and the recipient were reaped; native/store
+physical retirement and zero retained state owner counters were verified from
+the actual stopped reports. The recipient recorded zero POSTs and mutations,
+and every frozen product hash stayed unchanged. Signed guest execution,
+migration/restore and pending-effect close remain unqualified by this attempt.
+
 ## Qualification boundaries
 
 `deferredHttp.dispatchAuthority` can explicitly select
