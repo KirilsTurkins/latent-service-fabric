@@ -1,0 +1,369 @@
+{
+  "formatVersion": 1,
+  "status": "passed",
+  "scope": "explicit approved local processor and actual signed generated-source greeting only",
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:dd290dbffe4bc047362b4f12a526a70b2025b0f0b7a3546296915250bf2ad91d",
+      "bytes": 1231
+    },
+    "sourceHead": "89394cc3221d7c4e3073f102e3651b4d16347f75",
+    "sourceTree": "949af0b9f061a5da7a44f8d236ebcd44e42d553f",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.5",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:4f91be61098019939c11c9675b921d764d2234134b28dea9281df294ccee7867",
+        "bytes": 67643024,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:aad832dc568b2698f43f61d9a1660633498c2c303439cbaaf5def34cfcfadb10",
+        "bytes": 178832736,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:aa38fc80420649e7bb437d02728e6b875e25ae9709f5e79515284b59f4e4a705",
+        "bytes": 16818480,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:3553218d8bee71ab770fc843e657debdb0cd9fe69f982249c965c3a55e35ab4a",
+        "bytes": 7883088,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:02ee6ee46279a2ee357742abcaa2a75764e670e803d97f2ee0beced965ee1a86",
+        "bytes": 22438216,
+        "actualFeatures": []
+      }
+    }
+  },
+  "qualificationSources": {
+    "tools/qualify_java_annotation_processors.py": {
+      "sha256": "sha256:566dc42fa25673c8c4bb779058e593fabae68c2edc7f2bb2da91ef6cd60d1627",
+      "bytes": 17291
+    },
+    "tools/java_annotation_processors.py": {
+      "sha256": "sha256:8b527db2d2f9b71d75a7760515eaa416955464786b7f50dc20517f6f0125ee7a",
+      "bytes": 20271
+    },
+    "tools/java_guest/compiler.py": {
+      "sha256": "sha256:4f476cff15be6b6c9f23ad8660dfe366d446af1dd54c5377bb484106ec62c586",
+      "bytes": 25894
+    },
+    "sdk/java-guest/processors/SourceOwnership.java": {
+      "sha256": "sha256:eb48814a7c9da38af5153f41098d2aff7c81c7aee70ab596e63bed3823651780",
+      "bytes": 7626
+    }
+  },
+  "component": {
+    "sha256": "sha256:e360402c578008657d25ff1da8e2724ec6cd83935fd5d5ed82e38be249f70904",
+    "bytes": 489768
+  },
+  "approvalIdentity": "sha256:fb78484636d31b286a6f57bd8c5aa1f6ecddcb6f63ff4a3a6471503aa0c16bc5",
+  "generatedSources": {
+    "outside/generated/Message.java": {
+      "digest": "sha256:3b95d3ac7e5bc1681990180a3a5b941a2e0c642e73104f376b199a0c8ba355bd",
+      "size": 126
+    }
+  },
+  "sourceOwnershipControl": {
+    "digest": "sha256:eb48814a7c9da38af5153f41098d2aff7c81c7aee70ab596e63bed3823651780",
+    "size": 7626,
+    "profile": "pinned-javac-ast-parse-only-v1"
+  },
+  "containment": {
+    "status": "passed",
+    "parentLoopbackPeerAccepted": 0,
+    "parentEnvironmentDenied": true,
+    "ambientInputDenied": true,
+    "originalSourceWriteDenied": true,
+    "scope": "actual declared processor checks, not hostile multitenant isolation"
+  },
+  "sourceOwnershipNegatives": {
+    "status": "passed",
+    "cases": [
+      {
+        "case": "original-class-collision",
+        "reason": "java-annotation-processor-generated-source-owner-collision",
+        "exitCode": 1
+      },
+      {
+        "case": "original-nested-class-collision",
+        "reason": "java-annotation-processor-generated-source-owner-collision",
+        "exitCode": 1
+      },
+      {
+        "case": "platform-package",
+        "reason": "java-annotation-processor-generated-source-overrides-platform",
+        "exitCode": 1
+      },
+      {
+        "case": "escaped-platform-package",
+        "reason": "java-annotation-processor-generated-source-overrides-platform",
+        "exitCode": 1
+      },
+      {
+        "case": "generated-package-path",
+        "reason": "java-annotation-processor-generated-source-package-path-mismatch",
+        "exitCode": 1
+      },
+      {
+        "case": "invalid-generated-source",
+        "reason": "java-annotation-processor-generated-source-parse-failed",
+        "exitCode": 1
+      }
+    ],
+    "scope": "actual pinned Javac parse-only source ownership, not guest execution"
+  },
+  "unsignedPackageDenied": "permission-denied",
+  "runtimeGrantDenied": "permission-denied",
+  "calls": [
+    {
+      "activation": "processor-call-0",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "Captured Ada"
+        }
+      ],
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "4796543",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9109504",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "6470"
+      },
+      "processReaped": true
+    },
+    {
+      "activation": "processor-call-1",
+      "exitCode": 3,
+      "decoded": [
+        {
+          "err": "Please enter a name."
+        }
+      ],
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "4787399",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9109504",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "6464"
+      },
+      "processReaped": true
+    },
+    {
+      "activation": "processor-call-2",
+      "exitCode": 0,
+      "decoded": [
+        {
+          "ok": "Captured Bob"
+        }
+      ],
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "4796543",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "9109504",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "5812"
+      },
+      "processReaped": true
+    }
+  ],
+  "shutdown": {
+    "schemaVersion": "latent.standalone.status.v1",
+    "event": "stopped",
+    "clean": true,
+    "report": {
+      "audit": {
+        "workerJoined": true,
+        "queuedOperations": 0,
+        "queryOwners": 0,
+        "queryBytes": 0,
+        "pendingAttempts": 0,
+        "reservedRecords": 0,
+        "stageBytes": 0,
+        "recoveryPending": false,
+        "unknownOutcomes": 0,
+        "previousSessionLossUnknown": false
+      },
+      "rollouts": {
+        "workerJoined": true,
+        "workerLive": false,
+        "queuedCommands": 0,
+        "activeCommands": 0,
+        "retainedRequestBytes": 0,
+        "responseOwners": 0,
+        "responseBytes": 0,
+        "failed": false,
+        "canary": {
+          "retainedWindows": 0,
+          "retainedSamples": 0,
+          "liveSamples": 0,
+          "snapshotOwners": 0
+        }
+      },
+      "policies": {
+        "workCompleted": true,
+        "activeJobs": 0,
+        "retainedReadOwners": 0
+      },
+      "providers": {
+        "clean": true,
+        "controlOwners": 0,
+        "connections": 0,
+        "pendingRequests": 0,
+        "runningRequests": 0,
+        "workers": 0,
+        "cleanupJobs": 0,
+        "failedCleanup": 0,
+        "sessions": 0,
+        "handles": 0,
+        "calls": 0,
+        "results": 0,
+        "ioCalls": 0,
+        "ioRetainedBytes": 0,
+        "blobStages": 0,
+        "blobHandles": 0,
+        "blobWork": 0,
+        "secretGenerations": 0,
+        "secretReferences": 0,
+        "streamOwners": 0,
+        "streamConnections": 0,
+        "streamPendingOperations": 0,
+        "streamRetainedChunks": 0,
+        "streamMaintenanceOwners": 0
+      },
+      "clean": true,
+      "activeConnections": 0,
+      "activeRpcs": 0,
+      "activeControlJobs": 0,
+      "activeActivations": 0,
+      "cancellationRegistrations": 0,
+      "observerCorrelations": 0,
+      "quotaReservations": 0,
+      "queuedReservations": 0,
+      "reservedCpuFuel": 0,
+      "reservedMemoryBytes": 0,
+      "activeLeases": 0,
+      "queuedActivations": 0,
+      "quarantinedCells": 0,
+      "activeBackendInvocations": 0,
+      "instanceReservations": 0,
+      "preparingComponents": 0,
+      "preparingSourceBytes": 0,
+      "preparingMetadataBytes": 0,
+      "liveStores": 0,
+      "liveHostStates": 0,
+      "liveInstances": 0,
+      "liveTemporaryBuffers": 0,
+      "liveCancellationProbes": 0,
+      "telemetryRetainedEntries": 145,
+      "telemetryFlushed": true,
+      "epochHelperJoined": true,
+      "compiler": {
+        "maximum_jobs": 1,
+        "maximum_workers": 1,
+        "maximum_queued_jobs": 0,
+        "maximum_waiters": 3,
+        "maximum_waiters_per_job": 3,
+        "maximum_ready_preparations": 3,
+        "maximum_document_bytes": 5308416,
+        "assigned_jobs": 0,
+        "running_jobs": 0,
+        "queued_jobs": 0,
+        "waiting_callers": 0,
+        "ready_preparations": 0,
+        "ready_metadata_bytes": 0,
+        "ready_compiled_image_bytes": 0,
+        "reserved_document_bytes": 0,
+        "workers_live": 0,
+        "workers_quiescent": 1,
+        "workers_joined": 1,
+        "accepting": false,
+        "failed": false,
+        "jobs_started": 1,
+        "jobs_completed": 1,
+        "jobs_failed": 0,
+        "jobs_abandoned": 0,
+        "coalesced_waiters": 0,
+        "queue_rejected": 0,
+        "waiter_rejected": 0,
+        "ready_rejected": 0,
+        "cancelled_waiters": 0,
+        "discarded_results": 0
+      },
+      "cleanup": {
+        "capacity": 4,
+        "accepting": false,
+        "driverAlive": false,
+        "driverJoined": true,
+        "reserved": 0,
+        "queued": 0,
+        "running": 0,
+        "handoffs": 0,
+        "completed": 0,
+        "timedOut": 0,
+        "panicked": 0,
+        "fallbacks": 0,
+        "failed": false
+      }
+    }
+  },
+  "receipts": {
+    "current-qualification-r5.json": {
+      "sha256": "sha256:0d242796331e22a19ab451503a854f0ca71ab877dc30a17a68eb38fa9eb35da8",
+      "bytes": 2197
+    },
+    "current-containment-r5.json": {
+      "sha256": "sha256:ef066160803cbc238f52051f392bede1043de7261acd4f3ed7fe063a230ed842",
+      "bytes": 218
+    },
+    "current-source-ownership-r5.json": {
+      "sha256": "sha256:671725c9261461d9380f0c6de2933b446f7e2b9674f403a47aa497358f57c196",
+      "bytes": 828
+    },
+    "current-guest-r5.json": {
+      "sha256": "sha256:7af3413de76801d180221eb8d3a7d9792dfe0b2142c1c3f4ee71212c6ee52590",
+      "bytes": 8984
+    },
+    "current-profile-r5.json": {
+      "sha256": "sha256:ace65d805e85bfa7a41a2137e8d6f31bcc8f3aeaf4775f3e49ff52fe1d4c5801",
+      "bytes": 1036
+    }
+  },
+  "validation": {
+    "processorSourceCases": 31,
+    "sdkSourceCases": 98,
+    "linuxToolkitSourceCases": 144,
+    "linuxToolkitOriginalSkips": 2,
+    "scopedGitleaksFiles": 21,
+    "scopedGitleaksFindings": 0
+  },
+  "invalidHistoricalNegatives": "r1 through r4 used an invalid standalone package path; six refusals not credited",
+  "doesNotClose": [
+    682,
+    677
+  ]
+}

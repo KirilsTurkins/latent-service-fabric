@@ -1,26 +1,12 @@
 {
   "kind": "workflow",
   "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "developer-tools-${{ github.ref }}"
+    },
     "name": "Developer tools",
     "on": {
-      "push": {
-        "branches": [
-          "feat/559-*",
-          "!feat/559-preflight-ready",
-          "!feat/559-packaged-qualification"
-        ],
-        "paths-ignore": [
-          ".github/workflows/developer-platform-preflight.yml",
-          ".github/workflows/developer-packaged-qualification.yml",
-          "tools/dev_packaged_*.py",
-          "tools/prepare_dev_packaged_probe.py",
-          "tools/tests/test_dev_packaged_probe.py",
-          "packaging/dev/qualification-trusted-root.jsonl",
-          "packaging/dev/qualification.Dockerfile",
-          "tools/ci/contracts/**",
-          "docs/**"
-        ]
-      },
       "pull_request": {
         "paths": [
           ".cargo/managed-guest.toml",
@@ -121,14 +107,28 @@
           "wit/**"
         ]
       },
+      "push": {
+        "branches": [
+          "feat/559-*",
+          "!feat/559-preflight-ready",
+          "!feat/559-packaged-qualification"
+        ],
+        "paths-ignore": [
+          ".github/workflows/developer-platform-preflight.yml",
+          ".github/workflows/developer-packaged-qualification.yml",
+          "tools/dev_packaged_*.py",
+          "tools/prepare_dev_packaged_probe.py",
+          "tools/tests/test_dev_packaged_probe.py",
+          "packaging/dev/qualification-trusted-root.jsonl",
+          "packaging/dev/qualification.Dockerfile",
+          "tools/ci/contracts/**",
+          "docs/**"
+        ]
+      },
       "workflow_dispatch": null
     },
     "permissions": {
       "contents": "read"
-    },
-    "concurrency": {
-      "group": "developer-tools-${{ github.ref }}",
-      "cancel-in-progress": true
     }
   },
   "requiredJobs": [
@@ -140,7 +140,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Resolve compiler cache through runner environment without an invalid job-level runner context. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Add only private Java resolver source and test triggers; preserve every existing job and policy Resolve compiler cache through runner environment without an invalid job-level runner context. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Incoming current-target review: Add only private Java resolver source and test triggers; preserve every existing job and policy Preserve the historical narrow dependency fixture and every Phase4 compiler/guest qualification while retaining incoming dependency-cache, native website, and interrupt correctness checks. Incoming current-target review: Add only private Java resolver source and test triggers; preserve every existing job and policy Resolve compiler cache through runner environment without an invalid job-level runner context. CI performance: preserve every execution obligation; share pruned dependencies, retain correctness guards and overlap independent checks. Incoming current-target review: Add only private Java resolver source and test triggers; preserve every existing job and policy",
+  "reviewReason": "Keep every developer workflow gate and discover original explicit Java processor controls",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
