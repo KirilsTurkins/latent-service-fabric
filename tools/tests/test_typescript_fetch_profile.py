@@ -78,3 +78,23 @@ class TypeScriptFetchProfileTests(unittest.TestCase):
             'sdk/typescript-guest/activation/fetch-globals.d.ts', 'wit/platform/http-v3/package.wit'} <= names)
         self.assertNotIn('sdk/typescript-guest/runtime/http-fetch.mjs',
                          engine_input_paths(runtime.IMPORT_PROFILE))
+
+    def test_editable_fetch_project_captures_sdk_source_and_rejects_a_local_override(self):
+        import tempfile
+        from tools.rust_capsule_project import snapshot, inventory
+        from tools.typescript_guest.project import create, validate
+        with tempfile.TemporaryDirectory() as temporary:
+            path = create(Path(temporary)/'fetch', 'greeting', 'fetch-control', runtime_profile=fetch.FETCH_PROFILE)
+            files = snapshot(path)
+            validate(files)
+            source = 'vendor/lsf/sdk/typescript-guest/runtime/http-fetch.mjs'
+            self.assertEqual(files[source], (ROOT/source.removeprefix('vendor/lsf/')).read_bytes())
+            files[source] += b'\n// application override\n'
+            with self.assertRaisesRegex(ValueError, 'SDK source lock'):
+                validate(files)
+            lock = json.loads(files['sdk-lock.json'])
+            lock['sdk'] = json.loads(inventory({name.removeprefix('vendor/lsf/'): raw
+                for name, raw in files.items() if name.startswith('vendor/lsf/')}))
+            files['sdk-lock.json'] = json.dumps(lock).encode()
+            with self.assertRaisesRegex(ValueError, 'fetch runtime differs'):
+                validate(files)
