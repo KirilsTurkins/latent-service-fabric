@@ -1,0 +1,287 @@
+{
+  "schemaVersion": "latent.recovery970.default-tuple.v1",
+  "source": {
+    "head": "017131dc3a94e8435f09b56f063684eca78995d3",
+    "tree": "8033f3ff4ceb1dd70e0825a386b4d6eefdef0d79",
+    "baseHead": "1d7f130b9776727b7900bbf76e6019e1391a6d90",
+    "baseArchiveSha256": "94798afca7d75b02ce1cd7a3c9476c3924714dee84f96dadc3a9d05ef92d1a9c",
+    "deltaArchive": "default-delta-017131dc3a94e8435f09b56f063684eca78995d3.tar",
+    "deltaArchiveSha256": "f9e9d0f7fe76925802ff88522f36c01dc0e09b018522c7889bc5c8da41fcacab",
+    "deltaBytes": 1208320,
+    "sourceRoot": "/work/recovery970-default-017131dc3a94-20261013",
+    "binaryRoot": "/target/recovery970-default-binaries-017131dc3a94-20261013"
+  },
+  "completeCurrentTreeFiles": 9420,
+  "changedRegularInputs": 50,
+  "completeCurrentTreeVerifiedBeforeAndAfterBuild": true,
+  "manifestSha256": "c6540742a96c7d2bad27fe724dcdeb7ba8ca7da77a4036a9c525e8ac1d799ab5",
+  "roles": [
+    {
+      "role": "node",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latentd",
+        "--bin",
+        "latentd",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "baaea30b5bdceeefaf0b2c4defd70f473baa463f657138f8976c5134abcb9a05",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "0ac2f6032929d9bf13a917ac1693a5bba7b715ff0ed534bac5bcf1d367352018",
+      "stderrSha256": "376f7dce2b3ce66a3f86f8e6a9091d1bb172966267144e3125333c7f21451b78",
+      "freezeMethod": "independent-regular-copy",
+      "bytes": 181698336,
+      "device": 2096,
+      "inode": 6896,
+      "artifactGraphSha256": "2816581f18a410300501d5cce02628878e7d377428263eb55d0695e4807b4fe7",
+      "immediateOriginalToCopyHashEqualityVerified": true,
+      "independentlyCopiedInodeVerified": true
+    },
+    {
+      "role": "recovery_helper",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latentd",
+        "--example",
+        "transaction_recovery",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "a2241876258c8b203b64ce094060748cd9710588f73585fc0b4dea1f8123ee34",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "4b5fefd0cf71a725becc3021448a4f99f0b6f0d973f794a0fadd1353a74967cb",
+      "stderrSha256": "5f97b982dc023a899b3c86cd9deae9feb6033cd55bf713024fd2e813024024e5",
+      "freezeMethod": "independent-regular-copy",
+      "bytes": 186368104,
+      "device": 2096,
+      "inode": 6930,
+      "artifactGraphSha256": "f12f16f6b5c263e8e1a3522b79fc29c618d9a163f6e36894978d8ed98b82a244",
+      "immediateOriginalToCopyHashEqualityVerified": true,
+      "independentlyCopiedInodeVerified": true
+    },
+    {
+      "role": "cli",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latent",
+        "--bin",
+        "latent",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "d2cf86c5c50e945935f5da2e78920694dc78043b1a24a3147d309b4d9ef28f38",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "8689288c4478ff6044cc4740d0fdeeb5c7a6cd11718d52235f87c77054ff8c7c",
+      "stderrSha256": "b03d787bdd2b746c215b74e8f591db49d59b7dd29454c72d5c44c43a3612116a",
+      "freezeMethod": "independent-regular-copy",
+      "bytes": 69282536,
+      "device": 2096,
+      "inode": 6962,
+      "artifactGraphSha256": "ee0d629ab24dba791487dc9080a49b94f259e5c0c5ef89bdc4c91049ea6d8d6d",
+      "immediateOriginalToCopyHashEqualityVerified": true,
+      "independentlyCopiedInodeVerified": true
+    },
+    {
+      "role": "contracts_tool",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latent-packaging",
+        "--example",
+        "capsule_contracts",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "8e4c9437004fdc8f7acce722200354bae2fabe6d59dc970100d7ac2266371b40",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "374469bfda5ec00e81cc9325fb300b8b0e65dd89f2c52565b32a4c9ea82bb6cc",
+      "stderrSha256": "e7a0e788c2f011df0653279f56cd58dcca091a34d28573a86e1b886eaa34b4d9",
+      "freezeMethod": "independent-regular-copy",
+      "bytes": 7904536,
+      "device": 2096,
+      "inode": 6963,
+      "artifactGraphSha256": "6da52e4016732d67e067fc63f1c657a76c18405d0fcc704510efa3f8c0b312e0",
+      "immediateOriginalToCopyHashEqualityVerified": true,
+      "independentlyCopiedInodeVerified": true
+    },
+    {
+      "role": "aot_compiler",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latent-wasmtime",
+        "--bin",
+        "latent-aot-compiler",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "a0ac3ac86809b7a2994e7360daf53df72d5fb9c917dd7143ab601df061b1bbfd",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "91f2d804f2b389a32481cbf0f817694b9131f9a00361750d24db29c82a1c199d",
+      "stderrSha256": "05a1896fb27c11171c483b5ef70565971caddf9c5a03ff8c31adebdcb2a2c39d",
+      "freezeMethod": "independent-regular-copy",
+      "bytes": 41787216,
+      "device": 2096,
+      "inode": 6965,
+      "artifactGraphSha256": "353f0006b0fdd277e74fd97629b7065af8447adb9333d7673d96f3fa6f5d5b5a",
+      "immediateOriginalToCopyHashEqualityVerified": true,
+      "independentlyCopiedInodeVerified": true
+    },
+    {
+      "role": "signer",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latent-policy",
+        "--example",
+        "capsule_authoring",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "1dcd8c44ac0f0169d0ab4fcc045a001a6928edeaa347cb03a6846065a822101d",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "a572c4d2c1fb45549244889d0b046aa79513e49d79ffe54656bd04db952aad59",
+      "stderrSha256": "2bc212fa40d45c698db58d0aeb0ef6c9071860ef99888a2044287001ffb1a6dd",
+      "freezeMethod": "independent-regular-copy",
+      "bytes": 24771424,
+      "device": 2096,
+      "inode": 6967,
+      "artifactGraphSha256": "ae2d6a58270504914af992407d3af8a9ff3d38cf88381f494b95f4e68840bdf6",
+      "immediateOriginalToCopyHashEqualityVerified": true,
+      "independentlyCopiedInodeVerified": true
+    }
+  ],
+  "materialCeilingBytes": 268435456,
+  "transformed": false,
+  "freezeDirectoryReason": "independent regular product copies",
+  "frozenRoleHashesAndInodesRecheckedAfterAllRoles": true,
+  "deploymentAuditProfileFix": {
+    "source": "ae2a82d949e8172264aa3b5ea56d85b9490ff04b",
+    "wireUnitCases": 131,
+    "managementIntegrationCases": 48,
+    "originalDefaultProfileRetained": true,
+    "selectedProfileUsedForValidationAndAuditDigest": true
+  },
+  "qualificationBoundary": "Exact committed default-feature source, six actual Cargo graphs and independent frozen artifact custody. Earlier products and failed terminal attempts remain separate. Signing and authenticated execution retain their own receipts.",
+  "signedCampaignQualified": false,
+  "correctedSixPackageSigningQualified": false,
+  "earlyHttpSigningQualified": false,
+  "immediateHttpDenialQualified": false,
+  "pendingEffectRestoreQualified": false,
+  "productionApproval": false,
+  "issueClosure": false,
+  "signedTerminalAttempt": {
+    "packet": "recovery970-terminal-r9-017131-2026-10-13.json",
+    "attempt": "r9",
+    "ordinaryDeploymentApplySucceeded": true,
+    "namespaceCreateSucceeded": true,
+    "triggerApplyKnownFailure": "invalid-argument",
+    "signedGuestExecutionQualified": false
+  }
+}
