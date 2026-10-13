@@ -1,0 +1,199 @@
+{
+  "adoptedPullRequests": {
+    "982": "b6a8a349d03889ed70b9925c1418856937117987",
+    "983": "6eb07145bc67dc19ac4153273d8ceab3df8d4525",
+    "984": "41e518de64ec86017f5df6c4bd89da0f050664c1"
+  },
+  "angular": "22.2.1",
+  "browser": {
+    "browser": "155.0.4283.45",
+    "clickUpdatedSignal": true,
+    "errors": [],
+    "escapedInputText": true,
+    "hydrated": true,
+    "originalDomReused": true
+  },
+  "build": {
+    "bytes": 24702665,
+    "clientSha256": "9fd9c24f027d7ae21f18fedb161fa95bc75b0e9d5cf002409730e9a921c600ff",
+    "componentizeJs": "0.23.0",
+    "componentizeMillis": 19497.9627,
+    "embeddingSha256": "6094cd93d966f9bec9b01332db6e0eedbaf22f60b745c9f823f21e33cbd4d365",
+    "imports": [],
+    "node": "v24.19.0",
+    "packageLockSha256": "5b12f4daa1f5ce578c574af71dce1995950486db8c4c3a30bc73b2fdb178be4e",
+    "profileSha256": "4b612d65cbebfbd7a460a919f55a257415eaf550c594c4f3106498da00e80cd3",
+    "serverSha256": "5cf6070c2d5dd6366d742e6b752afbc8d01822ae00db8e4357b855b7230b36f0",
+    "sha256": "85927044370db8e2b580980d88e3a6bd42b22db3cda53e79284dcbd004722ff5"
+  },
+  "checks": {
+    "ciCoverage": {
+      "baselineBlocks": 88,
+      "currentBlocks": 284,
+      "delegatedOwners": 151,
+      "passed": true
+    },
+    "cleanNpmCi": true,
+    "foundationPassed": true,
+    "linuxControls": {
+      "cases": 98,
+      "passed": true,
+      "skips": 0
+    },
+    "linuxSelectedSymlinkControl": {
+      "cases": 1,
+      "passed": true,
+      "skips": 0
+    },
+    "npmLsAngularProblems": [],
+    "windowsAngularControls": {
+      "cases": 33,
+      "existingEnvironmentSkips": 1,
+      "passed": true
+    }
+  },
+  "evidence": {
+    "angular-source-controls.log": "074a23bc5a4fa319ce940b1f81c3953349d1cccdf94705d4bba037c6f646eafd",
+    "build.log": "1c3dba83df020f6501d51d4c3605a6e68b72dc5a5a2bec663bfa7c7e964ebdda",
+    "hydrate-current-renderer.log": "e7b20e35d0c76022f9561bcc4174cb65a7cd9ba30095f7b4248abb8550444dce",
+    "linux-link-control-retry.log": "eae293a5101a60145821bb7445f2e4094d03b8a83e7e6073a5af870658f93f74",
+    "linux-source-controls-retry.log": "ea3d775f35346a498e5d33e16c152d2a52efe1f3bea2afec74d372825227ef6c",
+    "native-build.jsonl": "e78ea304396ac9184c467faca73074d5b5797a3a13f8face7d86348471321819",
+    "native-renderer-current.log": "0d3f3e5d505d353608b9efd42ac45de2d7be479d26ee7d1ee77b3d2819a3ab3f",
+    "npm-ci.log": "9bed03ecec1098a52bd5a8e52f322eb346cf4d48c8bd72f3f5daaec4f731918d",
+    "npm-lock.log": "9ce95db39e0b18dbff8e781bfc6e434301507f90f7215238a33611e126077b82"
+  },
+  "issueClosure": null,
+  "native": {
+    "component_bytes": 24702665,
+    "component_sha256": "sha256:85927044370db8e2b580980d88e3a6bd42b22db3cda53e79284dcbd004722ff5",
+    "engine": "wasmtime-48.0.5",
+    "failures": [
+      {
+        "guest_fuel_remaining": 0,
+        "memory_denials": 0,
+        "millis": 0.986039,
+        "peak_linear_memory_bytes": 21168128,
+        "probe": "spin",
+        "trap": "OutOfFuel"
+      },
+      {
+        "guest_fuel_remaining": 18446744073709080425,
+        "memory_denials": 0,
+        "millis": 27.201269,
+        "peak_linear_memory_bytes": 21168128,
+        "probe": "spin",
+        "trap": "Interrupt"
+      },
+      {
+        "guest_fuel_remaining": 18446744073541265461,
+        "memory_denials": 0,
+        "millis": 27.23558,
+        "peak_linear_memory_bytes": 21168128,
+        "probe": "promise-storm",
+        "trap": "Interrupt"
+      },
+      {
+        "guest_fuel_remaining": 1458078355,
+        "memory_denials": 1,
+        "millis": 129.624436,
+        "peak_linear_memory_bytes": 264306688,
+        "probe": "allocate",
+        "trap": null
+      },
+      {
+        "guest_fuel_remaining": 1999397289,
+        "memory_denials": 0,
+        "millis": 1.997213,
+        "peak_linear_memory_bytes": 21168128,
+        "probe": "throw",
+        "trap": "UnreachableCodeReached"
+      },
+      {
+        "guest_fuel_remaining": 18446744073034532140,
+        "memory_denials": 0,
+        "millis": 57.817484,
+        "peak_linear_memory_bytes": 21168128,
+        "probe": "output",
+        "trap": null
+      },
+      {
+        "guest_fuel_remaining": 1999378489,
+        "memory_denials": 0,
+        "millis": 1.723043,
+        "peak_linear_memory_bytes": 21168128,
+        "probe": "delayed-timer",
+        "trap": "UnreachableCodeReached"
+      },
+      {
+        "guest_fuel_remaining": 1999383201,
+        "memory_denials": 0,
+        "millis": 1.828225,
+        "peak_linear_memory_bytes": 21168128,
+        "probe": "interval",
+        "trap": "UnreachableCodeReached"
+      },
+      {
+        "guest_fuel_remaining": 1988899292,
+        "memory_denials": 0,
+        "millis": 3.232149,
+        "peak_linear_memory_bytes": 21168128,
+        "probe": "timer-limit",
+        "trap": "UnreachableCodeReached"
+      },
+      {
+        "guest_fuel_remaining": 1922568601,
+        "memory_denials": 0,
+        "millis": 13.825044,
+        "peak_linear_memory_bytes": 21168128,
+        "probe": "microtask-limit",
+        "trap": "UnreachableCodeReached"
+      }
+    ],
+    "format_version": 1,
+    "fuel": 2000000000,
+    "hostcall_bytes": 131072,
+    "live_stores": 0,
+    "memory_limit_bytes": 268435456,
+    "preparation_millis": 34481.140985000005,
+    "profile_sha256": "sha256:4b612d65cbebfbd7a460a919f55a257415eaf550c594c4f3106498da00e80cd3",
+    "reuse_negative_control": true,
+    "samples": [
+      {
+        "fuel": 47783173,
+        "html_bytes": 476,
+        "live_stores_after_drop": 0,
+        "name": "Alice <unsafe>",
+        "peak_linear_memory_bytes": 21168128,
+        "render_millis": 14.418441000000001,
+        "setup_millis": 6.91826
+      },
+      {
+        "fuel": 47611532,
+        "html_bytes": 443,
+        "live_stores_after_drop": 0,
+        "name": "Bob",
+        "peak_linear_memory_bytes": 21168128,
+        "render_millis": 13.995598999999999,
+        "setup_millis": 0.342083
+      },
+      {
+        "fuel": 47783173,
+        "html_bytes": 476,
+        "live_stores_after_drop": 0,
+        "name": "Alice <unsafe>",
+        "peak_linear_memory_bytes": 21168128,
+        "render_millis": 13.643245,
+        "setup_millis": 0.327389
+      }
+    ],
+    "small_memory_rejected": true,
+    "success_after_each_failure": true,
+    "target_arch": "x86_64",
+    "target_os": "linux"
+  },
+  "nativeRendererSha256": "abb233144ff059cba4772220a0850d0da2fa3d8dc6ada24f44683f3ad292b4fd",
+  "schemaVersion": "latent.angular-dependency-reconciliation.v1",
+  "scope": "bounded maintained renderer dependency qualification; hosted publication/runtime lanes remain required",
+  "sourceBase": "1d216aa6ae758e7b3b415a9e8b748161c8d9746c"
+}

@@ -1,0 +1,46 @@
+{
+  "checks": {
+    "ciCoverage": {
+      "baselineBlocks": 88,
+      "currentBlocks": 284,
+      "delegatedOwners": 151
+    },
+    "descriptorGolden": "Buf1.72.0 fresh generated descriptor compared against current golden",
+    "descriptorTransactionSurfaceCases": 25,
+    "foundation": "passed",
+    "javaWorkflowContract": "unchanged and validated",
+    "nodeDescriptorGenerated": true,
+    "sdkGeneratedModels": [
+      "rust",
+      "c",
+      "typescript",
+      "go",
+      "java",
+      "dotnet"
+    ]
+  },
+  "committedInputs": {
+    "api/proto/phase1-descriptor-contract.json": "ec4482c023ff4d89724082c32c02ea9876f74ee5faf2bfea3410afd3bd0b162d",
+    "sdk/c/include/latent/transaction.h": "0f7fc764192892f8b2e96044274260e37618152c46423313e8fad5a9d461a156",
+    "sdk/dotnet/Latent.Sdk/Transactions.cs": "d8b6dbfc8b67ec866e33e881cc6f2b53690fa88110b1719639a4899a2c688760",
+    "sdk/go/transaction/models.go": "4d63afc6030e414155c502b19e51471952732bf4cfd08b77ade3d4d595797346",
+    "sdk/java-client/src/main/java/dev/latent/sdk/Transactions.java": "aa3a91f9b2c97b3bc0186617fe0d344c439c838c4d19cbe2a83cdd2ce3a1f80a",
+    "sdk/profile/transaction-client-contract.json": "1ea284270b598108df87daffaf5a3808a3caaf7e7309458c7210a9e1642cef75",
+    "sdk/rust/src/transaction/models.rs": "59fd16fb2b500bbf48275ef8ec55cb9dff9e72826edbb6f8d537892bbb67b8c9",
+    "sdk/typescript-client/src/node/protocol/transaction-generated.ts": "c2c804f56cdc6d0440a4067a1cf754ed4dc88f111188cbae54463a08a4912828",
+    "sdk/typescript-client/src/transactions.ts": "e18447cb2ed6f7b12f4c861260abe2a089f17d84187e0c33d9186aa06e34d4e0"
+  },
+  "evidence": {
+    "generated-contract-controls.log": "c6a505bd20404558f06914930f78759e88f278f228f8610082424801ca84194b",
+    "generated-transaction-controls.log": "0ddb0d451567f8ef71b056621e82eaebb12acef6abe9965f8ec69ed118581dcb",
+    "merged-descriptor.json": "435d4d51150b1b6832e4ce84b8afe009a7356f72c6ee17d794334befb5b3a390",
+    "merged-six-sdk-check.log": "5e89507f8340b8d1c7897a7920bb55d0b349811791d2120e22e4c3f175e6c600"
+  },
+  "parents": [
+    "d4c60c54f1eb8ebe55356364ef663776612db5a4",
+    "f8f6b9e7be94559bd5c81f0d019bd5f3299aa56f"
+  ],
+  "rendererQualification": "2026-10-12.json remains unchanged; original d4c60c54 delivery evidence, not rerun for this merge",
+  "schemaVersion": "latent.angular-dependency-integration.v1",
+  "sourceMerge": "b60af8b3c688ede6022c13acd985cb9348f0fa2f"
+}
