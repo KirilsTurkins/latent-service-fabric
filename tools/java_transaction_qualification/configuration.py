@@ -15,6 +15,7 @@ from .inputs import ComponentInput, decode, digest, require
 
 TENANT = "examples"
 SERVICE = "examples/transaction-java-aggregate"
+EARLY_HTTP_SERVICE = "examples/transaction-java-forbidden-http-before-stage"
 CONTRACT = "examples:transactional-aggregate/api@1.0.0"
 NAMESPACE = "transactional-aggregate"
 DEPLOYMENT = "transaction-java-aggregate"

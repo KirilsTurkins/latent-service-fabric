@@ -13,7 +13,7 @@ from . import configuration as cfg, http, lifecycle, policies
 from .campaign import Campaign, command_input, precondition, rpc_result
 from .inputs import decode, digest, require
 
-SERVICE = 'examples/transaction-java-forbidden-http-before-stage'
+SERVICE = cfg.EARLY_HTTP_SERVICE
 DEPLOYMENT = 'transaction-java-forbidden-http-before-stage'
 
 
@@ -154,7 +154,7 @@ def typed_denial(result):
 
 def execute(client, configuration, path, signed, item, publication, documents, receipts, node):
     campaign = Campaign(client, configuration, path, signed, (item,), {item.name: publication},
-                        documents, receipts, None, node)
+                        documents, receipts, None, node, service=SERVICE)
     # The captured URL is fixed at loopback port 1. Reserve its actual TCP
     # listener before execution so any contact remains observable through close.
     with socket.socket() as listener:

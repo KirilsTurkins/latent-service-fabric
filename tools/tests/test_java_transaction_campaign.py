@@ -32,6 +32,23 @@ def retirement():
 
 
 class CampaignOracle(unittest.TestCase):
+    def test_refusal_observation_uses_the_actual_early_or_ordinary_service(self):
+        from tools.java_transaction_qualification import configuration as cfg, refusal_observation
+        from unittest.mock import Mock
+        import time
+        for service in (cfg.SERVICE, cfg.EARLY_HTTP_SERVICE):
+            with self.subTest(service=service):
+                client = Mock(deadline=time.monotonic() + 5)
+                client.call.return_value = {'category': 'success', 'data': {
+                    'nodes': [{'targetService': service}, {'targetService': 'other-service'}],
+                    'nextPageToken': None}}
+                refusal_observation.observe(client, service=service)
+                self.assertEqual(client.call.call_args.args, ('activation', 'roots', '--service', service, '--page-size', '8'))
+                summary = client.evidence.record.call_args.args[1]
+                self.assertEqual(summary['requestedService'], service)
+                self.assertEqual(summary['rootCount'], 2)
+                self.assertEqual([row['targetMatchesCurrentService'] for row in summary['roots']], [True, False])
+
     def test_current_state_retirement_requires_both_physical_witnesses_and_every_zero_owner(self):
         report = retirement()
         counts = ('liveStorageWorkers', 'liveStorageOwners', 'queuedStorageRetirements', 'acceptedStorageJobs',

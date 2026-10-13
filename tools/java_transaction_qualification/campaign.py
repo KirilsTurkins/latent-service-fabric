@@ -44,7 +44,9 @@ def rpc_result(record, result, publication, key):
 
 class Campaign:
     def __init__(self, client, configuration, full_path, signed, items, publications,
-                 proposals, policy_receipts, peer, node):
+                 proposals, policy_receipts, peer, node, *, service=cfg.SERVICE):
+        require(service in {cfg.SERVICE, cfg.EARLY_HTTP_SERVICE}, "explicit-java-campaign-service")
+        self.service = service
         self.client, self.configuration, self.signed = client, configuration, signed
         self.items = {item.name: item for item in items}
         self.publications, self.proposals, self.policy_receipts = publications, proposals, policy_receipts
@@ -85,7 +87,7 @@ class Campaign:
         except ValueError:
             if observed.get("status") in {400, 401, 403, 404, 405, 502, 503}:
                 from .refusal_observation import observe
-                observe(self.client)
+                observe(self.client, service=self.service)
             raise
 
     def query(self, count, *, minimum=None, original_key=None):

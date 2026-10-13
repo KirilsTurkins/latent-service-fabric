@@ -6,7 +6,8 @@
     "CampaignOracle.test_evidence_path_and_byte_limits_refuse_before_publication",
     "CampaignOracle.test_generic_platform_refusal_is_distinct_from_durable_abort_json",
     "CampaignOracle.test_original_evidence_is_exclusive_and_never_overwritten",
-    "CampaignOracle.test_original_result_cannot_adopt_current_publication_or_another_caller_key"
+    "CampaignOracle.test_original_result_cannot_adopt_current_publication_or_another_caller_key",
+    "CampaignOracle.test_refusal_observation_uses_the_actual_early_or_ordinary_service"
   ],
   "guards": {
     "CampaignOracle.test_clean_boolean_does_not_replace_actual_retired_owners": {
@@ -92,10 +93,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "CampaignOracle.test_refusal_observation_uses_the_actual_early_or_ordinary_service": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:022e4093027b871ab6c5a45dc5d13f96d75d98ed4e2122f13d5b04c1adca83c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_transaction_campaign.py",
-  "reviewReason": "Retain exact business rejection lookup exit3 while preserving the original result byte oracle",
+  "reviewReason": "Add actual selected service failure observation without changing existing test guards or cases.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
