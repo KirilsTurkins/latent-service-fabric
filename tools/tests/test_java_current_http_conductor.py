@@ -12,6 +12,61 @@ from tools.tests.test_java_transaction_provision import observation
 
 
 class CurrentHttpConductor(unittest.TestCase):
+    def test_restore_checks_native_activation_retirement_before_starting_runtime(self):
+        from unittest.mock import Mock, patch
+        from tools.java_transaction_qualification import offline_campaign
+        view = list(b'NV\x02' + bytes([19]) * 32
+                    + b''.join(value.to_bytes(8, 'little') for value in (1, 2, 3, 4)))
+        restored_view = view[:59] + list((5).to_bytes(8, 'little'))
+        file = {'root': '/private/original-snapshots', 'name': 'restore-checkpoint-v2.snapshot'}
+        snapshot = {'snapshotDigest': 'sha256:' + 'a' * 64, 'manifestDigest': 'sha256:' + 'b' * 64}
+        window, review = 'sha256:' + 'c' * 64, 'sha256:' + 'd' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            configuration = root / 'original-node.json'
+            settings = {'dataDirectory': str(root), 'state': {'formatVersion': 2,
+                'checkpointRoot': str(root / 'checkpoint'), 'createIfMissing': False, 'operations': []}}
+            write_json(configuration, settings)
+            campaign = SimpleNamespace(query=lambda _: (None, object()),
+                result=lambda _: {'disposition': 'committed'}, socket=lambda *_a, **_k: {},
+                wait_effect=lambda *_a: None, full_path=configuration)
+            runner = offline_campaign.OfflineCampaign.__new__(offline_campaign.OfflineCampaign)
+            runner.campaign, runner.directory, runner.configuration = campaign, root, configuration
+            runner.current_v2, runner.migration_operation = True, 'java-schema-v1-to-v2'
+            runner.client = SimpleNamespace(evidence=SimpleNamespace(record=lambda *_a: None))
+            runner.node = SimpleNamespace(current_activation=object(), start=Mock())
+            runner.publication = 'publication:sha256:' + 'e' * 64
+            runner.recipient = lambda _: {'unchanged': True}
+            runner.quiesce = lambda *_a: None
+            runner.refresh_authority = lambda _: None
+            runner.inspect = lambda: {'view': restored_view}
+            responses = iter([
+                {'snapshot': snapshot, 'windowDigest': window},
+                {**snapshot, 'destinationIdentity': 'synthetic-source-control'},
+                {'reviewDigest': review},
+                {'action': 'resume-restored-migration', 'receipt': list(b'RMA\x01source-control'),
+                 'view': restored_view[:43] + list((3).to_bytes(8, 'little')) + restored_view[51:],
+                 'replay': False, **snapshot, 'windowAcknowledgement': window,
+                 'reviewDigest': review, 'resourcePhysicallyRetired': False}])
+            def action(request):
+                if request['action'] == 'restore':
+                    (root / 'restored-data/state').mkdir(parents=True)
+                    (root / 'restored-checkpoint').mkdir()
+                return next(responses)
+            runner.action = Mock(side_effect=action)
+            current = {'state-view': 'synthetic-source-control'}
+            with patch.object(offline_campaign, 'precondition', return_value={}), \
+                 patch.object(offline_campaign.http, 'aggregate', return_value={'count': '4'}), \
+                 patch.object(offline_campaign.http, 'view_token', return_value=bytes(view)), \
+                 patch.object(offline_campaign.restore_installation, 'catalogs', return_value={}):
+                with self.assertRaisesRegex(ValueError, 'closed-first-restored-migration-activation-result'):
+                    runner.restore(3, file, snapshot, current)
+            runner.node.start.assert_not_called()
+            self.assertEqual(runner.action.call_count, 4)
+            request = runner.action.call_args.args[0]
+            self.assertEqual(request['action'], 'resume-restored-migration')
+            self.assertEqual(request['expectedView'], restored_view)
+
     def test_restored_activation_refuses_old_receipts_replay_and_changed_physical_or_history_witnesses(self):
         from tools.java_transaction_qualification import offline_campaign
         before = list(b'NV\x02' + bytes([19]) * 32
