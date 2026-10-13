@@ -210,6 +210,20 @@ await Promise.resolve();
 await Promise.resolve();
 assert.equal(slots.retained(), 0);
 assert.equal(slots.current(), null);
+// A task that exits while queued remains behind the real running slot and
+// retires its placeholder before a fresh successor is admitted.
+const live = Promise.withResolvers();
+const cancelled = Promise.withResolvers();
+await slots.nextTaskExecutionSlot({task:{exitPromise:() => live.promise}});
+const queuedCancelled = slots.nextTaskExecutionSlot({task:{exitPromise:() => cancelled.promise}});
+cancelled.resolve();
+await Promise.resolve();
+assert.equal(slots.retained(), 1);
+live.resolve();
+await queuedCancelled;
+await Promise.resolve();
+assert.equal(slots.retained(), 0);
+assert.equal(slots.current(), null);
 assert.throws(() => retireGeneratedTaskSlots(generated + generated), /shape-drift/);
 """
         with tempfile.TemporaryDirectory() as owned:

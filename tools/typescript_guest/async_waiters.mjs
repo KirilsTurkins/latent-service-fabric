@@ -25,6 +25,8 @@ export function retireGeneratedTaskSlots(source) {
     ['  #nextTaskPromise = Promise.resolve(true);', '  #nextTaskPromise = null;'],
     ['      await this.#nextTaskPromise;',
       '      if (this.#nextTaskPromise !== null) await this.#nextTaskPromise;'],
+    ['        this.#nextTaskPromise = next.promise;',
+      '        this.#nextTaskPromise = next?.promise ?? null;'],
     ['        placeholder.completed = true;\n      }),',
       '        placeholder.completed = true;\n' +
       '        this.#nextTaskQueue = this.#nextTaskQueue.filter(entry => entry !== placeholder);\n' +
