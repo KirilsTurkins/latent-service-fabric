@@ -65,7 +65,11 @@ export function installFetchGlobals(bridge, target = globalThis) {
     url.hash = '';
     const method = supportedMethods.get(request.method);
     if (!method) throw new TypeError('native-HTTP-method-not-supported');
-    if (request.keepalive || request.integrity || !['default', 'no-store'].includes(request.cache)) {
+    if (request.keepalive || request.integrity || !['default', 'no-store'].includes(request.cache) ||
+        request.mode !== 'cors' || request.credentials !== 'same-origin' ||
+        request.referrer !== 'about:client' || request.referrerPolicy !== '') {
+      // Canonical 0.3 exposes no ambient-origin, cookie-jar, referrer or
+      // credential-suppression selector. Never silently ignore those options.
       throw new TypeError('native-HTTP-request-option-not-supported');
     }
     // The provider owns credentials and destination/header permission. Preserve

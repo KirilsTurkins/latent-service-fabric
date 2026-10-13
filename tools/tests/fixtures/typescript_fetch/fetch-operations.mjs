@@ -115,7 +115,9 @@ for (const init of [{redirect: 'follow'}, {redirect: 'error'}]) {
 }
 const refused = fixture();
 for (const [url, init] of [['file:///tmp/a', undefined], ['https://example.invalid/', {keepalive: true}],
-  ['https://example.invalid/', {headers: {'X-Item': '\u00e9'}}]]) {
+  ['https://example.invalid/', {headers: {'X-Item': '\u00e9'}}],
+  ...[{credentials: 'omit'}, {credentials: 'include'}, {mode: 'no-cors'}, {mode: 'same-origin'},
+    {referrer: 'https://referrer.invalid/'}, {referrerPolicy: 'origin'}].map(init => ['https://example.invalid/', init])]) {
   await assert.rejects(refused.fetch(url, init), TypeError);
 }
 assert.deepEqual(refused.events, []);

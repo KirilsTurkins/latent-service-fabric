@@ -126,6 +126,12 @@ integrity processing are explicitly unsupported. A Response left unread retains
 its real native body owner; returning it or collecting JS wrappers certifies no
 canonical retirement and cannot waive the existing root-drain gate.
 
+Canonical 0.3 also has no origin/CORS, cookie-jar, referrer or credential-suppression
+selector. Fetch rejects nondefault mode/credentials/referrer options before native
+admission; it does not silently forward a request that asked to suppress provider
+credentials. The default server profile leaves configured credential authority
+with the native provider and has no ambient browser origin or cookie jar.
+
 The first new native run executed all 31 selectors. All original 27 and the three
 direct retirement controls passed. The actual JS bridge case retained its own
 `globalThis.retired` Promise after successful subtask/set drops, leaving one
