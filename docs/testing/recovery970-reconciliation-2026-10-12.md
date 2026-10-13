@@ -9,8 +9,13 @@ recorded in the accompanying source-bound receipt.
 
 The initial merge exposed 325 conflicts across older and current foundations.
 Original index stages, index bytes, working/staged patches and feature sources
-were preserved privately before resolution. The original checkpoint remains in
-the merge ancestry. No competing older node/store/transaction runtime is restored.
+were preserved privately before resolution. The original checkpoint and its
+integration history remain recoverable on preservation refs. The subsequent
+history reconciliation rebuilt the intended tree on accepted development;
+the old history is retained at
+[`054a0dd7`](https://github.com/KirilsTurkins/latent-service-fabric/tree/preserve/pr970-before-history-reconcile-20261013).
+Historical receipts retain the source IDs they actually tested. No competing
+older node/store/transaction runtime is restored.
 
 ## Distinct behavior retained on current owners
 
