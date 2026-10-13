@@ -62,11 +62,13 @@ def captured_assets(item, files):
     if 'java-current-http-profile.json' in files:
         require(item.requirements_digest is not None, 'current-marker-requires-signed-effect-requirements')
         assets['java-current-http-profile.json'] = files['java-current-http-profile.json']
-    if item.name == 'forbidden-http':
+    if item.name in {'forbidden-http', 'forbidden-http-before-stage'}:
         require('java-current-http-profile.json' not in files and item.requirements_digest is None
                 and 0 < len(files[SCHEMA_ASSETS[-1]]) <= 262144,
                 'original-forbidden-source-without-effect-marker')
         assets[SCHEMA_ASSETS[-1]] = files[SCHEMA_ASSETS[-1]]
+        if item.name == 'forbidden-http-before-stage':
+            assets['java-early-http-denial-input.json'] = files['java-early-http-denial-input.json']
     return assets
 
 

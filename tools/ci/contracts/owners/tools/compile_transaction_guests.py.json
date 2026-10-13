@@ -2,7 +2,11 @@
   "kind": "owner",
   "path": "tools/compile_transaction_guests.py",
   "reviewBoundary": "committed-fingerprint",
+<<<<<<< HEAD
   "reviewReason": "Retain the exact current Java read-only cache owner and all accepted lifecycle, diagnostic, current HTTP capture selections and workflow commands across SDK reconciliation",
+=======
+  "reviewReason": "Capture additive explicit Java-only early HTTP fixture compiler recipe; original commands, limits and default variants remain.",
+>>>>>>> 33cca598fa47d087ff3a79999772dfe96dd64c7b
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0b1f3e21af8fe53dbe87c235854550a18fd38576b09f3a8784f8a5662922d77e"
+  "sha256": "83747450f74144f5685cea9b43cd1668fda7fd23fdf894a77c380c1c8eb2e4de"
 }

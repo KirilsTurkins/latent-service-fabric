@@ -31,11 +31,17 @@ VARIANTS = ("aggregate", "forbidden-http", "result-boundary")
 JAVA_SCHEMA_VARIANTS = ("put-once-legacy-v1", "put-once-compatible-v2", "put-once-writer-v2")
 JAVA_DIAGNOSTIC_VARIANT = "put-once-diagnostics"
 JAVA_ACCEPTANCE_VARIANTS = ("put-once-values", "forbidden-child")
+JAVA_EARLY_HTTP_VARIANT = 'forbidden-http-before-stage'
 
 
 def authored_project(language: str, variant: str, output: Path, *, java_current_http_profile: str | None = None) -> Path:
     if java_current_http_profile is not None and language != "java":
         raise ValueError("current HTTP source profile requires explicit Java compilation")
+    if variant == JAVA_EARLY_HTTP_VARIANT:
+        if language != 'java' or java_current_http_profile is not None:
+            raise ValueError('early HTTP denial requires a separate explicit Java source without effect profile')
+        from tools.java_transaction_http_denial import create
+        return create(output)
     if variant in JAVA_ACCEPTANCE_VARIANTS:
         if language != "java":
             raise ValueError("Java state value and child-refusal inputs require the Java compiler")
@@ -177,7 +183,11 @@ def compile_project(language: str, work: Path, output: Path, command: Commands,
 def compile_guests(language: str, output: Path, *, tools: Path | None = None, wasi_sdk: Path | None = None,
                    java_schema_put_once: bool = False, java_post_stage_diagnostic: bool = False,
                    java_state_acceptance: bool = False, java_current_http_profile: str | None = None,
-                   java_read_only_cache: Path | None = None) -> None:
+                   java_read_only_cache: Path | None = None, java_early_http_denial: bool = False) -> None:
+    if type(java_early_http_denial) is not bool or (java_early_http_denial and
+            (language != 'java' or java_schema_put_once or java_post_stage_diagnostic
+             or java_state_acceptance or java_current_http_profile is not None)):
+        raise ValueError('early HTTP denial requires the exclusive explicit Java compiler selection')
     if type(java_schema_put_once) is not bool or (java_schema_put_once and language != "java"):
         raise ValueError("Java schema qualification requires an explicit Java compiler selection")
     if (type(java_post_stage_diagnostic) is not bool
@@ -198,7 +208,7 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             or java_read_only_cache.is_symlink()):
         raise ValueError("read-only Java cache requires an existing explicit absolute directory and Java compiler")
     output = fresh(output)
-    variants = (JAVA_ACCEPTANCE_VARIANTS if java_state_acceptance else (JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
+    variants = ((JAVA_EARLY_HTTP_VARIANT,) if java_early_http_denial else JAVA_ACCEPTANCE_VARIANTS if java_state_acceptance else (JAVA_DIAGNOSTIC_VARIANT,) if java_post_stage_diagnostic
                 else (*VARIANTS, *JAVA_SCHEMA_VARIANTS) if java_schema_put_once else VARIANTS)
     for variant in variants:
         if variant == "result-boundary" and language != "rust":
@@ -238,6 +248,11 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             if variant == "put-once-values":
                 recipe += ("tools/java_transaction_values.py",)
                 report["valueInputDigest"] = digest(captured["transaction-value-inputs.json"])
+            if variant == JAVA_EARLY_HTTP_VARIANT:
+                recipe += ('tools/java_transaction_http_denial.py',)
+                report['earlyHttpDenialInputDigest'] = digest(captured['java-early-http-denial-input.json'])
+                report['immediateHttpDenialQualified'] = False
+                report['postStageRollbackQualified'] = False
             recipe_inputs = inventory({name: read_file(ROOT / name) for name in recipe})
             (current / "recipe-inputs.json").write_bytes(recipe_inputs)
             report["recipeDigest"] = digest(recipe_inputs)
@@ -266,7 +281,8 @@ def compile_guests(language: str, output: Path, *, tools: Path | None = None, wa
             command.run("validate-authored-component", wasm, "validate", "--features", "all", component)
             actual = surface(json.loads(command.run("actual-component-wit", wasm, "component", "wit", component, "--json")))
             check_surface(expected, actual, "aggregate" if variant in JAVA_SCHEMA_VARIANTS
-                          or variant in {JAVA_DIAGNOSTIC_VARIANT, "put-once-values"} else variant)
+                          or variant in {JAVA_DIAGNOSTIC_VARIANT, "put-once-values"}
+                          else 'forbidden-http' if variant == JAVA_EARLY_HTTP_VARIANT else variant)
             if any(read_file(work / name) != raw for name, raw in captured.items()):
                 raise ValueError("captured guest source changed during compilation")
             if inventory({name: read_file(ROOT / name) for name in recipe}) != recipe_inputs:
@@ -295,6 +311,8 @@ def main() -> None:
                         help="compile only the separate captured Java post-stage fault variant without node-execution claims")
     parser.add_argument("--java-state-acceptance", action="store_true",
                         help="compile separate unsigned-value/UTF-8 state and typed forbidden-child inputs")
+    parser.add_argument('--java-early-http-denial', action='store_true',
+                        help='compile only the separate typed HTTP denial before state/intent staging; no execution claim')
     parser.add_argument("--java-current-http-profile",
                         help="exact constructor-derived native HTTP profile for fresh Java captures; never an approval")
     parser.add_argument("--java-read-only-cache", type=Path,
@@ -305,7 +323,8 @@ def main() -> None:
                    java_post_stage_diagnostic=arguments.java_post_stage_diagnostic,
                    java_state_acceptance=arguments.java_state_acceptance,
                    java_current_http_profile=arguments.java_current_http_profile,
-                   java_read_only_cache=arguments.java_read_only_cache)
+                   java_read_only_cache=arguments.java_read_only_cache,
+                   java_early_http_denial=arguments.java_early_http_denial)
 
 
 if __name__ == "__main__":

@@ -11,6 +11,49 @@ from tools.transaction_guest_project import CURRENT_HTTP_PROFILE, HTTP_REQUIREME
 
 
 class CurrentJavaHttpInputs(unittest.TestCase):
+    def test_early_http_denial_is_separate_and_retains_original_post_stage_rollback_input(self):
+        from tools.compile_transaction_guests import authored_project
+        from tools.java_transaction_http_denial import VARIANT
+        from tools.transaction_guest_variants import create as original_variant
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original = original_variant(root / 'original', 'java', 'forbidden-http')
+            retained = snapshot(original)
+            project = authored_project('java', VARIANT, root / 'early')
+            files = snapshot(project)
+            source = files[SOURCE]
+            call = source.index(b'Bindings.LatentHttpClient.send(')
+            self.assertLess(call, source.index(b'command.get(KEY)'))
+            self.assertLess(call, source.index(b'command.put(KEY'))
+            self.assertLess(call, source.index(b'.stage(command)'))
+            self.assertLess(retained[SOURCE].index(b'.stage(command)'),
+                            retained[SOURCE].index(b'Bindings.LatentHttpClient.send('))
+            self.assertEqual(snapshot(original), retained)
+            self.assertEqual(files['wit/world.wit'], retained['wit/world.wit'])
+            self.assertEqual(read_json(project / 'capsule-project.json')['limits'],
+                             read_json(original / 'capsule-project.json')['limits'])
+            self.assertNotIn(CURRENT_HTTP_PROFILE, files)
+            self.assertNotIn(HTTP_REQUIREMENTS, files)
+            declaration = read_json(project / 'java-early-http-denial-input.json')
+            for name in ('componentCompiled', 'signedExecutionQualified',
+                         'immediateHttpDenialQualified', 'postStageRollbackQualified'):
+                self.assertIs(declaration[name], False)
+            for language in ('rust', 'c', 'typescript', 'go', 'dotnet'):
+                with self.assertRaises(ValueError):
+                    authored_project(language, VARIANT, root / ('refused-' + language))
+
+    def test_early_http_compiler_selection_is_exclusive_before_creating_output(self):
+        from tools.compile_transaction_guests import compile_guests
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / 'uncreated'
+            for language, options in (('rust', {}), ('java', {'java_state_acceptance': True}),
+                                     ('java', {'java_schema_put_once': True}),
+                                     ('java', {'java_post_stage_diagnostic': True}),
+                                     ('java', {'java_current_http_profile': 'qualified-http-v1:' + 'a' * 64})):
+                with self.assertRaises(ValueError):
+                    compile_guests(language, output, java_early_http_denial=True, **options)
+                self.assertFalse(output.exists())
+
     def test_current_selection_changes_transport_operation_without_rewriting_legacy_custody(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -197,4 +197,7 @@ class Recovery:
             "--credential-file", self.credential, "--tenant", cfg.TENANT, "--request-file", path,
             timeout=90))
         self.client.evidence.record(stage + "-report", result)
+        if result['schemaVersion'] == 'latent.native-transaction-recovery.v2':
+            require(result['catalogsRetired'] is True, 'current-native-control-catalog-retirement-required')
+            lifecycle.admission_lease_interval(self.client)
         return result

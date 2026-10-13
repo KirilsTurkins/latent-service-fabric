@@ -152,3 +152,35 @@ supply-chain epoch and restart clock floor remain real. The conductor now waits
 the original admission lease interval after each inspection before starting the
 next owner. The authority lease stays five seconds; original failed boot roots
 are preserved and are never retried as mutations.
+
+The separate `--java-early-http-denial` compiler selection authors an editable
+Java fixture that calls the supported HTTP import immediately after acquiring
+the command view. It checks the exact typed permission denial before any state
+read/write or event staging. Original `forbidden-http` captures still stage first
+and retain their rollback oracle. The new fixture preserves the original SDK,
+WIT, resource limits and zero outbound-request budget; it carries no effect
+marker or requirements. Source, compiler capture and signed execution are
+separate checkpoints, and every new qualification flag starts false.
+
+The [separate early HTTP compiler packet](pr970-early-http-compiler-evidence.json)
+records an actual clean-source maintained Java build at `47e4e607`. Pinned
+TeaVM C, WASI SDK 29, wasm-tools 1.254.0 and the existing read-only Gradle cache
+produced a 984,422-byte component with the exact HTTP/state/intent/clock imports.
+The emitted component and its separate portable copy compare byte-identical.
+Its source, archive, SDK, compiler closure, companion and declaration retain
+distinct digests. Compilation passed in 34.049 seconds under the original
+limits; signing, immediate HTTP denial and post-stage rollback remain unqualified.
+
+A separate closed loader verifies that capture's original report/material/source
+archive, early-call declaration, exact service and unchanged budgets. The
+original six-component selector still refuses this seventh variant. Packaging
+retains its exact Java source and declaration as signed assets, with no effect
+marker or requirements. A changed source order, claimed qualification or broader
+input cannot supply execution authority.
+
+Each current v2 native recovery action also opens the real control catalog.
+After retaining its original report, the conductor requires positive catalog
+retirement and waits the same original admission lease interval. This covers
+both successful and failed operation reports without changing their disposition
+or retryability. Missing retirement stops the collector; historical v1 behavior
+and the twelve-action, 1200-second limits remain unchanged.
