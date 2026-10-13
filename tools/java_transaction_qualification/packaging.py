@@ -53,6 +53,23 @@ def schema_assets(files):
     return selected
 
 
+def captured_assets(item, files):
+    assets = {path: raw for path, raw in files.items() if path.startswith('wit/') and path.endswith('.wit')}
+    assets.update({name: files[name] for name in ('state-schema.json', 'transaction-profile.json')})
+    assets.update(schema_assets(files))
+    if item.requirements_digest:
+        assets['deferred-http-requirements.json'] = files['deferred-http-requirements.json']
+    if 'java-current-http-profile.json' in files:
+        require(item.requirements_digest is not None, 'current-marker-requires-signed-effect-requirements')
+        assets['java-current-http-profile.json'] = files['java-current-http-profile.json']
+    if item.name == 'forbidden-http':
+        require('java-current-http-profile.json' not in files and item.requirements_digest is None
+                and 0 < len(files[SCHEMA_ASSETS[-1]]) <= 262144,
+                'original-forbidden-source-without-effect-marker')
+        assets[SCHEMA_ASSETS[-1]] = files[SCHEMA_ASSETS[-1]]
+    return assets
+
+
 def prepare(item: ComponentInput, output: Path, contracts: Path, signer: Path, command: Commands):
     output.mkdir()
     files = snapshot(item.directory / "project")
@@ -82,11 +99,7 @@ def prepare(item: ComponentInput, output: Path, contracts: Path, signer: Path, c
               for name, (role, media) in LAYER_MEDIA.items()]
     companion = package_companion(output, project, files)
     require(companion == ("transaction-binding.json", "asset", COMPANION_MEDIA), "actual-companion-layer-contract")
-    assets = {path: raw for path, raw in files.items() if path.startswith("wit/") and path.endswith(".wit")}
-    assets.update({name: files[name] for name in ("state-schema.json", "transaction-profile.json")})
-    assets.update(schema_assets(files))
-    if item.requirements_digest:
-        assets["deferred-http-requirements.json"] = files["deferred-http-requirements.json"]
+    assets = captured_assets(item, files)
     if "transaction-diagnostic-inputs.json" in files:
         from .diagnostic_inputs import declaration
         declaration(files["transaction-diagnostic-inputs.json"], files)
@@ -185,11 +198,17 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
               "compiledAgain": False, "signedNodeExecutionQualified": False, "packagedDistributionQualified": False,
               "inputs": [item.observation() for item in items], "profileRejections": [],
               "tools": [file_identity(contracts_tool,"contracts-tool"), file_identity(signer,"signer")]}
+    if compiler_source is not None:
+        record['currentPreparationControls'] = []
+        record['immediateHttpDenialQualified'] = False
     start = time.monotonic()
     try:
         for item in items:
             if item.name == "forbidden-http":
-                _forbidden_profile(item, output, contracts_tool, signer, command, record)
+                if compiler_source is None:
+                    _forbidden_profile(item, output, contracts_tool, signer, command, record)
+                else:
+                    _current_forbidden_preparation(item, output, contracts_tool, signer, command, record)
             else:
                 prepare(item, output / item.name, contracts_tool, signer, command)
         accepted = [item for item in items if item.name != "forbidden-http"]
@@ -210,6 +229,25 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
     finally:
         record["commands"], record["seconds"] = command.records, round(time.monotonic()-start,6)
         write_json(output / "package-fixture-receipt.json", record)
+
+
+def _current_forbidden_preparation(item, output, contracts, signer, command, record):
+    # Current metadata recognizes the supported HTTP signature. Only actual
+    # strict execution can prove its immediate send was denied.
+    prepare(item, output / item.name, contracts, signer, command)
+    surface = decode(read_file(output / item.name / 'derived/surface.json'))
+    require(set(surface) == {'world', 'imports', 'exports'} and surface['world'] == WORLD
+            and surface['imports'] == sorted({
+                'latent:state/key-value@0.2.0', 'latent:intents/staging@0.1.0',
+                'latent:http/client@0.2.0', 'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'})
+            and surface['exports'] == ['examples:transactional-aggregate/api@1.0.0'],
+            'exact-current-forbidden-signature-preparation')
+    observed = {'variant': item.name, 'componentDigest': item.component_digest,
+                'stage': 'native-contract-preparation', 'surface': surface,
+                'signed': False, 'executionAuthorized': False, 'requestDispatched': False,
+                'immediateHttpDenialQualified': False, 'signedNodeExecutionQualified': False}
+    record['currentPreparationControls'].append(observed)
+    write_json(output / item.name / 'current-preparation-control.json', observed)
 
 
 def _forbidden_profile(item, output, contracts, signer, command, record):

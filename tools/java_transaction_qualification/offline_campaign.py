@@ -323,6 +323,18 @@ class OfflineCampaign:
 
     def execute(self):
         count = 2**32 + 3
+        _, aggregate = self.campaign.query(4)
+        key = 'java-before-schema-wide-value'
+        changed = self.campaign.result(self.campaign.socket('command', original_key=key,
+            body=command_input(2**32 - 1), condition=precondition(aggregate)))
+        require(changed['disposition'] == 'committed' and http.aggregate(changed)['count'] == str(count),
+                'actual-wide-java-value-before-schema')
+        publication = self.campaign.publications['put-once-compatible-v2']
+        effect = self.campaign.wait_effect(publication, key, changed)
+        rpc_result(lifecycle.lookup(self.client, publication, key), changed, publication, key)
+        self.client.evidence.passed('actual-wide-java-value-before-schema', {
+            'original': changed, 'effect': effect,
+            'recipientAcceptance': self.campaign.peer_record(changed['effect-ids'][0])})
         file, snapshot, current = self.schema(count)
         self.restore(count, file, snapshot, current)
         require(self.native.calls == 12, "original-bounded-recovery-sequence")

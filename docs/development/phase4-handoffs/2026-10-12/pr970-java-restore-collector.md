@@ -125,3 +125,23 @@ activation and before runtime startup. A sequencing regression exercises that
 path and proves an incomplete physical retirement witness prevents startup.
 It retains the original migration-resume path and every existing receipt,
 identity, history and count check. The combined signed campaign remains pending.
+
+Before schema migration, the conductor now commits the maximum unsigned 32-bit
+delta through the current compatible Java publication. It checks the resulting
+`2^32 + 3` aggregate, original durable command and acknowledged effect before
+snapshotting. This supplies the previously missing wide-value setup without
+lowering the migration oracle or changing the twelve native recovery actions.
+All 156 focused Linux controls pass; actual signed execution remains pending.
+
+The fresh current contract tool recognizes the supported immediate HTTP
+signature for preparation. Current packaging therefore records that exact
+surface with signing, execution authority, dispatch and immediate-denial
+qualification all false. The historical early-refusal control retains its
+original boundary. An actual current strict HTTP denial needs a separate signed
+execution control; preparation or generic package success cannot substitute.
+
+Current package assets now retain the exact compiler-captured HTTP profile
+marker alongside its effect requirements. The signer already requires that
+material, and refused the earlier incomplete package before generating trust.
+The forbidden component retains its original Java source with no HTTP marker
+or effect requirements. Neither asset supplies authority or execution proof.

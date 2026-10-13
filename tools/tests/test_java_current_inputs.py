@@ -87,6 +87,59 @@ class CurrentJavaInputs(unittest.TestCase):
 
 
 class CurrentJavaPackaging(unittest.TestCase):
+    def test_package_retains_exact_current_marker_and_negative_source_as_signed_assets(self):
+        from types import SimpleNamespace
+        from tools.java_transaction_qualification import packaging
+        files = {'wit/world.wit': b'captured world', 'state-schema.json': b'captured schema',
+                 'transaction-profile.json': b'captured profile',
+                 'deferred-http-requirements.json': b'captured requirements',
+                 'java-current-http-profile.json': b'captured current marker',
+                 'src/dev/latent/app/Capsule.java': b'captured source'}
+        item = SimpleNamespace(name='put-once-legacy-v1', requirements_digest='sha256:' + 'a' * 64)
+        retained = packaging.captured_assets(item, files)
+        self.assertIs(retained['java-current-http-profile.json'], files['java-current-http-profile.json'])
+        self.assertIs(retained['deferred-http-requirements.json'], files['deferred-http-requirements.json'])
+        item = SimpleNamespace(name='forbidden-http', requirements_digest=None)
+        negative = {name: raw for name, raw in files.items()
+                    if name not in {'deferred-http-requirements.json', 'java-current-http-profile.json'}}
+        retained = packaging.captured_assets(item, negative)
+        self.assertIs(retained['src/dev/latent/app/Capsule.java'], negative['src/dev/latent/app/Capsule.java'])
+        self.assertNotIn('java-current-http-profile.json', retained)
+        for changed, selected in ((files, item), (files, SimpleNamespace(name='aggregate', requirements_digest=None))):
+            with self.assertRaises(ValueError):
+                packaging.captured_assets(selected, changed)
+
+    def test_current_forbidden_preparation_preserves_signature_without_claiming_execution_denial(self):
+        from pathlib import Path
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import packaging
+        surface = {'world': packaging.WORLD, 'imports': sorted({
+            'latent:state/key-value@0.2.0', 'latent:intents/staging@0.1.0',
+            'latent:http/client@0.2.0', 'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'}),
+            'exports': ['examples:transactional-aggregate/api@1.0.0']}
+        item = SimpleNamespace(name='forbidden-http', component_digest='sha256:' + 'a' * 64)
+        record = {'currentPreparationControls': [], 'profileRejections': []}
+        with patch.object(packaging, 'prepare') as prepared, \
+             patch.object(packaging, 'read_file', return_value=encoded(surface)), \
+             patch.object(packaging, 'write_json'):
+            packaging._current_forbidden_preparation(item, Path('output'), Path('contracts'),
+                Path('signer'), object(), record)
+        prepared.assert_called_once()
+        self.assertEqual(record['profileRejections'], [])
+        observed = record['currentPreparationControls'][0]
+        for field in ('signed', 'executionAuthorized', 'requestDispatched',
+                      'immediateHttpDenialQualified', 'signedNodeExecutionQualified'):
+            self.assertIs(observed[field], False)
+        for changed in (dict(surface, imports=[]), dict(surface, exports=[]),
+                        dict(surface, world='another:world/service@1.0.0'), dict(surface, approved=True)):
+            with self.subTest(changed=changed), patch.object(packaging, 'prepare'), \
+                 patch.object(packaging, 'read_file', return_value=encoded(changed)), \
+                 patch.object(packaging, 'write_json', side_effect=AssertionError('must not record malformed surface')):
+                with self.assertRaises(ValueError):
+                    packaging._current_forbidden_preparation(item, Path('output'), Path('contracts'),
+                        Path('signer'), object(), record)
+
     def test_current_package_selects_explicit_compiler_source_without_historical_fallback(self):
         from pathlib import Path
         from unittest.mock import patch
