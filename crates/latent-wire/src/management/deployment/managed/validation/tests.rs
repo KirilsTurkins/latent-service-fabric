@@ -67,6 +67,42 @@ fn managed_phase4_validation_preserves_original_request_and_stateless_refusal() 
 }
 
 #[test]
+fn managed_phase4_audit_identity_uses_the_same_selected_catalog_request_digest() {
+    use latent_rollout::deployment_audit::DeploymentRejectionIdentity;
+    let profile = super::super::super::tests::phase4_profile();
+    let request = apply(
+        captured_request(),
+        administrator(),
+        &ManagementLimits::default(),
+        profile,
+    )
+    .unwrap();
+    assert!(DeploymentRejectionIdentity::from_request(&request).is_err());
+    let selected =
+        DeploymentRejectionIdentity::from_request_with_profile(&request, profile).unwrap();
+    assert_eq!(
+        selected.request_digest(),
+        &request.request_digest_with_profile(profile).unwrap()
+    );
+    let mut changed = request.clone();
+    let DeploymentOperationRequest::Apply { context, .. } = &mut changed else {
+        unreachable!()
+    };
+    context.expected_state_version += 1;
+    assert_ne!(
+        selected.request_digest(),
+        DeploymentRejectionIdentity::from_request_with_profile(&changed, profile)
+            .unwrap()
+            .request_digest()
+    );
+    let DeploymentOperationRequest::Apply { manifest, .. } = &mut changed else {
+        unreachable!()
+    };
+    manifest.metadata.tenant = Some(latent_core::TenantId("foreign".into()));
+    assert!(DeploymentRejectionIdentity::from_request_with_profile(&changed, profile).is_err());
+}
+
+#[test]
 fn managed_phase4_selection_retains_required_fields_scope_and_preconditions() {
     let profile = super::super::super::tests::phase4_profile();
     let limits = ManagementLimits::default();
