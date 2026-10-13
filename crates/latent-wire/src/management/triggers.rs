@@ -22,7 +22,9 @@ pub fn http_trigger_from_proto(
 ) -> Result<latent_manifest::TriggerManifest, Status> {
     let limits = super::ManagementLimits::default();
     let mut budget = super::RequestBudget::new::<proto::Trigger>(&limits)?;
-    validation::wire(&value, &mut budget, &limits)?;
+    // Descriptive reply conversion accepts the installed closed grammar. Apply
+    // admission separately requires the adapter's trusted host profile.
+    validation::wire(&value, &mut budget, &limits, true)?;
     latent_control_store::http_routes::normalize_http_trigger(conversion::manifest(value)?)
         .map_err(|_| Status::invalid_argument("invalid-http-trigger"))
 }
@@ -87,7 +89,12 @@ impl proto::trigger_service_server::TriggerService for ManagementServiceAdapter 
         let _request_lease = store
             .reserve_trigger_request()
             .map_err(|e| platform_status(e, &self.limits))?;
-        let command = validation::apply(request.into_inner(), principal, &self.limits)?;
+        let command = validation::apply_with_profile(
+            request.into_inner(),
+            principal,
+            &self.limits,
+            self.manifest_profile,
+        )?;
         let (result, ack) = execute(self, command, expires).await?;
         let (value, lease) = result.into_parts();
         let output = response::apply(value, ack)?;
