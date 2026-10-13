@@ -24,10 +24,12 @@ export const api = {
         parsed.hash = '';
         return parsed.href;
       }
-      if (mode >= 4 && mode <= 7) {
+      if (mode >= 4 && mode <= 11) {
         const options = mode === 4 ? undefined : {method: 'POST',
           ...(mode >= 6 ? {body: 'abcdefgh'} : {}),
-          ...(mode === 7 ? {signal: new AbortController().signal} : {})};
+          ...(mode === 7 || mode >= 10 ? {signal: new AbortController().signal} : {}),
+          ...(mode >= 9 ? {headers: {'x-fetch-control': '0'}} : {}),
+          ...(mode === 11 ? {redirect: 'error' as const} : {})};
         await fetch(url, options);
         return 'denied diagnostic unexpectedly succeeded';
       }
