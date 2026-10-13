@@ -17,6 +17,8 @@ pub use state_management::{
     StateManagementReservation, StateManagementServices,
 };
 #[cfg(test)]
+mod retained_abort_fixture;
+#[cfg(test)]
 mod tests;
 
 use crate::{
