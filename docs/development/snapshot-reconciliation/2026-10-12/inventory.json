@@ -3805,8 +3805,8 @@
   "remainingOpenCount": 13,
   "lastVerifiedOpenCount": 10,
   "latestRemoteObservation": {
-    "observedAtUtc": "2026-10-13T01:09:48.169288+00:00",
-    "openCount": 6,
+    "observedAtUtc": "2026-10-13T01:22:35.328527+00:00",
+    "openCount": 4,
     "snapshotPrs": [
       970
     ],
@@ -3834,22 +3834,6 @@
         "mergeable": "MERGEABLE",
         "number": 982,
         "title": "fix(deps): reconcile Angular renderer 22.2.1 patch peers"
-      },
-      {
-        "headRefName": "dependabot/cargo/development/libc-0.2.190",
-        "headRefOid": "ae5664bea0f89f8c8b05b630be44a73b08b1acd4",
-        "isDraft": false,
-        "mergeable": "UNKNOWN",
-        "number": 981,
-        "title": "chore(deps): bump libc from 0.2.189 to 0.2.190"
-      },
-      {
-        "headRefName": "dependabot/cargo/development/wasmparser-0.261.0",
-        "headRefOid": "9e983657d239d705cd2d3cc249e6d9bb36026d69",
-        "isDraft": false,
-        "mergeable": "MERGEABLE",
-        "number": 979,
-        "title": "Reconcile Rust dependency pins and bounded collector smoke"
       }
     ],
     "issueClosures": []
@@ -3864,6 +3848,25 @@
       "owningIssues": [],
       "ticketAcceptance": "No repository ticket referenced or closed",
       "reconciliation": "SPDX parser 0.13.6 accepted after 49 success and 2 existing skipped checks on the exact head."
+    }
+  ],
+  "acceptedDependencyDeliveries": [
+    {
+      "pullRequest": 979,
+      "deliveredHead": "9e983657d239d705cd2d3cc249e6d9bb36026d69",
+      "mergeCommit": "c450f280a57889ba910585a534a0c46167f16992",
+      "mergedAt": "2026-10-13T01:21:26Z",
+      "exactHeadChecks": 51,
+      "adoptedPrs": [
+        {
+          "pullRequest": 981,
+          "snapshotHead": "ae5664bea0f89f8c8b05b630be44a73b08b1acd4",
+          "closedAt": "2026-10-13T01:21:45Z",
+          "branchPreserved": true
+        }
+      ],
+      "reconciliation": "wasmparser0.261 and libc0.2.190 exact pins; unchanged dependency drift validator and bounded three collector smoke recipes pass; full campaign qualification remains incomplete. No ticket closes.",
+      "issueClosures": []
     }
   ]
 }
