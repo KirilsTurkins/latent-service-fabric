@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "latent.transaction-pre-store-access-control.v1",
+  "sourceBase": "7f336b0741b3098d4f283a79a1d726a5aab1b9a4",
+  "sourceKind": "source-byte-matched-native-controls",
+  "sourceFiles": [
+    {
+      "path": "crates/latent-wasmtime/src/backend.rs",
+      "sha256": "70dbda45c4104bd31441ae9462163bd90df46e3b75113f3d0cacb55ad48f7521"
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend/input.rs",
+      "sha256": "67a3b6ae41cd5f63e44436bd2c2b3c4d7bdc31e0a35123c85dea99afcde6af83"
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend/transaction_access.rs",
+      "sha256": "d49c19026e26df5cf3563fba64fb3bd5e0e9f63bb31374c89ed6f3a5544a106d"
+    },
+    {
+      "path": "crates/latent-wasmtime/src/backend/transaction_access/tests.rs",
+      "sha256": "24f9466164fcaa05da6ac9d1da2e27003fd96cb15d24bdae4a46d8996d8a7180"
+    }
+  ],
+  "baseline": {
+    "nativeProductSha256": "6ab66aefb577d066a7864fab667f9befa65726c605a225c494de2bf09f7fc227",
+    "result": "one regression failed because guest closure count remained zero"
+  },
+  "candidate": {
+    "nativeProductSha256": "b116979f4ed8e028ed8242a2002d7bfc81d543d5f3806d901bb7f8018415e499",
+    "regressionsPassed": 2,
+    "allActiveLibraryCasesPassed": 359,
+    "existingIgnoredCases": 2,
+    "seconds": 10.685025
+  },
+  "storeCreatedBeforeRefusal": false,
+  "hostStateTransferClosesOnlyOnActualDrop": true,
+  "nativePhysicalWitnessStillRequired": true,
+  "resourceCapsChanged": false,
+  "signedRuntimeQualified": false,
+  "productionApproval": false,
+  "issueClosure": false
+}

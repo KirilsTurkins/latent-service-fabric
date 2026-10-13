@@ -6934,6 +6934,8 @@
         "backend::readiness::worker_wait::tests::worker_window_retries_only_exact_busy_and_preserves_other_error_allocations",
         "backend::result_lifetime_tests::native_errors_release_while_the_actual_cleanup_helper_still_owns_runtime_and_permit",
         "backend::result_lifetime_tests::successful_classification_and_unwind_keep_the_same_final_drop_order",
+        "backend::transaction_access::tests::refused_context_and_foreign_backend_close_actual_pre_store_guest_access",
+        "backend::transaction_access::tests::transferred_access_closes_only_when_the_actual_host_state_access_is_destroyed",
         "bindings::compatibility_tests::activation_runtime_linker_preserves_exact_shape_and_unknown_profile_denial",
         "bindings::compatibility_tests::blob_preparation_requires_exact_owned_chunk_and_async_shapes",
         "bindings::compatibility_tests::frozen_schema_matrix_matches_host_shapes_identity_and_generated_sdk_baseline",
@@ -7175,7 +7177,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 359,
+      "minimumCases": 361,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
