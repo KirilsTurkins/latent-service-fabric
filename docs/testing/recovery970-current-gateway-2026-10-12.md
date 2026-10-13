@@ -174,6 +174,16 @@ created no catalog, authority or guest, and preserves the original one-call,
 64 MiB, 60-second policy ceilings. Signed execution and pending-effect
 reconciliation keep separate qualification receipts.
 
+The [combined `dd294da2` tuple packet](evidence/recovery970-default-tuple-dd294-2026-10-13.json)
+includes the trusted deployment-management profile selection and separate early
+HTTP fixture signer. A 1,177,600-byte Git delta plus unchanged regular build
+inputs reproduces all 9418 files in its exact current tree; every blob was
+verified before and after the six actual builds. Frozen regular artifacts retain
+their Cargo inode and byte identity on the same filesystem and were rechecked
+after every later role. The initial cross-filesystem hardlink refusal is retained;
+the successful node compilation was not repeated. All six products retain the
+original default features, assertion/overflow policy and material ceiling.
+
 ## Qualification boundaries
 
 `deferredHttp.dispatchAuthority` can explicitly select
