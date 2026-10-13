@@ -9,6 +9,7 @@ mod operation;
 mod profile;
 mod request;
 mod restore;
+mod restored;
 mod scope;
 mod selection;
 

@@ -14,6 +14,7 @@ mod resource;
 mod restore_adoption;
 mod restore_input;
 mod restore_stage;
+mod restored_resume;
 mod resume;
 mod snapshot;
 mod startup;
@@ -45,6 +46,10 @@ pub use restore_stage::{
     ProtectedRestoreDestinationConfig, ProtectedRestoreStageJob, RestoreRowDisposition,
     RestoreStageControls, RestoreStageError, RestoreStageOwners, RestoreStageReceipt,
     RestoreStageRequest, RestoreWriteFence, RestoreWriteKind,
+};
+pub use restored_resume::{
+    ProtectedRestoredMigrationResumeJob, ProtectedRestoredMigrationResumeReceipt,
+    RestoredMigrationResumeCommitFence, RestoredMigrationResumeOwners,
 };
 pub use resume::{
     MigrationResumeCommitFence, ProtectedMigrationResumeJob, ProtectedMigrationResumeReceipt,

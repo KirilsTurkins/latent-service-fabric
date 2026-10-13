@@ -265,8 +265,95 @@ pub(super) async fn execute(
             migration(store, codecs).await
         }
         Action::ResumeMigration { .. } => resume_migration(store, codecs).await,
+        Action::ResumeRestoredMigration { .. } => resume_restored_migration(store, codecs).await,
         _ => metadata_action(store, codecs, settings).await,
     }
+}
+
+async fn resume_restored_migration(
+    store: &ProtectedStoreOwner,
+    codecs: Arc<Codecs>,
+) -> Result<serde_json::Value, PlatformError> {
+    let Action::ResumeRestoredMigration {
+        operation_id,
+        migration_operation_id,
+        file,
+        expected_view,
+        snapshot_digest,
+        manifest_digest,
+        window_acknowledgement,
+    } = &codecs.action
+    else {
+        return Err(super::denied());
+    };
+    let (operation, migration, expected) = (
+        operation_id.clone(),
+        migration_operation_id.clone(),
+        expected_view.clone(),
+    );
+    let (snapshot_digest, manifest_digest, window_digest) = (
+        super::assets::digest_bytes(snapshot_digest)?,
+        super::assets::digest_bytes(manifest_digest)?,
+        super::assets::digest_bytes(window_acknowledgement)?,
+    );
+    let selected = Arc::clone(&codecs);
+    let request=awaited(store.with_store_retaining(StoreIoKind::RecoveryRead,1024*1024,
+        Arc::clone(&codecs) as Arc<dyn std::any::Any+Send+Sync>,move |engine| {
+            let view=engine.snapshot()?;
+            Ok((|| { selected.closure(&view)?;
+                Ok::<_,StoreError>(latent_state::recovery::restored_resume::RestoredMigrationResumeRequest {
+                    scope:selected.selected_view(&view)?.scope(),operation_id:operation,
+                    operator_id:selected.authority.actor.clone(),migration_operation_id:migration,
+                    expected_view:expected,snapshot_digest,manifest_digest,window_digest,review_digest:selected.review,
+                    restore_operation_digest:latent_state::recovery::RecoveryGuard::capture(&view)?.ok_or(StoreError::Unavailable)?.operation_digest(),
+                })
+            })())
+        }).map_err(protected)?,&codecs).await?.map_err(protected)?.map_err(storage)?;
+    let row = Arc::clone(&codecs);
+    let current = Arc::clone(&codecs);
+    let (snapshot, opened) = awaited(
+        store
+            .open_snapshot_profile(
+                file_config(file),
+                Arc::clone(&codecs.original),
+                move |key, bytes| row.row(key, bytes),
+                Arc::new(move || current.check()),
+                codecs.authority.file_bytes,
+                latent_state::protected_store::ProtectedSnapshotProfile::SingleNamespace,
+            )
+            .map_err(protected)?,
+        &codecs,
+    )
+    .await?;
+    if let Err(error) = opened.map_err(protected)?.map_err(snapshot_error) {
+        retire(snapshot, &codecs).await;
+        return Err(error);
+    }
+    let (snapshot, result) = awaited(
+        store
+            .resume_restored_migration(
+                snapshot,
+                request,
+                codecs.catalog.primary().schema.clone(),
+                Arc::clone(&codecs)
+                    as Arc<dyn latent_state::protected_store::RestoredMigrationResumeOwners>,
+            )
+            .map_err(protected)?,
+        &codecs,
+    )
+    .await?;
+    let result = result
+        .map_err(protected)?
+        .map_err(|error| failure(format!("protected-restored-migration-resume:{error:?}")));
+    let retired = retire(snapshot, &codecs).await;
+    let receipt = result?;
+    Ok(
+        serde_json::json!({"action":"resume-restored-migration","receipt":receipt.receipt().encode().map_err(storage)?,
+        "view":receipt.receipt().view_token().map_err(storage)?,"replay":receipt.replayed(),
+        "snapshotDigest":digest(snapshot_digest),"manifestDigest":digest(manifest_digest),
+        "windowAcknowledgement":digest(window_digest),"reviewDigest":digest(codecs.review),
+        "resourcePhysicallyRetired":retired}),
+    )
 }
 
 async fn resume_migration(
@@ -331,11 +418,13 @@ async fn resume_migration(
     let current = Arc::clone(&codecs);
     let (snapshot, opened) = awaited(
         store
-            .open_snapshot(
+            .open_snapshot_profile(
                 file_config(file),
                 Arc::clone(&codecs.original),
                 move |key, bytes| row.row(key, bytes),
                 Arc::new(move || current.check()),
+                codecs.authority.file_bytes,
+                latent_state::protected_store::ProtectedSnapshotProfile::SingleNamespace,
             )
             .map_err(protected)?,
         &codecs,
@@ -423,11 +512,13 @@ async fn migration(
     let current = Arc::clone(&codecs);
     let (snapshot, opened) = awaited(
         store
-            .open_snapshot(
+            .open_snapshot_profile(
                 file_config(file),
                 Arc::clone(&codecs.original),
                 move |key, bytes| row.row(key, bytes),
                 Arc::new(move || current.check()),
+                codecs.authority.file_bytes,
+                latent_state::protected_store::ProtectedSnapshotProfile::SingleNamespace,
             )
             .map_err(protected)?,
         &codecs,

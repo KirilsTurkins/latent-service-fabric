@@ -163,7 +163,7 @@ impl Codecs {
             Err(StoreError::UnsupportedFormat) => {}
             result => return result,
         }
-        let validators: [Validator; 8] = [
+        let validators: [Validator; 9] = [
             latent_wire::phase4::StateManagementBackend::validate_operation_bytes,
             |key, bytes| {
                 NamespaceCatalog::validate_row(key, bytes).map_err(|error| match error {
@@ -179,6 +179,7 @@ impl Codecs {
             latent_state::recovery::migration::AggregateMigrationProgress::validate_row,
             latent_state::recovery::resume::MigrationResumeReceipt::validate_row,
             latent_state::recovery::namespace_resume::NamespaceResumeReceipt::validate_row,
+            latent_state::recovery::restored_resume::RestoredMigrationResumeReceipt::validate_row,
         ];
         for validator in validators {
             match validator(key, bytes) {

@@ -146,10 +146,11 @@ impl ProtectedStoreOwner {
         owners: Arc<dyn AggregateMigrationOwners>,
     ) -> Result<ProtectedMigrationJob, ProtectedStoreError> {
         request.validate().map_err(ProtectedStoreError::Store)?;
+        let work = snapshot.custody.maximum_job_bytes();
         let inner = self.with_custody(
             snapshot.custody,
             StoreIoKind::RecoveryWrite,
-            8 * 1024 * 1024,
+            work,
             move |file, store| {
                 let Some(file) = file else {
                     return Ok(Err(MigrationError::Review(StoreError::Invalid)));
@@ -179,11 +180,10 @@ fn apply(
     file.check()
         .map_err(|_| MigrationError::Review(StoreError::Unavailable))?;
     let view = store.snapshot().map_err(MigrationError::source)?;
-    let checkpoint = VerifiedMigrationCheckpoint::inspect(
+    let checkpoint = VerifiedMigrationCheckpoint::from_inspected(
         &view,
-        &mut file.cursor(),
-        file.deadline(),
-        |key, bytes| owners.row(key, bytes),
+        file.inspect(|key, bytes| owners.row(key, bytes))
+            .map_err(MigrationError::Review)?,
         |view| owners.linked(view),
         |artifact| owners.artifact(artifact),
     )?;

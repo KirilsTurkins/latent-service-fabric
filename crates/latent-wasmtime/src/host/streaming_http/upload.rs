@@ -1,7 +1,7 @@
 use super::table::Reserved;
 use super::{
-    Arc, AsContextMut, Error, HostState, HttpError, Instant, Kind, Resource, StreamingHttpInvoker,
-    Value, checkpoint, convert_error, convert_request, synchronize, trap, wit,
+    checkpoint, convert_error, convert_request, synchronize, trap, wit, Arc, AsContextMut, Error,
+    HostState, HttpError, Instant, Kind, Resource, StreamingHttpInvoker, Value,
 };
 
 pub(super) fn open(

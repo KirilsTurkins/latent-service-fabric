@@ -278,16 +278,43 @@ fn dispatch_policy(
         .iter()
         .filter(|g| g.capability.0 == HTTP_CAPABILITY)
         .collect();
-    if grants.len() != 1
-        || config.dispatch_policies != [grants[0].policy.0.clone()]
-        || !grants[0].constraints.is_empty()
-    {
-        return Err(denied());
-    }
-    let restriction = GrantRestriction {
-        operations: grants[0].operations.clone(),
-        resources: None,
-        ceiling: None,
+    let restriction = if config.service_integration() {
+        // This explicit native effect owner has no immediate HTTP guest grant.
+        // Signed INTENT/source requirements and current dispatch policy still
+        // constrain the exact rule, provider and every HTTP acceptance fence.
+        if !grants.is_empty()
+            || !asset
+                .metadata()
+                .manifest()
+                .imports
+                .iter()
+                .any(|import| import.contract.0 == INTENT_CONTRACT && !import.optional)
+            || asset
+                .metadata()
+                .manifest()
+                .imports
+                .iter()
+                .any(|import| import.contract.0 == HTTP_CAPABILITY)
+        {
+            return Err(denied());
+        }
+        GrantRestriction {
+            operations: vec!["send".into()],
+            resources: None,
+            ceiling: None,
+        }
+    } else {
+        if grants.len() != 1
+            || config.dispatch_policies != [grants[0].policy.0.clone()]
+            || !grants[0].constraints.is_empty()
+        {
+            return Err(denied());
+        }
+        GrantRestriction {
+            operations: grants[0].operations.clone(),
+            resources: None,
+            ceiling: None,
+        }
     };
     let reference = adapter.provider_reference();
     let service = ServiceId(declaration_service(asset).into());
@@ -298,11 +325,18 @@ fn dispatch_policy(
         service: Some(service),
         claims: Metadata::new(),
     };
+    let selection = if config.service_integration() {
+        latent_capabilities::namespace::RecoverySelection::ServiceIntegration
+    } else {
+        latent_capabilities::namespace::RecoverySelection::OriginalCaller
+    };
+    let caller_scope = latent_capabilities::namespace::CallerScope::derive(&principal, &selection)?;
     Ok(dispatch::DispatchPolicy {
         rule,
         policy,
         publication: asset.publication().clone(),
         principal,
+        caller_scope,
         service: declaration_service(asset).into(),
         policies: config.dispatch_policies.clone(),
         binding: config.dispatch_binding.clone(),

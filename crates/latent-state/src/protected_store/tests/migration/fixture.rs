@@ -299,6 +299,32 @@ impl Setup {
         work_bytes: u64,
         finite: bool,
     ) -> Self {
+        Self::with_recipe(
+            clock,
+            response_bytes,
+            work_bytes,
+            finite,
+            AggregateMigrationRecipe::Count,
+        )
+    }
+
+    pub fn with_finite_java_restore_profile() -> Self {
+        Self::with_recipe(
+            Arc::new(SystemActivationClock),
+            RESTORE_INPUT_RESPONSE_BYTES + RESTORE_ADOPTION_RESPONSE_BYTES,
+            17 * 1024 * 1024 + 512 * 1024,
+            true,
+            AggregateMigrationRecipe::JavaAggregate,
+        )
+    }
+
+    fn with_recipe(
+        clock: Arc<dyn ActivationClock>,
+        response_bytes: u64,
+        work_bytes: u64,
+        finite: bool,
+        recipe: AggregateMigrationRecipe,
+    ) -> Self {
         let (root, mut config) = super::super::fixture();
         if finite {
             config.engine.cache_bytes = 8 * 1024 * 1024;
@@ -319,14 +345,8 @@ impl Setup {
                     StoreIoKind::RecoveryWrite,
                     256 * 1024,
                     Arc::clone(&original) as Arc<dyn std::any::Any + Send + Sync>,
-                    |engine| {
-                        let inputs = logical::populate(
-                            engine,
-                            AggregateMigrationRecipe::Count,
-                            true,
-                            32,
-                            None,
-                        );
+                    move |engine| {
+                        let inputs = logical::populate(engine, recipe, true, 32, None);
                         let view = engine.snapshot()?;
                         let mut rows = Vec::new();
                         visit_view(&view, Instant::now() + WATCHDOG, |_, key, bytes| {
@@ -371,14 +391,32 @@ impl Setup {
     }
 
     pub fn checkpoint(&self) -> (ProtectedSnapshot, Arc<Owners>, AggregateMigrationRequest) {
+        self.checkpoint_named("original-migration.v2")
+    }
+
+    pub fn checkpoint_named(
+        &self,
+        name: &str,
+    ) -> (ProtectedSnapshot, Arc<Owners>, AggregateMigrationRequest) {
+        self.checkpoint_profile(name, ProtectedSnapshotProfile::General)
+    }
+
+    pub fn checkpoint_profile(
+        &self,
+        name: &str,
+        profile: ProtectedSnapshotProfile,
+    ) -> (ProtectedSnapshot, Arc<Owners>, AggregateMigrationRequest) {
         let owners = Arc::new(Owners::new(Arc::clone(&self.seed)));
         let linked = Arc::clone(&owners);
         let artifact = Arc::clone(&owners);
         let row = Arc::clone(&owners);
         let job = self
             .owner
-            .create_reviewed_snapshot(
-                config(self.target.path()),
+            .create_reviewed_snapshot_profile(
+                ProtectedSnapshotConfig {
+                    root: self.target.path().to_owned(),
+                    file_name: name.into(),
+                },
                 self.seed.inputs.metadata.clone(),
                 Arc::clone(self.original()),
                 move |view| {
@@ -392,6 +430,8 @@ impl Setup {
                 move |required| artifact.artifact(required),
                 move |key, bytes| row.row(key, bytes),
                 Arc::new(|| Ok(())),
+                crate::recovery::snapshot::SNAPSHOT_FILE_BYTES,
+                profile,
             )
             .unwrap();
         let (snapshot, receipt) = wait(job).unwrap();
@@ -400,6 +440,44 @@ impl Setup {
         request.checkpoint_digest = receipt.snapshot_digest;
         request.checkpoint_manifest_digest = receipt.manifest_digest;
         (snapshot, owners, request)
+    }
+
+    pub fn snapshot_config(&self, name: &str) -> ProtectedSnapshotConfig {
+        ProtectedSnapshotConfig {
+            root: self.target.path().to_owned(),
+            file_name: name.into(),
+        }
+    }
+
+    pub fn refresh_current_seed(&mut self) {
+        let mut inputs = self.seed.inputs.clone();
+        inputs
+            .metadata
+            .tenant
+            .clone_from(&inputs.request.scope.tenant.0);
+        inputs.metadata.operation_id = "migrated-backup".into();
+        self.seed = Arc::new(
+            wait(
+                self.owner
+                    .with_store(StoreIoKind::RecoveryRead, 256 * 1024, move |engine| {
+                        let view = engine.snapshot()?;
+                        let mut rows = Vec::new();
+                        visit_view(&view, Instant::now() + WATCHDOG, |_, key, bytes| {
+                            logical::row(&view, key, bytes)?;
+                            rows.push((key.clone(), bytes.to_vec()));
+                            Ok(())
+                        })?;
+                        Ok(Seed { inputs, rows })
+                    })
+                    .unwrap(),
+            )
+            .unwrap()
+            .unwrap(),
+        );
+    }
+
+    pub fn schema(&self) -> crate::namespace::compatibility::ReviewedSchema {
+        self.seed.inputs.schema.clone()
     }
 
     pub fn open_checkpoint(&self) -> Result<ProtectedSnapshot, SnapshotError> {

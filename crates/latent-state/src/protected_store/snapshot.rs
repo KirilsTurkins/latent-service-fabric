@@ -156,6 +156,38 @@ impl ProtectedStoreOwner {
         Ok(ProtectedSnapshotJob { inner })
     }
 
+    /// Same protected reader/custody with an explicitly narrower decoder and
+    /// authenticated operator file ceiling. No allowance or clock is renewed.
+    pub fn open_snapshot_profile(
+        &self,
+        config: ProtectedSnapshotConfig,
+        original: Arc<NativeReservation>,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+        maximum_file_bytes: u64,
+        profile: ProtectedSnapshotProfile,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        let bytes = config.validate()?;
+        let custody = self.reserve_custody(bytes, profile.work_bytes(), Arc::clone(&original))?;
+        let inner = self.initialize_custody_with(custody, profile.work_bytes(), move |store| {
+            let file = match SnapshotFile::open_existing_profile(
+                store,
+                config,
+                original,
+                current,
+                maximum_file_bytes,
+                profile,
+            ) {
+                Ok(file) => file,
+                Err(SnapshotError::Source(error)) => return Err(error),
+                Err(error) => return Ok((None, Err(error))),
+            };
+            let receipt = file.inspect(validate_row).map_err(SnapshotError::Review);
+            Ok((Some(file), receipt))
+        })?;
+        Ok(ProtectedSnapshotJob { inner })
+    }
+
     /// Export one physically quiesced source to an exclusively created private
     /// operator file. All ten row families and exact immutable associations are
     /// captured from the same native snapshot; the complete bounded stream is

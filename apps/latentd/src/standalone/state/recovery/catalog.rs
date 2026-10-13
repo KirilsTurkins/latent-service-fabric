@@ -88,6 +88,7 @@ impl Catalog {
             latent_state::recovery::migration::retained_format(),
             latent_state::recovery::resume::retained_format(),
             latent_state::recovery::namespace_resume::retained_format(),
+            latent_state::recovery::restored_resume::retained_format(),
         ]);
         for effect in &catalog.effects {
             for (kind, identity) in [

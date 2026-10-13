@@ -15,7 +15,6 @@ use crate::{
             MigrationResumeAction, MigrationResumePlan, MigrationResumeReceipt,
             MigrationResumeRequest, RECEIPT_BYTES,
         },
-        snapshot::inspect_snapshot,
     },
     store_io::{StoreIoError, StoreIoKind},
 };
@@ -120,10 +119,11 @@ impl ProtectedStoreOwner {
         owners: Arc<dyn AggregateMigrationOwners>,
     ) -> Result<ProtectedMigrationResumeJob, ProtectedStoreError> {
         request.validate().map_err(ProtectedStoreError::Store)?;
+        let work = snapshot.custody.maximum_job_bytes();
         let inner = self.with_custody(
             snapshot.custody,
             StoreIoKind::RecoveryWrite,
-            8 * 1024 * 1024,
+            work,
             move |file, store| {
                 let Some(file) = file else {
                     return Ok(Err(MigrationError::Review(StoreError::Invalid)));
@@ -185,10 +185,9 @@ fn apply(
     progress
         .require_input(&request.migration)
         .map_err(MigrationError::Review)?;
-    let checkpoint = inspect_snapshot(&mut file.cursor(), file.deadline(), |key, bytes| {
-        owners.row(key, bytes)
-    })
-    .map_err(MigrationError::Review)?;
+    let checkpoint = file
+        .inspect(|key, bytes| owners.row(key, bytes))
+        .map_err(MigrationError::Review)?;
     if checkpoint.snapshot_digest != progress.checkpoint_digest()
         || checkpoint.manifest_digest != progress.checkpoint_manifest_digest()
     {

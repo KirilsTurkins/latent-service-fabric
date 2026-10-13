@@ -1,7 +1,7 @@
 use super::table::Reserved;
 use super::{
-    AsContextMut, Error, HostState, Instant, Kind, Resource, Value, checkpoint, convert_error,
-    synchronize, trap, wit,
+    checkpoint, convert_error, synchronize, trap, wit, AsContextMut, Error, HostState, Instant,
+    Kind, Resource, Value,
 };
 
 pub(super) fn read(

@@ -73,6 +73,15 @@ pub(super) enum Action {
         checkpoint_digest: String,
         checkpoint_manifest_digest: String,
     },
+    ResumeRestoredMigration {
+        operation_id: String,
+        migration_operation_id: String,
+        file: File,
+        expected_view: Vec<u8>,
+        snapshot_digest: String,
+        manifest_digest: String,
+        window_acknowledgement: String,
+    },
     Review {},
     InspectCloseEffects {
         operation_id: String,
@@ -140,7 +149,9 @@ impl Action {
             Self::Review {} | Self::InspectCloseEffects { .. } | Self::CloseEffects { .. } => {
                 &["namespace-review-recovery"]
             }
-            Self::Resume { .. } | Self::ResumeMigration { .. } => &["namespace-resume"],
+            Self::Resume { .. }
+            | Self::ResumeMigration { .. }
+            | Self::ResumeRestoredMigration { .. } => &["namespace-resume"],
         }
     }
     #[cfg(test)]
@@ -159,6 +170,24 @@ impl Action {
             latent_core::transaction_contract::identity(value).map_err(|_| super::denied())
         };
         match self {
+            Self::ResumeRestoredMigration {
+                operation_id,
+                migration_operation_id,
+                file: input,
+                expected_view,
+                snapshot_digest,
+                manifest_digest,
+                window_acknowledgement,
+            } => {
+                identity(operation_id)?;
+                identity(migration_operation_id)?;
+                file(input)?;
+                view(expected_view)?;
+                super::assets::digest_bytes(snapshot_digest)?;
+                super::assets::digest_bytes(manifest_digest)?;
+                super::assets::digest_bytes(window_acknowledgement)?;
+                Ok(())
+            }
             Self::ResumeMigration {
                 operation_id,
                 migration_operation_id,

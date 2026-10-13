@@ -26,6 +26,9 @@ impl DispatchRegistry {
             return if previous.rule == policy.rule
                 && previous.policies == policy.policies
                 && previous.binding == policy.binding
+                && previous.caller_scope == policy.caller_scope
+                && previous.restriction.canonical_bytes(HTTP_CAPABILITY)?
+                    == policy.restriction.canonical_bytes(HTTP_CAPABILITY)?
             {
                 Ok(false)
             } else {
@@ -76,6 +79,7 @@ pub(super) struct DispatchPolicy {
     pub policy: Arc<PolicyStore>,
     pub publication: ReleaseUseEligibility,
     pub principal: InvocationPrincipal,
+    pub caller_scope: latent_capabilities::namespace::CallerScope,
     pub service: String,
     pub policies: Vec<String>,
     pub binding: String,

@@ -131,7 +131,12 @@ pub(in crate::standalone) fn deferred(
         service: Some(service.clone()),
         claims: std::collections::BTreeMap::default(),
     };
-    let caller = CallerScope::derive(&principal, &RecoverySelection::OriginalCaller)?;
+    let selection = if config.service_integration() {
+        RecoverySelection::ServiceIntegration
+    } else {
+        RecoverySelection::OriginalCaller
+    };
+    let caller = CallerScope::derive(&principal, &selection)?;
     Ok(Some(NativeDeferredEffectHostInspection {
         tenant: scope.tenant,
         service: service.0,

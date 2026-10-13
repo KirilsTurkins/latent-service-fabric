@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "latent.recovery970.restored-activation-evidence.v1",
+  "sourceBoundary": {
+    "committedBase": "347caea6626d875b5a6250da8c376c99d00d37ca",
+    "executedSource": "authored uncommitted Rust overlay; exact owned files below",
+    "sourceFiles": {
+      "apps/latentd/src/standalone/state/installations/http.rs": "b90f840d810ef2d1571d5f6d54c3d15ca1c40365c983dc897cb7ae72bf8a6956",
+      "apps/latentd/src/standalone/state/installations/http/dispatch.rs": "534b193d4c98b7e6140a71d4e8bb5f110527be10b104729faa3cc2c1ad07cc5d",
+      "crates/latent-state/src/recovery/restored_resume.rs": "b6b9572bc139ead22af048b1a651b2e30db652048aae18530e43cd18e818a3d9",
+      "crates/latent-state/src/recovery/restored_resume/tests.rs": "e7d77fef6a5b9232d2b86438cd537261c695d23d828e978e6dc28ea97f9b48c7",
+      "crates/latent-state/src/recovery/restored_resume/plan.rs": "bb4aec7e30861c5cdf7672c7c6ddb307d9e1c15f3a55c927709baebd70f0c123",
+      "crates/latent-state/src/recovery/restored_resume/codec.rs": "895d3986381add0b11b4e428466e682eb446edf68a0fc0a9eebda5db526b491b",
+      "crates/latent-state/src/recovery/migration/tests/fixture.rs": "8ae1208e9ae93914e0d18842ca97baa6b487a0fe43000cd0ceeb62dfaee60de3",
+      "crates/latent-state/src/protected_store/restored_resume.rs": "2a639bbcfdfbb93aa2c4f88abfd7ed8ae340139d32084be020b6538aec4da5e1",
+      "crates/latent-state/src/protected_store/tests/migration/restored_resume.rs": "15245ba87da4d933b9a1f3c3f2cbb8c6c4d95e715207204106ac52a891e714a5",
+      "crates/latent-state/src/protected_store/tests/migration/fixture.rs": "36a3b50d18378b559ae86299963ef93dc55103763cb16bd92ab34fd698e1aab1",
+      "apps/latentd/src/config/state/effects.rs": "5df02a2f4f1b1b99606e744281c4d4008a3cc7e8635f30acf96bd48f222bf338",
+      "apps/latentd/src/config/state/tests.rs": "3b337c27fbb053b1fca23ae0abb662c8154c36a2f01e98591aeb1d13f392664e"
+    }
+  },
+  "features": {
+    "state": [],
+    "node": [
+      "development-outbound-streams",
+      "development-test-node"
+    ]
+  },
+  "profile": {
+    "opt_level": "0",
+    "debuginfo": 0,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "test": true
+  },
+  "controls": {
+    "focused": {
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0,
+      "binarySha256": "2ae798491afd92be71553a1f8be47e2ce4573d60ec7d69554ee3d0037ba06fa9",
+      "logSha256": "2a1856f8c3fcdded3fd937f8ad08fc2ec226d7e307eda110fa4c4b5970d4cba5"
+    },
+    "stateLibrary": {
+      "passed": 374,
+      "failed": 0,
+      "ignored": 0,
+      "binarySha256": "2ae798491afd92be71553a1f8be47e2ce4573d60ec7d69554ee3d0037ba06fa9",
+      "logSha256": "be910c3e6ab3ba0b1b13a2cc80ce8b36251caac574bbd078b971c0002061d36c"
+    },
+    "nodeLibrary": {
+      "passed": 327,
+      "failed": 0,
+      "ignored": 30,
+      "binarySha256": "a1a5ca2c0383b60fe2f7b125e15ff5efd9d1d9b56042bb58465ccaa13973466a",
+      "logSha256": "fde22e8c5ba22a6716d0ec15b67364e8b6895364c6d3ac1af037dd4def01248e"
+    },
+    "clippy": [
+      {
+        "command": [
+          "cargo",
+          "+1.97.1",
+          "clippy",
+          "-p",
+          "latent-state",
+          "--all-targets",
+          "--all-features",
+          "--no-deps",
+          "--locked",
+          "--offline"
+        ],
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "cargo",
+          "+1.97.1",
+          "clippy",
+          "-p",
+          "latentd",
+          "--all-targets",
+          "--all-features",
+          "--no-deps",
+          "--locked",
+          "--offline",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exitCode": 0
+      }
+    ],
+    "retainedFailedAttempts": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "physicalSchedule": [
+    "actual JavaAggregate migration stage and completion",
+    "protected scoped migrated snapshot export",
+    "same protected archive reread and exact loss-window review",
+    "private Fresh rooted import with separate checkpoint",
+    "actual source/file retirement before physical destination adoption",
+    "explicit ready restore-guard review",
+    "revoked and ignored original-native fences refuse without mutation",
+    "new RMA1 activation advances generation once",
+    "later quiesce followed by exact immutable replay without reactivation",
+    "response retains original reservation through file retirement then releases to zero",
+    "byte-identical replacement of original archive refuses before mutation"
+  ],
+  "fences": [
+    "current authenticated purpose/publication/physical owner remain required by installed gateway",
+    "exact guard restore-operation/snapshot/window/review digest",
+    "exact manifest and protected two-pass archive progress key/digest",
+    "completed original migration actor/operation/recipe/package/schema",
+    "current paused scope/history/expected NV2 view",
+    "single original writer/native fence and exact CAS rows",
+    "same installed tenant accounting; immutable distinct receipt prefix"
+  ],
+  "ceilings": {
+    "snapshotProfile": "SingleNamespace",
+    "snapshotWorkerBytes": 7340032,
+    "maximumSnapshotRowBytes": 2097152,
+    "retainedRecoveryBytes": 16777216,
+    "maximumRecoveryJobBytes": 8396800,
+    "cacheBytes": 8388608,
+    "maximumNativeRecoveryReservationBytes": 33554432,
+    "receiptBytes": 8192
+  },
+  "qualificationBoundary": "Real physical controlled-owner and affected library evidence. This does not qualify the authenticated signed Java campaign, packaged operator installation, independent review, or production rollout.",
+  "signedCampaignQualified": false,
+  "productionApproval": false,
+  "issueClosure": false
+}

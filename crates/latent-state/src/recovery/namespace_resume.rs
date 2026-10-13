@@ -157,6 +157,39 @@ pub struct NamespaceResumeReceipt {
 }
 
 impl NamespaceResumeReceipt {
+    pub(crate) fn require_attribution(
+        &self,
+        key_digest: [u8; 32],
+        fingerprint: [u8; 32],
+    ) -> Result<(), StoreError> {
+        self.validate()?;
+        if self.key_digest != key_digest || self.fingerprint != fingerprint {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(())
+    }
+    pub(crate) fn activated(
+        mut namespace: NamespaceRecord,
+        mut history: NamespaceHistory,
+        key_digest: [u8; 32],
+        fingerprint: [u8; 32],
+    ) -> Result<Self, StoreError> {
+        namespace.version.generation = namespace
+            .version
+            .generation
+            .checked_add(1)
+            .ok_or(StoreError::Capacity)?;
+        namespace.status = NamespaceStatus::Active;
+        history.status = HistoryStatus::Ready;
+        let receipt = Self {
+            key_digest,
+            fingerprint,
+            namespace,
+            history,
+        };
+        receipt.validate()?;
+        Ok(receipt)
+    }
     #[must_use]
     pub fn namespace(&self) -> &NamespaceRecord {
         &self.namespace

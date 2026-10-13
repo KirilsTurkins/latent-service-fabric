@@ -154,6 +154,47 @@ products are fixture evidence, separate from production operator qualification.
 
 ## Qualification boundaries
 
+`deferredHttp.dispatchAuthority` can explicitly select
+`{"formatVersion":1,"mode":"signed-service-integration"}`. This native effect
+owner requires the exact signed nonoptional INTENT import and deferred
+requirements, and refuses an immediate HTTP import or guest deployment grant.
+Every dispatch still requires current publication, provider, configuration,
+credential reference and HTTP policy/binding fences for the derived service
+principal. The selected scope and grant restriction remain sealed in the
+dispatch registry. An absent declaration keeps the original guest-grant route;
+the new selection grants no guest HTTP capability.
+
+The separate `resume-restored-migration` action accepts `operationId`,
+`migrationOperationId`, `file` (`root`, `name`), the current 67-byte `expectedView`,
+`snapshotDigest`, `manifestDigest` and `windowAcknowledgement`. It rereads the
+same protected single-namespace archive and exact completed Java migration.
+The current ready restore guard, original restore-operation/window/review,
+current package/schema/purpose and original writer/native fence remain required.
+The first activation advances namespace generation once and makes the existing
+namespace/history active/ready; incarnation and schema/recovery epochs stay
+unchanged. Generic resume and the original migration resume retain their
+completed-migration and restored-history refusals.
+
+The result contains `action`, a byte-array `receipt`, `view`, `replay`,
+`snapshotDigest`, `manifestDigest`, `windowAcknowledgement`, `reviewDigest` and
+`resourcePhysicallyRetired`. The new receipt starts with `RMA\x01`, is bounded
+by 8192 bytes, and has a distinct retained prefix. Exact replay returns the
+original receipt/view without activating later state. Its attribution includes
+the exact restore operation and protected archive progress digest. Migration
+and original migration resume now consume the same scoped decoder/custody work,
+retaining the existing broad-profile refusal and every qualification ceiling.
+
+The [restored activation packet](evidence/recovery970-restored-activation-2026-10-13.json)
+records five passing focused controls: real finite Java migration, protected
+snapshot, Fresh import and physical adoption; revoked/ignored native fences;
+immutable replay after later quiesce; response capacity retained through file
+retirement and released to zero; exact guard/source/CAS/codec refusals; and
+byte-identical original-file substitution refusal. All 374 state library cases
+and 327 active node cases passed, with all 30 existing node ignores preserved.
+The strict node Clippy policy passed. These are controlled-owner physical and
+library controls; the complete authenticated signed Java campaign remains
+pending.
+
 Real signed compact installation/retirement and exact operation-selection
 profile controls passed. The real finite fresh restore passed, including the
 preserved broad-profile refusal. Eight actual custody controls, five actual

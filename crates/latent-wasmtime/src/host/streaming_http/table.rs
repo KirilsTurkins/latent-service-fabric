@@ -1,13 +1,13 @@
 //! Fixed Store-local resources; no number can create or extend authority.
 use latent_capabilities::broker::{
-    CapabilitySession, SessionResourceTableReservation,
     http::HttpError,
     io::IoOutputChunk,
     streaming_http::{HttpBody, HttpUpload, StreamingHttpError as Error},
+    CapabilitySession, SessionResourceTableReservation,
 };
 use std::sync::{
-    Arc,
     atomic::{AtomicU32, AtomicU64, Ordering},
+    Arc,
 };
 const CAPACITY: usize = 64;
 static NEXT_REP: AtomicU32 = AtomicU32::new(1);
@@ -304,12 +304,10 @@ mod tests {
         drop(stale);
         assert!(table.entry(replacement.rep(), Kind::Chunk).is_ok());
         drop(replacement);
-        assert!(
-            table
-                .entries
-                .iter()
-                .all(|entry| entry.state.load(Ordering::Acquire) == 0)
-        );
+        assert!(table
+            .entries
+            .iter()
+            .all(|entry| entry.state.load(Ordering::Acquire) == 0));
     }
 
     struct DropWitness {
@@ -386,12 +384,10 @@ mod tests {
             );
         }
         assert_eq!(table.entries.capacity(), CAPACITY);
-        assert!(
-            table
-                .entries
-                .iter()
-                .all(|entry| entry.state.load(Ordering::Acquire) == 0)
-        );
+        assert!(table
+            .entries
+            .iter()
+            .all(|entry| entry.state.load(Ordering::Acquire) == 0));
     }
 
     #[tokio::test]
