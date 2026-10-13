@@ -75,6 +75,27 @@ def restored_resume_request(view, file, snapshot, acknowledgement, migration_ope
     return request
 
 
+def restored_migration_result(result, request, review_digest):
+    fields = {'action', 'receipt', 'view', 'replay', 'snapshotDigest', 'manifestDigest',
+              'windowAcknowledgement', 'reviewDigest', 'resourcePhysicallyRetired'}
+    require(isinstance(result, dict) and set(result) == fields
+            and result['action'] == request['action'] == 'resume-restored-migration'
+            and result['replay'] is False and result['resourcePhysicallyRetired'] is True,
+            'closed-first-restored-migration-activation-result')
+    receipt = recovery.byte_array(result['receipt'], 8192)
+    require(len(receipt) > 4 and receipt.startswith(b'RMA\x01'), 'new-attributed-restored-migration-receipt')
+    for field in ('snapshotDigest', 'manifestDigest', 'windowAcknowledgement'):
+        require(recovery.original_digest(result[field]) == request[field], 'original-restored-activation-identities')
+    require(recovery.original_digest(result['reviewDigest']) == recovery.original_digest(review_digest),
+            'current-accepted-restored-review-identity')
+    before = bytes(recovery.original_view(request['expectedView']))
+    after = bytes(recovery.original_view(result['view']))
+    require(after[:43] == before[:43] and after[51:] == before[51:]
+            and int.from_bytes(after[43:51], 'little') == int.from_bytes(before[43:51], 'little') + 1,
+            'restored-activation-advances-only-namespace-generation')
+    return result
+
+
 class OfflineCampaign:
     def __init__(self, campaign, helper, directory):
         self.campaign, self.directory = campaign, directory
@@ -165,6 +186,8 @@ class OfflineCampaign:
                                   checkpointDigest=migration["checkpointDigest"],
                                   checkpointManifestDigest=migration["checkpointManifestDigest"])
         resumed = self.action(resume_request)
+        if resume_request['action'] == 'resume-restored-migration':
+            restored_migration_result(resumed, resume_request, reviewed['reviewDigest'])
         if activation is not None:
             activation.start(self.campaign, self.writer, 'writer-runtime')
         else:
