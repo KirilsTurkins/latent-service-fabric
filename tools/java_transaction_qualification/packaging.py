@@ -234,18 +234,31 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
 
 
 def current_signing_mode(items):
-    packet = decode(read_file(Path(__file__).resolve().parents[2] /
-        'docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json'))['captures']
-    expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
-                if name != 'forbidden-http'}
     actual = {item.name: digest(read_file(item.directory / 'report.json', 262144)) for item in items}
-    if actual == expected:
-        require(all(item.compiler_source == packet['sourceCommit'] for item in items),
-                'rebuilt-current-captured-source')
-        return 'fixture-sign-rebuilt-current-java-inputs'
-    require(not any(actual.get(name) == report for name, report in expected.items()),
-            'mixed-historical-and-rebuilt-capture-reports')
-    return 'fixture-sign-current-java-inputs'
+    require(len(items) == 5 and len(actual) == len(items), 'five-distinct-current-capture-reports')
+    modes = (
+        ('docs/development/phase4-handoffs/2026-10-12/pr970-current-post-evidence.json',
+         'fixture-sign-current-java-inputs',
+         'qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161'),
+        ('docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json',
+         'fixture-sign-rebuilt-current-java-inputs',
+         'qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161'),
+        ('docs/testing/evidence/java-current-fresh-http-capture-2026-10-13.json',
+         'fixture-sign-fresh-http-current-java-inputs',
+         'qualified-http-v1:74c19c60dccdecdca0b94eb8c88776516aa77c261b21dc978dab9793f9600cc5'),
+    )
+    matched = []
+    for path, mode, profile in modes:
+        packet = decode(read_file(Path(__file__).resolve().parents[2] / path))['captures']
+        require(packet['nativeIdempotencyProfile'] == profile, 'closed-current-custody-profile')
+        expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
+                    if name != 'forbidden-http'}
+        if actual == expected:
+            require(all(item.compiler_source == packet['sourceCommit'] for item in items),
+                    'closed-current-captured-source')
+            matched.append(mode)
+    require(len(matched) == 1, 'one-complete-closed-current-capture-report-set')
+    return matched[0]
 
 
 def _current_forbidden_preparation(item, output, contracts, signer, command, record):

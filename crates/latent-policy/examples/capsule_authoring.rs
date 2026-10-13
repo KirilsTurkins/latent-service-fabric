@@ -51,6 +51,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &args[3..],
         );
     }
+    if args.len() == 8 && args[0] == "fixture-sign-fresh-http-current-java-inputs" {
+        return authoring::sign_fresh_http_current_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("fresh HTTP current fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
     if args.len() == 4 && args[0] == "fixture-sign-early-http-input" {
         return authoring::sign_early_http(
             std::path::Path::new(&args[1]),

@@ -10,6 +10,8 @@
     "CurrentJavaPackaging.test_current_package_selects_explicit_compiler_source_without_historical_fallback",
     "CurrentJavaPackaging.test_current_selection_requires_both_original_and_forbidden_before_any_signing",
     "CurrentJavaPackaging.test_duplicate_variant_or_mixed_source_refuses_without_invoking_signer",
+    "CurrentJavaPackaging.test_fresh_http_custody_profile_mixed_reports_and_foreign_source_refuse",
+    "CurrentJavaPackaging.test_fresh_http_signing_requires_one_complete_closed_capture_report_set",
     "CurrentJavaPackaging.test_package_retains_exact_current_marker_and_negative_source_as_signed_assets",
     "CurrentJavaPackaging.test_recompiled_signing_requires_complete_exact_report_set",
     "CurrentJavaPackaging.test_separate_early_capture_keeps_original_six_selection_closed_and_rejects_claims_or_late_call"
@@ -95,7 +97,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
       ],
       "skipSites": []
     },
@@ -107,7 +109,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
       ],
       "skipSites": []
     },
@@ -119,7 +121,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
       ],
       "skipSites": []
     },
@@ -131,7 +133,31 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_fresh_http_custody_profile_mixed_reports_and_foreign_source_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_fresh_http_signing_requires_one_complete_closed_capture_report_set": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
       ],
       "skipSites": []
     },
@@ -143,7 +169,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
       ],
       "skipSites": []
     },
@@ -155,7 +181,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
       ],
       "skipSites": []
     },
@@ -167,13 +193,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_current_inputs.py",
-  "reviewReason": "Preserve original captures and require a complete exact recompiled report set for separate fixture signing",
+  "reviewReason": "Retain all thirteen current Java controls and review the non-skipping class fixture table for two added closed fresh HTTP custody controls",
   "schemaVersion": "latent.ci.contracts.v1"
 }

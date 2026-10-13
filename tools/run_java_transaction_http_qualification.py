@@ -50,7 +50,8 @@ COLLECTORS += ("tools/java_transaction_qualification/refusal_observation.py",
                "tools/java_transaction_qualification/restore_authority.py",
                "tools/java_transaction_qualification/current_recipient.py",
                "tools/java_transaction_qualification/current_activation.py")
-COLLECTORS += ('docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json',)
+COLLECTORS += ('docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json',
+               'docs/testing/evidence/java-current-fresh-http-capture-2026-10-13.json')
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",

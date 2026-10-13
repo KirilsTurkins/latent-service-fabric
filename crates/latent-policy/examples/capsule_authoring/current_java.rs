@@ -12,6 +12,8 @@ const WORLD: &str = "examples:transactional-aggregate/service@1.0.0";
 const SERVICE: &str = "examples/transaction-java-aggregate";
 const PROFILE: &str =
     "qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161";
+const FRESH_HTTP_PROFILE: &str =
+    "qualified-http-v1:74c19c60dccdecdca0b94eb8c88776516aa77c261b21dc978dab9793f9600cc5";
 const NAMES: [&str; 5] = [
     "aggregate",
     "put-once-legacy-v1",
@@ -32,6 +34,9 @@ const PINS: &[u8] = include_bytes!(
 );
 const REBUILT_PINS: &[u8] = include_bytes!(
     "../../../../docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json"
+);
+const FRESH_HTTP_PINS: &[u8] = include_bytes!(
+    "../../../../docs/testing/evidence/java-current-fresh-http-capture-2026-10-13.json"
 );
 
 pub(super) fn read(root: &Path, name: &str, maximum: u64) -> Result<Vec<u8>> {
@@ -82,7 +87,12 @@ pub(super) fn model_material(model: &Value, name: &str, raw: &[u8]) -> Result<()
     )
 }
 
-fn load(root: &Path, captures: &Value, selected_names: &[&str]) -> Result<(String, inputs::Build)> {
+fn load(
+    root: &Path,
+    captures: &Value,
+    selected_names: &[&str],
+    expected_profile: &str,
+) -> Result<(String, inputs::Build)> {
     require(
         root.is_absolute(),
         "current Java fixture inputs must be absolute",
@@ -169,7 +179,7 @@ fn load(root: &Path, captures: &Value, selected_names: &[&str]) -> Result<(Strin
         let marker: Value = serde_json::from_slice(&marker)?;
         require(
             marker["schemaVersion"] == "latent.java.current-http-source-input.v1"
-                && marker["idempotencyProfile"] == PROFILE
+                && marker["idempotencyProfile"] == expected_profile
                 && report["nativeEffectOperation"] == "http"
                 && report["nativeEffectProfile"] == "current-v2-http",
             "current Java fixture HTTP marker mismatch",
@@ -295,7 +305,7 @@ pub(crate) fn sign_current_java(
     compiler_source: &str,
     paths: &[OsString],
 ) -> Result<()> {
-    sign_selected(output, compiler_source, paths, &NAMES, PINS)
+    sign_selected(output, compiler_source, paths, &NAMES, PINS, PROFILE)
 }
 
 /// Separate signed negative material. This does not approve an immediate call,
@@ -305,7 +315,14 @@ pub(crate) fn sign_current_java_with_negative(
     compiler_source: &str,
     paths: &[OsString],
 ) -> Result<()> {
-    sign_selected(output, compiler_source, paths, &WITH_NEGATIVE, PINS)
+    sign_selected(
+        output,
+        compiler_source,
+        paths,
+        &WITH_NEGATIVE,
+        PINS,
+        PROFILE,
+    )
 }
 
 pub(crate) fn sign_rebuilt_current_java(
@@ -313,7 +330,29 @@ pub(crate) fn sign_rebuilt_current_java(
     compiler_source: &str,
     paths: &[OsString],
 ) -> Result<()> {
-    sign_selected(output, compiler_source, paths, &NAMES, REBUILT_PINS)
+    sign_selected(
+        output,
+        compiler_source,
+        paths,
+        &NAMES,
+        REBUILT_PINS,
+        PROFILE,
+    )
+}
+
+pub(crate) fn sign_fresh_http_current_java(
+    output: &Path,
+    compiler_source: &str,
+    paths: &[OsString],
+) -> Result<()> {
+    sign_selected(
+        output,
+        compiler_source,
+        paths,
+        &NAMES,
+        FRESH_HTTP_PINS,
+        FRESH_HTTP_PROFILE,
+    )
 }
 
 pub(super) fn absent(root: &Path, name: &str) -> Result<()> {
@@ -329,6 +368,7 @@ fn sign_selected(
     paths: &[OsString],
     selected_names: &[&str],
     selected_pins: &[u8],
+    expected_profile: &str,
 ) -> Result<()> {
     require(
         compiler_source == SOURCE && paths.len() == selected_names.len(),
@@ -345,13 +385,14 @@ fn sign_selected(
     let packet: Value = serde_json::from_slice(selected_pins)?;
     let captures = &packet["captures"];
     require(
-        captures["sourceCommit"] == SOURCE && captures["nativeIdempotencyProfile"] == PROFILE,
+        captures["sourceCommit"] == SOURCE
+            && captures["nativeIdempotencyProfile"] == expected_profile,
         "committed current Java fixture custody pins changed",
     )?;
     let mut builds = Vec::with_capacity(selected_names.len());
     let mut names = BTreeSet::new();
     for path in paths {
-        let (name, build) = load(Path::new(path), captures, selected_names)?;
+        let (name, build) = load(Path::new(path), captures, selected_names, expected_profile)?;
         require(
             names.insert(name),
             "current Java fixture input is duplicated",
@@ -374,6 +415,51 @@ fn sign_selected(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fresh_http_capture_keeps_its_constructor_profile_and_material_custody_separate() {
+        let original: Value = serde_json::from_slice(PINS).unwrap();
+        let rebuilt: Value = serde_json::from_slice(REBUILT_PINS).unwrap();
+        let fresh: Value = serde_json::from_slice(FRESH_HTTP_PINS).unwrap();
+        for old in [original, rebuilt] {
+            assert_eq!(old["captures"]["nativeIdempotencyProfile"], PROFILE);
+            for name in WITH_NEGATIVE {
+                assert_ne!(
+                    old["captures"]["variants"][name]["materials"]["report"],
+                    fresh["captures"]["variants"][name]["materials"]["report"]
+                );
+            }
+        }
+        assert_eq!(fresh["captures"]["sourceCommit"], SOURCE);
+        assert_eq!(
+            fresh["captures"]["nativeIdempotencyProfile"],
+            FRESH_HTTP_PROFILE
+        );
+        assert_eq!(fresh["constructor"]["profile"], FRESH_HTTP_PROFILE);
+        assert_eq!(
+            fresh["constructor"]["sourceCommit"],
+            "d0a1c923b6b37c754ffdc574b2275a3edc73e3af"
+        );
+        assert_eq!(fresh["captures"]["variants"].as_object().unwrap().len(), 6);
+        assert_eq!(fresh["signingQualified"], false);
+        assert_eq!(fresh["executionQualified"], false);
+        assert_eq!(fresh["packagedDistributionQualified"], false);
+        assert!(fresh.get("recipient").is_none());
+        assert!(fresh.get("receiptIdentities").is_none());
+    }
+
+    #[test]
+    fn fresh_http_fixture_rejects_foreign_profile_source_and_partial_set_before_output() {
+        let directory = tempfile::tempdir().unwrap();
+        let output = directory.path().join("not-created");
+        assert!(sign_fresh_http_current_java(&output, "unreviewed", &[]).is_err());
+        assert!(sign_fresh_http_current_java(&output, SOURCE, &[]).is_err());
+        let paths = vec![OsString::from(directory.path()); NAMES.len()];
+        for (pins, profile) in [(PINS, FRESH_HTTP_PROFILE), (FRESH_HTTP_PINS, PROFILE)] {
+            assert!(sign_selected(&output, SOURCE, &paths, &NAMES, pins, profile).is_err());
+        }
+        assert!(!output.exists());
+    }
 
     #[test]
     fn recompiled_set_preserves_original_source_component_and_authority_inputs() {

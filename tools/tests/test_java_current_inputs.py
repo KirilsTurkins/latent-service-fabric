@@ -87,18 +87,30 @@ class CurrentJavaInputs(unittest.TestCase):
 
 
 class CurrentJavaPackaging(unittest.TestCase):
+    @staticmethod
+    def signing_packets():
+        names = ('aggregate', 'put-once-legacy-v1', 'put-once-compatible-v2', 'put-once-writer-v2', 'put-once-diagnostics')
+        packets = {}
+        for filename, prefix, profile in (
+                ('pr970-current-post-evidence.json', 'historical:', '96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161'),
+                ('java-current-rebuilt-capture-2026-10-13.json', '', '96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161'),
+                ('java-current-fresh-http-capture-2026-10-13.json', 'fresh:', '74c19c60dccdecdca0b94eb8c88776516aa77c261b21dc978dab9793f9600cc5')):
+            packets[filename] = {'captures': {'sourceCommit': 'a' * 40,
+                'nativeIdempotencyProfile': 'qualified-http-v1:' + profile,
+                'variants': {name: {'materials': {'report': {'sha256': digest((prefix + name).encode())}}}
+                             for name in names}}}
+        return names, packets
+
     def test_recompiled_signing_requires_complete_exact_report_set(self):
         from pathlib import Path
         from types import SimpleNamespace
         from unittest.mock import patch
         from tools.java_transaction_qualification import packaging
-        names = ('aggregate', 'put-once-legacy-v1', 'put-once-compatible-v2', 'put-once-writer-v2', 'put-once-diagnostics')
-        packet = {'captures': {'sourceCommit': 'a' * 40, 'variants': {
-            name: {'materials': {'report': {'sha256': digest(name.encode())}}} for name in names}}}
+        names, packets = self.signing_packets()
         items = [SimpleNamespace(name=name, directory=Path('/capture') / name,
                                  compiler_source='a' * 40) for name in names]
         def material(path, *_args):
-            return encoded(packet) if path.name.endswith('.json') and path.name != 'report.json' else path.parent.name.encode()
+            return encoded(packets[path.name]) if path.name != 'report.json' else path.parent.name.encode()
         with patch.object(packaging, 'read_file', side_effect=material):
             self.assertEqual(packaging.current_signing_mode(items), 'fixture-sign-rebuilt-current-java-inputs')
             with self.assertRaises(ValueError):
@@ -108,9 +120,56 @@ class CurrentJavaPackaging(unittest.TestCase):
                 packaging.current_signing_mode(items)
         def mixed(path, *_args):
             if path.name != 'report.json':
-                return encoded(packet)
+                return encoded(packets[path.name])
             return b'historical' if path.parent.name == 'aggregate' else path.parent.name.encode()
         with patch.object(packaging, 'read_file', side_effect=mixed):
+            with self.assertRaises(ValueError):
+                packaging.current_signing_mode(items)
+
+    def test_fresh_http_signing_requires_one_complete_closed_capture_report_set(self):
+        from pathlib import Path
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import packaging
+        names, packets = self.signing_packets()
+        items = [SimpleNamespace(name=name, directory=Path('/capture') / name,
+                                 compiler_source='a' * 40) for name in names]
+        for prefix, mode in (('historical:', 'fixture-sign-current-java-inputs'),
+                             ('', 'fixture-sign-rebuilt-current-java-inputs'),
+                             ('fresh:', 'fixture-sign-fresh-http-current-java-inputs')):
+            def material(path, *_args):
+                return encoded(packets[path.name]) if path.name != 'report.json' else (prefix + path.parent.name).encode()
+            with self.subTest(mode=mode), patch.object(packaging, 'read_file', side_effect=material):
+                self.assertEqual(packaging.current_signing_mode(items), mode)
+                for changed in (items[:-1], items + [items[0]], items[:-1] + [items[0]]):
+                    with self.assertRaises(ValueError):
+                        packaging.current_signing_mode(changed)
+
+    def test_fresh_http_custody_profile_mixed_reports_and_foreign_source_refuse(self):
+        from pathlib import Path
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import packaging
+        names, packets = self.signing_packets()
+        items = [SimpleNamespace(name=name, directory=Path('/capture') / name,
+                                 compiler_source='a' * 40) for name in names]
+        for other in ('historical:', '', 'unreviewed:'):
+            def mixed(path, *_args):
+                if path.name != 'report.json':
+                    return encoded(packets[path.name])
+                return ((other if path.parent.name == 'aggregate' else 'fresh:') + path.parent.name).encode()
+            with self.subTest(mixed=other), patch.object(packaging, 'read_file', side_effect=mixed):
+                with self.assertRaises(ValueError):
+                    packaging.current_signing_mode(items)
+        def fresh(path, *_args):
+            return encoded(packets[path.name]) if path.name != 'report.json' else ('fresh:' + path.parent.name).encode()
+        with patch.object(packaging, 'read_file', side_effect=fresh):
+            items[0].compiler_source = 'b' * 40
+            with self.assertRaises(ValueError):
+                packaging.current_signing_mode(items)
+            items[0].compiler_source = 'a' * 40
+            packets['java-current-fresh-http-capture-2026-10-13.json']['captures']['nativeIdempotencyProfile'] = \
+                packets['java-current-rebuilt-capture-2026-10-13.json']['captures']['nativeIdempotencyProfile']
             with self.assertRaises(ValueError):
                 packaging.current_signing_mode(items)
 
