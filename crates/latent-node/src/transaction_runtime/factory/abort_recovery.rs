@@ -18,6 +18,9 @@ const WORK_BYTES: u64 = 256 * 1024;
 const RESPONSE_BYTES: u64 = 16 * 1024;
 type Publication = Option<(PreparedDisposition, Arc<StateAuthorization>)>;
 
+#[cfg(test)]
+mod tests;
+
 struct AbortWriter {
     original: Arc<StateAuthorization>,
     namespaces: Arc<NamespaceCatalog>,
@@ -32,26 +35,40 @@ struct AbortWriter {
 }
 
 impl NativeTransactionAdmission {
-    pub(super) async fn persist_conflict_abort(
+    pub(super) async fn persist_terminal_abort(
         &self,
         disposition: CommandCompletionDisposition,
         host: &Arc<StateTransactionHost>,
+        failure_code: Option<latent_core::PlatformErrorCode>,
     ) -> CommandCompletionDisposition {
         let CommandCompletionDisposition::Retired {
             command,
             proof,
-            reason: AtomicError::Conflict,
+            reason,
             retained,
             retained_native,
         } = disposition
         else {
             return disposition;
         };
+        let code = match (reason, failure_code) {
+            (AtomicError::Conflict, _) => latent_core::PlatformErrorCode::StateConflict,
+            (AtomicError::Unavailable, Some(code)) => code,
+            _ => {
+                return CommandCompletionDisposition::Retired {
+                    command,
+                    proof,
+                    reason,
+                    retained,
+                    retained_native,
+                };
+            }
+        };
         let Ok(writer) = AbortWriter::new(self, host, &command) else {
             return CommandCompletionDisposition::Retired {
                 command,
                 proof,
-                reason: AtomicError::Conflict,
+                reason,
                 retained,
                 retained_native,
             };
@@ -63,7 +80,7 @@ impl NativeTransactionAdmission {
             StoreIoKind::RecoveryWrite,
             WORK_BYTES,
             keeper,
-            move |store| active.publish(store, *proof, &identity),
+            move |store| active.publish(store, *proof, &identity, code),
         );
         let observed = match job {
             Ok(job) => job.await.ok().and_then(Result::ok),
@@ -142,6 +159,7 @@ impl AbortWriter {
         store: &EmbeddedStore,
         proof: RetiredAttempt,
         identity: &CommandRecord,
+        code: latent_core::PlatformErrorCode,
     ) -> Result<Publication, StoreError> {
         let view = store.snapshot()?;
         let namespace = NamespaceCatalog::read_in(
@@ -160,7 +178,7 @@ impl AbortWriter {
         let Ok(envelope) = CompleteEnvelope::technical_abort(
             &view,
             proof,
-            "state-conflict".into(),
+            code.wire_code().into(),
             self.time.sample(),
         ) else {
             return Ok(None);

@@ -22,6 +22,7 @@ impl NativeTransactionAdmission {
             _ => outcome,
         };
         let consumption = outcome_consumption(&outcome);
+        let original_failure = original_failed_outcome(&outcome);
         let admitted = match self.take_result() {
             Ok(Some(admitted)) => admitted,
             Ok(None) => return outcome,
@@ -48,8 +49,11 @@ impl NativeTransactionAdmission {
                         cleanup_failure: host.retire().await.err(),
                     },
                 };
-                let disposition = self.persist_conflict_abort(disposition, &host).await;
-                let observation = command_observation(&disposition, consumption);
+                let failure_code = original_failure.as_ref().and_then(platform_failure_code);
+                let disposition = self
+                    .persist_terminal_abort(disposition, &host, failure_code)
+                    .await;
+                let observation = command_observation(&disposition, consumption, original_failure);
                 (
                     TransactionCompletionResult::Command(disposition),
                     observation,
@@ -136,6 +140,17 @@ impl NativeTransactionAdmission {
     }
 }
 
+fn platform_failure_code(outcome: &ActivationOutcome) -> Option<PlatformErrorCode> {
+    match outcome {
+        ActivationOutcome::Failed { error, .. } => Some(error.code),
+        _ => None,
+    }
+}
+
+fn original_failed_outcome(outcome: &ActivationOutcome) -> Option<ActivationOutcome> {
+    platform_failure_code(outcome).map(|_| outcome.clone())
+}
+
 fn with_completion_binding(
     binding: Result<(), PlatformError>,
     observation: ActivationOutcome,
@@ -153,11 +168,12 @@ fn with_completion_binding(
 fn command_observation(
     disposition: &CommandCompletionDisposition,
     consumption: BudgetConsumption,
+    original_failure: Option<ActivationOutcome>,
 ) -> ActivationOutcome {
     match disposition {
         CommandCompletionDisposition::Durable { result, .. } => match result.outcome() {
-            Outcome::Committed => empty_success(consumption),
-            Outcome::Rejected => ActivationOutcome::DeclaredError {
+            Outcome::Committed if original_failure.is_none() => empty_success(consumption),
+            Outcome::Rejected if original_failure.is_none() => ActivationOutcome::DeclaredError {
                 error: DeclaredError {
                     code: result.code().unwrap_or("rejected").into(),
                     message: String::new(),
@@ -167,21 +183,49 @@ fn command_observation(
                 },
                 consumption,
             },
-            Outcome::Aborted if result.code() == Some("state-conflict") => {
-                failure_for_platform_error(
-                    super::error(
-                        PlatformErrorCode::StateConflict,
-                        "transaction-state-conflict",
-                    ),
-                    consumption,
-                )
-            }
+            Outcome::Aborted => aborted_observation(result.code(), consumption, original_failure),
             _ => unavailable(consumption),
         },
         CommandCompletionDisposition::Retired {
             reason: AtomicError::Conflict,
             ..
-        } => failure_for_platform_error(
+        } => conflict_observation(consumption, original_failure.as_ref()),
+        _ => unavailable(consumption),
+    }
+}
+
+fn conflict_observation(
+    consumption: BudgetConsumption,
+    original_failure: Option<&ActivationOutcome>,
+) -> ActivationOutcome {
+    if original_failure.is_some() {
+        return unavailable(consumption);
+    }
+    failure_for_platform_error(
+        super::error(
+            PlatformErrorCode::StateConflict,
+            "transaction-state-conflict",
+        ),
+        consumption,
+    )
+}
+
+fn aborted_observation(
+    code: Option<&str>,
+    consumption: BudgetConsumption,
+    original_failure: Option<ActivationOutcome>,
+) -> ActivationOutcome {
+    match original_failure {
+        Some(ActivationOutcome::Failed {
+            terminal_state,
+            error,
+            ..
+        }) if code == Some(error.code.wire_code()) => ActivationOutcome::Failed {
+            terminal_state,
+            error,
+            consumption,
+        },
+        None if code == Some("state-conflict") => failure_for_platform_error(
             super::error(
                 PlatformErrorCode::StateConflict,
                 "transaction-state-conflict",

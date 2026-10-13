@@ -83,3 +83,55 @@ fn successful_completion_binding_publishes_the_original_observation_once() {
         assert_eq!(outcome, original);
     }
 }
+
+#[test]
+fn retained_abort_code_cannot_replace_a_different_original_failure() {
+    let original = ActivationOutcome::Failed {
+        terminal_state: ActivationTerminalState::GuestTrap,
+        error: super::super::error(PlatformErrorCode::GuestTrap, "original guest trap"),
+        consumption: charged(),
+    };
+    for code in [None, Some("state-conflict"), Some("cancelled")] {
+        assert_eq!(
+            aborted_observation(code, charged(), Some(original.clone())),
+            unavailable(charged())
+        );
+    }
+    assert_eq!(
+        aborted_observation(Some("guest-trap"), charged(), Some(original.clone())),
+        original
+    );
+    assert_eq!(
+        aborted_observation(Some("state-conflict"), charged(), None),
+        failure_for_platform_error(
+            super::super::error(
+                PlatformErrorCode::StateConflict,
+                "transaction-state-conflict"
+            ),
+            charged()
+        )
+    );
+}
+
+#[test]
+fn retired_conflict_cannot_replace_an_original_execution_fault() {
+    let original = ActivationOutcome::Failed {
+        terminal_state: ActivationTerminalState::GuestTrap,
+        error: super::super::error(PlatformErrorCode::GuestTrap, "original guest trap"),
+        consumption: charged(),
+    };
+    assert_eq!(
+        conflict_observation(charged(), Some(&original)),
+        unavailable(charged())
+    );
+    assert_eq!(
+        conflict_observation(charged(), None),
+        failure_for_platform_error(
+            super::super::error(
+                PlatformErrorCode::StateConflict,
+                "transaction-state-conflict"
+            ),
+            charged()
+        )
+    );
+}

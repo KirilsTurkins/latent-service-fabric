@@ -2,6 +2,7 @@ mod history;
 mod invocation;
 mod policy;
 mod publication;
+mod staging;
 
 use super::*;
 use latent_artifacts::{DirectoryArtifactRepository, ReleaseUseEligibility};
@@ -49,7 +50,7 @@ impl EffectTimeSource for Clock {
     }
 }
 
-pub(super) struct Fixture {
+pub(in crate::transaction_runtime) struct Fixture {
     _root: tempfile::TempDir,
     _catalog: DirectoryArtifactRepository,
     pub effects: EffectAuthorityOwner,
@@ -72,8 +73,23 @@ impl Fixture {
             .await
     }
 
+    pub async fn with_staging() -> Self {
+        Self::with_native_configuration(
+            latent_core::native_capacity::NativeCapacityLimits::default(),
+            true,
+        )
+        .await
+    }
+
     pub async fn with_native_limits(
         limits: latent_core::native_capacity::NativeCapacityLimits,
+    ) -> Self {
+        Self::with_native_configuration(limits, false).await
+    }
+
+    async fn with_native_configuration(
+        limits: latent_core::native_capacity::NativeCapacityLimits,
+        enable_staging: bool,
     ) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
@@ -94,6 +110,7 @@ impl Fixture {
         let namespaces = Arc::new(NamespaceCatalog::new());
         Self::create_namespace(&store, &namespaces).await;
         let effects = EffectAuthorityOwner::new(128, 16, 100).unwrap();
+        let intents = enable_staging.then(|| staging::install(&policy, &publication, &effects));
         let clock = Arc::new(Clock {
             millis: std::sync::atomic::AtomicU64::new(1000),
             continuity: std::sync::atomic::AtomicBool::new(true),
@@ -128,7 +145,7 @@ impl Fixture {
                 &deployment,
                 publication.clone(),
                 Arc::new(binding),
-                None,
+                intents.map(Arc::new),
                 latent_capabilities::namespace::RecoverySelection::OriginalCaller,
                 "visibility-v1".into(),
                 latent_commit::atomic::ResultPolicy {
@@ -291,6 +308,25 @@ impl Fixture {
             .await;
         assert!(report.clean, "{report:?}");
         assert!(report.snapshot.physically_retired());
+        self.store.reap_retired_threads().unwrap();
+    }
+
+    pub async fn shutdown_uncertain_writer(mut self) {
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let report = self.dispatcher.shutdown(deadline).await.unwrap();
+        assert_eq!(report.worker_threads_remaining, 0, "{report:?}");
+        assert_eq!(report.snapshot.command_owners, 0, "{report:?}");
+        assert!(report.physically_retired, "{report:?}");
+        let report = self
+            .store
+            .drain_async(deadline, tokio::time::sleep_until(deadline.into()))
+            .unwrap()
+            .await;
+        assert!(
+            !report.clean,
+            "uncertain writer cannot qualify a clean store"
+        );
+        assert!(report.snapshot.physically_retired(), "{report:?}");
         self.store.reap_retired_threads().unwrap();
     }
 }

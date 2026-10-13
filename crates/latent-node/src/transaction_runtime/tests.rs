@@ -1,9 +1,10 @@
 //! Real protected-engine/policy tests. These are native host-owner tests;
 //! the six authored Wasmtime components have a separate execution campaign.
 mod capacity;
-mod fixture;
+pub(super) mod fixture;
 mod history;
 mod response;
+mod technical_abort;
 
 use super::*;
 use crate::TransactionActivationAdmission;
