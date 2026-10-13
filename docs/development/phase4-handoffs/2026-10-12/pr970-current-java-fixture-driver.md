@@ -99,6 +99,17 @@ imports, declaration and bounded provenance before generating ephemeral keys.
 Positive effect markers, requirements and schema associations are forbidden,
 including dangling paths. It calls the existing real package-signing and
 verification owner. The original five- and six-input modes retain their separate
-source contracts. Two additive refusal cases are registered; their native
-execution and actual one-package signing remain pending the new product freeze.
+source contracts. All twelve default native example controls now pass, including
+the two additive refusal cases, with all six frozen product hashes unchanged.
 An early denial cannot qualify the original post-stage rollback case.
+
+Actual corrected-six signing and separate early-input signing now pass with
+frozen default products from `dd294da2`. Fresh preparation records those exact
+contracts/signer identities. All six original current packages and the one
+separate early package pass real signing and package verification. Seven actual
+refusals preserve no output: original five-mode with six inputs, wrong compiler
+sources, added effect markers and changed compiler reports. Every original
+capture and the failed earlier six-mode attempt remain preserved. The
+[signing packet](../../../testing/evidence/recovery970-actual-signing-dd294-2026-10-13.json)
+records these product/material boundaries; no guest, provider or node authority
+was installed by these controls.
