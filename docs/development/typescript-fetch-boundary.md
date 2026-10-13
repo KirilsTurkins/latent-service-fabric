@@ -146,6 +146,17 @@ remain unselected. The original Native64 and compiler-snapshot phase gate remain
 intact, so URL construction during snapshot is currently unsupported. The added
 URL owner still needs its distinct fetch core and actual runtime controls.
 
+The native parser source additionally preflights UTF-8 inputs at 8,192 bytes and
+query data at 256 pairs, before allocating Rust backing. Normalized URL backing
+must also fit 8,192 bytes. Conservative form-encoding checks account for up to
+three encoded bytes per input byte, including linked URL/query growth. Mutation
+parses a separately admitted bounded temporary graph first; a refusal leaves the
+original URL and linked params intact. These limits tighten this explicit source
+profile and do not enlarge the existing native/object or linear-memory ceilings.
+Borrowed encoded inputs use scoped ownership; only actual by-value Rust transfer
+discharges that buffer. Strict WASI syntax checks pass; actual over-limit/fresh
+reuse behavior remains a required runtime control.
+
 The first new native run executed all 31 selectors. All original 27 and the three
 direct retirement controls passed. The actual JS bridge case retained its own
 `globalThis.retired` Promise after successful subtask/set drops, leaving one

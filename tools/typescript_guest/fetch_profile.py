@@ -7,7 +7,7 @@ HTTP_INTERFACE = "latent:http/streaming@0.3.0"
 SDK_RUNTIME_FILES = (
     "http-headers.mjs", "http-body.mjs", "http-objects.mjs", "http-fetch.mjs",
 )
-NATIVE_SOURCES = ('native_url_owner.h',)
+NATIVE_SOURCES = ('native_url_owner.h', 'native_url_inputs.h')
 
 
 def source_paths() -> tuple[str, ...]:

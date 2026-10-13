@@ -43,13 +43,19 @@ def derive(original: dict[str, bytes], owner: bytes) -> tuple[dict[str, bytes], 
                     b'#include "worker-location.h"\n', b'#include "crypto/uuid.h"\n'):
         source = replace_once(source, include, b'', 'pure-URL-unselected-include')
     source = replace_once(source, b'#include "url.h"\n',
-        b'#include "url.h"\n#include "native_url_owner.h"\n', 'native-URL-owner-header')
+        b'#include "url.h"\n#include "native_url_owner.h"\n#include "native_url_inputs.h"\n', 'native-URL-owner-header')
     source = replace_once(source, b'using blob::Blob;\nusing file::File;\nusing worker_location::WorkerLocation;\n',
         b'''using lsf::typescript::activation::NativeUrl;
 using lsf::typescript::activation::NativeParams;
 using lsf::typescript::activation::UrlGraph;
 using lsf::typescript::activation::make_native_container;
 using lsf::typescript::activation::admit_native_object;
+using lsf::typescript::activation::UrlInput;
+using lsf::typescript::activation::url_input;
+using lsf::typescript::activation::url_query_bound;
+using lsf::typescript::activation::url_params_growth;
+using lsf::typescript::activation::url_backing_bound;
+using lsf::typescript::activation::url_mutate;
 
 namespace {
 NativeUrl* native_url(JSObject* self) {
@@ -170,10 +176,54 @@ bool URLSearchParams::init_class(JSContext *cx, JS::HandleObject global) {''', '
     base_owner->value.value.reset(jsurl::new_jsurl(&str));
     base = base_owner->value.value.get();
 ''', 'temporary-base-admit-before-parser')
+    source = source.replace(b'core::encode_spec_string(', b'url_input(')
+    source = replace_once(source, b'jsurl::SpecString validate(', b'UrlInput validate(', 'owned-validated-parameter-input')
+    source = source.replace(b'jsurl::SpecString key', b'UrlInput key')
+    key_conversion = b'  auto *const params = URLSearchParams::get_params(self);\n\n  auto value = url_input(cx, val);'
+    if source.count(key_conversion) != 2:
+        raise ValueError('pinned-URL-append-and-set-conversion-shape')
+    source = source.replace(key_conversion,
+        b'  auto *const params = URLSearchParams::get_params(self);\n  if (!key.data) return false;\n\n  auto value = url_input(cx, val);')
+    source = replace_once(source, b'maybe_consume_sequence_or_record<jsurl::SpecString,',
+        b'maybe_consume_sequence_or_record<UrlInput,', 'owned-sequence-conversion-input')
+    source = replace_once(source, b'append_impl(cx, self, value,', b'append_impl(cx, self, std::move(value),',
+        'move-owned-append-key')
+    for function in ('append', 'set'):
+        source = replace_once(source, f'  jsurl::params_{function}(params, key, value);'.encode(),
+            (f'  auto linked = JS::GetReservedSlot(self, std::to_underlying(URLSearchParams::Slots::Url));\n'
+             f'  if (!key.data || !url_params_growth(cx, params, key.len, value.len, linked.isUndefined() ? nullptr : static_cast<jsurl::JSUrl*>(linked.toPrivate()))) return false;\n'
+             f'  jsurl::params_{function}(params, key.release(), value.release());').encode(),
+            'transfer-only-after-bounded-' + function)
+    source = replace_once(source, b'  jsurl::params_set(params, name, value);',
+        b'  auto linked = JS::GetReservedSlot(self, std::to_underlying(URLSearchParams::Slots::Url));\n'
+        b'  if (!url_params_growth(cx, params, name.len, value.len, linked.isUndefined() ? nullptr : static_cast<jsurl::JSUrl*>(linked.toPrivate()))) return false;\n'
+        b'  jsurl::params_set(params, name.release(), value.release());', 'bounded-direct-set-transfer')
+    source = replace_once(source, b'    jsurl::params_init(params, &init);',
+        b'    if (init.len > lsf::typescript::activation::URL_INPUT_BYTES / 3) {\n'
+        b'      JS_ReportErrorASCII(cx, "fetch-profile-URL-query-growth-limit"); return nullptr;\n    }\n'
+        b'    if (!url_query_bound(cx, init.data, init.len)) return nullptr;\n'
+        b'    jsurl::params_init(params, &init);', 'constructor-query-pair-preflight')
+    source = replace_once(source, b'  jsurl::JSUrlSearchParams *params = jsurl::url_search_params(url);',
+        b'  if (!url_backing_bound(cx, url)) return nullptr;\n'
+        b'  jsurl::JSUrlSearchParams *params = jsurl::url_search_params(url);', 'linked-query-capacity-before-expansion')
+    source = replace_once(source, b'    jsurl::SpecString str = url_input(', b'    auto str = url_input(',
+        'retain-borrowed-setter-input-owner')
+    source = replace_once(source, b'    jsurl::set_##field(url, &str);',
+        b'    if (!url_mutate(cx, url, &str, jsurl::set_##field, std::string_view(#field) == "href")) return false;',
+        'bounded-shadow-setter-before-real-mutation')
+    source = replace_once(source, b'  JS::SetReservedSlot(self, std::to_underlying(Slots::Owner), JS::PrivateValue(owner.release()));\n'
+        b'  JS::SetReservedSlot(self, std::to_underlying(Slots::Url), JS::PrivateValue(url));',
+        b'  if (!url_backing_bound(cx, url)) return nullptr;\n'
+        b'  JS::SetReservedSlot(self, std::to_underlying(Slots::Owner), JS::PrivateValue(owner.release()));\n'
+        b'  JS::SetReservedSlot(self, std::to_underlying(Slots::Url), JS::PrivateValue(url));', 'bounded-normalized-URL-before-exposure')
+    source = replace_once(source, b'    base = base_owner->value.value.get();\n',
+        b'    base = base_owner->value.value.get();\n'
+        b'    if (base && !url_backing_bound(cx, base)) return nullptr;\n', 'bounded-temporary-base')
     result = {CPP: source, HEADER: header, 'lsf/native_url_owner.h': owner}
     return result, {'profile': 'spidermonkey-activation-promises-clocks-fetch-v1',
         'originalSource': identity(original), 'derivedSource': identity(result),
         'ordinaryImportProfileChanged': False, 'objectURLSupported': False,
         'BlobFileWorkerRandomSelected': False, 'originalNativeObjectCeiling': 64,
         'acknowledgementOutsideGCRequired': True, 'qualification': 'unknown',
+        'maximumURLInputAndBackingBytes': 8192, 'maximumQueryPairs': 256,
         'signedLSFComponentQualified': False}
