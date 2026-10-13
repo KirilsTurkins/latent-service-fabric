@@ -14,11 +14,16 @@ RUN grep -q 'http://archive.ubuntu.com/ubuntu' /etc/apt/sources.list.d/ubuntu.so
     -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
     -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' \
     /etc/apt/sources.list.d/ubuntu.sources
+# These packages and their dependencies are in main. Limit build indexes to that
+# component while APT selects the fixed signed snapshot for every archive suite.
+# The temporary source leaves the image's normal HTTPS repositories unchanged.
 # Bounded retries preserve the signed snapshot and fail on incomplete indexes.
-RUN sed -i -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' \
-    -e 's|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources \
-    && apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 update -qq --error-on=any --snapshot "$UBUNTU_SNAPSHOT" \
-    && apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 install -y --no-install-recommends --snapshot "$UBUNTU_SNAPSHOT" \
+RUN sed -e 's|^Components: .*|Components: main|' \
+    /etc/apt/sources.list.d/ubuntu.sources > /tmp/lsf-build.sources \
+    && apt-get -o Dir::Etc::sourcelist=/tmp/lsf-build.sources -o Dir::Etc::sourceparts=- \
+    -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 update -qq --error-on=any --snapshot "$UBUNTU_SNAPSHOT" \
+    && apt-get -o Dir::Etc::sourcelist=/tmp/lsf-build.sources -o Dir::Etc::sourceparts=- \
+    -o Acquire::Retries=2 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15 install -y --no-install-recommends --snapshot "$UBUNTU_SNAPSHOT" \
     ca-certificates=20260601~24.04.1 openssl=3.0.13-0ubuntu3.15 \
     libexpat1=2.6.1-2ubuntu0.5 libgdbm6t64=1.23-5.1build1 \
     libgdbm-compat4t64=1.23-5.1build1 libreadline8t64=8.2-4build1 \
@@ -28,6 +33,7 @@ RUN sed -i -e 's|http://archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubu
     libpython3-stdlib=3.12.3-0ubuntu2.1 python3.12=3.12.3-1ubuntu0.17 \
     python3.12-minimal=3.12.3-1ubuntu0.17 libpython3.12-stdlib=3.12.3-1ubuntu0.17 \
     libpython3.12-minimal=3.12.3-1ubuntu0.17 \
+    && rm /tmp/lsf-build.sources \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=python /usr/local/ /usr/local/
 RUN rm -rf /usr/local/lib/python3.13/site-packages /usr/local/bin/pip /usr/local/bin/pip3 /usr/local/bin/pip3.13
