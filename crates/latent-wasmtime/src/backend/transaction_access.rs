@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use latent_executor::{ExecutionCancellation, transaction::TransactionHost};
+use latent_executor::{transaction::TransactionHost, ExecutionCancellation};
 
 pub(super) struct InvocationOwnership<'a> {
     pub(super) cancellation: &'a dyn ExecutionCancellation,

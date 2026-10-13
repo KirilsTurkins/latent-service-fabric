@@ -22,20 +22,20 @@ use wasmtime::{Engine, Store};
 use crate::cache::{ActiveInstanceGate, PrepareAccess, PreparedCache, PreparedCacheSnapshot};
 use crate::config::WasmtimeConfig;
 use crate::containment::{
-    EpochTicker, MAX_DIAGNOSTIC_BYTES, RuntimeResourceCounters, RuntimeResourceSnapshot,
-    StopControl, bounded_text, classify_runtime_error, configure_epoch, interrupted_outcome,
-    platform_error,
+    bounded_text, classify_runtime_error, configure_epoch, interrupted_outcome, platform_error,
+    EpochTicker, RuntimeResourceCounters, RuntimeResourceSnapshot, StopControl,
+    MAX_DIAGNOSTIC_BYTES,
 };
 use crate::host::accounting::InvocationAccounting;
 use crate::host::{
-    ActivationHostContext, BoundedLogSink, HostCallTiming, HostState, validate_request_context,
+    validate_request_context, ActivationHostContext, BoundedLogSink, HostCallTiming, HostState,
 };
 use crate::invocation_input_observer::{
     InputTrace, InvocationInputDropReason, InvocationInputObserver, InvocationInputPhase,
 };
 use crate::preparation_observer::{PreparationJob, PreparationObserver, PreparationStage};
 use crate::timing::{InvocationTimingStore, InvocationTimingStoreSnapshot, Phase0InvocationTiming};
-use crate::{ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices, surface, values};
+use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices};
 
 mod admission;
 #[cfg(test)]

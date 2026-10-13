@@ -11,7 +11,7 @@ use crate::invocation_input_observer::{InputTrace, InvocationObservation, RawGua
 use crate::{InvocationInputDropReason, InvocationInputObserver, Phase0InvocationTiming};
 
 use super::{
-    Instant, WasmtimeBackend, WasmtimePreparedUse, elapsed_micros, validate_request_context,
+    elapsed_micros, validate_request_context, Instant, WasmtimeBackend, WasmtimePreparedUse,
 };
 
 impl WasmtimeBackend {

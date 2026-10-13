@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 use latent_activation::{ActivationEnvelope, TraceContext};
 use latent_core::transaction_contract::Value;
