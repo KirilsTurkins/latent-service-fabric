@@ -215,6 +215,12 @@ outcome stays distinct from audit failure. An absent operation receipt or
 NotFound from GetActivation/GetPolicyOperation is Unknown, not proof of
 nonexecution; both exceptional lookups preserve the original recovery ID.
 
+Socket-write confirmation and outcome knowledge remain separate. Once a real
+RPC stream exists, a lost response or local cancellation leaves execution
+Unknown even if write confirmation has not arrived. A trailers-only response
+confirms dispatch, but supplies no durable transaction outcome. Cancellation
+before an HTTP/2 stream can be created remains NotDispatched.
+
 ApplyPolicy requires explicit `expectedGeneration`, including zero for create,
 and the caller's nonempty operation ID. Authentication/authorization and document
 validation remain node-owned. No client identity generation, authorization,

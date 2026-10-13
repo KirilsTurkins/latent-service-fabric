@@ -358,12 +358,33 @@ public final class TransactionTransportTest {
                 check(peer.received.await(2, TimeUnit.SECONDS), "actual dispatch readiness");
                 if (mode.equals("hold")) { check(pending.cancel(false), "local cancellation"); check(peer.cancelled.await(2, TimeUnit.SECONDS), "physical cancellation readiness"); }
                 var failed = failure(pending);
-                check(failed.transport().outcome().equals(Management.OutcomeKnowledge.UNKNOWN) && failed.observed().isEmpty() && failed.identity().expectedAbort().isEmpty(), "transport cannot invent technical abort");
+                check(failed.transport().outcome().equals(Management.OutcomeKnowledge.UNKNOWN) && failed.observed().isEmpty() && failed.identity().expectedAbort().isEmpty(),
+                        "transport cannot invent technical abort: mode=" + mode + ", category=" + failed.transport().category()
+                                + ", outcome=" + failed.transport().outcome() + ", dispatched=" + failed.transport().dispatched()
+                                + ", observed=" + failed.observed().isPresent() + ", expectedAbort=" + failed.identity().expectedAbort().isPresent());
                 check(failed.identity().activationId().equals(Optional.of("activation-a")) && failed.identity().command().orElseThrow().clientKey().equals("business-key-a"), "original stable business identity");
                 check(peer.calls.get() == 1, "no automatic mutation resubmission");
                 peer.mode = "normal";
                 check(get(client.lookupCommand(TransactionWire.fromWire(lookup()), OPTIONS)).value().command().orElseThrow().outcome().equals(Transactions.CommandOutcome.COMMITTED), "recovery uses fresh live call");
                 check(peer.calls.get() == 2 && client.shutdown(Duration.ofSeconds(3)).clean(), "explicit recovery and finite drain");
+            }
+        }
+        try (var listener = new java.net.ServerSocket(0, 1, java.net.InetAddress.getByName("127.0.0.1"));
+                var client = new RpcClient(ClientConfig.loopback("http://127.0.0.1:" + listener.getLocalPort(), "tenant-a", "test-only-java-token"))) {
+            listener.setSoTimeout(2000);
+            var pending = client.invokeCommand(TransactionWire.fromWire(invoke()), OPTIONS);
+            try (var socket = listener.accept()) {
+                socket.setSoTimeout(2000);
+                byte[] preface = socket.getInputStream().readNBytes(24);
+                check(java.util.Arrays.equals(preface, "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(java.nio.charset.StandardCharsets.US_ASCII)),
+                        "actual connection waits for HTTP/2 settings");
+                check(pending.cancel(false), "unready transport cancellation");
+                var failed = failure(pending);
+                check(!failed.transport().dispatched() && failed.transport().outcome().equals(Management.OutcomeKnowledge.NOT_DISPATCHED)
+                        && failed.observed().isEmpty() && failed.identity().expectedAbort().isEmpty(), "cancelled unready transport cannot send a command");
+                check(failed.identity().activationId().equals(Optional.of("activation-a"))
+                        && failed.identity().command().orElseThrow().clientKey().equals("business-key-a"), "unready cancellation retains original identity");
+                check(client.shutdown(Duration.ofSeconds(3)).clean(), "unready transport retires within the original drain");
             }
         }
     }
