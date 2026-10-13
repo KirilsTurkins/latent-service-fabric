@@ -233,6 +233,11 @@ fn restored() -> Restored {
     )
     .unwrap()
     .unwrap();
+    // Receiving the reviewed request does not retire the worker's native pins.
+    // Wait for their actual release before acquiring exclusive snapshot custody.
+    adopted
+        .ready
+        .wait_test_metadata_retirement(Instant::now() + WATCHDOG);
     Restored {
         setup,
         root,
