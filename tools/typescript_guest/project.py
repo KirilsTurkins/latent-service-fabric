@@ -9,7 +9,7 @@ from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TU
 
 
 def create(directory: Path, template: str, name: str | None = None, *, runtime_profile: str | None = None) -> Path:
-    from tools.typescript_guest.runtime_profile import NATIVE_PROFILES, selected_profile
+    from tools.typescript_guest.runtime_profile import FETCH_PROFILE, NATIVE_PROFILES, selected_profile
     profile = selected_profile({'runtimeProfile': runtime_profile} if runtime_profile is not None else {})
     if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown TypeScript capsule template")
@@ -19,7 +19,14 @@ def create(directory: Path, template: str, name: str | None = None, *, runtime_p
     source = (ROOT / "tools/toolchain-smoke/examples" / ("tutorial_" + template.replace("-", "_"))
               if template in TUTORIALS else ROOT / "examples/rust-capsules" / template)
     vendor = {}
-    for folder in ("sdk/typescript-guest/runtime", "sdk/typescript-guest/capabilities", "wit/platform"):
+    runtime_folder = 'sdk/typescript-guest/runtime'
+    runtime_files = ('text.ts',)
+    if profile == FETCH_PROFILE:
+        from tools.typescript_guest.fetch_profile import SDK_RUNTIME_FILES
+        runtime_files += SDK_RUNTIME_FILES
+    for runtime_name in runtime_files:
+        vendor[runtime_folder+'/'+runtime_name] = read_file(ROOT/runtime_folder/runtime_name)
+    for folder in ("sdk/typescript-guest/capabilities", "wit/platform"):
         vendor.update({folder + "/" + path: data for path, data in snapshot(ROOT / folder).items()})
     if profile in NATIVE_PROFILES:
         folder = 'sdk/typescript-guest/activation'
