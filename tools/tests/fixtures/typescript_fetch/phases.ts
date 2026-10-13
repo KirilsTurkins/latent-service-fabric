@@ -33,7 +33,8 @@ export const api = {
       }
       throw new Error('unsupported finite diagnostic selector');
     } catch (error) {
-      return JSON.stringify({mode, error: String(error), cause: String((error as {cause?: unknown})?.cause)});
+      const cause = (error as {cause?: {payload?: unknown}})?.cause;
+      return JSON.stringify({mode, error: String(error), cause: String(cause), payload: cause?.payload});
     }
   },
 };
