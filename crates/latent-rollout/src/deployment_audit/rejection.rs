@@ -19,8 +19,20 @@ impl DeploymentRejectionIdentity {
 
     /// Precharge `MAX_AUDIT_RETAINED_BYTES` before validation/digest scratch.
     pub fn from_request(request: &DeploymentOperationRequest) -> crate::Result<Self> {
-        request.validate()?;
-        let request_digest = request.request_digest()?;
+        Self::from_request_with_profile(
+            request,
+            latent_manifest::ManifestValidationProfile::default(),
+        )
+    }
+
+    /// Use the same trusted manifest selection as request validation and catalog
+    /// preparation. The profile grants no mutation or audit acknowledgement.
+    pub fn from_request_with_profile(
+        request: &DeploymentOperationRequest,
+        profile: latent_manifest::ManifestValidationProfile,
+    ) -> crate::Result<Self> {
+        request.validate_with_profile(profile)?;
+        let request_digest = request.request_digest_with_profile(profile)?;
         let context = request.context();
         let identities = AuditIdentities {
             deployment: Some(request.id().clone()),

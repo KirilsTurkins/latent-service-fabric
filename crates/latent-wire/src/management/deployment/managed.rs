@@ -70,8 +70,9 @@ async fn execute(
     let _request_lease = store
         .reserve_operation_request()
         .map_err(|error| platform_status(error, &adapter.limits))?;
-    let rejected = DeploymentRejectionIdentity::from_request(&request)
-        .map_err(|error| platform_status(error, &adapter.limits))?;
+    let rejected =
+        DeploymentRejectionIdentity::from_request_with_profile(&request, adapter.manifest_profile)
+            .map_err(|error| platform_status(error, &adapter.limits))?;
     let context = request.context().clone();
     let prepared = tokio::time::timeout_at(deadline.into(), store.prepare_operation(request))
         .await
