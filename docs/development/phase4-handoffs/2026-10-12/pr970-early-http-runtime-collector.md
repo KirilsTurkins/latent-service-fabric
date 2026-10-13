@@ -18,6 +18,8 @@ publication's update/query/scan operations under its own service and companion
 binding. Observed state and clock profiles supply proposals; ordinary CAS
 mutations grant only state and clocks. No HTTP, deferred-intent, recovery or
 restore authority is added. The protected native owner initializes its clock.
+Trigger CAS finishes in the metadata session before runtime captures its current
+control catalog transaction. Runtime startup does not mutate that catalog.
 
 The actual command has `reject=false` and a positive delta. In the exact pinned
 Java source, its declared `rejected` result can be returned at this position only

@@ -230,7 +230,7 @@ class CurrentHttpConductor(unittest.TestCase):
                 activation.start(None, name, 'legacy-runtime')
                 activation.metadata[name] = ({'generation': '3'}, {'deploymentGeneration': 3})
                 activation.start(None, name, 'legacy-after-diagnostic')
-                self.assertEqual(binding.call_count, 2)
+                binding.assert_not_called()
             self.assertEqual(collector.cases, ['deploy-' + name + '-legacy-runtime',
                                               'deploy-' + name + '-legacy-after-diagnostic'])
             self.assertEqual(len(collector.files), 2)
@@ -338,12 +338,41 @@ class CurrentHttpConductor(unittest.TestCase):
                 metadata.assert_called_once()
             events.clear()
             with patch.object(lifecycle, 'deployment_metadata', return_value=({'generation': '1'}, {'original': True})), \
+                 patch.object(lifecycle, 'bind_http_routes', side_effect=lambda *_: events.append(('bind',))), \
                  patch.object(lifecycle, 'admission_lease_interval', side_effect=lambda _: events.append(('lease',))):
                 selected = activation.select_metadata('put-once-legacy-v1', 'legacy-metadata')
-            self.assertEqual([row[0] for row in events], ['start', 'stop', 'lease'])
+            self.assertEqual([row[0] for row in events], ['start', 'bind', 'stop', 'lease'])
             from tools.phase2_operator_process import read_json
             self.assertEqual(read_json(selected)['state']['operations'], rows[3:6])
             self.assertEqual(configuration.value['state']['operations'], [])
+
+    def test_uncertain_trigger_metadata_cannot_capture_or_start_runtime_or_refresh_precondition(self):
+        from unittest.mock import Mock, patch
+        from tools.java_transaction_qualification import lifecycle
+        from tools.java_transaction_qualification.current_activation import CurrentActivation
+        activation = CurrentActivation.__new__(CurrentActivation)
+        name = 'put-once-legacy-v1'
+        activation.client, activation.signed = object(), Path('/unused')
+        activation.configuration = SimpleNamespace(path=Path('/bootstrap'), authority='localhost:1')
+        activation.node = SimpleNamespace(process=None, start=Mock(), stop=Mock())
+        activation.items = {name: SimpleNamespace(name=name)}
+        activation.publications = {name: 'publication:sha256:' + 'a' * 64}
+        activation.proposals = {'deploymentGrants': []}
+        activation.metadata, activation.path = {}, Mock()
+        with patch.object(lifecycle, 'deployment_metadata', return_value=({'generation': '2'}, {'original': True})) as metadata, \
+             patch.object(lifecycle, 'bind_http_routes', side_effect=ValueError('uncertain-trigger')) as binding, \
+             patch.object(lifecycle, 'admission_lease_interval') as lease:
+            with self.assertRaisesRegex(ValueError, 'uncertain-trigger'):
+                activation.select_metadata(name, 'legacy-metadata')
+            metadata.assert_called_once()
+            binding.assert_called_once()
+            lease.assert_not_called()
+            self.assertEqual(activation.metadata, {})
+            activation.node.stop.assert_called_once()
+            activation.path.assert_not_called()
+            with self.assertRaises(ValueError):
+                activation.start(None, name, 'legacy-after-diagnostic')
+            self.assertEqual(activation.node.start.call_count, 1)
 
     def test_active_runtime_selects_one_exact_publication_and_copies_original_operations(self):
         from tools.java_transaction_qualification import configuration as cfg

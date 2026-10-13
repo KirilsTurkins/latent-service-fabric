@@ -314,8 +314,10 @@ def admit_authority(client, signed, items, configuration, node, full_path, publi
     if current:
         from tools.java_transaction_qualification.current_activation import CurrentActivation
         activation = CurrentActivation(client, configuration, node, signed, items, publications, proposals, full_path)
-        activation.metadata[legacy.name] = lifecycle.deployment_metadata(client, signed, legacy,
+        deployed, target = lifecycle.deployment_metadata(client, signed, legacy,
             publications[legacy.name], proposals['deploymentGrants'])
+        lifecycle.bind_http_routes(client, configuration.authority, legacy, target)
+        activation.metadata[legacy.name] = (deployed, target)
     node.stop()
     lifecycle.admission_lease_interval(client)
     if current:

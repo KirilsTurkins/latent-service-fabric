@@ -36,8 +36,13 @@ class CurrentActivation:
         require(self.node.process is None, 'metadata-mutation-requires-retired-runtime')
         self.node.start(self.configuration.path, current_session=session)
         try:
-            self.metadata[name] = lifecycle.deployment_metadata(self.client, self.signed, self.items[name],
-                self.publications[name], self.proposals['deploymentGrants'])
+            deployed, target = lifecycle.deployment_metadata(self.client, self.signed, self.items[name],
+                                                            self.publications[name], self.proposals['deploymentGrants'])
+            # Trigger CAS advances the same control catalog transaction pinned
+            # by startup installation. Finish it before capturing runtime.
+            lifecycle.bind_http_routes(self.client, self.configuration.authority,
+                                       self.items[name], target)
+            self.metadata[name] = (deployed, target)
         finally:
             self.node.stop()
         lifecycle.admission_lease_interval(self.client)
@@ -48,7 +53,6 @@ class CurrentActivation:
         path = self.path(name)
         self.node.start(path, current_session=session)
         deployed, target = self.metadata[name]
-        lifecycle.bind_http_routes(self.client, self.configuration.authority, self.items[name], target)
         self.active = name
         if campaign is not None:
             campaign.full_path = path

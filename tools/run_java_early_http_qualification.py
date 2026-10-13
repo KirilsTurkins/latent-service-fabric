@@ -190,6 +190,7 @@ def run(args):
                 node.start(configuration.path, current_session='authority')
                 receipts = policies.apply(client, documents)
                 target = campaign.metadata(client, signed, item, publication, documents['deploymentGrants'])
+                campaign.bind_routes(client, configuration.authority, item, target)
                 node.stop()
                 lifecycle.admission_lease_interval(client)
                 stage = 'namespace-create'
@@ -199,7 +200,6 @@ def run(args):
                 lifecycle.admission_lease_interval(client)
                 stage = 'actual-early-http'
                 node.start(path, current_session='early-http-runtime')
-                campaign.bind_routes(client, configuration.authority, item, target)
                 record['campaign'] = campaign.execute(client, configuration, path, signed, item,
                                                       publication, documents, receipts, node)
                 inputs.require(node.ordinal == 4 and node.restore_authority_sessions == 0 and len(node.shutdown) == 4,
