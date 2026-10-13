@@ -3519,9 +3519,24 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 970,
-      "currentDeliveryHead": "f7d7d67df0998a36487ee37c21d9d0e941fe6c19",
-      "currentTitle": "Reconcile restored-effect closure on current recovery owners",
-      "currentMergeability": "UNKNOWN"
+      "currentDeliveryHead": "a4d3ec592ad923701154961668285c552934294f",
+      "currentTitle": "Integrate current installed recovery and transactional HTTP management",
+      "currentMergeability": "MERGEABLE",
+      "historyReconciliation": {
+        "oldHead": "054a0dd7d4d0b6ea246d5fb7a041a5ca617ec6a3",
+        "preservedRemoteRef": "refs/heads/preserve/pr970-before-history-reconcile-20261013",
+        "oldBranchOnlyCommits": 1108,
+        "rebuiltHead": "1641e0eccae13f0f670c66b5939dce103bba8df9",
+        "rebuiltCommits": 2,
+        "currentCommits": 4,
+        "integrationBase": "90cf1f4c87ca24e9a64b077dc2eb501dcef22441",
+        "intendedSource": "d3f229ec3df4b489aa2ddff49df185a940f247e9",
+        "intendedTree": "878d5f2a28fa55ab359931d4a4d900c87ad0998e",
+        "exactIntendedTreePreserved": true,
+        "historicalEvidenceSourceIdsUnchanged": true,
+        "qualificationTransferred": false,
+        "contributingRule": "CONTRIBUTING.md#commit-history-and-evidence"
+      }
     },
     {
       "pullRequest": 971,
@@ -3802,10 +3817,10 @@
       "reconciliation": "Exact dated evidence and original source refs are preserved in the current handoff. Their source-specific approvals and incomplete ticket qualification remain historical. Current implementation/acceptance work continues with the referenced owners; no ticket closes."
     }
   ],
-  "remainingOpenCount": 13,
-  "lastVerifiedOpenCount": 10,
+  "remainingOpenCount": 1,
+  "lastVerifiedOpenCount": 1,
   "latestRemoteObservation": {
-    "observedAtUtc": "2026-10-13T01:25:13.780777+00:00",
+    "observedAtUtc": "2026-10-13T12:27:10.730192+00:00",
     "openCount": 1,
     "snapshotPrs": [
       970
