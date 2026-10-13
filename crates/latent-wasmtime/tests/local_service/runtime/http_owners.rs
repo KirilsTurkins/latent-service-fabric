@@ -3,7 +3,7 @@ use latent_capabilities::broker::{
     io::{IoLimits, IoRuntime, IoSnapshot},
     pools::{ProviderPoolLimits, ProviderPools},
     streaming_http::STREAMING_HTTP_CAPABILITY,
-    ActivationCapabilityBroker, ActivationCapabilityRuntime,
+    ActivationCapabilityBroker, ActivationCapabilityRuntime, CapabilityBrokerLimits,
 };
 use latent_control_store::bindings::{BindingDefinition, ConfiguredBindingProvider};
 use latent_core::{CapabilityId, PolicyId, PublicationId, ServiceId, TenantId};
@@ -93,6 +93,13 @@ impl Owners {
         )
         .unwrap();
         let reference = provider.reference();
+        // A streaming operation authorizes its inline metadata window as well
+        // as transfer bytes. Retain the existing broker/provider limits.
+        let broker_limits = CapabilityBrokerLimits::default();
+        let input_allowance = broker_limits.maximum_input_bytes as u64
+            + HttpStreamLimits::default().maximum_input_bytes;
+        let output_allowance = broker_limits.maximum_output_bytes as u64
+            + HttpStreamLimits::default().maximum_output_bytes;
         for (id, kind, document) in [
             (
                 POLICY,
@@ -103,7 +110,7 @@ impl Owners {
                     "publications":[publication.as_str()],"capability":STREAMING_HTTP_CAPABILITY,
                     "operations":OPERATIONS,"resources":{"kind":"http","origins":[{"scheme":"http","host":"localhost","port":configuration.port}],
                         "methods":["GET","POST"],"paths":["/allowed"],"pathPrefixes":[]},
-                    "requireAudit":false,"ceiling":{"operations":8,"inputBytes":16_777_216,"outputBytes":16_777_216,"wallTimeMillis":120_000}
+                    "requireAudit":false,"ceiling":{"operations":8,"inputBytes":input_allowance,"outputBytes":output_allowance,"wallTimeMillis":120_000}
                 }]}),
             ),
             (
