@@ -23,6 +23,8 @@ export function lazySyncImportWaiters(source) {
 export function retireGeneratedTaskSlots(source) {
   const replacements = [
     ['  #nextTaskPromise = Promise.resolve(true);', '  #nextTaskPromise = null;'],
+    ['      await this.#nextTaskPromise;',
+      '      if (this.#nextTaskPromise !== null) await this.#nextTaskPromise;'],
     ['        placeholder.completed = true;\n      }),',
       '        placeholder.completed = true;\n' +
       '        this.#nextTaskQueue = this.#nextTaskQueue.filter(entry => entry !== placeholder);\n' +

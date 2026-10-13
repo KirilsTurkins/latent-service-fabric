@@ -195,6 +195,7 @@ const first = Promise.withResolvers();
 const second = Promise.withResolvers();
 const order = [];
 const enterFirst = slots.nextTaskExecutionSlot({task:{exitPromise:() => first.promise}}).then(() => order.push(1));
+assert.notEqual(slots.current(), null); // No previous task exists to await.
 await enterFirst;
 const enterSecond = slots.nextTaskExecutionSlot({task:{exitPromise:() => second.promise}}).then(() => order.push(2));
 await Promise.resolve();
