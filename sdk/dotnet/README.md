@@ -19,7 +19,7 @@ independent audit facts and remaining execution qualification.
 
 | Surface | Contract |
 | --- | --- |
-| Platform | Linux x86-64; SDK 8.0.425, runtime 8.0.31, `net8.0` |
+| Platform | Linux x86-64; SDK 8.0.426, runtime 8.0.32, `net8.0` |
 | Endpoint | Exact numeric loopback `http://127.0.0.1:PORT` or `http://[::1]:PORT`; HTTP/2 prior knowledge |
 | Authentication | Explicit bounded bearer token; no environment discovery, logging, redirects, cookies, proxies or caller-lineage authority |
 | Ownership | One owned TCP connection and reusable `SocketsHttpHandler`/`HttpClient` for the client's lifetime |

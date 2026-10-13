@@ -301,8 +301,8 @@ class SdkGraphTests(unittest.TestCase):
         packages, records = inventory(root)
         observed = {(item.name, item.version) for item in packages if item.path.startswith("sdk/dotnet/")}
         self.assertEqual(observed, {("Google.Protobuf", "3.31.1"), ("Grpc.Core.Api", "2.71.0"), ("Grpc.Tools", "2.71.0"),
-                                   ("Microsoft.NETCore.App.Ref", "8.0.31"), ("Microsoft.NETCore.App.Runtime.linux-x64", "8.0.31"),
-                                   ("Microsoft.AspNetCore.App.Ref", "8.0.31"), ("Microsoft.AspNetCore.App.Runtime.linux-x64", "8.0.31")})
+                                   ("Microsoft.NETCore.App.Ref", "8.0.32"), ("Microsoft.NETCore.App.Runtime.linux-x64", "8.0.32"),
+                                   ("Microsoft.AspNetCore.App.Ref", "8.0.32"), ("Microsoft.AspNetCore.App.Runtime.linux-x64", "8.0.32")})
         self.assertEqual(sum(item["coverage"] == "OSV" for item in records if item["path"].startswith("sdk/dotnet/")), 3)
 
     def test_dotnet_legacy_absence_cannot_hide_partial_transport_or_orphan_configuration(self) -> None:
