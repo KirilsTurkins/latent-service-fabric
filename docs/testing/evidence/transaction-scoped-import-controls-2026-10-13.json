@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "latent.transaction-scoped-import-controls.v1",
+  "evidenceKind": "native-source-regression-controls",
+  "sourceBase": "ed90e4f65b237960d2503d2cb7439efe90d4ce0b",
+  "testedIndexTree": "590d62673899715758373f0b8a0d712f3432fa31",
+  "sourceFiles": [
+    {
+      "path": "crates/latent-capabilities/src/broker/session.rs",
+      "sha256": "3aa29b6928e682e181cc0eb297b189fa36b8fea5e362eedca55667d91102dd2f"
+    },
+    {
+      "path": "crates/latent-capabilities/src/broker/session/transaction_imports.rs",
+      "sha256": "202ead3ac2d54fa38c487653acff3cc6ca3779c5de08f351cda8db73b1ca7e65"
+    },
+    {
+      "path": "crates/latent-capabilities/src/broker/tests.rs",
+      "sha256": "03a9e9e78dad8d8ec358246fc87694e37f358efe15cf2eb75181d21d50616e01"
+    },
+    {
+      "path": "crates/latent-capabilities/src/broker/tests/transaction_imports.rs",
+      "sha256": "f1e5112cb45e9693631544ca842b8476a59b49dd42e692a599bd728335d1503d"
+    }
+  ],
+  "problem": "Trusted transaction compilation excludes scoped state and intent imports from ordinary provider plans; session admission previously rejected their original transaction owner.",
+  "implementation": "Match scoped imports only with the original Phase4 TransactionHost activation and same budget ledger, then match every ordinary import against the unchanged sealed provider plan.",
+  "baseline": {
+    "positiveRegressionFailed": true,
+    "negativeControlsPassed": true,
+    "artifactSha256": "68c7299932ef9e159684aace881373ffd4fb75f1fa4a15a1e650fe28f0995197"
+  },
+  "candidate": {
+    "artifactSha256": "df2cfc2e76643367405a10d716a97c922e721a6243e6dc3cf61fd17905215a87",
+    "artifactBytes": 34078648,
+    "activeTests": 169,
+    "ignoredTests": 0,
+    "regressionsPassed": 2,
+    "maintainedClippyExitCode": 0
+  },
+  "authority": {
+    "stateCallsGrantedByImports": false,
+    "intentCallsGrantedByImports": false,
+    "ordinaryProviderMatchingUnchanged": true,
+    "publicationAndPolicyFencesUnchanged": true,
+    "resourceCapsChanged": false,
+    "guestRetirementOwnerChanged": false
+  },
+  "acceptance": {
+    "signedJavaRuntimeQualified": false,
+    "packagedDistributionQualified": false,
+    "independentAcceptanceReview": false,
+    "completeTicket": false,
+    "issueClosure": false
+  }
+}
