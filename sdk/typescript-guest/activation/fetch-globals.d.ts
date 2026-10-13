@@ -35,7 +35,41 @@ interface Body {
     text(): Promise<string>;
     json(): Promise<any>;
 }
-type BodyInit = string | ArrayBuffer | ArrayBufferView;
+type BodyInit = string | ArrayBuffer | ArrayBufferView | URLSearchParams;
+declare class URLSearchParams implements Iterable<[string, string]> {
+    constructor(init?: string | URLSearchParams | Record<string, string> | Iterable<readonly [string, string]>);
+    readonly size: number;
+    append(name: string, value: string): void;
+    delete(name: string, value?: string): void;
+    get(name: string): string | null;
+    getAll(name: string): string[];
+    has(name: string, value?: string): boolean;
+    set(name: string, value: string): void;
+    sort(): void;
+    toString(): string;
+    entries(): IterableIterator<[string, string]>;
+    keys(): IterableIterator<string>;
+    values(): IterableIterator<string>;
+    forEach(callback: (value: string, name: string, params: URLSearchParams) => void, thisArg?: any): void;
+    [Symbol.iterator](): IterableIterator<[string, string]>;
+}
+declare class URL {
+    constructor(input: string | URL, base?: string | URL);
+    href: string;
+    protocol: string;
+    username: string;
+    password: string;
+    host: string;
+    hostname: string;
+    port: string;
+    pathname: string;
+    search: string;
+    hash: string;
+    readonly origin: string;
+    readonly searchParams: URLSearchParams;
+    toString(): string;
+    toJSON(): string;
+}
 interface RequestInit {
     method?: string;
     headers?: HeadersInit;

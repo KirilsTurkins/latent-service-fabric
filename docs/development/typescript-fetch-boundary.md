@@ -74,16 +74,15 @@ failed-acknowledgement state instead of trusting a fulfilled JS value alone.
 The original 64-object/resource ceilings and original one-argument cancellation
 path remain intact.
 
-Three additional native fixture cases cover typed-lift retirement, cancellation
-with a physically pending borrow, and identity/unissued-id rejection. The 19
-existing import-source controls and strict syntax-only compilation against the
-pinned actual SpiderMonkey/WASI headers passed. Disk recovery currently keeps
-native linking paused, so these new cases have not yet executed. This source
-checkpoint is not a new engine tuple and cannot reuse the earlier signed runtime
-receipts. Before installation, the compiler still must bind the operation's exact
-id/result/retirement handle into the SDK-owned streaming module, select its
-separate fetch world, rebuild the source-bound engine, and execute all original
-runtime controls plus signed borrowed-read/cancel/drop/reuse cases.
+The new native fixture cases cover typed-lift retirement, cancellation with a
+physically pending borrow, identity/unissued-id rejection and actual JS bridge
+arity. The 19 existing import-source controls passed; all 31 native selectors now
+pass in the exact pinned SpiderMonkey/WASI fixture below. The compiler's explicit
+fetch source selection binds the operation ID/result/retirement handle and
+separate fetch world. A fresh ordinary import core and source splicer have built,
+while installed fetch still requires its additional URL owner and genuine
+ordinary/signed borrowed-read/cancel/drop/reuse controls. Earlier signed runtime
+receipts remain evidence for their original bytes.
 
 The compiler source now observes the exact reserved ID inside the generated
 import's original `try/finally`, before typed lowering. The explicit fetch
@@ -131,6 +130,21 @@ selector. Fetch rejects nondefault mode/credentials/referrer options before nati
 admission; it does not silently forward a request that asked to suppress provider
 credentials. The default server profile leaves configured credential authority
 with the native provider and has no ambient browser origin or cookie jar.
+
+The actual fresh engine/Wizer probe reports `ReadableStream`, text codecs and
+`AbortController` present, while `URL`, `URLSearchParams` and `Blob` are absent.
+The standalone probe's intentional initialization exception and earlier missing
+compiler-shim setup remain retained. This demonstrates why Node source controls
+cannot qualify installed globals. The exact maintained pure URL derivation now
+compiles against the authenticated WASI/SpiderMonkey headers with `-Wall -Werror`.
+It admits native parser graphs before Rust allocations, owns temporary string
+bases and standalone params, and retains a strong JS parent for linked params.
+The linked box keeps a separate lease in its URL owner until Rust actually frees
+both. Finalizers mark physical death; the existing outside-GC checkpoint performs
+the acknowledgements. Object-URL methods reject explicitly; Blob/File/Worker/UUID
+remain unselected. The original Native64 and compiler-snapshot phase gate remain
+intact, so URL construction during snapshot is currently unsupported. The added
+URL owner still needs its distinct fetch core and actual runtime controls.
 
 The first new native run executed all 31 selectors. All original 27 and the three
 direct retirement controls passed. The actual JS bridge case retained its own

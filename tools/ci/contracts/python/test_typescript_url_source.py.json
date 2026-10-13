@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "TypeScriptUrlSourceTests.test_each_changed_original_cpp_header_rust_or_ffi_input_is_rejected",
+    "TypeScriptUrlSourceTests.test_exact_native_parser_selection_grants_no_authority_or_api_qualification",
+    "TypeScriptUrlSourceTests.test_fetch_source_closure_binds_native_parser_but_ordinary_imports_do_not",
+    "TypeScriptUrlSourceTests.test_missing_extra_or_ownerless_selection_is_rejected"
+  ],
+  "guards": {
+    "TypeScriptUrlSourceTests.test_each_changed_original_cpp_header_rust_or_ffi_input_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f64e1817314e8aeff0c141d25ec184a66c5cc2deb4c02a69cac9b12e8980d5da",
+        "class:setup-sha256:f1e1b306c4df98eaca0e3ced8fcc82ed017cb903a26c42b7aa595f29044c5ecf"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptUrlSourceTests.test_exact_native_parser_selection_grants_no_authority_or_api_qualification": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f64e1817314e8aeff0c141d25ec184a66c5cc2deb4c02a69cac9b12e8980d5da",
+        "class:setup-sha256:f1e1b306c4df98eaca0e3ced8fcc82ed017cb903a26c42b7aa595f29044c5ecf"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptUrlSourceTests.test_fetch_source_closure_binds_native_parser_but_ordinary_imports_do_not": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f64e1817314e8aeff0c141d25ec184a66c5cc2deb4c02a69cac9b12e8980d5da",
+        "class:setup-sha256:f1e1b306c4df98eaca0e3ced8fcc82ed017cb903a26c42b7aa595f29044c5ecf"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptUrlSourceTests.test_missing_extra_or_ownerless_selection_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f64e1817314e8aeff0c141d25ec184a66c5cc2deb4c02a69cac9b12e8980d5da",
+        "class:setup-sha256:f1e1b306c4df98eaca0e3ced8fcc82ed017cb903a26c42b7aa595f29044c5ecf"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_url_source.py",
+  "reviewReason": "Add exact native URL parser source/tamper selection guards; keep the original native64 ceiling, ordinary import selection and qualification boundary unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

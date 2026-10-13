@@ -60,6 +60,11 @@ RECIPE += ('tools/typescript_guest/fetch_profile.py', 'tools/typescript_guest/fe
            'tools/typescript_guest/operation_capture.mjs', 'tools/typescript_guest/fetch_startup.mjs',
            'sdk/typescript-guest/activation/fetch-globals.d.ts')
 RECIPE += tuple('sdk/typescript-guest/runtime/' + name for name in SDK_RUNTIME_FILES)
+from tools.typescript_guest.fetch_profile import NATIVE_SOURCES as FETCH_NATIVE_SOURCES
+RECIPE += tuple('sdk/typescript-guest/activation/' + name for name in FETCH_NATIVE_SOURCES)
+RECIPE += ('tools/typescript_guest/url_engine.py',)
+RECIPE += tuple('tools/tests/fixtures/typescript_url/' + name for name in (
+    'original-url.cpp', 'original-url.h', 'original-rust-url.h', 'original-rust-url.rs'))
 
 
 def runtime_package_sources(original: dict[str, bytes], selected: dict,

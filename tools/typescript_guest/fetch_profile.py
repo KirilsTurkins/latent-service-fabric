@@ -7,6 +7,7 @@ HTTP_INTERFACE = "latent:http/streaming@0.3.0"
 SDK_RUNTIME_FILES = (
     "http-headers.mjs", "http-body.mjs", "http-objects.mjs", "http-fetch.mjs",
 )
+NATIVE_SOURCES = ('native_url_owner.h',)
 
 
 def source_paths() -> tuple[str, ...]:
@@ -15,7 +16,11 @@ def source_paths() -> tuple[str, ...]:
         'tools/typescript_guest/fetch_profile.py', 'tools/typescript_guest/fetch_bindings.mjs',
         'tools/typescript_guest/operation_capture.mjs', 'tools/typescript_guest/fetch_startup.mjs',
         'sdk/typescript-guest/activation/fetch-globals.d.ts', 'wit/platform/http-v3/package.wit',
-    ) + tuple('sdk/typescript-guest/runtime/' + name for name in SDK_RUNTIME_FILES)))
+        'tools/typescript_guest/url_engine.py',
+    ) + tuple('sdk/typescript-guest/activation/' + name for name in NATIVE_SOURCES)
+      + tuple('tools/tests/fixtures/typescript_url/' + name for name in (
+          'original-url.cpp', 'original-url.h', 'original-rust-url.h', 'original-rust-url.rs'))
+      + tuple('sdk/typescript-guest/runtime/' + name for name in SDK_RUNTIME_FILES)))
 
 
 def binding_world(canonical: bytes, graph: dict, world: str, http_wit: bytes) -> dict[str, bytes]:

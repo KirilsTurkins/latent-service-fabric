@@ -98,7 +98,10 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         from tools.typescript_guest.clock_engine import CLOCK_NATIVE_SOURCES
         from tools.typescript_guest.runtime_profile import CLOCK_PROFILES, IMPORT_PROFILES, FETCH_PROFILE
         from tools.typescript_guest.import_engine import NATIVE_IMPORT_SOURCES
+        from tools.typescript_guest.fetch_profile import NATIVE_SOURCES as FETCH_NATIVE_SOURCES
         selected_native = NATIVE_SOURCES + (CLOCK_NATIVE_SOURCES if profile in CLOCK_PROFILES else ()) + (NATIVE_IMPORT_SOURCES if profile in IMPORT_PROFILES else ())
+        if profile == FETCH_PROFILE:
+            selected_native += FETCH_NATIVE_SOURCES
         declarations = ('runtime-globals.d.ts',) + (('clock-globals.d.ts',) if profile in CLOCK_PROFILES else ()) + (('fetch-globals.d.ts',) if profile == FETCH_PROFILE else ())
         for name in (*selected_native, *declarations):
             path = 'sdk/typescript-guest/activation/'+name

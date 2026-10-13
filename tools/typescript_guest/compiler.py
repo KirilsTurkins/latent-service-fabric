@@ -238,6 +238,8 @@ class Compiler:
             from tools.typescript_guest.clock_engine import CLOCK_NATIVE_SOURCES
             from tools.typescript_guest.import_engine import NATIVE_IMPORT_SOURCES
             selected_native = NATIVE_SOURCES + (CLOCK_NATIVE_SOURCES if self.runtime_profile in runtime.CLOCK_PROFILES else ()) + (NATIVE_IMPORT_SOURCES if self.runtime_profile in runtime.IMPORT_PROFILES else ())
+            if fetch_binding is not None:
+                selected_native += fetch_profile.NATIVE_SOURCES
             declarations = ('runtime-globals.d.ts',) + (('clock-globals.d.ts',) if self.runtime_profile in runtime.CLOCK_PROFILES else ()) + (('fetch-globals.d.ts',) if fetch_binding is not None else ())
             for name in (*selected_native, *declarations):
                 path = 'sdk/typescript-guest/activation/'+name
