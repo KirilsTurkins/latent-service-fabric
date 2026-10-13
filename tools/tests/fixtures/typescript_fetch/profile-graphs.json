@@ -1,0 +1,3218 @@
+{
+  "parser": "wasm-tools1.254.0",
+  "sources": {
+    "sdk/typescript-guest/probes/world.wit": "461f00998a8ad629ef0c3f16a52e09cdde4f880ad4992f9357b036bfaf625afc",
+    "wit/platform/http-v3/package.wit": "6fcae4b3123ec3ce0b32a4e65390630be3bde40ee74b50d7b732150b6bb6147d",
+    "wit/platform/activation-runtime/package.wit": "0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+    "wit/platform/clock/package.wit": "a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+  },
+  "original": {
+    "worlds": [
+      {
+        "name": "capsule",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "exports": {
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          }
+        },
+        "package": 0
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "host",
+        "types": {},
+        "functions": {
+          "echo": {
+            "name": "echo",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ],
+            "result": "string"
+          },
+          "roundtrip": {
+            "name": "roundtrip",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "u64"
+              },
+              {
+                "name": "minimum",
+                "type": "s64"
+              },
+              {
+                "name": "maximum",
+                "type": "s64"
+              }
+            ],
+            "result": 0
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "probe",
+        "types": {
+          "item": 1,
+          "payload": 5
+        },
+        "functions": {
+          "run": {
+            "name": "run",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "input",
+                "type": 5
+              }
+            ],
+            "result": 6
+          },
+          "echo-signed": {
+            "name": "echo-signed",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "s64"
+              }
+            ],
+            "result": "s64"
+          }
+        },
+        "package": 0
+      }
+    ],
+    "types": [
+      {
+        "name": null,
+        "kind": {
+          "tuple": {
+            "types": [
+              "u64",
+              "s64",
+              "s64"
+            ]
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "item",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "name": "amount",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u8"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": 1
+        },
+        "owner": null
+      },
+      {
+        "name": "payload",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "u64"
+              },
+              {
+                "name": "minimum",
+                "type": "s64"
+              },
+              {
+                "name": "maximum",
+                "type": "s64"
+              },
+              {
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "name": "bytes",
+                "type": 2
+              },
+              {
+                "name": "maybe",
+                "type": 3
+              },
+              {
+                "name": "items",
+                "type": 4
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 1
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 5,
+            "err": "string"
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "lsf:typescript-probe@1.0.0",
+        "interfaces": {
+          "host": 0,
+          "probe": 1
+        },
+        "worlds": {
+          "capsule": 0
+        }
+      }
+    ]
+  },
+  "binding": {
+    "worlds": [
+      {
+        "name": "capsule",
+        "imports": {
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          }
+        },
+        "exports": {
+          "interface-2": {
+            "interface": {
+              "id": 2
+            }
+          }
+        },
+        "package": 1
+      },
+      {
+        "name": "selected",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          },
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          }
+        },
+        "exports": {
+          "interface-2": {
+            "interface": {
+              "id": 2
+            }
+          }
+        },
+        "package": 2
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "streaming",
+        "types": {
+          "method": 0,
+          "header": 1,
+          "request": 5,
+          "upload": 6,
+          "body": 7,
+          "chunk": 8,
+          "response": 10,
+          "http-error": 11
+        },
+        "functions": {
+          "open": {
+            "name": "open",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "request",
+                "type": 5
+              }
+            ],
+            "result": 13,
+            "docs": {
+              "contents": "Accept exact metadata and create one bounded operation. A publisher proof\nor an import declaration is not permission to open a connection."
+            }
+          },
+          "write": {
+            "name": "write",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": 14
+              },
+              {
+                "name": "bytes",
+                "type": 15
+              }
+            ],
+            "result": 16,
+            "docs": {
+              "contents": "Success accepts this finite chunk into the owned transport; it does not\npromise remote application processing. An idempotency key permits no retry."
+            }
+          },
+          "finish": {
+            "name": "finish",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": 12
+              }
+            ],
+            "result": 17,
+            "docs": {
+              "contents": "Consume the upload, finish its framing, and return validated response\nheaders plus an owned body. Header success does not promise a complete body."
+            }
+          },
+          "read": {
+            "name": "read",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": 18
+              },
+              {
+                "name": "maximum-bytes",
+                "type": "u32"
+              }
+            ],
+            "result": 21,
+            "docs": {
+              "contents": "None is verified EOF, never a truncated body or a post-header error.\nA held chunk keeps its complete capacity; closing the body cannot refund it."
+            }
+          },
+          "chunk-bytes": {
+            "name": "chunk-bytes",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": 22
+              }
+            ],
+            "result": 23,
+            "docs": {
+              "contents": "Materialize once per chunk. Later calls return invalid-state. Keep the\nchunk until this call has returned, then Drop it to release its capacity."
+            }
+          },
+          "trailers": {
+            "name": "trailers",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": 18
+              }
+            ],
+            "result": 24,
+            "docs": {
+              "contents": "Materialize once after verified EOF; repeated or premature calls return\ninvalid-state. Trailers are never used as authorization metadata."
+            }
+          },
+          "abort-upload": {
+            "name": "abort-upload",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": 12
+              }
+            ],
+            "result": 16,
+            "docs": {
+              "contents": "Abort consumes ownership. It cannot undo bytes already sent to a peer."
+            }
+          },
+          "abort-body": {
+            "name": "abort-body",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": 9
+              }
+            ],
+            "result": 16
+          }
+        },
+        "docs": {
+          "contents": "Owned, immediate HTTP operations. No automatic replay, redirect, upgrade,\napplication transaction, durable outbox, or rollback is implied.\nEvery operation and resource retains the original activation deadline.\nDropping an upload/body aborts actual I/O; separately held chunks stay charged."
+        },
+        "package": 0
+      },
+      {
+        "name": "host",
+        "types": {},
+        "functions": {
+          "echo": {
+            "name": "echo",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ],
+            "result": "string"
+          },
+          "roundtrip": {
+            "name": "roundtrip",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "u64"
+              },
+              {
+                "name": "minimum",
+                "type": "s64"
+              },
+              {
+                "name": "maximum",
+                "type": "s64"
+              }
+            ],
+            "result": 25
+          }
+        },
+        "package": 1
+      },
+      {
+        "name": "probe",
+        "types": {
+          "item": 26,
+          "payload": 30
+        },
+        "functions": {
+          "run": {
+            "name": "run",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "input",
+                "type": 30
+              }
+            ],
+            "result": 31
+          },
+          "echo-signed": {
+            "name": "echo-signed",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "s64"
+              }
+            ],
+            "result": "s64"
+          }
+        },
+        "package": 1
+      }
+    ],
+    "types": [
+      {
+        "name": "method",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "get"
+              },
+              {
+                "name": "head"
+              },
+              {
+                "name": "post"
+              },
+              {
+                "name": "put"
+              },
+              {
+                "name": "patch"
+              },
+              {
+                "name": "delete"
+              },
+              {
+                "name": "options"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "header",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": 1
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "string"
+        },
+        "owner": null
+      },
+      {
+        "name": "request",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "method",
+                "type": 0
+              },
+              {
+                "name": "url",
+                "type": "string"
+              },
+              {
+                "name": "headers",
+                "type": 2
+              },
+              {
+                "name": "body-length",
+                "type": 3
+              },
+              {
+                "name": "body-media-type",
+                "type": 4
+              },
+              {
+                "name": "idempotency-key",
+                "type": 4
+              },
+              {
+                "name": "timeout-millis",
+                "type": 3
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "upload",
+        "kind": "resource",
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "body",
+        "kind": "resource",
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "chunk",
+        "kind": "resource",
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 7
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "response",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "status",
+                "type": "u16"
+              },
+              {
+                "name": "headers",
+                "type": 2
+              },
+              {
+                "name": "body-media-type",
+                "type": 4
+              },
+              {
+                "name": "body",
+                "type": 9
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "http-error",
+        "kind": {
+          "variant": {
+            "cases": [
+              {
+                "name": "invalid-url",
+                "type": null
+              },
+              {
+                "name": "invalid-request",
+                "type": null
+              },
+              {
+                "name": "permission-denied",
+                "type": null
+              },
+              {
+                "name": "request-too-large",
+                "type": null
+              },
+              {
+                "name": "response-too-large",
+                "type": null
+              },
+              {
+                "name": "deadline-exceeded",
+                "type": null
+              },
+              {
+                "name": "cancelled",
+                "type": null
+              },
+              {
+                "name": "budget-exhausted",
+                "type": null
+              },
+              {
+                "name": "dns-failed",
+                "type": null
+              },
+              {
+                "name": "tls-failed",
+                "type": null
+              },
+              {
+                "name": "connection-failed",
+                "type": null
+              },
+              {
+                "name": "unavailable",
+                "type": null
+              },
+              {
+                "name": "uncertain",
+                "type": null
+              },
+              {
+                "name": "invalid-state",
+                "type": null
+              },
+              {
+                "name": "unexpected-eof",
+                "type": null
+              },
+              {
+                "name": "unsupported-encoding",
+                "type": null
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 6
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 12,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 6
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u8"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 10,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 7
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 8
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": 19
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 20,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 8
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 15,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 2,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "tuple": {
+            "types": [
+              "u64",
+              "s64",
+              "s64"
+            ]
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "item",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "name": "amount",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u8"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": 26
+        },
+        "owner": null
+      },
+      {
+        "name": "payload",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "u64"
+              },
+              {
+                "name": "minimum",
+                "type": "s64"
+              },
+              {
+                "name": "maximum",
+                "type": "s64"
+              },
+              {
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "name": "bytes",
+                "type": 27
+              },
+              {
+                "name": "maybe",
+                "type": 28
+              },
+              {
+                "name": "items",
+                "type": 29
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 30,
+            "err": "string"
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "latent:http@0.3.0",
+        "interfaces": {
+          "streaming": 0
+        },
+        "worlds": {}
+      },
+      {
+        "name": "lsf:typescript-probe@1.0.0",
+        "interfaces": {
+          "host": 1,
+          "probe": 2
+        },
+        "worlds": {
+          "capsule": 0
+        }
+      },
+      {
+        "name": "lsf:lsf-typescript-activation@1.0.0",
+        "interfaces": {},
+        "worlds": {
+          "selected": 1
+        }
+      }
+    ]
+  },
+  "http": {
+    "worlds": [
+      {
+        "name": "sdk-http",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "exports": {},
+        "package": 1
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "streaming",
+        "types": {
+          "method": 0,
+          "header": 1,
+          "request": 5,
+          "upload": 6,
+          "body": 7,
+          "chunk": 8,
+          "response": 10,
+          "http-error": 11
+        },
+        "functions": {
+          "open": {
+            "name": "open",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "request",
+                "type": 5
+              }
+            ],
+            "result": 13,
+            "docs": {
+              "contents": "Accept exact metadata and create one bounded operation. A publisher proof\nor an import declaration is not permission to open a connection."
+            }
+          },
+          "write": {
+            "name": "write",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": 14
+              },
+              {
+                "name": "bytes",
+                "type": 15
+              }
+            ],
+            "result": 16,
+            "docs": {
+              "contents": "Success accepts this finite chunk into the owned transport; it does not\npromise remote application processing. An idempotency key permits no retry."
+            }
+          },
+          "finish": {
+            "name": "finish",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": 12
+              }
+            ],
+            "result": 17,
+            "docs": {
+              "contents": "Consume the upload, finish its framing, and return validated response\nheaders plus an owned body. Header success does not promise a complete body."
+            }
+          },
+          "read": {
+            "name": "read",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": 18
+              },
+              {
+                "name": "maximum-bytes",
+                "type": "u32"
+              }
+            ],
+            "result": 21,
+            "docs": {
+              "contents": "None is verified EOF, never a truncated body or a post-header error.\nA held chunk keeps its complete capacity; closing the body cannot refund it."
+            }
+          },
+          "chunk-bytes": {
+            "name": "chunk-bytes",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": 22
+              }
+            ],
+            "result": 23,
+            "docs": {
+              "contents": "Materialize once per chunk. Later calls return invalid-state. Keep the\nchunk until this call has returned, then Drop it to release its capacity."
+            }
+          },
+          "trailers": {
+            "name": "trailers",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": 18
+              }
+            ],
+            "result": 24,
+            "docs": {
+              "contents": "Materialize once after verified EOF; repeated or premature calls return\ninvalid-state. Trailers are never used as authorization metadata."
+            }
+          },
+          "abort-upload": {
+            "name": "abort-upload",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": 12
+              }
+            ],
+            "result": 16,
+            "docs": {
+              "contents": "Abort consumes ownership. It cannot undo bytes already sent to a peer."
+            }
+          },
+          "abort-body": {
+            "name": "abort-body",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": 9
+              }
+            ],
+            "result": 16
+          }
+        },
+        "docs": {
+          "contents": "Owned, immediate HTTP operations. No automatic replay, redirect, upgrade,\napplication transaction, durable outbox, or rollback is implied.\nEvery operation and resource retains the original activation deadline.\nDropping an upload/body aborts actual I/O; separately held chunks stay charged."
+        },
+        "package": 0
+      }
+    ],
+    "types": [
+      {
+        "name": "method",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "get"
+              },
+              {
+                "name": "head"
+              },
+              {
+                "name": "post"
+              },
+              {
+                "name": "put"
+              },
+              {
+                "name": "patch"
+              },
+              {
+                "name": "delete"
+              },
+              {
+                "name": "options"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "header",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": 1
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "string"
+        },
+        "owner": null
+      },
+      {
+        "name": "request",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "method",
+                "type": 0
+              },
+              {
+                "name": "url",
+                "type": "string"
+              },
+              {
+                "name": "headers",
+                "type": 2
+              },
+              {
+                "name": "body-length",
+                "type": 3
+              },
+              {
+                "name": "body-media-type",
+                "type": 4
+              },
+              {
+                "name": "idempotency-key",
+                "type": 4
+              },
+              {
+                "name": "timeout-millis",
+                "type": 3
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "upload",
+        "kind": "resource",
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "body",
+        "kind": "resource",
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "chunk",
+        "kind": "resource",
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 7
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "response",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "status",
+                "type": "u16"
+              },
+              {
+                "name": "headers",
+                "type": 2
+              },
+              {
+                "name": "body-media-type",
+                "type": 4
+              },
+              {
+                "name": "body",
+                "type": 9
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "http-error",
+        "kind": {
+          "variant": {
+            "cases": [
+              {
+                "name": "invalid-url",
+                "type": null
+              },
+              {
+                "name": "invalid-request",
+                "type": null
+              },
+              {
+                "name": "permission-denied",
+                "type": null
+              },
+              {
+                "name": "request-too-large",
+                "type": null
+              },
+              {
+                "name": "response-too-large",
+                "type": null
+              },
+              {
+                "name": "deadline-exceeded",
+                "type": null
+              },
+              {
+                "name": "cancelled",
+                "type": null
+              },
+              {
+                "name": "budget-exhausted",
+                "type": null
+              },
+              {
+                "name": "dns-failed",
+                "type": null
+              },
+              {
+                "name": "tls-failed",
+                "type": null
+              },
+              {
+                "name": "connection-failed",
+                "type": null
+              },
+              {
+                "name": "unavailable",
+                "type": null
+              },
+              {
+                "name": "uncertain",
+                "type": null
+              },
+              {
+                "name": "invalid-state",
+                "type": null
+              },
+              {
+                "name": "unexpected-eof",
+                "type": null
+              },
+              {
+                "name": "unsupported-encoding",
+                "type": null
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 6
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 12,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 6
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u8"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 10,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 7
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 8
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": 19
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 20,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 8
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 15,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 2,
+            "err": 11
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "latent:http@0.3.0",
+        "interfaces": {
+          "streaming": 0
+        },
+        "worlds": {}
+      },
+      {
+        "name": "lsf:typescript-fetch-sdk@1.0.0",
+        "interfaces": {},
+        "worlds": {
+          "sdk-http": 0
+        }
+      }
+    ]
+  },
+  "runtime": {
+    "worlds": [
+      {
+        "name": "capsule",
+        "imports": {
+          "interface-4": {
+            "interface": {
+              "id": 4
+            }
+          }
+        },
+        "exports": {
+          "interface-5": {
+            "interface": {
+              "id": 5
+            }
+          }
+        },
+        "package": 3
+      },
+      {
+        "name": "selected",
+        "imports": {
+          "interface-3": {
+            "interface": {
+              "id": 3
+            }
+          },
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          },
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          },
+          "interface-2": {
+            "interface": {
+              "id": 2
+            }
+          },
+          "interface-4": {
+            "interface": {
+              "id": 4
+            }
+          }
+        },
+        "exports": {
+          "interface-5": {
+            "interface": {
+              "id": 5
+            }
+          }
+        },
+        "package": 4
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "monotonic",
+        "types": {},
+        "functions": {
+          "now-nanos": {
+            "name": "now-nanos",
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "wall",
+        "types": {},
+        "functions": {
+          "now-unix-millis": {
+            "name": "now-unix-millis",
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "streaming",
+        "types": {
+          "method": 0,
+          "header": 1,
+          "request": 5,
+          "upload": 6,
+          "body": 7,
+          "chunk": 8,
+          "response": 10,
+          "http-error": 11
+        },
+        "functions": {
+          "open": {
+            "name": "open",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "request",
+                "type": 5
+              }
+            ],
+            "result": 13,
+            "docs": {
+              "contents": "Accept exact metadata and create one bounded operation. A publisher proof\nor an import declaration is not permission to open a connection."
+            }
+          },
+          "write": {
+            "name": "write",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": 14
+              },
+              {
+                "name": "bytes",
+                "type": 15
+              }
+            ],
+            "result": 16,
+            "docs": {
+              "contents": "Success accepts this finite chunk into the owned transport; it does not\npromise remote application processing. An idempotency key permits no retry."
+            }
+          },
+          "finish": {
+            "name": "finish",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": 12
+              }
+            ],
+            "result": 17,
+            "docs": {
+              "contents": "Consume the upload, finish its framing, and return validated response\nheaders plus an owned body. Header success does not promise a complete body."
+            }
+          },
+          "read": {
+            "name": "read",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": 18
+              },
+              {
+                "name": "maximum-bytes",
+                "type": "u32"
+              }
+            ],
+            "result": 21,
+            "docs": {
+              "contents": "None is verified EOF, never a truncated body or a post-header error.\nA held chunk keeps its complete capacity; closing the body cannot refund it."
+            }
+          },
+          "chunk-bytes": {
+            "name": "chunk-bytes",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": 22
+              }
+            ],
+            "result": 23,
+            "docs": {
+              "contents": "Materialize once per chunk. Later calls return invalid-state. Keep the\nchunk until this call has returned, then Drop it to release its capacity."
+            }
+          },
+          "trailers": {
+            "name": "trailers",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": 18
+              }
+            ],
+            "result": 24,
+            "docs": {
+              "contents": "Materialize once after verified EOF; repeated or premature calls return\ninvalid-state. Trailers are never used as authorization metadata."
+            }
+          },
+          "abort-upload": {
+            "name": "abort-upload",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "target",
+                "type": 12
+              }
+            ],
+            "result": 16,
+            "docs": {
+              "contents": "Abort consumes ownership. It cannot undo bytes already sent to a peer."
+            }
+          },
+          "abort-body": {
+            "name": "abort-body",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "source",
+                "type": 9
+              }
+            ],
+            "result": 16
+          }
+        },
+        "docs": {
+          "contents": "Owned, immediate HTTP operations. No automatic replay, redirect, upgrade,\napplication transaction, durable outbox, or rollback is implied.\nEvery operation and resource retains the original activation deadline.\nDropping an upload/body aborts actual I/O; separately held chunks stay charged."
+        },
+        "package": 1
+      },
+      {
+        "name": "activation",
+        "types": {
+          "owner-kind": 25,
+          "token": 26,
+          "error": 27,
+          "phase": 28,
+          "observation": 29
+        },
+        "functions": {
+          "register": {
+            "name": "register",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "kind",
+                "type": 25
+              },
+              {
+                "name": "continuation",
+                "type": 30
+              }
+            ],
+            "result": 31
+          },
+          "park": {
+            "name": "park",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 26
+              }
+            ],
+            "result": 32
+          },
+          "wake": {
+            "name": "wake",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 26
+              }
+            ],
+            "result": 32
+          },
+          "settle": {
+            "name": "settle",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 26
+              }
+            ],
+            "result": 32
+          },
+          "close": {
+            "name": "close",
+            "kind": "freestanding",
+            "params": [],
+            "result": 32
+          },
+          "observe": {
+            "name": "observe",
+            "kind": "freestanding",
+            "params": [],
+            "result": 33
+          },
+          "wait-for": {
+            "name": "wait-for",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "nanos",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": 30
+              }
+            ],
+            "result": 32,
+            "docs": {
+              "contents": "A cancelled/root-deadline-limited wait never reports requested elapsed\nsuccess. The host owns no sleeping worker and borrows no Store at await."
+            }
+          },
+          "wait-until": {
+            "name": "wait-until",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "unix-millis",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": 30
+              }
+            ],
+            "result": 32,
+            "docs": {
+              "contents": "Convert the absolute wall value once at registration into monotonic\nwaiting; later wall adjustments do not restart the accepted wait."
+            }
+          },
+          "timer-start": {
+            "name": "timer-start",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "first-delay-nanos",
+                "type": "u64"
+              },
+              {
+                "name": "period-nanos",
+                "type": 34
+              },
+              {
+                "name": "continuation",
+                "type": 30
+              }
+            ],
+            "result": 31,
+            "docs": {
+              "contents": "Invocation-local single-shot or fixed-rate recurrence. Recurrence\ncoalesces missed ticks; the host never dispatches a callback or builds\na catch-up queue. Zero periods are invalid. Language callback execution\nremains bounded by the same task/queue limits and original deadline."
+            }
+          },
+          "timer-next": {
+            "name": "timer-next",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 26
+              }
+            ],
+            "result": 35,
+            "docs": {
+              "contents": "Only one next wait may be live per timer. Returns the number of missed\nrecurring ticks coalesced into this single readiness result."
+            }
+          },
+          "timer-stop": {
+            "name": "timer-stop",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 26
+              }
+            ],
+            "result": 32,
+            "docs": {
+              "contents": "Cancels readiness. Pending physical owners stay charged until dropped."
+            }
+          }
+        },
+        "docs": {
+          "contents": "Versioned compiler/runtime support beneath language standard APIs. Tokens\nidentify only Store-local logical owners; they confer no external authority."
+        },
+        "package": 2
+      },
+      {
+        "name": "host",
+        "types": {},
+        "functions": {
+          "echo": {
+            "name": "echo",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ],
+            "result": "string"
+          },
+          "roundtrip": {
+            "name": "roundtrip",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "u64"
+              },
+              {
+                "name": "minimum",
+                "type": "s64"
+              },
+              {
+                "name": "maximum",
+                "type": "s64"
+              }
+            ],
+            "result": 36
+          }
+        },
+        "package": 3
+      },
+      {
+        "name": "probe",
+        "types": {
+          "item": 37,
+          "payload": 41
+        },
+        "functions": {
+          "run": {
+            "name": "run",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "input",
+                "type": 41
+              }
+            ],
+            "result": 42
+          },
+          "echo-signed": {
+            "name": "echo-signed",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "value",
+                "type": "s64"
+              }
+            ],
+            "result": "s64"
+          }
+        },
+        "package": 3
+      }
+    ],
+    "types": [
+      {
+        "name": "method",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "get"
+              },
+              {
+                "name": "head"
+              },
+              {
+                "name": "post"
+              },
+              {
+                "name": "put"
+              },
+              {
+                "name": "patch"
+              },
+              {
+                "name": "delete"
+              },
+              {
+                "name": "options"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "header",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": 1
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "string"
+        },
+        "owner": null
+      },
+      {
+        "name": "request",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "method",
+                "type": 0
+              },
+              {
+                "name": "url",
+                "type": "string"
+              },
+              {
+                "name": "headers",
+                "type": 2
+              },
+              {
+                "name": "body-length",
+                "type": 3
+              },
+              {
+                "name": "body-media-type",
+                "type": 4
+              },
+              {
+                "name": "idempotency-key",
+                "type": 4
+              },
+              {
+                "name": "timeout-millis",
+                "type": 3
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "upload",
+        "kind": "resource",
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "body",
+        "kind": "resource",
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "chunk",
+        "kind": "resource",
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 7
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "response",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "status",
+                "type": "u16"
+              },
+              {
+                "name": "headers",
+                "type": 2
+              },
+              {
+                "name": "body-media-type",
+                "type": 4
+              },
+              {
+                "name": "body",
+                "type": 9
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": "http-error",
+        "kind": {
+          "variant": {
+            "cases": [
+              {
+                "name": "invalid-url",
+                "type": null
+              },
+              {
+                "name": "invalid-request",
+                "type": null
+              },
+              {
+                "name": "permission-denied",
+                "type": null
+              },
+              {
+                "name": "request-too-large",
+                "type": null
+              },
+              {
+                "name": "response-too-large",
+                "type": null
+              },
+              {
+                "name": "deadline-exceeded",
+                "type": null
+              },
+              {
+                "name": "cancelled",
+                "type": null
+              },
+              {
+                "name": "budget-exhausted",
+                "type": null
+              },
+              {
+                "name": "dns-failed",
+                "type": null
+              },
+              {
+                "name": "tls-failed",
+                "type": null
+              },
+              {
+                "name": "connection-failed",
+                "type": null
+              },
+              {
+                "name": "unavailable",
+                "type": null
+              },
+              {
+                "name": "uncertain",
+                "type": null
+              },
+              {
+                "name": "invalid-state",
+                "type": null
+              },
+              {
+                "name": "unexpected-eof",
+                "type": null
+              },
+              {
+                "name": "unsupported-encoding",
+                "type": null
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 2
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 6
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 12,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 6
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u8"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 10,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 7
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "own": 8
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": 19
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 20,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "handle": {
+            "borrow": 8
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 15,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 2,
+            "err": 11
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "owner-kind",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "task"
+              },
+              {
+                "name": "managed-idle-worker"
+              },
+              {
+                "name": "executor"
+              },
+              {
+                "name": "queued-work"
+              },
+              {
+                "name": "wait"
+              },
+              {
+                "name": "timer"
+              },
+              {
+                "name": "result"
+              },
+              {
+                "name": "native"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 3
+        }
+      },
+      {
+        "name": "token",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "generation",
+                "type": "u64"
+              },
+              {
+                "name": "id",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 3
+        }
+      },
+      {
+        "name": "error",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "unavailable"
+              },
+              {
+                "name": "permission-denied"
+              },
+              {
+                "name": "resource-exhausted"
+              },
+              {
+                "name": "cancelled"
+              },
+              {
+                "name": "deadline"
+              },
+              {
+                "name": "invalid-state"
+              },
+              {
+                "name": "invalid-token"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 3
+        }
+      },
+      {
+        "name": "phase",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "running"
+              },
+              {
+                "name": "waiting"
+              },
+              {
+                "name": "closing"
+              },
+              {
+                "name": "draining"
+              },
+              {
+                "name": "cancelling"
+              },
+              {
+                "name": "retired"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 3
+        }
+      },
+      {
+        "name": "observation",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "phase",
+                "type": 28
+              },
+              {
+                "name": "tasks",
+                "type": "u32"
+              },
+              {
+                "name": "executors",
+                "type": "u32"
+              },
+              {
+                "name": "queued-work",
+                "type": "u32"
+              },
+              {
+                "name": "waits",
+                "type": "u32"
+              },
+              {
+                "name": "timers",
+                "type": "u32"
+              },
+              {
+                "name": "results",
+                "type": "u32"
+              },
+              {
+                "name": "native-owners",
+                "type": "u32"
+              },
+              {
+                "name": "parked-tasks",
+                "type": "u32"
+              },
+              {
+                "name": "managed-idle-workers",
+                "type": "u32"
+              },
+              {
+                "name": "native-memory-bytes",
+                "type": "u64"
+              },
+              {
+                "name": "admission-failures",
+                "type": "u64"
+              },
+              {
+                "name": "stale-wakes",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 3
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": 26
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 26,
+            "err": 27
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 27
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 29,
+            "err": 27
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "u64",
+            "err": 27
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "tuple": {
+            "types": [
+              "u64",
+              "s64",
+              "s64"
+            ]
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": "item",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "name": "amount",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 5
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": "u8"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "list": 37
+        },
+        "owner": null
+      },
+      {
+        "name": "payload",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "u64"
+              },
+              {
+                "name": "minimum",
+                "type": "s64"
+              },
+              {
+                "name": "maximum",
+                "type": "s64"
+              },
+              {
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "name": "bytes",
+                "type": 38
+              },
+              {
+                "name": "maybe",
+                "type": 39
+              },
+              {
+                "name": "items",
+                "type": 40
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 5
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 41,
+            "err": "string"
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "latent:clock@0.1.0",
+        "interfaces": {
+          "monotonic": 0,
+          "wall": 1
+        },
+        "worlds": {}
+      },
+      {
+        "name": "latent:http@0.3.0",
+        "interfaces": {
+          "streaming": 2
+        },
+        "worlds": {}
+      },
+      {
+        "name": "latent:runtime@0.1.0",
+        "interfaces": {
+          "activation": 3
+        },
+        "worlds": {}
+      },
+      {
+        "name": "lsf:typescript-probe@1.0.0",
+        "interfaces": {
+          "host": 4,
+          "probe": 5
+        },
+        "worlds": {
+          "capsule": 0
+        }
+      },
+      {
+        "name": "lsf:lsf-typescript-activation@1.0.0",
+        "interfaces": {},
+        "worlds": {
+          "selected": 1
+        }
+      }
+    ]
+  },
+  "activation": {
+    "worlds": [
+      {
+        "name": "abi",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "exports": {},
+        "package": 1
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "activation",
+        "types": {
+          "owner-kind": 0,
+          "token": 1,
+          "error": 2,
+          "phase": 3,
+          "observation": 4
+        },
+        "functions": {
+          "register": {
+            "name": "register",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "kind",
+                "type": 0
+              },
+              {
+                "name": "continuation",
+                "type": 5
+              }
+            ],
+            "result": 6
+          },
+          "park": {
+            "name": "park",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 7
+          },
+          "wake": {
+            "name": "wake",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 7
+          },
+          "settle": {
+            "name": "settle",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 7
+          },
+          "close": {
+            "name": "close",
+            "kind": "freestanding",
+            "params": [],
+            "result": 7
+          },
+          "observe": {
+            "name": "observe",
+            "kind": "freestanding",
+            "params": [],
+            "result": 8
+          },
+          "wait-for": {
+            "name": "wait-for",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "nanos",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": 5
+              }
+            ],
+            "result": 7,
+            "docs": {
+              "contents": "A cancelled/root-deadline-limited wait never reports requested elapsed\nsuccess. The host owns no sleeping worker and borrows no Store at await."
+            }
+          },
+          "wait-until": {
+            "name": "wait-until",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "unix-millis",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": 5
+              }
+            ],
+            "result": 7,
+            "docs": {
+              "contents": "Convert the absolute wall value once at registration into monotonic\nwaiting; later wall adjustments do not restart the accepted wait."
+            }
+          },
+          "timer-start": {
+            "name": "timer-start",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "first-delay-nanos",
+                "type": "u64"
+              },
+              {
+                "name": "period-nanos",
+                "type": 9
+              },
+              {
+                "name": "continuation",
+                "type": 5
+              }
+            ],
+            "result": 6,
+            "docs": {
+              "contents": "Invocation-local single-shot or fixed-rate recurrence. Recurrence\ncoalesces missed ticks; the host never dispatches a callback or builds\na catch-up queue. Zero periods are invalid. Language callback execution\nremains bounded by the same task/queue limits and original deadline."
+            }
+          },
+          "timer-next": {
+            "name": "timer-next",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 1
+              }
+            ],
+            "result": 10,
+            "docs": {
+              "contents": "Only one next wait may be live per timer. Returns the number of missed\nrecurring ticks coalesced into this single readiness result."
+            }
+          },
+          "timer-stop": {
+            "name": "timer-stop",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 1
+              }
+            ],
+            "result": 7,
+            "docs": {
+              "contents": "Cancels readiness. Pending physical owners stay charged until dropped."
+            }
+          }
+        },
+        "docs": {
+          "contents": "Versioned compiler/runtime support beneath language standard APIs. Tokens\nidentify only Store-local logical owners; they confer no external authority."
+        },
+        "package": 0
+      }
+    ],
+    "types": [
+      {
+        "name": "owner-kind",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "task"
+              },
+              {
+                "name": "managed-idle-worker"
+              },
+              {
+                "name": "executor"
+              },
+              {
+                "name": "queued-work"
+              },
+              {
+                "name": "wait"
+              },
+              {
+                "name": "timer"
+              },
+              {
+                "name": "result"
+              },
+              {
+                "name": "native"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "token",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "generation",
+                "type": "u64"
+              },
+              {
+                "name": "id",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "error",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "unavailable"
+              },
+              {
+                "name": "permission-denied"
+              },
+              {
+                "name": "resource-exhausted"
+              },
+              {
+                "name": "cancelled"
+              },
+              {
+                "name": "deadline"
+              },
+              {
+                "name": "invalid-state"
+              },
+              {
+                "name": "invalid-token"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "phase",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "running"
+              },
+              {
+                "name": "waiting"
+              },
+              {
+                "name": "closing"
+              },
+              {
+                "name": "draining"
+              },
+              {
+                "name": "cancelling"
+              },
+              {
+                "name": "retired"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "observation",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "phase",
+                "type": 3
+              },
+              {
+                "name": "tasks",
+                "type": "u32"
+              },
+              {
+                "name": "executors",
+                "type": "u32"
+              },
+              {
+                "name": "queued-work",
+                "type": "u32"
+              },
+              {
+                "name": "waits",
+                "type": "u32"
+              },
+              {
+                "name": "timers",
+                "type": "u32"
+              },
+              {
+                "name": "results",
+                "type": "u32"
+              },
+              {
+                "name": "native-owners",
+                "type": "u32"
+              },
+              {
+                "name": "parked-tasks",
+                "type": "u32"
+              },
+              {
+                "name": "managed-idle-workers",
+                "type": "u32"
+              },
+              {
+                "name": "native-memory-bytes",
+                "type": "u64"
+              },
+              {
+                "name": "admission-failures",
+                "type": "u64"
+              },
+              {
+                "name": "stale-wakes",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": 1
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 1,
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 4,
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "u64",
+            "err": 2
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "latent:runtime@0.1.0",
+        "interfaces": {
+          "activation": 0
+        },
+        "worlds": {}
+      },
+      {
+        "name": "lsf:typescript-abi@1.0.0",
+        "interfaces": {},
+        "worlds": {
+          "abi": 0
+        }
+      }
+    ]
+  },
+  "clock": {
+    "worlds": [
+      {
+        "name": "abi",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          },
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          }
+        },
+        "exports": {},
+        "package": 1
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "monotonic",
+        "types": {},
+        "functions": {
+          "now-nanos": {
+            "name": "now-nanos",
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "wall",
+        "types": {},
+        "functions": {
+          "now-unix-millis": {
+            "name": "now-unix-millis",
+            "kind": "freestanding",
+            "params": [],
+            "result": "u64"
+          }
+        },
+        "package": 0
+      }
+    ],
+    "types": [],
+    "packages": [
+      {
+        "name": "latent:clock@0.1.0",
+        "interfaces": {
+          "monotonic": 0,
+          "wall": 1
+        },
+        "worlds": {}
+      },
+      {
+        "name": "lsf:clock-abi@1.0.0",
+        "interfaces": {},
+        "worlds": {
+          "abi": 0
+        }
+      }
+    ]
+  }
+}

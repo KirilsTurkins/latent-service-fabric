@@ -193,3 +193,6 @@ export async function responseFromNative(metadata, nativeBody) {
     throw error;
   }
 }
+
+export function requestBodyState(value) { return branded(requests, value).body; }
+export function abortResponseBody(value, reason) { return branded(responses, value).body.abort(reason); }

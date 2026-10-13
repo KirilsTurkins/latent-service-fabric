@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve every CLI operation and ordinary synchronous build path while adding explicit source-bound engine/splicer selection and captured npm runtime identity.",
+  "reviewReason": "Add one explicit unqualified SDK fetch runtime selector; retain every existing CLI command argument, ordinary synchronous default and tool identity guard.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6d204a309170d61773ce78f3d4841fcdda2b9ac22306bab884870d76fa3b5410"
+  "sha256": "398bee723f7512d3f98f9f89bf74a0a7696b0631c09173b79ea4be0a7b0bf050"
 }

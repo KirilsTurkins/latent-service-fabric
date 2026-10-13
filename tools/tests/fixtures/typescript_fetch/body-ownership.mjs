@@ -1,5 +1,6 @@
 // Controlled callback lifetimes exercise SDK source only, never a native receipt.
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 import {BodyState, NativeBodyReader} from './http-body.mjs';
 const settled = value => ({result: Promise.resolve(value), retired: Promise.resolve(), cancel() {}});
 const deferred = () => Promise.withResolvers();
@@ -99,3 +100,14 @@ const falseFailure = new NativeBodyReader({
 await assert.rejects(falseFailure.pull(), value => value === 0);
 await assert.rejects(falseFailure.cancel());
 assert.equal(falseFailureDrops, 1); // A failed destruction is retained, never silently retried.
+
+const foreignBytes = vm.runInNewContext('new Uint8Array([7,8])');
+assert.equal(foreignBytes instanceof Uint8Array, false);
+const foreign = new NativeBodyReader({
+  read() { return settled(chunk); }, materialize() { return settled(foreignBytes); },
+  dropChunk() {}, dropBody() {},
+});
+const copied = await foreign.pull();
+assert.deepEqual(copied, new Uint8Array([7,8]));
+assert.equal(copied instanceof Uint8Array, true);
+await foreign.cancel();

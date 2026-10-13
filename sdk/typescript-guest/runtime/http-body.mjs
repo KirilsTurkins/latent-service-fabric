@@ -5,9 +5,18 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const Stream = globalThis.ReadableStream;
 const BlobType = globalThis.Blob;
+const arrayBufferLength = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength').get;
+const typedArrayName = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(Uint8Array.prototype), Symbol.toStringTag).get;
+
+function isArrayBuffer(value) {
+  try { Reflect.apply(arrayBufferLength, value, []); return true; }
+  catch { return false; }
+}
+
+function isBytes(value) { return Reflect.apply(typedArrayName, value, []) === 'Uint8Array'; }
 
 function boundedBytes(value) {
-  if (!(value instanceof Uint8Array) || value.byteLength > maximumBodyBytes) {
+  if (!isBytes(value) || value.byteLength > maximumBodyBytes) {
     throw new TypeError('body-profile-byte-limit-or-type');
   }
   return value;
@@ -26,11 +35,11 @@ function encode(value) {
 
 export function extractBody(value) {
   if (value === undefined || value === null) return {source: null, mediaType: null};
-  if (value instanceof ArrayBuffer) {
+  if (isArrayBuffer(value)) {
     return {source: boundedBytes(new Uint8Array(value)).slice(), mediaType: null};
   }
   if (ArrayBuffer.isView(value)) {
-    if (!(value.buffer instanceof ArrayBuffer)) throw new TypeError('shared-body-buffer-not-supported');
+    if (!isArrayBuffer(value.buffer)) throw new TypeError('shared-body-buffer-not-supported');
     return {source: boundedBytes(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)).slice(), mediaType: null};
   }
   if (typeof URLSearchParams === 'function' && value instanceof URLSearchParams) {
@@ -127,10 +136,11 @@ export class NativeBodyReader {
       } else {
         const bytes = await this.#run(() => this.#operations.materialize(chunk));
         if (this.#cancelled) throw this.#reason;
-        if (!(bytes instanceof Uint8Array) || bytes.byteLength > maximumChunkBytes) {
+        if (!isBytes(bytes) || bytes.byteLength > maximumChunkBytes) {
           throw new TypeError('native-body-chunk-profile-limit-or-type');
         }
-        output = bytes.slice(); // The returned bytes outlive the charged native chunk.
+        output = new Uint8Array(bytes.byteLength);
+        output.set(bytes); // Application-realm bytes outlive the charged native chunk.
       }
     } catch (error) {
       failed = true;
@@ -234,6 +244,12 @@ export class BodyState {
   get used() { return this.#disturbed; }
   get hasBody() { return this.#source !== null; }
   get unusable() { return this.#disturbed || Boolean(this.#stream?.locked); }
+
+  abort(reason) {
+    if (!(this.#source instanceof NativeBodyReader)) throw new TypeError('native-body-owner-required');
+    if (this.#controller) this.#controller.error(reason);
+    return this.#source.cancel(reason);
+  }
 
   clone() {
     if (this.unusable) throw new TypeError('body-is-used-or-locked');

@@ -96,14 +96,20 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if profile in NATIVE_PROFILES:
         from tools.typescript_guest.activation_engine import NATIVE_SOURCES
         from tools.typescript_guest.clock_engine import CLOCK_NATIVE_SOURCES
-        from tools.typescript_guest.runtime_profile import CLOCK_PROFILES, IMPORT_PROFILE
+        from tools.typescript_guest.runtime_profile import CLOCK_PROFILES, IMPORT_PROFILES, FETCH_PROFILE
         from tools.typescript_guest.import_engine import NATIVE_IMPORT_SOURCES
-        selected_native = NATIVE_SOURCES + (CLOCK_NATIVE_SOURCES if profile in CLOCK_PROFILES else ()) + (NATIVE_IMPORT_SOURCES if profile == IMPORT_PROFILE else ())
-        declarations = ('runtime-globals.d.ts',) + (('clock-globals.d.ts',) if profile in CLOCK_PROFILES else ())
+        selected_native = NATIVE_SOURCES + (CLOCK_NATIVE_SOURCES if profile in CLOCK_PROFILES else ()) + (NATIVE_IMPORT_SOURCES if profile in IMPORT_PROFILES else ())
+        declarations = ('runtime-globals.d.ts',) + (('clock-globals.d.ts',) if profile in CLOCK_PROFILES else ()) + (('fetch-globals.d.ts',) if profile == FETCH_PROFILE else ())
         for name in (*selected_native, *declarations):
             path = 'sdk/typescript-guest/activation/'+name
             if _vendor.get(path) != read_file(ROOT/path):
                 raise ValueError('captured TypeScript native runtime source differs from the maintained selection')
+        if profile == FETCH_PROFILE:
+            from tools.typescript_guest.fetch_profile import SDK_RUNTIME_FILES
+            for name in SDK_RUNTIME_FILES:
+                path = 'sdk/typescript-guest/runtime/' + name
+                if _vendor.get(path) != read_file(ROOT/path):
+                    raise ValueError('captured TypeScript fetch runtime differs from the maintained selection')
     from tools.typescript_generator_authoring import validate_generated_inputs
     validate_generated_inputs(files)
     captured = "latent.dependencies.json" in files

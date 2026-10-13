@@ -55,6 +55,11 @@ RECIPE += ('tools/typescript_guest/import_engine.py','tools/typescript_guest/imp
 RECIPE += ('tools/typescript_guest/runtime_bundle.py',)
 RECIPE += ('tools/typescript_guest/text_codec_engine.py',)
 RECIPE += ("tools/typescript_generator_authoring.py",)
+from tools.typescript_guest.fetch_profile import SDK_RUNTIME_FILES
+RECIPE += ('tools/typescript_guest/fetch_profile.py', 'tools/typescript_guest/fetch_bindings.mjs',
+           'tools/typescript_guest/operation_capture.mjs', 'tools/typescript_guest/fetch_startup.mjs',
+           'sdk/typescript-guest/activation/fetch-globals.d.ts')
+RECIPE += tuple('sdk/typescript-guest/runtime/' + name for name in SDK_RUNTIME_FILES)
 
 
 def runtime_package_sources(original: dict[str, bytes], selected: dict,
@@ -145,7 +150,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             if runtime_profile in runtime.NATIVE_PROFILES:
                 options.update(isolated_workspace=temporary, runtime_profile=runtime_profile,
                                engine=runtime_engine, engine_receipt=runtime_engine_receipt)
-                if runtime_profile == runtime.IMPORT_PROFILE:
+                if runtime_profile in runtime.IMPORT_PROFILES:
                     options.update(splicer=runtime_splicer,splicer_receipt=runtime_splicer_receipt)
                 elif runtime_splicer is not None or runtime_splicer_receipt is not None:
                     raise ValueError('source-built splicer requires the explicit TypeScript import candidate')

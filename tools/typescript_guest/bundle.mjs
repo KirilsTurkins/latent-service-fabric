@@ -4,7 +4,7 @@ import { builtinModules } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 
-const [esbuildPath, projectPath, input, output, importsPath, configurationPath, parserPath] = process.argv.slice(2);
+const [esbuildPath, projectPath, input, output, importsPath, configurationPath, parserPath, fetchStartup] = process.argv.slice(2);
 const { build } = await import(pathToFileURL(esbuildPath));
 const project = await realpath(projectPath);
 const imports = new Set(JSON.parse(await readFile(importsPath, 'utf8')));
@@ -15,6 +15,43 @@ const insideProject = path => {
   const inside = relative(project, path);
   return !inside.startsWith('..') && !isAbsolute(inside);
 };
+// Only the compiler passes this closed, SDK-owned input. It is protected with
+// the compiler recipe, outside application resolution and initializer ordering.
+let sdkBanner = '';
+let sdkInputs = [];
+if (fetchStartup) {
+  if (configuration.runtimeProfile !== 'spidermonkey-activation-promises-clocks-fetch-v1') {
+    throw new Error('fetch-startup-requires-explicit-profile');
+  }
+  const sdkRoot = await realpath(new URL('.', import.meta.url));
+  const startup = await realpath(fetchStartup);
+  const expected = new Set(['fetch_startup.mjs', ...['http-headers.mjs', 'http-body.mjs',
+    'http-objects.mjs', 'http-fetch.mjs'].map(name => 'fetch-sdk/' + name)]);
+  if (relative(sdkRoot, startup).replaceAll('\\', '/') !== 'fetch_startup.mjs') {
+    throw new Error('fetch-startup-outside-compiler-recipe');
+  }
+  const sdk = await build({absWorkingDir: sdkRoot, entryPoints: [startup], bundle: true,
+    format: 'iife', platform: 'neutral', target: 'es2022', write: false,
+    metafile: true, logLevel: 'warning', plugins: [{name: 'SDK-fetch-inputs', setup(builder) {
+      builder.onLoad({filter: /.*/}, async args => {
+        const path = await realpath(args.path);
+        const name = relative(sdkRoot, path).replaceAll('\\', '/');
+        if (!expected.has(name)) return {errors: [{text: 'unreviewed-fetch-startup-source'}]};
+        return undefined;
+      });
+    }}]});
+  sdkBanner = sdk.outputFiles[0].text;
+  if (sdkBanner.length > 1024 * 1024) throw new Error('SDK-fetch-startup-byte-limit');
+  for (const name of Object.keys(sdk.metafile.inputs)) {
+    const path = await realpath(resolve(sdkRoot, name));
+    const key = relative(sdkRoot, path).replaceAll('\\', '/');
+    if (!expected.delete(key)) throw new Error('unreviewed-or-duplicate-fetch-startup-source');
+    const raw = await readFile(path);
+    sdkInputs.push({path: key, digest: 'sha256:' + createHash('sha256').update(raw).digest('hex'), size: raw.byteLength});
+  }
+  if (expected.size) throw new Error('incomplete-SDK-fetch-startup-source');
+  sdkInputs.sort((a, b) => a.path.localeCompare(b.path));
+}
 // Initializers run during component snapshot creation. Reject caller-dependent
 // clock/entropy observations before any library initializer. The wrapper also
 // checks when a module captures an intrinsic by reference.
@@ -52,7 +89,7 @@ const result = await build({
   sourcemap: captured ? 'external' : false, sourcesContent: false,
   minify: false, metafile: true, write: false, logLevel: 'warning',
   logOverride: { 'unsupported-dynamic-import': 'error', 'unsupported-require-call': 'error', 'direct-eval': 'error' },
-  banner: { js: guard }, footer: { js: captured ? '__lsfSnapshotActive = false;' : '' },
+  banner: { js: guard + sdkBanner }, footer: { js: captured ? '__lsfSnapshotActive = false;' : '' },
   plugins: [{ name: 'captured-closed-modules', setup(builder) {
     builder.onResolve({ filter: /.*/ }, args => {
       if (args.kind === 'dynamic-import' || args.kind.startsWith('require') && !captured) {
@@ -122,5 +159,8 @@ for (const file of result.outputFiles) {
 await writeFile(output + '.inputs.json', JSON.stringify({
   ...result.metafile, capturedInputs: inputs, selection: configuration,
   snapshotGuardDigest: 'sha256:' + createHash('sha256').update(guard).digest('hex'),
+  ...(fetchStartup ? {SDKFetchStartup: {files: sdkInputs,
+    digest: 'sha256:' + createHash('sha256').update(sdkBanner).digest('hex'),
+    qualification: 'unknown', apiSupport: 'not-evaluated'}} : {}),
   moduleResolution: 'neutral-native-exports-import-require-default-with-explicit-custom-conditions',
 }, null, 2) + '\n', { flag: 'wx' });

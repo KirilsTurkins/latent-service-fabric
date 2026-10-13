@@ -1,0 +1,28 @@
+{
+  "cases": [
+    "TypeScriptFetchOperationTests.test_typed_mapping_backpressure_abort_and_failed_retirement_ownership"
+  ],
+  "guards": {
+    "TypeScriptFetchOperationTests.test_typed_mapping_backpressure_abort_and_failed_retirement_ownership": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:2958bcff2a8105673f50ada67dbf8d5ecb8e2277353334f6bff7a877cbab4fa9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:23a7bb0dfcb01ca3ee1ced3ee5e4d06103bc732b80407360d8b6c5bb659aae1b",
+        "unittest.skipUnless(shutil.which('node'), 'requires Node')"
+      ]
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_fetch_operations.py",
+  "reviewReason": "Add source-only typed HTTP mapping and borrowed-read abort/retirement controls; preserve denied credentials, original resource ceilings and all prior cases.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

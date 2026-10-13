@@ -101,5 +101,37 @@ form or two arguments for the captured retirement form. Its ID validator no
 longer rejects the second argument before checking that identity. The native
 fixture now includes the actual bridge implementation and tests wrong live
 retirement identities, deferred physical completion, idempotent completion and
-invalid arity through JS calls. Strict pinned WASI syntax compilation passes;
-the four added retirement/bridge cases still await native linking and execution.
+invalid arity through JS calls. Strict pinned WASI syntax compilation passes.
+The source checkpoint preceded native execution; the actual results are below.
+
+The explicit `spidermonkey-activation-promises-clocks-fetch-v1` compiler selection
+now stages the SDK startup and its closed source set separately from application
+resolution. Its binding world adds only `latent:http/streaming@0.3.0`; activation
+and clocks remain native engine imports. Actual wasm-tools 1.254.0 parser graphs
+prove the complete original imports/exports and resource ownership types survive.
+Seven source controls reject synchronous/shadowed HTTP signatures and changed
+application types. The ordinary synchronous default stays unchanged. A real
+Node 24.19.0/esbuild compiler-host bundle runs the SDK banner before a dependency
+initializer, which sees all four globals and no private bridge. This check uses
+controlled HTTP callbacks and is not an installed component or provider receipt.
+
+The source adapter accepts bounded finite request bodies, manual redirects and
+native response streams. It copies genuine typed byte arrays across the compiler
+realm before dropping chunks, removes the abort listener after successful body
+drop, and retains cleanup failures separately. Failed retirement prevents
+canonical drops and further fetch admission. Reserved credential headers remain
+visible to native permission checks. Automatic redirects, streamed uploads,
+native body clone/tee, non-ASCII wire headers, keepalive, cache retrieval and
+integrity processing are explicitly unsupported. A Response left unread retains
+its real native body owner; returning it or collecting JS wrappers certifies no
+canonical retirement and cannot waive the existing root-drain gate.
+
+The first new native run executed all 31 selectors. All original 27 and the three
+direct retirement controls passed. The actual JS bridge case retained its own
+`globalThis.retired` Promise after successful subtask/set drops, leaving one
+reachable native owner at the unchanged final gate. That failed product and log
+are preserved. The fixture now clears only that test-owned global before the
+existing full GC/checkpoints; a fresh native run is pending. A newly rebuilt,
+source-bound engine/splicer and ordinary/signed fetch cancellation, drop and reuse
+controls are still required. All profile observations remain unknown and these
+changes close none of #691, #745 or #685.

@@ -47,19 +47,19 @@ def validate(root:Path, *, sdk_root:Path=ROOT)->dict:
     required_files={'engine.wasm','engine-input.json'}
     if not any(name.startswith('licenses/')for name in files):
         raise ValueError('typescript-runtime-bundle-original-notices-required')
-    if profile==runtime.IMPORT_PROFILE:
+    if profile in runtime.IMPORT_PROFILES:
         required_files.add('splicer-input.json')
         if not any(name.startswith('splicer/')for name in files):
             raise ValueError('typescript-runtime-bundle-source-splicer-required')
     if not required_files<=files.keys() or any(name not in required_files|{MANIFEST}
             and not name.startswith('licenses/')
-            and not (profile==runtime.IMPORT_PROFILE and name.startswith('splicer/'))for name in files):
+            and not (profile in runtime.IMPORT_PROFILES and name.startswith('splicer/'))for name in files):
         raise ValueError('typescript-runtime-bundle-unexpected-or-missing-file')
     envelope=decode(files['engine-input.json'],65536)
     sdk={name:read_file(sdk_root/name)for name in engine_input_paths(profile)}
     runtime.validate_engine(envelope,files['engine.wasm'],sdk,
         read_file(sdk_root/'wit/platform/activation-runtime/package.wit'),profile=profile)
-    if profile==runtime.IMPORT_PROFILE:
+    if profile in runtime.IMPORT_PROFILES:
         splicer=splicer_files(root/'splicer')
         validate_splicer(decode(files['splicer-input.json'],65536),splicer,sdk_root)
         if envelope['compilerSplicerInputDigest']!=runtime.digest(files['splicer-input.json']):
@@ -78,6 +78,6 @@ def compiler_options(staged:Path,project:Path)->dict:
     if bundle['profile']!=profile:
         raise ValueError('typescript-runtime-bundle-project-profile-mismatch')
     options={'runtime_engine':root/'engine.wasm','runtime_engine_receipt':root/'engine-input.json'}
-    if profile==runtime.IMPORT_PROFILE:
+    if profile in runtime.IMPORT_PROFILES:
         options.update(runtime_splicer=root/'splicer',runtime_splicer_receipt=root/'splicer-input.json')
     return options

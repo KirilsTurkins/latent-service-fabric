@@ -15,8 +15,10 @@ SYNC_PROFILE = 'spidermonkey-public-sync-v1'
 ASYNC_PROFILE = 'spidermonkey-activation-promises-v1'
 CLOCK_PROFILE = 'spidermonkey-activation-promises-clocks-v1'
 IMPORT_PROFILE = 'spidermonkey-activation-promises-clocks-imports-v1'
-NATIVE_PROFILES = (ASYNC_PROFILE, CLOCK_PROFILE, IMPORT_PROFILE)
-CLOCK_PROFILES = (CLOCK_PROFILE, IMPORT_PROFILE)
+FETCH_PROFILE = 'spidermonkey-activation-promises-clocks-fetch-v1'
+IMPORT_PROFILES = (IMPORT_PROFILE, FETCH_PROFILE)
+NATIVE_PROFILES = (ASYNC_PROFILE, CLOCK_PROFILE, *IMPORT_PROFILES)
+CLOCK_PROFILES = (CLOCK_PROFILE, *IMPORT_PROFILES)
 ACTIVATION_INTERFACE = 'latent:runtime/activation@0.1.0'
 SELECTED_WORLD = 'lsf:typescript-activation/selected@1.0.0'
 ENGINE_SCHEMA = 'latent.typescript.native-engine-input.v1'
@@ -108,11 +110,11 @@ def validate_engine(value: dict, core: bytes, sdk_inputs: dict[str, bytes], runt
     expected = {'schemaVersion', 'profile', 'coreDigest', 'coreBytes', 'sdkInputs',
                 'runtimeWitDigest', 'upstream', 'sourceDerivationDigest', 'buildReceiptDigest',
                 'qualification', 'apiSupport', 'inputTrust'}
-    if profile == IMPORT_PROFILE:
+    if profile in IMPORT_PROFILES:
         expected |= {'compilerSplicerInputDigest'}
     if not isinstance(value, dict) or set(value) != expected:
         raise ValueError('typescript-native-engine-input-schema')
-    schema = IMPORT_ENGINE_SCHEMA if profile == IMPORT_PROFILE else ENGINE_SCHEMA
+    schema = IMPORT_ENGINE_SCHEMA if profile in IMPORT_PROFILES else ENGINE_SCHEMA
     if profile not in NATIVE_PROFILES or value['schemaVersion'] != schema or value['profile'] != profile:
         raise ValueError('typescript-native-engine-input-version')
     if value['upstream'] != SOURCE_PINS:
@@ -134,7 +136,7 @@ def validate_engine(value: dict, core: bytes, sdk_inputs: dict[str, bytes], runt
     for key in ('sourceDerivationDigest', 'buildReceiptDigest'):
         if not isinstance(value[key], str) or not DIGEST.fullmatch(value[key]):
             raise ValueError('typescript-native-engine-source-material-required')
-    if profile == IMPORT_PROFILE and not DIGEST.fullmatch(value['compilerSplicerInputDigest'] if isinstance(value['compilerSplicerInputDigest'], str) else ''):
+    if profile in IMPORT_PROFILES and not DIGEST.fullmatch(value['compilerSplicerInputDigest'] if isinstance(value['compilerSplicerInputDigest'], str) else ''):
         raise ValueError('typescript-native-import-engine-compiler-source-required')
     if (value['qualification'], value['apiSupport'], value['inputTrust']) != (
             'unknown', 'not-evaluated', 'operator-asserted'):

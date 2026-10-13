@@ -8,10 +8,12 @@ import { coreIntegerLowering } from './signed64.mjs';
 import { explicitResourceOwners } from './resources.mjs';
 import { selectedSourceSplicer } from './source_splicer.mjs';
 import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises } from './async_waiters.mjs';
+import {fetchOperationBindings} from './fetch_bindings.mjs';
 
 const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer] = process.argv.slice(2);
 const prepareImport = witPath === '--source-import-adapter';
 const importProfile = 'spidermonkey-activation-promises-clocks-imports-v1';
+const fetchProfile = 'spidermonkey-activation-promises-clocks-fetch-v1';
 const useImportAdapter = prepareImport || !!sourceSplicer;
 const bytes = await readFile(compiler);
 if (createHash('sha256').update(bytes).digest('hex') !==
@@ -54,17 +56,18 @@ const compilerEnv = { HOME: compilerHome,
 let generatedBindings;
 let selectedEngine;
 let selectedSplicer;
+let fetchCaptureSource;
 if (engine || selectionPath) {
   if (!engine || !selectionPath) throw new Error('selected-native-engine-inputs-required');
   const selection = JSON.parse(await readFile(selectionPath, 'utf8'));
   const raw = await readFile(engine);
   const actual = 'sha256:' + createHash('sha256').update(raw).digest('hex');
-  if (!['spidermonkey-activation-promises-v1','spidermonkey-activation-promises-clocks-v1',importProfile].includes(selection.profile) ||
+  if (!['spidermonkey-activation-promises-v1','spidermonkey-activation-promises-clocks-v1',importProfile,fetchProfile].includes(selection.profile) ||
       selection.qualification !== 'unknown' || selection.apiSupport !== 'not-evaluated' ||
       selection.engineInput.coreDigest !== actual || selection.engineInput.coreBytes !== raw.byteLength) {
     throw new Error('selected-native-engine-identity-or-qualification-changed');
   }
-  if (selection.profile === importProfile) {
+  if ([importProfile,fetchProfile].includes(selection.profile)) {
     if (!sourceSplicer || !selection.compilerSplicerInput ||
         selection.compilerSplicerInput.qualification !== 'unknown' || selection.compilerSplicerInput.apiSupport !== 'not-evaluated') {
       throw new Error('source-bound-import-compiler-inputs-required');
@@ -76,6 +79,9 @@ if (engine || selectionPath) {
       }
     }
     selectedSplicer = selectedSourceSplicer(await import(pathToFileURL(sourceSplicer)));
+    if (selection.profile === fetchProfile) {
+      fetchCaptureSource = await readFile(new URL('./operation_capture.mjs', import.meta.url), 'utf8');
+    }
   } else if (sourceSplicer) throw new Error('source-splicer-requires-import-profile');
   selectedEngine = { digest: actual, size: raw.byteLength, profile: selection.profile,
     qualification: 'unknown', apiSupport: 'not-evaluated' };
@@ -91,6 +97,7 @@ const result = await componentize({
       generatedBindings = retireGeneratedTaskSlots(lazySyncImportWaiters(generatedBindings));
     }
     if (selectedSplicer) generatedBindings = applicationRealmImportPromises(generatedBindings);
+    if (fetchCaptureSource) generatedBindings = fetchOperationBindings(generatedBindings, fetchCaptureSource);
     return generatedBindings;
   },
   disableFeatures: ['stdio', 'random', 'clocks', 'http', 'fetch-event'],
