@@ -30,6 +30,7 @@ use std::{
 };
 pub use validation::validate_row;
 pub use validation::{inspect_cell, inspect_usage, tenant_for_row, ObservedCell, StateUsage};
+pub use validation::{inspect_cell_in_namespace, validate_row_in_namespace};
 static NEXT_SESSION: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

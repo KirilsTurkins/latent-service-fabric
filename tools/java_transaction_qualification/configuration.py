@@ -67,11 +67,17 @@ class Configuration:
 
 
 def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
-              checkpoint: Path, recipient_port: int, credential: Path) -> Configuration:
+              checkpoint: Path | None, recipient_port: int, credential: Path, *, deferred_endpoint=None,
+              current_http_installation=None, protected_clock_only=False) -> Configuration:
+    require(type(protected_clock_only) is bool and (not protected_clock_only
+            or checkpoint is None and current_http_installation is None and deferred_endpoint is None),
+            'explicit-protected-clock-without-deferred-installation')
     require(type(recipient_port) is int and 1 <= recipient_port <= 65535,
             "actual-recipient-listener-port")
-    require(checkpoint.is_file() and not checkpoint.is_symlink()
-            and compiler.is_file() and not compiler.is_symlink(), "native-owned-configuration-inputs")
+    require(compiler.is_file() and not compiler.is_symlink()
+            and ((checkpoint is None and (current_http_installation is not None or protected_clock_only))
+                 or isinstance(checkpoint, Path) and checkpoint.is_file() and not checkpoint.is_symlink()),
+            "native-owned-configuration-inputs")
     original = configure_node(directory, signed, TENANT)
     value = read_json(original)
     # Provision private empty directories only. The native protected owner must
@@ -87,7 +93,7 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
     value.update(securityProfile="external-capsule-v1",
         limits={"maximumComponentBytes": 32 * 1024 * 1024, "maximumPayloadBytes": 2 * 1024 * 1024},
         budgetProfile={"mode": "phase4", "maximumStateReadBytes": 4194304,
-                       "maximumStateWriteBytes": 2097152, "maximumEffects": 1},
+                       "maximumStateWriteBytes": 2097152, "maximumEffectCount": 1},
         capabilityPolicies={"formatVersion": 1, "maximumControlJobs": 2,
             "store": {"maximumRecords": 64, "maximumOutcomes": 256, "maximumCatalogBytes": 4194304,
                       "maximumReadOwners": 64, "maximumPageRecords": POLICY_PAGE_RECORDS}})
@@ -138,8 +144,26 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
         "credentials": [{"reference": RECIPIENT_CREDENTIAL, "file": credential.name,
                          "destination": 0, "header": "authorization"}]}
     value["providers"] = providers
+    if deferred_endpoint is not None:
+        from .current_recipient import endpoint
+        require(isinstance(deferred_endpoint, dict)
+                and deferred_endpoint == endpoint(origin, deferred_endpoint["endpointIncarnation"]),
+                "exact-current-configured-http-endpoint")
+        providers["http"]["deferred"] = [deferred_endpoint]
+    if current_http_installation is not None:
+        require(deferred_endpoint is not None
+                and current_http_installation["deferred"] == [deferred_endpoint],
+                "exact-current-installation-endpoint")
+        selected = decode(json.dumps(current_http_installation).encode(), 65536)
+        require(selected["identity"] == providers["http"]["identity"]
+                and selected["configuration"]["extraRoots"] == [list(read_file(tls / "ca.der", 65536))],
+                "same-current-provider-identity-and-tls-root")
+        selected["credentialDirectory"] = str(credential.parent)
+        selected["credentials"][0]["file"] = credential.name
+        providers["http"] = selected
     from .state_configuration import declaration
-    checkpoint_root = checkpoint.parent / "installed-state-checkpoint"
+    checkpoint_root = (directory / "installed-state-checkpoint" if checkpoint is None
+                       else checkpoint.parent / "installed-state-checkpoint")
     checkpoint_root.mkdir(mode=0o700)
     value["state"] = declaration(checkpoint_root.resolve())
     value["state"]["tenantQuotas"] = [{"tenant": TENANT, "limits": dict(TENANT_QUOTA_PROFILE)}]
@@ -149,9 +173,15 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
 
 
 def installed(items: tuple[ComponentInput, ...], publications: dict[str, str],
-              recipient_incarnation: str) -> list[dict]:
+              recipient_incarnation: str, *, credential_reference=RECIPIENT_CREDENTIAL,
+              service_integration_dispatch=False) -> list[dict]:
     import re
     require(re.fullmatch(r"[0-9a-f]{64}", recipient_incarnation), "actual-recipient-incarnation")
+    require(credential_reference in {RECIPIENT_CREDENTIAL, "java-current-http"},
+            "explicit-current-recipient-credential-reference")
+    require(type(service_integration_dispatch) is bool
+            and (not service_integration_dispatch or credential_reference == 'java-current-http'),
+            'explicit-current-service-integration-dispatch')
     result = []
     accepted = tuple(item for item in items if item.name != "forbidden-http")
     from .diagnostic_inputs import NAME
@@ -184,11 +214,31 @@ def installed(items: tuple[ComponentInput, ...], publications: dict[str, str],
             if name == "update" and item.requirements_digest:
                 row["deferredHttp"] = {"requirementsDigest": item.requirements_digest,
                     "providerId": "http", "providerIncarnation": recipient_incarnation,
-                    "credentialReference": RECIPIENT_CREDENTIAL, "stagingBinding": "java-staging-installed",
+                    "credentialReference": credential_reference, "stagingBinding": "java-staging-installed",
                     "stagingPolicies": [STAGING_POLICY], "dispatchBinding": "java-dispatch-installed",
                     "dispatchPolicies": [DISPATCH_POLICY]}
+                if service_integration_dispatch:
+                    row['deferredHttp']['dispatchAuthority'] = {
+                        'formatVersion': 1, 'mode': 'signed-service-integration'}
             result.append(row)
     count = len(expected_names) * 3
     require(len(result) == count and len({(row["publication"], row["function"]) for row in result}) == count,
             "exact-original-twelve-operation-set")
     return result
+
+
+def active_operations(operations: list[dict], publication: str, component_digest: str) -> list[dict]:
+    """Select one actual publication's three operations; create no authority."""
+    import copy
+    import re
+    require(isinstance(operations, list) and 0 < len(operations) <= 15
+            and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", publication or "")
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", component_digest or ""),
+            "explicit-active-publication-and-component")
+    selected = [row for row in operations if row["publication"] == publication]
+    require(len(selected) == 3 and {row["function"] for row in selected} == {"update", "query", "scan"}
+            and all(row["componentDigest"] == component_digest and row["tenant"] == TENANT
+                    and row["contract"] == CONTRACT and row["binding"] == DEPLOYMENT
+                    and row["deployment"] == DEPLOYMENT and row["incarnation"] == 1
+                    for row in selected), "exact-one-current-runtime-operation-set")
+    return copy.deepcopy(selected)

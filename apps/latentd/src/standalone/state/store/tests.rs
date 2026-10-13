@@ -156,6 +156,7 @@ async fn detached_actual_initializer_keeps_native_admission_until_worker_buffers
                         .unwrap();
                     assert!(!timeout.timed_out() && *released);
                 })),
+                false,
             )
             .await
     });

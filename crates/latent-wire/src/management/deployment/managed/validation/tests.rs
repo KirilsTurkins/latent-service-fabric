@@ -1,5 +1,171 @@
 use super::*;
 
+fn captured_request() -> proto::ApplyDeploymentRequest {
+    proto::ApplyDeploymentRequest {
+        deployment:
+            Some(
+                super::super::super::deployment_to_proto(
+                    &super::super::super::tests::captured_phase4(),
+                )
+                .unwrap(),
+            ),
+        expected_component_digest: None,
+        expected_generation: Some(0),
+        operation: Some(proto::DeploymentOperationPrecondition {
+            operation_id: "phase4-control".into(),
+            expected_state_version: Some(0),
+        }),
+    }
+}
+
+fn administrator() -> InvocationPrincipal {
+    InvocationPrincipal {
+        subject: "workflow-operator".into(),
+        kind: latent_core::PrincipalKind::Administrator,
+        tenant: Some(latent_core::TenantId("examples".into())),
+        service: None,
+        claims: latent_core::Metadata::new(),
+    }
+}
+
+#[test]
+fn managed_phase4_validation_preserves_original_request_and_stateless_refusal() {
+    let limits = ManagementLimits::default();
+    assert_eq!(
+        apply(
+            captured_request(),
+            administrator(),
+            &limits,
+            ManifestValidationProfile::default()
+        )
+        .unwrap_err()
+        .code(),
+        tonic::Code::InvalidArgument
+    );
+    let request = apply(
+        captured_request(),
+        administrator(),
+        &limits,
+        super::super::super::tests::phase4_profile(),
+    )
+    .unwrap();
+    let DeploymentOperationRequest::Apply {
+        context,
+        manifest,
+        expected_generation,
+    } = request
+    else {
+        panic!("expected apply");
+    };
+    assert_eq!(
+        manifest,
+        super::super::super::tests::captured_phase4().manifest
+    );
+    assert_eq!(context.tenant.0, "examples");
+    assert_eq!(context.expected_state_version, 0);
+    assert_eq!(expected_generation, 0);
+}
+
+#[test]
+fn managed_phase4_audit_identity_uses_the_same_selected_catalog_request_digest() {
+    use latent_rollout::deployment_audit::DeploymentRejectionIdentity;
+    let profile = super::super::super::tests::phase4_profile();
+    let request = apply(
+        captured_request(),
+        administrator(),
+        &ManagementLimits::default(),
+        profile,
+    )
+    .unwrap();
+    assert!(DeploymentRejectionIdentity::from_request(&request).is_err());
+    let selected =
+        DeploymentRejectionIdentity::from_request_with_profile(&request, profile).unwrap();
+    assert_eq!(
+        selected.request_digest(),
+        &request.request_digest_with_profile(profile).unwrap()
+    );
+    let mut changed = request.clone();
+    let DeploymentOperationRequest::Apply { context, .. } = &mut changed else {
+        unreachable!()
+    };
+    context.expected_state_version += 1;
+    assert_ne!(
+        selected.request_digest(),
+        DeploymentRejectionIdentity::from_request_with_profile(&changed, profile)
+            .unwrap()
+            .request_digest()
+    );
+    let DeploymentOperationRequest::Apply { manifest, .. } = &mut changed else {
+        unreachable!()
+    };
+    manifest.metadata.tenant = Some(latent_core::TenantId("foreign".into()));
+    assert!(DeploymentRejectionIdentity::from_request_with_profile(&changed, profile).is_err());
+}
+
+#[test]
+fn managed_phase4_selection_retains_required_fields_scope_and_preconditions() {
+    let profile = super::super::super::tests::phase4_profile();
+    let limits = ManagementLimits::default();
+    for change in [
+        "metadata",
+        "resources",
+        "tenant",
+        "route",
+        "operation",
+        "generation",
+        "availability",
+    ] {
+        let mut request = captured_request();
+        let expected = if change == "tenant" {
+            tonic::Code::PermissionDenied
+        } else {
+            tonic::Code::InvalidArgument
+        };
+        match change {
+            "metadata" => request.deployment.as_mut().unwrap().metadata = None,
+            "resources" => request.deployment.as_mut().unwrap().resources = None,
+            "tenant" => {
+                let deployment = request.deployment.as_mut().unwrap();
+                deployment.metadata.as_mut().unwrap().tenant = Some("foreign".into());
+                deployment.publication.as_mut().unwrap().tenant = "foreign".into();
+                deployment.requested_publication.as_mut().unwrap().tenant = "foreign".into();
+            }
+            "route" => request.deployment.as_mut().unwrap().route_weight = 10001,
+            "operation" => request.operation = None,
+            "generation" => request.expected_generation = None,
+            "availability" => {
+                request
+                    .deployment
+                    .as_mut()
+                    .unwrap()
+                    .availability
+                    .as_mut()
+                    .unwrap()
+                    .minimum_zones = 2;
+            }
+            _ => unreachable!(),
+        }
+        assert_eq!(
+            apply(request, administrator(), &limits, profile)
+                .unwrap_err()
+                .code(),
+            expected,
+            "{change}"
+        );
+    }
+    let mut request = captured_request();
+    let id = &mut request.deployment.as_mut().unwrap().id;
+    let value = id.clone();
+    *id = String::with_capacity(limits.max_id_bytes + 1);
+    id.push_str(&value);
+    assert_eq!(
+        apply(request, administrator(), &limits, profile)
+            .unwrap_err()
+            .code(),
+        tonic::Code::ResourceExhausted
+    );
+}
+
 #[test]
 fn managed_preconditions_preserve_presence_zero_and_full_u64() {
     for (state, generation, delete, valid) in [

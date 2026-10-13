@@ -29,9 +29,11 @@ latent-state = { path = "../latent-state" }
 latent-commit = { path = "../latent-commit" }
 latent-effects = { path = "../latent-effects" }
 latent-admission = { path = "../latent-admission" }
+latent-ingress = { path = "../latent-ingress" }
 http-body.workspace = true
 prost.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 sha2.workspace = true
 tokio.workspace = true
 tonic.workspace = true
@@ -44,7 +46,6 @@ latent-packaging = { path = "../latent-packaging" }
 latent-test-process = { path = "../latent-test-process" }
 latent-core = { path = "../latent-core", features = ["test-support"] }
 latent-streams = { path = "../latent-streams", features = ["development-outbound"] }
-serde_json.workspace = true
 tempfile.workspace = true
 latent-scheduler = { path = "../latent-scheduler" }
 tokio = { workspace = true, features = ["test-util", "rt-multi-thread"] }

@@ -12,10 +12,19 @@ fn installed_metadata_keeps_startup_residency_and_an_independent_full_recovery_j
         .unwrap();
     let startup = startup_footprint(&store, native).unwrap();
     assert!(installation_footprint(&store, native, startup, 0).is_ok());
-    assert!(installation_footprint(&store, native, startup, 1).is_err());
+    assert_eq!(
+        super::super::installation_profile(&store),
+        latent_artifacts::TransactionAssetProfile::Compact
+    );
+    assert!(installation_footprint(&store, native, startup, 1).is_ok());
+    assert!(installation_footprint(&store, native, startup, 12).is_ok());
     let recovery = store.io.recovery.as_mut().unwrap();
     recovery.job_bytes = 32 * MIB;
     recovery.retained_bytes = 64 * MIB;
+    assert_eq!(
+        super::super::installation_profile(&store),
+        latent_artifacts::TransactionAssetProfile::Broad
+    );
     assert!(installation_footprint(&store, native, startup, 1).is_ok());
     assert!(installation_footprint(&store, native, startup, 8).is_ok());
     assert!(installation_footprint(&store, native, startup, 9).is_ok());

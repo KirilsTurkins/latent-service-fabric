@@ -12,7 +12,8 @@ from .inputs import decode, require
 REPORT_FIELDS = {"schemaVersion", "operationSucceeded", "failure", "result", "retirement", "catalogsRetired"}
 RETIREMENT_FIELDS = {"clean", "physicallyRetired", "liveWorkers", "acceptedJobs", "threadsJoined"}
 ACTIONS = {"snapshot", "inspect-namespace", "inspect-restore", "restore", "stage-migration",
-           "complete-migration", "review", "resume"}
+           "complete-migration", "resume-migration", "resume-restored-migration", "review", "resume",
+           "inspect-close-effects", "close-effects"}
 FAILURES = {"configuration", "busy", "destination", "input", "review", "target", "protected"}
 FAILURE_REASONS = {
     "platform": {"unavailable", "deadline-exceeded", "cancelled", "resource-exhausted", "permission-denied",
@@ -31,6 +32,25 @@ FAILURE_REASONS = {
                "byteBudget", "jobTooLarge", "exhausted", "poisoned", "workerStartFailed", "recoveryRequired",
                "initializationFailed", "notStarted", "finalizationFailed", "drainWaiterBusy", "alreadyDelivered"},
 }
+
+
+def decoder_sources(items, publications):
+    """Explicit signed byte identities, never old deployment or decoder grants."""
+    names = ("put-once-legacy-v1", "put-once-compatible-v2", "put-once-writer-v2", "put-once-diagnostics")
+    require(isinstance(publications, dict) and set(names) <= set(publications),
+            "four-explicit-current-decoder-publications")
+    selected = []
+    for name in names:
+        require(name in items, "original-current-decoder-item-required")
+        component, publication = items[name].component_digest, publications[name]
+        original_digest(component)
+        require(isinstance(publication, str) and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", publication),
+                "current-decoder-publication-identity")
+        selected.append({"componentDigest": component, "publication": publication})
+    require(len({row["componentDigest"] for row in selected}) == 4
+            and len({row["publication"] for row in selected}) == 4,
+            "distinct-current-decoder-byte-identities")
+    return selected
 
 
 def byte_array(value, maximum):
@@ -57,7 +77,8 @@ def original_digest(value):
 def report(raw):
     value = decode(raw, 1048576)
     require(isinstance(value, dict) and set(value) == REPORT_FIELDS
-            and value["schemaVersion"] == "latent.native-transaction-recovery.v1"
+            and value["schemaVersion"] in {"latent.native-transaction-recovery.v1",
+                                           "latent.native-transaction-recovery.v2"}
             and type(value["operationSucceeded"]) is bool
             and type(value["catalogsRetired"]) is bool, "closed-native-recovery-report")
     if value["operationSucceeded"]:
@@ -65,11 +86,18 @@ def report(raw):
                 "native-success-keeps-original-result")
     else:
         failure = value["failure"]
-        require(value["result"] is None and isinstance(failure, dict)
+        if value["schemaVersion"] == "latent.native-transaction-recovery.v2":
+            require(value["result"] is None and isinstance(failure, dict)
+                    and set(failure) == {"code", "message", "retryable"}
+                    and failure["code"] in FAILURE_REASONS["platform"]
+                    and isinstance(failure["message"], str) and len(failure["message"]) <= 1024
+                    and type(failure["retryable"]) is bool, "closed-current-native-producer-failure")
+        else:
+            require(value["result"] is None and isinstance(failure, dict)
                 and failure.get("stage") in FAILURES
                 and set(failure) == ({"stage"} if failure.get("stage") in {"configuration", "busy", "destination"}
                                     else {"stage", "failure"}), "native-failure-is-not-success")
-        if "failure" in failure:
+        if value["schemaVersion"] == "latent.native-transaction-recovery.v1" and "failure" in failure:
             detail = failure["failure"]
             require(isinstance(detail, dict) and set(detail) == {"owner", "reason"}
                     and isinstance(detail["owner"], str) and isinstance(detail["reason"], str)
@@ -116,9 +144,10 @@ class Recovery:
     current purpose, package, schema, namespace, checkpoint and physical fences.
     Nothing here derives a grant, native profile, schema review or continuity.
     """
-    def __init__(self, client, helper: Path, configuration, directory: Path, node):
+    def __init__(self, client, helper: Path, configuration, directory: Path, node, *, sources=None):
         self.client, self.helper, self.configuration = client, helper, configuration
         self.node = node
+        self.sources = sources
         directory.mkdir(mode=0o700)
         self.directory, self.calls = directory, 0
         callers = [entry for entry in configuration.value["credentials"]
@@ -141,7 +170,21 @@ class Recovery:
                 and isinstance(request, dict) and request.get("action") in ACTIONS
                 and not ({"approved", "grant", "deadline", "continuity"} & set(request)),
                 "closed-native-recovery-action-data")
-        raw = encoded({"publication": publication, "request": request})
+        envelope = {"publication": publication, "request": request}
+        if self.sources is not None:
+            require(isinstance(self.sources, list) and len(self.sources) == 4
+                    and all(isinstance(row, dict) and set(row) == {"componentDigest", "publication"}
+                            for row in self.sources)
+                    and len({row["publication"] for row in self.sources}) == 4
+                    and publication in {row["publication"] for row in self.sources},
+                    "closed-four-current-decoder-source-selectors")
+            for row in self.sources:
+                original_digest(row["componentDigest"])
+                require(isinstance(row["publication"], str)
+                        and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", row["publication"]),
+                        "current-decoder-publication-identity")
+            envelope["decoderSources"] = [row for row in self.sources if row["publication"] != publication]
+        raw = encoded(envelope)
         require(len(raw) <= 16384, "original-native-recovery-input-bound")
         self.calls += 1
         stage = f"native-recovery-{self.calls:02d}"
@@ -154,4 +197,7 @@ class Recovery:
             "--credential-file", self.credential, "--tenant", cfg.TENANT, "--request-file", path,
             timeout=90))
         self.client.evidence.record(stage + "-report", result)
+        if result['schemaVersion'] == 'latent.native-transaction-recovery.v2':
+            require(result['catalogsRetired'] is True, 'current-native-control-catalog-retirement-required')
+            lifecycle.admission_lease_interval(self.client)
         return result

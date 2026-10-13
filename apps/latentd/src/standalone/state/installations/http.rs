@@ -34,6 +34,66 @@ struct Requirements {
     ceiling: DispatchCeiling,
 }
 
+/// Retained decoder association only. This reads the same signed requirements
+/// and current configured adapter; it installs no authority or dispatch rule.
+pub(in crate::standalone::state) fn recovery_profile(
+    asset: &SelectedTransactionAsset,
+    operation: &OperationSettings,
+    adapters: &[Arc<HttpEffectAdapter>],
+) -> Result<Option<(EffectScope, latent_effects::authority::DispatchProfile)>, PlatformError> {
+    let Some(config) = &operation.deferred_http else {
+        return Ok(None);
+    };
+    let (digest, bytes) = asset.deferred_http_requirements().ok_or_else(denied)?;
+    if digest.to_string() != config.requirements_digest || bytes.len() > 8192 {
+        return Err(denied());
+    }
+    let requirement: Requirements = serde_json::from_slice(bytes).map_err(|_| denied())?;
+    let declaration = asset.declaration();
+    if requirement.format_version != 1
+        || requirement.protocol != "lsf-atomic-idempotent-http-v1"
+        || requirement.capsule != declaration.capsule
+        || requirement.deployment != declaration.deployment
+        || requirement.state_binding != declaration.binding
+        || requirement.namespace != declaration.namespace
+        || requirement.companion_digest != asset.asset_digest().to_string()
+        || requirement.operation != "http"
+        || requirement.adapter != "qualified-http-effect-v1"
+        || requirement.payload_format != "http-body-value-v1"
+    {
+        return Err(denied());
+    }
+    let mut matching = adapters.iter().filter(|adapter| {
+        adapter.profile().provider == config.provider_id
+            && adapter.endpoint().endpoint_incarnation == config.provider_incarnation
+            && adapter.profile().idempotency_profile == requirement.idempotency_profile
+    });
+    let adapter = matching.next().ok_or_else(denied)?;
+    if matching.next().is_some() {
+        return Err(denied());
+    }
+    let scope = EffectScope {
+        tenant: operation.tenant.0.clone(),
+        namespace: declaration.namespace.clone(),
+        incarnation: operation.incarnation,
+        publication: operation.publication.as_str().into(),
+        binding: requirement.binding,
+        operation: "http".into(),
+    };
+    let rule = adapter
+        .rule(
+            scope,
+            1,
+            adapter.provider_reference().configuration_epoch(),
+            requirement.ceiling,
+        )
+        .map_err(|_| denied())?;
+    if rule.protected_credential_reference != config.credential_reference {
+        return Err(denied());
+    }
+    Ok(Some((rule.scope, rule.profile)))
+}
+
 #[allow(
     clippy::too_many_arguments,
     reason = "Each original installed owner remains explicit at the startup seal"
@@ -218,16 +278,43 @@ fn dispatch_policy(
         .iter()
         .filter(|g| g.capability.0 == HTTP_CAPABILITY)
         .collect();
-    if grants.len() != 1
-        || config.dispatch_policies != [grants[0].policy.0.clone()]
-        || !grants[0].constraints.is_empty()
-    {
-        return Err(denied());
-    }
-    let restriction = GrantRestriction {
-        operations: grants[0].operations.clone(),
-        resources: None,
-        ceiling: None,
+    let restriction = if config.service_integration() {
+        // This explicit native effect owner has no immediate HTTP guest grant.
+        // Signed INTENT/source requirements and current dispatch policy still
+        // constrain the exact rule, provider and every HTTP acceptance fence.
+        if !grants.is_empty()
+            || !asset
+                .metadata()
+                .manifest()
+                .imports
+                .iter()
+                .any(|import| import.contract.0 == INTENT_CONTRACT && !import.optional)
+            || asset
+                .metadata()
+                .manifest()
+                .imports
+                .iter()
+                .any(|import| import.contract.0 == HTTP_CAPABILITY)
+        {
+            return Err(denied());
+        }
+        GrantRestriction {
+            operations: vec!["send".into()],
+            resources: None,
+            ceiling: None,
+        }
+    } else {
+        if grants.len() != 1
+            || config.dispatch_policies != [grants[0].policy.0.clone()]
+            || !grants[0].constraints.is_empty()
+        {
+            return Err(denied());
+        }
+        GrantRestriction {
+            operations: grants[0].operations.clone(),
+            resources: None,
+            ceiling: None,
+        }
     };
     let reference = adapter.provider_reference();
     let service = ServiceId(declaration_service(asset).into());
@@ -238,11 +325,18 @@ fn dispatch_policy(
         service: Some(service),
         claims: Metadata::new(),
     };
+    let selection = if config.service_integration() {
+        latent_capabilities::namespace::RecoverySelection::ServiceIntegration
+    } else {
+        latent_capabilities::namespace::RecoverySelection::OriginalCaller
+    };
+    let caller_scope = latent_capabilities::namespace::CallerScope::derive(&principal, &selection)?;
     Ok(dispatch::DispatchPolicy {
         rule,
         policy,
         publication: asset.publication().clone(),
         principal,
+        caller_scope,
         service: declaration_service(asset).into(),
         policies: config.dispatch_policies.clone(),
         binding: config.dispatch_binding.clone(),

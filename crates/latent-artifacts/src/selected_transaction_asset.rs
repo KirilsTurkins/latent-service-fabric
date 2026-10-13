@@ -14,6 +14,41 @@ use crate::{ReleaseUseEligibility, ReleaseUseRecheck, VerifiedArtifactMetadata};
 /// creates a reservation or borrows the protected store's resident allowance.
 pub const TRANSACTION_ASSET_WORK_BYTES: u64 = 24 * 1024 * 1024;
 pub const TRANSACTION_ASSET_RESPONSE_BYTES: u64 = 2 * 1024 * 1024;
+
+/// Host-selected finite read profiles, never a request-supplied decoder or grant.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransactionAssetProfile {
+    Broad,
+    Compact,
+}
+impl TransactionAssetProfile {
+    #[must_use]
+    pub const fn work_bytes(self) -> u64 {
+        match self {
+            Self::Broad => TRANSACTION_ASSET_WORK_BYTES,
+            Self::Compact => 6 * 1024 * 1024,
+        }
+    }
+    #[must_use]
+    pub const fn response_bytes(self) -> u64 {
+        match self {
+            Self::Broad => TRANSACTION_ASSET_RESPONSE_BYTES,
+            Self::Compact => 512 * 1024,
+        }
+    }
+    pub(crate) const fn document_bytes(self) -> usize {
+        match self {
+            Self::Broad => DOCUMENT_BYTES,
+            Self::Compact => 64 * 1024,
+        }
+    }
+    pub(crate) const fn metadata_bytes(self) -> usize {
+        match self {
+            Self::Broad => CONTROL_METADATA_BYTES,
+            Self::Compact => 512 * 1024,
+        }
+    }
+}
 pub(crate) const DOCUMENT_BYTES: usize = 256 * 1024;
 pub(crate) const COMPANION_BYTES: usize = 128 * 1024;
 pub(crate) const CONTROL_METADATA_BYTES: usize = 4 * 1024 * 1024;

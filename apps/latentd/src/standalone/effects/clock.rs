@@ -29,7 +29,7 @@ pub struct ProtectedEffectClock {
 }
 
 impl ProtectedEffectClock {
-    pub(super) fn admit(
+    pub(in crate::standalone) fn admit(
         original: Arc<dyn ActivationClock>,
         authority: Arc<SupplyChainAuthority>,
         checkpoint: Option<&ExternalCheckpoint>,
@@ -93,7 +93,7 @@ impl ProtectedEffectClock {
         Ok(sample)
     }
 
-    pub(super) fn covered_epoch(&self) -> Result<u64, PlatformError> {
+    pub(in crate::standalone) fn covered_epoch(&self) -> Result<u64, PlatformError> {
         self.sample()?;
         let state = self.observation.lock().map_err(|_| unavailable())?;
         if state.rejected {

@@ -29,6 +29,17 @@ The opt-in Phase 4 `state` and `transaction` groups use the
 They require a node composed with its actual transaction runtime and current
 namespace/result permissions; protocol definitions do not install that runtime.
 
+Use the explicit global `--phase4` option when preparing transaction capsule
+packages or deployments: for example, `latent --phase4 release publish-package
+DIR --evidence INDEX --operation-id OP --expected-generation 0`. It selects the
+supported transaction manifest validator for local `validate`, package
+build/inspect/verify, signed package publication, and deployment/rollout
+preparation and deployment replies. The default validator remains stateless.
+The option supplies no signature, namespace, provider, execution, or dispatch
+authority; the node still independently admits every request under its actual
+configuration and current policy. Existing file, evidence, and request bounds
+apply to both selections.
+
 | Command | Behavior |
 | --- | --- |
 | `validate capsule FILE` | Bounded schema and stateless semantic checks, without credentials or a connection. |

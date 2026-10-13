@@ -1,0 +1,231 @@
+{
+  "formatVersion": 1,
+  "scope": "actual current Java fixture signing, package proof verification, TLS and refusals only",
+  "javaNodeExecutionQualified": false,
+  "nativeSource": {
+    "head": "a37aa97780a15aee55b049cdb23833b0474386d6",
+    "tree": "b195ad41fcc31c84144b3610bc60afafd7236ed3",
+    "archive": "default-source-a37aa97780a15aee55b049cdb23833b0474386d6.tar",
+    "archiveSha256": "4c0174a1cbad834aba6693b7bb1f7fd209095604f852971d11ae98c8f66c0d44",
+    "sourceRoot": "/work/recovery970-default-a37aa97780a1-20261013",
+    "binaryRoot": "/work/recovery970-default-binaries-a37aa97780a1-20261013"
+  },
+  "products": [
+    {
+      "role": "contracts_tool",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latent-packaging",
+        "--example",
+        "capsule_contracts",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "sha256": "8a235072784b10d616dd8eaffd3a7d0ec536b93bb096bed2452bc9c9b32befd1",
+      "features": [],
+      "executable": "/work/recovery970-default-binaries-a37aa97780a1-20261013/capsule_contracts",
+      "artifactExecutable": "/target/debug/examples/capsule_contracts",
+      "stdoutSha256": "8de2ff2e527b57b6bb1ac6945314ca2459ba69bcd9b5d0b28b4a0167ea12406a",
+      "stderrSha256": "ae4401f2f16e1c7d0dd4083f0fbc8e82ba2834c5d5bf8659e5b3a9d84f577d6d"
+    },
+    {
+      "role": "signer",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latent-policy",
+        "--example",
+        "capsule_authoring",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "sha256": "6672717d6d2239c8627329954ba86082639908eb59ddd30ff2ed2d5144c83440",
+      "features": [],
+      "executable": "/work/recovery970-default-binaries-a37aa97780a1-20261013/capsule_authoring",
+      "artifactExecutable": "/target/debug/examples/capsule_authoring",
+      "stdoutSha256": "8358196e7f2f2ffe763eac12d0adf936132b6a082f6a3aabbae69bf668eb5a57",
+      "stderrSha256": "6e9f2ec3c5ce0e913c35d395add8b871ddad77daeeb9035aa234617779c37743"
+    }
+  ],
+  "signing": {
+    "status": "passed",
+    "scope": "actual current fixture package signing and verifier/refusals/TLS only; no Java node execution",
+    "nativeSource": "a37aa97780a15aee55b049cdb23833b0474386d6",
+    "nativeTree": "b195ad41fcc31c84144b3610bc60afafd7236ed3",
+    "tools": {
+      "contracts-tool": {
+        "name": "contracts-tool",
+        "digest": "sha256:8a235072784b10d616dd8eaffd3a7d0ec536b93bb096bed2452bc9c9b32befd1",
+        "size": 104818624
+      },
+      "signer": {
+        "name": "signer",
+        "digest": "sha256:6672717d6d2239c8627329954ba86082639908eb59ddd30ff2ed2d5144c83440",
+        "size": 146104192
+      }
+    },
+    "commands": [
+      {
+        "stage": "aggregate-contracts",
+        "exitCode": 0,
+        "seconds": 0.014212
+      },
+      {
+        "stage": "put-once-legacy-v1-contracts",
+        "exitCode": 0,
+        "seconds": 0.012885
+      },
+      {
+        "stage": "put-once-compatible-v2-contracts",
+        "exitCode": 0,
+        "seconds": 0.012362
+      },
+      {
+        "stage": "put-once-writer-v2-contracts",
+        "exitCode": 0,
+        "seconds": 0.012039
+      },
+      {
+        "stage": "put-once-diagnostics-contracts",
+        "exitCode": 0,
+        "seconds": 0.01195
+      },
+      {
+        "stage": "current-sign",
+        "exitCode": 0,
+        "seconds": 2.220857
+      },
+      {
+        "stage": "current-fixture-tls",
+        "exitCode": 0,
+        "seconds": 0.011851
+      },
+      {
+        "stage": "wrong-source",
+        "exitCode": 1,
+        "seconds": 0.011634
+      },
+      {
+        "stage": "incomplete-set",
+        "exitCode": 1,
+        "seconds": 0.01133
+      }
+    ],
+    "releaseSet": {
+      "compilerExecutedBySigner": false,
+      "compilerSource": "9bae83952d9513c965a88d375b2a533916a98473",
+      "evidenceKind": "synthetic-native-package-trust",
+      "expiresAtUnixSeconds": 1791845863,
+      "packagedDistributionQualified": false,
+      "policyDigest": "sha256:58eb6a53ff62e1406e9ae5cfe5a83ffea7d98f8308731b135f324ac8e6ae9764",
+      "releases": [
+        {
+          "buildType": "https://latent.dev/build/java-capsule/v1",
+          "componentDigest": "sha256:c0fdb390a366f94b860e3d2d5139055691a67ada2fae19e7184462b49ab3549d",
+          "name": "java718-aggregate",
+          "observationDigest": "sha256:5f416f03007afef671a3f2f4069ffac9228348e23d3745675f56d942342f8731",
+          "packageDigest": "sha256:ab5050d462a8f3e2bdc1fa989ac5b43ef2977e30829830cbf065c7193cf5af2b",
+          "service": "examples/transaction-java-aggregate",
+          "sourceSnapshotDigest": "sha256:b700777207ed5e2043d113e4fcd8bef4a77f80bfd10301fa50b134065cff31c8",
+          "world": "examples:transactional-aggregate/service@1.0.0"
+        },
+        {
+          "buildType": "https://latent.dev/build/java-capsule/v1",
+          "componentDigest": "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd",
+          "name": "java718-put-once-legacy-v1",
+          "observationDigest": "sha256:f6dfeb0e38d37be7737e7faf5021836ddb67642091d0ab2fbf0261bb797ca93f",
+          "packageDigest": "sha256:133678ae1813b7e34d24d8ccfe7167bdc99e79ff39e5784b15a85084dac09d9e",
+          "service": "examples/transaction-java-aggregate",
+          "sourceSnapshotDigest": "sha256:d59054c9e55c811bac928d370b2fc2840995f9caf1a773358c103ef604334294",
+          "world": "examples:transactional-aggregate/service@1.0.0"
+        },
+        {
+          "buildType": "https://latent.dev/build/java-capsule/v1",
+          "componentDigest": "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813",
+          "name": "java718-put-once-compatible-v2",
+          "observationDigest": "sha256:fa2b49011893d9e6a8c47c5981a29c9078941343d896c546744047b51f0eca48",
+          "packageDigest": "sha256:103c181c783cf855bc28e67a3ce95f2144d1c065f06d11ee60fd51e84fee3996",
+          "service": "examples/transaction-java-aggregate",
+          "sourceSnapshotDigest": "sha256:0a5bd09216f485b6f65bfac9820c48b0a9009b34c2b984c3ed8cdf9f94c409e9",
+          "world": "examples:transactional-aggregate/service@1.0.0"
+        },
+        {
+          "buildType": "https://latent.dev/build/java-capsule/v1",
+          "componentDigest": "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+          "name": "java718-put-once-writer-v2",
+          "observationDigest": "sha256:bb6b95e1fcf7e22e6385860c0c05f727a26fc3ca46a1e3c3dcc34e1e6afe5abe",
+          "packageDigest": "sha256:2afe1b84197976cc26e8d28196d1c851b01ba12dce7246974f80a2c78b485d53",
+          "service": "examples/transaction-java-aggregate",
+          "sourceSnapshotDigest": "sha256:0a83bf958e450c9e7d3f9a53fb20efc318b8adde872bd6e7af62d0f65725f1b2",
+          "world": "examples:transactional-aggregate/service@1.0.0"
+        },
+        {
+          "buildType": "https://latent.dev/build/java-capsule/v1",
+          "componentDigest": "sha256:322dfed5d9838edfbbd53bf0672c31f849ac7c7309358975bf1bf6c10b0a24bb",
+          "name": "java718-put-once-diagnostics",
+          "observationDigest": "sha256:6cbf71ca2a9ea98ca981d0e11289c4d9cfb7c1c4e43432170a2f61cd154bbc4e",
+          "packageDigest": "sha256:d4173e9dd164348ef263a0bb3558898f49b95532b30ab1f9a98bc0f5f3e35f3a",
+          "service": "examples/transaction-java-aggregate",
+          "sourceSnapshotDigest": "sha256:36c544ac14b688efe6b2f85e405def2726084c5f581bc21d2c22a106b81f3f5e",
+          "world": "examples:transactional-aggregate/service@1.0.0"
+        }
+      ],
+      "schemaVersion": "latent.component.signing-fixture.v1",
+      "signedNodeExecutionQualified": false,
+      "tenant": "examples",
+      "trust": "ephemeral-native-package-test-only"
+    },
+    "sourceRefusalNoOutput": true,
+    "incompleteRefusalNoOutput": true
+  },
+  "tamperedMaterial": {
+    "status": "passed",
+    "scope": "actual current signing driver refuses changed material without output",
+    "nativeSource": "a37aa97780a15aee55b049cdb23833b0474386d6",
+    "exitCode": 1,
+    "stdoutBytes": 0,
+    "reason": "current Java fixture material digest mismatch",
+    "outputCreated": false
+  },
+  "receipts": {
+    "actual-signing-qualification-r1.json": {
+      "sha256": "sha256:4919d1ed1243a3c8a86cdfcb6d4875bb115efdab8767244a33825eb32faaf206",
+      "bytes": 5491
+    },
+    "tampered-material-refusal-r1.json": {
+      "sha256": "sha256:3f44afef0ad8c3018ace3d19684368845265d6e9389987bd10bc5ea7a97e4421",
+      "bytes": 295
+    },
+    "native-source-manifest-a37.json": {
+      "sha256": "sha256:d8393cfff24ff95857e6f515c7e794e0227f4a76ef94faa66e24ca6c8c04703d",
+      "bytes": 1264822
+    }
+  },
+  "driverManifest": {
+    "path": "crates/latent-policy/Cargo.toml",
+    "identity": {
+      "sha256": "sha256:76588eb5ab29a6be500e4a992825997c4567618359963d8addfc02d975ed9702",
+      "bytes": 1135
+    }
+  },
+  "nativeSourceCases": {
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  "clippy": "maintained workspace warning policy passed; extra global warnings-as-errors attempt retained separately",
+  "remaining": [
+    "combined signed Java node publication/admission and command/query/effect/recovery campaign"
+  ],
+  "doesNotClose": [
+    718,
+    682
+  ]
+}

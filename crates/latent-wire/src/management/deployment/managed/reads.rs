@@ -28,8 +28,12 @@ pub(in crate::management::deployment) async fn get(
     {
         return Err(Status::internal("deployment snapshot identity changed"));
     }
-    let mut output =
-        super::super::response::get(result.value().deployment.as_ref(), &tenant, &adapter.limits)?;
+    let mut output = super::super::response::get(
+        result.value().deployment.as_ref(),
+        &tenant,
+        &adapter.limits,
+        adapter.manifest_profile,
+    )?;
     output.state_version = Some(result.value().state_version);
     output.route_generation = Some(result.value().route_generation.0);
     output.durability = Some(response::durability(result.value().confirmed));

@@ -25,6 +25,30 @@ pub(crate) const INSTALLATION_CAPTURE_WORK_BYTES: u64 =
     latent_artifacts::TRANSACTION_ASSET_WORK_BYTES + INSTALLATION_SELECTION_BYTES + 2 * 1024 * 1024;
 pub(crate) const INSTALLATION_CAPTURE_REQUEST_BYTES: u64 = 64 * 1024;
 
+pub(crate) fn installation_profile(
+    store: &latent_state::protected_store::ProtectedStoreConfig,
+) -> latent_artifacts::TransactionAssetProfile {
+    if store.io.recovery.is_some_and(|recovery| {
+        recovery.job_bytes
+            < INSTALLATION_CAPTURE_WORK_BYTES
+                + INSTALLATION_CAPTURE_REQUEST_BYTES
+                + latent_artifacts::TRANSACTION_ASSET_RESPONSE_BYTES
+    }) {
+        latent_artifacts::TransactionAssetProfile::Compact
+    } else {
+        latent_artifacts::TransactionAssetProfile::Broad
+    }
+}
+pub(crate) fn installation_capture_work(profile: latent_artifacts::TransactionAssetProfile) -> u64 {
+    profile.work_bytes() + INSTALLATION_SELECTION_BYTES + installation_scratch(profile)
+}
+pub(crate) fn installation_scratch(profile: latent_artifacts::TransactionAssetProfile) -> u64 {
+    match profile {
+        latent_artifacts::TransactionAssetProfile::Broad => 2 * 1024 * 1024,
+        latent_artifacts::TransactionAssetProfile::Compact => 64 * 1024,
+    }
+}
+
 // Operator objects retain streaming duplicate/unknown-field rejection and
 // refuse Serde's positional struct-array representation at every owner layer.
 macro_rules! configuration_object {

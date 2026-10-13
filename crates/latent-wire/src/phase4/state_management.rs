@@ -124,6 +124,15 @@ const WORK_BYTES: usize = 8 * 1024 * 1024;
 const RESPONSE_BYTES: usize = 4 * contract::MAX_RESPONSE_BYTES + 16384;
 
 impl StateManagementBackend {
+    /// Closed archive byte/key decoder only. Complete current namespace linkage
+    /// is still required by validate_operation_row and the original census.
+    pub fn validate_operation_bytes(
+        key: &latent_state::embedded::RowKey,
+        bytes: &[u8],
+    ) -> Result<(), latent_state::embedded::StoreError> {
+        state_receipt::validated_bytes(key, bytes).map(|_| ())
+    }
+
     pub fn validate_operation_row(
         view: &latent_state::embedded::ReadView,
         key: &latent_state::embedded::RowKey,

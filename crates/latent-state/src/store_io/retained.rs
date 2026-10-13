@@ -130,9 +130,10 @@ impl<S: Send + Sync + 'static> StoreIoOwner<S> {
             .checked_add(metadata)
             .ok_or(StoreIoError::Exhausted)?;
         if custody_deadline.is_some() {
-            state.require_idle_custody()?;
+            state.admit_custody_resource(bytes)?;
+        } else {
+            state.admit(recovery, bytes)?;
         }
-        state.admit(recovery, bytes)?;
         let custody = if let Some(deadline) = custody_deadline {
             if control.clock.monotonic_now() >= deadline {
                 return Err(StoreIoError::CustodyExpired);

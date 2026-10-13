@@ -8,7 +8,7 @@ use latent_wire::phase4::StateManagementBinding;
 
 use crate::config::state::{OperationSettings, StateSettings};
 
-pub(super) fn state_binding(
+pub(in crate::standalone::state) fn state_binding(
     settings: &StateSettings,
     operation: &OperationSettings,
     deployment: &DeploymentManifest,
@@ -90,7 +90,7 @@ pub(super) fn maximum_quota(
     Ok(quota)
 }
 
-pub(super) fn check_asset(
+pub(in crate::standalone::state) fn check_asset(
     asset: &SelectedTransactionAsset,
     operation: &OperationSettings,
     deployment: &DeploymentManifest,

@@ -3,7 +3,9 @@
 //! publication/provider/result authority. Restored work stays paused for review.
 
 pub mod migration;
+pub mod namespace_resume;
 pub mod restore;
+pub mod restored_resume;
 pub mod resume;
 pub mod snapshot;
 pub mod v1;

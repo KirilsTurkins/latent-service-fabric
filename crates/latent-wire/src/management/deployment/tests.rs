@@ -2,6 +2,7 @@ mod fixtures;
 
 use latent_control_store::DeploymentPage;
 use latent_core::{RouteGeneration, TenantId};
+use latent_manifest::ManifestValidationProfile;
 use tonic::Code;
 
 use super::super::{proto, ManagementLimits, RequestBudget};
@@ -11,12 +12,108 @@ use super::{
 };
 use fixtures::deployment;
 
+pub(super) fn phase4_profile() -> ManifestValidationProfile {
+    ManifestValidationProfile::phase4(
+        latent_core::BudgetProfile::Phase4,
+        latent_core::PHASE4_HOST_ABI_V1,
+        &latent_manifest::phase4_host_abi_digest(),
+    )
+    .unwrap()
+}
+
+pub(super) fn captured_phase4() -> latent_control_store::VersionedDeployment {
+    use latent_manifest::{JsonManifestCodec, ManifestCodec};
+    let manifest = JsonManifestCodec::default()
+        .decode_deployment(include_bytes!(
+            "tests/fixtures/phase4-managed-deployment.json"
+        ))
+        .unwrap();
+    let publication = manifest
+        .publication
+        .clone()
+        .map(|id| latent_artifacts::PublicationRef {
+            id,
+            scope: latent_artifacts::LifecycleScope::Tenant(
+                manifest.metadata.tenant.clone().unwrap(),
+            ),
+        });
+    latent_control_store::VersionedDeployment {
+        manifest,
+        publication,
+        generation: 1,
+    }
+}
+
+#[test]
+fn selected_phase4_responses_preserve_the_captured_manifest_and_stateless_refusal() {
+    let value = captured_phase4();
+    let tenant = value.manifest.metadata.tenant.clone().unwrap();
+    let limits = ManagementLimits::default();
+    let profile = phase4_profile();
+    let default = ManifestValidationProfile::default();
+    assert_eq!(
+        response::apply(&value, &tenant, &limits, default)
+            .unwrap_err()
+            .code(),
+        Code::Internal
+    );
+    assert_eq!(
+        response::get(Some(&value), &tenant, &limits, default)
+            .unwrap_err()
+            .code(),
+        Code::Internal
+    );
+    let applied = response::apply(&value, &tenant, &limits, profile)
+        .unwrap()
+        .deployment
+        .unwrap();
+    let fetched = response::get(Some(&value), &tenant, &limits, profile)
+        .unwrap()
+        .deployment
+        .unwrap();
+    assert_eq!(applied, fetched);
+    assert_eq!(deployment_from_proto(applied).unwrap(), value);
+    let page = DeploymentPage {
+        deployments: vec![value],
+        next_page_token: None,
+        catalog_generation: RouteGeneration(1),
+    };
+    assert_eq!(
+        response::page(&page, &tenant, 1, &limits, default)
+            .unwrap_err()
+            .code(),
+        Code::Internal
+    );
+    assert_eq!(
+        response::page(&page, &tenant, 1, &limits, profile)
+            .unwrap()
+            .deployments,
+        vec![fetched]
+    );
+    assert_eq!(
+        response::page(&page, &TenantId("foreign".into()), 1, &limits, profile)
+            .unwrap_err()
+            .code(),
+        Code::Internal
+    );
+    let small = ManagementLimits {
+        max_response_bytes: 256,
+        ..limits
+    };
+    assert_eq!(
+        response::get(page.deployments.first(), &tenant, &small, profile)
+            .unwrap_err()
+            .code(),
+        Code::ResourceExhausted
+    );
+}
+
 #[test]
 fn every_deployment_field_and_object_stamp_survives_conversion() {
     let mut wire = deployment();
     wire.generation = 19;
     // Conversion is lossless even for later-phase dimensions; the RPC boundary
-    // separately applies Phase 1 semantic validation before mutation.
+    // separately applies the selected host profile before mutation.
     let budget = wire.resources.as_mut().unwrap();
     budget.child_calls = 1;
     budget.outbound_requests = 2;
@@ -120,7 +217,13 @@ fn short_caller_ids_do_not_reject_generated_release_digests() {
     let mut budget = RequestBudget::new::<proto::ApplyDeploymentRequest>(&limits).unwrap();
     validation::wire(&wire, &mut budget, &limits).unwrap();
     let domain = deployment_from_proto(wire).unwrap();
-    response::apply(&domain, &TenantId("acme".to_owned()), &limits).unwrap();
+    response::apply(
+        &domain,
+        &TenantId("acme".to_owned()),
+        &limits,
+        ManifestValidationProfile::default(),
+    )
+    .unwrap();
 }
 
 #[test]
@@ -131,22 +234,39 @@ fn responses_reject_wrong_scope_and_aggregate_page_allocation() {
     };
     let domain = deployment_from_proto(deployment()).unwrap();
     assert_eq!(
-        response::get(Some(&domain), &TenantId("other".to_owned()), &limits)
-            .unwrap_err()
-            .code(),
+        response::get(
+            Some(&domain),
+            &TenantId("other".to_owned()),
+            &limits,
+            ManifestValidationProfile::default(),
+        )
+        .unwrap_err()
+        .code(),
         Code::Internal
     );
     let tenant = TenantId("acme".to_owned());
-    response::get(Some(&domain), &tenant, &limits).unwrap();
+    response::get(
+        Some(&domain),
+        &tenant,
+        &limits,
+        ManifestValidationProfile::default(),
+    )
+    .unwrap();
     let page = DeploymentPage {
         deployments: vec![domain; 3],
         next_page_token: None,
         catalog_generation: RouteGeneration(1),
     };
     assert_eq!(
-        response::page(&page, &tenant, 3, &limits)
-            .unwrap_err()
-            .code(),
+        response::page(
+            &page,
+            &tenant,
+            3,
+            &limits,
+            ManifestValidationProfile::default()
+        )
+        .unwrap_err()
+        .code(),
         Code::ResourceExhausted
     );
 }

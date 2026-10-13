@@ -54,7 +54,7 @@ class QualificationOriginOracle(unittest.TestCase):
             Draft202012Validator(schema).validate(actual.value["httpIngress"])
             self.assertEqual(actual.value["budgetProfile"]["maximumStateReadBytes"], 4194304)
             self.assertEqual(actual.value["budgetProfile"]["maximumStateWriteBytes"], 2097152)
-            self.assertEqual(actual.value["budgetProfile"]["maximumEffects"], 1)
+            self.assertEqual(actual.value["budgetProfile"]["maximumEffectCount"], 1)
 
     def test_real_query_keeps_matching_origin_and_bearer_without_retries(self):
         seen = []

@@ -127,7 +127,11 @@ fn unrepresentable_publication_receipts_are_rejected_without_coercion() {
 fn deployment_version_is_exact_and_manifest_numeric_fields_stay_canonical() {
     let expected = deployment();
     bounds::checked(&expected, 4096).unwrap();
-    let value = response::deployment(expected).unwrap();
+    let value = response::deployment(
+        expected,
+        latent_manifest::ManifestValidationProfile::default(),
+    )
+    .unwrap();
     assert_eq!(value["generation"], u64::MAX.to_string());
     assert_eq!(value["manifest"]["metadata"]["name"], "echo-production");
     assert_eq!(value["manifest"]["spec"]["resources"]["cpuFuel"], 1_000_000);
@@ -135,13 +139,46 @@ fn deployment_version_is_exact_and_manifest_numeric_fields_stay_canonical() {
 }
 
 #[test]
+fn transaction_deployment_projection_requires_selected_profile_without_relaxing_identity() {
+    use clap::Parser;
+    let profile = crate::args::Cli::try_parse_from(["latent", "--phase4", "node", "list"])
+        .unwrap_or_else(|_| panic!("test command"))
+        .manifest_profile()
+        .unwrap();
+    let mut expected = deployment();
+    expected.resources.as_mut().unwrap().state_read_bytes = 4096;
+    expected.resources.as_mut().unwrap().state_write_bytes = 8192;
+    assert!(response::deployment(
+        expected.clone(),
+        latent_manifest::ManifestValidationProfile::default()
+    )
+    .is_err());
+    let value = response::deployment(expected.clone(), profile).unwrap();
+    assert_eq!(
+        value["manifest"]["spec"]["resources"]["stateReadBytes"],
+        4096
+    );
+    assert_eq!(
+        value["manifest"]["spec"]["resources"]["stateWriteBytes"],
+        8192
+    );
+    assert_eq!(value["generation"], u64::MAX.to_string());
+    expected.id = "different-deployment".to_owned();
+    assert!(response::deployment(expected, profile).is_err());
+}
+
+#[test]
 fn malformed_deployment_identity_and_missing_budget_fail_conversion() {
     let mut value = deployment();
     value.id = "another-deployment".to_owned();
-    assert!(response::deployment(value).is_err());
+    assert!(
+        response::deployment(value, latent_manifest::ManifestValidationProfile::default()).is_err()
+    );
     let mut value = deployment();
     value.resources = None;
-    assert!(response::deployment(value).is_err());
+    assert!(
+        response::deployment(value, latent_manifest::ManifestValidationProfile::default()).is_err()
+    );
     let mut value = deployment();
     value.generation = 0;
     assert!(bounds::checked(&value, 4096).is_err());

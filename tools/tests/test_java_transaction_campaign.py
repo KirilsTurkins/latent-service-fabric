@@ -32,6 +32,22 @@ def retirement():
 
 
 class CampaignOracle(unittest.TestCase):
+    def test_current_state_retirement_requires_both_physical_witnesses_and_every_zero_owner(self):
+        report = retirement()
+        counts = ('liveStorageWorkers', 'liveStorageOwners', 'queuedStorageRetirements', 'acceptedStorageJobs',
+                  'storageRetainedBytes', 'ordinaryNativeReservations', 'recoveryNativeReservations',
+                  'ordinaryNativeBytes', 'recoveryNativeBytes', 'namespaceOwners')
+        report['state'] = dict.fromkeys(counts, 0)
+        report['state'].update(clean=True, quarantined=False, storePhysicallyRetired=True, nativePhysicallyRetired=True)
+        lifecycle.require_retirement(report)
+        for name, value in (('storePhysicallyRetired', False), ('nativePhysicallyRetired', False),
+                            ('quarantined', True), ('liveStorageOwners', 1), ('namespaceOwners', 1),
+                            ('storageRetainedBytes', True), ('storeEngine', 'closed'), ('approved', True)):
+            changed = copy.deepcopy(report)
+            changed['state'][name] = value
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                lifecycle.require_retirement(changed)
+
     def test_original_evidence_is_exclusive_and_never_overwritten(self):
         with tempfile.TemporaryDirectory() as temporary:
             collector = evidence.Evidence(Path(temporary) / "evidence")

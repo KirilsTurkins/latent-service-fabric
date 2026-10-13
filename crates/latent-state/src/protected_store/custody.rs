@@ -31,6 +31,9 @@ pub(super) struct ProtectedStoreCustody<T: Send + 'static> {
 }
 
 impl<T: Send + 'static> ProtectedStoreCustody<T> {
+    pub(super) fn maximum_job_bytes(&self) -> u64 {
+        self.maximum_job_bytes
+    }
     pub(super) fn retirement_witness(&mut self) -> Option<StoreIoRetirementWitness> {
         self.io.retirement_witness()
     }

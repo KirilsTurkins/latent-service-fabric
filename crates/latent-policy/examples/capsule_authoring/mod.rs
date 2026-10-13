@@ -1,7 +1,11 @@
+mod current_java;
+mod early_http;
 mod freshness;
 mod inputs;
 mod policy;
 
+pub(super) use current_java::{sign_current_java, sign_current_java_with_negative};
+pub(super) use early_http::sign_early_http;
 pub(super) use freshness::check_stale_proofs;
 
 use std::{
@@ -78,6 +82,18 @@ fn sign(output: &Path, paths: &[OsString], separate_builders: bool) -> Result<()
             return Err("duplicate demo package name".into());
         }
         builds.push(build);
+    }
+    sign_checked(output, builds, separate_builders, None)
+}
+
+fn sign_checked(
+    output: &Path,
+    builds: Vec<inputs::Build>,
+    separate_builders: bool,
+    compiler_source: Option<&str>,
+) -> Result<()> {
+    if !output.is_absolute() || output.exists() || builds.is_empty() || builds.len() > 16 {
+        return Err("choose a fresh absolute fixture output and bounded checked builds".into());
     }
     let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let validity = SignatureValidity {
@@ -187,9 +203,18 @@ fn sign(output: &Path, paths: &[OsString], separate_builders: bool) -> Result<()
         releases.push(release);
     }
     // Written last; failed/partial signing attempts have no success marker.
-    let record = json!({"schemaVersion":"latent.capsule.demo.v1", "tenant":TENANT,
+    let mut record = json!({"schemaVersion":"latent.capsule.demo.v1", "tenant":TENANT,
         "trust":"isolated-short-lived-demo-only", "expiresAtUnixSeconds": validity.expires_at,
         "policyDigest": artifact_blob_digest(&policy_document).to_string(), "releases": releases});
+    if let Some(source) = compiler_source {
+        record["schemaVersion"] = json!("latent.component.signing-fixture.v1");
+        record["trust"] = json!("ephemeral-native-package-test-only");
+        record["evidenceKind"] = json!("synthetic-native-package-trust");
+        record["compilerSource"] = json!(source);
+        record["compilerExecutedBySigner"] = json!(false);
+        record["signedNodeExecutionQualified"] = json!(false);
+        record["packagedDistributionQualified"] = json!(false);
+    }
     write(
         &output.join("release-set.json"),
         &serde_json::to_vec_pretty(&record)?,

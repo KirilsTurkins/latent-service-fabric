@@ -97,9 +97,11 @@ class RecordingClient(Client):
     No argv or credential bytes are recorded. Failed or uncertain mutations are
     never retried. The inherited process owner positively reaps every CLI.
     """
-    def __init__(self, executable, directory, cancellation, deadline, evidence):
+    def __init__(self, executable, directory, cancellation, deadline, evidence, *, phase4=False):
+        require(type(phase4) is bool, "explicit-cli-transaction-profile")
         super().__init__(executable, directory, cancellation, deadline)
         self.evidence = evidence
+        self.phase4 = phase4
 
     def call(self, *arguments, codes=(0,), timeout=25):
         self.cancellation.check()
@@ -108,6 +110,8 @@ class RecordingClient(Client):
         if self.node:
             self.node.drain()
         prefix = [self.executable, "--output", "json"]
+        if self.phase4:
+            prefix.append("--phase4")
         if self.config:
             prefix += ["--config", str(self.config), "--profile", "operator"]
         self.calls += 1

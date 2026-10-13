@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "RestoreAuthorityControls.test_additional_session_is_exclusive_to_current_empty_operation_restore",
+    "RestoreAuthorityControls.test_any_retained_input_drift_refuses_before_first_mutation",
+    "RestoreAuthorityControls.test_changed_scope_generation_and_approval_fields_refuse_without_mutation",
+    "RestoreAuthorityControls.test_each_current_generation_is_read_once_and_exact_files_apply_once",
+    "RestoreAuthorityControls.test_unknown_mutation_is_not_refreshed_retried_or_converted_to_success"
+  ],
+  "guards": {
+    "RestoreAuthorityControls.test_additional_session_is_exclusive_to_current_empty_operation_restore": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e7216b061f04e0922055edc26197726520c5079ab1a5a6c8a6f7a73710384475",
+        "class:setup-sha256:4e2a9f37e37dcc411a995a83cd5e157e3fe18a14bd3bee3a075978b048c9d7bc"
+      ],
+      "skipSites": []
+    },
+    "RestoreAuthorityControls.test_any_retained_input_drift_refuses_before_first_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e7216b061f04e0922055edc26197726520c5079ab1a5a6c8a6f7a73710384475",
+        "class:setup-sha256:4e2a9f37e37dcc411a995a83cd5e157e3fe18a14bd3bee3a075978b048c9d7bc"
+      ],
+      "skipSites": []
+    },
+    "RestoreAuthorityControls.test_changed_scope_generation_and_approval_fields_refuse_without_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e7216b061f04e0922055edc26197726520c5079ab1a5a6c8a6f7a73710384475",
+        "class:setup-sha256:4e2a9f37e37dcc411a995a83cd5e157e3fe18a14bd3bee3a075978b048c9d7bc"
+      ],
+      "skipSites": []
+    },
+    "RestoreAuthorityControls.test_each_current_generation_is_read_once_and_exact_files_apply_once": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e7216b061f04e0922055edc26197726520c5079ab1a5a6c8a6f7a73710384475",
+        "class:setup-sha256:4e2a9f37e37dcc411a995a83cd5e157e3fe18a14bd3bee3a075978b048c9d7bc"
+      ],
+      "skipSites": []
+    },
+    "RestoreAuthorityControls.test_unknown_mutation_is_not_refreshed_retried_or_converted_to_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e7216b061f04e0922055edc26197726520c5079ab1a5a6c8a6f7a73710384475",
+        "class:setup-sha256:4e2a9f37e37dcc411a995a83cd5e157e3fe18a14bd3bee3a075978b048c9d7bc"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_restore_authority.py",
+  "reviewReason": "Once-read policy CAS controls and explicit empty-operation v2 restore session with original ordinary-session bound",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

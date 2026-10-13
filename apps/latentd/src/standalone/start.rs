@@ -25,6 +25,8 @@ use super::{
 use crate::config::NodeSettings;
 
 mod control;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod offline;
 mod recovery;
 #[cfg(test)]
 mod tests;
@@ -697,7 +699,8 @@ impl StandaloneNode {
                 clock: Arc::clone(&self.clock),
             },
             settings.management.clone(),
-        )?;
+        )?
+        .with_manifest_profile(settings.manifest_profile);
         let management = self
             .policy_management(management, &catalogs)?
             .with_activation_journal(self.manager.journal());

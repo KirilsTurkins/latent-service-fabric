@@ -142,6 +142,30 @@ pub(super) fn ensure_native(
     original: &NativeReservation,
     before_native_retirement: impl FnOnce(),
 ) -> Result<StateModeObservation, crate::embedded::StoreError> {
+    ensure_native_fenced(
+        root,
+        identity,
+        actual_fresh_identity,
+        original,
+        before_native_retirement,
+    )
+    .map(|(observed, _)| observed)
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn ensure_native_fenced(
+    root: &latent_protected_files::ProtectedRoot,
+    identity: &StoreIdentity,
+    actual_fresh_identity: bool,
+    original: &NativeReservation,
+    before_native_retirement: impl FnOnce(),
+) -> Result<
+    (
+        StateModeObservation,
+        latent_protected_files::ProtectedMutableFile,
+    ),
+    crate::embedded::StoreError,
+> {
     use crate::embedded::StoreError;
     use std::os::unix::fs::FileExt;
 
@@ -213,5 +237,5 @@ pub(super) fn ensure_native(
     drop(bytes);
     drop(expected);
     drop(file);
-    Ok(StateModeObservation { created_here })
+    Ok((StateModeObservation { created_here }, fence))
 }

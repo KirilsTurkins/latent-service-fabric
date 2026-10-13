@@ -92,6 +92,84 @@ pub fn inspect_usage(
     })
 }
 
+/// Closed archive decoding with an already captured namespace description.
+/// The complete staged/current view must independently validate its linkage;
+/// this value creates no session, namespace authority or restore approval.
+pub fn inspect_cell_in_namespace(
+    key: &RowKey,
+    bytes: &[u8],
+    namespace: &NamespaceRecord,
+) -> Result<ObservedCell, StoreError> {
+    if key.family != Family::State {
+        return Err(StoreError::UnsupportedFormat);
+    }
+    let (identity, business_key) = cell_identity_and_key(&key.key)?;
+    require_captured_namespace(&identity, namespace)?;
+    let cell = codec::Cell::decode(bytes, namespace.version.generation).map_err(storage)?;
+    Ok(ObservedCell {
+        scope: StateScope {
+            tenant: identity.tenant,
+            namespace: identity.namespace,
+            incarnation: identity.incarnation,
+            state_schema: namespace.state_schema.clone(),
+            entity: identity.entity,
+            mode: StateMode::Query,
+        },
+        key: business_key.to_vec(),
+        generation: cell.generation,
+        value: cell.value,
+    })
+}
+
+pub fn validate_row_in_namespace(
+    key: &RowKey,
+    bytes: &[u8],
+    namespace: &NamespaceRecord,
+) -> Result<(), StoreError> {
+    if key.family == Family::State {
+        inspect_cell_in_namespace(key, bytes, namespace)?;
+        return Ok(());
+    }
+    if key.family != Family::Maintenance || !key.key.starts_with(b"state-usage-v1\0") {
+        return Err(StoreError::UnsupportedFormat);
+    }
+    let rest = &key.key[b"state-usage-v1\0".len()..];
+    let mut input = KeyInput(rest.strip_prefix(b"ns-v1\0").ok_or(StoreError::Corrupt)?);
+    let identity = CellIdentity {
+        tenant: TenantId(input.text()?),
+        namespace: StateNamespaceId(input.text()?),
+        incarnation: input.number()?,
+        entity: None,
+    };
+    if !input.0.is_empty() {
+        return Err(StoreError::Corrupt);
+    }
+    require_captured_namespace(&identity, namespace)?;
+    let usage = codec::Usage::decode(bytes).map_err(storage)?;
+    if usage.keys > namespace.quota.state_keys
+        || usage.bytes > namespace.quota.state_bytes
+        || usage.tombstones > namespace.quota.state_keys
+        || usage.tombstone_bytes > namespace.quota.state_bytes
+    {
+        return Err(StoreError::Corrupt);
+    }
+    Ok(())
+}
+
+fn require_captured_namespace(
+    identity: &CellIdentity,
+    namespace: &NamespaceRecord,
+) -> Result<(), StoreError> {
+    namespace.validate().map_err(|_| StoreError::Corrupt)?;
+    if identity.tenant != namespace.tenant
+        || identity.namespace != namespace.id
+        || identity.incarnation != namespace.version.incarnation
+    {
+        return Err(StoreError::UnsupportedFormat);
+    }
+    Ok(())
+}
+
 pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     match key.family {
         Family::State if key.key.starts_with(b"state-v1\0") => {

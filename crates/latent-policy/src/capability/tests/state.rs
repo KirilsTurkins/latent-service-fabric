@@ -133,3 +133,103 @@ fn state_and_intent_opt_ins_preserve_stateless_linking_and_closed_bounded_decodi
         }
     }
 }
+
+#[test]
+fn current_recovery_labels_require_the_exact_current_administrator_purpose_and_state_tuple() {
+    let operations = [
+        "namespace-snapshot",
+        "namespace-inspect-restore",
+        "namespace-restore",
+        "namespace-schema-migrate",
+        "namespace-review-recovery",
+        "namespace-resume",
+    ];
+    let mut document = policy();
+    document["rules"][0]["capability"] = "latent:state/key-value@0.2.0".into();
+    document["rules"][0]["principals"] = json!([{"kind":"administrator","subject":"operator"}]);
+    document["rules"][0]["operations"] = json!(operations);
+    document["rules"][0]["resources"] =
+        json!({"kind":"state","scopes":[scope("orders",None,"operator-scope")]});
+    let parsed = CapabilityPolicy::parse(&serde_json::to_vec(&document).unwrap()).unwrap();
+    let administrator = InvocationPrincipal {
+        subject: "operator".into(),
+        kind: PrincipalKind::Administrator,
+        tenant: Some(TenantId("a".into())),
+        service: None,
+        claims: latent_core::Metadata::new(),
+    };
+    for operation in operations {
+        let evaluated = parsed.evaluate(
+            &administrator,
+            "echo",
+            &publication_id(),
+            "latent:state/key-value@0.2.0",
+            operation,
+            &target("orders", None, "operator-scope"),
+        );
+        assert!(evaluated.is_some());
+        for resource in [
+            target("other", None, "operator-scope"),
+            target("orders", None, "other-scope"),
+            target("orders", Some("entity"), "operator-scope"),
+        ] {
+            assert!(parsed
+                .evaluate(
+                    &administrator,
+                    "echo",
+                    &publication_id(),
+                    "latent:state/key-value@0.2.0",
+                    operation,
+                    &resource
+                )
+                .is_none());
+        }
+        let mut user = administrator.clone();
+        user.kind = PrincipalKind::User;
+        assert!(parsed
+            .evaluate(
+                &user,
+                "echo",
+                &publication_id(),
+                "latent:state/key-value@0.2.0",
+                operation,
+                &target("orders", None, "operator-scope")
+            )
+            .is_none());
+        assert!(parsed
+            .evaluate(
+                &administrator,
+                "other-service",
+                &publication_id(),
+                "latent:state/key-value@0.2.0",
+                operation,
+                &target("orders", None, "operator-scope")
+            )
+            .is_none());
+        assert!(parsed
+            .evaluate(
+                &administrator,
+                "echo",
+                &format!("publication:sha256:{}", "3".repeat(64)),
+                "latent:state/key-value@0.2.0",
+                operation,
+                &target("orders", None, "operator-scope")
+            )
+            .is_none());
+        let restricted = GrantRestriction {
+            operations: vec![operation.into()],
+            resources: None,
+            ceiling: None,
+        };
+        restricted.validate("latent:state/key-value@0.2.0").unwrap();
+        assert!(restricted.validate("latent:http/client@0.2.0").is_err());
+    }
+    for unknown in [
+        "namespace-approve",
+        "namespace-restore-all",
+        "namespace-resume-unsafe",
+    ] {
+        document["rules"][0]["operations"] = json!([unknown]);
+        assert!(CapabilityPolicy::parse(&serde_json::to_vec(&document).unwrap()).is_err());
+    }
+}

@@ -25,7 +25,7 @@ pub(super) async fn apply(
     principal: InvocationPrincipal,
     deadline: Instant,
 ) -> Result<Response<proto::ApplyDeploymentResponse>, Status> {
-    let request = validation::apply(value, principal, &adapter.limits)?;
+    let request = validation::apply(value, principal, &adapter.limits, adapter.manifest_profile)?;
     let (result, ack) = execute(adapter, request, deadline).await?;
     let (value, lease) = result.into_parts();
     let output = response::apply(value, ack, &adapter.limits)
@@ -70,8 +70,9 @@ async fn execute(
     let _request_lease = store
         .reserve_operation_request()
         .map_err(|error| platform_status(error, &adapter.limits))?;
-    let rejected = DeploymentRejectionIdentity::from_request(&request)
-        .map_err(|error| platform_status(error, &adapter.limits))?;
+    let rejected =
+        DeploymentRejectionIdentity::from_request_with_profile(&request, adapter.manifest_profile)
+            .map_err(|error| platform_status(error, &adapter.limits))?;
     let context = request.context().clone();
     let prepared = tokio::time::timeout_at(deadline.into(), store.prepare_operation(request))
         .await
@@ -101,7 +102,12 @@ async fn execute(
         ));
     }
     drop(rejected);
-    response::preflight(&prepared, &context.tenant, &adapter.limits)?;
+    response::preflight(
+        &prepared,
+        &context.tenant,
+        &adapter.limits,
+        adapter.manifest_profile,
+    )?;
     let mut guard =
         ManagedDeploymentAudit::begin(audit, prepared.preview(), prepared.replayed(), deadline)
             .await

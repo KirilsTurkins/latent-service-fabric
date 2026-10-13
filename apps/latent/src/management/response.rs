@@ -1,4 +1,4 @@
-use latent_manifest::{ManifestCodec, ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::{ManifestCodec, ManifestValidationProfile, ManifestValidator};
 use latent_wire::management::{deployment_from_proto, proto, release_descriptor_from_proto};
 use serde_json::{json, Value};
 
@@ -32,9 +32,12 @@ pub(super) fn release(value: proto::ReleaseDescriptor) -> Result<Value, Failure>
     }))
 }
 
-pub(super) fn deployment(value: proto::Deployment) -> Result<Value, Failure> {
+pub(super) fn deployment(
+    value: proto::Deployment,
+    profile: ManifestValidationProfile,
+) -> Result<Value, Failure> {
     let versioned = deployment_from_proto(value).map_err(|_| invalid_response())?;
-    Phase1ManifestValidator
+    profile
         .validate_deployment(&versioned.manifest)
         .map_err(|_| invalid_response())?;
     let encoded = prepare::codec()
@@ -75,24 +78,35 @@ pub(super) fn releases(value: proto::ListReleasesResponse) -> Result<Outcome, Fa
     ))
 }
 
-pub(super) fn applied(value: proto::ApplyDeploymentResponse) -> Result<Outcome, Failure> {
+pub(super) fn applied(
+    value: proto::ApplyDeploymentResponse,
+    profile: ManifestValidationProfile,
+) -> Result<Outcome, Failure> {
     Ok(Outcome::success(
-        json!({"deployment": deployment(value.deployment.ok_or_else(invalid_response)?)?, "warnings": value.warnings}),
+        json!({"deployment": deployment(value.deployment.ok_or_else(invalid_response)?, profile)?, "warnings": value.warnings}),
     ))
 }
 
-pub(super) fn got_deployment(value: proto::GetDeploymentResponse) -> Result<Outcome, Failure> {
+pub(super) fn got_deployment(
+    value: proto::GetDeploymentResponse,
+    profile: ManifestValidationProfile,
+) -> Result<Outcome, Failure> {
     match value.deployment {
-        Some(value) => Ok(Outcome::success(json!({"deployment": deployment(value)?}))),
+        Some(value) => Ok(Outcome::success(
+            json!({"deployment": deployment(value, profile)?}),
+        )),
         None => Ok(Outcome::not_found(json!({"deployment": null}))),
     }
 }
 
-pub(super) fn deployments(value: proto::ListDeploymentsResponse) -> Result<Outcome, Failure> {
+pub(super) fn deployments(
+    value: proto::ListDeploymentsResponse,
+    profile: ManifestValidationProfile,
+) -> Result<Outcome, Failure> {
     let rows = value
         .deployments
         .into_iter()
-        .map(deployment)
+        .map(|value| deployment(value, profile))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(Outcome::success(
         json!({"deployments": rows, "nextPageToken": token(value.page)?}),

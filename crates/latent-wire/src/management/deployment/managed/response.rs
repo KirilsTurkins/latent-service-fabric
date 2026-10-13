@@ -7,6 +7,7 @@ use latent_control_store::deployment_operations::{
     DeploymentReadLease, PreparedDeploymentOperation, MAX_RECEIPT_BYTES,
 };
 use latent_core::{PlatformError, TenantId};
+use latent_manifest::ManifestValidationProfile;
 use latent_rollout::deployment_audit::MAX_AUDIT_RETAINED_BYTES;
 use prost::Message;
 use std::time::Instant;
@@ -16,6 +17,7 @@ pub(super) fn preflight(
     prepared: &PreparedDeploymentOperation,
     tenant: &TenantId,
     limits: &ManagementLimits,
+    profile: ManifestValidationProfile,
 ) -> Result<(), Status> {
     let mut budget = scratch(limits)?;
     control_audit::charge(&mut budget)?;
@@ -23,7 +25,7 @@ pub(super) fn preflight(
     let deployment = prepared
         .apply_result()
         .map(|value| {
-            deployment_validation::domain(value, tenant, &mut budget, limits)?;
+            deployment_validation::domain(value, tenant, &mut budget, limits, profile)?;
             deployment_to_proto(value)
                 .map_err(|_| Status::internal("invalid managed deployment result"))
         })

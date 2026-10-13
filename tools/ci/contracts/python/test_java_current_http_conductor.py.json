@@ -1,0 +1,244 @@
+{
+  "cases": [
+    "CurrentHttpConductor.test_active_runtime_selects_one_exact_publication_and_copies_original_operations",
+    "CurrentHttpConductor.test_current_endpoint_cannot_select_historical_or_unpaired_capsules",
+    "CurrentHttpConductor.test_current_proposals_bind_native_state_staging_and_exact_http_dispatch_grants",
+    "CurrentHttpConductor.test_current_session_program_requires_explicit_profile_order_and_single_runtime",
+    "CurrentHttpConductor.test_current_transition_retires_before_metadata_and_never_starts_after_uncertain_mutation",
+    "CurrentHttpConductor.test_endpoint_file_is_closed_and_retains_original_twenty_seven_byte_ceiling",
+    "CurrentHttpConductor.test_fault_staging_framing_uses_exact_operation_without_changing_historical_accounting",
+    "CurrentHttpConductor.test_host_inspection_retires_original_clock_interval_before_returning_profiles",
+    "CurrentHttpConductor.test_installation_keeps_exact_declared_ca_reference_and_body_limits",
+    "CurrentHttpConductor.test_observed_current_operation_requires_explicit_selection_and_all_publications_match",
+    "CurrentHttpConductor.test_offline_migration_requires_actual_wide_value_commit_and_effect_before_snapshot",
+    "CurrentHttpConductor.test_restore_checks_native_activation_retirement_before_starting_runtime",
+    "CurrentHttpConductor.test_restored_activation_refuses_old_receipts_replay_and_changed_physical_or_history_witnesses",
+    "CurrentHttpConductor.test_restored_migration_request_keeps_exact_snapshot_window_and_original_operation",
+    "CurrentHttpConductor.test_retained_decoders_have_four_distinct_explicit_signed_sources_without_generic_alias",
+    "CurrentHttpConductor.test_return_to_legacy_records_both_deployments_without_reusing_measured_case",
+    "CurrentHttpConductor.test_signed_service_integration_is_explicit_and_only_marks_deferred_update_rows",
+    "CurrentHttpConductor.test_uncertain_trigger_metadata_cannot_capture_or_start_runtime_or_refresh_precondition"
+  ],
+  "guards": {
+    "CurrentHttpConductor.test_active_runtime_selects_one_exact_publication_and_copies_original_operations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_current_endpoint_cannot_select_historical_or_unpaired_capsules": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_current_proposals_bind_native_state_staging_and_exact_http_dispatch_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_current_session_program_requires_explicit_profile_order_and_single_runtime": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_current_transition_retires_before_metadata_and_never_starts_after_uncertain_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_endpoint_file_is_closed_and_retains_original_twenty_seven_byte_ceiling": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_fault_staging_framing_uses_exact_operation_without_changing_historical_accounting": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_host_inspection_retires_original_clock_interval_before_returning_profiles": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_installation_keeps_exact_declared_ca_reference_and_body_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_observed_current_operation_requires_explicit_selection_and_all_publications_match": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_offline_migration_requires_actual_wide_value_commit_and_effect_before_snapshot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_restore_checks_native_activation_retirement_before_starting_runtime": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_restored_activation_refuses_old_receipts_replay_and_changed_physical_or_history_witnesses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_restored_migration_request_keeps_exact_snapshot_window_and_original_operation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_retained_decoders_have_four_distinct_explicit_signed_sources_without_generic_alias": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_return_to_legacy_records_both_deployments_without_reusing_measured_case": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_signed_service_integration_is_explicit_and_only_marks_deferred_update_rows": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "CurrentHttpConductor.test_uncertain_trigger_metadata_cannot_capture_or_start_runtime_or_refresh_precondition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_current_http_conductor.py",
+  "reviewReason": "Add unknown trigger outcome refusal; finish actual trigger CAS before startup source capture, retain every original case and guard.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -18,6 +18,8 @@ pub fn execute(cli: &Cli, command: &PackageCommand) -> Outcome {
 }
 
 fn execute_inner(cli: &Cli, command: &PackageCommand) -> Result<Outcome, Failure> {
+    let mut limits = limits();
+    limits.manifest_profile = cli.manifest_profile()?;
     match command {
         PackageCommand::CanonicalPolicy(args) => {
             let publisher = input::read(&args.publisher_policy, 65_536, "publisher-policy")?;
@@ -35,29 +37,32 @@ fn execute_inner(cli: &Cli, command: &PackageCommand) -> Result<Outcome, Failure
         PackageCommand::Build(args) => {
             let source = input::read(&args.source, 256 * 1024, "package-source")?;
             let source =
-                latent_packaging::decode_package_source(&source, limits()).map_err(failure)?;
-            let input = latent_packaging::read_package_input(&args.input_root, &source, limits())
+                latent_packaging::decode_package_source(&source, limits).map_err(failure)?;
+            let input = latent_packaging::read_package_input(&args.input_root, &source, limits)
                 .map_err(failure)?;
             let package = if let Some(path) = &args.sbom_inputs {
                 let bytes = input::read(path, 1024 * 1024, "sbom-inputs")?;
-                let inventory = latent_packaging::decode_sbom_inventory(&bytes, limits().sbom)
+                let inventory = latent_packaging::decode_sbom_inventory(&bytes, limits.sbom)
                     .map_err(failure)?;
-                latent_packaging::build_package_with_sbom(input, inventory, limits())
+                latent_packaging::build_package_with_sbom(input, inventory, limits)
             } else {
-                latent_packaging::build_package(input, limits())
+                latent_packaging::build_package(input, limits)
             }
             .map_err(failure)?;
             if args.validate_web {
-                latent_packaging::inspect_web_bundle(&package, limits().semantics)
+                latent_packaging::inspect_web_bundle(&package, limits.semantics)
                     .map_err(failure)?;
             }
             latent_packaging::write_package_directory(&package, &args.output_dir)
                 .map_err(failure)?;
             Ok(Outcome::success(summary(&package)))
         }
-        PackageCommand::Inspect(args) => Ok(Outcome::success(summary(&read(&args.directory)?))),
+        PackageCommand::Inspect(args) => Ok(Outcome::success(summary(&read_with_profile(
+            &args.directory,
+            limits.manifest_profile,
+        )?))),
         PackageCommand::Verify(args) => {
-            let package = read(&args.directory)?;
+            let package = read_with_profile(&args.directory, limits.manifest_profile)?;
             let evidence = evidence(
                 &args.evidence_index,
                 &args.evidence_root,
@@ -118,7 +123,19 @@ pub(super) fn limits() -> PackagingLimits {
 }
 
 pub(crate) fn read(directory: &Path) -> Result<PackageBundle, Failure> {
-    latent_packaging::read_package_directory(directory, limits()).map_err(failure)
+    read_with_profile(
+        directory,
+        latent_manifest::ManifestValidationProfile::default(),
+    )
+}
+
+pub(crate) fn read_with_profile(
+    directory: &Path,
+    profile: latent_manifest::ManifestValidationProfile,
+) -> Result<PackageBundle, Failure> {
+    let mut limits = limits();
+    limits.manifest_profile = profile;
+    latent_packaging::read_package_directory(directory, limits).map_err(failure)
 }
 
 pub(crate) fn evidence(

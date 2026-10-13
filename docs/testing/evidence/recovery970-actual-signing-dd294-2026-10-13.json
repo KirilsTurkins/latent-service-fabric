@@ -1,0 +1,196 @@
+{
+  "schemaVersion": "latent.recovery970.actual-signing.v1",
+  "source": "dd294da2eb81ada8bcd8826b0d1281a55052cd99",
+  "defaultExampleControls": {
+    "passed": 12,
+    "failed": 0,
+    "ignored": 0,
+    "features": [],
+    "profile": {
+      "opt_level": "0",
+      "debuginfo": 0,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": true
+    },
+    "executableSha256": "bb44d8b9ab04151c972eddcba95d9b7fd07fdd2f7a1f4006c8169a2920c08197",
+    "logSha256": "899fdf0109949db6c7cf7f35b2cec2eee912bb2ac9cb032f2167499ae9510681",
+    "receiptSha256": "a2022a9eed31783be016c2868d576fd2ff50ba1f4512b7691bf1f9ac62768081",
+    "allSixFrozenProductsUnchanged": true
+  },
+  "controls": [
+    {
+      "nativeSource": "dd294da2eb81ada8bcd8826b0d1281a55052cd99",
+      "sourceCompiler": "9bae83952d9513c965a88d375b2a533916a98473",
+      "products": {
+        "contracts": "8e4c9437004fdc8f7acce722200354bae2fabe6d59dc970100d7ac2266371b40",
+        "signer": "1dcd8c44ac0f0169d0ab4fcc045a001a6928edeaa347cb03a6846065a822101d"
+      },
+      "signedPackages": 6,
+      "realPackageVerificationPassed": true,
+      "releaseSetSha256": "de37612ae6763ba6361ff1bedc04334dae0c91d2229fd7bdd829579ba78071b6",
+      "sourceMaterialRecheckedAfterSigning": true,
+      "nativeProductHashesRecheckedAfterSigning": true,
+      "refusals": [
+        {
+          "control": "old-five-mode-rejects-six",
+          "exitCode": 1,
+          "outputCreated": false
+        },
+        {
+          "control": "six-mode-rejects-other-source",
+          "exitCode": 1,
+          "outputCreated": false
+        },
+        {
+          "control": "six-mode-rejects-negative-marker",
+          "exitCode": 1,
+          "outputCreated": false
+        },
+        {
+          "control": "six-mode-rejects-negative-report",
+          "exitCode": 1,
+          "outputCreated": false
+        }
+      ],
+      "commands": [
+        {
+          "stage": "aggregate-contracts",
+          "exitCode": 0,
+          "seconds": 0.023982
+        },
+        {
+          "stage": "forbidden-http-contracts",
+          "exitCode": 0,
+          "seconds": 0.024499
+        },
+        {
+          "stage": "put-once-legacy-v1-contracts",
+          "exitCode": 0,
+          "seconds": 0.01172
+        },
+        {
+          "stage": "put-once-compatible-v2-contracts",
+          "exitCode": 0,
+          "seconds": 0.011608
+        },
+        {
+          "stage": "put-once-writer-v2-contracts",
+          "exitCode": 0,
+          "seconds": 0.011967
+        },
+        {
+          "stage": "put-once-diagnostics-contracts",
+          "exitCode": 0,
+          "seconds": 0.011981
+        },
+        {
+          "stage": "actual-six-package-signing",
+          "exitCode": 0,
+          "seconds": 2.812739
+        },
+        {
+          "stage": "old-five-mode-rejects-six",
+          "exitCode": 1,
+          "seconds": 0.011449
+        },
+        {
+          "stage": "six-mode-rejects-other-source",
+          "exitCode": 1,
+          "seconds": 0.011551
+        },
+        {
+          "stage": "six-mode-rejects-negative-marker",
+          "exitCode": 1,
+          "seconds": 0.502412
+        },
+        {
+          "stage": "six-mode-rejects-negative-report",
+          "exitCode": 1,
+          "seconds": 0.370941
+        }
+      ],
+      "privateReceiptSha256": "99c16b6851f97310832cf5ea7b266cca468c39d1aba7d4f004e919d6eec366e7",
+      "signedComponents": [
+        "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+        "sha256:322dfed5d9838edfbbd53bf0672c31f849ac7c7309358975bf1bf6c10b0a24bb",
+        "sha256:717712f8976aa0be1fcc01cb425116f8372832937bedcf63d52b21e509d22767",
+        "sha256:c0fdb390a366f94b860e3d2d5139055691a67ada2fae19e7184462b49ab3549d",
+        "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd",
+        "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813"
+      ]
+    },
+    {
+      "nativeSource": "dd294da2eb81ada8bcd8826b0d1281a55052cd99",
+      "sourceCompiler": "47e4e60778d7fdd033d5f1d6c05595752713c971",
+      "products": {
+        "contracts": "8e4c9437004fdc8f7acce722200354bae2fabe6d59dc970100d7ac2266371b40",
+        "signer": "1dcd8c44ac0f0169d0ab4fcc045a001a6928edeaa347cb03a6846065a822101d"
+      },
+      "signedPackages": 1,
+      "realPackageVerificationPassed": true,
+      "releaseSetSha256": "65dfb4ddab5f7943bf9f77f0f92de54f0ef7d5ec42a3436b3efc23410255e76d",
+      "sourceMaterialRecheckedAfterSigning": true,
+      "nativeProductHashesRecheckedAfterSigning": true,
+      "refusals": [
+        {
+          "control": "early-rejects-old-source",
+          "exitCode": 1,
+          "outputCreated": false
+        },
+        {
+          "control": "early-rejects-effect-marker",
+          "exitCode": 1,
+          "outputCreated": false
+        },
+        {
+          "control": "early-rejects-changed-report",
+          "exitCode": 1,
+          "outputCreated": false
+        }
+      ],
+      "commands": [
+        {
+          "stage": "forbidden-http-before-stage-contracts",
+          "exitCode": 0,
+          "seconds": 0.022338
+        },
+        {
+          "stage": "actual-separate-early-http-signing",
+          "exitCode": 0,
+          "seconds": 0.421319
+        },
+        {
+          "stage": "early-rejects-old-source",
+          "exitCode": 1,
+          "seconds": 0.011468
+        },
+        {
+          "stage": "early-rejects-effect-marker",
+          "exitCode": 1,
+          "seconds": 0.011673
+        },
+        {
+          "stage": "early-rejects-changed-report",
+          "exitCode": 1,
+          "seconds": 0.011528
+        }
+      ],
+      "privateReceiptSha256": "60521326fab958d7a9960d3931a6d7b9ed2134c680e1ffefefc4ee401d28772c",
+      "signedComponents": [
+        "sha256:0fb2662569299abb5e022aab0f7f53bb5f4f11f75d845cf5b048271a54f6404c"
+      ]
+    }
+  ],
+  "originalFiveModeRetained": true,
+  "originalFailedSixSigningPreserved": true,
+  "ephemeralTrustOnly": true,
+  "compilerExecutedAgain": false,
+  "guestExecuted": false,
+  "immediateHttpDenialQualified": false,
+  "originalPostStageRollbackQualified": false,
+  "pendingRestoreCloseQualified": false,
+  "packagedOperatorQualified": false,
+  "productionApproval": false,
+  "issueClosure": false
+}

@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "PendingRecoveryControls.test_changed_replay_stops_before_review_resume_or_runtime_start",
+    "PendingRecoveryControls.test_close_is_abandonment_and_replay_cannot_replace_receipt_or_acknowledgement",
+    "PendingRecoveryControls.test_close_plan_preserves_exact_pending_effect_window_view_and_operator",
+    "PendingRecoveryControls.test_dispatcher_audit_is_not_synthesized_from_nonnull_or_known_receipt",
+    "PendingRecoveryControls.test_live_owner_after_signed_commit_prevents_quiesce_and_backup",
+    "PendingRecoveryControls.test_logical_pause_with_any_live_physical_owner_cannot_satisfy_drain",
+    "PendingRecoveryControls.test_pending_session_order_cannot_expand_terminal_or_legacy_defaults",
+    "PendingRecoveryControls.test_program_selectors_reject_unknown_untyped_and_legacy_pending_before_process",
+    "PendingRecoveryControls.test_restore_authority_is_one_empty_operation_session_at_exact_pending_position",
+    "PendingRecoveryControls.test_unknown_dispatcher_operation_lookup_cannot_qualify_plausible_original_receipt"
+  ],
+  "guards": {
+    "PendingRecoveryControls.test_changed_replay_stops_before_review_resume_or_runtime_start": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingRecoveryControls.test_close_is_abandonment_and_replay_cannot_replace_receipt_or_acknowledgement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingRecoveryControls.test_close_plan_preserves_exact_pending_effect_window_view_and_operator": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingRecoveryControls.test_dispatcher_audit_is_not_synthesized_from_nonnull_or_known_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingRecoveryControls.test_live_owner_after_signed_commit_prevents_quiesce_and_backup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingRecoveryControls.test_logical_pause_with_any_live_physical_owner_cannot_satisfy_drain": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingRecoveryControls.test_pending_session_order_cannot_expand_terminal_or_legacy_defaults": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingRecoveryControls.test_program_selectors_reject_unknown_untyped_and_legacy_pending_before_process": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingRecoveryControls.test_restore_authority_is_one_empty_operation_session_at_exact_pending_position": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingRecoveryControls.test_unknown_dispatcher_operation_lookup_cannot_qualify_plausible_original_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_pending_recovery.py",
+  "reviewReason": "Add ten closed pending recovery sequence, physical drain, attribution, known original lookup, audit and immutable replay controls; preserve every original terminal and legacy guard and limit.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

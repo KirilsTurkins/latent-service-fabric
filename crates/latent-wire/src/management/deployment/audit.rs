@@ -271,6 +271,7 @@ pub(super) fn response(
     tenant: &latent_core::TenantId,
     limits: &ManagementLimits,
     enabled: bool,
+    profile: latent_manifest::ManifestValidationProfile,
 ) -> Result<super::super::proto::ApplyDeploymentResponse, Status> {
     let mut ceiling = limits.clone();
     if enabled {
@@ -279,7 +280,7 @@ pub(super) fn response(
             .checked_sub(128 + std::mem::size_of::<super::super::proto::AuditAck>())
             .ok_or_else(super::super::bounds::exhausted)?;
     }
-    let mut response = super::response::apply(deployment, tenant, &ceiling)?;
+    let mut response = super::response::apply(deployment, tenant, &ceiling, profile)?;
     if enabled {
         response.audit_ack = Some(super::super::control_audit::maximum());
     }

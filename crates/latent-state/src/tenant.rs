@@ -223,5 +223,16 @@ pub fn validate_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), S
     Ok(())
 }
 
+/// Compare archive installation bytes with exact current reviewed quotas.
+/// This is closed decoding only; it installs no quota or current authority.
+pub fn validate_guard_bytes(bytes: &[u8], quotas: &[TenantQuota]) -> Result<(), StoreError> {
+    let guard = codec::Guard::decode(bytes)?;
+    let expected = codec::Guard::new(quotas)?;
+    if guard.encode() != expected.encode() {
+        return Err(StoreError::Conflict);
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests;

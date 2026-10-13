@@ -3,6 +3,7 @@ use super::*;
 use crate::standalone::state::{kernel::tests::Fixture as KernelFixture, AdapterClock};
 use latent_artifacts::{
     AdmissionStorageLimits, ArtifactRepository, DirectoryArtifactRepositoryConfig,
+    TRANSACTION_ASSET_RESPONSE_BYTES,
 };
 use latent_core::{BudgetProfile, TenantId};
 use latent_manifest::{
@@ -19,6 +20,7 @@ use serde_json::json;
 use std::time::{Duration, Instant};
 
 // Reuse the existing actual package, signature, provenance and trust fixture.
+mod compact;
 mod http;
 #[path = "../../../../../../crates/latent-policy/src/supply_chain/tests/support.rs"]
 #[allow(
@@ -54,11 +56,19 @@ impl Setup {
         Self::configured(document, false).await
     }
 
+    async fn configured(document: Option<Vec<u8>>, executable: bool) -> Self {
+        Self::configured_profile(document, executable, false).await
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "The real signed fixture composes each independent original owner before admission"
     )]
-    async fn configured(document: Option<Vec<u8>>, executable: bool) -> Self {
+    async fn configured_profile(
+        document: Option<Vec<u8>>,
+        executable: bool,
+        compact: bool,
+    ) -> Self {
         let mut fixture = KernelFixture::new();
         let companion = declaration();
         let signed = match document {
@@ -125,6 +135,10 @@ impl Setup {
         input["createIfMissing"] = true.into();
         input["startupTimeoutMillis"] = 20_000.into();
         input["checkpointRoot"] = json!(fixture.settings.checkpoint_root);
+        if compact {
+            input["store"]["recovery"]["maximumJobBytes"] = (8 * 1024 * 1024 + 8192).into();
+            input["store"]["recovery"]["retainedBytes"] = (16 * 1024 * 1024).into();
+        }
         input["tenantQuotas"][0]["tenant"] = "tests".into();
         let operation = &mut input["operations"][0];
         operation["tenant"] = "tests".into();

@@ -20,9 +20,11 @@ SELECTORS = {"trapAfterStage": "4294967293", "loopAfterStage": "4294967294",
              "memoryAfterStage": "4294967292"}
 
 
-def source_variant(original: str) -> str:
+def source_variant(original: str, *, intent_operation: str = "put-once") -> str:
+    if intent_operation not in {"put-once", "http"}:
+        raise ValueError("explicit Java diagnostic intent operation required")
     put = "            command.put(KEY, payload).value();\n"
-    stage = '            new Intent("qualified-http", "put-once", effectPayload).stage(command).value();\n'
+    stage = '            new Intent("qualified-http", "' + intent_operation + '", effectPayload).stage(command).value();\n'
     if original.count(put) != 1 or original.count(stage) != 1 or original.index(put) > original.index(stage):
         raise ValueError("controlled diagnostic staging source drift")
     selected = replace_once(original,
@@ -42,10 +44,11 @@ def source_variant(original: str) -> str:
         stage, stage + "            TransactionDiagnostics.afterStage(request.delta());\n")
 
 
-def create(directory: Path, name: str = "transaction-java-aggregate") -> Path:
-    project = create_schema(directory, "legacy-v1", name, effect="put-once")
+def create(directory: Path, name: str = "transaction-java-aggregate", *, http_profile: str | None = None) -> Path:
+    project = create_schema(directory, "legacy-v1", name,
+                            effect="current-http" if http_profile is not None else "put-once", http_profile=http_profile)
     original = read_file(project / SOURCE)
-    source = source_variant(original.decode()).encode()
+    source = source_variant(original.decode(), intent_operation="http" if http_profile is not None else "put-once").encode()
     helper = read_file(ROOT / "examples/java-transaction-schema/TransactionDiagnostics.java")
     (project / SOURCE).write_bytes(source)
     (project / HELPER).write_bytes(helper)

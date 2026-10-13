@@ -73,6 +73,48 @@ fn native_effect_installation_pins_reject_implicit_grants_null_and_ambiguous_pol
 }
 
 #[test]
+fn signed_service_dispatch_selection_is_explicit_closed_and_never_a_guest_http_grant() {
+    let effect = serde_json::json!({"requirementsDigest":format!("sha256:{}", "d".repeat(64)),
+        "providerId":"http","providerIncarnation":"e".repeat(64),"credentialReference":"effect-secret",
+        "stagingBinding":"intent-stage","stagingPolicies":["stage"],"dispatchBinding":"intent-dispatch","dispatchPolicies":["dispatch"]});
+    let mut wire = input();
+    wire["operations"][0]["deferredHttp"] = effect;
+    let old = derive(&serde_json::from_value(wire.clone()).unwrap(), &data()).unwrap();
+    assert!(!old.operations[0]
+        .deferred_http
+        .as_ref()
+        .unwrap()
+        .service_integration());
+    wire["operations"][0]["deferredHttp"]["dispatchAuthority"] =
+        serde_json::json!({"formatVersion":1,"mode":"signed-service-integration"});
+    let selected = derive(&serde_json::from_value(wire.clone()).unwrap(), &data()).unwrap();
+    assert!(selected.operations[0]
+        .deferred_http
+        .as_ref()
+        .unwrap()
+        .service_integration());
+    for hostile in [
+        serde_json::Value::Null,
+        serde_json::json!([]),
+        serde_json::json!({"formatVersion":1,"mode":"signed-service-integration","grant":true}),
+        serde_json::json!({"formatVersion":1}),
+        serde_json::json!({"mode":"signed-service-integration"}),
+    ] {
+        let mut value = wire.clone();
+        value["operations"][0]["deferredHttp"]["dispatchAuthority"] = hostile;
+        assert!(serde_json::from_value::<StateConfig>(value).is_err());
+    }
+    for hostile in [
+        serde_json::json!({"formatVersion":2,"mode":"signed-service-integration"}),
+        serde_json::json!({"formatVersion":1,"mode":"original-caller"}),
+    ] {
+        let mut value = wire.clone();
+        value["operations"][0]["deferredHttp"]["dispatchAuthority"] = hostile;
+        assert!(derive(&serde_json::from_value(value).unwrap(), &data()).is_err());
+    }
+}
+
+#[test]
 fn persisted_owner_identity_and_finite_limits_cannot_be_omitted_or_downgraded() {
     for name in [
         "storeIdentity",

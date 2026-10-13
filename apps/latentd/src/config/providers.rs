@@ -141,7 +141,10 @@ pub(super) fn derive(
         || !cfg!(all(target_os = "linux", target_arch = "x86_64"))
         || config.capability_policies.is_none()
         || config.audit.is_none()
-        || config.budget_profile.profile() != BudgetProfile::Phase3
+        || !matches!(
+            config.budget_profile.profile(),
+            BudgetProfile::Phase3 | BudgetProfile::Phase4
+        )
         || providers.format_version != 1
         || providers.no_installations()
         || providers.bindings.is_empty()
