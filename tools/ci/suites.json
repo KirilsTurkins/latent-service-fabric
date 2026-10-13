@@ -1494,6 +1494,8 @@
         "broker::tests::route_fence::local_route_cutover_denies_old_handles_before_provider_work_starts",
         "broker::tests::runtime_passes_the_tighter_store_deadline_without_minting_another_ledger",
         "broker::tests::stopped_sessions_keep_response_and_original_ledger_until_actual_drop",
+        "broker::tests::transaction_imports::descriptive_or_foreign_transaction_imports_cannot_open_a_session",
+        "broker::tests::transaction_imports::original_transaction_imports_open_only_the_unchanged_provider_session",
         "broker::tests::typed_input_reservations_precede_construction_and_survive_session_close",
         "broker::tests::unpolled_calls_reserve_nothing_and_revocation_denies_before_dispatch",
         "broker::tests::unused_multi_dimension_reservations_refund_together_without_refunding_other_work",
@@ -1535,7 +1537,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 167,
+      "minimumCases": 169,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
