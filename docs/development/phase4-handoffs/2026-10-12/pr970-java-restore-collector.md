@@ -111,3 +111,11 @@ under the accepted restore guard and current source/writer fences; an old
 migration receipt supplies no restored activation authority. Ninety-seven
 focused source controls pass. Full runtime, migration and restore evidence
 remain pending.
+
+The first restored activation result must carry a new bounded `RMA\x01`
+receipt, retain the exact snapshot, manifest, window and accepted review
+identities, positively retire its protected resource, and advance only the
+namespace generation by one in the returned NV2 view. A historical receipt,
+replay flag, changed history epoch or incomplete physical witness refuses
+before a successful campaign case is recorded. Ninety-eight focused source
+controls pass; the native protected-owner campaign remains pending.

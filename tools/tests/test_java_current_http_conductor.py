@@ -12,6 +12,28 @@ from tools.tests.test_java_transaction_provision import observation
 
 
 class CurrentHttpConductor(unittest.TestCase):
+    def test_restored_activation_refuses_old_receipts_replay_and_changed_physical_or_history_witnesses(self):
+        from tools.java_transaction_qualification import offline_campaign
+        before = list(b'NV\x02' + bytes([19]) * 32
+                      + b''.join(value.to_bytes(8, 'little') for value in (1, 2, 3, 4)))
+        after = before[:43] + list((3).to_bytes(8, 'little')) + before[51:]
+        request = {'action': 'resume-restored-migration', 'expectedView': before,
+                   'snapshotDigest': 'sha256:' + 'a' * 64, 'manifestDigest': 'sha256:' + 'b' * 64,
+                   'windowAcknowledgement': 'sha256:' + 'c' * 64}
+        review = 'sha256:' + 'd' * 64
+        result = {**request, 'receipt': list(b'RMA\x01synthetic-source-control'), 'view': after,
+                  'replay': False, 'reviewDigest': review, 'resourcePhysicallyRetired': True}
+        result.pop('expectedView')
+        self.assertEqual(offline_campaign.restored_migration_result(result, request, review), result)
+        changes = ({'receipt': list(b'NRS\x02old')}, {'receipt': list(b'RMA\x01')},
+                   {'receipt': [True, 77, 65, 1, 0]}, {'receipt': [0] * 8193}, {'replay': True},
+                   {'resourcePhysicallyRetired': False}, {'resourcePhysicallyRetired': 1},
+                   {'snapshotDigest': 'sha256:' + 'e' * 64}, {'reviewDigest': 'sha256:' + 'e' * 64},
+                   {'view': before}, {'view': after[:59] + list((5).to_bytes(8, 'little'))}, {'approved': True})
+        for change in changes:
+            with self.subTest(change=list(change)), self.assertRaises(ValueError):
+                offline_campaign.restored_migration_result(dict(result, **change), request, review)
+
     def test_signed_service_integration_is_explicit_and_only_marks_deferred_update_rows(self):
         from tools.java_transaction_qualification import configuration as cfg, evidence, inputs
         with tempfile.TemporaryDirectory() as temporary:
