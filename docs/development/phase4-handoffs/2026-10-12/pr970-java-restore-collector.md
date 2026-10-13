@@ -177,3 +177,10 @@ original six-component selector still refuses this seventh variant. Packaging
 retains its exact Java source and declaration as signed assets, with no effect
 marker or requirements. A changed source order, claimed qualification or broader
 input cannot supply execution authority.
+
+Each current v2 native recovery action also opens the real control catalog.
+After retaining its original report, the conductor requires positive catalog
+retirement and waits the same original admission lease interval. This covers
+both successful and failed operation reports without changing their disposition
+or retryability. Missing retirement stops the collector; historical v1 behavior
+and the twelve-action, 1200-second limits remain unchanged.
