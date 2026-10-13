@@ -1,0 +1,529 @@
+{
+  "formatVersion": 1,
+  "scope": "Fresh compiler capture custody after helper loss; no signed runtime qualification",
+  "peerSource": {
+    "commit": "c3931cade7d1d52230d70273e0ff801c05c03a79",
+    "path": "tools/java_transaction_qualification/current_recipient.py",
+    "identity": {
+      "sha256": "sha256:5673d794f6fe53023c4b61bfe83275612fb3fdef78140c4b1547e002424c39b6",
+      "bytes": 19313
+    }
+  },
+  "recipient": {
+    "status": "passed",
+    "scope": "actual TLS synthetic current POST recipient only, no signed guest or delivery claim",
+    "declaration": {
+      "formatVersion": 1,
+      "origin": {
+        "scheme": "https",
+        "host": "localhost",
+        "port": 52027
+      },
+      "operationPath": "/effect",
+      "lookupPrefix": "/receipts/",
+      "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "retentionMillis": 600000,
+      "mediaType": "application/octet-stream",
+      "maximumPayloadBytes": 27
+    },
+    "profile": {
+      "formatVersion": 1,
+      "contract": "lsf-atomic-idempotent-http-v1",
+      "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "retentionMillis": 600000,
+      "maximumPayloadBytes": 27
+    },
+    "absent": {
+      "formatVersion": 1,
+      "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "idempotencyKey": "lsf-effect-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bodyDigest": "fd5340c30124514ccf745aaa50bb66dc3346733b991b63c1e5b740a9cdac5b63",
+      "outcome": "absent",
+      "sequence": 0,
+      "duplicate": false
+    },
+    "lostReplyRecordDigest": "dec8637de4868ba23eb2f9774d229660a71b84841c94dbd73fea58ca7ecd4cac",
+    "lookup": {
+      "formatVersion": 1,
+      "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "idempotencyKey": "lsf-effect-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bodyDigest": "fd5340c30124514ccf745aaa50bb66dc3346733b991b63c1e5b740a9cdac5b63",
+      "outcome": "accepted",
+      "sequence": 1,
+      "duplicate": true
+    },
+    "duplicate": {
+      "formatVersion": 1,
+      "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "idempotencyKey": "lsf-effect-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bodyDigest": "fd5340c30124514ccf745aaa50bb66dc3346733b991b63c1e5b740a9cdac5b63",
+      "outcome": "accepted",
+      "sequence": 1,
+      "duplicate": true
+    },
+    "changedInput": {
+      "formatVersion": 1,
+      "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "idempotencyKey": "lsf-effect-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bodyDigest": "fd5340c30124514ccf745aaa50bb66dc3346733b991b63c1e5b740a9cdac5b63",
+      "outcome": "conflict",
+      "sequence": 0,
+      "duplicate": false
+    },
+    "physicalSessions": [
+      {
+        "stage": "mutation-reply-lost",
+        "receivedReply": false
+      },
+      {
+        "stage": "stop-1",
+        "reaped": true,
+        "record": {
+          "schemaVersion": "latent.synthetic.current-post-recipient.v1",
+          "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "requests": 7,
+          "posts": 3,
+          "gets": 3,
+          "profileProbes": 1,
+          "originalRecords": 0,
+          "retainedRecords": 1,
+          "mutations": 1,
+          "duplicatePosts": 1,
+          "lostRepliesAfterAcceptance": 1,
+          "recipientDeliveryQualified": false,
+          "connections": 7,
+          "refusedConnections": 0,
+          "activeConnections": 0,
+          "workerThreads": 0,
+          "listenerClosed": true
+        }
+      },
+      {
+        "stage": "stop-2",
+        "reaped": true,
+        "record": {
+          "schemaVersion": "latent.synthetic.current-post-recipient.v1",
+          "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "requests": 9,
+          "posts": 4,
+          "gets": 4,
+          "profileProbes": 1,
+          "originalRecords": 1,
+          "retainedRecords": 1,
+          "mutations": 1,
+          "duplicatePosts": 2,
+          "lostRepliesAfterAcceptance": 1,
+          "recipientDeliveryQualified": false,
+          "connections": 9,
+          "refusedConnections": 0,
+          "activeConnections": 0,
+          "workerThreads": 0,
+          "listenerClosed": true
+        }
+      }
+    ]
+  },
+  "constructor": {
+    "attempt": 4,
+    "configuration": "/work/recovery970-preview-r4-20261012/node.json",
+    "configurationSha256": "6432aa0df3a8474ef12e6539f22851642a91d15227ecdbc53927d7fe6e27ff00",
+    "command": [
+      "/target/debug/latentd",
+      "inspect-configured-http-effects",
+      "--config",
+      "/work/recovery970-preview-r4-20261012/node.json"
+    ],
+    "binarySha256": "0375557c2aac588570fa75358428c805f7b3f2c99d25a05100fe2b20b4a1685d",
+    "exitCode": 0,
+    "businessFilesCreated": [],
+    "checkpointFilesCreated": [],
+    "preview": {
+      "schemaVersion": "latent.configured-http-effect-inspection.v1",
+      "adapters": [
+        {
+          "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "profile": {
+            "provider": "http",
+            "destination": "https://localhost:52027/effect",
+            "adapter": "qualified-http-effect-v1",
+            "intent_format": 1,
+            "payload_format": "http-body-value-v1",
+            "idempotency_profile": "qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161"
+          }
+        }
+      ]
+    }
+  },
+  "captures": {
+    "formatVersion": 1,
+    "scope": "actual compiler capture only; no approval, signing, guest execution or issue closure",
+    "sourceCommit": "9bae83952d9513c965a88d375b2a533916a98473",
+    "sourceTree": "629d64a235c73721bfe7b6dc450b6e233aeafcae",
+    "nativeIdempotencyProfile": "qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161",
+    "variants": {
+      "aggregate": {
+        "directory": "/work/pr970-current-java-capture-9bae-r1-20261012/schema/aggregate",
+        "materials": {
+          "component": {
+            "sha256": "sha256:c0fdb390a366f94b860e3d2d5139055691a67ada2fae19e7184462b49ab3549d",
+            "bytes": 1047270
+          },
+          "capsuleSource": {
+            "sha256": "sha256:28939cbc29ad95e2f963cc2e7e6b13fe126368427ee70b0206a3012ad5006039",
+            "bytes": 3684
+          },
+          "report": {
+            "sha256": "sha256:3877758875c1840023dd5d5ba86dcdf35c20cf9f8500c21b9bc1756fc72f6289",
+            "bytes": 19641
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:b700777207ed5e2043d113e4fcd8bef4a77f80bfd10301fa50b134065cff31c8",
+            "bytes": 25542
+          },
+          "recipeInputs": {
+            "sha256": "sha256:68209bcfee8efe8a55571bee7cd582410e3d059c33b987ad7721129427e5d5d8",
+            "bytes": 8604
+          },
+          "companion": {
+            "sha256": "sha256:6554b968e80b2e3132742d3c95e21ba2056fa4fa9f846b419c36daf2da3a57e4",
+            "bytes": 959
+          }
+        },
+        "selected": {
+          "variant": "aggregate",
+          "componentDigest": "sha256:c0fdb390a366f94b860e3d2d5139055691a67ada2fae19e7184462b49ab3549d",
+          "companionDigest": "sha256:6554b968e80b2e3132742d3c95e21ba2056fa4fa9f846b419c36daf2da3a57e4",
+          "sourceDigest": "sha256:b700777207ed5e2043d113e4fcd8bef4a77f80bfd10301fa50b134065cff31c8",
+          "compilerSource": "9bae83952d9513c965a88d375b2a533916a98473",
+          "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+          "requirementsDigest": null,
+          "signedNodeExecutionQualified": false
+        },
+        "nativeEffectProfile": null,
+        "nativeEffectOperation": null,
+        "commandsSucceeded": true
+      },
+      "forbidden-http": {
+        "directory": "/work/pr970-current-java-capture-9bae-r1-20261012/schema/forbidden-http",
+        "materials": {
+          "component": {
+            "sha256": "sha256:717712f8976aa0be1fcc01cb425116f8372832937bedcf63d52b21e509d22767",
+            "bytes": 1145250
+          },
+          "capsuleSource": {
+            "sha256": "sha256:239e151da4f0bb402f75d378663be4e8d441ed250ddc99c25df4ee32389bd5fa",
+            "bytes": 4360
+          },
+          "report": {
+            "sha256": "sha256:da72eba3ab94083839f3cc53633037d6147a238dbe6b2a6d1b66cfbafc681e95",
+            "bytes": 20162
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:9a0223fd3a01e8037416adfccf93cbca7de1d814607544407fd2c04616905b22",
+            "bytes": 25670
+          },
+          "recipeInputs": {
+            "sha256": "sha256:68209bcfee8efe8a55571bee7cd582410e3d059c33b987ad7721129427e5d5d8",
+            "bytes": 8604
+          },
+          "companion": {
+            "sha256": "sha256:2b71f2d1e6151f97478c258a477ef06470fe43c1f13f37387de39efdd63541a3",
+            "bytes": 974
+          }
+        },
+        "selected": {
+          "variant": "forbidden-http",
+          "componentDigest": "sha256:717712f8976aa0be1fcc01cb425116f8372832937bedcf63d52b21e509d22767",
+          "companionDigest": "sha256:2b71f2d1e6151f97478c258a477ef06470fe43c1f13f37387de39efdd63541a3",
+          "sourceDigest": "sha256:9a0223fd3a01e8037416adfccf93cbca7de1d814607544407fd2c04616905b22",
+          "compilerSource": "9bae83952d9513c965a88d375b2a533916a98473",
+          "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+          "requirementsDigest": null,
+          "signedNodeExecutionQualified": false
+        },
+        "nativeEffectProfile": null,
+        "nativeEffectOperation": null,
+        "commandsSucceeded": true
+      },
+      "put-once-legacy-v1": {
+        "directory": "/work/pr970-current-java-capture-9bae-r1-20261012/schema/put-once-legacy-v1",
+        "materials": {
+          "component": {
+            "sha256": "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd",
+            "bytes": 1051617
+          },
+          "capsuleSource": {
+            "sha256": "sha256:31ae58fe2dac40229b9719930cf6dacaad3ea97790db6039b9d76044368ccf12",
+            "bytes": 3925
+          },
+          "report": {
+            "sha256": "sha256:8af3892d69aeddcabdafe2f855e6504b5ba9052bd03f4acb7a408e843ab3d419",
+            "bytes": 20413
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:d59054c9e55c811bac928d370b2fc2840995f9caf1a773358c103ef604334294",
+            "bytes": 26340
+          },
+          "recipeInputs": {
+            "sha256": "sha256:b18067a0dc3fa1a6c4eb65ee6bf66f462307e5f4f1649311aaa1337eab535d94",
+            "bytes": 9190
+          },
+          "companion": {
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+            "bytes": 959
+          },
+          "currentHttpMarker": {
+            "sha256": "sha256:4635e27f9fa3d49e96adbd50fd5fa85197d34af328e0054ccc948102f2a7a9cf",
+            "bytes": 176
+          },
+          "requirements": {
+            "sha256": "sha256:dfa7b1459dbe78c9dc1a43aef3171916d84f78f49fc8df50ea09dc13036f80ab",
+            "bytes": 787
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:85053de6baff57cdabd85753fd8829894ad4cebbd0dbd81e481a828f6e3d439f",
+            "bytes": 512
+          }
+        },
+        "selected": {
+          "variant": "put-once-legacy-v1",
+          "componentDigest": "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd",
+          "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+          "sourceDigest": "sha256:d59054c9e55c811bac928d370b2fc2840995f9caf1a773358c103ef604334294",
+          "compilerSource": "9bae83952d9513c965a88d375b2a533916a98473",
+          "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+          "requirementsDigest": "sha256:dfa7b1459dbe78c9dc1a43aef3171916d84f78f49fc8df50ea09dc13036f80ab",
+          "signedNodeExecutionQualified": false
+        },
+        "nativeEffectProfile": "current-v2-http",
+        "nativeEffectOperation": "http",
+        "commandsSucceeded": true
+      },
+      "put-once-compatible-v2": {
+        "directory": "/work/pr970-current-java-capture-9bae-r1-20261012/schema/put-once-compatible-v2",
+        "materials": {
+          "component": {
+            "sha256": "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813",
+            "bytes": 1050523
+          },
+          "capsuleSource": {
+            "sha256": "sha256:71a1ad4e95e4601a148a3642b6593c112771f443623699ed26da4e76665766ba",
+            "bytes": 3819
+          },
+          "report": {
+            "sha256": "sha256:27f3f66ec873fec04e1d24d3610eb25afcf82b2306b71c198013c0d32a61d193",
+            "bytes": 20550
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:0a5bd09216f485b6f65bfac9820c48b0a9009b34c2b984c3ed8cdf9f94c409e9",
+            "bytes": 26478
+          },
+          "recipeInputs": {
+            "sha256": "sha256:b18067a0dc3fa1a6c4eb65ee6bf66f462307e5f4f1649311aaa1337eab535d94",
+            "bytes": 9190
+          },
+          "companion": {
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+            "bytes": 959
+          },
+          "currentHttpMarker": {
+            "sha256": "sha256:4635e27f9fa3d49e96adbd50fd5fa85197d34af328e0054ccc948102f2a7a9cf",
+            "bytes": 176
+          },
+          "requirements": {
+            "sha256": "sha256:dfa7b1459dbe78c9dc1a43aef3171916d84f78f49fc8df50ea09dc13036f80ab",
+            "bytes": 787
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:12360858819356371de20bb326b1096cdc4a490635d6c2e9dec5c415efff2f9d",
+            "bytes": 595
+          }
+        },
+        "selected": {
+          "variant": "put-once-compatible-v2",
+          "componentDigest": "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813",
+          "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+          "sourceDigest": "sha256:0a5bd09216f485b6f65bfac9820c48b0a9009b34c2b984c3ed8cdf9f94c409e9",
+          "compilerSource": "9bae83952d9513c965a88d375b2a533916a98473",
+          "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+          "requirementsDigest": "sha256:dfa7b1459dbe78c9dc1a43aef3171916d84f78f49fc8df50ea09dc13036f80ab",
+          "signedNodeExecutionQualified": false
+        },
+        "nativeEffectProfile": "current-v2-http",
+        "nativeEffectOperation": "http",
+        "commandsSucceeded": true
+      },
+      "put-once-writer-v2": {
+        "directory": "/work/pr970-current-java-capture-9bae-r1-20261012/schema/put-once-writer-v2",
+        "materials": {
+          "component": {
+            "sha256": "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+            "bytes": 1050523
+          },
+          "capsuleSource": {
+            "sha256": "sha256:2ea02a9201cad1a5214724315e36fbb128aee101878568826918363bf3f0f743",
+            "bytes": 3818
+          },
+          "report": {
+            "sha256": "sha256:76ff27575ce487f01eb7eceff2c9694a5e6ecf1245e04f2f464e48c115e666e7",
+            "bytes": 20410
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:0a83bf958e450c9e7d3f9a53fb20efc318b8adde872bd6e7af62d0f65725f1b2",
+            "bytes": 26478
+          },
+          "recipeInputs": {
+            "sha256": "sha256:b18067a0dc3fa1a6c4eb65ee6bf66f462307e5f4f1649311aaa1337eab535d94",
+            "bytes": 9190
+          },
+          "companion": {
+            "sha256": "sha256:e5719a610fb20811a402aed0531d13d71547978104048d9e275ae7b7ae061c49",
+            "bytes": 959
+          },
+          "currentHttpMarker": {
+            "sha256": "sha256:4635e27f9fa3d49e96adbd50fd5fa85197d34af328e0054ccc948102f2a7a9cf",
+            "bytes": 176
+          },
+          "requirements": {
+            "sha256": "sha256:83c1d6de5fee0d54d255ad8cc6007911adf1a3d755521c02be67676b374980cd",
+            "bytes": 787
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:3c9b9439afc4d81be04685b11f8165be508b85a199ca4706b1eaf32c1ef17b70",
+            "bytes": 591
+          }
+        },
+        "selected": {
+          "variant": "put-once-writer-v2",
+          "componentDigest": "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+          "companionDigest": "sha256:e5719a610fb20811a402aed0531d13d71547978104048d9e275ae7b7ae061c49",
+          "sourceDigest": "sha256:0a83bf958e450c9e7d3f9a53fb20efc318b8adde872bd6e7af62d0f65725f1b2",
+          "compilerSource": "9bae83952d9513c965a88d375b2a533916a98473",
+          "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+          "requirementsDigest": "sha256:83c1d6de5fee0d54d255ad8cc6007911adf1a3d755521c02be67676b374980cd",
+          "signedNodeExecutionQualified": false
+        },
+        "nativeEffectProfile": "current-v2-http",
+        "nativeEffectOperation": "http",
+        "commandsSucceeded": true
+      },
+      "put-once-diagnostics": {
+        "directory": "/work/pr970-current-java-capture-9bae-r1-20261012/diagnostics/put-once-diagnostics",
+        "materials": {
+          "component": {
+            "sha256": "sha256:322dfed5d9838edfbbd53bf0672c31f849ac7c7309358975bf1bf6c10b0a24bb",
+            "bytes": 1060950
+          },
+          "capsuleSource": {
+            "sha256": "sha256:ac4a89a75bc9868350f21924eefcf2c20ceefd6dc200b0b9c3c4e6064c51b1d8",
+            "bytes": 4147
+          },
+          "report": {
+            "sha256": "sha256:bd7bc93db4ff39a8411a1f39a4a05c76ba6b1f684d39ef45851b9a58b4335c72",
+            "bytes": 20519
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:36c544ac14b688efe6b2f85e405def2726084c5f581bc21d2c22a106b81f3f5e",
+            "bytes": 26620
+          },
+          "recipeInputs": {
+            "sha256": "sha256:3bfd23a872ab79f6819f2e3c36a6975103ece64b20ac3f669c0546af4d6fcfcd",
+            "bytes": 9487
+          },
+          "companion": {
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+            "bytes": 959
+          },
+          "currentHttpMarker": {
+            "sha256": "sha256:4635e27f9fa3d49e96adbd50fd5fa85197d34af328e0054ccc948102f2a7a9cf",
+            "bytes": 176
+          },
+          "requirements": {
+            "sha256": "sha256:dfa7b1459dbe78c9dc1a43aef3171916d84f78f49fc8df50ea09dc13036f80ab",
+            "bytes": 787
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:c12d550e271d5638cce287f89a3b4d62e55e1768b3654e90bbbd3c2d14347d00",
+            "bytes": 512
+          }
+        },
+        "selected": {
+          "variant": "put-once-diagnostics",
+          "componentDigest": "sha256:322dfed5d9838edfbbd53bf0672c31f849ac7c7309358975bf1bf6c10b0a24bb",
+          "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+          "sourceDigest": "sha256:36c544ac14b688efe6b2f85e405def2726084c5f581bc21d2c22a106b81f3f5e",
+          "compilerSource": "9bae83952d9513c965a88d375b2a533916a98473",
+          "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+          "requirementsDigest": "sha256:dfa7b1459dbe78c9dc1a43aef3171916d84f78f49fc8df50ea09dc13036f80ab",
+          "signedNodeExecutionQualified": false
+        },
+        "nativeEffectProfile": "current-v2-http",
+        "nativeEffectOperation": "http",
+        "commandsSucceeded": true
+      }
+    }
+  },
+  "receiptIdentities": {
+    "recipient-qualification-r2.json": {
+      "sha256": "sha256:cac1e470cb4a8cb610d9b674058f0c08c6c6e66a12f5a32ef06e186a10f339ce",
+      "bytes": 3956
+    },
+    "native-constructor-preview-r4.json": {
+      "sha256": "sha256:05ab19b985184a9a812544ee2978bad40568a5d5f091ba132b23addc3dd16974",
+      "bytes": 1098
+    },
+    "current-capture-identities.json": {
+      "sha256": "sha256:ee09bc57586c743ba4e437018157c96c0a8be6ab288470afee48e892ff91a5ec",
+      "bytes": 14512
+    }
+  },
+  "sourceControls": {
+    "cases": 9,
+    "windows": "passed",
+    "linux": "passed"
+  },
+  "constructorScope": {
+    "binaryAndConfigurationObserved": true,
+    "committedSourceTree": null,
+    "sourceScope": "then-uncommitted gateway overlay on 7ed1bb5, normal #974221 merge and SDK293 leaf",
+    "buildCommand": "cargo +1.97.1 build -p latentd --bin latentd --example transaction_recovery --all-features --locked --offline",
+    "reportedFeatures": [
+      "development-outbound-streams",
+      "development-test-node"
+    ],
+    "ordinaryDefaultNativeQualified": false,
+    "sourceApprovalGranted": false,
+    "freshSourceBoundPreviewAndPolicyRequired": true
+  },
+  "doesNotClose": [
+    718,
+    682
+  ],
+  "captureKind": "fresh-recompile-after-helper-loss",
+  "historicalCapturePacketSha256": "sha256:e70ed3652341e273ef7644e790027de5c0a6ba983bd10f37040185a4f87f333d",
+  "allComponentsEqualHistoricalCapture": true
+}

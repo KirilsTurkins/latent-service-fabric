@@ -30,6 +30,9 @@ const WITH_NEGATIVE: [&str; 6] = [
 const PINS: &[u8] = include_bytes!(
     "../../../../docs/development/phase4-handoffs/2026-10-12/pr970-current-post-evidence.json"
 );
+const REBUILT_PINS: &[u8] = include_bytes!(
+    "../../../../docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json"
+);
 
 pub(super) fn read(root: &Path, name: &str, maximum: u64) -> Result<Vec<u8>> {
     read_package_file(root, name, maximum).map_err(|error| error.message.into())
@@ -292,7 +295,7 @@ pub(crate) fn sign_current_java(
     compiler_source: &str,
     paths: &[OsString],
 ) -> Result<()> {
-    sign_selected(output, compiler_source, paths, &NAMES)
+    sign_selected(output, compiler_source, paths, &NAMES, PINS)
 }
 
 /// Separate signed negative material. This does not approve an immediate call,
@@ -302,7 +305,15 @@ pub(crate) fn sign_current_java_with_negative(
     compiler_source: &str,
     paths: &[OsString],
 ) -> Result<()> {
-    sign_selected(output, compiler_source, paths, &WITH_NEGATIVE)
+    sign_selected(output, compiler_source, paths, &WITH_NEGATIVE, PINS)
+}
+
+pub(crate) fn sign_rebuilt_current_java(
+    output: &Path,
+    compiler_source: &str,
+    paths: &[OsString],
+) -> Result<()> {
+    sign_selected(output, compiler_source, paths, &NAMES, REBUILT_PINS)
 }
 
 pub(super) fn absent(root: &Path, name: &str) -> Result<()> {
@@ -317,6 +328,7 @@ fn sign_selected(
     compiler_source: &str,
     paths: &[OsString],
     selected_names: &[&str],
+    selected_pins: &[u8],
 ) -> Result<()> {
     require(
         compiler_source == SOURCE && paths.len() == selected_names.len(),
@@ -330,7 +342,7 @@ fn sign_selected(
         output.is_absolute() && !output.exists(),
         "current Java fixture output must be fresh and absolute",
     )?;
-    let packet: Value = serde_json::from_slice(PINS)?;
+    let packet: Value = serde_json::from_slice(selected_pins)?;
     let captures = &packet["captures"];
     require(
         captures["sourceCommit"] == SOURCE && captures["nativeIdempotencyProfile"] == PROFILE,
@@ -362,6 +374,31 @@ fn sign_selected(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn recompiled_set_preserves_original_source_component_and_authority_inputs() {
+        let original: Value = serde_json::from_slice(PINS).unwrap();
+        let rebuilt: Value = serde_json::from_slice(REBUILT_PINS).unwrap();
+        assert_eq!(
+            original["captures"]["sourceCommit"],
+            rebuilt["captures"]["sourceCommit"]
+        );
+        for name in WITH_NEGATIVE {
+            let old = &original["captures"]["variants"][name]["materials"];
+            let new = &rebuilt["captures"]["variants"][name]["materials"];
+            for (key, value) in old.as_object().unwrap() {
+                if key == "report" || key == "compilerInputs" {
+                    assert_ne!(value, &new[key]);
+                } else {
+                    assert_eq!(value, &new[key]);
+                }
+            }
+        }
+        let root = tempfile::tempdir().unwrap();
+        let output = root.path().join("must-not-exist");
+        assert!(sign_rebuilt_current_java(&output, SOURCE, &[]).is_err());
+        assert!(!output.exists());
+    }
 
     #[test]
     fn current_fixture_never_accepts_another_source_or_partial_set() {

@@ -87,6 +87,33 @@ class CurrentJavaInputs(unittest.TestCase):
 
 
 class CurrentJavaPackaging(unittest.TestCase):
+    def test_recompiled_signing_requires_complete_exact_report_set(self):
+        from pathlib import Path
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import packaging
+        names = ('aggregate', 'put-once-legacy-v1', 'put-once-compatible-v2', 'put-once-writer-v2', 'put-once-diagnostics')
+        packet = {'captures': {'sourceCommit': 'a' * 40, 'variants': {
+            name: {'materials': {'report': {'sha256': digest(name.encode())}}} for name in names}}}
+        items = [SimpleNamespace(name=name, directory=Path('/capture') / name,
+                                 compiler_source='a' * 40) for name in names]
+        def material(path, *_args):
+            return encoded(packet) if path.name.endswith('.json') and path.name != 'report.json' else path.parent.name.encode()
+        with patch.object(packaging, 'read_file', side_effect=material):
+            self.assertEqual(packaging.current_signing_mode(items), 'fixture-sign-rebuilt-current-java-inputs')
+            with self.assertRaises(ValueError):
+                packaging.current_signing_mode(items[:-1])
+            items[0].compiler_source = 'b' * 40
+            with self.assertRaises(ValueError):
+                packaging.current_signing_mode(items)
+        def mixed(path, *_args):
+            if path.name != 'report.json':
+                return encoded(packet)
+            return b'historical' if path.parent.name == 'aggregate' else path.parent.name.encode()
+        with patch.object(packaging, 'read_file', side_effect=mixed):
+            with self.assertRaises(ValueError):
+                packaging.current_signing_mode(items)
+
     def test_separate_early_capture_keeps_original_six_selection_closed_and_rejects_claims_or_late_call(self):
         from pathlib import Path
         from unittest.mock import patch

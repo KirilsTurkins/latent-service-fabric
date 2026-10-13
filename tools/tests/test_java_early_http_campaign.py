@@ -32,6 +32,21 @@ def hosts():
 
 
 class EarlyHttpControls(unittest.TestCase):
+    def test_signing_mode_selects_rebuilt_custody_only_by_exact_report_identity(self):
+        packet = {'sourceCommit': 'a' * 40, 'materials': {
+            'report': {'sha256': digest(b'rebuilt')}, 'component': {'sha256': 'sha256:' + 'b' * 64}}}
+        item = SimpleNamespace(directory=Path('/capture'), compiler_source='a' * 40,
+                               component_digest='sha256:' + 'b' * 64)
+        with patch.object(runner, 'read_json', return_value=packet), \
+             patch.object(runner, 'read_file', return_value=b'rebuilt'):
+            self.assertEqual(runner.signing_mode(item), 'fixture-sign-rebuilt-early-http-input')
+            item.component_digest = 'sha256:' + 'c' * 64
+            with self.assertRaises(ValueError):
+                runner.signing_mode(item)
+        with patch.object(runner, 'read_json', return_value=packet), \
+             patch.object(runner, 'read_file', return_value=b'historical'):
+            self.assertEqual(runner.signing_mode(item), 'fixture-sign-early-http-input')
+
     def test_four_sessions_cannot_expand_other_programs_or_install_restore_authority(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()

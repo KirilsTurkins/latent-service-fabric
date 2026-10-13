@@ -13,6 +13,9 @@ const SERVICE: &str = "examples/transaction-java-forbidden-http-before-stage";
 const PINS: &[u8] = include_bytes!(
     "../../../../docs/development/phase4-handoffs/2026-10-12/pr970-early-http-compiler-evidence.json"
 );
+const REBUILT_PINS: &[u8] = include_bytes!(
+    "../../../../docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json"
+);
 
 fn no_effect_authority(root: &Path) -> Result<()> {
     for name in [
@@ -29,13 +32,13 @@ fn no_effect_authority(root: &Path) -> Result<()> {
     clippy::too_many_lines,
     reason = "One closed captured source validates every material and original ceiling before ephemeral signing"
 )]
-fn load(root: &Path) -> Result<inputs::Build> {
+fn load(root: &Path, selected_pins: &[u8]) -> Result<inputs::Build> {
     require(
         root.is_absolute(),
         "early HTTP fixture needs absolute input",
     )?;
     no_effect_authority(root)?;
-    let capture: Value = serde_json::from_slice(PINS)?;
+    let capture: Value = serde_json::from_slice(selected_pins)?;
     require(
         capture["sourceCommit"] == SOURCE && capture["variant"] == VARIANT,
         "early HTTP captured source owner mismatch",
@@ -218,13 +221,57 @@ pub(crate) fn sign_early_http(
         compiler_source == SOURCE && paths.len() == 1,
         "early HTTP signing requires its one exact separate captured input",
     )?;
-    let build = load(Path::new(&paths[0]))?;
+    let build = load(Path::new(&paths[0]), PINS)?;
+    sign_checked(output, vec![build], false, Some(SOURCE))
+}
+
+pub(crate) fn sign_rebuilt_early_http(
+    output: &Path,
+    compiler_source: &str,
+    paths: &[OsString],
+) -> Result<()> {
+    require(
+        compiler_source == SOURCE && paths.len() == 1,
+        "rebuilt early HTTP signing requires one exact captured input",
+    )?;
+    let build = load(Path::new(&paths[0]), REBUILT_PINS)?;
     sign_checked(output, vec![build], false, Some(SOURCE))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rebuilt_capture_changes_only_report_and_compiler_closure_custody() {
+        let original: Value = serde_json::from_slice(PINS).unwrap();
+        let rebuilt: Value = serde_json::from_slice(REBUILT_PINS).unwrap();
+        assert_eq!(original["sourceCommit"], rebuilt["sourceCommit"]);
+        for key in [
+            "component",
+            "sourceInputs",
+            "recipeInputs",
+            "sourceArchive",
+            "capsuleSource",
+            "companion",
+        ] {
+            assert_eq!(original["materials"][key], rebuilt["materials"][key]);
+        }
+        for key in ["report", "compilerInputs"] {
+            assert_ne!(original["materials"][key], rebuilt["materials"][key]);
+        }
+        assert_eq!(rebuilt["signedNodeExecutionQualified"], false);
+        assert_eq!(rebuilt["issueClosure"], false);
+    }
+
+    #[test]
+    fn rebuilt_mode_refuses_historical_report_before_creating_output() {
+        let root = tempfile::tempdir().unwrap();
+        let output = root.path().join("must-not-exist");
+        assert!(sign_rebuilt_early_http(&output, "wrong", &[root.path().into()]).is_err());
+        assert!(sign_rebuilt_early_http(&output, SOURCE, &[]).is_err());
+        assert!(!output.exists());
+    }
 
     #[test]
     fn separate_early_input_rejects_other_source_and_extra_packages_before_output() {

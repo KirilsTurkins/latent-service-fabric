@@ -28,7 +28,8 @@ from tools.rust_capsule_project import fresh, read_file
 
 EXTRA_COLLECTORS = ('tools/run_java_early_http_qualification.py',
                     'tools/java_transaction_qualification/early_http_inputs.py',
-                    'tools/java_transaction_qualification/early_http_campaign.py')
+                    'tools/java_transaction_qualification/early_http_campaign.py',
+                    'docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json')
 
 
 def selection(path, expected):
@@ -88,7 +89,8 @@ def package(args, item, output, timeout):
     commands = Commands(output, output, build_environment(output), deadline_seconds=timeout,
                         command_seconds=min(timeout, 600))
     packaging.prepare(item, output / item.name, args.contracts_tool, args.signer, commands)
-    commands.run('early-http-signing', args.signer, 'fixture-sign-early-http-input',
+    mode = signing_mode(item)
+    commands.run('early-http-signing', args.signer, mode,
                  output / 'signed', item.compiler_source, output / item.name)
     releases = read_json(output / 'signed/release-set.json')
     inputs.require(releases['schemaVersion'] == 'latent.component.signing-fixture.v1'
@@ -100,6 +102,19 @@ def package(args, item, output, timeout):
     write_json(output / 'package-fixture-receipt.json', {'passed': True, 'commands': commands.records,
         'input': item.observation(), 'guestCompiledAgain': False, 'signedExecutionQualified': False})
     return output / 'signed'
+
+
+def signing_mode(item):
+    packet = read_json(Path(__file__).resolve().parents[1] /
+        'docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json')
+    report = inputs.digest(read_file(item.directory / 'report.json', 262144))
+    rebuilt = packet['materials']['report']['sha256']
+    if report == rebuilt:
+        inputs.require(item.compiler_source == packet['sourceCommit']
+                       and item.component_digest == packet['materials']['component']['sha256'],
+                       'rebuilt-early-captured-component-and-source')
+        return 'fixture-sign-rebuilt-early-http-input'
+    return 'fixture-sign-early-http-input'
 
 
 def publish(client, signed, item):

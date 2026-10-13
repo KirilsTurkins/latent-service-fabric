@@ -214,7 +214,7 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
             else:
                 prepare(item, output / item.name, contracts_tool, signer, command)
         accepted = [item for item in items if item.name != "forbidden-http"]
-        mode = "fixture-sign-java-inputs" if compiler_source is None else "fixture-sign-current-java-inputs"
+        mode = "fixture-sign-java-inputs" if compiler_source is None else current_signing_mode(accepted)
         arguments = [] if compiler_source is None else [compiler_source]
         command.run(mode, signer, mode, output / "signed", *arguments, *[output / item.name for item in accepted])
         signed = decode(read_file(output / "signed/release-set.json"))
@@ -231,6 +231,21 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
     finally:
         record["commands"], record["seconds"] = command.records, round(time.monotonic()-start,6)
         write_json(output / "package-fixture-receipt.json", record)
+
+
+def current_signing_mode(items):
+    packet = decode(read_file(Path(__file__).resolve().parents[2] /
+        'docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json'))['captures']
+    expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
+                if name != 'forbidden-http'}
+    actual = {item.name: digest(read_file(item.directory / 'report.json', 262144)) for item in items}
+    if actual == expected:
+        require(all(item.compiler_source == packet['sourceCommit'] for item in items),
+                'rebuilt-current-captured-source')
+        return 'fixture-sign-rebuilt-current-java-inputs'
+    require(not any(actual.get(name) == report for name, report in expected.items()),
+            'mixed-historical-and-rebuilt-capture-reports')
+    return 'fixture-sign-current-java-inputs'
 
 
 def _current_forbidden_preparation(item, output, contracts, signer, command, record):

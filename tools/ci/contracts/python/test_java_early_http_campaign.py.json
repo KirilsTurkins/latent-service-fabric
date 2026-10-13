@@ -6,7 +6,8 @@
     "EarlyHttpControls.test_http_grant_fails_before_first_deployment_mutation",
     "EarlyHttpControls.test_inspection_rejects_deferred_owner_duplicates_and_changed_caller_scope",
     "EarlyHttpControls.test_operations_use_exact_companion_service_and_never_install_effects",
-    "EarlyHttpControls.test_selection_is_one_early_capture_and_rejects_changed_or_six_component_documents"
+    "EarlyHttpControls.test_selection_is_one_early_capture_and_rejects_changed_or_six_component_documents",
+    "EarlyHttpControls.test_signing_mode_selects_rebuilt_custody_only_by_exact_report_identity"
   ],
   "guards": {
     "EarlyHttpControls.test_actual_host_proposals_exclude_http_intent_recovery_and_foreign_service": {
@@ -92,10 +93,22 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "EarlyHttpControls.test_signing_mode_selects_rebuilt_custody_only_by_exact_report_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:eda622bb797c4c6b0ab7e6f81cb2bd8d4fa3f6e25b726c6bc2c3a2d6cdbf4f7b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_early_http_campaign.py",
-  "reviewReason": "Add seven closed controls for the separate early HTTP fixture; terminal and pending case sets and guard hashes remain unchanged.",
+  "reviewReason": "Add exact report identity selection controls for separately preserved rebuilt compiler custody",
   "schemaVersion": "latent.ci.contracts.v1"
 }
