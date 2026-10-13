@@ -10,6 +10,16 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class TypeScriptAsyncWaiterTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("node"), "requires Node")
+    def test_native_lift_stays_in_actual_metadata_frame_without_duplicate_trampoline_await(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root/'async_waiters.mjs').write_bytes((ROOT/'tools/typescript_guest/async_waiters.mjs').read_bytes())
+            (root/'test.mjs').write_bytes((ROOT/'tools/tests/fixtures/typescript_fetch/native-lift-frame.mjs').read_bytes())
+            result = subprocess.run([shutil.which('node'), str(root/'test.mjs')],
+                capture_output=True, text=True, timeout=30, check=False)
+            self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+
+    @unittest.skipUnless(shutil.which("node"), "requires Node")
     def test_actual_async_imports_use_application_promises_and_preserve_resources(self):
         source = r"""
 import assert from 'node:assert/strict';

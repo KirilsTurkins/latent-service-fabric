@@ -59,6 +59,7 @@ function __lsfApplicationAsyncFunction(original) {
   Object.defineProperty(callable, 'length', {value: original.length});
   return callable;
 }
+
 function __lsfNormalizeAsyncMethods(target) {
   if (!target) return;
   for (const key of Reflect.ownKeys(target)) {
@@ -90,4 +91,45 @@ function __lsfApplicationBuiltinModule(name, exports) {
 `;
   return source.replace(/^defineBuiltinModule\(/gm, '__lsfApplicationBuiltinModule(')
     .replace(anchor, anchor + helper);
+}
+
+// Exact native trampolines need one genuine await, followed by typed lifting
+// inside the existing metadata continuation. Ordinary generated calls retain
+// their original await/return path and the task/exclusive ordering above.
+export function liftNativeImportInMetadataFrame(source) {
+  const declaration = 'async function _withGlobalCurrentTaskMetaAsync(args) {';
+  if (source.split(declaration).length !== 2) throw new Error('native-import-metadata-source-shape');
+  source = source.replace(declaration,
+    "const __lsfNativeLift = Symbol('compiler-native-import-lift');\n" + declaration);
+  const start = source.indexOf(declaration);
+  const end = source.indexOf('\nasync function _clearCurrentTask(', start);
+  if (end < start) throw new Error('native-import-metadata-end-shape');
+  let metadata = source.slice(start, end);
+  const returned = '    return await fn();';
+  if (metadata.split(returned).length !== 2) throw new Error('native-import-metadata-await-shape');
+  metadata = metadata.replace(returned,
+    '    const lift = fn[__lsfNativeLift];\n' +
+    "    if (typeof lift === 'function') return lift(await fn());\n" + returned);
+  source = source.slice(0, start) + metadata + source.slice(end);
+  const trampoline = /const __lsfAwaitImport = async \(\.\.\.lowered\) => __lsfImports\.lift\(await (\$[A-Za-z0-9_$]+)\(__lsfImportId \| 0, \.\.\.lowered\)\);/g;
+  let replaced = 0;
+  source = source.replace(trampoline, (_, original) => {
+    replaced++;
+    return `const __lsfAwaitImport = (...lowered) => ${original}(__lsfImportId | 0, ...lowered);\n` +
+      '    __lsfAwaitImport[__lsfNativeLift] = id => __lsfImports.lift(id);';
+  });
+  if (!replaced || source.includes('const __lsfAwaitImport = async')) {
+    throw new Error('native-import-exact-trampoline-shape');
+  }
+  // FunctionBindgen passes one module-private closure to the unchanged helper.
+  // A lift tag cannot come from application arguments or a reflected HTTP API.
+  const call = /fn: \(\) => __lsfAwaitImport\(([^\n]+)\),/g;
+  let bound = 0;
+  source = source.replace(call, (_, arguments_) => {
+    bound++;
+    return `fn: Object.assign(() => __lsfAwaitImport(${arguments_}),\n` +
+      '          {[__lsfNativeLift]: __lsfAwaitImport[__lsfNativeLift]}),';
+  });
+  if (bound !== replaced) throw new Error('native-import-metadata-lift-binding-shape');
+  return source;
 }

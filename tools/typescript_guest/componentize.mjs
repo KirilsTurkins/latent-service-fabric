@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { coreIntegerLowering } from './signed64.mjs';
 import { explicitResourceOwners } from './resources.mjs';
 import { selectedSourceSplicer } from './source_splicer.mjs';
-import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises } from './async_waiters.mjs';
+import { lazySyncImportWaiters, retireGeneratedTaskSlots, applicationRealmImportPromises, liftNativeImportInMetadataFrame } from './async_waiters.mjs';
 import {fetchOperationBindings} from './fetch_bindings.mjs';
 
 const [compiler, witPath, sourcePath, output, world = 'capsule', engine, selectionPath, sourceSplicer] = process.argv.slice(2);
@@ -97,6 +97,7 @@ const result = await componentize({
       generatedBindings = retireGeneratedTaskSlots(lazySyncImportWaiters(generatedBindings));
     }
     if (selectedSplicer) generatedBindings = applicationRealmImportPromises(generatedBindings);
+    if (fetchCaptureSource) generatedBindings = liftNativeImportInMetadataFrame(generatedBindings);
     if (fetchCaptureSource) generatedBindings = fetchOperationBindings(generatedBindings, fetchCaptureSource);
     return generatedBindings;
   },
