@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "latent.transaction-runtime-wrapper-controls.v1",
+  "evidenceKind": "native-source-regression-controls",
+  "sourceBase": "ca94b2cb686260b3579bea9cca1b05bf18e90785",
+  "testedIndexTree": "1fffe69de0849db1bd4a6c9c144fa98368498149",
+  "sourceFiles": [
+    {
+      "path": "crates/latent-capabilities/src/broker/runtime.rs",
+      "sha256": "671783e8e7d0006780f7bf6019cc301ce59ac2318d0fa2ccf0fb21bf3c54b35e"
+    },
+    {
+      "path": "crates/latent-capabilities/src/broker/tests/transaction_imports.rs",
+      "sha256": "3176b937f5a9eee3b522025d41cd2be8673d7cfa713303bd35b5e6e138a8a45c"
+    }
+  ],
+  "problem": "The runtime deadline adapter forwarded the original ledger and cancellation probe but omitted the original TransactionHost.",
+  "implementation": "Forward the same borrowed owner TransactionHost while preserving the original narrowed deadline and budget ledger.",
+  "baseline": {
+    "wrapperRegressionFailed": true,
+    "artifactSha256": "1f6feb13c9b04c1828b7605ae2f3c0677a54d5faf60ba4ef90f7bf4097863ea4"
+  },
+  "candidate": {
+    "activeTests": 170,
+    "ignoredTests": 0,
+    "regressions": 3,
+    "artifactSha256": "71244709715b0676e26aa8b910b81ee8281070dffa95e3d9f3053f4f70940db8",
+    "artifactBytes": 34084168,
+    "maintainedClippyExitCode": 0
+  },
+  "authority": {
+    "newHostCreated": false,
+    "newBudgetCreated": false,
+    "providerGrantAdded": false,
+    "deadlineExtended": false,
+    "resourceCapsChanged": false
+  },
+  "acceptance": {
+    "signedJavaRuntimeQualified": false,
+    "packagedDistributionQualified": false,
+    "independentAcceptanceReview": false,
+    "issueClosure": false
+  }
+}
