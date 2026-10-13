@@ -186,8 +186,6 @@ class OfflineCampaign:
                                   checkpointDigest=migration["checkpointDigest"],
                                   checkpointManifestDigest=migration["checkpointManifestDigest"])
         resumed = self.action(resume_request)
-        if resume_request['action'] == 'resume-restored-migration':
-            restored_migration_result(resumed, resume_request, reviewed['reviewDigest'])
         if activation is not None:
             activation.start(self.campaign, self.writer, 'writer-runtime')
         else:
@@ -265,6 +263,8 @@ class OfflineCampaign:
         resume_request = restored_resume_request(requested, file, snapshot, acknowledgement,
             self.migration_operation if getattr(self.node, 'current_activation', None) is not None else None)
         resumed = self.action(resume_request)
+        if resume_request['action'] == 'resume-restored-migration':
+            restored_migration_result(resumed, resume_request, reviewed['reviewDigest'])
         self.node.start(self.configuration, **({'current_session': 'restored-runtime'}
                         if getattr(self.node, 'current_publication_program', False) else {}))
         self.campaign.full_path = self.configuration

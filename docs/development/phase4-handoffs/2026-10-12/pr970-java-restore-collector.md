@@ -119,3 +119,9 @@ namespace generation by one in the returned NV2 view. A historical receipt,
 replay flag, changed history epoch or incomplete physical witness refuses
 before a successful campaign case is recorded. Ninety-eight focused source
 controls pass; the native protected-owner campaign remains pending.
+
+The restored result check now runs immediately after the actual restored
+activation and before runtime startup. A sequencing regression exercises that
+path and proves an incomplete physical retirement witness prevents startup.
+It retains the original migration-resume path and every existing receipt,
+identity, history and count check. The combined signed campaign remains pending.
