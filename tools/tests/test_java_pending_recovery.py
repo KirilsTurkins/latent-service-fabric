@@ -213,7 +213,7 @@ class PendingRecoveryControls(unittest.TestCase):
             {'outcomeKnown': True, 'data': {'dispatcher': snapshot(), 'auditAcknowledgement': audit}},
             {'outcomeKnown': True, 'data': {'receipt': original, 'replayed': False, 'published': True,
                                           'paused': True, 'auditAcknowledgement': audit, 'recovery': recovery}},
-            {'outcomeKnown': False, 'data': {'receipt': original, 'auditAcknowledgement': audit, 'recovery': recovery}}]
+            {'outcomeKnown': False, 'data': {'receipt': original, 'auditAcknowledgement': audit}}]
         client = SimpleNamespace(call=Mock(side_effect=responses), evidence=SimpleNamespace(passed=Mock()))
         with self.assertRaisesRegex(ValueError, 'historical-dispatcher-receipt-is-original'):
             controls.control_dispatcher(client, 'pause', 'original-pause')
@@ -244,6 +244,9 @@ class DispatcherRecoverySelectorControls(unittest.TestCase):
 
     def test_current_cli_selector_keeps_original_control_and_immutable_operation_lookup(self):
         client = self.client(self.recovery, copy.deepcopy(self.recovery))
+        responses = list(client.call.side_effect)
+        del responses[2]['data']['recovery']
+        client.call.side_effect = responses
         result = controls.control_dispatcher(client, 'pause', 'original-pause')
         self.assertEqual(result, self.original)
         self.assertEqual(client.call.call_count, 3)
@@ -260,7 +263,13 @@ class DispatcherRecoverySelectorControls(unittest.TestCase):
             for control_recovery, lookup_recovery in ((changed, self.recovery), (self.recovery, changed)):
                 with self.subTest(field=field, control=control_recovery is changed):
                     client = self.client(control_recovery, lookup_recovery)
-                    with self.assertRaisesRegex(ValueError, 'original-dispatcher-recovery-selector'):
+                    responses = list(client.call.side_effect)
+                    if control_recovery is changed:
+                        del responses[2]['data']['recovery']
+                    client.call.side_effect = responses
+                    reason = ('original-dispatcher-recovery-selector' if control_recovery is changed
+                              else 'historical-dispatcher-receipt-is-original')
+                    with self.assertRaisesRegex(ValueError, reason):
                         controls.control_dispatcher(client, 'pause', 'original-pause')
                     client.evidence.passed.assert_not_called()
         for changed in (None, dict(self.recovery, extra=False), dict(self.recovery, automaticRetry=0)):
@@ -269,6 +278,13 @@ class DispatcherRecoverySelectorControls(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'original-dispatcher-recovery-selector'):
                     controls.control_dispatcher(client, 'pause', 'original-pause')
                 client.evidence.passed.assert_not_called()
+
+    def test_read_only_lookup_rejects_even_a_matching_mutation_recovery_selector(self):
+        client = self.client(self.recovery, copy.deepcopy(self.recovery))
+        with self.assertRaisesRegex(ValueError, 'historical-dispatcher-receipt-is-original'):
+            controls.control_dispatcher(client, 'pause', 'original-pause')
+        self.assertEqual(client.call.call_count, 3)
+        client.evidence.passed.assert_not_called()
 
 
 if __name__ == '__main__':

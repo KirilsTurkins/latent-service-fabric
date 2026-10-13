@@ -99,10 +99,9 @@ def control_dispatcher(client, action, operation):
             'actual-dispatcher-generation-advance')
     lookup = client.call('dispatcher', 'operation', *arguments, '--original-action', action)
     recovered = lookup['data']
-    require(lookup['outcomeKnown'] is True and set(recovered) == {'receipt', 'auditAcknowledgement', 'recovery'}
+    require(lookup['outcomeKnown'] is True and set(recovered) == {'receipt', 'auditAcknowledgement'}
             and recovered['auditAcknowledgement'] is not None and recovered['receipt'] == receipt,
             'historical-dispatcher-receipt-is-original')
-    recovery_selector(recovered['recovery'], action, operation, original)
     durable_audit(recovered['auditAcknowledgement'])
     client.evidence.passed(operation, {'before': before, 'receipt': receipt, 'lookup': recovered})
     return receipt

@@ -297,10 +297,12 @@ post-stage immediate-HTTP rollback case or the terminal and pending programmes.
 
 The current dispatcher CLI includes a recovery selector with the original
 operation, action, tenant, scope and owner generation. The pending collector
-checks that exact selector on the control response and its immutable operation
-lookup, including `automaticRetry=false`. Its original regression fails the
-old collector; all 53 related controls pass. No new mutation follows a receipt
-lookup or an uncertain result.
+checks that exact selector on the mutation response, including
+`automaticRetry=false`. The read-only operation lookup must match the original
+receipt and durable audit acknowledgement; it has no mutation recovery selector.
+Both response shapes remain closed. The regressions fail the previous collector;
+all related controls preserve the original no-retry and unknown-outcome checks.
+No new mutation follows a receipt lookup or an uncertain result.
 
 Recovery recognizes only the original and separately reviewed fresh HTTP
 marker. Each must match the installed component, signed companion and exact
