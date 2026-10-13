@@ -145,3 +145,10 @@ marker alongside its effect requirements. The signer already requires that
 material, and refused the earlier incomplete package before generating trust.
 The forbidden component retains its original Java source with no HTTP marker
 or effect requirements. Neither asset supplies authority or execution proof.
+
+Native constructor and transaction-host inspection open and retire the actual
+control catalogs. They install no business execution owner, but their persisted
+supply-chain epoch and restart clock floor remain real. The conductor now waits
+the original admission lease interval after each inspection before starting the
+next owner. The authority lease stays five seconds; original failed boot roots
+are preserved and are never retried as mutations.
