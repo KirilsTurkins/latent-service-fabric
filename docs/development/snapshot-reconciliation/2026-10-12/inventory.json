@@ -155,14 +155,19 @@
         771
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "merged-after-all-exact-head-checks",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
+      "closed": true,
       "currentDeliveryPr": 856,
       "currentDeliveryHead": "bfe5a571f0a05b369608743fe60711e0994dc21a",
       "currentTitle": "Reconcile .NET standard resources and explicit wall clock",
-      "currentMergeability": "UNKNOWN"
+      "currentMergeability": "UNKNOWN",
+      "deliveredHead": "bfe5a571f0a05b369608743fe60711e0994dc21a",
+      "mergeCommit": "8a41e86785b5d42254a4462261884287bdecdb29",
+      "mergedAt": "2026-10-13T00:02:26Z",
+      "exactHeadChecks": 50,
+      "reconciliation": "Current Dotnet resources and actual wall-clock SDK component campaign; full SDK qualification scope remains open. Exact current-head hosted checks passed; no issue closes."
     },
     {
       "pullRequest": 857,
@@ -3500,7 +3505,7 @@
       "currentDeliveryPr": 970,
       "currentDeliveryHead": "d9685b6ba2ed67f8174463a7afa41c4b959f04f9",
       "currentTitle": "Reconcile restored-effect closure on current recovery owners",
-      "currentMergeability": "UNKNOWN"
+      "currentMergeability": "CONFLICTING"
     },
     {
       "pullRequest": 971,
@@ -3784,10 +3789,9 @@
   "remainingOpenCount": 13,
   "lastVerifiedOpenCount": 10,
   "latestRemoteObservation": {
-    "observedAtUtc": "2026-10-13T00:00:53.234735+00:00",
-    "openCount": 11,
+    "observedAtUtc": "2026-10-13T00:04:02.233189+00:00",
+    "openCount": 10,
     "snapshotPrs": [
-      856,
       916,
       919,
       923,
@@ -3799,7 +3803,7 @@
         "headRefName": "dependabot/npm_and_yarn/examples/renderer-profile/development/angular/platform-server-22.2.1",
         "headRefOid": "41e518de64ec86017f5df6c4bd89da0f050664c1",
         "isDraft": false,
-        "mergeable": "UNKNOWN",
+        "mergeable": "MERGEABLE",
         "number": 984,
         "title": "chore(deps): bump @angular/platform-server from 22.2.0 to 22.2.1 in /examples/renderer-profile"
       },
@@ -3807,7 +3811,7 @@
         "headRefName": "dependabot/npm_and_yarn/examples/renderer-profile/development/angular/platform-browser-22.2.1",
         "headRefOid": "6eb07145bc67dc19ac4153273d8ceab3df8d4525",
         "isDraft": false,
-        "mergeable": "UNKNOWN",
+        "mergeable": "MERGEABLE",
         "number": 983,
         "title": "chore(deps): bump @angular/platform-browser from 22.2.0 to 22.2.1 in /examples/renderer-profile"
       },
@@ -3823,7 +3827,7 @@
         "headRefName": "dependabot/cargo/development/libc-0.2.190",
         "headRefOid": "ae5664bea0f89f8c8b05b630be44a73b08b1acd4",
         "isDraft": false,
-        "mergeable": "UNKNOWN",
+        "mergeable": "MERGEABLE",
         "number": 981,
         "title": "chore(deps): bump libc from 0.2.189 to 0.2.190"
       },
