@@ -100,7 +100,10 @@ export function liftNativeImportInMetadataFrame(source) {
   const declaration = 'async function _withGlobalCurrentTaskMetaAsync(args) {';
   if (source.split(declaration).length !== 2) throw new Error('native-import-metadata-source-shape');
   source = source.replace(declaration,
-    "const __lsfNativeLift = Symbol('compiler-native-import-lift');\n" + declaration);
+    "const __lsfNativeLifts = new WeakMap();\n" +
+    'function __lsfNativeLiftCall(callable, lift) {\n' +
+    '  __lsfNativeLifts.set(callable, lift);\n' +
+    '  return callable;\n}\n' + declaration);
   const start = source.indexOf(declaration);
   const end = source.indexOf('\nasync function _clearCurrentTask(', start);
   if (end < start) throw new Error('native-import-metadata-end-shape');
@@ -108,7 +111,7 @@ export function liftNativeImportInMetadataFrame(source) {
   const returned = '    return await fn();';
   if (metadata.split(returned).length !== 2) throw new Error('native-import-metadata-await-shape');
   metadata = metadata.replace(returned,
-    '    const lift = fn[__lsfNativeLift];\n' +
+    '    const lift = __lsfNativeLifts.get(fn);\n' +
     "    if (typeof lift === 'function') return lift(await fn());\n" + returned);
   source = source.slice(0, start) + metadata + source.slice(end);
   const trampoline = /const __lsfAwaitImport = async \(\.\.\.lowered\) => __lsfImports\.lift\(await (\$[A-Za-z0-9_$]+)\(__lsfImportId \| 0, \.\.\.lowered\)\);/g;
@@ -116,7 +119,7 @@ export function liftNativeImportInMetadataFrame(source) {
   source = source.replace(trampoline, (_, original) => {
     replaced++;
     return `const __lsfAwaitImport = (...lowered) => ${original}(__lsfImportId | 0, ...lowered);\n` +
-      '    __lsfAwaitImport[__lsfNativeLift] = id => __lsfImports.lift(id);';
+      '    __lsfNativeLifts.set(__lsfAwaitImport, id => __lsfImports.lift(id));';
   });
   if (!replaced || source.includes('const __lsfAwaitImport = async')) {
     throw new Error('native-import-exact-trampoline-shape');
@@ -127,8 +130,8 @@ export function liftNativeImportInMetadataFrame(source) {
   let bound = 0;
   source = source.replace(call, (_, arguments_) => {
     bound++;
-    return `fn: Object.assign(() => __lsfAwaitImport(${arguments_}),\n` +
-      '          {[__lsfNativeLift]: __lsfAwaitImport[__lsfNativeLift]}),';
+    return `fn: __lsfNativeLiftCall(() => __lsfAwaitImport(${arguments_}),\n` +
+      '          __lsfNativeLifts.get(__lsfAwaitImport)),';
   });
   if (bound !== replaced) throw new Error('native-import-metadata-lift-binding-shape');
   return source;
