@@ -24,6 +24,13 @@ export const api = {
         parsed.hash = '';
         return parsed.href;
       }
+      if (mode >= 4 && mode <= 7) {
+        const options = mode === 4 ? undefined : {method: 'POST',
+          ...(mode >= 6 ? {body: 'abcdefgh'} : {}),
+          ...(mode === 7 ? {signal: new AbortController().signal} : {})};
+        await fetch(url, options);
+        return 'denied diagnostic unexpectedly succeeded';
+      }
       throw new Error('unsupported finite diagnostic selector');
     } catch (error) {
       return JSON.stringify({mode, error: String(error), cause: String((error as {cause?: unknown})?.cause)});

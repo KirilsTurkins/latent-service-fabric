@@ -196,7 +196,11 @@ checked. The [signed URL packet](../testing/evidence/typescript-native-url-signe
 separately records four diagnostic phases: Request construction, finite body
 consumption, stream read/close and URL mapping work in actual components.
 
-The signed default-fetch denied-provider case also succeeds with no TCP contact.
+The signed default-fetch denied-provider fixture's assertion succeeds because
+fetch rejects and there is no TCP contact. Later caught diagnostics identify
+`activation-runtime-task-register-denied:2` before native open for GET, empty
+POST, finite-body POST and POST with a signal. The earlier assertion therefore
+does not qualify the HTTP provider's PermissionDenied path.
 Positive POST currently traps before any outbound request or TCP connection;
 its first joined peer/invocation attempt reached the original 120-second bound.
 The independent host-cancellation probe exposes a 74.9 ms pre-open GuestTrap,

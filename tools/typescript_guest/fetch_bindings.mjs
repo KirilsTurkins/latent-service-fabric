@@ -29,7 +29,9 @@ Object.defineProperty(contentGlobal, '__lsfSdkFetchBridge',
   return source.replace(anchor, anchor + integration).replace(registration,
     `  if (name === 'latent:http/streaming@0.3.0') {
     if (__lsfFetchHttp) throw new Error('duplicate-SDK-streaming-HTTP-module');
-    __lsfFetchHttp = normalized;
+    // The SDK capture owns the application-realm result conversion. Ordinary
+    // application imports still receive their existing normalized wrappers.
+    __lsfFetchHttp = exports;
   }
 ` + registration);
 }

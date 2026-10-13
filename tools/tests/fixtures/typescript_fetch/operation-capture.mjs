@@ -89,7 +89,7 @@ const contentGlobal = {Promise: AppPromise, __lsfAsyncImportBridge: {
 new Function('contentGlobal', 'defineBuiltinModule', transformed)(contentGlobal,
   (name, module) => registered.push({name, module}));
 const bridge = contentGlobal.__lsfSdkFetchBridge;
-assert.equal(bridge.http, registered[0].module);
+assert.notEqual(bridge.http, registered[0].module);
 const actual = bridge.invoke(bridge.http.read, bridge.http, ['owned-body', 16384]);
 assert.equal(actual.id, 23);
 assert.equal(actual.retired, nativeRetirement.promise);
