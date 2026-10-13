@@ -31,11 +31,11 @@ const PINS: &[u8] = include_bytes!(
     "../../../../docs/development/phase4-handoffs/2026-10-12/pr970-current-post-evidence.json"
 );
 
-fn read(root: &Path, name: &str, maximum: u64) -> Result<Vec<u8>> {
+pub(super) fn read(root: &Path, name: &str, maximum: u64) -> Result<Vec<u8>> {
     read_package_file(root, name, maximum).map_err(|error| error.message.into())
 }
 
-fn require(condition: bool, reason: &'static str) -> Result<()> {
+pub(super) fn require(condition: bool, reason: &'static str) -> Result<()> {
     if condition {
         Ok(())
     } else {
@@ -43,14 +43,14 @@ fn require(condition: bool, reason: &'static str) -> Result<()> {
     }
 }
 
-fn digest_matches(raw: &[u8], expected: &Value) -> Result<()> {
+pub(super) fn digest_matches(raw: &[u8], expected: &Value) -> Result<()> {
     require(
         expected.as_str() == Some(artifact_blob_digest(raw).as_str()),
         "current Java fixture material digest mismatch",
     )
 }
 
-fn pinned(root: &Path, path: &str, identity: &Value, maximum: u64) -> Result<Vec<u8>> {
+pub(super) fn pinned(root: &Path, path: &str, identity: &Value, maximum: u64) -> Result<Vec<u8>> {
     let raw = read(root, path, maximum)?;
     digest_matches(&raw, &identity["sha256"])?;
     require(
@@ -60,7 +60,7 @@ fn pinned(root: &Path, path: &str, identity: &Value, maximum: u64) -> Result<Vec
     Ok(raw)
 }
 
-fn model_material(model: &Value, name: &str, raw: &[u8]) -> Result<()> {
+pub(super) fn model_material(model: &Value, name: &str, raw: &[u8]) -> Result<()> {
     let rows = model["materials"]
         .as_array()
         .ok_or("current Java material list missing")?;
@@ -305,7 +305,7 @@ pub(crate) fn sign_current_java_with_negative(
     sign_selected(output, compiler_source, paths, &WITH_NEGATIVE)
 }
 
-fn absent(root: &Path, name: &str) -> Result<()> {
+pub(super) fn absent(root: &Path, name: &str) -> Result<()> {
     match root.join(name).symlink_metadata() {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         _ => Err("negative Java fixture must not add a positive effect association".into()),

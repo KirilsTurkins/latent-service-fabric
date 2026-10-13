@@ -91,3 +91,14 @@ control. It grants no HTTP capability and establishes no admission rejection,
 guest execution, provider noncontact or application rollback. The retained
 source stages an event intent before calling HTTP; a trap at that earlier
 stage cannot qualify the HTTP denial gate.
+The separate `fixture-sign-early-http-input OUTPUT SOURCE INPUT` mode accepts
+one exact `forbidden-http-before-stage` capture from committed compiler source
+`47e4e60778d7fdd033d5f1d6c05595752713c971`. It checks every public material pin,
+the distinct service, original zero outbound ceiling, exact HTTP/state/intent
+imports, declaration and bounded provenance before generating ephemeral keys.
+Positive effect markers, requirements and schema associations are forbidden,
+including dangling paths. It calls the existing real package-signing and
+verification owner. The original five- and six-input modes retain their separate
+source contracts. Two additive refusal cases are registered; their native
+execution and actual one-package signing remain pending the new product freeze.
+An early denial cannot qualify the original post-stage rollback case.

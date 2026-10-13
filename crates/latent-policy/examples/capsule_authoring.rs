@@ -42,6 +42,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &args[3..],
         );
     }
+    if args.len() == 4 && args[0] == "fixture-sign-early-http-input" {
+        return authoring::sign_early_http(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("early fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
     if args.len() < 3
         || !matches!(args[0].to_str(), Some("demo-sign" | "demo-sign-separated"))
         || args.len() > 18

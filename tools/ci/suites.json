@@ -4300,6 +4300,8 @@
         "authoring::current_java::tests::current_fixture_never_accepts_another_source_or_partial_set",
         "authoring::current_java::tests::negative_fixture_cannot_add_a_positive_marker_or_dangling_association",
         "authoring::current_java::tests::negative_fixture_requires_its_separate_complete_source_set_before_output",
+        "authoring::early_http::tests::early_input_cannot_gain_positive_effect_authority_through_dangling_marker",
+        "authoring::early_http::tests::separate_early_input_rejects_other_source_and_extra_packages_before_output",
         "authoring::inputs::tests::diagnostic_asset_inventory_cannot_cover_replaced_bytes",
         "authoring::inputs::tests::diagnostic_assets_preserve_checked_component_and_wit_inventory",
         "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
