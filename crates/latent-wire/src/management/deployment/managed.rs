@@ -25,7 +25,7 @@ pub(super) async fn apply(
     principal: InvocationPrincipal,
     deadline: Instant,
 ) -> Result<Response<proto::ApplyDeploymentResponse>, Status> {
-    let request = validation::apply(value, principal, &adapter.limits)?;
+    let request = validation::apply(value, principal, &adapter.limits, adapter.manifest_profile)?;
     let (result, ack) = execute(adapter, request, deadline).await?;
     let (value, lease) = result.into_parts();
     let output = response::apply(value, ack, &adapter.limits)
@@ -101,7 +101,12 @@ async fn execute(
         ));
     }
     drop(rejected);
-    response::preflight(&prepared, &context.tenant, &adapter.limits)?;
+    response::preflight(
+        &prepared,
+        &context.tenant,
+        &adapter.limits,
+        adapter.manifest_profile,
+    )?;
     let mut guard =
         ManagedDeploymentAudit::begin(audit, prepared.preview(), prepared.replayed(), deadline)
             .await
