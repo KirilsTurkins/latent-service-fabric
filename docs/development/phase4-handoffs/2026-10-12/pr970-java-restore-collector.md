@@ -161,3 +161,12 @@ and retain their rollback oracle. The new fixture preserves the original SDK,
 WIT, resource limits and zero outbound-request budget; it carries no effect
 marker or requirements. Source, compiler capture and signed execution are
 separate checkpoints, and every new qualification flag starts false.
+
+The [separate early HTTP compiler packet](pr970-early-http-compiler-evidence.json)
+records an actual clean-source maintained Java build at `47e4e607`. Pinned
+TeaVM C, WASI SDK 29, wasm-tools 1.254.0 and the existing read-only Gradle cache
+produced a 984,422-byte component with the exact HTTP/state/intent/clock imports.
+The emitted component and its separate portable copy compare byte-identical.
+Its source, archive, SDK, compiler closure, companion and declaration retain
+distinct digests. Compilation passed in 34.049 seconds under the original
+limits; signing, immediate HTTP denial and post-stage rollback remain unqualified.
