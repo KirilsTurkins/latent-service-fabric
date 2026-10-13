@@ -152,3 +152,12 @@ supply-chain epoch and restart clock floor remain real. The conductor now waits
 the original admission lease interval after each inspection before starting the
 next owner. The authority lease stays five seconds; original failed boot roots
 are preserved and are never retried as mutations.
+
+The separate `--java-early-http-denial` compiler selection authors an editable
+Java fixture that calls the supported HTTP import immediately after acquiring
+the command view. It checks the exact typed permission denial before any state
+read/write or event staging. Original `forbidden-http` captures still stage first
+and retain their rollback oracle. The new fixture preserves the original SDK,
+WIT, resource limits and zero outbound-request budget; it carries no effect
+marker or requirements. Source, compiler capture and signed execution are
+separate checkpoints, and every new qualification flag starts false.
