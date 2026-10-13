@@ -2021,13 +2021,16 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "useful-source-adopted-through-accepted-current-pr",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
-      "currentDeliveryHead": "5eb418a12529ab0173f3ce23a6cd8f4b0a7dc793",
+      "closed": true,
+      "currentDeliveryHead": "4951043cdf12eace4bd85d13abf393d015b8c8ae",
       "currentMergeability": "UNKNOWN",
-      "currentDeliveryPr": 916
+      "currentDeliveryPr": 923,
+      "closedAt": "2026-10-13T00:05:51Z",
+      "mergeCommit": "6b6006b7b494bc5b736395ee98a36b2a44e9bf63",
+      "reconciliation": "Original useful async runtime/import source and signed ordinary/service/npm controls adopted through accepted923. Original source branch and historical receipts remain. No issue completion inferred."
     },
     {
       "pullRequest": 917,
@@ -2086,13 +2089,16 @@
         842
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "useful-source-adopted-through-accepted-current-pr",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
-      "currentDeliveryHead": "a6c3e1472c622abfd8f5515e31301b08940c88b2",
+      "closed": true,
+      "currentDeliveryHead": "4951043cdf12eace4bd85d13abf393d015b8c8ae",
       "currentMergeability": "UNKNOWN",
-      "currentDeliveryPr": 919
+      "currentDeliveryPr": 923,
+      "closedAt": "2026-10-13T00:05:53Z",
+      "mergeCommit": "6b6006b7b494bc5b736395ee98a36b2a44e9bf63",
+      "reconciliation": "Original useful async runtime/import source and signed ordinary/service/npm controls adopted through accepted923. Original source branch and historical receipts remain. No issue completion inferred."
     },
     {
       "pullRequest": 920,
@@ -2160,14 +2166,19 @@
         677
       ],
       "ticketAcceptance": "not inferred from snapshot or PR closure",
-      "disposition": "current-reconciliation-in-progress",
+      "disposition": "merged-after-all-exact-head-checks",
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
-      "closed": false,
+      "closed": true,
       "currentDeliveryPr": 923,
       "currentDeliveryHead": "4951043cdf12eace4bd85d13abf393d015b8c8ae",
       "currentTitle": "Fix signed TypeScript Promise lifecycle and reconcile runtime snapshots",
-      "currentMergeability": "MERGEABLE"
+      "currentMergeability": "MERGEABLE",
+      "deliveredHead": "4951043cdf12eace4bd85d13abf393d015b8c8ae",
+      "mergeCommit": "6b6006b7b494bc5b736395ee98a36b2a44e9bf63",
+      "mergedAt": "2026-10-13T00:05:19Z",
+      "exactHeadChecks": 50,
+      "reconciliation": "Actual signed maintained TypeScript ordinary clock service captured-npm and after-failure campaign with producer-owned async splicing and physical import accounting. Later fetch ownership qualification continues independently; no whole-ticket closure inferred."
     },
     {
       "pullRequest": 924,
@@ -2487,8 +2498,8 @@
       "incorporatingMergedPrs": [],
       "preservedDescendantTips": [],
       "closed": false,
-      "currentDeliveryHead": "7dd3e774cf9b2a750999ddfb8274280f0ef0346a",
-      "currentMergeability": "CONFLICTING",
+      "currentDeliveryHead": "aa7c0551c3a570f050b428b4d2b91a05bab4f7d7",
+      "currentMergeability": "MERGEABLE",
       "currentDeliveryPr": 935
     },
     {
@@ -3789,12 +3800,9 @@
   "remainingOpenCount": 13,
   "lastVerifiedOpenCount": 10,
   "latestRemoteObservation": {
-    "observedAtUtc": "2026-10-13T00:04:02.233189+00:00",
-    "openCount": 10,
+    "observedAtUtc": "2026-10-13T00:24:26.946027+00:00",
+    "openCount": 7,
     "snapshotPrs": [
-      916,
-      919,
-      923,
       935,
       970
     ],
@@ -3817,9 +3825,9 @@
       },
       {
         "headRefName": "dependabot/npm_and_yarn/examples/renderer-profile/development/angular/compiler-22.2.1",
-        "headRefOid": "b5b46b3038914f1c1b3e9511df6893e3c91571ad",
+        "headRefOid": "278b913d5607b92ba15a6effba95b812c80d0ec2",
         "isDraft": false,
-        "mergeable": "CONFLICTING",
+        "mergeable": "MERGEABLE",
         "number": 982,
         "title": "fix(deps): reconcile Angular renderer 22.2.1 patch peers"
       },
@@ -3833,9 +3841,9 @@
       },
       {
         "headRefName": "dependabot/cargo/development/wasmparser-0.261.0",
-        "headRefOid": "7784132aef09206eb200758e185c6f0c3a742c81",
+        "headRefOid": "9e983657d239d705cd2d3cc249e6d9bb36026d69",
         "isDraft": false,
-        "mergeable": "CONFLICTING",
+        "mergeable": "MERGEABLE",
         "number": 979,
         "title": "Reconcile Rust dependency pins and bounded collector smoke"
       }
