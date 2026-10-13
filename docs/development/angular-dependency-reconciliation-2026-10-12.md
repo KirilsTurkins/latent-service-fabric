@@ -50,3 +50,16 @@ passed on the merged source. The Java workflow and its reviewed contract
 already agree; all processor, lifecycle, value and diagnostic commands remain.
 The renderer/browser packet above records the earlier Angular qualification
 source and was preserved unchanged; it is not a rerun of this later merge.
+
+The following normal merge carries the delivered #979 source at
+`9e983657d239d705cd2d3cc249e6d9bb36026d69` into this PR, including its exact #935
+ancestry. All 14 incoming dependency and bounded collector files match that
+reviewed head byte for byte. The Angular package and lock are unchanged.
+The combined source passes all 34 Rust authoring and measurement-runner
+controls on Linux, including the unchanged symlink and process ownership
+cases, and CI command coverage retains 88 baseline blocks, 285 current blocks,
+and 151 delegated owners. The Windows symlink privilege refusal and incomplete
+private Linux exports remain local failed attempts; neither supplies passing
+evidence. No native measurement, renderer, browser, or guest qualification
+packet is relabeled as execution of this merge. Current-head hosted checks are
+still required before acceptance.
