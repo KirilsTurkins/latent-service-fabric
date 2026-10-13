@@ -406,6 +406,14 @@ impl Setup {
         name: &str,
         profile: ProtectedSnapshotProfile,
     ) -> (ProtectedSnapshot, Arc<Owners>, AggregateMigrationRequest) {
+        // A completed metadata response can precede the worker's last pin drop.
+        // Exclusive snapshot custody still requires actual native retirement.
+        self.owner
+            .ready
+            .wait_test_metadata_retirement(Instant::now() + WATCHDOG);
+        self.owner
+            .ready
+            .wait_test_custody_retirement(Instant::now() + WATCHDOG);
         let owners = Arc::new(Owners::new(Arc::clone(&self.seed)));
         let linked = Arc::clone(&owners);
         let artifact = Arc::clone(&owners);
