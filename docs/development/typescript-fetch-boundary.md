@@ -95,3 +95,11 @@ allocation. The source controls cover the real initializer realm transform,
 typed-finish ordering and rejection while physical retirement is still pending.
 This hook remains uninstalled until the fetch profile and a fresh engine/splicer
 tuple are built and qualified; these controlled callbacks are source evidence.
+
+The JS-facing cancellation bridge accepts exactly one argument for the existing
+form or two arguments for the captured retirement form. Its ID validator no
+longer rejects the second argument before checking that identity. The native
+fixture now includes the actual bridge implementation and tests wrong live
+retirement identities, deferred physical completion, idempotent completion and
+invalid arity through JS calls. Strict pinned WASI syntax compilation passes;
+the four added retirement/bridge cases still await native linking and execution.

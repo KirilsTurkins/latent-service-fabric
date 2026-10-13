@@ -18,8 +18,8 @@ bool reserve(JSContext* cx,unsigned argc,JS::Value* vp) {
                      captures,&id,&result,&parameters))return false;
   args.rval().setNumber(id);return true;
 }
-bool identity(JSContext* cx,const JS::CallArgs& args,uint32_t& id) {
-  if(args.length()!=1 || !args[0].isNumber() ||
+bool identity(JSContext* cx,const JS::CallArgs& args,uint32_t& id,unsigned expected_length=1) {
+  if(args.length()!=expected_length || !args[0].isNumber() ||
      !JS::ToUint32(cx,args[0],&id) || id==0 || args[0].toNumber()!=static_cast<double>(id)) {
     JS_ReportErrorASCII(cx,"activation-runtime-import-record-identity-invalid");return false;
   }
@@ -36,8 +36,11 @@ bool finish(JSContext* cx,unsigned argc,JS::Value* vp) {
 }
 bool cancel(JSContext* cx,unsigned argc,JS::Value* vp) {
   auto args=JS::CallArgsFromVp(argc,vp);uint32_t id=0;
-  if(!identity(cx,args,id))return false;
-  if(argc>=2) {
+  if(argc!=1 && argc!=2) {
+    JS_ReportErrorASCII(cx,"activation-runtime-import-cancel-arity-invalid");return false;
+  }
+  if(!identity(cx,args,id,argc))return false;
+  if(argc==2) {
     if(!args[1].isObject()) { JS_ReportErrorASCII(cx,"activation-runtime-import-retirement-Promise-required");return false; }
     JS::RootedObject retirement(cx,&args[1].toObject());
     if(!cancel_import_with_retirement(cx,id,retirement))return false;

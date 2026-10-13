@@ -210,6 +210,32 @@ static PromiseRecords* promise_records;
 static ReactionRecords* reaction_records;
 static Timers* timer_runtime;
 static Imports* import_runtime;
+// Exercise the actual compiler-private JS bridge against the fixture's real
+// Import manager. Its finite diagnostic broker is still not an LSF provider.
+namespace lsf::typescript::activation {
+bool reserve_import(JSContext* cx,uint32_t result_size,uint32_t parameter_size,
+                    uint32_t raw_kind,const JS::HandleValueArray& captures,
+                    uint32_t* id,void** result,void** parameters) {
+  if(!import_runtime->reserve(cx,result_size,parameter_size,
+      static_cast<ImportRawResult>(raw_kind),captures,*id))return false;
+  *result=import_runtime->resultBuffer(*id);
+  *parameters=import_runtime->parameterBuffer(*id);
+  return true;
+}
+bool lift_import_value(JSContext* cx,uint32_t id,JS::MutableHandleValue value) {
+  return import_runtime->liftValue(cx,id,value);
+}
+bool finish_import(JSContext* cx,uint32_t id) { return import_runtime->liftCompleted(cx,id); }
+bool cancel_import(JSContext* cx,uint32_t id) { return import_runtime->cancel(cx,id); }
+bool import_retirement(JSContext* cx,uint32_t id,JS::MutableHandleObject promise) {
+  return import_runtime->retirementPromise(cx,id,promise);
+}
+bool cancel_import_with_retirement(JSContext* cx,uint32_t id,JS::HandleObject promise) {
+  return import_runtime->cancelWithRetirement(cx,id,promise);
+}
+}
+#include "../native_import_globals.cpp"
+
 static bool imported_global(JSContext* cx,unsigned argc,JS::Value* vp) {
   auto args=JS::CallArgsFromVp(argc,vp);uint32_t id=0;
   if(!import_runtime->reserve(cx,4,0,ImportRawResult::I32,JS::HandleValueArray::empty(),id))return false;
@@ -364,7 +390,8 @@ int main(int argc, char** argv) {
         !JS_DefineFunction(cx, global, "rootDone", root_done, 0, 0) ||
         !JS_DefineFunction(cx, global, "ordinaryImported", imported_global, 0, 0) ||
         !JS_DefineFunction(cx, global, "liftImported", lift_imported, 1, 0) ||
-        !JS_DefineFunction(cx, global, "releaseImported", release_imported, 0, 0)) return 8;
+        !JS_DefineFunction(cx, global, "releaseImported", release_imported, 0, 0) ||
+        !install_import_bridge(cx,global)) return 8;
     if (!jobs.beginRoot(cx)) return 9;
     JS::RootedValue output(cx);
     const char* selected = argv[1];
@@ -440,6 +467,15 @@ int main(int argc, char** argv) {
       JS_ClearPendingException(cx);
       status=wrong_identity && unissued && shared_drain(cx,queue,timers,imports,readiness) &&
              imported_lifts==1 && JS::GetPromiseState(retirement)==JS::PromiseState::Fulfilled?0:1;
+    } else if (!std::strcmp(selected,"JS-bridge-cancel-retains-exact-retirement-identity")) {
+      defer_cancel=true;
+      if(!evaluate(cx,"globalThis.root=ordinaryImported().catch(()=>rootDone());globalThis.retired=__lsfAsyncImportBridge.retired(1);globalThis.denied=0;try{__lsfAsyncImportBridge.cancel(1,Promise.resolve(1));}catch{denied++;}__lsfAsyncImportBridge.cancel(1,retired);",&output))return 10;
+      const bool retained=counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==1 &&
+                          counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1 &&
+                          expect(cx,"retired instanceof Promise");
+      if(!shared_drain(cx,queue,timers,imports,readiness))return 10;
+      const bool idempotent=evaluate(cx,"__lsfAsyncImportBridge.cancel(1,retired);for(const args of [[999,Promise.resolve(999)],[1,retired,0]]){try{__lsfAsyncImportBridge.cancel(...args);}catch{denied++;}}",&output);
+      status=retained && idempotent && expect(cx,"denied===3") && !imports.hasPending()?0:1;
     } else if (!std::strcmp(selected,"cancel-keeps-import-buffer-until-terminal")) {
       defer_cancel=true;
       if(!evaluate(cx,"globalThis.root=ordinaryImported().catch(()=>rootDone());",&output))return 10;
