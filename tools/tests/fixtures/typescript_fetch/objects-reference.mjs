@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {Request as CandidateRequest, Response as CandidateResponse, responseFromNative} from './http-objects.mjs';
+import {Request as CandidateRequest, Response as CandidateResponse, responseFromNative, isNativeResponse} from './http-objects.mjs';
 import {NativeBodyReader} from './http-body.mjs';
 
 for (const options of [{}, {method: 'post', body: 'text'}, {method: 'patch', body: new Uint8Array([1, 2])},
@@ -97,7 +97,9 @@ const native = () => new NativeBodyReader({
   read() { return {result: Promise.resolve(undefined), retired: Promise.resolve(), cancel() {}}; },
   materialize() { throw new Error('EOF-has-no-chunk'); }, dropChunk() {}, dropBody() { closes++; },
 });
-const response = await responseFromNative({status: 503, headers: [], url: 'https://example.invalid/a'}, native());
+const response = responseFromNative({status: 503, headers: [], url: 'https://example.invalid/a'}, native());
+assert.equal(isNativeResponse(response),true); // Pure header projection needs no async cleanup frame.
+assert.equal(isNativeResponse({}),false);
 assert.equal(response.status, 503); // HTTP failure status remains a Response.
 assert.equal(response.ok, false);
 assert.equal(response.url, 'https://example.invalid/a');

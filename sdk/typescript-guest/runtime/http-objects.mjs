@@ -177,7 +177,7 @@ bodyMethods(Response.prototype, value => branded(responses, value).body, value =
 
 // Called by the SDK adapter after genuine header success, never by an ambient
 // Node transport. The native body is closed separately for bodyless statuses.
-export async function responseFromNative(metadata, nativeBody) {
+export function responseFromNative(metadata, nativeBody) {
   if (!(nativeBody instanceof NativeBodyReader)) throw new TypeError('native-body-owner-required');
   try {
     if (!Number.isInteger(metadata.status) || metadata.status < 200 || metadata.status > 599) {
@@ -186,13 +186,19 @@ export async function responseFromNative(metadata, nativeBody) {
     const headers = Headers.fromTyped(metadata.headers);
     const url = new RequestURL(metadata.url).href;
     const source = bodylessStatuses.has(metadata.status) ? null : nativeBody;
-    if (source === null) await nativeBody.cancel();
+    if (source === null) return (async () => {
+      await nativeBody.cancel();
+      return response(metadata.status, '', headers, new BodyState(null), {type: 'basic', url});
+    })();
     return response(metadata.status, '', headers, new BodyState(source), {type: 'basic', url});
   } catch (error) {
-    try { await nativeBody.cancel(error); } catch {}
-    throw error;
+    return (async () => {
+      try { await nativeBody.cancel(error); } catch {}
+      throw error;
+    })();
   }
 }
 
 export function requestBodyState(value) { return branded(requests, value).body; }
+export function isNativeResponse(value) { return responses.has(value); }
 export function abortResponseBody(value, reason) { return branded(responses, value).body.abort(reason); }

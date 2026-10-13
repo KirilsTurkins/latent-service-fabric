@@ -1,6 +1,6 @@
 import {Headers} from './http-headers.mjs';
 import {NativeBodyReader, maximumChunkBytes} from './http-body.mjs';
-import {Request, Response, responseFromNative, requestBodyState, abortResponseBody} from './http-objects.mjs';
+import {Request, Response, responseFromNative, requestBodyState, abortResponseBody, isNativeResponse} from './http-objects.mjs';
 
 const dispose = Symbol.dispose || Symbol.for('dispose');
 const supportedMethods = new Map(['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'].map(name => [name, name.toLowerCase()]));
@@ -120,7 +120,8 @@ export function installFetchGlobals(bridge, target = globalThis) {
         },
       });
       responseBody = undefined; // The native reader owns cleanup, including failures.
-      const response = await responseFromNative({...metadata, url: url.href}, native);
+      const created = responseFromNative({...metadata, url: url.href}, native);
+      const response = isNativeResponse(created) ? created : await created;
       if (!bodyClosed) {
         abortBody = () => {
           abortResponseBody(response, signal.reason).catch(error => {
