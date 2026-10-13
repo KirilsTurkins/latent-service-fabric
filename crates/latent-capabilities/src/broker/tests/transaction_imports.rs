@@ -228,3 +228,53 @@ fn descriptive_or_foreign_transaction_imports_cannot_open_a_session() {
         .push(scoped_import("latent:context/context@0.1.0"));
     assert!(!opens(&fixture, &web, &control));
 }
+
+#[test]
+fn narrowed_runtime_deadline_retains_the_original_transaction_owner() {
+    struct Plan(Arc<CompiledCapabilityPlan>);
+    impl CapabilityPlanSource for Plan {
+        fn plan(
+            &self,
+            _: &latent_routing::ResolvedRevision,
+        ) -> Result<Arc<CompiledCapabilityPlan>, PlatformError> {
+            Ok(self.0.clone())
+        }
+    }
+    let fixture = Fixture::new(CapabilityBrokerLimits::default());
+    let (request, control) = selected(&fixture);
+    let runtime = ActivationCapabilityRuntime::new(
+        fixture.broker.clone(),
+        Arc::new(Plan(fixture.plan.clone())),
+    );
+    let session = runtime
+        .open_session(
+            &request,
+            &control,
+            &fixture.publication,
+            control.original.budget.deadline(),
+        )
+        .unwrap();
+    assert!(session
+        .core
+        .budget
+        .is_same_instance(&control.original.budget));
+    assert!(session
+        .bind(
+            crate::namespace::STATE_CONTRACT,
+            "acquire-query",
+            ResourceTarget::Clock
+        )
+        .is_err());
+    session.close();
+    drop(session);
+    let mut absent = control;
+    absent.host = None;
+    assert!(runtime
+        .open_session(
+            &request,
+            &absent,
+            &fixture.publication,
+            absent.original.budget.deadline()
+        )
+        .is_err());
+}

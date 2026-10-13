@@ -234,4 +234,7 @@ impl ExecutionCancellation for RuntimeCancellation<'_> {
     fn effective_deadline(&self) -> Option<&latent_core::EffectiveDeadline> {
         Some(self.deadline)
     }
+    fn transaction_host(&self) -> Option<Arc<dyn latent_executor::transaction::TransactionHost>> {
+        self.owner.transaction_host()
+    }
 }
