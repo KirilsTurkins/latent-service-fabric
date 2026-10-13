@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "TypeScriptRuntimeMaterialTests.test_any_selected_compiler_file_changes_its_material_identity",
+    "TypeScriptRuntimeMaterialTests.test_original_synchronous_selection_has_no_invented_runtime_materials",
+    "TypeScriptRuntimeMaterialTests.test_selected_engine_names_exact_core_and_input_envelope",
+    "TypeScriptRuntimeMaterialTests.test_selected_splicer_names_envelope_and_actual_file_inventory"
+  ],
+  "guards": {
+    "TypeScriptRuntimeMaterialTests.test_any_selected_compiler_file_changes_its_material_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c70d69f67e0ecae9fdb9aa8f4ddb9a7b8b8b0deba14066151368956a27e9cbad",
+        "class:setup-sha256:3dea8ea9f435dc51a404f429fe09995857894b1e8bd55f5ef156b0844f1b68dc"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptRuntimeMaterialTests.test_original_synchronous_selection_has_no_invented_runtime_materials": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c70d69f67e0ecae9fdb9aa8f4ddb9a7b8b8b0deba14066151368956a27e9cbad",
+        "class:setup-sha256:3dea8ea9f435dc51a404f429fe09995857894b1e8bd55f5ef156b0844f1b68dc"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptRuntimeMaterialTests.test_selected_engine_names_exact_core_and_input_envelope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c70d69f67e0ecae9fdb9aa8f4ddb9a7b8b8b0deba14066151368956a27e9cbad",
+        "class:setup-sha256:3dea8ea9f435dc51a404f429fe09995857894b1e8bd55f5ef156b0844f1b68dc"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptRuntimeMaterialTests.test_selected_splicer_names_envelope_and_actual_file_inventory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c70d69f67e0ecae9fdb9aa8f4ddb9a7b8b8b0deba14066151368956a27e9cbad",
+        "class:setup-sha256:3dea8ea9f435dc51a404f429fe09995857894b1e8bd55f5ef156b0844f1b68dc"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_runtime_materials.py",
+  "reviewReason": "Four exact selected engine/splicer material controls preserve original synchronous absence and the signed closed name/digest/size shape; no API or publisher qualification",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -8,7 +8,9 @@ from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TU
     fresh, inventory, read_file, snapshot)
 
 
-def create(directory: Path, template: str, name: str | None = None) -> Path:
+def create(directory: Path, template: str, name: str | None = None, *, runtime_profile: str | None = None) -> Path:
+    from tools.typescript_guest.runtime_profile import NATIVE_PROFILES, selected_profile
+    profile = selected_profile({'runtimeProfile': runtime_profile} if runtime_profile is not None else {})
     if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown TypeScript capsule template")
     name = name or "my-" + template
@@ -19,6 +21,9 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     vendor = {}
     for folder in ("sdk/typescript-guest/runtime", "sdk/typescript-guest/capabilities", "wit/platform"):
         vendor.update({folder + "/" + path: data for path, data in snapshot(ROOT / folder).items()})
+    if profile in NATIVE_PROFILES:
+        folder = 'sdk/typescript-guest/activation'
+        vendor.update({folder+'/'+path: data for path, data in snapshot(ROOT/folder).items()})
     for path in ("Cargo.toml", "tools/toolchain.toml", "LICENSE", "NOTICE",
                  "sdk/typescript-guest/tools/package.json", "sdk/typescript-guest/tools/package-lock.json"):
         vendor[path] = read_file(ROOT / path)
@@ -35,6 +40,8 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
         limits["outboundRequests"] = 1
     project = {"formatVersion": 1, "name": name, "version": "1.0.0", "tenant": "examples",
                "service": "examples/" + name, "world": f"examples:{template}/service@1.0.0", "limits": limits}
+    if runtime_profile is not None:
+        project['runtimeProfile'] = profile
     lock = {"formatVersion": 1, "language": "typescript", "sdk": json.loads(inventory(vendor)),
             "template": {"name": template, "sourceDigest": digest(files["src/main.ts"]),
                          "witDigest": digest(files["wit/world.wit"])}}
@@ -74,9 +81,11 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if not {"capsule-project.json", "sdk-lock.json", "src/main.ts", "wit/world.wit"} <= files.keys():
         raise ValueError("incomplete TypeScript capsule project")
     project, lock = (decode_json(files[name]) for name in ("capsule-project.json", "sdk-lock.json"))
-    if (not isinstance(project, dict) or set(project) != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    if (not isinstance(project, dict) or set(project) - {'runtimeProfile'} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
+    from tools.typescript_guest.runtime_profile import NATIVE_PROFILES, selected_profile
+    profile = selected_profile(project)
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid TypeScript capsule name")
     if not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "service", "world")):
@@ -84,6 +93,17 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if project["tenant"] is not None and not (isinstance(project["tenant"], str) and 0 < len(project["tenant"]) <= 512):
         raise ValueError("invalid optional tenant identity")
     lock, _vendor, pins = validate_sdk_inputs(files)
+    if profile in NATIVE_PROFILES:
+        from tools.typescript_guest.activation_engine import NATIVE_SOURCES
+        from tools.typescript_guest.clock_engine import CLOCK_NATIVE_SOURCES
+        from tools.typescript_guest.runtime_profile import CLOCK_PROFILES, IMPORT_PROFILE
+        from tools.typescript_guest.import_engine import NATIVE_IMPORT_SOURCES
+        selected_native = NATIVE_SOURCES + (CLOCK_NATIVE_SOURCES if profile in CLOCK_PROFILES else ()) + (NATIVE_IMPORT_SOURCES if profile == IMPORT_PROFILE else ())
+        declarations = ('runtime-globals.d.ts',) + (('clock-globals.d.ts',) if profile in CLOCK_PROFILES else ())
+        for name in (*selected_native, *declarations):
+            path = 'sdk/typescript-guest/activation/'+name
+            if _vendor.get(path) != read_file(ROOT/path):
+                raise ValueError('captured TypeScript native runtime source differs from the maintained selection')
     from tools.typescript_generator_authoring import validate_generated_inputs
     validate_generated_inputs(files)
     captured = "latent.dependencies.json" in files

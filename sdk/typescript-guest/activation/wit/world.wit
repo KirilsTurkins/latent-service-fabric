@@ -1,0 +1,7 @@
+package latent:typescript-runtime@0.1.0;
+
+// Private engine support. Import recognition never installs an owner profile
+// or grants its operations; the original admitted host broker remains final.
+world jobs {
+    import latent:runtime/activation@0.1.0;
+}

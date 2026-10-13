@@ -9,7 +9,9 @@ mod types;
 
 use super::{exhausted, invalid, SemanticLimits};
 use latent_core::PlatformError;
-use wasmparser::{BinaryReader, FuncValidatorAllocations, Parser, ValidPayload, Validator};
+use wasmparser::{
+    BinaryReader, FuncValidatorAllocations, Parser, ValidPayload, Validator, WasmFeatures,
+};
 
 type Result<T> = std::result::Result<T, PlatformError>;
 
@@ -37,7 +39,12 @@ fn validate_prechecked(component: &[u8], limits: SemanticLimits) -> Result<()> {
     // No Validator/type arena exists until every borrowed section and body has
     // passed the input budgets, including unused nested core modules.
     code::preflight(component, &mut budget)?;
-    let mut validator = Validator::new();
+    // Pending imported promises need the nonblocking cancellation acknowledgement.
+    // The borrowed canonical preflight below keeps every other newly enabled
+    // more-async operation outside this closed binary profile.
+    let mut validator = Validator::new_with_features(
+        WasmFeatures::default() | WasmFeatures::CM_MORE_ASYNC_BUILTINS,
+    );
     let mut allocations = FuncValidatorAllocations::default();
     for payload in Parser::new(0).parse_all(component) {
         match read(validator.payload(&read(payload)?))? {
@@ -178,7 +185,8 @@ fn component_section(id: u8, reader: &mut BinaryReader<'_>, budget: &mut Budget)
             // The pinned reader hard-caps canonical options at ten. These small
             // temporary values are discarded before constructing Validator.
             8 => {
-                read(reader.read::<wasmparser::CanonicalFunction>())?;
+                let function = read(reader.read::<wasmparser::CanonicalFunction>())?;
+                canonical_profile(&function)?;
             }
             10 => {
                 let item = read(reader.read::<wasmparser::ComponentImport<'_>>())?;
@@ -192,6 +200,25 @@ fn component_section(id: u8, reader: &mut BinaryReader<'_>, budget: &mut Budget)
         }
     }
     end(reader)
+}
+
+fn canonical_profile(function: &wasmparser::CanonicalFunction) -> Result<()> {
+    use wasmparser::{CanonicalFunction as Function, CanonicalOption};
+    let unsupported = match function {
+        Function::StreamRead { options, .. }
+        | Function::StreamWrite { options, .. }
+        | Function::FutureRead { options, .. }
+        | Function::FutureWrite { options, .. } => !options.contains(&CanonicalOption::Async),
+        Function::StreamCancelRead { async_: true, .. }
+        | Function::StreamCancelWrite { async_: true, .. }
+        | Function::FutureCancelRead { async_: true, .. }
+        | Function::FutureCancelWrite { async_: true, .. } => true,
+        _ => false,
+    };
+    if unsupported {
+        return Err(invalid("unsupported-more-async-builtin"));
+    }
+    Ok(())
 }
 
 fn instance(reader: &mut BinaryReader<'_>, component: bool, budget: &mut Budget) -> Result<()> {

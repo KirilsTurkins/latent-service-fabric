@@ -1,0 +1,30 @@
+{
+  "status": "source-generated",
+  "generator": "wit-bindgen-cli0.62.0",
+  "image": "sha256:6ca2881c9aae38527b074b6cec6e58c98977f18e3dd5345ab972bbf1e5fa6dc0",
+  "sourceClockWitSha256": "a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea",
+  "worldSha256": "842b6a11e7aad846847c6453ecc6ecec6bd2b93a5dce8c9d7b3de05e892d2934",
+  "outputs": [
+    {
+      "path": "clocks.c",
+      "bytes": 1446,
+      "sha256": "973e0fcc381ae69f8ea41f9c57505fd977d87635b4dd4107453c5f7cb61821b7"
+    },
+    {
+      "path": "clocks.h",
+      "bytes": 470,
+      "sha256": "52d7686d2fa5d770fd55a691081f4d758adaf62a6270a1f6439daeda1225b4ae"
+    },
+    {
+      "path": "clocks_component_type.o",
+      "bytes": 388,
+      "sha256": "0f6d19fba71434d0e72b7a55deb9e94308e951c187a2742ced57199fd4145865"
+    }
+  ],
+  "seconds": 0.6503805000029388,
+  "originalMaximumSeconds": 90,
+  "clockAuthorityGranted": false,
+  "nativeOrSDKCompiled": false,
+  "supportedAsyncProfile": false,
+  "signedLSFComponentQualified": false
+}
