@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "latent.hosted-wsl-recipe-review.v1",
+  "reviewedAtUtc": "2026-10-13T22:07:18.392539+00:00",
+  "privateReviewReceiptDigest": "sha256:b27ea56a437e02993ec1afa1206e6b967bb27227094d5d5bbc854445f32bcbf8",
+  "issueAcceptance": false,
+  "prHead": "d30bcf8c61f137972e561948649c1af1fdec7c39",
+  "checkoutSourceCommit": "7fb713e2f6b4a280807042caba23afff164ef744",
+  "checkoutClean": true,
+  "sourceTree": "36a7d15c7973cb81092e6508f79bb6656b808229",
+  "headAndCheckoutTreeEqual": true,
+  "headChecks": {
+    "count": 51,
+    "conclusion": "all completed success"
+  },
+  "job": {
+    "runId": 38465717458,
+    "jobId": 115532443535,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38465717458/job/115532443535",
+    "conclusion": "success",
+    "startedAt": "2026-10-13T20:49:41Z",
+    "completedAt": "2026-10-13T20:54:30Z"
+  },
+  "artifact": {
+    "id": 11849120507,
+    "name": "developer-wsl-candidate-7fb713e2f6b4a280807042caba23afff164ef744",
+    "bytes": 67983618,
+    "sha256": "sha256:8fa4cb27b01f3cc168f056b5756aea2503ed85b27ed2061395d58a17b66e01ac",
+    "apiDigestMatched": true
+  },
+  "recipeSha256": "sha256:a78f358d20d686dcc0dbcf733945c23f6958153824de988e32703ea9d967d45c",
+  "imageSha256FromLog": "sha256:4042dec6b300322a0db93d9e34bcb02c44dcb99d747530de0c7c42cec9520f7b",
+  "candidateArchive": {
+    "name": "latent-dev-linux-x86_64-wsl-rootfs.zip",
+    "sha256": "sha256:d50fb562faf83e07507ae6da73cdebd8b2624a3a165f36ce6ca078ef737ece7b",
+    "size": 68603262
+  },
+  "candidateManifestSha256": "sha256:6defa8cea3546631216566c0236c513a84b277c8367c663e1ab707346c2bf272",
+  "rootfsTar": {
+    "executable": false,
+    "path": "rootfs.tar",
+    "sha256": "sha256:6ae1ed139177bf1d84f64fe711e4f51ef010879b776c1aebd8b1a5a29a03b0d9",
+    "size": 189872640
+  },
+  "candidateFilesVerified": 133,
+  "packageCount": 111,
+  "explicitPinsVerified": {
+    "ca-certificates": "20260601~24.04.1",
+    "openssl": "3.0.13-0ubuntu3.15",
+    "libexpat1": "2.6.1-2ubuntu0.5",
+    "libgdbm6t64": "1.23-5.1build1",
+    "libgdbm-compat4t64": "1.23-5.1build1",
+    "libreadline8t64": "8.2-4build1",
+    "libicu74": "74.2-1ubuntu3.1",
+    "readline-common": "8.2-4build1",
+    "libsqlite3-0": "3.45.1-1ubuntu2.8",
+    "python3": "3.12.3-0ubuntu2.1",
+    "python3-minimal": "3.12.3-0ubuntu2.1",
+    "libpython3-stdlib": "3.12.3-0ubuntu2.1",
+    "python3.12": "3.12.3-1ubuntu0.17",
+    "python3.12-minimal": "3.12.3-1ubuntu0.17",
+    "libpython3.12-stdlib": "3.12.3-1ubuntu0.17",
+    "libpython3.12-minimal": "3.12.3-1ubuntu0.17"
+  },
+  "packageLicensesVerified": 111,
+  "sbomPackagesVerified": 112,
+  "python": "3.13.5",
+  "helperSha256": "sha256:165eb7108968a1fc5f509edb5114b9758044a241037eedb2f744220dac982f30",
+  "aptInstallStepSeconds": 205.7,
+  "postImageChecks": {
+    "runtimeSourcesSha256": "sha256:92d2ff28918561a6c5e4ebf241769a57b13eebd1504d77d7a3a77a73e368c5ec",
+    "runtimeSourcesPreserved": true,
+    "keyringSha256": "sha256:80a36b0a6de2f69f49d2df75ef473ccde121e9e190b9ea01d20a4f63778d5c31",
+    "archiveKeyringPreserved": true,
+    "temporaryBuildSourceRemoved": true,
+    "aptListFilesRemoved": true,
+    "sourceAndInventoryMatch": true,
+    "helperBytesMatchInventory": true
+  },
+  "accountSmoke": {
+    "outcome": "checked subprocess completed successfully before export",
+    "evidence": "successful exact-source build_dev_rootfs.py code path",
+    "rawResultJsonRetainedInArtifact": false,
+    "builderSha256": "sha256:b118f20a188b1a737fb3b335c399b566ca2c5c4f741767738e8cbceb5d1a8a37",
+    "smokeSourceSha256": "sha256:c5eb81f442b2dd3c510616703f684ca332de2b5165b5a15deda268010efdd2d1",
+    "independentAccountJsonReview": false
+  },
+  "qualification": "hosted image assembly and offline artifact inspection only",
+  "publisherAuthenticated": false,
+  "attestationSteps": "skipped for pull_request",
+  "wslImportOrPackagedQualification": false,
+  "earlierLocalAttempts": "remain failed; no relabeling"
+}

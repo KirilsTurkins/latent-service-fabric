@@ -286,3 +286,36 @@ execution, original post-stage immediate-HTTP rollback and packaged operator
 acceptance remain unqualified. The original six-input signer failure is retained:
 its forbidden fixture has its own captured service, and the separate six-mode
 now preserves that service instead of selecting the positive aggregate service.
+
+## Current controls and hosted image evidence
+
+The separate [clean early HTTP campaign](evidence/java-early-http-clean-source-2026-10-13.json)
+passed on `7c4a0dcc`: typed immediate denial, unchanged business state,
+byte-identical duplicate and retained-result replay, zero TCP contact and
+physical retirement of four node sessions. This does not establish the
+post-stage immediate-HTTP rollback case or the terminal and pending programmes.
+
+The current dispatcher CLI includes a recovery selector with the original
+operation, action, tenant, scope and owner generation. The pending collector
+checks that exact selector on the control response and its immutable operation
+lookup, including `automaticRetry=false`. Its original regression fails the
+old collector; all 53 related controls pass. No new mutation follows a receipt
+lookup or an uncertain result.
+
+Recovery recognizes only the original and separately reviewed fresh HTTP
+marker. Each must match the installed component, signed companion and exact
+requirement bytes. The selected marker enters the conformance proof; the
+original proof remains byte-for-byte unchanged. The fresh-marker regression
+fails the old source, and twelve recovery plus seven clock controls pass with
+the fix. Unknown, changed and mixed associations remain refused. These are
+controlled-owner results, independent of signed recovery acceptance.
+
+The [hosted WSL image receipt](evidence/recovery970-wsl-hosted-image-2026-10-13.json)
+records actual successful assembly and inspection of 133 candidate files,
+all sixteen pinned packages, licenses, SBOM entries and preserved runtime
+repository/keyring bytes. Its clean checkout `7fb713e2` has exactly the
+`d30bcf8c` tree. Temporary build sources and package lists are absent from the
+export. Account smoke completed through the checked builder path, but its raw
+JSON was not uploaded for independent inspection. Publisher authentication,
+WSL import and packaged operator qualification remain false; earlier local
+upstream failures retain their original failed status.
