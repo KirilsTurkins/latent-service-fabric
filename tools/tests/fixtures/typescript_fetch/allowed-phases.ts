@@ -10,6 +10,13 @@ export const api = {
         await response.body!.cancel('diagnostic-after-headers');
         return JSON.stringify({stage: 'headers-and-cancel', status: response.status});
       }
+      if (mode === 1) {
+        const reader=response.body!.getReader();
+        let value;
+        try { value=await reader.read(); }
+        finally {await reader.cancel('diagnostic-after-first-read');reader.releaseLock();}
+        return JSON.stringify({stage:'one-read',done:value.done,bytes:value.value?Array.from(value.value):null});
+      }
       return JSON.stringify({stage: 'complete', status: response.status, text: await response.text()});
     } catch (error) {
       const cause = (error as {cause?: {payload?: unknown}})?.cause;

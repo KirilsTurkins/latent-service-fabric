@@ -124,45 +124,47 @@ export class NativeBodyReader {
   }
 
   async #pull() {
-    let chunk;
-    let output;
-    let failed = false;
-    let failure;
     try {
-      chunk = await this.#run(() => this.#operations.read(maximumChunkBytes));
-      if (this.#cancelled) throw this.#reason;
-      if (chunk === undefined) {
-        await this.#dropBody();
-      } else {
-        const bytes = await this.#run(() => this.#operations.materialize(chunk));
+      let chunk;
+      let output;
+      let failed = false;
+      let failure;
+      try {
+        chunk = await this.#run(() => this.#operations.read(maximumChunkBytes));
         if (this.#cancelled) throw this.#reason;
-        if (!isBytes(bytes) || bytes.byteLength > maximumChunkBytes) {
-          throw new TypeError('native-body-chunk-profile-limit-or-type');
+        if (chunk === undefined) {
+          await this.#dropBody();
+        } else {
+          const bytes = await this.#run(() => this.#operations.materialize(chunk));
+          if (this.#cancelled) throw this.#reason;
+          if (!isBytes(bytes) || bytes.byteLength > maximumChunkBytes) {
+            throw new TypeError('native-body-chunk-profile-limit-or-type');
+          }
+          output = new Uint8Array(bytes.byteLength);
+          output.set(bytes); // Application-realm bytes outlive the charged native chunk.
         }
-        output = new Uint8Array(bytes.byteLength);
-        output.set(bytes); // Application-realm bytes outlive the charged native chunk.
-      }
-    } catch (error) {
-      failed = true;
-      failure = error;
-    } finally {
-      if (chunk !== undefined && !this.#current) {
-        try { await this.#operations.dropChunk(chunk); }
-        catch (error) {
-          this.#failedChunk = chunk;
-          this.#retainCleanup(error);
-          if (!failed) { failed = true; failure = error; }
+      } catch (error) {
+        failed = true;
+        failure = error;
+      } finally {
+        if (chunk !== undefined && !this.#current) {
+          try { await this.#operations.dropChunk(chunk); }
+          catch (error) {
+            this.#failedChunk = chunk;
+            this.#retainCleanup(error);
+            if (!failed) { failed = true; failure = error; }
+          }
         }
       }
-    }
-    if (failed) {
-      if (!this.#current) {
-        try { await this.#dropBody(); }
-        catch (error) { this.#retainCleanup(error); }
+      if (failed) {
+        if (!this.#current) {
+          try { await this.#dropBody(); }
+          catch (error) { this.#retainCleanup(error); }
+        }
+        throw failure;
       }
-      throw failure;
-    }
-    return output;
+      return output;
+    } finally { this.#pulling = null; }
   }
 
   pull() {
@@ -172,8 +174,7 @@ export class NativeBodyReader {
     if (this.#pulling) return Promise.reject(new TypeError('native-body-read-already-pending'));
     const pending = this.#pull();
     this.#pulling = pending;
-    const clear = () => { if (this.#pulling === pending) this.#pulling = null; };
-    return pending.then(value => { clear(); return value; }, error => { clear(); throw error; });
+    return pending;
   }
 
   cancel(reason) {

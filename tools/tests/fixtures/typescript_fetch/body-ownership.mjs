@@ -37,6 +37,7 @@ const pending = new NativeBodyReader({
   dropBody() { cancelledEvents.push('drop-body'); },
 });
 const pulling = pending.pull();
+await assert.rejects(pending.pull(), /read-already-pending/);
 const originalRejection = assert.rejects(pulling, value => value === reason);
 const cancellation = pending.cancel(reason);
 assert.equal(pending.cancel(reason), cancellation);
