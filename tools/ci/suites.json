@@ -4314,7 +4314,7 @@
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 10,
+      "minimumCases": 12,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
