@@ -69,6 +69,25 @@ inline bool url_params_growth(JSContext* cx, jsurl::JSUrlSearchParams* params,
   return true;
 }
 
+inline bool url_params_normalization(JSContext* cx, jsurl::JSUrlSearchParams* params,
+                                     jsurl::JSUrl* parent) {
+  // Existing decoded entries are already bounded. This owned parser cache is
+  // at most their admitted form representation; it is not an FFI allocation.
+  const size_t query = jsurl::params_to_string(params).len;
+  if (query > URL_INPUT_BYTES || jsurl::params_size(params) > URL_QUERY_PAIRS) {
+    JS_ReportErrorASCII(cx, "fetch-profile-URL-query-growth-limit"); return false;
+  }
+  if (parent) {
+    const size_t base = jsurl::href(parent).len - jsurl::search(parent).len;
+    // sort/delete may change raw query spelling to form encoding even when
+    // pair count decreases. Refuse that expansion before changing either view.
+    if (base >= URL_INPUT_BYTES || query + 1 > URL_INPUT_BYTES - base) {
+      JS_ReportErrorASCII(cx, "fetch-profile-URL-linked-query-growth-limit"); return false;
+    }
+  }
+  return true;
+}
+
 inline bool url_backing_bound(JSContext* cx, jsurl::JSUrl* value) {
   const auto href = jsurl::href(value);
   const auto query = jsurl::search(value);

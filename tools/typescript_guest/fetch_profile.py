@@ -16,10 +16,11 @@ def source_paths() -> tuple[str, ...]:
         'tools/typescript_guest/fetch_profile.py', 'tools/typescript_guest/fetch_bindings.mjs',
         'tools/typescript_guest/operation_capture.mjs', 'tools/typescript_guest/fetch_startup.mjs',
         'sdk/typescript-guest/activation/fetch-globals.d.ts', 'wit/platform/http-v3/package.wit',
-        'tools/typescript_guest/url_engine.py',
+        'tools/typescript_guest/url_engine.py', 'tools/typescript_guest/url_rust_graph.py',
     ) + tuple('sdk/typescript-guest/activation/' + name for name in NATIVE_SOURCES)
       + tuple('tools/tests/fixtures/typescript_url/' + name for name in (
-          'original-url.cpp', 'original-url.h', 'original-rust-url.h', 'original-rust-url.rs'))
+          'original-url.cpp', 'original-url.h', 'original-rust-url.h', 'original-rust-url.rs',
+          'original-aggregate-Cargo.lock', 'original-aggregate-Cargo.toml.in', 'original-aggregate.rs.in'))
       + tuple('sdk/typescript-guest/runtime/' + name for name in SDK_RUNTIME_FILES)))
 
 

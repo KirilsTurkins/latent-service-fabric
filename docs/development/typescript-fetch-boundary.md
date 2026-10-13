@@ -157,6 +157,25 @@ Borrowed encoded inputs use scoped ownership; only actual by-value Rust transfer
 discharges that buffer. Strict WASI syntax checks pass; actual over-limit/fresh
 reuse behavior remains a required runtime control.
 
+The maintained parser also returned an allocating Rust vector from `getAll`
+without an exported destructor. The selected C++ implementation instead copies
+matching borrowed `params_at` entries into the JS array. `origin` retains the
+maintained Rust algorithm and returns its owned `SpecString` to a new by-value
+Rust `Drop` export on every exit. Official cbindgen 0.29.0 shows that destructor
+is the only generated ABI addition; the original C++ header postprocessing is
+preserved. Linked `sort` and `delete` preflight form normalization before either
+view can change, including growth caused by encoding even when pair count falls.
+
+The ordinary import archive contains encoding/hooks only. Fetch therefore needs
+its own single maintained aggregate archive selecting encoding/hooks and
+rust-url. The aggregate lock selects url 2.5.4 and idna 1.0.3; the standalone
+crate's older lock is not the maintained aggregate resolution. All 46 selected
+versions/checksums remain unchanged, multipart remains unselected, and the
+37 missing public source archives were authenticated against that lock. These
+sources and the strict WASI syntax check are recorded in the
+[URL source packet](../testing/evidence/typescript-native-url-source-2026-10-13.json).
+They have not yet produced or qualified the distinct fetch runtime.
+
 The first new native run executed all 31 selectors. All original 27 and the three
 direct retirement controls passed. The actual JS bridge case retained its own
 `globalThis.retired` Promise after successful subtask/set drops, leaving one

@@ -1,0 +1,483 @@
+{
+  "schemaVersion": "latent.typescript.native-url-source-observation.v1",
+  "qualification": "unknown",
+  "installedFetchQualified": false,
+  "nativeURLRuntimeQualified": false,
+  "ordinaryImportProfileInputsChanged": false,
+  "ordinaryImportSourceCount": 40,
+  "fetchSourceCount": 61,
+  "nativeObjectCeiling": 64,
+  "URLBackingAndInputBytes": 8192,
+  "queryPairs": 256,
+  "compilerSnapshotURLConstructorsSupported": false,
+  "sourceChecks": {
+    "focusedTestsPassed": 15,
+    "strictPinnedWASISyntaxExit": 0
+  },
+  "cbindgen": {
+    "officialRelease": "https://github.com/mozilla/cbindgen/releases/tag/0.29.0",
+    "officialBinary": "https://github.com/mozilla/cbindgen/releases/download/0.29.0/cbindgen-ubuntu22.04",
+    "binary": {
+      "path": "/tmp/pr923-cbindgen-0.29.0",
+      "sha256": "2cc8a248e12632a0249f17d7370ad4a38c98292bdf7bb1357f737f8b6e8cc435",
+      "bytes": 5608256
+    },
+    "version": "cbindgen 0.29.0",
+    "baseline": {
+      "path": "/work/pr923-fetch-url-FFI-20261013/rust-url-baseline.h",
+      "sha256": "49852e795259855384d0b67fc136305d07b6664ee95d4205f4a9b2adc0673968",
+      "bytes": 3987
+    },
+    "derived": {
+      "path": "/work/pr923-fetch-url-FFI-20261013/rust-url-generated.h",
+      "sha256": "bad03e4baacad796519d6c5806582e8a40c9446d45e37d93dee46944b3514909",
+      "bytes": 4029
+    },
+    "onlyGeneratedChangeIsOwnedDestructor": true,
+    "maintainedHeaderPostprocessingPreserved": true,
+    "baselineFullHeaderEqualsMaintainedPostprocessedHeader": false
+  },
+  "RustGraph": {
+    "selectedCrates": [
+      "rust-encoding",
+      "rust-hooks",
+      "rust-url"
+    ],
+    "originalAggregate": {
+      "path": "/work/pr923-fetch-URL-engine-20261013/source/StarlingMonkey/runtime/crates/staticlib-template/Cargo.lock",
+      "sha256": "46a469ce88f8334da3cd64872191b927eb969c84f8c08b58c8ec2501b205b30a",
+      "bytes": 11081
+    },
+    "selectedLock": {
+      "path": "/work/pr923-fetch-url-Rust-graph-r2-20261013/source/Cargo.lock",
+      "sha256": "495c11965aa9f930f669f2916e691a97fd95e7866394b041f494e01ab5e02ed1",
+      "bytes": 10577
+    },
+    "selectedPackageCount": 46,
+    "selectedVersionsAndChecksumsPreserved": true,
+    "multipartSelected": false,
+    "authenticatedNewArchives": [
+      {
+        "name": "displaydoc-0.2.5",
+        "URL": "https://static.crates.io/crates/displaydoc/displaydoc-0.2.5.crate",
+        "checksum": "97369cbbc041bc366949bc74d34658d6cda5621039731c6310521892a3a20ae0",
+        "archiveBytes": 24219,
+        "sourceFileCount": 39,
+        "sourceBytes": 95598
+      },
+      {
+        "name": "form_urlencoded-1.2.1",
+        "URL": "https://static.crates.io/crates/form_urlencoded/form_urlencoded-1.2.1.crate",
+        "checksum": "e13624c2627564efccf4934284bdd98cbaa14e79b0b5a141218e507b3a823456",
+        "archiveBytes": 8969,
+        "sourceFileCount": 6,
+        "sourceBytes": 27747
+      },
+      {
+        "name": "icu_collections-1.5.0",
+        "URL": "https://static.crates.io/crates/icu_collections/icu_collections-1.5.0.crate",
+        "checksum": "db2fa452206ebee18c4b5c2274dbf1de17008e874b4dc4f0aea9d01ca79e4526",
+        "archiveBytes": 82762,
+        "sourceFileCount": 76,
+        "sourceBytes": 676561
+      },
+      {
+        "name": "icu_locid-1.5.0",
+        "URL": "https://static.crates.io/crates/icu_locid/icu_locid-1.5.0.crate",
+        "checksum": "13acbb8371917fc971be86fc8057c41a64b521c184808a698c02acc242dbf637",
+        "archiveBytes": 55131,
+        "sourceFileCount": 62,
+        "sourceBytes": 288535
+      },
+      {
+        "name": "icu_locid_transform-1.5.0",
+        "URL": "https://static.crates.io/crates/icu_locid_transform/icu_locid_transform-1.5.0.crate",
+        "checksum": "01d11ac35de8e40fdeda00d9e1e9d92525f3f9d887cdd7aa81d727596788b54e",
+        "archiveBytes": 29094,
+        "sourceFileCount": 25,
+        "sourceBytes": 163232
+      },
+      {
+        "name": "icu_locid_transform_data-1.5.0",
+        "URL": "https://static.crates.io/crates/icu_locid_transform_data/icu_locid_transform_data-1.5.0.crate",
+        "checksum": "fdc8ff3388f852bede6b579ad4e978ab004f139284d7b28715f773507b946f6e",
+        "archiveBytes": 44727,
+        "sourceFileCount": 15,
+        "sourceBytes": 148289
+      },
+      {
+        "name": "icu_normalizer-1.5.0",
+        "URL": "https://static.crates.io/crates/icu_normalizer/icu_normalizer-1.5.0.crate",
+        "checksum": "19ce3e0da2ec68599d193c93d088142efd7f9c5d6fc9b803774855747dc6a84f",
+        "archiveBytes": 53113,
+        "sourceFileCount": 37,
+        "sourceBytes": 298798
+      },
+      {
+        "name": "icu_normalizer_data-1.5.0",
+        "URL": "https://static.crates.io/crates/icu_normalizer_data/icu_normalizer_data-1.5.0.crate",
+        "checksum": "f8cafbf7aa791e9b22bec55a167906f9e1215fd475cd22adfcf660e03e989516",
+        "archiveBytes": 50561,
+        "sourceFileCount": 14,
+        "sourceBytes": 278719
+      },
+      {
+        "name": "icu_properties-1.5.1",
+        "URL": "https://static.crates.io/crates/icu_properties/icu_properties-1.5.1.crate",
+        "checksum": "93d6020766cfc6302c15dbbc9c8778c37e62c14427cb7f6e601d849e092aeef5",
+        "archiveBytes": 64479,
+        "sourceFileCount": 19,
+        "sourceBytes": 389323
+      },
+      {
+        "name": "icu_properties_data-1.5.0",
+        "URL": "https://static.crates.io/crates/icu_properties_data/icu_properties_data-1.5.0.crate",
+        "checksum": "67a8effbc3dd3e4ba1afa8ad918d5684b8868b3b26500753effea8d2eed19569",
+        "archiveBytes": 227993,
+        "sourceFileCount": 129,
+        "sourceBytes": 1845743
+      },
+      {
+        "name": "icu_provider-1.5.0",
+        "URL": "https://static.crates.io/crates/icu_provider/icu_provider-1.5.0.crate",
+        "checksum": "6ed421c8a8ef78d3e2dbc98a973be2f3770cb42b606e3ab18d6237c4dfde68d9",
+        "archiveBytes": 52722,
+        "sourceFileCount": 25,
+        "sourceBytes": 251775
+      },
+      {
+        "name": "icu_provider_macros-1.5.0",
+        "URL": "https://static.crates.io/crates/icu_provider_macros/icu_provider_macros-1.5.0.crate",
+        "checksum": "1ec89e9337638ecdc08744df490b221a7399bf8d164eb52a665454e60e075ad6",
+        "archiveBytes": 6436,
+        "sourceFileCount": 7,
+        "sourceBytes": 27149
+      },
+      {
+        "name": "idna-1.0.3",
+        "URL": "https://static.crates.io/crates/idna/idna-1.0.3.crate",
+        "checksum": "686f825264d630750a544639377bae737628043f20d38bbc029e8f29ea968a7e",
+        "archiveBytes": 142515,
+        "sourceFileCount": 20,
+        "sourceBytes": 925302
+      },
+      {
+        "name": "idna_adapter-1.2.0",
+        "URL": "https://static.crates.io/crates/idna_adapter/idna_adapter-1.2.0.crate",
+        "checksum": "daca1df1c957320b2cf139ac61e7bd64fed304c5040df000a745aa1de3b4ef71",
+        "archiveBytes": 8206,
+        "sourceFileCount": 8,
+        "sourceBytes": 27355
+      },
+      {
+        "name": "litemap-0.7.4",
+        "URL": "https://static.crates.io/crates/litemap/litemap-0.7.4.crate",
+        "checksum": "4ee93343901ab17bd981295f2cf0026d4ad018c7c31ba84549a4ddbb47a45104",
+        "archiveBytes": 28257,
+        "sourceFileCount": 23,
+        "sourceBytes": 130068
+      },
+      {
+        "name": "percent-encoding-2.3.1",
+        "URL": "https://static.crates.io/crates/percent-encoding/percent-encoding-2.3.1.crate",
+        "checksum": "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e",
+        "archiveBytes": 10235,
+        "sourceFileCount": 6,
+        "sourceBytes": 29579
+      },
+      {
+        "name": "proc-macro2-1.0.94",
+        "URL": "https://static.crates.io/crates/proc-macro2/proc-macro2-1.0.94.crate",
+        "checksum": "a31971752e70b8b2686d7e46ec17fb38dad4051d94024c88df49b667caea9c84",
+        "archiveBytes": 52391,
+        "sourceFileCount": 28,
+        "sourceBytes": 238482
+      },
+      {
+        "name": "quote-1.0.39",
+        "URL": "https://static.crates.io/crates/quote/quote-1.0.39.crate",
+        "checksum": "c1f1914ce909e1658d9907913b4b91947430c7d9be598b15a1912935b8c04801",
+        "archiveBytes": 31206,
+        "sourceFileCount": 34,
+        "sourceBytes": 139538
+      },
+      {
+        "name": "serde-1.0.218",
+        "URL": "https://static.crates.io/crates/serde/serde-1.0.218.crate",
+        "checksum": "e8dfc9d19bdbf6d17e22319da49161d5d0108e4188e8b680aef6299eed22df60",
+        "archiveBytes": 78968,
+        "sourceFileCount": 28,
+        "sourceBytes": 528335
+      },
+      {
+        "name": "serde_derive-1.0.218",
+        "URL": "https://static.crates.io/crates/serde_derive/serde_derive-1.0.218.crate",
+        "checksum": "f09503e191f4e797cb8aac08e9a4a4695c5edf6a2e70e376d961ddd5c969f82b",
+        "archiveBytes": 57782,
+        "sourceFileCount": 26,
+        "sourceBytes": 329495
+      },
+      {
+        "name": "smallvec-1.14.0",
+        "URL": "https://static.crates.io/crates/smallvec/smallvec-1.14.0.crate",
+        "checksum": "7fcf8323ef1faaee30a44a340193b1ac6814fd9b7b4e88e9d4519a3e4abe1cfd",
+        "archiveBytes": 35561,
+        "sourceFileCount": 18,
+        "sourceBytes": 148405
+      },
+      {
+        "name": "stable_deref_trait-1.2.0",
+        "URL": "https://static.crates.io/crates/stable_deref_trait/stable_deref_trait-1.2.0.crate",
+        "checksum": "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3",
+        "archiveBytes": 8054,
+        "sourceFileCount": 8,
+        "sourceBytes": 24262
+      },
+      {
+        "name": "syn-2.0.99",
+        "URL": "https://static.crates.io/crates/syn/syn-2.0.99.crate",
+        "checksum": "e02e925281e18ffd9d640e234264753c43edc62d64b2d4cf898f1bc5e75f3fc2",
+        "archiveBytes": 297762,
+        "sourceFileCount": 104,
+        "sourceBytes": 2266925
+      },
+      {
+        "name": "synstructure-0.13.1",
+        "URL": "https://static.crates.io/crates/synstructure/synstructure-0.13.1.crate",
+        "checksum": "c8af7666ab7b6390ab78131fb5b0fce11d6b7a6951602017c35fa82800708971",
+        "archiveBytes": 18327,
+        "sourceFileCount": 7,
+        "sourceBytes": 100358
+      },
+      {
+        "name": "tinystr-0.7.6",
+        "URL": "https://static.crates.io/crates/tinystr/tinystr-0.7.6.crate",
+        "checksum": "9117f5d4db391c1cf6927e7bea3db74b9a1c1add8f7eda9ffd5364f40f57b82f",
+        "archiveBytes": 16971,
+        "sourceFileCount": 21,
+        "sourceBytes": 84367
+      },
+      {
+        "name": "unicode-ident-1.0.17",
+        "URL": "https://static.crates.io/crates/unicode-ident/unicode-ident-1.0.17.crate",
+        "checksum": "00e2473a93778eb0bad35909dff6a10d28e63f792f16ed15e404fca9d5eeedbe",
+        "archiveBytes": 47704,
+        "sourceFileCount": 26,
+        "sourceBytes": 335774
+      },
+      {
+        "name": "url-2.5.4",
+        "URL": "https://static.crates.io/crates/url/url-2.5.4.crate",
+        "checksum": "32f8b686cadd1473f4bd0117a5d28d36b1ade384ea9b5069a1c40aefed7fda60",
+        "archiveBytes": 81097,
+        "sourceFileCount": 18,
+        "sourceBytes": 572233
+      },
+      {
+        "name": "utf16_iter-1.0.5",
+        "URL": "https://static.crates.io/crates/utf16_iter/utf16_iter-1.0.5.crate",
+        "checksum": "c8232dd3cdaed5356e0f716d285e4b40b932ac434100fe9b7e0e8e935b9e6246",
+        "archiveBytes": 9736,
+        "sourceFileCount": 11,
+        "sourceBytes": 37396
+      },
+      {
+        "name": "utf8_iter-1.0.4",
+        "URL": "https://static.crates.io/crates/utf8_iter/utf8_iter-1.0.4.crate",
+        "checksum": "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be",
+        "archiveBytes": 10437,
+        "sourceFileCount": 11,
+        "sourceBytes": 41435
+      },
+      {
+        "name": "write16-1.0.0",
+        "URL": "https://static.crates.io/crates/write16/write16-1.0.0.crate",
+        "checksum": "d1890f4022759daae28ed4fe62859b1236caebfc61ede2f63ed4e695f3f6d936",
+        "archiveBytes": 7218,
+        "sourceFileCount": 9,
+        "sourceBytes": 23162
+      },
+      {
+        "name": "writeable-0.5.5",
+        "URL": "https://static.crates.io/crates/writeable/writeable-0.5.5.crate",
+        "checksum": "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51",
+        "archiveBytes": 22354,
+        "sourceFileCount": 18,
+        "sourceBytes": 97745
+      },
+      {
+        "name": "yoke-0.7.5",
+        "URL": "https://static.crates.io/crates/yoke/yoke-0.7.5.crate",
+        "checksum": "120e6aef9aa629e3d4f52dc8cc43a015c7724194c97dfaf45180d2daf2b77f40",
+        "archiveBytes": 29673,
+        "sourceFileCount": 17,
+        "sourceBytes": 129498
+      },
+      {
+        "name": "yoke-derive-0.7.5",
+        "URL": "https://static.crates.io/crates/yoke-derive/yoke-derive-0.7.5.crate",
+        "checksum": "2380878cad4ac9aac1e2435f3eb4020e8374b5f13c296cb75b4620ff8e229154",
+        "archiveBytes": 7525,
+        "sourceFileCount": 9,
+        "sourceBytes": 25986
+      },
+      {
+        "name": "zerofrom-0.1.5",
+        "URL": "https://static.crates.io/crates/zerofrom/zerofrom-0.1.5.crate",
+        "checksum": "cff3ee08c995dee1859d998dea82f7374f2826091dd9cd47def953cae446cd2e",
+        "archiveBytes": 5091,
+        "sourceFileCount": 8,
+        "sourceBytes": 14842
+      },
+      {
+        "name": "zerofrom-derive-0.1.6",
+        "URL": "https://static.crates.io/crates/zerofrom-derive/zerofrom-derive-0.1.6.crate",
+        "checksum": "d71e5d6e06ab090c67b5e44993ec16b72dcbaabc526db883a360057678b48502",
+        "archiveBytes": 8305,
+        "sourceFileCount": 9,
+        "sourceBytes": 26449
+      },
+      {
+        "name": "zerovec-0.10.4",
+        "URL": "https://static.crates.io/crates/zerovec/zerovec-0.10.4.crate",
+        "checksum": "aa2b893d79df23bfb12d5461018d408ea19dfafe76c2c7ef6d4eba614f8ff079",
+        "archiveBytes": 126398,
+        "sourceFileCount": 63,
+        "sourceBytes": 628105
+      },
+      {
+        "name": "zerovec-derive-0.10.3",
+        "URL": "https://static.crates.io/crates/zerovec-derive/zerovec-derive-0.10.3.crate",
+        "checksum": "6eafa6dfb17584ea3e2bd6e76e0cc15ad7af12b09abdd1ca55961bed9b1063c6",
+        "archiveBytes": 19438,
+        "sourceFileCount": 15,
+        "sourceBytes": 85462
+      }
+    ],
+    "nativeArchiveBuilt": false,
+    "qualification": "unknown"
+  },
+  "syntaxReceipt": {
+    "qualification": "unknown",
+    "syntaxOnly": true,
+    "command": [
+      "/work/pr923-sdk30-20261012/wasi-sdk-30.0-x86_64-linux/bin/clang++",
+      "--target=wasm32-unknown-wasi",
+      "-O2",
+      "-flto=thin",
+      "-Wall",
+      "-Werror",
+      "-m32",
+      "-isystem",
+      "/history/typescript745-full-original-unified-promise-carrier-20261007-r5/public-headers",
+      "-include",
+      "/history/typescript745-full-original-unified-promise-carrier-20261007-r5/public-headers/js-confdefs.h",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/lsf",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/StarlingMonkey",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/StarlingMonkey/include",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/StarlingMonkey/runtime",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/StarlingMonkey/deps/include",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.0",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.0/include",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.3/include",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.10/bindings",
+      "-std=gnu++23",
+      "-fno-exceptions",
+      "-fno-rtti",
+      "-fno-sized-deallocation",
+      "-fno-aligned-new",
+      "-mthread-model",
+      "single",
+      "-fPIC",
+      "-fno-math-errno",
+      "-fno-omit-frame-pointer",
+      "-funwind-tables",
+      "-Wno-invalid-offsetof",
+      "-I/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/StarlingMonkey/crates/rust-url",
+      "-fsyntax-only",
+      "/work/pr923-fetch-url-FFI-syntax-r2-20261013/source/StarlingMonkey/builtins/web/url.cpp"
+    ],
+    "exitCode": 0,
+    "sources": [
+      {
+        "path": "/work/pr923-fetch-url-FFI-20261013/derived-r2/DERIVATION.json",
+        "sha256": "93ca6512f81a277174093f13743b42ee4f5a086248ee59480632d4b874e22bfc",
+        "bytes": 2054
+      },
+      {
+        "path": "/work/pr923-fetch-url-FFI-20261013/derived-r2/StarlingMonkey/builtins/web/url.cpp",
+        "sha256": "c095b77207a9569f9c4b005210227c70c74f6694a4c6937b4029e767f6d3079a",
+        "bytes": 29904
+      },
+      {
+        "path": "/work/pr923-fetch-url-FFI-20261013/derived-r2/StarlingMonkey/builtins/web/url.h",
+        "sha256": "09b79232aeb19a8a45d565e2d38587e72bdbb7d1bd6d2e44b3bfdacefe575641",
+        "bytes": 7312
+      },
+      {
+        "path": "/work/pr923-fetch-url-FFI-20261013/derived-r2/StarlingMonkey/crates/rust-url/rust-url.h",
+        "sha256": "deaa41152bb9c976ceaaba829318a0c0712505d7ffc1368671da246276b63c0f",
+        "bytes": 4412
+      },
+      {
+        "path": "/work/pr923-fetch-url-FFI-20261013/derived-r2/StarlingMonkey/crates/rust-url/src/lib.rs",
+        "sha256": "b4b3f151276d1db394740d46c3daf6cdd3ee70a064653fba05a7189044499cf3",
+        "bytes": 14156
+      },
+      {
+        "path": "/work/pr923-fetch-url-FFI-20261013/derived-r2/lsf/native_url_inputs.h",
+        "sha256": "8a7b79d7f924e0189f63898656ef07803df7f850559472a7105dcd7583638596",
+        "bytes": 5577
+      },
+      {
+        "path": "/work/pr923-fetch-url-FFI-20261013/derived-r2/lsf/native_url_owner.h",
+        "sha256": "2729864c1545975c5a8e3c7bc579cb34afaf27a375025ba6a6bd9e5969ee426c",
+        "bytes": 756
+      }
+    ]
+  },
+  "sourceInputs": [
+    {
+      "path": "tools/typescript_guest/url_engine.py",
+      "sha256": "4fc6ff57027b1b223a3946f8ac183bb2d2e979f611ff1c1339f69cd77b8967f0",
+      "bytes": 19093
+    },
+    {
+      "path": "tools/typescript_guest/url_rust_graph.py",
+      "sha256": "e0eef697fd17bce884fe9d3cfbc04d685a40183021d6c1f2ac032dd47839055b",
+      "bytes": 3062
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_url_owner.h",
+      "sha256": "2729864c1545975c5a8e3c7bc579cb34afaf27a375025ba6a6bd9e5969ee426c",
+      "bytes": 756
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_url_inputs.h",
+      "sha256": "8a7b79d7f924e0189f63898656ef07803df7f850559472a7105dcd7583638596",
+      "bytes": 5577
+    },
+    {
+      "path": "tools/tests/fixtures/typescript_url/reference.mjs",
+      "sha256": "2b939c213ba333010092868c236c4d7a6d7443dad41e7f46061b1019a696496e",
+      "bytes": 2347
+    }
+  ],
+  "preservedFailedAttempts": [
+    "/work/pr923-fetch-url-FFI-syntax-20261013",
+    "/work/pr923-fetch-url-FFI-20261013/receipt-full-match-false.json",
+    "/work/pr923-fetch-url-Rust-graph-20261013",
+    "/work/pr923-fetch-url-Rust-graph-r2-20261013/archives"
+  ],
+  "requiredNextEvidence": [
+    "source-bound single aggregate Rust archive",
+    "distinct FETCH core with actual selected URL globals",
+    "standard mutation/reference/linked-identity controls",
+    "rejection with unchanged linked views and fresh physical reuse",
+    "original ordinary runtime matrix",
+    "signed borrowed-read cancellation and exact native retirement/drop/reuse",
+    "two unchanged independently maintained default-fetch consumers",
+    "outside-checkout private package identity/catalogue changes"
+  ]
+}

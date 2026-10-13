@@ -49,3 +49,24 @@ class TypeScriptUrlSourceTests(unittest.TestCase):
         self.assertIn('tools/typescript_guest/url_engine.py', selected)
         self.assertNotIn('sdk/typescript-guest/activation/native_url_owner.h',
                          engine_input_paths(runtime_profile.IMPORT_PROFILE))
+
+    def test_exact_aggregate_retains_encoding_hooks_and_url_dependency_versions(self):
+        from tools.typescript_guest import url_rust_graph
+        original = {name: (FIXTURES/name).read_bytes() for name in url_rust_graph.PREIMAGES}
+        _, observed = url_rust_graph.derive(original)
+        self.assertEqual(observed['selectedCrates'], ['rust-encoding', 'rust-hooks', 'rust-url'])
+        self.assertEqual(observed['selectedPackageCount'], 46)
+        self.assertTrue(observed['selectedVersionsAndChecksumsPreserved'])
+        self.assertFalse(observed['separateDuplicateRustArchives'])
+        self.assertFalse(observed['multipartSelected'])
+
+    def test_changed_or_incomplete_aggregate_cannot_change_the_selected_parser_graph(self):
+        from tools.typescript_guest import url_rust_graph
+        original = {name: (FIXTURES/name).read_bytes() for name in url_rust_graph.PREIMAGES}
+        for name in original:
+            changed = dict(original)
+            changed[name] += b'\n'
+            with self.assertRaisesRegex(ValueError, 'unreviewed-maintained-URL-aggregate'):
+                url_rust_graph.derive(changed)
+        with self.assertRaisesRegex(ValueError, 'exact-maintained-URL-aggregate-required'):
+            url_rust_graph.derive({})

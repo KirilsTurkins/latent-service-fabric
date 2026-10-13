@@ -54,6 +54,7 @@ using lsf::typescript::activation::UrlInput;
 using lsf::typescript::activation::url_input;
 using lsf::typescript::activation::url_query_bound;
 using lsf::typescript::activation::url_params_growth;
+using lsf::typescript::activation::url_params_normalization;
 using lsf::typescript::activation::url_backing_bound;
 using lsf::typescript::activation::url_mutate;
 
@@ -198,6 +199,17 @@ bool URLSearchParams::init_class(JSContext *cx, JS::HandleObject global) {''', '
         b'  auto linked = JS::GetReservedSlot(self, std::to_underlying(URLSearchParams::Slots::Url));\n'
         b'  if (!url_params_growth(cx, params, name.len, value.len, linked.isUndefined() ? nullptr : static_cast<jsurl::JSUrl*>(linked.toPrivate()))) return false;\n'
         b'  jsurl::params_set(params, name.release(), value.release());', 'bounded-direct-set-transfer')
+    for function in ('delete', 'delete_kv'):
+        call = (b'    jsurl::params_delete(params, &name);' if function == 'delete' else
+                b'    jsurl::params_delete_kv(params, &name, &value);')
+        source = replace_once(source, call,
+            b'    auto linked = JS::GetReservedSlot(self, std::to_underlying(Slots::Url));\n'
+            b'    if (!url_params_normalization(cx, params, linked.isUndefined() ? nullptr : static_cast<jsurl::JSUrl*>(linked.toPrivate()))) return false;\n' + call,
+            'bounded-normalization-before-' + function)
+    source = replace_once(source, b'  jsurl::params_sort(params);',
+        b'  auto linked = JS::GetReservedSlot(self, std::to_underlying(Slots::Url));\n'
+        b'  if (!url_params_normalization(cx, params, linked.isUndefined() ? nullptr : static_cast<jsurl::JSUrl*>(linked.toPrivate()))) return false;\n'
+        b'  jsurl::params_sort(params);', 'bounded-normalization-before-sort')
     source = replace_once(source, b'    jsurl::params_init(params, &init);',
         b'    if (init.len > lsf::typescript::activation::URL_INPUT_BYTES / 3) {\n'
         b'      JS_ReportErrorASCII(cx, "fetch-profile-URL-query-growth-limit"); return nullptr;\n    }\n'
@@ -208,6 +220,29 @@ bool URLSearchParams::init_class(JSContext *cx, JS::HandleObject global) {''', '
         b'  jsurl::JSUrlSearchParams *params = jsurl::url_search_params(url);', 'linked-query-capacity-before-expansion')
     source = replace_once(source, b'    jsurl::SpecString str = url_input(', b'    auto str = url_input(',
         'retain-borrowed-setter-input-owner')
+    source = replace_once(source, b'''  const jsurl::CVec<jsurl::SpecSlice> values = jsurl::params_get_all(params, &name);
+
+  JS::RootedObject result(cx, JS::NewArrayObject(cx, values.len));''',
+        b'''  // Borrow each maintained parser entry; the old allocating CVec has no
+  // destructor in this FFI. No native temporary survives the JS copies.
+  JS::RootedObject result(cx, JS::NewArrayObject(cx, 0));''', 'get-all-no-unowned-FFI-vector')
+    source = replace_once(source, b'''  for (size_t i = 0; i < values.len; i++) {
+    const jsurl::SpecSlice value = values.ptr[i];''',
+        b'''  size_t output = 0;
+  for (size_t i = 0; i < jsurl::params_size(const_cast<jsurl::JSUrlSearchParams*>(params)); i++) {
+    jsurl::JSSearchParam entry;
+    jsurl::params_at(params, i, &entry);
+    if (entry.done || entry.name.len != name.len ||
+        (name.len && std::memcmp(entry.name.data, name.data, name.len))) continue;
+    const jsurl::SpecSlice value = entry.value;''', 'get-all-borrowed-parser-enumeration')
+    source = replace_once(source, b'    if (!JS_SetElement(cx, result, i, str_val)) {',
+        b'    if (!JS_SetElement(cx, result, output++, str_val)) {', 'get-all-dense-matching-elements')
+    source = replace_once(source, b'  jsurl::SpecString slice = origin(cx, self);',
+        b'''  jsurl::SpecString slice = origin(cx, self);
+  struct OwnedOrigin {
+    jsurl::SpecString value;
+    ~OwnedOrigin() { jsurl::free_spec_string(value); }
+  } owned{slice};''', 'origin-actual-Rust-destructor-on-every-exit')
     source = replace_once(source, b'    jsurl::set_##field(url, &str);',
         b'    if (!url_mutate(cx, url, &str, jsurl::set_##field, std::string_view(#field) == "href")) return false;',
         'bounded-shadow-setter-before-real-mutation')
@@ -219,7 +254,21 @@ bool URLSearchParams::init_class(JSContext *cx, JS::HandleObject global) {''', '
     source = replace_once(source, b'    base = base_owner->value.value.get();\n',
         b'    base = base_owner->value.value.get();\n'
         b'    if (base && !url_backing_bound(cx, base)) return nullptr;\n', 'bounded-temporary-base')
-    result = {CPP: source, HEADER: header, 'lsf/native_url_owner.h': owner}
+    destructor = b'''
+// Return ownership to the same Rust String destructor that created this FFI
+// value. The C++ caller cannot infer Rust's allocator from pointer/capacity.
+#[no_mangle]
+pub extern "C" fn free_spec_string(value: SpecString) {
+    drop(value);
+}
+'''
+    rust = replace_once(original[RUST], b'/// This type exists to transfer &str-likes over FFI.',
+        destructor + b'\n/// This type exists to transfer &str-likes over FFI.', 'exact-Rust-String-owner-drop')
+    rust_header = replace_once(original[RUST_HEADER], b'SpecSlice params_to_string(const JSUrlSearchParams *params);',
+        b'SpecSlice params_to_string(const JSUrlSearchParams *params);\n\nvoid free_spec_string(SpecString value);',
+        'generated-additive-String-destructor-declaration')
+    result = {CPP: source, HEADER: header, RUST: rust, RUST_HEADER: rust_header,
+              'lsf/native_url_owner.h': owner}
     return result, {'profile': 'spidermonkey-activation-promises-clocks-fetch-v1',
         'originalSource': identity(original), 'derivedSource': identity(result),
         'ordinaryImportProfileChanged': False, 'objectURLSupported': False,
