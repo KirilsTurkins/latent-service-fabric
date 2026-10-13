@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "latent.java.early-http.clean-source-receipt.v1",
+  "scope": "Bounded signed early HTTP denial only; no terminal, pending or packaged qualification",
+  "sourceCommit": "7c4a0dcc9dd98108b1f36c0dcabf1dfc286128a3",
+  "sourceTree": "d196c159c534676f5d8b6ee3343beb883f0bdfe5",
+  "trackedSourceFiles": 9439,
+  "completeTreeVerifiedAfterBuild": true,
+  "compilerSourceCommit": "47e4e60778d7fdd033d5f1d6c05595752713c971",
+  "conductorSourceCommit": "7c4a0dcc9dd98108b1f36c0dcabf1dfc286128a3",
+  "nativeManifestDigest": "sha256:d6c182fbf66d0bb82bfe775212c1fb935506d27cf106aad50c79189e7f4f9696",
+  "campaignReceiptDigest": "sha256:45d78173c5eb6103dac9133d1981ddca40168e56e70ec1da22deb937a0f7be14",
+  "signedGuestExecutionQualified": true,
+  "immediateHttpDenialQualified": true,
+  "postStageRollbackQualified": false,
+  "packagedDistributionQualified": false,
+  "passed": true,
+  "measuredCases": [
+    "publish-early-http",
+    "namespace-create",
+    "signed-early-http-typed-denial",
+    "early-physical-retirement"
+  ],
+  "httpRequests": 5,
+  "actualTcpContacts": 0,
+  "businessStateWritten": false,
+  "originalDeclaredResult": "rejected",
+  "duplicateAndRetainedResultBytesEqualOriginal": true,
+  "nativeTools": [
+    {
+      "role": "node",
+      "digest": "sha256:f87965b69c1ab197915acacaa46ec6d26af3ab0b63f089b61017890cb3ced703",
+      "bytes": 181768344,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    {
+      "role": "recovery_helper",
+      "digest": "sha256:3c953bb78e74d0dbdacf9ec51cae52925aaa9596303c01f5e9997267b3372bb9",
+      "bytes": 186457384,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    {
+      "role": "cli",
+      "digest": "sha256:a1f04b9d7b2935fc7679dfad7ffdd9764e2e28c42a3ebadf0b4400f34f736468",
+      "bytes": 69323312,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    {
+      "role": "contracts_tool",
+      "digest": "sha256:8e4c9437004fdc8f7acce722200354bae2fabe6d59dc970100d7ac2266371b40",
+      "bytes": 7904536,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    {
+      "role": "aot_compiler",
+      "digest": "sha256:4550842301b1a1b074f280216a712010fb01aa21eb7d66eae1c3074474ca6d23",
+      "bytes": 41788480,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    {
+      "role": "signer",
+      "digest": "sha256:3eae945f048d211b8d91e660394eb80fc8e2d874804af8115c50042fc36ec6c5",
+      "bytes": 24799192,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      }
+    }
+  ],
+  "evidenceInventory": {
+    "path": "inventory.json",
+    "bytes": 14523,
+    "digest": "sha256:38241e929a63021bb4518a5486ee3c8e0145719c06d0aafb659284a463c68960"
+  },
+  "physicalRetirementCaseDigest": "sha256:e4b34b5d1da5c70ea76748c68d5cd783aa2eab2ca6c66e488b585385efbdeee5",
+  "historicalFailedAttemptsPreserved": true,
+  "priorEarlyZeroRootObservationsQueriedOrdinaryService": true
+}

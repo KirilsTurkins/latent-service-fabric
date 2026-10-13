@@ -46,6 +46,7 @@ class RefusalObservationOracle(unittest.TestCase):
                 client = Client(Path(temporary), failure)
                 subject = campaign.Campaign.__new__(campaign.Campaign)
                 subject.client = client
+                subject.service = cfg.SERVICE
                 with self.assertRaisesRegex(ValueError, "transaction-response-status"):
                     subject.result({"status": 403, "body": b"", "headers": []})
                 self.assertEqual(len(client.calls), 1)

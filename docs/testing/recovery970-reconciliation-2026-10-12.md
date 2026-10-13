@@ -51,6 +51,21 @@ the old byte approval boundary and adds separate current proposal inspection.
 Its complete signed/operator campaign is still pending; the earlier native
 receipt below does not qualify these new gateway bytes.
 
+The [clean signed early HTTP receipt](evidence/java-early-http-clean-source-2026-10-13.json)
+records source `7c4a0dcc`, compiler source `47e4e607`, and six separately frozen
+native tools. Five actual HTTP exchanges prove typed immediate denial,
+byte-identical duplicate and retained-result replay, unchanged business state,
+zero TCP contact and physical retirement of four node sessions. The protected
+clock concurrency regression failed on the original source and passed after
+sampling and publication were serialized. This qualifies the separate early
+fixture only; terminal recovery, pending restore/close, original post-stage
+rollback and packaged distribution acceptance remain unqualified.
+
+Earlier early-fixture zero-root failure observations queried the ordinary
+service. They cannot establish rejection before activation acceptance. The
+observer now explicitly records and queries the selected campaign service;
+the original failed attempts remain preserved with their original bytes.
+
 ## Actual controlled workload and acceptance limits
 
 The adapted [HTTP recovery schedule](../../crates/latent-http/src/deferred/tests/recovery.rs)
