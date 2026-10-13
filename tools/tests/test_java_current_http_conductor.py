@@ -12,6 +12,25 @@ from tools.tests.test_java_transaction_provision import observation
 
 
 class CurrentHttpConductor(unittest.TestCase):
+    def test_host_inspection_retires_original_clock_interval_before_returning_profiles(self):
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import evidence, lifecycle
+        value, operations, _ = observation()
+        events = []
+        client = SimpleNamespace()
+        with patch.object(lifecycle, 'native', side_effect=lambda *_a, **_k:
+                (events.append('inspect'), evidence.encoded(value))[1]), \
+             patch.object(lifecycle, 'admission_lease_interval', side_effect=lambda actual:
+                (self.assertIs(actual, client), events.append('lease'))):
+            hosts = lifecycle.inspect(client, Path('native'), Path('configuration'), operations)
+        self.assertEqual(hosts.value, value)
+        self.assertEqual(events, ['inspect', 'lease'])
+        with patch.object(lifecycle, 'native', return_value=evidence.encoded({})), \
+             patch.object(lifecycle, 'admission_lease_interval') as lease:
+            with self.assertRaises(ValueError):
+                lifecycle.inspect(client, Path('native'), Path('configuration'), operations)
+        lease.assert_not_called()
+
     def test_offline_migration_requires_actual_wide_value_commit_and_effect_before_snapshot(self):
         from unittest.mock import Mock, patch
         from tools.java_transaction_qualification import offline_campaign

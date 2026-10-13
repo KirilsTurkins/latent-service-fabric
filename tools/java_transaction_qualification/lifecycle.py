@@ -272,8 +272,12 @@ def inspect(client, node: Path, configuration: Path, operations, *, stage="trans
     from .policies import ObservedHosts
     value = decode(native(client, node, stage, "inspect-transaction-hosts",
                           "--config", configuration, timeout=120), 262144)
-    return ObservedHosts.read(value, operations, diagnostic=len(operations) == 15,
-                              intent_operation=intent_operation)
+    observed = ObservedHosts.read(value, operations, diagnostic=len(operations) == 15,
+                                  intent_operation=intent_operation)
+    # Business inspection still opens/retire the real control catalog owner.
+    # Its persisted clock floor cannot be reused immediately by another boot.
+    admission_lease_interval(client)
+    return observed
 
 
 def namespace_arguments(publication: str):

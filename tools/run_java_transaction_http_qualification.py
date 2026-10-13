@@ -267,6 +267,9 @@ def prepare_environment(client, args, work, signed):
                     inputs.require(marker["idempotencyProfile"] == profile,
                                    "actual-current-preview-matches-every-captured-http-profile")
             client.evidence.record("actual-current-http-constructor-preview", preview)
+            # Inspection retires its actual control catalogs and persisted
+            # supply-chain clock floor before the next ordinary node owner.
+            lifecycle.admission_lease_interval(client)
         return peer, configuration, lifecycle.Node(client, args.node, node_root,
             current_publication_program=endpoint is not None)
     except BaseException:
