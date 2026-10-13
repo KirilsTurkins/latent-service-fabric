@@ -37,5 +37,7 @@
   "resourceCapsChanged": false,
   "signedRuntimeQualified": false,
   "productionApproval": false,
-  "issueClosure": false
+  "issueClosure": false,
+  "controlSourceCommit": "0cc2829aca917bd517e722d66deba4cbdab01e2e",
+  "laterSourceDifference": "Documentation backticks only; historical native source hashes remain unchanged."
 }

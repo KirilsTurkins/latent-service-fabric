@@ -1,4 +1,4 @@
-//! Guest access follows either pre-Store invocation or actual HostState Drop.
+//! Guest access follows either pre-Store invocation or actual `HostState` Drop.
 
 use std::sync::Arc;
 
@@ -26,7 +26,7 @@ impl GuestAccess {
     }
 
     /// Transfer at the infallible Access attachment, after Store preflight.
-    /// HostState then owns the same closure through actual guest destruction.
+    /// `HostState` then owns the same closure through actual guest destruction.
     pub(super) fn take_host(&mut self) -> Option<Arc<dyn TransactionHost>> {
         self.0.take()
     }
