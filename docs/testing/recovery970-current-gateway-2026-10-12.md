@@ -148,7 +148,7 @@ artifact graph, node digest
 the same profile and no business/checkpoint files. These are constructor
 controls, not a signed recovery campaign.
 
-The raw default debug node, helper, CLI and AOT products exceed the existing
+The earlier `a37aa977` raw default debug node, helper, CLI and AOT products exceed the existing
 256 MiB conductor material ceiling. That refusal is retained. Separate copied
 products remove only nonallocated debug sections with GNU strip 2.40 and record
 both original and transformed byte identities. Every allocated ELF section and
@@ -156,6 +156,23 @@ program-header byte compares identical; original Cargo artifacts remain
 unchanged. All transformed products fit the same ceiling, while the bounded
 contracts and signer products retain their original bytes. The recipe and
 products are fixture evidence, separate from production operator qualification.
+
+The [committed `1d7f130b` tuple packet](evidence/recovery970-default-tuple-1d7-2026-10-13.json)
+records six separate Cargo builds with default features, optimization zero,
+debug information zero, debug assertions and overflow checks enabled. All six
+untransformed products fit the original 256 MiB material bound. Their source
+archive, actual artifact graphs and immediate original-to-copy hashes are
+retained. The original four-role attempt stopped before AOT at the 3 GiB host
+headroom floor; only AOT and signer resumed after byte-preserving compression.
+The four completed copies were rechecked, and the stopped attempt remains.
+
+The same packet records 53 actual native policy-parser controls against that
+committed source. The exact original 3692-byte policy and 287-byte binding
+parse successfully with all six existing recovery purpose labels. Unknown,
+miscontract, duplicate and oversized operation sets still refuse. This control
+created no catalog, authority or guest, and preserves the original one-call,
+64 MiB, 60-second policy ceilings. Signed execution and pending-effect
+reconciliation keep separate qualification receipts.
 
 ## Qualification boundaries
 
