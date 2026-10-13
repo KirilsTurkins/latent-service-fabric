@@ -260,7 +260,9 @@ class OfflineCampaign:
         hosts = lifecycle.inspect(self.client, self.node.executable, inspection, operations,
                                   stage="restored-transaction-host-inspection", intent_operation="http")
         diagnostic = len(operations) == 15
-        proposals = policies.documents(hosts, self.campaign.publications, diagnostic=diagnostic)
+        selection = {} if activation is None else {
+            'current_http_endpoint': settings['providers']['http']['deferred'][0]}
+        proposals = policies.documents(hosts, self.campaign.publications, diagnostic=diagnostic, **selection)
         paused = copy.deepcopy(settings)
         paused["state"]["operations"] = []
         path = self.configuration.parent / "restored-authority-node.json"

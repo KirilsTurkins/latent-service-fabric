@@ -52,7 +52,8 @@ class CurrentActivation:
         self.active = name
         if campaign is not None:
             campaign.full_path = path
-        self.client.evidence.passed('deploy-' + name, {'deployment': deployed, 'selectedTarget': target})
+        self.client.evidence.passed('deploy-' + name + '-' + session,
+                                   {'deployment': deployed, 'selectedTarget': target})
         return target
 
     def switch(self, campaign, name):

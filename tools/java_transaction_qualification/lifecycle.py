@@ -353,7 +353,10 @@ def bind_http_routes(client, authority: str, item, target):
 def deploy(client, signed: Path, item, publication: str, grants, authority: str):
     deployed, target = deployment_metadata(client, signed, item, publication, grants)
     bind_http_routes(client, authority, item, target)
-    client.evidence.passed("deploy-" + item.name, {"deployment": deployed, "selectedTarget": target})
+    case = 'deploy-' + item.name
+    if case in getattr(client.evidence, 'cases', []):
+        case += '-generation-' + deployed['generation']
+    client.evidence.passed(case, {"deployment": deployed, "selectedTarget": target})
     return target
 
 

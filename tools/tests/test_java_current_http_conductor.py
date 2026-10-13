@@ -12,6 +12,67 @@ from tools.tests.test_java_transaction_provision import observation
 
 
 class CurrentHttpConductor(unittest.TestCase):
+    def test_return_to_legacy_records_both_deployments_without_reusing_measured_case(self):
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import configuration as cfg, evidence, lifecycle
+        from tools.java_transaction_qualification.current_activation import CurrentActivation
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            collector = evidence.Evidence(root / 'evidence')
+            activation = CurrentActivation.__new__(CurrentActivation)
+            activation.client = SimpleNamespace(evidence=collector)
+            activation.configuration = SimpleNamespace(authority='localhost:1')
+            activation.node = SimpleNamespace(process=None, start=lambda *_a, **_k: None)
+            name = 'put-once-legacy-v1'
+            activation.items = {name: SimpleNamespace(name=name)}
+            activation.path = lambda _: root / 'selected.json'
+            activation.metadata = {name: ({'generation': '1'}, {'deploymentGeneration': 1})}
+            with patch.object(lifecycle, 'bind_http_routes') as binding:
+                activation.start(None, name, 'legacy-runtime')
+                activation.metadata[name] = ({'generation': '3'}, {'deploymentGeneration': 3})
+                activation.start(None, name, 'legacy-after-diagnostic')
+                self.assertEqual(binding.call_count, 2)
+            self.assertEqual(collector.cases, ['deploy-' + name + '-legacy-runtime',
+                                              'deploy-' + name + '-legacy-after-diagnostic'])
+            self.assertEqual(len(collector.files), 2)
+            from tools.phase2_operator_process import read_json
+            receipts = [read_json(collector.directory / row['path']) for row in collector.files]
+            self.assertEqual([row['observed']['deployment']['generation'] for row in receipts], ['1', '3'])
+
+    def test_current_proposals_bind_native_state_staging_and_exact_http_dispatch_grants(self):
+        from tools.java_transaction_qualification import configuration as cfg
+        value, operations, publications = observation()
+        for row in value['deferredHttp']:
+            row['operation'] = 'http'
+        hosts = policies.ObservedHosts.read(value, operations, intent_operation='http')
+        endpoint = current_recipient.endpoint({'scheme': 'https', 'host': 'localhost', 'port': 52027}, 'e' * 64)
+        proposal = policies.documents(hosts, publications, current_http_endpoint=endpoint)
+        grants = {row['capability']: row for row in proposal['deploymentGrants']}
+        self.assertEqual(len(grants), len(proposal['deploymentGrants']))
+        self.assertEqual(set(grants), {*(pair[0] for pair in cfg.CLOCKS.values()),
+                                      policies.STATE_CONTRACT, policies.INTENT_CONTRACT})
+        self.assertEqual(grants[policies.STATE_CONTRACT], {'capability': policies.STATE_CONTRACT,
+                         'policy': cfg.STATE_POLICY, 'operations': policies.DATA_OPERATIONS})
+        self.assertEqual(grants[policies.INTENT_CONTRACT], {'capability': policies.INTENT_CONTRACT,
+                         'policy': cfg.STAGING_POLICY, 'operations': ['stage']})
+        self.assertNotIn(policies.HTTP_CONTRACT, grants)
+        provider = hosts.providers['http']
+        self.assertEqual(proposal['bindings']['java-dispatch-installed'], policies.binding(
+            policies.HTTP_CONTRACT, provider['profile'], provider['configurationDigest'],
+            int(provider['configurationEpoch']), ['send']))
+        for rule, source in zip(proposal['policies'][cfg.DISPATCH_POLICY]['rules'], hosts.effects):
+            self.assertEqual(rule['capability'], policies.HTTP_CONTRACT)
+            self.assertEqual(rule['operations'], ['send'])
+            self.assertEqual(rule['publications'], [source['publication']])
+            self.assertEqual(rule['principals'], [{'kind': 'service', 'subject': source['dispatchSubject']}])
+            self.assertEqual(rule['resources'], {'kind': 'http', 'origins': [endpoint['origin']],
+                'methods': ['GET', 'POST'], 'paths': ['/effect'], 'pathPrefixes': ['/receipts/']})
+            self.assertEqual(rule['ceiling'], {'operations': 1, 'inputBytes': 27,
+                'outputBytes': 2048, 'wallTimeMillis': 2000})
+        value['deferredHttp'][0]['operation'] = 'put-once'
+        with self.assertRaises(ValueError):
+            policies.documents(hosts, publications, current_http_endpoint=endpoint)
+
     def test_current_session_program_requires_explicit_profile_order_and_single_runtime(self):
         from unittest.mock import patch
         from tools.java_transaction_qualification import lifecycle
