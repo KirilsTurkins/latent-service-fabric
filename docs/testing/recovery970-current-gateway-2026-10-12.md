@@ -37,6 +37,7 @@ Current action fields are:
 | `resume` | `operationId`, exact `expectedView` byte array |
 | `stage-migration`, `complete-migration` | `operationId`, `file`, `expectedView`, `checkpointDigest`, `checkpointManifestDigest` |
 | `resume-migration` | `operationId`, `migrationOperationId`, `file`, `expectedView`, `migrationExpectedView`, `checkpointDigest`, `checkpointManifestDigest` |
+| `resume-restored-migration` | `operationId`, `migrationOperationId`, `file`, `expectedView`, `snapshotDigest`, `manifestDigest`, `windowAcknowledgement` |
 
 Digests use `sha256:` and 64 lowercase hexadecimal digits. Restore inspection
 returns `windowDigest`; restore requires that exact acknowledgement. Namespace
