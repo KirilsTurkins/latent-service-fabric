@@ -87,6 +87,37 @@ class CurrentJavaInputs(unittest.TestCase):
 
 
 class CurrentJavaPackaging(unittest.TestCase):
+    def test_current_forbidden_preparation_preserves_signature_without_claiming_execution_denial(self):
+        from pathlib import Path
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import packaging
+        surface = {'world': packaging.WORLD, 'imports': sorted({
+            'latent:state/key-value@0.2.0', 'latent:intents/staging@0.1.0',
+            'latent:http/client@0.2.0', 'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'}),
+            'exports': ['examples:transactional-aggregate/api@1.0.0']}
+        item = SimpleNamespace(name='forbidden-http', component_digest='sha256:' + 'a' * 64)
+        record = {'currentPreparationControls': [], 'profileRejections': []}
+        with patch.object(packaging, 'prepare') as prepared, \
+             patch.object(packaging, 'read_file', return_value=encoded(surface)), \
+             patch.object(packaging, 'write_json'):
+            packaging._current_forbidden_preparation(item, Path('output'), Path('contracts'),
+                Path('signer'), object(), record)
+        prepared.assert_called_once()
+        self.assertEqual(record['profileRejections'], [])
+        observed = record['currentPreparationControls'][0]
+        for field in ('signed', 'executionAuthorized', 'requestDispatched',
+                      'immediateHttpDenialQualified', 'signedNodeExecutionQualified'):
+            self.assertIs(observed[field], False)
+        for changed in (dict(surface, imports=[]), dict(surface, exports=[]),
+                        dict(surface, world='another:world/service@1.0.0'), dict(surface, approved=True)):
+            with self.subTest(changed=changed), patch.object(packaging, 'prepare'), \
+                 patch.object(packaging, 'read_file', return_value=encoded(changed)), \
+                 patch.object(packaging, 'write_json', side_effect=AssertionError('must not record malformed surface')):
+                with self.assertRaises(ValueError):
+                    packaging._current_forbidden_preparation(item, Path('output'), Path('contracts'),
+                        Path('signer'), object(), record)
+
     def test_current_package_selects_explicit_compiler_source_without_historical_fallback(self):
         from pathlib import Path
         from unittest.mock import patch

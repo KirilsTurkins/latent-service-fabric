@@ -132,3 +132,10 @@ delta through the current compatible Java publication. It checks the resulting
 snapshotting. This supplies the previously missing wide-value setup without
 lowering the migration oracle or changing the twelve native recovery actions.
 All 156 focused Linux controls pass; actual signed execution remains pending.
+
+The fresh current contract tool recognizes the supported immediate HTTP
+signature for preparation. Current packaging therefore records that exact
+surface with signing, execution authority, dispatch and immediate-denial
+qualification all false. The historical early-refusal control retains its
+original boundary. An actual current strict HTTP denial needs a separate signed
+execution control; preparation or generic package success cannot substitute.
