@@ -90,7 +90,7 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
         port = reservation.getsockname()[1]
     authority = f"localhost:{port}"
     origin = {"scheme": "https", "host": "localhost", "port": recipient_port}
-    value.update(securityProfile="external-capsule-v1",
+    value.update(securityProfile="external-capsule-v1", engine={"javaGuest": True},
         limits={"maximumComponentBytes": 32 * 1024 * 1024, "maximumPayloadBytes": 2 * 1024 * 1024},
         budgetProfile={"mode": "phase4", "maximumStateReadBytes": 4194304,
                        "maximumStateWriteBytes": 2097152, "maximumEffectCount": 1},
