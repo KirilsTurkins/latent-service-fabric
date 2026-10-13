@@ -464,3 +464,56 @@ async fn signed_fetch_phase_diagnostic_retains_actual_js_errors_and_native_consu
     );
     fixture.http.as_ref().unwrap().shutdown().await;
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires exact current protected-compiler finite allowed-provider diagnostic output"]
+async fn signed_allowed_fetch_diagnostic_retains_exact_js_failure_and_actual_tcp_stage() {
+    use tokio::io::AsyncWriteExt;
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let root = tempfile::tempdir().unwrap();
+    let fixture = Box::pin(fixture(
+        "typescript-fetch-allowed-phase",
+        root.path(),
+        Some(super::super::fixture::http::Configuration { port, permit: true }),
+    ))
+    .await;
+    for mode in 0..2 {
+        let mut request = fixture.request(&format!("fetch-allowed-phase-{mode}"), mode);
+        request.target.contract = ContractId("examples:fetch-allowed-phase/api@1.0.0".into());
+        request.input = format!("[{port},{mode}]").into_bytes();
+        let accepted = fixture.manager.start(request).unwrap();
+        let mut invocation = Box::pin(async {
+            tokio::time::timeout(Duration::from_mins(2), accepted)
+                .await
+                .unwrap()
+        });
+        let receipt = tokio::select! {
+            receipt=&mut invocation => receipt,
+            accepted=listener.accept() => {
+                let (mut socket,_)=accepted.unwrap();
+                eprintln!("allowed diagnostic mode={mode} actual TCP accepted");
+                let parsed=tokio::select! {
+                    ()=read_request(&mut socket,0) => true,
+                    receipt=&mut invocation => {
+                        eprintln!("allowed diagnostic mode={mode} earlynativeoutcome={:?}",receipt.outcome);
+                        closed_socket(&mut socket).await;
+                        fixture.idle().await;
+                        continue;
+                    }
+                };
+                assert!(parsed);
+                socket.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 8\r\nConnection: close\r\nx-fetch-response: native\r\n\r\nabcdefgh").await.unwrap();
+                let receipt=tokio::time::timeout(Duration::from_mins(2),invocation).await.unwrap();
+                closed_socket(&mut socket).await;
+                receipt
+            }
+        };
+        eprintln!(
+            "allowed diagnostic mode={mode} actualnativeoutcome={:?}",
+            receipt.outcome
+        );
+        fixture.idle().await;
+    }
+    fixture.http.as_ref().unwrap().shutdown().await;
+}

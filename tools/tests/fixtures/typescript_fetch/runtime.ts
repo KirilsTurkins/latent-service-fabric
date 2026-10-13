@@ -5,9 +5,12 @@ export const api = {
     if (++calls !== 1) throw new Error('stale-fetch-activation');
     const url = `http://localhost:${port}/allowed`;
     if (mode === 4) {
-      try { await fetch(url); }
+      try { await fetch(url, {method: 'POST', body: 'abcdefgh', headers: {'x-fetch-control': '0'},
+        signal: new AbortController().signal, redirect: 'error'}); }
       catch (error) {
         if (!(error instanceof TypeError)) throw error;
+        const cause = (error as {cause?: {message?: string, payload?: {tag?: string}}}).cause;
+        if (cause?.payload?.tag !== 'permission-denied') throw new Error(`native-denial-not-reached:${cause?.message}`);
         return 42;
       }
       throw new Error('denied native provider unexpectedly contacted');
