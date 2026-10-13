@@ -197,7 +197,7 @@ def collector_identity():
     return {name: file_identity(root / name, "collector", 262144)["digest"] for name in COLLECTORS}
 
 
-def prepare_environment(client, args, work, signed):
+def prepare_environment(client, args, work, signed, *, node_program='terminal'):
     endpoint = current_endpoint(args)
     installation = None
     if endpoint is None:
@@ -271,7 +271,7 @@ def prepare_environment(client, args, work, signed):
             # supply-chain clock floor before the next ordinary node owner.
             lifecycle.admission_lease_interval(client)
         return peer, configuration, lifecycle.Node(client, args.node, node_root,
-            current_publication_program=endpoint is not None)
+            current_publication_program=endpoint is not None, current_program=node_program)
     except BaseException:
         peer.close()
         raise

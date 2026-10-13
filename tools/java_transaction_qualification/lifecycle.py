@@ -30,18 +30,26 @@ CURRENT_NODE_PROGRAM = (
 )
 CURRENT_METADATA_SESSIONS = {'publish', 'authority', 'diagnostic-metadata', 'legacy-metadata',
                              'compatible-metadata', 'writer-metadata'}
+PENDING_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
+                        'pending-original-runtime', 'pending-restored-runtime')
 
 
 class Node:
-    def __init__(self, client, executable: Path, directory: Path, *, current_publication_program=False):
+    def __init__(self, client, executable: Path, directory: Path, *, current_publication_program=False,
+                 current_program='terminal'):
         require(type(current_publication_program) is bool
                 and (not current_publication_program or getattr(client, 'phase4', False)),
                 'explicit-current-node-program')
+        require(type(current_program) is str and current_program in {'terminal', 'pending-close'}
+                and (current_program == 'terminal' or current_publication_program),
+                'closed-current-node-program-selection')
         self.client, self.executable, self.directory = client, executable, directory
         self.process, self.ordinal = None, 0
         self.shutdown = []
         self.restore_authority_sessions = 0
         self.current_publication_program = current_publication_program
+        self.current_program = current_program
+        self.program = CURRENT_NODE_PROGRAM if current_program == 'terminal' else PENDING_NODE_PROGRAM
         self.current_activation = None
 
     def start(self, configuration: Path, *, restore_authority=False, current_session=None):
@@ -50,7 +58,7 @@ class Node:
             settings = read_json(configuration)
             state = settings.get("state")
             require(not self.current_publication_program
-                    or self.ordinal - self.restore_authority_sessions == 13,
+                    or self.ordinal - self.restore_authority_sessions == len(self.program) - 1,
                     'current-restore-authority-after-writer-retirement')
             require(current_session is None and self.process is None and self.restore_authority_sessions == 0
                     and isinstance(state, dict) and type(state.get("formatVersion")) is int
@@ -60,8 +68,8 @@ class Node:
             self.restore_authority_sessions += 1
         elif self.current_publication_program:
             position = self.ordinal - self.restore_authority_sessions
-            require(self.process is None and position < len(CURRENT_NODE_PROGRAM)
-                    and current_session == CURRENT_NODE_PROGRAM[position], 'bounded-current-node-session-program')
+            require(self.process is None and position < len(self.program)
+                    and current_session == self.program[position], 'bounded-current-node-session-program')
             settings = read_json(configuration)
             state = settings.get('state')
             require(isinstance(state, dict) and type(state.get('formatVersion')) is int

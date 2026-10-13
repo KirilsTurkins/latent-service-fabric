@@ -233,3 +233,24 @@ ordinary restored-node policy reauthorization, clean-host packaged operator
 qualification or independent acceptance review. New current HTTP source bytes
 need distinct reviewed component/source entries; the original pinned table is
 preserved. Issues #399, #388, #391 and #709 remain open.
+
+`tools/run_java_pending_recovery_qualification.py` is a separate finite current
+conductor. It selects six named ordinary node sessions and one empty-operation
+restore-authority session, preserving the terminal fourteen-session program and
+the original six-session default. Its twelve native actions export an actual
+unattempted pending effect, resume the original installation for real remote
+acceptance and reply loss, restore the older pending bytes, inspect and close
+the exact stable effect ID, replay that close, review and resume. The dispatcher
+control uses the existing authenticated node operator, original owner epoch and
+revision, durable audit and immutable receipt lookup. Logical pause alone cannot
+satisfy the physical drain required before backup.
+
+The [pending conductor source packet](evidence/recovery970-pending-conductor-2026-10-13.json)
+records ten new closed observer/sequence controls and thirty-one retained
+current/recovery controls. A live physical owner prevents export; a changed close
+replay prevents review and activation; delivery acknowledgements cannot replace
+explicit no-redrive abandonment. These are source controls. Signed pending
+execution, original post-stage immediate-HTTP rollback and packaged operator
+acceptance remain unqualified. The original six-input signer failure is retained:
+its forbidden fixture has its own captured service, and the separate six-mode
+now preserves that service instead of selecting the positive aggregate service.

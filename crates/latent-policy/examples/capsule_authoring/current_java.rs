@@ -273,10 +273,15 @@ fn load(root: &Path, captures: &Value, selected_names: &[&str]) -> Result<(Strin
         "current Java fixture provenance claim exceeds observed source custody",
     )?;
     let build = inputs::load_current_java(root, &serde_json::to_vec(model)?)?;
+    let expected_service = if name == "forbidden-http" {
+        "examples/transaction-java-forbidden-http"
+    } else {
+        SERVICE
+    };
     require(
         build.bundle.layout().config().name == format!("java718-{name}")
             && build.world == WORLD
-            && build.service == SERVICE,
+            && build.service == expected_service,
         "current Java fixture package, world or service mismatch",
     )?;
     Ok((name.to_owned(), build))
