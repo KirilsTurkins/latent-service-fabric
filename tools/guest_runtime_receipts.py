@@ -157,6 +157,10 @@ def read(raw: bytes, **bindings):
 def verify_build(value, language, files, source_inputs, component, materials):
     original, bindings, graph = captured_inputs(language, files, source_inputs)
     profile = graph.get('selection', {}).get('runtimeProfile', PROFILES[language]) if graph is not None else PROFILES[language]
+    if language == 'typescript':
+        from tools.typescript_guest.runtime_profile import selected_profile
+        project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}
+        profile = selected_profile(project, graph)
     return validate(value, language=language, source=digest(source_inputs), component=digest(component),
                     original=digest(inventory(original)), binding_preimage=digest(inventory(bindings)),
                     profile=profile, graph=graph, materials=materials)

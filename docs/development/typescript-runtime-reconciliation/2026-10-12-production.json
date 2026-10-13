@@ -1,0 +1,136 @@
+{
+  "schema": "latent.typescript.runtime-reconciliation-evidence.v1",
+  "pr": 923,
+  "sourceHead": "13c9ad1d4c5eace6e51ecbc7b15141a1be40d4cd",
+  "mergedDeliveryHead": "c64b5c9b298bff96ec2854dcb6f45f8c1644f88a",
+  "issues": [
+    745,
+    691,
+    685
+  ],
+  "closesIssues": [],
+  "classification": {
+    "qualification": "unknown",
+    "apiSupport": "not-evaluated",
+    "inputTrust": "operator-asserted"
+  },
+  "production": {
+    "diagnosticEngine": false,
+    "diagnosticHost": false,
+    "applicationBodiesChanged": false,
+    "limitsChanged": false,
+    "actualSignedAdmission": true,
+    "coreSha256": "ec7f1a8f6f599ec5283357ebd79e90d833d88291570e10c1a3a353557c6d33d0",
+    "coreBytes": 9945496,
+    "engineInputSha256": "4b581e005948db7dc99f2cedc0e3cb08307c446c93f1f4aac0f882e31cbb81ad",
+    "splicerInputSha256": "c4cb8e9e425f365dfd596ff6bb6d537389514adee1140ab56041451f6e453467",
+    "sourceOwnedWasiSplicerSha256": "ea1e45684324106a3df4ef813ba5c70cfba73ee09e756c129ba4e5fd89e6f275",
+    "transpiledSplicerCoreSha256": "0b9a837e1639d8a39351d0ee04c7017667ee8b7cdc59c30cbbecd87d53812890",
+    "signedOriginalCases": {
+      "ordinary": 15,
+      "clock": 4,
+      "service": 2,
+      "unchangedNpm": 5
+    },
+    "requiredOrdinaryTraps": 4,
+    "freshAfterFailure": 1,
+    "serviceChildCallsPerCase": 1,
+    "everyCaseChecksActualPhysicalIdle": true,
+    "npmPins": {
+      "p-queue": "9.0.0",
+      "p-timeout": "7.0.1",
+      "delay": "6.0.0",
+      "eventemitter3": "5.0.1"
+    },
+    "nativeOwnerCeiling": 64,
+    "invocationLimits": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 134217728,
+      "wallMillis": 120000
+    }
+  },
+  "sourceControls": {
+    "pythonCases": 177,
+    "pythonSkips": 0,
+    "intrinsicCases": 12,
+    "nativeImportTimerSnapshotCases": 27,
+    "compilerAbiAndPointerCases": 8,
+    "fixtureBrokerOnlyControlsAreSignedQualification": false,
+    "retained64RefusesNextAdmission": true,
+    "churnRequiresPhysicalCollectionAndAcknowledgement": true,
+    "hostCallsDuringGc": false,
+    "compilerBuildSeconds": 488.98124354899846,
+    "compilerCpuLimit": 1,
+    "compilerMemoryBytes": 2147483648,
+    "originalCommandSeconds": 600,
+    "originalOverallSeconds": 900,
+    "originalCargoLockUnchanged": true
+  },
+  "evidence": {
+    "signed-production-r18.log": {
+      "sha256": "0bec3e04eb623aef81f995152cf12acec2121262b2c90f82fecd9d71ba370ca3",
+      "bytes": 10572
+    },
+    "signed-npm-production-r18.log": {
+      "sha256": "18c68bd5885c6c2facea63bb66ad87962d788391f789f180a9eb56b8438dad9e",
+      "bytes": 3104
+    },
+    "signed-clock-production-r18-0.log": {
+      "sha256": "d370c2fd3ad2011f86794d7760e2ff10d93f41b63980f1b49ee5922baa1b0225",
+      "bytes": 2548
+    },
+    "signed-service-production-r18-0.log": {
+      "sha256": "a198a26bcefc35582dd486785fb9d6a23b18359f6cbcaacb776d074056e3bc64",
+      "bytes": 1478
+    },
+    "native-pressure-controls-r2.json": {
+      "sha256": "7e93beee2283687d9e78e9488a069da339ffd7a1dd04c55a931b9e3646332796",
+      "bytes": 3786
+    },
+    "native-import-error-controls-r3.json": {
+      "sha256": "3eadef4b500f79e2915aaf3429e65e9da8abf5735cbe60dafe9f23d7eb8dc686",
+      "bytes": 7104
+    },
+    "splicer-pointer-build.json": {
+      "sha256": "fea337702782b978e4a02492f3273572fb1aac3a0cba2c0a3845f8b4149cef12",
+      "bytes": 6886
+    },
+    "splicer-pointer-transpile.json": {
+      "sha256": "7508dd110e0bf21a0aa11f6d52138c0ba92194e023f65a4b4a9a348c78f51d9e",
+      "bytes": 5276
+    },
+    "typescript-source-r7.json": {
+      "sha256": "e23c136741b25067d042cbc23df94b6eee70f44247611a446e8c8716d50d51c3",
+      "bytes": 97
+    }
+  },
+  "remaining": {
+    "745": [
+      "broader signed exhaustion/cancellation/late-wake matrix",
+      "automatic runtime selection and installed packaged distribution"
+    ],
+    "691": [
+      "default global fetch and body ownership",
+      "unchanged default-fetch consumer and provider/race acceptance"
+    ],
+    "685": [
+      "complete private/local/offline/update/remove/watch native npm workflow acceptance"
+    ]
+  },
+  "historicalFailuresRetained": true,
+  "hostedCiAwaited": false,
+  "security": {
+    "static": {
+      "sourceHead": "13c9ad1d4c5eace6e51ecbc7b15141a1be40d4cd",
+      "status": "pass",
+      "findings": 0,
+      "exceptions": 0
+    },
+    "secrets": {
+      "sourceHead": "13c9ad1d4c5eace6e51ecbc7b15141a1be40d4cd",
+      "status": "pass",
+      "findings": 0,
+      "exceptions": 0
+    }
+  }
+}

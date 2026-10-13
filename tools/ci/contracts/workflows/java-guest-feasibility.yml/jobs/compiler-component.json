@@ -182,7 +182,7 @@
   },
   "jobId": "compiler-component",
   "kind": "job",
-  "reviewReason": "Retain the destination current Java workflow and add only its disposable Ubuntu compiler namespace prerequisite; preserve all commands and bounds.",
+  "reviewReason": "Enable the same disposable Ubuntu compiler namespace prerequisite as maintained C Go Rust Dotnet TypeScript lanes while retaining all annotation processor commands and bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/java-guest-feasibility.yml"
 }

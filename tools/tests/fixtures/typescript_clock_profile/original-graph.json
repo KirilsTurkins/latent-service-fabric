@@ -1,0 +1,51 @@
+{
+  "parser": "wasm-tools1.254.0",
+  "graph": {
+    "worlds": [
+      {
+        "name": "capsule",
+        "imports": {},
+        "exports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "package": 0
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "ordinary",
+        "types": {},
+        "functions": {
+          "run": {
+            "name": "run",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "which",
+                "type": "u32"
+              }
+            ],
+            "result": "u32"
+          }
+        },
+        "package": 0
+      }
+    ],
+    "types": [],
+    "packages": [
+      {
+        "name": "tests:typescript-async@1.0.0",
+        "interfaces": {
+          "ordinary": 0
+        },
+        "worlds": {
+          "capsule": 0
+        }
+      }
+    ]
+  }
+}

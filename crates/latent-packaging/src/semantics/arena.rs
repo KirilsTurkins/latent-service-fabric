@@ -8,7 +8,8 @@ use super::{
 };
 use latent_core::PlatformError;
 use wit_parser::{
-    Function, Interface, Resolve, TypeDef, TypeDefKind, UnresolvedPackage, World, WorldItem,
+    AstItem, Function, Interface, Resolve, TypeDef, TypeDefKind, UnresolvedPackage, World,
+    WorldItem,
 };
 
 #[derive(Default)]
@@ -24,7 +25,22 @@ pub(super) fn unresolved(
     limits: SemanticLimits,
 ) -> Result<(), PlatformError> {
     scan(
-        value.worlds.iter().map(|(_, item)| item),
+        value.worlds.iter().map(|(id, item)| {
+            // The parser creates an unnamed arena placeholder for a foreign
+            // world include. Its declared dependency name is the input name;
+            // the resolved arena is checked again with the actual world body.
+            let declared = if item.name.is_empty() {
+                value.foreign_deps.values().find_map(|items| {
+                    items.iter().find_map(|(name, (dependency, _))| {
+                        matches!(dependency, AstItem::World(world) if *world == id)
+                            .then_some(name.as_str())
+                    })
+                })
+            } else {
+                None
+            };
+            (item, declared.unwrap_or(&item.name))
+        }),
         value.interfaces.iter().map(|(_, item)| item),
         value.types.iter().map(|(_, item)| item),
         counts,
@@ -39,7 +55,10 @@ pub(super) fn resolved(value: &Resolve, limits: SemanticLimits) -> Result<(), Pl
     }
     let mut counts = Counts::default();
     scan(
-        value.worlds.iter().map(|(_, item)| item),
+        value
+            .worlds
+            .iter()
+            .map(|(_, item)| (item, item.name.as_str())),
         value.interfaces.iter().map(|(_, item)| item),
         value.types.iter().map(|(_, item)| item),
         &mut counts,
@@ -49,14 +68,14 @@ pub(super) fn resolved(value: &Resolve, limits: SemanticLimits) -> Result<(), Pl
 }
 
 fn scan<'a>(
-    worlds: impl Iterator<Item = &'a World>,
+    worlds: impl Iterator<Item = (&'a World, &'a str)>,
     interfaces: impl Iterator<Item = &'a Interface>,
     types: impl Iterator<Item = &'a TypeDef>,
     counts: &mut Counts,
     limits: SemanticLimits,
 ) -> Result<(), PlatformError> {
-    for world in worlds {
-        name(&world.name, limits)?;
+    for (world, declared_name) in worlds {
+        name(declared_name, limits)?;
         add(&mut counts.worlds, 1, limits.max_component_items)?;
         add(
             &mut counts.nodes,

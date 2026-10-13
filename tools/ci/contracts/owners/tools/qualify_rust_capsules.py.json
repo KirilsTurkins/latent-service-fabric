@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve explicit CLR hash entropy declaration and original zero-execution missing-grant control for standard resource qualification",
+  "reviewReason": "Reconciled both reviewed changes: exact TypeScript source splicer and async waiter input closure, and explicit CLR hash entropy/resource qualification with owned immutable native binaries. All compiler, signing, source checks and original missing-grant zero-execution control remain intact.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "73742b5c603bc17956603878c553b736fda34c323c88cc132418b629fa1ebc31"
+  "sha256": "bd7f4c1cfba1685be674dcd3767e0b39a724ddf30ed81b4c98bab6a6d6ce5477"
 }
