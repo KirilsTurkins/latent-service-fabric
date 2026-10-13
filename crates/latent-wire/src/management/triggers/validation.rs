@@ -96,10 +96,25 @@ fn operation(
     }
     Ok(())
 }
+#[cfg(test)]
 pub(super) fn apply(
     value: proto::ApplyTriggerRequest,
     principal: InvocationPrincipal,
     configured: &ManagementLimits,
+) -> Result<TriggerOperationRequest, Status> {
+    apply_with_profile(
+        value,
+        principal,
+        configured,
+        latent_manifest::ManifestValidationProfile::default(),
+    )
+}
+
+pub(super) fn apply_with_profile(
+    value: proto::ApplyTriggerRequest,
+    principal: InvocationPrincipal,
+    configured: &ManagementLimits,
+    profile: latent_manifest::ManifestValidationProfile,
 ) -> Result<TriggerOperationRequest, Status> {
     let limits = bounded(configured);
     let mut budget = RequestBudget::new::<proto::ApplyTriggerRequest>(&limits)?;
@@ -113,7 +128,7 @@ pub(super) fn apply(
         .trigger
         .as_ref()
         .ok_or_else(|| Status::invalid_argument("trigger is required"))?;
-    wire(trigger, &mut budget, &limits)?;
+    wire(trigger, &mut budget, &limits, profile.transactional())?;
     if value.encoded_len() > limits.max_request_bytes {
         return Err(bounds::exhausted());
     }
@@ -179,6 +194,7 @@ pub(super) fn wire(
     value: &proto::Trigger,
     budget: &mut RequestBudget,
     limits: &ManagementLimits,
+    transactional: bool,
 ) -> Result<(), Status> {
     budget.allocation::<proto::Trigger>(1)?;
     field(
@@ -268,12 +284,40 @@ pub(super) fn wire(
             "trigger publication scope does not match",
         ));
     }
-    if value.configuration.len() != 6 {
+    configuration(
+        value,
+        budget,
+        limits,
+        target_kind,
+        expected_profile,
+        transactional,
+    )
+}
+
+fn configuration(
+    value: &proto::Trigger,
+    budget: &mut RequestBudget,
+    limits: &ManagementLimits,
+    target_kind: proto::TriggerTargetKind,
+    expected_profile: &str,
+    transactional: bool,
+) -> Result<(), Status> {
+    let transaction = target_kind == proto::TriggerTargetKind::Application
+        && transactional
+        && value.configuration.get("profile").map(String::as_str)
+            == Some(latent_ingress::http::transaction::PROFILE);
+    if if transaction {
+        !(13..=15).contains(&value.configuration.len())
+    } else {
+        value.configuration.len() != 6
+    } {
         return Err(Status::invalid_argument(
             "closed HTTP trigger configuration is required",
         ));
     }
-    if value.configuration.get("profile").map(String::as_str) != Some(expected_profile) {
+    if !transaction
+        && value.configuration.get("profile").map(String::as_str) != Some(expected_profile)
+    {
         return Err(Status::invalid_argument(
             "HTTP trigger profile does not match target kind",
         ));
@@ -291,12 +335,47 @@ pub(super) fn wire(
     budget.allocation::<u8>(value.configuration.capacity().saturating_mul(128))?;
     for (k, v) in &value.configuration {
         field(k, budget, 32)?;
-        let maximum = match k.as_str() {
-            "path" => 8192,
-            "host" => 255,
-            _ => 32,
+        let maximum = if transaction {
+            latent_ingress::http::transaction::configuration_limit(k).ok_or_else(|| {
+                Status::invalid_argument("unknown transaction HTTP configuration field")
+            })?
+        } else {
+            match k.as_str() {
+                "path" => 8192,
+                "host" => 255,
+                _ => 32,
+            }
         };
         budget.string(v, maximum.min(limits.max_string_bytes))?;
+    }
+    if transaction {
+        // Prepay temporary sparse nodes, copied strings and the parser's owned
+        // route/base64 scratch before allocating or invoking the shared parser.
+        budget.allocation::<u8>(value.configuration.len().saturating_mul(128))?;
+        budget.allocation::<latent_ingress::http::transaction::TransactionRoute>(1)?;
+        budget.allocation::<u8>(20)?;
+        for (key, value) in &value.configuration {
+            budget.allocation::<u8>(key.len())?;
+            budget.allocation::<u8>(value.len().saturating_mul(3))?;
+        }
+        let fields = value
+            .configuration
+            .iter()
+            .map(|(key, value)| (key.clone(), serde_json::Value::String(value.clone())))
+            .collect();
+        let route =
+            latent_ingress::http::transaction::TransactionRoute::from_configuration(&fields)
+                .map_err(|_| Status::invalid_argument("invalid transaction HTTP configuration"))?;
+        let method = latent_ingress::http::Method::parse(
+            value
+                .configuration
+                .get("method")
+                .expect("validated transaction method"),
+        )
+        .map_err(|_| Status::invalid_argument("invalid transaction HTTP method"))?;
+        route
+            .require_method(method)
+            .map_err(|_| Status::invalid_argument("transaction HTTP mode and method mismatch"))?;
     }
     Ok(())
 }
