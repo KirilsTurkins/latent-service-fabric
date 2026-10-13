@@ -7,6 +7,39 @@ use wasm_encoder::{Component, Encode, ModuleSection, RawSection};
 mod aliases;
 
 #[test]
+fn nonblocking_subtask_cancellation_keeps_other_more_async_operations_closed() {
+    use wasm_encoder::{CanonicalFunctionSection, ComponentTypeSection};
+    let mut canonical = CanonicalFunctionSection::new();
+    canonical.subtask_cancel(true);
+    let mut component = Component::new();
+    component.section(&canonical);
+    validate(&component.finish(), SemanticLimits::default()).unwrap();
+
+    for future in [false, true] {
+        let mut types = ComponentTypeSection::new();
+        if future {
+            types.ty().defined_type().future(None);
+        } else {
+            types.ty().defined_type().stream(None);
+        }
+        let mut canonical = CanonicalFunctionSection::new();
+        if future {
+            canonical.future_read(0, []);
+        } else {
+            canonical.stream_read(0, []);
+        }
+        let mut component = Component::new();
+        component.section(&types).section(&canonical);
+        assert_eq!(
+            validate(&component.finish(), SemanticLimits::default())
+                .unwrap_err()
+                .message,
+            "unsupported-more-async-builtin"
+        );
+    }
+}
+
+#[test]
 fn small_real_nested_types_and_clock_import_validate_without_execution() {
     let bytes = component(Options::default());
     assert!(bytes.len() < 512);

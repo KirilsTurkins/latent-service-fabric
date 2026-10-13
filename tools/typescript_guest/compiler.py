@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import re
 import shutil
-from tools.rust_capsule_project import ROOT, digest, inventory, read_file, write_json
+from tools.rust_capsule_project import ROOT, checked_path, digest, inventory, read_file, write_json
 from tools.phase3_resource_identity import inventory as tree_identity
 from tools.typescript_guest.probe import semantic, projection
 
@@ -27,6 +27,12 @@ def declaration_aliases(source: str) -> str:
     return source.replace(expected, expected.replace("\nfunction ", "\ndeclare function "))
 
 
+def discovered_host_tool(name: str, search_path: str) -> Path:
+    """Bind a trusted host executable alias to its physical input bytes."""
+    selected = shutil.which(name, path=search_path)
+    return Path(selected).resolve(strict=True) if selected else Path('missing-' + name)
+
+
 def import_identities(graph: dict, selected: str) -> list[str]:
     def identity(package, name):
         base, separator, version = graph["packages"][package]["name"].rpartition("@")
@@ -47,14 +53,57 @@ def import_identities(graph: dict, selected: str) -> list[str]:
 
 
 class Compiler:
-    def __init__(self, tools: Path, commands, expected: dict[str, bytes], *, isolated_workspace: Path | None = None):
+    def __init__(self, tools: Path, commands, expected: dict[str, bytes], *, isolated_workspace: Path | None = None,
+                 runtime_profile: str = 'spidermonkey-public-sync-v1', engine: Path | None = None,
+                 engine_receipt: Path | None = None, splicer: Path | None = None,
+                 splicer_receipt: Path | None = None):
+        from tools.typescript_guest.runtime_profile import NATIVE_PROFILES, SYNC_PROFILE, IMPORT_PROFILE, selection, validate_engine
+        from tools.typescript_guest.activation_engine import engine_input_paths
+        selection(runtime_profile)
+        self.runtime_profile = runtime_profile
+        self.engine, self.engine_original, self.engine_before = None, None, None
+        self.engine_metadata = None
+        self.runtime_observation = None
+        self.source_splicer = self.source_splicer_metadata = self.source_splicer_original = None
+        if runtime_profile == IMPORT_PROFILE:
+            if splicer is None or splicer_receipt is None or isolated_workspace is None:
+                raise ValueError('selected TypeScript import candidate requires actual source-bound compiler inputs')
+            from tools.typescript_guest.import_profile import splicer_files, validate_splicer
+            splicer, splicer_receipt = map(checked_path, (splicer, splicer_receipt))
+            captured = splicer_files(splicer)
+            raw = read_file(splicer_receipt,65536)
+            self.source_splicer_metadata = validate_splicer(json.loads(raw),captured,ROOT)
+            self.source_splicer_original = (splicer,splicer_receipt,captured,raw)
+        elif splicer is not None or splicer_receipt is not None:
+            raise ValueError('source-built splicer requires the explicit TypeScript import candidate')
+        if runtime_profile == SYNC_PROFILE and (engine is not None or engine_receipt is not None):
+            raise ValueError('native engine input requires an explicit TypeScript runtime selection')
+        if runtime_profile in NATIVE_PROFILES:
+            if engine is None or engine_receipt is None:
+                raise ValueError('selected TypeScript Promise candidate requires actual source-bound engine inputs')
+            engine, engine_receipt = map(checked_path, (engine, engine_receipt))
+            core, envelope = read_file(engine, 64*1024*1024), read_file(engine_receipt, 65536)
+            sdk = {name: read_file(ROOT/name) for name in engine_input_paths(runtime_profile)}
+            self.engine_metadata = validate_engine(json.loads(envelope), core, sdk,
+                read_file(ROOT/'wit/platform/activation-runtime/package.wit'), profile=runtime_profile)
+            if runtime_profile == IMPORT_PROFILE and self.engine_metadata['compilerSplicerInputDigest'] != digest(self.source_splicer_original[3]):
+                raise ValueError('typescript-engine-and-compiler-splicer-input-mismatch')
+            self.engine_original = (engine, engine_receipt)
+            self.engine_before = (core, envelope)
+            self.engine = engine
+            if isolated_workspace is not None:
+                prefix = isolated_workspace/'selected-runtime-engine'
+                prefix.mkdir()
+                self.engine = prefix/'engine.wasm'
+                self.engine.write_bytes(core)
+                (prefix/'engine-input.json').write_bytes(envelope)
         self.tools, self.commands = tools.resolve(), commands
         self.isolation = None
         self.recipe = ROOT / "tools/typescript_guest"
         self.original_tools, self.original_before = None, None
         self.expected = expected
-        self.node = Path(shutil.which("node", path=commands.environment["PATH"]) or "missing-node")
-        self.wasm = Path(shutil.which("wasm-tools", path=commands.environment["PATH"]) or "missing-wasm-tools")
+        self.node = discovered_host_tool("node", commands.environment["PATH"])
+        self.wasm = discovered_host_tool("wasm-tools", commands.environment["PATH"])
         if commands.run("node-version", self.node, "--version").strip() != b"v24.19.0":
             raise ValueError("unreviewed Node compiler host")
         if commands.run("wasm-tools-version", self.wasm, "--version").split()[:2] != [b"wasm-tools", b"1.254.0"]:
@@ -73,13 +122,20 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
         self.tsc = modules / "typescript/bin/tsc"
         self.compiler = modules / "@bytecodealliance/componentize-js/src/componentize.js"
         self.esbuild = modules / "esbuild/lib/main.js"
+        if self.source_splicer_original is not None:
+            self.source_splicer = modules/'@bytecodealliance/componentize-js/lsf-source-splicer'
+            self.source_splicer.mkdir()
+            for name,data in self.source_splicer_original[2].items():
+                path=self.source_splicer/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+            # A generated package-local module uses the same reviewed shim
+            # closure, without a link or application-provided host module.
         package = json.loads(expected["package.json"])
         for name, version in package["dependencies"].items():
             actual = json.loads(read_file(modules / name / "package.json"))
@@ -88,7 +144,8 @@ class Compiler:
         for name, data in expected.items():
             if read_file(self.tools / name) != data:
                 raise ValueError("compiler lock differs from captured project")
-        commands.run("prepare-compiler-adapter", self.node, self.recipe / "componentize.mjs", self.compiler)
+        commands.run("prepare-compiler-adapter", self.node, self.recipe / "componentize.mjs", self.compiler,
+                     *(["--source-import-adapter"] if runtime_profile == IMPORT_PROFILE else []))
         self.before = self.identity()
         if isolated_workspace is not None:
             from tools.captured_compiler_isolation import Isolation
@@ -100,7 +157,10 @@ class Compiler:
                     with path.open("rb") as source:
                         if source.read(4) == b"\x7fELF":
                             selected_tools["sdk-native/" + path.relative_to(self.tools).as_posix()] = path
-            self.isolation = Isolation(isolated_workspace, selected_tools, {"typescript-compiler": self.tools})
+            inputs = {"typescript-compiler": self.tools}
+            if self.engine is not None:
+                inputs['typescript-runtime-engine'] = self.engine.parent
+            self.isolation = Isolation(isolated_workspace, selected_tools, inputs)
             self.isolation.protect_inputs(self.recipe)
 
     def run(self, stage, tool, *arguments):
@@ -132,20 +192,97 @@ class Compiler:
         return {"files": rows, "bytes": total}
 
     def compile(self, work: Path, world: str, output: Path, *, application_modules: dict | None = None):
+        from tools.typescript_guest import runtime_profile as runtime
         output.mkdir()
         command, wasm = self, self.wasm
         source = work / "wit"
         canonical = command.run("canonical-wit", wasm, "component", "wit", source, "--no-docs").decode()
         graph = semantic(json.loads(command.run("authoritative-types", wasm, "component", "wit", source, "--json")))
+        application_graph, application_world = graph, world
+        application_canonical = canonical
+        if self.runtime_profile in runtime.NATIVE_PROFILES:
+            selected_world = runtime.scoped_selected_world(world)
+            runtime.check_application_bindings(application_graph, application_world, profile=self.runtime_profile)
+            from tools.typescript_guest.activation_engine import NATIVE_SOURCES
+            from tools.typescript_guest.clock_engine import CLOCK_NATIVE_SOURCES
+            from tools.typescript_guest.import_engine import NATIVE_IMPORT_SOURCES
+            selected_native = NATIVE_SOURCES + (CLOCK_NATIVE_SOURCES if self.runtime_profile in runtime.CLOCK_PROFILES else ()) + (NATIVE_IMPORT_SOURCES if self.runtime_profile == runtime.IMPORT_PROFILE else ())
+            declarations = ('runtime-globals.d.ts',) + (('clock-globals.d.ts',) if self.runtime_profile in runtime.CLOCK_PROFILES else ())
+            for name in (*selected_native, *declarations):
+                path = 'sdk/typescript-guest/activation/'+name
+                if read_file(work/'vendor/lsf'/path) != read_file(ROOT/path):
+                    raise ValueError('captured TypeScript native runtime differs from the selected engine')
+            # The actual maintained parser proves every original public type and
+            # import survives. SDK runtime imports add no application authority.
+            captured = work/'vendor/lsf/wit/platform/activation-runtime/package.wit'
+            runtime_wit = read_file(captured)
+            if runtime_wit != read_file(ROOT/'wit/platform/activation-runtime/package.wit'):
+                raise ValueError('captured TypeScript activation interface differs from the selected engine')
+            selected = output/'selected-wit'
+            selected.mkdir()
+            if self.runtime_profile in runtime.CLOCK_PROFILES:
+                from tools.typescript_guest.clock_engine import derive_clock_world
+                clock_wit = read_file(work/'vendor/lsf/wit/platform/clock/package.wit')
+                if clock_wit != read_file(ROOT/'wit/platform/clock/package.wit'):
+                    raise ValueError('captured TypeScript clock interface differs from the selected engine')
+                files = derive_clock_world(canonical.encode(), graph, world, runtime_wit, clock_wit)
+            else:
+                files = runtime.derive_world(canonical.encode(), graph, world, runtime_wit)
+            original_sources = {path.relative_to(work/'wit').as_posix(): read_file(path, 256 * 1024)
+                                for path in sorted((work/'wit').rglob('*.wit'))}
+            files = runtime.original_world_sources(files, original_sources)
+            for name, raw in files.items():
+                target = selected/name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(raw)
+            activation = output/'activation-wit'
+            (activation/'deps/activation').mkdir(parents=True)
+            (activation/'deps/activation/package.wit').write_bytes(runtime_wit)
+            (activation/'world.wit').write_text('package lsf:typescript-abi@1.0.0;\nworld abi { import latent:runtime/activation@0.1.0; }\n', encoding='utf-8')
+            actual = semantic(json.loads(command.run('selected-runtime-types', wasm, 'component', 'wit', selected, '--json')))
+            abi = semantic(json.loads(command.run('selected-activation-types', wasm, 'component', 'wit', activation, '--json')))
+            if self.runtime_profile in runtime.CLOCK_PROFILES:
+                clocks = output/'clock-wit'
+                (clocks/'deps/clock').mkdir(parents=True)
+                (clocks/'deps/clock/package.wit').write_bytes(clock_wit)
+                (clocks/'world.wit').write_text('package lsf:clock-abi@1.0.0;\nworld abi { import latent:clock/monotonic@0.1.0; import latent:clock/wall@0.1.0; }\n',encoding='utf-8')
+                clock_graph = semantic(json.loads(command.run('selected-clock-types', wasm, 'component', 'wit', clocks, '--json')))
+                self.runtime_observation = runtime.check_derived_world(
+                    graph, actual, abi, world, selected_world=selected_world, clock=clock_graph)
+            else:
+                self.runtime_observation = runtime.check_derived_world(
+                    graph, actual, abi, world, selected_world=selected_world)
+            self.runtime_observation['engineInput'] = self.engine_metadata
+            # The full clock type comparison is reused by both profiles. Its
+            # default clock-only label must not erase the explicit source-owned
+            # import compiler selection validated by this constructor.
+            self.runtime_observation['profile'] = self.runtime_profile
+            if self.source_splicer_metadata is not None:
+                self.runtime_observation['compilerSplicerInput'] = self.source_splicer_metadata
+            write_json(output/'typescript-runtime-selection.json', self.runtime_observation)
+            write_json(output/'selected-wit-inputs.json', {'world': selected_world, 'sources': [
+                {'path': 'wit/'+name, 'content': raw.decode('utf-8')} for name, raw in sorted(files.items())]})
+            source, graph, world = selected, actual, selected_world
+            canonical = command.run('selected-runtime-wit', wasm, 'component', 'wit', selected, '--no-docs').decode()
+        # Only application bindings are projected. The exact native activation
+        # async-lower imports remain in the selected engine metadata and cannot
+        # be replaced by synchronous generated JS wrappers during world merge.
+        binding_canonical, binding_graph, binding_world = (
+            (application_canonical, application_graph, application_world)
+            if self.runtime_profile in runtime.NATIVE_PROFILES else (canonical, graph, world))
         projected = output / "stackful.wit"
-        projected.write_text(re.sub(r"\basync\s+func\b", "func", canonical), encoding="utf-8")
+        projected.write_text(binding_canonical if self.runtime_profile == runtime.IMPORT_PROFILE else re.sub(r"\basync\s+func\b", "func", binding_canonical), encoding="utf-8")
         actual = semantic(json.loads(command.run("projected-types", wasm, "component", "wit", projected, "--json")))
-        if actual != projection(graph):
+        if actual != (binding_graph if self.runtime_profile == runtime.IMPORT_PROFILE else projection(binding_graph)):
             raise ValueError("stackful projection changed the authoritative type graph")
         generated = work / "generated"
-        command.run("generate-types", self.node, self.jco, "types", projected, "--world-name", world, "--name", "capsule", "--out-dir", generated)
+        # The selected engine genuinely returns ordinary Promises. Generate
+        # source declarations from the original async contract; only the
+        # compiler's core binding ABI uses the established projection.
+        declaration_wit = work / 'wit' if self.runtime_profile in runtime.NATIVE_PROFILES else projected
+        command.run("generate-types", self.node, self.jco, "types", declaration_wit, "--world-name", binding_world, "--name", "capsule", "--out-dir", generated)
         second = output / "generated-check"
-        command.run("regenerate-types", self.node, self.jco, "types", projected, "--world-name", world, "--name", "capsule", "--out-dir", second)
+        command.run("regenerate-types", self.node, self.jco, "types", declaration_wit, "--world-name", binding_world, "--name", "capsule", "--out-dir", second)
         # Preserve raw generated declarations separately from the reviewed
         # compiler spelling projection and compare both independent outputs.
         write_json(output / "raw-generated-bindings.json", tree_identity(generated))
@@ -155,6 +292,12 @@ class Compiler:
                 adapted = declaration_aliases(original)
                 if adapted != original:
                     path.write_text(adapted, encoding="utf-8")
+            if self.runtime_profile in runtime.NATIVE_PROFILES:
+                (directory/'activation-runtime-globals.d.ts').write_bytes(
+                    read_file(ROOT/'sdk/typescript-guest/activation/runtime-globals.d.ts'))
+                if self.runtime_profile in runtime.CLOCK_PROFILES:
+                    (directory/'clock-runtime-globals.d.ts').write_bytes(
+                        read_file(ROOT/'sdk/typescript-guest/activation/clock-globals.d.ts'))
         first_identity = tree_identity(generated)
         if first_identity != tree_identity(second):
             raise ValueError("generated binding drift between identical inputs")
@@ -163,7 +306,7 @@ class Compiler:
             match = re.search(r"@module Interface ([^ ]+)", path.read_text())
             if match:
                 paths[match[1]] = ["./" + path.relative_to(work).as_posix()]
-        imports = import_identities(graph, world)
+        imports = import_identities(binding_graph, binding_world)
         missing = [name for name in imports if name not in paths]
         if missing:
             raise ValueError("unsupported or colliding generated WIT import identities: " + ", ".join(missing))
@@ -187,8 +330,12 @@ class Compiler:
         command.run("bundle", self.node, self.recipe / "bundle.mjs", self.esbuild,
                     work, work / "src/main.ts", bundle, allowed, bundle_configuration,
                     self.tools / "node_modules/acorn/dist/acorn.mjs")
-        command.run("componentize", self.node, self.recipe / "componentize.mjs", self.compiler,
-                    projected, bundle, output, world)
+        arguments = [self.compiler, projected, bundle, output, binding_world]
+        if self.engine is not None:
+            arguments.extend((self.engine, output/'typescript-runtime-selection.json'))
+        if self.source_splicer is not None:
+            arguments.append(self.source_splicer/'spidermonkey-embedding-splicer.js')
+        command.run("componentize", self.node, self.recipe / "componentize.mjs", *arguments)
         bare, embedded, component = (output / name for name in ("bare.wasm", "embedded.wasm", "component.wasm"))
         command.run("strip-projection", wasm, "strip", "--delete", "^component-type", output / "core.wasm", "-o", bare)
         command.run("restore-authoritative-contract", wasm, "component", "embed", source, bare, "--world", world, "-o", embedded)
@@ -198,9 +345,26 @@ class Compiler:
         if "import wasi:" in surface:
             raise ValueError("ambient WASI import survived compilation")
         (output / "component.wit").write_text(surface, encoding="utf-8")
+        if self.runtime_profile in runtime.NATIVE_PROFILES:
+            # Bind an independently decoded final component, not just generated
+            # metadata. The existing projection path remains the sync contract.
+            final = semantic(json.loads(command.run('final-runtime-types', wasm, 'component', 'wit', component, '--json')))
+            if runtime.public_component_graph(final) != runtime.public_graph(graph, world):
+                raise ValueError('compiled TypeScript selected-world type graph changed')
         return component, first_identity
 
     def check_unchanged(self):
+        if self.source_splicer_original is not None:
+            from tools.typescript_guest.import_profile import splicer_files
+            original,receipt,captured,raw = self.source_splicer_original
+            if splicer_files(original) != captured or read_file(receipt,65536) != raw or splicer_files(self.source_splicer) != captured:
+                raise ValueError('selected TypeScript source-built splicer inputs changed')
+        if self.engine_original is not None:
+            if tuple(read_file(path, 64*1024*1024 if index == 0 else 65536)
+                     for index, path in enumerate(self.engine_original)) != self.engine_before:
+                raise ValueError('original selected TypeScript engine inputs changed')
+            if read_file(self.engine, 64*1024*1024) != self.engine_before[0]:
+                raise ValueError('staged selected TypeScript engine changed')
         if self.identity() != self.before:
             raise ValueError("installed compiler inputs changed during build")
         if self.original_tools is not None and self.identity(self.original_tools) != self.original_before:
@@ -209,3 +373,19 @@ class Compiler:
             raise ValueError("original compiler declarations changed during isolated build")
         if self.isolation is not None:
             self.isolation.check_unchanged()
+
+    def runtime_materials(self) -> list[dict]:
+        """Name the actual selected inputs after their normal immutable recheck."""
+        rows = []
+        if self.engine_before is not None:
+            for name, raw in zip(('typescript-native-engine', 'typescript-native-engine-input'),
+                                 self.engine_before, strict=True):
+                rows.append({'name': name, 'digest': digest(raw), 'size': len(raw)})
+        if self.source_splicer_original is not None:
+            _root, _receipt, captured, raw = self.source_splicer_original
+            identity = inventory(captured)
+            rows.extend((
+                {'name': 'typescript-source-splicer-input', 'digest': digest(raw), 'size': len(raw)},
+                {'name': 'typescript-source-splicer-files', 'digest': digest(identity), 'size': len(identity)},
+            ))
+        return rows

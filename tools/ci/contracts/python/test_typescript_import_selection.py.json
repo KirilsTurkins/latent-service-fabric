@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Eight distinct exact engine/compiler schema and profile/no-authority/no-availability controls for named source-owned import candidate; no engine or signed API qualification; all prior source cases and guards retained",
+  "module": "tools/tests/test_typescript_import_selection.py",
+  "cases": [
+    "TypeScriptImportSelectionTests.test_actual_import_candidate_requires_distinct_schema_and_compiler_binding",
+    "TypeScriptImportSelectionTests.test_declared_engine_support_does_not_promote_input",
+    "TypeScriptImportSelectionTests.test_explicit_profile_stays_unknown_and_grants_no_authority",
+    "TypeScriptImportSelectionTests.test_invalid_compiler_digest_rejected",
+    "TypeScriptImportSelectionTests.test_missing_compiler_recipe_binding_rejected",
+    "TypeScriptImportSelectionTests.test_old_profile_cannot_receive_import_candidate_envelope",
+    "TypeScriptImportSelectionTests.test_original_synchronous_default_unchanged",
+    "TypeScriptImportSelectionTests.test_source_closure_contains_actual_native_compiler_and_async_cancel_inputs"
+  ],
+  "guards": {
+    "TypeScriptImportSelectionTests.test_explicit_profile_stays_unknown_and_grants_no_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2076ae0d7f5af53b17d25dd7e34fdaa97551623e99307b671e0c05e0349f9687",
+        "class:setup-sha256:bdbd0f113c3ee0d3cd0938aeed3dcec1912e9180e8afb325a85beb8a7d768ab1"
+      ]
+    },
+    "TypeScriptImportSelectionTests.test_original_synchronous_default_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2076ae0d7f5af53b17d25dd7e34fdaa97551623e99307b671e0c05e0349f9687",
+        "class:setup-sha256:bdbd0f113c3ee0d3cd0938aeed3dcec1912e9180e8afb325a85beb8a7d768ab1"
+      ]
+    },
+    "TypeScriptImportSelectionTests.test_actual_import_candidate_requires_distinct_schema_and_compiler_binding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2076ae0d7f5af53b17d25dd7e34fdaa97551623e99307b671e0c05e0349f9687",
+        "class:setup-sha256:bdbd0f113c3ee0d3cd0938aeed3dcec1912e9180e8afb325a85beb8a7d768ab1"
+      ]
+    },
+    "TypeScriptImportSelectionTests.test_missing_compiler_recipe_binding_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2076ae0d7f5af53b17d25dd7e34fdaa97551623e99307b671e0c05e0349f9687",
+        "class:setup-sha256:bdbd0f113c3ee0d3cd0938aeed3dcec1912e9180e8afb325a85beb8a7d768ab1"
+      ]
+    },
+    "TypeScriptImportSelectionTests.test_old_profile_cannot_receive_import_candidate_envelope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2076ae0d7f5af53b17d25dd7e34fdaa97551623e99307b671e0c05e0349f9687",
+        "class:setup-sha256:bdbd0f113c3ee0d3cd0938aeed3dcec1912e9180e8afb325a85beb8a7d768ab1"
+      ]
+    },
+    "TypeScriptImportSelectionTests.test_invalid_compiler_digest_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2076ae0d7f5af53b17d25dd7e34fdaa97551623e99307b671e0c05e0349f9687",
+        "class:setup-sha256:bdbd0f113c3ee0d3cd0938aeed3dcec1912e9180e8afb325a85beb8a7d768ab1"
+      ]
+    },
+    "TypeScriptImportSelectionTests.test_declared_engine_support_does_not_promote_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2076ae0d7f5af53b17d25dd7e34fdaa97551623e99307b671e0c05e0349f9687",
+        "class:setup-sha256:bdbd0f113c3ee0d3cd0938aeed3dcec1912e9180e8afb325a85beb8a7d768ab1"
+      ]
+    },
+    "TypeScriptImportSelectionTests.test_source_closure_contains_actual_native_compiler_and_async_cancel_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:2076ae0d7f5af53b17d25dd7e34fdaa97551623e99307b671e0c05e0349f9687",
+        "class:setup-sha256:bdbd0f113c3ee0d3cd0938aeed3dcec1912e9180e8afb325a85beb8a7d768ab1"
+      ]
+    }
+  }
+}
