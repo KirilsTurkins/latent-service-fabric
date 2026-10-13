@@ -1,6 +1,6 @@
 use latent_control_store::VersionedDeployment;
 use latent_core::TenantId;
-use latent_manifest::{ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::{ManifestValidationProfile, ManifestValidator};
 use tonic::Status;
 
 use super::super::{identifier, proto, ManagementLimits, RequestBudget};
@@ -86,6 +86,7 @@ pub(super) fn domain(
     tenant: &TenantId,
     budget: &mut RequestBudget,
     limits: &ManagementLimits,
+    profile: ManifestValidationProfile,
 ) -> Result<(), Status> {
     let manifest = &deployment.manifest;
     if manifest.publication.as_ref().is_some_and(|id| {
@@ -152,7 +153,7 @@ pub(super) fn domain(
     ] {
         bounded_strings(values, budget, limits)?;
     }
-    Phase1ManifestValidator
+    profile
         .validate_deployment(manifest)
         .map_err(|_| Status::internal("deployment repository returned an invalid manifest"))
 }

@@ -699,7 +699,8 @@ impl StandaloneNode {
                 clock: Arc::clone(&self.clock),
             },
             settings.management.clone(),
-        )?;
+        )?
+        .with_manifest_profile(settings.manifest_profile);
         let management = self
             .policy_management(management, &catalogs)?
             .with_activation_journal(self.manager.journal());

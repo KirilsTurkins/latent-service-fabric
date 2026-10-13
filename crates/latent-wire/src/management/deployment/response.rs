@@ -1,5 +1,6 @@
 use latent_control_store::{DeploymentPage, VersionedDeployment};
 use latent_core::TenantId;
+use latent_manifest::ManifestValidationProfile;
 use tonic::Status;
 
 use super::super::{proto, ManagementLimits, RequestBudget};
@@ -9,9 +10,10 @@ pub(super) fn apply(
     deployment: &VersionedDeployment,
     tenant: &TenantId,
     limits: &ManagementLimits,
+    profile: ManifestValidationProfile,
 ) -> Result<proto::ApplyDeploymentResponse, Status> {
     let mut budget = RequestBudget::for_response::<proto::ApplyDeploymentResponse>(limits)?;
-    validation::domain(deployment, tenant, &mut budget, limits)?;
+    validation::domain(deployment, tenant, &mut budget, limits, profile)?;
     Ok(proto::ApplyDeploymentResponse {
         deployment: Some(convert(deployment)?),
         warnings: Vec::new(),
@@ -26,10 +28,11 @@ pub(super) fn get(
     deployment: Option<&VersionedDeployment>,
     tenant: &TenantId,
     limits: &ManagementLimits,
+    profile: ManifestValidationProfile,
 ) -> Result<proto::GetDeploymentResponse, Status> {
     let mut budget = RequestBudget::for_response::<proto::GetDeploymentResponse>(limits)?;
     let deployment = if let Some(deployment) = deployment {
-        validation::domain(deployment, tenant, &mut budget, limits)?;
+        validation::domain(deployment, tenant, &mut budget, limits, profile)?;
         Some(convert(deployment)?)
     } else {
         None
@@ -47,6 +50,7 @@ pub(super) fn page(
     tenant: &TenantId,
     page_size: u32,
     limits: &ManagementLimits,
+    profile: ManifestValidationProfile,
 ) -> Result<proto::ListDeploymentsResponse, Status> {
     let mut budget = RequestBudget::for_response::<proto::ListDeploymentsResponse>(limits)?;
     budget.sequence(&page.deployments, page_size as usize)?;
@@ -57,7 +61,7 @@ pub(super) fn page(
     }
     // Validate the entire borrowed page before allocating response records.
     for deployment in &page.deployments {
-        validation::domain(deployment, tenant, &mut budget, limits)?;
+        validation::domain(deployment, tenant, &mut budget, limits, profile)?;
     }
     Ok(proto::ListDeploymentsResponse {
         deployments: page
