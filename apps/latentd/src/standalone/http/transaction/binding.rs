@@ -247,6 +247,13 @@ fn result_read_deadline(
     ))
 }
 
+fn denied() -> PlatformError {
+    crate::standalone::error(
+        PlatformErrorCode::PermissionDenied,
+        "transaction-http-binding-not-installed",
+    )
+}
+
 #[cfg(test)]
 mod result_deadline_tests {
     use super::*;
@@ -264,16 +271,10 @@ mod result_deadline_tests {
             result_read_deadline(2000, now + seconds(1), sample).unwrap(),
             (2000, now + seconds(1))
         );
+        let expired = now.checked_sub(seconds(1)).unwrap();
         assert_eq!(
-            result_read_deadline(999, now - seconds(1), sample).unwrap(),
-            (999, now - seconds(1))
+            result_read_deadline(999, expired, sample).unwrap(),
+            (999, expired)
         );
     }
-}
-
-fn denied() -> PlatformError {
-    crate::standalone::error(
-        PlatformErrorCode::PermissionDenied,
-        "transaction-http-binding-not-installed",
-    )
 }
