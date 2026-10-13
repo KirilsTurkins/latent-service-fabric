@@ -68,11 +68,14 @@ class Configuration:
 
 def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
               checkpoint: Path | None, recipient_port: int, credential: Path, *, deferred_endpoint=None,
-              current_http_installation=None) -> Configuration:
+              current_http_installation=None, protected_clock_only=False) -> Configuration:
+    require(type(protected_clock_only) is bool and (not protected_clock_only
+            or checkpoint is None and current_http_installation is None and deferred_endpoint is None),
+            'explicit-protected-clock-without-deferred-installation')
     require(type(recipient_port) is int and 1 <= recipient_port <= 65535,
             "actual-recipient-listener-port")
     require(compiler.is_file() and not compiler.is_symlink()
-            and ((checkpoint is None and current_http_installation is not None)
+            and ((checkpoint is None and (current_http_installation is not None or protected_clock_only))
                  or isinstance(checkpoint, Path) and checkpoint.is_file() and not checkpoint.is_symlink()),
             "native-owned-configuration-inputs")
     original = configure_node(directory, signed, TENANT)

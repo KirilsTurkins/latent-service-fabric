@@ -32,6 +32,7 @@ CURRENT_METADATA_SESSIONS = {'publish', 'authority', 'diagnostic-metadata', 'leg
                              'compatible-metadata', 'writer-metadata'}
 PENDING_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
                         'pending-original-runtime', 'pending-restored-runtime')
+EARLY_HTTP_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'early-http-runtime')
 
 
 class Node:
@@ -40,7 +41,7 @@ class Node:
         require(type(current_publication_program) is bool
                 and (not current_publication_program or getattr(client, 'phase4', False)),
                 'explicit-current-node-program')
-        require(type(current_program) is str and current_program in {'terminal', 'pending-close'}
+        require(type(current_program) is str and current_program in {'terminal', 'pending-close', 'early-http'}
                 and (current_program == 'terminal' or current_publication_program),
                 'closed-current-node-program-selection')
         self.client, self.executable, self.directory = client, executable, directory
@@ -49,12 +50,14 @@ class Node:
         self.restore_authority_sessions = 0
         self.current_publication_program = current_publication_program
         self.current_program = current_program
-        self.program = CURRENT_NODE_PROGRAM if current_program == 'terminal' else PENDING_NODE_PROGRAM
+        self.program = {'terminal': CURRENT_NODE_PROGRAM, 'pending-close': PENDING_NODE_PROGRAM,
+                        'early-http': EARLY_HTTP_NODE_PROGRAM}[current_program]
         self.current_activation = None
 
     def start(self, configuration: Path, *, restore_authority=False, current_session=None):
         require(type(restore_authority) is bool, "explicit-restore-authority-session")
         if restore_authority:
+            require(self.current_program != 'early-http', 'early-http-cannot-install-restore-authority')
             settings = read_json(configuration)
             state = settings.get("state")
             require(not self.current_publication_program
