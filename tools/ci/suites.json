@@ -9694,6 +9694,7 @@
         "standalone::effects::clock::tests::lifecycle::actual_authority_retirement_rejects_a_previously_admitted_effect_clock",
         "standalone::effects::clock::tests::lifecycle::actual_clock_regression_cannot_be_repaired_by_a_later_forward_sample",
         "standalone::effects::clock::tests::lifecycle::actual_lease_renewal_cannot_revive_a_clock_that_already_lost_coverage",
+        "standalone::effects::clock::tests::lifecycle::concurrent_clock_observers_cannot_publish_a_false_rollback",
         "standalone::effects::clock::tests::original_anchor_bounds_forward_discontinuity_and_cumulative_drift",
         "standalone::effects::clock::tests::original_monotonic_progress_rejects_hidden_wall_and_monotonic_rollbacks",
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10013,7 +10014,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 358,
+      "minimumCases": 359,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

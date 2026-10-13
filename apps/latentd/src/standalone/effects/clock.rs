@@ -62,11 +62,14 @@ impl ProtectedEffectClock {
     /// The authority uses its bounded currentness read, without filesystem I/O
     /// or renewal. No consumer substitutes a later wall-clock sample.
     pub fn sample(&self) -> Result<ClockSample, PlatformError> {
+        // Sampling and publication share one order. Otherwise a concurrent
+        // caller can publish a newer sample before this one obtains the lock,
+        // making an earlier real observation look like a clock rollback.
+        let mut state = self.observation.lock().map_err(|_| unavailable())?;
         let sample = self.original.sample();
         // This exact original owner's sealed metadata remains readable inside
         // its current admission fence, without recursively locking its ledger.
         let coverage = self.coverage.sample();
-        let mut state = self.observation.lock().map_err(|_| unavailable())?;
         if state.rejected || !continuous(&state, sample) {
             state.rejected = true;
             return Err(unavailable());
