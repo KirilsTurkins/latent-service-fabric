@@ -170,3 +170,10 @@ The emitted component and its separate portable copy compare byte-identical.
 Its source, archive, SDK, compiler closure, companion and declaration retain
 distinct digests. Compilation passed in 34.049 seconds under the original
 limits; signing, immediate HTTP denial and post-stage rollback remain unqualified.
+
+A separate closed loader verifies that capture's original report/material/source
+archive, early-call declaration, exact service and unchanged budgets. The
+original six-component selector still refuses this seventh variant. Packaging
+retains its exact Java source and declaration as signed assets, with no effect
+marker or requirements. A changed source order, claimed qualification or broader
+input cannot supply execution authority.

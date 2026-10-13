@@ -87,6 +87,60 @@ class CurrentJavaInputs(unittest.TestCase):
 
 
 class CurrentJavaPackaging(unittest.TestCase):
+    def test_separate_early_capture_keeps_original_six_selection_closed_and_rejects_claims_or_late_call(self):
+        from pathlib import Path
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import early_http_inputs as early
+        from tools.java_transaction_qualification.current_inputs import CurrentSelection
+        from tools.java_transaction_qualification.inputs import digest
+        selected = CurrentSelection('a' * 40, early.VARIANT, 'sha256:' + 'b' * 64,
+                                    'sha256:' + 'c' * 64, 'sha256:' + 'd' * 64)
+        with self.assertRaises(ValueError):
+            selected.validate()
+        source = b'''try (var command = State.acquireCommand().value()) {
+Bindings.LatentHttpClient.send(
+Bindings.LatentHttpClientHttpError.permissionDenied().tag()
+command.get(KEY)
+command.put(KEY
+.stage(command)
+}'''
+        declaration = {'schemaVersion': 'latent.java.early-http-denial-input.v1', 'variant': early.VARIANT,
+            'originalPostStageSourceDigest': 'sha256:' + 'e' * 64, 'sourceDigest': digest(source),
+            'worldDigest': digest(b'world'), 'companionDigest': 'sha256:' + 'f' * 64,
+            'callBefore': ['state-get', 'state-put', 'intent-stage'], 'expectedTypedError': 'permission-denied',
+            'expectedBusinessResult': 'rejected', 'componentCompiled': False, 'signedExecutionQualified': False,
+            'immediateHttpDenialQualified': False, 'postStageRollbackQualified': False}
+        files = {'project/java-early-http-denial-input.json': encoded(declaration),
+                 'project/src/dev/latent/app/Capsule.java': source, 'project/wit/world.wit': b'world',
+                 'project/capsule-project.json': encoded({
+                     'service': 'examples/transaction-java-forbidden-http-before-stage',
+                     'limits': {'cpuFuel': 1_000_000_000, 'memoryBytes': 67_108_864,
+                         'wallTimeLimitMillis': 120000, 'childCalls': 0, 'outboundRequests': 0,
+                         'stateReadBytes': 4194304, 'stateWriteBytes': 2097152, 'blobReadBytes': 0,
+                         'blobWriteBytes': 0, 'logBytes': 0, 'effectCount': 32}})}
+        report = {'earlyHttpDenialInputDigest': digest(files['project/java-early-http-denial-input.json']),
+            'companionDigest': declaration['companionDigest'], 'componentDigest': selected.component_digest,
+            'sourceDigest': 'sha256:' + '1' * 64, 'hostAbiDigest': 'sha256:' + '2' * 64,
+            'immediateHttpDenialQualified': False, 'postStageRollbackQualified': False}
+        with patch.object(early, '_validate_materials', return_value=report) as captured:
+            result = early.validate_files(Path('captured'), files, selected)
+        self.assertEqual(result.name, early.VARIANT)
+        captured.assert_called_once_with(files, selected, (early.VARIANT,))
+        for changed in ({'approved': True}, {'componentCompiled': True}, {'expectedTypedError': 'unavailable'}):
+            invalid = dict(files, **{'project/java-early-http-denial-input.json': encoded(dict(declaration, **changed))})
+            with patch.object(early, '_validate_materials', return_value=report), self.assertRaises(ValueError):
+                early.validate_files(Path('captured'), invalid, selected)
+        invalid = dict(files, **{'project/java-current-http-profile.json': b'marker'})
+        with patch.object(early, '_validate_materials', return_value=report), self.assertRaises(ValueError):
+            early.validate_files(Path('captured'), invalid, selected)
+        late = source.replace(b'Bindings.LatentHttpClient.send(\n', b'') + b'Bindings.LatentHttpClient.send(\n'
+        changed = dict(declaration, sourceDigest=digest(late))
+        invalid = dict(files, **{'project/src/dev/latent/app/Capsule.java': late,
+                                'project/java-early-http-denial-input.json': encoded(changed)})
+        late_report = dict(report, earlyHttpDenialInputDigest=digest(invalid['project/java-early-http-denial-input.json']))
+        with patch.object(early, '_validate_materials', return_value=late_report), self.assertRaises(ValueError):
+            early.validate_files(Path('captured'), invalid, selected)
+
     def test_package_retains_exact_current_marker_and_negative_source_as_signed_assets(self):
         from types import SimpleNamespace
         from tools.java_transaction_qualification import packaging
