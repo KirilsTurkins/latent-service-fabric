@@ -280,9 +280,9 @@ export class BodyState {
     return transferred;
   }
 
-  async consume() {
+  async consume(convert = value => value) {
     if (this.unusable) throw new TypeError('body-is-used-or-locked');
-    if (this.#source === null) return new Uint8Array();
+    if (this.#source === null) return convert(new Uint8Array());
     this.#disturbed = true;
     // A finite standard consumer can drain its exact native source directly.
     // It needs no second stream/pull Promise graph when no stream was exposed;
@@ -308,7 +308,7 @@ export class BodyState {
     const result = new Uint8Array(total);
     let offset = 0;
     for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.byteLength; }
-    return result;
+    return convert(result);
   }
 }
 
@@ -319,7 +319,10 @@ export function bodyMethods(target, state, headers) {
   });
   target.bytes = async function () { return state(this).consume(); };
   target.arrayBuffer = async function () { return (await state(this).consume()).buffer; };
-  target.text = async function () { return decoder.decode(await state(this).consume()); };
+  target.text = function () {
+    try { return state(this).consume(bytes => decoder.decode(bytes)); }
+    catch (error) { return Promise.reject(error); }
+  };
   target.json = async function () { return JSON.parse(decoder.decode(await state(this).consume())); };
   target.blob = async function () {
     if (typeof BlobType !== 'function') throw new TypeError('Blob-is-unavailable');

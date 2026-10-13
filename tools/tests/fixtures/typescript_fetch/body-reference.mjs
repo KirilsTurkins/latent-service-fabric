@@ -38,6 +38,8 @@ for (const input of ['invalid \ufffd text', '{"a":2}', new Blob(['x'], {type: 'a
 }
 assert.deepEqual(await new Candidate('{"a":2}').json(), {a: 2});
 await assert.rejects(new Candidate('broken').json(), SyntaxError);
+assert.equal(await new Candidate(null).text(), '');
+await assert.rejects(Candidate.prototype.text.call({}), TypeError);
 const bytes = new Uint8Array([1, 2]);
 const captured = new Candidate(bytes);
 bytes[0] = 99;
