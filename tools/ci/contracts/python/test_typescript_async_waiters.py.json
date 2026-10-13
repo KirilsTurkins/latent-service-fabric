@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.ci.contracts.v1",
   "kind": "python",
-  "reviewReason": "Reviewed one added two-realm Node regression: actual intrinsic application Promises, pending ordering, original rejection identity, receiver and resource constructor identity, unchanged synchronous bindings, name/arity and nonconstructible async functions. Existing cases and every skip/setup/decorator guard remain byte-for-byte equivalent; the new case uses the same Node availability predicate, owned temporary files and30-second subprocess bound.",
+  "reviewReason": "Review added first-free-slot and queued-cancellation/reentry assertions in the existing generated-slot regression. All prior cases, actual Node availability predicate, subprocess bound, setup, class/decorator/skip sites remain unchanged. The parser skip-control body hash changes solely because that skipped-when-Node-unavailable test gains assertions; no skip or weakened guard is added.",
   "module": "tools/tests/test_typescript_async_waiters.py",
   "cases": [
     "TypeScriptAsyncWaiterTests.test_actual_async_imports_use_application_promises_and_preserve_resources",
@@ -52,7 +52,7 @@
         "unittest.skipUnless(shutil.which('node'), 'requires Node')"
       ],
       "skipSites": [
-        "skip-control-sha256:f0625047ba38a53e3948763e17b0ce87ed3c2972e1810d806d5a060e07ed1c17",
+        "skip-control-sha256:43bbb85a0e792c5a4a7bd56022a9487895cc05b900e0165a8f455697138ad975",
         "unittest.skipUnless(shutil.which('node'), 'requires Node')"
       ],
       "fixtureGuards": [
