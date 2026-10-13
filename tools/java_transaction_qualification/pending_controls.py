@@ -41,6 +41,16 @@ def durable_audit(value):
     return value
 
 
+def recovery_selector(value, action, operation, original):
+    require(isinstance(value, dict) and set(value) == {'family', 'scope', 'tenant', 'operationId',
+                'action', 'expectedGeneration', 'automaticRetry'}
+            and value == {'family': 'dispatcher', 'scope': 'node', 'tenant': cfg.TENANT,
+                'operationId': operation, 'action': 'DISPATCHER_ACTION_' + action.upper(),
+                'expectedGeneration': original, 'automaticRetry': False}
+            and value['automaticRetry'] is False,
+            'original-dispatcher-recovery-selector')
+
+
 def inspect_dispatcher(client):
     result = client.call('dispatcher', 'inspect', '--scope', 'node')
     data = result['data']
@@ -68,10 +78,11 @@ def control_dispatcher(client, action, operation):
     result = client.call('dispatcher', action, *arguments)
     data = result['data']
     require(result['outcomeKnown'] is True and isinstance(data, dict)
-            and set(data) == {'receipt', 'replayed', 'published', 'paused', 'auditAcknowledgement'}
+            and set(data) == {'receipt', 'replayed', 'published', 'paused', 'auditAcknowledgement', 'recovery'}
             and data['replayed'] is False and data['published'] is True
             and data['paused'] is (action == 'pause') and data['auditAcknowledgement'] is not None,
             'actual-current-dispatcher-control-published')
+    recovery_selector(data['recovery'], action, operation, original)
     receipt = data['receipt']
     durable_audit(data['auditAcknowledgement'])
     require(isinstance(receipt, dict) and set(receipt) == RECEIPT_FIELDS
@@ -88,9 +99,10 @@ def control_dispatcher(client, action, operation):
             'actual-dispatcher-generation-advance')
     lookup = client.call('dispatcher', 'operation', *arguments, '--original-action', action)
     recovered = lookup['data']
-    require(lookup['outcomeKnown'] is True and set(recovered) == {'receipt', 'auditAcknowledgement'}
+    require(lookup['outcomeKnown'] is True and set(recovered) == {'receipt', 'auditAcknowledgement', 'recovery'}
             and recovered['auditAcknowledgement'] is not None and recovered['receipt'] == receipt,
             'historical-dispatcher-receipt-is-original')
+    recovery_selector(recovered['recovery'], action, operation, original)
     durable_audit(recovered['auditAcknowledgement'])
     client.evidence.passed(operation, {'before': before, 'receipt': receipt, 'lookup': recovered})
     return receipt

@@ -1,5 +1,7 @@
 {
   "cases": [
+    "DispatcherRecoverySelectorControls.test_changed_or_unknown_selector_cannot_qualify_control_or_original_lookup",
+    "DispatcherRecoverySelectorControls.test_current_cli_selector_keeps_original_control_and_immutable_operation_lookup",
     "PendingRecoveryControls.test_changed_replay_stops_before_review_resume_or_runtime_start",
     "PendingRecoveryControls.test_close_is_abandonment_and_replay_cannot_replace_receipt_or_acknowledgement",
     "PendingRecoveryControls.test_close_plan_preserves_exact_pending_effect_window_view_and_operator",
@@ -12,6 +14,30 @@
     "PendingRecoveryControls.test_unknown_dispatcher_operation_lookup_cannot_qualify_plausible_original_receipt"
   ],
   "guards": {
+    "DispatcherRecoverySelectorControls.test_changed_or_unknown_selector_cannot_qualify_control_or_original_lookup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:668e8082d4b0b13ef6f62299a20d7624840a3d5be0a449f0ade84ed045e8c369"
+      ],
+      "skipSites": []
+    },
+    "DispatcherRecoverySelectorControls.test_current_cli_selector_keeps_original_control_and_immutable_operation_lookup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:559a1805fad8e920dc7bad060fd1fdae2d91973279a8a19491202ac13b35d5b8",
+        "class:setup-sha256:668e8082d4b0b13ef6f62299a20d7624840a3d5be0a449f0ade84ed045e8c369"
+      ],
+      "skipSites": []
+    },
     "PendingRecoveryControls.test_changed_replay_stops_before_review_resume_or_runtime_start": {
       "bases": [
         "unittest.TestCase"
@@ -135,6 +161,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_pending_recovery.py",
-  "reviewReason": "Add ten closed pending recovery sequence, physical drain, attribution, known original lookup, audit and immutable replay controls; preserve every original terminal and legacy guard and limit.",
+  "reviewReason": "Validate the current CLI dispatcher recovery selector against the original mutation and retained operation without replay or inferred authority; retain all prior cases and guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -206,16 +206,69 @@ class PendingRecoveryControls(unittest.TestCase):
             'afterGeneration': {'ownerEpoch': '1', 'revision': '3'}, 'observedAtUnixMillis': '10',
             'clockContinuityProven': True, 'restoreReviewRequired': False,
             'disposition': 'STATE_OPERATION_DISPOSITION_COMMITTED'}
+        recovery = {'family': 'dispatcher', 'scope': 'node', 'tenant': cfg.TENANT,
+            'operationId': 'original-pause', 'action': 'DISPATCHER_ACTION_PAUSE',
+            'expectedGeneration': original['beforeGeneration'], 'automaticRetry': False}
         responses = [
             {'outcomeKnown': True, 'data': {'dispatcher': snapshot(), 'auditAcknowledgement': audit}},
             {'outcomeKnown': True, 'data': {'receipt': original, 'replayed': False, 'published': True,
-                                          'paused': True, 'auditAcknowledgement': audit}},
-            {'outcomeKnown': False, 'data': {'receipt': original, 'auditAcknowledgement': audit}}]
+                                          'paused': True, 'auditAcknowledgement': audit, 'recovery': recovery}},
+            {'outcomeKnown': False, 'data': {'receipt': original, 'auditAcknowledgement': audit, 'recovery': recovery}}]
         client = SimpleNamespace(call=Mock(side_effect=responses), evidence=SimpleNamespace(passed=Mock()))
         with self.assertRaisesRegex(ValueError, 'historical-dispatcher-receipt-is-original'):
             controls.control_dispatcher(client, 'pause', 'original-pause')
         self.assertEqual(client.call.call_count, 3)
         client.evidence.passed.assert_not_called()
+
+
+class DispatcherRecoverySelectorControls(unittest.TestCase):
+    def setUp(self):
+        self.audit = {'status': 'AUDIT_ACK_STATUS_DURABLE', 'attemptSequence': '1'}
+        self.original = {'operationId': 'original-pause', 'receiptId': 'sha256:' + 'a' * 64,
+            'action': 'DISPATCHER_ACTION_PAUSE', 'authenticatedOperator': lifecycle.operator_actor(),
+            'actorTenant': cfg.TENANT, 'beforeGeneration': {'ownerEpoch': '1', 'revision': '2'},
+            'afterGeneration': {'ownerEpoch': '1', 'revision': '3'}, 'observedAtUnixMillis': '10',
+            'clockContinuityProven': True, 'restoreReviewRequired': False,
+            'disposition': 'STATE_OPERATION_DISPOSITION_COMMITTED'}
+        self.recovery = {'family': 'dispatcher', 'scope': 'node', 'tenant': cfg.TENANT,
+            'operationId': 'original-pause', 'action': 'DISPATCHER_ACTION_PAUSE',
+            'expectedGeneration': self.original['beforeGeneration'], 'automaticRetry': False}
+
+    def client(self, control_recovery, lookup_recovery):
+        return SimpleNamespace(call=Mock(side_effect=[
+            {'outcomeKnown': True, 'data': {'dispatcher': snapshot(), 'auditAcknowledgement': self.audit}},
+            {'outcomeKnown': True, 'data': {'receipt': self.original, 'replayed': False, 'published': True,
+                'paused': True, 'auditAcknowledgement': self.audit, 'recovery': control_recovery}},
+            {'outcomeKnown': True, 'data': {'receipt': self.original, 'auditAcknowledgement': self.audit,
+                'recovery': lookup_recovery}}]), evidence=SimpleNamespace(passed=Mock()))
+
+    def test_current_cli_selector_keeps_original_control_and_immutable_operation_lookup(self):
+        client = self.client(self.recovery, copy.deepcopy(self.recovery))
+        result = controls.control_dispatcher(client, 'pause', 'original-pause')
+        self.assertEqual(result, self.original)
+        self.assertEqual(client.call.call_count, 3)
+        self.assertEqual(client.call.call_args_list[1].args[:2], ('dispatcher', 'pause'))
+        self.assertEqual(client.call.call_args_list[2].args[:2], ('dispatcher', 'operation'))
+        client.evidence.passed.assert_called_once()
+
+    def test_changed_or_unknown_selector_cannot_qualify_control_or_original_lookup(self):
+        replacements = {'family': 'namespace', 'scope': 'tenant', 'tenant': 'other',
+            'operationId': 'replacement', 'action': 'DISPATCHER_ACTION_RESUME',
+            'expectedGeneration': {'ownerEpoch': '2', 'revision': '2'}, 'automaticRetry': True}
+        for field, replacement in replacements.items():
+            changed = dict(self.recovery, **{field: replacement})
+            for control_recovery, lookup_recovery in ((changed, self.recovery), (self.recovery, changed)):
+                with self.subTest(field=field, control=control_recovery is changed):
+                    client = self.client(control_recovery, lookup_recovery)
+                    with self.assertRaisesRegex(ValueError, 'original-dispatcher-recovery-selector'):
+                        controls.control_dispatcher(client, 'pause', 'original-pause')
+                    client.evidence.passed.assert_not_called()
+        for changed in (None, dict(self.recovery, extra=False), dict(self.recovery, automaticRetry=0)):
+            with self.subTest(changed=changed):
+                client = self.client(changed, self.recovery)
+                with self.assertRaisesRegex(ValueError, 'original-dispatcher-recovery-selector'):
+                    controls.control_dispatcher(client, 'pause', 'original-pause')
+                client.evidence.passed.assert_not_called()
 
 
 if __name__ == '__main__':
