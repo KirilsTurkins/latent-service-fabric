@@ -1,0 +1,438 @@
+{
+  "parser": "wasm-tools1.254.0",
+  "graph": {
+    "worlds": [
+      {
+        "name": "abi",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "exports": {},
+        "package": 1
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "activation",
+        "types": {
+          "owner-kind": 0,
+          "token": 1,
+          "error": 2,
+          "phase": 3,
+          "observation": 4
+        },
+        "functions": {
+          "register": {
+            "name": "register",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "kind",
+                "type": 0
+              },
+              {
+                "name": "continuation",
+                "type": 5
+              }
+            ],
+            "result": 6
+          },
+          "park": {
+            "name": "park",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 7
+          },
+          "wake": {
+            "name": "wake",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 7
+          },
+          "settle": {
+            "name": "settle",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 7
+          },
+          "close": {
+            "name": "close",
+            "kind": "freestanding",
+            "params": [],
+            "result": 7
+          },
+          "observe": {
+            "name": "observe",
+            "kind": "freestanding",
+            "params": [],
+            "result": 8
+          },
+          "wait-for": {
+            "name": "wait-for",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "nanos",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": 5
+              }
+            ],
+            "result": 7,
+            "docs": {
+              "contents": "A cancelled/root-deadline-limited wait never reports requested elapsed\nsuccess. The host owns no sleeping worker and borrows no Store at await."
+            }
+          },
+          "wait-until": {
+            "name": "wait-until",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "unix-millis",
+                "type": "u64"
+              },
+              {
+                "name": "continuation",
+                "type": 5
+              }
+            ],
+            "result": 7,
+            "docs": {
+              "contents": "Convert the absolute wall value once at registration into monotonic\nwaiting; later wall adjustments do not restart the accepted wait."
+            }
+          },
+          "timer-start": {
+            "name": "timer-start",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "first-delay-nanos",
+                "type": "u64"
+              },
+              {
+                "name": "period-nanos",
+                "type": 9
+              },
+              {
+                "name": "continuation",
+                "type": 5
+              }
+            ],
+            "result": 6,
+            "docs": {
+              "contents": "Invocation-local single-shot or fixed-rate recurrence. Recurrence\ncoalesces missed ticks; the host never dispatches a callback or builds\na catch-up queue. Zero periods are invalid. Language callback execution\nremains bounded by the same task/queue limits and original deadline."
+            }
+          },
+          "timer-next": {
+            "name": "timer-next",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 1
+              }
+            ],
+            "result": 10,
+            "docs": {
+              "contents": "Only one next wait may be live per timer. Returns the number of missed\nrecurring ticks coalesced into this single readiness result."
+            }
+          },
+          "timer-stop": {
+            "name": "timer-stop",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 1
+              }
+            ],
+            "result": 7,
+            "docs": {
+              "contents": "Cancels readiness. Pending physical owners stay charged until dropped."
+            }
+          }
+        },
+        "docs": {
+          "contents": "Versioned compiler/runtime support beneath language standard APIs. Tokens\nidentify only Store-local logical owners; they confer no external authority."
+        },
+        "package": 0
+      }
+    ],
+    "types": [
+      {
+        "name": "owner-kind",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "task"
+              },
+              {
+                "name": "managed-idle-worker"
+              },
+              {
+                "name": "executor"
+              },
+              {
+                "name": "queued-work"
+              },
+              {
+                "name": "wait"
+              },
+              {
+                "name": "timer"
+              },
+              {
+                "name": "result"
+              },
+              {
+                "name": "native"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "token",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "generation",
+                "type": "u64"
+              },
+              {
+                "name": "id",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "error",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "unavailable"
+              },
+              {
+                "name": "permission-denied"
+              },
+              {
+                "name": "resource-exhausted"
+              },
+              {
+                "name": "cancelled"
+              },
+              {
+                "name": "deadline"
+              },
+              {
+                "name": "invalid-state"
+              },
+              {
+                "name": "invalid-token"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "phase",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "running"
+              },
+              {
+                "name": "waiting"
+              },
+              {
+                "name": "closing"
+              },
+              {
+                "name": "draining"
+              },
+              {
+                "name": "cancelling"
+              },
+              {
+                "name": "retired"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "observation",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "phase",
+                "type": 3
+              },
+              {
+                "name": "tasks",
+                "type": "u32"
+              },
+              {
+                "name": "executors",
+                "type": "u32"
+              },
+              {
+                "name": "queued-work",
+                "type": "u32"
+              },
+              {
+                "name": "waits",
+                "type": "u32"
+              },
+              {
+                "name": "timers",
+                "type": "u32"
+              },
+              {
+                "name": "results",
+                "type": "u32"
+              },
+              {
+                "name": "native-owners",
+                "type": "u32"
+              },
+              {
+                "name": "parked-tasks",
+                "type": "u32"
+              },
+              {
+                "name": "managed-idle-workers",
+                "type": "u32"
+              },
+              {
+                "name": "native-memory-bytes",
+                "type": "u64"
+              },
+              {
+                "name": "admission-failures",
+                "type": "u64"
+              },
+              {
+                "name": "stale-wakes",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": 1
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 1,
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 4,
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "u64",
+            "err": 2
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "latent:runtime@0.1.0",
+        "interfaces": {
+          "activation": 0
+        },
+        "worlds": {}
+      },
+      {
+        "name": "lsf:runtime-types@1.0.0",
+        "interfaces": {},
+        "worlds": {
+          "abi": 0
+        }
+      }
+    ]
+  }
+}

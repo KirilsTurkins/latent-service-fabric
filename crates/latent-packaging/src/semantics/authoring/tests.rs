@@ -37,6 +37,41 @@ fn shared_type_interfaces_and_world_inclusion_preserve_shapes_without_host_autho
 }
 
 #[test]
+fn foreign_world_inclusion_preserves_names_shapes_and_dependency_limits() {
+    let selected =
+        "package example:selected@1.2.3; world service { include example:author/service@1.2.3; }";
+    let files: BTreeMap<_, _> = [
+        ("wit/selected.wit".into(), selected.as_bytes()),
+        ("wit/app.wit".into(), WIT.as_bytes()),
+    ]
+    .into();
+    let derived = derive_capsule_contracts(
+        "example:selected/service@1.2.3",
+        &files,
+        SemanticLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(derived.contracts(), derive(WIT).unwrap().contracts());
+    assert_eq!(derived.exports(), &["example:author/api@1.2.3"]);
+    assert_eq!(
+        derived.wit_lock().packages[1].dependencies,
+        ["example:author@1.2.3"]
+    );
+    let missing = BTreeMap::from([("wit/selected.wit".into(), selected.as_bytes())]);
+    assert!(derive_capsule_contracts(
+        "example:selected/service@1.2.3",
+        &missing,
+        SemanticLimits::default(),
+    )
+    .is_err());
+    let limits = SemanticLimits {
+        max_name_bytes: "service".len() - 1,
+        ..SemanticLimits::default()
+    };
+    assert!(derive_capsule_contracts("example:selected/service@1.2.3", &files, limits).is_err());
+}
+
+#[test]
 fn complete_full_width_scalar_and_result_contract_is_derived_from_source() {
     let derived = derive(WIT).unwrap();
     assert_eq!(derived.exports(), &["example:author/api@1.2.3"]);

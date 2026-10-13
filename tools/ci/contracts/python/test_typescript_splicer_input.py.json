@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Nine exact compiler-input/source/tamper/path/qualification denial controls for private P3 compiler candidate; no engine or signed API qualification; all prior source cases and guards retained",
+  "module": "tools/tests/test_typescript_splicer_input.py",
+  "cases": [
+    "TypeScriptSplicerInputTests.test_changed_compiler_byte_rejected",
+    "TypeScriptSplicerInputTests.test_current_exact_source_files_remain_unqualified",
+    "TypeScriptSplicerInputTests.test_declared_support_cannot_promote_compiler_input",
+    "TypeScriptSplicerInputTests.test_escaping_file_path_rejected",
+    "TypeScriptSplicerInputTests.test_fake_Wasm_extension_rejected",
+    "TypeScriptSplicerInputTests.test_missing_generated_module_rejected",
+    "TypeScriptSplicerInputTests.test_recipe_digest_is_required_even_when_bytes_match",
+    "TypeScriptSplicerInputTests.test_stale_sdk_codegen_recipe_rejected",
+    "TypeScriptSplicerInputTests.test_unknown_schema_field_rejected"
+  ],
+  "guards": {
+    "TypeScriptSplicerInputTests.test_current_exact_source_files_remain_unqualified": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35dbbeecdc7a0db34a22afdd7381cab2ea215e1fbc52c88a9678578406b85133",
+        "class:setup-sha256:928e109eea293e40876591cf11ef6f12d791fa126df33a945d7958a658738ccf"
+      ]
+    },
+    "TypeScriptSplicerInputTests.test_changed_compiler_byte_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35dbbeecdc7a0db34a22afdd7381cab2ea215e1fbc52c88a9678578406b85133",
+        "class:setup-sha256:928e109eea293e40876591cf11ef6f12d791fa126df33a945d7958a658738ccf"
+      ]
+    },
+    "TypeScriptSplicerInputTests.test_stale_sdk_codegen_recipe_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35dbbeecdc7a0db34a22afdd7381cab2ea215e1fbc52c88a9678578406b85133",
+        "class:setup-sha256:928e109eea293e40876591cf11ef6f12d791fa126df33a945d7958a658738ccf"
+      ]
+    },
+    "TypeScriptSplicerInputTests.test_declared_support_cannot_promote_compiler_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35dbbeecdc7a0db34a22afdd7381cab2ea215e1fbc52c88a9678578406b85133",
+        "class:setup-sha256:928e109eea293e40876591cf11ef6f12d791fa126df33a945d7958a658738ccf"
+      ]
+    },
+    "TypeScriptSplicerInputTests.test_unknown_schema_field_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35dbbeecdc7a0db34a22afdd7381cab2ea215e1fbc52c88a9678578406b85133",
+        "class:setup-sha256:928e109eea293e40876591cf11ef6f12d791fa126df33a945d7958a658738ccf"
+      ]
+    },
+    "TypeScriptSplicerInputTests.test_escaping_file_path_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35dbbeecdc7a0db34a22afdd7381cab2ea215e1fbc52c88a9678578406b85133",
+        "class:setup-sha256:928e109eea293e40876591cf11ef6f12d791fa126df33a945d7958a658738ccf"
+      ]
+    },
+    "TypeScriptSplicerInputTests.test_missing_generated_module_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35dbbeecdc7a0db34a22afdd7381cab2ea215e1fbc52c88a9678578406b85133",
+        "class:setup-sha256:928e109eea293e40876591cf11ef6f12d791fa126df33a945d7958a658738ccf"
+      ]
+    },
+    "TypeScriptSplicerInputTests.test_fake_Wasm_extension_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35dbbeecdc7a0db34a22afdd7381cab2ea215e1fbc52c88a9678578406b85133",
+        "class:setup-sha256:928e109eea293e40876591cf11ef6f12d791fa126df33a945d7958a658738ccf"
+      ]
+    },
+    "TypeScriptSplicerInputTests.test_recipe_digest_is_required_even_when_bytes_match": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35dbbeecdc7a0db34a22afdd7381cab2ea215e1fbc52c88a9678578406b85133",
+        "class:setup-sha256:928e109eea293e40876591cf11ef6f12d791fa126df33a945d7958a658738ccf"
+      ]
+    }
+  }
+}
