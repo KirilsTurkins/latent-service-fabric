@@ -48,8 +48,8 @@ def sdk_snapshot(root: Path) -> dict:
         "feasibility/gradle/verification-metadata.xml", "feasibility/platform.c",
         "feasibility/closed-runtime.wat", "tools/feasibility.py", "tools/dependencies.py",
         "tools/teavm_platform.py", "tools/capture.py")}
-    for folder in ("runtime", "templates", "wit", "fibers", "server", "resources"):
-        if folder in ("fibers", "server", "resources") and not (root / folder).is_dir(): continue
+    for folder in ("runtime", "templates", "wit", "fibers", "server", "resources", "processors"):
+        if folder in ("fibers", "server", "resources", "processors") and not (root / folder).is_dir(): continue
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
     if (root / "client").exists():
         files.update({"client/" + name: data for name, data in snapshot(root / "client").items()})
@@ -218,7 +218,8 @@ class Compiler:
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
                 activation_profile: bool = False, server_profile: bool = False,
-                server_bridge: bytes | None = None, http_client_profile: bool = False) -> tuple[Path, dict]:
+                server_bridge: bytes | None = None, http_client_profile: bool = False,
+                processor_stage=None) -> tuple[Path, dict]:
         if type(activation_profile) is not bool:
             raise ValueError("Java activation profile requires an explicit boolean selection")
         if type(server_profile) is not bool or server_bridge is not None and not server_profile:
@@ -253,6 +254,11 @@ class Compiler:
             target = project / "captured-application/jars" / f"{index:04d}.jar"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(read_file(jar, 64 * 1024 * 1024))
+        if processor_stage is not None:
+            for index, jar in enumerate(processor_stage[1]):
+                target = project / 'captured-processor-api/jars' / f'{index:04d}.jar'
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(read_file(jar, 64 * 1024 * 1024))
         # Never let Gradle silently select or provision an unobserved JDK. This
         # generated private property file is part of this source-bound recipe.
         (project / "gradle.properties").write_text(
@@ -313,10 +319,23 @@ class Compiler:
         target = java_root / "dev/latent/generated/Bindings.java"
         target.parent.mkdir(parents=True); target.write_bytes(read_file(destination / "bindings/Bindings.java"))
         install_sdk(self.sdk, destination / "bindings", java_root)
+        processor_profile = None
+        origin_sources = sources
+        if processor_stage is not None:
+            from tools.java_annotation_processors import process
+            processor_profile = process(self, java_root, tuple(sorted(application_source_names)),
+                                        project, processor_stage, application_classpath)
+            origin_sources = destination / "processed-application"
+            shutil.copytree(sources, origin_sources)
+            for name in processor_profile["generated"]:
+                selected = origin_sources / name
+                selected.parent.mkdir(parents=True, exist_ok=True)
+                selected.write_bytes(read_file(java_root / name))
+                application_source_names.add(name)
         if activation_profile:
             from tools.java_guest.class_origin import checkpoint_index
             origins = json.loads(self.run("java-source-origins", "java",
-                self.sdk / "fibers/analysis/SourceOrigins.java", sources))
+                self.sdk / "fibers/analysis/SourceOrigins.java", origin_sources))
             if (not isinstance(origins, dict) or set(origins) != {"schemaVersion", "sources"}
                     or origins["schemaVersion"] != "lsf.java.source-origins.v1"
                     or not isinstance(origins["sources"], list)):
@@ -373,6 +392,8 @@ class Compiler:
         if resource_profile is not None:
             resources.recheck(application_resources, resource_profile)
             details["immutableResources"] = resource_profile
+        if processor_profile is not None:
+            details['annotationProcessors'] = processor_profile
         return component, details
 
     def check_unchanged(self):

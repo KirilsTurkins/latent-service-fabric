@@ -4,8 +4,9 @@ The Java recipe accepts developer-selected Maven and local/private JARs through
 the [captured dependency contract](application-dependencies.md). Maven resolution
 uses the pinned Gradle/JDK pair and an SDK-owned finite task. Local-only JAR
 capture reads the selected bytes without starting Gradle or a host JVM.
-Application Gradle plugins, arbitrary Maven scripts and annotation processors
-do not execute.
+Application Gradle plugins and arbitrary Maven scripts do not execute. Annotation
+processors require explicit captured class selection and a separate exact
+execution approval; automatic host service discovery stays disabled.
 
 These commands use the source-owned Java tool from an LSF checkout. Keep its
 compiler and immutable SDK inputs pinned as described in
@@ -65,6 +66,45 @@ native resolution lock. Original POM and Gradle module descriptors remain
 captured independently of JAR bytes. Local JAR declarations have `id`, `path` and
 `dependencies` fields. Their declared transitive edges must name another captured
 artifact. A compatible new JAR requires no LSF source edit or catalogue entry.
+
+For an explicit source processor, declare its class and each otherwise
+non-runtime helper input before resolving and reviewing the same captured graph:
+
+```bash
+python3 tools/java_capsule.py add-local ./my-java --id developer/processor/1 \
+  --jar ./processor.jar --processor-class outside.processor.ChosenProcessor \
+  --depends developer/helper/1
+python3 tools/java_capsule.py add-local ./my-java --id developer/helper/1 \
+  --jar ./helper.jar --processor-input
+```
+
+`build` without the exact `--executable-approval` refuses processor execution and
+retains `executable-input-approval-request.json`. Review that specification and
+pass its exact identity on a new build attempt. The approval binds source,
+recipe, original processor/helper bytes, transformations, selected classes,
+pinned JDK/compiler cache and actual isolation tools/libraries. Changed inputs
+need a new approval. This operation uses the existing executable-input trust
+protocol; it supplies no guest authority or signing key.
+
+The finite Linux Bubblewrap stage invokes only the explicitly named processors
+with `javac -proc:only`. The ordinary TeaVM compilation retains `-proc:none`.
+The processor classpath can supply passive SOURCE-retention annotation types via
+`compileOnly`; it does not become the runtime JAR classpath. Required unsupported
+runtime classes fail the normal compiler diagnostics. Generated output must be
+new UTF-8 Java source, with no class files, source overwrite or owned platform
+namespace replacement. A pinned parse-only Javac control checks declared and
+nested class identities, package paths and Unicode escapes without application
+initialization. Processor and source-ownership receipts enter build provenance;
+generated classes also enter the selected activation profile's source-origin
+and checkpoint classification.
+
+`tools/qualify_java_annotation_processors.py` rebuilds an unlisted developer
+processor and helper, checks actual contained execution and source-ownership
+negatives, then signs/admit/invokes the generated component on supplied exact
+default native products. It preserves the 60-second processor stage, 256 MiB JVM
+heap and existing application/node limits. This source-processing profile is a
+single-user compiler boundary, not hostile multitenant or unrestricted plugin,
+JNI, reflection or complete library-runtime qualification.
 
 Capture developer-selected JARs with unchanged Java package names and explicit
 transitive edges:

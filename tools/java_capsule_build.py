@@ -15,7 +15,11 @@ from tools import (guest_compatibility_build, guest_resources, guest_dependency_
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
 from tools.java_guest import resources as java_resources
-from tools.application_dependencies import prepare
+from tools.application_dependencies import prepare, verify_inputs
+from tools.application_dependency_approval import request as execution_request, approve as approve_execution
+from tools.application_dependency_store import DependencyError
+from tools.build_snapshot import canonical
+from tools import java_annotation_processors
 from tools.java_application_dependencies import classpath
 from tools.java_resource_artifacts import packaged_resources
 from tools.rust_capsule_build import Commands, package_inputs
@@ -44,6 +48,7 @@ RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += java_server_source.RECIPE
 RECIPE += ("tools/java_generator_authoring.py",)
 RECIPE += java_http_client.RECIPE
+RECIPE += ("tools/application_dependency_approval.py", "tools/captured_compiler_isolation.py", "tools/java_annotation_processors.py")
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -60,7 +65,7 @@ def retain_logs(source: Path, output: Path) -> None:
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, wasi_sdk: Path, *, gradle="gradle", timeout=900,
           offline_cache: Path | None = None, read_only_cache: Path | None = None,
-          runtime_profile: str | None = None) -> Path:
+          runtime_profile: str | None = None, executable_approval: str | None = None) -> Path:
     if type(timeout) not in {int, float} or not 0 < timeout <= 900:
         raise ValueError("Java build deadline must be positive and at most 900 seconds")
     if runtime_profile is not None and (type(runtime_profile) is not str or runtime_profile != ACTIVATION_PROFILE):
@@ -88,7 +93,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
         with tempfile.TemporaryDirectory(prefix="lsf-java-capsule-") as owned:
             temporary, compiler_dir = Path(owned), Path(owned) / "compiler"
             try:
-                work = temporary / "project"
+                verified = verify_inputs(observed.dependency_root, 'java')
+                has_processors = verified is not None and bool(verified.lock['executableInputs'])
+                processor_workspace = temporary / 'processor-workspace'
+                if has_processors:
+                    processor_workspace.mkdir()
+                work = processor_workspace / 'inputs/project' if has_processors else temporary / "project"
                 for name, data in files.items():
                     path = work / name
                     path.parent.mkdir(parents=True, exist_ok=True)
@@ -96,20 +106,47 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands = Commands(work, output, build_environment(temporary))
                 commands.deadline = start + timeout
                 stage = "application-dependencies"
-                closure = prepare(observed.dependency_root, work, output, "java")
+                approval, processor_stage = None, None
+                cache_selection = {"read_only_cache": read_only_cache} if read_only_cache is not None else {}
+                if has_processors:
+                    if offline_cache is None and read_only_cache is None:
+                        raise DependencyError('java-annotation-processors-require-captured-compiler-cache')
+                    stage = 'processor-compiler-inputs'
+                    compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
+                        sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
+                        config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache,
+                        **cache_selection)
+                    isolated = java_annotation_processors.isolation(compiler, processor_workspace)
+                    compiler_jars = java_annotation_processors.compiler_classpath(compiler)
+                    recipe_identity = digest(canonical({'recipe': digest(recipe_inputs), 'sourceSnapshot': digest(source_inputs)}))
+                    requested = execution_request(verified, isolated, recipe_identity)
+                    write_json(output / 'executable-input-approval-request.json', {
+                        'formatVersion': 1, 'identity': digest(canonical(requested)), 'specification': requested})
+                    stage = 'executable-input-approval'
+                    if executable_approval is None:
+                        raise DependencyError('java-annotation-processors-require-exact-executable-approval')
+                    approval = approve_execution(verified, isolated, recipe_identity, executable_approval)
+                closure = prepare(observed.dependency_root, work, output, "java", execution_approval=approval)
                 if closure is not None and offline_cache is None and read_only_cache is None:
                     raise ValueError("captured Java builds require the verified offline compiler cache")
-                application_jars, application_inventory = classpath(closure, temporary / "selected-application-jars")
+                input_root = processor_workspace / 'inputs' if has_processors else temporary
+                application_jars, application_inventory = classpath(closure, input_root / "selected-application-jars")
+                if has_processors:
+                    processor_jars, processor_names, processor_inventory = java_annotation_processors.classpath(
+                        closure, input_root / 'selected-processor-jars')
+                    write_json(output / 'java-processor-classpath.json', processor_inventory)
+                    processor_stage = (isolated, processor_jars, processor_names, processor_workspace / 'outputs', compiler_jars)
                 write_json(output / "java-classpath.json", application_inventory)
                 additional_resources, resource_sources = packaged_resources(closure, application_inventory, files)
                 application_resources = java_resources.materialize({**files, **resource_sources}, source_inputs,
                     additional_resources, temporary / "selected-application-resources")
                 stage = "compiler-inputs"
                 cache_selection = {"read_only_cache": read_only_cache} if read_only_cache is not None else {}
-                compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
-                    sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
-                    config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache,
-                    **cache_selection)
+                if compiler is None:
+                    compiler = Compiler(compiler_dir, checked_path(wasi_sdk), gradle=gradle,
+                        sdk=work / "vendor/lsf/sdk/java-guest", platform=work / "vendor/lsf/wit/platform",
+                        config=pins, timeout=timeout - (time.monotonic() - start), offline_cache=offline_cache,
+                        **cache_selection)
                 (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
                 server_plan, automatic_bridge = None, None
                 if "server" in project:
@@ -133,6 +170,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     profile_selection["application_resources"] = application_resources
                 if "httpClient" in project:
                     profile_selection["http_client_profile"] = True
+                if processor_stage is not None:
+                    profile_selection["processor_stage"] = processor_stage
                 component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
                     application_classpath=application_jars, **profile_selection)
                 component = read_file(component_path, 64 * 1024 * 1024)
@@ -162,6 +201,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 package_files = dict(files)
                 package_files.update(resource_sources)
                 package_files.update({"wit/" + path: data for path, data in wit_files.items()})
+                if has_processors:
+                    from tools.application_dependency_store import directory_files
+                    processor_sources = directory_files(processor_workspace / 'outputs/generated')
+                    package_files.update({'derived/annotation-processors/' + name: data for name, data in processor_sources.items()})
+                    write_json(output / 'java-annotation-processors.json', generated['annotationProcessors'])
                 surface = read_json(derived / "surface.json")
                 recipe_inputs = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe_inputs, surface)
                 stage = "compatibility"
@@ -223,6 +267,10 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     materials.extend([{"name": "application-dependency-closure", "digest": digest(data), "size": len(data)},
                                       {"name": "java-classpath-selection", "digest": digest(read_file(output / "java-classpath.json", 8 * 1024 * 1024)),
                                        "size": (output / "java-classpath.json").stat().st_size}])
+                if has_processors:
+                    for name in ('java-processor-classpath', 'java-annotation-processors'):
+                        data = read_file(output / (name + '.json'), 8 * 1024 * 1024)
+                        materials.append({"name": name, "digest": digest(data), "size": len(data)})
                 finished = int(time.time())
                 if finished < started or finished - started > 900 or time.monotonic() - start > timeout:
                     raise ValueError("Java build clock or overall deadline invalid")
