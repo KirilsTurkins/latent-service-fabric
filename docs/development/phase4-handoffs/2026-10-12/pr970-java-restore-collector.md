@@ -139,3 +139,9 @@ surface with signing, execution authority, dispatch and immediate-denial
 qualification all false. The historical early-refusal control retains its
 original boundary. An actual current strict HTTP denial needs a separate signed
 execution control; preparation or generic package success cannot substitute.
+
+Current package assets now retain the exact compiler-captured HTTP profile
+marker alongside its effect requirements. The signer already requires that
+material, and refused the earlier incomplete package before generating trust.
+The forbidden component retains its original Java source with no HTTP marker
+or effect requirements. Neither asset supplies authority or execution proof.

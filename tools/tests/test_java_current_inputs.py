@@ -87,6 +87,28 @@ class CurrentJavaInputs(unittest.TestCase):
 
 
 class CurrentJavaPackaging(unittest.TestCase):
+    def test_package_retains_exact_current_marker_and_negative_source_as_signed_assets(self):
+        from types import SimpleNamespace
+        from tools.java_transaction_qualification import packaging
+        files = {'wit/world.wit': b'captured world', 'state-schema.json': b'captured schema',
+                 'transaction-profile.json': b'captured profile',
+                 'deferred-http-requirements.json': b'captured requirements',
+                 'java-current-http-profile.json': b'captured current marker',
+                 'src/dev/latent/app/Capsule.java': b'captured source'}
+        item = SimpleNamespace(name='put-once-legacy-v1', requirements_digest='sha256:' + 'a' * 64)
+        retained = packaging.captured_assets(item, files)
+        self.assertIs(retained['java-current-http-profile.json'], files['java-current-http-profile.json'])
+        self.assertIs(retained['deferred-http-requirements.json'], files['deferred-http-requirements.json'])
+        item = SimpleNamespace(name='forbidden-http', requirements_digest=None)
+        negative = {name: raw for name, raw in files.items()
+                    if name not in {'deferred-http-requirements.json', 'java-current-http-profile.json'}}
+        retained = packaging.captured_assets(item, negative)
+        self.assertIs(retained['src/dev/latent/app/Capsule.java'], negative['src/dev/latent/app/Capsule.java'])
+        self.assertNotIn('java-current-http-profile.json', retained)
+        for changed, selected in ((files, item), (files, SimpleNamespace(name='aggregate', requirements_digest=None))):
+            with self.assertRaises(ValueError):
+                packaging.captured_assets(selected, changed)
+
     def test_current_forbidden_preparation_preserves_signature_without_claiming_execution_denial(self):
         from pathlib import Path
         from types import SimpleNamespace

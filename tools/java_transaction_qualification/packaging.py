@@ -44,6 +44,23 @@ def schema_assets(files):
     return selected
 
 
+def captured_assets(item, files):
+    assets = {path: raw for path, raw in files.items() if path.startswith('wit/') and path.endswith('.wit')}
+    assets.update({name: files[name] for name in ('state-schema.json', 'transaction-profile.json')})
+    assets.update(schema_assets(files))
+    if item.requirements_digest:
+        assets['deferred-http-requirements.json'] = files['deferred-http-requirements.json']
+    if 'java-current-http-profile.json' in files:
+        require(item.requirements_digest is not None, 'current-marker-requires-signed-effect-requirements')
+        assets['java-current-http-profile.json'] = files['java-current-http-profile.json']
+    if item.name == 'forbidden-http':
+        require('java-current-http-profile.json' not in files and item.requirements_digest is None
+                and 0 < len(files[SCHEMA_ASSETS[-1]]) <= 262144,
+                'original-forbidden-source-without-effect-marker')
+        assets[SCHEMA_ASSETS[-1]] = files[SCHEMA_ASSETS[-1]]
+    return assets
+
+
 def prepare(item: ComponentInput, output: Path, contracts: Path, signer: Path, command: Commands):
     output.mkdir()
     files = snapshot(item.directory / "project")
@@ -73,11 +90,7 @@ def prepare(item: ComponentInput, output: Path, contracts: Path, signer: Path, c
               for name, (role, media) in LAYER_MEDIA.items()]
     companion = package_companion(output, project, files)
     require(companion == ("transaction-binding.json", "asset", COMPANION_MEDIA), "actual-companion-layer-contract")
-    assets = {path: raw for path, raw in files.items() if path.startswith("wit/") and path.endswith(".wit")}
-    assets.update({name: files[name] for name in ("state-schema.json", "transaction-profile.json")})
-    assets.update(schema_assets(files))
-    if item.requirements_digest:
-        assets["deferred-http-requirements.json"] = files["deferred-http-requirements.json"]
+    assets = captured_assets(item, files)
     if "transaction-diagnostic-inputs.json" in files:
         from .diagnostic_inputs import declaration
         declaration(files["transaction-diagnostic-inputs.json"], files)
