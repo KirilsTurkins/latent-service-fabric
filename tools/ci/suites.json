@@ -9894,6 +9894,9 @@
         "standalone::state::maintenance::tests::maintenance_uses_original_protected_sample_and_shared_process_identity",
         "standalone::state::recovery::execution::tests::encoded_refusal_retains_the_original_affine_response_after_admission_close_until_frame_drop",
         "standalone::state::recovery::execution::tests::oversized_output_refuses_without_refunding_a_live_original_response",
+        "standalone::state::recovery::profile::tests::current_http_custody_preserves_original_proof_and_matches_each_closed_capture",
+        "standalone::state::recovery::profile::tests::current_http_custody_refuses_unknown_mixed_and_changed_signed_associations",
+        "standalone::state::recovery::profile::tests::fresh_current_http_schema_review_accepts_its_exact_captured_marker",
         "standalone::state::recovery::profile::tests::installed_java_codecs_preserve_unsigned_maximum_and_refuse_wrong_media_tag_and_shape",
         "standalone::state::recovery::profile::tests::reviewed_profile_refuses_unknown_component_and_declaration_only_or_changed_source",
         "standalone::state::recovery::request::tests::native_decoder_sources_are_descriptive_unique_and_bounded_with_the_current_source",
@@ -10016,7 +10019,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 359,
+      "minimumCases": 362,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

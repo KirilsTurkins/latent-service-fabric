@@ -1,5 +1,8 @@
 //! One installed codec owner for the maintained, compiler-captured Java inputs.
 //! Native codec conformance is separate from actual Java execution evidence.
+mod http_custody;
+pub(super) use http_custody::CurrentHttpInput;
+use http_custody::HttpCustody;
 use latent_core::PlatformError;
 use latent_state::namespace::compatibility::{ReviewedSchema, SchemaDeclaration, SchemaId};
 use serde::Deserialize;
@@ -101,7 +104,7 @@ impl Profile {
         declaration: &[u8],
         source: &[u8],
         codec: Option<&[u8]>,
-        marker: Option<&[u8]>,
+        http: Option<CurrentHttpInput<'_>>,
     ) -> Result<ReviewedSchema, PlatformError> {
         if declaration.len() > 4096 {
             return Err(super::denied());
@@ -110,6 +113,11 @@ impl Profile {
             serde_json::from_slice(declaration).map_err(|_| super::denied())?;
         let (variant, source_digest) = self.source();
         let (readers, writers) = self.schemas()?;
+        let custody = match (self.current_http(), http) {
+            (true, Some(input)) => Some(HttpCustody::select(self, &input)?),
+            (false, None) => None,
+            _ => return Err(super::denied()),
+        };
         let same = |actual: &[String], selected: &[SchemaId]| {
             actual.len() == selected.len()
                 && actual
@@ -139,17 +147,17 @@ impl Profile {
                 }
                 _ => true,
             }
-            || if self.current_http() {
-                marker.is_none_or(|bytes| digest(bytes) != CURRENT_MARKER)
-            } else {
-                marker.is_some()
-            }
         {
             return Err(super::denied());
         }
         // Execute the installed reader/writer and fixed-recipe conformance on
         // every construction. The signed association alone is insufficient.
-        let proof = self.conformance()?;
+        let proof = match custody {
+            Some(HttpCustody::Fresh) => {
+                self.conformance_with_marker(HttpCustody::Fresh.marker())?
+            }
+            _ => self.conformance()?,
+        };
         ReviewedSchema::accept_with(
             SchemaDeclaration {
                 package_digest: package,
@@ -163,6 +171,9 @@ impl Profile {
         .map_err(|_| super::denied())
     }
     pub fn conformance(self) -> Result<[u8; 32], PlatformError> {
+        self.conformance_with_marker(CURRENT_MARKER)
+    }
+    fn conformance_with_marker(self, marker: &str) -> Result<[u8; 32], PlatformError> {
         let recipe: serde_json::Value =
             serde_json::from_slice(RECIPE).map_err(|_| super::denied())?;
         let (old, new) = (
@@ -188,7 +199,7 @@ impl Profile {
         if self.current_http() {
             proof.update(b"lsf.java718.aggregate-current-http.v1");
             proof.update(self.source().1);
-            proof.update(CURRENT_MARKER);
+            proof.update(marker);
         } else {
             proof.update(IDENTITY);
         }
@@ -327,6 +338,242 @@ fn digest(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn current_http_input(profile: Profile, custody: HttpCustody) -> CurrentHttpInput<'static> {
+        let component = match profile {
+            Profile::CurrentLegacy => {
+                "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd"
+            }
+            Profile::CurrentCompatible => {
+                "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813"
+            }
+            Profile::CurrentWriter => {
+                "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d"
+            }
+            Profile::CurrentDiagnostic => {
+                "sha256:322dfed5d9838edfbbd53bf0672c31f849ac7c7309358975bf1bf6c10b0a24bb"
+            }
+            _ => panic!("a current captured profile is required"),
+        };
+        let writer = profile == Profile::CurrentWriter;
+        let requirements: &[u8] = match (custody, writer) {
+            (HttpCustody::Original, false) => {
+                include_bytes!("profile/fixtures/http-requirements-original.json")
+            }
+            (HttpCustody::Original, true) => {
+                include_bytes!("profile/fixtures/http-writer-requirements-original.json")
+            }
+            (HttpCustody::Fresh, false) => {
+                include_bytes!("profile/fixtures/http-requirements-fresh.json")
+            }
+            (HttpCustody::Fresh, true) => {
+                include_bytes!("profile/fixtures/http-writer-requirements-fresh.json")
+            }
+        };
+        let marker: &[u8] = match custody {
+            HttpCustody::Original => include_bytes!("profile/fixtures/http-marker-original.json"),
+            HttpCustody::Fresh => include_bytes!("profile/fixtures/http-marker-fresh.json"),
+        };
+        CurrentHttpInput {
+            component,
+            companion: if writer {
+                "sha256:e5719a610fb20811a402aed0531d13d71547978104048d9e275ae7b7ae061c49"
+            } else {
+                "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d"
+            },
+            marker,
+            requirements_digest: match (custody, writer) {
+                (HttpCustody::Original, false) => {
+                    "sha256:dfa7b1459dbe78c9dc1a43aef3171916d84f78f49fc8df50ea09dc13036f80ab"
+                }
+                (HttpCustody::Original, true) => {
+                    "sha256:83c1d6de5fee0d54d255ad8cc6007911adf1a3d755521c02be67676b374980cd"
+                }
+                (HttpCustody::Fresh, false) => {
+                    "sha256:49c9b8af6be278198d286b776f492e0fda9a6621b9b2fcd36aa788d77a2e5c54"
+                }
+                (HttpCustody::Fresh, true) => {
+                    "sha256:4b4e375e4834be64784c71da140da42540bd901d8bc33a8ff813a9a2e18c6f1b"
+                }
+            },
+            requirements,
+        }
+    }
+
+    #[test]
+    fn fresh_current_http_schema_review_accepts_its_exact_captured_marker() {
+        let schema = Profile::CurrentLegacy
+            .review(
+                [1; 32],
+                include_bytes!("profile/fixtures/current-legacy-schema.json"),
+                include_bytes!("profile/fixtures/current-legacy.java"),
+                None,
+                Some(current_http_input(
+                    Profile::CurrentLegacy,
+                    HttpCustody::Fresh,
+                )),
+            )
+            .expect("the exact fresh captured HTTP source must support recovery review");
+        assert_ne!(schema.proof_digest(), [0; 32]);
+        assert_ne!(
+            schema.proof_digest(),
+            Profile::CurrentLegacy.conformance().unwrap()
+        );
+        assert_eq!(
+            schema.proof_digest(),
+            Profile::CurrentLegacy
+                .conformance_with_marker(HttpCustody::Fresh.marker())
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn current_http_custody_preserves_original_proof_and_matches_each_closed_capture() {
+        for (custody, packet) in [
+            (
+                HttpCustody::Original,
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../../docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json"
+                ))
+                .as_slice(),
+            ),
+            (
+                HttpCustody::Fresh,
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../../docs/testing/evidence/java-current-fresh-http-capture-2026-10-13.json"
+                ))
+                .as_slice(),
+            ),
+        ] {
+            let packet: serde_json::Value = serde_json::from_slice(packet).unwrap();
+            for (profile, name) in [
+                (Profile::CurrentLegacy, "put-once-legacy-v1"),
+                (Profile::CurrentCompatible, "put-once-compatible-v2"),
+                (Profile::CurrentWriter, "put-once-writer-v2"),
+                (Profile::CurrentDiagnostic, "put-once-diagnostics"),
+            ] {
+                let input = current_http_input(profile, custody);
+                let pin = &packet["captures"]["variants"][name]["materials"];
+                assert_eq!(HttpCustody::select(profile, &input).unwrap(), custody);
+                assert_eq!(pin["component"]["sha256"], input.component);
+                assert_eq!(pin["companion"]["sha256"], input.companion);
+                assert_eq!(pin["requirements"]["sha256"], input.requirements_digest);
+                assert_eq!(
+                    pin["currentHttpMarker"]["sha256"],
+                    format!("sha256:{}", custody.marker())
+                );
+                assert_eq!(
+                    pin["capsuleSource"]["sha256"],
+                    format!("sha256:{}", profile.source().1)
+                );
+                let marker: serde_json::Value = serde_json::from_slice(input.marker).unwrap();
+                let requirements: serde_json::Value =
+                    serde_json::from_slice(input.requirements).unwrap();
+                assert_eq!(
+                    marker["idempotencyProfile"],
+                    packet["captures"]["nativeIdempotencyProfile"]
+                );
+                assert_eq!(
+                    requirements["idempotencyProfile"],
+                    marker["idempotencyProfile"]
+                );
+            }
+        }
+        let original = Profile::CurrentLegacy
+            .review(
+                [1; 32],
+                include_bytes!("profile/fixtures/current-legacy-schema.json"),
+                include_bytes!("profile/fixtures/current-legacy.java"),
+                None,
+                Some(current_http_input(
+                    Profile::CurrentLegacy,
+                    HttpCustody::Original,
+                )),
+            )
+            .unwrap();
+        assert_eq!(
+            original.proof_digest(),
+            Profile::CurrentLegacy.conformance().unwrap()
+        );
+        assert_eq!(
+            original.proof_digest(),
+            [
+                117, 212, 188, 50, 164, 158, 241, 47, 80, 251, 189, 135, 9, 150, 7, 69, 57, 180,
+                241, 54, 62, 94, 189, 81, 148, 208, 136, 7, 219, 65, 0, 135
+            ]
+        );
+    }
+
+    #[test]
+    fn current_http_custody_refuses_unknown_mixed_and_changed_signed_associations() {
+        let profile = Profile::CurrentLegacy;
+        let fresh = current_http_input(profile, HttpCustody::Fresh);
+        let original = current_http_input(profile, HttpCustody::Original);
+        let writer = current_http_input(Profile::CurrentWriter, HttpCustody::Fresh);
+        let mut changed = fresh;
+        for input in [
+            CurrentHttpInput {
+                component: writer.component,
+                ..fresh
+            },
+            CurrentHttpInput {
+                companion: writer.companion,
+                ..fresh
+            },
+            CurrentHttpInput {
+                marker: b"unreviewed",
+                ..fresh
+            },
+            CurrentHttpInput {
+                requirements_digest: original.requirements_digest,
+                requirements: original.requirements,
+                ..fresh
+            },
+            CurrentHttpInput {
+                marker: original.marker,
+                ..fresh
+            },
+            CurrentHttpInput {
+                requirements_digest: original.requirements_digest,
+                ..fresh
+            },
+            CurrentHttpInput {
+                requirements: writer.requirements,
+                ..fresh
+            },
+        ] {
+            assert!(HttpCustody::select(profile, &input).is_err());
+        }
+        let mut requirements = fresh.requirements.to_vec();
+        requirements.push(b' ');
+        changed.requirements = &requirements;
+        assert!(HttpCustody::select(profile, &changed).is_err());
+        assert!(HttpCustody::select(Profile::Legacy, &fresh).is_err());
+        let source = include_bytes!("profile/fixtures/current-legacy.java");
+        let declaration = include_bytes!("profile/fixtures/current-legacy-schema.json");
+        assert!(profile
+            .review([1; 32], declaration, b"changed source", None, Some(fresh))
+            .is_err());
+        assert!(profile
+            .review([1; 32], declaration, source, None, Some(changed))
+            .is_err());
+        assert!(profile
+            .review([1; 32], declaration, source, None, None)
+            .is_err());
+        let mut claimed: serde_json::Value = serde_json::from_slice(declaration).unwrap();
+        claimed["publicationReviewGranted"] = true.into();
+        assert!(profile
+            .review(
+                [1; 32],
+                &serde_json::to_vec(&claimed).unwrap(),
+                source,
+                None,
+                Some(fresh)
+            )
+            .is_err());
+    }
 
     #[test]
     fn installed_java_codecs_preserve_unsigned_maximum_and_refuse_wrong_media_tag_and_shape() {

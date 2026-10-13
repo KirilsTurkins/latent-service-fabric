@@ -1,5 +1,5 @@
 //! Exact admitted package layers retained before any fixed-worker review.
-use super::profile::{Profile, V1, V2};
+use super::profile::{CurrentHttpInput, Profile, V1, V2};
 use super::selection::RecoverySource;
 use latent_artifacts::{
     package::{
@@ -96,12 +96,24 @@ pub(super) fn capture(
         }
     }
     let marker = if profile.current_http() {
-        Some(asset(
+        let marker = asset(
             &config,
             layers,
             "java-current-http-profile.json",
             "application/json",
-        )?)
+        )?;
+        let (requirements_digest, requirements) = operation
+            .asset
+            .get()
+            .deferred_http_requirements()
+            .ok_or_else(super::denied)?;
+        Some(CurrentHttpInput {
+            component: &publication.release().0,
+            companion: operation.asset.get().asset_digest().as_str(),
+            marker,
+            requirements_digest: requirements_digest.as_str(),
+            requirements,
+        })
     } else {
         None
     };
@@ -135,7 +147,7 @@ pub(super) fn capture(
     if let Some(marker) = marker {
         artifacts.push(artifact(
             "lsf.java718.current-http-source-input.v1".into(),
-            marker,
+            marker.marker,
         ));
     }
     publication.check_current()?;
