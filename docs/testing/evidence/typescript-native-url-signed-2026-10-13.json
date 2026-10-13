@@ -1,0 +1,405 @@
+{
+  "qualification": "unknown",
+  "installedFetchQualified": false,
+  "signedNativeURLQualifiedForRecordedFiniteCases": true,
+  "sourceDiagnosticPhasesAreNotFetchQualification": true,
+  "logs": [
+    {
+      "path": "/work/pr923-fetch-signed-phases-20261013/0-signed_fetch_phase_diagnostic_retains_actual_js_errors_and_native_consumption.log",
+      "sha256": "f9a3c953bb07b6ad777e7dbd39d87c22c1a008af1db9523658c7cb4f26900e06",
+      "bytes": 6173,
+      "nativeSignedTestPassed": true,
+      "invocations": [
+        {
+          "selector": 0,
+          "actualResult": "Request-constructor:PASS",
+          "fuel": 16662003,
+          "peakMemoryBytes": 8459496,
+          "outboundRequests": 0
+        },
+        {
+          "selector": 1,
+          "actualResult": "Request-text:abcdefgh",
+          "fuel": 21681845,
+          "peakMemoryBytes": 8459496,
+          "outboundRequests": 0
+        },
+        {
+          "selector": 2,
+          "actualResult": {
+            "bytes": [
+              97,
+              98,
+              99,
+              100,
+              101,
+              102,
+              103,
+              104
+            ],
+            "done": true
+          },
+          "fuel": 22215869,
+          "peakMemoryBytes": 8459496,
+          "outboundRequests": 0
+        },
+        {
+          "selector": 3,
+          "actualResult": "http://localhost:9876/allowed",
+          "fuel": 15055739,
+          "peakMemoryBytes": 8459496,
+          "outboundRequests": 0
+        }
+      ]
+    },
+    {
+      "path": "/work/pr923-fetch-signed-phases-20261013/1-signed_native_url_reference_rejected_mutation_and_fresh_state_preserve_linked_owners.log",
+      "sha256": "a90c29acbb025728d1d4a67b671cd7c5661b3f04935a8eea44d907c2b51b2534",
+      "bytes": 9851,
+      "nativeSignedTestPassed": true,
+      "invocations": [
+        {
+          "selector": 0,
+          "actualResult": {
+            "linked": [
+              "https://example.invalid/caf%C3%A9?a=2&a=1&q=updated+value&snow=%E2%98%83#part",
+              [
+                [
+                  "a",
+                  "2"
+                ],
+                [
+                  "a",
+                  "1"
+                ],
+                [
+                  "q",
+                  "updated value"
+                ],
+                [
+                  "snow",
+                  "\u2603"
+                ]
+              ],
+              true
+            ],
+            "mutated": [
+              "https://example.invalid/caf%C3%A9?x=8",
+              [
+                [
+                  "x",
+                  "8"
+                ]
+              ],
+              true
+            ],
+            "empty": "",
+            "standalone": [
+              "a=1&a=3&b=2",
+              true,
+              [
+                "1",
+                "3"
+              ]
+            ],
+            "invalidSetters": true,
+            "invalid": true
+          },
+          "fuel": 19960326,
+          "peakMemoryBytes": 8459496,
+          "outboundRequests": 0
+        },
+        {
+          "selector": 0,
+          "actualResult": {
+            "linked": [
+              "https://example.invalid/caf%C3%A9?a=2&a=1&q=updated+value&snow=%E2%98%83#part",
+              [
+                [
+                  "a",
+                  "2"
+                ],
+                [
+                  "a",
+                  "1"
+                ],
+                [
+                  "q",
+                  "updated value"
+                ],
+                [
+                  "snow",
+                  "\u2603"
+                ]
+              ],
+              true
+            ],
+            "mutated": [
+              "https://example.invalid/caf%C3%A9?x=8",
+              [
+                [
+                  "x",
+                  "8"
+                ]
+              ],
+              true
+            ],
+            "empty": "",
+            "standalone": [
+              "a=1&a=3&b=2",
+              true,
+              [
+                "1",
+                "3"
+              ]
+            ],
+            "invalidSetters": true,
+            "invalid": true
+          },
+          "fuel": 19960326,
+          "peakMemoryBytes": 8459496,
+          "outboundRequests": 0
+        },
+        {
+          "selector": 1,
+          "actualResult": {
+            "refused": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "fresh": "fresh",
+            "identity": true
+          },
+          "fuel": 28251329,
+          "peakMemoryBytes": 8459496,
+          "outboundRequests": 0
+        },
+        {
+          "selector": 2,
+          "actualResult": [
+            "https://example.invalid",
+            "http://[::1]",
+            "ftp://example.invalid",
+            "null",
+            "null",
+            "https://example.invalid"
+          ],
+          "fuel": 16308050,
+          "peakMemoryBytes": 8459496,
+          "outboundRequests": 0
+        },
+        {
+          "selector": 3,
+          "actualResult": [
+            "https://another.invalid/next?b=2&c=3",
+            true,
+            [
+              [
+                "b",
+                "2"
+              ],
+              [
+                "c",
+                "3"
+              ]
+            ]
+          ],
+          "fuel": 15676319,
+          "peakMemoryBytes": 8459496,
+          "outboundRequests": 0
+        },
+        {
+          "selector": 0,
+          "actualResult": {
+            "linked": [
+              "https://example.invalid/caf%C3%A9?a=2&a=1&q=updated+value&snow=%E2%98%83#part",
+              [
+                [
+                  "a",
+                  "2"
+                ],
+                [
+                  "a",
+                  "1"
+                ],
+                [
+                  "q",
+                  "updated value"
+                ],
+                [
+                  "snow",
+                  "\u2603"
+                ]
+              ],
+              true
+            ],
+            "mutated": [
+              "https://example.invalid/caf%C3%A9?x=8",
+              [
+                [
+                  "x",
+                  "8"
+                ]
+              ],
+              true
+            ],
+            "empty": "",
+            "standalone": [
+              "a=1&a=3&b=2",
+              true,
+              [
+                "1",
+                "3"
+              ]
+            ],
+            "invalidSetters": true,
+            "invalid": true
+          },
+          "fuel": 19960326,
+          "peakMemoryBytes": 8459496,
+          "outboundRequests": 0
+        }
+      ]
+    }
+  ],
+  "executionReceipt": {
+    "actualSignedExecution": true,
+    "qualification": "unknown",
+    "commands": [
+      {
+        "name": "signed_fetch_phase_diagnostic_retains_actual_js_errors_and_native_consumption",
+        "command": [
+          "/work/pr923-fetch-signed-native-link-r2-20261013/local_service",
+          "runtime::typescript_fetch::signed_fetch_phase_diagnostic_retains_actual_js_errors_and_native_consumption",
+          "--exact",
+          "--ignored",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exitCode": 0,
+        "seconds": 40.261195248998774
+      },
+      {
+        "name": "signed_native_url_reference_rejected_mutation_and_fresh_state_preserve_linked_owners",
+        "command": [
+          "/work/pr923-fetch-signed-native-link-r2-20261013/local_service",
+          "runtime::typescript_fetch::signed_native_url_reference_rejected_mutation_and_fresh_state_preserve_linked_owners",
+          "--exact",
+          "--ignored",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "exitCode": 0,
+        "seconds": 39.619267717000184
+      }
+    ],
+    "product": {
+      "path": "/work/pr923-fetch-signed-native-link-r2-20261013/local_service",
+      "sha256": "51ff8f94c6ec96f0da0999d982c2a5cf9fb5a35fdd2182673ec1c23ad6111f40",
+      "bytes": 124845640
+    },
+    "allOriginalLimitsRetained": true,
+    "seconds": 80.05784430099993,
+    "passedBoth": true
+  },
+  "frozenNativeReceipt": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--jobs",
+      "2",
+      "-p",
+      "latent-wasmtime",
+      "--test",
+      "local_service",
+      "--all-features",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "exitCode": 0,
+    "monitorStopReason": null,
+    "seconds": 13.088176319999548,
+    "source": [
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/crates/latent-wasmtime/tests/local_service/fixture.rs",
+        "sha256": "0e2ca6d75f00381d352b9d15fe6a19243b4dc777d3f1e981b9dfcf623e715680",
+        "bytes": 37391
+      },
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/crates/latent-wasmtime/tests/local_service/runtime.rs",
+        "sha256": "e3709d6f720bca432eef9a40b8e6e863539478b564999c8aefa64bd7610247bc",
+        "bytes": 25468
+      },
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/crates/latent-wasmtime/tests/local_service/runtime/http_owners.rs",
+        "sha256": "5e4ae4fb79ae51bf011de6e45daf66e9e65c811a9a41a434c69d484153fcec08",
+        "bytes": 7086
+      },
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/crates/latent-wasmtime/tests/local_service/runtime/typescript_fetch.rs",
+        "sha256": "e502a8cddec8ae704aff85e00363f69dc8d89a36544c8c31324fa0ca1fffae31",
+        "bytes": 16912
+      },
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/crates/latent-wasmtime/src/host/streaming_http/table.rs",
+        "sha256": "bd47332858630de36755ba5904553a4d9f61367873b1d62503927d3d2997d90b",
+        "bytes": 13958
+      },
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/crates/latent-wasmtime/src/host/streaming_http/body.rs",
+        "sha256": "28d8a627e950b1e7b677c69d8f797c8071a693b59d5b4c6f0b5c9bddd1b8dd28",
+        "bytes": 5695
+      },
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/crates/latent-wasmtime/src/host/streaming_http/upload.rs",
+        "sha256": "2fefdd1804193677ba3a9f913d478fe9897f2fa4a532bc776785cab4cb7913f5",
+        "bytes": 8267
+      },
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/Cargo.toml",
+        "sha256": "c2e6cc2fda9d99df90a3919f51ce9a96850c69bc3de575f1a7c7fe2bbaf1ce9f",
+        "bytes": 3663
+      },
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/Cargo.lock",
+        "sha256": "322da1092cae448c779c5b0fafcc8ce2876042d54ff020776c4b5faa40694ad6",
+        "bytes": 111538
+      },
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/rust-toolchain.toml",
+        "sha256": "7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc",
+        "bytes": 140
+      },
+      {
+        "path": "/work/pr923-fetch-native-source-20261013/rustfmt.toml",
+        "sha256": "2d0562f04f39c74eac44973c8464645e3d3b5f93d6b07ec7258792f8a850fc38",
+        "bytes": 113
+      }
+    ],
+    "qualification": "unknown",
+    "actualSignedExecution": false,
+    "originalLimitsUnchanged": true,
+    "compilerArtifact": {
+      "path": "/target/debug/deps/local_service-0c5a12e08baae583",
+      "sha256": "51ff8f94c6ec96f0da0999d982c2a5cf9fb5a35fdd2182673ec1c23ad6111f40",
+      "bytes": 124845640
+    },
+    "product": {
+      "path": "/work/pr923-fetch-signed-native-link-r2-20261013/local_service",
+      "sha256": "51ff8f94c6ec96f0da0999d982c2a5cf9fb5a35fdd2182673ec1c23ad6111f40",
+      "bytes": 124845640
+    }
+  },
+  "originalLimitsUnchanged": true,
+  "actualEveryInvocationIdleChecked": true,
+  "nativeOwners": 64,
+  "memoryBytes": 134217728,
+  "fuel": 1000000000,
+  "wallMillis": 120000
+}

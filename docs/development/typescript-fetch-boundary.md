@@ -187,6 +187,24 @@ produce URL/reference and default-fetch components with strict types, exact
 world graphs, compiler containment and completed package observations. Signed
 execution and the remaining library/private-package requirements are pending.
 
+The fresh signed node run now passes six native URL activations: the independently
+captured Node reference, linked parameters after href mutation, six origin
+schemes, every byte/pair refusal with unchanged linked views, and fresh reuse.
+The real HTTP binding is explicitly denied for this pure URL test and makes no
+socket contact. Original physical idle, Native64 and invocation limits remain
+checked. The [signed URL packet](../testing/evidence/typescript-native-url-signed-2026-10-13.json)
+separately records four diagnostic phases: Request construction, finite body
+consumption, stream read/close and URL mapping work in actual components.
+
+The signed default-fetch denied-provider case also succeeds with no TCP contact.
+Positive POST currently traps before any outbound request or TCP connection;
+its first joined peer/invocation attempt reached the original 120-second bound.
+The independent host-cancellation probe exposes a 74.9 ms pre-open GuestTrap,
+181,884,974 fuel and 8,459,496 bytes peak memory. Those failures remain preserved.
+Positive body/capture/lowering ownership needs diagnosis; the four successful
+finite diagnostic phases do not establish fetch qualification. No hidden retry,
+timer fallback, synthetic retirement or raised resource ceiling is introduced.
+
 The first new native run executed all 31 selectors. All original 27 and the three
 direct retirement controls passed. The actual JS bridge case retained its own
 `globalThis.retired` Promise after successful subtask/set drops, leaving one
@@ -202,7 +220,8 @@ Its exact 9,269,759-byte product is
 `ea3a25d8ca8a842109e07de38aff98464993fcb6b526eb41a9f92ebb3eb690e3`.
 The [fixture packet](../testing/evidence/typescript-native-retirement-2026-10-13.json)
 retains source/link/product identities and both failed attempts. This is finite
-diagnostic-broker evidence; it does not qualify installed fetch. A newly rebuilt,
-source-bound engine/splicer and ordinary/signed fetch cancellation, drop and reuse
-controls are still required. All profile observations remain unknown and these
+diagnostic-broker evidence; it does not qualify installed fetch. The separately
+rebuilt engine/splicer now has exact source/build custody above. Ordinary runtime
+and signed fetch cancellation, drop and reuse controls are still required.
+All profile observations remain unknown and these
 changes close none of #691, #745 or #685.

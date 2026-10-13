@@ -46,6 +46,9 @@ mod diagnostics;
 #[path = "../guest_sdk/runtime.rs"]
 mod guest_runtime;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[path = "runtime/http_owners.rs"]
+pub mod http;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "outbound/owners.rs"]
 pub mod streams;
 
@@ -160,6 +163,8 @@ pub struct Fixture {
     pub read_wait: Arc<ObservedReadWait>,
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     pub streams: Option<Box<streams::Owners>>,
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub http: Option<Box<http::Owners>>,
     _root: tempfile::TempDir,
 }
 impl Fixture {
@@ -196,6 +201,8 @@ impl Fixture {
             None,
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             None,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            None,
         )
         .await
     }
@@ -208,6 +215,8 @@ impl Fixture {
             None,
             load,
             None,
+            None,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             None,
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             None,
@@ -235,6 +244,8 @@ impl Fixture {
             Some((limits, call_wall_millis)),
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             None,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            None,
         )
         .await
     }
@@ -260,6 +271,33 @@ impl Fixture {
             Some((limits, call_wall_millis)),
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             None,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            None,
+        )
+        .await
+    }
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub async fn with_named_runtime_http(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        identities: RuntimeIdentities,
+        configuration: http::Configuration,
+    ) -> Self {
+        Self::with_packages_and_load(
+            2,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            Some(identities),
+            Some((limits, 120_000)),
+            None,
+            Some(Box::new(configuration)),
         )
         .await
     }
@@ -283,6 +321,7 @@ impl Fixture {
             None,
             None,
             Some(Box::new(configuration)),
+            None,
         )
         .await
     }
@@ -307,11 +346,18 @@ impl Fixture {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
             Box<latent_streams::StreamProviderConfig>,
         >,
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))] http_configuration: Option<
+            Box<http::Configuration>,
+        >,
     ) -> Self {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let stream_enabled = outbound_streams.is_some();
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         let stream_enabled = false;
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        let http_enabled = http_configuration.is_some();
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        let http_enabled = false;
         let root = tempfile::tempdir().unwrap();
         let identities = identities.unwrap_or_default();
         let tenant = identities.tenant.0.as_str();
@@ -454,6 +500,10 @@ impl Fixture {
         if stream_enabled {
             consumer.grants = streams::grants();
         }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if http_enabled {
+            consumer.grants.extend(http::grants());
+        }
         let mut target = deployment("callee", target_tenant, &callee, &callee_publication);
         target.service = identities.callee.clone();
         target.grants = if activation_runtime.is_some()
@@ -468,6 +518,7 @@ impl Fixture {
                 .grants
                 .iter()
                 .filter(|grant| grant.capability.0 != SERVICE_INVOCATION_CAPABILITY)
+                .filter(|grant| grant.capability.0 != "latent:http/streaming@0.3.0")
                 .cloned()
                 .collect()
         } else if activation_runtime.is_some() || stream_enabled {
@@ -577,6 +628,17 @@ impl Fixture {
                 &configuration,
             ))
         });
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        let http = http_configuration.map(|configuration| {
+            Box::new(http::Owners::install(
+                &broker,
+                &policies,
+                &identities.tenant,
+                &identities.caller,
+                &caller_publication,
+                &configuration,
+            ))
+        });
         let guest_runtime = if let Some((_, call_wall_millis)) = activation_runtime {
             guest_runtime::Runtime::activation_scoped_with_clocks(
                 &broker,
@@ -600,6 +662,13 @@ impl Fixture {
         if streams.is_some() {
             definitions.push(streams::Owners::definition());
         }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if http.is_some() {
+            definitions.push(http::Owners::definition(
+                &identities.tenant,
+                &identities.caller,
+            ));
+        }
         let mut providers = vec![ConfiguredBindingProvider {
             tenant: identities.tenant.clone(),
             service: identities.callee.clone(),
@@ -610,6 +679,10 @@ impl Fixture {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         if let Some(streams) = &streams {
             providers.push(streams.provider());
+        }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if let Some(http) = &http {
+            providers.push(http.provider(&identities.tenant));
         }
         let (generation, transaction) = store.binding_version().unwrap();
         let update = store
@@ -629,6 +702,10 @@ impl Fixture {
             store.clone(),
         ));
         guest_runtime.install(&capabilities);
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if let Some(http) = &http {
+            http.install_runtime(&capabilities);
+        }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         if let Some(streams) = &streams {
             capabilities
@@ -651,7 +728,7 @@ impl Fixture {
         )
         .unwrap();
         let backend = Arc::new(factory.create_backend_instance());
-        let mut admission_policy = node_policy(cells, stream_enabled);
+        let mut admission_policy = node_policy(cells, stream_enabled || http_enabled);
         if tenant != "tenant-a" {
             let mut tenant_policy = admission_policy
                 .tenants
@@ -730,6 +807,8 @@ impl Fixture {
             read_wait,
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             streams,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            http,
             _root: root,
         }
     }
@@ -743,6 +822,10 @@ impl Fixture {
         request.budget = packages::budget();
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         if self.streams.is_some() {
+            request.budget.outbound_requests = 8;
+        }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if self.http.is_some() {
             request.budget.outbound_requests = 8;
         }
         request.input = format!("[{which}]").into_bytes();
@@ -773,6 +856,10 @@ impl Fixture {
         })
         .await
         .expect("all activation, store, call and result owners reclaimed");
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        if let Some(http) = &self.http {
+            http.idle();
+        }
     }
     pub fn revoke_target(&self) {
         use latent_artifacts::*;
