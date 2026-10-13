@@ -174,7 +174,18 @@ versions/checksums remain unchanged, multipart remains unselected, and the
 37 missing public source archives were authenticated against that lock. These
 sources and the strict WASI syntax check are recorded in the
 [URL source packet](../testing/evidence/typescript-native-url-source-2026-10-13.json).
-They have not yet produced or qualified the distinct fetch runtime.
+The resulting single source-bound Rust archive builds successfully and freezes
+4,047,388 bytes as `d7b5cf2ab8c26a2651c98aa07e7fadd5b7cd10270b047cbb49ec018aaf982169`.
+The separately rebuilt URL/installer core is 10,287,975 bytes,
+`d858dfc2359f71f6d8bf6604e94478ca2c8677df847bba784fc8de8004237ad7`, with
+61 exact fetch inputs. Its original compiler limits remain one CPU, 2 GiB and
+580 seconds; continuous disk checks retained the 3 GiB floor. The ordinary
+40-input import core remains byte-identical. The
+[build packet](../testing/evidence/typescript-fetch-build-2026-10-13.json) records
+the distinct graph and preserved failures. Actual protected compiler builds now
+produce URL/reference and default-fetch components with strict types, exact
+world graphs, compiler containment and completed package observations. Signed
+execution and the remaining library/private-package requirements are pending.
 
 The first new native run executed all 31 selectors. All original 27 and the three
 direct retirement controls passed. The actual JS bridge case retained its own

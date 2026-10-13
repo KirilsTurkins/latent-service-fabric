@@ -1,0 +1,525 @@
+{
+  "schemaVersion": "latent.typescript.fetch-build-observation.v1",
+  "sourceCheckpoint": "3064c66c51b231e1d0f9a967a57bb40233b58329",
+  "qualification": "unknown",
+  "installedFetchQualified": false,
+  "actualSignedFetchExecuted": false,
+  "ordinaryImportProfileInputsChanged": false,
+  "ordinaryImportSourceCount": 40,
+  "fetchSourceCount": 61,
+  "core": {
+    "path": "/work/pr923-fetch-URL-engine-r2-20261013/build/engine.wasm",
+    "sha256": "d858dfc2359f71f6d8bf6604e94478ca2c8677df847bba784fc8de8004237ad7",
+    "bytes": 10287975
+  },
+  "RustAggregate": {
+    "path": "/work/pr923-fetch-url-Rust-graph-r2-20261013/build/librust_staticlib.a",
+    "sha256": "d7b5cf2ab8c26a2651c98aa07e7fadd5b7cd10270b047cbb49ec018aaf982169",
+    "bytes": 4047388
+  },
+  "RustBuild": {
+    "exitCode": 0,
+    "seconds": 19.120822146000137,
+    "monitorStopReason": null,
+    "receipt": {
+      "path": "C:\\Users\\turkins\\Desktop\\lf-typescript-fetch-20261012\\target\\fetch-url\\rust-build-receipt.json",
+      "sha256": "0e217f59e752961331be5c4e24d945b5a9433c9e342094ce94d49f4ac9a58508",
+      "bytes": 284889
+    },
+    "selectedPackageCount": 46
+  },
+  "engineBuild": {
+    "receipt": {
+      "path": "C:\\Users\\turkins\\Desktop\\lf-typescript-fetch-20261012\\target\\fetch-url\\core-build-receipt.json",
+      "sha256": "164216ae3d6ec919c745806fb64817ace20fa12351260a6bc459d7bf157a55b6",
+      "bytes": 19366
+    },
+    "commands": [
+      {
+        "name": "compile-0",
+        "argv": [
+          "/work/pr923-sdk30-20261012/wasi-sdk-30.0-x86_64-linux/bin/clang++",
+          "--target=wasm32-unknown-wasi",
+          "-O2",
+          "-flto=thin",
+          "-Wall",
+          "-Werror",
+          "-m32",
+          "-isystem",
+          "/history/typescript745-full-original-unified-promise-carrier-20261007-r5/public-headers",
+          "-include",
+          "/history/typescript745-full-original-unified-promise-carrier-20261007-r5/public-headers/js-confdefs.h",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/lsf",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/include",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/runtime",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/deps/include",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.0",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.0/include",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.3/include",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.10/bindings",
+          "-std=gnu++23",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-fno-sized-deallocation",
+          "-fno-aligned-new",
+          "-mthread-model",
+          "single",
+          "-fPIC",
+          "-fno-math-errno",
+          "-fno-omit-frame-pointer",
+          "-funwind-tables",
+          "-Wno-invalid-offsetof",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/crates/rust-url",
+          "-c",
+          "/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/builtins/web/url.cpp",
+          "-o",
+          "/work/pr923-fetch-URL-engine-r2-20261013/build/StarlingMonkey_builtins_web_url.cpp.o"
+        ],
+        "exitCode": 0,
+        "monitorStopReason": null,
+        "seconds": 7.009605205999833
+      },
+      {
+        "name": "compile-1",
+        "argv": [
+          "/work/pr923-sdk30-20261012/wasi-sdk-30.0-x86_64-linux/bin/clang++",
+          "--target=wasm32-unknown-wasi",
+          "-O2",
+          "-flto=thin",
+          "-Wall",
+          "-Werror",
+          "-m32",
+          "-isystem",
+          "/history/typescript745-full-original-unified-promise-carrier-20261007-r5/public-headers",
+          "-include",
+          "/history/typescript745-full-original-unified-promise-carrier-20261007-r5/public-headers/js-confdefs.h",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/lsf",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/include",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/runtime",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/deps/include",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.0",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.0/include",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.3/include",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/host-apis/wasi-0.2.10/bindings",
+          "-std=gnu++23",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-fno-sized-deallocation",
+          "-fno-aligned-new",
+          "-mthread-model",
+          "single",
+          "-fPIC",
+          "-fno-math-errno",
+          "-fno-omit-frame-pointer",
+          "-funwind-tables",
+          "-Wno-invalid-offsetof",
+          "-I/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/crates/rust-url",
+          "-c",
+          "/work/pr923-fetch-URL-engine-r2-20261013/source/StarlingMonkey/builtins/install_builtins.cpp",
+          "-o",
+          "/work/pr923-fetch-URL-engine-r2-20261013/build/StarlingMonkey_builtins_install_builtins.cpp.o"
+        ],
+        "exitCode": 0,
+        "monitorStopReason": null,
+        "seconds": 4.00440599400099
+      },
+      {
+        "name": "link",
+        "argv": [
+          "/work/pr923-sdk30-20261012/wasi-sdk-30.0-x86_64-linux/bin/clang++",
+          "--target=wasm32-unknown-wasi",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/0.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/1.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/2.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/3.o",
+          "/work/pr923-fetch-engine-source-r2-20261013/build/StarlingMonkey_runtime_engine.cpp.o",
+          "/work/pr923-fetch-engine-source-r2-20261013/build/StarlingMonkey_runtime_event_loop.cpp.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/6.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/7.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/8.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/10.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/11.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/12.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/13.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/14.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/15.o",
+          "/work/pr923-fetch-engine-source-r2-20261013/build/StarlingMonkey_builtins_web_abort_abort-signal.cpp.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/17.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/18.o",
+          "/work/pr923-fetch-engine-source-r2-20261013/build/StarlingMonkey_builtins_web_timers.cpp.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/20.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/21.o",
+          "/work/pr923-fetch-engine-source-r2-20261013/build/embedding_embedding.cpp.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/23.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/24.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/25.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/26.o",
+          "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/28.o",
+          "/work/pr923-fetch-URL-engine-r2-20261013/build/StarlingMonkey_builtins_install_builtins.cpp.o",
+          "/history/typescript745-selected-whole-engine-build-20261008-codec-r4/native-clock.o",
+          "/history/typescript745-selected-whole-engine-build-20261008-codec-r4/clocks.o",
+          "/work/pr923-import-production-engine-20261012/source/lsf/clocks_component_type.o",
+          "/work/pr923-fetch-engine-source-r2-20261013/build/lsf_native_engine.cpp.o",
+          "/work/pr923-fetch-engine-source-r2-20261013/build/lsf_native_import_bridge.cpp.o",
+          "/work/pr923-fetch-engine-source-r2-20261013/build/lsf_native_import_globals.cpp.o",
+          "/history/typescript745-selected-whole-engine-build-20261008-codec-r4/text-codec.o",
+          "/history/typescript745-selected-whole-engine-build-20261008-codec-r4/text-encoder.o",
+          "/history/typescript745-selected-whole-engine-build-20261008-codec-r4/text-decoder.o",
+          "/history/typescript745-source-bound-unified-unit-build-20261007-r2/Unified_cpp_js_src2.o",
+          "/history/typescript745-public-spidermonkey-20261007-r2/payload/spidermonkey-dist-release/libspidermonkey.a",
+          "/work/pr923-fetch-url-Rust-graph-r2-20261013/build/librust_staticlib.a",
+          "/history/typescript745-original-rust-engine-libraries-build-20261007-r1/libwrappers.a",
+          "/work/pr923-import-production-engine-20261012/source/StarlingMonkey/host-apis/wasi-0.2.10/bindings/bindings_component_type.o",
+          "/work/pr923-import-production-engine-20261012/source/lsf/jobs_component_type.o",
+          "-Wl,-z,stack-size=1048576",
+          "-Wl,--stack-first",
+          "-mexec-model=reactor",
+          "-Wl,--export=latent_runtime_activation_observe",
+          "-Wl,--export=latent_runtime_activation_wait_for",
+          "-Wl,--export=latent_runtime_activation_wait_until",
+          "-Wl,--export=lsf_import_result_buffer",
+          "-Wl,--export=lsf_import_parameter_buffer",
+          "-Wl,--export=lsf_import_begin",
+          "-Wl,--export=lsf_import_started",
+          "-Wl,--threads=1",
+          "-Wl,--thinlto-jobs=1",
+          "-Wl,--lto-O0",
+          "-Wl,--strip-debug",
+          "-lwasi-emulated-signal",
+          "-lwasi-emulated-process-clocks",
+          "-lwasi-emulated-getpid",
+          "/work/pr923-fetch-URL-engine-r2-20261013/build/StarlingMonkey_builtins_web_url.cpp.o",
+          "-o",
+          "/work/pr923-fetch-URL-engine-r2-20261013/build/engine.wasm"
+        ],
+        "exitCode": 0,
+        "monitorStopReason": null,
+        "seconds": 103.07671043899973
+      }
+    ],
+    "seconds": 116.37250512099854,
+    "sourceDerivation": {
+      "path": "/work/pr923-fetch-URL-engine-r2-20261013/SOURCE.json",
+      "sha256": "6a501e9f71355dca298c80f036364ad8625d693070cf47f557ac5cc8adc404f3",
+      "bytes": 263705
+    },
+    "reusedExactLinkInputs": [
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/0.o",
+        "sha256": "32212b4ef49d80169394f72aa7c6ab28bd79dbb57003b86cbe48a5f06215c665",
+        "bytes": 39904
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/1.o",
+        "sha256": "7b0d392f8266d6d40854fc6a8d8e31898a24e89646800b5ccf26a718b0661bfd",
+        "bytes": 4088
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/2.o",
+        "sha256": "2cfbe25306102e2f82c7242de005d92de2ee12a257416db900aa3116b806e128",
+        "bytes": 8036
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/3.o",
+        "sha256": "6267bb12426e0a45102032d70d240e217be5ed79c5f22d1a6ef48b6e611bfe45",
+        "bytes": 4632
+      },
+      {
+        "path": "/work/pr923-fetch-engine-source-r2-20261013/build/StarlingMonkey_runtime_engine.cpp.o",
+        "sha256": "f0fa85fbf2164f34b51efa922eeb071fea823f129b4f6f663a43ec9e20179512",
+        "bytes": 261440
+      },
+      {
+        "path": "/work/pr923-fetch-engine-source-r2-20261013/build/StarlingMonkey_runtime_event_loop.cpp.o",
+        "sha256": "7e1e7cf8c03dc8913318af34c650213a7f800f256fea28875b4f3a52d856a7df",
+        "bytes": 209400
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/6.o",
+        "sha256": "8a01f5d8a82b73d32adfdfd1fd1e7ebd9b9615389f26e6d5747d308dd604d6b6",
+        "bytes": 8508
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/7.o",
+        "sha256": "bb379e5ed03118d8e13b711f2886f4534e906b3222b00cde796e1a722151ff00",
+        "bytes": 57716
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/8.o",
+        "sha256": "526eacaa1d3eae1d163971ec0e87358adae8cfc179df34449474bb6e894de5a0",
+        "bytes": 3984
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/10.o",
+        "sha256": "06ba1550d6a6a058e81d7efc475a8990b77fbc2ddb93edcc45a1a98a39e45495",
+        "bytes": 6316
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/11.o",
+        "sha256": "7a3c62a7b322a1f8e35484875946f167c3d4f30998d54ddcb63e2d1a32f08994",
+        "bytes": 6440
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/12.o",
+        "sha256": "3bbacc95efcad4ca6d23f0251ad54cd5ef22fa7f85cefa927ddbe15dbd6d0f7f",
+        "bytes": 42212
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/13.o",
+        "sha256": "0fe8e9d4ffc99dbe2b9093c238c34433877887a7282dc0b55e723ebb1ce550e9",
+        "bytes": 71512
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/14.o",
+        "sha256": "d890c4ed8bf92b9a8a6362b3fe9b7fcde8653d61efb32e0946fdb514448f7b97",
+        "bytes": 24084
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/15.o",
+        "sha256": "56716ad4ae9e97d145283d334297cb655d093473e4f170a689c03c1bfe201ace",
+        "bytes": 9844
+      },
+      {
+        "path": "/work/pr923-fetch-engine-source-r2-20261013/build/StarlingMonkey_builtins_web_abort_abort-signal.cpp.o",
+        "sha256": "692db6527c9dfdc82e4f8891b2396cddd403357bf5e1c3316b1fd87d6ec1509f",
+        "bytes": 70804
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/17.o",
+        "sha256": "ee530ff3a977433d15257c530c35c26eb14d7fda9be985d4bc3f7d5dcb60fce2",
+        "bytes": 16840
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/18.o",
+        "sha256": "6b306b9f6f494c1fe648dd4021db4d067c33f5f1a3f918b5e0dda976adfddb0f",
+        "bytes": 31196
+      },
+      {
+        "path": "/work/pr923-fetch-engine-source-r2-20261013/build/StarlingMonkey_builtins_web_timers.cpp.o",
+        "sha256": "67a76f1382273847e739ebae36a832e30cbf14b0dfc16083c2e3aa293735d2c5",
+        "bytes": 10656
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/20.o",
+        "sha256": "4d1c38db77694938fd934f21deb323444118fe58b2c292629d6d9755bb9e4e93",
+        "bytes": 290544
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/21.o",
+        "sha256": "498ff5df5a6ac2f7e51df5c0349cea6a2565cf01b5e9f56b22c68f2cb50e3b2e",
+        "bytes": 18752
+      },
+      {
+        "path": "/work/pr923-fetch-engine-source-r2-20261013/build/embedding_embedding.cpp.o",
+        "sha256": "da8e519459f558fdb8a6408aaa776897aa6fefa43393739ea4ff737f046a5fde",
+        "bytes": 69484
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/23.o",
+        "sha256": "db65a28879109fef9f53c7d495cc2007debe47b83ed12ffc65b8e823665d5d3f",
+        "bytes": 161260
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/24.o",
+        "sha256": "a4ad94a3ee22795d0866d0cc7332743eab804206c7e43c875252cdbaf5547f7b",
+        "bytes": 3372
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/25.o",
+        "sha256": "e2374c85e96c5bfb934f18b0a8317a5df8dbd9181fb04c94d559cde886066a1e",
+        "bytes": 12948
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/26.o",
+        "sha256": "a6e58f16c0c0e556a0e807f51c34d06222248d1afeaa53e24f0a1e4be6cb2eee",
+        "bytes": 211984
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261007-r5/objects/28.o",
+        "sha256": "6d5ac3d7b9945adde9134d476f49d33783fb3569825533ef8a96bafcb1b3ac81",
+        "bytes": 23788
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261008-codec-r4/native-clock.o",
+        "sha256": "9f826047b0fac91c89d60a3d570d708495cbeee8c013fe73aa96a9b0970c4144",
+        "bytes": 11132
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261008-codec-r4/clocks.o",
+        "sha256": "cc67972d46366a61ce7dd48e5ae113d238b2c3bb426b8f322ff3e843d483908f",
+        "bytes": 5920
+      },
+      {
+        "path": "/work/pr923-import-production-engine-20261012/source/lsf/clocks_component_type.o",
+        "sha256": "0f6d19fba71434d0e72b7a55deb9e94308e951c187a2742ced57199fd4145865",
+        "bytes": 388
+      },
+      {
+        "path": "/work/pr923-fetch-engine-source-r2-20261013/build/lsf_native_engine.cpp.o",
+        "sha256": "1a90a0a5579924ee584f0a6d4e04e3abca1eeb25ee8cb97ca0afd1cefde66e9f",
+        "bytes": 116932
+      },
+      {
+        "path": "/work/pr923-fetch-engine-source-r2-20261013/build/lsf_native_import_bridge.cpp.o",
+        "sha256": "d5c5e91a664ce1f5a1fe05c5030a2025f39d442fe4edd6e00d8e83c9da87d87b",
+        "bytes": 10644
+      },
+      {
+        "path": "/work/pr923-fetch-engine-source-r2-20261013/build/lsf_native_import_globals.cpp.o",
+        "sha256": "1ef0909e63355550a3eaca82ee6e267c322cfc5df894e5614b7c944a6afdb062",
+        "bytes": 9496
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261008-codec-r4/text-codec.o",
+        "sha256": "7c94a0d8d1f8b82f77b7dee7b07259a242da2ac4266e7fb3edeb234de25169a1",
+        "bytes": 3660
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261008-codec-r4/text-encoder.o",
+        "sha256": "76e765eae05fbff5ee012cd082f0d43accdad040f54d3a11f96b47e612db319f",
+        "bytes": 22424
+      },
+      {
+        "path": "/history/typescript745-selected-whole-engine-build-20261008-codec-r4/text-decoder.o",
+        "sha256": "56bbdd3bd82b07c017b8d6f6f92175ca54955d829f611d8a31455aae13a25cad",
+        "bytes": 28780
+      },
+      {
+        "path": "/history/typescript745-source-bound-unified-unit-build-20261007-r2/Unified_cpp_js_src2.o",
+        "sha256": "9edd6d7ef3ff49d80632109f062051a7d1766f07d9d17e9487289127026d7259",
+        "bytes": 5919708
+      },
+      {
+        "path": "/history/typescript745-public-spidermonkey-20261007-r2/payload/spidermonkey-dist-release/libspidermonkey.a",
+        "sha256": "298b85501657189dc66139242abf5aeb4e981b8db7c37cc5a69d1151ec40aacc",
+        "bytes": 538170426
+      },
+      {
+        "path": "/work/pr923-fetch-url-Rust-graph-r2-20261013/build/librust_staticlib.a",
+        "sha256": "d7b5cf2ab8c26a2651c98aa07e7fadd5b7cd10270b047cbb49ec018aaf982169",
+        "bytes": 4047388
+      },
+      {
+        "path": "/history/typescript745-original-rust-engine-libraries-build-20261007-r1/libwrappers.a",
+        "sha256": "83c9274fab8d06cb54930f6647a2a6841e8fb742324286ab59b8c627cbd5a9ec",
+        "bytes": 830
+      },
+      {
+        "path": "/work/pr923-import-production-engine-20261012/source/StarlingMonkey/host-apis/wasi-0.2.10/bindings/bindings_component_type.o",
+        "sha256": "c48f1ae980766fdb2decaa417fe0eaf618a56e26cb7f36c329c92a1ff60439c2",
+        "bytes": 16049
+      },
+      {
+        "path": "/work/pr923-import-production-engine-20261012/source/lsf/jobs_component_type.o",
+        "sha256": "f4d920377d465498216f9e246c3456038887649cf677eaf42971fcdfe2205b47",
+        "bytes": 1141
+      }
+    ]
+  },
+  "engineEnvelope": {
+    "file": {
+      "path": "C:\\Users\\turkins\\Desktop\\lf-typescript-fetch-20261012\\target\\fetch-url\\engine-input61.json",
+      "sha256": "3874f835449d80197b8cf5cf5df3322879cdb3955229c21d3eb28e1688791627",
+      "bytes": 12722
+    },
+    "sourceDerivationDigest": "sha256:6a501e9f71355dca298c80f036364ad8625d693070cf47f557ac5cc8adc404f3",
+    "buildReceiptDigest": "sha256:164216ae3d6ec919c745806fb64817ace20fa12351260a6bc459d7bf157a55b6",
+    "compilerSplicerInputDigest": "sha256:248302d02470ca676ab838acfe722b861af481aae093543ed5d2242d112fc360"
+  },
+  "headroom": {
+    "oneSecondMonitor": true,
+    "minimumFreeBytes": 4302856192,
+    "minimumAllowedBytes": 3221225472,
+    "ownedOutputBoundBytes": 471859200
+  },
+  "limits": {
+    "compilerCpu": 1,
+    "compilerAddressSpaceBytes": 2147483648,
+    "commandSeconds": 580,
+    "nativeOwners": 64,
+    "URLInputAndBackingBytes": 8192,
+    "queryPairs": 256,
+    "invocationMemoryBytes": 134217728,
+    "invocationFuel": 1000000000,
+    "invocationWallMillis": 120000
+  },
+  "NodeReference": {
+    "sourceDiagnosticOnly": true,
+    "nativeRuntimeQualified": false,
+    "command": [
+      "/work/pr923-public-20261012/node-v24.19.0-linux-x64/bin/node",
+      "/work/pr923-fetch-url-reference-20261013/run.mjs"
+    ],
+    "node": {
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+      "bytes": 125989464
+    },
+    "source": {
+      "sha256": "2b939c213ba333010092868c236c4d7a6d7443dad41e7f46061b1019a696496e",
+      "bytes": 2347
+    },
+    "exitCode": 0,
+    "reference": {
+      "linked": [
+        "https://example.invalid/caf%C3%A9?a=2&a=1&q=updated+value&snow=%E2%98%83#part",
+        [
+          [
+            "a",
+            "2"
+          ],
+          [
+            "a",
+            "1"
+          ],
+          [
+            "q",
+            "updated value"
+          ],
+          [
+            "snow",
+            "\u2603"
+          ]
+        ],
+        true
+      ],
+      "mutated": [
+        "https://example.invalid/caf%C3%A9?x=8",
+        [
+          [
+            "x",
+            "8"
+          ]
+        ],
+        true
+      ],
+      "empty": "",
+      "standalone": [
+        "a=1&a=3&b=2",
+        true,
+        [
+          "1",
+          "3"
+        ]
+      ],
+      "invalidSetters": true,
+      "invalid": true
+    }
+  },
+  "preservedFailures": [
+    "/work/pr923-fetch-URL-runtime-bundle-20261013",
+    "/work/pr923-fetch-URL-project-20261013",
+    "/work/pr923-fetch-runtime-project-20261013",
+    "Windows owned Rust launcher null ExitCode after actual Linux exit0"
+  ],
+  "requiredNextEvidence": [
+    "actual signed URL/reference/refusal/fresh controls",
+    "actual signed borrowed-read cancellation/drop/reuse/zero native owners",
+    "ordinary runtime matrix on exact new importer",
+    "two unchanged independently maintained fetch consumers",
+    "outside-checkout private package identity/catalogue changes"
+  ]
+}
