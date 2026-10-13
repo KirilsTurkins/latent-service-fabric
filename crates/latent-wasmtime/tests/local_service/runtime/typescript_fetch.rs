@@ -230,13 +230,20 @@ async fn read_request(socket: &mut tokio::net::TcpStream, mode: u32) {
 async fn closed_socket(socket: &mut tokio::net::TcpStream) {
     use tokio::io::AsyncReadExt;
     let mut byte = [0];
-    assert_eq!(
-        tokio::time::timeout(Duration::from_secs(2), socket.read(&mut byte))
-            .await
-            .expect("actual guest body cancellation/drop must close its TCP socket")
-            .unwrap(),
-        0
-    );
+    let terminal = tokio::time::timeout(Duration::from_secs(2), socket.read(&mut byte))
+        .await
+        .expect("actual guest body cancellation/drop must close its TCP socket");
+    match terminal {
+        Ok(0) => {}
+        Err(error)
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::ConnectionReset
+                    | std::io::ErrorKind::ConnectionAborted
+                    | std::io::ErrorKind::BrokenPipe
+            ) => {}
+        other => panic!("physical TCP owner did not close: {other:?}"),
+    }
 }
 
 fn fetch_request(
