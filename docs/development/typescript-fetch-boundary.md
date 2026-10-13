@@ -136,8 +136,18 @@ The first new native run executed all 31 selectors. All original 27 and the thre
 direct retirement controls passed. The actual JS bridge case retained its own
 `globalThis.retired` Promise after successful subtask/set drops, leaving one
 reachable native owner at the unchanged final gate. That failed product and log
-are preserved. The fixture now clears only that test-owned global before the
-existing full GC/checkpoints; a fresh native run is pending. A newly rebuilt,
+are preserved. The second run cleared that global and reached zero physical
+owners, then correctly refused a new native Promise constructed after root
+settlement. The fixture now creates that validation input under the original
+root, checks exact bridge rejection reasons afterward, and clears its own roots
+before the unchanged full GC/checkpoints. The fresh third run passes all 31
+selectors: retained/idempotent checks pass, all three exact refusals are observed,
+all owners end at zero, and native admissions/acknowledgements balance 9/9.
+Its exact 9,269,759-byte product is
+`ea3a25d8ca8a842109e07de38aff98464993fcb6b526eb41a9f92ebb3eb690e3`.
+The [fixture packet](../testing/evidence/typescript-native-retirement-2026-10-13.json)
+retains source/link/product identities and both failed attempts. This is finite
+diagnostic-broker evidence; it does not qualify installed fetch. A newly rebuilt,
 source-bound engine/splicer and ordinary/signed fetch cancellation, drop and reuse
 controls are still required. All profile observations remain unknown and these
 changes close none of #691, #745 or #685.

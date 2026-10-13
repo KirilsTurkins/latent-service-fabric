@@ -469,13 +469,20 @@ int main(int argc, char** argv) {
              imported_lifts==1 && JS::GetPromiseState(retirement)==JS::PromiseState::Fulfilled?0:1;
     } else if (!std::strcmp(selected,"JS-bridge-cancel-retains-exact-retirement-identity")) {
       defer_cancel=true;
-      if(!evaluate(cx,"globalThis.root=ordinaryImported().catch(()=>rootDone());globalThis.retired=__lsfAsyncImportBridge.retired(1);globalThis.denied=0;try{__lsfAsyncImportBridge.cancel(1,Promise.resolve(1));}catch{denied++;}__lsfAsyncImportBridge.cancel(1,retired);",&output))return 10;
+      if(!evaluate(cx,"globalThis.root=ordinaryImported().catch(()=>rootDone());globalThis.retired=__lsfAsyncImportBridge.retired(1);globalThis.unissued=Promise.resolve(999);globalThis.denied=0;try{__lsfAsyncImportBridge.cancel(1,Promise.resolve(1));}catch(error){if(error.message!=='activation-runtime-import-cancel-retirement-identity-invalid')throw error;denied++;}__lsfAsyncImportBridge.cancel(1,retired);",&output))return 10;
       const bool retained=counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_WAIT]==1 &&
                           counts[LATENT_RUNTIME_ACTIVATION_OWNER_KIND_RESULT]==1 &&
                           expect(cx,"retired instanceof Promise");
       if(!shared_drain(cx,queue,timers,imports,readiness))return 10;
-      const bool idempotent=evaluate(cx,"__lsfAsyncImportBridge.cancel(1,retired);for(const args of [[999,Promise.resolve(999)],[1,retired,0]]){try{__lsfAsyncImportBridge.cancel(...args);}catch{denied++;}}",&output);
+      // Construct test Promises under the original root. After settlement the
+      // unchanged admission gate rejects newly allocated Native work, before
+      // it could exercise this bridge's unissued-ID check.
+      const bool idempotent=evaluate(cx,"__lsfAsyncImportBridge.cancel(1,retired);for(const [args,message] of [[[999,unissued],'activation-runtime-import-cancel-retirement-completion-invalid'],[[1,retired,0],'activation-runtime-import-cancel-arity-invalid']]){try{__lsfAsyncImportBridge.cancel(...args);}catch(error){if(error.message!==message)throw error;denied++;}}",&output);
       status=retained && idempotent && expect(cx,"denied===3") && !imports.hasPending()?0:1;
+      std::printf("{\"bridgeRetained\":%s,\"bridgeIdempotent\":%s,\"deniedOne\":%s,\"deniedTwo\":%s,\"deniedThree\":%s,\"importsPending\":%s}\n",
+          retained?"true":"false",idempotent?"true":"false",
+          expect(cx,"denied===1")?"true":"false",expect(cx,"denied===2")?"true":"false",
+          expect(cx,"denied===3")?"true":"false",imports.hasPending()?"true":"false");
     } else if (!std::strcmp(selected,"cancel-keeps-import-buffer-until-terminal")) {
       defer_cancel=true;
       if(!evaluate(cx,"globalThis.root=ordinaryImported().catch(()=>rootDone());",&output))return 10;
@@ -665,7 +672,7 @@ int main(int argc, char** argv) {
     if (!jobs.rootSettled() && !jobs.settleRoot(cx)) return 11;
     if (!timers.cancel(cx) || !imports.cancelAll(cx) || !queue.cancelQueued(cx) || !readiness.retire(cx)) return 11;
     output.setUndefined();
-    if (!evaluate(cx, "globalThis.root=null;globalThis.order=null;globalThis.id=null;globalThis.answer=null;", &output))
+    if (!evaluate(cx, "globalThis.root=null;globalThis.order=null;globalThis.id=null;globalThis.answer=null;globalThis.retired=null;globalThis.unissued=null;", &output))
       return 11;
     output.setUndefined();
     collect(cx);

@@ -1,0 +1,252 @@
+{
+  "schemaVersion": "latent.typescript.native-retirement-fixture-evidence.v1",
+  "fixtureBrokerOnly": true,
+  "signedLSFComponentQualified": false,
+  "installedFetchQualified": false,
+  "originalOwnerCeiling": 64,
+  "original27CasesRetained": true,
+  "cases": {
+    "missing-import-record-reports-and-preserves-error": 0,
+    "real-import-Promise-pending-until-terminal": 0,
+    "parked-import-runnable-timer-and-microtask-sibling": 0,
+    "accepted-import-after-root-settlement": 0,
+    "opaque-import-not-lifted-on-close": 0,
+    "retirement-completion-follows-typed-lift-and-native-acks": 0,
+    "logical-cancel-does-not-complete-physical-retirement": 0,
+    "retirement-identity-and-unissued-id-cannot-cancel-live-import": 0,
+    "JS-bridge-cancel-retains-exact-retirement-identity": 0,
+    "cancel-keeps-import-buffer-until-terminal": 0,
+    "typed-import-lift-finally-preserves-original-error": 0,
+    "snapshot-pure-promises-no-owner-imports": 0,
+    "snapshot-job-cannot-cross-activation": 0,
+    "snapshot-runtime-effects-still-denied": 0,
+    "snapshot-opaque-promise-detected": 0,
+    "root-promise-suspends": 0,
+    "macro-microtask-order": 0,
+    "accepted-timer-after-root": 0,
+    "captured-arguments": 0,
+    "clear-before-readiness": 0,
+    "clear-after-ready-before-callback": 0,
+    "coalesced-interval-self-clear": 0,
+    "callback-exception-preserved": 0,
+    "immediate-return-no-subtask-handle": 0,
+    "native-exhaustion-before-timer": 0,
+    "readiness-set-requires-actual-child-drop": 0,
+    "timer-exhaustion-before-capture": 0,
+    "snapshot-no-effects": 0,
+    "cancel-retains-buffer-until-terminal": 0,
+    "stop-ack-retains-owners": 0,
+    "callback-ack-no-replay": 0
+  },
+  "sourceInputs": [
+    {
+      "path": "sdk/typescript-guest/activation/broker_accounting.h",
+      "sha256": "5771507a3bf4905b3707d31426675ad0bcd699a1fa96799541c98b7755eddc33",
+      "bytes": 9391
+    },
+    {
+      "path": "sdk/typescript-guest/activation/broker_import_accounting.h",
+      "sha256": "d06c3a53bc789ac68b87475ac83543da37f42b6ac61c5a96f63c21c99b4f3ec1",
+      "bytes": 3204
+    },
+    {
+      "path": "sdk/typescript-guest/activation/clock_values.h",
+      "sha256": "8e85831a0817eda3a1375fda790df22a6b343277ee102e64ef7b2be37df0bb42",
+      "bytes": 1238
+    },
+    {
+      "path": "generated/lsf/jobs.h",
+      "sha256": "39cc090680123f77748519e3b7852cdb1673826af3ecece3a53fde1210436581",
+      "bytes": 8260
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_cancel.h",
+      "sha256": "59397ab2badf02d292e517157c9686a730cd7ebe582ea1d5a7b4c81be57b7438",
+      "bytes": 479
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_clocks.h",
+      "sha256": "2a318536a65272343a7c7579c0baecdac42a0a22e307e30ec7146a2df288659a",
+      "bytes": 1584
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_engine.h",
+      "sha256": "26dd9c43379501924f3fe637833a1c1a32a078eaae54eb17a3f8e39bb46da123",
+      "bytes": 1991
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_import_globals.cpp",
+      "sha256": "60f6038b5b708042f4e19c0b6702e274907481928abb22987bfcd29c89b43d35",
+      "bytes": 3208
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_import_lifecycle.h",
+      "sha256": "c17bbf0f1c3f3de8353741ac4f9cdbde40f232198377a467fec6560ef55d6537",
+      "bytes": 5845
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_import_values.h",
+      "sha256": "5b98e85df356d7005ab6a3085fc9c12ad4e5f6cc8d00ddf33095f4683fc0ea24",
+      "bytes": 2390
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_imports.h",
+      "sha256": "65136478f239dc1816fa21b3b6e946de360912207f245c9a5c7a6bc1c1460548",
+      "bytes": 12061
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_job_queue.h",
+      "sha256": "f7498c93b6240e5965101eabd62775f229fdff06b08a8629bf2e68a58800845c",
+      "bytes": 8857
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_objects.h",
+      "sha256": "081afe123537c0555d0d29d20a85181dcb7feb62ce85251d4de7e2932427d039",
+      "bytes": 1028
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_ownership.h",
+      "sha256": "476b5db1f88bf96637221e199e0dbbd44deb3d924d7f3389ef4b7f3bccf472ed",
+      "bytes": 615
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_readiness.h",
+      "sha256": "d38d7d66ed3b16d25c3e1705f2858923ed47ef1a374c88ee9049a98ce04801f3",
+      "bytes": 8450
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_retirement.h",
+      "sha256": "5921cccf4dd2cd6a11ad070383247a4e186cbd15e21f955a56069149297d24b6",
+      "bytes": 4294
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_timeout.h",
+      "sha256": "f5b1e996dc1e7fa9a535760a13d00829854773eb11b0676727365582cfaad2d9",
+      "bytes": 1416
+    },
+    {
+      "path": "sdk/typescript-guest/activation/native_timers.h",
+      "sha256": "5413bb498d1c0ca713d87eb171c4e4ca19e330831de3db069cf96d5b5a5b32a3",
+      "bytes": 11314
+    },
+    {
+      "path": "sdk/typescript-guest/activation/promise_accounting.h",
+      "sha256": "1451f4d6d53a300e378a0a371810021ded638d683bf0b3dc145671ec0d5060b9",
+      "bytes": 2406
+    },
+    {
+      "path": "sdk/typescript-guest/activation/promise_hooks.h",
+      "sha256": "37417b24250854e41d6c320d978daf8338bf7393526dab70b725e8f1fb06654e",
+      "bytes": 2147
+    },
+    {
+      "path": "sdk/typescript-guest/activation/promise_records.h",
+      "sha256": "9bbe75a1f2e7475ae5cbbaf0bf5e3b39d405a69127fd8839edd5be77b39911c0",
+      "bytes": 4590
+    },
+    {
+      "path": "sdk/typescript-guest/activation/reaction_records.h",
+      "sha256": "a7b6372c234af5ef87ad3619c991775381e63c7861426fb30995d8e043675a3f",
+      "bytes": 5052
+    },
+    {
+      "path": "sdk/typescript-guest/activation/tests/native_imports.cpp",
+      "sha256": "95acb3955fc3efc7cf0d095b27b42b69d2fc33f636fabf36a1cc7283aade3636",
+      "bytes": 40651
+    }
+  ],
+  "linkInputs": [
+    {
+      "path": "/history/typescript745-source-bound-unified-unit-build-20261007-r2/Unified_cpp_js_src2.o",
+      "sha256": "9edd6d7ef3ff49d80632109f062051a7d1766f07d9d17e9487289127026d7259",
+      "bytes": 5919708
+    },
+    {
+      "path": "/history/typescript745-public-spidermonkey-20261007-r2/payload/spidermonkey-dist-release/libspidermonkey.a",
+      "sha256": "298b85501657189dc66139242abf5aeb4e981b8db7c37cc5a69d1151ec40aacc",
+      "bytes": 538170426
+    },
+    {
+      "path": "/history/typescript745-original-rust-engine-libraries-build-20261007-r1/librust_staticlib.a",
+      "sha256": "fc519d927b6da44c87981e1ddd955a0fc53fe48a568e2b79a32503d7576a46a7",
+      "bytes": 3660154
+    },
+    {
+      "path": "/history/typescript745-original-rust-engine-libraries-build-20261007-r1/libwrappers.a",
+      "sha256": "83c9274fab8d06cb54930f6647a2a6841e8fb742324286ab59b8c627cbd5a9ec",
+      "bytes": 830
+    }
+  ],
+  "product": {
+    "path": "/work/pr923-fetch-bridge-native-r3-20261013/native-imports.wasm",
+    "sha256": "ea3a25d8ca8a842109e07de38aff98464993fcb6b526eb41a9f92ebb3eb690e3",
+    "bytes": 9269759
+  },
+  "runner": {
+    "path": "/work/pr923-fetch-bridge-native-r3-20261013/run.mjs",
+    "sha256": "83bd6e85491be1d095b0fa4036b1e6bd996fc861e9d9f96e9334f949ff447c84",
+    "bytes": 451
+  },
+  "node": {
+    "path": "/work/pr923-public-20261012/node-v24.19.0-linux-x64/bin/node",
+    "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+    "bytes": 125989464
+  },
+  "command": [
+    "/work/pr923-sdk30-20261012/wasi-sdk-30.0-x86_64-linux/bin/clang++",
+    "--target=wasm32-unknown-wasi",
+    "-std=gnu++23",
+    "-fno-exceptions",
+    "-fno-rtti",
+    "-fno-sized-deallocation",
+    "-fno-aligned-new",
+    "-mthread-model",
+    "single",
+    "-Wall",
+    "-Werror",
+    "-isystem",
+    "/history/typescript745-full-original-unified-promise-carrier-20261007-r5/public-headers",
+    "-include",
+    "/history/typescript745-full-original-unified-promise-carrier-20261007-r5/public-headers/js-confdefs.h",
+    "/work/pr923-fetch-bridge-syntax-r3-20261013/inputs/tests/native_imports.cpp",
+    "/history/typescript745-source-bound-unified-unit-build-20261007-r2/Unified_cpp_js_src2.o",
+    "/history/typescript745-public-spidermonkey-20261007-r2/payload/spidermonkey-dist-release/libspidermonkey.a",
+    "/history/typescript745-original-rust-engine-libraries-build-20261007-r1/librust_staticlib.a",
+    "/history/typescript745-original-rust-engine-libraries-build-20261007-r1/libwrappers.a",
+    "-Wl,-z,stack-size=1048576",
+    "-Wl,--stack-first",
+    "-Wl,--lto-O0",
+    "-Wl,--strip-debug",
+    "-Wl,--threads=1",
+    "-Wl,--thinlto-jobs=1",
+    "-lwasi-emulated-signal",
+    "-lwasi-emulated-process-clocks",
+    "-lwasi-emulated-getpid",
+    "-o",
+    "/work/pr923-fetch-bridge-native-r3-20261013/native-imports.wasm"
+  ],
+  "maximumCommandSeconds": 580,
+  "linkerThreads": 1,
+  "receiptSha256": "15f9a8f29c9045a1ef34a1a72fa719377add843d8532376a933fd86df99b3c91",
+  "bridgeLog": "{\"bridgeRetained\":true,\"bridgeIdempotent\":true,\"deniedOne\":false,\"deniedTwo\":false,\"deniedThree\":true,\"importsPending\":false}\n{\"case\":\"JS-bridge-cancel-retains-exact-retirement-identity\",\"status\":0,\"owners\":0,\"starts\":0,\"stops\":0,\"subtaskDrops\":1,\"setDrops\":1,\"idleWaits\":1,\"nativeAdmissions\":9,\"nativeAcknowledgements\":9,\"hostcallInGC\":false}\n",
+  "failedAttemptsRetained": [
+    {
+      "product": {
+        "path": "/work/pr923-fetch-bridge-native-20261013/native-imports.wasm",
+        "sha256": "03355823807451f1c72e89813078fca64e4de2e2008e48f5cf44d7a1b416b9a9",
+        "bytes": 9268933
+      },
+      "case": "{\"case\":\"JS-bridge-cancel-retains-exact-retirement-identity\",\"status\":1,\"owners\":1,\"starts\":0,\"stops\":0,\"subtaskDrops\":1,\"setDrops\":1,\"idleWaits\":1,\"nativeAdmissions\":8,\"nativeAcknowledgements\":7,\"hostcallInGC\":false}\n",
+      "diagnosis": "Test-owned globalThis.retired retains one reachable fulfilled Promise at final unchanged cleanup gate."
+    },
+    {
+      "product": {
+        "path": "/work/pr923-fetch-bridge-native-r2-20261013/native-imports.wasm",
+        "sha256": "9b1a791a86289532492b1e6c3fd977453dd9d089a0a28c896c6cc6a9b8ec8306",
+        "bytes": 9268997
+      },
+      "case": "{\"case\":\"JS-bridge-cancel-retains-exact-retirement-identity\",\"status\":1,\"owners\":0,\"starts\":0,\"stops\":0,\"subtaskDrops\":1,\"setDrops\":1,\"idleWaits\":1,\"nativeAdmissions\":8,\"nativeAcknowledgements\":8,\"hostcallInGC\":false}\n",
+      "diagnosis": "All physical cleanup passes. Post-root validation constructs a new native Promise before its try block; the original admission gate refuses it."
+    }
+  ]
+}
