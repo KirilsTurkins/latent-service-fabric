@@ -17,7 +17,7 @@ SOURCES = {"node": {"url": "https://nodejs.org/dist/v24.19.0/node-v24.19.0-linux
     "sha256": "sha256:f625d97cd707df4ff96254916fbc5ff014f09c09effe5a1e0ca8f6d41a8789d4"}}
 
 
-def prepare(payload: Path, output: Path, download) -> None:
+def prepare(payload: Path, output: Path, download, *, runtime_inputs:Path|None=None) -> None:
     from tools.typescript_capsule import install
     archive = output / "node.archive"
     download(archive, SOURCES["node"])
@@ -30,9 +30,23 @@ def prepare(payload: Path, output: Path, download) -> None:
         # Materializing .bin would duplicate scripts with a different module root.
         retained = output / "typescript-tools"
         shutil.copytree(installed, retained, ignore=shutil.ignore_patterns(".bin", "logs"))
-        pack({"node": node, "tools": retained}, payload / "sdk")
+        roots={"node": node, "tools": retained}
+        if runtime_inputs is not None:
+            from tools.typescript_guest.runtime_bundle import validate,regular_files
+            expected=validate(runtime_inputs)
+            original_runtime=regular_files(runtime_inputs)
+            selected=output/'typescript-runtime'
+            shutil.copytree(runtime_inputs,selected)
+            if validate(selected)!=expected or regular_files(selected)!=original_runtime:
+                raise ValueError('typescript-runtime-bundle-changed-during-capture')
+            roots['typescript-runtime']=selected
+        pack(roots, payload / "sdk")
+        if runtime_inputs is not None and regular_files(runtime_inputs)!=original_runtime:
+            raise ValueError('typescript-runtime-bundle-source-changed-during-pack')
         notices = payload / "licenses/typescript"
         notices.mkdir(parents=True)
+        if runtime_inputs is not None:
+            shutil.copytree(selected/'licenses',notices/'source-owned-runtime')
         shutil.copyfile(node / "LICENSE", notices / "Node-LICENSE.txt")
         shutil.copyfile(installed / "package-lock.json", notices / "package-lock.json")
         (notices / "README.txt").write_text(

@@ -3960,6 +3960,7 @@
         "semantics::arena::depths::tests::unused_flat_aliases_check_cached_transitive_heights_before_and_after_resolution",
         "semantics::authoring::tests::complete_full_width_scalar_and_result_contract_is_derived_from_source",
         "semantics::authoring::tests::exact_host_sources_and_direct_dependencies_are_required",
+        "semantics::authoring::tests::foreign_world_inclusion_preserves_names_shapes_and_dependency_limits",
         "semantics::authoring::tests::lists_records_variants_enums_aliases_tuples_and_async_kinds_are_retained",
         "semantics::authoring::tests::malformed_versions_duplicate_packages_paths_and_foreign_sources_fail_closed",
         "semantics::authoring::tests::shared_type_interfaces_and_world_inclusion_preserve_shapes_without_host_authority",
@@ -4018,6 +4019,7 @@
         "semantics::wasm::tests::hidden_package_docs_and_huge_local_counts_have_independent_preflight_limits",
         "semantics::wasm::tests::lowered_limits_and_truncated_nested_extents_are_rejected",
         "semantics::wasm::tests::nested_flat_chains_and_result_diamonds_are_bounded_before_validator",
+        "semantics::wasm::tests::nonblocking_subtask_cancellation_keeps_other_more_async_operations_closed",
         "semantics::wasm::tests::operator_vectors_are_bounded_before_owned_operand_allocation",
         "semantics::wasm::tests::small_real_nested_types_and_clock_import_validate_without_execution",
         "semantics::web::tests::backend_world_requests_only_the_exact_async_http_import",
@@ -4030,7 +4032,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-packaging/Cargo.toml",
-      "minimumCases": 78,
+      "minimumCases": 80,
       "mode": "libtest",
       "package": "latent-packaging",
       "platforms": [
@@ -8255,20 +8257,32 @@
         "runtime::signed_java_completable_futures_use_default_activation_executor",
         "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
         "runtime::signed_runtime_limits_closing_and_generation_fences_use_normal_node_admission",
+        "runtime::typescript::signed_async_service_import_preserves_sibling_progress_and_actual_child_owners",
+        "runtime::typescript::signed_pending_exports_timers_rejections_and_fresh_state_use_real_node_owners",
+        "runtime::typescript::signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
+        "runtime::typescript::signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime",
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
       "expectedIgnored": [
         "runtime::signed_java_completable_futures_use_default_activation_executor",
-        "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers"
+        "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
+        "runtime::typescript::signed_async_service_import_preserves_sibling_progress_and_actual_child_owners",
+        "runtime::typescript::signed_pending_exports_timers_rejections_and_fresh_state_use_real_node_owners",
+        "runtime::typescript::signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
+        "runtime::typescript::signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime"
       ],
       "id": "latent-wasmtime.test.local-service",
       "ignoredLeaves": [
+        "signed_async_service_import_preserves_sibling_progress_and_actual_child_owners",
         "signed_java_completable_futures_use_default_activation_executor",
-        "signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers"
+        "signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
+        "signed_pending_exports_timers_rejections_and_fresh_state_use_real_node_owners",
+        "signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
+        "signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 33,
+      "minimumCases": 37,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

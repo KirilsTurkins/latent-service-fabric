@@ -4,7 +4,7 @@ from __future__ import annotations
 from tools import guest_compatibility_context_build, guest_runtime_receipts
 from tools.transaction_guest_project import packaging_arguments
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import tempfile
 import time
 from tools.build_observation import build_environment, file_identity, public_repository
@@ -15,6 +15,7 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
     read_file, read_json, snapshot, write_json)
 from tools.typescript_guest.compiler import Compiler
 from tools.typescript_guest.project import validate
+from tools.typescript_guest import runtime_profile as runtime
 from tools.application_dependencies import prepare
 from tools.typescript_application_dependencies import source_snapshot, bundle_configuration
 
@@ -22,6 +23,7 @@ BUILD_TYPE = "https://latent.dev/build/typescript-capsule/v1"
 RECIPE = ("tools/typescript_capsule.py", "tools/typescript_guest/project.py", "tools/typescript_guest/build.py",
     "tools/typescript_guest/compiler.py", "tools/typescript_guest/probe.py", "tools/typescript_guest/bundle.mjs",
     "tools/typescript_guest/componentize.mjs", "tools/typescript_guest/signed64.mjs", "tools/typescript_guest/resources.mjs",
+    "tools/typescript_guest/source_splicer.mjs", "tools/typescript_guest/async_waiters.mjs",
     "tools/rust_capsule_project.py", "tools/rust_capsule_build.py",
     "tools/build_observation.py", "tools/build_process.py", "tools/build_process_linux.py",
     "tools/build_process_windows.py", "tools/build_process_signals.py", "tools/build_snapshot.py", "tools/stage_runtime_wit.py",
@@ -37,10 +39,55 @@ RECIPE += ('tools/guest_runtime_receipts.py',)
 RECIPE += guest_resources.RECIPE
 RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
+RECIPE += ('tools/typescript_guest/runtime_profile.py', 'tools/typescript_guest/activation_engine.py',
+           'tools/typescript_guest/promise_engine.py', 'tools/typescript_guest/timer_engine.py', 'tools/typescript_guest/abort_engine.py',
+           'tools/typescript_guest/event_engine.py', 'tools/typescript_guest/clock_engine.py',
+           'sdk/typescript-guest/activation/runtime-globals.d.ts')
+from tools.typescript_guest.activation_engine import NATIVE_SOURCES
+RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in NATIVE_SOURCES)
+from tools.typescript_guest.clock_engine import CLOCK_NATIVE_SOURCES
+RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in CLOCK_NATIVE_SOURCES)
+RECIPE += ('sdk/typescript-guest/activation/clock-globals.d.ts',)
+from tools.typescript_guest.import_engine import NATIVE_IMPORT_SOURCES
+RECIPE += tuple('sdk/typescript-guest/activation/'+name for name in NATIVE_IMPORT_SOURCES if 'sdk/typescript-guest/activation/'+name not in RECIPE)
+RECIPE += ('tools/typescript_guest/import_engine.py','tools/typescript_guest/import_bindgen.py',
+           'tools/typescript_guest/import_profile.py','tools/typescript_guest/splicer_input.py')
+RECIPE += ('tools/typescript_guest/runtime_bundle.py',)
+RECIPE += ('tools/typescript_guest/text_codec_engine.py',)
 RECIPE += ("tools/typescript_generator_authoring.py",)
 
 
-def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path):
+def runtime_package_sources(original: dict[str, bytes], selected: dict,
+                            *, selected_world: str = runtime.SELECTED_WORLD) -> dict[str, bytes]:
+    """Keep selected lock sources separate from the immutable application capture."""
+    if (not isinstance(selected, dict) or set(selected) != {'world', 'sources'}
+            or selected['world'] != selected_world
+            or not isinstance(selected['sources'], list) or not 1 <= len(selected['sources']) <= 256):
+        raise ValueError('typescript-selected-package-source-envelope')
+    sources = {}
+    total = 0
+    for row in selected['sources']:
+        if not isinstance(row, dict) or set(row) != {'path', 'content'}:
+            raise ValueError('typescript-selected-package-source-entry')
+        name, content = row['path'], row['content']
+        if (not isinstance(name, str) or not isinstance(content, str)
+                or not name.startswith('wit/') or not name.endswith('.wit')
+                or len(name) > 512 or PurePosixPath(name).as_posix() != name
+                or any(part in ('', '.', '..') for part in name.split('/'))
+                or ':' in name or '\\' in name or name in sources):
+            raise ValueError('typescript-selected-package-source-path')
+        raw = content.encode('utf-8')
+        total += len(raw)
+        if not raw or len(raw) > 256 * 1024 or total > 4 * 1024 * 1024:
+            raise ValueError('typescript-selected-package-source-limit')
+        sources[name] = raw
+    return {**{name: raw for name, raw in original.items()
+               if not (name.startswith('wit/') and name.endswith('.wit'))}, **sources}
+
+
+def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str, *, tools: Path,
+          runtime_engine: Path | None = None, runtime_engine_receipt: Path | None = None,
+          runtime_splicer: Path | None = None, runtime_splicer_receipt: Path | None = None):
     project_path, output, tools = map(checked_path, (project_path, output, tools))
     project_path = guest_dependency_inputs.application_root(project_path, 'typescript')
     if output == project_path or output in project_path.parents or (
@@ -71,6 +118,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "application-dependencies"
             closure = prepare(observed.dependency_root, work, output, "typescript")
             application_modules = bundle_configuration(closure) if closure is not None else None
+            runtime_profile = runtime.selected_profile(project, closure.lock if closure is not None else None)
             if closure is not None:
                 write_json(output / "npm-inputs.json", application_modules)
             write_json(output / "diagnostic-source.json", {"capturedSource": str(work / "src"),
@@ -93,9 +141,18 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             surface = read_json(derived / "surface.json")
             recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             stage = "compiler-inputs"
+            options = {'isolated_workspace': temporary if closure is not None else None}
+            if runtime_profile in runtime.NATIVE_PROFILES:
+                options.update(isolated_workspace=temporary, runtime_profile=runtime_profile,
+                               engine=runtime_engine, engine_receipt=runtime_engine_receipt)
+                if runtime_profile == runtime.IMPORT_PROFILE:
+                    options.update(splicer=runtime_splicer,splicer_receipt=runtime_splicer_receipt)
+                elif runtime_splicer is not None or runtime_splicer_receipt is not None:
+                    raise ValueError('source-built splicer requires the explicit TypeScript import candidate')
+            elif any(value is not None for value in (runtime_engine,runtime_engine_receipt,runtime_splicer,runtime_splicer_receipt)):
+                raise ValueError('native engine input requires the explicit TypeScript Promise candidate')
             compiler = Compiler(tools, commands, {name: files["vendor/lsf/sdk/typescript-guest/tools/" + name]
-                                                 for name in ("package.json", "package-lock.json")},
-                                isolated_workspace=temporary if closure is not None else None)
+                                                 for name in ("package.json", "package-lock.json")}, **options)
             write_json(output / "compiler-inputs.json", compiler.before)
             compiler_paths = {"node": compiler.node, "wasm-tools": compiler.wasm}
             materials.extend(file_identity(path, name) for name, path in compiler_paths.items())
@@ -104,6 +161,31 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 write_json(output / "compiler-containment.json", compiler.isolation.receipt)
             stage = "compile"
             component_path, generated = compiler.compile(work, project["world"], temporary / "compiled", application_modules=application_modules)
+            package_project = project
+            package_sources = files
+            runtime_assets = ()
+            runtime_materials = []
+            if runtime_profile in runtime.NATIVE_PROFILES:
+                for name in ('contracts.json', 'wit-lock.json', 'surface.json'):
+                    (output/('original-'+name)).write_bytes(read_file(output/name))
+                selected_contracts = temporary/'selected-contracts'
+                selected_input = temporary/'compiled/selected-wit-inputs.json'
+                selected_world = runtime.scoped_selected_world(project['world'])
+                package_sources = runtime_package_sources(files, read_json(selected_input),
+                                                          selected_world=selected_world)
+                commands.run('selected-runtime-contracts', paths['contracts-tool'],
+                             selected_input, selected_contracts)
+                for name in ('contracts.json', 'wit-lock.json', 'surface.json'):
+                    (output/name).write_bytes(read_file(selected_contracts/name))
+                if read_json(output/'surface.json')['exports'] != read_json(output/'original-surface.json')['exports']:
+                    raise ValueError('selected TypeScript runtime changed public contract exports')
+                package_project = dict(project, world=selected_world)
+                (output/'typescript-runtime-selection.json').write_bytes(
+                    read_file(temporary/'compiled/typescript-runtime-selection.json', 65536))
+                runtime_assets = (('typescript-runtime-selection.json', 'asset',
+                                  'application/vnd.latent.typescript.runtime-selection.v1+json'),)
+                raw = read_file(output/'typescript-runtime-selection.json', 65536)
+                runtime_materials.append({'name': 'typescript-runtime-selection', 'digest': digest(raw), 'size': len(raw)})
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             (output / "generated-bindings.js").write_bytes(read_file(temporary / "compiled/generated-bindings.js", 8 * 1024 * 1024))
@@ -111,10 +193,18 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             if closure is not None:
                 (output / "bundle-selected-inputs.json").write_bytes(read_file(temporary / "compiled/application.mjs.inputs.json", 8 * 1024 * 1024))
                 (output / "application.mjs.map").write_bytes(read_file(temporary / "compiled/application.mjs.map", 32 * 1024 * 1024))
+            # The selected runtime derives an authoritative surface with its
+            # activation import. Use those same bytes for compatibility and
+            # manifest admission; the original surface remains retained above.
+            surface = read_json(output / "surface.json")
             stage = "compatibility"
+            recipe = guest_compatibility_build.capture_host_recipe(output, recipe_files, recipe, surface)
             guest_compatibility_build.inspect(commands, compiler.wasm, output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
-            package_inputs(output, project, surface, files, component)
+            if runtime_assets:
+                package_inputs(output, package_project, surface, package_sources, component, additional_assets=runtime_assets)
+            else:
+                package_inputs(output, project, surface, files, component)
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
@@ -128,10 +218,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             if inventory({name: read_file(ROOT / name) for name in recipe_files}) != recipe:
                 raise ValueError("authoring recipe changed during compilation")
             compiler.check_unchanged()
+            runtime_materials.extend(compiler.runtime_materials())
             if closure is not None:
                 closure.check_unchanged()
             if [file_identity(path, name) for name, path in paths.items()] != materials:
                 raise ValueError("compiler or packaging binary changed")
+            materials.extend(runtime_materials)
             package_files = {"package-source.json": read_file(output / "package-source.json")}
             for layer in read_json(output / "package-source.json")["layers"]:
                 package_files[layer["source"]] = read_file(output / layer["source"], 64 * 1024 * 1024)
@@ -150,7 +242,6 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 for name in ("application-dependencies.json", "npm-inputs.json", "compiler-containment.json", "bundle-selected-inputs.json", "application.mjs.map"):
                     data = read_file(output / name, 32 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
-            runtime_profile = closure.lock['selection']['runtimeProfile'] if closure is not None else 'spidermonkey-public-sync-v1'
             materials.append(guest_runtime_receipts.emit(output, 'typescript', runtime_profile, files,
                 source_inputs, component, materials, graph=closure.lock if closure is not None else None,
                 binding_digest=generated['filesDigest'], configuration={"profile": runtime_profile, "world": project['world'],

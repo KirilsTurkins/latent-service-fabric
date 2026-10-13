@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "TypeScriptRuntimePackagingTests.test_original_foreign_packages_remain_separate_exact_lock_sources",
+    "TypeScriptRuntimePackagingTests.test_paths_duplicates_and_unknown_world_fail_before_package_materialization",
+    "TypeScriptRuntimePackagingTests.test_runtime_receipt_verifies_explicit_source_selection_without_promoting_it",
+    "TypeScriptRuntimePackagingTests.test_selected_lock_sources_replace_only_package_wit_and_keep_original_capture",
+    "TypeScriptRuntimePackagingTests.test_selected_world_retains_original_tenant_namespace_without_changing_exports",
+    "TypeScriptRuntimePackagingTests.test_source_bytes_and_envelopes_retain_existing_parser_limits"
+  ],
+  "guards": {
+    "TypeScriptRuntimePackagingTests.test_original_foreign_packages_remain_separate_exact_lock_sources": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d025e44cc1bbf3ea11d3ba706946eb6452798d097ec6c52eeedf0df85c9f587e",
+        "class:setup-sha256:16d5604cc55bc519704da92a8f06074f3b5cf02f7cd5b83e98c2b54d164da224"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptRuntimePackagingTests.test_paths_duplicates_and_unknown_world_fail_before_package_materialization": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d025e44cc1bbf3ea11d3ba706946eb6452798d097ec6c52eeedf0df85c9f587e",
+        "class:setup-sha256:16d5604cc55bc519704da92a8f06074f3b5cf02f7cd5b83e98c2b54d164da224"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptRuntimePackagingTests.test_runtime_receipt_verifies_explicit_source_selection_without_promoting_it": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d025e44cc1bbf3ea11d3ba706946eb6452798d097ec6c52eeedf0df85c9f587e",
+        "class:setup-sha256:16d5604cc55bc519704da92a8f06074f3b5cf02f7cd5b83e98c2b54d164da224"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptRuntimePackagingTests.test_selected_lock_sources_replace_only_package_wit_and_keep_original_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d025e44cc1bbf3ea11d3ba706946eb6452798d097ec6c52eeedf0df85c9f587e",
+        "class:setup-sha256:16d5604cc55bc519704da92a8f06074f3b5cf02f7cd5b83e98c2b54d164da224"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptRuntimePackagingTests.test_selected_world_retains_original_tenant_namespace_without_changing_exports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d025e44cc1bbf3ea11d3ba706946eb6452798d097ec6c52eeedf0df85c9f587e",
+        "class:setup-sha256:16d5604cc55bc519704da92a8f06074f3b5cf02f7cd5b83e98c2b54d164da224"
+      ],
+      "skipSites": []
+    },
+    "TypeScriptRuntimePackagingTests.test_source_bytes_and_envelopes_retain_existing_parser_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d025e44cc1bbf3ea11d3ba706946eb6452798d097ec6c52eeedf0df85c9f587e",
+        "class:setup-sha256:16d5604cc55bc519704da92a8f06074f3b5cf02f7cd5b83e98c2b54d164da224"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_runtime_packaging.py",
+  "reviewReason": "Add selected TypeScript WIT package input, tenant namespace and immutable captured-source regressions; preserve every existing test and skip contract.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

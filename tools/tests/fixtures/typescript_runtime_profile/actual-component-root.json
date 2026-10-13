@@ -1,0 +1,315 @@
+{
+  "parser": "wasm-tools1.254.0",
+  "SDKSourceHead": "de90c5d79f7d20a286361a4550c4d1ae9e164e38",
+  "nativeEngineSourceHead": "9e468153be71c835518830c66c63b45d529da5c0",
+  "componentSha256": "7647f6e8ad80850fdf7b4801fbb859ba7de6a9de2f3d735302797a2b97dc2547",
+  "originalSourceSha256": "f60dbfc995617635b7306578402c8442fb8e75c45fe74578f72fab4c448700c5",
+  "activationSourceSha256": "0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+  "actualComposeAndValidationPassedBeforeReaderFailure": true,
+  "graph": {
+    "worlds": [
+      {
+        "name": "root",
+        "imports": {
+          "interface-0": {
+            "interface": {
+              "id": 0
+            }
+          }
+        },
+        "exports": {
+          "interface-1": {
+            "interface": {
+              "id": 1
+            }
+          }
+        },
+        "package": 2
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "activation",
+        "types": {
+          "owner-kind": 0,
+          "token": 1,
+          "error": 2
+        },
+        "functions": {
+          "register": {
+            "name": "register",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "kind",
+                "type": 0
+              },
+              {
+                "name": "continuation",
+                "type": 3
+              }
+            ],
+            "result": 4
+          },
+          "park": {
+            "name": "park",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 5
+          },
+          "wake": {
+            "name": "wake",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 5
+          },
+          "settle": {
+            "name": "settle",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "owner",
+                "type": 1
+              }
+            ],
+            "result": 5
+          },
+          "close": {
+            "name": "close",
+            "kind": "freestanding",
+            "params": [],
+            "result": 5
+          },
+          "timer-start": {
+            "name": "timer-start",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "first-delay-nanos",
+                "type": "u64"
+              },
+              {
+                "name": "period-nanos",
+                "type": 6
+              },
+              {
+                "name": "continuation",
+                "type": 3
+              }
+            ],
+            "result": 4
+          },
+          "timer-next": {
+            "name": "timer-next",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 1
+              }
+            ],
+            "result": 7
+          },
+          "timer-stop": {
+            "name": "timer-stop",
+            "kind": "freestanding",
+            "params": [
+              {
+                "name": "timer",
+                "type": 1
+              }
+            ],
+            "result": 5
+          }
+        },
+        "package": 0
+      },
+      {
+        "name": "ordinary",
+        "types": {},
+        "functions": {
+          "run": {
+            "name": "run",
+            "kind": "async-freestanding",
+            "params": [
+              {
+                "name": "which",
+                "type": "u32"
+              }
+            ],
+            "result": "u32"
+          }
+        },
+        "package": 1
+      }
+    ],
+    "types": [
+      {
+        "name": "owner-kind",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "task"
+              },
+              {
+                "name": "managed-idle-worker"
+              },
+              {
+                "name": "executor"
+              },
+              {
+                "name": "queued-work"
+              },
+              {
+                "name": "wait"
+              },
+              {
+                "name": "timer"
+              },
+              {
+                "name": "result"
+              },
+              {
+                "name": "native"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "token",
+        "kind": {
+          "record": {
+            "fields": [
+              {
+                "name": "generation",
+                "type": "u64"
+              },
+              {
+                "name": "id",
+                "type": "u64"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": "error",
+        "kind": {
+          "enum": {
+            "cases": [
+              {
+                "name": "unavailable"
+              },
+              {
+                "name": "permission-denied"
+              },
+              {
+                "name": "resource-exhausted"
+              },
+              {
+                "name": "cancelled"
+              },
+              {
+                "name": "deadline"
+              },
+              {
+                "name": "invalid-state"
+              },
+              {
+                "name": "invalid-token"
+              }
+            ]
+          }
+        },
+        "owner": {
+          "interface": 0
+        }
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": 1
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": 1,
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": null,
+            "err": 2
+          }
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "option": "u64"
+        },
+        "owner": null
+      },
+      {
+        "name": null,
+        "kind": {
+          "result": {
+            "ok": "u64",
+            "err": 2
+          }
+        },
+        "owner": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "latent:runtime@0.1.0",
+        "interfaces": {
+          "activation": 0
+        },
+        "worlds": {}
+      },
+      {
+        "name": "tests:typescript-async@1.0.0",
+        "interfaces": {
+          "ordinary": 1
+        },
+        "worlds": {}
+      },
+      {
+        "name": "root:component",
+        "interfaces": {},
+        "worlds": {
+          "root": 0
+        }
+      }
+    ]
+  }
+}

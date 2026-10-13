@@ -108,6 +108,14 @@ pub struct Signers {
 }
 impl Signers {
     pub fn new(build_type: &str) -> Self {
+        Self::with_tenant(build_type, None)
+    }
+
+    pub fn for_tenant(build_type: &str, tenant: &TenantId) -> Self {
+        Self::with_tenant(build_type, Some(tenant.0.as_str()))
+    }
+
+    fn with_tenant(build_type: &str, tenant: Option<&str>) -> Self {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -128,7 +136,8 @@ impl Signers {
             builder_public,
         )
         .unwrap();
-        let policy_document = policy_document(now, &publisher_public, &builder_public, build_type);
+        let policy_document =
+            policy_document(now, &publisher_public, &builder_public, build_type, tenant);
         Self {
             publisher,
             builder,
@@ -141,6 +150,15 @@ impl Signers {
         &self,
         bundle: &PackageBundle,
         observation: &BuildObservation,
+    ) -> PackageAdmissionUpload {
+        self.upload_for_tenant(bundle, observation, &TenantId("tests".into()))
+    }
+
+    pub fn upload_for_tenant(
+        &self,
+        bundle: &PackageBundle,
+        observation: &BuildObservation,
+        tenant: &TenantId,
     ) -> PackageAdmissionUpload {
         let subject = PackageSigningSubject::from_package(
             bundle.manifest_bytes(),
@@ -176,7 +194,7 @@ impl Signers {
         latent_policy::supply_chain::verify_package_once(
             &self.policy,
             latent_policy::supply_chain::PackageVerificationRequest {
-                tenant: &TenantId("tests".into()),
+                tenant,
                 package: bundle,
                 evidence: &evidence,
                 unix_seconds: self.now,
@@ -248,6 +266,7 @@ fn policy_document(
     publisher: &[u8; 32],
     builder: &[u8; 32],
     build_type: &str,
+    tenant: Option<&str>,
 ) -> Vec<u8> {
     let publisher = json!({"formatVersion":1,"scope":"tests","generation":1,"validFrom":now - 60,"validUntil":now + 3600,
             "maxSignatureLifetimeSeconds":2000,"maxProofAgeSeconds":60,
@@ -270,8 +289,15 @@ fn policy_document(
     .unwrap()
     .digest()
     .to_string();
+    let mut tenants = vec![
+        json!({"tenant":"tests","publishers":["guest-publisher"]}),
+        json!({"tenant":"tenant-a","publishers":["guest-publisher"]}),
+    ];
+    if let Some(tenant) = tenant.filter(|tenant| !matches!(*tenant, "tests" | "tenant-a")) {
+        tenants.push(json!({"tenant":tenant,"publishers":["guest-publisher"]}));
+    }
     let policy = json!({"formatVersion":1,"generation":1,"scope":"tests","validFrom":now - 60,"validUntil":now + 3600,
-            "tenants":[{"tenant":"tests","publishers":["guest-publisher"]},{"tenant":"tenant-a","publishers":["guest-publisher"]}], "publisher":publisher,"builder":builder,
+            "tenants":tenants, "publisher":publisher,"builder":builder,
             "publisherRevocations":{"formatVersion":1,"scope":"tests","policyDigest":publisher_digest,"generation":1,"validFrom":now - 60,"validUntil":now + 3600,"revokedKeys":[],"revokedPublishers":[]},
             "builderRevocations":{"formatVersion":1,"scope":"tests","policyDigest":builder_digest,"generation":1,"validFrom":now - 60,"validUntil":now + 3600,"revokedKeys":[],"revokedBuilders":[]},
             "sbom":{"formatVersion":1,"embedded":"required","detached":"optional","requireSource":[],"requireLicense":[]}});

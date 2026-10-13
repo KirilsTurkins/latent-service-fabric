@@ -17,6 +17,8 @@ pub(crate) struct CompilerEngineSettings {
     memory: super::layout::MemoryLayout,
     copy_on_write_images: bool,
     java_guest: bool,
+    #[serde(default, skip_serializing_if = "is_false")]
+    activation_import_cancellation: bool,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -37,6 +39,7 @@ impl CompilerEngineSettings {
             memory: config.memory_layout(),
             copy_on_write_images: config.copy_on_write_images,
             java_guest: config.java_guest,
+            activation_import_cancellation: config.activation_runtime.is_some(),
         }
     }
     pub(crate) fn validate_compiler(&self) -> Result<(), PlatformError> {
@@ -57,6 +60,7 @@ impl CompilerEngineSettings {
         });
         engine_config.wasm_component_model(true);
         engine_config.wasm_component_model_async(true);
+        engine_config.wasm_component_model_more_async_builtins(self.activation_import_cancellation);
         // Security upgrades must not admit new, unqualified value shapes.
         engine_config.wasm_component_model_fixed_length_lists(false);
         // Preserve the ordinary profile's pre-Java typed function references.
@@ -84,6 +88,10 @@ impl CompilerEngineSettings {
         engine_config.wasm_backtrace_details(WasmBacktraceDetails::Disable);
         engine_config.wasm_backtrace_max_frames(None);
     }
+}
+
+fn is_false(value: &bool) -> bool {
+    !value
 }
 
 impl WasmtimeConfig {
