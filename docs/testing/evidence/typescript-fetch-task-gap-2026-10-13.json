@@ -1,0 +1,196 @@
+{
+  "schemaVersion": "latent.typescript.fetch-task-admission-gap.v1",
+  "qualification": "unknown",
+  "installedFetchQualified": false,
+  "nativeHTTPPermissionDeniedQualified": false,
+  "coreDigest": "sha256:d858dfc2359f71f6d8bf6604e94478ca2c8677df847bba784fc8de8004237ad7",
+  "nativeTestProduct": "sha256:51ff8f94c6ec96f0da0999d982c2a5cf9fb5a35fdd2182673ec1c23ad6111f40",
+  "limits": {
+    "tasks": 16,
+    "nativeOwners": 64,
+    "memoryBytes": 134217728,
+    "fuel": 1000000000,
+    "wallMillis": 120000
+  },
+  "variants": [
+    "GET",
+    "empty POST",
+    "finite-body POST",
+    "finite-body POST with signal"
+  ],
+  "originalProjection": [
+    {
+      "selector": 0,
+      "output": {
+        "mode": 4,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 137603542,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    },
+    {
+      "selector": 1,
+      "output": {
+        "mode": 5,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 137642394,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    },
+    {
+      "selector": 2,
+      "output": {
+        "mode": 6,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 145948236,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    },
+    {
+      "selector": 3,
+      "output": {
+        "mode": 7,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 190710603,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    }
+  ],
+  "rawSDKCapture": [
+    {
+      "selector": 0,
+      "output": {
+        "mode": 4,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 137465859,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    },
+    {
+      "selector": 1,
+      "output": {
+        "mode": 5,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 137506791,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    },
+    {
+      "selector": 2,
+      "output": {
+        "mode": 6,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 145724047,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    },
+    {
+      "selector": 3,
+      "output": {
+        "mode": 7,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 190428572,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    }
+  ],
+  "firstSlotAvoidsNullWait": [
+    {
+      "selector": 0,
+      "output": {
+        "mode": 4,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 128050444,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    },
+    {
+      "selector": 1,
+      "output": {
+        "mode": 5,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 128087842,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    },
+    {
+      "selector": 2,
+      "output": {
+        "mode": 6,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 136593936,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    },
+    {
+      "selector": 3,
+      "output": {
+        "mode": 7,
+        "error": "TypeError: native-HTTP-operation-failed",
+        "cause": "Error: activation-runtime-task-register-denied:2"
+      },
+      "fuel": 181104101,
+      "peakMemory": 8459496,
+      "outboundRequests": 0
+    }
+  ],
+  "everyVariantStillFailsBeforeHTTPAdmission": true,
+  "noTCPContact": true,
+  "originalFailure": "activation-runtime-task-register-denied:2",
+  "signedDenialAssertionScope": "fetch rejected and no TCP contact; HTTP provider permission was not reached",
+  "physicalFailureCleanup": {
+    "IoSnapshot": {
+      "calls": 0,
+      "occupiedRunningSlots": 0,
+      "queuedCalls": 0,
+      "stagedBytes": 0,
+      "resultBytes": 0,
+      "buffers": 0,
+      "streams": 0,
+      "metadataBytes": 0
+    },
+    "broker": {
+      "sessions": 0,
+      "handles": 0,
+      "calls": 0,
+      "results": 0,
+      "bufferBytes": 0
+    },
+    "runtime": {
+      "activeInvocations": 0,
+      "liveStores": 0,
+      "liveHostStates": 0,
+      "liveInstances": 0,
+      "liveTemporaryBuffers": 0,
+      "liveCancellationProbes": 0,
+      "storesCreated": 1
+    }
+  },
+  "nextRequiredEvidence": "private native observe counters/site at original task refusal, then corrected actual task16 lifecycle",
+  "noResourceLimitIncrease": true,
+  "noSyntheticRetirement": true,
+  "originalFailedAttemptsKept": true,
+  "closesIssues": []
+}

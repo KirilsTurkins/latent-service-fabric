@@ -208,6 +208,15 @@ The independent host-cancellation probe exposes a 74.9 ms pre-open GuestTrap,
 Positive body/capture/lowering ownership needs diagnosis; the four successful
 finite diagnostic phases do not establish fetch qualification. No hidden retry,
 timer fallback, synthetic retirement or raised resource ceiling is introduced.
+The raw SDK module capture now performs only one application-realm Promise
+conversion. Generated tasks also skip a null predecessor wait and handle a
+queued task exiting before a new slot exists. Source FIFO/exit/cancellation
+controls pass. Fresh signed four-variant diagnostics still exhaust Task16 before
+HTTP admission after these changes; lower fuel does not establish support.
+The [task admission gap packet](../testing/evidence/typescript-fetch-task-gap-2026-10-13.json)
+retains all three projections and the exact zero-owner failure cleanup. A private
+native counter/site diagnostic is prepared without changing the public product,
+the admission gates or any resource limit.
 
 The first new native run executed all 31 selectors. All original 27 and the three
 direct retirement controls passed. The actual JS bridge case retained its own
