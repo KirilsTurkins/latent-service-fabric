@@ -1,0 +1,353 @@
+{
+  "schemaVersion": "latent.typescript.fetch-component-build-observation.v1",
+  "qualification": "unknown",
+  "actualSignedExecution": false,
+  "installedFetchQualified": false,
+  "sourceCheckpoint": "3064c66c51b231e1d0f9a967a57bb40233b58329",
+  "coreDigest": "sha256:d858dfc2359f71f6d8bf6604e94478ca2c8677df847bba784fc8de8004237ad7",
+  "fetchSourceCount": 61,
+  "compilerLimitsUnchanged": true,
+  "snapshottedURLConstructorsUsed": false,
+  "fixtures": [
+    {
+      "role": "url",
+      "directory": "/work/pr923-fetch-URL-project-r2-20261013/build",
+      "completed": {
+        "formatVersion": 1,
+        "packageAssembled": true,
+        "observationDigest": "sha256:179945e04447efc963736f057e0e337156007aad58a5075ae3af128365c512b4",
+        "sourceDigest": "sha256:9dd8fcb47e41312a63b7f004b99f46b5837575c84b15524971a41ca3cde8ea10",
+        "componentDigest": "sha256:16db35936d5174814da1b80e6a0b3871f63c0bb9df93634a05616a31685436a5",
+        "sdkBindingDigest": "sha256:f0b64f0eca2b4d9060f55e3beee8fdde63b66f1a0e20f13a765bf2bab3467c0e",
+        "buildSeconds": 23.50836,
+        "commands": [
+          {
+            "stage": "contracts",
+            "exitCode": 0,
+            "seconds": 0.012195
+          },
+          {
+            "stage": "node-version",
+            "exitCode": 0,
+            "seconds": 0.054081
+          },
+          {
+            "stage": "wasm-tools-version",
+            "exitCode": 0,
+            "seconds": 0.012002
+          },
+          {
+            "stage": "prepare-compiler-adapter",
+            "exitCode": 0,
+            "seconds": 0.199503
+          },
+          {
+            "stage": "canonical-wit",
+            "exitCode": 0,
+            "seconds": 0.01193
+          },
+          {
+            "stage": "authoritative-types",
+            "exitCode": 0,
+            "seconds": 0.011219
+          },
+          {
+            "stage": "SDK-fetch-HTTP-types",
+            "exitCode": 0,
+            "seconds": 0.011078
+          },
+          {
+            "stage": "fetch-binding-types",
+            "exitCode": 0,
+            "seconds": 0.010978
+          },
+          {
+            "stage": "fetch-binding-canonical-wit",
+            "exitCode": 0,
+            "seconds": 0.01121
+          },
+          {
+            "stage": "selected-runtime-types",
+            "exitCode": 0,
+            "seconds": 0.010942
+          },
+          {
+            "stage": "selected-activation-types",
+            "exitCode": 0,
+            "seconds": 0.011202
+          },
+          {
+            "stage": "selected-clock-types",
+            "exitCode": 0,
+            "seconds": 0.011007
+          },
+          {
+            "stage": "selected-runtime-wit",
+            "exitCode": 0,
+            "seconds": 0.011075
+          },
+          {
+            "stage": "projected-types",
+            "exitCode": 0,
+            "seconds": 0.011276
+          },
+          {
+            "stage": "generate-types",
+            "exitCode": 0,
+            "seconds": 0.247464
+          },
+          {
+            "stage": "regenerate-types",
+            "exitCode": 0,
+            "seconds": 0.247828
+          },
+          {
+            "stage": "typecheck",
+            "exitCode": 0,
+            "seconds": 0.077306
+          },
+          {
+            "stage": "bundle",
+            "exitCode": 0,
+            "seconds": 0.133363
+          },
+          {
+            "stage": "componentize",
+            "exitCode": 0,
+            "seconds": 10.542042
+          },
+          {
+            "stage": "strip-projection",
+            "exitCode": 0,
+            "seconds": 0.031704
+          },
+          {
+            "stage": "restore-authoritative-contract",
+            "exitCode": 0,
+            "seconds": 0.021543
+          },
+          {
+            "stage": "compose",
+            "exitCode": 0,
+            "seconds": 0.113236
+          },
+          {
+            "stage": "validate",
+            "exitCode": 0,
+            "seconds": 0.044178
+          },
+          {
+            "stage": "surface",
+            "exitCode": 0,
+            "seconds": 0.021986
+          },
+          {
+            "stage": "final-runtime-types",
+            "exitCode": 0,
+            "seconds": 0.021718
+          },
+          {
+            "stage": "selected-runtime-contracts",
+            "exitCode": 0,
+            "seconds": 0.011367
+          },
+          {
+            "stage": "compatibility-final-wit",
+            "exitCode": 0,
+            "seconds": 0.021708
+          },
+          {
+            "stage": "package",
+            "exitCode": 0,
+            "seconds": 1.983003
+          },
+          {
+            "stage": "inspect",
+            "exitCode": 0,
+            "seconds": 1.392467
+          }
+        ]
+      },
+      "strictTypecheck": true,
+      "protectedCompilerContainment": true,
+      "finalWorldGraphCompared": true,
+      "observationBytes": 3542,
+      "actualSignedExecution": false
+    },
+    {
+      "role": "fetch",
+      "directory": "/work/pr923-fetch-runtime-project-r2-20261013/build",
+      "completed": {
+        "formatVersion": 1,
+        "packageAssembled": true,
+        "observationDigest": "sha256:912be40866fe50250e0cc17c7fb335325f08dbb75946f4b15f5f71d8dfb45d9b",
+        "sourceDigest": "sha256:b09c5d92951e20fb06244797a978a4aa0e9aaee72fbe43a449d1dae1b901df53",
+        "componentDigest": "sha256:d9af1b55264d83c408891802c48d913531e0f78e939981cbb688249142a42548",
+        "sdkBindingDigest": "sha256:7765a11a000ac3e58df9f242714f0d4b0240e2ef931215317d32b4d3d2684169",
+        "buildSeconds": 22.192198,
+        "commands": [
+          {
+            "stage": "contracts",
+            "exitCode": 0,
+            "seconds": 0.012234
+          },
+          {
+            "stage": "node-version",
+            "exitCode": 0,
+            "seconds": 0.011496
+          },
+          {
+            "stage": "wasm-tools-version",
+            "exitCode": 0,
+            "seconds": 0.011946
+          },
+          {
+            "stage": "prepare-compiler-adapter",
+            "exitCode": 0,
+            "seconds": 0.155059
+          },
+          {
+            "stage": "canonical-wit",
+            "exitCode": 0,
+            "seconds": 0.011282
+          },
+          {
+            "stage": "authoritative-types",
+            "exitCode": 0,
+            "seconds": 0.010941
+          },
+          {
+            "stage": "SDK-fetch-HTTP-types",
+            "exitCode": 0,
+            "seconds": 0.01117
+          },
+          {
+            "stage": "fetch-binding-types",
+            "exitCode": 0,
+            "seconds": 0.010997
+          },
+          {
+            "stage": "fetch-binding-canonical-wit",
+            "exitCode": 0,
+            "seconds": 0.011045
+          },
+          {
+            "stage": "selected-runtime-types",
+            "exitCode": 0,
+            "seconds": 0.011335
+          },
+          {
+            "stage": "selected-activation-types",
+            "exitCode": 0,
+            "seconds": 0.010994
+          },
+          {
+            "stage": "selected-clock-types",
+            "exitCode": 0,
+            "seconds": 0.011297
+          },
+          {
+            "stage": "selected-runtime-wit",
+            "exitCode": 0,
+            "seconds": 0.011246
+          },
+          {
+            "stage": "projected-types",
+            "exitCode": 0,
+            "seconds": 0.011043
+          },
+          {
+            "stage": "generate-types",
+            "exitCode": 0,
+            "seconds": 0.246238
+          },
+          {
+            "stage": "regenerate-types",
+            "exitCode": 0,
+            "seconds": 0.236427
+          },
+          {
+            "stage": "typecheck",
+            "exitCode": 0,
+            "seconds": 0.082811
+          },
+          {
+            "stage": "bundle",
+            "exitCode": 0,
+            "seconds": 0.133349
+          },
+          {
+            "stage": "componentize",
+            "exitCode": 0,
+            "seconds": 10.574389
+          },
+          {
+            "stage": "strip-projection",
+            "exitCode": 0,
+            "seconds": 0.031781
+          },
+          {
+            "stage": "restore-authoritative-contract",
+            "exitCode": 0,
+            "seconds": 0.031455
+          },
+          {
+            "stage": "compose",
+            "exitCode": 0,
+            "seconds": 0.123473
+          },
+          {
+            "stage": "validate",
+            "exitCode": 0,
+            "seconds": 0.041875
+          },
+          {
+            "stage": "surface",
+            "exitCode": 0,
+            "seconds": 0.031477
+          },
+          {
+            "stage": "final-runtime-types",
+            "exitCode": 0,
+            "seconds": 0.031559
+          },
+          {
+            "stage": "selected-runtime-contracts",
+            "exitCode": 0,
+            "seconds": 0.011366
+          },
+          {
+            "stage": "compatibility-final-wit",
+            "exitCode": 0,
+            "seconds": 0.021617
+          },
+          {
+            "stage": "package",
+            "exitCode": 0,
+            "seconds": 2.257954
+          },
+          {
+            "stage": "inspect",
+            "exitCode": 0,
+            "seconds": 1.469326
+          }
+        ]
+      },
+      "strictTypecheck": true,
+      "protectedCompilerContainment": true,
+      "finalWorldGraphCompared": true,
+      "observationBytes": 3542,
+      "actualSignedExecution": false
+    }
+  ],
+  "failedAttempts": [
+    "/work/pr923-fetch-URL-project-20261013",
+    "/work/pr923-fetch-runtime-project-20261013"
+  ],
+  "signedAcceptancePending": [
+    "native URL reference/linked rejection and fresh state",
+    "default fetch real borrowed-read cancellation/drop/socket EOF and physical owners zero",
+    "host cancellation and fresh reuse",
+    "denied HTTP provider no socket contact"
+  ]
+}
