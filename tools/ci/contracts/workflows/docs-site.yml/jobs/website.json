@@ -63,7 +63,7 @@
       {
         "name": "Verify production pages, theme and source-backed controls",
         "working-directory": "website",
-        "run": "# Each suite owns separate servers, browsers and evidence directories.\n# Run the complete five-suite matrix concurrently on the hosted VM.\nnpm run test:versions &\nversions_pid=$!\nnpm run test:build &\nbuild_pid=$!\nnpm run test:theme &\ntheme_pid=$!\nnpm run test:examples &\nexamples_pid=$!\nnpm run test:discovery &\ndiscovery_pid=$!\nstatus=0\nwait \"$build_pid\" || status=$?\nwait \"$theme_pid\" || status=$?\nwait \"$examples_pid\" || status=$?\nwait \"$discovery_pid\" || status=$?\nwait \"$versions_pid\" || status=$?\nexit \"$status\"\n"
+        "run": "# Keep the long discovery audit away from the synthetic version build.\n# Both waves retain every suite and its original process deadline.\nnpm run test:discovery &\ndiscovery_pid=$!\nnpm run test:build &\nbuild_pid=$!\nstatus=0\nwait \"$build_pid\" || status=$?\nwait \"$discovery_pid\" || status=$?\nnpm run test:versions &\nversions_pid=$!\nnpm run test:theme &\ntheme_pid=$!\nnpm run test:examples &\nexamples_pid=$!\nwait \"$theme_pid\" || status=$?\nwait \"$examples_pid\" || status=$?\nwait \"$versions_pid\" || status=$?\nexit \"$status\"\n"
       },
       {
         "name": "Retain only the tested site and compact browser receipts",
