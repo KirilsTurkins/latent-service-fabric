@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "latent.recovery970.purpose-and-negative-signing.v1",
+  "committedBase": "9e99c270bf6ef4e7998397f7a79056a858d81229",
+  "executedSource": "authored uncommitted overlay; exact source files below",
+  "sourceFiles": {
+    "crates/latent-policy/examples/capsule_authoring.rs": "84166bd4919c41ccb3b62cda4f71d8692aecc236a947611b882ef999ab504b52",
+    "crates/latent-policy/examples/capsule_authoring/current_java.rs": "5d3ae5c72c927665a92393179f3d50a2e4897f3d88c9d615556130b1fb3226c4",
+    "crates/latent-policy/examples/capsule_authoring/mod.rs": "23bf2d6a0178ad97c762b8f70ab269177380903ef38a8e6c202ec94e5ca79a9c",
+    "crates/latent-policy/src/capability.rs": "62d331de3b074e9cbc0beb5eec4adf57dc5a82df0066263e7014f047fe6cdb7e",
+    "crates/latent-policy/src/capability/tests/state.rs": "8d2f38ec4d1de0fd0aa4e037203ca471e5b42ab9aee17f43a16cf5de79c1d40c",
+    "schemas/capability-policy.schema.json": "fc7a89e51026a7e7c501cf49c311e942269833bd658bb21e9b24f8c24079be3d",
+    "schemas/capability-provider-binding.schema.json": "13bc69ac8da7eb1e7b7b5e34cd2f09b9764be48dbf65c8d1aada2a3873ad23d9",
+    "tools/tests/test_capability_policy_schema.py": "dcad13872407a21446645d3798b5748a6cba456b9dfca9de4967aa771e5726c6"
+  },
+  "controls": {
+    "defaultFixture": {
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0,
+      "binarySha256": "79c68eb27237888e45f9ab6e19efb610cd01264f0915db8af7b5f4961dfe2f2e",
+      "logSha256": "6ae9417c1d6108396db247e27eac13b218493824628de2705d6ea162340d0db0"
+    },
+    "policyLibrary": {
+      "passed": 141,
+      "failed": 0,
+      "ignored": 7,
+      "binarySha256": "90f5bdad8ce59dcc1224fa0ea3ab98c61fa671bb62e05da23efa6997ead77205",
+      "logSha256": "20d65a575c5b51c30aaf34db2a98ff339b642833eb0fbaad894a09449a8bc205"
+    },
+    "policySchemaParity": {
+      "passed": 5,
+      "failed": 0
+    },
+    "existingPythonConsumers": {
+      "passed": 33,
+      "failed": 0
+    }
+  },
+  "fixtureMode": "fixture-sign-current-java-with-negative",
+  "fivePositiveModeRetained": true,
+  "purposes": [
+    "namespace-snapshot",
+    "namespace-inspect-restore",
+    "namespace-restore",
+    "namespace-schema-migrate",
+    "namespace-review-recovery",
+    "namespace-resume"
+  ],
+  "authorityBoundary": "Closed host purpose labels on existing STATE capability; no added guest WIT/constructor, implicit permission or ceiling. Existing authenticated Administrator/current publication/policy/exact resource/physical writer fences remain.",
+  "negativeBoundary": "Exact six captured inputs and separate ephemeral signing only; no immediate HTTP grant, provider contact/noncontact, runtime denial, guest execution or rollback approval inferred.",
+  "runtimeQualified": false,
+  "productionApproval": false,
+  "issueClosure": false
+}

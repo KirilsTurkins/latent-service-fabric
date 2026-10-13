@@ -19,6 +19,14 @@ const NAMES: [&str; 5] = [
     "put-once-writer-v2",
     "put-once-diagnostics",
 ];
+const WITH_NEGATIVE: [&str; 6] = [
+    "aggregate",
+    "put-once-legacy-v1",
+    "put-once-compatible-v2",
+    "put-once-writer-v2",
+    "put-once-diagnostics",
+    "forbidden-http",
+];
 const PINS: &[u8] = include_bytes!(
     "../../../../docs/development/phase4-handoffs/2026-10-12/pr970-current-post-evidence.json"
 );
@@ -71,18 +79,18 @@ fn model_material(model: &Value, name: &str, raw: &[u8]) -> Result<()> {
     )
 }
 
-fn load(root: &Path, captures: &Value) -> Result<(String, inputs::Build)> {
+fn load(root: &Path, captures: &Value, selected_names: &[&str]) -> Result<(String, inputs::Build)> {
     require(
         root.is_absolute(),
         "current Java fixture inputs must be absolute",
     )?;
-    let report_raw = read(root, "compiler-report.json", 262144)?;
+    let report_raw = read(root, "compiler-report.json", 262_144)?;
     let report: Value = serde_json::from_slice(&report_raw)?;
     let name = report["variant"]
         .as_str()
         .ok_or("current Java fixture variant missing")?;
     require(
-        NAMES.contains(&name),
+        selected_names.contains(&name),
         "current Java fixture variant is not approved for signing",
     )?;
     let pin = &captures["variants"][name]["materials"];
@@ -122,15 +130,32 @@ fn load(root: &Path, captures: &Value) -> Result<(String, inputs::Build)> {
         &pin["compilerInputs"],
         4 * 1024 * 1024,
     )?;
-    let companion = pinned(root, "transaction-binding.json", &pin["companion"], 262144)?;
+    let companion = pinned(root, "transaction-binding.json", &pin["companion"], 262_144)?;
     let archive = read(root, "source.tar.gz", 32 * 1024 * 1024)?;
     digest_matches(&archive, &report["sourceArchiveDigest"])?;
-    if name != "aggregate" {
+    if name == "forbidden-http" {
         pinned(
             root,
             "src/dev/latent/app/Capsule.java",
             &pin["capsuleSource"],
-            262144,
+            262_144,
+        )?;
+        for path in [
+            "java-current-http-profile.json",
+            "deferred-http-requirements.json",
+            "application-schema-inputs.json",
+        ] {
+            absent(root, path)?;
+        }
+        require(report["nativeEffectOperation"].is_null() && report["nativeEffectProfile"].is_null()
+            && report["currentHttpProfileInputDigest"].is_null(),
+            "negative Java fixture cannot acquire a current HTTP marker or native effect requirement")?;
+    } else if name != "aggregate" {
+        pinned(
+            root,
+            "src/dev/latent/app/Capsule.java",
+            &pin["capsuleSource"],
+            262_144,
         )?;
         let marker = pinned(
             root,
@@ -179,10 +204,10 @@ fn load(root: &Path, captures: &Value) -> Result<(String, inputs::Build)> {
     ] {
         digest_matches(raw, &fixture[field])?;
     }
-    if name == "aggregate" {
+    if matches!(name, "aggregate" | "forbidden-http") {
         require(
             fixture["requirementsDigest"].is_null(),
-            "aggregate fixture must not add an effect requirement",
+            "non-HTTP-effect fixture must not add an effect requirement",
         )?;
     } else {
         require(
@@ -192,10 +217,10 @@ fn load(root: &Path, captures: &Value) -> Result<(String, inputs::Build)> {
     }
     let model = &fixture["provenanceModel"];
     let manifest: Value = serde_json::from_slice(&read(root, "capsule.json", 65536)?)?;
-    let expected_limits = serde_json::json!({"cpuFuel":1000000000u64,"memoryBytes":67108864u64,
-        "wallTimeLimitMillis":120000,"childCalls":0,"outboundRequests":0,"stateReadBytes":4194304,
-        "stateWriteBytes":2097152,"blobReadBytes":0,"blobWriteBytes":0,"logBytes":0,
-        "effectCount":if name == "aggregate" {32} else {1}});
+    let expected_limits = serde_json::json!({"cpuFuel":1_000_000_000_u64,"memoryBytes":67_108_864_u64,
+        "wallTimeLimitMillis":120_000,"childCalls":0,"outboundRequests":0,"stateReadBytes":4_194_304,
+        "stateWriteBytes":2_097_152,"blobReadBytes":0,"blobWriteBytes":0,"logBytes":0,
+        "effectCount":if matches!(name, "aggregate" | "forbidden-http") {32} else {1}});
     require(
         manifest["execution"]["limits"] == expected_limits
             && manifest["execution"]["threading"] == "single-threaded"
@@ -203,6 +228,25 @@ fn load(root: &Path, captures: &Value) -> Result<(String, inputs::Build)> {
             && manifest["execution"]["fusionEligible"] == false,
         "current Java fixture must retain original invocation bounds",
     )?;
+    if name == "forbidden-http" {
+        let imports = manifest["imports"]
+            .as_array()
+            .ok_or("negative Java fixture imports missing")?;
+        for contract in [
+            "latent:http/client@0.2.0",
+            "latent:state/key-value@0.2.0",
+            "latent:intents/staging@0.1.0",
+        ] {
+            require(
+                imports
+                    .iter()
+                    .filter(|entry| entry["contract"] == contract && entry["optional"] == false)
+                    .count()
+                    == 1,
+                "negative Java fixture must retain each original HTTP/state/intent import",
+            )?;
+        }
+    }
     model_material(model, "source-snapshot", &source)?;
     model_material(model, "build-recipe", &recipe)?;
     model_material(model, "compiler-closure", &closure)?;
@@ -222,7 +266,7 @@ fn load(root: &Path, captures: &Value) -> Result<(String, inputs::Build)> {
             && model["parameters"]
                 == serde_json::json!({"compiler":"teavm-c",
                 "entryPoint":"dev.latent.app.Capsule","target":"wasm32-wasip1",
-                "bindings":"lsf-java-wit-v1","optimization":"O2","javaHeapBytes":4194304})
+                "bindings":"lsf-java-wit-v1","optimization":"O2","javaHeapBytes":4_194_304})
             && model["reproducibility"] == "not-checked"
             && model["hermetic"] == false
             && model["dependencyCompleteness"] == "declared-inputs-incomplete",
@@ -243,9 +287,39 @@ pub(crate) fn sign_current_java(
     compiler_source: &str,
     paths: &[OsString],
 ) -> Result<()> {
+    sign_selected(output, compiler_source, paths, &NAMES)
+}
+
+/// Separate signed negative material. This does not approve an immediate call,
+/// qualify a runtime refusal or change the five-positive fixture's contract.
+pub(crate) fn sign_current_java_with_negative(
+    output: &Path,
+    compiler_source: &str,
+    paths: &[OsString],
+) -> Result<()> {
+    sign_selected(output, compiler_source, paths, &WITH_NEGATIVE)
+}
+
+fn absent(root: &Path, name: &str) -> Result<()> {
+    match root.join(name).symlink_metadata() {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        _ => Err("negative Java fixture must not add a positive effect association".into()),
+    }
+}
+
+fn sign_selected(
+    output: &Path,
+    compiler_source: &str,
+    paths: &[OsString],
+    selected_names: &[&str],
+) -> Result<()> {
     require(
-        compiler_source == SOURCE && paths.len() == NAMES.len(),
-        "current Java fixture requires the exact source and five positive captured inputs",
+        compiler_source == SOURCE && paths.len() == selected_names.len(),
+        if selected_names.len() == NAMES.len() {
+            "current Java fixture requires the exact source and five positive captured inputs"
+        } else {
+            "current Java fixture requires the exact source and all six separately selected captured inputs"
+        },
     )?;
     require(
         output.is_absolute() && !output.exists(),
@@ -257,10 +331,10 @@ pub(crate) fn sign_current_java(
         captures["sourceCommit"] == SOURCE && captures["nativeIdempotencyProfile"] == PROFILE,
         "committed current Java fixture custody pins changed",
     )?;
-    let mut builds = Vec::with_capacity(NAMES.len());
+    let mut builds = Vec::with_capacity(selected_names.len());
     let mut names = BTreeSet::new();
     for path in paths {
-        let (name, build) = load(Path::new(path), captures)?;
+        let (name, build) = load(Path::new(path), captures, selected_names)?;
         require(
             names.insert(name),
             "current Java fixture input is duplicated",
@@ -269,9 +343,9 @@ pub(crate) fn sign_current_java(
     }
     require(
         names
-            == NAMES
-                .into_iter()
-                .map(str::to_owned)
+            == selected_names
+                .iter()
+                .map(|name| (*name).to_owned())
                 .collect::<BTreeSet<_>>(),
         "current Java fixture input set is incomplete",
     )?;
@@ -300,5 +374,35 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         std::fs::write(directory.path().join("input"), b"changed").unwrap();
         assert!(pinned(directory.path(), "input", &identity, 32).is_err());
+    }
+
+    #[test]
+    fn negative_fixture_requires_its_separate_complete_source_set_before_output() {
+        let directory = tempfile::tempdir().unwrap();
+        let output = directory.path().join("not-created");
+        assert!(sign_current_java_with_negative(&output, "unreviewed", &[]).is_err());
+        let paths = vec![OsString::from(directory.path()); NAMES.len()];
+        assert!(sign_current_java_with_negative(&output, SOURCE, &paths).is_err());
+        assert!(
+            sign_current_java(&output, SOURCE, &vec![OsString::from(directory.path()); 6]).is_err()
+        );
+        assert!(!output.exists());
+    }
+
+    #[test]
+    fn negative_fixture_cannot_add_a_positive_marker_or_dangling_association() {
+        let directory = tempfile::tempdir().unwrap();
+        absent(directory.path(), "marker").unwrap();
+        std::fs::write(directory.path().join("marker"), b"not-approved").unwrap();
+        assert!(absent(directory.path(), "marker").is_err());
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(
+                directory.path().join("missing"),
+                directory.path().join("linked"),
+            )
+            .unwrap();
+            assert!(absent(directory.path(), "linked").is_err());
+        }
     }
 }

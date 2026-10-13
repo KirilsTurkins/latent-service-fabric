@@ -83,6 +83,8 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         host_operations = {"commit", "read-result", "inspect-effect", "cancel-command",
                            "namespace-create", "namespace-inspect", "namespace-list",
                            "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate",
+                           "namespace-snapshot", "namespace-inspect-restore", "namespace-restore",
+                           "namespace-schema-migrate", "namespace-review-recovery", "namespace-resume",
                            "effect-plan", "effect-reconcile", "effect-redrive", "effect-terminate",
                            "state-checkpoint", "purge-expired-payload"}
         self.assertTrue(expected["latent:state/key-value@0.2.0"].isdisjoint(host_operations))

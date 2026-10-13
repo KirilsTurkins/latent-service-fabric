@@ -120,6 +120,10 @@ StrictCommand, dispatcher or business-store owner and does not advance the
 state epoch. The exact store configuration digest is invariant to operation
 selection; `operations=[]` preserves it when the state declaration is identical.
 Catalog startup and shutdown still use the real protected control owners.
+Their supply-chain epoch and restart floor are real control writes. A collector
+waits the original admission lease interval after either catalog-owning
+inspection before starting another owner; an inspection result cannot waive
+that floor or renew its deadline.
 
 `latentd inspect-configured-http-effects --config CONFIG` exposes actual
 constructor-derived adapter profiles before publications exist. The schema is

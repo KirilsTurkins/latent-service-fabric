@@ -4298,6 +4298,8 @@
       "expectedCases": [
         "authoring::current_java::tests::changed_unsigned_material_cannot_match_a_closed_custody_pin",
         "authoring::current_java::tests::current_fixture_never_accepts_another_source_or_partial_set",
+        "authoring::current_java::tests::negative_fixture_cannot_add_a_positive_marker_or_dangling_association",
+        "authoring::current_java::tests::negative_fixture_requires_its_separate_complete_source_set_before_output",
         "authoring::inputs::tests::diagnostic_asset_inventory_cannot_cover_replaced_bytes",
         "authoring::inputs::tests::diagnostic_assets_preserve_checked_component_and_wit_inventory",
         "authoring::policy::tests::demo_proofs_cover_documented_window_but_never_extend_signature_expiry",
@@ -4310,7 +4312,7 @@
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 8,
+      "minimumCases": 10,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -4367,6 +4369,7 @@
         "capability::tests::normalized_http_scope_has_exact_origins_and_segment_prefixes",
         "capability::tests::required_audit_is_monotonic_and_old_canonical_documents_are_unchanged",
         "capability::tests::runtime_timer_policy_requires_its_exact_contract_and_clock_scope",
+        "capability::tests::state::current_recovery_labels_require_the_exact_current_administrator_purpose_and_state_tuple",
         "capability::tests::state::same_tenant_subjects_require_current_entity_and_result_policy_grants",
         "capability::tests::state::state_and_intent_opt_ins_preserve_stateless_linking_and_closed_bounded_decoding",
         "capability::tests::state::state_policy_matches_exact_tuples_without_cross_product_or_incarnation_revival",
@@ -4498,7 +4501,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 147,
+      "minimumCases": 148,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [

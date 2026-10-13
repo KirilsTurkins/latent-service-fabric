@@ -74,3 +74,20 @@ capsule_authoring fixture-sign-current-java-inputs /new/private/output \
 Its real TLS command is `capsule_authoring fixture-tls /new/private/tls`.
 The current collector's AOT compiler is a separate explicit
 `latent-wasmtime` binary `latent-aot-compiler`; it is not a signer mode.
+
+The separate `fixture-sign-current-java-with-negative` mode accepts those exact
+five directories plus the separately captured `forbidden-http` directory,
+using the same pinned compiler source. All six reports, components, archives,
+companions and provenance associations are checked before key generation.
+The negative retains its exact Capsule.java, HTTP/state/intent imports,
+32-effect and zero-outbound-request invocation bounds. It cannot add a current
+HTTP marker, native HTTP requirements or an application-schema approval.
+The original five-positive command and its input boundary remain unchanged.
+All ten default example controls pass, including no-output refusal for a wrong
+source or incomplete selection and rejection of dangling marker associations.
+
+Signing the negative is fixture material for a later real strict-runtime
+control. It grants no HTTP capability and establishes no admission rejection,
+guest execution, provider noncontact or application rollback. The retained
+source stages an event intent before calling HTTP; a trap at that earlier
+stage cannot qualify the HTTP denial gate.
