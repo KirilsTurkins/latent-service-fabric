@@ -25,6 +25,7 @@ struct OriginalKeeper {
 impl Drop for OriginalKeeper {
     fn drop(&mut self) {
         assert!(self.native_destroyed.load(Ordering::SeqCst));
+        assert!(self.io.snapshot().unwrap().retained_operation_bytes >= 512);
         // The native allocation is destroyed, but the enclosing storage
         // reservation and retirement witness have not been released yet.
         self.notice
@@ -42,6 +43,7 @@ struct OriginalJobKeeper {
 impl Drop for OriginalJobKeeper {
     fn drop(&mut self) {
         assert!(self.destroyed.load(Ordering::SeqCst));
+        assert!(self.io.snapshot().unwrap().retained_operation_bytes >= 512);
         self.notice
             .send(self.io.snapshot().unwrap().accepted)
             .unwrap();
@@ -92,7 +94,10 @@ fn original_job_capacity_survives_callback_completion_and_detached_buffer_destru
         })
         .unwrap();
     let (_, ticket) = ready(&callback_receiver);
+    let charge = owner.snapshot().unwrap().retained_operation_bytes;
+    assert!(charge >= 512);
     drop(job);
+    assert_eq!(owner.snapshot().unwrap().retained_operation_bytes, charge);
     assert!(weak.upgrade().is_some());
     assert!(matches!(
         global.reserve(NativeAdmissionClass::Recovery, request, deadline),
@@ -100,6 +105,7 @@ fn original_job_capacity_survives_callback_completion_and_detached_buffer_destru
     ));
     callback.release(ticket).unwrap();
     let (_, ticket) = ready(&destructor_receiver);
+    assert_eq!(owner.snapshot().unwrap().retained_operation_bytes, charge);
     assert!(!destroyed.load(Ordering::SeqCst));
     assert!(weak.upgrade().is_some());
     assert!(matches!(
@@ -107,7 +113,9 @@ fn original_job_capacity_survives_callback_completion_and_detached_buffer_destru
         Err(NativeCapacityError::SlotsFull)
     ));
     destructor.release(ticket).unwrap();
-    assert!(finish(&owner).clean);
+    let report = finish(&owner);
+    assert!(report.clean);
+    assert_eq!(report.snapshot.retained_operation_bytes, 0);
     assert_eq!(retired.recv_timeout(WATCHDOG).unwrap(), 1);
     assert!(weak.upgrade().is_none());
     assert!(destroyed.load(Ordering::SeqCst));
@@ -176,13 +184,16 @@ fn original_capacity_keeper_survives_detached_native_retirement_until_actual_des
     assert!(weak_keeper.upgrade().is_some());
     assert_eq!(owner.snapshot().unwrap().physical_owners, 1);
     assert!(owner.snapshot().unwrap().retained_bytes >= 512);
+    assert!(owner.snapshot().unwrap().retained_operation_bytes >= 512);
     assert!(matches!(
         global.reserve(NativeAdmissionClass::Ordinary, request, deadline),
         Err(NativeCapacityError::SlotsFull)
     ));
     assert!(!closed.load(Ordering::SeqCst));
     rendezvous.release(ticket).unwrap();
-    assert!(finish(&owner).clean);
+    let report = finish(&owner);
+    assert!(report.clean);
+    assert_eq!(report.snapshot.retained_operation_bytes, 0);
     assert_eq!(keeper_retired.recv_timeout(WATCHDOG).unwrap(), 1);
     assert!(native_destroyed.load(Ordering::SeqCst));
     assert!(witness.has_retired());
@@ -254,6 +265,7 @@ fn native_retirement_remains_charged_and_on_worker_through_paused_destructor() {
     assert_eq!(during.physical_owners, 1);
     assert_eq!(during.accepted, 1);
     assert!(during.retained_bytes >= 256);
+    assert!(during.retained_operation_bytes >= 256);
     assert!(!closed.load(Ordering::SeqCst));
     clock.advance(Duration::from_secs(1));
     assert!(!wait(drain).clean);
@@ -306,11 +318,13 @@ fn dropping_retirement_receipt_detaches_without_refunding_paused_physical_cleanu
     assert!(!destroyed.load(Ordering::SeqCst));
     assert_eq!(owner.snapshot().unwrap().physical_owners, 1);
     assert!(owner.snapshot().unwrap().retained_bytes >= 512);
+    assert!(owner.snapshot().unwrap().retained_operation_bytes >= 512);
     owner.close();
     rendezvous.release(ticket).unwrap();
     let report = finish(&owner);
     assert!(report.clean);
     assert!(report.snapshot.physically_retired());
+    assert_eq!(report.snapshot.retained_operation_bytes, 0);
     assert!(destroyed.load(Ordering::SeqCst));
 }
 
@@ -318,8 +332,10 @@ fn dropping_retirement_receipt_detaches_without_refunding_paused_physical_cleanu
 fn completed_response_memory_prevents_clean_drain_until_actual_waiter_drop() {
     let (store, _, closed) = store();
     let clock = clock();
+    let mut config = limits();
+    config.resident_bytes = 4096;
     let owner =
-        StoreIoOwner::with_clock(store, limits(), |_| Ok(()), Arc::new(clock.clone())).unwrap();
+        StoreIoOwner::with_clock(store, config, |_| Ok(()), Arc::new(clock.clone())).unwrap();
     let (completed, notices) = mpsc::channel();
     let job = owner
         .submit(StoreIoKind::Read, 1024, move |_| {
@@ -328,6 +344,12 @@ fn completed_response_memory_prevents_clean_drain_until_actual_waiter_drop() {
         })
         .unwrap();
     notices.recv_timeout(WATCHDOG).unwrap();
+    owner.wait_for_snapshot(WATCHDOG, |snapshot| snapshot.active_reads == 0);
+    let completed = owner.snapshot().unwrap();
+    let charge = completed.retained_operation_bytes;
+    assert_eq!(completed.accepted, 1);
+    assert!(charge >= 1024);
+    assert_eq!(completed.retained_bytes, 4096 + charge);
     let deadline = clock.monotonic_now() + Duration::from_secs(1);
     let mut drain = Box::pin(
         owner
@@ -340,6 +362,7 @@ fn completed_response_memory_prevents_clean_drain_until_actual_waiter_drop() {
     assert!(!timed_out.clean);
     assert_eq!(timed_out.snapshot.accepted, 1);
     assert!(timed_out.snapshot.retained_bytes >= 1024);
+    assert_eq!(timed_out.snapshot.retained_operation_bytes, charge);
     drop(job);
     let late = wait(
         owner
@@ -350,20 +373,55 @@ fn completed_response_memory_prevents_clean_drain_until_actual_waiter_drop() {
             .unwrap(),
     );
     assert!(late.snapshot.physically_retired());
+    assert_eq!(late.snapshot.retained_operation_bytes, 0);
     assert!(!late.clean);
     assert!(closed.load(Ordering::SeqCst));
 }
 
 #[test]
 fn engine_resident_bytes_remain_reserved_until_physical_destruction() {
-    let (store, _, _) = store();
+    let (store, _, closed) = store();
     let mut config = limits();
     config.resident_bytes = 4096;
-    let owner = StoreIoOwner::new(store, config, |_| Ok(())).unwrap();
-    assert_eq!(owner.snapshot().unwrap().retained_bytes, 4096);
+    config.retained_bytes = 4096 + 512;
+    config.job_bytes = config.retained_bytes;
+    let finalizer = Rendezvous::new(1);
+    let worker_finalizer = finalizer.clone();
+    let (notice, receiver) = mpsc::channel();
+    let owner = StoreIoOwner::new(store, config, move |_| {
+        pause(&worker_finalizer, &notice, ());
+        Ok(())
+    })
+    .unwrap();
+    let idle = owner.snapshot().unwrap();
+    assert_eq!(idle.retained_bytes, 4096);
+    assert_eq!(idle.retained_operation_bytes, 0);
+    assert_eq!(idle.accepted, 0);
+    assert!(idle.live_workers > 0);
+    assert!(!idle.physically_retired());
+    assert_eq!(
+        owner
+            .submit(StoreIoKind::Read, 513, |_| ())
+            .err()
+            .unwrap()
+            .reason,
+        StoreIoError::ByteBudget
+    );
+    owner.close();
+    let (_, ticket) = ready(&receiver);
+    let finalizing = owner.snapshot().unwrap();
+    assert!(finalizing.finalizing());
+    assert_eq!(finalizing.retained_bytes, 4096);
+    assert_eq!(finalizing.retained_operation_bytes, 0);
+    assert!(!finalizing.physically_retired());
+    assert!(!closed.load(Ordering::SeqCst));
+    finalizer.release(ticket).unwrap();
     let report = finish(&owner);
     assert!(report.clean);
     assert_eq!(report.snapshot.retained_bytes, 0);
+    assert_eq!(report.snapshot.retained_operation_bytes, 0);
+    assert!(report.snapshot.physically_retired());
+    assert!(closed.load(Ordering::SeqCst));
 }
 
 #[test]

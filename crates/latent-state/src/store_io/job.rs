@@ -26,6 +26,10 @@ impl<S> Drop for Reservation<S> {
                 .state
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.retained_operation_bytes = state
+                .retained_operation_bytes
+                .checked_sub(self.bytes)
+                .expect("accepted operation byte accounting underflow");
             state.accepted -= 1;
             state.retained_bytes -= self.bytes;
             if self.recovery {

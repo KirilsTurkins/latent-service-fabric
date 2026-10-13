@@ -216,7 +216,7 @@ impl Shared {
             counts_observed_at_millis: state.counts_time,
             queued: jobs.queued,
             active_jobs: jobs.active_reads + jobs.active_writes,
-            retained_attempt_bytes: jobs.retained_bytes,
+            retained_attempt_bytes: jobs.retained_operation_bytes,
             live_workers: jobs.live_workers,
             accepted_effects: state.effects.len(),
             live_tenants: state.tenants.len()
