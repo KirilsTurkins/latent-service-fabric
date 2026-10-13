@@ -11,7 +11,7 @@ use crate::invocation_input_observer::{InputTrace, InvocationObservation, RawGua
 use crate::{InvocationInputDropReason, InvocationInputObserver, Phase0InvocationTiming};
 
 use super::{
-    elapsed_micros, validate_request_context, Instant, WasmtimeBackend, WasmtimePreparedUse,
+    Instant, WasmtimeBackend, WasmtimePreparedUse, elapsed_micros, validate_request_context,
 };
 
 impl WasmtimeBackend {
@@ -38,6 +38,7 @@ impl WasmtimeBackend {
         cancellation: &dyn ExecutionCancellation,
         prepared: Option<WasmtimePreparedUse>,
     ) -> ExecutionReport {
+        let ownership = super::transaction_access::InvocationOwnership::new(cancellation);
         if let Err(error) =
             validate_request_context(&request, self.config.maximum_artifact_metadata_bytes)
         {
@@ -54,7 +55,7 @@ impl WasmtimeBackend {
             observe(
                 self.invoke_inner_timed(
                     request,
-                    cancellation,
+                    ownership,
                     &mut timing,
                     prepared,
                     Some(&trace),
@@ -66,7 +67,7 @@ impl WasmtimeBackend {
         } else {
             self.invoke_inner_timed(
                 request,
-                cancellation,
+                ownership,
                 &mut timing,
                 prepared,
                 None,
