@@ -1740,6 +1740,7 @@
       "expectedCases": [
         "deployments::bindings::compile::invocation::tests::installed_graph_distinguishes_tenants_and_rejects_cross_tenant_cycles",
         "deployments::bindings::compile::tests::graph_checks_auto_local_edges_and_rejects_cycle_depth_and_bounded_work",
+        "deployments::bindings::compile::transaction_import_tests::denied_immediate_http_requires_scoped_state_and_cannot_replace_ordinary_bindings",
         "deployments::bindings::compile::web::tests::context_only_web_projection_cannot_acquire_provider_grants",
         "deployments::bindings::compile::web::tests::scoped_web_http_requires_one_exact_grant_without_ambient_imports",
         "deployments::bindings::model::invocation_tests::different_provider_contract_recovers_only_as_an_explicit_service_adapter",
@@ -2014,7 +2015,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-control-store/Cargo.toml",
-      "minimumCases": 266,
+      "minimumCases": 267,
       "mode": "libtest",
       "package": "latent-control-store",
       "platforms": [

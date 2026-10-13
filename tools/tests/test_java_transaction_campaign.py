@@ -80,6 +80,14 @@ class CampaignOracle(unittest.TestCase):
                 campaign.rpc_result(changed, value, "original-signed-publication", "original-id")
 
     def test_current_rpc_result_bytes_must_equal_original_http_payload(self):
+        from contextlib import nullcontext
+        from unittest.mock import Mock, patch
+        client = Mock()
+        original = {'outcome': 'COMMAND_OUTCOME_REJECTED'}
+        client.call.return_value = {'data': {'command': original}}
+        with patch.object(lifecycle, 'as_user', return_value=nullcontext()):
+            self.assertIs(lifecycle.lookup(client, 'publication:sha256:' + 'a' * 64, 'key'), original)
+        self.assertEqual(client.call.call_args.kwargs['codes'], (0, 3))
         value = result()
         changed = inspection(value)
         changed["retainedResult"]["value"]["payload"]["data"] = "W10="

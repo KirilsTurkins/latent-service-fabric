@@ -174,6 +174,26 @@ fn original_transaction_imports_open_only_the_unchanged_provider_session() {
     let mut state_only = request;
     state_only.imports.pop();
     assert!(opens(&fixture, &state_only, &control));
+    let mut denied_http = state_only;
+    denied_http
+        .imports
+        .push(scoped_import(crate::broker::http::HTTP_CAPABILITY));
+    let session = fixture
+        .broker
+        .open_session(
+            fixture.plan.clone(),
+            &denied_http,
+            &control,
+            &fixture.publication,
+        )
+        .unwrap();
+    assert!(session
+        .bind(
+            crate::broker::http::HTTP_CAPABILITY,
+            "send",
+            ResourceTarget::Clock
+        )
+        .is_err());
 }
 #[test]
 fn descriptive_or_foreign_transaction_imports_cannot_open_a_session() {
@@ -191,7 +211,7 @@ fn descriptive_or_foreign_transaction_imports_cannot_open_a_session() {
         let mut duplicate = request.clone();
         duplicate.imports.push(request.imports[index].clone());
         assert!(!opens(&fixture, &duplicate, &control));
-        for replacement in ["unknown", "latent:http/client@0.2.0"] {
+        for replacement in ["unknown", "latent:streaming-http/client@0.3.0"] {
             let mut wrong = request.clone();
             wrong.imports[index] = scoped_import(replacement);
             assert!(!opens(&fixture, &wrong, &control));

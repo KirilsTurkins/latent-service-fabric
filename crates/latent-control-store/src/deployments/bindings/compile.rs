@@ -461,9 +461,14 @@ async fn plan<'a>(
         // The selected profile and checked package surface identify native
         // transaction imports. Their runtime owner admits the namespace; an
         // ordinary binding plan neither supplies nor authorizes that owner.
-        if owner.manifest_profile.transactional()
-            && matches!(interface, STATE_CONTRACT | INTENT_CONTRACT)
-        {
+        if native_transaction_import(
+            owner.manifest_profile.transactional(),
+            surface
+                .imports()
+                .iter()
+                .any(|import| import.as_ref() == STATE_CONTRACT),
+            interface,
+        ) {
             continue;
         }
         let d = definition(record, definitions, interface)?;
@@ -549,6 +554,35 @@ async fn plan<'a>(
         fence,
         deadline,
     )
+}
+
+fn native_transaction_import(transactional: bool, state: bool, interface: &str) -> bool {
+    transactional
+        && (matches!(interface, STATE_CONTRACT | INTENT_CONTRACT)
+            || state && interface == latent_capabilities::broker::http::HTTP_CAPABILITY)
+}
+
+#[cfg(test)]
+mod transaction_import_tests {
+    use super::*;
+
+    #[test]
+    fn denied_immediate_http_requires_scoped_state_and_cannot_replace_ordinary_bindings() {
+        let http = latent_capabilities::broker::http::HTTP_CAPABILITY;
+        assert!(native_transaction_import(true, true, http));
+        assert!(!native_transaction_import(true, false, http));
+        assert!(!native_transaction_import(false, true, http));
+        assert!(!native_transaction_import(
+            true,
+            true,
+            "latent:clock/wall@0.1.0"
+        ));
+        assert!(!native_transaction_import(
+            true,
+            true,
+            "latent:streaming-http/client@0.3.0"
+        ));
+    }
 }
 
 fn definition_digest(

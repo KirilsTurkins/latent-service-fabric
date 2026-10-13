@@ -36,6 +36,10 @@ class QualificationOriginOracle(unittest.TestCase):
             self.assertEqual(actual.value["httpIngress"]["browserOrigins"], expected)
             self.assertEqual(actual.value["httpIngress"]["authentication"], {"mode": "bearer"})
             self.assertEqual(actual.value["engine"], {"javaGuest": True})
+            self.assertEqual({binding['contract']: binding['providerBinding']
+                              for binding in actual.value['providers']['bindings']}, {
+                cfg.CLOCKS['clockMonotonic'][0]: 'clock-monotonic-installed',
+                cfg.CLOCKS['clockWall'][0]: 'clock-wall-installed'})
             self.assertEqual(actual.value["isolatedAot"]["process"], {
                 "jobTimeoutMillis": 300000, "maximumOutputBytes": 134217728,
                 "addressSpaceBytes": 4294967296})

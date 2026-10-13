@@ -13,7 +13,15 @@ pub(super) fn matches(
     cancellation: &dyn ExecutionCancellation,
     budget: &ActivationBudget,
 ) -> bool {
-    let scoped = |name: &str| matches!(name, STATE_CONTRACT | INTENT_CONTRACT);
+    const HTTP: &str = crate::broker::http::HTTP_CAPABILITY;
+    if !request
+        .imports
+        .iter()
+        .any(|import| matches!(import.contract.as_str(), STATE_CONTRACT | INTENT_CONTRACT))
+    {
+        return super::imports_match(plan, request, web_projection);
+    }
+    let scoped = |name: &str| matches!(name, STATE_CONTRACT | INTENT_CONTRACT | HTTP);
     let count = request
         .imports
         .iter()
@@ -36,16 +44,18 @@ pub(super) fn matches(
             .bindings
             .iter()
             .any(|binding| scoped(&binding.provider.capability))
-        || ![STATE_CONTRACT, INTENT_CONTRACT].iter().all(|contract| {
-            let imports = request
-                .imports
-                .iter()
-                .filter(|import| import.contract == *contract);
-            imports.clone().count() <= 1
-                && imports.into_iter().all(|import| {
-                    import.capability.0 == *contract && !import.opaque_handle.is_empty()
-                })
-        })
+        || ![STATE_CONTRACT, INTENT_CONTRACT, HTTP]
+            .iter()
+            .all(|contract| {
+                let imports = request
+                    .imports
+                    .iter()
+                    .filter(|import| import.contract == *contract);
+                imports.clone().count() <= 1
+                    && imports.into_iter().all(|import| {
+                        import.capability.0 == *contract && !import.opaque_handle.is_empty()
+                    })
+            })
         || !request
             .imports
             .iter()

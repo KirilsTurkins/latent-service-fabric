@@ -128,7 +128,9 @@ def configure(directory: Path, signed: Path, compiler: Path, tls: Path,
         providers[name] = {"identity": {"id": name, "tenant": TENANT, "service": "runtime-host", "epoch": 1}}
         providers["bindings"].append({"name": name + "-transaction", "tenant": TENANT,
             "consumerService": SERVICE, "providerService": "runtime-host",
-            "contract": contract, "providerBinding": name + "-installed"})
+            "contract": contract, "providerBinding": {
+                "clockMonotonic": "clock-monotonic-installed",
+                "clockWall": "clock-wall-installed"}[name]})
     providers["http"] = {"identity": {"id": "http", "tenant": TENANT,
         "service": "runtime-host", "epoch": 1},
         "configuration": {"formatVersion": 1, "publicRoots": False,

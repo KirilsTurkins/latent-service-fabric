@@ -414,7 +414,8 @@ def as_user(client, subject=cfg.ALICE):
 def lookup(client, publication, original_key):
     with as_user(client):
         return client.call("transaction", "lookup", *namespace_arguments(publication),
-                           "--operation", "update", "--client-key", original_key)["data"]["command"]
+                           "--operation", "update", "--client-key", original_key,
+                           codes=(0, 3))["data"]["command"]
 
 
 def effect(client, publication, original_key, effect_id):
