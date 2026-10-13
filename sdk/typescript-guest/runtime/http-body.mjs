@@ -274,22 +274,27 @@ export class BodyState {
     if (this.unusable) throw new TypeError('body-is-used-or-locked');
     if (this.#source === null) return new Uint8Array();
     this.#disturbed = true;
-    const reader = this.stream.getReader();
+    // A finite standard consumer can drain its exact native source directly.
+    // It needs no second stream/pull Promise graph when no stream was exposed;
+    // an already-created stream retains its ordinary reader/locking path.
+    const native = this.#source instanceof NativeBodyReader && this.#stream === null;
+    const reader = native ? null : this.stream.getReader();
     const chunks = [];
     let total = 0;
     try {
       while (true) {
-        const {done, value} = await reader.read();
+        const bytes = native ? await this.#source.pull() : undefined;
+        const {done, value} = native ? {done: bytes === undefined, value: bytes} : await reader.read();
         if (done) break;
         if (!(value instanceof Uint8Array) || value.byteLength > maximumBodyBytes - total) {
           const error = new TypeError('body-profile-byte-limit-or-type');
-          try { await reader.cancel(error); } catch {}
+          try { if (native) await this.#source.cancel(error); else await reader.cancel(error); } catch {}
           throw error;
         }
         total += value.byteLength;
         chunks.push(value);
       }
-    } finally { reader.releaseLock(); }
+    } finally { reader?.releaseLock(); }
     const result = new Uint8Array(total);
     let offset = 0;
     for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.byteLength; }

@@ -25,6 +25,20 @@ await reader.cancel();
 assert.equal(events.filter(value => value === 'drop-body').length, 1);
 assert.throws(() => new BodyState(reader).clone(), /not-supported/);
 
+let directReads = 0;
+const directOrder = [];
+const direct = new BodyState(new NativeBodyReader({
+  read() {directOrder.push('read');return settled(directReads++ ? undefined : chunk);},
+  materialize() {directOrder.push('materialize');return settled(new Uint8Array([3,4]));},
+  dropChunk() {directOrder.push('chunk-drop');},
+  dropBody() {directOrder.push('body-drop');},
+}));
+assert.equal(direct.used,false);
+assert.deepEqual(await direct.consume(),new Uint8Array([3,4]));
+assert.equal(direct.used,true);
+assert.deepEqual(directOrder,['read','materialize','chunk-drop','read','body-drop']);
+await assert.rejects(direct.consume(),/used-or-locked/);
+
 const result = deferred();
 const retirement = deferred();
 const cancelledEvents = [];
