@@ -12,6 +12,48 @@ from tools.tests.test_java_transaction_provision import observation
 
 
 class CurrentHttpConductor(unittest.TestCase):
+    def test_offline_migration_requires_actual_wide_value_commit_and_effect_before_snapshot(self):
+        from unittest.mock import Mock, patch
+        from tools.java_transaction_qualification import offline_campaign
+        publication = 'publication:sha256:' + 'a' * 64
+        runner = offline_campaign.OfflineCampaign.__new__(offline_campaign.OfflineCampaign)
+        runner.native = SimpleNamespace(calls=12)
+        runner.client = SimpleNamespace(evidence=SimpleNamespace(passed=Mock()))
+        sequence = Mock()
+        runner.schema = Mock(return_value=({}, {}, {}))
+        runner.restore = Mock()
+        aggregate = {'key-version': {'none': None}}
+        result = {'disposition': 'committed', 'effect-ids': ['b' * 64]}
+        runner.campaign = SimpleNamespace(query=Mock(return_value=({}, aggregate)),
+            socket=Mock(return_value={}), result=Mock(return_value=result),
+            publications={'put-once-compatible-v2': publication},
+            wait_effect=Mock(return_value={'retired': True}), peer_record=Mock(return_value={}))
+        sequence.attach_mock(runner.campaign.wait_effect, 'effect')
+        sequence.attach_mock(runner.schema, 'schema')
+        with patch.object(offline_campaign.http, 'aggregate', return_value={'count': str(2**32 + 3)}), \
+             patch.object(offline_campaign.lifecycle, 'lookup', return_value={}), \
+             patch.object(offline_campaign, 'rpc_result') as inspected:
+            sequence.attach_mock(inspected, 'inspection')
+            observed = runner.execute()
+        self.assertEqual([call[0] for call in sequence.mock_calls], ['effect', 'inspection', 'schema'])
+        runner.campaign.query.assert_called_once_with(4)
+        call = runner.campaign.socket.call_args
+        self.assertEqual(call.args, ('command',))
+        self.assertEqual(call.kwargs['original_key'], 'java-before-schema-wide-value')
+        self.assertEqual(call.kwargs['condition'], '"absent"')
+        self.assertEqual(call.kwargs['body'], offline_campaign.command_input(2**32 - 1))
+        runner.campaign.wait_effect.assert_called_once_with(publication, call.kwargs['original_key'], result)
+        inspected.assert_called_once_with({}, result, publication, call.kwargs['original_key'])
+        runner.schema.assert_called_once_with(2**32 + 3)
+        self.assertEqual(observed['nativeActions'], 12)
+        runner.schema.reset_mock()
+        runner.restore.reset_mock()
+        with patch.object(offline_campaign.http, 'aggregate', return_value={'count': '4'}):
+            with self.assertRaisesRegex(ValueError, 'actual-wide-java-value-before-schema'):
+                runner.execute()
+        runner.schema.assert_not_called()
+        runner.restore.assert_not_called()
+
     def test_restore_checks_native_activation_retirement_before_starting_runtime(self):
         from unittest.mock import Mock, patch
         from tools.java_transaction_qualification import offline_campaign

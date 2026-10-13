@@ -125,3 +125,10 @@ activation and before runtime startup. A sequencing regression exercises that
 path and proves an incomplete physical retirement witness prevents startup.
 It retains the original migration-resume path and every existing receipt,
 identity, history and count check. The combined signed campaign remains pending.
+
+Before schema migration, the conductor now commits the maximum unsigned 32-bit
+delta through the current compatible Java publication. It checks the resulting
+`2^32 + 3` aggregate, original durable command and acknowledged effect before
+snapshotting. This supplies the previously missing wide-value setup without
+lowering the migration oracle or changing the twelve native recovery actions.
+All 156 focused Linux controls pass; actual signed execution remains pending.

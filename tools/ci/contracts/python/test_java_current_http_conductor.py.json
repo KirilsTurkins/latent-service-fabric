@@ -9,6 +9,7 @@
     "CurrentHttpConductor.test_fault_staging_framing_uses_exact_operation_without_changing_historical_accounting",
     "CurrentHttpConductor.test_installation_keeps_exact_declared_ca_reference_and_body_limits",
     "CurrentHttpConductor.test_observed_current_operation_requires_explicit_selection_and_all_publications_match",
+    "CurrentHttpConductor.test_offline_migration_requires_actual_wide_value_commit_and_effect_before_snapshot",
     "CurrentHttpConductor.test_restore_checks_native_activation_retirement_before_starting_runtime",
     "CurrentHttpConductor.test_restored_activation_refuses_old_receipts_replay_and_changed_physical_or_history_witnesses",
     "CurrentHttpConductor.test_restored_migration_request_keeps_exact_snapshot_window_and_original_operation",
@@ -125,6 +126,18 @@
       ],
       "skipSites": []
     },
+    "CurrentHttpConductor.test_offline_migration_requires_actual_wide_value_commit_and_effect_before_snapshot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:40a9b1fe382616c0ae68c92e4648751af05f26f539bdcdbecdd6d62965437c0a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "CurrentHttpConductor.test_restore_checks_native_activation_retirement_before_starting_runtime": {
       "bases": [
         "unittest.TestCase"
@@ -200,6 +213,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_current_http_conductor.py",
-  "reviewReason": "Review additive regression proving restored activation physical retirement is checked before runtime startup; retain every prior case and guard.",
+  "reviewReason": "Review additive wide-value commit/effect/inspection before snapshot sequencing regression; preserve all original cases and guard hashes.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
