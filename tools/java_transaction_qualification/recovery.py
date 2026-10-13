@@ -12,7 +12,7 @@ from .inputs import decode, require
 REPORT_FIELDS = {"schemaVersion", "operationSucceeded", "failure", "result", "retirement", "catalogsRetired"}
 RETIREMENT_FIELDS = {"clean", "physicallyRetired", "liveWorkers", "acceptedJobs", "threadsJoined"}
 ACTIONS = {"snapshot", "inspect-namespace", "inspect-restore", "restore", "stage-migration",
-           "complete-migration", "resume-migration", "review", "resume"}
+           "complete-migration", "resume-migration", "resume-restored-migration", "review", "resume"}
 FAILURES = {"configuration", "busy", "destination", "input", "review", "target", "protected"}
 FAILURE_REASONS = {
     "platform": {"unavailable", "deadline-exceeded", "cancelled", "resource-exhausted", "permission-denied",

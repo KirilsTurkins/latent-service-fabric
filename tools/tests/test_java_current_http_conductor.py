@@ -12,6 +12,67 @@ from tools.tests.test_java_transaction_provision import observation
 
 
 class CurrentHttpConductor(unittest.TestCase):
+    def test_signed_service_integration_is_explicit_and_only_marks_deferred_update_rows(self):
+        from tools.java_transaction_qualification import configuration as cfg, evidence, inputs
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            items, publications = [], {}
+            names = ('aggregate', 'put-once-legacy-v1', 'put-once-compatible-v2', 'put-once-writer-v2')
+            for index, name in enumerate(names):
+                directory = root / name
+                (directory / 'project').mkdir(parents=True)
+                raw = evidence.encoded({'capsule': cfg.SERVICE, 'namespace': cfg.NAMESPACE,
+                    'deployment': cfg.DEPLOYMENT, 'binding': cfg.DEPLOYMENT,
+                    'operations': [{'operation': function,
+                                    'mode': 'strict-command' if function == 'update' else 'fresh-query'}
+                                   for function in ('update', 'query', 'scan')]})
+                (directory / 'project/transaction-binding.json').write_bytes(raw)
+                items.append(SimpleNamespace(name=name, directory=directory,
+                    component_digest='sha256:' + str(index + 1) * 64, companion_digest=inputs.digest(raw),
+                    requirements_digest=None if name == 'aggregate' else 'sha256:' + 'e' * 64))
+                publications[name] = 'publication:sha256:' + str(index + 5) * 64
+            original = conductor.cfg.installed(tuple(items), publications, 'e' * 64)
+            selected = conductor.cfg.installed(tuple(items), publications, 'e' * 64,
+                credential_reference='java-current-http', service_integration_dispatch=True)
+            self.assertEqual(len(selected), len(original))
+            for old, current in zip(original, selected):
+                if 'deferredHttp' not in old:
+                    self.assertEqual(old, current)
+                else:
+                    self.assertEqual(current['function'], 'update')
+                    self.assertNotIn('dispatchAuthority', old['deferredHttp'])
+                    self.assertEqual(current['deferredHttp']['dispatchAuthority'],
+                                     {'formatVersion': 1, 'mode': 'signed-service-integration'})
+                    remaining = copy.deepcopy(current)
+                    remaining['deferredHttp'].pop('dispatchAuthority')
+                    remaining['deferredHttp']['credentialReference'] = cfg.RECIPIENT_CREDENTIAL
+                    self.assertEqual(old, remaining)
+            for selected_flag, reference in ((1, 'java-current-http'), (True, cfg.RECIPIENT_CREDENTIAL)):
+                with self.assertRaises(ValueError):
+                    conductor.cfg.installed(tuple(items), publications, 'e' * 64,
+                        credential_reference=reference, service_integration_dispatch=selected_flag)
+
+    def test_restored_migration_request_keeps_exact_snapshot_window_and_original_operation(self):
+        from tools.java_transaction_qualification import offline_campaign
+        view = list(b'NV\x02' + bytes([19]) * 32
+                    + b''.join(value.to_bytes(8, 'little') for value in (1, 2, 3, 4)))
+        file = {'root': '/private/original-snapshots', 'name': 'restore-checkpoint-v2.snapshot'}
+        snapshot = {'snapshotDigest': 'sha256:' + 'a' * 64, 'manifestDigest': 'sha256:' + 'b' * 64}
+        window = 'sha256:' + 'c' * 64
+        original = copy.deepcopy(file)
+        request = offline_campaign.restored_resume_request(view, file, snapshot, window, 'java-schema-v1-to-v2')
+        self.assertEqual(request, {'action': 'resume-restored-migration', 'operationId': 'java-restored-resume',
+            'migrationOperationId': 'java-schema-v1-to-v2', 'file': file, 'expectedView': view,
+            **snapshot, 'windowAcknowledgement': window})
+        request['file']['name'] = 'local-copy'
+        self.assertEqual(file, original)
+        self.assertEqual(offline_campaign.restored_resume_request(view, None, None, None),
+            {'action': 'resume', 'operationId': 'java-restored-resume', 'expectedView': view})
+        for migration, changed in (('different-migration', snapshot),
+                                   ('java-schema-v1-to-v2', dict(snapshot, snapshotDigest='sha256:' + '0' * 64))):
+            with self.assertRaises(ValueError):
+                offline_campaign.restored_resume_request(view, file, changed, window, migration)
+
     def test_return_to_legacy_records_both_deployments_without_reusing_measured_case(self):
         from unittest.mock import patch
         from tools.java_transaction_qualification import configuration as cfg, evidence, lifecycle
