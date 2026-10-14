@@ -94,7 +94,9 @@ try {
       assert.equal(await page.locator('[data-search-version]').count(), 0);
       await page.goto(`${prefix}guides/`, {waitUntil: 'networkidle'});
       await page.getByLabel('SDK language', {exact: true}).selectOption('Go');
-      assert.deepEqual((await page.locator('[data-guide]').evaluateAll(nodes => nodes.map(node => node.dataset.guide))).sort(), ['author-capsule', 'client-go']);
+      assert.deepEqual((await page.locator('[data-guide]').evaluateAll(nodes => nodes.map(node => node.dataset.guide))).sort(),
+        ['application-libraries', 'author-capsule', 'client-go', 'libraries-go', 'packaged-resources',
+          'transaction-recovery', 'transactional-guest']);
       await page.getByLabel('Topic', {exact: true}).selectOption('angular-browser');
       await page.getByRole('status').getByText(/No tasks match/).waitFor();
       await page.getByRole('link', {name: 'Clear filters', exact: true}).click();
