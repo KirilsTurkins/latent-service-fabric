@@ -18,7 +18,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
-        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
       ],
       "skipSites": []
     },
@@ -30,7 +30,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
-        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
       ],
       "skipSites": []
     },
@@ -42,7 +42,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
-        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
       ],
       "skipSites": []
     },
@@ -54,7 +54,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
-        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
       ],
       "skipSites": []
     },
@@ -66,7 +66,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
-        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
       ],
       "skipSites": []
     },
@@ -78,7 +78,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
-        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
       ],
       "skipSites": []
     },
@@ -90,7 +90,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
-        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
       ],
       "skipSites": []
     },
@@ -102,13 +102,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
-        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_restore_target_identity.py",
-  "reviewReason": "Explicit review: identity-only mock patches the new directory provisioning ownership boundary with registered cleanup; all eight original methods, assertions, skips and predicates remain unchanged",
+  "reviewReason": "Explicit review: the identity-only provisioning mock is lexical around invoke, including errors from manually-created TestCase fixtures; all eight original test methods, assertions, skip predicates and the six compatibility methods remain unchanged.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

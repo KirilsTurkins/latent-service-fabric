@@ -139,7 +139,13 @@ class OfflineCampaign:
         lifecycle.admission_lease_interval(self.client)
 
     def snapshot(self, name, operation):
-        file = {"root": str(self.directory), "name": name}
+        root = self.directory
+        if self.current_v2:
+            from . import snapshot_destination_root
+            root, observed = snapshot_destination_root.provision(
+                self.client, self.node, self.directory, operation)
+            self.client.evidence.record('snapshot-destination-directory', observed)
+        file = {"root": str(root), "name": name}
         result = self.action({"action": "snapshot", "operationId": operation, "file": file})
         return file, original_snapshot(result, operation)
 

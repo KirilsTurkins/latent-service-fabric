@@ -22,10 +22,6 @@ class SelectedConfiguration(Exception):
 
 class RestoreTargetIdentity(unittest.TestCase):
     def runner(self, root, *, pending, returned_identity=TARGET):
-        # Identity-only mocked native handoffs retain their original directory creation.
-        provision = patch.object(restore_destination_roots, 'provision')
-        provision.start()
-        self.addCleanup(provision.stop)
         source = root / 'source'
         source.mkdir()
         settings = {'dataDirectory': str(source), 'providers': {'original': 'retained'},
@@ -72,9 +68,11 @@ class RestoreTargetIdentity(unittest.TestCase):
 
     def invoke(self, runner, snapshot, *, pending):
         file = {'root': '/synthetic-original-snapshot', 'name': 'snapshot'}
-        if pending:
-            return runner.restored(file, snapshot, {}, {'posts': 1})
-        return runner.restore(4, file, snapshot, {})
+        # Manual TestCase users also retire this identity-only mock on failure.
+        with patch.object(restore_destination_roots, 'provision'):
+            if pending:
+                return runner.restored(file, snapshot, {}, {'posts': 1})
+            return runner.restore(4, file, snapshot, {})
 
     def assert_selection(self, runner, original, requests):
         self.assertEqual(len(requests), 2)
