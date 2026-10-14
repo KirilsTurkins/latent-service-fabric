@@ -35,6 +35,9 @@ and response publication. No permissive default runtime or new listener exists.
 | Rollout | `StartRollout`, `ChangeRollout`, `EvaluateRollout`, `GetRollout`, `ListRollouts`, `GetRolloutOperation` | Optional audited stages and declared canary promotion over one tenant/service cohort. |
 | Policy | `ApplyPolicy`, `GetPolicy`, `ListPolicies`, `DeletePolicy`, `GetPolicyOperation`, `EvaluatePolicy` | Optional durable tenant-scoped capability policies and provider-binding metadata, CAS/replay, bounded pages and descriptive explanation. |
 | Capability | `ListCapabilities`, `ExplainCapabilityGrant` | Optional configured broker inspection: exact deployment bindings, policy/provider currentness, tenant resource usage and operator-only shared counters. Descriptive responses grant no authority. |
+| State | `MutateNamespace`, `InspectNamespace`, `SelectEntity`, `MutateState`, `PlanEffectMutation`, `GetStateOperationReceipt` | Explicit installed Phase 4 owner, current namespace/operator permissions and supported mutation selection. A declared mutation does not install backup/restore or another adapter. |
+| Transaction | `InvokeCommand`, `Query`, `LookupCommand`, `LookupCommit`, `GetEffect`, `ListEffectHistory`, `CancelCommand` | Installed command/fresh-query path and reserved original-result recovery, with current caller scope and physical response ownership. |
+| Dispatcher | `InspectDispatcher`, `ControlDispatcher`, `GetDispatcherOperation` | Explicit configured dispatch owner and current operator policy; original receipts distinguish control from provider acknowledgement. |
 
 `WatchDeployment`, `WatchRouteSnapshots`, `RegisterNode`, `ReportInventory`, and
 `Heartbeat` return explicit gRPC `Unimplemented`. They do not open an idle stream

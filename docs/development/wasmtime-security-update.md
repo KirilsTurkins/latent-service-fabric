@@ -1,32 +1,20 @@
-# Wasmtime 48.0.4 security baseline
+# Wasmtime security baseline and upgrade records
 
-## October 3, 2026 update
+## Current Development selection
 
-The current RustSec scan rejects Wasmtime 48.0.3 for
-[RUSTSEC-2026-0325](https://rustsec.org/advisories/RUSTSEC-2026-0325.html),
-[RUSTSEC-2026-0326](https://rustsec.org/advisories/RUSTSEC-2026-0326.html) and
-[RUSTSEC-2026-0327](https://rustsec.org/advisories/RUSTSEC-2026-0327.html).
-The dependency now pins
-[Wasmtime 48.0.4](https://github.com/bytecodealliance/wasmtime/releases/tag/v48.0.4),
-with matching Cranelift 0.135.4 internals. Upstream's wasm-tools requirement is
-`^0.254.1`; Cargo resolves the published 0.254.2 packages. Both Cargo-generated
-locks retain the same reviewed registry package identities.
+The workspace and `tools/toolchain.toml` currently pin Wasmtime **48.0.5**.
+Use [the toolchain table](toolchain.md#selected-versions) and committed Cargo locks
+for the complete compiler/runtime selection. The records below describe their
+original sources and advisory databases; they are not a current scan or approval
+for a later engine.
 
-The published upstream source is
-`d02ffd202850007ea953224f589a569e8830eb6c`. Its root license bytes and digest
-are unchanged. The native license policy advances the donor revision and package
-versions together. The explicit features, minimum Rust 1.95.0, compiler sandbox,
-authenticated copying loader, host WIT bytes and resource limits are unchanged.
-Current v4 and Phase 4 descriptors update only their engine metadata; historical
-v2/v3 descriptors and dated execution receipts retain their original bytes.
+Rebuild the node and isolated compiler from the same lock, approve the actual
+new compiler digest, and regenerate native/renderer artifacts whose compatibility
+identity changed. Preserve failed attempts and original receipts. Exact current
+source, advisory scans and the affected runtime/containment checks determine
+acceptance; neither this page nor a passing historical scan grants it.
 
-Rebuild the node and isolated compiler together, update the approved compiler
-digest, and prepare new native and renderer artifacts. A source update or an old
-48.0.3 execution receipt does not qualify the new engine. Fresh advisory scans,
-minimum-Rust checks, strict Clippy and runtime regressions remain required.
-No advisory exception or reduced security gate accompanies this update.
-
-## October 4, 2026 update
+## Historical October 3 and 4, 2026 update
 
 The fresh security baseline on October 4 found
 [RUSTSEC-2026-0325](https://rustsec.org/advisories/RUSTSEC-2026-0325.html),
@@ -139,7 +127,7 @@ including the matching internal Wasmtime, Pulley and Cranelift packages. The
 runtime and `latent-aot-compiler` must be rebuilt and deployed together. This
 does not change the LSF package version or expand its supported host interfaces.
 
-## Advisory triage
+### Advisory triage
 
 [Upstream 47.0.4](https://github.com/bytecodealliance/wasmtime/releases/tag/v47.0.4)
 fixes [RUSTSEC-2026-0268](https://rustsec.org/advisories/RUSTSEC-2026-0268.html)
@@ -161,7 +149,7 @@ The resolved Wasmtime features remain `async`, `component-model`,
 `parallel-compilation` remain disabled. The patch review found no changed LSF
 API usage or need to broaden those features.
 
-## Recorded scan
+### Recorded scan
 
 The scan ran on September 13, 2026 using the official `cargo-audit 0.22.2`
 Windows MSVC binary. Its release ZIP was verified against the upstream asset
@@ -182,7 +170,7 @@ This records the database checked at that time; new advisories require another
 scan. Issue [#282](https://github.com/KirilsTurkins/latent-service-fabric/issues/282)
 owns recurring CI scans and explicit exception handling.
 
-## Native artifact and compiler boundary
+### Native artifact and compiler boundary
 
 The declared runtime version, layout-policy identity, actual engine compatibility
 hash, compiler executable digest and authenticated AOT receipt all participate
@@ -208,7 +196,7 @@ independent cache entry. Existing tests cover tampered bytes and receipts, wrong
 keys, currentness/revocation and resource reclamation. The version-policy test
 does not claim to execute a retained 47.0.3 binary.
 
-## Validation and scope
+### Validation and scope
 
 The required CI builds both node and compiler from the locked dependency set,
 runs the workspace suite and bounded delivery workflows, and exercises native

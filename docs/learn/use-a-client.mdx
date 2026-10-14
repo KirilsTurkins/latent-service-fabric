@@ -279,3 +279,10 @@ Continue with [provider failure and recovery](../how-to/exercise-provider-failur
 or [policy reconciliation](../how-to/reconcile-a-policy-change.md).
 For detailed limits and language-specific ownership rules, see the
 [shared client API reference](../../sdk/profile/README.md).
+
+For Development transaction clients, use the
+[six transport facades](../development/transaction-clients.md) and
+[original command/effect recovery](../operations/transaction-recovery.md).
+Their explicit Phase 4 node, namespace and current result-read requirements are
+separate from this stateless provider tutorial. A cancelled client wait does not
+provide a durable command abort or authorize another attempt.

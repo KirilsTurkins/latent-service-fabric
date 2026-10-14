@@ -43,7 +43,9 @@ stateless profile; portable Windows testing does not provide transaction storage
 
 Do not point current source at an older state directory and assume it can be
 upgraded. Follow the selected [storage profile](../architecture/state-and-effects.md#incoming-identity-formats-and-linked-retention)
-and [coupled backup workflow](../operations/local-storage-recovery.md).
+and [protected checkpoint contract](../development/transaction-checkpoint.md).
+The container backup helper's fixed roots do not establish Phase 4 restore
+custody or include every possible external checkpoint location.
 Supported upgrades preserve pending commands and effects; code rollback does
 not roll back business state or external actions. Older-history restore has its
 own incarnation and paused reconciliation requirements.
@@ -52,9 +54,9 @@ own incarnation and paused reconciliation requirements.
 
 Merged source, an executed fixture and a packaged release establish different
 boundaries. Phase 4's collective gate and the broader SDK library/runtime gates
-remain open. PR #970 adds current installed recovery to this documentation
-branch, but is still pending integration and complete terminal/pending native
-qualification. Neither its historical receipts nor alpha.5 qualify that work.
+remain open. Current installed recovery still needs complete terminal/pending
+native and packaged qualification. Neither historical compiler receipts nor
+alpha.5 qualify that work.
 
 Maintainers can use the [post-release documentation audit](../development/documentation-audit-2026-10-14.md)
 for the exact release tree, merged PR inventory, corrected claims and retained

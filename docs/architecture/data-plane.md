@@ -112,8 +112,25 @@ one fixed supervisor keeps polling the same owner under its original deadline.
 A terminal response alone does not establish safe reuse, and dropping a waiter
 does not end underlying compiler, file or child-process work.
 
+## Transactional commands and fresh queries
+
+An explicitly installed [Phase 4 runtime](../development/installed-transaction-rpc.md)
+uses the existing activation, preparation, deadline and cleanup owners while
+binding an original command to its protected namespace view. Accepted work must
+retire and staging must seal before the host's final authority/conflict fence
+and atomic state/outbox/outcome persistence. The guest cannot commit early or
+make an immediate irreversible call inside a strict command.
+
+A fresh query uses an independent bounded read-only view and creates no durable
+business command or outbox row. Result recovery reads the original durable
+identity under current result-read authority without invoking the guest. The
+[commit protocol](../protocol/commit-protocol.md) and
+[state/effect architecture](state-and-effects.md) define these separate paths;
+their complete native/application and packaged acceptance remains outstanding.
+
 ## Unsupported execution models
 
-Transactional state, durable effect outboxes, remote cluster routing and durable
-workflow continuations are not implemented. Current stateless calls return output or typed failure without guest state commits,
-outboxes or durable suspension.
+Remote cluster routing and durable workflow continuations remain planned.
+Ordinary stateless calls retain their existing behavior without guest state
+commits, outboxes or durable suspension; a transaction profile does not change
+their execution mode implicitly.
