@@ -12,6 +12,160 @@ from tools.tests.test_java_transaction_provision import observation
 
 
 class CurrentHttpConductor(unittest.TestCase):
+    def test_ambiguous_crash_restart_reaps_then_waits_original_lease_before_one_start(self):
+        from unittest.mock import Mock, patch
+        from tools.java_transaction_qualification import campaign, evidence, http, lifecycle
+        from tools.tests.test_java_transaction_campaign import inspection
+        from tools.tests.test_java_transaction_qualification import result
+
+        for current_program in (False, True):
+            with self.subTest(current_program=current_program), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                original = result(count='4')
+                unchanged = copy.deepcopy(original)
+                publication = 'original-compatible-publication'
+                record = inspection(original)
+                record['source']['publicationId'] = publication
+                record['key']['clientKey'] = 'java-original-ambiguous'
+                collector = evidence.Evidence(root / 'evidence')
+                subject = campaign.Campaign.__new__(campaign.Campaign)
+                subject.client = SimpleNamespace(evidence=collector)
+                subject.peer = SimpleNamespace(directory=root)
+                subject.publications = {'put-once-compatible-v2': publication}
+                subject.originals, subject.full_path = {}, root / 'original-node.json'
+                subject.query = Mock(return_value=(None, {'key-version': {'none': None}}))
+                subject.socket, subject.result = Mock(return_value=original), Mock(return_value=original)
+                subject.original = Mock(return_value=copy.deepcopy(original))
+                uncertain = {'disposition': 'EFFECT_DISPOSITION_UNCERTAIN_AFTER_DISPATCH'}
+                recovered = {'originalEffectId': original['effect-ids'][0], 'providerReceipt': {'original': True}}
+                subject.wait_effect = Mock(side_effect=(uncertain, recovered))
+                accepted = {'original-provider-acceptance': True}
+                subject.peer_record = Mock(return_value=accepted)
+                events = []
+                node = SimpleNamespace(process=object(), current_publication_program=current_program)
+                def crash():
+                    node.process = None
+                    events.append('crash-reaped')
+                def lease(actual):
+                    self.assertIs(actual, subject.client)
+                    self.assertIsNone(node.process)
+                    self.assertEqual((root / 'mode').read_bytes(), b'reply')
+                    events.append('lease')
+                def start(path, **kwargs):
+                    self.assertIsNone(node.process)
+                    self.assertEqual(events, ['crash-reaped', 'lease'])
+                    self.assertEqual(path, subject.full_path)
+                    self.assertEqual(kwargs, {'current_session': 'compatible-after-crash'} if current_program else {})
+                    events.append('start')
+                node.crash, node.start = Mock(side_effect=crash), Mock(side_effect=start)
+                subject.node = node
+                with patch.object(lifecycle, 'admission_lease_interval', side_effect=lease) as interval, \
+                     patch.object(lifecycle, 'lookup', return_value=record) as lookup, \
+                     patch.object(http, 'replay', wraps=http.replay) as replay:
+                    subject._ambiguous_restart()
+                self.assertEqual(events, ['crash-reaped', 'lease', 'start'])
+                node.crash.assert_called_once_with()
+                interval.assert_called_once_with(subject.client)
+                node.start.assert_called_once()
+                subject.socket.assert_called_once_with('command', original_key='java-original-ambiguous',
+                    body=campaign.command_input(1), condition='"absent"')
+                subject.result.assert_called_once_with(original)
+                replay.assert_called_once_with(original, unchanged)
+                lookup.assert_called_once_with(subject.client, publication, 'java-original-ambiguous')
+                self.assertEqual(subject.query.call_args_list, [((3,), {}), ((4,), {})])
+                self.assertEqual(subject.wait_effect.call_args_list, [
+                    ((publication, 'java-original-ambiguous', original, 'EFFECT_DISPOSITION_UNCERTAIN_AFTER_DISPATCH'), {}),
+                    ((publication, 'java-original-ambiguous', original), {})])
+                self.assertEqual(original, unchanged)
+                self.assertIs(subject.originals['java-original-ambiguous'], original)
+                names = [entry['path'] for entry in collector.files]
+                self.assertEqual(names, ['case-ambiguous-provider-acceptance.json', 'case-crash-restart-original-recovery.json'])
+
+    def test_crash_lease_or_start_failure_cannot_retry_start_or_claim_recovery(self):
+        from unittest.mock import Mock, patch
+        from tools.java_transaction_qualification import campaign, evidence, http, lifecycle
+        from tools.tests.test_java_transaction_qualification import result
+
+        failures = (('crash', RuntimeError('unreaped-crash')),
+                    ('deadline', ValueError('original-admission-lease-interval')),
+                    ('cancellation', KeyboardInterrupt('original-cancellation')),
+                    ('lease', RuntimeError('lease-failure')),
+                    ('start', ValueError('startup-unavailable')))
+        for stage, failure in failures:
+            with self.subTest(stage=stage), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                original = result(count='4')
+                unchanged = copy.deepcopy(original)
+                collector = evidence.Evidence(root / 'evidence')
+                subject = campaign.Campaign.__new__(campaign.Campaign)
+                subject.client = SimpleNamespace(evidence=collector)
+                subject.peer = SimpleNamespace(directory=root)
+                subject.publications = {'put-once-compatible-v2': 'original-compatible-publication'}
+                subject.originals, subject.full_path = {}, root / 'original-node.json'
+                subject.query = Mock(return_value=(None, {'key-version': {'none': None}}))
+                subject.socket, subject.result = Mock(return_value=original), Mock(return_value=original)
+                subject.wait_effect = Mock(return_value={'disposition': 'EFFECT_DISPOSITION_UNCERTAIN_AFTER_DISPATCH'})
+                subject.peer_record = Mock(return_value={'original': True})
+                subject.original = Mock()
+                subject.node = SimpleNamespace(current_publication_program=True,
+                    crash=Mock(side_effect=failure if stage == 'crash' else None),
+                    start=Mock(side_effect=failure if stage == 'start' else None))
+                with patch.object(lifecycle, 'admission_lease_interval',
+                                  side_effect=failure if stage in {'deadline', 'cancellation', 'lease'} else None) as interval, \
+                     patch.object(lifecycle, 'lookup') as lookup, patch.object(http, 'replay') as replay:
+                    with self.assertRaises(type(failure)) as observed:
+                        subject._ambiguous_restart()
+                self.assertIs(observed.exception, failure)
+                subject.node.crash.assert_called_once_with()
+                self.assertEqual(interval.call_count, 0 if stage == 'crash' else 1)
+                self.assertEqual(subject.node.start.call_count, 1 if stage == 'start' else 0)
+                replay.assert_not_called()
+                lookup.assert_not_called()
+                subject.original.assert_not_called()
+                subject.query.assert_called_once_with(3)
+                subject.wait_effect.assert_called_once()
+                subject.socket.assert_called_once()
+                self.assertEqual(original, unchanged)
+                self.assertEqual([entry['path'] for entry in collector.files], ['case-ambiguous-provider-acceptance.json'])
+
+    def test_original_crash_lease_wait_preserves_cutoff_and_checks_cancellation(self):
+        from unittest.mock import Mock, patch
+        from tools.java_transaction_qualification import lifecycle
+
+        clock, sleeps = [100.0], []
+        client = SimpleNamespace(deadline=107.0, cancellation=SimpleNamespace(check=Mock()))
+        def sleep(seconds):
+            self.assertGreater(seconds, 0)
+            self.assertLessEqual(seconds, 0.1)
+            sleeps.append(seconds)
+            clock[0] += seconds
+        with patch.object(lifecycle.time, 'monotonic', side_effect=lambda: clock[0]), \
+             patch.object(lifecycle.time, 'sleep', side_effect=sleep):
+            lifecycle.admission_lease_interval(client)
+        self.assertAlmostEqual(clock[0], 106.0)
+        self.assertAlmostEqual(sum(sleeps), 6.0)
+        self.assertEqual(client.deadline, 107.0)
+        self.assertEqual(client.cancellation.check.call_count, len(sleeps))
+        for cutoff in (105.0, 106.0):
+            with self.subTest(cutoff=cutoff):
+                refused = SimpleNamespace(deadline=cutoff, cancellation=SimpleNamespace(check=Mock()))
+                with patch.object(lifecycle.time, 'monotonic', return_value=100.0), \
+                     patch.object(lifecycle.time, 'sleep') as delay:
+                    with self.assertRaisesRegex(ValueError, 'original-admission-lease-interval'):
+                        lifecycle.admission_lease_interval(refused)
+                self.assertEqual(refused.deadline, cutoff)
+                delay.assert_not_called()
+                refused.cancellation.check.assert_not_called()
+        cancelled = SimpleNamespace(deadline=107.0,
+            cancellation=SimpleNamespace(check=Mock(side_effect=KeyboardInterrupt('original-cancellation'))))
+        with patch.object(lifecycle.time, 'monotonic', return_value=100.0), \
+             patch.object(lifecycle.time, 'sleep') as delay:
+            with self.assertRaises(KeyboardInterrupt):
+                lifecycle.admission_lease_interval(cancelled)
+        self.assertEqual(cancelled.deadline, 107.0)
+        cancelled.cancellation.check.assert_called_once_with()
+        delay.assert_not_called()
+
     def test_host_inspection_retires_original_clock_interval_before_returning_profiles(self):
         from unittest.mock import patch
         from tools.java_transaction_qualification import evidence, lifecycle

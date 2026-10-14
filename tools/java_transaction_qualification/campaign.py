@@ -319,6 +319,7 @@ class Campaign:
         # lookup. The same original IDs/receipt/horizon remain authoritative.
         with mode.open("wb") as output:
             output.write(b"reply")
+        lifecycle.admission_lease_interval(self.client)
         self.node.start(self.full_path, **({'current_session': 'compatible-after-crash'}
                         if getattr(self.node, 'current_publication_program', False) else {}))
         http.replay(committed, self.original(key))

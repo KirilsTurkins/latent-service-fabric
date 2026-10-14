@@ -241,7 +241,9 @@ class Peer:
 
 def admission_lease_interval(client):
     # This is the original configured five-second supply-chain lease, not a
-    # readiness witness. Reopening occurs only after actual clean retirement.
+    # readiness witness. Call only after physical retirement of the original
+    # process, including a reaped controlled crash; this wait supplies no clean
+    # shutdown report.
     until = time.monotonic() + 6
     require(until < client.deadline, "original-admission-lease-interval")
     while time.monotonic() < until:
