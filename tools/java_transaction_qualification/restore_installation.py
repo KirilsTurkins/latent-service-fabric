@@ -24,6 +24,18 @@ def store_identity(value):
     return value
 
 
+def requested_identity(original: dict):
+    state = original.get('state')
+    require(isinstance(state, dict) and type(state.get('formatVersion')) is int
+            and state['formatVersion'] == 2 and 'stateRoot' not in state,
+            'explicit-current-v2-restore-configuration')
+    if 'storeIdentity' not in state:
+        return None
+    source = store_identity(state['storeIdentity'])
+    require(source != RESTORED_STORE_IDENTITY, 'distinct-restore-store-identity')
+    return RESTORED_STORE_IDENTITY
+
+
 def directory(path: Path):
     require(isinstance(path, Path) and path.is_absolute() and len(str(path)) <= 4096
             and '..' not in path.parts and path.resolve(strict=True) == path

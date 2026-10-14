@@ -214,6 +214,8 @@ class OfflineCampaign:
         self.campaign.query(count + 1)
         self.quiesce(self.publication, "java-restore-quiesce")
         original_settings = read_json(self.configuration)
+        target_identity = (restore_installation.requested_identity(original_settings)
+                           if self.current_v2 else None)
         destination = self.directory / "restored-state"
         checkpoint_destination = None
         data_destination = None
@@ -234,8 +236,9 @@ class OfflineCampaign:
             "operationId": "java-explicit-restore", "snapshotDigest": snapshot["snapshotDigest"]}
         if self.current_v2:
             request.update(destinationCheckpointRoot=str(checkpoint_destination),
-                           manifestDigest=snapshot["manifestDigest"],
-                           destinationStoreIdentity=restore_installation.RESTORED_STORE_IDENTITY)
+                           manifestDigest=snapshot["manifestDigest"])
+        if target_identity is not None:
+            request['destinationStoreIdentity'] = target_identity
         window = self.action(dict(request, action="inspect-restore"))
         require(window["snapshot"]["snapshotDigest"] == snapshot["snapshotDigest"]
                 and window["snapshot"]["manifestDigest"] == snapshot["manifestDigest"],
@@ -244,12 +247,13 @@ class OfflineCampaign:
         restored = self.action(dict(request, action="restore", windowAcknowledgement=acknowledgement))
         require(restored["snapshotDigest"] == snapshot["snapshotDigest"]
                 and restored["manifestDigest"] == snapshot["manifestDigest"], "original-native-restored-snapshot")
-        if self.current_v2:
+        if target_identity is not None:
             require(restored['destinationIdentity'] == request['destinationStoreIdentity'],
                     'actual-restored-store-identity')
         require(self.recipient("restored-before-review") == recipient, "restored-history-does-not-redrive-before-review")
         settings = (restore_installation.selection(original_settings, data_destination, checkpoint_destination,
-                                                   identity=restored['destinationIdentity'])
+                                                   identity=(restored['destinationIdentity']
+                                                             if target_identity is not None else None))
                     if self.current_v2 else restored_configuration(original_settings, destination))
         self.configuration = self.campaign.full_path.parent / "restored-node.json"
         write_json(self.configuration, settings)

@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "RestoreIdentityCompatibility.test_both_canonical_collectors_require_the_actual_matching_receipt",
+    "RestoreIdentityCompatibility.test_both_collectors_keep_legacy_omission_without_selecting_a_new_identity",
+    "RestoreIdentityCompatibility.test_canonical_source_requires_distinct_target_without_mutating_settings",
+    "RestoreIdentityCompatibility.test_omitted_source_identity_keeps_optional_projection_and_input_unchanged",
+    "RestoreIdentityCompatibility.test_present_invalid_source_or_destination_alias_is_not_legacy_omission",
+    "RestoreIdentityCompatibility.test_present_malformed_source_stops_both_collectors_before_copy_or_native_action"
+  ],
+  "guards": {
+    "RestoreIdentityCompatibility.test_both_canonical_collectors_require_the_actual_matching_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a7f3d99c38cf040b345577e6c6f6d54df1e4c1710973932ac5720bd0503c3b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RestoreIdentityCompatibility.test_both_collectors_keep_legacy_omission_without_selecting_a_new_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a7f3d99c38cf040b345577e6c6f6d54df1e4c1710973932ac5720bd0503c3b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RestoreIdentityCompatibility.test_canonical_source_requires_distinct_target_without_mutating_settings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a7f3d99c38cf040b345577e6c6f6d54df1e4c1710973932ac5720bd0503c3b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RestoreIdentityCompatibility.test_omitted_source_identity_keeps_optional_projection_and_input_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a7f3d99c38cf040b345577e6c6f6d54df1e4c1710973932ac5720bd0503c3b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RestoreIdentityCompatibility.test_present_invalid_source_or_destination_alias_is_not_legacy_omission": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a7f3d99c38cf040b345577e6c6f6d54df1e4c1710973932ac5720bd0503c3b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RestoreIdentityCompatibility.test_present_malformed_source_stops_both_collectors_before_copy_or_native_action": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e8a7f3d99c38cf040b345577e6c6f6d54df1e4c1710973932ac5720bd0503c3b",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_restore_identity_compatibility.py",
+  "reviewReason": "Cover optional legacy identity metadata without bypassing malformed current identities, matching receipts, or physical activation retirement",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
