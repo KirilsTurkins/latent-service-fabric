@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "EffectReconciliationTests.test_ambiguous_or_foreign_lookup_receipt_is_fatal_after_single_accepted_apply",
+    "EffectReconciliationTests.test_current_effect_must_remain_same_original_uncertain_attempt_before_plan",
+    "EffectReconciliationTests.test_failed_apply_is_never_retried_or_replanned",
+    "EffectReconciliationTests.test_legacy_pending_early_and_expired_cutoff_cannot_enable_reconciliation",
+    "EffectReconciliationTests.test_one_actual_plan_apply_and_same_plan_receipt_use_original_cutoff_and_cas",
+    "EffectReconciliationTests.test_original_byte_and_uint64_contracts_refuse_malformed_or_overflow_values",
+    "EffectReconciliationTests.test_plan_selectors_kind_action_stamp_and_actual_encoded_plan_cannot_be_substituted",
+    "EffectReconciliationTests.test_receipt_requires_exact_real_operator_original_plan_and_positive_provider_fact",
+    "EffectReconciliationTests.test_target_rule_is_separate_purpose_limited_and_preserves_default_proposal",
+    "EffectReconciliationTests.test_unknown_transport_replayed_or_missing_durable_audit_is_fatal"
+  ],
+  "guards": {
+    "EffectReconciliationTests.test_ambiguous_or_foreign_lookup_receipt_is_fatal_after_single_accepted_apply": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EffectReconciliationTests.test_current_effect_must_remain_same_original_uncertain_attempt_before_plan": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EffectReconciliationTests.test_failed_apply_is_never_retried_or_replanned": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EffectReconciliationTests.test_legacy_pending_early_and_expired_cutoff_cannot_enable_reconciliation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EffectReconciliationTests.test_one_actual_plan_apply_and_same_plan_receipt_use_original_cutoff_and_cas": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EffectReconciliationTests.test_original_byte_and_uint64_contracts_refuse_malformed_or_overflow_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EffectReconciliationTests.test_plan_selectors_kind_action_stamp_and_actual_encoded_plan_cannot_be_substituted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EffectReconciliationTests.test_receipt_requires_exact_real_operator_original_plan_and_positive_provider_fact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EffectReconciliationTests.test_target_rule_is_separate_purpose_limited_and_preserves_default_proposal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EffectReconciliationTests.test_unknown_transport_replayed_or_missing_durable_audit_is_fatal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_effect_reconciliation.py",
+  "reviewReason": "Add finite explicit current-admin original-effect reconciliation controls without changing existing caller isolation or original test guards",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

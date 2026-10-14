@@ -2,6 +2,7 @@
 //! native plans and row hashes carry data; actual retained owners supply access.
 mod audit;
 mod authorization;
+mod data_target;
 mod execute;
 mod input;
 mod lookup;
@@ -46,6 +47,7 @@ struct Access {
     entity: Option<String>,
     node: Arc<dyn ManagementDecision>,
     data: OwnedPolicyDecision,
+    target: std::sync::OnceLock<data_target::BoundTarget>,
     actions: std::sync::OnceLock<Actions>,
     action: Action,
     deadline: Instant,

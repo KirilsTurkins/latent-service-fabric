@@ -9025,7 +9025,23 @@
         "phase4::tests::malformed_profile_and_stale_transport_deadline_never_admit_work",
         "phase4::tests::missing_identity_and_wrong_tenant_cannot_touch_recovery_runtime",
         "phase4::tests::namespace_operations_require_management_role_before_domain_owner",
-        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation"
+        "phase4::tests::ordinary_authenticated_user_uses_current_result_authority_without_admin_elevation",
+        "phase4::state_management::tests::effects::cross_caller::absent_actual_provider_fact_does_not_upgrade_cross_caller_plan_to_acknowledgement",
+        "phase4::state_management::tests::effects::cross_caller::actual_user_original_effect_current_admin_plan_lookup_and_receipt_preserve_original_actor",
+        "phase4::state_management::tests::effects::cross_caller::captured_original_source_component_schema_and_publication_cannot_be_substituted",
+        "phase4::state_management::tests::effects::cross_caller::captured_target_rejects_foreign_publication_tenant_profile_and_effect",
+        "phase4::state_management::tests::effects::cross_caller::cross_caller_expired_original_transport_and_plan_cannot_refresh_authority",
+        "phase4::state_management::tests::effects::cross_caller::current_original_target_lookup_keeps_reserved_capacity_under_ordinary_saturation",
+        "phase4::state_management::tests::effects::cross_caller::current_target_selector_key_effect_namespace_and_version_cannot_be_retargeted",
+        "phase4::state_management::tests::effects::cross_caller::detached_cross_caller_lookup_retains_native_owner_until_real_provider_cleanup",
+        "phase4::state_management::tests::effects::cross_caller::memory::already_occupied_asset_credit_and_spare_owned_capacity_cannot_hide_binding_transfer_peak",
+        "phase4::state_management::tests::effects::cross_caller::memory::duplicate_foreign_and_wrong_subcharge_class_cannot_credit_captured_source_metadata",
+        "phase4::state_management::tests::effects::cross_caller::memory::measured_binding_peak_and_all_selection_slices_fit_the_same_unchanged_resident_owner",
+        "phase4::state_management::tests::effects::cross_caller::missing_or_shared_captured_mode_cannot_be_inferred_from_absent_selector",
+        "phase4::state_management::tests::effects::cross_caller::missing_original_target_read_plan_and_reconcile_each_preserve_original_uncertainty",
+        "phase4::state_management::tests::effects::cross_caller::original_user_and_untrusted_administrator_remain_denied_before_provider_lookup",
+        "phase4::state_management::tests::effects::cross_caller::untagged_original_and_other_caller_own_grants_cannot_select_foreign_effect_data",
+        "phase4::state_management::tests::effects::cross_caller::withdrawal_of_original_target_read_is_checked_at_physical_result_release"
       ],
       "expectedIgnored": [
         "phase4::local_transaction::tests::actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_commit_and_effect",
@@ -9092,7 +9108,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 242,
+      "minimumCases": 258,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

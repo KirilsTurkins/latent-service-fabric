@@ -54,6 +54,10 @@ COLLECTORS += ('docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.js
                'docs/testing/evidence/java-current-fresh-http-capture-2026-10-13.json')
 COLLECTORS += ('tools/java_transaction_qualification/read_observer.py',)
 COLLECTORS += ('docs/testing/evidence/java-current-native-memory-capture-2026-10-14.json',)
+COLLECTORS += ('tools/java_transaction_qualification/effect_reconciliation.py',
+               'sdk/profile/transaction-requirements-v1.json',
+               'api/proto/latent/control/v1/state.proto', 'api/proto/latent/control/v1/release.proto',
+               'api/proto/latent/transaction/v1/transaction.proto')
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",
              "pending-effect-restore-reconciliation", "full-retention-horizon-expiry",
@@ -298,6 +302,9 @@ def prepare_authority(client, args, signed, items, peer, configuration, node, *,
     selection = {} if not getattr(peer, 'current_http', False) else {
         'current_http_endpoint': configuration.value['providers']['http']['deferred'][0]}
     proposals = policies.documents(hosts, publications, diagnostic=diagnostic, **selection)
+    if getattr(peer, 'current_http', False) and getattr(node, 'current_program', None) == 'terminal':
+        from tools.java_transaction_qualification.effect_reconciliation import policy_proposal
+        proposals = policy_proposal(proposals, hosts, publications['put-once-compatible-v2'])
     client.evidence.record("actual-native-hosts", hosts.value)
     client.evidence.record("reviewed-policy-proposals", proposals)
     mutations = policies.prepare_mutations(client, proposals) if retained else None

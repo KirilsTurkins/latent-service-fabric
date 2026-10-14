@@ -324,6 +324,9 @@ class Campaign:
                         if getattr(self.node, 'current_publication_program', False) else {}))
         http.replay(committed, self.original(key))
         self.query(4)
+        if getattr(self.peer, 'current_http', False) and getattr(self.node, 'current_program', None) == 'terminal':
+            from .effect_reconciliation import reconcile
+            reconcile(self, publication, key, committed, actual)
         recovered = self.wait_effect(publication, key, committed)
         require(self.peer_record(committed["effect-ids"][0]) == peer, "restart-preserves-original-provider-acceptance")
         rpc_result(lifecycle.lookup(self.client, publication, key), committed, publication, key)

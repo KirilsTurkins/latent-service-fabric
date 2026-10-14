@@ -164,6 +164,8 @@ pub(super) fn management_binding(
         "read-result",
         "inspect-effect",
         "cancel-command",
+        "effect-plan",
+        "effect-reconcile",
     ]
     .into_iter()
     .map(String::from)

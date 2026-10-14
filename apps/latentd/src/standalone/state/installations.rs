@@ -144,11 +144,12 @@ pub(super) async fn load(
     }
     let mut installations = Vec::with_capacity(settings.operations.len());
     let mut bindings: Vec<StateManagementBinding> = Vec::with_capacity(settings.operations.len());
+    let recovery = RecoverySelection::OriginalCaller;
     let mut http_rules = false;
     for (index, operation) in settings.operations.iter().enumerate() {
         let resident = &residents[index / state::INSTALLATION_OPERATIONS_PER_LEASE];
         let (installation, binding) = capture(
-            kernel, settings, operation, owners, &services, resident, &policy, effects,
+            kernel, settings, operation, owners, &services, resident, &policy, effects, &recovery,
         )
         .await?;
         if let Some(installation) = installation {
@@ -177,7 +178,7 @@ pub(super) async fn load(
         None
     } else {
         Some(
-            StateManagementBackend::new(
+            StateManagementBackend::new_with_captured_effect_recovery(
                 StateManagementServices {
                     store: Arc::clone(&kernel.store),
                     namespaces: Arc::clone(&kernel.namespaces),
@@ -197,15 +198,16 @@ pub(super) async fn load(
                     audit: services.audit,
                 },
                 bindings,
-            )?
-            .with_dispatcher(effects.management_port())?
-            .with_command_recovery(effects.command_admission_source())?
-            .with_resident_metadata(
+                &recovery,
                 residents
                     .into_iter()
                     .map(|resident| resident.metadata)
                     .collect(),
-            )?,
+                settings.operations.len() as u64
+                    * latent_artifacts::TRANSACTION_ASSET_RESPONSE_BYTES,
+            )?
+            .with_dispatcher(effects.management_port())?
+            .with_command_recovery(effects.command_admission_source())?,
         )
     };
     Ok(InstalledState {
@@ -232,6 +234,7 @@ async fn capture(
     resident: &Resident,
     policy: &Arc<PolicyStore>,
     effects: &EffectRuntime,
+    recovery: &RecoverySelection,
 ) -> Result<(Option<TransactionInstallation>, StateManagementBinding), PlatformError> {
     let deadline = kernel.original_deadline()?;
     let profile = state::installation_profile(&settings.store);
@@ -290,6 +293,7 @@ async fn capture(
     let adapters = services.http.adapters.clone();
     let registry = Arc::clone(&services.http.registry);
     let authority = effects.command_admission_source().effect_authority();
+    let recovery = recovery.clone();
     let job = kernel
         .store
         .with_store_retaining(StoreIoKind::RecoveryRead, charge, original, move |engine| {
@@ -378,7 +382,7 @@ async fn capture(
                             publication,
                             Arc::new(state_binding),
                             intents,
-                            RecoverySelection::OriginalCaller,
+                            recovery,
                             operation.result_policy,
                             ResultPolicy {
                                 replay: ReplayPolicy::Full,

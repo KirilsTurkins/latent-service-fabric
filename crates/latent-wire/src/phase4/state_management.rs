@@ -1,6 +1,7 @@
 //! Actual namespace management over the node's single protected engine.
 mod audit;
 mod authorization;
+mod captured_binding;
 mod clock;
 mod command_result;
 mod floor_release;
@@ -114,7 +115,7 @@ pub struct StateManagementServices {
 }
 struct Inner {
     services: StateManagementServices,
-    bindings: Vec<Arc<StateManagementBinding>>,
+    bindings: Vec<captured_binding::CapturedBinding>,
     dispatcher: Option<latent_effects::runtime::DispatcherManagementPort>,
     recovery_bindings: Option<Vec<StateManagementRecoveryBinding>>,
     command_source: Option<latent_effects::runtime::CommandAdmissionSource>,
@@ -164,6 +165,47 @@ impl StateManagementBackend {
         services: StateManagementServices,
         bindings: Vec<StateManagementBinding>,
     ) -> Result<Self, PlatformError> {
+        Self::construct(services, bindings, None, Vec::new())
+    }
+
+    /// Actual inline vector footprint, paid before captured bindings allocate.
+    pub fn captured_effect_binding_bytes(capacity: usize) -> Result<u64, PlatformError> {
+        captured_binding::bytes(capacity)
+    }
+
+    /// Input/captured vector overlap, existing Arc cells and actual owned
+    /// capacities. The original asset metadata remains separately covered.
+    pub fn captured_effect_binding_peak_bytes(
+        bindings: &Vec<StateManagementBinding>,
+    ) -> Result<u64, PlatformError> {
+        captured_binding::peak_bytes(bindings)
+    }
+
+    /// Trusted source capture only. This tag selects no caller and grants no
+    /// permission; each original effect still needs exact current data access.
+    pub fn new_with_captured_effect_recovery(
+        services: StateManagementServices,
+        bindings: Vec<StateManagementBinding>,
+        selection: &latent_capabilities::namespace::RecoverySelection,
+        memory: Vec<Arc<latent_core::native_capacity::NativeBufferPermit>>,
+        retained_asset_bytes: u64,
+    ) -> Result<Self, PlatformError> {
+        let mode = captured_binding::prepaid(
+            &services,
+            selection,
+            &memory,
+            &bindings,
+            retained_asset_bytes,
+        )?;
+        Self::construct(services, bindings, Some(mode), memory)
+    }
+
+    fn construct(
+        services: StateManagementServices,
+        bindings: Vec<StateManagementBinding>,
+        recovery: Option<latent_policy::capability::RecoveryScopeKind>,
+        memory: Vec<Arc<latent_core::native_capacity::NativeBufferPermit>>,
+    ) -> Result<Self, PlatformError> {
         if !services
             .store
             .uses_native_capacity(&services.admission.native_capacity())
@@ -183,12 +225,21 @@ impl StateManagementBackend {
                 return Err(invalid());
             }
         }
+        let mut captured = Vec::with_capacity(bindings.len());
+        captured.extend(
+            bindings
+                .into_iter()
+                .map(|binding| captured_binding::CapturedBinding {
+                    binding: Arc::new(binding),
+                    recovery,
+                }),
+        );
         Ok(Self(Arc::new(Inner {
             services,
-            bindings: bindings.into_iter().map(Arc::new).collect(),
+            bindings: captured,
             dispatcher: None,
             recovery_bindings: None,
-            resident_metadata: Vec::new(),
+            resident_metadata: memory,
             command_source: None,
         })))
     }
@@ -503,7 +554,7 @@ impl StateManagementBackend {
                     && binding.namespace.0 == selector.namespace
                     && binding.incarnation.to_string() == selector.incarnation
             })
-            .cloned()
+            .map(|binding| Arc::clone(&binding.binding))
             .ok_or_else(denied)?;
         Ok(Some(binding))
     }
