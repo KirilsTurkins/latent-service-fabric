@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import os
 from pathlib import Path
+import re
 import stat
 import time
 
@@ -14,6 +15,13 @@ from .recovery import require_stopped_owner
 MAX_ENTRIES = 4096
 MAX_FILE_BYTES = 268435456
 MAX_LOGICAL_BYTES = 1073741824
+RESTORED_STORE_IDENTITY = 'java-transaction-restored-qualification'
+
+
+def store_identity(value):
+    require(type(value) is str and re.fullmatch(r'[A-Za-z0-9._-]{1,128}', value) is not None,
+            'canonical-restore-store-identity')
+    return value
 
 
 def directory(path: Path):
@@ -27,7 +35,7 @@ def directory(path: Path):
     return info
 
 
-def selection(original: dict, data_root: Path, checkpoint_root: Path) -> dict:
+def selection(original: dict, data_root: Path, checkpoint_root: Path, *, identity=None) -> dict:
     directory(data_root)
     directory(checkpoint_root)
     state = original.get('state')
@@ -43,6 +51,8 @@ def selection(original: dict, data_root: Path, checkpoint_root: Path) -> dict:
     selected['dataDirectory'] = str(data_root)
     selected['state']['checkpointRoot'] = str(checkpoint_root)
     selected['state']['createIfMissing'] = False
+    if identity is not None:
+        selected['state']['storeIdentity'] = store_identity(identity)
     return selected
 
 

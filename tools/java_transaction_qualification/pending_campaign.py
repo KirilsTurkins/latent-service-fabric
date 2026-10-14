@@ -97,7 +97,8 @@ class PendingCampaign(OfflineCampaign):
         require(not destination.exists() and not checkpoint.exists(), 'fresh-pending-restore-destination')
         request = {'file': file, 'destinationRoot': str(destination), 'destinationCheckpointRoot': str(checkpoint),
                    'operationId': 'java-explicit-pending-restore', 'snapshotDigest': snapshot['snapshotDigest'],
-                   'manifestDigest': snapshot['manifestDigest']}
+                    'manifestDigest': snapshot['manifestDigest'],
+                    'destinationStoreIdentity': restore_installation.RESTORED_STORE_IDENTITY}
         window = self.action(dict(request, action='inspect-restore'))
         require(window['snapshot']['snapshotDigest'] == snapshot['snapshotDigest']
                 and window['snapshot']['manifestDigest'] == snapshot['manifestDigest'],
@@ -106,8 +107,11 @@ class PendingCampaign(OfflineCampaign):
         restored = self.action(dict(request, action='restore', windowAcknowledgement=acknowledgement))
         require(restored['snapshotDigest'] == snapshot['snapshotDigest']
                 and restored['manifestDigest'] == snapshot['manifestDigest'], 'actual-pending-restore-snapshot')
+        require(restored['destinationIdentity'] == request['destinationStoreIdentity'],
+                'actual-pending-restored-store-identity')
         require(self.observation() == recipient, 'restored-pending-does-not-contact-recipient')
-        selected = restore_installation.selection(settings, destination_data, checkpoint)
+        selected = restore_installation.selection(settings, destination_data, checkpoint,
+                                                   identity=restored['destinationIdentity'])
         self.configuration = self.campaign.full_path.parent / 'pending-restored-node.json'
         write_json(self.configuration, selected)
         self.configuration.chmod(0o600)

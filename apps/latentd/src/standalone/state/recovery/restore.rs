@@ -77,7 +77,7 @@ impl Codecs {
         status: RecoveryStatus,
     ) -> Result<(), StoreError> {
         self.restore_request(input, request)?;
-        self.closure(staged)?;
+        self.restored_closure(staged)?;
         let guard = RecoveryGuard::capture(staged)?.ok_or(StoreError::Corrupt)?;
         if guard.status() != status
             || guard.window_digest() != request.loss_window_acknowledgement

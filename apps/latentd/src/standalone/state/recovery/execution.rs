@@ -150,6 +150,7 @@ pub(super) async fn execute(
             operation_id,
             snapshot_digest,
             manifest_digest,
+            ..
         }
         | Action::Restore {
             file,
@@ -168,7 +169,9 @@ pub(super) async fn execute(
                 checkpoint: ProtectedCheckpointConfig {
                     root: destination_checkpoint_root.clone(),
                 },
-                identity: settings.store_identity.clone(),
+                identity: codecs
+                    .action
+                    .restore_destination_identity(&settings.store_identity)?,
             };
             let row = Arc::clone(&codecs);
             let current = Arc::clone(&codecs);

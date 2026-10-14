@@ -234,7 +234,8 @@ class OfflineCampaign:
             "operationId": "java-explicit-restore", "snapshotDigest": snapshot["snapshotDigest"]}
         if self.current_v2:
             request.update(destinationCheckpointRoot=str(checkpoint_destination),
-                           manifestDigest=snapshot["manifestDigest"])
+                           manifestDigest=snapshot["manifestDigest"],
+                           destinationStoreIdentity=restore_installation.RESTORED_STORE_IDENTITY)
         window = self.action(dict(request, action="inspect-restore"))
         require(window["snapshot"]["snapshotDigest"] == snapshot["snapshotDigest"]
                 and window["snapshot"]["manifestDigest"] == snapshot["manifestDigest"],
@@ -243,8 +244,12 @@ class OfflineCampaign:
         restored = self.action(dict(request, action="restore", windowAcknowledgement=acknowledgement))
         require(restored["snapshotDigest"] == snapshot["snapshotDigest"]
                 and restored["manifestDigest"] == snapshot["manifestDigest"], "original-native-restored-snapshot")
+        if self.current_v2:
+            require(restored['destinationIdentity'] == request['destinationStoreIdentity'],
+                    'actual-restored-store-identity')
         require(self.recipient("restored-before-review") == recipient, "restored-history-does-not-redrive-before-review")
-        settings = (restore_installation.selection(original_settings, data_destination, checkpoint_destination)
+        settings = (restore_installation.selection(original_settings, data_destination, checkpoint_destination,
+                                                   identity=restored['destinationIdentity'])
                     if self.current_v2 else restored_configuration(original_settings, destination))
         self.configuration = self.campaign.full_path.parent / "restored-node.json"
         write_json(self.configuration, settings)

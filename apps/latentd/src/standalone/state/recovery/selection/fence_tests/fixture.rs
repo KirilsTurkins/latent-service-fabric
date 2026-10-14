@@ -446,5 +446,6 @@ fn restore_action(root: &std::path::Path) -> Action {
         manifest_digest: format!("sha256:{}", "2".repeat(64)),
         destination_checkpoint_root: root.join("restored-checkpoint"),
         window_acknowledgement: format!("sha256:{}", "3".repeat(64)),
+        destination_store_identity: None,
     }
 }
