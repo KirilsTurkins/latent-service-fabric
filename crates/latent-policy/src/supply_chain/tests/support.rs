@@ -300,6 +300,46 @@ impl Fixture {
             sboms: vec![],
         }
     }
+    pub fn annotated_upload(&self, annotation: &str) -> PackageAdmissionUpload {
+        let mut upload = self.upload();
+        let mut manifest: Value = serde_json::from_slice(&upload.manifest).unwrap();
+        manifest["annotations"]["tests.native-recovery-fence"] = annotation.into();
+        upload.manifest = serde_json::to_vec(&manifest).unwrap();
+        let subject = PackageSigningSubject::from_package(
+            &upload.manifest,
+            &upload.configuration,
+            PackageLimits::default(),
+        )
+        .unwrap();
+        let validity = SignatureValidity {
+            issued_at: 1000,
+            expires_at: 2000,
+        };
+        let signature = self
+            .publisher_signer
+            .sign_package(&subject, validity, SignatureLimits::default())
+            .unwrap();
+        let provenance = self
+            .builder_signer
+            .sign_build(
+                &subject,
+                &observation(&subject),
+                validity,
+                ProvenanceLimits::default(),
+            )
+            .unwrap();
+        upload.signatures = vec![AdmissionEvidence {
+            manifest: signature.manifest_bytes().to_vec(),
+            configuration: b"{}".to_vec(),
+            payload: signature.payload_bytes().to_vec(),
+        }];
+        upload.provenance = vec![AdmissionEvidence {
+            manifest: provenance.manifest_bytes().to_vec(),
+            configuration: b"{}".to_vec(),
+            payload: provenance.payload_bytes().to_vec(),
+        }];
+        upload
+    }
     pub fn wrong_subject_upload(&self) -> PackageAdmissionUpload {
         let mut input = packaging::capsule(packaging::component::Options::default());
         input

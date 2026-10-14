@@ -1,6 +1,7 @@
 //! Original authenticated administrator and current, purpose-specific seals.
 use super::{assets::SchemaEvidence, request::Action};
 use crate::standalone::effects::ProtectedEffectClock;
+use latent_artifacts::ReleaseUseEligibility;
 use latent_capabilities::namespace::{CallerScope, RecoverySelection, STATE_CONTRACT};
 use latent_core::{InvocationPrincipal, PlatformError, PrincipalKind};
 use latent_policy::capability::{
@@ -129,13 +130,21 @@ impl Authority {
         purpose: &str,
         action: impl FnOnce() -> Result<(), StoreError>,
     ) -> Result<(), StoreError> {
+        self.with_current_dependencies(purpose, &[], action)
+    }
+    pub fn with_current_dependencies(
+        &self,
+        purpose: &str,
+        dependencies: &[ReleaseUseEligibility],
+        action: impl FnOnce() -> Result<(), StoreError>,
+    ) -> Result<(), StoreError> {
         if !self.purposes.contains(&purpose) {
             return Err(StoreError::Unavailable);
         }
         let references = self.decisions.iter().collect::<Vec<_>>();
         let mut action = Some(action);
         self.policy
-            .with_retained_decisions(&references, &mut |_| {
+            .with_retained_decisions_and_dependencies(&references, dependencies, &mut |_| {
                 if Instant::now() >= self.deadline
                     || !latent_effects::runtime::EffectTimeSource::observe(self.clock.as_ref())
                         .continuity_proven

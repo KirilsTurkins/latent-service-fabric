@@ -86,13 +86,8 @@ impl Codecs {
             .iter()
             .map(|schema| schema.operation.publication().clone())
             .collect::<Vec<_>>();
-        let mut action = Some(action);
-        latent_artifacts::ReleaseUseEligibility::with_all_current(&publications, &mut |_| {
-            self.authority
-                .with_current(purpose, action.take().ok_or_else(super::denied)?)
-                .map_err(|_| super::denied())
-        })
-        .map_err(|_| StoreError::Unavailable)
+        self.authority
+            .with_current_dependencies(purpose, &publications, action)
     }
     pub fn time(&self) -> Result<EffectTime, StoreError> {
         let time = self.authority.clock.observe();

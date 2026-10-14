@@ -207,3 +207,6 @@ fn retain(
         asset,
     }))
 }
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod fence_tests;
