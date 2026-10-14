@@ -615,7 +615,7 @@ async fn detached_cross_caller_lookup_retains_native_owner_until_real_provider_c
         .fixture
         .update(Some(&document), "withdraw-held-original-target");
     waiter.abort();
-    assert!(waiter.await.unwrap_err().is_cancelled());
+    assert!(matches!(waiter.await, Err(error) if error.is_cancelled()));
     assert!(effect.dispatcher.snapshot().unwrap().physical_owners > 0);
     provider.hold.store(false, Ordering::SeqCst);
     provider.release.notify_one();
