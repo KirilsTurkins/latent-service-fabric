@@ -1,280 +1,113 @@
 # Engineering roadmap
 
-## Phase 0: executable spike — Phase 1 authorized
+The latest published runtime and developer toolkit is **0.1.0-alpha.5**.
+Development contains newer merged source and explicitly selected profiles. Use
+[Changes since alpha.5](start/development-changes.md) to find their application
+workflows and [the post-release audit](development/documentation-audit-2026-10-14.md)
+for the source-bound inventory. A merged implementation slice does not complete
+its collective acceptance gate or publish a new distribution.
 
-Repository contracts, one Rust echo capsule, one fixed cell pool, Wasmtime
-component loading, timeout/trap containment, baseline measurements, native
-Linux calibration, hot-path profiling, and a long-running resource soak are
-implemented. Fresh native-Linux calibration, profiling, and soak packages from
-commit `52ac4754…` were independently rebuilt from their raw evidence and bound
-to a fresh full baseline at `b932a935…`. The retained August 30
-[receipt](../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
-records `pass`, `authorized`, and no blockers. See
-[the completion gate](phase-0-completion.md).
+## Completed foundations
 
-The underlying measurements remain single-host observational evidence. Neither
-an issue closure nor such an observation alone authorizes Phase 1. The full
-receipt authorizes only because it validates the matched raw archives,
-execution identity, profiling, resource soak, and fresh-baseline checks
-together. Phase 1 builds on the retained runtime and invariants; Phase 0 does
-not claim production readiness or Phase 1 API compatibility.
+| Phase | Delivered boundary | Acceptance record |
+| --- | --- | --- |
+| Phase 0: executable spike | Fixed cells, real echo execution, containment and single-host measurements | [Feasibility gate](phase-0-completion.md) |
+| Phase 1: single-node stateless fabric | Durable publication/deployment, bounded routing, admission, scheduling, invocation, CLI and six client contracts | [Functional completion](phase-1-completion.md) and [performance extension](phase-1-extension-completion.md) |
+| Phase 2: packaging and supply chain | Exact packages, OCI transfer, publisher/build trust, admission, isolated AOT, audit and controlled rollout/recovery | [Package delivery gate](phase-2-completion.md) |
+| Phase 3: capabilities and application hosting | Declared standalone providers, HTTP/static/Angular delivery, six guest SDKs, packaged developer workflow and learning site | [Integration gate](phase-3-gate-review.md) |
+| First integration feedback | Static/publication/container workflows, qualified developer selection and alpha.5 distribution | [Published alpha.5 evidence](development/native-release-gate.md#published-alpha5-evidence) |
 
-## Phase 1: single-node stateless fabric — complete
-
-The following features and their acceptance evidence are delivered:
-
-- [Executable build and generated bindings](development/build-foundation.md) (#2) and [cross-layer contracts](protocol/phase-1-contract-hardening.md) (#36).
-- [Manifest codecs and schema-backed validation](protocol/manifest-codec.md) (#3).
-- [Durable local release catalog](development/local-release-catalog.md) (#4).
-- [Embedded deployment catalog and immutable local routing](deployment-routing.md) (#5).
-- [Resource budgets, deadlines, and cancellation primitives](runtime/resource-budgets.md) (#6).
-- [Bounded single-node admission and overload control](admission-control.md) (#7).
-- [Fixed class pools and bounded tenant-fair scheduling](scheduling.md) (#8).
-- [Generic Wasmtime execution and bounded canonical values](runtime/wasmtime.md) (#9).
-- [Activation context, structured logging, and clock capabilities](runtime/capabilities.md) (#10).
-- [Stateless activation lifecycle, bounded journal/status, and scoped cancellation](activation-lifecycle.md) (#11).
-- [Shared telemetry, redacted lifecycle/guest observations, and bounded node inventory](telemetry.md) (#13).
-- [Generic invocation, cancellation, and retained-status service adapters](protocol/invocation-service.md) (#12).
-- [Release, deployment, route, and node management service adapters](reference/management-services.md) (#37).
-- [Configured standalone Linux node, loopback RPCs, durable restart and bounded shutdown](reference/standalone-node.md) (#14).
-- [Bounded developer/operator CLI and scriptable local echo workflow](reference/operator-cli.md) (#15).
-- [Bounded deterministic conformance, child resource observations and diagnostic report validation](testing/phase-1-conformance.md), with [retained clean CI evidence](../benchmarks/phase1/conformance/2026-09-08-ci93-aee91e5/README.md).
-- [Explicit scale, mixed-workload soak and benchmark collectors](testing/phase-1-measurements.md), with [all four scales, three full soaks and seven benchmark runs retained](../benchmarks/phase1/measurements/2026-09-08-container-linux-d72c99b6/REPORT.md).
-- [Seven controlled historical/current pairs](../benchmarks/phase1/paired/2026-09-08-container-linux-e7e06f7/REPORT.md) with the original executables, semantic controls, productionization differences and complete raw evidence (#94).
-- [SDK caller identity and cancellation contracts](../sdk/README.md) with executable fixtures across six languages (#65).
-
-The [completion review](phase-1-completion.md) maps the collective evidence to
-all fifteen [gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16)
-criteria and records the completion decision and merged CI evidence for the
-[Phase 1 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/1).
-Status is recorded as of September 8, 2026. The standalone node and operator CLI
-support the local release-to-invocation workflow through generated RPC clients;
-see the [scriptable quickstart](development/standalone-quickstart.md).
-
-At 100,000 releases/deployments, service-specific execution resources remain
-absent and fixed node topology remains constant, while catalog metadata RSS
-grows explicitly. Reclamation satisfies the declared finite policy; paired
-measurements report additional current runtime overhead. Delivery does not mean
-constant RSS, arbitrary-duration leak freedom, a production SLO or a claim of
-no performance regression. The retained Phase 0 demonstration and historical
-native receipts keep their original scope. Clustering, general capabilities,
-state/effects and workflows remain the later phases below.
-
-The completed [Phase 1 performance extension](phase-1-extension-completion.md)
-records the merged prioritized optimizations and Docker/Kubernetes
-comparisons, separately from the original functional completion decision.
-Resident Echo met its 2 ms useful-success target in #103; distinct 100k
-catalog RSS fell 58.90% in #107. These results do not establish a universal
-latency SLO, all-shape memory ceiling or isolated orchestration cost.
-Phase 2 builds on that completed handoff under the scope below; local
-catalog/build foundations remain Phase 1.
-
-## Phase 2: packaging and supply chain — complete
-
-[Epic #139](https://github.com/KirilsTurkins/latent-service-fabric/issues/139)
-and the [Phase 2 milestone](https://github.com/KirilsTurkins/latent-service-fabric/milestone/4)
-track the completed package-to-execution and operator workflow. The
-[completion review](phase-2-completion.md) records the collective acceptance
-decision for [gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158),
-including all eighteen delivery dependencies (#140–157), currentness and offline
-checks, the fixed dormant-resource profile and retained limitations.
-
-The [Phase 2 delivery notes](phase-2-delivery.md) summarize current features,
-migration and recovery boundaries and identify their release status.
-
-| Delivered surface | Contract and scope |
-| --- | --- |
-| Package format and deterministic build/inspection (#140–141) | [Exact OCI package identity](protocol/package-format.md), capsule/browser/SSR package formats and [bounded packaging](component-development/packaging.md) from supplied bytes. Web formats do not implement a web runtime. |
-| OCI distribution (#142) | [Scoped authenticated transfer](reference/oci-registry.md), exact immutable descriptors and bounded detached referrer discovery. |
-| Publisher, builder and SBOM evidence (#143–145) | Separate [publisher trust](reference/publisher-trust.md) and [builder/source policy](reference/build-provenance.md), plus [observed inventory and SBOM associations](component-development/sbom.md). The maintained build remains nonhermetic. |
-| Enforced admission and compatibility (#146–147) | [Current tenant/supply-chain admission](reference/package-admission.md), actual runtime requirements and [conservative exact-pair contract comparison](reference/release-compatibility.md). Transfer and diagnostic verification create no execution grant. |
-| Durable release lifecycle (#148) | [Admission, revocation, retirement and evidence renewal](reference/release-lifecycle.md), owner-bound current capabilities, bounded operation outcomes and fail-closed recovery in local and enforced modes. |
-| Replaceable raw cache (#149) | [Digest-verified file/buffer ownership](reference/raw-artifact-cache.md), bounded staging, pins and explicit reclamation. It cannot delete authoritative catalog content or confer trust. |
-| Isolated compilation and native reuse (#150–151) | [Trusted-local Linux x86_64 producer and opt-in persistent loading](runtime/trusted-aot.md), protected local receipts, exact engine/source identity, child ownership through reap and page-rounded image permits. |
-| Durable audit and observation (#152) | [Typed attempts, outcomes and diagnostics](phase-2-audit.md), one bounded worker, scoped queries, explicit loss/uncertainty and no per-invocation durable enqueue. |
-| Rollout, canary and rollback (#153–155) | [Combined atomic catalog publication](phase-2-rollouts.md), [sealed full-window promotion](phase-2-canary-promotion.md) and [explicit original-base restoration](phase-2-rollback.md) through new monotonic generations. |
-| Operator workflows (#156) | [Package build/inspect/verify/push/pull and authenticated control workflows](phase-2-operator-workflows.md), exact managed deployment receipts, finite reconciliation and lossless CLI output. |
-
-The standalone node remains single-node and stateless. Supply-chain enforcement
-requires explicit configuration; trusted-local mode retains real lifecycle checks without
-inventing signing proof. Native reuse, durable audit and rollout management have
-their own opt-in owners and limits. Native loading never turns cached bytes into
-current permission.
-
-Phase 2 extends the local deployment format through combined rollout state and
-managed-operation history while retaining earlier decoding and omitted-field
-semantics. Replay returns retained history; it never renews a grant, repeats an
-evicted operation or restores a revoked release. Catalog durability, audit
-acknowledgement and client outcome certainty remain distinct.
-
-The retained Phase 0/1 measurements keep their original execution identities and
-limitations. Phase 2 adds a bounded 32-release resource observation on its
-recorded WSL2 host; it makes no new 100k-scale, latency or production SLO claim.
-Its [evidence set](../benchmarks/phase2/2026-09-13/README.md) preserves exact
-identities, actual outcomes and failed or superseded attempts.
+These reports retain their original sources, measurements and limitations.
+They do not establish production sizing, a universal latency SLO, arbitrary
+library compatibility or acceptance for later source changes. Current
+installation and operator instructions live in the task guides; reproduction
+of an old result requires its recorded revision.
 
 ## Phase 3: capabilities and application hosting
 
-**Status: complete for the declared standalone profiles.**
+The accepted standalone profiles are the published baseline. Later dependency,
+activation-runtime and transaction work uses separate selected profiles and
+acceptance owners; it does not broaden the original completion decision.
 
-All six guest SDKs, the packaged developer workflow, native distribution and
-complete learning site are delivered. The maintainer accepted the 27-topic
-guide review; final runtime CI, both real VM profiles, public tool downloads,
-18-project creation and protected live-site checks passed. The
-[completion decision](phase-3-gate-review.md) records the exact evidence and
-remaining platform/security limits. The
-[alpha.4 release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.4) and
-[matching guides](https://kirilsturkins.github.io/latent-service-fabric/docs/0.1.0-alpha.4/start/application-development/)
-are public. Runtime tags and historical measurements remain immutable.
+## SDK libraries and activation runtimes
 
-[Epic #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
-tracks the delivered capability and application-hosting implementation,
-including the architecture/security audit requirements and the retained
-[Angular umbrella #44](https://github.com/KirilsTurkins/latent-service-fabric/issues/44).
-The tracker records scoped delivery, dependencies and acceptance evidence.
-The context, logging and clock surface already delivered in #10 remains the
-baseline.
+[Epic #677](https://github.com/KirilsTurkins/latent-service-fabric/issues/677)
+tracks ordinary application-library and runtime integration. Merged source now
+captures closed dependency graphs, immutable resources, approved generators,
+server declarations, final compatibility reports and authenticated build/watch
+inputs. Start with [application libraries](how-to/add-application-libraries.md)
+and [composition inspection](how-to/inspect-a-composition.md).
 
-Exact versioned contracts, durable grants and a sealed broker govern capability
-use. Shared I/O ownership, provider pools and descendant reservations support
-external providers and isolated local service calls. Web ingress and rendering
-use those foundations and the package/lifecycle boundary. The linked gate keeps
-the original implementation, SDK and operator execution evidence.
-
-| Workstream | Delivered capability and acceptance tickets |
-| --- | --- |
-| Exact authority and ABI | [Versioned capability ABI and host profiles #202](https://github.com/KirilsTurkins/latent-service-fabric/issues/202), [durable policies/grant revisions #203](https://github.com/KirilsTurkins/latent-service-fabric/issues/203), [sealed activation broker and handles #204](https://github.com/KirilsTurkins/latent-service-fabric/issues/204). |
-| Shared resources and bindings | [Asynchronous I/O and stream ownership #205](https://github.com/KirilsTurkins/latent-service-fabric/issues/205), [provider pools/configuration epochs/shutdown #206](https://github.com/KirilsTurkins/latent-service-fabric/issues/206), [exact host and isolated-local bindings #207](https://github.com/KirilsTurkins/latent-service-fabric/issues/207). |
-| Child calls and diagnostics | [Conserved descendant budgets/cancellation #208](https://github.com/KirilsTurkins/latent-service-fabric/issues/208), [broker-authorized local service calls #209](https://github.com/KirilsTurkins/latent-service-fabric/issues/209), [capability audit and resource visibility #210](https://github.com/KirilsTurkins/latent-service-fabric/issues/210). |
-| Outbound HTTP | [Policy-scoped DNS/TLS/HTTP #211](https://github.com/KirilsTurkins/latent-service-fabric/issues/211) and [streaming bodies/backpressure #212](https://github.com/KirilsTurkins/latent-service-fabric/issues/212). |
-| Immutable blobs | [Durable bounded local storage #213](https://github.com/KirilsTurkins/latent-service-fabric/issues/213) and [authenticated S3-compatible provider #214](https://github.com/KirilsTurkins/latent-service-fabric/issues/214). |
-| Secrets | [Protected local references and atomic rotation #215](https://github.com/KirilsTurkins/latent-service-fabric/issues/215) and [bounded Vault KV-v2 provider #216](https://github.com/KirilsTurkins/latent-service-fabric/issues/216). |
-| Events | [Real NATS JetStream publication #217](https://github.com/KirilsTurkins/latent-service-fabric/issues/217) and [external consumer triggers through shared scheduling #218](https://github.com/KirilsTurkins/latent-service-fabric/issues/218). This does not supply a transactional guest outbox. |
-| Guest utilities | [Budgeted cryptographic randomness #219](https://github.com/KirilsTurkins/latent-service-fabric/issues/219) and [custom metrics with cardinality policy #220](https://github.com/KirilsTurkins/latent-service-fabric/issues/220). |
-| HTTP application routing | [Request/response contracts #222](https://github.com/KirilsTurkins/latent-service-fabric/issues/222), [atomic scoped trigger routes #223](https://github.com/KirilsTurkins/latent-service-fabric/issues/223), [shared authenticated ingress #229](https://github.com/KirilsTurkins/latent-service-fabric/issues/229). |
-| Browser storage and responses | [Exact renderer/asset release admission #225](https://github.com/KirilsTurkins/latent-service-fabric/issues/225), [immutable asset serving #231](https://github.com/KirilsTurkins/latent-service-fabric/issues/231), [safe HTTP response-cache policy #232](https://github.com/KirilsTurkins/latent-service-fabric/issues/232). |
-| Angular SSR and hydration | [Execution-profile proof #224](https://github.com/KirilsTurkins/latent-service-fabric/issues/224), [bounded renderer cells #233](https://github.com/KirilsTurkins/latent-service-fabric/issues/233), [deterministic renderer/hydration packaging #234](https://github.com/KirilsTurkins/latent-service-fabric/issues/234), [browser isolation #235](https://github.com/KirilsTurkins/latent-service-fabric/issues/235), [real-browser reference workflow #236](https://github.com/KirilsTurkins/latent-service-fabric/issues/236), under [#44](https://github.com/KirilsTurkins/latent-service-fabric/issues/44). |
-| SDKs and executable examples | [Typed guest bindings and Rust/C examples #221](https://github.com/KirilsTurkins/latent-service-fabric/issues/221), [six-SDK parity #227](https://github.com/KirilsTurkins/latent-service-fabric/issues/227), [real Rust transport #228](https://github.com/KirilsTurkins/latent-service-fabric/issues/228), [bounded TypeScript/browser client #230](https://github.com/KirilsTurkins/latent-service-fabric/issues/230), and executable clients for [Go #260](https://github.com/KirilsTurkins/latent-service-fabric/issues/260), [C #261](https://github.com/KirilsTurkins/latent-service-fabric/issues/261), [Java #262](https://github.com/KirilsTurkins/latent-service-fabric/issues/262) and [.NET #263](https://github.com/KirilsTurkins/latent-service-fabric/issues/263). |
-| Guest authoring and development | Standalone authoring in Rust, C, TypeScript, Go, Java and C# (#544–#549), with packaged compiler tools, editable applications, test fixtures, diagnostics, recovery and the scoped Windows/WSL2, Linux, SSH and devcontainer workflow (#559). |
-| Operators and completion evidence | [Policy/provider/web management #226](https://github.com/KirilsTurkins/latent-service-fabric/issues/226), [runbooks #237](https://github.com/KirilsTurkins/latent-service-fabric/issues/237), [adversarial isolation #238](https://github.com/KirilsTurkins/latent-service-fabric/issues/238), [resource/preparation measurements #239](https://github.com/KirilsTurkins/latent-service-fabric/issues/239), [collective gate #240](https://github.com/KirilsTurkins/latent-service-fabric/issues/240). |
-
-Every provider must preserve exact tenant/grant/owner identity and fail closed
-across revocation and configuration changes. Buffers, handles, connections,
-streams, waits and descendants need finite shared reservations that survive
-cancellation until actual cleanup. Provider responses and secret values cannot
-escape into unrestricted logs or audit payloads. Pools, ingress listeners and
-consumer loops belong to the node, not dormant services.
-
-Angular uses the selected and measured renderer profile, with actual HTTP
-serving, renderer execution and browser hydration qualified by the reference
-workflow. It does not support arbitrary Node.js applications. Static/CSR sites
-use the shared listener without a guest activation. Neither package type creates
-an application-owned listener or idle renderer.
-
-## First integration feedback: delivered scope
-
-The [alpha.5 release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.5) publishes this work with
-fresh SDK distributions and matching versioned guides. The
-[native release gate](development/native-release-gate.md#published-alpha5-evidence)
-records exact-source CI, authenticated downloads, both real VM profiles and
-the tested alpha.4 upgrade.
-
-The original #626–#643 tickets deliver the static-schema correction, larger
-bounded site inventory, XML sitemaps, public-document navigation, framework CSP
-recipes, static/API composition, released-binary publication and recoverable
-route sets. See [website delivery](how-to/deliver-a-website.md) for the application
-workflow and [container operation](operations/container-runtime.md) for the
-non-root local node, private CI/probes, HTTPS/gzip, coupled backup and ownership
-handover. The CLI's bounded authentication/network controls were qualified with
-a real local Harbor registry. No Azure resources or cloud simulation were used.
-
-The accepted CORS work establishes design and browser feasibility; native asset
-grants remain [#660](https://github.com/KirilsTurkins/latent-service-fabric/issues/660).
-Capacity planning and maintenance are delivered; committed-history deletion
-remains [#662](https://github.com/KirilsTurkins/latent-service-fabric/issues/662).
-The intermittent Go guest trap remains under
-[investigation #675](https://github.com/KirilsTurkins/latent-service-fabric/issues/675).
-These boundaries remain explicit in the alpha.5 release description and guides.
+Selected Rust standard-clock, TypeScript Promise/clock/service/npm, Java server
+revision/processor and .NET resource/wall-clock fixtures have executed evidence.
+Each profile retains its narrower acceptance boundary in
+[engineering records](development/engineering-records.md). Full standard
+thread/executor/reactor behavior, ordinary HTTP clients, private/update/watch
+lifecycle, broader exhaustion/cancellation and clean installed distributions
+remain owned by their language tickets. No general runtime is inferred from a
+captured package or one successful fixture. Outbound research remains separate
+from enabled, explicitly authorized provider profiles.
 
 ## Phase 4: state and effects
 
-**Status: implementation in progress; architectural decision and model evidence
-are distinct from enabled runtime/storage qualification.** Phase 3 gate #240,
-the six maintained guest SDKs (#544–#549) and packaged developer workflow #559 are
-completed foundations. [Epic #379](https://github.com/KirilsTurkins/latent-service-fabric/issues/379)
+**Status: implementation in progress; collective acceptance and a new public
+release remain outstanding.**
+[Epic #379](https://github.com/KirilsTurkins/latent-service-fabric/issues/379)
 and [gate #407](https://github.com/KirilsTurkins/latent-service-fabric/issues/407)
-own the finite implementation and collective acceptance. The
-[host-owned contract](../adr/0062-host-own-serializable-transactions-and-durable-outcomes.md)
-defines one tenant/namespace transaction, conservative serializable OCC, atomic
-state/outbox/outcome/inbox persistence, current caller-scoped recovery and
-independent bounded fresh queries. The
-[state/effect architecture](architecture/state-and-effects.md) records its boundary.
+own the complete state/effect delivery. The
+[host-owned transaction decision](../adr/0062-host-own-serializable-transactions-and-durable-outcomes.md)
+and [state/effect architecture](architecture/state-and-effects.md) define one
+namespace transaction, conservative serializable conflict checks, atomic
+state/outbox/result/inbox persistence and independent fresh queries.
 
-| Wave | Required tickets and delivery |
+| Merged implementation area | Maintained guide or contract |
 | --- | --- |
-| Contracts and storage | [#380](https://github.com/KirilsTurkins/latent-service-fabric/issues/380) host-owned decision/model; [#381](https://github.com/KirilsTurkins/latent-service-fabric/issues/381) one qualified embedded engine/durability profile; [#382](https://github.com/KirilsTurkins/latent-service-fabric/issues/382) exact WIT/RPC/host contracts and six-compiler shape checks. |
-| Core commands and queries | [#383](https://github.com/KirilsTurkins/latent-service-fabric/issues/383) shared protected store; [#384](https://github.com/KirilsTurkins/latent-service-fabric/issues/384) namespace authority/lifecycle; [#385](https://github.com/KirilsTurkins/latent-service-fabric/issues/385) bounded serializable OCC/scans; [#386](https://github.com/KirilsTurkins/latent-service-fabric/issues/386) atomic envelope; [#387](https://github.com/KirilsTurkins/latent-service-fabric/issues/387) deduplication/result/rejection/explicit-abort recovery; [#388](https://github.com/KirilsTurkins/latent-service-fabric/issues/388) shared activation/commit/cancellation/cleanup; [#408](https://github.com/KirilsTurkins/latent-service-fabric/issues/408) read-only fresh queries and stale-edit preconditions. |
-| Guest authoring | [#389](https://github.com/KirilsTurkins/latent-service-fabric/issues/389) Rust, C, TypeScript, Go, Java and C#/.NET guest SDKs/templates/actual components, with Java implementation slice [#718](https://github.com/KirilsTurkins/latent-service-fabric/issues/718). One shared host path; all six are required. |
-| Effects, entities and application HTTP | [#390](https://github.com/KirilsTurkins/latent-service-fabric/issues/390) durable dispatch authority/independent lifetime; [#391](https://github.com/KirilsTurkins/latent-service-fabric/issues/391) bounded dispatcher/claims/uncertainty; [#392](https://github.com/KirilsTurkins/latent-service-fabric/issues/392) real JetStream; [#393](https://github.com/KirilsTurkins/latent-service-fabric/issues/393) qualified idempotent HTTP; [#394](https://github.com/KirilsTurkins/latent-service-fabric/issues/394) active-only entity lanes; [#395](https://github.com/KirilsTurkins/latent-service-fabric/issues/395) transactional incoming messages/post-commit acknowledgements; [#409](https://github.com/KirilsTurkins/latent-service-fabric/issues/409) shared application HTTP command/query/authorized recovery. |
-| Durable lifecycle and operators | [#396](https://github.com/KirilsTurkins/latent-service-fabric/issues/396) immutable durable payload references; [#397](https://github.com/KirilsTurkins/latent-service-fabric/issues/397) linked quotas/retention/GC and physically reserved recovery capacity; [#398](https://github.com/KirilsTurkins/latent-service-fabric/issues/398) independent retained-format/schema compatibility and migration/rollback; [#399](https://github.com/KirilsTurkins/latent-service-fabric/issues/399) consistent backup/guarded paused restore; [#400](https://github.com/KirilsTurkins/latent-service-fabric/issues/400) scoped CLI/management/audit/recovery, including the early public slice. |
-| Integrated delivery | [#401](https://github.com/KirilsTurkins/latent-service-fabric/issues/401) the six existing external transports, separately from guest SDKs; [#402](https://github.com/KirilsTurkins/latent-service-fabric/issues/402) one maintained stateful/browser application with six-language backend examples; [#403](https://github.com/KirilsTurkins/latent-service-fabric/issues/403) crash/adversarial matrix and distinct six-guest/six-client maps; [#404](https://github.com/KirilsTurkins/latent-service-fabric/issues/404) stateful density/active cost/latency/backlog/recovery measurements; [#405](https://github.com/KirilsTurkins/latent-service-fabric/issues/405) native/developer distribution and qualified persistent-state upgrades/platform workflows; [#406](https://github.com/KirilsTurkins/latent-service-fabric/issues/406) versioned six-guest/six-client learning paths and actual Pages publication; [#407](https://github.com/KirilsTurkins/latent-service-fabric/issues/407) collective decision. |
+| Protected embedded storage, namespace authority and bounded command/query sessions | [Shared store](development/shared-state-store-owner.md), [namespace authority](development/namespace-authority.md), [state sessions](development/optimistic-state-sessions.md) |
+| Atomic command envelopes, completion and duplicate delivery | [Atomic envelope](development/atomic-command-envelope.md), [host runtime](development/phase4-runtime.md), [delivery notifications](development/command-delivery-notifications.md) |
+| Durable claims, transitions and separately authorized deferred providers | [Dispatch storage](development/durable-dispatch-storage.md), [deferred HTTP installation](development/deferred-http-installation.md), [JetStream](development/deferred-jetstream.md) |
+| Current caller-scoped management, installed RPCs and shared HTTP routes | [Installed RPCs](development/installed-transaction-rpc.md), [HTTP boundary](development/transaction-http-v1.md), [transaction recovery](operations/transaction-recovery.md) |
+| Guest templates, six external transaction facades and reference application | [Transactional guest](component-development/transactional-authoring.md), [transaction clients](development/transaction-clients.md), [order drafts](../examples/stateful-reference/README.md) |
+| Linked retention, command-floor retirement, checkpoint/restore and format custody | [Linked retention](architecture/state-and-effects.md#incoming-identity-formats-and-linked-retention), [retirement reconciliation](development/phase4-handoffs/2026-10-12/pr974-reconciliation.md), [checkpoints](development/transaction-checkpoint.md) |
 
-Waves express dependency order, not mandatory serialization. Implementation does
-not wait for the aggregate evidence/gate or every SDK port. Deliver namespace
-setup → command → deliberately lost response → original-result recovery → effect
-inspection incrementally through #400/#401. One real capsule must atomically
-update state and stage a JetStream intent, restart after commit before send,
-recover the same result and prove duplicate submission changes neither state nor
-effects. Add shared fresh-query/HTTP paths and all six guest/client schedules;
-this early proof does not replace HTTP effects, entities, inbox, operations,
-browser or language-specific acceptance.
+The pending [PR #970](https://github.com/KirilsTurkins/latent-service-fabric/pull/970)
+is this documentation branch's source base for current installed recovery.
+Complete terminal/pending native qualification remains required; historical Java
+compiler captures are bound to their original sources. Ticket and packaged
+acceptance must not be inferred from this branch or prior fixture receipts.
 
-Required scope is one embedded store and one-node host-owned transactions,
-explicitly unordered deferred effects and finite recovery. Immediate Phase 3
-HTTP/event operations do not claim atomic guest-state commitment or universal
-exactly-once effects. Queries have no mandatory durable business-command rows.
-Terminal business rejection is durable recovery metadata without business
-mutations; explicit technical-abort retries need no-commit/retired-owner proof
-and a fenced attempt. Unresolved work protects linked identity/payload/format
-metadata even after result bytes expire. Compatible upgrades preserve pending
-formats; older-history restore changes incarnation and starts paused for
-reconciliation. Code rollback does not rewind state or external actions.
+Strict commands stage business state and intents; the host decides commitment
+only after accepted work retires and staging seals. Immediate irreversible calls
+are denied. Result lookup needs current read authority and preserves the original
+identity; local timeout or cancellation supplies no abort proof. Compatible
+upgrades preserve pending formats and linked protection. Older-history restore
+changes incarnation and starts dispatch paused. Code rollback cannot rewind
+state or external actions.
 
-The separate SDK Libraries #677/#736/#741–#746 and outbound research work do not
-block core Phase 4. Any newly installed runtime/transaction composition must
-settle required accepted work/continuations and seal staging before host commit,
-with #388's focused evidence. Standard clients gain no immediate mutation
-authority. Internal dispatcher retries and invocation-local timers do not supply
-Phase 6 durable schedules. Clustering remains Phase 5. No Mac/ARM64 expansion,
-production Windows node, general SQL product, external database or six replacement
-runtimes/clients is introduced. Supported stateless APIs and immutable historical
-evidence remain; final public release requires separate authorization.
+Phase 4 does not add a production Windows node, Mac/ARM64 support, general SQL,
+external database, cluster routing or durable workflows. Its remaining platform,
+SDK, migration, restore and application matrices are acceptance work, not implied
+support. The independent SDK library gates do not redefine the core transaction
+model.
 
 ## Phase 5: cluster
 
 Separate control plane, route watches, direct node invocation, mTLS identity,
-artifact prefetch, state affinity and multi-zone placement. Phase 3 service calls
-are isolated local calls; they do not establish distributed routing or remote
-delegation.
-
-Before cluster implementation begins, carry [RFC-0004](../rfcs/0004-route-and-authorization-freshness.md)
-and its [implementation/conformance handoff](architecture/cluster-freshness-handoff.md)
-into the Phase 5 plan. Phase 3 ticket #274 delivers this design only: separate
-route retention from finite publication authorization, preserve local guarded
-start, define clock/replay/restart/reconnect behavior, and explicitly bound
-availability during a partition. Phase 5 owns the wire/storage/control-plane
-implementation and executed multi-node fault evidence; local tests do not prove
-remote-revocation freshness.
+artifact prefetch, state affinity and multi-zone placement remain planned.
+Current service calls are isolated local calls. Carry
+[RFC-0004](../rfcs/0004-route-and-authorization-freshness.md) and its
+[conformance handoff](architecture/cluster-freshness-handoff.md) into implementation:
+finite authorization, guarded start, clock/replay/restart/reconnect behavior and
+partition availability need executed multi-node evidence.
 
 ## Phase 6: durable workflows
 
 Explicit workflow state machines, durable timers, continuations, awaited effects,
-replay and compensation. Ordinary provider deadlines, retries or consumer cursors
-do not supply workflow suspension or replay.
+replay and compensation remain planned. Invocation-local timers, provider retries
+and consumer cursors do not supply workflow suspension or replay.
 
 ## Phase 7: research promotion candidates
 
-User-space state paging, continuation eviction, call-graph fusion, immutable
-shared blobs, adaptive materialization, native software fault isolation and
-hardware capability backends. These remain research candidates rather than
-requirements of the Phase 2 or Phase 3 completion gates.
+User-space paging, continuation eviction, call-graph fusion, immutable shared
+blobs, adaptive materialization, native software fault isolation and hardware
+capability backends remain [research](../research/README.md) candidates. Promotion
+requires a separate accepted decision and qualification.

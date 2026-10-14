@@ -9,7 +9,9 @@ import '../css/discovery.css';
 type Guide = {id: string; title: string; topic: string; audience: string[]; languages: string[]; pages: {title: string; route: string; role: string}[]};
 const topics: Record<string, string> = {'evaluate-install-contribute': 'Evaluation and setup', 'capsule-delivery-recovery': 'Capsules and delivery',
   'executable-clients': 'Client SDKs', 'capabilities-operators': 'Capabilities and operations', 'angular-browser': 'Angular and browsers',
-  'static-web-delivery': 'Static website delivery', 'container-operations': 'Container operations', 'reference-evidence': 'Architecture and reference'};
+  'static-web-delivery': 'Static website delivery', 'container-operations': 'Container operations',
+  'application-inputs': 'Application libraries and composition', 'transactions-effects': 'Transactions and effects',
+  'reference-evidence': 'Architecture and reference'};
 const audiences: Record<string, string> = {'capsule-author': 'Capsule authors', 'client-developer': 'Client developers', contributor: 'Contributors',
   evaluator: 'Evaluators', operator: 'Operators', 'web-developer': 'Web developers'};
 

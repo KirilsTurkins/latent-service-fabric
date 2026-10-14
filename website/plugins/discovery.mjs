@@ -4,6 +4,27 @@ import {readSource, repositoryRoot, requireValue} from '../lib/repository.mjs';
 const languages = {'client-rust': 'Rust', 'client-typescript': 'TypeScript', 'client-go': 'Go', 'client-c': 'C', 'client-java': 'Java', 'client-dotnet': 'C#/.NET'};
 // The original review matrix remains a review contract, not the catalogue's ceiling.
 const integrationGuides = [
+  ['development-changes', 'Choose workflows added since alpha.5', 'evaluate-install-contribute', ['capsule-author', 'operator', 'contributor'], [],
+    ['start/development-changes']],
+  ['application-libraries', 'Add, review and update application libraries', 'application-inputs', ['capsule-author'], Object.values(languages),
+    ['how-to/add-application-libraries']],
+  ...[['rust', 'Rust', 'rust-library-authoring'], ['c', 'C', 'c-dependencies'],
+    ['typescript', 'TypeScript', 'typescript-library-authoring'], ['go', 'Go', 'go-library-authoring'],
+    ['java', 'Java', 'java-dependencies'], ['dotnet', 'C#/.NET', 'dotnet-dependencies']]
+    .map(([language, label, page]) => [`libraries-${language}`, `Capture ${label} application dependencies`, 'application-inputs',
+      ['capsule-author'], [label], [`component-development/${page}`]]),
+  ['packaged-resources', 'Capture immutable application resources', 'application-inputs', ['capsule-author'], Object.values(languages),
+    ['component-development/packaged-resources']],
+  ['java-processors', 'Approve Java source generators and annotation processors', 'application-inputs', ['capsule-author'], ['Java'],
+    ['component-development/java-generators']],
+  ['inspect-composition', 'Check composition, preparation and activation diagnostics', 'application-inputs', ['capsule-author', 'operator'], [],
+    ['how-to/inspect-a-composition']],
+  ['java-server', 'Compile ordinary Java HttpServer registrations', 'static-web-delivery', ['capsule-author', 'web-developer'], ['Java'],
+    ['component-development/java-httpserver']],
+  ['transactional-guest', 'Author a transactional aggregate guest', 'transactions-effects', ['capsule-author'], Object.values(languages),
+    ['component-development/transactional-authoring']],
+  ['transaction-recovery', 'Recover original commands and inspect deferred effects', 'transactions-effects', ['operator', 'client-developer'], Object.values(languages),
+    ['operations/transaction-recovery']],
   ['deliver-website', 'Deliver an existing website', 'static-web-delivery', ['web-developer', 'operator'], [],
     ['how-to/deliver-a-website', 'how-to/serve-angular-and-docusaurus']],
   ['publish-static-build', 'Sign and publish a frontend build', 'static-web-delivery', ['web-developer', 'operator'], [],

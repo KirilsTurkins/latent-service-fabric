@@ -33,9 +33,16 @@ the same explicit profile. Missing inputs, profile disagreement and changed
 bytes fail before application compilation. The bundle continues to record
 unknown qualification and does not advertise a supported release.
 
-The current contributor proofs include genuine engine and typed compiler
-controls, full component type comparisons, and isolated Wizer construction.
-Engine controls use an explicitly simulated admission broker. Actual signed
-LSF execution, conserved budgets, cancellation/late-wake cleanup, current
-ordinary npm execution and the complete runtime matrix remain required.
-This page does not advertise a supported release or full Node environment.
+The [current production reconciliation](../development/typescript-runtime-reconciliation.md)
+records source-built engine/splicer inputs and the original 26 signed controls:
+15 ordinary cases, four clock cases, two service cases and five unchanged npm
+cases, plus a fresh-after-failure control. These actual LSF runs are separate
+from the earlier simulated-broker/Wizer compiler proofs. The four expected
+ordinary failure cases remain guest traps, and both service cases execute a real
+child. The input classification remains unknown/not-evaluated; the finite matrix
+does not upgrade it to a supported distribution.
+
+Broader exhaustion/cancellation/late-wake behavior, default fetch/body ownership,
+complete private/update/watch workflows, automatic runtime selection and clean
+installed distributions remain separate ticket requirements. This page does
+not advertise a supported release or full Node environment.

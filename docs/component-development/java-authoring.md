@@ -6,7 +6,8 @@ below remains supported.
 
 For ordinary `HttpServer` registration with a compiler-generated web entrypoint,
 see the [selected Java server profile](java-httpserver.md). Its member boundary
-and pending real ingress qualification are separate from the typed RPC examples.
+and source-bound signed ingress/lifecycle evidence are separate from the typed
+RPC examples. Broader server and packaged-toolkit acceptance remains open.
 
 For application development, use [Creating a capsule](creating-a-capsule.md).
 That shared tutorial has all six language choices and uses `dev init`, `build`,

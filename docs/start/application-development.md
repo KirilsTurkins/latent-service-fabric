@@ -5,6 +5,11 @@ node. The `latent-dev` toolkit creates the project and manages the compiler,
 node and credentials. You do not need to build LSF or install a language compiler
 on your desktop.
 
+This download path uses the published alpha.5 toolkit. For newer source workflows,
+start with [Changes since alpha.5](development-changes.md). Its library capture,
+approved generators, composition inspection and explicit transaction profiles
+have separate tool and node requirements.
+
 Follow this path once, choosing your language and OS inside the guides:
 
 1. [Get the developer tools](developer-setup.md).
