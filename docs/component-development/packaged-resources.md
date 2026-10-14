@@ -49,12 +49,18 @@ A package name alone cannot make an unobserved file a trusted resource.
 | TypeScript | Captured bundled asset modules | Dynamic asset lookup still requires component evidence |
 | Go | Captured `//go:embed` data | Exact embedded lookup APIs still require component evidence |
 | Java | Captured selected classpath resource bytes | `getResourceAsStream` integration and emitted component tests pending |
-| .NET | Captured selected embedded resource inputs | `GetManifestResourceStream` integration and emitted component tests pending |
+| .NET | One verified selection supplies package layers and embedded compiler inputs | `Assembly.GetManifestResourceStream` runs in the focused signed resource fixture; broader library/distribution acceptance remains open |
 
-This table identifies the ingestion paths and outstanding runtime acceptance;
-package assembly does not prove those APIs execute. The index records
+The [.NET resource and explicit wall-clock reconciliation](../development/phase4-handoffs/2026-10-12/pr856-reconciliation.md)
+records fresh signed-node checks for binary/empty resources, literal names,
+independent stream positions, absent lookup and disposal. Those checks do not
+qualify every NuGet library or a new packaged toolkit. Java's captured resource
+layers still require their own emitted-component lookup qualification.
+
+This table identifies the ingestion paths and their runtime acceptance boundaries;
+package assembly alone does not prove those APIs execute. The index records
 `runtimeLookup: language-profile-qualification-required`. Each language owner
-must execute the unchanged standard API in a signed admitted component, including
+must qualify the unchanged standard API in a signed admitted component, including
 transitive data, outside-checkout/offline and lifecycle cases, before advertising
 that path as supported. A runtime lookup cannot resolve dependencies or fall
 back to the host filesystem.

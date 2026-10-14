@@ -88,6 +88,13 @@ before selecting this environment.
 
 ## Inspect and recover
 
+For a current source frontend, use `dev doctor --workspace "$Workspace"` to
+observe prerequisites and `dev preflight --input "$Composition" --workspace
+"$Workspace"` to check a selected composition without deploying or invoking it.
+[Inspect a composition](inspect-a-composition.md) distinguishes structural
+support, actual preparation, current live observations and execution. These
+newer checks require the matching Development frontend.
+
 ```bash
 dev status --workspace "$Workspace"
 dev build-status --workspace "$Workspace"
@@ -104,6 +111,10 @@ An unknown or expired result remains uncertain. Keep the workspace and original
 operation, restore connectivity, and inspect it before more work. Do not repeat
 an uncertain invocation or force a conflicting deployment. An unreachable node
 is not proof that it stopped.
+
+`dev recover` recovers the frontend's pending operation. Business transaction
+recovery has its own original command/attempt identity and namespace authority;
+follow [transaction recovery](../operations/transaction-recovery.md) for that path.
 
 ## Stop and remove workspaces
 

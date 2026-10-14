@@ -17,6 +17,11 @@ The captured compiler uses Componentize.NET 0.8.0-preview00011 and its exact
 NativeAOT LLVM dependency lock. This experimental profile is not a general .NET
 host: no JIT, dynamic assemblies, qualified thread pool, timers or
 host event loop. Contract calls suspend through the LSF runtime.
+Current source also binds the verified resource selection to ordinary
+`Assembly.GetManifestResourceStream` and explicitly declared wall-clock imports.
+[Packaged resources](packaged-resources.md) describes the focused signed evidence;
+broader .NET library/runtime and installed distribution qualification stays
+separate from those controls.
 Run from the checkout after installing the pinned .NET and Rust SDKs:
 
 ```sh

@@ -311,6 +311,12 @@ requires checking the deployment grant, provider binding and allowed destination
 
 ## Execution boundaries
 
+This section describes the default synchronous selection used above. The explicit
+[`spidermonkey-activation-promises-clocks-imports-v1` candidate](typescript-import-runtime-candidate.md)
+has a different Promise/timer/import bridge and current finite signed execution
+coverage. Selecting it requires its exact captured engine and source-built
+compiler inputs; adding an npm package does not change the default profile.
+
 The guest runs in an activation-owned SpiderMonkey heap in WebAssembly. It is
 not Node, a browser, or an application-owned JavaScript event loop. There is no
 ambient filesystem, process, clock, entropy, network, timer, worker or DOM

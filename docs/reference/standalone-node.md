@@ -14,7 +14,8 @@ limits](../runtime/descendant-budgets.md) with `mode: "phase3"`. Its default,
 `mode: "phase1"`, supplies basic execution accounting. Capability counter ceilings
 default to zero and remain separate from grants.
 
-`latentd serve` runs the standalone stateless node on Linux. One process composes
+`latentd serve` runs the standalone node on Linux, with stateless execution by
+default. One process composes
 durable release and deployment catalogs, immutable routing, admission and quotas,
 fixed execution cells, generic Wasmtime execution, activation capabilities,
 bounded lifecycle/status retention, telemetry, and the invocation and management
@@ -34,6 +35,29 @@ audit history; the
 with an ephemeral endpoint and private credentials. Generated Tonic clients can
 also use the [management](management-services.md) and
 [invocation](../protocol/invocation-service.md) contracts directly.
+
+## Optional transactional state in Development
+
+Current source accepts the version-2 `state` member defined by
+[the node-state schema](../../schemas/node-state.schema.json). Omission disables
+state; `null` is invalid. It requires Phase 4 accounting, enforced supply-chain,
+audit and capability-policy owners together. Store/native/dispatcher ceilings,
+signed operation installations, namespace incarnations and current result/effect
+permissions must be selected explicitly. Configuration grants no namespace or
+provider authority and does not create a namespace automatically.
+
+Follow [installed transaction RPCs](../development/installed-transaction-rpc.md)
+for the protected store and startup boundary, then
+[transaction recovery](../operations/transaction-recovery.md) for lost responses.
+Shared [transaction HTTP](../development/transaction-http-v1.md) and
+[deferred HTTP installation](../development/deferred-http-installation.md) use
+those same owners. Missing namespace installation exposes authenticated management
+until creation and restart capture the current lifecycle. A changed deployment
+needs a new startup selection.
+
+These Development profiles and PR #970's pending current recovery are outside
+the published alpha.5 distribution. Collective native/application and packaged
+acceptance remains separate; use the matching version's guide for released tools.
 
 ## Execution security profile
 
@@ -132,43 +156,43 @@ reload live trust; the host replacement API owns that transaction.
 | Field | Default | Meaning and supported bounds |
 | --- | --- | --- |
 | `bind` | `127.0.0.1:50051` | Loopback IP literal; port zero selects an ephemeral port. |
-| `workers.runtime` | `2` | Fixed invocation/network runtime workers, 1–32. |
-| `workers.control` | `2` | Fixed control runtime workers and maximum concurrent management jobs, 1–8. |
+| `workers.runtime` | `2` | Fixed invocation/network runtime workers, 1â€“32. |
+| `workers.control` | `2` | Fixed control runtime workers and maximum concurrent management jobs, 1â€“8. |
 | `cells` | One `standard` class, capacity 2, queue capacity 16, memory 64 MiB | Up to five known classes; details below. |
-| `execution.maximumCpuFuel` | `100000000` | Per-activation node fuel ceiling, 1–10 billion. |
-| `execution.maximumWallTimeMillis` | `1000` | Activation wall-time and transport request ceiling, 2–300000 ms. |
-| `execution.maximumLogBytes` | `16384` | Per-activation log allowance, 0–16384 bytes; zero denies logs. |
+| `execution.maximumCpuFuel` | `100000000` | Per-activation node fuel ceiling, 1â€“10 billion. |
+| `execution.maximumWallTimeMillis` | `1000` | Activation wall-time and transport request ceiling, 2â€“300000 ms. |
+| `execution.maximumLogBytes` | `16384` | Per-activation log allowance, 0â€“16384 bytes; zero denies logs. |
 | `engine.allocator` | `"on-demand"` | `"on-demand"` or `"pooling"`. Pooling derives its component and stack slots from the checked total execution-cell capacity. |
 | `engine.optimization` | `"speed"` | Cranelift `"speed"` or `"speed-and-size"`; both retain fuel, epoch interruption and async execution. |
 | `limits.maximumComponentBytes` | `16777216` | Upload, repository and backend component ceiling, up to 64 MiB. |
 | `limits.maximumPayloadBytes` | `1048576` | Invocation/codec input and output ceiling, up to 1 MiB. |
-| `limits.maximumConnections` | `32` | Accepted transport connections, 1–1024. |
-| `limits.unauthenticatedConnectionTimeoutMillis` | `5000` | Accept-to-first-authenticated-RPC deadline, 100–60000 ms; protocol traffic does not renew it. |
+| `limits.maximumConnections` | `32` | Accepted transport connections, 1â€“1024. |
+| `limits.unauthenticatedConnectionTimeoutMillis` | `5000` | Accept-to-first-authenticated-RPC deadline, 100â€“60000 ms; protocol traffic does not renew it. |
 | `limits.maximumConnectionAgeMillis` | `300000` | Accept-to-drain age, at least the authentication timeout and at most 86400000 ms. |
-| `limits.connectionDrainTimeoutMillis` | `5000` | Allowance for already admitted RPCs after connection age expiry, 1–60000 ms; then close the connection. |
-| `cache.entries` | `8` | Retained prepared components, 1–4096. |
+| `limits.connectionDrainTimeoutMillis` | `5000` | Allowance for already admitted RPCs after connection age expiry, 1â€“60000 ms; then close the connection. |
+| `cache.entries` | `8` | Retained prepared components, 1â€“4096. |
 | `cache.sourceBytes` | `67108864` | Associated component-byte ceiling for resident code, at least one maximum component and at most 1 GiB; not retained source buffers. |
-| `cache.metadataBytes` | `8388608` | Resident preparation metadata accounting ceiling, 1 MiB–1 GiB. |
+| `cache.metadataBytes` | `8388608` | Resident preparation metadata accounting ceiling, 1 MiBâ€“1 GiB. |
 | `cache.compiledImageBytes` | `134217728` | Retained compiled image ranges, at most 1 GiB. |
 | `cache.preparations` | `1` | Total distinct compiler jobs, assigned plus queued; at most the admitted population (cells plus queue capacity). |
 | `cache.compilerWorkers` | `min(2, cache.preparations)` | Fixed compiler threads, 1 to 8 and no greater than total compiler jobs. Remaining job slots form the bounded compiler queue. |
 | `catalogs.releaseEntries` | `4096` | Completed-release index count, at most 100000. |
-| `catalogs.releaseIndexBytes` | `67108864` | Release index allocation ceiling, 1 MiB–1 GiB. |
-| `catalogs.publicationStorageBytes` | `4294967296` | Conservative shared blob, publication link and incomplete file exposure ceiling, 1 byte–1 PiB. Lifecycle history has separate limits. |
-| `catalogs.contentIndexBytes` | `67108864` | Shared content/reference metadata ceiling, 1 byte–1 GiB. |
-| `catalogs.contentBlobs` | `1000000` | Shared immutable file count, 1–1000000. |
-| `catalogs.publicationFiles` | `1024` | Files in one publication directory, 1–1024. |
+| `catalogs.releaseIndexBytes` | `67108864` | Release index allocation ceiling, 1 MiBâ€“1 GiB. |
+| `catalogs.publicationStorageBytes` | `4294967296` | Conservative shared blob, publication link and incomplete file exposure ceiling, 1 byteâ€“1 PiB. Lifecycle history has separate limits. |
+| `catalogs.contentIndexBytes` | `67108864` | Shared content/reference metadata ceiling, 1 byteâ€“1 GiB. |
+| `catalogs.contentBlobs` | `1000000` | Shared immutable file count, 1â€“1000000. |
+| `catalogs.publicationFiles` | `1024` | Files in one publication directory, 1â€“1024. |
 | `catalogs.deployments` | `4096` | Deployment count, at most 100000. |
-| `catalogs.deploymentStateBytes` | `67108864` | Deployment/compiler state ceiling, 1 MiB–1 GiB. |
+| `catalogs.deploymentStateBytes` | `67108864` | Deployment/compiler state ceiling, 1 MiBâ€“1 GiB. |
 | `supplyChain` | `{"mode":"trusted-local"}` | Explicit local compatibility or `enforced` with a required policy file. |
-| `supplyChain.clockLeaseSeconds` | `5` in enforced mode | Durable future clock lease, integer 1–5 seconds; restart before its persisted floor fails closed. |
+| `supplyChain.clockLeaseSeconds` | `5` in enforced mode | Durable future clock lease, integer 1â€“5 seconds; restart before its persisted floor fails closed. |
 | `retention.terminalEntries` | `1024` | Retained terminal activation count, at most 100000. |
-| `retention.terminalTtlMillis` | `300000` | Monotonic terminal retention, 1–86400000 ms. |
+| `retention.terminalTtlMillis` | `300000` | Monotonic terminal retention, 1â€“86400000 ms. |
 | `retention.bytes` | `268435456` | Journal allocation ceiling, at most 1 GiB; all active reservations must fit. |
-| `telemetry.queueEntries` | `128` | Shared exporter queue, 1–4096 records. |
-| `telemetry.retainedEntries` | `1024` | Local diagnostic capture, 1–65536 records. |
-| `telemetry.retainedBytes` | `8388608` | Local diagnostic allocation ceiling, 64 KiB–256 MiB. |
-| `shutdownGraceMillis` | `1000` | Bounded drain/transport/runtime shutdown interval, 1–60000 ms. |
+| `telemetry.queueEntries` | `128` | Shared exporter queue, 1â€“4096 records. |
+| `telemetry.retainedEntries` | `1024` | Local diagnostic capture, 1â€“65536 records. |
+| `telemetry.retainedBytes` | `8388608` | Local diagnostic allocation ceiling, 64 KiBâ€“256 MiB. |
+| `shutdownGraceMillis` | `1000` | Bounded drain/transport/runtime shutdown interval, 1â€“60000 ms. |
 
 The [connection deadline policy](../runtime/transport-connection-deadlines.md)
 defines first authentication, maximum age, draining, reconnect/status recovery
@@ -179,7 +203,7 @@ A cell entry has `class`, `capacity`, `queueCapacity`, and `maximumMemoryBytes`.
 Known classes are `tiny`, `small`, `standard`, `large`, and `extra-large`. Omit
 disabled classes. Every configured capacity and queue is positive; larger classes
 cannot have smaller memory ceilings. Total cells are at most 64, and total cells
-plus queue capacity are at most 1024. Memory is 64 KiB–1 GiB per class.
+plus queue capacity are at most 1024. Memory is 64 KiBâ€“1 GiB per class.
 
 Compiler jobs use their own fixed workers, independently of invocation and
 management workers. Same-key waiters and ready pins are each bounded by the
@@ -204,8 +228,8 @@ does not invent CPU feature support or expose arbitrary capability/claim policy.
 
 Let `C` be total cell capacity and `Q` total queue capacity. Admission uses
 `R = C + Q`, because it reserves CPU and memory for queued work as well as
-running work. A journal activation reserves 4 MiB, so `R × 4 MiB` must fit
-`retention.bytes`. If the existing allowance also covers `(R + 1) × 4 MiB`,
+running work. A journal activation reserves 4 MiB, so `R Ã— 4 MiB` must fit
+`retention.bytes`. If the existing allowance also covers `(R + 1) Ã— 4 MiB`,
 journal, cancellation and cleanup tracking reserve one additional transient
 request. This lets a request refused by the unchanged admission ceiling retain
 its ordinary platform outcome and closed diagnostic reason. It adds no cell,
@@ -288,12 +312,12 @@ outside the cache-tampering threat boundary.
 
 | AOT field | Supported bounds and accounting |
 | --- | --- |
-| `process.jobTimeoutMillis` | 1–300000 ms, including time after reserving a queued job; independent of a caller's deadline. |
+| `process.jobTimeoutMillis` | 1â€“300000 ms, including time after reserving a queued job; independent of a caller's deadline. |
 | `process.maximumOutputBytes` | Positive and at most 256 MiB per serialized native result. |
-| `process.addressSpaceBytes` | 64 MiB–4 GiB per compiler child; includes executable mappings and trusted setup. |
-| `cache.entries` | 1–16384 native/receipt entries. Byte and metadata bounds may fill first. |
+| `process.addressSpaceBytes` | 64 MiBâ€“4 GiB per compiler child; includes executable mappings and trusted setup. |
+| `cache.entries` | 1â€“16384 native/receipt entries. Byte and metadata bounds may fill first. |
 | `cache.diskBytes` | At most 4 GiB of native payload bytes, with room for one maximum result. Default 256 MiB. Small per-entry ownership headers are separately bounded. |
-| `images.maximumImages` | 1–4096 live native mappings, including prepared/ready/active pins after resident eviction. |
+| `images.maximumImages` | 1â€“4096 live native mappings, including prepared/ready/active pins after resident eviction. |
 | `images.maximumImageBytes` | At most 256 MiB per page-rounded mapping; must fit a maximum output rounded to the host page size. |
 | `images.maximumTotalBytes` | At most 1 GiB of simultaneously owned native mappings, and at least the per-image limit. |
 
@@ -328,9 +352,9 @@ actual child exit is observed.
 
 ## Authentication and execution boundary
 
-There are 1–64 configured credentials. Tokens are unique, 32–256 ASCII characters
+There are 1â€“64 configured credentials. Tokens are unique, 32â€“256 ASCII characters
 from letters, digits, `_` and `-`. Subjects are bounded identifiers. Tenant names
-follow the manifest namespace grammar: 1–128 ASCII characters, alphanumeric ends,
+follow the manifest namespace grammar: 1â€“128 ASCII characters, alphanumeric ends,
 with internal `-`, `_` or `.` permitted.
 
 | Role | Trusted principal and access |
@@ -367,7 +391,7 @@ layout/reset settings participate in preparation compatibility identity.
 
 Use the [measured engine profiles](../../benchmarks/optimization/engine-profiles/2026-09-09-container-linux-fbb6e26/README.md)
 to assess a configuration change. In the retained four-workload comparison,
-pooling/speed reduced warm setup by 16–29 us, with higher compilation cost,
+pooling/speed reduced warm setup by 16â€“29 us, with higher compilation cost,
 sampled RSS and compiled-image charges. Its lower virtual-memory high-water
 usage does not imply lower resident memory. Pooling is an option for repeated
 prepared invocations when that tradeoff fits the workload. Speed-and-size did
@@ -603,7 +627,7 @@ spent waiting for the request body does not restart the deadline at manager entr
 One control-runtime sampler reads `/proc/pressure/cpu` and
 `/proc/pressure/memory` every 250 ms. It uses `some.avg10`: the kernel's ten-second
 trend for time during which at least some tasks stalled on that resource. The
-percentage is converted to a 0–1000 value, rounding down to whole milli units.
+percentage is converted to a 0â€“1000 value, rounding down to whole milli units.
 These are system pressure observations, distinct from CPU utilization or resident
 memory size. See the [Linux PSI documentation](https://docs.kernel.org/accounting/psi.html).
 

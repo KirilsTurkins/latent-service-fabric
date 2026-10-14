@@ -36,6 +36,11 @@ provides Start, Learn, How-to, Reference, Understand and Contribute sections.
 Choose the development documentation for this branch; published versioned guides
 describe their own release and may differ from the current source.
 
+[Changes since alpha.5](docs/start/development-changes.md) covers the newer
+source workflows: application-library capture, approved generators, immutable
+resources, composition diagnostics and explicitly configured transactions.
+Use the published version's guides for downloaded alpha.5 tools.
+
 ## What you can build
 
 | Goal | Current support | Start here |
@@ -64,8 +69,12 @@ Standalone node configuration exposes outbound HTTP, local blobs, activation
 clocks and OS-backed randomness through explicit provider installations.
 Other maintained provider integrations use trusted Rust embedding; consult the
 [provider reference](docs/reference/standalone-providers.md) before choosing a
-setup. Durable application state, transactional effects and clustering remain
-planned work. Management RPCs are local; application HTTP ingress has its own
+setup. Development now includes protected transactional state, deferred effects
+and current-authorized recovery behind explicitly selected profiles; their
+collective and packaged acceptance remains open. See
+[transaction recovery](docs/operations/transaction-recovery.md) and
+[the roadmap](docs/roadmap.md). Clustering remains planned. Management RPCs are
+local; application HTTP ingress has its own
 [listener and security configuration](docs/reference/http-ingress.md).
 
 [![Build a package, sign and admit it, then invoke a capsule or serve a website through the node.](docs/assets/package-delivery.svg)](docs/assets/package-delivery.svg)
