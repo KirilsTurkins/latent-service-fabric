@@ -23,6 +23,7 @@ pub struct TransactionResponseAuthority {
     retention: Arc<TransactionRetention>,
     operation: &'static str,
     result_retention: OnceLock<ResultRetention>,
+    original_control: Option<crate::TransactionCommitControl>,
 }
 
 impl TransactionResponseAuthority {
@@ -36,7 +37,20 @@ impl TransactionResponseAuthority {
             retention,
             operation: if query { "query-info" } else { "read-result" },
             result_retention: OnceLock::new(),
+            original_control: None,
         }
+    }
+
+    pub(super) fn original_authorization(&self) -> Arc<StateAuthorization> {
+        Arc::clone(&self.authorization)
+    }
+
+    pub(super) fn with_pre_host_control(
+        mut self,
+        control: crate::TransactionCommitControl,
+    ) -> Self {
+        self.original_control = Some(control);
+        self
     }
 
     #[must_use]
@@ -48,6 +62,15 @@ impl TransactionResponseAuthority {
     /// happen outside the callback except for one bounded nonblocking transport
     /// poll. No waiting or storage I/O is permitted; guest accounting stays closed.
     pub fn with_current(&self, publish: &mut dyn FnMut()) -> Result<(), PlatformError> {
+        let original_observed = self
+            .original_control
+            .as_ref()
+            .map(|control| {
+                control
+                    .observe_current()
+                    .ok_or_else(super::authorization::denied)
+            })
+            .transpose()?;
         // Clock observation may consult the original command role. Perform it
         // outside Policy/Namespace/Native bookkeeping locks.
         let observed = self.retention.monotonic_now();
@@ -67,21 +90,40 @@ impl TransactionResponseAuthority {
         } else {
             None
         };
+        let mut released = false;
+        let mut current_publish = || {
+            if self
+                .original_control
+                .as_ref()
+                .zip(original_observed)
+                .is_none_or(|(control, observed)| control.is_current_at(observed))
+            {
+                released = true;
+                publish();
+            }
+        };
         self.authorization
             .with_response_current(self.operation, || {
                 if self.authorization.cancelled_metadata.is_some() {
                     self.authorization.with_response_native(
                         self.retention.native(),
                         deadline.unwrap_or_else(|| self.retention.native().original_deadline()),
-                        publish,
+                        &mut current_publish,
                     )
                 } else {
                     match deadline {
-                        Some(deadline) => self.retention.with_current_until(deadline, publish),
-                        None => self.retention.with_current(publish),
+                        Some(deadline) => self
+                            .retention
+                            .with_current_until(deadline, &mut current_publish),
+                        None => self.retention.with_current(&mut current_publish),
                     }
                 }
-            })
+            })?;
+        if released {
+            Ok(())
+        } else {
+            Err(super::authorization::denied())
+        }
     }
 
     pub(super) fn bind_result(

@@ -109,18 +109,16 @@ impl NativeTransactionAdmission {
                 )
             }
             TransactionAdmissionResult::Pending(pending) => {
-                let command = pending.record().clone();
-                let proof = pending.retire_without_guest().map(Box::new);
-                // This proof still needs a fresh authorized recovery writer to
-                // persist Aborted. It is never exposed as a durable abort here.
-                (
-                    TransactionCompletionResult::PendingRetired {
-                        command,
-                        proof,
-                        retained: Arc::clone(&retained),
-                    },
-                    outcome,
-                )
+                let result = self
+                    .complete_pre_host(pending, &outcome, &control, Arc::clone(&retained))
+                    .await;
+                let observation = match &result {
+                    TransactionCompletionResult::Command(disposition) => {
+                        command_observation(disposition, consumption, original_failure)
+                    }
+                    _ => outcome,
+                };
+                (result, observation)
             }
         };
         self.publish_completion(result, observation)

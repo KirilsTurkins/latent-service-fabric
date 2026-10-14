@@ -102,9 +102,20 @@ impl TransactionCommitControl {
     }
 
     pub(crate) fn is_current(&self) -> bool {
-        !self
-            .budget
-            .retained_authority_is_cancelled_at(self.clock.monotonic_now())
+        self.is_current_at(self.clock.monotonic_now())
+    }
+
+    /// Sample the original covered clock before entering an owner fence.
+    pub(crate) fn observe_current(&self) -> Option<std::time::Instant> {
+        let observed = self.clock.monotonic_now();
+        self.is_current_at(observed).then_some(observed)
+    }
+
+    /// Recheck the original signals without consulting a clock under a fence.
+    /// A caller reusing an observation must also fence the original finite
+    /// deadline with the actual role/native owner; this cannot renew it.
+    pub(crate) fn is_current_at(&self, observed: std::time::Instant) -> bool {
+        !self.budget.retained_authority_is_cancelled_at(observed)
             && self.transport.cause().is_none()
     }
 
@@ -151,5 +162,11 @@ impl TransactionCommitControl {
             Arc::new(latent_core::SystemActivationClock),
             budget.clone(),
         )
+    }
+
+    #[cfg(all(test, unix))]
+    pub(crate) fn with_native_test_clock(mut self, clock: Arc<dyn ActivationClock>) -> Self {
+        self.clock = clock;
+        self
     }
 }

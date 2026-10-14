@@ -3,6 +3,7 @@ mod abort_recovery;
 mod admission;
 mod completion;
 mod policy;
+pub(super) mod pre_host_conflict;
 mod replay;
 mod retry;
 mod selection;
@@ -112,6 +113,7 @@ enum State {
     Pending {
         claim: Option<AdmittedCommand>,
         role: Arc<super::command_role::CommandRole>,
+        conflict: Option<pre_host_conflict::OriginalConflict>,
     },
     Ready(Option<TransactionAdmissionResult>),
     Failed,
@@ -202,10 +204,15 @@ impl NativeTransactionAdmission {
             .map_err(|_| super::authorization::denied())?;
         Ok(match &mut *state {
             State::Ready(result) => result.take(),
-            State::Pending { claim, role } => claim.take().map(|claim| {
+            State::Pending {
+                claim,
+                role,
+                conflict,
+            } => claim.take().map(|claim| {
                 TransactionAdmissionResult::Pending(super::PendingCommandAdmission {
                     claim,
                     role: Arc::clone(role),
+                    conflict: conflict.take(),
                 })
             }),
             State::Fresh(_) | State::Failed => None,

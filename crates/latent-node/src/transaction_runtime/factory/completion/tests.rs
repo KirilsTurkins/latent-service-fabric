@@ -2,6 +2,8 @@ use super::*;
 use latent_core::{ActivationTerminalState, ErrorDetail};
 use std::cell::Cell;
 
+mod pre_host_conflict;
+
 fn charged() -> BudgetConsumption {
     BudgetConsumption {
         cpu_fuel: 17,

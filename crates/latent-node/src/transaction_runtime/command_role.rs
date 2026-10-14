@@ -84,6 +84,7 @@ impl super::CommandTimeSource for CommandClock {
 pub struct PendingCommandAdmission {
     pub(super) claim: AdmittedCommand,
     pub(super) role: Arc<CommandRole>,
+    pub(super) conflict: Option<super::factory::pre_host_conflict::OriginalConflict>,
 }
 impl PendingCommandAdmission {
     #[must_use]

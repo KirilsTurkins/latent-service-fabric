@@ -149,6 +149,7 @@ impl NativeTransactionAdmission {
             *self.state.lock().map_err(|_| authorization::denied())? = State::Pending {
                 claim: None,
                 role: Arc::clone(&role),
+                conflict: None,
             };
             let input = AdmissionInput {
                 key: CommandKey {
@@ -245,7 +246,7 @@ impl NativeTransactionAdmission {
         };
         let host = StateTransactionHost::open(
             Arc::clone(&self.owners.store),
-            authorization,
+            Arc::clone(&authorization),
             envelope.activation_id.clone(),
             scope,
             command,
@@ -256,6 +257,9 @@ impl NativeTransactionAdmission {
         )
         .await
         .map_err(|failure| {
+            if failure == latent_executor::transaction::StateFailure::Conflict {
+                self.record_pre_host_conflict(&authorization, envelope);
+            }
             error(
                 match failure {
                     latent_executor::transaction::StateFailure::Conflict => {
@@ -469,6 +473,7 @@ impl NativeTransactionAdmission {
                 *state = State::Pending {
                     claim: Some(claim),
                     role,
+                    conflict: None,
                 };
                 Ok(())
             }
