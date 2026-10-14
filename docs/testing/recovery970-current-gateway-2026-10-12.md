@@ -304,6 +304,37 @@ Both response shapes remain closed. The regressions fail the previous collector;
 all related controls preserve the original no-retry and unknown-outcome checks.
 No new mutation follows a receipt lookup or an uncertain result.
 
+Dispatcher inspection reports bytes retained by accepted operations separately
+from the resident engine and worker allocation. The original reservation lock
+charges this counter and refunds it after the affine keeper and completion value
+are destroyed. The total byte budget, resident charge and worker-retirement
+requirements remain unchanged. The authenticated paused-inspection regression
+fails the old implementation; the fixed state, effect and wire library controls
+pass with all original ignore obligations retained. A zero operation counter
+alone does not establish physical engine retirement.
+
+Retained durable abort lookup and replay preserve codes recognized by the
+existing platform-error decoder. Unknown codes remain `unavailable`. These
+projections keep their original terminal classification, consumption, proof
+association and generic redacted message; they reconstruct no guest diagnostics
+or retry authority. The controls publish an actual metadata-only abort after
+affine physical retirement, reopen the original store and verify the linked
+command/result before projection. Both old mappings fail the `guest-trap`
+regression. These source controls do not replace the signed terminal campaign.
+
+The original command host binds a staging observer to its journal owner before
+guest access. Only successful insertion of a captured intent produces a witness;
+its command, attempt, transaction and publication identifiers come from the
+original admitted claim. The journal charges 2048 bytes within the existing
+record limit, retains no guest or payload, and rejects stale serials, reused
+identities, terminal updates and progress outside the original grant. Inspection
+keeps its authenticated tenant, administrator and pagination gates. Wire and CLI
+project the existing optional witness field. A maintained compiled Rust guest
+proves the complete host-to-manager-to-inspection path: the original code omits
+the witness, and the fixed path reports the actual staging before strict runtime
+teardown. This source control grants no persistence, delivery or retry authority;
+the signed Java campaigns retain their separate acceptance receipts.
+
 Recovery recognizes only the original and separately reviewed fresh HTTP
 marker. Each must match the installed component, signed companion and exact
 requirement bytes. The selected marker enters the conformance proof; the

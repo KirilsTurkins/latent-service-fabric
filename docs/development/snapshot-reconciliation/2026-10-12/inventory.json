@@ -3519,7 +3519,7 @@
       "preservedDescendantTips": [],
       "closed": false,
       "currentDeliveryPr": 970,
-      "currentDeliveryHead": "a4d3ec592ad923701154961668285c552934294f",
+      "currentDeliveryHead": "06b861ea60adb3f19c4697cc0d8e142323e402ba",
       "currentTitle": "Integrate current installed recovery and transactional HTTP management",
       "currentMergeability": "MERGEABLE",
       "historyReconciliation": {
@@ -3528,7 +3528,7 @@
         "oldBranchOnlyCommits": 1108,
         "rebuiltHead": "1641e0eccae13f0f670c66b5939dce103bba8df9",
         "rebuiltCommits": 2,
-        "currentCommits": 4,
+        "currentCommits": 36,
         "integrationBase": "90cf1f4c87ca24e9a64b077dc2eb501dcef22441",
         "intendedSource": "d3f229ec3df4b489aa2ddff49df185a940f247e9",
         "intendedTree": "878d5f2a28fa55ab359931d4a4d900c87ad0998e",
@@ -3536,7 +3536,8 @@
         "historicalEvidenceSourceIdsUnchanged": true,
         "qualificationTransferred": false,
         "contributingRule": "CONTRIBUTING.md#commit-history-and-evidence"
-      }
+      },
+      "currentDeliveryObservedAtUtc": "2026-10-14T00:12:39.548135+00:00"
     },
     {
       "pullRequest": 971,
@@ -3820,7 +3821,7 @@
   "remainingOpenCount": 1,
   "lastVerifiedOpenCount": 1,
   "latestRemoteObservation": {
-    "observedAtUtc": "2026-10-13T12:27:10.730192+00:00",
+    "observedAtUtc": "2026-10-14T00:12:39.548135+00:00",
     "openCount": 1,
     "snapshotPrs": [
       970
