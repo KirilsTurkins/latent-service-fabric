@@ -30,6 +30,29 @@ authenticated operator. Neither runs or deploys a guest. Definition support,
 preparation, live observation and execution are separate result fields. An
 unobserved authority field stays unobserved; a package digest grants no access.
 
+Keep the declaration tied to the outputs you actually inspected:
+
+| Input | Source to retain |
+| --- | --- |
+| Package/component/contract digests and local byte paths | The same captured build, package inspection and extracted WIT metadata; paths resolve relative to the composition file |
+| Tenant, publication and deployment generation | Your authenticated node configuration and exact admitted deployment, not an arbitrary digest substituted for a publication ID |
+| Revision, route and HTTP/provider binding selection | Current target inspection and configured provider/policy records; preserve generations as full-width decimal strings |
+| Language, WIT shape and profile | The selected compiler's actual output and the support matrix; an unlisted combination remains untested |
+
+For a separately installed operator instead of a developer workspace, select its
+absolute executable path, exact `sha256:<64-lowercase-hex>` byte identity and
+private configuration explicitly:
+
+```bash
+latent-dev dev preflight --input "$Composition" \
+  --operator "$Operator" --operator-sha256 "$OperatorSha256" --config "$OperatorConfig"
+```
+
+Do not combine `--operator` with `--workspace`. The digest selects already
+authenticated operator bytes; it supplies no publisher, tenant or application
+authority. This path still performs read-only inspection/preparation and never
+repairs, deploys or repeats an application call automatically.
+
 ## Inspect the exact installed target
 
 For an existing Java HTTP installation, set `Publication` to its real

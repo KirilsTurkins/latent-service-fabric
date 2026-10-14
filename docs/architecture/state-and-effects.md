@@ -5,9 +5,15 @@ defines host-owned serializable commands, durable outcomes and independent bound
 queries. Its [executable reference model](../../crates/latent-commit/src/model/mod.rs)
 and schedules establish decision consistency, not storage/power-loss, authenticated
 runtime or physical cleanup proof. Runtime enablement belongs to the implementation
-owners below. Current supported activations retain the stateless capability profile;
-management receipts/audit/provider cleanup are operational records, not application
-state transactions. See the [activation lifecycle](../activation-lifecycle.md).
+owners below. Stateless activations retain their existing capability profile.
+Development additionally installs the explicit `lsf-host-abi-phase4-v1` command,
+query and intent profile through the
+[configured transaction runtime](../development/installed-transaction-rpc.md).
+It requires protected storage, current namespace/result/effect authority and
+the signed companion; it is not enabled by an ordinary stateless deployment.
+Management receipts and the audit journal alone do not provide an application
+transaction. See the [activation lifecycle](../activation-lifecycle.md) and
+[transaction recovery](../operations/transaction-recovery.md).
 
 Phase 3 gate #240, all six guest SDKs (#544–#549) and the packaged developer workflow
 #559 are completed foundations. The [Phase 4 roadmap](../roadmap.md#phase-4-state-and-effects)
