@@ -51,6 +51,16 @@ the old byte approval boundary and adds separate current proposal inspection.
 Its complete signed/operator campaign is still pending; the earlier native
 receipt below does not qualify these new gateway bytes.
 
+The [2026-10-14 clean-source progress packet](evidence/recovery970-current-progress-2026-10-14.json)
+records 1,958 passing active controls, 66 preserved ignores, three real guest
+controls and six native tools on exact source `6a380a5990b0`. Its separate early
+HTTP programme passed. The complete terminal programme failed at pre-host stale
+conflict abort persistence, and the pending restore/close programme failed at a
+nested publication/policy fence during original resume. All four individual
+post-stage fault cases passed, including measured native memory exhaustion and
+its original durable abort. Those individual results do not qualify either
+failed complete programme or transfer to later source changes.
+
 The [clean signed early HTTP receipt](evidence/java-early-http-clean-source-2026-10-13.json)
 records source `7c4a0dcc`, compiler source `47e4e607`, and six separately frozen
 native tools. Five actual HTTP exchanges prove typed immediate denial,
@@ -58,7 +68,7 @@ byte-identical duplicate and retained-result replay, unchanged business state,
 zero TCP contact and physical retirement of four node sessions. The protected
 clock concurrency regression failed on the original source and passed after
 sampling and publication were serialized. This qualifies the separate early
-fixture only; terminal recovery, pending restore/close, original post-stage
+fixture on that source only; terminal recovery, pending restore/close, original post-stage
 rollback and packaged distribution acceptance remain unqualified.
 
 Earlier early-fixture zero-root failure observations queried the ordinary

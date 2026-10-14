@@ -2,9 +2,10 @@
 
 PR #970 retains the original authenticated graph and restored-effect receipt
 owners, and now wraps the current protected store instead of reinstalling a
-competing runtime. Complete signed Java/operator qualification is still pending.
-The earlier 573-case receipt binds the earlier source checkpoint and is not a
-receipt for this new gateway.
+competing runtime. The latest [clean-source progress packet](evidence/recovery970-current-progress-2026-10-14.json)
+records passing native and early HTTP controls, with the complete terminal and
+pending restore/close programmes still unqualified. Every receipt keeps its
+actual tested source; the earlier 573-case receipt binds its earlier checkpoint.
 
 The gateway authenticates the protected-file administrator credential, exact
 tenant and configured publication. It retains current publication/package
@@ -297,10 +298,10 @@ post-stage immediate-HTTP rollback case or the terminal and pending programmes.
 
 The current dispatcher CLI includes a recovery selector with the original
 operation, action, tenant, scope and owner generation. The pending collector
-checks that exact selector on the mutation response, including
-`automaticRetry=false`. The read-only operation lookup must match the original
-receipt and durable audit acknowledgement; it has no mutation recovery selector.
-Both response shapes remain closed. The regressions fail the previous collector;
+checks that exact selector on both the mutation response and the read-only
+operation lookup, including `automaticRetry=false`. The lookup must also match
+the original receipt and durable audit acknowledgement. Both response shapes
+remain closed. The regressions fail the previous collector;
 all related controls preserve the original no-retry and unknown-outcome checks.
 No new mutation follows a receipt lookup or an uncertain result.
 
@@ -367,6 +368,43 @@ original proof remains byte-for-byte unchanged. The fresh-marker regression
 fails the old source, and twelve recovery plus seven clock controls pass with
 the fix. Unknown, changed and mixed associations remain refused. These are
 controlled-owner results, independent of signed recovery acceptance.
+
+## 2026-10-14 clean-source progress
+
+The [progress packet](evidence/recovery970-current-progress-2026-10-14.json)
+binds source `6a380a5990b0d0138fc138e74125c4cf2fe01bea`, tree
+`75971ef5753fb1271f6f59925d0883bab589e9ba` and 9,494 verified tracked files.
+All 1,958 active native controls pass across eleven libraries; all 66 original
+ignores remain registered. Three explicit compiled-guest controls pass, and six
+independently copied native tools were built from that exact clean source.
+The packet records the actual compiler profiles, tool hashes, collector bytes
+and private receipt hashes. Later documentation commits do not change that
+execution identity.
+
+| Signed programme on that source | Actual result |
+| --- | --- |
+| Early HTTP denial | Passed with typed denial, unchanged business state, zero TCP contact and physical retirement. |
+| Terminal recovery | Failed at stale-edit abort proof after eighteen measured cases. All four individual post-stage trap, fuel, cancellation and native-memory cases passed; the memory case satisfied the existing strict diagnostic and original durable-abort checks. |
+| Pending restore/close | Failed at the original offline resume after nine measured cases. Namespace inspection, snapshot and catalogue retirement succeeded; the retained effect remained literal unattempted Pending work. |
+
+The terminal stale precondition returned `recovery-required` without a durable
+abort fence. The pending resume refused a nested publication/policy fence;
+neither refusal supplies a terminal result or retry authority. Both failed
+attempts remain preserved and unqualified. Their separate fixes require fresh
+native tools and complete signed programmes before these results can advance.
+
+The new [native-memory capture packet](evidence/java-current-native-memory-capture-2026-10-14.json)
+contains six actual captures from clean compiler source `eba0d96e`. The five
+ordinary components remain unchanged. The diagnostic memory probe uses bounded
+direct buffers under the original 4 MiB Java heap and 64 MiB native grant;
+it does not relabel the earlier managed-heap trap as native exhaustion.
+The closed custody controls passed nineteen signer cases, fifty-two actual
+signing/material/tamper checks and eighteen Python cases. Those checks remain
+separate from complete runtime and packaged-distribution acceptance.
+
+Issues #707, #399, #388, #391, #709 and #718 remain open for their broader
+requirements. No ticket closure is inferred from this progress packet or the
+51 successful/skipped hosted checks observed on `6a380a5990b0`.
 
 The [hosted WSL image receipt](evidence/recovery970-wsl-hosted-image-2026-10-13.json)
 records actual successful assembly and inspection of 133 candidate files,
