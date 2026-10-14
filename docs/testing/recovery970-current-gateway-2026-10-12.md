@@ -304,6 +304,23 @@ Both response shapes remain closed. The regressions fail the previous collector;
 all related controls preserve the original no-retry and unknown-outcome checks.
 No new mutation follows a receipt lookup or an uncertain result.
 
+The explicit read-only observers can consume up to eight attempts when a
+dispatcher inspection or original-command lookup returns the closed
+`resource-exhausted` transport response. Each refused read remains recorded with
+its dispatched, unknown outcome. The observers keep the original absolute
+cutoff, ten-second drain bound and 256-call campaign limit; they infer no result
+until the actual audited response passes its original checks. Mutation, receipt
+replay and cancellation calls retain their single-call behavior.
+
+A stored pending command lookup reports `RECOVERY_REQUIRED`,
+`outcomeKnown=false` and `metadataDurable=false`. These conservative fields are
+preserved. The collector verifies the original key, scope, source and distinct
+retention identities, then requires the current original host's running staging
+witness before issuing the one cancellation request. The stored description
+supplies no live owner, commit or abort authority. Fifty-five focused controls
+pass with all original cases and CI fixture guards retained; collector identity
+also binds the new observer helper bytes.
+
 Dispatcher inspection reports bytes retained by accepted operations separately
 from the resident engine and worker allocation. The original reservation lock
 charges this counter and refunds it after the affine keeper and completion value
