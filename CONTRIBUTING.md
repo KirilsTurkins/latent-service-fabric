@@ -83,12 +83,20 @@ through their documented explicit commands or manual workflow inputs.
 
 ## Commit history and evidence
 
-Before final review, inspect both `git log origin/development..HEAD` and
-`git diff origin/development...HEAD`. The commits must describe the actual PR
-diff. When a parent PR has been squash-merged, reconcile a stacked branch onto
-the current target before delivery so it does not present the parent's original
-commits, checkpoint merges or already delivered work as new changes. Temporary
-integration history may be retained on preservation refs while parent CI runs.
+For temporary stacked review, target the parent branch and identify the parent
+PR in the description. Review only the child leaf with
+`git log origin/<parent-branch>..HEAD` and
+`git diff origin/<parent-branch>...HEAD`. Preserve temporary integration history
+on separate refs while the parent is under review.
+
+After the parent has actually been squash-merged, reconstruct the reviewed leaf
+on current `development` and restore the PR base to `development`. Before final
+review, inspect both `git log origin/development..HEAD` and
+`git diff origin/development...HEAD`: they must describe the actual PR diff
+without presenting the parent's original commits, checkpoint merges or already
+delivered work as new changes. Run fresh main and security CI on that final
+head and base. Branch-filtered security workflows may not run against a
+temporary parent base; earlier stacked checks do not replace final-base CI.
 
 Use factual commit messages. Describe what the commit changes; claim a test,
 qualification, merge or issue closure only when the recorded evidence establishes
