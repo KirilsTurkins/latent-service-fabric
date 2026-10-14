@@ -16,20 +16,28 @@ function sections(items, groups, remainder) {
 export function buildSidebars(pages) {
   const sidebars = {start: [], learn: [], howTo: [], reference: [], understand: [], contribute: [], records: []};
   const start = new Set(['reference/standalone-node', 'installation']);
-  const libraryGuides = ['rust', 'c', 'typescript', 'go', 'java', 'dotnet']
-    .map(language => `component-development/${language}-library-authoring`);
+  const libraryGuides = ['rust-library-authoring', 'c-dependencies', 'typescript-library-authoring',
+    'go-library-authoring', 'java-dependencies', 'dotnet-dependencies']
+    .map(name => `component-development/${name}`);
+  const generatorGuides = ['rust-dependencies', 'c-generators', 'typescript-generators', 'go-generators', 'java-generators']
+    .map(name => `component-development/${name}`);
   const howTo = new Set(['phase-2-delivery', 'component-development/portable-tests',
-    'component-development/devcontainer', ...libraryGuides]);
+    'component-development/devcontainer', ...libraryGuides, ...generatorGuides]);
   const references = new Set(['phase-2-operator-workflows', 'phase-2-rollouts', 'phase-2-rollback',
     'phase-2-canary-promotion', 'phase-2-canary-observation', 'phase-2-audit',
     'component-development/guest-sdk',
     'component-development/packaging', 'component-development/sbom', 'component-development/static-sites',
+    'component-development/application-dependencies', 'component-development/packaged-resources',
+    'component-development/library-compatibility', 'component-development/go-dependencies', 'component-development/typescript-dependencies',
+    'component-development/server-source', 'component-development/java-httpserver', 'component-development/java-http-context',
+    'component-development/java-http-composition', 'component-development/java-httpurlconnection',
     ...['rust', 'c', 'typescript', 'go', 'java', 'dotnet'].map(language => `component-development/${language}-authoring`)]);
   const maintenance = new Set(['operations/maintained-security-monitoring', 'operations/native-release-promotion',
     'how-to/exercise-provider-failure-and-recovery']);
   for (const page of pages.filter(page => page.source.startsWith('docs/'))) {
     let group = 'understand';
-    if (page.id === 'roadmap' || /^(phase-[01]-|phase-[23]-.*(?:completion|review)$|phase3-management-integration$|evidence\/|architecture\/cluster-freshness-handoff$|protocol\/phase-1-contract-hardening$)/.test(page.id)) group = 'records';
+    if (page.id === 'roadmap' || /^(phase-[01]-|phase-[23]-.*(?:completion|review)$|phase3-management-integration$|evidence\/|architecture\/cluster-freshness-handoff$|protocol\/phase-1-contract-hardening$)/.test(page.id)
+      || /^development\/(?:phase4-handoffs\/|sdk-handoffs\/|snapshot-reconciliation\/|(?:java|rust)-runtime-reconciliation\/|typescript-runtime-reconciliation$|documentation-audit-|angular-dependency-reconciliation-)/.test(page.id)) group = 'records';
     else if (start.has(page.id) || page.id.startsWith('start/')) group = 'start';
     else if (references.has(page.id)) group = 'reference';
     else if (maintenance.has(page.id)) group = 'contribute';
@@ -46,6 +54,7 @@ export function buildSidebars(pages) {
     {label: 'Your first application', collapsed: false, ids: ['start/index', 'start/application-development', 'start/developer-setup', 'start/development-workspace']},
     {label: 'Install a node', ids: ['installation', 'reference/standalone-node']},
     {label: 'Build from source', ids: ['start/first-node']},
+    {label: 'After alpha.5', ids: ['start/development-changes']},
   ], 'Getting started');
   sidebars.learn = sections(sidebars.learn, [
     {label: 'Write and run capsules', collapsed: false, ids: ['component-development/creating-a-capsule',
@@ -56,8 +65,10 @@ export function buildSidebars(pages) {
     {label: 'Contracts and execution', ids: ['learn/runtime-identities', 'learn/read-contracts-and-evidence']},
   ], 'Application concepts');
   sidebars.howTo = sections(sidebars.howTo, [
-    {label: 'Application development', ids: ['how-to/developer-commands', 'component-development/portable-tests',
-      'component-development/devcontainer', ...libraryGuides]},
+    {label: 'Application development', ids: ['how-to/developer-commands', 'how-to/inspect-a-composition',
+      'component-development/portable-tests', 'component-development/devcontainer']},
+    {label: 'Libraries and generated source', ids: ['how-to/add-application-libraries', ...libraryGuides, ...generatorGuides]},
+    {label: 'Transactions and effects', ids: ['operations/transaction-recovery']},
     {label: 'Web delivery', ids: ['how-to/deliver-a-website', 'how-to/serve-angular-and-docusaurus',
       'how-to/static-site-and-api', 'operations/static-release-workflow', 'operations/static-route-sets',
       'operations/static-compression', 'operations/publication-retention', 'how-to/diagnose-angular-delivery']},
@@ -74,7 +85,12 @@ export function buildSidebars(pages) {
     {label: 'Capsules and publication', ids: ['component-development/guest-sdk',
       'reference/developer-test-fixtures', 'component-development/packaging', 'component-development/sbom'],
       match: id => /^reference\/(?:publication|publisher|package|build-provenance|release|oci|raw-artifact)/.test(id)},
-    {label: 'HTTP and web delivery', ids: ['component-development/static-sites'], match: id => /^reference\/(?:http|web)/.test(id)},
+    {label: 'HTTP and web delivery', ids: ['component-development/static-sites', 'component-development/server-source',
+      'component-development/java-httpserver', 'component-development/java-http-context', 'component-development/java-http-composition',
+      'component-development/java-httpurlconnection'], match: id => /^reference\/(?:http|web)/.test(id)},
+    {label: 'Application inputs', ids: ['component-development/application-dependencies',
+      'component-development/packaged-resources', 'component-development/library-compatibility',
+      'component-development/go-dependencies', 'component-development/typescript-dependencies']},
     {label: 'Rollouts and recovery', match: id => id.startsWith('phase-2-')},
   ], 'Protocols and management');
   sidebars.understand = sections(sidebars.understand, [
