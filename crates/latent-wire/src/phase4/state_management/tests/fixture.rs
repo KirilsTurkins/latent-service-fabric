@@ -53,6 +53,19 @@ impl StateManagementReservation for Reservation {
         }
         self.native.with_live(action).map_err(|_| expired())
     }
+    fn with_live_until(
+        &self,
+        deadline: Instant,
+        action: &mut dyn FnMut(),
+    ) -> Result<(), PlatformError> {
+        let previous = self.fences.fetch_add(1, Ordering::Relaxed);
+        if previous >= self.reject_after.load(Ordering::Relaxed) {
+            return Err(expired());
+        }
+        self.native
+            .with_live_until(deadline, action)
+            .map_err(|_| expired())
+    }
 }
 impl StateManagementAdmission for Admission {
     fn native_capacity(&self) -> latent_core::native_capacity::NativeCapacityOwner {
@@ -156,6 +169,22 @@ impl Fixture {
         io: Option<latent_state::store_io::StoreIoLimits>,
         native: latent_core::native_capacity::NativeCapacityOwner,
     ) -> Self {
+        Self::configured(audited, io, native, None).await
+    }
+    pub async fn with_effect_authority(
+        authority: &latent_effects::authority::EffectAuthorityOwner,
+    ) -> Self {
+        let mut limits = latent_core::native_capacity::NativeCapacityLimits::default();
+        limits.recovery.bytes = 64 * 1024 * 1024;
+        let native = latent_core::native_capacity::NativeCapacityOwner::new(limits).unwrap();
+        Self::configured(true, None, native, Some(authority.rejection_observer())).await
+    }
+    async fn configured(
+        audited: bool,
+        io: Option<latent_state::store_io::StoreIoLimits>,
+        native: latent_core::native_capacity::NativeCapacityOwner,
+        observer: Option<Arc<dyn latent_core::authority_rejection::AuthorityRejectionObserver>>,
+    ) -> Self {
         let directory = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let directory = tempfile::tempdir_in(directory).unwrap();
@@ -167,6 +196,12 @@ impl Fixture {
             )
             .unwrap(),
         );
+        if let Some(observer) = &observer {
+            catalog
+                .lifecycle_authority()
+                .install_rejection_observer(Arc::clone(observer))
+                .unwrap();
+        }
         let publication = publish(&catalog, "first").await;
         let component = publication.1;
         let publication = publication.0;
@@ -178,6 +213,9 @@ impl Fixture {
             )
             .unwrap(),
         );
+        if let Some(observer) = observer {
+            policy.install_rejection_observer(observer).unwrap();
+        }
         let document = json!({"formatVersion":1,"tenant":"a","rules":[rule("alice", &publication, audited),rule("bob", &publication, audited)]});
         let updated = policy
             .mutate(
@@ -212,13 +250,7 @@ impl Fixture {
                 |_| Ok(()),
             )
             .unwrap();
-        let mut config = ProtectedStoreConfig::bounded_linux(directory.path().join("store"));
-        if let Some(io) = io {
-            config.io = io;
-        }
-        fs::create_dir(&config.root).unwrap();
-        fs::set_permissions(&config.root, fs::Permissions::from_mode(0o700)).unwrap();
-        config.create_if_missing = true;
+        let config = store_config(directory.path().join("store"), io);
         let store = Arc::new(start(config.clone()).await);
         store.bind_native_capacity(&native).unwrap();
         let admission = Arc::new(Admission::new(native));
@@ -336,6 +368,20 @@ impl Fixture {
         }
         assert_eq!(self.admission.budget.outstanding_reservations(), 0);
     }
+}
+
+fn store_config(
+    root: PathBuf,
+    io: Option<latent_state::store_io::StoreIoLimits>,
+) -> ProtectedStoreConfig {
+    let mut config = ProtectedStoreConfig::bounded_linux(root);
+    if let Some(io) = io {
+        config.io = io;
+    }
+    fs::create_dir(&config.root).unwrap();
+    fs::set_permissions(&config.root, fs::Permissions::from_mode(0o700)).unwrap();
+    config.create_if_missing = true;
+    config
 }
 fn open_audit(path: &std::path::Path) -> (latent_audit::AuditHandle, latent_audit::AuditWorker) {
     let (handle, worker) = latent_audit::DirectoryPhase2AuditJournal::open(

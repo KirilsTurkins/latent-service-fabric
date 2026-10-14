@@ -1,5 +1,6 @@
 use super::*;
 mod fixture;
+mod inspection;
 mod provider;
 use fixture::{mutation, operator, setup};
 

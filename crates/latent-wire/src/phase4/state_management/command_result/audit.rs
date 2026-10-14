@@ -23,6 +23,10 @@ pub(super) async fn begin(
             hash.update(b"commit\0");
             hash.update(value.encode_to_vec());
         }
+        contract::Request::GetEffect(value) => {
+            hash.update(b"effect\0");
+            hash.update(value.encode_to_vec());
+        }
         _ => return Err(invalid()),
     }
     super::super::audit::begin_operation(

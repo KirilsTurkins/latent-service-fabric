@@ -511,6 +511,10 @@ fn target(request: &contract::Request) -> Result<RequestedTarget<'_>, PlatformEr
             value.command.as_ref(),
             value.authorization_publication.as_ref(),
         )),
+        contract::Request::GetEffect(value) => Some((
+            value.command.as_ref(),
+            value.authorization_publication.as_ref(),
+        )),
         _ => None,
     };
     if let Some((command, publication)) = lookup {

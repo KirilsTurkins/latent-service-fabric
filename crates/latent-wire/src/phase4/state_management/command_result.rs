@@ -1,6 +1,7 @@
 //! Original-result reads share the protected store and recovery capacity owner.
 mod audit;
 mod authority;
+mod effect;
 mod projection;
 
 use super::{
@@ -56,7 +57,9 @@ impl ReadError {
 pub(super) fn handles(request: &contract::Request) -> bool {
     matches!(
         request,
-        contract::Request::LookupCommand(_) | contract::Request::LookupCommit(_)
+        contract::Request::LookupCommand(_)
+            | contract::Request::LookupCommit(_)
+            | contract::Request::GetEffect(_)
     )
 }
 
@@ -76,6 +79,11 @@ pub(super) async fn execute(
     let caller =
         recovery_bindings::scope(&inner, &context, selector.shared_recovery_scope.as_deref())?;
     let started = inner.services.clock.monotonic_now();
+    let operation = if matches!(request, contract::Request::GetEffect(_)) {
+        "inspect-effect"
+    } else {
+        "read-result"
+    };
     let decision = authorization::EffectDecision {
         services: &inner.services,
         binding: &binding,
@@ -85,7 +93,7 @@ pub(super) async fn execute(
         deadline,
         input_bytes: request.encoded_len(),
     }
-    .seal("read-result")?;
+    .seal(operation)?;
     let mut policy_deadline = None;
     inner
         .services
@@ -185,6 +193,7 @@ fn selector(request: &contract::Request) -> Result<&t::CommandSelector, Platform
     match request {
         contract::Request::LookupCommand(value) => value.command.as_ref().ok_or_else(invalid),
         contract::Request::LookupCommit(value) => value.command.as_ref().ok_or_else(invalid),
+        contract::Request::GetEffect(value) => value.command.as_ref().ok_or_else(invalid),
         _ => Err(invalid()),
     }
 }
@@ -249,7 +258,10 @@ fn lookup(
         window,
         read,
     });
-    let response = projection::response(request, &record, result.as_ref())?;
+    let response = match request {
+        contract::Request::GetEffect(value) => effect::response(&view, &record, value, time)?,
+        _ => projection::response(request, &record, result.as_ref())?,
+    };
     Ok((response, owner))
 }
 

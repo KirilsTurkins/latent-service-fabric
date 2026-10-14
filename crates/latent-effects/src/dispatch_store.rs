@@ -18,8 +18,8 @@ mod codec;
 pub mod control;
 pub mod effect_management;
 pub use catalog::{
-    ClaimedEffect, DispatchCatalog, DispatchCounts, DispatchEpoch, DuePage, HistoryPage,
-    RetainedEffectRows,
+    ClaimedEffect, DispatchCatalog, DispatchCounts, DispatchEpoch, DuePage, EffectInspection,
+    HistoryPage, RetainedEffectRows,
 };
 pub use codec::{DispatchStoreError, HistoryRecord};
 
