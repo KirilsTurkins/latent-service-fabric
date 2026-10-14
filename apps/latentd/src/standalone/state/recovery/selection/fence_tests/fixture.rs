@@ -96,11 +96,23 @@ impl Fixture {
         Self::configured(false, true).await
     }
 
+    pub async fn for_restore_targets(targets: &[&ProtectedStoreConfig]) -> Self {
+        Self::configured_with_targets(true, false, Some(targets)).await
+    }
+
+    async fn configured(restore: bool, short_policy: bool) -> Self {
+        Self::configured_with_targets(restore, short_policy, None).await
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "One real signed subject pair, original native reservation, policy and protected writer constructs the final-fence controls"
     )]
-    async fn configured(restore: bool, short_policy: bool) -> Self {
+    async fn configured_with_targets(
+        restore: bool,
+        short_policy: bool,
+        targets: Option<&[&ProtectedStoreConfig]>,
+    ) -> Self {
         let root = tempfile::tempdir().unwrap();
         let schema = SchemaId::from_definition(b"final-fence-test-schema").unwrap();
         let companion = serde_json::to_vec(
@@ -209,12 +221,16 @@ impl Fixture {
             Arc::new(SystemActivationClock),
         )
         .unwrap();
+        let work_bytes = match targets {
+            None => config.startup_memory_bytes(0).unwrap() + 9 * 1024 * 1024,
+            Some(targets) => restore_target_work_bytes(&config, targets),
+        };
         let original = Arc::new(
             native
                 .reserve(
                     NativeAdmissionClass::Recovery,
                     NativeReservationRequest {
-                        work_bytes: config.startup_memory_bytes(0).unwrap() + 9 * 1024 * 1024,
+                        work_bytes,
                         response_bytes: 2 * 1024 * 1024,
                         ..Default::default()
                     },
@@ -403,6 +419,29 @@ impl Fixture {
     }
 }
 
+fn restore_target_work_bytes(
+    source: &ProtectedStoreConfig,
+    targets: &[&ProtectedStoreConfig],
+) -> u64 {
+    let original = source.startup_memory_bytes(0).unwrap() + 9 * 1024 * 1024;
+    targets.iter().fold(original, |bytes, target| {
+        let initializing = target
+            .startup_memory_bytes(0)
+            .unwrap()
+            .checked_add(source.io.resident_bytes)
+            .and_then(|value| value.checked_add(1024 * 1024))
+            .unwrap();
+        let reading = source
+            .io
+            .resident_bytes
+            .checked_add(target.io.resident_bytes)
+            .and_then(|value| value.checked_add(1024 * 1024))
+            .and_then(|value| value.checked_add(8 * 1024 * 1024))
+            .unwrap();
+        bytes.max(initializing).max(reading)
+    })
+}
+
 fn evidence(operation: Arc<RecoverySource>, schema: &SchemaId, companion: &[u8]) -> SchemaEvidence {
     let package = operation.publication().package().unwrap().as_str();
     let package_digest = super::super::super::assets::digest_bytes(package).unwrap();
@@ -446,5 +485,6 @@ fn restore_action(root: &std::path::Path) -> Action {
         manifest_digest: format!("sha256:{}", "2".repeat(64)),
         destination_checkpoint_root: root.join("restored-checkpoint"),
         window_acknowledgement: format!("sha256:{}", "3".repeat(64)),
+        destination_store_identity: None,
     }
 }

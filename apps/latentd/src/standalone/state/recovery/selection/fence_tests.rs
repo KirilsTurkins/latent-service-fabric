@@ -1,6 +1,7 @@
 //! Actual Codecs final acceptance on real signed sources, policy and native writer.
 mod fixture;
 mod joint;
+mod restore_target;
 use fixture::Fixture;
 use latent_state::embedded::StoreError;
 

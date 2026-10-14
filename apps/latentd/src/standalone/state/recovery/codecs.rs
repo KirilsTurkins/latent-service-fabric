@@ -125,6 +125,22 @@ impl Codecs {
         }
         self.catalog.closure(view, self.authority.deadline)
     }
+    pub(super) fn restored_closure(&self, view: &ReadView) -> Result<SnapshotClosure, StoreError> {
+        self.check()?;
+        let identity = self
+            .action
+            .restore_destination_identity(&self.identity)
+            .map_err(|_| StoreError::Invalid)?;
+        super::super::validation::validate(view, &identity, &self.quotas, &self.original)?;
+        let owner = DispatchCatalog::checkpoint(view)?.ok_or(StoreError::Corrupt)?;
+        if owner.0 < self.checkpoint.dispatch_owner_epoch()
+            || owner.1 < self.checkpoint.clock_floor_millis()
+            || self.time()?.unix_millis < owner.1
+        {
+            return Err(StoreError::Unavailable);
+        }
+        self.catalog.closure(view, self.authority.deadline)
+    }
     pub fn artifact(&self, artifact: &RequiredArtifact) -> Result<(), StoreError> {
         self.check()?;
         if self.catalog.artifacts.contains(artifact) {

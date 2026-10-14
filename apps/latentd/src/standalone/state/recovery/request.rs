@@ -1,5 +1,6 @@
 //! Bounded operation data. Neither an operation ID nor a digest is authority.
 use latent_core::{PlatformError, PublicationId};
+use latent_state::store_identity::StoreIdentity;
 use serde::Deserialize;
 use std::path::PathBuf;
 
@@ -40,6 +41,8 @@ pub(super) enum Action {
         snapshot_digest: String,
         manifest_digest: String,
         destination_checkpoint_root: PathBuf,
+        #[serde(default, deserialize_with = "restore_identity")]
+        destination_store_identity: Option<StoreIdentity>,
     },
     Restore {
         file: File,
@@ -49,6 +52,8 @@ pub(super) enum Action {
         manifest_digest: String,
         destination_checkpoint_root: PathBuf,
         window_acknowledgement: String,
+        #[serde(default, deserialize_with = "restore_identity")]
+        destination_store_identity: Option<StoreIdentity>,
     },
     StageMigration {
         operation_id: String,
@@ -105,6 +110,21 @@ pub(super) struct File {
     pub name: String,
 }
 
+fn validated_restore_identity(
+    identity: Option<String>,
+) -> Result<Option<StoreIdentity>, latent_state::embedded::StoreError> {
+    identity.map(StoreIdentity::new).transpose()
+}
+
+fn restore_identity<'de, D>(deserializer: D) -> Result<Option<StoreIdentity>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let identity = Option::<String>::deserialize(deserializer)?;
+    validated_restore_identity(identity)
+        .map_err(|_| serde::de::Error::custom("invalid restore destination identity"))
+}
+
 impl NativeRecoveryRequest {
     pub fn decode(bytes: &[u8]) -> Result<Self, PlatformError> {
         if bytes.is_empty() || bytes.len() > 16_384 {
@@ -136,7 +156,29 @@ impl NativeRecoveryRequest {
         Ok(request)
     }
 }
+
+#[cfg(test)]
+mod restore_target_tests;
 impl Action {
+    pub(super) fn restore_destination_identity(
+        &self,
+        source: &StoreIdentity,
+    ) -> Result<StoreIdentity, PlatformError> {
+        match self {
+            Self::InspectRestore {
+                destination_store_identity,
+                ..
+            }
+            | Self::Restore {
+                destination_store_identity,
+                ..
+            } => Ok(destination_store_identity
+                .clone()
+                .unwrap_or_else(|| source.clone())),
+            _ => Err(super::denied()),
+        }
+    }
+
     pub const fn purposes(&self) -> &'static [&'static str] {
         match self {
             Self::Snapshot { .. } => &["namespace-snapshot"],
@@ -267,6 +309,7 @@ impl Action {
                 snapshot_digest,
                 manifest_digest,
                 destination_checkpoint_root,
+                ..
             }
             | Self::Restore {
                 file: input,
