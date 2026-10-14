@@ -2373,14 +2373,21 @@
         "runtime::tests::scheduling::compatible_retained_decoders_dispatch_old_and_new_publications_without_reinterpreting_payloads",
         "runtime::tests::scheduling::exact_retained_profile_inventory_blocks_missing_decoder_without_redirecting",
         "runtime::tests::scheduling::indexed_hot_tenant_backlog_does_not_starve_cold_tenant_or_allocate_backlog_workers",
-        "runtime::tests::scheduling::pause_and_current_revocation_prevent_claim_without_refunding_unrelated_live_work"
+        "runtime::tests::scheduling::pause_and_current_revocation_prevent_claim_without_refunding_unrelated_live_work",
+        "runtime::tests::startup::startup_release_keeps_saved_pause_and_literal_pending_effect_across_owner_restart",
+        "runtime::tests::startup::current_pause_winning_readiness_release_remains_the_original_operator_intent",
+        "runtime::tests::startup::managed_resume_under_bootstrap_hold_waits_for_actual_readiness_release",
+        "runtime::tests::startup::ordinary_configured_pause_and_managed_resume_keep_original_no_hold_semantics",
+        "runtime::tests::startup::startup_release_refuses_current_restore_review_closed_and_discontinuous_owners",
+        "runtime::tests::startup::unknown_accepted_pause_cannot_be_cleared_by_startup_release",
+        "runtime::tests::startup::non_http_readiness_keeps_historical_resume_paused_until_current_owner_resume"
       ],
       "expectedIgnored": [],
       "id": "latent-effects.lib.latent-effects",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 150,
+      "minimumCases": 157,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [
@@ -10072,7 +10079,11 @@
         "standalone::state::recovery::selection::fence_tests::joint::second_original_restore_decision_revision_remains_required_in_joint_fence",
         "standalone::state::recovery::selection::fence_tests::original_clock_regression_or_foreign_purpose_refuses_actual_metadata_acceptance",
         "standalone::state::recovery::selection::fence_tests::original_native_close_refuses_accepted_writer_until_real_keeper_and_store_retire",
-        "standalone::state::recovery::selection::fence_tests::revoked_primary_or_secondary_signed_publication_refuses_actual_metadata_acceptance"
+        "standalone::state::recovery::selection::fence_tests::revoked_primary_or_secondary_signed_publication_refuses_actual_metadata_acceptance",
+        "standalone::state::runtime::tests::startup::actual_installed_http_readiness_preserves_saved_pause_after_new_dispatcher_epoch",
+        "standalone::state::runtime::tests::startup::actual_fresh_installed_http_readiness_releases_only_derived_bootstrap_hold",
+        "standalone::state::runtime::tests::startup::actual_ready_non_http_runtime_keeps_default_pause_then_accepts_current_managed_resume",
+        "standalone::state::runtime::tests::startup::actual_current_non_http_resume_under_bootstrap_hold_waits_for_readiness"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10141,7 +10152,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 397,
+      "minimumCases": 401,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

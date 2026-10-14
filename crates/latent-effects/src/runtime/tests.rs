@@ -37,6 +37,7 @@ mod ownership;
 mod pressure;
 mod recovery;
 mod scheduling;
+mod startup;
 
 #[derive(Default)]
 struct Clock {

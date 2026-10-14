@@ -23,6 +23,11 @@ use std::sync::{
 };
 
 pub const NOW: u64 = 1100;
+#[derive(Clone, Copy)]
+enum TransactionShape {
+    Standard,
+    DeferredHttp,
+}
 pub struct Clock(pub AtomicU64);
 impl Clock {
     pub fn set(&self, now: u64) {
@@ -91,6 +96,21 @@ impl Fixture {
             false,
         )
     }
+    pub fn transactional_deferred_http_with_companion(
+        bytes: Vec<u8>,
+        http_document: Vec<u8>,
+    ) -> Self {
+        Self::configured_http_shape(
+            "builder-a",
+            true,
+            None,
+            true,
+            Some((bytes, false)),
+            Some(http_document),
+            false,
+            TransactionShape::DeferredHttp,
+        )
+    }
     pub fn transactional_executable_with_companion(bytes: Vec<u8>) -> Self {
         Self::configured_http(
             "builder-a",
@@ -119,10 +139,6 @@ impl Fixture {
             false,
         )
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "One isolated cryptographic fixture signs the actual package under its explicit test policy"
-    )]
     fn configured_http(
         builder_id: &str,
         with_inventory: bool,
@@ -132,7 +148,39 @@ impl Fixture {
         http_document: Option<Vec<u8>>,
         executable: bool,
     ) -> Self {
-        let mut input = if transactional {
+        Self::configured_http_shape(
+            builder_id,
+            with_inventory,
+            requirements,
+            transactional,
+            companion,
+            http_document,
+            executable,
+            TransactionShape::Standard,
+        )
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        reason = "One isolated cryptographic fixture signs the actual package under its explicit test policy"
+    )]
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Existing package options and the explicit deferred test shape remain separate"
+    )]
+    fn configured_http_shape(
+        builder_id: &str,
+        with_inventory: bool,
+        requirements: Option<Value>,
+        transactional: bool,
+        companion: Option<(Vec<u8>, bool)>,
+        http_document: Option<Vec<u8>>,
+        executable: bool,
+        shape: TransactionShape,
+    ) -> Self {
+        let mut input = if matches!(shape, TransactionShape::DeferredHttp) {
+            packaging::transactional_capsule_with_intents()
+        } else if transactional {
             packaging::transactional_capsule()
         } else {
             packaging::capsule(packaging::component::Options::default())

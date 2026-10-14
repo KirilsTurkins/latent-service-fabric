@@ -147,8 +147,13 @@ impl StateKernel {
             retire_failed_bootstrap(bootstrap).await;
             return Err(super::unavailable());
         }
+        // StateSettings derives this bit solely as a bootstrap hold, not an
+        // operator choice. The dedicated protected constructor installs that
+        // hold before spawning; durable operator intent remains separate.
+        let mut dispatcher = settings.dispatcher.clone();
+        dispatcher.start_paused = false;
         let protected = EffectRuntime::start_protected(ProtectedEffectStartup {
-            dispatcher: settings.dispatcher.clone(),
+            dispatcher,
             store: Arc::clone(&store),
             authority: bootstrap.authority.clone(),
             adapters,

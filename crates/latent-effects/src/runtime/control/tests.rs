@@ -100,7 +100,7 @@ impl Fixture {
         Self {
             _root: root,
             store,
-            shared: Arc::new(Shared::new(paused, epoch, review, 128, 100)),
+            shared: Arc::new(Shared::new(false, paused, epoch, review, 128, 100)),
             time,
         }
     }
@@ -350,7 +350,7 @@ fn persisted_pause_survives_new_exclusive_owner_epoch_and_restore_review_is_stic
         .unwrap()
         .unwrap();
     assert_eq!(restored, (true, true));
-    let shared = Shared::new(restored.0, epoch, restored.1, 128, 100);
+    let shared = Shared::new(false, restored.0, epoch, restored.1, 128, 100);
     let state = shared.state.lock().unwrap();
     let request = DispatcherControlRequest::new(
         "operator-tenant".into(),

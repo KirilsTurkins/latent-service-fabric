@@ -151,6 +151,79 @@ pub fn transaction_profile() -> latent_manifest::ManifestValidationProfile {
     .unwrap()
 }
 
+/// An encoded package-shape fixture for installing a deferred transaction rule.
+/// Its pinned STATE and INTENT imports confer no permission and execute no guest.
+pub fn transactional_capsule_with_intents() -> PackageInput {
+    let state = latent_core::PHASE4_HOST_ABI_V1
+        .interface("latent:state/key-value@0.2.0")
+        .unwrap();
+    let intents = latent_core::PHASE4_HOST_ABI_V1
+        .interface("latent:intents/staging@0.1.0")
+        .unwrap();
+    let clock = component::host(component::Options::default());
+    let state_host = wasm_encoder::InstanceType::new();
+    let intent_host = wasm_encoder::InstanceType::new();
+    let bytes = component::with_hosts(
+        component::Options::default(),
+        &[
+            (component::CLOCK, &clock),
+            (state.interface, &state_host),
+            (intents.interface, &intent_host),
+        ],
+    );
+    let mut input = transactional_capsule();
+    let mut service = Vec::new();
+    for layer in &mut input.layers {
+        match layer.path.as_str() {
+            "component.wasm" => layer.bytes.clone_from(&bytes),
+            "wit/service.wit" => {
+                service = std::str::from_utf8(&layer.bytes)
+                    .unwrap()
+                    .replace(
+                        "    export api;",
+                        "    import latent:intents/staging@0.1.0;\n    export api;",
+                    )
+                    .into_bytes();
+                layer.bytes.clone_from(&service);
+            }
+            _ => (),
+        }
+    }
+    input.layers.push(layer(
+        "wit/intents.wit",
+        LayerRole::Asset,
+        "text/plain",
+        intents.wit.as_bytes().to_vec(),
+    ));
+    mutate_json(&mut input, "capsule.json", |manifest| {
+        manifest["component"]["digest"] = json!(artifact_blob_digest(&bytes).as_str());
+        manifest["imports"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"contract":intents.interface,"optional":false}));
+    });
+    mutate_json(&mut input, "wit-lock.json", |lock| {
+        let packages = lock["packages"].as_array_mut().unwrap();
+        let service_package = packages
+            .iter_mut()
+            .find(|p| p["sourcePath"] == "wit/service.wit")
+            .unwrap();
+        service_package["digest"] = json!(artifact_blob_digest(&service).as_str());
+        service_package["dependencies"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!("latent:intents@0.1.0"));
+        service_package["dependencies"]
+            .as_array_mut()
+            .unwrap()
+            .sort_by(|left, right| left.as_str().cmp(&right.as_str()));
+        packages.push(json!({"id":"latent:intents@0.1.0","sourcePath":"wit/intents.wit",
+            "digest":artifact_blob_digest(intents.wit.as_bytes()).as_str(),"dependencies":["latent:state@0.2.0"]}));
+        packages.sort_by(|left, right| left["id"].as_str().cmp(&right["id"].as_str()));
+    });
+    input
+}
+
 pub fn layer(path: &str, role: LayerRole, media_type: &str, bytes: Vec<u8>) -> LayerInput {
     LayerInput {
         path: path.into(),

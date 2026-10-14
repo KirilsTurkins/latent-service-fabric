@@ -106,6 +106,12 @@ impl EffectRuntime {
     pub fn resume(&self) -> Result<(), PlatformError> {
         self.owner.resume().map_err(runtime_error)
     }
+    pub(in crate::standalone) fn release_startup(&self) -> Result<(), PlatformError> {
+        self.owner.release_startup().map_err(runtime_error)
+    }
+    pub(in crate::standalone) fn finish_startup_paused(&self) -> Result<(), PlatformError> {
+        self.owner.finish_startup_paused().map_err(runtime_error)
+    }
     pub fn prepare_dispatcher_control(
         &self,
         request: DispatcherControlRequest,

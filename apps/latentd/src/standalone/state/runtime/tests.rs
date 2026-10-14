@@ -13,6 +13,8 @@ use std::{
     time::Duration,
 };
 
+mod startup;
+
 struct Policies {
     store: Arc<PolicyStore>,
     _catalog: DirectoryArtifactRepository,
