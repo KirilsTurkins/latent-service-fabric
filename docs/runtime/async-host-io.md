@@ -1,9 +1,9 @@
 # Bounded asynchronous host I/O
 
-The current security baseline selects **Wasmtime 48.0.4**. References below to
-47.0.4 describe the earlier qualification, not the current supported dependency.
-See the [security update](../development/wasmtime-security-update.md)
-for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+Use the engine pinned in [the toolchain baseline](../development/toolchain.md#selected-versions)
+and the committed Cargo lock. The [security upgrade record](../development/wasmtime-security-update.md)
+separates that current selection from dated qualification and native-artifact
+identities; an older receipt does not qualify a different engine.
 
 `latent_capabilities::broker::io` implements the shared ownership substrate for
 [#205](https://github.com/KirilsTurkins/latent-service-fabric/issues/205). A single
@@ -140,7 +140,7 @@ These are logical ownership bounds, not total process RSS or allocator overhead.
 
 ## Executed profile and advisory boundary
 
-The conformance harness uses the reviewed Wasmtime 48.0.4 dependency, fuel,
+The maintained conformance harness uses the pinned Wasmtime dependency, fuel,
 hostcall-fuel and a bounded Store memory limiter. Its tiny test-only component
 uses an async-typed import, canonical async lowering, a real subtask and
 waitable-set suspension through `func_wrap_concurrent`. It deliberately delays

@@ -8,9 +8,10 @@ result-read and effect permissions described in
 The six [transaction clients](../development/transaction-clients.md) expose the
 same original-identity recovery boundary on their existing transports.
 
-This branch also describes PR #970's current installed recovery. That PR remains
-pending integration and complete terminal/pending native qualification; it is
-not a packaged-release acceptance record.
+Current installed recovery remains a Development workflow with outstanding
+complete terminal/pending native and packaged qualification. The
+[source-bound audit](../development/documentation-audit-2026-10-14.md) records its
+implementation and acceptance scope.
 
 ## Preserve the original command
 
@@ -87,7 +88,13 @@ management RPC or operator permissions.
 For restore or retirement, preserve the coupled catalog/store/receipt history
 and physically drain current owners before transferring custody. Older-history
 restore changes incarnation and keeps dispatch paused for explicit review.
-Readiness does not override an operator's durable pause. Use the
-[backup guide](local-storage-recovery.md) and
+Readiness does not override an operator's durable pause. Follow the
+[protected checkpoint](../development/transaction-checkpoint.md),
+[snapshot custody](../development/protected-snapshots.md) and
 [state/effect retention rules](../architecture/state-and-effects.md#incoming-identity-formats-and-linked-retention).
+The [container backup helper](local-storage-recovery.md) copies only its fixed
+`config`, `data` and `cache` roots. It can omit an external checkpoint and its
+receipt does not approve a transactional restore. The operator CLI commands
+above expose inspection and effect management, not a general checkpoint/restore
+workflow; those native and packaged acceptance requirements remain separate.
 Code rollback cannot reverse an external action.

@@ -1,9 +1,9 @@
 # Host ABI compatibility profiles
 
-The current security baseline selects **Wasmtime 48.0.4**. References below to
-47.0.4 describe the earlier qualification, not the current supported dependency.
-See the [security update](../development/wasmtime-security-update.md)
-for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+Use the engine pinned in [the toolchain baseline](../development/toolchain.md#selected-versions)
+and the committed Cargo lock. The [security upgrade record](../development/wasmtime-security-update.md)
+separates that current selection from dated qualification and native-artifact
+identities; an older receipt does not qualify a different engine.
 
 `lsf-host-abi-phase3-v5` is the current generic recognition profile in
 `latent-core`. The [frozen matrix](../../wit/host-abi-phase3-v5.json) records its
@@ -30,7 +30,13 @@ error and compatibility contract; [ADR-0032](../../adr/0032-use-bounded-owned-re
 | `latent:telemetry/custom@0.1.0` | supported, synchronous WIT with cooperative audit waits | configured [shared custom metrics](custom-metrics.md) |
 | `latent:service/invoke@0.1.0` | supported, async import | configured [isolated local adapter](local-service-invocation.md) |
 | `latent:runtime/activation@0.1.0` | supported, activation ownership and waits | opt-in engine configuration and exact independent grant; language ports need separate qualification |
-| `latent:network/streams@0.1.0` | supported, exact owned connection/chunk resources | unavailable by default; provider implementation and architecture review remain separate |
+| `latent:network/streams@0.1.0` | supported, exact owned connection/chunk resources | unavailable by default; [development TCP provider](../reference/standalone-streams.md) requires its explicit build feature and separate qualification |
+
+"Built in" identifies a host implementation, not an installed standalone grant.
+The node's [provider configuration](../reference/standalone-providers.md) must
+still install and bind the exact context, log or clock provider required by the
+selected capsule. Generic recognition cannot supply a missing owner, and an
+unlisted composition remains untested by the developer support matrix.
 
 An inspected package has no provider authority. Wasmtime preparation rejects a
 required provider that has no installed owner. The generated host/guest
@@ -79,10 +85,27 @@ positions in `latent:blob/blob@0.2.0`. V5 accepts exact connection/chunk
 positions in `latent:network/streams@0.1.0`. Application exports still use the bounded value
 codec. Other resource identities, implicit futures/streams, maps, fixed lists
 and error-context remain rejected. [Blob tokens](local-blobs.md) retain their separate lifecycle;
-state remains a later-phase contract. Runtime waits require their own exact
+state uses the separately selected Phase 4 transaction profile described below. Runtime waits require their own exact
 capability and preserve the original activation deadline. Clock-read permission
 does not authorize a wait or any timer. See the [streaming ownership and
 limits](streaming-http.md).
+
+
+## Explicit transaction profile
+
+`lsf-host-abi-phase4-v1` has its own
+[frozen matrix](../../wit/host-abi-phase4-v1.json) and
+[transaction preparation contract](../protocol/transactions.md). It selects
+`latent:state/key-value@0.2.0` and `latent:intents/staging@0.1.0` for host-created
+commands and independent fresh queries. It does not broaden ordinary V5
+capability grants or authorize immediate application effects inside a strict
+command. Installing its compiler inputs does not install namespace authority,
+protected storage or dispatch providers.
+
+Use [the installed runtime](../development/installed-transaction-rpc.md) for node
+composition and [transactional authoring](../component-development/transactional-authoring.md)
+for guest inputs. A recognized import, signed component or successful preparation
+is separate from signed-node, client/application and packaged qualification.
 
 ## Cache identity and security
 
@@ -100,14 +123,15 @@ checked at invocation. The [sealed broker](capability-broker.md) and
 [exact binding compiler](capability-bindings.md) implement live policy, provider
 epoch and publication checks independently of ABI recognition.
 
-The baseline is Wasmtime 48.0.4 with guest generator wit-bindgen 0.62.0. No WASI
+The toolchain baseline pins the engine and guest generator independently. No WASI
 filesystem, HTTP or WASIp3 streams are installed. Expanding that surface requires
 an advisory reachability review. ABI compatibility does not establish a stronger
 [execution isolation profile](../../rfcs/0001-minimum-execution-isolation-profiles.md).
-External-capsule deployment enforcement belongs to #280; fixed external guest
-execution hosts remain unavailable.
+External-capsule deployments require their selected
+[execution security profile](execution-security-profiles.md). Separate-process
+guest execution hosts remain unavailable; ABI recognition does not provide one.
 
-Normal CI parses all five worlds, compiles native/Wasm generated bindings and tests
+Normal CI parses the maintained worlds, compiles native/Wasm generated bindings and tests
 real component/linker compatibility, wrong shapes/versions, missing providers,
 forged/stale descriptors, comparison limits and schema/source/generator parity.
 The fixtures allocate no dormant application resources and provide no provider
