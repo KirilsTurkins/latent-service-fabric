@@ -62,7 +62,7 @@ class StandardTlsSource(unittest.TestCase):
     def test_current_selected_compiler_engine_and_bindgen_pins_are_required(self):
         inputs = self.recipe(); profile.tool_pins(inputs)
         for name, before, after in (('rust-toolchain.toml', b'1.97.1', b'1.97.2'),
-                                   ('Cargo.toml', b'=48.0.5', b'=48.0.6'),
+                                   ('Cargo.toml', b'=48.0.6', b'=48.0.7'),
                                    ('Cargo.toml', b'=0.62.0', b'=0.63.0'),
                                    ('Cargo.lock', profile.PINS['wasmtime'][1].encode(), b'0' * 64)):
             altered = dict(inputs); self.assertIn(before, altered[name]); altered[name] = altered[name].replace(before, after)

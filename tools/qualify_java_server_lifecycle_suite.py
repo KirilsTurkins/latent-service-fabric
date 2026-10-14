@@ -63,7 +63,7 @@ def native(commands, output, pins):
     commands.run("source-still-clean", "git", "diff", "--exit-code", "HEAD", "--")
     lock = tomllib.loads((ROOT / "Cargo.lock").read_text())
     versions = [row["version"] for row in lock["package"] if row["name"] == "wasmtime"]
-    require(versions == ["48.0.5"], "server-lifecycle-current-wasmtime-required")
+    require(versions == ["48.0.6"], "server-lifecycle-current-wasmtime-required")
     receipt = frozen / "native-tuple.json"
     write_json(receipt, {"status": "passed", "scope": "completed-default-native-products-only",
         "tupleRole": "ordinary-defaults", "features": [], "hostAbiProfile": "lsf-host-abi-phase3-v5",

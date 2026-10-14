@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "New maintained actual Java source build sign and shared-ingress lifecycle owner with strict ordinary-default native capture",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e1d013cb3d486aae5dddfc7d106e02b86b9fa70625d709e273a1e699b1721636"
+  "sha256": "1a8526ada3ed3fe8fc83c6d294d90262321997cd5b43f1c629b8478fd997d49f"
 }

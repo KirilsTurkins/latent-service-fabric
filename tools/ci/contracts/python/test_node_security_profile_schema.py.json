@@ -6,15 +6,15 @@
   "cases":["SecurityProfileSchema.test_external_report_requires_every_observed_control","SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings","SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement","SecurityProfileSchema.test_transactional_host_observations_require_actual_enforced_admission"],
   "guards":{
     "SecurityProfileSchema.test_transactional_host_observations_require_actual_enforced_admission":
-      "be7680f937903609ed0ecbcf325576c2a306a99258e5fba90affbfa129fc12d5",
+      "49a7ec68b15c4b9debd3863739cd7b644b80c269e6870708b284b61afc8a02ed",
     "SecurityProfileSchema.test_selector_is_exact_and_not_a_claim_of_runtime_enforcement":
-      "be7680f937903609ed0ecbcf325576c2a306a99258e5fba90affbfa129fc12d5",
+      "49a7ec68b15c4b9debd3863739cd7b644b80c269e6870708b284b61afc8a02ed",
     "SecurityProfileSchema.test_external_report_requires_every_observed_control":
-      "be7680f937903609ed0ecbcf325576c2a306a99258e5fba90affbfa129fc12d5",
+      "49a7ec68b15c4b9debd3863739cd7b644b80c269e6870708b284b61afc8a02ed",
     "SecurityProfileSchema.test_local_observations_preserve_independent_admission_and_compiler_settings":
-      "be7680f937903609ed0ecbcf325576c2a306a99258e5fba90affbfa129fc12d5"
+      "49a7ec68b15c4b9debd3863739cd7b644b80c269e6870708b284b61afc8a02ed"
   },
   "guardDefinitions":{
-    "be7680f937903609ed0ecbcf325576c2a306a99258e5fba90affbfa129fc12d5":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:9359e096871b478141c65e237a07680375845ffede42abfa0ad310735856d6c8","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
+    "49a7ec68b15c4b9debd3863739cd7b644b80c269e6870708b284b61afc8a02ed":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:346f6fe5fe18bbf894a7bb97cf4341a9f72dd9598413a9d45dadc8d9de542980","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
   }
 }
