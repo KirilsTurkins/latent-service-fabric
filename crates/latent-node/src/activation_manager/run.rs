@@ -230,6 +230,9 @@ impl Inner {
                 ));
             }
             lifecycle.transaction_host = Some(Arc::clone(&host));
+            if let Some(original) = admission.original_command_cancellation()? {
+                lifecycle.bind_original_command_cancellation(original)?;
+            }
             if let Some(identity) = host.staging_identity() {
                 let observer = lifecycle.staging_observer(identity)?;
                 host.bind_staging_observer(observer).map_err(|_| {

@@ -39,6 +39,7 @@ use tonic::{Request, Response, Status};
 pub struct Phase4Call {
     context: AuthenticatedInvocationContext,
     request: contract::Request,
+    original_command_manager: Option<latent_node::LocalActivationManager>,
 }
 impl Phase4Call {
     #[must_use]
@@ -52,6 +53,24 @@ impl Phase4Call {
     #[must_use]
     pub fn into_parts(self) -> (AuthenticatedInvocationContext, contract::Request) {
         (self.context, self.request)
+    }
+
+    fn with_original_command_manager(
+        mut self,
+        manager: latent_node::LocalActivationManager,
+    ) -> Self {
+        self.original_command_manager = Some(manager);
+        self
+    }
+
+    fn into_state_parts(
+        self,
+    ) -> (
+        AuthenticatedInvocationContext,
+        contract::Request,
+        Option<latent_node::LocalActivationManager>,
+    ) {
+        (self.context, self.request, self.original_command_manager)
     }
 }
 
@@ -252,7 +271,11 @@ impl Phase4ServiceAdapter {
         let original = request.association();
         let mut owned = self
             .runtime
-            .execute(Phase4Call { context, request })
+            .execute(Phase4Call {
+                context,
+                request,
+                original_command_manager: None,
+            })
             .await
             .map_err(crate::invocation::platform_status)?;
         owned

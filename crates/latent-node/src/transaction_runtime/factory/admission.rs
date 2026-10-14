@@ -30,6 +30,20 @@ enum PendingPublication {
 }
 
 impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
+    fn original_command_cancellation(
+        &self,
+    ) -> Result<Option<crate::transaction_runtime::OriginalCommandCancellation>, PlatformError>
+    {
+        let state = self.state.lock().map_err(|_| authorization::denied())?;
+        match &*state {
+            State::Ready(Some(TransactionAdmissionResult::Command { claim, host })) => {
+                super::super::cancellation::OriginalCommandCancellation::from_claim(claim, host)
+                    .map(Some)
+            }
+            _ => Ok(None),
+        }
+    }
+
     fn requires_prepared_input(&self) -> bool {
         self.validator.is_some()
     }

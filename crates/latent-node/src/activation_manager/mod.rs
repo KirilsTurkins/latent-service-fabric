@@ -375,6 +375,20 @@ impl LocalActivationManager {
             .cancel_with(tenant, id, || self.inner.cancellations.cancel(id, reason))
     }
 
+    /// Caller must freshly authorize this exact protected record for cancellation.
+    /// Association and request remain linearized with original registration reuse.
+    pub fn cancel_original_command(
+        &self,
+        tenant: &TenantId,
+        command: &latent_commit::atomic::CommandRecord,
+        store: &latent_state::protected_store::ProtectedStoreOwner,
+        reason: &str,
+    ) -> Result<crate::transaction_runtime::OriginalCommandCancelDisposition, PlatformError> {
+        self.inner
+            .journal
+            .cancel_original_command(tenant, command, store, reason)
+    }
+
     fn validate_query_size(
         &self,
         tenant: &TenantId,

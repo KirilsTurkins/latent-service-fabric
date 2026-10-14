@@ -68,6 +68,10 @@ pub(in crate::transaction_runtime) struct Fixture {
     clock: Arc<Clock>,
 }
 impl Fixture {
+    pub fn protected_store(&self) -> &Arc<ProtectedStoreOwner> {
+        &self.store
+    }
+
     pub async fn new() -> Self {
         Self::with_native_limits(latent_core::native_capacity::NativeCapacityLimits::default())
             .await

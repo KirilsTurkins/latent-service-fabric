@@ -1,6 +1,7 @@
 //! One bounded record per activation, with writes held by its lifecycle owner.
 
 mod bytes;
+mod command_cancellation;
 mod lineage;
 mod owner;
 mod staging;

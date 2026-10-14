@@ -161,6 +161,11 @@ impl Phase4Runtime for LocalTransactionRuntime {
             call.request(),
             contract::Request::InvokeCommand(_) | contract::Request::Query(_)
         ) {
+            let call = if matches!(call.request(), contract::Request::CancelCommand(_)) {
+                call.with_original_command_manager(self.manager.clone())
+            } else {
+                call
+            };
             return self.management.execute(call);
         }
         match self.start(call) {

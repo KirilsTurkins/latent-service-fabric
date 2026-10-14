@@ -44,6 +44,19 @@ impl latent_core::BudgetCancellationProbe for Cancellation {
 }
 
 impl Fixture {
+    pub fn original_cancellation_owner(
+        &self,
+        envelope: &ActivationEnvelope,
+    ) -> crate::cancellation::WeakCancellationOwner {
+        self.registrations
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|entry| entry.activation_id() == &envelope.activation_id)
+            .unwrap()
+            .weak_owner()
+    }
+
     pub fn cancel_original(&self, envelope: &ActivationEnvelope) {
         assert_eq!(
             self.cancellations

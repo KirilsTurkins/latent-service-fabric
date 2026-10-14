@@ -364,6 +364,7 @@ fn namespace_attempt(v: &AuditOperationAttempt) -> Result<()> {
             | AuditControlAction::EffectRedrive
             | AuditControlAction::EffectTerminate
             | AuditControlAction::StateOperationRead
+            | AuditControlAction::CommandCancel
     );
     let namespace = matches!(
         v.action,

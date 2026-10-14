@@ -270,6 +270,15 @@ impl StateManagementBackend {
         context: AuthenticatedInvocationContext,
         request: contract::Request,
     ) -> BoxFuture<'static, Result<OwnedPhase4Response, PlatformError>> {
+        self.execute_with_command_manager(context, request, None)
+    }
+
+    fn execute_with_command_manager(
+        &self,
+        context: AuthenticatedInvocationContext,
+        request: contract::Request,
+        command_manager: Option<latent_node::LocalActivationManager>,
+    ) -> BoxFuture<'static, Result<OwnedPhase4Response, PlatformError>> {
         let admission = self.admit(context, request);
         let inner = Arc::clone(&self.0);
         Box::pin(async move {
@@ -301,6 +310,7 @@ impl StateManagementBackend {
                     binding,
                     deadline,
                     permit,
+                    command_manager,
                 )
                 .await;
             }
@@ -493,8 +503,8 @@ impl Phase4Runtime for StateManagementBackend {
         &self,
         call: Phase4Call,
     ) -> BoxFuture<'_, Result<OwnedPhase4Response, PlatformError>> {
-        let (context, request) = call.into_parts();
-        self.execute_state(context, request)
+        let (context, request, command_manager) = call.into_state_parts();
+        self.execute_with_command_manager(context, request, command_manager)
     }
 }
 struct RequestedTarget<'a> {
@@ -515,6 +525,13 @@ fn target(request: &contract::Request) -> Result<RequestedTarget<'_>, PlatformEr
             value.command.as_ref(),
             value.authorization_publication.as_ref(),
         )),
+        contract::Request::CancelCommand(value) => {
+            let original = value.command.as_ref().ok_or_else(invalid)?;
+            Some((
+                original.command.as_ref(),
+                original.authorization_publication.as_ref(),
+            ))
+        }
         _ => None,
     };
     if let Some((command, publication)) = lookup {

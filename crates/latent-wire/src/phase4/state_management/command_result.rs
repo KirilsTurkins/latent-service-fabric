@@ -1,6 +1,7 @@
 //! Original-result reads share the protected store and recovery capacity owner.
 mod audit;
 mod authority;
+mod cancellation;
 mod effect;
 mod projection;
 
@@ -60,6 +61,7 @@ pub(super) fn handles(request: &contract::Request) -> bool {
         contract::Request::LookupCommand(_)
             | contract::Request::LookupCommit(_)
             | contract::Request::GetEffect(_)
+            | contract::Request::CancelCommand(_)
     )
 }
 
@@ -74,16 +76,12 @@ pub(super) async fn execute(
     binding: Arc<StateManagementBinding>,
     deadline: Instant,
     permit: Arc<dyn StateManagementReservation>,
+    command_manager: Option<latent_node::LocalActivationManager>,
 ) -> Result<OwnedPhase4Response, PlatformError> {
     let selector = selector(&request)?;
     let caller =
         recovery_bindings::scope(&inner, &context, selector.shared_recovery_scope.as_deref())?;
     let started = inner.services.clock.monotonic_now();
-    let operation = if matches!(request, contract::Request::GetEffect(_)) {
-        "inspect-effect"
-    } else {
-        "read-result"
-    };
     let decision = authorization::EffectDecision {
         services: &inner.services,
         binding: &binding,
@@ -93,7 +91,7 @@ pub(super) async fn execute(
         deadline,
         input_bytes: request.encoded_len(),
     }
-    .seal(operation)?;
+    .seal(operation(&request))?;
     let mut policy_deadline = None;
     inner
         .services
@@ -125,7 +123,7 @@ pub(super) async fn execute(
         entity: selector.entity.clone(),
         client_key: selector.client_key.clone(),
     };
-    let pending = audit::begin(&inner, &context, &binding, &request).await?;
+    let mut pending = audit::begin(&inner, &context, &binding, &request).await?;
     let read = Arc::new(ReadAuthority {
         inner: Arc::clone(&inner),
         binding,
@@ -133,6 +131,7 @@ pub(super) async fn execute(
         permit,
         key,
         deadline,
+        command_manager,
     });
     read.before_lookup()?;
     let keeper = Arc::clone(&read);
@@ -144,7 +143,7 @@ pub(super) async fn execute(
             WORK_BYTES as u64,
             read,
             move |engine| {
-                let result = lookup(Arc::clone(&keeper), &request, engine);
+                let result = lookup(Arc::clone(&keeper), &request, engine, &mut pending);
                 let (conclusion, reason) = match &result {
                     Ok(_) => (AuditOperationResult::Committed, AuditReason::Verified),
                     Err(ReadError::Store(_)) => (
@@ -161,7 +160,12 @@ pub(super) async fn execute(
                     }
                     Err(_) => (AuditOperationResult::Rejected, AuditReason::Rejected),
                 };
-                let finish = pending.finish(conclusion, reason, None, true);
+                let finish = pending.finish(
+                    conclusion,
+                    reason,
+                    None,
+                    !matches!(request, contract::Request::CancelCommand(_)),
+                );
                 if let Err(ReadError::Store(error)) = &result {
                     return Err(*error);
                 }
@@ -194,7 +198,22 @@ fn selector(request: &contract::Request) -> Result<&t::CommandSelector, Platform
         contract::Request::LookupCommand(value) => value.command.as_ref().ok_or_else(invalid),
         contract::Request::LookupCommit(value) => value.command.as_ref().ok_or_else(invalid),
         contract::Request::GetEffect(value) => value.command.as_ref().ok_or_else(invalid),
+        contract::Request::CancelCommand(value) => value
+            .command
+            .as_ref()
+            .ok_or_else(invalid)?
+            .command
+            .as_ref()
+            .ok_or_else(invalid),
         _ => Err(invalid()),
+    }
+}
+
+fn operation(request: &contract::Request) -> &'static str {
+    match request {
+        contract::Request::CancelCommand(_) => "cancel-command",
+        contract::Request::GetEffect(_) => "inspect-effect",
+        _ => "read-result",
     }
 }
 
@@ -202,6 +221,7 @@ fn lookup(
     read: Arc<ReadAuthority>,
     request: &contract::Request,
     engine: &EmbeddedStore,
+    pending: &mut super::audit::Pending,
 ) -> Result<(contract::Response, Arc<ResponseOwner>), ReadError> {
     let source = read.inner.command_source.as_ref().ok_or_else(unsupported)?;
     // Original command time is sampled outside Policy/Namespace/Native fences.
@@ -248,6 +268,19 @@ fn lookup(
             value.attempt_id.as_deref(),
             time,
         )?,
+        contract::Request::CancelCommand(value) => historical(
+            &view,
+            &read,
+            record,
+            result,
+            value
+                .command
+                .as_ref()
+                .ok_or_else(invalid)?
+                .attempt_id
+                .as_deref(),
+            time,
+        )?,
         _ => (record, result),
     };
     let payload = matches!(request, contract::Request::LookupCommand(_));
@@ -260,6 +293,9 @@ fn lookup(
     });
     let response = match request {
         contract::Request::GetEffect(value) => effect::response(&view, &record, value, time)?,
+        contract::Request::CancelCommand(value) => {
+            cancellation::response(value, &record, &owner, pending)?
+        }
         _ => projection::response(request, &record, result.as_ref())?,
     };
     Ok((response, owner))

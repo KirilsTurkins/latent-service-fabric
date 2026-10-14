@@ -1,5 +1,6 @@
 //! Activation-scoped native state sessions over the existing protected owner.
 mod authorization;
+mod cancellation;
 mod capacity;
 mod command_role;
 mod completion;
@@ -13,6 +14,8 @@ mod staging;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
 pub use authorization::{PolicyCallBinding, StateAuthorization};
+pub(crate) use cancellation::CommandCancellationIdentity;
+pub use cancellation::{OriginalCommandCancelDisposition, OriginalCommandCancellation};
 pub use capacity::TransactionRetention;
 pub use command_role::PendingCommandAdmission;
 pub use completion::{CommandCompletion, CommandCompletionDisposition};

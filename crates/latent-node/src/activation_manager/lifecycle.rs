@@ -120,6 +120,16 @@ impl Lifecycle {
             .staging_observer(identity)
     }
 
+    pub(super) fn bind_original_command_cancellation(
+        &self,
+        original: crate::transaction_runtime::OriginalCommandCancellation,
+    ) -> Result<(), PlatformError> {
+        self.journal
+            .as_ref()
+            .expect("original journal owner")
+            .bind_original_command_cancellation(original, self.registration().weak_owner())
+    }
+
     pub(super) fn advance(
         &mut self,
         phase: ActivationPhase,

@@ -2,6 +2,7 @@
 //! native admission/commit, manager and Wasmtime backend. Trusted-local source
 //! publication is explicit; these cases do not qualify publisher signatures.
 mod backend;
+mod cancellation;
 mod fixture;
 mod large_results;
 mod namespace;

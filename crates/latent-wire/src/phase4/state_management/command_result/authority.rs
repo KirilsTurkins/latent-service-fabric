@@ -14,6 +14,7 @@ pub(super) struct ReadAuthority {
     pub decision: OwnedPolicyDecision,
     pub key: CommandKey,
     pub deadline: Instant,
+    pub command_manager: Option<latent_node::LocalActivationManager>,
     // Original installation metadata and RPC capacity retire after all values.
     pub inner: Arc<Inner>,
     pub permit: Arc<dyn StateManagementReservation>,
@@ -68,7 +69,7 @@ impl ResultWindow {
             },
         }
     }
-    fn cutoff(
+    pub(super) fn cutoff(
         &self,
         source: &CommandAdmissionSource,
         clock: &dyn ActivationClock,
