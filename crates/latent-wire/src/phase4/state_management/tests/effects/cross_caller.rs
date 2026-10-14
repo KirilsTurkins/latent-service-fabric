@@ -211,7 +211,9 @@ async fn current_target_selector_key_effect_namespace_and_version_cannot_be_reta
     )
     .await;
     let mut changed = base.clone();
-    changed.expected_version = vec![0; 32];
+    changed.expected_version[0] ^= 1;
+    assert_ne!(changed.expected_version, base.expected_version);
+    assert!(contract::Request::from(changed.clone()).validate().is_ok());
     fixture::assert_refused(
         &mut effect,
         changed,
@@ -473,6 +475,15 @@ async fn captured_target_rejects_foreign_publication_tenant_profile_and_effect()
         .as_mut()
         .unwrap()
         .tenant = "foreign".into();
+    changed
+        .effect
+        .as_mut()
+        .unwrap()
+        .authorization_publication
+        .as_mut()
+        .unwrap()
+        .tenant = "foreign".into();
+    assert!(contract::Request::from(changed.clone()).validate().is_ok());
     fixture::assert_refused(
         &mut effect,
         changed,

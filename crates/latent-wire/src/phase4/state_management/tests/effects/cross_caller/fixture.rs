@@ -108,9 +108,11 @@ pub(super) async fn grant(effect: &mut FixtureEffect, operations: &[&str]) {
         .unwrap()
         .retain(|rule| rule["id"] != "bob-original-alice-effect");
     document["rules"].as_array_mut().unwrap().push(rule);
-    effect
-        .fixture
-        .update(Some(&document), "exact-original-effect-purpose");
+    let operation = format!(
+        "exact-original-effect-purpose-{}",
+        effect.fixture.policy_revision
+    );
+    effect.fixture.update(Some(&document), &operation);
     effect.fixture.document = document;
     let response = effect
         .fixture
