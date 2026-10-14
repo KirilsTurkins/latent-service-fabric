@@ -24,9 +24,13 @@ standalone node as a non-root process. Optional node-level adapters provide
 operation identities and recovery. These helpers do not add an idle process per
 capsule or establish support for unqualified cloud hosts and storage mounts.
 
-State transactions, durable effect outboxes, clustering and durable workflows
-are planned designs. Their architecture pages state that boundary explicitly;
-they are not installation instructions. Maintainer acceptance and historical
+Development adds explicitly configured protected state, host-owned transactions,
+durable effect outboxes and original-result recovery. The
+[state/effect architecture](docs/architecture/state-and-effects.md) and
+[installed transaction runtime](docs/development/installed-transaction-rpc.md)
+describe those owners and remaining acceptance gates. These profiles are outside
+the published alpha.5 toolkit; clustering and durable workflows remain planned.
+Maintainer acceptance and historical
 measurements are collected in [engineering records](docs/development/engineering-records.md).
 
 - [Overview](docs/architecture/overview.md)
@@ -39,13 +43,13 @@ measurements are collected in [engineering records](docs/development/engineering
 - [Angular server rendering](docs/component-development/angular-build.md)
 - [Identity and capabilities](docs/architecture/identity-and-capabilities.md)
 - [Blob model](docs/architecture/blob-model.md)
-- [State and effects: implemented operations and planned transactions](docs/architecture/state-and-effects.md)
+- [State, transactions and durable effects](docs/architecture/state-and-effects.md)
 - [Planned cluster topology](docs/architecture/cluster-topology.md)
 - [Security model](docs/architecture/security.md)
 - [Versioning and deployment](docs/architecture/versioning-and-deployment.md)
 - [API surface](docs/api-surface.md)
 - [Activation lifecycle](docs/protocol/activation-lifecycle.md)
-- [Planned commit protocol](docs/protocol/commit-protocol.md)
+- [Host-owned commit protocol](docs/protocol/commit-protocol.md)
 - [Platform errors](docs/protocol/platform-errors.md)
 - [Testing invariants](docs/testing/invariants.md)
 - [Engineering records and roadmap](docs/development/engineering-records.md)

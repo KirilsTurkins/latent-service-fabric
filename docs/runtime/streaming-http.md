@@ -1,9 +1,9 @@
 # Bounded streaming HTTP
 
-The current security baseline selects **Wasmtime 48.0.4**. References below to
-47.0.4 describe the earlier qualification, not the current supported dependency.
-See the [security update](../development/wasmtime-security-update.md)
-for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+Use the engine pinned in [the toolchain baseline](../development/toolchain.md#selected-versions)
+and the committed Cargo lock. The [security upgrade record](../development/wasmtime-security-update.md)
+separates that current selection from dated qualification and native-artifact
+identities; an older receipt does not qualify a different engine.
 
 `latent-http::StreamingHttpProvider` implements the canonical async
 `latent:http/streaming@0.3.0` interface. Its installed profile is
@@ -147,7 +147,7 @@ implicit future/stream, changed own/borrow, wrong version and wrong async shapes
 are rejected. The V3 digest enters prepared/native identity; rebuild the node and
 AOT compiler together and regenerate incompatible cached artifacts.
 
-The baseline is Wasmtime 48.0.4. On 2026-09-14 the upstream patched ranges for
+The toolchain baseline determines the current engine. On 2026-09-14 the upstream patched ranges for
 [RUSTSEC-2026-0268](https://rustsec.org/advisories/RUSTSEC-2026-0268.html) and
 [RUSTSEC-2026-0269](https://rustsec.org/advisories/RUSTSEC-2026-0269.html) include
 47.0.4. The actual installed extension uses explicit resources and bounded byte

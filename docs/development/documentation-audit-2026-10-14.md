@@ -61,6 +61,26 @@ than expanded into repeated feature histories.
 
 ## Acceptance limits
 
+The second pass also checked the architecture index/overview, API map, commit
+protocol, operational topology and operator reference against the delivered
+owners. Their blanket state/transaction "not implemented" statements and stale
+Phase 3 service classifications are corrected. The canonical startup page now
+describes installed operations rather than repeating the earlier empty-operation
+milestone; its original source record remains linked.
+
+Current toolchain documentation now matches Wasmtime 48.0.5 and wasmparser
+0.261.0 in the workspace pins. Runtime pages use that authoritative baseline
+instead of repeating older "current" versions. The duplicate October 3–4 engine
+upgrade narrative is consolidated while dated advisory and execution records
+retain their scope.
+
+The second pass makes the backup boundary explicit: the container helper copies
+only `config`, `data` and `cache`. An external Phase 4 checkpoint may be outside
+those roots, and a successful copy is not transactional restore approval.
+Protected checkpoint/snapshot custody remains under its own native acceptance
+owner. Composition inspection also documents explicit standalone operator
+selection and where actual input identities come from.
+
 This audit validates documentation, navigation and website behavior. It does not
 reexecute language compilers, signed guest campaigns, storage migration, provider
 qualification or packaged host schedules. Gate #407, SDK epic #677 and the broader

@@ -131,8 +131,12 @@ There is no automatic pagination, cursor restart, retry, stale-precondition
 replacement, operation-ID generation, or hidden reconciliation request. Source
 compilation, signing/key creation, watch, cluster registration,
 and benchmark commands remain outside this CLI. Capability policy, shared HTTP ingress, web publication and native SDK
-transports are implemented. Durable service state, transactional effects and
-clustering remain unimplemented.
+transports are implemented. Development's explicit `--phase4` selection adds
+namespace management, original command/commit/effect inspection and checked
+operator effect actions through the configured transaction runtime. Follow
+[transaction recovery](../operations/transaction-recovery.md) for the sequence
+and authority requirements. It is outside alpha.5 and retains its separate
+acceptance gates; clustering remains planned.
 
 ## Credentials and limits
 
