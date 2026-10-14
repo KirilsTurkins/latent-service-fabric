@@ -6,6 +6,7 @@ mod codecs;
 mod execution;
 mod migration;
 mod operation;
+mod original_resume;
 mod profile;
 mod request;
 mod restore;
