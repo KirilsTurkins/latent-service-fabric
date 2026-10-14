@@ -9948,6 +9948,8 @@
         "standalone::state::kernel::tests::missing_persisted_state_mode_refuses_restart_before_any_dispatch_epoch_write",
         "standalone::state::maintenance::tests::maintenance_cannot_synthesize_continuity_after_actual_covered_lease_loss",
         "standalone::state::maintenance::tests::maintenance_uses_original_protected_sample_and_shared_process_identity",
+        "standalone::state::recovery::authority::tests::original_smaller_file_and_policy_allowances_are_never_widened",
+        "standalone::state::recovery::authority::tests::streamed_snapshot_remaining_passes_real_policy_validation_before_intersection",
         "standalone::state::recovery::execution::tests::encoded_refusal_retains_the_original_affine_response_after_admission_close_until_frame_drop",
         "standalone::state::recovery::execution::tests::oversized_output_refuses_without_refunding_a_live_original_response",
         "standalone::state::recovery::profile::tests::current_http_custody_preserves_original_proof_and_matches_each_closed_capture",
@@ -10075,7 +10077,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 362,
+      "minimumCases": 364,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

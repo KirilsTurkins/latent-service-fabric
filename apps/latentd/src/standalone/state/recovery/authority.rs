@@ -13,6 +13,9 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(test)]
+mod tests;
+
 pub(super) struct NativeProfile<'a> {
     pub profile: &'a str,
     pub digest: &'a str,
@@ -86,12 +89,7 @@ impl Authority {
                     provider_profile: host.profile,
                     configuration_digest: host.digest,
                     configuration_epoch: host.epoch,
-                    remaining: CapabilityCeiling {
-                        operations: 1,
-                        input_bytes: file_bytes,
-                        output_bytes: file_bytes,
-                        wall_time_millis: 60_000,
-                    },
+                    remaining: policy_file_ceiling(file_bytes),
                     input_bytes: 0,
                     output_bytes: 0,
                 },
@@ -148,5 +146,18 @@ impl Authority {
                     .map_err(|_| super::super::unavailable())
             })
             .map_err(|_| StoreError::Unavailable)
+    }
+}
+
+fn policy_file_ceiling(file_bytes: u64) -> CapabilityCeiling {
+    // A streamed snapshot's physical file limit is separate from the policy
+    // API's bounded per-operation byte allowance. Validation precedes policy
+    // intersection, so this descriptor must already satisfy that existing cap.
+    let bytes = file_bytes.min(64 * 1024 * 1024);
+    CapabilityCeiling {
+        operations: 1,
+        input_bytes: bytes,
+        output_bytes: bytes,
+        wall_time_millis: 60_000,
     }
 }
