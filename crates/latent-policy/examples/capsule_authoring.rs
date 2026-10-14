@@ -69,6 +69,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &args[3..],
         );
     }
+    if args.len() == 8 && args[0] == "fixture-sign-native-memory-current-java-inputs" {
+        return authoring::sign_native_memory_current_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("native memory current fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
     if args.len() == 4 && args[0] == "fixture-sign-rebuilt-early-http-input" {
         return authoring::sign_rebuilt_early_http(
             std::path::Path::new(&args[1]),

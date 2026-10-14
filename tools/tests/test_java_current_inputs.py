@@ -86,6 +86,94 @@ class CurrentJavaInputs(unittest.TestCase):
         with self.assertRaises(ValueError): current.validate_materials(files, replace(selected, report_digest=digest(files["report.json"])))
 
 
+class CurrentJavaNativeMemoryPackaging(unittest.TestCase):
+    def test_terminal_and_pending_identity_bind_native_memory_custody_packet_bytes(self):
+        from pathlib import Path
+        import tempfile
+        from unittest.mock import patch
+        from tools import run_java_transaction_http_qualification as terminal
+        from tools import run_java_pending_recovery_qualification as pending
+        packet = 'docs/testing/evidence/java-current-native-memory-capture-2026-10-14.json'
+        self.assertIn(packet, terminal.COLLECTORS)
+        source = Path(terminal.__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in dict.fromkeys(terminal.COLLECTORS + pending.EXTRA_COLLECTORS):
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes((source / name).read_bytes())
+            with patch.object(terminal, '__file__', str(root / 'tools/run_java_transaction_http_qualification.py')), \
+                    patch.object(pending, '__file__', str(root / 'tools/run_java_pending_recovery_qualification.py')):
+                before, inherited = terminal.collector_identity(), pending.collector_identity()
+                self.assertEqual(before[packet], inherited[packet])
+                path = root / packet
+                path.write_bytes(path.read_bytes() + b'\n')
+                after, inherited_after = terminal.collector_identity(), pending.collector_identity()
+                self.assertNotEqual(before[packet], after[packet])
+                self.assertEqual(after[packet], inherited_after[packet])
+                for original, changed in ((before, after), (inherited, inherited_after)):
+                    self.assertEqual({name: value for name, value in original.items() if name != packet},
+                                     {name: value for name, value in changed.items() if name != packet})
+
+    def context(self):
+        from pathlib import Path
+        from types import SimpleNamespace
+        names, packets = CurrentJavaPackaging.signing_packets()
+        for packet in packets.values():
+            packet['captures']['sourceCommit'] = '9bae83952d9513c965a88d375b2a533916a98473'
+        source = 'eba0d96e9439028aacd6c1f9a85d4ce0118a19bc'
+        filename = 'java-current-native-memory-capture-2026-10-14.json'
+        packets[filename] = {'captures': {'sourceCommit': source,
+            'nativeIdempotencyProfile': 'qualified-http-v1:74c19c60dccdecdca0b94eb8c88776516aa77c261b21dc978dab9793f9600cc5',
+            'variants': {name: {'materials': {'report': {'sha256': digest(('native-memory:' + name).encode())}}}
+                         for name in names}}}
+        items = [SimpleNamespace(name=name, directory=Path('/capture') / name, compiler_source=source)
+                 for name in names]
+        return items, packets, filename, source
+
+    def test_native_memory_signing_requires_complete_new_report_set_under_its_source(self):
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import packaging
+        items, packets, _, _ = self.context()
+        def material(path, *_args):
+            return encoded(packets[path.name]) if path.name != 'report.json' else ('native-memory:' + path.parent.name).encode()
+        with patch.object(packaging, 'read_file', side_effect=material):
+            self.assertEqual(packaging.current_signing_mode(items), 'fixture-sign-native-memory-current-java-inputs')
+            for changed in (items[:-1], items + [items[0]], items[:-1] + [items[0]]):
+                with self.subTest(incomplete=[item.name for item in changed]), self.assertRaises(ValueError):
+                    packaging.current_signing_mode(changed)
+
+    def test_native_memory_signing_rejects_mixed_sources_profiles_and_old_report_substitution(self):
+        from unittest.mock import patch
+        from tools.java_transaction_qualification import packaging
+        for other in ('historical:', '', 'fresh:', 'unreviewed:'):
+            items, packets, _, _ = self.context()
+            def mixed(path, *_args):
+                if path.name != 'report.json':
+                    return encoded(packets[path.name])
+                return ((other if path.parent.name == 'aggregate' else 'native-memory:') + path.parent.name).encode()
+            with self.subTest(report=other), patch.object(packaging, 'read_file', side_effect=mixed), self.assertRaises(ValueError):
+                packaging.current_signing_mode(items)
+        items, packets, filename, source = self.context()
+        def selected(path, *_args):
+            return encoded(packets[path.name]) if path.name != 'report.json' else ('native-memory:' + path.parent.name).encode()
+        with patch.object(packaging, 'read_file', side_effect=selected):
+            for wrong_source in ('9bae83952d9513c965a88d375b2a533916a98473', 'f' * 40):
+                items[0].compiler_source = wrong_source
+                with self.subTest(source=wrong_source), self.assertRaises(ValueError):
+                    packaging.current_signing_mode(items)
+            items[0].compiler_source = source
+            packets[filename]['captures']['nativeIdempotencyProfile'] = packets['pr970-current-post-evidence.json']['captures']['nativeIdempotencyProfile']
+            with self.assertRaises(ValueError):
+                packaging.current_signing_mode(items)
+            packets[filename]['captures']['nativeIdempotencyProfile'] = 'qualified-http-v1:74c19c60dccdecdca0b94eb8c88776516aa77c261b21dc978dab9793f9600cc5'
+            for item in items:
+                item.compiler_source = 'f' * 40
+            packets[filename]['captures']['sourceCommit'] = 'f' * 40
+            with self.assertRaises(ValueError):
+                packaging.current_signing_mode(items)
+
+
 class CurrentJavaPackaging(unittest.TestCase):
     @staticmethod
     def signing_packets():
@@ -107,8 +195,13 @@ class CurrentJavaPackaging(unittest.TestCase):
         from unittest.mock import patch
         from tools.java_transaction_qualification import packaging
         names, packets = self.signing_packets()
+        source = '9bae83952d9513c965a88d375b2a533916a98473'
+        for packet in packets.values():
+            packet['captures']['sourceCommit'] = source
+        _, native_packets, native_filename, _ = CurrentJavaNativeMemoryPackaging().context()
+        packets[native_filename] = native_packets[native_filename]
         items = [SimpleNamespace(name=name, directory=Path('/capture') / name,
-                                 compiler_source='a' * 40) for name in names]
+                                 compiler_source=source) for name in names]
         def material(path, *_args):
             return encoded(packets[path.name]) if path.name != 'report.json' else path.parent.name.encode()
         with patch.object(packaging, 'read_file', side_effect=material):
@@ -132,8 +225,13 @@ class CurrentJavaPackaging(unittest.TestCase):
         from unittest.mock import patch
         from tools.java_transaction_qualification import packaging
         names, packets = self.signing_packets()
+        source = '9bae83952d9513c965a88d375b2a533916a98473'
+        for packet in packets.values():
+            packet['captures']['sourceCommit'] = source
+        _, native_packets, native_filename, _ = CurrentJavaNativeMemoryPackaging().context()
+        packets[native_filename] = native_packets[native_filename]
         items = [SimpleNamespace(name=name, directory=Path('/capture') / name,
-                                 compiler_source='a' * 40) for name in names]
+                                 compiler_source=source) for name in names]
         for prefix, mode in (('historical:', 'fixture-sign-current-java-inputs'),
                              ('', 'fixture-sign-rebuilt-current-java-inputs'),
                              ('fresh:', 'fixture-sign-fresh-http-current-java-inputs')):
@@ -151,8 +249,13 @@ class CurrentJavaPackaging(unittest.TestCase):
         from unittest.mock import patch
         from tools.java_transaction_qualification import packaging
         names, packets = self.signing_packets()
+        source = '9bae83952d9513c965a88d375b2a533916a98473'
+        for packet in packets.values():
+            packet['captures']['sourceCommit'] = source
+        _, native_packets, native_filename, _ = CurrentJavaNativeMemoryPackaging().context()
+        packets[native_filename] = native_packets[native_filename]
         items = [SimpleNamespace(name=name, directory=Path('/capture') / name,
-                                 compiler_source='a' * 40) for name in names]
+                                 compiler_source=source) for name in names]
         for other in ('historical:', '', 'unreviewed:'):
             def mixed(path, *_args):
                 if path.name != 'report.json':
@@ -167,7 +270,7 @@ class CurrentJavaPackaging(unittest.TestCase):
             items[0].compiler_source = 'b' * 40
             with self.assertRaises(ValueError):
                 packaging.current_signing_mode(items)
-            items[0].compiler_source = 'a' * 40
+            items[0].compiler_source = source
             packets['java-current-fresh-http-capture-2026-10-13.json']['captures']['nativeIdempotencyProfile'] = \
                 packets['java-current-rebuilt-capture-2026-10-13.json']['captures']['nativeIdempotencyProfile']
             with self.assertRaises(ValueError):

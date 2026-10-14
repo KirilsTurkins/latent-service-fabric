@@ -1,6 +1,7 @@
 //! One installed codec owner for the maintained, compiler-captured Java inputs.
 //! Native codec conformance is separate from actual Java execution evidence.
 mod http_custody;
+mod native_memory;
 pub(super) use http_custody::CurrentHttpInput;
 use http_custody::HttpCustody;
 use latent_core::PlatformError;
@@ -84,9 +85,8 @@ impl Profile {
             "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d" => {
                 Ok(Self::CurrentWriter)
             }
-            "sha256:322dfed5d9838edfbbd53bf0672c31f849ac7c7309358975bf1bf6c10b0a24bb" => {
-                Ok(Self::CurrentDiagnostic)
-            }
+            "sha256:322dfed5d9838edfbbd53bf0672c31f849ac7c7309358975bf1bf6c10b0a24bb"
+            | native_memory::COMPONENT => Ok(Self::CurrentDiagnostic),
             _ => Err(super::denied()),
         }
     }

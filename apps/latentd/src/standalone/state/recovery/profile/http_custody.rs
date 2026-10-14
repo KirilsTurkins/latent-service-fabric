@@ -31,6 +31,9 @@ impl HttpCustody {
             "c62dd813a48cd7ab58246c87e06aca500b004421eb5a9b324f6e89a061556c9b" => Self::Fresh,
             _ => return Err(super::super::denied()),
         };
+        if input.component == super::native_memory::COMPONENT && custody != Self::Fresh {
+            return Err(super::super::denied());
+        }
         let writer = profile.base() == Profile::Writer;
         let companion = if writer {
             "sha256:e5719a610fb20811a402aed0531d13d71547978104048d9e275ae7b7ae061c49"

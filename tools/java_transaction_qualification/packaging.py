@@ -239,18 +239,26 @@ def current_signing_mode(items):
     modes = (
         ('docs/development/phase4-handoffs/2026-10-12/pr970-current-post-evidence.json',
          'fixture-sign-current-java-inputs',
-         'qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161'),
+         'qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161',
+         '9bae83952d9513c965a88d375b2a533916a98473'),
         ('docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json',
          'fixture-sign-rebuilt-current-java-inputs',
-         'qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161'),
+         'qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161',
+         '9bae83952d9513c965a88d375b2a533916a98473'),
         ('docs/testing/evidence/java-current-fresh-http-capture-2026-10-13.json',
          'fixture-sign-fresh-http-current-java-inputs',
-         'qualified-http-v1:74c19c60dccdecdca0b94eb8c88776516aa77c261b21dc978dab9793f9600cc5'),
+         'qualified-http-v1:74c19c60dccdecdca0b94eb8c88776516aa77c261b21dc978dab9793f9600cc5',
+         '9bae83952d9513c965a88d375b2a533916a98473'),
+        ('docs/testing/evidence/java-current-native-memory-capture-2026-10-14.json',
+         'fixture-sign-native-memory-current-java-inputs',
+         'qualified-http-v1:74c19c60dccdecdca0b94eb8c88776516aa77c261b21dc978dab9793f9600cc5',
+         'eba0d96e9439028aacd6c1f9a85d4ce0118a19bc'),
     )
     matched = []
-    for path, mode, profile in modes:
+    for path, mode, profile, source in modes:
         packet = decode(read_file(Path(__file__).resolve().parents[2] / path))['captures']
         require(packet['nativeIdempotencyProfile'] == profile, 'closed-current-custody-profile')
+        require(packet['sourceCommit'] == source, 'closed-current-custody-source')
         expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
                     if name != 'forbidden-http'}
         if actual == expected:

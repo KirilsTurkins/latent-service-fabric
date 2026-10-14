@@ -1,4 +1,7 @@
 //! Closed captured inputs and explicit synthetic trust, never compiler execution.
+mod native_memory;
+pub(crate) use native_memory::sign_native_memory_current_java;
+
 use std::{collections::BTreeSet, ffi::OsString, path::Path};
 
 use latent_artifacts::package::artifact_blob_digest;
@@ -92,6 +95,7 @@ fn load(
     captures: &Value,
     selected_names: &[&str],
     expected_profile: &str,
+    expected_source: &str,
 ) -> Result<(String, inputs::Build)> {
     require(
         root.is_absolute(),
@@ -112,7 +116,7 @@ fn load(
         pin["report"]["bytes"].as_u64() == Some(report_raw.len() as u64)
             && report["language"] == "java"
             && report["world"] == WORLD
-            && report["sourceRevision"] == SOURCE
+            && report["sourceRevision"] == expected_source
             && report["workingTreeChanged"] == false
             && report["status"] == "compiled"
             && report["compiled"] == true
@@ -202,7 +206,7 @@ fn load(
     require(
         fixture["schemaVersion"] == "latent.component.signing-fixture-input.v1"
             && fixture["evidenceKind"] == "synthetic-native-package-trust"
-            && fixture["compilerSource"] == SOURCE
+            && fixture["compilerSource"] == expected_source
             && fixture["compilerExecutedBySigner"] == false
             && fixture["packagedDistributionQualified"] == false
             && fixture["signedNodeExecutionQualified"] == false,
@@ -305,7 +309,15 @@ pub(crate) fn sign_current_java(
     compiler_source: &str,
     paths: &[OsString],
 ) -> Result<()> {
-    sign_selected(output, compiler_source, paths, &NAMES, PINS, PROFILE)
+    sign_selected(
+        output,
+        compiler_source,
+        paths,
+        &NAMES,
+        PINS,
+        PROFILE,
+        SOURCE,
+    )
 }
 
 /// Separate signed negative material. This does not approve an immediate call,
@@ -322,6 +334,7 @@ pub(crate) fn sign_current_java_with_negative(
         &WITH_NEGATIVE,
         PINS,
         PROFILE,
+        SOURCE,
     )
 }
 
@@ -337,6 +350,7 @@ pub(crate) fn sign_rebuilt_current_java(
         &NAMES,
         REBUILT_PINS,
         PROFILE,
+        SOURCE,
     )
 }
 
@@ -352,6 +366,7 @@ pub(crate) fn sign_fresh_http_current_java(
         &NAMES,
         FRESH_HTTP_PINS,
         FRESH_HTTP_PROFILE,
+        SOURCE,
     )
 }
 
@@ -369,9 +384,10 @@ fn sign_selected(
     selected_names: &[&str],
     selected_pins: &[u8],
     expected_profile: &str,
+    expected_source: &str,
 ) -> Result<()> {
     require(
-        compiler_source == SOURCE && paths.len() == selected_names.len(),
+        compiler_source == expected_source && paths.len() == selected_names.len(),
         if selected_names.len() == NAMES.len() {
             "current Java fixture requires the exact source and five positive captured inputs"
         } else {
@@ -385,14 +401,20 @@ fn sign_selected(
     let packet: Value = serde_json::from_slice(selected_pins)?;
     let captures = &packet["captures"];
     require(
-        captures["sourceCommit"] == SOURCE
+        captures["sourceCommit"] == expected_source
             && captures["nativeIdempotencyProfile"] == expected_profile,
         "committed current Java fixture custody pins changed",
     )?;
     let mut builds = Vec::with_capacity(selected_names.len());
     let mut names = BTreeSet::new();
     for path in paths {
-        let (name, build) = load(Path::new(path), captures, selected_names, expected_profile)?;
+        let (name, build) = load(
+            Path::new(path),
+            captures,
+            selected_names,
+            expected_profile,
+            expected_source,
+        )?;
         require(
             names.insert(name),
             "current Java fixture input is duplicated",
@@ -456,7 +478,7 @@ mod tests {
         assert!(sign_fresh_http_current_java(&output, SOURCE, &[]).is_err());
         let paths = vec![OsString::from(directory.path()); NAMES.len()];
         for (pins, profile) in [(PINS, FRESH_HTTP_PROFILE), (FRESH_HTTP_PINS, PROFILE)] {
-            assert!(sign_selected(&output, SOURCE, &paths, &NAMES, pins, profile).is_err());
+            assert!(sign_selected(&output, SOURCE, &paths, &NAMES, pins, profile, SOURCE).is_err());
         }
         assert!(!output.exists());
     }
