@@ -99,6 +99,25 @@ pub(super) struct Fixture {
     _root: tempfile::TempDir,
 }
 impl Fixture {
+    pub(super) fn inspection_adapter(&self) -> crate::management::ManagementServiceAdapter {
+        crate::management::ManagementServiceAdapter::new(
+            crate::management::ManagementServices {
+                audit: None,
+                rollouts: None,
+                artifacts: self.catalog.clone(),
+                deployments: self.routes.clone(),
+                routes: self.routes.clone(),
+                inventory: Arc::new(InspectionOnlyInventory),
+                principals: Arc::new(LocalPrincipalPolicy),
+                authorization: Arc::new(LocalManagementPolicy),
+                clock: Arc::new(SystemActivationClock),
+            },
+            ManagementLimits::default(),
+        )
+        .unwrap()
+        .with_activation_journal(self.manager.journal())
+    }
+
     pub async fn new(paused: bool) -> Self {
         Self::with_quota(paused, NamespaceQuota::default()).await
     }
@@ -768,6 +787,12 @@ impl Fixture {
             self.executions() + self.backend.imports.queries.load(Ordering::SeqCst)
         );
         eprintln!("actual-guest command-executions={} query-executions={} stores-created={} live-stores={}",self.executions(),self.backend.imports.queries.load(Ordering::SeqCst),runtime.stores_created,runtime.live_stores);
+    }
+}
+struct InspectionOnlyInventory;
+impl latent_node::InventoryReporter for InspectionOnlyInventory {
+    fn snapshot(&self) -> BoxFuture<'_, Result<latent_node::NodeInventory, PlatformError>> {
+        Box::pin(async { Err(error(PlatformErrorCode::PermissionDenied)) })
     }
 }
 

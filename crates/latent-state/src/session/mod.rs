@@ -334,6 +334,11 @@ impl StateSession {
     pub fn charged_bytes(&self) -> (usize, usize) {
         (self.read_charge, self.stage_charge)
     }
+    /// Actual distinct pending mutations; neither a sealed plan nor persistence.
+    #[must_use]
+    pub fn staged_mutation_count(&self) -> usize {
+        self.staged.len()
+    }
     fn access(
         &mut self,
         view: &ReadView,

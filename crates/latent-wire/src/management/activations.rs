@@ -55,40 +55,7 @@ pub(super) fn inspect(
         ),
     }
     .map_err(|error| errors::platform_status(error, &adapter.limits))?;
-    let nodes = value
-        .nodes
-        .into_iter()
-        .map(|node| proto::ActivationTreeNode {
-            activation_id: node.activation_id.0,
-            parent_activation_id: node.parent_activation_id.map(|id| id.0),
-            root_activation_id: node.root_activation_id.0,
-            phase: phase(node.phase).into(),
-            terminal_state: node.terminal_state.map(|state| terminal(state).into()),
-            last_updated_unix_millis: node.last_updated_unix_millis,
-            diagnostic: node.diagnostic.as_ref().map(diagnostic),
-            diagnostic_is_terminal: node.diagnostic_is_terminal,
-            principal_kind: match node.principal_kind {
-                latent_core::PrincipalKind::Anonymous => "anonymous",
-                latent_core::PrincipalKind::User => "user",
-                latent_core::PrincipalKind::Service => "service",
-                latent_core::PrincipalKind::Node => "node",
-                latent_core::PrincipalKind::Trigger => "trigger",
-                latent_core::PrincipalKind::Administrator => "administrator",
-                _ => "unknown",
-            }
-            .into(),
-            caller_service: node.caller_service.map(|id| id.0),
-            granted_budget: node
-                .granted_budget
-                .as_ref()
-                .map(super::control_budget_to_proto),
-            effective_deadline_unix_millis: node.effective_deadline_unix_millis,
-            target_service: node.target_service.0,
-            received_at_unix_millis: node.received_at_unix_millis,
-            // This node variant does not install the captured-intent observer.
-            transaction_staging: None,
-        })
-        .collect();
+    let nodes = value.nodes.into_iter().map(tree_node).collect();
     adapter.response(proto::InspectActivationTreeResponse {
         schema_version: 1,
         nodes,
@@ -99,6 +66,51 @@ pub(super) fn inspect(
         cursor_expired: value.cursor_expired,
         retained_history_only: true,
     })
+}
+
+fn tree_node(node: latent_node::ActivationTreeNode) -> proto::ActivationTreeNode {
+    proto::ActivationTreeNode {
+        activation_id: node.activation_id.0,
+        parent_activation_id: node.parent_activation_id.map(|id| id.0),
+        root_activation_id: node.root_activation_id.0,
+        phase: phase(node.phase).into(),
+        terminal_state: node.terminal_state.map(|state| terminal(state).into()),
+        last_updated_unix_millis: node.last_updated_unix_millis,
+        diagnostic: node.diagnostic.as_ref().map(diagnostic),
+        diagnostic_is_terminal: node.diagnostic_is_terminal,
+        principal_kind: match node.principal_kind {
+            latent_core::PrincipalKind::Anonymous => "anonymous",
+            latent_core::PrincipalKind::User => "user",
+            latent_core::PrincipalKind::Service => "service",
+            latent_core::PrincipalKind::Node => "node",
+            latent_core::PrincipalKind::Trigger => "trigger",
+            latent_core::PrincipalKind::Administrator => "administrator",
+            _ => "unknown",
+        }
+        .into(),
+        caller_service: node.caller_service.map(|id| id.0),
+        granted_budget: node
+            .granted_budget
+            .as_ref()
+            .map(super::control_budget_to_proto),
+        effective_deadline_unix_millis: node.effective_deadline_unix_millis,
+        target_service: node.target_service.0,
+        received_at_unix_millis: node.received_at_unix_millis,
+        transaction_staging: node.transaction_staging.map(|value| {
+            proto::TransactionStagingWitness {
+                schema_version: 1,
+                activation_serial: value.activation_serial,
+                command_id: value.command_id,
+                attempt_id: value.attempt_id,
+                transaction_id: value.transaction_id,
+                publication_id: value.publication_id,
+                staged_mutations: value.staged_mutations,
+                captured_intents: value.captured_intents,
+                state_write_bytes: value.state_write_bytes,
+                observed_at_unix_millis: value.observed_at_unix_millis,
+            }
+        }),
+    }
 }
 
 pub(super) fn diagnostic(value: &ActivationDiagnostic) -> proto::ActivationDiagnostic {

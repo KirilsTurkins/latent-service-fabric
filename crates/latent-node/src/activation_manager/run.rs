@@ -229,7 +229,16 @@ impl Inner {
                     "query write budget denied",
                 ));
             }
-            lifecycle.transaction_host = Some(host);
+            lifecycle.transaction_host = Some(Arc::clone(&host));
+            if let Some(identity) = host.staging_identity() {
+                let observer = lifecycle.staging_observer(identity)?;
+                host.bind_staging_observer(observer).map_err(|_| {
+                    error(
+                        PlatformErrorCode::PermissionDenied,
+                        "transaction staging observer refused",
+                    )
+                })?;
+            }
         }
         if permit.is_some() {
             lifecycle.advance(ActivationPhase::Queued, Metadata::new())?;

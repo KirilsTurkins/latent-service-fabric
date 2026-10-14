@@ -20,6 +20,9 @@ pub(super) struct Imports {
     pub platform_failure: std::sync::Mutex<Option<latent_core::PlatformErrorCode>>,
     pub result_limit_trap: AtomicBool,
     pub pause_read: AtomicBool,
+    pub pause_after_stage: AtomicBool,
+    pub staged: Notify,
+    pub continue_after_stage: Notify,
     pub entered: Notify,
     pub release: Notify,
 }
@@ -102,6 +105,18 @@ impl TransactionHost for Host {
         Box::pin(async move {
             let sequence = self.inner.stage(intent).await?;
             self.imports.staged_intents.fetch_add(1, Ordering::SeqCst);
+            if self.imports.pause_after_stage.swap(false, Ordering::SeqCst) {
+                self.imports.staged.notify_one();
+                let deadline = self
+                    .budget()
+                    .deadline()
+                    .monotonic()
+                    .ok_or(IntentFailure::Cancelled)?;
+                tokio::select! {
+                    () = self.imports.continue_after_stage.notified() => {},
+                    () = tokio::time::sleep_until(deadline.into()) => return Err(IntentFailure::Cancelled),
+                }
+            }
             Ok(sequence)
         })
     }
