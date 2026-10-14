@@ -7,6 +7,8 @@ use crate::{
 use latent_core::{PlatformError, PrincipalKind, TenantId};
 use std::{sync::Arc, time::Instant};
 
+mod retirement;
+
 impl StandaloneNode {
     pub async fn inspect_configured_http_effects(
         settings: NodeSettings,
@@ -308,35 +310,7 @@ impl StandaloneNode {
             report.retire_catalog_pins();
         }
         drop(policy);
-        let deadline = Instant::now() + settings.shutdown_grace();
-        let mut clean = true;
-        if let Some(provider) = &catalogs.providers {
-            clean &= provider
-                .shutdown(deadline)
-                .await
-                .is_ok_and(|report| report.clean);
-        }
-        if let Some(rollout) = &catalogs.rollouts {
-            clean &= rollout.shutdown(settings.shutdown_grace()).await.is_ok();
-        }
-        if let Some(policy) = &catalogs.policies {
-            let report = policy.shutdown(deadline).await;
-            clean &= report.work_completed
-                && report.active_jobs == 0
-                && report.retained_read_owners == 0;
-        }
-        if let Some(telemetry) = catalogs.telemetry.take() {
-            clean &= telemetry.runtime.shutdown().await.is_ok();
-        }
-        if let Some(control) = catalogs.control.take() {
-            clean &= control.shutdown(settings.shutdown_grace()).await.is_ok();
-        }
-        if let Some(rollout) = &catalogs.rollouts {
-            clean &= rollout.worker_joined().await;
-        }
-        if let Some(audit) = &catalogs.audit {
-            clean &= audit.shutdown(settings.shutdown_grace()).await.is_ok();
-        }
+        let clean = catalogs.retire_recovery(&settings).await;
         let mut report = report.ok_or_else(|| failure.unwrap_or_else(super::mode_error))?;
         report.catalogs_retired = clean;
         Ok(report)

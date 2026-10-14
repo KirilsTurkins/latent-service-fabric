@@ -10,6 +10,8 @@ pub use inspection::ConfiguredHttpEffectInspection;
 pub use inspection::{
     NativeDeferredEffectHostInspection, NativeHttpCallerInspection, NativeTransactionHostInspection,
 };
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(in crate::standalone) use installations::SignedFixture;
 mod kernel;
 mod maintenance;
 mod preparation;

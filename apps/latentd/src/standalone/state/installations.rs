@@ -6,6 +6,8 @@ mod selection;
 mod tests;
 #[cfg(test)]
 use latent_policy::supply_chain::{SupplyChainClock, SupplyChainPolicy};
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(in crate::standalone) use tests::SignedFixture;
 
 use std::sync::Arc;
 

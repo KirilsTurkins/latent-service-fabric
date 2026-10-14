@@ -30,6 +30,8 @@ mod http;
 )]
 mod signed;
 
+pub(in crate::standalone) use signed::Fixture as SignedFixture;
+
 fn declaration() -> Vec<u8> {
     serde_json::to_vec(&json!({"apiVersion":"latent.dev/v1","kind":"TransactionBinding",
         "capsule":"tests/packaging","deployment":"deployment","binding":"binding",
