@@ -373,6 +373,12 @@ fn actual_migrated_backup_fresh_restore_activates_only_with_same_physical_writer
     )
     .unwrap()
     .unwrap();
+    // The quiesce reply precedes its worker's final native bookkeeping. Observe
+    // this original writer's actual retirement before acquiring replay custody.
+    fixture
+        .adopted
+        .ready
+        .wait_test_metadata_retirement(Instant::now() + WATCHDOG);
     let (snapshot, replay) = wait(
         fixture
             .adopted
