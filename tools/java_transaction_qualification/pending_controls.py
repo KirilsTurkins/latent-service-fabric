@@ -14,7 +14,7 @@ COUNTERS = {'queued', 'activeJobs', 'retainedAttemptBytes', 'liveWorkers', 'acce
 FLAGS = {'paused', 'pendingControl', 'restoreReviewRequired', 'admissionClosed', 'quarantined',
          'clockContinuityProven'}
 PHYSICAL = {'queued', 'activeJobs', 'retainedAttemptBytes', 'acceptedEffects', 'physicalOwners',
-            'quarantinedPhysicalOwners', 'commandOwners', 'claims'}
+            'quarantinedPhysicalOwners', 'commandOwners'}
 RECEIPT_FIELDS = {'operationId', 'receiptId', 'action', 'authenticatedOperator', 'actorTenant',
                   'beforeGeneration', 'afterGeneration', 'observedAtUnixMillis', 'clockContinuityProven',
                   'restoreReviewRequired', 'disposition'}
