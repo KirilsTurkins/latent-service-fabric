@@ -199,6 +199,7 @@ class PendingRecoveryControls(unittest.TestCase):
         runner.snapshot.assert_not_called()
 
     def test_unknown_dispatcher_operation_lookup_cannot_qualify_plausible_original_receipt(self):
+        from tools.tests.java_read_observer_fixtures import reply
         audit = {'status': 'AUDIT_ACK_STATUS_DURABLE', 'attemptSequence': '1'}
         original = {'operationId': 'original-pause', 'receiptId': 'sha256:' + 'a' * 64,
             'action': 'DISPATCHER_ACTION_PAUSE', 'authenticatedOperator': lifecycle.operator_actor(),
@@ -210,11 +211,11 @@ class PendingRecoveryControls(unittest.TestCase):
             'operationId': 'original-pause', 'action': 'DISPATCHER_ACTION_PAUSE',
             'expectedGeneration': original['beforeGeneration'], 'automaticRetry': False}
         responses = [
-            {'outcomeKnown': True, 'data': {'dispatcher': snapshot(), 'auditAcknowledgement': audit}},
+            reply('dispatcher inspect', {'dispatcher': snapshot(), 'auditAcknowledgement': audit}),
             {'outcomeKnown': True, 'data': {'receipt': original, 'replayed': False, 'published': True,
                                           'paused': True, 'auditAcknowledgement': audit, 'recovery': recovery}},
             {'outcomeKnown': False, 'data': {'receipt': original, 'auditAcknowledgement': audit}}]
-        client = SimpleNamespace(call=Mock(side_effect=responses), evidence=SimpleNamespace(passed=Mock()))
+        client = SimpleNamespace(call=Mock(side_effect=responses), deadline=10**12, evidence=SimpleNamespace(passed=Mock()))
         with self.assertRaisesRegex(ValueError, 'historical-dispatcher-receipt-is-original'):
             controls.control_dispatcher(client, 'pause', 'original-pause')
         self.assertEqual(client.call.call_count, 3)
@@ -243,8 +244,11 @@ class DispatcherRecoverySelectorControls(unittest.TestCase):
                 'recovery': lookup_recovery}}]), evidence=SimpleNamespace(passed=Mock()))
 
     def test_current_cli_selector_keeps_original_control_and_immutable_operation_lookup(self):
+        from tools.tests.java_read_observer_fixtures import reply
         client = self.client(self.recovery, copy.deepcopy(self.recovery))
         responses = list(client.call.side_effect)
+        responses[0] = reply('dispatcher inspect', responses[0]['data'])
+        client.deadline = 10**12
         del responses[2]['data']['recovery']
         client.call.side_effect = responses
         result = controls.control_dispatcher(client, 'pause', 'original-pause')
@@ -255,6 +259,7 @@ class DispatcherRecoverySelectorControls(unittest.TestCase):
         client.evidence.passed.assert_called_once()
 
     def test_changed_or_unknown_selector_cannot_qualify_control_or_original_lookup(self):
+        from tools.tests.java_read_observer_fixtures import reply
         replacements = {'family': 'namespace', 'scope': 'tenant', 'tenant': 'other',
             'operationId': 'replacement', 'action': 'DISPATCHER_ACTION_RESUME',
             'expectedGeneration': {'ownerEpoch': '2', 'revision': '2'}, 'automaticRetry': True}
@@ -264,6 +269,8 @@ class DispatcherRecoverySelectorControls(unittest.TestCase):
                 with self.subTest(field=field, control=control_recovery is changed):
                     client = self.client(control_recovery, lookup_recovery)
                     responses = list(client.call.side_effect)
+                    responses[0] = reply('dispatcher inspect', responses[0]['data'])
+                    client.deadline = 10**12
                     if control_recovery is changed:
                         del responses[2]['data']['recovery']
                     client.call.side_effect = responses
@@ -275,12 +282,21 @@ class DispatcherRecoverySelectorControls(unittest.TestCase):
         for changed in (None, dict(self.recovery, extra=False), dict(self.recovery, automaticRetry=0)):
             with self.subTest(changed=changed):
                 client = self.client(changed, self.recovery)
+                responses = list(client.call.side_effect)
+                responses[0] = reply('dispatcher inspect', responses[0]['data'])
+                client.call.side_effect = responses
+                client.deadline = 10**12
                 with self.assertRaisesRegex(ValueError, 'original-dispatcher-recovery-selector'):
                     controls.control_dispatcher(client, 'pause', 'original-pause')
                 client.evidence.passed.assert_not_called()
 
     def test_read_only_lookup_rejects_even_a_matching_mutation_recovery_selector(self):
+        from tools.tests.java_read_observer_fixtures import reply
         client = self.client(self.recovery, copy.deepcopy(self.recovery))
+        responses = list(client.call.side_effect)
+        responses[0] = reply('dispatcher inspect', responses[0]['data'])
+        client.call.side_effect = responses
+        client.deadline = 10**12
         with self.assertRaisesRegex(ValueError, 'historical-dispatcher-receipt-is-original'):
             controls.control_dispatcher(client, 'pause', 'original-pause')
         self.assertEqual(client.call.call_count, 3)

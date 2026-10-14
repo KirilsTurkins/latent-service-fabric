@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 import time
 
-from . import configuration as cfg, lifecycle, recovery
+from . import configuration as cfg, lifecycle, recovery, read_observer
 from .evidence import encoded
 from .inputs import require
 
@@ -51,8 +51,21 @@ def recovery_selector(value, action, operation, original):
             'original-dispatcher-recovery-selector')
 
 
-def inspect_dispatcher(client):
-    result = client.call('dispatcher', 'inspect', '--scope', 'node')
+def inspect_dispatcher(client, *, until=None):
+    cutoff = min(client.deadline, time.monotonic() + 25,
+                 client.deadline if until is None else until)
+    for attempt in range(8):
+        require(time.monotonic() < cutoff, 'original-dispatcher-inspection-cutoff')
+        result = client.call('dispatcher', 'inspect', '--scope', 'node', codes=(0, 5),
+                             timeout=min(25, cutoff - time.monotonic()), cutoff=cutoff)
+        state = read_observer.kind(result, 'dispatcher inspect')
+        require(time.monotonic() < cutoff, 'original-dispatcher-inspection-cutoff')
+        if state == 'success':
+            break
+        if attempt < 7:
+            read_observer.pause(cutoff, 'original-dispatcher-inspection-cutoff')
+    else:
+        raise ValueError('original-dispatcher-inspection-read-bound')
     data = result['data']
     require(result['outcomeKnown'] is True and isinstance(data, dict)
             and set(data) == {'dispatcher', 'auditAcknowledgement'}
@@ -110,7 +123,7 @@ def control_dispatcher(client, action, operation):
 def drained_dispatcher(client):
     until = min(client.deadline, time.monotonic() + 10)
     for _ in range(24):
-        value = inspect_dispatcher(client)
+        value = inspect_dispatcher(client, until=until)
         require(value['paused'] is True and value['pendingControl'] is False
                 and value['restoreReviewRequired'] is False and value['admissionClosed'] is False
                 and value['quarantined'] is False and value['clockContinuityProven'] is True,

@@ -1,0 +1,231 @@
+{
+  "cases": [
+    "ReadBackpressureControls.test_busy_classifier_cannot_be_applied_to_a_mutation_or_receipt_operation",
+    "ReadBackpressureControls.test_busy_dispatcher_reads_keep_original_cutoff_and_require_actual_audited_snapshot",
+    "ReadBackpressureControls.test_busy_lookup_consumes_original_attempt_then_preserves_unknown_same_claim",
+    "ReadBackpressureControls.test_busy_schema_dispatched_unknown_code_and_empty_data_are_all_closed",
+    "ReadBackpressureControls.test_current_pending_transaction_link_rejects_stale_witness_and_counter_only_staging",
+    "ReadBackpressureControls.test_deadline_crossed_by_node_drain_cannot_spawn_an_observer_process",
+    "ReadBackpressureControls.test_drain_passes_its_original_ten_second_cutoff_through_busy_inspection",
+    "ReadBackpressureControls.test_eight_busy_reads_exhaust_without_claim_or_pause_cancel_or_replay",
+    "ReadBackpressureControls.test_expired_cutoffs_make_no_call_and_late_success_cannot_extend_time",
+    "ReadBackpressureControls.test_global_cli_bound_still_refuses_before_process_creation",
+    "ReadBackpressureControls.test_original_lookup_deadline_cannot_accept_a_late_descriptive_claim",
+    "ReadBackpressureControls.test_original_mutation_and_recovery_receipt_are_never_retried_on_busy",
+    "ReadBackpressureControls.test_pending_lookup_rejects_terminal_substitution_missing_source_and_wrong_attempt",
+    "ReadBackpressureControls.test_recording_client_preserves_raw_busy_and_reaps_with_absolute_read_cutoff",
+    "ReadBackpressureControls.test_revocation_other_rpc_errors_and_missing_audit_are_fatal_before_pause",
+    "ReadBackpressureControls.test_successful_pending_read_is_not_staging_or_cancellation_authority",
+    "ReadBackpressureControls.test_terminal_and_pending_identity_bind_transitive_read_observer_bytes"
+  ],
+  "guards": {
+    "ReadBackpressureControls.test_busy_classifier_cannot_be_applied_to_a_mutation_or_receipt_operation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_busy_dispatcher_reads_keep_original_cutoff_and_require_actual_audited_snapshot": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_busy_lookup_consumes_original_attempt_then_preserves_unknown_same_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_busy_schema_dispatched_unknown_code_and_empty_data_are_all_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_current_pending_transaction_link_rejects_stale_witness_and_counter_only_staging": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_deadline_crossed_by_node_drain_cannot_spawn_an_observer_process": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_drain_passes_its_original_ten_second_cutoff_through_busy_inspection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_eight_busy_reads_exhaust_without_claim_or_pause_cancel_or_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_expired_cutoffs_make_no_call_and_late_success_cannot_extend_time": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_global_cli_bound_still_refuses_before_process_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_original_lookup_deadline_cannot_accept_a_late_descriptive_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_original_mutation_and_recovery_receipt_are_never_retried_on_busy": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_pending_lookup_rejects_terminal_substitution_missing_source_and_wrong_attempt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_recording_client_preserves_raw_busy_and_reaps_with_absolute_read_cutoff": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_revocation_other_rpc_errors_and_missing_audit_are_fatal_before_pause": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_successful_pending_read_is_not_staging_or_cancellation_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    },
+    "ReadBackpressureControls.test_terminal_and_pending_identity_bind_transitive_read_observer_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ae90ee3e70d46fdb686550e77a1ba15a7167126c5df7e57a471b5bbb7816923b",
+        "class:setup-sha256:746176f2dc030b5ffdb818cddf411ea01da43d3a1347a2986683a13a205256ce"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_read_backpressure.py",
+  "reviewReason": "Preserve the reviewed read observer guards and add the transitive helper byte identity control for terminal and inherited pending collectors.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

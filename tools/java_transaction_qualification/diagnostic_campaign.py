@@ -12,7 +12,7 @@ import socket
 import threading
 import time
 
-from . import configuration as cfg, http, lifecycle, provider
+from . import configuration as cfg, http, lifecycle, provider, read_observer
 from .diagnostic_inputs import LIMITS, NAME
 from .inputs import require
 
@@ -56,7 +56,10 @@ def staging_witness(node, record, original=None, *, intent_operation="put-once")
             and isinstance(witness["publicationId"], str)
             and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", witness["publicationId"]),
             "original-staging-serial-and-immutable-claim-identity")
-    require(isinstance(record, dict) and record.get("metadataDurable") is True
+    require(isinstance(record, dict) and (record.get("outcome") == "COMMAND_OUTCOME_ABORTED"
+                and record.get("metadataDurable") is True
+            or record.get("outcome") == "COMMAND_OUTCOME_RECOVERY_REQUIRED"
+                and record.get("metadataDurable") is False)
             and isinstance(record.get("source"), dict)
             and witness["commandId"] == record.get("commandId")
             and witness["attemptId"] == record.get("attemptId")
@@ -68,6 +71,13 @@ def staging_witness(node, record, original=None, *, intent_operation="put-once")
                 and witness["attemptId"] == proof.get("attemptId")
                 and witness["transactionId"] == proof.get("transactionId"),
                 "staging-witness-matches-original-abort-transaction")
+    else:
+        require(record.get("outcome") == "COMMAND_OUTCOME_RECOVERY_REQUIRED"
+                and isinstance(record.get("retention"), dict)
+                and isinstance(record["retention"].get("requiredRecordIds"), list)
+                and len(record["retention"]["requiredRecordIds"]) == 3
+                and witness["transactionId"] == record["retention"]["requiredRecordIds"][2],
+                "staging-witness-matches-original-pending-transaction")
     grant = node.get("grantedBudget")
     require(isinstance(grant, dict) and set(grant) == set(LIMITS), "actual-original-staging-grant")
     for name, expected in LIMITS.items():
@@ -273,10 +283,7 @@ class DiagnosticCampaign:
         else:
             raise ValueError("original-cancel-root-not-observed")
         record = self.original_attempt(pending, key, until)
-        require(record["outcome"] == "COMMAND_OUTCOME_IN_PROGRESS" and record["metadataDurable"] is True
-                and record["source"]["publicationId"] == self.publication
-                and record["source"]["componentDigest"] == self.input.item.component_digest
-                and record["key"]["clientKey"] == key, "actual-original-precommit-command-attempt")
+        read_observer.pending_claim(record, self.publication, self.input.item.component_digest, key)
         live = self.live_staging(pending, identity, record, until)
         with lifecycle.as_user(self.client):
             result = self.client.call("transaction", "cancel", *lifecycle.namespace_arguments(self.publication),
@@ -318,20 +325,24 @@ class DiagnosticCampaign:
     def original_attempt(self, pending, key, until):
         # Root admission precedes preparation and the durable claim. These are
         # finite reads of the same key, never another mutation or new deadline.
-        for _ in range(8):
+        until = min(until, self.client.deadline)
+        for attempt in range(8):
             require(pending.thread.is_alive() and time.monotonic() < until,
                     "original-command-not-running-for-cancel")
             with lifecycle.as_user(self.client):
                 observed = self.client.call("transaction", "lookup", *lifecycle.namespace_arguments(self.publication),
-                    "--operation", "update", "--client-key", key, codes=(0, 6))
-            require(observed["outcomeKnown"] is True, "original-command-lookup-certainty")
-            if observed["category"] == "success":
-                return observed["data"]["command"]
-            require(observed["category"] == "not-found" and observed["data"].get("command") is None,
-                    "original-command-lookup-refusal")
-            remaining = until - time.monotonic()
-            require(remaining > 0, "original-command-not-running-for-cancel")
-            time.sleep(min(0.05, remaining))
+                    "--operation", "update", "--client-key", key, codes=(0, 5, 6),
+                    timeout=min(25, until - time.monotonic()), cutoff=until)
+            state = read_observer.kind(observed, "transaction lookup", missing=True)
+            require(pending.thread.is_alive() and time.monotonic() < until,
+                    "original-command-lookup-within-same-cutoff")
+            if state == 'success':
+                require(observed['outcomeKnown'] is False and set(observed['data']) == {'command'},
+                        'original-pending-command-lookup-certainty')
+                return read_observer.pending_claim(observed['data']['command'], self.publication,
+                    self.input.item.component_digest, key)
+            if attempt < 7:
+                read_observer.pause(until, "original-command-not-running-for-cancel")
         raise ValueError("original-durable-attempt-not-observed")
 
     def case(self, kind, selector):

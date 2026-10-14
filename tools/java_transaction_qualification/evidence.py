@@ -103,12 +103,14 @@ class RecordingClient(Client):
         self.evidence = evidence
         self.phase4 = phase4
 
-    def call(self, *arguments, codes=(0,), timeout=25):
+    def call(self, *arguments, codes=(0,), timeout=25, cutoff=None):
         self.cancellation.check()
-        require(self.calls < 256 and time.monotonic() < self.deadline,
+        until = min(self.deadline, self.deadline if cutoff is None else cutoff)
+        require(self.calls < 256 and time.monotonic() < until,
                 "original-cli-campaign-bound")
         if self.node:
             self.node.drain()
+        require(time.monotonic() < until, 'original-cli-campaign-bound')
         prefix = [self.executable, "--output", "json"]
         if self.phase4:
             prefix.append("--phase4")
@@ -120,7 +122,7 @@ class RecordingClient(Client):
                           self.environment, self.cancellation, maximum=1048576)
         result = None
         try:
-            result = process.complete(min(self.deadline, time.monotonic() + timeout))
+            result = process.complete(min(until, time.monotonic() + timeout))
         finally:
             process.close()
             self.evidence.write(f"cli-{ordinal:03d}.stdout", bytes(process.buffers[0]))
