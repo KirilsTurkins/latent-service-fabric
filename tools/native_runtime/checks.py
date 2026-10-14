@@ -8,7 +8,7 @@ from pathlib import Path
 import tempfile
 import time
 
-from .common import document, encode, execute, require
+from .common import InstallError, document, encode, execute, require
 from .configuration import EXTERNAL, client_document, load, validate_layout
 from . import files, host
 from .layout import Layout, service_identity
@@ -81,10 +81,16 @@ def readiness(layout: Layout, timeout: float = 20) -> dict:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
-            status, output = execute([
-                str(root / "bin" / "latent"), "--config", str(client), "--output", "json",
-                "--connect-timeout-ms", "500", "--rpc-timeout-ms", "1000", "node", "get", node["nodeId"],
-            ], timeout=min(2, remaining), maximum=262144, cwd=str(layout.data))
+            try:
+                status, output = execute([
+                    str(root / "bin" / "latent"), "--config", str(client), "--output", "json",
+                    "--connect-timeout-ms", "500", "--rpc-timeout-ms", "1000", "node", "get", node["nodeId"],
+                ], timeout=min(2, remaining), maximum=262144, cwd=str(layout.data))
+            except InstallError as error:
+                if type(error) is not InstallError or str(error) != "command-timeout":
+                    raise
+                # execute completed its existing cleanup without a response.
+                status, output = None, b""
             if status == 0:
                 result = document(output, 262144)
                 inventory = result.get("data", {}).get("inventory", {})
