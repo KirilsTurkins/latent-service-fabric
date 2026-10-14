@@ -239,6 +239,10 @@ class OfflineCampaign:
                            manifestDigest=snapshot["manifestDigest"])
         if target_identity is not None:
             request['destinationStoreIdentity'] = target_identity
+            from . import restore_destination_roots
+            provisioned = restore_destination_roots.provision(
+                self.client, self.node, self.directory, destination, checkpoint_destination)
+            self.client.evidence.record('restore-destination-directories', provisioned)
         window = self.action(dict(request, action="inspect-restore"))
         require(window["snapshot"]["snapshotDigest"] == snapshot["snapshotDigest"]
                 and window["snapshot"]["manifestDigest"] == snapshot["manifestDigest"],

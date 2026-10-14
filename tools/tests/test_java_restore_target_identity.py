@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from tools.java_transaction_qualification import offline_campaign, pending_campaign
+from tools.java_transaction_qualification import restore_destination_roots
 from tools.java_transaction_qualification import restore_installation as restore
 from tools.java_transaction_qualification.state_configuration import declaration
 
@@ -21,6 +22,10 @@ class SelectedConfiguration(Exception):
 
 class RestoreTargetIdentity(unittest.TestCase):
     def runner(self, root, *, pending, returned_identity=TARGET):
+        # Identity-only mocked native handoffs retain their original directory creation.
+        provision = patch.object(restore_destination_roots, 'provision')
+        provision.start()
+        self.addCleanup(provision.stop)
         source = root / 'source'
         source.mkdir()
         settings = {'dataDirectory': str(source), 'providers': {'original': 'retained'},

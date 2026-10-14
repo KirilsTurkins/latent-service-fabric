@@ -17,8 +17,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:aff93441b01ed75d38bb1c5ef95c7312f8a2584552a556d3c8cf467667e47ede",
-        "class:setup-sha256:0f35da64d49781a1886836fc5cc49309b68f3a2e69a7e73c457a60b3b269edcc"
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
       ],
       "skipSites": []
     },
@@ -29,8 +29,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:aff93441b01ed75d38bb1c5ef95c7312f8a2584552a556d3c8cf467667e47ede",
-        "class:setup-sha256:0f35da64d49781a1886836fc5cc49309b68f3a2e69a7e73c457a60b3b269edcc"
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
       ],
       "skipSites": []
     },
@@ -41,8 +41,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:aff93441b01ed75d38bb1c5ef95c7312f8a2584552a556d3c8cf467667e47ede",
-        "class:setup-sha256:0f35da64d49781a1886836fc5cc49309b68f3a2e69a7e73c457a60b3b269edcc"
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
       ],
       "skipSites": []
     },
@@ -53,8 +53,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:aff93441b01ed75d38bb1c5ef95c7312f8a2584552a556d3c8cf467667e47ede",
-        "class:setup-sha256:0f35da64d49781a1886836fc5cc49309b68f3a2e69a7e73c457a60b3b269edcc"
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
       ],
       "skipSites": []
     },
@@ -65,8 +65,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:aff93441b01ed75d38bb1c5ef95c7312f8a2584552a556d3c8cf467667e47ede",
-        "class:setup-sha256:0f35da64d49781a1886836fc5cc49309b68f3a2e69a7e73c457a60b3b269edcc"
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
       ],
       "skipSites": []
     },
@@ -77,8 +77,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:aff93441b01ed75d38bb1c5ef95c7312f8a2584552a556d3c8cf467667e47ede",
-        "class:setup-sha256:0f35da64d49781a1886836fc5cc49309b68f3a2e69a7e73c457a60b3b269edcc"
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
       ],
       "skipSites": []
     },
@@ -89,8 +89,8 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:aff93441b01ed75d38bb1c5ef95c7312f8a2584552a556d3c8cf467667e47ede",
-        "class:setup-sha256:0f35da64d49781a1886836fc5cc49309b68f3a2e69a7e73c457a60b3b269edcc"
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
       ],
       "skipSites": []
     },
@@ -101,14 +101,14 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:aff93441b01ed75d38bb1c5ef95c7312f8a2584552a556d3c8cf467667e47ede",
-        "class:setup-sha256:0f35da64d49781a1886836fc5cc49309b68f3a2e69a7e73c457a60b3b269edcc"
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:6e4c7ed1f9c023310795d29eba5c1e7f370ddd184c8fc55451c634530504603d"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_restore_target_identity.py",
-  "reviewReason": "Bind explicit distinct restore target data to actual native receipt and restored configuration; preserve original test guards and all native authority and physical ownership checks",
+  "reviewReason": "Explicit review: identity-only mock patches the new directory provisioning ownership boundary with registered cleanup; all eight original methods, assertions, skips and predicates remain unchanged",
   "schemaVersion": "latent.ci.contracts.v1"
 }
