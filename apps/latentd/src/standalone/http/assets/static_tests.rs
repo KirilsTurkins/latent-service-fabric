@@ -7,7 +7,11 @@ use latent_core::{TenantId, TriggerId};
 use latent_ingress::http::{CanonicalTarget, Method, Scheme};
 use latent_manifest::{JsonManifestCodec, ManifestCodec};
 use std::{sync::Arc, time::Duration};
-use tokio::{io::AsyncWriteExt, net::TcpStream, time::Instant};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+    time::{timeout_at, Instant},
+};
 
 const HTML: &str = "Accept: text/html\r\n";
 const SITEMAP: &[u8] =
@@ -151,6 +155,9 @@ fn no_execution(h: &Harness) {
 }
 async fn get(h: &Harness, path: &str, headers: &str) -> (u16, String, Vec<u8>) {
     h.call("GET", path, headers, node::TOKEN).await
+}
+async fn serial_get(h: &Harness, path: &str, headers: &str) -> (u16, String, Vec<u8>) {
+    h.serial_call("GET", path, headers, node::TOKEN).await
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -345,7 +352,7 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         ("/orders/42?tab=history", NAVIGATION, b"root"),
         ("/docs/orders/42", HTML, b"root"),
     ] {
-        let response = get(&h, path, headers).await;
+        let response = serial_get(&h, path, headers).await;
         assert_eq!((response.0, response.2.as_slice()), (200, body), "{path}");
         assert!(response.1.contains("Cache-Control: private, no-cache\r\n"));
         assert!(response.1.contains("Sec-Fetch-Dest"));
@@ -357,9 +364,9 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
                 .contains("x-content-type-options: nosniff\r\n"));
         }
         let conditional = format!("{headers}If-None-Match: {}\r\n", etag(&response.1));
-        let cached = get(&h, path, &conditional).await;
+        let cached = serial_get(&h, path, &conditional).await;
         assert_eq!((cached.0, cached.2.len()), (304, 0));
-        let head = h.call("HEAD", path, headers, node::TOKEN).await;
+        let head = h.serial_call("HEAD", path, headers, node::TOKEN).await;
         assert_eq!((head.0, head.2.len()), (200, 0));
         assert_eq!(etag(&head.1), etag(&response.1));
         if matches!(path, "/sitemap.xml" | "/docs/sitemap.xml") {
@@ -375,7 +382,7 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         ("/docs", "/docs/"),
         ("/docs/guide?tab=history", "/docs/guide/?tab=history"),
     ] {
-        let response = get(&h, path, "").await;
+        let response = serial_get(&h, path, "").await;
         assert_eq!((response.0, response.2.len()), (308, 0));
         assert!(response.1.contains(&format!("Location: {location}\r\n")));
     }
@@ -385,7 +392,7 @@ async fn static_routes_resolve_mounts_routes_assets_indexes_fallback_and_revalid
         .unwrap()
         .asset_url("/index.html")
         .unwrap();
-    assert!(get(&h, &immutable, "")
+    assert!(serial_get(&h, &immutable, "")
         .await
         .1
         .contains("private, max-age=31536000, immutable"));
@@ -423,7 +430,7 @@ async fn signed_error_documents(h: &Harness, root_generations: [u64; 2]) {
         "/docs/nested/missing.html",
         "/docs/nested/missing.HTML",
     ] {
-        let (code, headers, body) = get(h, path, NAVIGATION).await;
+        let (code, headers, body) = serial_get(h, path, NAVIGATION).await;
         assert_eq!(
             (code, body.as_slice()),
             (404, b"signed not found".as_slice())
@@ -434,7 +441,8 @@ async fn signed_error_documents(h: &Harness, root_generations: [u64; 2]) {
         assert!(headers
             .to_ascii_lowercase()
             .contains("content-security-policy:"));
-        let (head_code, head_headers, body) = h.call("HEAD", path, NAVIGATION, node::TOKEN).await;
+        let (head_code, head_headers, body) =
+            h.serial_call("HEAD", path, NAVIGATION, node::TOKEN).await;
         assert_eq!((head_code, body.len()), (404, 0));
         assert_eq!(etag(&head_headers), etag(&headers));
         assert!(head_headers.contains("Content-Length: 16\r\n"));
@@ -443,15 +451,15 @@ async fn signed_error_documents(h: &Harness, root_generations: [u64; 2]) {
             "If-None-Match: *\r\n".into(),
             "If-Match: \"other\"\r\n".into(),
         ] {
-            let response = get(h, path, &format!("{NAVIGATION}{condition}")).await;
+            let response = serial_get(h, path, &format!("{NAVIGATION}{condition}")).await;
             assert_eq!(
                 (response.0, response.2.as_slice()),
                 (404, b"signed not found".as_slice())
             );
         }
     }
-    assert_eq!(get(h, "/docs/nested/exact", NAVIGATION).await.0, 200);
-    assert_eq!(get(h, "/docs/nested/guide", NAVIGATION).await.0, 308);
+    assert_eq!(serial_get(h, "/docs/nested/exact", NAVIGATION).await.0, 200);
+    assert_eq!(serial_get(h, "/docs/nested/guide", NAVIGATION).await.0, 308);
     unconfigured_error_document(h).await;
     for (path, headers, status) in [
         ("/docs/nested/missing.js", NAVIGATION, 404),
@@ -482,22 +490,22 @@ async fn signed_error_documents(h: &Harness, root_generations: [u64; 2]) {
             400,
         ),
     ] {
-        let response = get(h, path, headers).await;
+        let response = serial_get(h, path, headers).await;
         assert_eq!((response.0, response.2.len()), (status, 0), "{path}");
     }
     assert_eq!(
-        h.call("POST", "/docs/nested/unknown", HTML, node::TOKEN)
+        h.serial_call("POST", "/docs/nested/unknown", HTML, node::TOKEN)
             .await
             .0,
         405
     );
     assert!(matches!(
-        h.call("GET", "/docs/nested/unknown", NAVIGATION, "invalid")
+        h.serial_call("GET", "/docs/nested/unknown", NAVIGATION, "invalid")
             .await
             .0,
         401 | 403
     ));
-    let old = get(h, "/docs/nested/unknown", HTML).await;
+    let old = serial_get(h, "/docs/nested/unknown", HTML).await;
     assert_eq!(
         (old.0, old.2.as_slice()),
         (404, b"signed not found".as_slice())
@@ -509,7 +517,7 @@ async fn unconfigured_error_document(h: &Harness) {
     for (method, trigger) in [("GET", "plain"), ("HEAD", "plain-head")] {
         apply(h, trigger, &plain, "/plain", "prefix", method, 0);
         let (status, headers, body) = h
-            .call(method, "/plain/unknown", NAVIGATION, node::TOKEN)
+            .serial_call(method, "/plain/unknown", NAVIGATION, node::TOKEN)
             .await;
         assert_eq!((status, body.len()), (404, 0));
         // No signed error document exists: this uses the bounded rejection
@@ -873,18 +881,42 @@ async fn static_disconnect_and_shutdown_retain_actual_blocking_read_and_captured
         .await
         .unwrap();
     started.recv_timeout(Duration::from_secs(5)).unwrap();
+    assert_eq!(h.repository.web_read_snapshot().unwrap().active_reads, 1);
     delete(&h, "root", generation);
+    let until = Instant::now() + Duration::from_secs(8);
+    socket.shutdown().await.unwrap();
+    let mut bytes = Vec::new();
+    timeout_at(until, socket.read_to_end(&mut bytes))
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(bytes.is_empty());
     drop(socket);
     node::wait(|| h.owner.handle().snapshot().connections == 0).await;
+    assert_eq!(h.owner.handle().snapshot().exchanges, 0);
     assert_eq!(store.snapshot().active_reads, 1);
-    assert!(
-        !store
-            .shutdown(Instant::now() + Duration::from_millis(10))
-            .await
-    );
-    assert_eq!(store.snapshot().active_reads, 1);
-    no_execution(&h);
-    resume.send(()).unwrap();
-    node::wait(|| store.snapshot().active_reads == 0).await;
+    assert_eq!(h.repository.web_read_snapshot().unwrap().active_reads, 1);
+    {
+        let retirement = h.previous_response_retired();
+        tokio::pin!(retirement);
+        std::future::poll_fn(|context| {
+            assert!(std::future::Future::poll(retirement.as_mut(), context).is_pending());
+            std::task::Poll::Ready(())
+        })
+        .await;
+        assert_eq!(h.owner.handle().snapshot().connections, 0);
+        assert_eq!(h.owner.handle().snapshot().exchanges, 0);
+        assert!(
+            !store
+                .shutdown(Instant::now() + Duration::from_millis(10))
+                .await
+        );
+        assert_eq!(store.snapshot().active_reads, 1);
+        no_execution(&h);
+        resume.send(()).unwrap();
+        node::wait(|| store.snapshot().active_reads == 0).await;
+        timeout_at(until, retirement).await.unwrap();
+    }
+    assert_eq!(h.repository.web_read_snapshot().unwrap().active_reads, 0);
     h.finish().await;
 }
