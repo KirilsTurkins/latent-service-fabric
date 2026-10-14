@@ -11,22 +11,20 @@ This implementation has native AST/JDK/kernel conformance, normal component
 compilation and signed normal-node routing/HEAD probes. The maintained Java
 qualification also builds two outside-checkout server projects and exercises
 authenticated route tooling, bounded responses and original-ledger retirement.
-Complete failure, TLS, redeploy/rollback, cancellation/disconnect and packaged
-frontend qualification remain required by #728. The profile is not a completed
-milestone gate, general JDK networking support or an executor-enabled server
-profile.
+The [current revision-lifecycle reconciliation](../development/java-runtime-reconciliation/2026-10-12/pr895.md)
+adds fresh ordinary-server revision, exact routing and recovery controls on its
+recorded source. Use the maintained lifecycle helper described below for that
+selection. Earlier failures retain their original meaning; they do not override
+later source-bound successes. Broader #728 acceptance and clean packaged frontend
+qualification remain separate. The profile is not a completed milestone gate,
+general JDK networking support or an executor-enabled server profile.
 
-The [2026-10-01 retained-component replay](../testing/evidence/java-server-tls-replay-2026-10-01.json) passed all 50 maintained HTTP controls on the normal TLS node, with strict CA and hostname verification, pre-dispatch rejection of a 65,537-byte body, unchanged inputs and clean shutdown. It reused the exact previously compiled component and fresh short-lived demo signatures; it does not establish a fresh compiler build. An additional 65,536-byte echo probe returned 502 under the original limits. Its failure is retained separately, and maximal body execution remains unqualified.
-
-The maintained helper qualification also requires a 65,536-byte binary request
-to pass through ordinary `HttpExchange` body streams and return byte for byte,
-followed by a fresh successful request and zero physical owners. The original
-50 controls, excess-body denial and activation limits remain required. This
-[52-control signed regression](../testing/evidence/java-server-maximum-body-regression-2026-10-07.json)
-passed with the rebuilt UTF-8 repair component and clean node shutdown. Its
-SDK, node and controller revisions are recorded separately; complete current
-profile qualification remains pending. The retained failed observation above
-remains unchanged.
+The current suite includes the accepted 65,536-byte binary body, oversize denial
+and physical cleanup. The earlier
+[retained-component replay failure](../testing/evidence/java-server-tls-replay-2026-10-01.json)
+and [maximum-body repair regression](../testing/evidence/java-server-maximum-body-regression-2026-10-07.json)
+remain source-bound historical evidence; use the current suite and its retained
+receipt for present lifecycle qualification.
 
 ## Create and build
 
