@@ -66,6 +66,20 @@ impl StateManagementReservation for Reservation {
             .with_live_until(deadline, action)
             .map_err(|_| expired())
     }
+    fn with_live_pair_until(
+        &self,
+        other: &latent_core::native_capacity::NativeReservation,
+        deadline: Instant,
+        action: &mut dyn FnMut(),
+    ) -> Result<(), PlatformError> {
+        let previous = self.fences.fetch_add(1, Ordering::Relaxed);
+        if previous >= self.reject_after.load(Ordering::Relaxed) {
+            return Err(expired());
+        }
+        self.native
+            .with_live_pair_until(other, deadline, action)
+            .map_err(|_| expired())
+    }
 }
 impl StateManagementAdmission for Admission {
     fn native_capacity(&self) -> latent_core::native_capacity::NativeCapacityOwner {

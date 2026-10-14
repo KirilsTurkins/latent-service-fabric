@@ -20,6 +20,12 @@ pub struct TransactionInstallation {
     pub(super) selection: Option<Arc<dyn super::TransactionInstallationSelection>>,
 }
 impl TransactionInstallation {
+    #[cfg(all(test, unix))]
+    pub(in crate::transaction_runtime) fn state_binding_for_native_test(
+        &self,
+    ) -> &Arc<PolicyCallBinding> {
+        &self.state
+    }
     /// Validate the descriptive caller choice against this trusted binding.
     /// Namespace/policy admission still seals the actual permission separately.
     pub fn check_recovery_scope(

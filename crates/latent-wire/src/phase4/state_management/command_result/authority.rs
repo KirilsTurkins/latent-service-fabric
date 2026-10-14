@@ -11,7 +11,7 @@ use std::time::Duration;
 
 pub(super) struct ReadAuthority {
     pub binding: Arc<StateManagementBinding>,
-    pub decision: OwnedPolicyDecision,
+    pub decision: Arc<OwnedPolicyDecision>,
     pub key: CommandKey,
     pub deadline: Instant,
     pub command_manager: Option<latent_node::LocalActivationManager>,
@@ -91,7 +91,7 @@ impl ResultWindow {
 }
 
 pub(super) struct ResponseOwner {
-    pub namespace: NamespaceRead,
+    pub namespace: Arc<NamespaceRead>,
     pub lifecycle: NamespaceLifecycleHandle,
     pub window: ResultWindow,
     pub read: Arc<ReadAuthority>,

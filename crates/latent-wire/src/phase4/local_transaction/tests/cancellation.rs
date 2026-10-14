@@ -87,6 +87,44 @@ async fn finish_guest(f: &Fixture, owner: CommandTask) {
     assert_eq!(f.manager.cancellation_snapshot().active_registrations, 0);
 }
 
+fn assert_abort_receipt(command: &t::CommandInspection, original: &t::CommandInspection) {
+    assert_eq!(command.command_id, original.command_id);
+    assert_eq!(command.attempt_id, original.attempt_id);
+    assert_eq!(command.key, original.key);
+    assert_eq!(command.source, original.source);
+    assert_eq!(command.outcome, t::CommandOutcome::Aborted as i32);
+    assert!(command.metadata_durable && !command.application_state_committed);
+    assert!(command.proven_abort.is_some() && command.commit.is_none());
+}
+
+fn assert_cancelled_abort(command: &t::CommandInspection, original: &t::CommandInspection) {
+    assert_abort_receipt(command, original);
+    let Some(t::command_inspection::RetainedResult::TechnicalFailure(failure)) =
+        &command.retained_result
+    else {
+        panic!("original cancelled attempt requires retained technical failure");
+    };
+    assert_eq!(failure.code, "cancelled");
+}
+
+fn assert_original_cancelled_invoke(
+    returned: &t::InvokeCommandResponse,
+    before: &t::CommandInspection,
+) {
+    assert_abort_receipt(returned.command.as_ref().unwrap(), before);
+    assert!(returned.command.as_ref().unwrap().retained_result.is_none());
+    let invocation = returned.invocation.as_ref().unwrap();
+    let Some(latent_rpc::invocation::v1::invoke_response::Result::PlatformFailure(failure)) =
+        &invocation.result
+    else {
+        panic!("original cancelled invoke receipt requires the actual failure category");
+    };
+    assert_eq!(failure.code, "cancelled");
+    let consumption = invocation.consumption.as_ref().unwrap();
+    assert_eq!(consumption.effect_count, 1);
+    assert!(consumption.state_write_bytes > 16_384);
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 #[ignore = "Requires the maintained compiled Rust transaction guest"]
 async fn actual_guest_installed_cancellation_reaches_only_original_live_command() {
@@ -109,6 +147,20 @@ async fn actual_guest_installed_cancellation_reaches_only_original_live_command(
     drop(original);
     assert_eq!(f.executions(), 1);
     assert_eq!(f.manager.cancellation_snapshot().active_registrations, 1);
+    let denied = f
+        .adapter()
+        .cancel_command(context("bob").request(request(&f, "original-cancel")))
+        .await
+        .unwrap_err();
+    assert_eq!(denied.code(), tonic::Code::PermissionDenied);
+    let mut wrong = request(&f, "original-cancel");
+    wrong.command.as_mut().unwrap().attempt_id = Some("01".into());
+    let wrong = f
+        .adapter()
+        .cancel_command(context("alice").request(wrong))
+        .await
+        .unwrap_err();
+    assert_eq!(wrong.code(), tonic::Code::InvalidArgument);
     let requested = f
         .adapter()
         .cancel_command(context("alice").request(request(&f, "original-cancel")))
@@ -134,23 +186,34 @@ async fn actual_guest_installed_cancellation_reaches_only_original_live_command(
     assert_eq!(associated.attempt_id, before.attempt_id);
     assert_eq!(associated.source, before.source);
     assert_pending(associated);
-    let denied = f
-        .adapter()
-        .cancel_command(context("bob").request(request(&f, "original-cancel")))
-        .await
-        .unwrap_err();
-    assert_eq!(denied.code(), tonic::Code::PermissionDenied);
-    let mut wrong = request(&f, "original-cancel");
-    wrong.command.as_mut().unwrap().attempt_id = Some("01".into());
-    let wrong = f
-        .adapter()
-        .cancel_command(context("alice").request(wrong))
-        .await
-        .unwrap_err();
-    assert_eq!(wrong.code(), tonic::Code::InvalidArgument);
     assert_eq!(f.rows(Family::State).await, 0);
     assert_eq!(f.rows(Family::Outbox).await, 0);
-    finish_guest(&f, command_owner).await;
+    f.backend.imports.continue_after_stage.notify_one();
+    let returned = tokio::time::timeout(Duration::from_secs(5), command_owner)
+        .await
+        .unwrap()
+        .unwrap();
+    if returned.is_err() {
+        drop(requested);
+        f.shutdown().await;
+        panic!(
+            "physically retired authorized cancellation lacks its original durable abort receipt"
+        );
+    }
+    let returned = returned.unwrap().into_inner();
+    assert_original_cancelled_invoke(&returned, &before);
+    let owned_lookup = f
+        .recovery_backend()
+        .await
+        .execute_state(context("alice"), f.lookup_request("original-cancel").into())
+        .await
+        .unwrap()
+        .into_parts();
+    let contract::Response::LookupCommand(lookup) = &owned_lookup.0 else {
+        panic!("original abort lookup absent");
+    };
+    assert_cancelled_abort(lookup.command.as_ref().unwrap(), &before);
+    drop(owned_lookup);
     assert_eq!(
         terminal(&f, &original_activation),
         Some(latent_core::ActivationTerminalState::Cancelled)

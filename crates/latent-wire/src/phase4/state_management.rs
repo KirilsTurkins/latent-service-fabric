@@ -75,6 +75,16 @@ pub trait StateManagementReservation: Send + Sync {
     ) -> Result<(), PlatformError> {
         Err(unsupported())
     }
+    /// Joint currentness of this original management reservation and another
+    /// reservation from the same actual owner. Implementations fail closed.
+    fn with_live_pair_until(
+        &self,
+        _other: &latent_core::native_capacity::NativeReservation,
+        _deadline: Instant,
+        _action: &mut dyn FnMut(),
+    ) -> Result<(), PlatformError> {
+        Err(unsupported())
+    }
 }
 
 /// Trusted installed target constraints. Descriptive configuration grants no

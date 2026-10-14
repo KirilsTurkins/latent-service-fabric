@@ -496,6 +496,19 @@
       "testThreads": 1,
       "timeoutSeconds": 900
     },
+    "http-response-policy": {
+      "exact": true,
+      "filter": "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity",
+      "ignored": true,
+      "names": [
+        "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity"
+      ],
+      "resourceClass": "runtime-bounded",
+      "runner": "ci_rust_artifacts",
+      "suite": "latentd.lib.latentd",
+      "testThreads": 1,
+      "timeoutSeconds": 180
+    },
     "metadata-working-set": {
       "exact": true,
       "executionOnly": true,
@@ -683,19 +696,6 @@
       "suite": "latent-wasmtime.test.vault-secrets",
       "testThreads": 1,
       "timeoutSeconds": 300
-    },
-    "http-response-policy": {
-      "exact": true,
-      "filter": "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity",
-      "ignored": true,
-      "names": [
-        "standalone::http::tests::browser_component::actual_http_component_browser_policy_rejects_unsafe_output_without_reflecting_identity"
-      ],
-      "resourceClass": "runtime-bounded",
-      "runner": "ci_rust_artifacts",
-      "suite": "latentd.lib.latentd",
-      "testThreads": 1,
-      "timeoutSeconds": 180
     }
   },
   "sourceRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
@@ -1511,6 +1511,9 @@
         "namespace::tests::authority::lifecycle_cas_rejects_stale_handles_and_recreation_cannot_revive_result_ownership",
         "namespace::tests::authority::lifecycle_domain_replay_is_currently_authorized_and_active_owners_block_retirement",
         "namespace::tests::authority::management_receipt_disclosure_rechecks_current_permission_and_exact_stable_actor",
+        "namespace::tests::authority::metadata::joint_cancel_metadata_refuses_foreign_principal_store_and_non_cancel_purpose",
+        "namespace::tests::authority::metadata::joint_cancel_metadata_requires_current_original_and_retained_purpose",
+        "namespace::tests::authority::metadata::joint_metadata_callback_refusal_and_panic_preserve_existing_policy_owner",
         "namespace::tests::authority::owned_activation_survives_borrowed_snapshot_drop_but_replacement_policy_cannot_refresh_its_grant",
         "namespace::tests::authority::policy_revoked_before_actual_writer_acceptance_leaves_all_families_unmodified",
         "namespace::tests::authority::publication_revoked_before_writer_acceptance_does_not_revoke_shared_component_correction",
@@ -1540,7 +1543,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-capabilities/Cargo.toml",
-      "minimumCases": 170,
+      "minimumCases": 173,
       "mode": "libtest",
       "package": "latent-capabilities",
       "platforms": [
@@ -2165,7 +2168,10 @@
         "native_capacity::tests::ordinary_slot_and_bytes_pressure_preserve_actual_reserved_recovery_capacity",
         "native_capacity::tests::original_monotonic_deadline_and_close_fence_never_refund_retained_response_bytes",
         "native_capacity::tests::overflow_invalid_deadline_and_size_reject_before_any_native_owner_is_created",
+        "native_capacity::tests::paired_existing_reservations_keep_capacity_and_both_original_deadlines",
+        "native_capacity::tests::paired_reservations_refuse_foreign_owner_and_either_closed_partition",
         "native_capacity::tests::panicked_native_acceptance_fails_closed_without_refunding_original_buffer_owners",
+        "native_capacity::tests::panicked_paired_acceptance_retains_both_real_capacity_owners_and_fails_closed",
         "native_capacity::tests::single_drain_waiter_detachment_does_not_extend_original_native_buffer_cutoff",
         "publication::tests::canonical_round_trip_compacts_spare_capacity",
         "publication::tests::other_domains_and_noncanonical_inputs_fail_without_echoing_input",
@@ -2199,7 +2205,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 131,
+      "minimumCases": 134,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [
@@ -3230,6 +3236,17 @@
         "transaction_runtime::tests::cancellation::original_native_command_cancellation_requests_only_its_original_owner",
         "transaction_runtime::tests::cancellation::original_native_command_cancellation_respects_existing_record_cap",
         "transaction_runtime::tests::cancellation::original_native_query_and_released_guest_do_not_mint_command_cancellation",
+        "transaction_runtime::tests::cancellation_abort::actual_authorized_cancel_retirement_publishes_only_original_metadata_abort",
+        "transaction_runtime::tests::cancellation_abort::actual_cancel_request_without_original_guest_retirement_cannot_publish_abort",
+        "transaction_runtime::tests::cancellation_abort::actual_current_cancel_purpose_revocation_preserves_original_pending",
+        "transaction_runtime::tests::cancellation_abort::actual_generic_cancellation_cannot_be_upgraded_by_later_management_request",
+        "transaction_runtime::tests::cancellation_abort::actual_original_identity_expiry_cannot_publish_cancel_metadata",
+        "transaction_runtime::tests::cancellation_abort::actual_original_transport_stop_after_durable_abort_refuses_receipt_release",
+        "transaction_runtime::tests::cancellation_abort::actual_read_purpose_cannot_construct_cancel_metadata_or_request_original_owner",
+        "transaction_runtime::tests::cancellation_abort::actual_repeated_request_cannot_replace_first_metadata_authority",
+        "transaction_runtime::tests::cancellation_abort::actual_transport_stop_after_original_candidate_take_denies_promotion",
+        "transaction_runtime::tests::cancellation_abort::actual_transport_stop_after_promotion_denies_final_native_publication",
+        "transaction_runtime::tests::cancellation_abort::original_nonzero_external_grant_and_slot_free_cancellation_keep_ordinary_semantics",
         "transaction_runtime::tests::capacity::durable_response_owner_retains_global_slot_after_native_view_and_admission_retire",
         "transaction_runtime::tests::capacity::foreign_recovery_and_underfunded_ingress_cannot_open_native_or_command_rows",
         "transaction_runtime::tests::capacity::frozen_query_and_lost_waiter_retain_original_global_slot_through_real_retirement",
@@ -3266,7 +3283,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 164,
+      "minimumCases": 175,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [

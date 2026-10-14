@@ -261,13 +261,37 @@ pub struct CancellationHandle {
     maximum_reason_bytes: usize,
 }
 
-#[cfg_attr(test, derive(Clone))]
+#[derive(Clone)]
 pub(crate) struct WeakCancellationOwner {
     registry: Weak<RegistryInner>,
     state: Weak<CancellationState>,
 }
 
+/// Read-only view of the original accepted cancellation. It retains neither
+/// the registration table nor an activation/guest owner.
+pub(crate) struct CancellationMetadataProbe(Weak<CancellationState>);
+
+impl CancellationMetadataProbe {
+    pub(crate) fn is_current(&self) -> bool {
+        self.0.upgrade().is_some_and(|state| {
+            matches!(
+                &*state.lock_lifecycle(),
+                CancellationLifecycle::CancellationAccepted { .. }
+                    | CancellationLifecycle::Terminal {
+                        state: ActivationTerminalState::Cancelled,
+                        cancellation_reason: Some(_),
+                    }
+            )
+        })
+    }
+}
+
 impl WeakCancellationOwner {
+    pub(crate) fn matches_handle(&self, handle: &CancellationHandle) -> bool {
+        self.state
+            .upgrade()
+            .is_some_and(|state| Arc::ptr_eq(&state, &handle.state))
+    }
     pub(crate) fn matches_activation(&self, activation: &ActivationId) -> bool {
         self.state
             .upgrade()
@@ -301,9 +325,58 @@ impl WeakCancellationOwner {
         drop(registrations);
         result
     }
+
+    pub(crate) fn cancel_authorized(
+        &self,
+        reason: &str,
+        install: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<crate::transaction_runtime::OriginalCommandCancelDisposition, PlatformError> {
+        use crate::transaction_runtime::OriginalCommandCancelDisposition as D;
+        let (Some(inner), Some(original)) = (self.registry.upgrade(), self.state.upgrade()) else {
+            return Ok(D::RecoveryRequired);
+        };
+        let registry = ActivationCancellationRegistry { inner };
+        let registrations = registry.lock_registrations();
+        if !registrations
+            .get(&original.activation_id)
+            .is_some_and(|current| Arc::ptr_eq(current, &original))
+        {
+            return Ok(D::RecoveryRequired);
+        }
+        let mut lifecycle = original.lock_lifecycle();
+        let installed = matches!(*lifecycle, CancellationLifecycle::Live);
+        let result = match &*lifecycle {
+            CancellationLifecycle::Live => {
+                install()?;
+                *lifecycle = CancellationLifecycle::CancellationAccepted {
+                    reason: registry.bound_reason(reason),
+                };
+                D::Requested
+            }
+            CancellationLifecycle::CancellationAccepted { .. } => D::Requested,
+            CancellationLifecycle::CommitAccepted | CancellationLifecycle::Terminal { .. } => {
+                D::RecoveryRequired
+            }
+        };
+        drop(lifecycle);
+        drop(registrations);
+        if installed {
+            original.signal.send_replace(true);
+        }
+        Ok(result)
+    }
 }
 
 impl CancellationHandle {
+    pub(crate) fn metadata_probe(&self) -> CancellationMetadataProbe {
+        CancellationMetadataProbe(Arc::downgrade(&self.state))
+    }
+    pub(crate) fn accepted_cancellation(&self) -> bool {
+        matches!(
+            *self.state.lock_lifecycle(),
+            CancellationLifecycle::CancellationAccepted { .. }
+        )
+    }
     #[must_use]
     pub fn activation_id(&self) -> &ActivationId {
         &self.state.activation_id

@@ -9,16 +9,20 @@ impl StateAuthorization {
         namespace: NamespaceRead,
         namespaces: &NamespaceCatalog,
         recovery: &RecoverySelection,
+        cancelled_metadata: Option<Arc<super::super::cancellation::CancellationAbortPermit>>,
     ) -> Result<Arc<Self>, PlatformError> {
         let now = Instant::now();
-        let deadline = self
+        let mut deadline = self
             .budget
             .deadline()
             .monotonic()
             .ok_or_else(denied)?
             .min(self.authority.deadline());
+        if let Some(permit) = &cancelled_metadata {
+            deadline = deadline.min(permit.cutoff()?);
+        }
         let ownership = self.authority.ownership();
-        if self.budget.retained_authority_is_cancelled_at(now)
+        if (cancelled_metadata.is_none() && self.budget.retained_authority_is_cancelled_at(now))
             || now >= deadline
             || namespace.record().tenant != ownership.tenant
             || namespace.record().id.0 != ownership.namespace
@@ -59,14 +63,31 @@ impl StateAuthorization {
         }
         // Preserve the exact originally captured permission as well as its
         // numeric ceilings. A later broader grant cannot renew this attempt.
-        self.authority.with_operation(
-            &self.policy,
+        let authority = match &cancelled_metadata {
+            Some(permit) => self.authority.with_operation_metadata_dependency(
+                &self.policy,
+                &decision,
+                &self.namespace,
+                ("acquire-command", &permit.decision()),
+                || permit.with_native_pair(retained.native(), &mut || {}),
+            ),
+            None => self.authority.with_operation(
+                &self.policy,
+                &decision,
+                &self.namespace,
+                "acquire-command",
+                || Ok(()),
+            ),
+        };
+        authority?;
+        self.seal_abort_authority(
+            namespace,
+            namespaces,
+            recovery,
+            deadline,
             &decision,
-            &self.namespace,
-            "acquire-command",
-            || Ok(()),
-        )?;
-        self.seal_abort_authority(namespace, namespaces, recovery, deadline, &decision)
+            cancelled_metadata,
+        )
     }
 
     fn seal_abort_authority(
@@ -76,6 +97,7 @@ impl StateAuthorization {
         recovery: &RecoverySelection,
         deadline: Instant,
         decision: &SealedPolicyDecision<'_>,
+        cancelled_metadata: Option<Arc<super::super::cancellation::CancellationAbortPermit>>,
     ) -> Result<Arc<Self>, PlatformError> {
         let lifecycle = namespaces
             .lifecycle()
@@ -93,7 +115,11 @@ impl StateAuthorization {
             },
             lifecycle,
         )?;
-        let authorization = Self::new(
+        let authority = match &cancelled_metadata {
+            Some(permit) => authority.with_metadata_dependency(permit.decision()),
+            None => authority,
+        };
+        let mut authorization = Self::new(
             Arc::clone(&self.policy),
             Arc::new(authority),
             namespace,
@@ -105,6 +131,7 @@ impl StateAuthorization {
             self.budget.clone(),
         )?
         .with_retention(Arc::clone(self.retention.as_ref().ok_or_else(denied)?));
+        authorization.cancelled_metadata = cancelled_metadata;
         // Frozen original accounting remains frozen. This authority stays
         // private to the metadata writer and the original result response.
         Ok(Arc::new(authorization))

@@ -48,6 +48,9 @@ pub struct TransactionRetention {
 }
 
 impl TransactionRetention {
+    pub(super) fn native(&self) -> &NativeReservation {
+        &self.native
+    }
     pub(super) fn reserve(
         owner: &NativeCapacityOwner,
         envelope: &ActivationEnvelope,

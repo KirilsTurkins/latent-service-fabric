@@ -1,9 +1,16 @@
 //! A native claim binds cancellation to its original manager registration.
+mod abort;
 use super::{authorization, StateTransactionHost};
+pub use abort::CommandCancellationAuthority;
+pub(crate) use abort::{
+    with_request_authority, CancellationAbortPermit, CancellationAbortSlot,
+    PendingCancellationAbort,
+};
 use latent_commit::atomic::{AdmittedCommand, CommandRecord, Outcome};
 use latent_core::{ActivationBudget, ActivationId, PlatformError, TenantId};
 use latent_state::protected_store::ProtectedStoreOwner;
 use std::sync::{Arc, Weak};
+pub(crate) const CANCELLATION_RECORD_BYTES: usize = 2048;
 
 /// An accepted request is not a durable command disposition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,7 +24,8 @@ pub enum OriginalCommandCancelDisposition {
 pub struct OriginalCommandCancellation {
     activation: ActivationId,
     budget: ActivationBudget,
-    identity: CommandCancellationIdentity,
+    identity: Arc<CommandCancellationIdentity>,
+    abort_slot: Weak<CancellationAbortSlot>,
 }
 
 #[cfg_attr(test, derive(Clone))]
@@ -32,6 +40,11 @@ pub(crate) struct CommandCancellationIdentity {
 }
 
 impl OriginalCommandCancellation {
+    #[cfg(test)]
+    pub(crate) fn without_abort_slot_for_test(mut self) -> Self {
+        self.abort_slot = Weak::new();
+        self
+    }
     pub(super) fn from_claim(
         claim: &AdmittedCommand,
         host: &StateTransactionHost,
@@ -60,7 +73,7 @@ impl OriginalCommandCancellation {
         Ok(Self {
             activation: host.activation.clone(),
             budget: host.authorization.budget.clone(),
-            identity: CommandCancellationIdentity {
+            identity: Arc::new(CommandCancellationIdentity {
                 tenant: TenantId(record.key().tenant.clone()),
                 command: record.id().hex(),
                 attempt: record.attempt(),
@@ -68,7 +81,8 @@ impl OriginalCommandCancellation {
                 publication: record.source().publication.clone(),
                 fingerprint: record.fingerprint().bytes(),
                 store: Arc::downgrade(&host.store),
-            },
+            }),
+            abort_slot: Weak::new(),
         })
     }
 
@@ -76,8 +90,32 @@ impl OriginalCommandCancellation {
         &self.activation == id && self.budget.is_same_instance(budget)
     }
 
-    pub(crate) fn into_identity(self) -> CommandCancellationIdentity {
-        self.identity
+    pub(crate) fn with_abort_slot(
+        mut self,
+        slot: &Arc<CancellationAbortSlot>,
+        identity: Arc<CommandCancellationIdentity>,
+    ) -> Self {
+        self.abort_slot = Arc::downgrade(slot);
+        self.identity = identity;
+        self
+    }
+
+    pub(crate) fn identity(&self) -> Arc<CommandCancellationIdentity> {
+        self.identity.clone()
+    }
+    pub(crate) fn activation_retained_bytes(&self) -> usize {
+        self.abort_slot.upgrade().map_or(0, |slot| {
+            slot.retained_scope_bytes() + abort::prepaid_bytes()
+        })
+    }
+
+    pub(crate) fn into_identity(
+        self,
+    ) -> (
+        Arc<CommandCancellationIdentity>,
+        Weak<CancellationAbortSlot>,
+    ) {
+        (self.identity, self.abort_slot)
     }
 }
 
@@ -90,7 +128,10 @@ impl CommandCancellationIdentity {
             self.publication.capacity(),
         ]
         .into_iter()
-        .try_fold(0usize, usize::checked_add)
+        .try_fold(
+            std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>(),
+            usize::checked_add,
+        )
     }
 
     pub(crate) fn matches_record(
@@ -99,15 +140,29 @@ impl CommandCancellationIdentity {
         store: &ProtectedStoreOwner,
     ) -> bool {
         record.outcome() == Outcome::Pending
-            && self.tenant.0 == record.key().tenant
+            && self.matches_identity(record)
+            && self
+                .store
+                .upgrade()
+                .is_some_and(|original| original.is_same_owner(store))
+    }
+
+    pub(crate) fn same_identity(&self, other: &Self) -> bool {
+        self.tenant == other.tenant
+            && self.command == other.command
+            && self.attempt == other.attempt
+            && self.transaction == other.transaction
+            && self.publication == other.publication
+            && self.fingerprint == other.fingerprint
+            && Weak::ptr_eq(&self.store, &other.store)
+    }
+
+    pub(crate) fn matches_identity(&self, record: &CommandRecord) -> bool {
+        self.tenant.0 == record.key().tenant
             && self.command == record.id().hex()
             && self.attempt == record.attempt()
             && self.transaction == record.transaction_id().hex()
             && self.publication == record.source().publication
             && self.fingerprint == record.fingerprint().bytes()
-            && self
-                .store
-                .upgrade()
-                .is_some_and(|original| original.is_same_owner(store))
     }
 }

@@ -37,8 +37,38 @@ impl crate::TransactionActivationAdmission for NativeTransactionAdmission {
         let state = self.state.lock().map_err(|_| authorization::denied())?;
         match &*state {
             State::Ready(Some(TransactionAdmissionResult::Command { claim, host })) => {
-                super::super::cancellation::OriginalCommandCancellation::from_claim(claim, host)
-                    .map(Some)
+                let original = super::super::cancellation::OriginalCommandCancellation::from_claim(
+                    claim, host,
+                )?;
+                if !super::super::cancellation::CancellationAbortSlot::eligible(
+                    &original.identity(),
+                    host,
+                ) {
+                    return Ok(Some(original));
+                }
+                // The shell is allocated only after the original real ingress
+                // metadata/host-memory reservation exists; no separate quota.
+                let _prepaid = self.retained_capacity()?;
+                let mut shared = self
+                    .cancellation_abort
+                    .lock()
+                    .map_err(|_| authorization::denied())?;
+                let slot = shared.get_or_insert_with(Arc::default).clone();
+                drop(shared);
+                let identity = slot
+                    .bind(
+                        original.identity(),
+                        host,
+                        self.owners.policy.clone(),
+                        self.owners.namespaces.clone(),
+                        self.owners.native.clone(),
+                    )
+                    .ok()
+                    .flatten();
+                Ok(Some(match identity {
+                    Some(identity) => original.with_abort_slot(&slot, identity),
+                    None => original,
+                }))
             }
             _ => Ok(None),
         }

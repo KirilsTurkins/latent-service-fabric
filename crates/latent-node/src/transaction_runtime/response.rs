@@ -68,9 +68,19 @@ impl TransactionResponseAuthority {
             None
         };
         self.authorization
-            .with_response_current(self.operation, || match deadline {
-                Some(deadline) => self.retention.with_current_until(deadline, publish),
-                None => self.retention.with_current(publish),
+            .with_response_current(self.operation, || {
+                if self.authorization.cancelled_metadata.is_some() {
+                    self.authorization.with_response_native(
+                        self.retention.native(),
+                        deadline.unwrap_or_else(|| self.retention.native().original_deadline()),
+                        publish,
+                    )
+                } else {
+                    match deadline {
+                        Some(deadline) => self.retention.with_current_until(deadline, publish),
+                        None => self.retention.with_current(publish),
+                    }
+                }
             })
     }
 

@@ -53,6 +53,22 @@ pub struct TransactionCommitControl {
     clock: Arc<dyn ActivationClock>,
     budget: ActivationBudget,
 }
+
+/// Original fixed signals only; no budget, manager, registration or guest is
+/// retained by metadata recovery. A late transport stop remains a refusal.
+pub(crate) struct OriginalCancellationMetadataFence {
+    transport: Arc<super::transport_stop::TransportStop>,
+    cancellation: crate::cancellation::CancellationMetadataProbe,
+    clock: Arc<dyn ActivationClock>,
+    deadline: std::time::Instant,
+}
+impl OriginalCancellationMetadataFence {
+    pub(crate) fn is_current(&self) -> bool {
+        self.clock.monotonic_now() < self.deadline
+            && self.transport.cause().is_none()
+            && self.cancellation.is_current()
+    }
+}
 impl TransactionCommitControl {
     pub(super) fn new(
         cancellation: crate::CancellationHandle,
@@ -90,6 +106,38 @@ impl TransactionCommitControl {
             .budget
             .retained_authority_is_cancelled_at(self.clock.monotonic_now())
             && self.transport.cause().is_none()
+    }
+
+    pub(crate) fn accepted_original_cancellation(&self) -> bool {
+        self.transport.cause().is_none()
+            && !self
+                .budget
+                .deadline()
+                .is_expired_at(self.clock.monotonic_now())
+            && self.cancellation.accepted_cancellation()
+    }
+
+    pub(crate) fn cancelled_metadata_fence(&self) -> Option<OriginalCancellationMetadataFence> {
+        let deadline = self.budget.deadline().monotonic()?;
+        self.accepted_original_cancellation()
+            .then(|| OriginalCancellationMetadataFence {
+                transport: self.transport.clone(),
+                cancellation: self.cancellation.metadata_probe(),
+                clock: self.clock.clone(),
+                deadline,
+            })
+    }
+    pub(crate) fn matches_cancellation_owner(
+        &self,
+        owner: &crate::cancellation::WeakCancellationOwner,
+    ) -> bool {
+        owner.matches_handle(&self.cancellation)
+    }
+
+    #[cfg(all(test, unix))]
+    pub(crate) fn stop_transport_for_native_test(&self) {
+        self.transport
+            .mark(super::transport_stop::ActivationTransportInterruption::Disconnected);
     }
 
     #[cfg(all(test, unix))]

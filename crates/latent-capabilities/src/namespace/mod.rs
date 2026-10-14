@@ -59,6 +59,7 @@ enum Mode {
 /// it after current policy/publication revocation or namespace reincarnation.
 pub struct NamespaceAuthority {
     initial: OwnedPolicyDecision,
+    metadata_dependency: Option<Arc<OwnedPolicyDecision>>,
     ownership: ResultOwnership,
     publication: String,
     version: NamespaceVersion,
@@ -178,6 +179,7 @@ impl NamespaceAuthority {
             deadline.min(Instant::now() + Duration::from_millis(ceiling.wall_time_millis));
         Ok(Self {
             initial,
+            metadata_dependency: None,
             ownership,
             publication,
             version: namespace.record().version,
@@ -229,6 +231,15 @@ impl NamespaceAuthority {
         CommitCancellation {
             gate: Arc::clone(&self.gate),
         }
+    }
+
+    /// An extra retained decision can only restrict the metadata operations.
+    /// Every use rechecks its actual cancel-command scope with the original and
+    /// fresh decisions under the same policy/publication fence.
+    #[must_use]
+    pub fn with_metadata_dependency(mut self, dependency: Arc<OwnedPolicyDecision>) -> Self {
+        self.metadata_dependency = Some(dependency);
+        self
     }
 
     /// Short no-I/O currentness boundary for a host-derived operation. Read the
@@ -286,8 +297,48 @@ impl NamespaceAuthority {
         retained_response: bool,
         action: impl FnOnce() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
+        self.with_operation_fenced_dependency(
+            store,
+            operation,
+            namespace,
+            expected_operation,
+            (retained_response, self.metadata_dependency.as_deref()),
+            action,
+        )
+    }
+
+    /// Add a real retained cancel purpose to one metadata operation; this grants
+    /// nothing and preserves the original capture and namespace acceptance gate.
+    pub fn with_operation_metadata_dependency(
+        &self,
+        store: &PolicyStore,
+        operation: &SealedPolicyDecision<'_>,
+        namespace: &NamespaceRead,
+        metadata: (&str, &OwnedPolicyDecision),
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        self.with_operation_fenced_dependency(
+            store,
+            operation,
+            namespace,
+            metadata.0,
+            (false, Some(metadata.1)),
+            action,
+        )
+    }
+
+    fn with_operation_fenced_dependency(
+        &self,
+        store: &PolicyStore,
+        operation: &SealedPolicyDecision<'_>,
+        namespace: &NamespaceRead,
+        expected_operation: &str,
+        fence: (bool, Option<&OwnedPolicyDecision>),
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        let (retained_response, dependency) = fence;
         let mut action = Some(action);
-        store.with_captured(&self.initial, operation, &mut |inputs| {
+        let mut check = |inputs: &[&EvaluationInput<'_>]| {
             if retained_response {
                 self.gate.check_retained_response()?;
                 self.check_namespace_scope(namespace, expected_operation)?;
@@ -296,6 +347,18 @@ impl NamespaceAuthority {
             }
             let actual = inputs.get(1).ok_or_else(denied)?;
             self.check_target(actual, expected_operation)?;
+            if dependency.is_some() {
+                if !matches!(
+                    expected_operation,
+                    "acquire-command" | "commit" | "read-result"
+                ) {
+                    return Err(denied());
+                }
+                self.check_target(inputs.get(2).ok_or_else(denied)?, "cancel-command")?;
+                if inputs[2].service != actual.service {
+                    return Err(denied());
+                }
+            }
             let mut action_error = None;
             let write = matches!(expected_operation, "put" | "delete" | "stage" | "commit");
             let result = self.lifecycle.with_current(namespace, write, || {
@@ -315,7 +378,13 @@ impl NamespaceAuthority {
             } else {
                 result.map_err(|_| denied())
             }
-        })
+        };
+        match dependency {
+            Some(dependency) => {
+                store.with_captured_and_retained(&self.initial, operation, dependency, &mut check)
+            }
+            None => store.with_captured(&self.initial, operation, &mut check),
+        }
     }
 
     /// Authorize BEFORE result/effect/inbox lookup and AGAIN before response

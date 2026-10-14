@@ -149,6 +149,21 @@ impl PolicyStore {
         self.with_current_decisions(&[&captured.borrowed(), operation], action)
     }
 
+    /// The original capture, a fresh operation and one retained extra authority
+    /// share one current policy/publication fence, without recursive locking.
+    pub fn with_captured_and_retained(
+        &self,
+        captured: &OwnedPolicyDecision,
+        operation: &SealedPolicyDecision<'_>,
+        retained: &OwnedPolicyDecision,
+        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        self.with_current_decisions(
+            &[&captured.borrowed(), operation, &retained.borrowed()],
+            action,
+        )
+    }
+
     /// Recheck the original retained owner, row stamps and publication under the
     /// existing short currentness fence. This does not acquire a replacement
     /// grant or expose a reusable borrowed authorization object. The callback

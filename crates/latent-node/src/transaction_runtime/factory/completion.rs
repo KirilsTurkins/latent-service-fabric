@@ -12,6 +12,10 @@ use std::sync::Arc;
 mod tests;
 
 impl NativeTransactionAdmission {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Keep the original affine completion and its optional cancellation metadata proof in one explicit disposition match"
+    )]
     pub(super) async fn complete_native(
         &self,
         outcome: ActivationOutcome,
@@ -39,7 +43,7 @@ impl NativeTransactionAdmission {
                     host.clone(),
                     self.owners.effects.clone(),
                     self.owners.time.clone(),
-                    control,
+                    control.clone(),
                 );
                 let disposition = match completion {
                     Ok(completion) => completion.finish(outcome).await,
@@ -51,7 +55,13 @@ impl NativeTransactionAdmission {
                 };
                 let failure_code = original_failure.as_ref().and_then(platform_failure_code);
                 let disposition = self
-                    .persist_terminal_abort(disposition, &host, failure_code)
+                    .persist_terminal_abort(
+                        disposition,
+                        &host,
+                        failure_code,
+                        &control,
+                        original_failure.as_ref(),
+                    )
                     .await;
                 let observation = command_observation(&disposition, consumption, original_failure);
                 (

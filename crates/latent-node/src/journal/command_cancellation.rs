@@ -1,20 +1,25 @@
 //! A separate opaque native association routes to the original cancellation owner.
 use super::{capacity, error, LocalActivationJournal, TERMINAL_RESERVE_BYTES};
+use crate::transaction_runtime::cancellation::{CancellationAbortSlot, PendingCancellationAbort};
 use crate::{
     cancellation::WeakCancellationOwner,
     transaction_runtime::{
-        CommandCancellationIdentity, OriginalCommandCancelDisposition, OriginalCommandCancellation,
+        CommandCancellationAuthority, CommandCancellationIdentity,
+        OriginalCommandCancelDisposition, OriginalCommandCancellation,
     },
 };
 use latent_commit::atomic::CommandRecord;
 use latent_core::{ActivationId, ActivationPhase, PlatformError, PlatformErrorCode, TenantId};
 use latent_state::protected_store::ProtectedStoreOwner;
+use std::sync::{Arc, Weak};
 
-pub(super) const RECORD_BYTES: usize = 2048;
+pub(super) const RECORD_BYTES: usize =
+    crate::transaction_runtime::cancellation::CANCELLATION_RECORD_BYTES;
 
 #[cfg_attr(test, derive(Clone))]
 pub(super) struct BoundOriginalCommand {
-    identity: CommandCancellationIdentity,
+    identity: Arc<CommandCancellationIdentity>,
+    abort_slot: Weak<CancellationAbortSlot>,
     serial: u64,
     owner: WeakCancellationOwner,
 }
@@ -43,12 +48,14 @@ pub(super) fn bind(
     {
         return Err(denied());
     }
-    let identity = original.into_identity();
+    let retained_activation = original.activation_retained_bytes();
+    let (identity, abort_slot) = original.into_identity();
     if identity.tenant != record.tenant {
         return Err(denied());
     }
     if identity
         .retained_bytes()
+        .and_then(|bytes| bytes.checked_add(retained_activation))
         .and_then(|bytes| bytes.checked_add(std::mem::size_of::<BoundOriginalCommand>()))
         .is_none_or(|bytes| bytes > RECORD_BYTES)
     {
@@ -63,6 +70,7 @@ pub(super) fn bind(
     }
     record.command_cancellation = Some(Box::new(BoundOriginalCommand {
         identity,
+        abort_slot,
         serial,
         owner,
     }));
@@ -111,6 +119,67 @@ impl LocalActivationJournal {
         store: &ProtectedStoreOwner,
         reason: &str,
     ) -> Result<OriginalCommandCancelDisposition, PlatformError> {
+        self.cancel_original_command_request(tenant, command, store, reason, None)
+    }
+
+    pub(crate) fn cancel_original_command_authorized(
+        &self,
+        tenant: &TenantId,
+        command: &CommandRecord,
+        store: &ProtectedStoreOwner,
+        reason: &str,
+        authority: Arc<dyn CommandCancellationAuthority>,
+        before: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<OriginalCommandCancelDisposition, PlatformError> {
+        let slot = {
+            let state = self.inner.lock();
+            let mut matched = None;
+            for record in state.records.values() {
+                if let Some(bound) = &record.command_cancellation {
+                    if &record.tenant == tenant && bound.identity.matches_record(command, store) {
+                        if matched.is_some() {
+                            return Err(error(
+                                PlatformErrorCode::Unavailable,
+                                "ambiguous-original-command-cancellation",
+                            ));
+                        }
+                        if bound.serial != record.serial || record.status.terminal_state.is_some() {
+                            return Err(denied());
+                        }
+                        matched = Some(bound.abort_slot.clone());
+                    }
+                }
+            }
+            matched.and_then(|slot| slot.upgrade())
+        };
+        let result = match slot {
+            Some(slot) => slot.with_authorized_request(command, &authority, |request| {
+                before()?;
+                self.cancel_original_command_request(tenant, command, store, reason, request)
+            }),
+            None => crate::transaction_runtime::cancellation::with_request_authority(
+                command,
+                authority.as_ref(),
+                |_| {
+                    before()?;
+                    self.cancel_original_command_request(tenant, command, store, reason, None)
+                },
+            ),
+        };
+        // Release this transient request only after the synchronous fence.
+        // A first installed candidate retains its actual prepaid owner.
+        drop(authority);
+        result
+    }
+
+    fn cancel_original_command_request(
+        &self,
+        tenant: &TenantId,
+        command: &CommandRecord,
+        store: &ProtectedStoreOwner,
+        reason: &str,
+        request: Option<PendingCancellationAbort>,
+    ) -> Result<OriginalCommandCancelDisposition, PlatformError> {
         if tenant.0 != command.key().tenant {
             return Err(denied());
         }
@@ -138,7 +207,16 @@ impl LocalActivationJournal {
             }
         }
         match matched {
-            Some(original) => Ok(original.owner.cancel(reason)),
+            Some(original) => match request {
+                None => Ok(original.owner.cancel(reason)),
+                Some(request) => original.owner.cancel_authorized(reason, || {
+                    original
+                        .abort_slot
+                        .upgrade()
+                        .ok_or_else(denied)?
+                        .install(request, original.owner.clone())
+                }),
+            },
             None => Ok(OriginalCommandCancelDisposition::RecoveryRequired),
         }
     }

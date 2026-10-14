@@ -127,7 +127,7 @@ pub(super) async fn execute(
     let read = Arc::new(ReadAuthority {
         inner: Arc::clone(&inner),
         binding,
-        decision,
+        decision: Arc::new(decision),
         permit,
         key,
         deadline,
@@ -286,7 +286,7 @@ fn lookup(
     let payload = matches!(request, contract::Request::LookupCommand(_));
     let window = ResultWindow::capture(&record, result.as_ref().filter(|_| payload));
     let owner = Arc::new(ResponseOwner {
-        namespace,
+        namespace: Arc::new(namespace),
         lifecycle,
         window,
         read,

@@ -1,4 +1,6 @@
+mod cancellation;
 mod history;
+pub(super) use cancellation::CancellationAuthority;
 mod invocation;
 mod policy;
 mod publication;
