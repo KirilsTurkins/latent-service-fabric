@@ -335,6 +335,14 @@ the witness, and the fixed path reports the actual staging before strict runtime
 teardown. This source control grants no persistence, delivery or retry authority;
 the signed Java campaigns retain their separate acceptance receipts.
 
+The [clean combined native receipt](evidence/recovery970-native-owner-controls-2026-10-14.json)
+records 1045 passing active controls, exact suite inventories, all 27 retained
+wire ignores and the explicit compiled-guest staging case on `4f88f9cb`. It also
+binds six independently frozen native tools to that complete clean source tree.
+The terminal and pending signed attempts on those tools remain failed at a
+dispatched management RPC returning `resource-exhausted`; neither attempt
+establishes complete signed recovery acceptance.
+
 Recovery recognizes only the original and separately reviewed fresh HTTP
 marker. Each must match the installed component, signed companion and exact
 requirement bytes. The selected marker enters the conformance proof; the

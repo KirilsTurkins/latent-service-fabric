@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "latent.current-native-owner-controls.v1",
+  "recordedAtUtc": "2026-10-14T00:28:25.814758+00:00",
+  "sourceCommit": "4f88f9cba3cd8043cac30ec954e2aaf2c8cffdb9",
+  "sourceTree": "11d73ce0dfbc2d04c04760b77ff18186438f9ff9",
+  "trackedFilesVerified": 9462,
+  "nativeCompiler": "rustc1.97.1",
+  "testReceiptSha256": "sha256:fada01236d678f9ec9c9bd2b573ed2903396f14832ef96214b688abb321b7d18",
+  "activeCases": 1045,
+  "libraries": [
+    {
+      "id": "latent-effects.lib.latent-effects",
+      "sha256": "f103b0a5bc3b34b939a2bd9a86471affea3e341c588d0bd39022690a4e262708",
+      "cases": 150,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-node.lib.latent-node",
+      "sha256": "94f5a07cbec9f6acc10431c56cdd74a3170cd5c79c9783963b7f72a39d5df55e",
+      "cases": 155,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [
+        "transaction-test-observation"
+      ],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-state.lib.latent-state",
+      "sha256": "e53e3f4d15f3a7adcd8aafdc127ecd7e4ab7ff5fce05b5476674d6a7030c54ac",
+      "cases": 374,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-wire.lib.latent-wire",
+      "sha256": "71db527fbb87e77193f7f6f0f48d00c1bdc9cc49f17e9d6e80bbc184db5b7024",
+      "cases": 230,
+      "ignored": 27,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent.lib.latent",
+      "sha256": "3d4fa8c9b1206fadae79e6010a570fbf0e0627398e428ba24b4bae8ad914425d",
+      "cases": 163,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    }
+  ],
+  "actualStagingControl": {
+    "case": "phase4::local_transaction::tests::staging::actual_guest_post_insertion_staging_reaches_original_manager_and_privileged_wire",
+    "exitCode": 0,
+    "stdoutSha256": "sha256:df08031f36029befba6e7388b49aeb07e64500e0ecb2761810c7a1add619b37c",
+    "guestSha256": "sha256:637b3c53834a5ef679b40d15bcbdef55f5858d700f27ac6e276475b1f81c4698",
+    "guestBytes": 108412,
+    "guestCompilation": "one maintained Rust aggregate component; separate from signed Java captures"
+  },
+  "sixToolManifestSha256": "sha256:1d55c0cca4987dc44793cab5b1b2073a762fb9353319ffd6a7157ece26c198b6",
+  "frozenRoles": [
+    {
+      "role": "node",
+      "sha256": "50e31d9da073b37e076d1e27985a8e0993e52fc21f328638bdf4c481fc5878ba",
+      "bytes": 181808408,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    },
+    {
+      "role": "recovery_helper",
+      "sha256": "78eb5776bc55b58237b319ebeaca425fd70c8277980982fe69907933decab570",
+      "bytes": 186526112,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    },
+    {
+      "role": "cli",
+      "sha256": "1fa9cc5c76bd000f7216db5e982ae38085d79fd3022770096e11c888d5b860d2",
+      "bytes": 69335216,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    },
+    {
+      "role": "contracts_tool",
+      "sha256": "8e4c9437004fdc8f7acce722200354bae2fabe6d59dc970100d7ac2266371b40",
+      "bytes": 7904536,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    },
+    {
+      "role": "aot_compiler",
+      "sha256": "2ab9278371570f121cf6a66411fe7738688b05b8dd3d2ade00b16c93479b48fb",
+      "bytes": 41788512,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    },
+    {
+      "role": "signer",
+      "sha256": "4c4b018b2c0a2254918f3900b274e03a304c45fea2dc0859380b8fa7ecc97011",
+      "bytes": 24812672,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    }
+  ],
+  "sourceSecretScan": {
+    "files": 44,
+    "findings": 0,
+    "receiptSha256": "sha256:59b5bf2328c2ff1623e13e26f06ec23251719c9b8b50547d0d8e2784248c477f"
+  },
+  "earlierHarnessAttempt": {
+    "compilationSucceeded": true,
+    "controlsExecuted": false,
+    "failure": "checker assumed default target instead of explicit shared /target",
+    "preserved": true,
+    "recordedCompilationInventoryReused": true
+  },
+  "boundary": "controlled native libraries and real trusted-local Rust staging path, not complete signed Java or packaged acceptance",
+  "thisPacketQualifiesSignedJava": false,
+  "thisPacketQualifiesPackagedDistribution": false,
+  "issueAcceptance": false
+}
