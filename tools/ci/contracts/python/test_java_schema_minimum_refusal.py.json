@@ -10,6 +10,7 @@
     "SchemaMinimumRefusalControls.test_native_scope_or_recovery_transition_cannot_substitute_for_schema_migration",
     "SchemaMinimumRefusalControls.test_old_409_guard_red_and_current_closed_refusal_green_with_real_query_parser",
     "SchemaMinimumRefusalControls.test_other_503_bodies_missing_body_and_loss_are_not_the_intended_refusal",
+    "SchemaMinimumRefusalControls.test_real_http_normal_return_omits_loss_flag_while_explicit_malformed_flags_fail",
     "SchemaMinimumRefusalControls.test_three_requests_keep_same_alice_path_and_original_minimum_without_body_or_command",
     "SchemaMinimumRefusalControls.test_transport_or_following_query_failure_is_never_retried_or_recorded",
     "SchemaMinimumRefusalControls.test_wrong_200_409_403_and_boolean_status_never_record_the_case_or_query_again",
@@ -138,6 +139,18 @@
       ],
       "skipSites": []
     },
+    "SchemaMinimumRefusalControls.test_real_http_normal_return_omits_loss_flag_while_explicit_malformed_flags_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
     "SchemaMinimumRefusalControls.test_three_requests_keep_same_alice_path_and_original_minimum_without_body_or_command": {
       "bases": [
         "unittest.TestCase"
@@ -213,6 +226,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_schema_minimum_refusal.py",
-  "reviewReason": "Review sixteen current-schema minimum controls: authenticate original and migrated namespace/schema/history bindings, require successful same-count queries around only this fixed Unavailable refusal, preserve old generic403/409 and all authority/deadline/native guards, and retain unknown private cause.",
+  "reviewReason": "Preserve all sixteen schema-minimum controls and their guards; add real Http.request normal-return coverage with omitted bodyLost and explicit malformed flags, without expanding any status, body, token, authority, deadline or retry behavior.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

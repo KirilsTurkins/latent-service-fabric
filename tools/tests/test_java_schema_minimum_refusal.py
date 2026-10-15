@@ -260,6 +260,57 @@ class SchemaMinimumRefusalControls(unittest.TestCase):
                     subject.campaign.refusal.assert_called_once_with('schema-refuses-stale-query-minimum', {'status': 409}, {409})
                     subject.campaign.socket.assert_called_once_with('query', minimum=before['state-view'])
 
+    def test_real_http_normal_return_omits_loss_flag_while_explicit_malformed_flags_fail(self):
+        with self.fixture() as args:
+            flow, before, _, _, ready = args[:5]
+            flow.transport = http.Http('localhost:52027', http.time.monotonic() + 30)
+            connections, responses, returned = [], [], []
+            for value in (fresh(ready), unavailable(), fresh(ready)):
+                response = Mock(status=value['status'])
+                response.getheaders.return_value = value['headers']
+                response.read.return_value = value['body']
+                connection = Mock()
+                connection.getresponse.return_value = response
+                connections.append(connection)
+                responses.append(response)
+            original_request = flow.transport.request
+            def capture_return(*args, **kwargs):
+                value = original_request(*args, **kwargs)
+                returned.append(value)
+                return value
+            with patch.object(http.http.client, 'HTTPConnection', side_effect=connections) as opened, \
+                    patch.object(flow.transport, 'request', side_effect=capture_return):
+                observed = self.observe(*args)
+            self.assertEqual(http.view_token(observed['state-view']), bytes(ready))
+            self.assertEqual(opened.call_count, 3)
+            self.assertEqual(flow.transport.requests, 3)
+            self.assertEqual(len(returned), 3)
+            self.assertTrue(all(set(value) == {'status', 'headers', 'body'} for value in returned))
+            self.assertEqual(returned[1]['body'], b'Unavailable\n')
+            for connection, response in zip(connections, responses, strict=True):
+                connection.putrequest.assert_called_once_with('GET', '/transaction/query', skip_host=True)
+                connection.endheaders.assert_called_once_with(None)
+                connection.close.assert_called_once_with()
+                response.read.assert_called_once_with(http.MAX_BODY + 1)
+            minimum_headers = [row.args for row in connections[1].putheader.call_args_list
+                               if row.args[0] == 'If-State-View']
+            self.assertEqual(minimum_headers, [('If-State-View', before['state-view'])])
+            records = [row.args[1] for row in flow.client.evidence.record.call_args_list
+                       if row.args[0].endswith('-response')]
+            self.assertEqual(len(records), 3)
+            self.assertTrue(all(row['bodyLost'] is False for row in records))
+            flow.client.evidence.passed.assert_called_once()
+        for flag in (None, True, 0, 1, 'false', []):
+            with self.subTest(flag=flag), self.fixture() as args:
+                flow, _, _, _, ready = args[:5]
+                refusal = unavailable()
+                refusal['bodyLost'] = flag
+                flow.transport.request.side_effect = [fresh(ready), refusal]
+                with self.assertRaisesRegex(ValueError, 'actual-incompatible-schema-minimum-refusal'):
+                    self.observe(*args)
+                self.assertEqual(flow.transport.request.call_count, 2)
+                flow.client.evidence.passed.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

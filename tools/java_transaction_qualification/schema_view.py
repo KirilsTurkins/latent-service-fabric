@@ -58,7 +58,7 @@ def minimum_refused(campaign, count, before, original_view, migrated_view, origi
     # The native minimum-view contract rejects incompatible schema/history as
     # Unavailable. Future-generation conflict remains the separate 409 contract.
     require(type(refusal["status"]) is int and refusal["status"] == 503
-            and refusal.get("bodyLost") is False and refusal.get("body") == b"Unavailable\n",
+            and refusal.get("bodyLost", False) is False and refusal.get("body") == b"Unavailable\n",
             "actual-incompatible-schema-minimum-refusal")
     following, _ = campaign.query(count)
     require(following["disposition"] == "query"
