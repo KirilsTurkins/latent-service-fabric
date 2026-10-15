@@ -45,6 +45,7 @@ pub(super) struct Fixture {
     pub native: NativeCapacityOwner,
     pub settings: StateSettings,
     pub principal: InvocationPrincipal,
+    _artifacts: Arc<latent_artifacts::DirectoryArtifactRepository>,
     pub(super) root: tempfile::TempDir,
 }
 
@@ -244,6 +245,7 @@ impl Fixture {
             native,
             settings,
             principal,
+            _artifacts: packages.artifacts,
             root,
         }
     }
