@@ -46,6 +46,31 @@ fn migration_stage_code(error: &latent_core::PlatformError) -> &'static str {
     }
 }
 
+fn migration_error_facts(
+    error: &latent_core::PlatformError,
+) -> (&'static str, &'static str, &'static str, &'static str) {
+    let layer = match error.message.split_once(':').map(|(layer, _)| layer) {
+        Some("protected-migration") => "migration",
+        Some("protected-snapshot") => "snapshot",
+        Some("protected-owner") => "owner",
+        Some("native-original-job") => "job",
+        Some("native-review") => "native-review",
+        Some("restore-stage") => "restore-stage",
+        _ if error.message == "native-original-deadline" => "original-deadline",
+        _ => "unmapped",
+    };
+    let owner_io = match error.message.as_str() {
+        "protected-owner:Io(CustodyBusy)" => "CustodyBusy",
+        _ => "unmapped",
+    };
+    (
+        migration_stage_code(error),
+        error.code.wire_code(),
+        layer,
+        owner_io,
+    )
+}
+
 #[tokio::test]
 async fn actual_installed_current_snapshot_stages_migration_under_original_owners() {
     let mut fixture = Box::pin(Fixture::new(1)).await;
@@ -159,6 +184,7 @@ async fn actual_old_current_snapshot_restores_but_missing_package_role_refuses_m
         .get()
         .as_ref()
         .is_err_and(|error| error.message == "protected-migration:Review(UnsupportedFormat)");
+    let stage_error = stage.get().as_ref().err().map(migration_error_facts);
     drop(stage);
     let restored = fixture.restore(snapshot, "old.snapshot").await;
     let accepted = restored.get().as_ref().is_ok_and(|value| {
@@ -166,8 +192,34 @@ async fn actual_old_current_snapshot_restores_but_missing_package_role_refuses_m
             && value["resourcePhysicallyRetired"] == true
             && value["pausedForReconciliation"] == true
     });
+    let restore_error = restored.get().as_ref().err().map(migration_error_facts);
+    let restore_flags = restored.get().as_ref().ok().map(|value| {
+        (
+            value["action"] == "restore",
+            value["resourcePhysicallyRetired"] == true,
+            value["pausedForReconciliation"] == true,
+        )
+    });
     drop((restored, exported));
-    fixture.finish().await;
+    let retired = fixture.finish().await;
+    eprintln!(
+        "missing-role-migration-package: {}",
+        json!({
+            "migrationRefused":refused,"restoreAccepted":accepted,
+            "stageErrorCode":stage_error.map(|error| error.0),
+            "stagePlatformCode":stage_error.map(|error| error.1),
+            "stageErrorLayer":stage_error.map(|error| error.2),
+            "stageOwnerIoTag":stage_error.map(|error| error.3),
+            "restoreErrorCode":restore_error.map(|error| error.0),
+            "restorePlatformCode":restore_error.map(|error| error.1),
+            "restoreErrorLayer":restore_error.map(|error| error.2),
+            "restoreOwnerIoTag":restore_error.map(|error| error.3),
+            "restoreActionMatches":restore_flags.map(|flags| flags.0),
+            "restoreResourcePhysicallyRetired":restore_flags.map(|flags| flags.1),
+            "restorePausedForReconciliation":restore_flags.map(|flags| flags.2),
+            "nativePhysicallyRetired":retired,
+        })
+    );
     assert!(
         refused && accepted,
         "old current snapshots keep restore compatibility and strict migration refusal"
