@@ -15,7 +15,7 @@ from tools.phase2_operator_process import Process, read_json, stopped_record, wr
 from tools.phase2_operator_scenario import NODE_ID, TOKEN, receipt, stop
 from tools.rust_capsule_project import read_file
 
-from . import configuration as cfg
+from . import configuration as cfg, read_observer
 from .evidence import native
 from .inputs import decode, digest, require
 
@@ -351,7 +351,21 @@ def create_namespace(client, item, publication):
 
 
 def inspect_namespace(client, publication):
-    value = client.call("state", "inspect", *namespace_arguments(publication))["data"]["namespace"]
+    arguments = ("state", "inspect", *namespace_arguments(publication))
+    cutoff = min(client.deadline, time.monotonic() + 25)
+    for attempt in range(8):
+        require(time.monotonic() < cutoff, "original-namespace-inspection-cutoff")
+        result = client.call(*arguments, codes=(0, 5),
+                            timeout=min(25, cutoff - time.monotonic()), cutoff=cutoff)
+        state = read_observer.namespace_kind(result)
+        require(time.monotonic() < cutoff, "original-namespace-inspection-cutoff")
+        if state == "success":
+            break
+        if attempt < 7:
+            read_observer.pause(cutoff, "original-namespace-inspection-cutoff")
+    else:
+        raise ValueError("original-namespace-inspection-read-bound")
+    value = result["data"]["namespace"]
     require(isinstance(value, dict) and re.fullmatch(r"0|[1-9][0-9]*", value["commandCount"]),
             "actual-namespace-command-count")
     return value

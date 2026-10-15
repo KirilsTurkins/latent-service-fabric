@@ -39,6 +39,21 @@ def kind(value, command, *, missing=False):
     return 'success'
 
 
+def namespace_kind(value):
+    require(isinstance(value, dict) and set(value) == ENVELOPE
+            and value['schemaVersion'] == 'latent.cli.result.v1' and value['command'] == 'state inspect'
+            and value['requestDispatched'] is True and type(value['outcomeKnown']) is bool
+            and isinstance(value['data'], dict), 'closed-original-namespace-read-response')
+    if value['category'] == 'transport-failure':
+        require(value['outcomeKnown'] is False and value['data'] == {} and isinstance(value['error'], dict)
+                and value['error'] == {'code': 'rpc-failed', 'grpcCode': 'resource-exhausted',
+                    'message': 'The RPC did not return a usable result.'}, 'closed-original-namespace-read-busy')
+        return 'busy'
+    require(value['category'] == 'success' and value['outcomeKnown'] is True and value['error'] is None,
+            'original-namespace-read-refusal')
+    return 'success'
+
+
 def pause(until, reason):
     remaining = until - time.monotonic()
     require(remaining > 0, reason)
