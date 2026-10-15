@@ -44,10 +44,12 @@ WASI-SDK **29** / Clang **21.1.4**, wit-bindgen **0.62.0 C**, and wasm-tools
 The obsolete TeaVM-WASI generator is not used. Build machines run JVM processes;
 capsules do not deploy or retain a JVM, Java server, guest host thread or event loop.
 
-The opt-in fiber runtime rolls back a managed worker reservation when its
-`ThreadFactory` thread rejects `start()` before the maintained start hook accepts
-work. A later start failure or unconfirmed host settlement retains its original
-owner until actual cleanup; neither path fabricates successful worker execution.
+The opt-in fiber runtime rolls back a managed worker reservation when internal
+startup fails before the maintained start hook accepts work. A later start
+failure or unconfirmed host settlement retains its original owner until actual
+cleanup. This ownership repair does not qualify custom `Thread.start` overrides;
+the [runtime profile](../../docs/runtime/java-activation-fibers.md) records that
+remaining reference-runtime difference.
 
 Edit `src/dev/latent/app/Capsule.java` and `wit/world.wit` in the created project.
 The entry class implements generated `dev.latent.generated.Bindings.Exports`.
