@@ -1,4 +1,4 @@
-﻿{
+{
     "schemaVersion":  "latent.java-library-ingestion.native-controls.v1",
     "status":  "passed",
     "scope":  "signed pure/transitive/local-library/resource execution and declared-error recovery",
@@ -56,7 +56,8 @@
                                                                                                 ]
                                                                          }
                                                }
-                              }
+                              },
+                   "executionArchiveCommit":  "0b5ff6a2eea21104be774cf21900d8f4b95610d0"
                },
     "host":  {
                  "python":  "3.13.5",
@@ -176,8 +177,77 @@
     "remainingAcceptance":  [
                                 "authenticated-private-feed",
                                 "installed-update-remove-watch",
-                                "approved-processor-containment",
                                 "trap-memory-fuel-cancellation-recovery"
                             ],
-    "issue682Complete":  false
+    "issue682Complete":  false,
+    "approvedProcessor":  {
+                              "status":  "passed",
+                              "scope":  "exact-approved-contained-processor-and-real-signed-greeting",
+                              "qualifierSha256":  "sha256:566dc42fa25673c8c4bb779058e593fabae68c2edc7f2bb2da91ef6cd60d1627",
+                              "component":  {
+                                                "sha256":  "sha256:e360402c578008657d25ff1da8e2724ec6cd83935fd5d5ed82e38be249f70904",
+                                                "bytes":  489768
+                                            },
+                              "processorProfile":  {
+                                                       "sha256":  "sha256:a266ad9274c267ec8e9f6e3c316e79651ba90fa1c265b595c64c81b803b8fbc2",
+                                                       "bytes":  1036
+                                                   },
+                              "guestReceipt":  {
+                                                   "sha256":  "sha256:736693dca15eeb63a302754883e7e28b4595b20b71e842461da6b27f7cd0f0c1",
+                                                   "bytes":  8984
+                                               },
+                              "containment":  {
+                                                  "status":  "passed",
+                                                  "parentLoopbackPeerAccepted":  0,
+                                                  "parentEnvironmentDenied":  true,
+                                                  "ambientInputDenied":  true,
+                                                  "originalSourceWriteDenied":  true,
+                                                  "scope":  "actual declared processor checks, not hostile multitenant isolation"
+                                              },
+                              "sourceOwnership":  {
+                                                      "status":  "passed",
+                                                      "cases":  [
+                                                                    {
+                                                                        "case":  "original-class-collision",
+                                                                        "reason":  "java-annotation-processor-generated-source-owner-collision",
+                                                                        "exitCode":  1
+                                                                    },
+                                                                    {
+                                                                        "case":  "original-nested-class-collision",
+                                                                        "reason":  "java-annotation-processor-generated-source-owner-collision",
+                                                                        "exitCode":  1
+                                                                    },
+                                                                    {
+                                                                        "case":  "platform-package",
+                                                                        "reason":  "java-annotation-processor-generated-source-overrides-platform",
+                                                                        "exitCode":  1
+                                                                    },
+                                                                    {
+                                                                        "case":  "escaped-platform-package",
+                                                                        "reason":  "java-annotation-processor-generated-source-overrides-platform",
+                                                                        "exitCode":  1
+                                                                    },
+                                                                    {
+                                                                        "case":  "generated-package-path",
+                                                                        "reason":  "java-annotation-processor-generated-source-package-path-mismatch",
+                                                                        "exitCode":  1
+                                                                    },
+                                                                    {
+                                                                        "case":  "invalid-generated-source",
+                                                                        "reason":  "java-annotation-processor-generated-source-parse-failed",
+                                                                        "exitCode":  1
+                                                                    }
+                                                                ],
+                                                      "scope":  "actual pinned Javac parse-only source ownership, not guest execution"
+                                                  },
+                              "namespaceHost":  "task-owned Docker container with explicit namespace-enabling seccomp and AppArmor settings",
+                              "defaultDockerNamespaceProbe":  "failed-closed",
+                              "unprivilegedGeneratorNativeControls":  {
+                                                                          "cases":  5,
+                                                                          "passed":  5,
+                                                                          "skips":  0,
+                                                                          "uid":  1000,
+                                                                          "network":  "none"
+                                                                      }
+                          }
 }
