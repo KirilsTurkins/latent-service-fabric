@@ -19,6 +19,12 @@ later source-bound successes. Broader #728 acceptance and clean packaged fronten
 qualification remain separate. The profile is not a completed milestone gate,
 general JDK networking support or an executor-enabled server profile.
 
+The [2026-10-15 execution summary](../development/java-runtime-reconciliation/2026-10-15/pr996-evidence.json)
+refreshes the 52 baseline requests and 12 revision-lifecycle cases against the
+recorded ordinary Wasmtime 48.0.6 native tuple. It retains exact source and
+component identities, zero sampled dormant owners, clean reaped shutdown and
+the remaining installed-frontend and cross-tenant acceptance boundaries.
+
 The current suite includes the accepted 65,536-byte binary body, oversize denial
 and physical cleanup. The earlier
 [retained-component replay failure](../testing/evidence/java-server-tls-replay-2026-10-01.json)
