@@ -1,5 +1,16 @@
 # C library ingestion qualification
 
+The [October 15 execution](evidence/c-library-ingestion-2026-10-15.json) passed
+on qualifier source `91d96300a63bee15d84b8763ca1b8365eaae048b`, using the separately
+recorded ordinary native tuple at `a49bbf172e08c13ed7bd5588e2323064652f9366`.
+Both source and verified static-library variants completed 27 real signed-node
+invocations, followed by clean reaped node shutdown; 21 actual object/generator
+controls also passed. Compilation ran as UID 1000 with Docker external networking
+disabled and the unchanged compiler namespace boundary. The offline rebuild
+retained source/SDK identity but produced different component bytes; this is an
+offline rebuild result, without a reproducible-binary claim. Installed frontend
+lifecycle, C threading/default sockets and cross-tenant qualification remain open.
+
 `tools/qualify_c_library_ingestion.py` separates explicit source acquisition from
 offline component qualification. It reuses the ordinary C builder, captured
 compiler namespaces, source/static-archive fixture, signed node workflow and
