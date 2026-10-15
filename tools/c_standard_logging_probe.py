@@ -16,7 +16,13 @@ LIBRARY = r'''#include "log_probe.h"
 #include <unistd.h>
 #include <wasi/api.h>
 extern int32_t __imported_wasi_snapshot_preview1_fd_write(int32_t, int32_t, int32_t, int32_t);
+static int initializer_accepted;
+__attribute__((constructor)) static void ordinary_library_initializer(void) {
+    initializer_accepted = printf("ordinary library initializer") >= 0;
+}
 int standard_log_probe(unsigned mode) {
+    if (mode == 12) return !initializer_accepted;
+    if (!initializer_accepted) return 0;
     unsigned char bytes[4097]; memset(bytes, 'a', sizeof(bytes));
     __wasi_ciovec_t vector = {.buf = bytes, .buf_len = 1};
     __wasi_size_t written = 99;
@@ -93,6 +99,7 @@ def prepare(project: Path) -> dict:
         raise ValueError('c-standard-logging-requires-original-greeting-template')
     branches = ''.join(f'    if (name->len == {len("log:" + name)} && memcmp(name->ptr, "log:{name}", name->len) == 0) mode = {i};\n'
                        for i, name in enumerate(CASES, 1))
+    branches += '    if (name->len == 22 && memcmp(name->ptr, "log:initializer-denied", name->len) == 0) mode = 12;\n'
     body = '\n    static unsigned calls;\n    unsigned mode = 0;\n' + branches + '''
     if (++calls != 1 || !standard_log_probe(mode)) {
         probe_string_free(name); lsf_text_error(error, "standard-logging-probe-failed"); return false;
@@ -112,6 +119,9 @@ def grant_and_probe(client, node, fixture, targets, publications, result):
     from tools.phase2_operator_process import require
     from tools.rust_capsule_node import assert_value, call, deploy, provider_idle
     target = targets['greeting']
+    initialization = call(client, target, 'greeting', 'greet', ['log:initializer-denied'], 'c-stdio-initializer-without-grant')
+    result['invocations'].append(initialization)
+    assert_value(client, initialization, [{'ok': '1'}])
     denied = call(client, target, 'greeting', 'greet', ['Ada'], 'c-stdio-without-log-grant')
     result['invocations'].append(denied)
     assert_value(client, denied, [{'err': 'standard-logging-probe-failed'}], 3)

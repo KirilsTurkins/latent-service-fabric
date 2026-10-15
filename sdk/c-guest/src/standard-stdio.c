@@ -8,7 +8,7 @@
 #define LSF_STDIO_MAX_IOVECS 16u
 #define LSF_STDIO_MAX_BYTES 4096u
 
-__attribute__((constructor)) static void initialize_standard_stdio(void) {
+__attribute__((constructor(101))) static void initialize_standard_stdio(void) {
     if (setvbuf(stdout, NULL, _IONBF, 0) || setvbuf(stderr, NULL, _IONBF, 0)) __builtin_trap();
 }
 
