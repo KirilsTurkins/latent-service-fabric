@@ -10,8 +10,9 @@ same original-identity recovery boundary on their existing transports.
 
 Current installed recovery remains a Development workflow with outstanding
 complete terminal/pending native and packaged qualification. The
-[source-bound audit](../development/documentation-audit-2026-10-14.md) records its
-implementation and acceptance scope.
+[installed recovery contract](../testing/installed-transaction-recovery.md)
+describes native action inputs, original source identities, destination custody
+and retained acceptance limits.
 
 ## Preserve the original command
 

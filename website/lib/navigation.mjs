@@ -37,7 +37,7 @@ export function buildSidebars(pages) {
   for (const page of pages.filter(page => page.source.startsWith('docs/'))) {
     let group = 'understand';
     if (page.id === 'roadmap' || /^(phase-[01]-|phase-[23]-.*(?:completion|review)$|phase3-management-integration$|evidence\/|architecture\/cluster-freshness-handoff$|protocol\/phase-1-contract-hardening$)/.test(page.id)
-      || /^development\/(?:phase4-handoffs\/|sdk-handoffs\/|snapshot-reconciliation\/|(?:java|rust)-runtime-reconciliation\/|typescript-runtime-reconciliation$|documentation-audit-|angular-dependency-reconciliation-)/.test(page.id)) group = 'records';
+      || /^development\/documentation-audit-/.test(page.id)) group = 'records';
     else if (start.has(page.id) || page.id.startsWith('start/')) group = 'start';
     else if (references.has(page.id)) group = 'reference';
     else if (maintenance.has(page.id)) group = 'contribute';

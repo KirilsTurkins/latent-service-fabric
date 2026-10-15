@@ -20,6 +20,10 @@ Preparation verifies component bytes and digest association, manifest execution
 requirements, declared imports/exports, and supported exported signatures.
 Stateless components may declare single-threaded or reentrant execution;
 cooperative threading and persistent state models are not admitted.
+The separately installed [transaction profile](host-abi-profile.md#explicit-transaction-profile)
+uses host-owned state and fresh command/query activations. Its protected store
+and signed operation admission do not make a persistent guest instance available
+through the generic stateless path.
 Contract and function lookup use the component's actual exported interfaces;
 the generic dispatcher contains no echo function or containment-control-string
 selection. Components with no imports are supported.

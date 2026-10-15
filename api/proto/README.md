@@ -40,8 +40,10 @@ The [componentless web methods](../../docs/reference/management-services.md#web-
 add exact web publication/lifecycle control and one bounded shared preparation
 wait. These methods preserve the legacy release protocol and never turn a web
 receipt or digest into capsule admission authority.
-Other trigger kinds, the public application listener and clustered
-registration/watch remain separate later deliveries.
+The optional [shared HTTP/TLS application listener](../../docs/reference/http-ingress.md)
+serves explicitly installed application and static-web routes. NATS triggers
+retain their separately configured embedding; declaring a trigger type does not
+install an adapter. Clustered registration/watch remains a later delivery.
 
 The Phase 1 pre-stabilization compatibility record and checked-in descriptor contract are in [`docs/protocol/phase-1-contract-hardening.md`](../../docs/protocol/phase-1-contract-hardening.md) and `phase1-descriptor-contract.json`, which is validated from a Buf-built `FileDescriptorSet` by `tools/validate_phase1_descriptor.py`.
 
@@ -51,3 +53,11 @@ Phase 4 adds the explicitly negotiated transaction profile in
 class at audit enum number 11. Existing fields, methods, reservations and enum
 numbers retain their meaning. See the [transaction contract](../../docs/protocol/transactions.md)
 for command identity, retained outcomes, version preconditions and recovery.
+
+The [installed transaction runtime](../../docs/development/installed-transaction-rpc.md)
+implements command/query and state management only when the original protected
+store, signed operations, namespace and policies are installed. Dispatcher
+inspection and preconditioned controls use the same original effect authority;
+they do not grant provider access or establish an external outcome. Current
+[native recovery qualification](../../docs/testing/installed-transaction-recovery.md)
+keeps terminal/pending and packaged acceptance separate from generated APIs.

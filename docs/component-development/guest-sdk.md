@@ -1,9 +1,10 @@
 # Guest SDK capability reference
 
-The current security baseline selects **Wasmtime 48.0.4**. References below to
-47.0.4 describe the earlier qualification, not the current supported dependency.
-See the [September security update](../development/wasmtime-security-update.md)
-for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+Use the current engine and compiler pins in the
+[toolchain baseline](../development/toolchain.md#selected-versions).
+Earlier qualification receipts retain their original engine and source identities;
+the [security update record](../development/wasmtime-security-update.md) explains
+prepared-artifact invalidation across engine changes.
 
 For your first application, follow [Creating a capsule](creating-a-capsule.md).
 It has one shared workflow and selectable examples for all six languages. This
@@ -60,8 +61,11 @@ support or a Node.js/WASI environment inside an LSF activation.
 Use the pins in [tools/toolchain.toml](../../tools/toolchain.toml): Rust 1.97.1,
 `wit-bindgen` 0.62.0, `wasm-tools` 1.254.0, Python 3.13.5 and Zig 0.16.0 for C.
 Rust guests target `wasm32-unknown-unknown`. The C reactor uses Zig's libc and
-64 KiB stack without importing WASI. Node and compiler use Wasmtime 48.0.3.
-The generated aggregate is `latent:platform/capsule@0.4.0` (host profile V4).
+64 KiB stack without importing WASI. The node and compiler use the workspace-pinned
+Wasmtime engine. The maintained capability examples below generate
+`latent:platform/capsule@0.4.0` (host profile V4). The separately selected V5 and
+transaction worlds are described in the [host ABI matrix](../runtime/host-abi-profile.md);
+this example profile does not install those additional providers.
 Each example imports only the capability it needs; the service callee has none.
 
 | SDK module | Exact WIT interface | Ownership and failure contract |

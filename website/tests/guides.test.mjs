@@ -42,11 +42,9 @@ test('all six dependency workflows and original recovery are discoverable as tas
   assert.ok(catalogue.find(item => item.id === 'transaction-recovery').pages.some(page => page.route === '/docs/operations/transaction-recovery/'));
 });
 
-test('dated reconciliation records stay out of the contributor setup path', () => {
+test('engineering records stay out of the contributor setup path', () => {
   const flatten = entries => entries.flatMap(entry => entry.type === 'category' ? flatten(entry.items) : [entry]);
-  for (const id of ['development/snapshot-reconciliation/2026-10-12/README',
-    'development/phase4-handoffs/2026-10-12/pr856-reconciliation',
-    'development/java-runtime-reconciliation/2026-10-12/pr935',
+  for (const id of ['development/engineering-records',
     'development/documentation-audit-2026-10-14']) {
     assert.ok(flatten(sidebars.records).some(entry => entry.id === id), id);
     assert.ok(!flatten(sidebars.contribute).some(entry => entry.id === id), id);

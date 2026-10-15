@@ -50,7 +50,7 @@ interrupted native work, lost delivery and commit uncertainty never schedule a
 replacement guest. Explicit protected retry/recovery policy remains a separate
 owner operation.
 
-The [PR #811 reconciliation](phase4-handoffs/2026-10-11/pr811-reconciliation.md)
+The [PR #811 reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-11/pr811-reconciliation.md)
 records current validation and snapshot decisions. Installed direct/RPC/HTTP
 command, cancellation, crash/restart and the six-guest matrix remain with #388
 and its consumers; source or external-client qualification does not finish them.

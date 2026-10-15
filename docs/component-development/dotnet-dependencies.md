@@ -95,7 +95,7 @@ not qualify a new source build or a clean packaged distribution.
 | Offline signed attempt before the entropy adapter, ending in a guest trap | [Original node attempt](../testing/evidence/dotnet-memorypack-offline-node-2026-10-01.json) |
 | Exact noncrypto entropy adapter composition | [Component observation](../testing/evidence/dotnet-memorypack-entropy-composition-2026-10-01.json) |
 | Fresh normal-node recovery, grant denial and original finite owner/dormant observations | [Recovery receipt](../testing/evidence/dotnet-memorypack-entropy-recovery-2026-10-01.json) and [retained driver](../testing/evidence/dotnet-memorypack-entropy-recovery-2026-10-01-driver.txt) |
-| Current resource-index integration, ordinary stream lookup and explicit wall-clock conversion | [.NET resource/clock reconciliation](../development/phase4-handoffs/2026-10-12/pr856-reconciliation.md) |
+| Current resource-index integration, ordinary stream lookup and explicit wall-clock conversion | [.NET resource/clock reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-12/pr856-reconciliation.md) |
 
 An enforced restart still obeys the original
 [trusted-clock lease](../reference/package-admission.md#clock-leases-retries-and-fresh-admission).

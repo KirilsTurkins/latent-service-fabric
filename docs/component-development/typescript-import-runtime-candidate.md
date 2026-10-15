@@ -33,7 +33,7 @@ the same explicit profile. Missing inputs, profile disagreement and changed
 bytes fail before application compilation. The bundle continues to record
 unknown qualification and does not advertise a supported release.
 
-The [current production reconciliation](../development/typescript-runtime-reconciliation.md)
+The [source-bound production qualification record](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/typescript-runtime-reconciliation.md)
 records source-built engine/splicer inputs and the original 26 signed controls:
 15 ordinary cases, four clock cases, two service cases and five unchanged npm
 cases, plus a fresh-after-failure control. These actual LSF runs are separate

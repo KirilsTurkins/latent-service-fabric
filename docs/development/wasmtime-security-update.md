@@ -2,7 +2,7 @@
 
 ## Current Development selection
 
-The workspace and `tools/toolchain.toml` currently pin Wasmtime **48.0.5**.
+The workspace and `tools/toolchain.toml` currently pin Wasmtime **48.0.6**.
 Use [the toolchain table](toolchain.md#selected-versions) and committed Cargo locks
 for the complete compiler/runtime selection. The records below describe their
 original sources and advisory databases; they are not a current scan or approval
