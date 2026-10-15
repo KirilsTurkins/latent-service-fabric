@@ -161,3 +161,69 @@ jobs:
             ${{ runner.temp }}/c-dependency-controls/**
           if-no-files-found: warn
           retention-days: 7
+
+  standard-facilities:
+    name: Signed C standard clock and entropy profile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
+        with:
+          version: '0.16.0'
+      - name: Prepare pinned bindings and supported compiler containment
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/guest-tools"
+          echo "$RUNNER_TEMP/guest-tools" >> "$GITHUB_PATH"
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Execute the actual captured standard library on current default native products
+        run: |
+          python3 -m unittest tools.tests.test_c_standard_facilities
+          python3 tools/qualify_c_standard_facilities.py --build-native --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-facilities"
+      - name: Retain bounded C standard runtime proof including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: c-standard-facilities-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/c-standard-facilities/qualified.json
+            ${{ runner.temp }}/c-standard-facilities/FAILED.json
+            ${{ runner.temp }}/c-standard-facilities/logs/**
+            ${{ runner.temp }}/c-standard-facilities/builds/*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/BUILD-FAILED.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/source-inputs.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/recipe-inputs.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/standard-runtime-selection.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/compatibility*.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/compiler-inputs.json
+            ${{ runner.temp }}/c-standard-facilities/builds/*/component.wasm
+            ${{ runner.temp }}/c-standard-facilities/builds/*/logs/**
+            ${{ runner.temp }}/c-standard-facilities/node/public-workflow.json
+          if-no-files-found: warn
+          retention-days: 7

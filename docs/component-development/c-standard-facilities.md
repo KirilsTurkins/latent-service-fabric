@@ -30,6 +30,10 @@ This explicit disposable test setup grants random byte input/output ceilings
 of 128 and 65,536 bytes to exercise the provider's existing activation limit;
 it does not change application budgets or install application grants. All
 original authoring cases and failed attempts remain part of the result.
+The same qualifier accepts `--build-native` instead of the two native input
+arguments. The separate C standard-facilities CI job uses that mode to capture
+default-feature native products from its own tested commit; it retains public
+node observations without copying private node configuration or signing keys.
 
 Set `runtimeProfile` in the captured `capsule-project.json` to
 `c-standard-clock-entropy-v1`. If the application has a dependency lock whose
