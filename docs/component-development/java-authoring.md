@@ -433,6 +433,15 @@ generated lookup index contains exactly the reviewed bytes, with no directory,
 repository or host-filesystem fallback. Names are case sensitive. A missing name
 returns `null`; a null name follows the standard null-argument failure.
 
+JAR manifests, `META-INF/INDEX.LIST`, module descriptors, signatures and legal
+metadata retain their own JAR identity. The
+[JAR index](https://docs.oracle.com/en/java/javase/17/docs/specs/jar/jar.html#jar-index)
+is a class-loading hint; it does not replace the captured native dependency
+graph. Each original and selected JAR retains its exact index bytes, while the
+merged immutable-resource namespace excludes those indexes. Ordinary duplicate
+classes and resources still fail. Resolve and review again if an older capture
+treated an index as an application resource; the changed selection fails closed.
+
 Each successful open owns a fresh byte array and `ByteArrayInputStream`.
 Resources use the existing guest heap and fuel budgets. Capture bounds do not
 guarantee that opening a large resource fits a particular invocation's heap.
