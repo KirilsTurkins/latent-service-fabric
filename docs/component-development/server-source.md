@@ -21,7 +21,7 @@ bytes cannot transfer to it.
 
 | Source path | Ordinary/default source delivery | Runtime-dependent server behavior | Developer extension |
 | --- | --- | --- | --- |
-| Java `HttpServer` | [Selected compiler/AST profile](java-httpserver.md); actual component probe and native conformance, real ingress qualification pending #728 | Executor/task/timer server lifecycle consumes #736/#741 | Separately labelled, never ordinary-source proof |
+| Java `HttpServer` | [Selected compiler/AST profile](java-httpserver.md); signed ordinary-source listener and revision-lifecycle evidence; complete installed frontend acceptance remains in #728 | Executor/task/timer server lifecycle consumes #736/#741 | Separately labelled, never ordinary-source proof |
 | Rust server APIs | No common server-source compiler adapter delivered | Selected runtime port #743 needs separate server lifecycle integration | Finite declarations can be used by an explicit extension |
 | C server APIs | No common server-source compiler adapter delivered | Selected runtime port #744 needs separate server lifecycle integration | Finite declarations can be used by an explicit extension |
 | TypeScript server APIs | No common server-source compiler adapter delivered | Selected runtime port #745 needs separate server lifecycle integration | Finite declarations can be used by an explicit extension |
@@ -153,8 +153,11 @@ component nor grants authority, and each trigger still uses the server's current
 catalog CAS. An installed replacement publication cannot be selected implicitly
 as the rollback target.
 `remove NAME ...` deletes only owned objects, using original operation lookup
-for its full receipt. Removed mounts must be explicitly selected before a plan
-can replace the set. There is no atomic multi-route publication promise: a
+for its full receipt. It checks the entire selected set for ownership and
+concurrent changes before the first deletion, then rechecks each object at its
+own catalog CAS. A later race can still leave earlier confirmed deletions in
+place; recovery never replays them. Removed mounts must be explicitly selected
+before a plan can replace the set. There is no atomic multi-route publication promise: a
 later failure can leave earlier individually confirmed writes in place.
 
 `inspect` distinguishes declared input from currently published manifests and
@@ -169,3 +172,12 @@ CAS, lost replies, unknown original receipts, retained last-good records and
 owned rollback/removal. They are compiler/tooling and native model evidence.
 Issue #727's real component integration and #728's source-API translation remain
 separate acceptance work; handwritten web exports do not count as Java lowering.
+
+The [2026-10-15 execution summary](../development/java-runtime-reconciliation/2026-10-15/pr996-evidence.json)
+records 52 baseline shared-listener requests and 12 ordinary-source lifecycle
+cases with 18 further HTTP observations. Both nodes ended with zero sampled
+guest/HTTP owners and clean, reaped shutdown; the summary retains the incomplete
+global topology flag and exact compiler/tooling/native-source identities.
+This qualifies those finite buffered-profile cases. Installed frontend flows,
+successful cross-tenant execution and executor-enabled servers need their own
+evidence; foreign-route denial does not establish those outcomes.

@@ -327,6 +327,45 @@ class ServerRoutes(unittest.TestCase):
         with self.assertRaisesRegex(DevError, "owned-removal"):
             self.routes.remove(["foreign-get"])
 
+    def test_removal_rejects_unowned_later_mount_before_deleting_any_route(self):
+        before = self.routes.apply(self.manifests)
+        published = copy.deepcopy(self.cli.triggers)
+        count = len(self.cli.mutations)
+        with self.assertRaisesRegex(DevError, "owned-removal"):
+            self.routes.remove(["independent-get", "foreign-get"])
+        self.assertEqual(self.routes.read(), before)
+        self.assertEqual(self.cli.triggers, published)
+        self.assertEqual(len(self.cli.mutations), count)
+
+    def test_removal_rejects_contested_later_mount_before_deleting_any_route(self):
+        before = self.routes.apply(self.manifests)
+        self.cli.triggers["independent-head"]["generation"] = "999"
+        published = copy.deepcopy(self.cli.triggers)
+        count = len(self.cli.mutations)
+        with self.assertRaisesRegex(DevError, "concurrent-change"):
+            self.routes.remove(["independent-get", "independent-head"])
+        self.assertEqual(self.routes.read(), before)
+        self.assertEqual(self.cli.triggers, published)
+        self.assertEqual(len(self.cli.mutations), count)
+
+    def test_removal_rechecks_ownership_after_preflight_without_replaying_prior_deletion(self):
+        self.routes.apply(self.manifests)
+        original = self.cli.call
+        def race(*arguments):
+            result = original(*arguments)
+            if arguments[:2] == ("trigger", "delete"):
+                self.cli.triggers["independent-head"]["generation"] = "999"
+            return result
+        self.cli.call = race
+        count = len(self.cli.mutations)
+        with self.assertRaisesRegex(DevError, "concurrent-change"):
+            self.routes.remove(["independent-get", "independent-head"])
+        self.assertNotIn("independent-get", self.routes.read()["routes"])
+        self.assertNotIn("independent-get", self.cli.triggers)
+        self.assertIn("independent-head", self.routes.read()["routes"])
+        self.assertEqual(self.cli.triggers["independent-head"]["generation"], "999")
+        self.assertEqual(self.cli.mutations[count:], ["delete"])
+
     def test_forged_receipt_scope_pin_or_generation_retains_original_intent(self):
         self.cli.lose_reply = True
         with self.assertRaises(DevError):
