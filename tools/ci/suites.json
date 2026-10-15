@@ -9043,7 +9043,16 @@
         "phase4::state_management::tests::effects::cross_caller::missing_original_target_read_plan_and_reconcile_each_preserve_original_uncertainty",
         "phase4::state_management::tests::effects::cross_caller::original_user_and_untrusted_administrator_remain_denied_before_provider_lookup",
         "phase4::state_management::tests::effects::cross_caller::untagged_original_and_other_caller_own_grants_cannot_select_foreign_effect_data",
-        "phase4::state_management::tests::effects::cross_caller::withdrawal_of_original_target_read_is_checked_at_physical_result_release"
+        "phase4::state_management::tests::effects::cross_caller::withdrawal_of_original_target_read_is_checked_at_physical_result_release",
+        "phase4::state_management::tests::effects::result_history::actual_original_result_and_commit_keep_old_schema_under_current_binding",
+        "phase4::state_management::tests::effects::result_history::actual_historical_attempt_keeps_original_abort_and_current_rejection_after_schema_change",
+        "phase4::state_management::tests::effects::result_history::actual_old_schema_result_keeps_caller_scope_and_all_selected_key_fields_closed",
+        "phase4::state_management::tests::effects::result_history::actual_current_namespace_schema_and_original_result_policy_remain_mandatory",
+        "phase4::state_management::tests::effects::result_history::actual_old_result_response_keeps_original_current_policy_after_revocation_and_regrant",
+        "phase4::state_management::tests::effects::result_history::actual_result_response_cannot_survive_a_later_namespace_lifecycle_change",
+        "phase4::state_management::tests::effects::result_history::actual_original_schema_result_retains_distinct_body_identity_and_clock_floor_limits",
+        "phase4::state_management::tests::effects::result_history::actual_corrupt_original_result_link_never_becomes_readable_after_schema_change",
+        "phase4::state_management::tests::effects::result_history::actual_effect_and_cancel_keep_original_schema_refusal_after_result_read_succeeds"
       ],
       "expectedIgnored": [
         "phase4::local_transaction::tests::actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_commit_and_effect",
@@ -9110,7 +9119,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 258,
+      "minimumCases": 267,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

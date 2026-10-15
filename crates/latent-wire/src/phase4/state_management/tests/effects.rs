@@ -3,6 +3,7 @@ mod cross_caller;
 mod fixture;
 mod inspection;
 mod provider;
+mod result_history;
 use fixture::{mutation, operator, setup};
 
 fn planned(value: &OwnedPhase4Response) -> c::EffectManagementPlan {

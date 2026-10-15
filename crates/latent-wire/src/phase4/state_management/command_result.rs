@@ -252,7 +252,7 @@ fn lookup(
         if record.is_some_and(|record| record.key() != &read.key) {
             return Err(AtomicError::Corrupt);
         }
-        if record.is_some_and(|record| !record_matches(&read, record)) {
+        if record.is_some_and(|record| !record_matches(&read, record, request)) {
             return Err(AtomicError::PermissionDenied);
         }
         read.with_namespace(&namespace, &lifecycle, read.deadline, &mut || {})
@@ -267,6 +267,7 @@ fn lookup(
             result,
             value.attempt_id.as_deref(),
             time,
+            request,
         )?,
         contract::Request::CancelCommand(value) => historical(
             &view,
@@ -280,6 +281,7 @@ fn lookup(
                 .attempt_id
                 .as_deref(),
             time,
+            request,
         )?,
         _ => (record, result),
     };
@@ -301,10 +303,20 @@ fn lookup(
     Ok((response, owner))
 }
 
-fn record_matches(read: &ReadAuthority, record: &CommandRecord) -> bool {
+fn record_matches(
+    read: &ReadAuthority,
+    record: &CommandRecord,
+    request: &contract::Request,
+) -> bool {
     record.key() == &read.key
         && record.result_read_policy() == read.binding.result_policy
-        && record.source().state_schema == read.binding.state_schema
+        // Result bytes keep their original source schema. Current namespace
+        // schema and read authority were checked separately above; result reads
+        // do not reinterpret those bytes as current application state.
+        && (matches!(
+            request,
+            contract::Request::LookupCommand(_) | contract::Request::LookupCommit(_)
+        ) || record.source().state_schema == read.binding.state_schema)
 }
 
 fn historical(
@@ -314,6 +326,7 @@ fn historical(
     current_result: Option<DurableResult>,
     requested: Option<&str>,
     time: CommandTime,
+    request: &contract::Request,
 ) -> Result<(CommandRecord, Option<DurableResult>), ReadError> {
     let Some(requested) = requested else {
         return Ok((current, current_result));
@@ -332,7 +345,7 @@ fn historical(
     if record.id() != current.id() || record.attempt() != attempt {
         return Err(StoreError::Corrupt.into());
     }
-    if !record_matches(read, &record) {
+    if !record_matches(read, &record, request) {
         return Err(denied().into());
     }
     if !time.continuity_proven || time.unix_millis < record.clock_floor() {
