@@ -193,6 +193,13 @@ def archive_files(data: bytes, kind: str) -> dict[str, bytes]:
                         raise DependencyError("dependency-path-collision")
                     seen.add(name.casefold())
                     mode = entry.external_attr >> 16
+                    # Some Unix ZIP writers use an all-bits-set mode for an
+                    # empty DOS directory marker. It cannot describe a file or
+                    # link: accept only the exact marker and retain all normal
+                    # path, collision, entry-count and payload checks below.
+                    if (entry.create_system == 3 and entry.external_attr == 0xffff0010
+                            and entry.is_dir() and entry.file_size == 0):
+                        mode = stat.S_IFDIR
                     if (entry.flag_bits & 1 or stat.S_IFMT(mode) not in {0, stat.S_IFREG, stat.S_IFDIR}
                             or entry.file_size > MAX_OBJECT):
                         raise DependencyError("dependency-archive-entry-denied")
