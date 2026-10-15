@@ -19,7 +19,7 @@ pub(in crate::local_repository) fn verify(
     metadata: &VerifiedArtifactMetadata,
     codec: &JsonManifestCodec,
 ) -> Result<(), PlatformError> {
-    verify_input(binding, Input::Raw(upload), metadata, codec)
+    verify_input(binding, &Input::Raw(upload), metadata, codec)
 }
 
 pub(in crate::local_repository) fn verify_checked(
@@ -28,7 +28,7 @@ pub(in crate::local_repository) fn verify_checked(
     metadata: &VerifiedArtifactMetadata,
     codec: &JsonManifestCodec,
 ) -> Result<PackageAdmissionUpload, PlatformError> {
-    verify_input(binding, Input::Checked(&upload), metadata, codec)?;
+    verify_input(binding, &Input::Checked(&upload), metadata, codec)?;
     Ok(upload.into_upload())
 }
 
@@ -64,7 +64,7 @@ impl Input<'_, '_> {
 
 fn verify_input(
     binding: &AdmissionBinding,
-    input: Input<'_, '_>,
+    input: &Input<'_, '_>,
     metadata: &VerifiedArtifactMetadata,
     codec: &JsonManifestCodec,
 ) -> Result<(), PlatformError> {
