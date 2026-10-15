@@ -1,210 +1,226 @@
 # Validation
 
-Use this page to choose checks for a change to LSF and understand what their
-results establish. The reviewed suite inventory and CI workflows determine the
-checks for the current source; historical acceptance reports retain their own
-tested revisions and environments.
+Use this page to select checks for an LSF change and interpret their results.
+Current selection comes from the reviewed test catalogue, command contracts and
+workflows. Historical discovery counts, performance samples and acceptance
+receipts keep their original source and environment; they are not today's test
+inventory or proof of execution.
 
-## Entry point
+## Choose an execution boundary
 
-Install the exact prerequisites in the [toolchain guide](docs/development/toolchain.md),
-then run the normal Linux validation entry point:
+Install the [pinned toolchain](docs/development/toolchain.md) for the selected
+owner. The repository's native runtime/process profiles target Linux x86_64 with
+the declared filesystem, sandbox and service prerequisites. The separate
+[Windows portable capsule tests](docs/component-development/portable-tests.md)
+run already compiled components under their supported subset; they do not
+qualify Linux storage, isolated compilation, process accounting or a full node.
+
+| Change or question | Maintained entry point |
+| --- | --- |
+| One Rust suite/case or a local failure | [Local test runner](docs/development/local-tests.md): list, plan, prepare, check, run and reproduce |
+| Which checks does a change require? | [CI profiles](docs/development/ci-profiles.md), [suite inventory](docs/testing/ci-suite-inventory.md) and [execution lanes](docs/testing/ci-lanes.md) |
+| Async timing, cancellation or resource races | [Deterministic tests](docs/development/deterministic-tests.md) and [testing invariants](docs/testing/invariants.md) |
+| Test/fixture/child-process ownership | [Owned processes](docs/development/owned-test-processes.md), [AOT inputs](docs/development/aot-test-inputs.md) and [Cargo recipes](docs/testing/ci-cargo-recipes.md) |
+| Docs, MDX, website or examples | [Website validation](docs/development/website.md) and [guide review](docs/development/phase3-guide-review.md) |
+| Native/package/platform acceptance | [Native release gate](docs/development/native-release-gate.md) and [packaged developer qualification](docs/development/packaged-developer-qualification.md) |
+
+## Select, prepare and execute
+
+Start with read-only planning from the repository root:
+
+```bash
+python3 tools/test.py list --output json
+python3 tools/test.py explain --suite latent-core.lib.latent-core
+python3 tools/test.py plan --suite latent-core.lib.latent-core
+python3 tools/test.py plan --suite process.angular-renderer
+```
+
+These commands read definitions and file presence. They do not compile, discover
+executable tests, install tools or contact services. Inspect the recipe, exact
+case selection, platform, resource class, prerequisites and execution support.
+A suite's boundary label does not imply a narrow build: the current core library
+uses `core-host`, while many other library suites still use the workspace recipe.
+Presence of an input is not validation of its bytes or proof that a test passed.
+
+For an installed Linux toolchain, this explicitly prepares and runs the core
+library selection:
+
+```bash
+python3 tools/test.py prepare --suite latent-core.lib.latent-core --inventory target/local-tests/core.jsonl
+python3 tools/test.py check --suite latent-core.lib.latent-core --inventory target/local-tests/core.jsonl
+python3 tools/test.py run --suite latent-core.lib.latent-core --inventory target/local-tests/core.jsonl
+```
+
+Use `--case EXACT_NAME` consistently to select one case. `prepare` may build and
+prepare registered fixtures; `check` validates inputs without executing tests.
+`run` performs owned exact discovery and execution without an implicit build or
+installation. Missing prerequisites, unsupported selections, zero/partial case
+sets, unexpected ignores and failed cleanup cannot become a successful skip.
+Some listed provider/custom selections still require the maintained owner named
+by their plan rather than a bare libtest fallback.
+
+Use a fresh owned inventory after source, lock, recipe or fixture changes.
+Never select the newest executable from `target/`, copy another checkout's
+inventory or treat a restored cache as test-result evidence. Compatible Cargo
+artifacts and immutable prepared copies are consumed on their producing checkout;
+mutable catalogs, compiler authority, provider state and resource counters remain
+private to the actual test owner.
+
+The [local runner guide](docs/development/local-tests.md#angularprovider-failure-reproduction)
+describes redacted `latent.test-run.v1` diagnostics and `reproduce`. Exact replay
+requires the recorded clean checkout and prepared byte identities. An explicitly
+allowed changed-checkout rerun is labelled as such and retains the original
+selection/fault. Reproduction never retries a failure until it passes.
+
+## Timing, cancellation and physical ownership
+
+Use committed readiness and the actual queue/lease/buffer state, not sleeps,
+yield counts or an accepted cancellation request. Manual `TestClock`, Tokio time
+and native/OS clocks are separate domains. Advancing one does not control another
+or prove native retirement. Real watchdogs bound deadlocks; they are not readiness
+witnesses and do not replace the subsystem's original deadline.
+
+Low-level helpers live in `latent-core`'s opt-in `test-support` feature. The
+neutral `latent-test-process` crate owns real child/resource helpers;
+`latent-testkit` re-exports the same types for higher-level harnesses. Preserve
+the workspace dependency DAG rather than importing the runtime harness into its
+own dependencies. The [deterministic guide](docs/development/deterministic-tests.md)
+owns the helper contracts and focused regression commands.
+
+A dropped waiter or successful child exit is not physical cleanup proof. Join
+actual owners and check retained resources. Selected Python process runners use
+the Linux subreaper contract, finite total deadlines, private fixtures and
+identity-bound readiness/retirement. Unsupported accounting is unavailable,
+not fabricated zero usage. Fault controls must fail as intended; they cannot
+substitute for the corresponding successful product run.
+
+## Runtime, state and application coverage
+
+Each row identifies owners and required evidence, not a declaration that every
+profile or acceptance gate has passed at the current head.
+
+| Boundary | Coverage and qualification entry point |
+| --- | --- |
+| Runtime ownership | [Invariants](docs/testing/invariants.md): admission, fairness, fixed cells, fresh Stores, budgets, cancellation, cleanup and quarantine |
+| Contracts and source | [Contract lanes](docs/testing/ci-lanes.md): WIT/Protobuf/schema validation, generated bindings, repository checks and the complete Python suite |
+| Transactions and recovery | [State/effects](docs/architecture/state-and-effects.md), [engine qualification](docs/testing/transaction-store-engine.md) and [installed recovery](docs/testing/installed-transaction-recovery.md): model/engine, atomic command outcomes, OCC, fresh queries, inbox/outbox, retention, epochs and explicit reconciliation |
+| Installed native/application state | [Installed runtime](docs/development/installed-transaction-rpc.md), [Java qualification](docs/testing/java-transaction-qualification.md) and [transaction clients](docs/development/transaction-clients.md): authenticated signed components, current result/dispatch authority, HTTP delivery and terminal/pending recovery programmes |
+| Providers and browser delivery | [Provider/renderer lanes](docs/testing/ci-lanes.md), [standard HTTP controls](docs/testing/standard-http-conformance.md) and [browser application](docs/testing/sdk-browser-application.md): real services/components, negative controls, ownership, static/Angular delivery and hydration |
+| Guest authoring | [Guest SDKs](docs/component-development/guest-sdk.md): six separate compiled language profiles, signed admission, actual execution and resource retirement |
+| External clients | [SDK profile](sdk/profile/README.md) and [provider workflow](docs/testing/sdk-provider-workflow.md): six native transports, shared wire vectors, original identity/recovery, cancellation and response ownership |
+| Security | [Security baseline](docs/development/security-baseline.md): separately selected advisory, secret, source/workflow and canary coverage |
+
+A model schedule, compiler capture, controlled peer, portable guest, embedded
+engine and signed live-node/browser programme establish different boundaries.
+In particular, Phase 4's native/application/packaged gates and the ADR-0062
+[restore identity variance](adr/0062-host-own-serializable-transactions-and-durable-outcomes.md#implementation-status-and-restore-identity)
+remain explicit. Build/discovery or a small engine fixture cannot close them.
+
+## Package and delivery validation
+
+Package/policy/artifact/catalog/audit owners test exact evidence association,
+current admission/revocation, durable receipts, caller preconditions, route pins,
+pagination and restart. Provider and renderer integrations additionally require
+their real service/component preparation and cleanup owners. Use the registered
+plan and [AOT preparation guide](docs/development/aot-test-inputs.md) rather than
+copying a raw Cargo filter that bypasses those prerequisites.
+
+The [bounded operator workflow](docs/development/standalone-quickstart.md#bounded-phase-2-operator-workflow)
+prepares current CLI/node binaries, a pinned TLS registry and signed fixtures,
+then checks transfer, independent admission, deployment/rollout/rollback,
+original-operation recovery, audit and restart. Synthetic signing fixtures prove
+their protocol scope; [observed build provenance](docs/reference/build-provenance.md)
+has its own input-capture evidence. A successful local package build grants no
+publisher or execution authority.
+
+## CI profiles and required results
+
+The [classifier](tools/ci_profile.py) reads the complete Git change and actual
+workspace dependency graph. Profiles are:
+
+| Profile | Selected obligations |
+| --- | --- |
+| `docs` | Approved prose/SVG/known issue forms; docs and website validation |
+| `website` | Reviewed website/MDX inputs; docs and full website types/unit/build/browser checks |
+| `fast` | An entirely eligible reverse-dependent source closure; docs, website, selected host correctness and selected MSRV checks |
+| `full` | Runtime-sensitive, shared/build/manifest/evidence, unknown or unavailable-history changes; the full job set plus the selected host correctness job |
+
+The host-only decision is graph-derived, not a permanent promise about a crate.
+Current state/core changes select full validation; an isolated workflows change
+can select `fast`. A host pass is additional feedback when full CI is selected.
+Do not replace the classifier's package list with an old five-package example.
+
+The full `rust` matrix has checks, tests, qualification, provider,
+renderer-public, renderer-angular, publications and angular-t1 variants. Contracts
+have Python, bindings, runtime, standalone, SDK-provider, measurement-smoke and
+optimization-smoke variants. Each producing runner owns fresh native inputs;
+inventories and mutable fixtures stay with their producing jobs. Dependency
+caches may reuse compilation; execution and qualification remain fresh results.
+Workspace ordinary tests, exact custom harnesses, separate doctests and signing
+compatibility retain distinct result checks. [Execution lanes](docs/testing/ci-lanes.md)
+and [performance records](docs/development/ci-performance.md) own the layout.
+
+`CI result` independently checks the expected jobs from the selected profile.
+Missing, failed, canceled or unexpectedly skipped jobs fail it. Superseded runs
+are canceled. The separate security aggregate and branch/release review remain
+independent. Cache reuse and shorter elapsed time cannot waive cases, limits,
+negative controls, cleanup or qualification.
+
+## Updating tests and command contracts
+
+Rust targets/cases and explicit ignores live in [the catalogue](tools/ci/suites.json)
+and additive [suite fragments](tools/ci/suites.d/). Workflow structure, ordered
+commands, delegated owners and exact Python cases live in [command contracts](tools/ci/contracts/).
+A renamed, newly ignored, unregistered or zero-test selection must fail visibly.
+The [contract guide](docs/testing/ci-command-contracts.md) explains scoped proposals
+and review; validation never silently regenerates or approves expectations.
+
+```bash
+python3 tools/ci_coverage.py
+python3 tools/validate_docs.py
+```
+
+The coverage receipt observes selected source and reviewed contracts, not an
+executed product suite. Follow [website development](docs/development/website.md)
+for examples, immutable versions, both production mounts, rendered links and
+browser/accessibility journeys. SVGs follow [the visual standard](docs/svg-style.md).
+Automated checks do not replace the separate human guide review.
+
+## Broad Linux validation and explicit campaigns
+
+With the complete pinned Linux prerequisites installed, the existing broad
+Makefile aggregate remains available:
 
 ```bash
 python3.13 -m venv .venv
 . .venv/bin/activate
 python -m pip install --requirement tools/requirements.lock
-make validate
+make validate WORKSPACE_ROOT=target/make/my-review-run
 ```
 
-This checks formatting, the Rust workspace, Clippy, tests, contracts and SDKs.
-Cargo commands use the committed lockfile. Generators write to `target/` or Cargo
-`OUT_DIR`; they must not overwrite handwritten contract sources. Formatting is
-checked with `cargo fmt --all --check`.
+[The Makefile](Makefile) requires clean tracked source and a fresh owned output
+root. It runs source/docs/CI contracts, shared Rust build/lint/helper checks,
+contract and client SDK validation, then explicit workspace/AOT preparation,
+exact discovery and checked workspace, doctest and signing execution. Use the
+[Make command guide](docs/development/make-commands.md) for individual targets
+and retained logs. This is not every Actions matrix, website/browser, packaged
+or native-release programme.
+Contract preparation rewrites its generated output, so do not run competing
+fixture writers against the same target root. Generators use `target/` or Cargo
+`OUT_DIR`, never handwritten contract sources.
 
-For focused work, start with [the local test runner](docs/development/local-tests.md).
-It plans a registered suite or case, reports prerequisites, prepares inputs only
-when explicitly requested, and executes without an implicit build. Its inventory
-is shared with CI. A focused pass does not replace other checks selected by a
-change to shared code, schemas or workflows.
+Normal checks do not run the ignored 100,000-release catalog campaign, full
+scale/soak/profiling, manual Phase 3 resource matrix or release VM programmes.
+CI's `run_catalog_scale` and `run_phase3_resources` inputs default to false.
+Use the [measurement guide](docs/testing/phase-1-measurements.md),
+[resource acceptance](docs/testing/phase3-resource-acceptance.md) and
+[native release gate](docs/development/native-release-gate.md) for explicit
+selection and suitable resources. Smoke checks establish collector/schema and
+ownership behavior, not the complete measured campaign.
 
-Normal validation does not select the ignored 100,000-entry metadata and durable
-catalog probes, full resource soaks, native profiling or release VM campaigns.
-Those require explicit commands and suitable resources.
-
-## What is validated
-
-| Area | Coverage and reference |
-| --- | --- |
-| Toolchains and source | Exact compiler/dependency pins, locked builds, formatting, Clippy, generated-binding drift and source layout |
-| Contracts | Protobuf lint/descriptors, WIT parsing and generated host/guest bindings, JSON Schema validation and bounded manifest decoding |
-| Runtime ownership | Admission, tenant fairness, cancellation/deadlines, fixed cell capacity, affine leases, fresh guest state, budget accounting, cleanup and quarantine |
-| Guest execution | Real Component Model fixtures, dynamic typed dispatch, capability calls, declared/platform errors, traps, memory/fuel limits, post-return failure and recovery |
-| Storage and routing | Durable publication and deployment, integrity checks, supported-format rejection, caller preconditions, exact receipts, bounded pagination, restart and pinned routes |
-| Package security | Package/evidence association, publisher and builder trust, current admission, revocation, compiler isolation and authenticated native cache ownership |
-| Management and operation | Real CLI/node workflows, authenticated invocation/status/cancellation, audit, rollout/canary/rollback and bounded shutdown |
-| Providers and web delivery | Capability authority, shared pools, resource closure, HTTP/static/Angular delivery, browser boundaries and owned asynchronous waits |
-| External SDKs | Six-language profile semantics, wire validation and controlled native transport tests; separately maintained real-node workflows |
-| Documentation | Markdown links/anchors, accessible local SVGs, generated website content, examples and browser journeys |
-
-The detailed source of test selection is the
-[suite inventory](docs/testing/ci-suite-inventory.md). The
-[CI lanes](docs/testing/ci-lanes.md) and
-[Cargo recipes](docs/testing/ci-cargo-recipes.md) explain execution ownership and
-shared build inputs. See [testing invariants](docs/testing/invariants.md) when
-adding coverage; tests must retain failure evidence and verify resource cleanup.
-
-## Runtime regression commands
-
-After installing prerequisites, these focused targets exercise core behavior
-without selecting the expensive ignored probes:
-
-```bash
-cargo test -p latent-manifest --all-targets --locked
-cargo test -p latent-core -p latent-executor -p latent-node --all-targets --locked
-cargo test -p latent-node --test activation_lifecycle --locked
-cargo test -p latent-scheduler --all-targets --locked
-cargo test -p latent-wire --all-targets --locked
-cargo test -p latent-artifacts -p latent-control-store --lib --locked
-cargo test -p latentd --lib --locked
-cargo test -p latentd --test standalone_node --test standalone_command --locked
-cargo test -p latent --all-targets --locked
-cargo test -p latentd --test catalog_scale --locked
-```
-
-Some integration cases require explicitly prepared components or binaries. Use
-the registered runner's plan before selecting a case; missing prerequisites must
-fail clearly instead of silently skipping the case or rebuilding in its timing
-window. Linux-only tests establish Linux behavior; a Windows skip is not a pass
-for filesystem synchronization, process supervision or compiler isolation.
-
-For the fixed cell pool, tests check concurrent acquisition, bounded queues,
-cancellation, stale/foreign leases, drop races and quarantine. The pool stores
-slot identities and generation counters while idle; it does not allocate guest
-stores, threads or sockets per dormant service.
-
-## Package and delivery validation
-
-These targets cover package, policy, storage, native-image, audit, delivery and
-operator boundaries:
-
-```bash
-cargo test -p latent-packaging -p latent-signing -p latent-policy --lib --all-features --locked
-cargo test -p latent-artifacts -p latent-control-store -p latent-audit -p latent-rollout --lib --all-features --locked
-cargo test -p latent-telemetry -p latent-wire -p latentd --lib --all-features --locked
-cargo test -p latent --all-targets --all-features --locked
-cargo test -p latent-wire --test management_service --all-features --locked
-cargo test -p latent-wasmtime --test native_aot_cache --all-features --locked
-```
-
-Native AOT cases require the Linux sandbox/compiler prerequisites in
-[trusted AOT](docs/runtime/trusted-aot.md). For the separate-process CLI, registry
-and node schedule, follow the
-[operator workflow](docs/development/standalone-quickstart.md#bounded-phase-2-operator-workflow).
-It explicitly prepares current binaries, a pinned TLS registry and fresh signed
-fixtures before execution. The runner owns its disposable processes and registry;
-it does not mount node catalogs into the CLI.
-
-That workflow checks transfer, independent admission, deployment receipt
-recovery, attributed invocation, staged promotion, rollback, audit and restart.
-Synthetic signed fixtures test the security protocol; the separately maintained
-[observed-build checks](docs/reference/build-provenance.md) establish actual
-builder-input capture.
-
-## Guest and client checks
-
-Build the maintained echo fixture and optionally check two clean builds:
-
-```bash
-make echo-capsule
-make echo-capsule-reproducibility
-```
-
-The fixture's component interface, generated manifest and actual digest are
-validated. Its unsigned local-build status grants no publisher authority. The
-same-host reproducibility check does not claim byte identity across toolchains
-or platforms. [Guest SDK checks](docs/component-development/guest-sdk.md) add
-signed admission, typed capabilities, resource ownership and real node execution.
-
-Run maintained external client validation with:
-
-```bash
-make sdks
-cargo test -p latent-sdk --locked
-```
-
-The [SDK profile](sdk/profile/README.md) shares selected wire vectors, unsigned
-integer boundaries, identity/presence, cancellation, response ownership and
-recovery semantics across Rust, C, TypeScript, Go, Java and C#. Native transport
-tests cover bounded connections, failures, deadlines and shutdown. Semantic test
-doubles and controlled peers establish different boundaries from an actual node;
-the [provider workflow](docs/testing/sdk-provider-workflow.md) covers the latter.
-Compiler identities are checked before compilation. Follow each SDK's own build
-instructions for its generated artifacts and cleanup.
-
-## Website and documentation
-
-Follow [website development](docs/development/website.md) for installation, local
-builds, navigation, examples and browser checks. Documentation links must resolve
-within their selected source/version. SVGs must be accessible, local-only XML
-with a title, description and viewBox; see [the visual standard](docs/svg-style.md).
-
-Automated checks can detect broken links, example drift and interaction failures.
-They cannot establish that a newcomer understands a guide. The maintainer's
-[guide review](docs/development/phase3-guide-review.md) remains a separate human
-review and must not be marked accepted by an automated or assistant audit.
-
-## CI jobs
-
-[CI profiles](docs/development/ci-profiles.md) select documentation or full
-validation from the complete change. Approved prose/SVG-only changes receive
-focused checks. Code, build inputs, evidence and workflow changes retain full
-validation. `CI result` checks every selected job's result. Superseded runs for
-the same ref are cancelled.
-
-Full CI covers Rust formatting/tests/Clippy, MSRV, repository contracts, durable
-catalog acceptance, SDKs, the website and the dependent OCI TLS integration.
-Maintained fixtures and observed-build artifacts connect the relevant jobs.
-[Dependency caches](docs/development/ci-caching.md) reuse build work without
-skipping checks or treating a previous receipt as fresh evidence.
-
-The durable catalog job's expensive 100,000-release publication/reopen step runs
-only with manual `run_catalog_scale: true`; its default is false. Ordinary jobs
-retain small integrity, restart, routing and probe-supervision regressions.
-
-## Explicit measurement and release campaigns
-
-The [measurement guide](docs/testing/phase-1-measurements.md) defines scale,
-soak and benchmark campaigns. The normal contracts gate runs a small collector
-smoke profile to check process ownership and result schemas. It cannot satisfy
-full measurement acceptance. Full workloads use explicit commands:
-
-```bash
-python3 tools/run_phase1_measurements.py --profile full --kind scale
-python3 tools/run_phase1_measurements.py --profile full --kind soak
-python3 tools/run_phase1_measurements.py --profile full --kind benchmark
-```
-
-Scale reaches 100,000 durable releases/deployments. Soak uses three independent
-processes with 100,000 measured calls each. Benchmark uses seven independent
-release-build processes. Review the guide's prerequisites and resource limits
-before running them. Container/hosted observations keep their recorded
-environment and do not become native-host measurements.
-
-The [native release gate](docs/development/native-release-gate.md) separately
-requires exact build inputs, real VM installation/reboot/upgrade acceptance and
-publisher approval. Ordinary CI alone does not authorize release publication.
-
-## Historical evidence and scope
-
-The [engineering records](docs/development/engineering-records.md) index previous
-acceptance decisions. Historical spike collectors and their executable surface
-have been retired. Receipts, raw archives, checksums and integrity/replay
-validators remain so past claims can be checked. Reproducing such a workload
-requires its recorded source revision, not today's development checkout.
-
-A passing check establishes the behavior exercised by its inputs on its recorded
-host. It does not establish unsupported platforms, hostile multitenant isolation,
-cluster behavior, production SLOs or a completed release gate. Current regression
-results, retained performance measurements and human acceptance have distinct
-purposes; report each at its actual scope.
+The [engineering records](docs/development/engineering-records.md) retain original
+sources, failed attempts and accepted results. Record source/dirty state,
+toolchain/recipe, host/filesystem, prepared identities, exact cases and actual
+outcomes. Keep discovery, execution, physical retirement and acceptance separate.
+Unavailable or unrun work is not a pass; a historical receipt never qualifies a
+later source, unsupported platform, cluster behavior, production SLO or release.

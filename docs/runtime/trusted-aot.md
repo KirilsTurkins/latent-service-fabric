@@ -1,14 +1,14 @@
 # Isolated trusted-local AOT compilation and native cache
 
-The current security baseline selects **Wasmtime 48.0.4**. References below to
-47.0.4 describe the earlier qualification, not the current supported dependency.
-See the [security update](../development/wasmtime-security-update.md)
-for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+Use the engine pinned in [the toolchain baseline](../development/toolchain.md#selected-versions)
+and the committed Cargo lock. The [security upgrade record](../development/wasmtime-security-update.md)
+separates that current selection from dated qualification and native-artifact
+identities; an older receipt does not qualify a different engine.
 
 `latent-wasmtime` provides bounded isolated compilation.
 Its `IsolatedAotCompiler` launches an approved one-job executable, verifies its input
 and output, and returns locally authenticated native bytes with an owned memory
-allowance. The child uses Wasmtime 48.0.4's safe `Engine::precompile_component`;
+allowance. The child uses the pinned Wasmtime engine's safe `Engine::precompile_component`;
 it never instantiates a guest or loads native output.
 
 Persistent native reuse and authenticated loading are opt-in. A
@@ -30,6 +30,11 @@ signatures alone does not select this compiler.
 The parent parser, configured compiler, native loader, Wasmtime and OS remain
 trusted; a separate compiler process does not make its native output untrusted
 code safe to execute in the node.
+
+The [native-SFI investigation](native-sfi-research.md) considers a separate,
+unimplemented backend for restricted native guests. These Wasmtime AOT receipts,
+cache entries and compiler controls do not admit such artifacts or establish
+their sandbox boundary.
 
 ## Host API and input authority
 
@@ -258,7 +263,7 @@ before the larger blob read. There is no public `load(bytes)` or restored-output
 constructor.
 
 The sole audited unsafe operation is `Component::deserialize` over this immutable
-authenticated slice. Wasmtime 48.0.4 copies the bytes into its own mapping; the
+authenticated slice. The selected copying loader copies the bytes into its own mapping; the
 loader never deserializes a replaceable file or trusts a filename. It checks the
 actual engine fingerprint, current input capability and job control before entry,
 then checks currentness again after the synchronous loader returns. Wasmtime

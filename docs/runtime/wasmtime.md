@@ -20,6 +20,10 @@ Preparation verifies component bytes and digest association, manifest execution
 requirements, declared imports/exports, and supported exported signatures.
 Stateless components may declare single-threaded or reentrant execution;
 cooperative threading and persistent state models are not admitted.
+The separately installed [transaction profile](host-abi-profile.md#explicit-transaction-profile)
+uses host-owned state and fresh command/query activations. Its protected store
+and signed operation admission do not make a persistent guest instance available
+through the generic stateless path.
 Contract and function lookup use the component's actual exported interfaces;
 the generic dispatcher contains no echo function or containment-control-string
 selection. Components with no imports are supported.
@@ -116,6 +120,19 @@ The factory also derives a bounded immutable
 the actual engine, target and detected CPU features. Capsule requirements are
 checked before preparation, and the profile participates in preparation identity.
 The configurable CPU cache label cannot grant support for a hardware feature.
+
+Pooling reserves `maximum_memory_bytes` per linear memory, with zero additional
+growth reservation and zero configured guard bytes. On-demand layout differs;
+these settings are not total mapping or RSS measurements. The current engine
+composition does not enable MPK. The
+[hardware-capability investigation](hardware-capabilities-research.md) considers
+separate optional experiments against this baseline, not an available backend.
+
+[Userfault-pager research](userfault-pager-research.md) is also separate from
+copy-on-write initialization and normal memory allocation. The selected engine's
+custom-memory hook covers host memories and on-demand instance allocation; it
+is not a drop-in pooled-instance pager. Fault recovery, growth/reset and engine
+ownership need independent qualification before integration.
 
 Prepared entries retain compiled components and pre-instantiation/export
 metadata, never running stores or component instances. The internal preparation

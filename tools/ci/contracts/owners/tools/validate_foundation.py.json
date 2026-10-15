@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/validate_foundation.py","reviewBoundary":"committed-fingerprint","reviewReason":"Retain all foundation recipe scopes and rejection guards; recognize only the complete failure-propagating matrix including the required separate metadata/security qualification lane.","schemaVersion":"latent.ci.contracts.v1","sha256":"9639f4cd0d05e39cb035f19f89e4e6a075dc4a7f36d39bf412139219e5574ec4"}
+{
+  "kind": "owner",
+  "path": "tools/validate_foundation.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Require current Make validation, binding, workspace/AOT preparation and execution entrypoints instead of the retired phase alias; preserve all existing workflow recipes, graph and generation boundary checks.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "3722c7de5ff54ba99a7696f0c68220d4a1d5af200fb518312fe020510e93554b"
+}

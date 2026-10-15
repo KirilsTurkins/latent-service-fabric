@@ -94,11 +94,13 @@ try {
       assert.equal(await page.locator('[data-search-version]').count(), 0);
       await page.goto(`${prefix}guides/`, {waitUntil: 'networkidle'});
       await page.getByLabel('SDK language', {exact: true}).selectOption('Go');
-      assert.deepEqual((await page.locator('[data-guide]').evaluateAll(nodes => nodes.map(node => node.dataset.guide))).sort(), ['author-capsule', 'client-go']);
+      assert.deepEqual((await page.locator('[data-guide]').evaluateAll(nodes => nodes.map(node => node.dataset.guide))).sort(),
+        ['application-libraries', 'author-capsule', 'client-go', 'libraries-go', 'packaged-resources',
+          'transaction-recovery', 'transactional-guest']);
       await page.getByLabel('Topic', {exact: true}).selectOption('angular-browser');
       await page.getByRole('status').getByText(/No tasks match/).waitFor();
       await page.getByRole('link', {name: 'Clear filters', exact: true}).click();
-      await page.getByRole('status').getByText(/39 tasks/).waitFor();
+      await page.getByRole('status').getByText(/53 tasks/).waitFor();
       await page.getByLabel('Topic', {exact: true}).selectOption('static-web-delivery');
       await page.locator('[data-guide="deliver-website"]').getByRole('link', {name: 'Deliver a website', exact: true}).click();
       await page.waitForURL(`${prefix}docs/how-to/deliver-a-website/`);
@@ -106,6 +108,25 @@ try {
       await page.goto(`${prefix}guides/?topic=container-operations`, {waitUntil: 'networkidle'});
       await page.locator('[data-guide="container-node"]').getByRole('link', {name: 'Run a node in a Linux container', exact: true}).click();
       await page.waitForURL(`${prefix}docs/operations/container-runtime/`);
+      await page.goto(`${prefix}guides/`, {waitUntil: 'networkidle'});
+      await page.getByLabel('Topic', {exact: true}).selectOption('application-inputs');
+      await page.getByLabel('SDK language', {exact: true}).selectOption('C#/.NET');
+      await page.locator('[data-guide="libraries-dotnet"]').getByRole('link').click();
+      await page.waitForURL(`${prefix}docs/component-development/dotnet-dependencies/`);
+      await page.goto(`${prefix}guides/?topic=transactions-effects`, {waitUntil: 'networkidle'});
+      await page.locator('[data-guide="transaction-recovery"]').getByRole('link').click();
+      await page.waitForURL(`${prefix}docs/operations/transaction-recovery/`);
+      for (const slug of ['start/development-changes', 'how-to/add-application-libraries',
+        'how-to/inspect-a-composition', 'operations/transaction-recovery']) {
+        await page.goto(`${prefix}docs/${slug}/`, {waitUntil: 'networkidle'});
+        assert.equal((await page.reload({waitUntil: 'networkidle'})).status(), 200);
+        await audit(`${slug}-desktop`);
+        await page.setViewportSize({width: 390, height: 844});
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), slug);
+        await audit(`${slug}-mobile`);
+        await page.screenshot({path: path.join(output, `${variant}-${slug.replaceAll('/', '-')}-mobile.png`), fullPage: true});
+        await page.setViewportSize({width: 1280, height: 900});
+      }
       await page.goto(`${prefix}guides/`, {waitUntil: 'networkidle'});
       await audit('catalogue-light');
       const toggle = page.getByRole('button', {name: /Switch between dark and light mode/});

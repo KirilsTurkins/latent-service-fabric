@@ -15,6 +15,69 @@ from tools.dev_guest_tools import stage_registry
 from tools.tests.test_dev_contracts import descriptor
 
 
+class ProjectNotices(unittest.TestCase):
+    def test_bundle_notice_bytes_are_in_the_archive_and_hashed_inventory(self):
+        import zipfile
+        from tools.dev_distribution import assemble, project_notices
+        source = Path(__file__).resolve().parents[2]
+        for target in ("windows-x86_64", "linux-x86_64"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                payload = root / "payload"
+                project_notices(source, payload / "licenses")
+                (payload / "sbom.spdx.json").write_bytes(b"{}\n")
+                result = assemble(payload, root / "candidate", commit="a" * 40,
+                    version="notice-test", target=target, epoch=0, executables=set())
+                self.assertEqual(set(result["licenses"]), {"licenses/LSF.txt", "licenses/LSF-NOTICE.txt"})
+                entries = {entry["path"]: entry for entry in result["files"]}
+                with zipfile.ZipFile(root / "candidate" / result["archive"]["name"]) as archive:
+                    for original, name in (("LICENSE", "LSF.txt"), ("NOTICE", "LSF-NOTICE.txt")):
+                        expected = (source / original).read_bytes()
+                        name = "licenses/" + name
+                        self.assertEqual(archive.read(name), expected)
+                        self.assertEqual(entries[name]["sha256"], common.digest(expected))
+                        self.assertEqual(entries[name]["size"], len(expected))
+
+    def test_missing_or_empty_notice_cannot_prepare_a_license_only_payload(self):
+        from tools.dev_distribution import project_notices
+        for notice in (None, b""):
+            with self.subTest(notice=notice), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                (root / "LICENSE").write_bytes(b"project license")
+                if notice is not None:
+                    (root / "NOTICE").write_bytes(notice)
+                with self.assertRaises(common.DevError):
+                    project_notices(root, root / "licenses")
+                self.assertFalse((root / "licenses").exists())
+
+    def test_rootfs_inventory_retains_the_project_notice_without_a_container(self):
+        import json
+        from tools import dev_rootfs_inventory as inventory
+        source = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            files = {"opt/latent-dev/LSF-LICENSE": (source / "LICENSE").read_bytes(),
+                "opt/latent-dev/LSF-NOTICE": (source / "NOTICE").read_bytes(),
+                "opt/latent-dev/helper.pyz": b"fixture helper", "opt/latent-dev/source.json": b"{}",
+                "usr/local/lib/python3.13/LICENSE.txt": b"fixture Python license",
+                "etc/os-release": b"fixture OS", "etc/wsl.conf": b"fixture WSL configuration"}
+            for name, raw in files.items():
+                selected = root / name
+                selected.parent.mkdir(parents=True, exist_ok=True)
+                selected.write_bytes(raw)
+            (root / "usr/share/common-licenses").mkdir(parents=True)
+            def fixture_path(value):
+                return root / str(value).lstrip("/")
+            with patch.object(inventory, "Path", side_effect=fixture_path), \
+                    patch.object(inventory.subprocess, "check_output", return_value=""):
+                inventory.main()
+            output = root / "opt/latent-dev/distribution"
+            self.assertEqual((output / "licenses/LSF-NOTICE.txt").read_bytes(), (source / "NOTICE").read_bytes())
+            result = json.loads((output / "rootfs-inventory.json").read_bytes())
+            self.assertEqual(result["qualification"], "image-assembly-only")
+            self.assertFalse(result["publisherAuthenticated"])
+
+
 class FrontendDistribution(unittest.TestCase):
     @unittest.skipUnless(sys.platform == "linux", "Candidate assembly runs on Linux")
     def test_candidate_rejects_changed_added_or_removed_frontend_libraries_before_assembly(self):

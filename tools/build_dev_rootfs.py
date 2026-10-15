@@ -52,7 +52,8 @@ def main() -> int:
     (context / "source.json").write_bytes(encode(identity))
     helper(context / "helper.pyz")
     for source, destination in (("packaging/dev/wsl.Dockerfile", "Dockerfile"), ("packaging/dev/wsl.conf", "wsl.conf"),
-                                ("tools/dev_rootfs_inventory.py", "rootfs_inventory.py"), ("LICENSE", "LSF-LICENSE")):
+                                ("tools/dev_rootfs_inventory.py", "rootfs_inventory.py"),
+                                ("LICENSE", "LSF-LICENSE"), ("NOTICE", "LSF-NOTICE")):
         shutil.copyfile(ROOT / source, context / destination)
     name = "lsf-dev-rootfs-" + secrets.token_hex(8)
     run("docker", "build", "--platform", "linux/amd64", "--tag", name, str(context))

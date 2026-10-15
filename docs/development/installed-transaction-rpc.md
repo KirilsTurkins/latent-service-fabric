@@ -57,11 +57,24 @@ persisted effect disposition, and an uncertain attempt supplies no inferred
 provider acknowledgement. Final response frames retain the original read
 authority and command identity cutoff.
 
-State-only commands and fresh queries are installed here. Deferred HTTP intent
-installation and application HTTP routes remain the #828/#409 integration.
-The preserved Java continuation collector still uses older HTTP/offline
-configuration and needs a separate port; its compiler captures and failed
-receipts do not qualify execution on this runtime. The private
-`transaction_recovery --diagnose-startup` helper runs ordinary startup and
-shutdown and may advance the durable node epoch. Its obsolete offline modes
-return `offline-recovery-adapter-unavailable` before opening the store.
+State-only commands and fresh queries use this installation boundary. The merged
+[deferred HTTP installation](deferred-http-installation.md) and
+[transaction HTTP routes](transaction-http-v1.md) compose the same runtime with
+shared ingress and separately authorized dispatch. The
+[stateful reference application](../../examples/stateful-reference/README.md)
+derives declarations from its exact signed companion; installing those
+declarations does not grant namespace or effect access. Issues #409 and #718
+retain wider runtime/application qualification requirements.
+
+For the operational lookup sequence, use [transaction recovery](../operations/transaction-recovery.md).
+The [installed native recovery helper](../testing/installed-transaction-recovery.md)
+now composes authenticated snapshot, restore, migration and effect-close actions
+through the current protected owners. These actions require exact source and
+destination identity, current authority and positive physical retirement; they
+are separate from the read/control lookup sequence. Complete terminal/pending
+native and packaged qualification remains outstanding. Preserved Java compiler
+captures and failed receipts qualify only their recorded sources.
+
+`transaction_recovery --diagnose-startup` runs ordinary startup and shutdown
+and may advance the durable node epoch. Its result is a startup observation,
+not restore approval or a successful recovery programme.

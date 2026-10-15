@@ -8,8 +8,10 @@ let permitted capsules use external services and local objects. Shared applicati
 ingress serves [static sites](../component-development/static-sites.md) and
 [Angular applications](../component-development/angular-build.md).
 
-Cluster placement, transactional application state and durable workflows are
-not available. Plan this installation as one node.
+Plan this installation as one node. Development's optional protected transaction
+runtime adds state, fresh queries and durable effect dispatch to that same node;
+the published alpha.5 container workflow does not install it. Cluster placement
+and durable workflows remain planned.
 
 ## Implemented single-node topology
 
@@ -21,6 +23,8 @@ latent CLI / generated management clients
           -> one deployment/route/rollout catalog transaction
           -> optional shared rollout coordinator
           -> optional durable audit worker
+          -> optional protected transaction store + finite native/recovery workers
+              -> external checkpoint + covered clock + bounded dispatcher
       -> immutable route pins + activation admission
           -> fixed execution-cell pool
           -> bounded compiler workers and resident prepared cache
@@ -70,6 +74,10 @@ Plan each finite ownership domain separately:
 - Audit disk/record/queue limits and retained query responses; the journal does not prune automatically.
 - Optional native blob/receipt storage, staging and read leases, compiler output and page-rounded live mappings.
 - Canary windows, live/retained samples, snapshot owners and activation status retention.
+- With Phase 4 selected: protected engine/storage limits, state staging, retained
+  results/effects, native/recovery partitions, checkpoint custody and physical
+  dispatch attempts. These have separate count and byte reservations, not one
+  unbounded shared state allowance.
 
 Evicting a cache entry cannot refund code still held by a ready or active owner.
 An authenticated native cache hit still requires current catalog-owned source,
@@ -96,5 +104,7 @@ The standalone configuration installs only the providers listed in its
 [provider reference](../reference/standalone-providers.md). Additional providers
 have their own integration instructions; adding an arbitrary provider name to
 the node configuration does not install one. PostgreSQL-backed control, remote
-placement, transactional state and durable workflow suspension are planned
-features; see the [roadmap](../roadmap.md).
+placement and durable workflow suspension remain planned. Explicit transaction
+configuration, installed authority and recovery use the
+[state runtime](../development/installed-transaction-rpc.md), not an arbitrary
+provider name. See the [roadmap](../roadmap.md) for its remaining acceptance work.

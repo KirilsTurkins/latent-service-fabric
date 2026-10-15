@@ -46,13 +46,22 @@ required accelerators or CPU features
 
 ## Node failure
 
-- unstarted queued work may be re-routed,
-- stateless work may be retried only under retry policy,
-- uncommitted state is discarded,
-- committed state remains durable,
-- effect intents in the outbox remain durable,
-- entity leases expire,
-- workflow continuations remain persisted.
+This is a future failover contract, not a property supplied by the standalone
+node's local database. Phase 5 must qualify replication, durable ownership and
+fencing before another node can recover a command or dispatch its effects.
+Losing the only storage root has no current automatic failover path.
+
+- Unstarted work may be rerouted only while preserving its exact target and
+  original authority/deadline constraints; a route pin is not acceptance.
+- Stateless retry remains an explicit caller/policy decision. Unknown external
+  outcome is no proof that a mutation is safe to repeat.
+- A transactional timeout or node loss requires recovery by original command
+  identity. Only durable abort evidence can establish zero commitment; loss of
+  an activation does not establish that its commit failed.
+- Committed state/outbox durability follows the selected replicated storage
+  contract, not the lifetime of an execution cell or the route snapshot.
+- Future entity ownership needs fencing beyond elapsed lease time. Durable
+  workflow continuations remain Phase 6 and are not supplied by local async waits.
 
 ## Finite control-plane outage behavior
 

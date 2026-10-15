@@ -1,0 +1,205 @@
+{
+  "cases": [
+    "MakefileTests.test_aot_preparation_validates_existing_inputs_without_rebuilding",
+    "MakefileTests.test_broad_validation_preflight_refuses_dirty_source_before_building",
+    "MakefileTests.test_default_is_help_without_build_install_or_test_side_effects",
+    "MakefileTests.test_exact_selectors_and_paths_are_single_arguments_without_shell_execution",
+    "MakefileTests.test_execution_and_reproduction_never_prepare_or_allow_changed_replay",
+    "MakefileTests.test_existing_execution_logs_are_not_overwritten",
+    "MakefileTests.test_failed_preparation_discovery_or_test_cannot_be_hidden_by_tee",
+    "MakefileTests.test_missing_git_identity_blocks_discovery_and_workspace_execution",
+    "MakefileTests.test_missing_selection_inputs_fail_before_an_owner_is_started",
+    "MakefileTests.test_named_contract_lane_is_exact_and_phony_checks_cannot_be_skipped_by_files",
+    "MakefileTests.test_parallel_make_keeps_fixture_writers_and_full_validation_order_serial",
+    "MakefileTests.test_website_validation_uses_prepared_npm_without_installing",
+    "MakefileTests.test_workspace_execution_preserves_all_recipes_checks_and_cargo_environment"
+  ],
+  "guards": {
+    "MakefileTests.test_aot_preparation_validates_existing_inputs_without_rebuilding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_broad_validation_preflight_refuses_dirty_source_before_building": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_default_is_help_without_build_install_or_test_side_effects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_exact_selectors_and_paths_are_single_arguments_without_shell_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_execution_and_reproduction_never_prepare_or_allow_changed_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_existing_execution_logs_are_not_overwritten": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_failed_preparation_discovery_or_test_cannot_be_hidden_by_tee": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_missing_git_identity_blocks_discovery_and_workspace_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_missing_selection_inputs_fail_before_an_owner_is_started": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_named_contract_lane_is_exact_and_phony_checks_cannot_be_skipped_by_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_parallel_make_keeps_fixture_writers_and_full_validation_order_serial": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_website_validation_uses_prepared_npm_without_installing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    },
+    "MakefileTests.test_workspace_execution_preserves_all_recipes_checks_and_cargo_environment": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:60863b4de0c80767c9c8f4a5a804bf525b618e734300b69d3aa6fe85a0f67a72",
+        "class:raise:raise unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')",
+        "class:setup-sha256:a6fed1a6efafb3ca966698ab64dc55294a223c39f76705eba6cb9607bffe4b3c",
+        "class:skip:unittest.SkipTest('GNU Make/Bash orchestration requires the POSIX tool environment')"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_makefile.py",
+  "reviewReason": "Register GNU Make orchestration controls for metadata-only defaults, exact selectors, explicit preparation, preserved workspace/doctest/signing checks, failure propagation, fresh reports, serialized fixture writers and prepared website npm; controlled commands are not runtime qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

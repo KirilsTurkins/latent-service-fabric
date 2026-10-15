@@ -16,6 +16,7 @@ def main() -> None:
     licenses = output / "licenses"
     licenses.mkdir()
     shutil.copyfile(root / "LSF-LICENSE", licenses / "LSF.txt")
+    shutil.copyfile(root / "LSF-NOTICE", licenses / "LSF-NOTICE.txt")
     python_license = Path("/usr/local/lib/python3.13/LICENSE.txt")
     if not python_license.is_file():
         raise RuntimeError("pinned-python-license-missing")

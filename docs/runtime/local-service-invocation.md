@@ -6,6 +6,10 @@ checked application export through the broker and the normal node activation
 manager. Each child gets a fresh Store and activation state. Compiled code may
 be shared; permission, identity, cells and budgets remain activation-owned.
 
+[Call-graph fusion](call-graph-fusion-research.md) investigates optional future
+composition over this path. It is not implemented, and a manifest eligibility
+declaration does not bypass the child boundaries described here.
+
 ## Installation and exact target selection
 
 A trusted node composition installs one provider registration with the above
@@ -34,12 +38,13 @@ with a finite child ceiling and installs the resulting shared adapter through
 `ActivationCapabilityRuntime::install_local_services`. The manager reference is
 weak, so the adapter cannot create a backend/manager ownership cycle. The node
 must select [descendant and provider budgets](descendant-budgets.md). Standalone startup installs
-the adapter when that profile and a capability runtime are supplied; standalone
-JSON provider configuration supplies opt-in HTTP, local-blob, `clockMonotonic`,
-`clockWall` and `random` host bindings, not isolated-local target bindings.
-Configure the checked local target and its binding through the trusted catalog
-composition described above. A declared import or policy CRUD alone cannot
-install this authority.
+the adapter when that profile and a capability runtime are supplied. The
+standalone `providers.localService` entry now selects one explicit local callee,
+deployment and exported contract; its consumer binding compiles through the same
+checked `isolated-local` owner. See [standalone local-service configuration](../reference/standalone-providers.md)
+for the accepted fields and admission rules. Other trusted embeddings retain the
+Rust composition above. A declared import or policy CRUD alone cannot install
+this authority.
 
 ## Guest values, identity and deadlines
 

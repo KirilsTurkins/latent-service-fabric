@@ -23,3 +23,16 @@ The V4 aggregate at `runtime-phase3-blobs` also includes the owned immutable-blo
 chunk interface. The separate `latent:web/application-service@0.1.0` world exports
 the [buffered HTTP application contract](../docs/protocol/http-applications.md)
 and imports trusted context. Its declaration installs no listener or provider.
+
+The V5 aggregate at `runtime-phase3-activation` adds activation-owned runtime
+operations and the separately gated network stream interface. Its recognized
+interfaces do not install a language scheduler, socket provider or ordinary
+standard-library adapter. The [activation runtime](../docs/runtime/activation-runtime.md)
+and [stream profile](../docs/runtime/outbound-stream-profile.md) retain their
+explicit installation and qualification boundaries.
+
+The distinct `runtime-phase4` world selects host-owned state/query and deferred
+intent contracts. Use [transactional authoring](../docs/component-development/transactional-authoring.md)
+with the exact signed companion and [installed runtime](../docs/development/installed-transaction-rpc.md).
+Strict commands deny immediate external effects; an import declaration or
+generated binding cannot provide namespace, result or dispatch authority.

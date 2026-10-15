@@ -131,8 +131,12 @@ There is no automatic pagination, cursor restart, retry, stale-precondition
 replacement, operation-ID generation, or hidden reconciliation request. Source
 compilation, signing/key creation, watch, cluster registration,
 and benchmark commands remain outside this CLI. Capability policy, shared HTTP ingress, web publication and native SDK
-transports are implemented. Durable service state, transactional effects and
-clustering remain unimplemented.
+transports are implemented. Development's explicit `--phase4` selection adds
+namespace management, original command/commit/effect inspection and checked
+operator effect actions through the configured transaction runtime. Follow
+[transaction recovery](../operations/transaction-recovery.md) for the sequence
+and authority requirements. It is outside alpha.5 and retains its separate
+acceptance gates; clustering remains planned.
 
 ## Credentials and limits
 
@@ -178,11 +182,11 @@ calls. Lesser roles retain the permissions described in the node reference.
 Endpoints must be literal loopback HTTP addresses with a positive port, such as
 `http://127.0.0.1:50051` or `http://[::1]:50051`. DNS, non-loopback addresses, TLS,
 paths, redirects, queries, fragments, and userinfo are not accepted. Credentials
-use the node's 32â€“256-byte ASCII token vocabulary and become one Bearer header.
+use the node's 32–256-byte ASCII token vocabulary and become one Bearer header.
 
 Configuration is limited to 64 KiB, 16 profiles, depth 16, and bounded structural
 counts. Unknown/duplicate fields, duplicate names, unsupported versions, and
-invalid integer values fail locally. Timeouts allow 1â€“300000 milliseconds.
+invalid integer values fail locally. Timeouts allow 1–300000 milliseconds.
 Component input defaults to 16 MiB and permits at most 64 MiB; payload input is
 at most 1 MiB; response input defaults to 4 MiB and permits at most 16 MiB. All
 three limits must be positive. Response HTTP/2 headers are bounded to 16 KiB;
@@ -208,7 +212,7 @@ evidence index are published last; partial output is not reported as complete.
 Manifest and contract documents are each bounded to 1 MiB. Identifiers are at most
 512 bytes; invocation metadata allows 64 unique keys and 32 KiB in total; cancel
 reasons allow 256 bytes. Operation and rollout IDs are at most 128 bytes. Release,
-deployment and node page sizes are 0â€“1000, with zero selecting the node's
+deployment and node page sizes are 0–1000, with zero selecting the node's
 default; rollout and audit pages allow 0-128. Continuation tokens are opaque and
 at most 8192 bytes. A catalog mutation or reopen can expire them; the CLI reports the error instead of restarting a list.
 `-` means standard input for file inputs and may be used only once per command.
@@ -259,7 +263,7 @@ Invoke supports `--route`, `--activation-id`, `--root-activation-id`,
 `--parent-activation-id`, `--media-type`, `--deadline-unix-millis`, `--priority`,
 `--idempotency-key`, repeated `--metadata KEY=VALUE`, `--budget FILE`, `--cpu-fuel`,
 `--memory-bytes`, `--wall-time-ms`, `--log-bytes`, and `--payload-output FILE`.
-Priority is 0â€“255. Duplicate metadata keys fail. An absent activation ID requests
+Priority is 0–255. Duplicate metadata keys fail. An absent activation ID requests
 server assignment; an explicitly empty ID fails. Supplied lineage is preserved,
 parent requires root, and lineage does not confer authority. Idempotency metadata
 does not promise redispatch deduplication. The server supplies a fresh trace and

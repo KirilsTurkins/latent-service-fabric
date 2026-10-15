@@ -17,7 +17,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.dev_workflow.common import HOST_ABI, PROTOCOL, digest, encode, require
-from tools.dev_distribution import frontend_files
+from tools.dev_distribution import frontend_files, project_notices
 
 ROOT = Path(__file__).resolve().parents[1]
 PREFLIGHT_RESOURCES = (
@@ -131,7 +131,7 @@ def python_inventory(output: Path, lock: Path) -> None:
                           Path(sysconfig.get_path("stdlib")) / "LICENSE.txt") if p.is_file()), None)
     require(python_license is not None, "frontend-python-license-required")
     shutil.copyfile(python_license, licenses / "CPython-3.13.5.txt")
-    shutil.copyfile(ROOT / "LICENSE", licenses / "LSF.txt")
+    project_notices(ROOT, licenses)
     packages = []
     for line in lock.read_text().splitlines():
         match = re.fullmatch(r"([a-z0-9-]+)==([^ ]+) --hash=sha256:([a-f0-9]{64})", line)

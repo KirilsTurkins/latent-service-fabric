@@ -30,6 +30,7 @@ No LSF source checkout or host language compiler is needed for this path.
 | Install a persistent node | [Native installation](../installation.md) |
 | Learn individual node commands or contribute to LSF | [Run your first node](first-node.md) from source |
 | Find a development command | [Developer commands](../how-to/developer-commands.md) |
+| Use features merged after alpha.5 | [Changes since alpha.5](development-changes.md), including library capture, composition checks and transactions |
 
 ## A few terms you will use
 

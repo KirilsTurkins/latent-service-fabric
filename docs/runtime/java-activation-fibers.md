@@ -7,7 +7,7 @@ closed ambient effects and original 64 MiB Java activation ceiling. The complete
 standard concurrency profile remains unqualified; default Java projects retain
 their current supported profile.
 
-The October 10 [PR #807 reconciliation](../development/phase4-handoffs/2026-10-10/pr807-reconciliation.md)
+The October 10 [PR #807 reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-10/pr807-reconciliation.md)
 records fresh signed local-service fixture execution: four ordinary-thread modes
 and four default-CompletableFuture modes, each repeated three times. All 24 calls
 return 42 under the original limits and pass the bounded physical idle checks.

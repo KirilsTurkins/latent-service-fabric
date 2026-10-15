@@ -24,8 +24,8 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `tonic-prost-build` |                               0.14.6 | Build-time Rust generation from every authoritative `.proto` |
 | `protoc-bin-vendored` |                                3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
 | Tracing / tracing-subscriber |                      0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
-| Wasmtime |                               48.0.4 | Generic Component Model runtime and retained Phase 0 compatibility facade |
-| `wasmparser` |                               0.259.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
+| Wasmtime |                               48.0.6 | Generic Component Model runtime and retained Phase 0 compatibility facade |
+| `wasmparser` |                               0.261.0 | Direct component binary validation; WIT tooling retains its separately locked parser dependencies |
 | `wasm-encoder` |                               0.259.0 | Component fixtures; `waitable_set_wait(memory)` retains the zero immediate used by the pinned runtime |
 | `wit-parser` |                               0.259.0 | Direct WIT parsing and component decoding; guest tooling retains its separately locked parser dependencies |
 | `wit-bindgen` |                               0.62.0 | Guest bindings and canonical ABI exports generated from WIT |
@@ -132,10 +132,15 @@ The supported reference environment is Linux or WSL. Install the selected toolch
 python3.13 -m venv .venv
 . .venv/bin/activate
 python -m pip install --requirement tools/requirements.lock
-make validate
+make validate WORKSPACE_ROOT=target/make/toolchain-review
 ```
 
-`make validate` executes formatting, locked workspace checks, Clippy, tests, repository/foundation/contract validation, retained echo and containment integration, and all SDK compilation. `make phase1-foundation` runs the Rust and contract subset. A missing or stale `Cargo.lock` fails all locked commands.
+Use a clean tracked checkout and a fresh owned root under `target/`.
+`make validate` runs source/documentation/CI contracts, shared Rust build/lint/helper
+checks, contract fixtures and client SDKs, then explicit workspace/AOT preparation
+and checked workspace/doctest/signing execution. A missing or stale `Cargo.lock`
+fails locked commands. The [Make command guide](make-commands.md) describes focused
+targets and the separate website validation path; this is not every CI or release gate.
 
 Routine PR CI runs maintained runtime contracts, SDK checks and retained evidence
 validators. The Phase 0 executable collectors and their workflows are retired;
@@ -175,8 +180,8 @@ The retained August 30 Phase 0 receipt records an authorized pass for its canoni
 
 ## Generated-output policy
 
-The [Wasmtime security baseline](wasmtime-security-update.md) records the 48.0.4
-advisory scan, native-loader review and runtime/compiler upgrade requirements.
+The [Wasmtime security record](wasmtime-security-update.md) separates the current
+pin from dated advisory scans and records native-loader/runtime upgrade requirements.
 
 Handwritten Rust, WIT, Protobuf, JSON Schema, examples, and SDK sources remain authoritative. Generated build products normally live in Cargo `OUT_DIR`, `target/contracts/`, `target/capsules/`, and SDK compiler directories. The type-only codec fixture described below is an explicit checked-in exception:
 

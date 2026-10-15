@@ -329,5 +329,5 @@ The merged source retains the five compatibility recovery schedules and all six
 prior dedicated-partition schedules, alongside the real-engine pressure tests.
 Their fixed-worker, queue, accepted-owner and byte ceilings remain unchanged.
 All 245 state library cases pass on pinned Rust 1.97.1 Linux after reconciliation;
-the [current handoff](phase4-handoffs/2026-10-10/pr796-reconciliation.md) records
+the [original source-bound handoff](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-10/pr796-reconciliation.md) records
 the complete scope. Earlier campaigns qualify their recorded source revisions.

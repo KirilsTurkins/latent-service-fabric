@@ -40,7 +40,29 @@ trigger resource
   → source acknowledgement
 ```
 
-Acknowledgement occurs only according to the trigger's delivery contract. Trigger events carry stable event and idempotency identifiers so duplicate delivery is safe where component logic supports it. A broker's durable consumer position does not provide an LSF state/effect transaction or exactly-once external execution.
+Acknowledgement follows the installed trigger's delivery contract. The generic
+`TriggerEvent` declaration has an optional idempotency key; it does not supply
+deduplication. The ordinary NATS adapter starts fresh stateless activations with
+no host command key. Applications needing duplicate protection must retain
+their own stable input identity or use the separately installed transactional
+inbox contract. A broker's durable consumer position provides neither an LSF
+state/effect transaction nor exactly-once external execution.
+
+## Transaction ingress and acknowledgement
+
+The explicitly installed [transaction HTTP profile](../development/transaction-http-v1.md)
+maps direct command, fresh-query and original-result routes onto the same
+runtime. Commands retain the original `Idempotency-Key`, canonical request and
+edit preconditions; the host validates its bounded result representation before
+durable completion. Current data permission is checked through response writes.
+A lost HTTP reply cannot undo a committed command or authorize a new key.
+
+The ordinary [NATS trigger](../runtime/nats-triggers.md) is a stateless delivery
+profile and does not itself install transactional inbox/outbox semantics.
+Transactional incoming identity and acknowledgement use their separately
+installed [inbox owner](state-and-effects.md#incoming-identity-formats-and-linked-retention).
+Neither a trigger acknowledgement nor an HTTP status proves deferred effect
+delivery. Query/result reads start no outbox dispatch.
 
 ## Planned durable timers
 

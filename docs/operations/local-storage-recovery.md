@@ -3,7 +3,16 @@
 Keep a node's complete durable state and protected configuration together. This
 guide covers the node-owned local Linux container layout from
 [Run a node in a Linux container](container-runtime.md). It uses UID/GID 10001 and
-a local ext4 or XFS mount. The maintained drill records the actual filesystem;
+a fixed `config`, `data`, `cache` root set. It does not follow arbitrary configured
+paths: a Phase 4 `checkpointRoot` outside these roots would be omitted. Its
+snapshot receipt does not qualify a transactional restore, namespace incarnation
+change or dispatcher reconciliation. For Development transactions, use the
+[protected checkpoint contract](../development/transaction-checkpoint.md) and
+[snapshot custody requirements](../development/protected-snapshots.md) under the
+selected store/restore owner; the container helper is not a substitute.
+
+The maintained container profile uses a local ext4 or XFS mount. The maintained
+drill records the actual filesystem;
 qualifying one observed filesystem does not qualify every mount of its type.
 
 Azure Files, NFS and SMB remain unqualified. There are no Azure resources in this
