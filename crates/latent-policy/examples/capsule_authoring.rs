@@ -97,13 +97,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
     if args.len() == 8 && args[0] == "fixture-sign-reconstructed-current-java-inputs" {
-        return authoring::sign_reconstructed_current_java(
-            std::path::Path::new(&args[1]),
-            args[2]
-                .to_str()
-                .ok_or("reconstructed current fixture source must be UTF-8")?,
-            &args[3..],
-        );
+        return sign_reconstructed_current(&args);
     }
     if args.len() < 3
         || !matches!(args[0].to_str(), Some("demo-sign" | "demo-sign-separated"))
@@ -116,4 +110,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         authoring::sign_demo(std::path::Path::new(&args[1]), &args[2..])
     }
+}
+
+fn sign_reconstructed_current(
+    args: &[std::ffi::OsString],
+) -> Result<(), Box<dyn std::error::Error>> {
+    authoring::sign_reconstructed_current_java(
+        std::path::Path::new(&args[1]),
+        args[2]
+            .to_str()
+            .ok_or("reconstructed current fixture source must be UTF-8")?,
+        &args[3..],
+    )
 }
