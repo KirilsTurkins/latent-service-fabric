@@ -126,3 +126,16 @@ runtime-support world; subsequent harness attempts distinguished preflight grant
 denial from a guest result, selected the outbound topology owner instead of
 ingress-only rows, and selected a finite response ceiling that admits the existing
 partial-body vector. None is relabelled as an executed successful case.
+
+The first hosted unchanged-client run failed before compilation because its
+caller supplied no verified offline compiler cache. The captured-build guard
+correctly rejected that invocation. The standalone qualifier now prepares its
+own greeting compiler through the unchanged maintained compiler, including
+strict dependency verification and final distribution/source checks, when no
+cache is explicitly supplied. It selects the completed module cache read-only
+for the captured client build; application registry resolution remains disabled.
+An explicit missing/incomplete cache cannot trigger acquisition fallback. Cache
+selection, acquisition commands and failed attempts are retained under the same
+3600 second enclosing qualification deadline. Five boundary controls cover
+explicit/default selection, acquisition failure, expired deadlines and an
+incomplete explicit cache. The corrected hosted native run remains pending.

@@ -352,6 +352,12 @@ jobs:
             ${{ runner.temp }}/java-capsule-authoring/*.json
             ${{ runner.temp }}/java-capsule-authoring/logs/**
             ${{ runner.temp }}/java-capsule-authoring/builds/**
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/**/*.json
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/build/**
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/provider/**
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-acquisition/*.log
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-acquisition/*.command.json
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-build/component.wasm
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/*.json
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/logs/**
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/*.json
