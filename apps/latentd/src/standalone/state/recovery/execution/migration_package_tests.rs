@@ -21,6 +21,31 @@ fn canonical(fixture: &Fixture) -> RequiredArtifact {
     }
 }
 
+fn migration_stage_code(error: &latent_core::PlatformError) -> &'static str {
+    match error.message.as_str() {
+        "protected-migration:Source(Invalid)" => "Source(Invalid)",
+        "protected-migration:Source(Capacity)" => "Source(Capacity)",
+        "protected-migration:Source(Conflict)" => "Source(Conflict)",
+        "protected-migration:Source(Corrupt)" => "Source(Corrupt)",
+        "protected-migration:Source(UnsupportedFormat)" => "Source(UnsupportedFormat)",
+        "protected-migration:Source(Unavailable)" => "Source(Unavailable)",
+        "protected-migration:Source(CommitUncertain)" => "Source(CommitUncertain)",
+        "protected-migration:Source(SnapshotExpired)" => "Source(SnapshotExpired)",
+        "protected-migration:Review(Invalid)" => "Review(Invalid)",
+        "protected-migration:Review(Capacity)" => "Review(Capacity)",
+        "protected-migration:Review(Conflict)" => "Review(Conflict)",
+        "protected-migration:Review(Corrupt)" => "Review(Corrupt)",
+        "protected-migration:Review(UnsupportedFormat)" => "Review(UnsupportedFormat)",
+        "protected-migration:Review(Unavailable)" => "Review(Unavailable)",
+        "protected-migration:Review(CommitUncertain)" => "Review(CommitUncertain)",
+        "protected-migration:Review(SnapshotExpired)" => "Review(SnapshotExpired)",
+        "protected-migration:Deadline" => "Deadline",
+        "protected-migration:Capacity" => "Capacity",
+        "native-original-deadline" => "native-original-deadline",
+        _ => "unmapped",
+    }
+}
+
 #[tokio::test]
 async fn actual_installed_current_snapshot_stages_migration_under_original_owners() {
     let mut fixture = Box::pin(Fixture::new(1)).await;
@@ -64,32 +89,7 @@ async fn actual_installed_current_snapshot_stages_migration_under_original_owner
     let has_canonical = required.contains(&canonical(&fixture));
     let stage = fixture.stage(snapshot.get(), "installed.snapshot").await;
     let succeeded = stage.get().is_ok();
-    let error_code = stage
-        .get()
-        .as_ref()
-        .err()
-        .map(|error| match error.message.as_str() {
-            "protected-migration:Source(Invalid)" => "Source(Invalid)",
-            "protected-migration:Source(Capacity)" => "Source(Capacity)",
-            "protected-migration:Source(Conflict)" => "Source(Conflict)",
-            "protected-migration:Source(Corrupt)" => "Source(Corrupt)",
-            "protected-migration:Source(UnsupportedFormat)" => "Source(UnsupportedFormat)",
-            "protected-migration:Source(Unavailable)" => "Source(Unavailable)",
-            "protected-migration:Source(CommitUncertain)" => "Source(CommitUncertain)",
-            "protected-migration:Source(SnapshotExpired)" => "Source(SnapshotExpired)",
-            "protected-migration:Review(Invalid)" => "Review(Invalid)",
-            "protected-migration:Review(Capacity)" => "Review(Capacity)",
-            "protected-migration:Review(Conflict)" => "Review(Conflict)",
-            "protected-migration:Review(Corrupt)" => "Review(Corrupt)",
-            "protected-migration:Review(UnsupportedFormat)" => "Review(UnsupportedFormat)",
-            "protected-migration:Review(Unavailable)" => "Review(Unavailable)",
-            "protected-migration:Review(CommitUncertain)" => "Review(CommitUncertain)",
-            "protected-migration:Review(SnapshotExpired)" => "Review(SnapshotExpired)",
-            "protected-migration:Deadline" => "Deadline",
-            "protected-migration:Capacity" => "Capacity",
-            "native-original-deadline" => "native-original-deadline",
-            _ => "unmapped",
-        });
+    let error_code = stage.get().as_ref().err().map(migration_stage_code);
     let error_platform = stage
         .get()
         .as_ref()
