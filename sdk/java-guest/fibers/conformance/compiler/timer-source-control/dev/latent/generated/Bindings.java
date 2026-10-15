@@ -19,7 +19,7 @@ public final class Bindings {
         public static final ArrayList<LatentRuntimeActivationToken> selected = new ArrayList<>();
         public static int waits, stops;
         public static long lastNanos;
-        public static boolean denyNext, denyStop;
+        public static boolean denyNext, denyStop, denySettle;
         public static Runnable stopObservation;
         public static int timers() { return (int)owners.values().stream().filter(kind -> kind == LatentRuntimeActivationOwnerKind.Timer).count(); }
         public static Reply<LatentRuntimeActivationToken> register(LatentRuntimeActivationOwnerKind kind, Option<LatentRuntimeActivationToken> continuation) {
@@ -40,7 +40,10 @@ public final class Bindings {
             if (denyStop) return new Reply<>(null, Error.Cancelled);
             return settle(token);
         }
-        public static Reply<Void> settle(LatentRuntimeActivationToken token) { return new Reply<>(null, owners.remove(token) == null ? Error.InvalidToken : null); }
+        public static Reply<Void> settle(LatentRuntimeActivationToken token) {
+            if (denySettle) return new Reply<>(null, Error.Cancelled);
+            return new Reply<>(null, owners.remove(token) == null ? Error.InvalidToken : null);
+        }
         public static Reply<Void> park(LatentRuntimeActivationToken token) { return new Reply<>(null, null); }
         public static Reply<Void> wake(LatentRuntimeActivationToken token) { return new Reply<>(null, null); }
         public static Reply<Void> close() { return new Reply<>(null, null); }

@@ -71,7 +71,19 @@ public final class Activation {
         work.managed = true;
         try { threads.put(thread, work); }
         catch (Throwable error) { Bindings.LatentRuntimeActivation.settle(work.token); throw error; }
-        thread.start();
+        try { thread.start(); }
+        catch (Throwable error) {
+            // Before the maintained start hook consumes this preparation, no
+            // worker has been accepted. Later failures retain uncertain work.
+            if (work.prepared) {
+                var settled = Bindings.LatentRuntimeActivation.settle(work.token);
+                if (settled.isError()) throw new IllegalStateException("activation-runtime-start-rollback-" + settled.error(), error);
+                threads.remove(thread);
+                work.token = null;
+                work.complete = true;
+            }
+            throw error;
+        }
     }
 
     public interface ManagedPool {
