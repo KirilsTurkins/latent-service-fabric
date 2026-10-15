@@ -525,3 +525,11 @@ retirement after each call and node shutdown. Repeated calls check fresh static
 application state and recovery after a declared error. Its receipt explicitly
 retains the separate private-feed, installed update/remove/watch, processor and
 trap/exhaustion/cancellation gates; a successful run does not close #682.
+
+The [15 October native control](../testing/evidence/java-dependency-ingestion-2026-10-15.json)
+records a fresh network-disabled build and enforced ordinary-node execution of
+that exact library graph, resource and declared-error recovery. The independent
+approved annotation-processor control also passed actual source-ownership
+negatives, host containment and three signed-node calls with clean shutdown.
+Both controls retain their actual source, component and native-product identities;
+the remaining installed/private and failure-lifecycle gates stay explicit.
