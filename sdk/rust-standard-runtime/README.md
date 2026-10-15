@@ -13,6 +13,9 @@ receipt. The checked-in original preimages come from Rust commit
 `8bab26f4f68e0e26f0bb7960be334d5b520ea452` under MIT OR Apache-2.0; their hashes
 are pinned in the helper. This source stage never alters an installed compiler
 or sysroot. Application code does not inject an LSF executor or runtime patch.
+The exact upstream [MIT](upstream/LICENSE-MIT) and
+[Apache-2.0](upstream/LICENSE-APACHE) texts accompany the original preimages;
+LSF overlays do not replace their attribution.
 
 The profile is **unqualified source**, with no automatic builder selection yet.
 It needs a rebuilt authenticated sysroot, owned clock-world component metadata

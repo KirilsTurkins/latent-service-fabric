@@ -24,6 +24,16 @@ Component domain errors are declared by each WIT contract. Infrastructure failur
 
 Every platform failure carries a stable code, human-readable message, explicit retryability hint, and structured details. The hint does not override operation-level idempotency rules.
 
+A platform code describes a failed observation, not durable command or effect
+disposition. Timeout, cancellation, `unavailable`, status absence and response
+expiry can follow a possible commit or external send. Recover the original
+command/operation/effect identity under current authority before choosing a
+retry. `state-conflict` does not authorize refreshing a stale-edit precondition
+or rerunning a guest. Only the explicit durable-abort/attempt contract can
+authorize a technical-abort retry; provider uncertainty keeps its independent
+reconciliation rules. See [commit recovery](commit-protocol.md#recovery) and
+[provider outcomes](../architecture/state-and-effects.md#immediate-calls-and-deferred-durable-intents).
+
 Guest failures keep the public `guest-trap` code. When the backend supplies a
 known classification, the node adds an `activation.guest-trap-kind` detail with
 one `kind` field. Public invocation and retained-status conversion and the CLI

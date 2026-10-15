@@ -14,7 +14,8 @@ limits](../runtime/descendant-budgets.md) with `mode: "phase3"`. Its default,
 `mode: "phase1"`, supplies basic execution accounting. Capability counter ceilings
 default to zero and remain separate from grants.
 
-`latentd serve` runs the standalone stateless node on Linux. One process composes
+`latentd serve` runs the standalone node on Linux, with stateless execution by
+default. One process composes
 durable release and deployment catalogs, immutable routing, admission and quotas,
 fixed execution cells, generic Wasmtime execution, activation capabilities,
 bounded lifecycle/status retention, telemetry, and the invocation and management
@@ -34,6 +35,29 @@ audit history; the
 with an ephemeral endpoint and private credentials. Generated Tonic clients can
 also use the [management](management-services.md) and
 [invocation](../protocol/invocation-service.md) contracts directly.
+
+## Optional transactional state in Development
+
+Current source accepts the version-2 `state` member defined by
+[the node-state schema](../../schemas/node-state.schema.json). Omission disables
+state; `null` is invalid. It requires Phase 4 accounting, enforced supply-chain,
+audit and capability-policy owners together. Store/native/dispatcher ceilings,
+signed operation installations, namespace incarnations and current result/effect
+permissions must be selected explicitly. Configuration grants no namespace or
+provider authority and does not create a namespace automatically.
+
+Follow [installed transaction RPCs](../development/installed-transaction-rpc.md)
+for the protected store and startup boundary, then
+[transaction recovery](../operations/transaction-recovery.md) for lost responses.
+Shared [transaction HTTP](../development/transaction-http-v1.md) and
+[deferred HTTP installation](../development/deferred-http-installation.md) use
+those same owners. Missing namespace installation exposes authenticated management
+until creation and restart capture the current lifecycle. A changed deployment
+needs a new startup selection.
+
+These Development profiles and PR #970's pending current recovery are outside
+the published alpha.5 distribution. Collective native/application and packaged
+acceptance remains separate; use the matching version's guide for released tools.
 
 ## Execution security profile
 

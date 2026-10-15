@@ -1,9 +1,9 @@
 # Bounded asynchronous host I/O
 
-The current security baseline selects **Wasmtime 48.0.4**. References below to
-47.0.4 describe the earlier qualification, not the current supported dependency.
-See the [security update](../development/wasmtime-security-update.md)
-for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+Use the engine pinned in [the toolchain baseline](../development/toolchain.md#selected-versions)
+and the committed Cargo lock. The [security upgrade record](../development/wasmtime-security-update.md)
+separates that current selection from dated qualification and native-artifact
+identities; an older receipt does not qualify a different engine.
 
 `latent_capabilities::broker::io` implements the shared ownership substrate for
 [#205](https://github.com/KirilsTurkins/latent-service-fabric/issues/205). A single
@@ -77,6 +77,16 @@ node's existing grace timeout reports quarantine if cleanup is not acknowledged.
 Reclaiming a retained response later does not automatically unquarantine a cell.
 Neither budget finalization nor a timeout response proves reclamation.
 
+[Continuation-eviction research](continuation-eviction-research.md) investigates
+a different handoff that would release a complete Store at approved durable
+boundaries. Ordinary provider suspension does not perform that handoff or make
+its pending future serializable.
+
+[Userfault paging](userfault-pager-research.md) is a different execution boundary:
+an unresolved memory fault blocks an OS thread rather than returning a pending
+host future. It needs independent bounded progress, failure and retirement proof;
+the existing async owner does not make a page fault cancellable.
+
 ## Buffers, backpressure and terminal behavior
 
 `IoBuffer` owns initialized, fixed-capacity, zeroizing storage. The adapter
@@ -140,7 +150,7 @@ These are logical ownership bounds, not total process RSS or allocator overhead.
 
 ## Executed profile and advisory boundary
 
-The conformance harness uses the reviewed Wasmtime 48.0.4 dependency, fuel,
+The maintained conformance harness uses the pinned Wasmtime dependency, fuel,
 hostcall-fuel and a bounded Store memory limiter. Its tiny test-only component
 uses an async-typed import, canonical async lowering, a real subtask and
 waitable-set suspension through `func_wrap_concurrent`. It deliberately delays

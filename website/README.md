@@ -1,65 +1,33 @@
-# Isolated documentation website
+# Documentation website
 
-The authoritative operator/author instructions are in
-[`docs/development/website.md`](../docs/development/website.md), with the ownership
-decision in [ADR-0041](../adr/0041-publish-single-source-version-bound-documentation.md).
+The website builds the authoritative `docs/` and `adr/` sources directly. It has
+no separately edited copy of current guides. Released documentation snapshots
+retain their recorded source and bytes.
 
-Use Node 24.19.0 and Python 3.11 or newer. The separately locked `toolchain/`
-selects npm 11.19.1 with the explicitly named `npm-11.19.1-lsf-bundle-v4`
-security derivation. It replaces the complete bundled `ip-address`, `undici`,
-`brace-expansion`, `http-cache-semantics` and `postcss-selector-parser` packages
-with authenticated 10.7.2, 6.28.1, 5.0.12, 4.3.0 and 7.1.6 inputs **before executing npm**; ordinary npm overrides
-cannot replace bundled bytes. This is not an upstream npm release or an advisory
-waiver. The input archives, derived TAR and complete package inventory are pinned;
-no downloaded package code runs during preparation. Outputs stay in `target/`.
-The website and framework locks also consume the exact source-patched
-`braces-3.0.3-lsf-depth-v1` archive. Its authenticated upstream files, bounded
-depth guard, and pinned Node 24.19.0 behavior proof are checked separately.
+Follow [Website development and validation](../docs/development/website.md) for
+the pinned Node/npm toolchain, authenticated preparation, clean installation,
+checks, builds and browser review. Its commands are the maintained installation
+sequence. The npm derivation's source, offline mode and explicit maintainer-only
+refresh behavior are defined in [the preparer](toolchain/prepare.py); normal
+installation authenticates the committed lock and executes no dependency
+lifecycle scripts.
 
-The cache input also receives a SHA-bound source repair that prevents private,
-non-storable and proxy-revalidated entries from becoming reusable through
-`max-stale`. The website and framework locks select this same repaired cache and
-a maintained braces 3.0.3 distribution with finite parser and AST walker limits.
-Names, upstream versions, dependency graphs and licenses remain unchanged.
-The [independent security verifier](../tools/security_npm_sources.py) reconstructs
-these archives from authenticated upstream data without importing the builder or
-executing package code. Every upstream identity remains in OSV queries; a source
-repair resolves only its exact reviewed advisory revision and lock. Changed or
-unknown advisories and any source, patch, archive or lock drift still fail.
+For a documentation change:
 
-From this directory in a POSIX shell:
+- Edit current guides under `docs/` and decisions under `adr/`.
+- Keep task navigation in [the sidebar builder](lib/navigation.mjs) and task
+  discovery in [the catalogue plugin](plugins/discovery.mjs). Application tasks
+  belong in the guides; dated acceptance and handoff records belong in
+  [engineering records](../docs/development/engineering-records.md).
+- Run `python tools/validate_docs.py` from the repository root, then the website
+  check, tests and both project/root builds from the website guide. Select the
+  browser checks for the changed navigation, examples or version behavior.
+- Keep published snapshots unchanged. Use
+  [versioned publication](../docs/development/website-versions.md) and
+  [Pages publication](../docs/development/website-publication.md) when preparing
+  an explicitly authorized release.
 
-```sh
-python3 toolchain/prepare.py
-python3 ../tools/security_derivations.py prepare
-npm ci --prefix toolchain --ignore-scripts --no-audit --no-fund
-node scripts/check-package-manager.mjs
-export PATH="$PWD/toolchain/node_modules/.bin:$PATH"
-npm ci --ignore-scripts --no-audit --no-fund
-npm run check
-npm test
-npm run build
-npm run build:root
-npm run browser:install
-npm run test:build
-```
-
-Preparation rejects altered inputs or a derived archive that differs from the
-reviewed lock. `--offline` uses only already cached, authenticated inputs.
-Maintainers can explicitly use `--refresh` to generate an unlocked candidate,
-then regenerate/review the toolchain lock and its security-inventory pins; normal
-installation must never use that flag. Re-run preparation without `--refresh`,
-perform a clean `npm ci`, and run the installed-package checker before acceptance.
-Both package graphs remain in the security inventory. Lifecycle scripts stay off.
-
-`npm run start` previews on loopback only. Builds consume `../docs` and `../adr`
-without moving or duplicating them, and never compile Cargo/SDK code or start an
-LSF node. Local outputs are development-only; #345's other children and #237
-still own guide acceptance, versions, theme, search, Wiki migration and Pages.
-
-The [dated validation checkpoint](evidence/foundation-2026-09-19.json) records
-the exact observed source and npm lock, not a perpetual passing badge. Rebuild
-the current head using these commands; `.generated/build-evidence.json` records
-that run's identity. Parent review owns ADR acceptance and merge. Coverage's
-27 practical-guide reviews remain pending and its acceptance-mode failure is
-intentional until their delegated owners provide reviewed execution evidence.
+The [coverage matrix](content/coverage.json) retains its reviewed guide and
+execution evidence. Adding a catalogue task does not approve a coverage row or
+qualify guest/runtime execution. Fresh build identities are generated under
+`.generated/`; historical checkpoints describe only their original runs.

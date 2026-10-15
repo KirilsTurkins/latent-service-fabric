@@ -16,15 +16,22 @@ See the [architecture overview](../docs/architecture/overview.md),
 [execution profiles](../docs/runtime/execution-security-profiles.md) and
 [current host ABI](../docs/runtime/host-abi-profile.md) for the supported boundary.
 
-Application transactions, durable effect dispatch and clustered control remain
-planned. A fixed execution-host backend for process-compromise containment is
-also unavailable. A compiler sandbox does not supply that guest boundary.
+Development also provides explicitly installed host-owned transactions, fresh
+queries and separately authorized deferred HTTP dispatch. The protected store,
+signed operation companion, namespace and current policies remain required;
+the [installed runtime](../docs/development/installed-transaction-rpc.md) and
+[recovery qualification](../docs/testing/installed-transaction-recovery.md)
+describe the implementation and outstanding terminal/pending and packaged gates.
+
+Clustered control and durable workflow execution remain planned. A fixed
+execution-host backend for process-compromise containment is unavailable;
+a compiler sandbox does not supply that guest boundary.
 
 ## Read superseded decisions in context
 
 - ADR-0027 replaces the original one-component/one-publication association with
   exact tenant-scoped publication authority.
-- ADR-0025 separates immediate capability calls from future transactional intents.
+- ADR-0025 separates immediate capability calls from transactional intents.
 - ADR-0029 adds an explicitly configured Bearer transport alongside the restricted
   static OCI profile. Its tested topology does not imply support for every registry.
 - ADR-0032/0033 extend the original ABI with exact HTTP/blob resource ownership;
@@ -43,6 +50,12 @@ also unavailable. A compiler sandbox does not supply that guest boundary.
 Dates, original rationale and historical measurements remain useful decision
 history. Current guides and reference pages must use the implemented contract;
 old implementation snapshots are not setup instructions.
+
+ADR-0062 also records an explicit [restore identity variance](0062-host-own-serializable-transactions-and-durable-outcomes.md#implementation-status-and-restore-identity):
+its original decision changes incarnation, while current protected restore
+preserves business identity and advances recovery epoch. Current guides describe
+the installed owner; they do not silently amend that accepted decision. The
+restore/collective gates still need an explicit scoped ADR resolution.
 
 ## Decision index
 
@@ -105,8 +118,8 @@ old implementation snapshots are not setup instructions.
 - [ADR-0046: Opt in to public document navigation](0046-opt-in-public-document-navigation.md)
 - [ADR-0047: Reconcile static route sets with durable intent](0047-reconcile-static-route-sets-with-durable-intent.md)
 - [ADR-0048: Expose bounded OCI authority in the CLI](0048-expose-bounded-oci-authority-in-the-cli.md)
-- [ADR-0050: Plan capacity before deleting publication history](0050-plan-capacity-before-deleting-publication-history.md)
 - [ADR-0049: Scope cross-origin assets to explicit publications](0049-scope-cross-origin-assets-to-publications.md)
+- [ADR-0050: Plan capacity before deleting publication history](0050-plan-capacity-before-deleting-publication-history.md)
 - [ADR-0051: Author static release evidence without a Rust toolchain](0051-author-static-release-evidence-without-a-rust-toolchain.md)
 - [ADR-0052: Authorize exact static style identities](0052-authorize-exact-static-style-identities.md)
 - [ADR-0053: Run authenticated native binaries in a bounded container profile](0053-run-authenticated-native-containers.md)
@@ -125,13 +138,7 @@ old implementation snapshots are not setup instructions.
 
 - [ADR-0060: Provide activation-scoped runtime compatibility for ordinary dependencies](0060-bound-invocation-scoped-concurrency.md)
 
-- [ADR-0061: Bound standard outbound streams](0061-bound-standard-outbound-streams.md)
-
 ### Transactional state and durable outcomes
 
-- [ADR-0063: Select redb for transactional host state](0063-select-redb-for-transactional-host-state.md)
 - [ADR-0062: Host-own serializable transactions and durable outcomes](0062-host-own-serializable-transactions-and-durable-outcomes.md)
-
-### Transactional state
-
 - [ADR-0063: Select redb for transactional host state](0063-select-redb-for-transactional-host-state.md)

@@ -1,7 +1,7 @@
 # Test invariants
 
-This document separates the historical Phase 0 executable invariants, delivered
-Phase 1 and Phase 2 evidence, and invariants that remain later-phase work. The retained
+This document maps current invariant owners and separates their requirements
+from historical Phase 0, Phase 1 and Phase 2 evidence. The retained
 clean-checkout [completion receipt](../../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
 authorized Phase 1 for its recorded August 30 execution identity. It does not
 describe the current runtime or claim production readiness. See the
@@ -9,6 +9,26 @@ describe the current runtime or claim production readiness. See the
 [Phase 1 gate](../phase-1-completion.md), and
 [extension results](../phase-1-extension-completion.md), and completed
 [Phase 2 gate](../phase-2-completion.md) for their separate scopes.
+
+## Current invariant owners
+
+Historical evidence below keeps its original source and configuration. Current
+implementation owners and their focused conformance are:
+
+| Boundary | Maintained owner and evidence entry point |
+| --- | --- |
+| Admission, fixed cells, fresh stores and cleanup | [Data plane](../architecture/data-plane.md), [execution cells](../architecture/execution-cells.md), [activation lifecycle](../activation-lifecycle.md). Cancellation never refunds physically live work. |
+| Publication and current authority | [Control plane](../architecture/control-plane.md), [security](../architecture/security.md), [capability bindings](../runtime/capability-bindings.md). Cached code/receipts never renew grants. |
+| Descendant progress and budgets | [Descendant reservations](../runtime/descendant-budgets.md), [local calls](../runtime/local-service-invocation.md). Parents retain their cells; saturated capacity rejects rather than creating hidden workers. |
+| Host-owned atomic commands and fresh queries | [Commit protocol](../protocol/commit-protocol.md), [state/effects](../architecture/state-and-effects.md). Original command, attempt, result and effect identities remain separate from activation status. |
+| Retention and recovery | [Reserved recovery/retention](../architecture/transaction-retention.md), [protected recovery](../architecture/protected-offline-recovery.md), [installed native qualification](installed-transaction-recovery.md). Epoch, decoder, current permission and actual retirement fences remain required. |
+| Cluster freshness and durable workflows | [Cluster conformance handoff](../architecture/cluster-freshness-handoff.md) and [roadmap](../roadmap.md). Distributed and workflow paths remain unimplemented. |
+
+Phase 3 capability delivery is no longer future work. Development also contains
+explicit Phase 4 runtime/recovery profiles, whose focused tests and source
+registration do not close the full application, terminal/pending native or
+packaged acceptance gates. Do not extend a historical zero-idle or RSS result
+to new provider/state populations without their own measured configuration.
 
 ## Phase 0 exercised subset
 
@@ -146,17 +166,19 @@ The [Phase 1 completion report](../phase-1-completion.md) maps this evidence to
 the collective gate decision.
 Phase 0 has no production route table or snapshot path.
 
-## Descendant budget hierarchy — planned Phase 3
+## Descendant budget hierarchy: implemented local profile
 
-A child call cannot exceed the parent’s remaining deadline, CPU, fan-out,
-outbound-call, state, blob, log, or effect budget. Phase 0 exercises local
-deadline/fuel/memory/log limits only; it has no descendant call graph.
-The current standalone node enforces the intersection of caller, capsule,
-deployment and node limits. It rejects unsupported child/provider dimensions;
-the Phase 3 broker and descendant-delegation tickets must implement those
-dimensions before a guest can use them. State/effect execution remains later work.
+[Descendant admission](../runtime/descendant-budgets.md) conserves the parent's
+remaining deadline, fuel, memory, fan-out, call and byte reservations. The
+[local-call provider](../runtime/local-service-invocation.md) admits a separate
+child activation under the exact compiled target and current authority. Unused
+reservations return once; live children keep their charges through retirement.
+Saturated parent-held cells cause prompt rejection, never hidden capacity or a
+refund of the waiting parent's cell. Unsupported dimensions and strict-command
+child compositions fail explicitly. Phase 0 has no descendant call graph; its
+local deadline/fuel/memory/log tests are not evidence for this delivered profile.
 
-## Failure ambiguity — delivered control, later provider effects
+## Failure ambiguity: independent control, command and provider outcomes
 
 Phase 2 control tests cover response loss and uncertain durability around release,
 deployment and rollout commits. Retained exact receipts support explicit lookup
@@ -164,15 +186,21 @@ and replay; unknown or evicted history does not establish that a mutation never
 ran. The operator CLI never automatically resubmits an ambiguous operation. See
 the [recovery contract](../phase-2-operator-workflows.md).
 
-Future provider tests must separately cover response loss after external
-dispatch. Transactional state/effects and durable outboxes are not supplied by
-the Phase 2 control journal. Phase 0 has no durable state/effect commit path.
+Immediate [provider acknowledgement/uncertainty](../runtime/capabilities.md) and
+[deferred dispatch](../architecture/state-and-effects.md#immediate-calls-and-deferred-durable-intents)
+have separate owners and conformance. The installed transaction runtime commits
+its state/outbox/outcome envelope in the protected engine; the Phase 2 control
+journal supplies no such application transaction. A lost reply, expired result
+or unknown status is no abort proof and never authorizes automatic write replay.
+Phase 0 has no durable state/effect path. The broader native/application recovery
+campaign remains distinct from focused provider and engine tests.
 
-## Local/remote equivalence — selected pairs implemented
+## Adapter/RPC equivalence: selected pairs implemented
 
-Domain output, platform errors, identity, deadlines, budgets, tracing, state
-semantics, and accounting must match whether a binding is inline, isolated
-local, or remote. The bounded Phase 1 profile compares eight outcome pairs and
+Cross-path equivalence is a requirement for every advertised execution mode.
+Inline composition and node-to-node remote invocation remain unsupported; the
+current direct-adapter/RPC comparison is not evidence for those modes. The
+bounded Phase 1 profile compares eight outcome pairs and
 three capability pairs through the direct adapter and real RPC, including live
 budgets, per-call context/clock invariants and correlated telemetry. This is
 selected evidence for the Phase 1 standalone boundary; other execution-host

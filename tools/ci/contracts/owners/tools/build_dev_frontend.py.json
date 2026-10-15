@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_frontend.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reconcile captured-input transfer, approved generators and conservative diagnostics with current transaction/native owners. Preserve all original cases, skip guards, historical commands, isolation requirements and receipt paths.",
+  "reviewReason": "Retain exact project LICENSE and NOTICE in the frontend payload and its existing file inventory; preserve all build, isolation and test obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a54f3a50980de5ec923c61260370c6b68fa5971f96e575422d110760fd851e31"
+  "sha256": "75ef4a11f8dffe1e88b690762d7e07f8e2e16991a476c3180c8cda96d60b3d78"
 }

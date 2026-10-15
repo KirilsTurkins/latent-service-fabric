@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/build_dev_guest_tools.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve the original builder and finite compiler contracts while adding only explicit source-bound TypeScript runtime input staging; preserve unknown API qualification.",
+  "reviewReason": "Retain exact project LICENSE and NOTICE in guest-tool payloads before existing bundle hashing; preserve every compiler, source, qualification and license obligation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9f26d50850c304d4a706126991b84abcb7a808e442911f07bfafe63578256f42"
+  "sha256": "d75c32459f543c89a69cea25b487e9367f20f13796acbcc4a0c8f4cc89f89ae6"
 }

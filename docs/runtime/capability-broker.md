@@ -6,6 +6,10 @@ the broker's private plan, session, handle row and accepted call owners authoriz
 provider work. This is the implementation of [#204](https://github.com/KirilsTurkins/latent-service-fabric/issues/204),
 building on [durable policies](capability-policies.md) and exact publication identity.
 
+These are software authorization and ownership objects, not CHERI tags or
+hardware-sealed pointers. [Hardware-capability research](hardware-capabilities-research.md)
+is separate and cannot replace the broker's current policy and provider checks.
+
 [Capability audit and inspection](capability-audit.md) adds required durable
 dispatch admission, typed provider evidence and tenant-scoped descriptive reads.
 Ordinary calls avoid mandatory journaling; required calls use owned asynchronous

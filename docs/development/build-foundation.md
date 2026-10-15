@@ -1,7 +1,7 @@
 # Executable build foundation
 
-This document describes the maintained clean-checkout build foundation introduced
-in Phase 1 and used by the completed Phase 2 delivery surface. It turns the
+This document describes the maintained clean-checkout build foundation used by the current
+standalone runtime, capability providers and explicit transaction profile. It turns the
 checked-in Rust, Protobuf, and WIT interfaces into compilable generated surfaces
 while retaining Phase 0 evidence as historical artifacts rather than live execution paths.
 
@@ -19,23 +19,20 @@ The foundation provides:
 
 Code generation runs only as a Cargo build step and writes generated Rust to `OUT_DIR`; linking its output allocates no runtime resources. The implemented scheduler, execution cells, adapters, and Linux service process are separate consumers of this foundation. See [the current API surface](../api-surface.md) and [standalone node](../reference/standalone-node.md) for their runtime ownership and startup boundaries.
 
+The [workspace package guide](workspace-packages.md) traces those consumers and
+links the complete [package README index](../../crates/README.md). Package pages
+describe their own modules, ownership, feature/target gates and source tests.
+
 ## Pinned Rust inputs
 
-The exact dependency baseline is recorded in both the root `Cargo.toml` and `tools/toolchain.toml`:
+Use the [selected toolchain versions](toolchain.md#selected-versions),
+root `Cargo.toml` and `tools/toolchain.toml` for the current Rust, engine,
+Protobuf and guest-generator pins. This page owns generation and build workflow;
+the central table owns version updates.
 
-| Area | Version |
-| --- | ---: |
-| Rust toolchain / MSRV | 1.97.1 / 1.95.0 |
-| Tokio | 1.53.1 |
-| Prost | 0.14.4 |
-| Tonic / Tonic Prost | 0.14.6 / 0.14.6 |
-| Tonic Prost Build | 0.14.6 |
-| Vendored `protoc` | 3.2.0 |
-| Tracing / tracing-subscriber | 0.1.44 / 0.3.23 |
-| Wasmtime | 48.0.4 |
-| `wit-bindgen` | 0.62.0 |
-
-The committed root `Cargo.lock` is authoritative. Local commands and CI use `--locked`; they do not silently replace the dependency graph.
+The committed root `Cargo.lock` is authoritative. Local commands and CI use
+`--locked`; they do not silently replace the dependency graph. Historical Phase 0
+receipts retain their recorded engines and cannot qualify the current graph.
 
 ## Code-generation ownership
 
@@ -119,19 +116,15 @@ python3.13 -m venv .venv
 . .venv/bin/activate
 python -m pip install --requirement tools/requirements.lock
 
-make phase1-foundation
-make sdks
+make validate WORKSPACE_ROOT=target/make/foundation-review
 ```
 
-`make validate` is the equivalent complete command. The foundation-only command expands to:
-
-```bash
-cargo fmt --all --check
-cargo check --workspace --all-targets --all-features --locked
-cargo clippy --workspace --all-targets --all-features --locked
-cargo test --workspace --all-targets --all-features --locked
-tools/validate_contracts.sh
-```
+Use a clean tracked checkout and a fresh owned output root. The
+[Make command guide](make-commands.md) describes source/Rust/contracts/client
+checks followed by explicit workspace/AOT preparation, exact discovery and the
+separate workspace, doctest and signing result checks. `make validate-source`
+and `make check-rust` select narrower source and build/helper checks. Neither is
+a declaration of complete runtime, provider/browser or packaged acceptance.
 
 Focused generation checks are available as:
 

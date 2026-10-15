@@ -1,5 +1,76 @@
 Latent Service Fabric
 Copyright 2026 Latent Service Fabric contributors
 
-This product includes interface definitions and architectural documentation
-for a latent, activation-oriented service execution fabric.
+Latent Service Fabric (LSF) contains a WebAssembly Component Model runtime,
+host-owned transactional state and capability providers, guest SDKs and external
+clients, native and developer tooling, web delivery, and documentation.
+
+Original LSF work is licensed under the Apache License, Version 2.0; see LICENSE.
+Third-party material retains its own terms and attribution. This notice is
+informational and does not modify those licenses.
+
+SOURCE ATTRIBUTIONS
+
+The following entries identify copied upstream source and validation data.
+They apply when that material is included; source experiments and test fixtures
+are not a statement that a binary distribution includes or enables them.
+
+Rust standard library
+  Original source preimages in sdk/rust-standard-runtime/upstream/std are from
+  rust-lang/rust commit 8bab26f4f68e0e26f0bb7960be334d5b520ea452.
+  Copyright (c) The Rust Project Contributors.
+  Terms: MIT OR Apache-2.0. The exact upstream texts are retained as
+  sdk/rust-standard-runtime/upstream/LICENSE-MIT and LICENSE-APACHE.
+  LSF source overlays and qualification boundaries are described in that
+  profile's README.md; the upstream preimages remain unchanged.
+
+rustls parser source
+  sdk/host-stream-tls/rustls-bounds retains a bounded patch for rustls 0.23.45.
+  Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com>.
+  Terms: Apache-2.0 OR ISC OR MIT. LICENSE-APACHE, LICENSE-ISC and LICENSE-MIT
+  are retained in that directory. PATCH.json records the upstream archive,
+  original and modified file identities, and LSF's changes.
+
+StarlingMonkey text-codec fixtures
+  tools/tests/fixtures/typescript_text_codec contains original native codec
+  and build-selection fixtures from bytecodealliance/StarlingMonkey commit
+  9dda8ba7fcda2e17c6795d402f0478cf4c1f7f37.
+  Terms: Apache-2.0 WITH LLVM-exception; the upstream LICENSE is retained in
+  the fixture directory. tools/typescript_guest/text_codec_engine.py records
+  the exact preimages and the separate LSF selection change.
+
+CycloneDX and SPDX validation data
+  tools/data/cyclonedx-1.6 retains CycloneDX specification schemas and their
+  upstream Apache-2.0 LICENSE. SOURCES.json records the exact upstream revision,
+  URLs and byte identities. The included JSON Signature Format schema credits
+  Anders Rundgren and the OpenKeyStore project in its original notice.
+  The derived SPDX identifier list retains its original classification sources
+  and filtering rule in SPDX-DERIVATION.json; it contains identifiers, not
+  third-party license texts or license conclusions.
+
+WASI specification interfaces
+  research/standard-outbound/wasi-sockets-v0.2.0 retains WASI sockets, clocks
+  and I/O interface definitions. UPSTREAM.json and wit/deps.lock preserve the
+  original capture and dependency identities.
+  The Contributors to the WASI Specification publish through the WebAssembly
+  Community Group under the W3C Community Contributor License Agreement.
+  The upstream contributor notice is retained as LICENSE.md in that directory,
+  from WebAssembly/wasi-sockets commit
+  776770e45258dab68559f1d28b2f5a673af1b4c6. It is separate from the original
+  interface capture; these specification notices are not an LSF Apache grant.
+
+DISTRIBUTED DEPENDENCIES
+
+Runtime, SDK, compiler, website and operating-system dependencies have their own
+licenses. For a particular bundle, consult its licenses/ directory, source-bound
+sbom.spdx.json and build inventory. Native runtime bundles retain LICENSE and
+NOTICE at their root; developer bundles retain licenses/LSF.txt and
+licenses/LSF-NOTICE.txt. These files accompany, rather than replace, upstream
+license and notice texts collected by the respective builders.
+
+Exact dependency inputs are recorded in the owning Cargo/npm/language locks and
+toolchain manifests. packaging/linux/license-sources.json records reviewed
+shared-monorepo license donors for exact native dependency versions. Compiler
+and system-image builders retain their separate upstream notices and package
+inventories; static font preparation retains the selected font's license.
+This file is an attribution index, not an exhaustive dependency inventory.

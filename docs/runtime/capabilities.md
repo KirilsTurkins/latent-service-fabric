@@ -25,12 +25,11 @@ imports, while preparation rejects providers without installed owners. The [seal
 handle and call ownership and can gate the four built-in imports in explicit
 managed embeddings. [Exact plan compilation](capability-bindings.md) and
 conserved [descendant budgets](descendant-budgets.md) support local child calls.
-The [standalone bootstrap](../reference/standalone-providers.md) installs the
-configured HTTP, local-blob, activation-clock and OS-entropy providers and exposes
-scoped provider management. Explicit bindings, deployment grants and current
-policy remain required.
-Other concrete adapters use their documented trusted Rust compositions; declaring
-their contracts does not install them through standalone configuration. Start with
+The [standalone provider reference](../reference/standalone-providers.md) lists
+the accepted configured HTTP/streaming, local-blob, clock/random, local-secret,
+metric, local-call and immediate NATS installations. S3 and Vault still use
+trusted Rust composition. Explicit bindings, deployment grants and current
+policy remain required; a declaration does not install a provider. Start with
 [the capability walkthrough](../learn/use-capabilities.md) to exercise the actual
 configuration, allowed and denied operations, revocation and cleanup.
 
@@ -56,9 +55,12 @@ permission or exposing credential-bearing selectors.
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
 [standalone node](../reference/standalone-node.md). The standalone provider
-configuration and application ingress remain distinct authority boundaries. Transactional
-state/effects, cluster transport and durable workflow suspension are not
-implemented; declared WIT alone makes none of them callable.
+configuration and application ingress remain distinct authority boundaries.
+Development's explicitly installed [transaction profile](../protocol/transactions.md)
+adds command/query state and staged intents through its signed companion and
+protected owner. Ordinary stateless capability grants do not enable it.
+Cluster transport and durable workflow suspension remain unimplemented;
+declared WIT alone makes neither callable.
 
 ## Immediate provider operations
 

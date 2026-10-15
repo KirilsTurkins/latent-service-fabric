@@ -5,9 +5,15 @@ defines host-owned serializable commands, durable outcomes and independent bound
 queries. Its [executable reference model](../../crates/latent-commit/src/model/mod.rs)
 and schedules establish decision consistency, not storage/power-loss, authenticated
 runtime or physical cleanup proof. Runtime enablement belongs to the implementation
-owners below. Current supported activations retain the stateless capability profile;
-management receipts/audit/provider cleanup are operational records, not application
-state transactions. See the [activation lifecycle](../activation-lifecycle.md).
+owners below. Stateless activations retain their existing capability profile.
+Development additionally installs the explicit `lsf-host-abi-phase4-v1` command,
+query and intent profile through the
+[configured transaction runtime](../development/installed-transaction-rpc.md).
+It requires protected storage, current namespace/result/effect authority and
+the signed companion; it is not enabled by an ordinary stateless deployment.
+Management receipts and the audit journal alone do not provide an application
+transaction. See the [activation lifecycle](../activation-lifecycle.md) and
+[transaction recovery](../operations/transaction-recovery.md).
 
 Phase 3 gate #240, all six guest SDKs (#544–#549) and the packaged developer workflow
 #559 are completed foundations. The [Phase 4 roadmap](../roadmap.md#phase-4-state-and-effects)
@@ -23,6 +29,18 @@ are separate six-language obligations; one matrix cannot substitute for the othe
 | Read-only query | Acquire a bounded consistent fresh view under current read authority, without a mandatory durable business-command/result/outbox row. Audit remains. |
 | Entity command | The same transaction path with an active-only ownership lane. Lane state exists while work is queued/active, then disappears; it is not a persistent actor or outbox dispatcher. |
 | Durable workflow | Phase 6 explicit continuation/state-machine work. An invocation-local wait or dispatcher retry does not provide it. |
+
+[Continuation-eviction research](../runtime/continuation-eviction-research.md)
+investigates compiler-generated state capture over a proposed durable handoff.
+The current state/outbox/outcome commit path does not implement workflow
+checkpointing, wait registration or exclusive resume, and an open transaction
+cannot be serialized across a durable wait.
+
+[Userfault-pager research](../runtime/userfault-pager-research.md) investigates
+optional data materialization and private dirty overlays. Current reads already
+select bounded records; a dirty-page set is neither a logical read set nor an
+alternative state/outbox/outcome commit. A mapped-state interface and persistent
+image representation would need separate semantics and qualification.
 
 Namespace identity is independent of executable/package/publication deduplication.
 No key, entity ID, historical receipt or same-tenant identity grants namespace or
@@ -41,13 +59,20 @@ This deliberately permits unrelated writes to conflict while preventing ABA and
 scan phantoms, including beyond a returned page. Snapshot consistency alone is
 not serializability. Generations never wrap/reuse, and conflicts never rerun guests.
 
-A fresh query acquired after an acknowledged commit on the same node/incarnation
+A fresh query acquired after an acknowledged commit in the same ready history
 observes at least that generation, including after ordinary restart. Pinned views
 can be older; unsupported historical/cross-request cursors fail explicitly.
-Older-history restore changes incarnation and starts recovery paused, breaking
-the old read-after-acknowledgement continuity. Application stale-edit preconditions
-use opaque incarnation-aware versions and are distinct from activation OCC.
+Older-history restore preserves business incarnation, advances the separate
+recovery epoch and starts recovery paused, breaking the old
+read-after-acknowledgement continuity. Application stale-edit preconditions use
+opaque scope/incarnation/schema/recovery-aware versions and are distinct from
+activation OCC.
 Clients and recovery never silently refresh the original expected version.
+
+ADR-0062's original restore-incarnation wording differs from this installed
+epoch split; its [implementation note](../../adr/0062-host-own-serializable-transactions-and-durable-outcomes.md#implementation-status-and-restore-identity)
+records the variance and required explicit decision before restore/collective
+acceptance. This source description does not approve that architectural change.
 
 ## Host-owned transaction lifecycle
 
@@ -183,10 +208,12 @@ Retention links command/fingerprint/attempt/commit identity, unresolved effects,
 payloads, inbox protection and required schema/binding/publication metadata.
 Application result bytes can expire while receipt-only recovery and deduplication
 identity remain. Unresolved dependent work prevents unsafe GC. Unknown/expired
-identity is no abort proof. Qualified conservative elapsed-time anchors survive
-ordinary restart; unqualified clock jumps cannot erase protection. Older-history
-restore changes incarnation, discards historical grants and starts command/effect/
-inbox processing paused for explicit reconciliation.
+identity is no abort proof. Durable time anchors retain their original clock and
+boot constraints across reopen; a new boot or lost continuity needs explicit
+authorized reanchoring before expiry can resume. Unqualified clock jumps cannot
+erase protection. Older-history restore advances the recovery epoch, preserves
+business identities, discards historical grants and starts command/effect/inbox
+processing paused for explicit reconciliation.
 
 Reserve physically usable finite operator inspection/recovery/cleanup capacity
 under declared business storage/queue saturation; refuse admission before that
@@ -198,6 +225,13 @@ The [implemented response-retention and recovery-reserve profile](transaction-re
 uses the same physical store, preserves linked protective identities and records
 bounded generation-safe maintenance progress. Its focused engine evidence is
 separate from public node/Java/HTTP qualification.
+
+Use the maintained [schema compatibility](application-schema-compatibility.md),
+[namespace history](namespace-history-epochs.md), [snapshot](logical-recovery-snapshot.md),
+[protected recovery](protected-offline-recovery.md), [older-history restore](reviewed-older-history-restore.md)
+and [fixed migration](fixed-aggregate-offline-migration.md) pages for their exact
+installed owner and format boundaries. They share one engine but do not share
+an implicit permission or automatic resume policy.
 
 ## Implementation and evidence owners
 

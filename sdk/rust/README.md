@@ -1,19 +1,77 @@
-# Rust client
+# latent-sdk
 
-`latent-sdk` includes a reusable generated-RPC client, enabled by the default
-`transport` feature. The [client contract](../../docs/reference/rust-client.md)
-defines endpoint/auth restrictions, message/owner limits, original deadlines,
-typed outcomes, operation recovery and physical shutdown. Build with
-`--no-default-features` for the transport-neutral models only.
+External Rust client SDK for standalone invocation, management and additive transaction/dispatcher operations. Transport-neutral typed models are always available; the default `transport` feature adds a reusable bounded generated-RPC client.
 
-The additive `transaction::TransactionClient` interface exposes fifteen
-StateService, TransactionService and DispatcherService calls on the same
-`RpcClient` owner. Recovery keeps the original caller-scoped selector, stale-edit
-preconditions and node-control action/generation. A validated durable observation
-survives independent audit failure. Dropping a future, cancellation and a gRPC
-ABORTED status never authorize a new attempt or refresh its precondition.
-Phase 4 signed-node execution and the six-client matrix remain open under #401;
-the focused source tests establish codec, association and transport behavior.
+`RpcClient` owns a shared lazily opened channel, finite calls/tasks/sockets and original call deadlines. It does not configure node providers, install application grants or execute guest code inside the client process.
+
+## Responsibilities and architecture
+
+| Source | Responsibility |
+| --- | --- |
+| [src/lib.rs](src/lib.rs) | Feature-gated client module exports. |
+| [src/management.rs](src/management.rs) | Typed management and eight-operation ClientProfile contract. |
+| [src/network.rs](src/network.rs) | RpcClient construction, lazy connection, limits, usage and physical shutdown. |
+| [src/network/profile.rs](src/network/profile.rs) | Managed profile transport behavior and checked associations. |
+| [src/network/transaction.rs](src/network/transaction.rs) | Additive Phase 4 calls on the same owner/channel. |
+| [src/transaction/mod.rs](src/transaction/mod.rs) | Command/query/recovery client contracts preserving original business identity. |
+| [examples/provider_client.rs](examples/provider_client.rs) | Concrete invocation/status/cancel consumer of the SDK. |
+| [examples/provider_workflow.rs](examples/provider_workflow.rs) | Finite shared real-node client qualification participant. |
+
+## Execution and ownership
+
+1. Construct explicit endpoint/tenant/credential/limit configuration; construction starts no I/O.
+2. Reserve a bounded call owner and connect lazily under its original monotonic deadline.
+3. Send one typed operation, validate response shape and associate identities before exposing results.
+4. Keep mutation knowledge, audit metadata and transport failure separate. Explicit status/recovery/cancel uses the retained identity.
+5. Close admission and await actual local calls/tasks/sockets during shutdown; local retirement does not certify remote guest/provider cleanup.
+
+## Integration boundaries
+
+Use `default-features = false` for transport-neutral interfaces. A controlled TCP/gRPC peer proves codec/transport behavior, not production transaction execution. The maintained provider examples and source-bound qualification records establish narrower scopes; broader signed-node/client acceptance remains tracked separately. Dropping an invocation future is not application cancellation or permission to repeat a mutation.
+
+## Dependencies and build
+
+Direct workspace dependencies: [latent-core](../../crates/latent-core/README.md), [latent-rpc](../../crates/latent-rpc/README.md) (optional).
+
+Cargo features (the manifest owns their exact expansion):
+
+| Feature | Enables |
+| --- | --- |
+| `default` | `transport` |
+| `transport` | `dep:latent-rpc`, `dep:prost`, `dep:tokio`, `dep:tonic`, `dep:tonic-prost`, `dep:http`, `dep:http-body`, `dep:hyper`, `dep:hyper-util`, `dep:tower`, `dep:zeroize` |
+
+Use [Cargo.toml](Cargo.toml) for external dependencies, target gates and test/build edges; [the workspace manifest](../../Cargo.toml) and [the toolchain guide](../../docs/development/toolchain.md) own current pins. Dependency presence does not install a runtime service.
+
+## Tests and verification
+
+The [package entry point](src/lib.rs) and the module links above are the source map. [The workspace package guide](../../docs/development/workspace-packages.md) explains feature/target selection, generated inputs and the registered test workflow.
+
+Inspect a registered suite from the repository root without building or running it:
+
+```sh
+python3 tools/test.py explain --suite latent-sdk.lib.latent-sdk
+```
+
+Use `list --output json` to find the remaining package targets. Follow the suite's recipe, platform and prerequisites for preparation, discovery and execution; a registration or compile-only check is not a passing execution/qualification result.
+
+Representative source tests (not a complete coverage inventory):
+
+- [`raw_audit_sequence_survives_without_any_invented_acknowledgement`](src/network/profile/metadata.rs)
+- [`shared_vectors_roundtrip_through_actual_protobuf`](src/network/profile/vectors.rs)
+- [`configuration_is_explicit_bounded_redacted_and_does_not_start_io`](src/network/tests.rs)
+- [`audit_metadata_preserves_full_width_and_rejects_ambiguous_presence`](src/network/tests.rs)
+
+Integration targets: [tests/client_profile_lifetime.rs](tests/client_profile_lifetime.rs), [tests/client_profile_vectors.rs](tests/client_profile_vectors.rs), [tests/network_transport.rs](tests/network_transport.rs), [tests/profile_transport.rs](tests/profile_transport.rs).
+
+## Related documentation
+
+- [Bounded Rust RPC client](../../docs/reference/rust-client.md)
+- [Transaction clients](../../docs/development/transaction-clients.md)
+- [Installed transaction RPCs](../../docs/development/installed-transaction-rpc.md)
+- [WIT value payloads](../../docs/protocol/wit-values.md)
+- [Configure standalone providers](../../docs/reference/standalone-providers.md)
+- [Workspace package index](../../crates/README.md)
+- [Architecture index](../../ARCHITECTURE.md)
 
 ## Invoke HTTP and blob guests
 
@@ -94,7 +152,7 @@ Four actual held provider requests separate local waiter drop, application
 Cancel, original deadline and shutdown. Recovery uses retained identities;
 shutdown waits for actual local call/task/socket owners. The operator runner
 independently checks terminal activations and provider/node reclamation.
-The shared qualification run passes all 18 assertions with nine admitted
+The retained shared qualification run passed all 18 assertions with nine admitted
 activation IDs and four physically closed upstream holds; PR #366 retains
 the source identities and independent clean node/provider shutdown receipts.
 Current policy RPCs emit no audit acknowledgement, so this participant asserts
@@ -103,13 +161,4 @@ limit matching the node profile. Controlled peers separately verify audit
 metadata and malformed response handling. These are not installed-bundle,
 browser or whole-process RSS isolation claims.
 
-## Checks
-
-```sh
-cargo test -p latent-sdk --all-targets --locked
-cargo test -p latent-sdk --no-default-features --locked
-cargo clippy -p latent-sdk --all-targets --locked --no-deps -- -D warnings
-```
-
-The transport suite uses a controlled real TCP/gRPC peer. It verifies wire and
-ownership behavior but does not stand in for real LSF provider execution.
+The registered tests include controlled TCP/gRPC peers. Those peers verify wire and local ownership behavior; use the real-node participant and its source-bound records for provider execution evidence.

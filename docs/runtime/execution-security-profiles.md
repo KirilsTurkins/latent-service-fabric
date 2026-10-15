@@ -1,9 +1,9 @@
 # Execution security profiles
 
-The current security baseline selects **Wasmtime 48.0.4**. References below to
-47.0.4 describe the earlier qualification, not the current supported dependency.
-See the [security update](../development/wasmtime-security-update.md)
-for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+Use the engine pinned in [the toolchain baseline](../development/toolchain.md#selected-versions)
+and the committed Cargo lock. The [security upgrade record](../development/wasmtime-security-update.md)
+separates that current selection from dated qualification and native-artifact
+identities; an older receipt does not qualify a different engine.
 
 The node supports the execution selectors defined by
 [ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md).
@@ -12,7 +12,7 @@ The node supports the execution selectors defined by
 | Selection | Trust assumption | Required controls |
 | --- | --- | --- |
 | `local-experimental-v1` (default) | T0: operator-controlled workloads and preparation | Existing standalone validation; admission and isolated AOT remain explicit independent options. |
-| `external-capsule-v1` | T1: hostile component bytes/inputs, trusted node, Wasmtime, host bindings, native loader and OS | Enforced package admission, protected credentials/trust policy/native key, exact host ABI and reviewed Wasmtime 48.0.4 baseline, supported Linux x86_64 isolated compilation. |
+| `external-capsule-v1` | T1: hostile component bytes/inputs, trusted node, Wasmtime, host bindings, native loader and OS | Enforced package admission, protected credentials/trust policy/native key, exact host ABI and reviewed pinned Wasmtime baseline, supported Linux x86_64 isolated compilation. |
 
 The compiler and authenticated native-loading subprofiles are observations of
 these controls, not additional node selectors. Unknown, null, future, provider,

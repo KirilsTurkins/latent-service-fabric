@@ -48,3 +48,59 @@ returned. Actual native-fiber retirement, root/export bootstrap, Task admission,
 std Thread/synchronization/timers/reactor integration and signed component
 qualification remain required. The ordinary target still rejects Thread
 creation; this source does not fabricate a thread handle or select a profile.
+
+## Package architecture
+
+`latent-rust-std-stack-source-transform` is an isolated Rust library with its own
+[Cargo.toml](Cargo.toml), [Cargo.lock](Cargo.lock) and empty local workspace. It is
+outside the root's 52 members. Its direct dependencies are the pinned Wasm parser,
+encoder and SHA-256 implementation; it has no path dependency on the node,
+capability broker or activation executor.
+
+| Source / interface | Responsibility |
+| --- | --- |
+| [src/lib.rs](src/lib.rs): `transform` | Check the exact original preimage and supported core-module shape, rewrite actual stack-global instructions, append helpers and validate the output |
+| [src/lib.rs](src/lib.rs): `Receipt` | Preserve original/derived hashes, original stack identity, rewrite counts and explicit debug/profile qualification flags |
+| [src/thread_entry.rs](src/thread_entry.rs): `transform_owned_thread_entry` | Rewrite a selected owned-thread callback through an appended translated body and checked context attach/detach wrapper |
+| [src/thread_entry.rs](src/thread_entry.rs): `ThreadEntryReceipt` | Bind original/derived module identity and the selected callback/wrapper transformation |
+
+## Transformation and ownership boundary
+
+1. The caller supplies immutable core-module bytes and their expected digest.
+   Preflight checks the selected module/import/global/memory profile and finite
+   input/function/operator bounds before re-encoding.
+2. The transform preserves original indices and unrelated sections. It rewrites
+   code operators, rather than scanning data or custom sections for matching
+   instruction bytes.
+3. Appended stack helpers require the already bootstrapped canonical context.
+   The owned-thread variant retains the original callback identity while moving
+   its body and enforcing the checked entry/exit protocol.
+4. Output validation and a receipt bind the derived bytes to the original input.
+   The caller still owns buffers, profile selection and every real runtime,
+   stack, TLS, native fiber and accounting object.
+
+The returned bytes/receipt confer no execution authority. A valid transformed
+core module is not a fully composed component or proof of supported Rust threads.
+The existing source limitations above remain prerequisites for any promotion.
+
+## Source tests and development
+
+Unit tests live alongside both implementation modules. They cover actual
+stack-get/set replacement, untouched data/custom bytes, wrong preimages,
+missing/wrong context, unsupported stack/memory shape, stackless helper behavior
+and owned-thread wrapper structure. These are transformation/validation tests,
+not signed guest execution or safe-preemption evidence.
+
+This project is not selected by the root registered test inventory. Use its
+independent manifest/lock and the Rust standard-runtime investigation's selected
+toolchain; changing the root feature set does not enable this experiment. A
+source change needs both transform checks and the separately qualified consuming
+runtime before it can claim application support.
+
+## References
+
+- [Rust standard runtime investigation](../README.md)
+- [Rust guest qualification](../../../docs/development/rust-capsule-qualification.md)
+- [Invocation-scoped runtime ownership](../../../docs/runtime/activation-runtime.md)
+- [Continuation eviction research](../../../docs/runtime/continuation-eviction-research.md)
+- [Workspace and isolated package index](../../../crates/README.md)

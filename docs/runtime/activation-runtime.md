@@ -4,7 +4,7 @@ The opt-in `activation-owned-v1` host support profile supplies
 `latent:runtime/activation@0.1.0` beneath maintained language runtimes. It is
 recognized by the V5 host ABI profile. Recognition does not install the bridge,
 grant its operations, or qualify any language runtime. Existing direct guest
-bindings and frozen V1Ã¢â‚¬â€œV4 sources remain available.
+bindings and frozen V1–V4 sources remain available.
 
 `WasmtimeConfig.activation_runtime` selects explicit finite limits for tasks,
 executors, queued work, waits, timers, results and native owners. `None` preserves
@@ -170,3 +170,10 @@ and private attempts remain retained.
 The initial [Java fiber integration](java-activation-fibers.md) exercises ordinary
 threads in signed components through this bridge. Its broader standard-runtime
 profile remains unqualified.
+
+[Continuation eviction](continuation-eviction-research.md) is separate research.
+These Store-local tokens, timers and language continuations do not provide a
+durable representation for recreating an activation after Store destruction.
+A durable workflow needs an
+explicit checkpoint/wait transition, fresh host owners and an exclusive-resume
+protocol; this bridge does not supply them.

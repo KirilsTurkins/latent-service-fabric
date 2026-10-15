@@ -35,5 +35,15 @@ as actual decoder coverage, and unresolved original work blocks normal retiremen
 The inventory is built by trusted decoders from one actual coherent store view.
 Its counts and original associations remain descriptive: they do not authorize
 result replay, renew a revoked grant, move work to a replacement publication or
-permit skipping an ordered predecessor. Full retained decoder installation,
-migration progress and operator workflows remain separate integration work.
+permit skipping an ordered predecessor. The current
+[installed recovery reviewer](../../apps/latentd/src/standalone/state/recovery/profile.rs)
+checks exact signed Java declarations, captured source/codec/HTTP marker and
+executes its fixed reader/writer conformance before accepting `ReviewedSchema`.
+Its [linked catalog reviewer](../../apps/latentd/src/standalone/state/recovery/catalog.rs)
+validates actual retained command/result/effect associations. Extra decoder
+publications supply original decoding sources, never new execution permission.
+This is a closed installed recovery profile, not a general schema evaluator or
+automatic deployment/canary compatibility gate. The broader deployment, native
+application and packaged qualification remains separate. See
+[fixed migration](fixed-aggregate-offline-migration.md) and the
+[installed qualification](../testing/installed-transaction-recovery.md).

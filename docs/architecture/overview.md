@@ -1,6 +1,6 @@
 # LSF architecture overview
 
-LSF runs stateless service capsules on a standalone Linux node. A deployed
+LSF runs service capsules on a standalone Linux node. A deployed
 capsule is stored code, contracts and configuration. A request creates a
 short-lived activation inside a fixed pool of sandboxed execution cells.
 The node reclaims that activation's execution resources when it finishes.
@@ -8,6 +8,10 @@ The node reclaims that activation's execution resources when it finishes.
 The current development implementation includes authenticated invocation and
 management, package admission, rollout and recovery, capability providers,
 shared HTTP ingress, static-site delivery and the supported Angular SSR profile.
+An explicitly selected Phase 4 configuration also installs protected state,
+transactional commands, fresh queries and durable deferred effects. Those
+Development profiles have separate acceptance requirements and are not supplied
+by the published alpha.5 toolkit. See [Changes since alpha.5](../start/development-changes.md).
 See [Run your first node](../start/first-node.md) for a working local example.
 
 ## From source to service
@@ -32,13 +36,17 @@ for inspecting uncertain outcomes. [Rollout](../phase-2-rollouts.md) and
 ## Resource ownership
 
 ```text
-resident state = fixed node runtime + bounded catalog metadata + active activations + bounded shared caches
+resident ownership = fixed node services + bounded retained metadata/caches + active and retiring work
 ```
 
 An inactive deployment owns no executing guest, dedicated process, operating
 system thread, listener, guest heap, connection pool, timer loop or telemetry
 exporter. Catalog, route and policy metadata can grow with deployment count
 within configured bounds. Execution allocation follows active work.
+Protected database caches, retained command/effect metadata and recovery
+reservations also have finite node-owned budgets. Durable pending work can
+outlive every activation without retaining a guest Store or cell. This ownership
+model is not an RSS formula or a claim that durable state is free.
 
 [![An admitted request leases a cell, runs with fresh activation state, then releases the cell after proven cleanup or quarantines it if cleanup is uncertain.](../assets/activation-lifecycle.svg)](../assets/activation-lifecycle.svg)
 
@@ -69,6 +77,12 @@ measured process memory.
 | Revision | The exact deployment selection used by an invocation. |
 | Activation | One invocation's input, identity, budget, deadline and temporary execution state. |
 
+Transactions add stable command, attempt, commit and effect identities independent
+of activation and route revision. Namespace incarnation identifies business
+identity; schema and recovery epochs fence live views across migration and
+older-history restore. See [state and effects](state-and-effects.md) and
+[namespace history](namespace-history-epochs.md).
+
 The [runtime identity guide](../learn/runtime-identities.md) explains how to keep
 these identities distinct when deploying and recovering an application.
 
@@ -93,11 +107,14 @@ See [capability bindings](../runtime/capability-bindings.md) and
 The runtime has HTTP, streaming HTTP, immutable blob, secret, event, local-call,
 randomness and custom-metric integrations. The
 [standalone provider configuration](../reference/standalone-providers.md)
-installs buffered HTTP, local immutable blobs, activation clocks and OS-backed
-randomness through explicit configuration, bindings and grants. Streaming HTTP,
-S3, Vault, NATS and the other embedding integrations use their documented
-trusted Rust composition; their presence in the source does not add fields to
-the standalone JSON configuration.
+installs buffered/streaming HTTP, local immutable blobs, activation clocks,
+OS-backed randomness, context/logging, protected local secrets, custom metrics,
+local calls and immediate NATS publication through explicit configuration,
+bindings and grants. The optional activation-runtime bridge has its own finite
+ownership limits. S3 and Vault still use trusted Rust embedding; development TCP
+streams require their separate build feature and qualification gates. The
+provider schema and installed profile determine availability, not the presence
+of a crate or an inspected import.
 
 The shared [HTTP ingress](../reference/http-ingress.md) handles configured
 application routes with bounded request and response ownership. A
@@ -115,12 +132,17 @@ clients use authenticated RPCs; browsers use the configured HTTP ingress.
 Optional external provider services and an OCI registry have their own owners.
 The node does not run a process or open a port for each deployed capsule.
 
-Durable guest state, transactional effects, cluster placement and durable
-workflows are not implemented. A completed HTTP call or event publication is
-not a universal exactly-once transaction. Stronger isolation through separate
+The [protected state/effect runtime](state-and-effects.md) commits staged state,
+intents and original outcomes atomically under its selected namespace and current
+authority. Commands, fresh queries, result recovery and effect dispatch have
+separate owners; a completed HTTP call or event publication is not a universal
+exactly-once transaction. Its collective, application and packaged gates remain
+open. Cluster placement and durable workflows remain planned. Stronger isolation through separate
 guest execution processes is also not part of the current cell model.
 
 For configuration, use the [node reference](../reference/standalone-node.md).
 For a design rationale, use the [architecture decisions](../../adr/README.md).
+The complete [architecture index](../../ARCHITECTURE.md) includes schema,
+retention, protected recovery and the planned cluster handoff.
 Contributors can find historical measurements and their tested scope in the
 [validation guide](../../VALIDATION.md).

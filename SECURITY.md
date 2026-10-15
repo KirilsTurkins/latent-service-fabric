@@ -1,112 +1,135 @@
 # Security Policy
 
-LSF assumes capsule code, capsule inputs, remote invocation payloads, and external provider responses are untrusted unless an explicit policy says otherwise.
+## Reporting vulnerabilities
 
 Report suspected vulnerabilities through [private vulnerability reporting](https://github.com/KirilsTurkins/latent-service-fabric/security/advisories/new).
-Include the affected source/version, a minimal reproduction and the observed
-impact. Keep credentials, signing keys and sensitive payloads out of public
-issues and pull requests.
+Include the affected release or exact commit, operating system/filesystem,
+selected security and runtime profiles, a minimal reproduction, and expected
+versus observed behavior and impact. Use synthetic data and redact credentials,
+private paths and application payloads from configuration and diagnostics.
 
-The standalone trusted computing base includes the standalone node,
-Wasmtime and its local compiler, local artifact/catalog verification, scoped
-authentication and admission, activation capability hosts, and the host operating
-system. The management/invocation RPC listener is restricted to authenticated
-local loopback operation.
-Integrity verification of local artifacts does not establish publisher identity.
+Keep vulnerability details, signing keys, tokens, raw secret matches and business
+snapshots out of public issues, pull requests and artifacts. Suspected credential
+exposure requires private reporting and revocation/rotation through its owner;
+never test a live credential as proof.
 
-Package delivery uses bounded OCI transport, package publisher signatures, independently
-authorized builder provenance, SBOM policy, and enforced catalog admission.
-Enforced mode checks complete package semantics and current tenant/trust policy,
-with durable generation/clock floors and execution-time eligibility checks.
-Declared runtime/target/CPU requirements must match the actual node profile.
-Bounded [release comparison](docs/reference/release-compatibility.md) keeps
-unsupported or unknown analysis from authorizing promotion; its reports remain
-separate from live supply-chain authority.
-Both local and enforced catalogs bind execution to their exact
-[lifecycle owner](docs/reference/release-lifecycle.md). Durable revoke/retire
-transitions cut off new route/preparation/start decisions; already accepted
-activations may finish. Rejected uploads retain bounded operation outcomes and
-cannot alter admitted content. Uncertain persistence denies positive eligibility.
-Historical receipts and locally admitted flags do not grant current authority.
-See [authenticated package admission](docs/reference/package-admission.md).
+## Version and qualification scope
 
-The runtime also offers an opt-in authenticated same-node isolated AOT path on its
-supported Linux x86_64 sandbox profile. Compilation runs in a bounded child and
-persistent native reuse accepts only locally authenticated output bound to exact
-engine, component and security configuration. The parent parser/validator,
-standalone node, Wasmtime native loader and host OS remain trusted. This does not
-support arbitrary external native artifacts and does not provide a separate guest
-execution process. See [trusted AOT](docs/runtime/trusted-aot.md).
+LSF is an experimental prerelease without production security certification.
+Security claims apply to the exact source, host and installed profile being
+qualified. Use the versioned guides for [published releases](https://github.com/KirilsTurkins/latent-service-fabric/releases)
+and the [Development changes guide](docs/start/development-changes.md) for opt-in
+features and remaining acceptance gates. A signed package, recognized ABI,
+successful build or passing scan alone does not qualify a runtime or release.
 
-[ADR-0026](adr/0026-require-explicit-execution-isolation-profiles.md) and
-[RFC-0001](rfcs/0001-minimum-execution-isolation-profiles.md) define the current
-isolation-profile boundary. Fresh in-process Wasmtime stores remain the delivered
-guest execution model. A stronger profile that must remain isolated after
-compromise of the guest/provider/renderer process requires a separate fixed,
-node-owned execution host and is unsupported until that backend and its finite
-evidence are implemented. Security-profile selection must fail closed rather
-than silently downgrade to a weaker boundary. The current trusted-local default
-is for operator-controlled workloads. Linux x86_64 configuration loading now has
-a descriptor-anchored protected-file policy for bearer credentials and enforced
-trust policy. The explicit `external-capsule-v1` selector now requires enforced
-admission, the exact supported host ABI, the reviewed runtime and a supported approved
-isolated compiler. `check-config` and startup verify those requirements; a
-protected persisted marker prevents weakening the profile on ordinary restart.
-Enforced admission alone still does not select compiler isolation. See
-[execution profiles and their finite evidence](docs/runtime/execution-security-profiles.md)
-and [protected configuration](docs/runtime/protected-configuration.md).
+Capsule code and input, request metadata, registry/provider responses, detached
+evidence, replaceable caches and native output are untrusted inputs. Validation,
+identity and current permission are separate checks. The maintained
+[security architecture](docs/architecture/security.md) describes the detailed
+controls; this policy summarizes their trust and disclosure boundaries.
 
-The optional [shared HTTP/TLS application ingress](docs/reference/http-ingress.md)
-adds the HTTP parser, TLS configuration, principal adapters and connection owner
-to the trusted computing base. Its direct TLS, local cleartext and approved
-reverse-proxy profiles are explicit. Forwarded fields never grant identity;
-public origins deliberately map unauthenticated callers to configured low-privilege
-principals. Finite handshake/header/body/idle/write/age limits reclaim connections,
-and every selected publication still passes current admission and guarded start.
-Request cancellation retains activation and delivery charges through actual
-cleanup. This transport does not broaden the supported guest isolation profile.
+## Execution, admission and identity
 
-The [browser/hydration boundary](docs/security/browser-boundary.md) fixes a
-same-origin CSP/CSRF/header policy and bounds public DTO transfer. It does not
-sanitize arbitrary HTML, make malicious same-origin scripts safe, or provide
-browser end-user authentication. Tenant origins and application disclosure
-decisions remain explicit operator/application responsibilities.
+The trusted computing base includes the node, Wasmtime, approved compiler/native
+loader, authentication/catalog/capability hosts, selected provider/renderer/
+transport/storage owners and the host OS. Guest Store and logical resource
+limits are not whole-process RSS or host-compromise boundaries.
 
-Anonymous public-document navigation and exact static stylesheet hashes require
-explicit host opt-ins. They do not enable credentialed cross-origin asset access
-or arbitrary inline execution. The optional
-[local HTTPS edge](docs/operations/local-https-edge.md),
-[compression adapter](docs/operations/static-compression.md) and
-[private readiness adapter](docs/operations/readiness-probes.md) become trusted
-node-level components when selected. Management credentials remain private;
-forwarded headers and health probes cannot grant tenant or principal authority.
+The default `local-experimental-v1` profile is for operator-controlled admission
+and preparation. Guest execution uses fresh Stores in fixed in-process cells.
+`external-capsule-v1` additionally requires enforced package admission, exact
+host compatibility, protected configuration and supported approved isolated
+compilation. Startup and `check-config` enforce those requirements; a protected
+persisted marker prevents weakening the profile on ordinary restart. Enforced
+admission alone does not select compiler isolation. A separate execution-host
+profile for containment after guest/provider/renderer-process compromise remains
+unsupported. Requested stronger profiles must fail closed rather than downgrade.
+See [execution profiles](docs/runtime/execution-security-profiles.md) and
+[protected configuration](docs/runtime/protected-configuration.md).
 
-The optional [capability policy owner](docs/runtime/capability-policies.md) is now
-part of the trusted computing base. It enforces closed rule parsing, tenant-scoped
-revision/CAS history, protected storage and final policy/publication currentness.
-Descriptive explanations and historical receipts grant no execution permission.
-Uncertain persistence retires the live owner until verified reopen. Provider
-installation and actual budget reservation remain separate broker boundaries.
+Trusted-local integrity checks do not establish publisher identity. Enforced
+[package admission](docs/reference/package-admission.md) combines exact tenant/
+package associations, publisher signatures, independently approved builder
+provenance, SBOM policy and actual runtime requirements, with durable policy and
+clock floors. Compatibility reports and cache hits grant no execution authority.
+Both catalog modes use [release lifecycle](docs/reference/release-lifecycle.md)
+fences: revocation denies later starts; already accepted work may finish boundedly.
+Historical receipts and uncertain persistence cannot establish current permission.
 
-The [asynchronous I/O ownership substrate](docs/runtime/async-host-io.md) retains
-queue, running-work, buffer and stream charges through actual cleanup. It requires
-a finite original Store deadline and checks authority after queueing. Cancellation
-does not refund a blocking worker or retained consumer, and incomplete ownership
-prevents cell reuse. This substrate does not install additional WASI providers.
-The [shared provider registry](docs/runtime/provider-pools.md) adds immutable
-credential epochs, tenant/provider queue fairness and finite connection, worker
-and cleanup pools on the configured node runtime. Retired epochs and unfinished
-physical resources retain their quotas; a timeout or dropped job waiter does not
-prove closure. Provider credentials are excluded from public pool observations.
+The optional [isolated AOT path](docs/runtime/trusted-aot.md) bounds Linux x86_64
+compilation and authenticates persistent native reuse against exact source,
+compiler, engine/host and security identities. It accepts no arbitrary external
+native artifacts. The parent validator/loader remains trusted; compiler isolation
+does not provide a separate guest execution process.
 
-HTTP, streaming HTTP, blobs, secrets, events, local calls, randomness and metrics
-have capability-specific authorization and cleanup contracts.
-[Standalone configuration](docs/reference/standalone-providers.md) accepts
-buffered HTTP and local immutable blobs; other integrations require their
-documented trusted Rust embedding. Installing a provider does not grant a
-capsule permission to use it.
+## Transports, providers and application isolation
 
-Application state transactions, effect outboxes and cluster mTLS are not
-implemented. See the [security architecture](docs/architecture/security.md)
-for the current supported boundaries. LSF remains an experimental prerelease
-without a production security certification.
+Management/invocation RPC remains authenticated loopback transport. Trusted
+principals and current scoped decisions supply authority, not request-body
+identities, correlation IDs or descriptive grants. Cluster mTLS, remote delegation
+and distributed authorization leases remain unimplemented.
+
+The optional [shared HTTP/TLS listener](docs/reference/http-ingress.md) maps
+explicit public origins to configured low-privilege principals; forwarded headers
+and probes never grant identity. The [browser boundary](docs/security/browser-boundary.md)
+fixes CSP/CSRF/header and disclosure rules, not arbitrary HTML sanitization,
+same-origin script safety or browser end-user authentication. Document navigation,
+styles and cross-origin assets need explicit policy. Selected [HTTPS](docs/operations/local-https-edge.md),
+[compression](docs/operations/static-compression.md) and [readiness](docs/operations/readiness-probes.md)
+adapters also become trusted node-level components.
+
+[Standalone provider configuration](docs/reference/standalone-providers.md)
+accepts explicit HTTP/streaming HTTP, local blobs/secrets, context/logging,
+clocks, randomness, metrics, local calls and immediate NATS publication. S3 and
+Vault use trusted Rust embedding. The [activation-runtime bridge](docs/runtime/activation-runtime.md)
+has separate installation, grants and finite ownership; recognizing its ABI does
+not qualify a language runtime. [Development TCP streams](docs/reference/standalone-streams.md)
+require their build feature and qualification gates; direct host TLS retains its
+separate unsupported installation boundary. None supplies ambient guest socket,
+filesystem, process or environment access.
+
+The [policy/broker boundary](docs/runtime/capability-policies.md) rechecks current
+scope, publication, policy and provider authority. Installation supplies neither
+permission nor resource reservation. [Async I/O](docs/runtime/async-host-io.md)
+and [provider pools](docs/runtime/provider-pools.md) retain physical-work,
+connection, buffer and retired-epoch charges until actual cleanup. Timeout or
+waiter loss is not cell-reuse proof; credentials stay out of public observations.
+
+## Protected transactions and recovery
+
+Development's explicitly [installed transaction runtime](docs/development/installed-transaction-rpc.md)
+requires protected storage, enforced admission, audit, capability policy, an exact
+signed operation companion and current namespace/result/effect authority.
+Ordinary stateless deployment does not enable it. The host atomically commits
+state, intents, original outcomes and applicable inbox facts; guests cannot
+commit early, weaken atomicity or make unsupported irreversible calls inside
+strict commands. Result lookup and deferred dispatch have independent current
+permissions. Durable intent is not provider acknowledgement or universal
+exactly-once external execution.
+
+Timeout, disconnect, cancellation and expired/unknown history are not abort
+proof. Recover by the original command/attempt/effect identity under current
+authority. [Protected restore](docs/architecture/protected-offline-recovery.md)
+keeps original business identities, advances recovery epoch, discards historical
+grants and stays paused for explicit reconciliation. The [ADR-0062 identity variance](adr/0062-host-own-serializable-transactions-and-durable-outcomes.md#implementation-status-and-restore-identity)
+remains an explicit architectural decision gate. Backups, checkpoints and
+restored business data require private custody; fixed container backup roots do
+not automatically include a separate external checkpoint. Neither matching file
+bytes nor receipt metadata proves fresh storage or physical retirement. Complete
+native/application/packaged recovery qualification remains separate.
+
+## Security monitoring and evidence
+
+The [security baseline](docs/development/security-baseline.md) defines RustSec,
+resolved SDK advisory inventory, redacted secret scans, source/workflow rules,
+expiring exceptions and fail-closed canaries. Its coordinator scopes changed
+surfaces and configures weekly/manual scans of both `development` and `release`.
+The [monitoring runbook](docs/operations/maintained-security-monitoring.md)
+separates configured services from actual executed, source-bound coverage.
+
+A green scan is a bounded observation using its recorded source, tools, advisory
+data and selected jobs. It does not prove absence of vulnerabilities, full
+semantic authorization analysis, current runtime qualification or release
+approval. Old receipts do not qualify later code or dependency graphs. Keep
+secret findings redacted and report suspected exposure through the private
+channel above.

@@ -11,7 +11,12 @@ automatic contract migration are not implemented.
 
 ## Contract authority
 
-WIT is authoritative for capsule-visible types, functions, resources, futures, streams, imports, and exports. Language SDK surfaces are generated or handwritten projections and must not change semantics.
+WIT is authoritative for capsule-visible types, functions, resources, futures,
+streams, imports and exports. Language SDK projections must preserve those
+semantics. Supported execution is narrower than the WIT language: exact
+[host ABI profiles](../runtime/host-abi-profile.md) and checked value/resource
+shapes determine what this node can install. A valid WIT declaration does not
+enable arbitrary resources, futures, streams or third-party imports.
 
 ## Version identity
 
@@ -46,6 +51,10 @@ consumer revision + imported contract + caller policy
 ## Inline eligibility
 
 Inline composition requires compatible trust, state, transaction, budget, and observability semantics. A deployment may forbid inline mode even when technically possible.
+These are future eligibility requirements; no current configuration enables
+inline execution. Strict transactional commands also reject unsupported
+synchronous child calls. A stateless local-call binding cannot implicitly join
+two namespaces into one transaction.
 
 ## Error semantics
 
@@ -64,3 +73,11 @@ variant structure. Unsupported and unknown results deny compatibility approval;
 general WIT migration remains future work. Exact host/local binding compilation
 uses these checked definitions and rejects unsupported or ambiguous inputs. WIT
 versions remain distinct from workspace and SDK package release versions.
+
+Transaction preparation additionally verifies the exact signed
+[operation companion](../protocol/transactions.md), state schema/binding and
+installed command/query profile. Application schema compatibility and retained
+result/effect decoders are separate from WIT compatibility. A compatible package
+comparison cannot grant namespace access or make an old decoder available.
+The concrete [binding compiler](../../crates/latent-control-store/src/deployments/bindings/mod.rs)
+and [schema reviewer](application-schema-compatibility.md) own those separate checks.

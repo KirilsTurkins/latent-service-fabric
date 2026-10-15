@@ -12,6 +12,15 @@ from tools.dev_workflow import bundle, paths
 from tools.dev_workflow.common import HOST_ABI, PROTOCOL, encode, guest_host_abi, require
 
 
+def project_notices(source: Path, licenses: Path) -> None:
+    """Retain the project's license and notice before inventorying a bundle."""
+    records = [(name, paths.read(source, name, 65536)) for name in ("LICENSE", "NOTICE")]
+    require(all(raw for _name, raw in records), "project-license-and-notice-required")
+    licenses.mkdir(parents=True, exist_ok=True)
+    for name, raw in records:
+        paths.write_new(licenses / ("LSF.txt" if name == "LICENSE" else "LSF-NOTICE.txt"), raw)
+
+
 def file_digest(path: Path) -> tuple[str, int]:
     path = paths.absolute(path.absolute())
     checksum, size = hashlib.sha256(), 0

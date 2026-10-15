@@ -2,17 +2,19 @@
 
 An explicit `state` object in the normal node configuration enables the shared
 Phase 4 owners before listeners become ready. It requires the Phase 4 budget
-profile, enforced supply-chain admission, and the existing capability policy
-owner. The node opens one protected state database under its data root, validates
-all linked command, result, namespace, history, migration, resume, and dispatch
-records in one view, and shares that owner with state management, command
+profile, enforced supply-chain admission, durable audit and the existing
+capability policy owner. The node opens one protected state database under its
+data root, validates all linked command, result, namespace, history, migration,
+resume, and dispatch records in one view, and shares that owner with state management, command
 completion, fresh queries, and deferred dispatch.
 
-The `state` configuration has `formatVersion: 1`, a positive
-`configurationEpoch`, an external protected `clockCheckpoint` path,
-`createIfMissing` (default false), and at most 128 `operations`. Each operation
-pins its tenant, component digest, exact publication, contract/function,
-deployment, binding, signed companion digest, namespace incarnation,
+The current [state schema](../../schemas/node-state.schema.json) requires
+`formatVersion: 2`, positive `configurationEpoch`, exact `storeIdentity`, a
+separate protected `checkpointRoot`, explicit storage/native/dispatcher limits,
+`createIfMissing` (default false), and at most 128 `operations`. The database
+root is fixed at `dataDirectory/state`; there is no `stateRoot` override.
+Each operation pins its tenant, component digest, exact publication,
+contract/function, deployment, binding, signed companion digest, namespace incarnation,
 result policy, and bounded state-policy IDs. Optional entity and route values
 are fixed installation constraints. No configuration field grants access.
 
@@ -25,11 +27,13 @@ Package metadata is not reconstructed from operator input. The shared protected
 engine currently requires its Linux/ext4 profile; portable checks do not certify
 that physical profile on Windows.
 
-The external checkpoint is a bounded protected document with `formatVersion: 1`,
-the actual `nodeId`, a positive `ownerEpoch`, and `clockFloorUnixMillis`. The node
-retains one original wall/monotonic anchor, rejects a wall value below the
-checkpoint, and refuses cumulative drift, regression, overflow, or poisoned
-observation. It never obtains renewed continuity by replacing its anchor.
+The [external checkpoint](../development/transaction-checkpoint.md) is the
+protected binary `transaction-checkpoint.v1` record, not the obsolete JSON
+`clockCheckpoint` configuration. It binds actual store identity, checkpoint
+generation, protected clock and dispatcher owner epochs and the durable floor.
+The same fixed native workers and original Recovery reservation own its file
+session and actual retirement. Current clock continuity cannot be manufactured
+from configuration labels, receipt metadata or a replaced wall/monotonic anchor.
 
 `StandaloneNode::state_runtime` exposes the actual installed runtime to the
 shared HTTP integration. `StateRuntime::installed` selects a retained operation
@@ -51,13 +55,14 @@ advance can satisfy an original committed view; a different recovery or schema
 epoch cannot. The original outcome, source, time, committed namespace version,
 view token, and abort proof remain in their original envelope.
 
-Every request owns ordinary native capacity and its original budget, deadline,
-publication, policy, and cancellation control. Accepted storage workers retain
+Requests retain their original budget, deadline, publication, policy and
+cancellation control. Accepted storage workers retain
 that original owner until physical retirement, including detached responses.
-Application lookup uses the bounded recovery-read worker with ordinary global
-capacity, preserving the administrative recovery reservation. The result delivery
-fence survives budget finalization and checks current purpose during bounded
-nonblocking transport polls without storage work or additional ledger charges.
+Installed `LookupCommand`/`LookupCommit` RPCs use the bounded reserved recovery
+lane without starting a guest. Capacity class grants no result-read or mutation
+permission. The result delivery fence survives budget finalization and checks
+current purpose during bounded nonblocking transport polls without storage work
+or additional ledger charges.
 
 State and transaction management use the normal authenticated management
 transport. Shutdown closes ordinary state admission, preserves actual command
@@ -66,14 +71,16 @@ storage owners, worker/thread retirement, and quarantine from the actual owners.
 Startup failure also closes and drains started owners within one cleanup cutoff;
 uncertain retirement quarantines the store rather than reporting it released.
 
-The focused portable milestone registers seven configuration/request/clock
-cases and one actual embedded-engine history case. It also preserves all prior
-suite cases and ignore guards. This is source and bounded portable evidence.
-Full installed signed-component command/query/replay, HTTP socket delivery,
-cutover, restart, cancellation, overload, and one-intent dispatch qualification
-remain required on the composed Linux node. Deferred adapters are empty unless
-explicitly installed from actual native provider and authority owners; a guest
-declaration does not establish an adapter, grant, or successful dispatch.
+Current configuration, request, clock, linked-state and recovery regression
+cases are selected from the [suite catalogue and fragments](ci-suite-inventory.md).
+Registration and focused portable/engine execution remain distinct from full
+installed signed-component command/query/replay, HTTP socket delivery, cutover,
+restart, cancellation, overload and intent-dispatch qualification. Use the
+[installed runtime](../development/installed-transaction-rpc.md) and
+[recovery qualification](installed-transaction-recovery.md) for the current native
+actions and remaining terminal/pending and packaged campaigns. Deferred adapters
+are empty unless explicitly installed from actual native provider and authority
+owners; a guest declaration does not establish an adapter, grant, or successful dispatch.
 
 An operation may explicitly install `deferredHttp` with `requirementsDigest`,
 `providerId`, `providerIncarnation`, `credentialReference`, `stagingBinding`,
