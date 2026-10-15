@@ -28,7 +28,10 @@ int standard_probe(unsigned mode) {
         unsigned char any = 0; for (unsigned i = 0; i < 256; ++i) any |= bytes[i];
         return any != 0;
     }
-    if (mode == 1) return clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &first) == -1 && errno == ENOTSUP;
+    if (mode == 1) {
+        __wasi_timestamp_t unsupported = 7;
+        return __wasi_clock_time_get(2, 1, &unsupported) == __WASI_ERRNO_NOTSUP && unsupported == 7;
+    }
     if (mode == 2) return clock_getres(CLOCK_MONOTONIC, &first) == -1 && errno == ENOTSUP && first.tv_sec == 7 && first.tv_nsec == 8;
     if (mode == 3) return clock_getres(CLOCK_REALTIME, &first) == 0 && first.tv_sec == 0 && first.tv_nsec == 1000000;
     if (mode == 4) {

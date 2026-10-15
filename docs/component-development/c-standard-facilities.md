@@ -47,7 +47,8 @@ not install providers or grant authority.
 | `clock_gettime(CLOCK_MONOTONIC, ...)` | Full-width `latent:clock/monotonic@0.1.0` nanoseconds; no truncation through milliseconds. |
 | `clock_gettime(CLOCK_REALTIME, ...)` | `latent:clock/wall@0.1.0` Unix milliseconds, checked multiplication to nanoseconds; effective resolution remains one millisecond. |
 | `clock_getres(CLOCK_REALTIME, ...)` | One millisecond, reflecting the selected wall contract. |
-| Other clock IDs; monotonic `clock_getres` | `ENOTSUP`; the provider contract does not declare monotonic resolution or CPU clocks. |
+| Other raw WASI clock IDs; monotonic `clock_getres` | `ENOTSUP`; the provider contract does not declare monotonic resolution or CPU clocks. |
+| POSIX `CLOCK_PROCESS_CPUTIME_ID` | The pinned libc does not declare this constant; an ordinary source use fails compilation. The actual retained failure is separate from the raw WASI runtime-denial probe. |
 | `getentropy(buffer, length)` | The pinned libc enforces its 256-byte limit; accepted requests use genuine `latent:random/random@0.1.0` bytes. |
 | Lower-level WASI `random_get` | At most 4096 bytes per call. Zero length requires no host call. Invalid memory is rejected before dispatch. |
 | Entropy errors | Invalid length maps to `EINVAL`, provider budget exhaustion to `EAGAIN`, and unavailable/invalid provider output to `EIO`; no fabricated bytes. |
@@ -59,6 +60,12 @@ captured original; generated application bindings, derived contracts, package
 inputs and runtime selection bind that transformation. The SDK binding check
 and original-source recheck remain separate. Neither original WIT nor the
 vendored SDK is edited during compilation.
+
+The [first hosted qualification failure](../testing/evidence/c-standard-facilities-failed-2026-10-16.json)
+records the unavailable POSIX CPU-clock declaration. The replacement runtime
+probe calls the pinned raw WASI clock API with CPU-clock ID 2, requires
+`ENOTSUP`, and verifies that its output remains unchanged. This does not add a
+POSIX CPU clock or turn the original compiler rejection into a pass.
 
 The initial profile supports one selected lower-kebab-case world declaration
 in a root WIT file. Explicit profile imports in that file, duplicate world

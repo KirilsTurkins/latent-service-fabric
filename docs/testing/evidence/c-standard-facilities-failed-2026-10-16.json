@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "latent.c-standard-facilities.compiler-failure.v1",
+  "status": "failed",
+  "runtimeQualified": false,
+  "pullRequest": 1016,
+  "candidateHead": "49c2e49b3460d72aa8f00419ae728fc9e390bdf0",
+  "testedMerge": "ef1afee75c7721df2610fde819dffe061b00c81c",
+  "testedTree": "59b03723e524f123e6f7fd4b1d16a701d6094785",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38822452457/job/116721982727",
+  "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38822452457/artifacts/12014713272",
+  "artifactBytes": 43325,
+  "artifactSha256": "5194b45bf8266d3f8963c52685474bbe8b947524a6bdd00af6c47604d652ec9f",
+  "stage": "compile",
+  "classification": "target-compiler-incompatibility",
+  "source": "application-vendor/standard-probe/clock_probe.c",
+  "line": 21,
+  "symbol": "CLOCK_PROCESS_CPUTIME_ID",
+  "diagnostic": "use of undeclared identifier 'CLOCK_PROCESS_CPUTIME_ID'",
+  "disposition": "Retain the unsupported POSIX declaration as a compiler limitation. A separate raw WASI clock-ID denial probe requires ENOTSUP and an unchanged output value; it does not claim POSIX CPU-time support.",
+  "originalLimitsChanged": false,
+  "signedNodeExecution": "not-run-because-compilation-failed"
+}
