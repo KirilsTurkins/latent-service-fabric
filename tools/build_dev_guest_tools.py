@@ -21,7 +21,7 @@ from tools import dev_tool_distribution as distribution, dev_managed_distributio
 from tools import dev_go_distribution, dev_typescript_distribution
 from tools.build_observation import build_environment, resolve_tools
 from tools.build_process import BuildProcessError, run_bounded_result
-from tools.dev_distribution import assemble, file_digest
+from tools.dev_distribution import assemble, file_digest, project_notices
 from tools.dev_guest_tools import ZIG_BYTES, ZIG_SHA256, ZIG_VERSION
 from tools.dev_workflow.common import GUEST_HOST_ABIS, HOST_ABI, PROTOCOL, encode, require
 from tools.dev_workflow.project import LANGUAGES
@@ -293,7 +293,7 @@ def main() -> int:
         sbom["relationships"] = list(relations.values())
     for name, source in licenses.items():
         distribution.copy(source, payload / name)
-    distribution.copy(ROOT / "LICENSE", payload / "licenses/LSF.txt")
+    project_notices(ROOT, payload / "licenses")
     extra = [{"SPDXID": "SPDXRef-tool-" + name, "name": name, "versionInfo": source["version"],
         "downloadLocation": source["url"], "filesAnalyzed": False, "licenseDeclared": "NOASSERTION",
         "licenseConcluded": "NOASSERTION", "copyrightText": "NOASSERTION",

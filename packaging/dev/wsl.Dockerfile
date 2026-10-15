@@ -41,6 +41,7 @@ COPY helper.pyz /opt/latent-dev/helper.pyz
 COPY wsl.conf /etc/wsl.conf
 COPY rootfs_inventory.py /opt/latent-dev/rootfs_inventory.py
 COPY LSF-LICENSE /opt/latent-dev/LSF-LICENSE
+COPY LSF-NOTICE /opt/latent-dev/LSF-NOTICE
 COPY source.json /opt/latent-dev/source.json
 RUN ldconfig && chmod 0755 /opt/latent-dev && chmod 0644 /opt/latent-dev/* /etc/wsl.conf \
     && /usr/local/bin/python3.13 -I /opt/latent-dev/rootfs_inventory.py \

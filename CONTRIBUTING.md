@@ -80,6 +80,12 @@ their owning generator; do not hand-edit them or introduce another wire schema.
 Rust build products belong in Cargo `OUT_DIR` or ignored output directories,
 with only explicitly reviewed reproducible fixture exceptions.
 
+When copying or modifying upstream source, retain its license and attribution
+texts and record the exact original source and changes. Update [NOTICE](NOTICE)
+when its source attributions change. Check that the affected distribution carries
+the project notice alongside the applicable upstream texts and inventory;
+dependency declarations or an SBOM do not replace those texts.
+
 Guest SDKs and external clients have separate contracts and qualification:
 [guest authoring](docs/component-development/guest-sdk.md) covers compiled
 components, while the [client profile](sdk/profile/README.md) covers native
