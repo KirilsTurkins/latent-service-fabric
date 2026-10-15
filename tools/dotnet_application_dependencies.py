@@ -327,10 +327,15 @@ def feed_config(policy: dict | None, owned: Path, sdk_configuration: bytes) -> t
         if 'authorizationEnv' in row:
             key = row['authorizationEnv']
             secret = os.environ.get(key) if isinstance(key, str) and re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', key) else None
-            if not secret or any(char in secret for char in '\0\r\n'):
+            if not secret:
                 raise DependencyError('nuget-explicit-feed-credential-missing')
+            username = row.get('username', 'token')
+            if (not isinstance(username, str) or not 0 < len(username) <= 16384 or len(secret) > 16384
+                    or any(ord(char) < 32 or ord(char) == 127 or 0xd800 <= ord(char) <= 0xdfff
+                           or ord(char) in {0xfffe, 0xffff} for char in username + secret)):
+                raise DependencyError('nuget-explicit-feed-credential-invalid')
             credential = ET.SubElement(credentials, row['name'])
-            ET.SubElement(credential, 'add', {'key': 'Username', 'value': row.get('username', 'token')})
+            ET.SubElement(credential, 'add', {'key': 'Username', 'value': username})
             ET.SubElement(credential, 'add', {'key': 'ClearTextPassword', 'value': secret})
         identities.append({'name': row['name'], 'kind': 'local' if 'path' in row else 'https', 'sourceIdentityDigest': identity})
     root.append(mappings)
