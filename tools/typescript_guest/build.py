@@ -55,6 +55,8 @@ RECIPE += ('tools/typescript_guest/import_engine.py','tools/typescript_guest/imp
 RECIPE += ('tools/typescript_guest/runtime_bundle.py',)
 RECIPE += ('tools/typescript_guest/text_codec_engine.py',)
 RECIPE += ("tools/typescript_generator_authoring.py",)
+RECIPE += ('tools/typescript_guest/fetch.mjs', 'tools/typescript_guest/fetch_profile.py',
+           'sdk/typescript-guest/activation/fetch-globals.d.ts')
 
 
 def runtime_package_sources(original: dict[str, bytes], selected: dict,
