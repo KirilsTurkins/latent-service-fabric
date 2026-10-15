@@ -24,7 +24,7 @@ fn reconstructed_capture_changes_only_report_identity_and_preserves_authority_in
     }
     assert_eq!(
         reconstructed["historicalCapturePacketSha256"],
-        latent_artifacts::package::artifact_blob_digest(REBUILT_PINS)
+        latent_artifacts::package::artifact_blob_digest(REBUILT_PINS).as_str()
     );
     assert_eq!(reconstructed["reportAndCompilerClosureAreNew"], false);
     assert_eq!(reconstructed["reportIsNew"], true);
