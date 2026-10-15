@@ -111,6 +111,11 @@ bytes fail with fixed diagnostics. Review, build, test and watch consume the
 verified cache without reopening the private feed. Local source directories use
 the same explicit capture and review flow.
 
+The [two-stage C library qualification](../testing/c-library-ingestion.md) acquires
+the maintained source/transitive-resource fixture separately, then builds and
+executes source and target-verified static variants with external networking
+disabled and an explicitly supplied immutable ordinary native tuple.
+
 For an authenticated project created with the existing
 [packaged developer workflow](../start/application-development.md), run the
 dependency commands against the outer directory containing `latent.project.json`.
