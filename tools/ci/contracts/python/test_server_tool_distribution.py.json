@@ -1,10 +1,36 @@
 {
   "cases": [
+    "ServerOperatorDistribution.test_installed_java_creator_preserves_every_existing_template",
+    "ServerOperatorDistribution.test_installed_new_server_captures_the_exact_sdk_without_checkout_imports",
     "ServerOperatorDistribution.test_installed_recipe_has_complete_server_operator_import_closure",
     "ServerOperatorDistribution.test_installed_tool_rejects_invalid_declaration_before_operator_dispatch",
     "ServerOperatorDistribution.test_other_language_recipes_do_not_advertise_java_server_operator_tools"
   ],
   "guards": {
+    "ServerOperatorDistribution.test_installed_java_creator_preserves_every_existing_template": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b4972d192f3cd4f8d690414dfa8656a2872b2e8b8fcaf5c8a367842c05a7b1a4",
+        "class:setup-sha256:f5489c591fb264a6e5015d301a2dbe5d7ce0c01670a0742c5b8cb56c37d4ab03"
+      ],
+      "skipSites": []
+    },
+    "ServerOperatorDistribution.test_installed_new_server_captures_the_exact_sdk_without_checkout_imports": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b4972d192f3cd4f8d690414dfa8656a2872b2e8b8fcaf5c8a367842c05a7b1a4",
+        "class:setup-sha256:f5489c591fb264a6e5015d301a2dbe5d7ce0c01670a0742c5b8cb56c37d4ab03"
+      ],
+      "skipSites": []
+    },
     "ServerOperatorDistribution.test_installed_recipe_has_complete_server_operator_import_closure": {
       "bases": [
         "unittest.TestCase"
@@ -44,6 +70,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_server_tool_distribution.py",
-  "reviewReason": "Execute the distributed Java server operator import closure outside the source checkout and preserve pre-dispatch rejection",
+  "reviewReason": "Retain installed route operator controls and add exact Java creator source closure, original SDK trust and all maintained template creation controls",
   "schemaVersion": "latent.ci.contracts.v1"
 }

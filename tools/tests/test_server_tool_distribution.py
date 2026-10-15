@@ -67,5 +67,48 @@ class ServerOperatorDistribution(unittest.TestCase):
         distribution.recipe(other, 'rust')
         self.assertFalse((other / 'recipe/tools/server_capsule.py').exists())
 
+    def test_installed_new_server_captures_the_exact_sdk_without_checkout_imports(self):
+        from tools.java_capsule_project import validate, sdk_inputs
+        from tools.rust_capsule_project import snapshot
+        command = self.payload / 'recipe/tools/java_capsule.py'
+        project = self.empty / 'independent-server'
+        result = subprocess.run([sys.executable, '-I', str(command), 'new-server', str(project),
+            '--name', 'independent-server'], cwd=self.empty, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        files = snapshot(project)
+        selected, lock, _pins = validate(files)
+        self.assertEqual(selected['server'], {'profile': 'lsf.java.httpserver.buffered.v1',
+                                             'entryPoint': 'dev.latent.app.Server'})
+        expected = sdk_inputs(distribution.ROOT)
+        self.assertEqual({name.removeprefix('vendor/lsf/'): data for name, data in files.items()
+                          if name.startswith('vendor/lsf/')}, expected)
+        self.assertEqual(lock['template']['name'], 'httpserver')
+        self.assertIn(b'HttpServer.create', files['src/dev/latent/app/Server.java'])
+        self.assertNotIn('src/dev/latent/app/Capsule.java', files)
+        observed = distribution.compiler_inventory(self.payload, '1' * 40, 'java')
+        retained = {entry['path']: entry for entry in observed['files']}
+        from tools.dev_workflow.common import digest
+        for name, data in expected.items():
+            entry = retained['recipe/' + name]
+            self.assertEqual((entry['sha256'], entry['size']), (digest(data), len(data)))
+        # A modified retained runtime cannot inherit the original project lock.
+        runtime = 'vendor/lsf/sdk/java-guest/runtime/dev/latent/guest/Wire.java'
+        self.assertIn(runtime, set(files))
+        with self.assertRaisesRegex(ValueError, 'SDK'):
+            validate({**files, runtime: files[runtime] + b'\n// changed captured runtime\n'})
+
+    def test_installed_java_creator_preserves_every_existing_template(self):
+        from tools.java_capsule_project import validate, AUTHORING_TEMPLATES
+        from tools.rust_capsule_project import snapshot
+        command = self.payload / 'recipe/tools/java_capsule.py'
+        for template in AUTHORING_TEMPLATES:
+            with self.subTest(template=template):
+                project = self.empty / template
+                result = subprocess.run([sys.executable, '-I', str(command), 'new', str(project),
+                    '--template', template], cwd=self.empty, capture_output=True, timeout=30)
+                self.assertEqual(result.returncode, 0, result.stderr.decode())
+                _selected, lock, _pins = validate(snapshot(project))
+                self.assertEqual(lock['template']['name'], template)
+
 
 if __name__ == '__main__': unittest.main()

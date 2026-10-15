@@ -124,6 +124,7 @@ def recipe(payload: Path, language: str) -> None:
     if language in {"java", "dotnet", "go", "typescript"}:
         names.add("tools/dev_managed_tools.py")
     if language == "java":
+        names.update(java_capsule_project.authoring_inputs(ROOT))
         # Server builds already emit declarations. Ship their existing scoped
         # operator tool alongside the recipe, without putting it in guest code.
         names.update({"tools/server_capsule.py", "tools/server_routes.py",
