@@ -64,11 +64,46 @@ async fn actual_installed_current_snapshot_stages_migration_under_original_owner
     let has_canonical = required.contains(&canonical(&fixture));
     let stage = fixture.stage(snapshot.get(), "installed.snapshot").await;
     let succeeded = stage.get().is_ok();
-    let error_code = stage.get().as_ref().err().map(|error| {
-        if error.message == "protected-migration:Review(UnsupportedFormat)" {
-            "Review(UnsupportedFormat)"
-        } else {
-            "other"
+    let error_code = stage
+        .get()
+        .as_ref()
+        .err()
+        .map(|error| match error.message.as_str() {
+            "protected-migration:Source(Invalid)" => "Source(Invalid)",
+            "protected-migration:Source(Capacity)" => "Source(Capacity)",
+            "protected-migration:Source(Conflict)" => "Source(Conflict)",
+            "protected-migration:Source(Corrupt)" => "Source(Corrupt)",
+            "protected-migration:Source(UnsupportedFormat)" => "Source(UnsupportedFormat)",
+            "protected-migration:Source(Unavailable)" => "Source(Unavailable)",
+            "protected-migration:Source(CommitUncertain)" => "Source(CommitUncertain)",
+            "protected-migration:Source(SnapshotExpired)" => "Source(SnapshotExpired)",
+            "protected-migration:Review(Invalid)" => "Review(Invalid)",
+            "protected-migration:Review(Capacity)" => "Review(Capacity)",
+            "protected-migration:Review(Conflict)" => "Review(Conflict)",
+            "protected-migration:Review(Corrupt)" => "Review(Corrupt)",
+            "protected-migration:Review(UnsupportedFormat)" => "Review(UnsupportedFormat)",
+            "protected-migration:Review(Unavailable)" => "Review(Unavailable)",
+            "protected-migration:Review(CommitUncertain)" => "Review(CommitUncertain)",
+            "protected-migration:Review(SnapshotExpired)" => "Review(SnapshotExpired)",
+            "protected-migration:Deadline" => "Deadline",
+            "protected-migration:Capacity" => "Capacity",
+            "native-original-deadline" => "native-original-deadline",
+            _ => "unmapped",
+        });
+    let error_platform = stage
+        .get()
+        .as_ref()
+        .err()
+        .map(|error| error.code.wire_code());
+    let error_layer = stage.get().as_ref().err().map(|error| {
+        match error.message.split_once(':').map(|(layer, _)| layer) {
+            Some("protected-migration") => "migration",
+            Some("protected-snapshot") => "snapshot",
+            Some("protected-owner") => "owner",
+            Some("native-original-job") => "job",
+            Some("native-review") => "native-review",
+            _ if error.message == "native-original-deadline" => "original-deadline",
+            _ => "unmapped",
         }
     });
     if let Ok(value) = stage.get() {
@@ -83,6 +118,7 @@ async fn actual_installed_current_snapshot_stages_migration_under_original_owner
         json!({
             "catalogCaptured":true,"snapshotSucceeded":true,"barePackageDeclared":bare,
             "canonicalPackageDeclared":has_canonical,"stageErrorCode":error_code,
+            "stagePlatformCode":error_platform,"stageErrorLayer":error_layer,
             "originalNativeOwner":original_owner,"nativePhysicallyRetired":retired,
         })
     );
