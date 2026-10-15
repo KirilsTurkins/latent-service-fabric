@@ -180,7 +180,12 @@ class OfflineCampaign:
                                 action="complete-migration" if self.current_v2 else "migration")
         require(completed["completed"] is True, "actual-native-migration-completed")
         after = self.inspect()
-        epoch_advanced(observed["view"], after["view"], "schema")
+        if self.current_v2:
+            from . import schema_view
+            schema_view.advanced(observed["view"], after["view"],
+                self.campaign.items["put-once-legacy-v1"], self.campaign.items[self.writer])
+        else:
+            epoch_advanced(observed["view"], after["view"], "schema")
         # Capture the quiesced V2 state before any later command. All effects in
         # this profile were already positively acknowledged by the base campaign.
         snapshot_file, snapshot = self.snapshot("restore-checkpoint-v2.snapshot", "java-restore-checkpoint")
