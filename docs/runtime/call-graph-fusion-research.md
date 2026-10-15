@@ -1,5 +1,8 @@
 # Call-graph fusion research
 
+[Draft RFC-0007](../../rfcs/0007-boundary-preserving-local-call-specialization.md)
+proposes boundary-preserving joint preparation as the first reviewable stage.
+
 Call-graph fusion investigates runtime-derived composites for selected stable
 local call chains while developers keep services separately authored and
 released. **LSF does not implement call-graph fusion.** The manifest's

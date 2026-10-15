@@ -16,6 +16,11 @@ retirement, sharing and measurement gates. The website's
 [hardware-capabilities guide](../../docs/runtime/hardware-capabilities-research.md)
 explains current availability.
 
+[Draft RFC-0008](../../rfcs/0008-native-guest-admission-and-activation-retirement.md)
+proposes common native guest admission/retirement obligations with native-SFI.
+It adopts no CHERI platform and does not cover host-library or MPK optimization
+studies as guest backends.
+
 ## Reviewed LSF source
 
 Reviewed on 2026-10-15 against documentation-stack parent

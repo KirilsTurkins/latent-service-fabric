@@ -20,6 +20,10 @@ a [semantic evaluation plan](evaluation-plan.md), and an updated
 experiment. The [website guide](../../docs/runtime/call-graph-fusion-research.md)
 summarizes current availability and the distinction from native-SFI.
 
+[Draft RFC-0007](../../rfcs/0007-boundary-preserving-local-call-specialization.md)
+proposes boundary-preserving joint preparation first. Component fusion and
+reduced activation/cell machinery remain separate decisions.
+
 ## Reviewed source
 
 Reviewed on 2026-10-15 against documentation-stack parent

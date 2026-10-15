@@ -40,7 +40,7 @@ and distinguish local feedback from complete acceptance.
 ## Change categories
 
 - **ADR:** a decision that changes a core invariant, dependency direction, execution model, or compatibility promise.
-- **RFC:** a proposal requiring review before contracts are changed.
+- **RFC:** a proposal requiring review before contracts are changed; use the [RFC template and index](rfcs/README.md).
 - **Interface change:** a compatible or incompatible update to WIT, Protobuf, JSON Schema, Rust traits, or an SDK surface.
 - **Implementation change:** code behind an accepted interface.
 

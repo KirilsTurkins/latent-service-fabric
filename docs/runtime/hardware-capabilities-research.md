@@ -1,5 +1,9 @@
 # Hardware-capability research
 
+[Draft RFC-0008](../../rfcs/0008-native-guest-admission-and-activation-retirement.md)
+covers possible native guest admission/retirement. Host-component and MPK
+optimization studies retain their separate research scope.
+
 Hardware capabilities are processor-enforced references with bounds and
 permissions. LSF's research considers CHERI-like native compartments and other
 hardware mechanisms for isolation and controlled sharing. **There is no LSF

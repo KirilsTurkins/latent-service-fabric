@@ -7,6 +7,13 @@ from the [implemented runtime and planned phases](../docs/roadmap.md). A
 prototype, source inspection or historical measurement does not establish a
 delivered standalone capability.
 
+Concrete proposed contracts are now collected in the
+[draft RFC index](../rfcs/README.md#draft-research-proposals): durable segments,
+boundary-preserving call specialization, native guest admission shared by SFI
+and hardware compartments, and optional mapped state. The
+[review guide](../docs/runtime/research-proposals.md) explains the choices and
+remaining questions. These drafts do not promote the research or supersede ADRs.
+
 ## Call-graph fusion
 
 The [fusion investigation](call-graph-fusion/README.md) distinguishes joint

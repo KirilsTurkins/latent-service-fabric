@@ -50,8 +50,10 @@ When changing a contract, update its generated bindings and conformance checks.
 The [contribution rules](../../CONTRIBUTING.md) describe interface ownership and
 resource constraints. Obsolete alpha APIs and compatibility adapters can be
 removed when their replacements are adopted, while retaining supported durable
-state and recovery contracts. Read the [ADR index](../../adr/README.md) before
-changing an invariant; an accepted design is distinct from an implemented and
+state and recovery contracts. Use the [RFC template/index](../../rfcs/README.md)
+for unresolved contract proposals and read the [ADR index](../../adr/README.md)
+before changing an invariant. The [research proposal guide](../runtime/research-proposals.md)
+shows current drafts. An accepted design is distinct from an implemented and
 qualified feature.
 
 Choose checks that exercise your change:
@@ -76,8 +78,10 @@ Explicitly prepare the selected suite/case, check its owned inputs, then run it
 without an implicit build. Register new cases and intentional ignores in the
 shared catalogue. Keep discovery, execution and actual resource cleanup separate.
 
-Edit current prose in `docs/` and decisions in `adr/`; the website reads those
-directories directly. Reference runnable examples from their owning projects
+Edit current prose in `docs/`, unresolved contract proposals in `rfcs/`, studies
+in `research/` and adopted decisions in `adr/`. The website publishes `docs/` and
+`adr/` directly and links other repository sources. Reference runnable examples
+from their owning projects
 through [source extraction](../development/website-examples.md). Use
 [Development changes](../start/development-changes.md) for newer source features;
 do not relabel them as features of the published toolkit or edit frozen release

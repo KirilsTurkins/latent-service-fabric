@@ -1,5 +1,8 @@
 # Continuation-eviction research
 
+[Draft RFC-0006](../../rfcs/0006-durable-workflow-segments-and-continuation-handoff.md)
+proposes finite durable segments and the handoff contract before compiler capture.
+
 Continuation eviction investigates saving an unfinished computation at approved
 compiler-generated boundaries, destroying its complete guest Store, then restoring
 logical state in a fresh execution environment. The target is resumption at that

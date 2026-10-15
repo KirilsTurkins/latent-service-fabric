@@ -1,5 +1,8 @@
 # User-space state-pager research
 
+[Draft RFC-0009](../../rfcs/0009-optional-mapped-state-and-fault-ownership.md)
+proposes read-only image grants and owned fault/mapping retirement for review.
+
 The userfault-pager track investigates loading explicitly structured state only
 when accessed and tracking changed pages for later delta capture. **LSF has no
 implemented userfault pager or guest mapped-state profile.** Explicit capability

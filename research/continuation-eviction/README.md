@@ -17,6 +17,10 @@ Read the [primary-source/compiler review](upstream-review.md),
 [continuation-eviction guide](../../docs/runtime/continuation-eviction-research.md)
 explains current behavior and availability.
 
+[Draft RFC-0006](../../rfcs/0006-durable-workflow-segments-and-continuation-handoff.md)
+proposes the durable segment/handoff contract for review. It adopts no compiler
+or runtime and leaves implementation/promotion evidence outstanding.
+
 ## Reviewed LSF source
 
 Reviewed on 2026-10-15 against documentation-stack parent

@@ -22,6 +22,10 @@ contract, negative cases, measurements and decision gates. The website's
 [native execution guide](../../docs/runtime/native-sfi-research.md) explains
 which execution paths are currently available.
 
+[Draft RFC-0008](../../rfcs/0008-native-guest-admission-and-activation-retirement.md)
+proposes native guest admission and retirement shared with possible hardware
+compartments. It selects no SFI toolchain or production backend.
+
 ## Repository evidence and review scope
 
 Reviewed on 2026-10-15 against documentation-stack parent

@@ -85,6 +85,8 @@ and current protected v2 workflow have distinct formats and approval boundaries.
 - [Testing invariants](docs/testing/invariants.md)
 - [Engineering records and roadmap](docs/development/engineering-records.md)
 - [Architecture decision records](adr/README.md)
+- [RFCs and draft research contracts](rfcs/README.md)
+- [Research proposal review guide](docs/runtime/research-proposals.md)
 
 ## Planned cluster architecture
 

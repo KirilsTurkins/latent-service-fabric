@@ -1,5 +1,8 @@
 # Native-SFI research and current native execution
 
+[Draft RFC-0008](../../rfcs/0008-native-guest-admission-and-activation-retirement.md)
+proposes the shared native guest admission and retirement contract for review.
+
 Native software fault isolation (native-SFI) is an exploratory optional backend
 idea for executing restricted native machine code as a guest in the node's
 address space. **LSF does not implement a native-SFI capsule backend.** There is

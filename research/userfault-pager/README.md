@@ -18,6 +18,10 @@ Read the [kernel, engine and research review](upstream-review.md),
 [pager guide](../../docs/runtime/userfault-pager-research.md) explains current
 availability and the distinction from continuation eviction.
 
+[Draft RFC-0009](../../rfcs/0009-optional-mapped-state-and-fault-ownership.md)
+proposes read-only image grants and fault/mapping ownership for review. It
+introduces no mapped-state API or kernel qualification.
+
 ## Reviewed LSF source
 
 Reviewed on 2026-10-15 against documentation-stack parent
