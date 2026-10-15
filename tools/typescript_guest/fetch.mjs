@@ -126,8 +126,11 @@ export function installFetch(http, snapshotActive, target = globalThis) {
       for (const key of ['integrity', 'referrer', 'referrerPolicy']) if (init[key]) throw unsupported(key);
       if (init.keepalive) throw unsupported('keepalive');
       if (init.duplex !== undefined) throw unsupported('duplex');
-      this.signal = init.signal ?? previous?.signal ?? new target.AbortController().signal;
-      if (!(this.signal instanceof target.AbortSignal)) throw new TypeError('invalid-AbortSignal');
+      const sourceSignal = init.signal === undefined ? previous?.signal : init.signal;
+      if (sourceSignal != null && !(sourceSignal instanceof target.AbortSignal)) throw new TypeError('invalid-AbortSignal');
+      // Use the maintained native dependent-signal algorithms, including weak
+      // dependency ownership. Request and clone never expose the input signal.
+      this.signal = target.AbortSignal.any(sourceSignal == null ? [] : [sourceSignal]);
       let content;
       if (init.body != null) {
         content = bytes(init.body);
@@ -240,7 +243,11 @@ export function installFetch(http, snapshotActive, target = globalThis) {
           if (!ArrayBuffer.isView(part) || part.BYTES_PER_ELEMENT !== 1 || !part.byteLength || part.byteLength > 65536) throw new TypeError('invalid-http-chunk');
           total += part.byteLength;
           if (total > maxBody) throw new RangeError('fetch-body-limit');
-          parts.push(part);
+          // A canonical chunk may own the materialized view's storage. Retain
+          // only our independently owned bytes before invoking its destructor.
+          const owned = new Uint8Array(part.byteLength);
+          owned.set(part);
+          parts.push(owned);
         } finally { drop(chunk); }
       }
       const contentBytes = new Uint8Array(total);

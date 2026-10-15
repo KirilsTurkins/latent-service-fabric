@@ -92,6 +92,21 @@ assert.throws(() => new Request('https://example.test', {body: 'bad'}), /body-fo
 assert.throws(() => new Request('https://user:password@example.test'), /invalid-fetch-url/);
 assert.throws(() => new Request('https://example.test', {credentials: 'include'}), /unsupported:credentials/);
 assert.throws(() => new Request('https://example.test', {signal: {addEventListener(){}}}), /invalid-AbortSignal/);
+const controller = new AbortController(), reason = {unchanged: true};
+const dependent = new Request('https://example.test', {signal: controller.signal});
+const dependentClone = dependent.clone();
+const reference = new globalThis.Request('https://example.test', {signal: controller.signal});
+assert.notEqual(reference.signal, controller.signal);
+assert.notEqual(dependent.signal, controller.signal);
+assert.notEqual(dependentClone.signal, dependent.signal);
+controller.abort(reason);
+for (const signal of [reference.signal, dependent.signal, dependentClone.signal]) {
+  assert.equal(signal.aborted, true); assert.equal(signal.reason, reason);
+}
+const reset = new Request(dependent, {signal: null});
+const referenceReset = new globalThis.Request(reference, {signal: null});
+assert.equal(reset.signal.aborted, referenceReset.signal.aborted);
+assert.equal(reset.signal.aborted, false);
 assert.throws(() => new Response('bytes').body, /unsupported:streaming-body/);
 assert.throws(() => new Request('https://example.test', {unknown: true}), /unsupported:RequestInit.unknown/);
 """)
@@ -102,7 +117,9 @@ import vm from 'node:vm';
 const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
 const release = Promise.withResolvers();
 const events = [], requests = [];
-const owner = name => ({[Symbol.dispose]() {events.push('drop:' + name);}});
+let materialized;
+const owner = name => ({[Symbol.dispose]() {events.push('drop:' + name);
+  if (name === 'chunk') materialized.fill(0);}});
 const upload = owner('upload'), body = owner('body'), chunk = owner('chunk');
 let reads = 0;
 installFetch({
@@ -112,7 +129,8 @@ installFetch({
     return {status: 503, headers: [], bodyMediaType: 'application/json', body}; },
   async read(value, maximum) { assert.equal(value, body); assert.equal(maximum, 65536); return reads++ === 0 ? chunk : undefined; },
   async chunkBytes(value) { assert.equal(value, chunk);
-    return vm.runInNewContext('new Uint8Array(values)', {values: [...new TextEncoder().encode('{"error":"busy"}')]}); }
+    materialized = vm.runInNewContext('new Uint8Array(values)', {values: [...new TextEncoder().encode('{"error":"busy"}')]});
+    return materialized; }
 }, () => false, target);
 const request = new target.Request('https://example.test/api', {method: 'POST', body: '{}',
   headers: {'Content-Type': 'application/json', 'Idempotency-Key': 'caller-key', 'X-Trace': 'original'}});
@@ -135,6 +153,7 @@ assert.throws(() => response.headers.set('x-test', 'changed'), /immutable-respon
 const clone = response.clone();
 assert.deepEqual(await response.json(), {error: 'busy'});
 assert.deepEqual(await clone.json(), {error: 'busy'});
+assert(materialized.every(value => value === 0)); // Destructor invalidated its borrowed view.
 assert.deepEqual(events, ['write:{}', 'consume:upload', 'drop:chunk', 'drop:body']);
 assert.equal(requests.length, 1);
 let attempts = 0;

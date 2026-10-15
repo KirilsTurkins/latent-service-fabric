@@ -48,7 +48,7 @@ typed provider failure, with no socket fallback.
 | Media/idempotency | Content-Type and Idempotency-Key map to the existing dedicated typed metadata. An idempotency key grants no retry. |
 | HTTP failures | HTTP status remains a response; transport rejection retains the original error as `cause`, and `uncertain` remains explicit. |
 | Redirects | At most five GET/HEAD follow-ups, each a new authorized/charged call; cross-origin follow-ups remove every guest header. No mutation redirect/replay. |
-| Abort | An already-aborted signal makes zero calls. Later abort rejects with the original reason and prevents further transfers after the pending call settles. Actual accepted work retains capacity until cleanup. |
+| Abort | Each Request and clone owns a native dependent signal, preserving the original reason without sharing signal identity. An already-aborted signal makes zero calls. Later abort rejects and prevents further transfers after the pending call settles; accepted work retains capacity until cleanup. |
 
 The source profile caps each buffered body at 1 MiB, each transferred chunk at
 64 KiB, headers at 64 entries/32 KiB, URLs at 2048 characters, and outstanding
@@ -63,7 +63,8 @@ calls; each is independently authorized and charged. Cancellation, a read error
 or local close cannot establish remote rollback. Abort rejection keeps the
 original reason identity and must not be interpreted as proof of no dispatch.
 
-The wrapper drops each canonical chunk after materialization, the body after
+The wrapper copies materialized chunks into independent guest-owned buffers
+before dropping their canonical owner, and drops the body after
 EOF/error and an unconsumed upload after failure. Finish consumes an upload
 before its possibly failing call; it is never dropped again. Cancellation does
 not drop a resource during an outstanding borrow. Aborted operations continue
