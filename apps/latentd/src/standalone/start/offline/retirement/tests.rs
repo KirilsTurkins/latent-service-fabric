@@ -9,6 +9,7 @@ use std::time::Duration;
 use tempfile::TempDir;
 
 mod fixture;
+pub(super) mod inspectors;
 
 type PolicyShutdownObserver = Box<
     dyn FnOnce(

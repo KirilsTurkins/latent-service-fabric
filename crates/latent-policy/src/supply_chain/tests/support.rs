@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+#[path = "support/fresh.rs"]
+mod fresh;
 #[path = "operator_fixture.rs"]
 mod operator_fixture;
 #[path = "../../../../latent-packaging/tests/fixtures/mod.rs"]

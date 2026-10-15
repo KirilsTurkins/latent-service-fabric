@@ -10106,7 +10106,9 @@
         "standalone::state::recovery::request::restore_target_tests::explicit_restore_target_cannot_supply_grants_cutoffs_or_unknown_fields",
         "standalone::state::recovery::selection::fence_tests::restore_target::actual_explicit_target_view_is_validated_without_changing_original_source_identity",
         "standalone::state::recovery::selection::fence_tests::restore_target::actual_foreign_or_source_identity_cannot_replace_the_explicit_target",
-        "standalone::state::recovery::selection::fence_tests::restore_target::actual_target_read_preserves_original_publication_clock_and_native_refusals"
+        "standalone::state::recovery::selection::fence_tests::restore_target::actual_target_read_preserves_original_publication_clock_and_native_refusals",
+        "standalone::start::offline::retirement::tests::inspectors::warm_configured_http_inspector_retires_after_graph_drop",
+        "standalone::start::offline::retirement::tests::inspectors::warm_transaction_host_inspector_retires_after_graph_drop"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10175,7 +10177,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 408,
+      "minimumCases": 410,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

@@ -6,6 +6,14 @@ use std::time::Instant;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
 
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn observe_inspection(
+    catalogs: &Catalogs,
+    response: &latent_core::native_capacity::NativeBufferPermit,
+) {
+    tests::inspectors::observe(catalogs, response);
+}
+
 impl Catalogs {
     pub(super) async fn retire_recovery(mut self, settings: &NodeSettings) -> bool {
         // Keep the evidence owner after the deployment/binding graph is gone.

@@ -70,6 +70,11 @@ pub(super) struct LoadSampler {
 }
 
 impl LoadSampler {
+    #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+    pub(super) fn task_observer(&self) -> tokio::task::AbortHandle {
+        self.task.abort_handle()
+    }
+
     pub(super) fn start(
         load: Arc<HostLoad>,
         interval: Duration,

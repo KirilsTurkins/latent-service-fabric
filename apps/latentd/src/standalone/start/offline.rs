@@ -5,7 +5,7 @@ use crate::{
     standalone::{state, transport, NativeRecoveryReport, NativeRecoveryRequest},
 };
 use latent_core::{PlatformError, PrincipalKind, TenantId};
-use std::{sync::Arc, time::Instant};
+use std::sync::Arc;
 
 mod retirement;
 
@@ -18,7 +18,7 @@ impl StandaloneNode {
             NativeAdmissionClass, NativeBufferClass, NativeReservationRequest,
         };
         use latent_effects::runtime::DeferredEffectAdapter;
-        let mut catalogs = Catalogs::open_with_control(&settings, &control_runtime).await?;
+        let catalogs = Catalogs::open_with_control(&settings, &control_runtime).await?;
         let bootstrap = catalogs.state.as_ref().ok_or_else(super::mode_error)?;
         let original = Arc::new(
             bootstrap
@@ -61,35 +61,10 @@ impl StandaloneNode {
             adapters: rows,
             response,
         };
-        let deadline = Instant::now() + settings.shutdown_grace();
-        if let Some(provider) = &catalogs.providers {
-            if !provider.shutdown(deadline).await?.clean {
-                return Err(super::mode_error());
-            }
-        }
-        if let Some(policy) = &catalogs.policies {
-            let retired = policy.shutdown(deadline).await;
-            if !retired.work_completed
-                || retired.active_jobs != 0
-                || retired.retained_read_owners != 0
-            {
-                return Err(super::mode_error());
-            }
-        }
-        if let Some(rollout) = &catalogs.rollouts {
-            rollout.shutdown(settings.shutdown_grace()).await?;
-            if !rollout.worker_joined().await {
-                return Err(super::mode_error());
-            }
-        }
-        if let Some(telemetry) = catalogs.telemetry.take() {
-            telemetry.runtime.shutdown().await?;
-        }
-        if let Some(control) = catalogs.control.take() {
-            control.shutdown(settings.shutdown_grace()).await?;
-        }
-        if let Some(audit) = &catalogs.audit {
-            audit.shutdown(settings.shutdown_grace()).await?;
+        #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+        retirement::observe_inspection(&catalogs, &report.response);
+        if !catalogs.retire_recovery(&settings).await {
+            return Err(super::mode_error());
         }
         Ok(report)
     }
@@ -111,7 +86,7 @@ impl StandaloneNode {
             .inspection_profile()
             .map_err(|_| super::mode_error())?;
         let (http_callers, transport_callers) = state::inspection::callers(&settings)?;
-        let mut catalogs = Catalogs::open_with_control(&settings, &control_runtime).await?;
+        let catalogs = Catalogs::open_with_control(&settings, &control_runtime).await?;
         let bootstrap = catalogs.state.as_ref().ok_or_else(super::mode_error)?;
         let original = Arc::new(
             bootstrap
@@ -219,35 +194,10 @@ impl StandaloneNode {
             deferred_http: effects,
             response,
         };
-        let deadline = Instant::now() + settings.shutdown_grace();
-        if let Some(provider) = &catalogs.providers {
-            if !provider.shutdown(deadline).await?.clean {
-                return Err(super::mode_error());
-            }
-        }
-        if let Some(policy) = &catalogs.policies {
-            let retired = policy.shutdown(deadline).await;
-            if !retired.work_completed
-                || retired.active_jobs != 0
-                || retired.retained_read_owners != 0
-            {
-                return Err(super::mode_error());
-            }
-        }
-        if let Some(rollout) = &catalogs.rollouts {
-            rollout.shutdown(settings.shutdown_grace()).await?;
-            if !rollout.worker_joined().await {
-                return Err(super::mode_error());
-            }
-        }
-        if let Some(telemetry) = catalogs.telemetry.take() {
-            telemetry.runtime.shutdown().await?;
-        }
-        if let Some(control) = catalogs.control.take() {
-            control.shutdown(settings.shutdown_grace()).await?;
-        }
-        if let Some(audit) = &catalogs.audit {
-            audit.shutdown(settings.shutdown_grace()).await?;
+        #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+        retirement::observe_inspection(&catalogs, &report.response);
+        if !catalogs.retire_recovery(&settings).await {
+            return Err(super::mode_error());
         }
         Ok(report)
     }
