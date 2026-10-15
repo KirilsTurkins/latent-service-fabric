@@ -345,6 +345,94 @@ class RustDependencyAuthoring(unittest.TestCase):
                 self.assertNotIn('secret', str(caught.exception))
                 run.assert_not_called()
 
+    def test_explicit_public_ca_is_owned_verified_resolver_input_and_nested_native_lock(self):
+        import tomllib
+        public_ca = (project.ROOT / 'tools/tests/fixtures/cargo-registry-public-ca.txt').read_bytes()
+        self.nested()
+        ca = self.app / 'registry-trust/public-ca.pem'
+        ca.parent.mkdir()
+        ca.write_bytes(public_ca)
+        config = self.root / 'private-registry.json'
+        config.write_bytes(canonical({'registries': {'team': {'index': 'sparse+https://registry.example.invalid/index/'}},
+            'tlsTrust': {'caFile': 'registry-trust/public-ca.pem'}}))
+        seen = []
+        def selected(command, cwd, environment, *arguments):
+            private_config = tomllib.loads((Path(environment['CARGO_HOME']) / 'config.toml').read_text())
+            certificate = Path(private_config['http']['cainfo'])
+            self.assertTrue(private_config['http']['ssl-verify'])
+            self.assertTrue(certificate.is_relative_to(Path(environment['CARGO_HOME']).parent))
+            self.assertFalse(certificate.is_relative_to(self.owner))
+            self.assertEqual(certificate.read_bytes(), public_ca)
+            self.assertNotIn('CARGO_HTTP_SSL_VERIFY', environment)
+            self.assertNotIn('CARGO_HTTP_CAINFO', environment)
+            seen.append(True)
+            return self.resolver_command(command, cwd, environment, *arguments)
+        candidate = self.root / 'certificate-candidate.json'
+        with patch.dict(os.environ, {'CARGO_HTTP_SSL_VERIFY': 'false', 'CARGO_HTTP_CAINFO': 'ambient-unselected'}), \
+                patch.object(native, 'run_bounded', side_effect=selected):
+            lock = native.resolve(self.owner, candidate, cargo=self.tool, registry_config=config)
+        self.assertEqual(len(seen), 4)
+        certificate = next(row for row in lock['nativeLocks'] if row['path'] == 'app/registry-trust/public-ca.pem')
+        self.assertEqual(certificate['digest'], digest(public_ca))
+        graph = json.loads((self.app / 'cargo-resolved.lock.json').read_bytes())
+        self.assertEqual(graph['resolver']['tlsTrust'], {'profile': 'cargo-explicit-registry-ca-v1',
+            'caFile': 'registry-trust/public-ca.pem', 'digest': digest(public_ca),
+            'size': len(public_ca), 'verification': 'required'})
+        authoring.review(self.owner, candidate, digest(candidate.read_bytes()))
+        self.assertEqual((self.app / 'sdk-lock.json').read_bytes(), self.sdk)
+        ca.write_bytes(public_ca + b'\n')
+        with self.assertRaisesRegex(DependencyError, 'dependency-native-lock-drift'):
+            authoring.status(self.owner)
+
+    def test_private_registry_rejects_nonpublic_malformed_unbounded_and_unsafe_ca_before_native_commands(self):
+        public_ca = (project.ROOT / 'tools/tests/fixtures/cargo-registry-public-ca.txt').read_bytes()
+        ca = self.app / 'registry-trust/public-ca.pem'
+        ca.parent.mkdir()
+        config = self.root / 'private-registry.json'
+        values = [(None, public_ca), ({}, public_ca), ({'caFile': '../outside.pem'}, public_ca),
+            ({'caFile': 'vendor/ca.pem'}, public_ca), ({'caFile': 'registry-trust/public-ca.pem'}, b'not a certificate'),
+            ({'caFile': 'registry-trust/public-ca.pem'}, b'-----BEGIN CERTIFICATE-----\nAQID\n-----END CERTIFICATE-----\n'),
+            ({'caFile': 'registry-trust/public-ca.pem'}, public_ca + b'-----BEGIN PRIVATE KEY-----\nsecret\n'),
+            ({'caFile': 'registry-trust/public-ca.pem'}, public_ca * 257),
+            ({'caFile': 'registry-trust/public-ca.pem'}, b'x' * (native.MAX_REGISTRY_CA + 1))]
+        for ordinal, (selection, raw) in enumerate(values):
+            ca.write_bytes(raw)
+            config.write_bytes(canonical({'registries': {}, 'tlsTrust': selection}))
+            with self.subTest(case=ordinal), patch.object(native, 'run_bounded') as run:
+                with self.assertRaises(DependencyError):
+                    native.resolve(self.owner, self.root / ('denied-ca-' + str(ordinal)), cargo=self.tool, registry_config=config)
+                run.assert_not_called()
+
+    def test_source_or_private_copy_ca_mutation_preserves_accepted_capture(self):
+        import tomllib
+        public_ca = (project.ROOT / 'tools/tests/fixtures/cargo-registry-public-ca.txt').read_bytes()
+        self.reviewed()
+        before = {name: (self.owner / name).read_bytes()
+                  for name in (inputs.MANIFEST, inputs.LOCK, 'cargo-resolved.lock.json')}
+        ca = self.app / 'registry-trust/public-ca.pem'
+        ca.parent.mkdir()
+        config = self.root / 'private-registry.json'
+        config.write_bytes(canonical({'registries': {}, 'tlsTrust': {'caFile': 'registry-trust/public-ca.pem'}}))
+        for mutation in ('source', 'remove', 'copy'):
+            ca.write_bytes(public_ca)
+            def changed(command, cwd, environment, *arguments):
+                result = self.resolver_command(command, cwd, environment, *arguments)
+                if command[1] == 'vendor':
+                    if mutation == 'source':
+                        ca.write_bytes(public_ca + b'\n')
+                    elif mutation == 'remove':
+                        ca.unlink()
+                    else:
+                        private = tomllib.loads((Path(environment['CARGO_HOME']) / 'config.toml').read_text())
+                        Path(private['http']['cainfo']).write_bytes(b'changed private copy')
+                return result
+            candidate = self.root / ('ca-mutation-' + mutation)
+            with self.subTest(mutation=mutation), patch.object(native, 'run_bounded', side_effect=changed):
+                with self.assertRaisesRegex(DependencyError, '^cargo-registry-certificate-mutated$'):
+                    native.resolve(self.owner, candidate, cargo=self.tool, registry_config=config)
+            self.assertFalse(candidate.exists())
+            self.assertEqual({name: (self.owner / name).read_bytes() for name in before}, before)
+
     def test_outside_path_matching_sdk_coordinates_cannot_bypass_executable_approval(self):
         import tomllib
         baseline = tomllib.loads((project.ROOT / 'tools/rust_capsule.lock').read_text())['package']
