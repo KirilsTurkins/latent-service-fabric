@@ -16,6 +16,12 @@ const PINS: &[u8] = include_bytes!(
 const REBUILT_PINS: &[u8] = include_bytes!(
     "../../../../docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json"
 );
+const RECONSTRUCTED_PINS: &[u8] = include_bytes!(
+    "../../../../docs/testing/evidence/java-early-http-reconstructed-capture-2026-10-15.json"
+);
+
+#[cfg(test)]
+mod reconstructed_tests;
 
 fn no_effect_authority(root: &Path) -> Result<()> {
     for name in [
@@ -235,6 +241,19 @@ pub(crate) fn sign_rebuilt_early_http(
         "rebuilt early HTTP signing requires one exact captured input",
     )?;
     let build = load(Path::new(&paths[0]), REBUILT_PINS)?;
+    sign_checked(output, vec![build], false, Some(SOURCE))
+}
+
+pub(crate) fn sign_reconstructed_early_http(
+    output: &Path,
+    compiler_source: &str,
+    paths: &[OsString],
+) -> Result<()> {
+    require(
+        compiler_source == SOURCE && paths.len() == 1,
+        "reconstructed early HTTP signing requires one exact captured input",
+    )?;
+    let build = load(Path::new(&paths[0]), RECONSTRUCTED_PINS)?;
     sign_checked(output, vec![build], false, Some(SOURCE))
 }
 
