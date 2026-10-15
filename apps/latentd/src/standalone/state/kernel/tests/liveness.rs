@@ -101,7 +101,7 @@ async fn actual_first_clock_busy_keeps_kernel_live_without_granting_a_clock_samp
         "original owners must physically retire before the result"
     );
     assert!(proof_schedule.completed && proof_schedule.triggered && proof_schedule.owner_advanced);
-    assert!(proof.as_ref().is_err_and(|error| exact_busy(error)));
+    assert!(proof.as_ref().is_err_and(exact_busy));
     assert!(schedule.completed && schedule.triggered && schedule.owner_advanced);
     assert_eq!(schedule.calls, 1);
     assert!(
@@ -125,7 +125,7 @@ async fn actual_old_second_clock_busy_is_removed_without_a_second_time_observati
         "original owners must physically retire before the result"
     );
     assert!(proof_schedule.completed && proof_schedule.triggered && proof_schedule.owner_advanced);
-    assert!(proof.as_ref().is_err_and(|error| exact_busy(error)));
+    assert!(proof.as_ref().is_err_and(exact_busy));
     assert!(schedule.completed);
     if schedule.triggered {
         assert!(
