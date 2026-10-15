@@ -155,9 +155,9 @@ created by `java_capsule.py new` uses the direct build/sign/node guide and needs
 an authenticated development descriptor before it can delegate these actions:
 
 ```powershell
-latent-dev dev trust --workspace java-test --project ./my-java
-python tools/java_capsule.py test ./my-java --workspace java-test --select greeting
-python tools/java_capsule.py watch ./my-java --workspace java-test --select greeting
+latent-dev dev trust --workspace test-java --project ./my-java
+python tools/java_capsule.py test ./my-java --workspace test-java --select greeting
+python tools/java_capsule.py watch ./my-java --workspace test-java --select greeting
 ```
 
 Source delegation uses only the observed frontend in that same checkout. A
@@ -168,6 +168,19 @@ outer manifest, lock and objects. A dependency/profile change needs fresh
 project trust. Unresolved or interrupted frontend operations retain their exit
 and uncertainty receipts; inspect `latent-dev dev status`/`dev recover` before
 doing more work. The authoring wrapper does not replay the operation.
+
+Java node tests use an explicitly consented `test-` workspace prepared with
+`--admission signed-fixture`. A fixture signature binds one exact build. After
+updating or removing a dependency, resolve and review the new graph and grant
+fresh project trust. The watcher retries that current source without another
+edit, but refuses to deploy changed bytes with the previous build's signature.
+Stop normally with `dev down`, provision a fresh `test-` workspace through the
+[normal workspace flow](../how-to/developer-commands.md), build the reviewed
+project, and explicitly run `dev prepare-test --consent-test-fixtures --admission
+signed-fixture` before watching and testing that new build. This preserves the
+original signing authority and does not automatically rotate policies or retry
+an uncertain deployment. The [actual signed watch qualification](../testing/java-dependency-watch.md)
+demonstrates local/transitive JAR updates and removal through this workflow.
 
 Classpath order follows the reviewed captured inventory. Duplicate classes and
 lookup resources fail even when their bytes match. Legal/signature/manifest/module

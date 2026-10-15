@@ -53,11 +53,17 @@ remaining reference-runtime difference.
 
 Edit `src/dev/latent/app/Capsule.java` and `wit/world.wit` in the created project.
 The entry class implements generated `dev.latent.generated.Bindings.Exports`.
-Additional Java source files beneath `src` are captured. Application JARs,
-Maven projects, Gradle plugins/build scripts, JNI, reflection-based dynamic
-loading, arbitrary native libraries and host threads are outside this profile.
-Core Java values, records, exceptions, lambdas and the reachable TeaVM class
-library used by the examples are supported; this is not a complete JDK runtime.
+Additional Java source files beneath `src` are captured. Declare developer-selected
+Maven or local/private JARs through [application dependency authoring](../../docs/component-development/java-dependencies.md),
+then explicitly resolve and review their captured transitive closure. Normal
+compilation consumes those bytes offline, separately from the pinned SDK locks.
+Processors and generators require separate explicit approval and containment;
+application Gradle scripts and compiler extension services do not run implicitly.
+Reachable JNI/native calls, dynamic loading and missing runtime methods require
+a selected maintained implementation or a concrete compatibility diagnostic.
+Unused native asset bytes remain attributed inputs. Core Java values, records,
+exceptions, lambdas and the reachable TeaVM class library used by the examples
+are supported; this is not a complete JDK runtime.
 Filesystem, stdout/stderr and ambient networking are unavailable, not fake
 successful operations. Use the declared platform capabilities for effects.
 
