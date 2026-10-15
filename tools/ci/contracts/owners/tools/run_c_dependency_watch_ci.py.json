@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_c_dependency_watch_ci.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind every explicit C watch fixture to reviewed source fingerprints while retaining all previous CI commands and guards",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e178f96a9fa955644fe542dd8e17bc023eadca43bf2b97a80abec849b4721eea"
+}

@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "WatchInputs.test_both_revisions_capture_offline_without_changing_sdk_or_adding_catalogue_entries",
+    "WatchInputs.test_closed_remove_requires_new_review_and_retains_sdk_bytes",
+    "WatchInputs.test_unexpected_original_input_is_preserved_instead_of_removed"
+  ],
+  "guards": {
+    "WatchInputs.test_both_revisions_capture_offline_without_changing_sdk_or_adding_catalogue_entries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:309c259d007a6193336966fd71164963ac30d33a7532a3e5e34db1f10b614560"
+      ],
+      "skipSites": []
+    },
+    "WatchInputs.test_closed_remove_requires_new_review_and_retains_sdk_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:309c259d007a6193336966fd71164963ac30d33a7532a3e5e34db1f10b614560"
+      ],
+      "skipSites": []
+    },
+    "WatchInputs.test_unexpected_original_input_is_preserved_instead_of_removed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:309c259d007a6193336966fd71164963ac30d33a7532a3e5e34db1f10b614560"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_dependency_watch_fixture.py",
+  "reviewReason": "Verify ordinary outside C transitive library capture update removal and immutable SDK with all existing tests retained",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
