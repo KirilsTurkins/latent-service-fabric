@@ -96,6 +96,14 @@ impl ProtectedEffectClock {
         Ok(sample)
     }
 
+    /// A contended observation grants no time or authority, but is not death.
+    pub(in crate::standalone) fn is_live(&self) -> bool {
+        match self.sample() {
+            Ok(_) => true,
+            Err(error) => authority_busy(&error),
+        }
+    }
+
     pub(in crate::standalone) fn covered_epoch(&self) -> Result<u64, PlatformError> {
         self.sample()?;
         let state = self.observation.lock().map_err(|_| unavailable())?;
@@ -104,6 +112,18 @@ impl ProtectedEffectClock {
         }
         Ok(state.authority_epoch)
     }
+}
+
+fn authority_busy(error: &PlatformError) -> bool {
+    let [detail] = error.details.as_slice() else {
+        return false;
+    };
+    error.code == PlatformErrorCode::Unavailable
+        && error.retryable
+        && error.message == "admission-authority-busy"
+        && detail.kind == "admission.currentness"
+        && detail.fields.len() == 1
+        && detail.fields.get("reason").map(String::as_str) == Some("admission-authority-busy")
 }
 
 impl EffectTimeSource for ProtectedEffectClock {

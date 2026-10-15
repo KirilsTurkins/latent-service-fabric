@@ -9,6 +9,8 @@ use latent_state::{embedded::EmbeddedStore, store_identity::ExternalCheckpoint};
 use serde_json::json;
 use std::{os::unix::fs::PermissionsExt, sync::Mutex, time::Duration};
 
+mod liveness;
+
 pub(in crate::standalone::state) struct Clock(Mutex<ClockSample>);
 impl Clock {
     pub(in crate::standalone::state) fn advance_to(&self, deadline: Instant) {

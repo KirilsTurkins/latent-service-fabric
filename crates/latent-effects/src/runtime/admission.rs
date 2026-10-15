@@ -38,6 +38,17 @@ impl CommandAdmissionSource {
         self.current_source().map(|source| source.1)
     }
 
+    /// Passive role health only. This samples no clock and grants no admission.
+    pub fn check_liveness(&self) -> Result<(), DispatcherError> {
+        let state = self
+            .services
+            .shared
+            .state
+            .lock()
+            .map_err(|_| DispatcherError::AdmissionClosed)?;
+        check(&self.services, &state)
+    }
+
     /// The exact installed effect registry, not a reconstructed authority owner.
     #[must_use]
     pub fn effect_authority(&self) -> EffectAuthorityOwner {

@@ -33,6 +33,7 @@ mod admission;
 mod capacity;
 mod control;
 mod effect_management;
+mod liveness_guards;
 mod ownership;
 mod pressure;
 mod recovery;

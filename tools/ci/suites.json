@@ -2380,14 +2380,16 @@
         "runtime::tests::startup::ordinary_configured_pause_and_managed_resume_keep_original_no_hold_semantics",
         "runtime::tests::startup::startup_release_refuses_current_restore_review_closed_and_discontinuous_owners",
         "runtime::tests::startup::unknown_accepted_pause_cannot_be_cleared_by_startup_release",
-        "runtime::tests::startup::non_http_readiness_keeps_historical_resume_paused_until_current_owner_resume"
+        "runtime::tests::startup::non_http_readiness_keeps_historical_resume_paused_until_current_owner_resume",
+        "runtime::tests::liveness_guards::unchanged_command_floor_rejects_rewound_time_before_any_writer_callback",
+        "runtime::tests::liveness_guards::unchanged_original_role_rejects_an_inconsistent_owner_epoch_without_callback"
       ],
       "expectedIgnored": [],
       "id": "latent-effects.lib.latent-effects",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-effects/Cargo.toml",
-      "minimumCases": 157,
+      "minimumCases": 159,
       "mode": "libtest",
       "package": "latent-effects",
       "platforms": [
@@ -10117,7 +10119,16 @@
         "standalone::state::recovery::execution::migration_package_tests::actual_foreign_package_identity_is_refused_by_protected_snapshot",
         "standalone::state::recovery::execution::migration_package_tests::actual_canonical_package_requires_original_bare_association",
         "standalone::state::recovery::execution::migration_package_tests::actual_four_selected_packages_fit_original_paid_metadata",
-        "standalone::state::recovery::execution::migration_package_tests::actual_current_policy_withdrawal_refuses_snapshot_output"
+        "standalone::state::recovery::execution::migration_package_tests::actual_current_policy_withdrawal_refuses_snapshot_output",
+        "standalone::state::kernel::tests::liveness::actual_first_clock_busy_keeps_kernel_live_without_granting_a_clock_sample",
+        "standalone::state::kernel::tests::liveness::actual_old_second_clock_busy_is_removed_without_a_second_time_observation",
+        "standalone::state::kernel::tests::liveness::actual_busy_command_admission_and_writer_fence_still_deny_without_entry",
+        "standalone::state::kernel::tests::liveness::failures::actual_clock_rollback_remains_fatal_after_time_advances_again",
+        "standalone::state::kernel::tests::liveness::failures::actual_coverage_expiry_remains_fatal_after_original_authority_renews",
+        "standalone::state::kernel::tests::liveness::failures::actual_authority_retirement_remains_fatal_to_liveness_and_admission",
+        "standalone::state::kernel::tests::liveness::failures::actual_restore_review_rejects_liveness_and_an_original_writer_fence",
+        "standalone::state::kernel::tests::liveness::failures::actual_closed_dispatcher_and_quarantined_store_remain_fatal",
+        "standalone::state::kernel::tests::liveness::failures::busy_message_lookalikes_never_supply_positive_liveness"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10186,7 +10197,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 419,
+      "minimumCases": 428,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
