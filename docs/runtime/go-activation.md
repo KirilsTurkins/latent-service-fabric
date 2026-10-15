@@ -16,6 +16,22 @@ runtime imports and synchronous export shapes. The node operator must install
 and grant the [activation runtime](activation-runtime.md), clocks and entropy
 for the exact publication. Selecting a profile supplies no authority.
 
+The SDK checkout creator can prepare that explicit selection, including its
+async public export shape and captured runtime WIT, without application edits:
+
+```bash
+python3 tools/go_capsule.py new /tmp/my-greeting \
+  --runtime-profile go-component-activation-v4
+```
+
+This selects the current unqualified v4 candidate; it does not install a
+provider or grant. Omitting the flag keeps the ordinary default template's
+existing WIT/profile. Review the explicit async public ABI when choosing an
+activation profile. Native module resolution inherits the project's exact
+runtime profile and records it in the captured graph; an explicitly conflicting
+selection fails before the resolver runs. Captured dependencies need no
+hand-edited runtime selection or application scheduler.
+
 Before allocating a new application goroutine or its stack, `newproc1`
 reserves a task on the original host ledger. A live parent supplies its exact
 generation token for accepted continuations during drain. Channel and sync

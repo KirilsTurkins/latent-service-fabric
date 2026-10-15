@@ -176,6 +176,15 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
     previous_graph = optional(project, 'go-resolved.lock.json')
     source_before = source_files(project)
+    selected = dict(selected or {})
+    project_document = json.loads(source_before['capsule-project.json'])
+    if not isinstance(project_document, dict):
+        raise DependencyError('go-runtime-project-profile-invalid')
+    project_profile = project_document.get('runtimeProfile')
+    if 'runtimeProfile' in project_document:
+        if 'runtimeProfile' in selected and selected['runtimeProfile'] != project_profile:
+            raise DependencyError('go-project-and-captured-runtime-profile-disagree')
+        selected['runtimeProfile'] = project_profile
     selected = selection(selected)
     original = {name: read_bytes(project / name) for name in ('go.mod', 'go.sum')}
     expected_sums = sums(original['go.sum'])
