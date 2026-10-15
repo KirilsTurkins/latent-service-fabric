@@ -17,7 +17,9 @@ public final class Capsule implements Bindings.Exports {
         int invocation = ++calls;
         HttpURLConnection connection = null;
         try {
-            connection = (HttpURLConnection) new URL(endpoint).openConnection();
+            connection = (HttpURLConnection) (which == 4
+                ? new URL(endpoint).openConnection(java.net.Proxy.NO_PROXY)
+                : new URL(endpoint).openConnection());
             if (which == 1) {
                 connection.setRequestMethod("POST");
                 connection.setDoOutput(true);
