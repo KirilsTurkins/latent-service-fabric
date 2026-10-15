@@ -7,10 +7,11 @@ so a raw `0.1.0-alpha.5..development` log incorrectly includes older phases.
 The audit instead follows the 127 merged development PRs after the matching
 source tree, through `90cf1f4c87ca24e9a64b077dc2eb501dcef22441`.
 
-The documentation branch starts at PR #970 head
+The initial audit used PR #970 source
 `1e9fa9cdfa02e2a1e8098d2325908cc460fa2de2`, which contains that development tip.
-Its additional source commits are pending PR work, not merged post-release
-features. Current installed recovery is described with its outstanding native
+On 15 October the documentation branch was refreshed onto parent head
+`200c17c26b24d6bf06d8d28102362ea714c1f4eb`. The parent's additional commits are
+pending PR work, not merged post-release features. Current installed recovery is described with its outstanding native
 terminal/pending and packaged acceptance. No runtime release, deployment or
 issue closure is part of this documentation change.
 
@@ -68,7 +69,7 @@ Phase 3 service classifications are corrected. The canonical startup page now
 describes installed operations rather than repeating the earlier empty-operation
 milestone; its original source record remains linked.
 
-Current toolchain documentation now matches Wasmtime 48.0.5 and wasmparser
+Current toolchain documentation matches the refreshed parent: Wasmtime 48.0.6 and wasmparser
 0.261.0 in the workspace pins. Runtime pages use that authoritative baseline
 instead of repeating older "current" versions. The duplicate October 3–4 engine
 upgrade narrative is consolidated while dated advisory and execution records
@@ -88,3 +89,25 @@ Java/HTTP tickets retain their own acceptance requirements. The source-bound
 receipts referenced by a guide keep their original environment and revisions.
 New catalogue entries do not change the reviewed guide-coverage matrix or its
 execution approvals. Heavy scale/profiling/soak work is not selected.
+
+## Further Markdown and archive review
+
+The 15 October pass reviewed the remaining maintained Markdown, source indexes
+and historical handoffs after refreshing the stack. It removed 38 standalone
+PR/snapshot reports, eight ZIPs and three archive-only indexes from the current
+tree. All 837 archived members and the ZIP bytes were checked against their
+recorded hashes and the immutable parent source before removal. The
+[engineering records](engineering-records.md) link the original narratives,
+archives and digest manifest; current tooling's compact qualification packets
+remain unchanged. Paths in the merged-PR inventory describe those original
+commits, including files subsequently consolidated or removed.
+
+Current SDK/build/security references now use the authoritative engine baseline,
+and the API, WIT, SDK and example indexes expose implemented transaction and
+activation surfaces. The older Java qualification narrative is replaced by the
+current version-2 conductor boundary; it no longer recommends the removed
+`state.stateRoot` override or describes the installed recovery adapter as absent.
+The native action guide includes explicit destination identity and receipt checks.
+Three maintained runtime/operator pages also had corrupted range punctuation
+repaired. Frozen documentation, raw benchmark evidence, original compiler and
+signed receipts retain their original bytes and qualification scope.

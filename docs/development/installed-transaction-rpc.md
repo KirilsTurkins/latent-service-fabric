@@ -67,10 +67,14 @@ declarations does not grant namespace or effect access. Issues #409 and #718
 retain wider runtime/application qualification requirements.
 
 For the operational lookup sequence, use [transaction recovery](../operations/transaction-recovery.md).
-PR #970's current recovery source is the base of this documentation audit; its
-complete terminal/pending native and packaged qualification remains outstanding.
-Preserved Java compiler captures and failed receipts qualify only their recorded
-sources. The private
-`transaction_recovery --diagnose-startup` helper runs ordinary startup and
-shutdown and may advance the durable node epoch. Its obsolete offline modes
-return `offline-recovery-adapter-unavailable` before opening the store.
+The [installed native recovery helper](../testing/installed-transaction-recovery.md)
+now composes authenticated snapshot, restore, migration and effect-close actions
+through the current protected owners. These actions require exact source and
+destination identity, current authority and positive physical retirement; they
+are separate from the read/control lookup sequence. Complete terminal/pending
+native and packaged qualification remains outstanding. Preserved Java compiler
+captures and failed receipts qualify only their recorded sources.
+
+`transaction_recovery --diagnose-startup` runs ordinary startup and shutdown
+and may advance the durable node epoch. Its result is a startup observation,
+not restore approval or a successful recovery programme.

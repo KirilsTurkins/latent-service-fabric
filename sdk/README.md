@@ -32,6 +32,15 @@ provider inspection, preconditioned mutation and recovery. Each native transport
 implements that profile. The profile's fast semantic fixtures and each
 transport's network tests cover separate parts of the contract.
 
+Development also provides a distinct [transaction client surface](../docs/development/transaction-clients.md)
+in all six languages for installed command/query, original-result lookup, state
+inspection and preconditioned effect controls. It uses the existing bounded
+transports and requires the explicitly installed transaction profile; it is
+outside the published alpha.5 SDK baseline. Preserve original command identities
+after uncertainty as described in [transaction recovery](../docs/operations/transaction-recovery.md).
+The wider signed-node, application/browser and packaged matrices retain their
+separate qualification requirements.
+
 All six languages also support capsule authoring through their separate guest
 SDKs: [Rust](rust-guest/README.md), [C](c-guest/README.md),
 [TypeScript](typescript-guest/README.md), [Go](go-guest/README.md),

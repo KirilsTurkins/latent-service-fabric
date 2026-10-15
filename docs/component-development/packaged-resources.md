@@ -51,7 +51,7 @@ A package name alone cannot make an unobserved file a trusted resource.
 | Java | Captured selected classpath resource bytes | `getResourceAsStream` integration and emitted component tests pending |
 | .NET | One verified selection supplies package layers and embedded compiler inputs | `Assembly.GetManifestResourceStream` runs in the focused signed resource fixture; broader library/distribution acceptance remains open |
 
-The [.NET resource and explicit wall-clock reconciliation](../development/phase4-handoffs/2026-10-12/pr856-reconciliation.md)
+The [.NET resource and explicit wall-clock reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-12/pr856-reconciliation.md)
 records fresh signed-node checks for binary/empty resources, literal names,
 independent stream positions, absent lookup and disposal. Those checks do not
 qualify every NuGet library or a new packaged toolkit. Java's captured resource

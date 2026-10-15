@@ -88,7 +88,7 @@ Only new UTF-8 Java source with checked class ownership enters ordinary
 proc-disabled compilation. Processor API JARs remain compile-only inputs.
 Changed source, recipe, compiler or dependency bytes require a fresh approval.
 
-[PR #935's source-bound qualification](../development/java-runtime-reconciliation/2026-10-12/pr935.md)
+[PR #935's source-bound qualification](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/java-runtime-reconciliation/2026-10-12/pr935.md)
 records an outside-checkout processor/helper, unapproved denial, contained
 generation, normal TeaVM component compilation and three signed-node calls.
 This delivered slice does not close the whole Java dependency/generator gate:

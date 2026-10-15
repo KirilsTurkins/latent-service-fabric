@@ -11,7 +11,7 @@ This implementation has native AST/JDK/kernel conformance, normal component
 compilation and signed normal-node routing/HEAD probes. The maintained Java
 qualification also builds two outside-checkout server projects and exercises
 authenticated route tooling, bounded responses and original-ledger retirement.
-The [current revision-lifecycle reconciliation](../development/java-runtime-reconciliation/2026-10-12/pr895.md)
+The [source-bound revision-lifecycle record](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/java-runtime-reconciliation/2026-10-12/pr895.md)
 adds fresh ordinary-server revision, exact routing and recovery controls on its
 recorded source. Use the maintained lifecycle helper described below for that
 selection. Earlier failures retain their original meaning; they do not override
