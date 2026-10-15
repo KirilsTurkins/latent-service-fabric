@@ -21,6 +21,12 @@ use their documented trusted Rust embedding. [Local child calls](../runtime/loca
 derive a bounded service principal and conserve parent budgets; node workload
 mTLS and remote delegation are not implemented.
 
+The complete standalone inventory also includes explicitly configured streaming
+HTTP, local secrets, custom metrics, local calls and immediate NATS publication.
+S3 and Vault require trusted Rust embedding. Development TCP streams are separately
+feature-gated. Use the provider reference for the accepted installation rather
+than inferring availability from an import or a crate.
+
 ## Identity layers
 
 LSF distinguishes:
@@ -59,6 +65,23 @@ slots, while actual provider work and result owners retain their charges until
 destruction. Cell reuse requires cleanup proof. Descriptive DTOs, claims and
 cached code are not grants. Local descendant delegation follows the checked target and conserved budget
 contracts described in the local-call reference.
+
+## Command and recovery authority
+
+The installed transaction profile derives original command recovery scope from
+the authenticated principal. Activation/root/parent IDs are not command keys.
+Namespace administration, command admission, fresh-query read, original-result
+read, effect inspection, dispatch and destructive recovery are purpose-specific
+current decisions. Tenant equality, historical grants and original source pins
+cannot substitute for any of them. A decoder publication supplies retained
+source bytes without installing an operation or granting current business access.
+
+The [transaction authorization owner](../../crates/latent-node/src/transaction_runtime/authorization.rs)
+retains those checks through physical execution and final response delivery.
+Protected recovery also needs its current operator/audit/clock and native fences;
+a snapshot digest or proposed restore acknowledgement is descriptive input.
+See [state management](../protocol/state-management.md) and
+[protected recovery](protected-offline-recovery.md).
 
 ## Node identity
 

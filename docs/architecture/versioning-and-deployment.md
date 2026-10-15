@@ -189,14 +189,19 @@ preserves approved current business visibility checks. A rollback publishes new
 code/routes without rewinding state, command history or externally visible work.
 Migration is explicit, bounded, authorized and restart-safe.
 
-#399's consistent backup covers the complete state/outbox/outcome/inbox and linked
-payload/format graph. Restoring older history creates a new namespace incarnation,
+The [logical snapshot](logical-recovery-snapshot.md) covers the complete selected
+state/outbox/outcome/inbox and linked payload/format graph. The current
+[protected restore](reviewed-older-history-restore.md) preserves namespace
+incarnation and original business identities, advances the recovery epoch,
 discards historical grants and starts command/effect/inbox processing paused for
 explicit reconciliation of work that may already have escaped the backup. It
 cannot turn an unknown outcome into abort proof or preserve a stale query's
 read-after-acknowledgement promise across that discontinuity. Ordinary restart
-preserves incarnation and acknowledged history. #397/#400 keep conservative time
-anchors and physically usable finite recovery capacity under declared saturation.
+preserves incarnation, epochs and acknowledged history. [Retention](transaction-retention.md)
+keeps conservative time anchors and physically usable finite recovery capacity
+under declared saturation. [Fixed migration](fixed-aggregate-offline-migration.md)
+has an explicit stage, completion and separately authorized resume; generic
+namespace resume cannot replace its original checkpoint and review.
 
 ## Derived artifacts
 

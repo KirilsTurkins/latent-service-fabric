@@ -7,8 +7,11 @@ reuse or quarantine through the [scheduler](../scheduling.md) and
 [activation lifecycle](../activation-lifecycle.md). Optional isolated native
 compilation uses temporary bounded workers, not guest execution cells.
 Asynchronous capabilities and local child calls keep their activation resources
-through waits. Separate guest execution processes and state transactions remain
-unsupported.
+through waits. The explicitly installed [transaction runtime](../development/installed-transaction-rpc.md)
+uses those same activation and cleanup owners with a protected command/query
+view. Its host seals staging and commits the complete state/outbox/outcome
+envelope; a cell grants no commit authority. Separate guest execution processes
+remain unsupported.
 
 [ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md) and
 [RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md) define the
@@ -32,7 +35,11 @@ implemented and validated.
 
 ## Cell classes
 
-The initial classes are `tiny`, `small`, `standard`, `large`, and policy-controlled `extra-large`. A capsule declares a ceiling, and admission chooses the smallest compatible class.
+The supported class names are `tiny`, `small`, `standard`, `large`, and
+policy-controlled `extra-large`. The node configures a finite subset and its
+capacities. Admission chooses the smallest class satisfying the requested
+resources and current capsule, deployment, tenant, trust and node policies;
+declaring a class does not allocate a pool or guarantee capacity.
 
 Fixed classes improve predictable capacity and reduce allocator fragmentation. They do not imply persistent service instances.
 
@@ -126,3 +133,7 @@ retain the on-demand/speed default and the measured pooling tradeoffs.
 Pooling does not remove the fresh-store boundary or permit cell reuse
 before execution and cleanup have retired. Prepared-cache capacity
 describes retained code, not resident service instances or available cells.
+
+The concrete owners are the [fixed cell pool](../../crates/latent-scheduler/src/fixed_pool/mod.rs),
+[local activation manager](../../crates/latent-node/src/activation_manager/mod.rs) and
+[transaction runtime](../../crates/latent-node/src/transaction_runtime/mod.rs).

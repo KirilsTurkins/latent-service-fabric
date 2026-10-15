@@ -112,7 +112,9 @@ A retained package source grants bounded access to exact original comparison
 bytes, not a refreshed execution grant.
 
 [Managed operations](phase-2-operator-workflows.md) retain compact receipts in
-catalog format 4 alongside rollout history. Exact replay precedes fresh state
+publication-aware catalog format 5, or 6/7 when bindings/HTTP route state are
+present, alongside rollout history. Obsolete formats 1 through 4 are rejected;
+there is no automatic compatibility reader. Exact replay precedes fresh state
 checks; finite retention and mandatory original state preconditions prevent an
 evicted create from executing again after delete. Leased snapshots and receipt
 queries are coherent reads. Catalog commit, durability and audit outcome are

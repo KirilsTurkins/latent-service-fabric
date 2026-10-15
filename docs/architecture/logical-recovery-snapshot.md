@@ -23,8 +23,8 @@ protected v2 accounting refuses retained v1 producers without a separately
 reviewed migration. There is no automatic format fallback or silent upgrade.
 Normal activation also refuses incomplete migration in either profile.
 
-The first profile requires every namespace to be quiesced and no retained native
-read view. The offline control owner must also drain actual command, dispatch,
+Export requires every selected namespace to be quiesced and no retained native
+read view. The exclusive control owner must also drain actual command, dispatch,
 acknowledgement and maintenance owners before opening the exclusive source
 root. These blocking routines run on that owner's existing fixed storage
 workers. A descriptive namespace flag is insufficient proof of physical drain.
@@ -40,8 +40,11 @@ artifacts or a removed decoder refuse the snapshot before export begins.
 Bounds are 65,536 rows, 128 MiB of logical data, a 160 MiB stream, 128 namespaces,
 128 required artifacts and a 1 MiB manifest. Export scans at most 128 rows and
 4 MiB per page; inspection allocates at most one 4 MiB row plus bounded metadata.
-The original deadline is at most one minute and is checked throughout both
-operations. Capacity exhaustion refuses; it never trims history or payloads.
+These are general codec ceilings. The protected SingleNamespace profile narrows
+the roster to one namespace and each row to 2 MiB; the installed gateway also
+narrows its manifest to 64 KiB. These limits do not raise the engine quota or
+the original native reservation. The original deadline is at most one minute
+and is checked throughout both operations. Capacity exhaustion refuses; it never trims history or payloads.
 
 Inspection checks framing, family identities, key order, all lengths before row
 allocation, installed row codecs, canonical closed metadata, source namespace
@@ -53,6 +56,10 @@ additionally validate the complete staged view before its guard can leave
 Snapshots contain sensitive business data. The protected offline wrapper owns
 an explicit private operator destination, exclusive creation, named-file
 fences and fsync. Neither backup data nor credentials belong in repository or
-public benchmark artifacts. The current codec tests exercise actual embedded
-snapshots and adversarial inspection. Protected fresh-root restore, reconciliation
-and normal management integration remain separate qualification requirements.
+public benchmark artifacts. The [protected producer](../../crates/latent-state/src/protected_store/snapshot.rs)
+adds actual file/custody/current-authority and retained-response owners around
+the [logical codec](../../crates/latent-state/src/recovery/snapshot.rs).
+Protected staging and paused adoption are implemented separately from this
+codec; see [physical recovery](protected-offline-recovery.md). The codec tests
+exercise actual embedded snapshots and adversarial inspection. Full native
+terminal/pending reconciliation and packaged qualification remain separate.

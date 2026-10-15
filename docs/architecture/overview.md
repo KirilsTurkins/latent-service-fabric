@@ -36,13 +36,17 @@ for inspecting uncertain outcomes. [Rollout](../phase-2-rollouts.md) and
 ## Resource ownership
 
 ```text
-resident state = fixed node runtime + bounded catalog metadata + active activations + bounded shared caches
+resident ownership = fixed node services + bounded retained metadata/caches + active and retiring work
 ```
 
 An inactive deployment owns no executing guest, dedicated process, operating
 system thread, listener, guest heap, connection pool, timer loop or telemetry
 exporter. Catalog, route and policy metadata can grow with deployment count
 within configured bounds. Execution allocation follows active work.
+Protected database caches, retained command/effect metadata and recovery
+reservations also have finite node-owned budgets. Durable pending work can
+outlive every activation without retaining a guest Store or cell. This ownership
+model is not an RSS formula or a claim that durable state is free.
 
 [![An admitted request leases a cell, runs with fresh activation state, then releases the cell after proven cleanup or quarantines it if cleanup is uncertain.](../assets/activation-lifecycle.svg)](../assets/activation-lifecycle.svg)
 
@@ -72,6 +76,12 @@ measured process memory.
 | Deployment | A selected publication and its execution, routing and capability configuration. |
 | Revision | The exact deployment selection used by an invocation. |
 | Activation | One invocation's input, identity, budget, deadline and temporary execution state. |
+
+Transactions add stable command, attempt, commit and effect identities independent
+of activation and route revision. Namespace incarnation identifies business
+identity; schema and recovery epochs fence live views across migration and
+older-history restore. See [state and effects](state-and-effects.md) and
+[namespace history](namespace-history-epochs.md).
 
 The [runtime identity guide](../learn/runtime-identities.md) explains how to keep
 these identities distinct when deploying and recovering an application.
@@ -132,5 +142,7 @@ guest execution processes is also not part of the current cell model.
 
 For configuration, use the [node reference](../reference/standalone-node.md).
 For a design rationale, use the [architecture decisions](../../adr/README.md).
+The complete [architecture index](../../ARCHITECTURE.md) includes schema,
+retention, protected recovery and the planned cluster handoff.
 Contributors can find historical measurements and their tested scope in the
 [validation guide](../../VALIDATION.md).

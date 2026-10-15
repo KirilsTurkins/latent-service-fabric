@@ -47,12 +47,14 @@ This deliberately permits unrelated writes to conflict while preventing ABA and
 scan phantoms, including beyond a returned page. Snapshot consistency alone is
 not serializability. Generations never wrap/reuse, and conflicts never rerun guests.
 
-A fresh query acquired after an acknowledged commit on the same node/incarnation
+A fresh query acquired after an acknowledged commit in the same ready history
 observes at least that generation, including after ordinary restart. Pinned views
 can be older; unsupported historical/cross-request cursors fail explicitly.
-Older-history restore changes incarnation and starts recovery paused, breaking
-the old read-after-acknowledgement continuity. Application stale-edit preconditions
-use opaque incarnation-aware versions and are distinct from activation OCC.
+Older-history restore preserves business incarnation, advances the separate
+recovery epoch and starts recovery paused, breaking the old
+read-after-acknowledgement continuity. Application stale-edit preconditions use
+opaque scope/incarnation/schema/recovery-aware versions and are distinct from
+activation OCC.
 Clients and recovery never silently refresh the original expected version.
 
 ## Host-owned transaction lifecycle
@@ -189,10 +191,12 @@ Retention links command/fingerprint/attempt/commit identity, unresolved effects,
 payloads, inbox protection and required schema/binding/publication metadata.
 Application result bytes can expire while receipt-only recovery and deduplication
 identity remain. Unresolved dependent work prevents unsafe GC. Unknown/expired
-identity is no abort proof. Qualified conservative elapsed-time anchors survive
-ordinary restart; unqualified clock jumps cannot erase protection. Older-history
-restore changes incarnation, discards historical grants and starts command/effect/
-inbox processing paused for explicit reconciliation.
+identity is no abort proof. Durable time anchors retain their original clock and
+boot constraints across reopen; a new boot or lost continuity needs explicit
+authorized reanchoring before expiry can resume. Unqualified clock jumps cannot
+erase protection. Older-history restore advances the recovery epoch, preserves
+business identities, discards historical grants and starts command/effect/inbox
+processing paused for explicit reconciliation.
 
 Reserve physically usable finite operator inspection/recovery/cleanup capacity
 under declared business storage/queue saturation; refuse admission before that
@@ -204,6 +208,13 @@ The [implemented response-retention and recovery-reserve profile](transaction-re
 uses the same physical store, preserves linked protective identities and records
 bounded generation-safe maintenance progress. Its focused engine evidence is
 separate from public node/Java/HTTP qualification.
+
+Use the maintained [schema compatibility](application-schema-compatibility.md),
+[namespace history](namespace-history-epochs.md), [snapshot](logical-recovery-snapshot.md),
+[protected recovery](protected-offline-recovery.md), [older-history restore](reviewed-older-history-restore.md)
+and [fixed migration](fixed-aggregate-offline-migration.md) pages for their exact
+installed owner and format boundaries. They share one engine but do not share
+an implicit permission or automatic resume policy.
 
 ## Implementation and evidence owners
 

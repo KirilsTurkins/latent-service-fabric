@@ -32,8 +32,17 @@ For a disposition with no state plan, `session::version::capture_view` exposes
 the actual view identity and history expectation alongside the coordinator's
 existing namespace expectation. These descriptors confer no authority.
 
+The [history owner](../../crates/latent-state/src/namespace/history.rs) and
+[view-token codec](../../crates/latent-state/src/session/version.rs) implement
+these identities. [Protected restore](reviewed-older-history-restore.md) advances
+the recovery epoch without changing business incarnation; [fixed migration](fixed-aggregate-offline-migration.md)
+advances schema epoch and business generation without advancing recovery epoch.
+Ordinary reopen advances neither. Epochs are not publication/policy generations
+or grants, and exhaustion refuses rather than wrapping.
+
 The engine-backed epoch tests cover ordinary reopen, old row/minimum tokens,
 scope mismatch, unsigned limits, malformed codecs, recovery pause and command
-or no-state disposition racing history publication. Broader schema compatibility,
-quiesced backup/restore and operator migration surfaces are separate required
-slices of #398/#399; the epoch port alone does not complete those issues.
+or no-state disposition racing history publication. The installed recovery
+gateway now composes those restore/migration owners, while its full native,
+application and packaged acceptance remains separate. The epoch port alone
+does not complete #398/#399.

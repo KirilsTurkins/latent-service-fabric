@@ -1,125 +1,99 @@
-# Protected offline recovery
+# Protected recovery and explicit resume
 
-The first physical profile is Linux x86-64 on an explicit local ext4 root.
-`OfflineRecoverySource` uses the same bounded embedded engine and fixed storage
-workers as ordinary commands. It exposes backup, inspection and fresh-root
-restore operations, with no guest, command, query, dispatcher or expiry entry.
-Its installed `RecoveryCodecs` owner supplies immutable artifact checks, actual
-linked row/payload/format validation, current operator authorization and review.
-These callbacks may perform only bounded local work; they may not run guests,
-shells or provider effects. Application reader declarations are insufficient
-for decoding retained commands, results, inbox entries, effects or payloads.
+The current protected v2 workflow uses the existing `ProtectedStoreOwner`,
+reserved Recovery capacity and fixed native workers. It exposes bounded
+snapshot, inspection, staged restore, adoption and migration operations. It
+creates no guest or provider execution owner. The qualified physical storage
+profile remains Linux x86-64 with an explicit private local ext4 root.
 
-The operator workflow is:
+The [installed recovery gateway](../testing/installed-transaction-recovery.md)
+composes authenticated operator actions with current signed publication,
+companion/schema, policy, audit, checkpoint and clock owners. That page owns the
+closed request fields, configured capacity and remaining native campaigns.
+The ordinary [result-recovery CLI](../operations/transaction-recovery.md) has a
+separate read/control contract; it does not perform a backup or restore.
 
-1. Close affected command, query, consumer, dispatch and maintenance admissions.
-   Quiesce every namespace in the selected root. Drain actual commit, view,
-   physical-request and dispatcher owners, then close the ordinary engine.
-   Offline startup requires an existing private root and engine, an exclusive
-   owner lock, quiesced namespace metadata and valid linked recovery inventory.
-   A dropped waiter, timeout or live descriptor does not establish retirement.
-2. Select a pre-existing private ext4 destination and safe leaf name. Review the
-   exact operator, tenant, installed runtime and artifact associations. Backup
-   creates a private file exclusively; it never reopens or overwrites an old
-   partial export. The canonical logical stream uses the selected engine's
-   consistent view, covers every family, validates linked closure and immutable
-   artifacts, syncs the file and reads it back before returning a receipt.
-3. Inspect the exact private snapshot with its expected digest and installed
-   decoders. This reports the actual current recovery window and checks target
-   capacity before creating a staged engine. A stale acknowledgement, missing
-   artifact, unknown runtime, unsupported retained format, bad path, corruption
-   or current authorization failure refuses restoration.
-4. Acknowledge that exact window and review the explicit fresh private root.
-   Restoration locks and creates its engine exclusively, writes `Staging`
-   before importing, rechecks protected file identities around every durable
-   write and validates the complete linked view. It retains original business,
-   command, effect and inbox identities while advancing the live recovery
-   epoch. The engine is flushed and physically closed before its receipt is
-   returned. The resulting guard and namespace histories remain paused.
-5. Reconcile current publication, provider, result-read and consumer permissions;
-   original grant horizons; uncertain or post-backup remote effects; newer
-   commands and inbox deduplication history; and conservative clock continuity.
-   Only separately reviewed activation and resumption can accept this history.
-   Pending snapshot rows never authorize automatic redrive or expiry.
+## Protected v2 ownership
 
-Input and target failures do not poison or replace the current source. Every
-accepted operation retains its physical worker, scratch accounting and
-exclusive root until actual completion, even after its waiter is dropped.
-A drain deadline leaves that ownership quarantined until physical retirement.
-Private partial exports and failed staged roots remain operator evidence and
-must use new destinations for a later attempt.
+| Transition | Concrete owner and required boundary |
+| --- | --- |
+| Snapshot | [ProtectedSnapshot](../../crates/latent-state/src/protected_store/snapshot.rs) retains the same native reservation, private file and exclusive custody. Installed row, artifact and linked-closure reviewers validate one actual engine view. |
+| Restore inspection | [review_restore_window](../../crates/latent-state/src/protected_store/restore_input.rs) rereads the original snapshot and current source view, then exposes the exact loss-window acknowledgement. Its read fence supplies no write permission. |
+| Fresh staging | [stage_restore](../../crates/latent-state/src/protected_store/restore_stage.rs) creates separate private store/checkpoint roots, persists `Staging` before import, preserves business rows and replaces archived controls only through installed current owners. Every write consumes its original fence. |
+| Paused adoption | [RestoreAdoptionPlan](../../crates/latent-state/src/protected_store/restore_adoption.rs) requires actual source and staged-resource retirement, original file identities and fresh current reviews. Its startup publishes the same restored root paused; matching receipt bytes are insufficient. |
+| Migration and resume | [migrate_aggregate](../../crates/latent-state/src/protected_store/migration.rs), [resume](../../crates/latent-state/src/protected_store/resume.rs) and [restored resume](../../crates/latent-state/src/protected_store/restored_resume.rs) retain the original checkpoint and current schema/policy/clock fences. Completion alone cannot activate business work. |
 
-The snapshot codec bounds are 65,536 rows, 128 MiB logical data, a 160 MiB file,
-128 namespaces, 128 immutable artifact references and a 1 MiB canonical
-manifest. Scans and import batches are bounded to 128 rows and 4 MiB. The
-physical operation reserves 32 MiB scratch plus the installed codec's bounded
-scratch and retained paths; staged engine cache is at most 8 MiB. These bounds
-do not silently raise the selected engine's own quotas. The original operator
-deadline, at most one minute, applies throughout inspection, review and writes.
+Before exclusive custody, close affected command, query, consumer, dispatch and
+maintenance admissions, quiesce the selected namespace roster, and drain actual
+commit, view, native-request and dispatcher owners. A paused flag, dropped
+waiter or elapsed drain deadline cannot replace physical retirement. Accepted
+work retains its reservation, buffers and native resource through cancellation;
+uncertain ownership remains charged and closed to business work.
 
-The finite physical fixture uses actual protected engines and schema-bound
-state. It covers fresh restore and paused history, a live ordinary owner,
-active namespace refusal, missing roots, lost waiter retirement, missing
-artifacts, current authorization loss, bad digest and an existing failed
-destination. Its installed runtime and empty retained-work inventory are
-closed fixture inputs. Real command/result/inbox/effect closure and the case
-where a remote effect succeeded after a pending backup require the composed
-transaction and qualified transport owners; this fixture does not certify them.
-Backups contain sensitive application data and are never public test artifacts.
-# Explicit review and resume
+Snapshot and staged destinations use explicit private roots and safe leaf names.
+Creation is exclusive. Existing partial exports or failed staging roots remain
+operator evidence and cannot be overwritten by a retry. The snapshot records the
+complete source-store identity. Restore also selects and verifies the actual
+new destination identity; neither a path nor a configured identity proves that
+its physical files are fresh. State v2 uses `dataDirectory/state`; adoption needs
+the reviewed installation layout and a separate fresh checkpoint root.
 
-`OfflineRecoverySource::start_review` opens an existing root exclusively for
-administration after real normal owners retire. It can inspect paused restored
-history, but refuses an incomplete `Staging` restore. It exposes no command,
-query, consumer delivery, maintenance or effect dispatch port. Ordinary backup
-startup still requires all relevant namespaces to be quiesced.
+The [logical format bounds](logical-recovery-snapshot.md) are ceilings, not a
+reservation sufficient for every installation. The General protected profile
+uses an 8 MiB callback footprint; SingleNamespace uses 7 MiB, one namespace and
+at most a 2 MiB row. Native custody separately charges paths, descriptors, staged
+engine cache and response owners. The installed gateway applies narrower
+manifest and aggregate capacity limits and refuses excess before destination
+creation. Its original absolute deadline is not renewed by inspection, replay,
+shutdown or a lost response.
 
-The installed `RecoveryCodecs` owner must authorize `inspect_namespace`, review
-the actual linked inventory and recovery window through `review_reconciliation`,
-and recheck present authority and conservative clock continuity at its final
-no-I/O `accept_reconciliation` fence. These new review callbacks default to
-refusal. Global review leaves each namespace paused.
+## Reconciliation and activation
 
-`resume_namespace` separately requires an authenticated operator, exact current
-opaque namespace view token, immutable review digest and original namespace
-scope. Its installed review sees the actual namespace, schema/recovery epochs,
-global guard and any original receipt. The final `accept_namespace_resume`
-callback rechecks current authority immediately before the physical commit.
-The atomic envelope compares the exact namespace, history, guard and receipt
-rows, then activates the namespace and history without changing incarnation,
-schema/recovery epochs, pins or historical command/effect identities.
+Completed import validates the full staged linked view, advances each live
+recovery epoch and leaves the guard `ReconciliationRequired` with histories
+paused. Business incarnation, command, attempt, effect and inbox identities
+remain unchanged. The [recovery guard](offline-recovery-guard.md) and
+[older-history restore](reviewed-older-history-restore.md) define those fences.
 
-The bounded `NRS1` operation receipt uses an independent decoder identity
-`lsf.namespace-resume.v1` in the retained checkpoint inventory. A retry with the
-same operator/operation and exact inputs returns the original namespace/version
-and token after current authorization. It does not reactivate a namespace that
-was subsequently quiesced, substitute its latest generation, or renew any grant.
-Changed inputs conflict. Management/CLI wiring, migration, and approved external
-effect reconciliation remain separate required work; review acceptance is never
-an automatic redrive instruction.
+An authorized review must reconcile present publication/result/provider/consumer
+permission, original deduplication and grant horizons, conservative time, newer
+commands and any external work that may have happened after the snapshot.
+A Pending row is no evidence of remote nonexecution. Global review does not
+activate namespace histories or instruct effect redrive. Namespace activation is
+a separate exact-token operation; a retained migration instead requires its
+specific checkpoint-bound resume path. Unfinished migration cannot use generic
+resume. Historical grants and receipt replays never supply current authority.
 
 ## Lost staged-restore responses
 
-The protected v2 workflow can recover a completed stage receipt while its
-original `ProtectedSnapshot` custody is still owned. After a response is lost,
-drop its response object, review the same input file again with
-`review_restore_window`, then call `recover_restore_receipt` with the exact
-original operation, operator, runtime and loss-window acknowledgement. The
-input response uses the same original native reservation and absolute deadline.
-It cannot replace the snapshot custody or extend the operation's lifetime.
+While the original `ProtectedSnapshot` custody remains owned, drop the lost
+response object, inspect the same input with `review_restore_window`, and call
+`recover_restore_receipt` with the same operation, operator, runtime and window
+acknowledgement. The response uses its original reservation and absolute deadline.
+It cannot replace snapshot custody or extend the operation.
 
-Receipt recovery performs no import or durable write. It rereads the actual
-snapshot, current source window, imported destination rows and protected
-checkpoint. The same installed owners must validate the completed linked view,
-current role, audit, controls and clock. The final read fence must be consumed.
-The destination remains in `ReconciliationRequired`; returning a receipt cannot
-adopt it, resume consumers or dispatch an old pending effect.
+Receipt recovery performs no import or durable write. Installed owners reread
+the snapshot, source window, destination rows and checkpoint, validate the
+completed linked view and current role/audit/controls/clock, and consume the
+final read fence. The destination remains paused. Different inputs, partial
+staging, changed checkpoint, revocation or expiry refuse. Adoption preparation
+also closes this read path. After custody retirement or process restart, use
+explicit restored-root review and adoption; an in-memory description provides
+no new-boot authority.
 
-A different request or owner, partial stage, changed checkpoint, revocation or
-expired original deadline refuses recovery. Once adoption preparation consumes
-the transition, this read path also refuses. After custody retirement or process
-restart, use the existing explicit restored-root review and adoption workflow;
-an in-memory completion description supplies no new-boot authority. The six
-added protected-store schedules cover this limited lost-response path. Their
-source registration is separate from execution evidence and the required real
-state/outbox/inbox recovery campaign.
+## Retained v1 facade and evidence
+
+`latent_state::recovery::offline::OfflineRecoverySource` explicitly re-exports
+[the v1 offline facade](../../crates/latent-state/src/recovery/v1/offline.rs).
+Its `RecoveryCodecs`, `start_review`, `resume_namespace` and 32 MiB scratch
+profile describe that facade. They are not the protected v2 API above. V1
+snapshot/migration/resume bytes retain their own identities, 16 KiB migration
+progress and installed review requirements. Its writers reject installed v2
+tenant accounting/progress; there is no format fallback or automatic upgrade.
+
+Finite engine fixtures and historical receipts retain their recorded source,
+reviewer and retained-work scope. An empty inventory cannot certify real
+state/outbox/inbox closure or the case where a remote effect succeeded after a
+pending snapshot. The current native gateway supplies composed actions, while
+its full terminal/pending, application and packaged acceptance remains separate.
+Backups contain sensitive application data and are never public test artifacts.

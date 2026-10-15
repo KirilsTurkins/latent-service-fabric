@@ -128,6 +128,30 @@ upload is not automatically admitted after lifecycle initialization. Caches may
 reclaim only their replaceable unpinned bytes, never authoritative release data.
 Lowered limits cannot silently discard security history to make room.
 
+## Protected transaction and recovery trust
+
+Strict commands use the selected protected engine and exact signed operation
+companion. Namespace/result/effect permissions are separate current decisions;
+guest staging handles cannot commit, choose a backend or call an unreviewed
+irreversible provider. The final writer fence precedes the complete atomic
+state/outbox/outcome/inbox envelope. Response delivery, durable disposition,
+physical cleanup and external acknowledgement remain independent facts.
+
+The [protected store](../../crates/latent-state/src/protected_store.rs) retains
+private physical identity, bounded native workers/reservations and conservative
+clock/checkpoint floors. The separate checkpoint custody does not become part
+of the fixed container backup roots merely because both are on local storage.
+This boundary does not protect against an administrator replacing all trusted
+storage and configuration. A deadline, path, matching file bytes or public
+receipt cannot prove physical retirement or construct fresh-store evidence.
+
+[Older-history restore](reviewed-older-history-restore.md) preserves original
+business identities, advances recovery epoch and discards archived authority.
+Current controls and explicit reconciliation are required before resume; Pending
+snapshot effects are no evidence of remote nonexecution. The installed decoder
+reviewer is closed to its reviewed signed sources, not a general plugin or script
+loader. Recovery files contain business data and require private operator custody.
+
 ## Isolation scope
 
 [ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md) and
