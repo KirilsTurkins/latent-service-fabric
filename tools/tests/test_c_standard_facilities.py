@@ -62,12 +62,20 @@ class StandardFacilities(unittest.TestCase):
             self.assertFalse(destination.exists())
 
     def test_dependency_graph_must_select_same_runtime_as_captured_application(self):
+        from tools.application_dependency_store import DependencyError
+        from tools.c_dependency_authoring import manifest
         selected = {'runtimeProfile': facilities.PROFILE}
         self.assertEqual(facilities.selected_profile(selected, {'selection': selected}), facilities.PROFILE)
         for graph in ({'selection': {'runtimeProfile': facilities.DEFAULT}},
                       {'selection': {'runtimeProfile': 'unknown'}}):
             with self.subTest(graph=graph), self.assertRaisesRegex(ValueError, 'selection-mismatch'):
                 facilities.selected_profile(selected, graph)
+        declaration = {'formatVersion': 1, 'language': 'c', 'selection': selected,
+                       'nativeLocks': [], 'artifacts': [], 'transformations': []}
+        self.assertEqual(manifest(declaration)['selection'], selected)
+        for invalid in (None, True, [], {}, 'unknown'):
+            with self.subTest(profile=invalid), self.assertRaisesRegex(DependencyError, 'runtime-profile-not-installed'):
+                manifest({**declaration, 'selection': {'runtimeProfile': invalid}})
 
     def test_derived_contracts_cannot_modify_captured_source_or_platform_inputs(self):
         root = project.create(self.root / 'project', 'greeting')

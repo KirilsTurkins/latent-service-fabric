@@ -152,6 +152,8 @@ class Inputs:
 def selected(closure: Closure | None, *, compiler_digest: str, runtime_digest: str,
              compiler_distribution_digest: str | None = None,
              runtime_profile: str = "closed-synchronous-v1") -> Inputs:
+    from tools.c_guest.standard_facilities import selected_profile
+    selected_profile({'runtimeProfile': runtime_profile}, closure.lock if closure is not None else None)
     sources, includes, archives, defines, receipts, symbols, symbol_bytes = [], [], [], [], [], set(), 0
     if closure is None:
         return Inputs((), (), (), (), {"formatVersion": 1, "artifacts": []})
