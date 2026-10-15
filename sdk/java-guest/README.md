@@ -88,6 +88,12 @@ public signatures are rejected before Java compilation rather than at invocation
 
 ## Capability ownership
 
+The opt-in [standard URLConnection profile](../../docs/component-development/java-httpurlconnection.md)
+also has a [finite signed real-provider gate](../../docs/testing/java-standard-http.md)
+using ordinary construction, body streams and error/cleanup paths. It shares
+the same typed provider authority and owners. Third-party client/private-library
+and complete runtime qualification remain open under #688.
+
 The nine [stateless Java examples](examples) exercise their eight capability interfaces. The table also describes the separately selected Phase 4 transaction template:
 
 | Capability | Java ownership and outcomes |
