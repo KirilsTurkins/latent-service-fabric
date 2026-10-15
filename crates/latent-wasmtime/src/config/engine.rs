@@ -1,10 +1,11 @@
-use wasmtime::{Config, OptLevel, PoolingAllocationConfig, WasmBacktraceDetails};
+use wasmtime::{Config, Engine, OptLevel, PoolingAllocationConfig, WasmBacktraceDetails};
 
 use super::layout::{
     ASYNC_STACK_ZEROING, POOL_DECOMMIT_BATCH_SIZE, POOL_KEEP_RESIDENT_BYTES, POOL_UNUSED_WARM_SLOTS,
 };
 use super::{CompilerOptimization, InstanceAllocator, WasmtimeConfig};
-use latent_core::PlatformError;
+use crate::containment::{bounded_text, platform_error, MAX_DIAGNOSTIC_BYTES};
+use latent_core::{PlatformError, PlatformErrorCode};
 
 /// Closed code-generation settings shared by the runtime and compiler bootstrap.
 /// Applying these does not construct a pooling allocator or an execution Store.
@@ -95,6 +96,21 @@ fn is_false(value: &bool) -> bool {
 }
 
 impl WasmtimeConfig {
+    pub(crate) fn runtime_engine(&self) -> Result<Engine, PlatformError> {
+        let mut engine_config = Config::new();
+        self.apply_engine(&mut engine_config)?;
+        Engine::new(&engine_config).map_err(|error| {
+            platform_error(
+                PlatformErrorCode::Internal,
+                &format!(
+                    "failed to construct Wasmtime engine: {}",
+                    bounded_text(&error.to_string(), MAX_DIAGNOSTIC_BYTES)
+                ),
+                false,
+            )
+        })
+    }
+
     pub(crate) fn apply_engine(&self, engine_config: &mut Config) -> Result<(), PlatformError> {
         self.validate()?;
         CompilerEngineSettings::from_config(self).apply(engine_config);

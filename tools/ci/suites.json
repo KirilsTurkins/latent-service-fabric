@@ -6953,6 +6953,8 @@
         "aot::ownership::tests::retained_output_and_metadata_outlive_completed_work_and_cap_tiny_outputs",
         "aot::profile::tests::host_abi_identity_is_bound_to_prepared_and_native_compatibility",
         "aot::profile::tests::previous_patch_version_and_layout_cannot_alias_the_current_aot_policy",
+        "aot::profile::tests::runtime_engine_profile_matches_compiler_and_child_across_supported_settings",
+        "aot::profile::tests::runtime_engine_profile_retains_compiler_only_limits_before_allocation",
         "aot::profile::tests::typed_function_references_are_explicit_in_native_policy_identity",
         "aot::protocol::tests::arguments_are_exact_bounded_canonical_numbers",
         "aot::protocol::tests::frame_limits_reject_before_body_allocation_and_require_one_complete_job",
@@ -7276,7 +7278,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 361,
+      "minimumCases": 363,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
