@@ -179,8 +179,10 @@ retaining the existing broad-profile refusal and every qualification ceiling.
 
 `tools/run_java_pending_recovery_qualification.py` is a separate finite current
 conductor. It selects six named ordinary node sessions and one empty-operation
-restore-authority session, preserving the terminal fourteen-session program and
-the original six-session default. Its twelve native actions export an actual
+restore-authority session. The default terminal program remains fourteen
+sessions; current HTTP terminal qualification explicitly selects eighteen before
+its first start. The pending program remains six sessions. Its twelve native
+actions export an actual
 unattempted pending effect, resume the original installation for real remote
 acceptance and reply loss, restore the older pending bytes, inspect and close
 the exact stable effect ID, replay that close, review and resume. The dispatcher

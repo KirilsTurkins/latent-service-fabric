@@ -42,7 +42,7 @@ in the current tree. Tooling that consumes their exact identities is unchanged.
 
 ## Historical snapshot archives
 
-The eight PR handoff ZIPs for #850, #959, #960, #966 and #975?#978 duplicated
+The eight PR handoff ZIPs for #850, #959, #960, #966 and #975–#978 duplicated
 source already retained in Git. They are removed from the current tree after
 checking all 837 member hashes and the archive bytes against source
 `200c17c26b24d6bf06d8d28102362ea714c1f4eb`. The originals remain in the

@@ -71,7 +71,7 @@ one bounded authenticated loopback listener on Linux.
 | `TriggerService` | Implemented shared HTTP trigger apply/get/list/delete and original-operation recovery under exact publication/deployment pins and audited CAS. |
 | `PolicyService` | Optional durable capability-policy/provider-binding apply/get/list/delete, original-operation recovery and descriptive evaluation. Supply-chain admission remains a separate authority. |
 | `StateService` | Opt-in namespace inspection/mutation, entity selection and supported checked state/effect management on the installed Phase4Runtime; operation support remains explicit. |
-| `TransactionService` | Opt-in InvokeCommand/Query, original LookupCommand/LookupCommit, GetEffect/ListEffectHistory and CancelCommand through current caller-scoped authority and retained physical owners. |
+| `TransactionService` | Opt-in InvokeCommand/Query, original LookupCommand/LookupCommit, GetEffect and CancelCommand through current caller-scoped authority and retained physical owners. `ListEffectHistory` is declared and wrapped but unsupported by this owner (`Unavailable`). |
 | `DispatcherService` | Opt-in InspectDispatcher, ControlDispatcher and original operation lookup with current operator authority; inspection and pause/resume do not prove provider delivery. |
 
 WatchDeployment, WatchRouteSnapshots, RegisterNode, ReportInventory and Heartbeat
