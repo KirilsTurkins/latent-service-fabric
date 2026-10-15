@@ -121,6 +121,13 @@ the actual engine, target and detected CPU features. Capsule requirements are
 checked before preparation, and the profile participates in preparation identity.
 The configurable CPU cache label cannot grant support for a hardware feature.
 
+Pooling reserves `maximum_memory_bytes` per linear memory, with zero additional
+growth reservation and zero configured guard bytes. On-demand layout differs;
+these settings are not total mapping or RSS measurements. The current engine
+composition does not enable MPK. The
+[hardware-capability investigation](hardware-capabilities-research.md) considers
+separate optional experiments against this baseline, not an available backend.
+
 Prepared entries retain compiled components and pre-instantiation/export
 metadata, never running stores or component instances. The internal preparation
 identity also binds a deterministic, engine-version-scoped fingerprint of

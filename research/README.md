@@ -28,6 +28,16 @@ artifact admission, capabilities, interruption, fault recovery and physical
 cleanup. There is no LSF native-SFI prototype or qualified backend. Candidate
 artifacts remain outside the node until the research and promotion gates pass.
 
+## Hardware capabilities
+
+The [hardware-capability investigation](hardware-capabilities/README.md)
+distinguishes architectural memory references from LSF policy and affine owners.
+It includes [primary-source/platform review](hardware-capabilities/upstream-review.md)
+and [evaluation gates](hardware-capabilities/evaluation-plan.md) for bounded
+compartments, safe retirement and sharing, plus a separate MPK study against the
+current compact Wasmtime layout. There is no qualified LSF hardware backend.
+The track remains optional and cannot define the portable capsule contract.
+
 ## Outbound streams and typed protocol boundaries
 
 The [outbound streams investigation](outbound-streams/README.md) includes a

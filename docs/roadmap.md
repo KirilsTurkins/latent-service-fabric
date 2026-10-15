@@ -110,6 +110,7 @@ and consumer cursors do not supply workflow suspension or replay.
 User-space paging, continuation eviction,
 [call-graph fusion](runtime/call-graph-fusion-research.md), immutable shared
 blobs, adaptive materialization,
-[native software fault isolation](runtime/native-sfi-research.md) and hardware
-capability backends remain [research](../research/README.md) candidates. Promotion
+[native software fault isolation](runtime/native-sfi-research.md) and
+[hardware capability backends](runtime/hardware-capabilities-research.md)
+remain [research](../research/README.md) candidates. Promotion
 requires a separate accepted decision and qualification.
