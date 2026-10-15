@@ -154,6 +154,11 @@ The resolver copies credentials only for selected aliases, disables ambient
 Git configuration and prompting, and uses an owned Cargo home. Do not put
 credentials in Cargo source URLs, application manifests or copied source files.
 The lock and public authoring outcomes contain no resolver token values.
+Registry aliases must select distinct credential environment names, including
+the default `crates-io` slot. Tokens are bounded to 16,384 characters and cannot
+contain control characters. The resolver captures the exact policy-file digest
+and rechecks its bytes before publishing a candidate; edits or removal require
+a fresh resolution attempt and preserve the previously accepted lock.
 Compiler processes use the existing curated environment and isolated captured
 closure, independently of resolver credentials.
 

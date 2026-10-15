@@ -301,6 +301,50 @@ class RustDependencyAuthoring(unittest.TestCase):
         with self.assertRaisesRegex(DependencyError, 'outside-project'):
             native.resolve(self.owner, self.root / 'candidate', cargo=self.tool, registry_config=inside)
 
+    def test_private_registry_policy_mutation_or_removal_preserves_accepted_inputs(self):
+        self.reviewed()
+        previous = {name: (self.owner / name).read_bytes()
+                    for name in (inputs.MANIFEST, inputs.LOCK, 'cargo-resolved.lock.json')}
+        config = self.root / 'private-registry.json'
+        original = canonical({'registries': {'team': {'index': 'sparse+https://registry.example.invalid/index/'}}})
+        for remove in (False, True):
+            config.write_bytes(original)
+            candidate = self.root / ('removed-policy-candidate' if remove else 'changed-policy-candidate')
+            def changed(command, *arguments):
+                result = self.resolver_command(command, *arguments)
+                if command[1] == 'vendor':
+                    if remove:
+                        config.unlink()
+                    else:
+                        config.write_bytes(original + b'\n')
+                return result
+            with self.subTest(remove=remove), patch.object(native, 'run_bounded', side_effect=changed):
+                with self.assertRaisesRegex(DependencyError, '^cargo-registry-configuration-mutated$'):
+                    native.resolve(self.owner, candidate, cargo=self.tool, registry_config=config)
+            self.assertFalse(candidate.exists())
+            self.assertEqual({name: (self.owner / name).read_bytes() for name in previous}, previous)
+
+    def test_registry_aliases_cannot_share_a_selected_or_default_credential_slot(self):
+        for aliases in (('team-feed', 'team_feed'), ('crates_io',)):
+            config = self.root / 'private-registry.json'
+            config.write_bytes(canonical({'registries': {alias: {'index': 'https://registry.example.invalid/' + alias}
+                                                         for alias in aliases}}))
+            with self.subTest(aliases=aliases), patch.object(native, 'run_bounded') as run:
+                with self.assertRaisesRegex(DependencyError, '^cargo-registry-credential-slot-ambiguous$'):
+                    native.resolve(self.owner, self.root / 'candidate', cargo=self.tool, registry_config=config)
+                run.assert_not_called()
+
+    def test_invalid_selected_tokens_fail_before_resolver_without_secret_diagnostics(self):
+        config = self.root / 'private-registry.json'
+        config.write_bytes(canonical({'registries': {'team': {'index': 'https://registry.example.invalid/index/'}}}))
+        for token in ('', 'secret\nvalue', 'secret\rvalue', 'secret\x7fvalue', 's' * 16385):
+            with self.subTest(size=len(token)), patch.dict(os.environ, {'CARGO_REGISTRIES_TEAM_TOKEN': token}), \
+                    patch.object(native, 'run_bounded') as run:
+                with self.assertRaisesRegex(DependencyError, '^cargo-registry-token-invalid$') as caught:
+                    native.resolve(self.owner, self.root / 'candidate', cargo=self.tool, registry_config=config)
+                self.assertNotIn('secret', str(caught.exception))
+                run.assert_not_called()
+
     def test_outside_path_matching_sdk_coordinates_cannot_bypass_executable_approval(self):
         import tomllib
         baseline = tomllib.loads((project.ROOT / 'tools/rust_capsule.lock').read_text())['package']
