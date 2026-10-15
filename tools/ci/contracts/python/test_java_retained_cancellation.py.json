@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "RetainedCancellation.test_cancel_failure_restores_user_context_and_stops_case",
+    "RetainedCancellation.test_compatible_selection_failure_prevents_http_checks",
+    "RetainedCancellation.test_current_requires_terminal_and_retained_activation",
+    "RetainedCancellation.test_current_terminal_selects_original_then_compatible_before_replay",
+    "RetainedCancellation.test_foreign_original_command_metadata_refuses_replay",
+    "RetainedCancellation.test_historical_runtime_uses_original_binding_without_switches",
+    "RetainedCancellation.test_missing_cancellation_disposition_cannot_claim_case",
+    "RetainedCancellation.test_non_already_committed_result_cannot_claim_case",
+    "RetainedCancellation.test_original_http_get_failure_suppresses_replay_query_and_success",
+    "RetainedCancellation.test_original_selection_failure_prevents_cancel_without_retry",
+    "RetainedCancellation.test_query_failure_suppresses_success",
+    "RetainedCancellation.test_replay_failure_suppresses_query_and_success"
+  ],
+  "guards": {
+    "RetainedCancellation.test_cancel_failure_restores_user_context_and_stops_case": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_compatible_selection_failure_prevents_http_checks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_current_requires_terminal_and_retained_activation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_current_terminal_selects_original_then_compatible_before_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_foreign_original_command_metadata_refuses_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_historical_runtime_uses_original_binding_without_switches": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_missing_cancellation_disposition_cannot_claim_case": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_non_already_committed_result_cannot_claim_case": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_original_http_get_failure_suppresses_replay_query_and_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_original_selection_failure_prevents_cancel_without_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_query_failure_suppresses_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    },
+    "RetainedCancellation.test_replay_failure_suppresses_query_and_success": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:d5958a1cc354bb78f97964dfc296b14b221bb5f758c065714960555db4c032e0",
+        "class:setup-sha256:ff927d15134c7cd57e2e8ab4ae2f3250b1b9cf9730349c715c6f16854bcc929e"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_retained_cancellation.py",
+  "reviewReason": "Mocked retained-cancellation collector selection preserves original publication, verifies the committed command, restores compatible runtime before HTTP checks, and refuses failed or mismatched steps without retries; no native qualification claim.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -336,12 +336,22 @@ class Campaign:
     def _retained_cancellation(self):
         key = "java-original-1"
         original = self.originals[key]
-        publication = self.publications["put-once-compatible-v2"]
+        publication = self.publications["put-once-legacy-v1"]
+        current = getattr(self.node, "current_publication_program", False)
+        if current:
+            require(getattr(self.node, "current_program", None) == "terminal"
+                    and getattr(self.node, "current_activation", None) is not None,
+                    "current-retained-cancellation-original-selection")
+            self.deploy("put-once-legacy-v1")
         with lifecycle.as_user(self.client):
             result = self.client.call("transaction", "cancel", *lifecycle.namespace_arguments(publication),
                 "--operation", "update", "--client-key", key, "--attempt-id", original["attempt-id"],
                 "--reason", "cancelled")["data"]
-        rpc_result(result["command"], original, self.publications["put-once-legacy-v1"], key)
+        require(result["cancellationDisposition"] == "COMMAND_CANCEL_DISPOSITION_ALREADY_COMMITTED",
+                "retained-cancellation-is-already-committed")
+        rpc_result(result["command"], original, publication, key)
+        if current:
+            self.deploy("put-once-compatible-v2")
         http.replay(original, self.original(key))
         self.query(4)
         self.client.evidence.passed("cancellation-after-commit", result)
