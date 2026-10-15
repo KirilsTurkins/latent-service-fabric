@@ -38,6 +38,100 @@ fn request() -> NativeReservationRequest {
     }
 }
 
+#[test]
+fn paired_existing_reservations_keep_capacity_and_both_original_deadlines() {
+    let (owner, clock, deadline) = fixture();
+    let ordinary = owner
+        .reserve(NativeAdmissionClass::Ordinary, request(), deadline)
+        .unwrap();
+    let recovery_deadline = deadline.checked_sub(Duration::from_secs(5)).unwrap();
+    let recovery = owner
+        .reserve(NativeAdmissionClass::Recovery, request(), recovery_deadline)
+        .unwrap();
+    let before = owner.snapshot().unwrap();
+    ordinary
+        .with_live_pair_until(&recovery, deadline, || ())
+        .unwrap();
+    ordinary
+        .with_live_pair_until(&ordinary, deadline, || ())
+        .unwrap();
+    assert_eq!(owner.snapshot().unwrap(), before);
+    clock.advance(Duration::from_secs(5));
+    ordinary.with_live(|| ()).unwrap();
+    assert_eq!(
+        ordinary.with_live_pair_until(&recovery, deadline, || panic!(
+            "expired other reservation accepted"
+        )),
+        Err(NativeCapacityError::DeadlineExceeded)
+    );
+    assert_eq!(owner.snapshot().unwrap(), before);
+    drop((ordinary, recovery));
+    assert!(owner.snapshot().unwrap().physically_retired());
+}
+
+#[test]
+fn paired_reservations_refuse_foreign_owner_and_either_closed_partition() {
+    let (owner, _, deadline) = fixture();
+    let ordinary = owner
+        .reserve(NativeAdmissionClass::Ordinary, request(), deadline)
+        .unwrap();
+    let recovery = owner
+        .reserve(NativeAdmissionClass::Recovery, request(), deadline)
+        .unwrap();
+    let (foreign, _, foreign_deadline) = fixture();
+    let other = foreign
+        .reserve(NativeAdmissionClass::Recovery, request(), foreign_deadline)
+        .unwrap();
+    assert_eq!(
+        ordinary.with_live_pair_until(&other, deadline, || panic!("foreign native owner accepted")),
+        Err(NativeCapacityError::InvalidRequest)
+    );
+    owner.close_ordinary();
+    recovery.with_live(|| ()).unwrap();
+    assert_eq!(
+        recovery.with_live_pair_until(&ordinary, deadline, || panic!(
+            "closed other reservation accepted"
+        )),
+        Err(NativeCapacityError::AdmissionClosed)
+    );
+    drop((ordinary, recovery, other));
+    assert!(owner.snapshot().unwrap().physically_retired());
+    assert!(foreign.snapshot().unwrap().physically_retired());
+}
+
+#[test]
+fn panicked_paired_acceptance_retains_both_real_capacity_owners_and_fails_closed() {
+    let (owner, _, deadline) = fixture();
+    let ordinary = owner
+        .reserve(NativeAdmissionClass::Ordinary, request(), deadline)
+        .unwrap();
+    let recovery = owner
+        .reserve(NativeAdmissionClass::Recovery, request(), deadline)
+        .unwrap();
+    let frame = ordinary
+        .allocate_bytes(NativeBufferClass::Response, 1024)
+        .unwrap();
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = recovery.with_live_pair_until(&ordinary, deadline, || {
+            panic!("paired host acceptance failed")
+        });
+    }))
+    .is_err());
+    assert_eq!(
+        ordinary.with_live(|| ()),
+        Err(NativeCapacityError::Poisoned)
+    );
+    drop((ordinary, recovery));
+    owner.close();
+    let retained = owner.0.lock_physical().snapshot();
+    assert!(retained.quarantined);
+    assert_eq!(retained.ordinary.slots, 1);
+    assert_eq!(retained.recovery.slots, 0);
+    drop(frame);
+    let retired = owner.0.lock_physical().report(false);
+    assert!(!retired.clean && retired.snapshot.physically_retired());
+}
+
 fn wait<T>(future: impl std::future::Future<Output = T>) -> T {
     block_on(with_watchdog(WATCHDOG, future))
 }

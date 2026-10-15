@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Retain current runtime owners and bounded compiler recipes; add explicit Java fixtures and reviewed Wasmtime 48.0.5 identities without relaxing source, budget or license checks.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "cc493f52943e63b9f9cff104d82c9e42eaa79d25c37e19f3aa876f0fc7e2220e"
+  "sha256": "cff90c19d03fcc18e8d04b2098ca287ad51a61a345a92789d313184d9e6f3761"
 }

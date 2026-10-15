@@ -239,7 +239,9 @@ impl StandaloneStateRuntime {
         }
         self.kernel.check_ready(effects)?;
         if self.http_rules {
-            effects.resume()?;
+            effects.release_startup()?;
+        } else {
+            effects.finish_startup_paused()?;
         }
         self.ready = true;
         Ok(())

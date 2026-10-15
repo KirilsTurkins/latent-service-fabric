@@ -290,7 +290,7 @@ fn restored_root_adoption_rechecks_revocation_after_retirement_without_replacing
 
 #[test]
 fn restored_root_adoption_rejects_byte_identical_replacement_engine_and_checkpoint_files() {
-    for replace_checkpoint in [false, true] {
+    for replace_leaf in 0..3 {
         let Prepared {
             setup,
             root,
@@ -302,8 +302,10 @@ fn restored_root_adoption_rejects_byte_identical_replacement_engine_and_checkpoi
         wait(snapshot.retire());
         assert!(finish(&setup.owner).clean);
         let source_before = fs::read(setup.source_path()).unwrap();
-        let path = if replace_checkpoint {
+        let path = if replace_leaf == 0 {
             checkpoint.path().join("transaction-checkpoint.v1")
+        } else if replace_leaf == 1 {
+            root.path().join(crate::protected_store::STATE_MODE_FILE)
         } else {
             root.path().join("transaction-state.redb")
         };

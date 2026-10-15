@@ -35,6 +35,14 @@ class QualificationOriginOracle(unittest.TestCase):
             expected = [{"authority": actual.authority, "tenant": cfg.TENANT}]
             self.assertEqual(actual.value["httpIngress"]["browserOrigins"], expected)
             self.assertEqual(actual.value["httpIngress"]["authentication"], {"mode": "bearer"})
+            self.assertEqual(actual.value["engine"], {"javaGuest": True})
+            self.assertEqual({binding['contract']: binding['providerBinding']
+                              for binding in actual.value['providers']['bindings']}, {
+                cfg.CLOCKS['clockMonotonic'][0]: 'clock-monotonic-installed',
+                cfg.CLOCKS['clockWall'][0]: 'clock-wall-installed'})
+            self.assertEqual(actual.value["isolatedAot"]["process"], {
+                "jobTimeoutMillis": 300000, "maximumOutputBytes": 134217728,
+                "addressSpaceBytes": 4294967296})
             self.assertEqual(actual.value["state"]["operations"], [])
             self.assertNotIn("recoverySelections", actual.value["state"])
             self.assertNotIn("clockCheckpoint", actual.value["state"])
@@ -49,12 +57,15 @@ class QualificationOriginOracle(unittest.TestCase):
             Draft202012Validator(state_schema).validate(state)
             self.assertRegex(actual.authority, r"^localhost:[1-9][0-9]{0,4}$")
             selected = actual.selected(root / "selected.json", [])
-            self.assertEqual(json.loads(selected.read_bytes())["httpIngress"]["browserOrigins"], expected)
+            selected_value = json.loads(selected.read_bytes())
+            self.assertEqual(selected_value["httpIngress"]["browserOrigins"], expected)
+            self.assertEqual(selected_value["engine"], actual.value["engine"])
+            self.assertEqual(selected_value["isolatedAot"]["process"], actual.value["isolatedAot"]["process"])
             schema = json.loads((Path(__file__).resolve().parents[2] / "schemas/node-http-ingress.schema.json").read_bytes())
             Draft202012Validator(schema).validate(actual.value["httpIngress"])
             self.assertEqual(actual.value["budgetProfile"]["maximumStateReadBytes"], 4194304)
             self.assertEqual(actual.value["budgetProfile"]["maximumStateWriteBytes"], 2097152)
-            self.assertEqual(actual.value["budgetProfile"]["maximumEffects"], 1)
+            self.assertEqual(actual.value["budgetProfile"]["maximumEffectCount"], 1)
 
     def test_real_query_keeps_matching_origin_and_bearer_without_retries(self):
         seen = []

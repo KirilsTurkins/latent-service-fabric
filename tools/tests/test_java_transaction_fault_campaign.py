@@ -218,27 +218,33 @@ class DiagnosticInputOracle(unittest.TestCase):
 
 class RollbackOracle(unittest.TestCase):
     def test_original_attempt_lookup_can_wait_for_claim_without_retrying_mutation_or_renewing_time(self):
+        from tools.tests.java_read_observer_fixtures import pending_claim, reply
         calls = []
-        original = {"outcomeKnown": True, "category": "success", "data": {"command": {"attemptId": "original"}}}
-        replies = iter(({"outcomeKnown": True, "category": "not-found", "data": {"command": None}}, original))
+        original = reply('transaction lookup', {'command': pending_claim()}, outcome=False)
+        missing = reply('transaction lookup', {}, category='not-found', error={
+            'code': 'not-found', 'message': 'The platform reported a failure.', 'retryable': False, 'details': []})
+        replies = iter((missing, original))
         def call(*args, **kwargs):
             calls.append((args, kwargs))
             return next(replies)
-        client = SimpleNamespace(call=call)
+        client = SimpleNamespace(call=call, deadline=time.monotonic() + 1000)
         collector = campaign.DiagnosticCampaign.__new__(campaign.DiagnosticCampaign)
         collector.client, collector.publication = client, "publication:sha256:" + "a" * 64
+        collector.input = SimpleNamespace(item=SimpleNamespace(component_digest='sha256:' + 'a' * 64))
         pending = SimpleNamespace(thread=SimpleNamespace(is_alive=lambda: True))
         cutoff = time.monotonic() + 10
         with patch.object(campaign.lifecycle, "as_user", return_value=nullcontext()), patch.object(campaign.time, "sleep"):
             self.assertEqual(collector.original_attempt(pending, "original-key", cutoff), original["data"]["command"])
         self.assertEqual(len(calls), 2)
         self.assertTrue(all(args[:2] == ("transaction", "lookup") and args[-2:] == ("--client-key", "original-key")
-                            and kwargs == {"codes": (0, 6)} for args, kwargs in calls))
+                            and kwargs['codes'] == (0, 5, 6) and set(kwargs) == {'codes', 'timeout', 'cutoff'}
+                            and 0 < kwargs['timeout'] <= 10 and kwargs['cutoff'] == cutoff for args, kwargs in calls))
         with self.assertRaisesRegex(ValueError, "not-running"):
             collector.original_attempt(pending, "original-key", time.monotonic() - 1)
         self.assertEqual(len(calls), 2)
 
     def test_unknown_lookup_and_exhausted_original_claim_read_bound_refuse_without_cancel(self):
+        from tools.tests.java_read_observer_fixtures import reply
         collector = campaign.DiagnosticCampaign.__new__(campaign.DiagnosticCampaign)
         collector.publication = "publication:sha256:" + "a" * 64
         pending = SimpleNamespace(thread=SimpleNamespace(is_alive=lambda: True))
@@ -247,8 +253,9 @@ class RollbackOracle(unittest.TestCase):
             calls = []
             def call(*args, **kwargs):
                 calls.append((args, kwargs))
-                return {"outcomeKnown": outcome, "category": category, "data": {"command": None}}
-            collector.client = SimpleNamespace(call=call)
+                return reply('transaction lookup', {}, outcome=outcome, category=category, error={
+                    'code': 'not-found', 'message': 'The platform reported a failure.', 'retryable': False, 'details': []})
+            collector.client = SimpleNamespace(call=call, deadline=time.monotonic() + 1000)
             with self.subTest(category=category, outcome=outcome), patch.object(campaign.lifecycle, "as_user", return_value=nullcontext()), \
                     patch.object(campaign.time, "sleep"), self.assertRaisesRegex(ValueError, reason):
                 collector.original_attempt(pending, "original-key", time.monotonic() + 10)
@@ -445,10 +452,10 @@ class StagingWitnessOracle(unittest.TestCase):
                 campaign.staged_terminal(final, changed, "fuel", abort()[2], live)
 
     def test_live_stage_observation_is_bounded_read_only_and_refuses_running_without_insertion(self):
+        from tools.tests.java_read_observer_fixtures import pending_claim
         _, node = terminal()
         node["terminalState"] = None
-        record = abort()[2]
-        record.update(outcome="COMMAND_OUTCOME_IN_PROGRESS", provenAbort=None)
+        record = pending_claim()
         pending = SimpleNamespace(thread=SimpleNamespace(is_alive=lambda: True))
         collector = campaign.DiagnosticCampaign.__new__(campaign.DiagnosticCampaign)
         for present, count in ((False, 8), (True, 1)):
@@ -482,10 +489,10 @@ class StagingWitnessOracle(unittest.TestCase):
         self.assertEqual(len(calls), count + 1)
 
     def test_single_cancellation_is_sent_only_after_original_live_staging_witness(self):
+        from tools.tests.java_read_observer_fixtures import pending_claim
         _, node = terminal("cancel")
         node["terminalState"] = None
-        record = abort()[2]
-        record.update(outcome="COMMAND_OUTCOME_IN_PROGRESS", provenAbort=None)
+        record = pending_claim()
         pending = SimpleNamespace(thread=SimpleNamespace(is_alive=lambda: True))
         collector = campaign.DiagnosticCampaign.__new__(campaign.DiagnosticCampaign)
         collector.publication = PUBLICATION

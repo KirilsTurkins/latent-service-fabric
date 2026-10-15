@@ -24,6 +24,81 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     if args.len() == 2 && args[0] == "fixture-tls" {
         return fixture_tls::create(std::path::Path::new(&args[1]));
     }
+    if args.len() == 8 && args[0] == "fixture-sign-current-java-inputs" {
+        return authoring::sign_current_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("current fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 9 && args[0] == "fixture-sign-current-java-with-negative" {
+        return authoring::sign_current_java_with_negative(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("current fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 8 && args[0] == "fixture-sign-rebuilt-current-java-inputs" {
+        return authoring::sign_rebuilt_current_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("rebuilt current fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 8 && args[0] == "fixture-sign-fresh-http-current-java-inputs" {
+        return authoring::sign_fresh_http_current_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("fresh HTTP current fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 4 && args[0] == "fixture-sign-early-http-input" {
+        return authoring::sign_early_http(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("early fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 8 && args[0] == "fixture-sign-native-memory-current-java-inputs" {
+        return authoring::sign_native_memory_current_java(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("native memory current fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 4 && args[0] == "fixture-sign-rebuilt-early-http-input" {
+        return authoring::sign_rebuilt_early_http(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("rebuilt early fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 4 && args[0] == "fixture-sign-reconstructed-early-http-input" {
+        return authoring::sign_reconstructed_early_http(
+            std::path::Path::new(&args[1]),
+            args[2]
+                .to_str()
+                .ok_or("reconstructed early fixture source must be UTF-8")?,
+            &args[3..],
+        );
+    }
+    if args.len() == 8 && args[0] == "fixture-sign-reconstructed-current-java-inputs" {
+        return sign_reconstructed_current(&args);
+    }
     if args.len() < 3
         || !matches!(args[0].to_str(), Some("demo-sign" | "demo-sign-separated"))
         || args.len() > 18
@@ -35,4 +110,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         authoring::sign_demo(std::path::Path::new(&args[1]), &args[2..])
     }
+}
+
+fn sign_reconstructed_current(
+    args: &[std::ffi::OsString],
+) -> Result<(), Box<dyn std::error::Error>> {
+    authoring::sign_reconstructed_current_java(
+        std::path::Path::new(&args[1]),
+        args[2]
+            .to_str()
+            .ok_or("reconstructed current fixture source must be UTF-8")?,
+        &args[3..],
+    )
 }

@@ -223,8 +223,15 @@ impl EffectManagementCatalog {
         view: &ReadView,
         record: &EffectRecord,
     ) -> Result<(), StoreError> {
+        Self::receipt_for_effect(view, record).map(|_| ())
+    }
+
+    pub(crate) fn receipt_for_effect(
+        view: &ReadView,
+        record: &EffectRecord,
+    ) -> Result<Option<EffectManagementReceipt>, StoreError> {
         let Some(stamp) = record.management() else {
-            return Ok(());
+            return Ok(None);
         };
         let operation =
             crate::effect_identity::parse(stamp.operation_digest()).map_err(storage_error)?;
@@ -250,7 +257,7 @@ impl EffectManagementCatalog {
         {
             return Err(StoreError::Corrupt);
         }
-        Ok(())
+        Ok(Some(receipt))
     }
 }
 

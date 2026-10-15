@@ -1,7 +1,7 @@
 use super::{
     c, capacity, contract, gate, input, io_error, native, projection, protected_error, Access, Arc,
-    Catalog, EffectManagementAuthorization, Error, NamespaceRead, Phase, Plan, PlatformError,
-    Receipt, Request,
+    AuthenticatedInvocationContext, Catalog, EffectManagementAuthorization, Error, NamespaceRead,
+    Phase, Plan, PlatformError, Receipt, Request,
 };
 use latent_commit::atomic::{
     command_identity, command_row_key, AtomicError, CommandRecord, Outcome as CommandOutcome,
@@ -29,6 +29,7 @@ struct Completion {
 pub(super) async fn prepare(
     access: Arc<Access>,
     request: contract::Request,
+    context: AuthenticatedInvocationContext,
 ) -> Result<Prepared, PlatformError> {
     let worker = Arc::clone(&access);
     let retained_bytes = u64::try_from(request.encoded_len())
@@ -61,7 +62,8 @@ pub(super) async fn prepare(
                     .ok_or(Error::NotFound)?;
                     worker.with_current(&namespace, Phase::Read, worker.action, &mut || Ok(()))?;
                     let original = input::original(&request).map_err(|error| gate(&error))?;
-                    let command = command(&view, &worker, original)?;
+                    let command =
+                        command(&view, &worker, original, &context, request.encoded_len())?;
                     let native_request = input::native_request(&worker, original, &command)?;
                     verify_effect(&view, &worker, original, &command)?;
                     let plan = Catalog::plan_for_actor(
@@ -117,6 +119,36 @@ fn command(
     view: &ReadView,
     access: &Access,
     original: &c::PlanEffectMutationRequest,
+    context: &AuthenticatedInvocationContext,
+    input_bytes: usize,
+) -> Result<CommandRecord, Error> {
+    let own = command_for_scope(view, access, original, &access.caller.scope);
+    let selector = original
+        .effect
+        .as_ref()
+        .and_then(|effect| effect.command.as_ref())
+        .ok_or(Error::Invalid)?;
+    if !matches!(&own, Err(Error::NotFound)) || selector.shared_recovery_scope.is_some() {
+        return own;
+    }
+    let effect = original.effect.as_ref().ok_or(Error::Invalid)?;
+    let row = effect_row_key(&effect.effect_id)?;
+    let bytes = view.get(&row)?.ok_or(Error::NotFound)?;
+    latent_effects::dispatch_store::validate_row(&row, &bytes)?;
+    let stored = EffectRecord::decode(&bytes)?;
+    let authority = stored.authority()?;
+    let record = command_for_scope(view, access, original, &authority.link().caller_scope)?;
+    verify_effect(view, access, original, &record)?;
+    let target = super::data_target::DataTarget::original(&access.inner, access, &record)?;
+    access.bind_target(context, target, input_bytes)?;
+    Ok(record)
+}
+
+fn command_for_scope(
+    view: &ReadView,
+    access: &Access,
+    original: &c::PlanEffectMutationRequest,
+    scope: &str,
 ) -> Result<CommandRecord, Error> {
     let selector = original
         .effect
@@ -136,7 +168,7 @@ fn command(
             .clone(),
         namespace: access.namespace.binding.namespace.0.clone(),
         incarnation: access.namespace.binding.incarnation.to_string(),
-        recovery_scope: access.caller.scope.clone(),
+        recovery_scope: scope.to_owned(),
         operation: selector.operation.clone(),
         entity: selector.entity.clone(),
         client_key: selector.client_key.clone(),

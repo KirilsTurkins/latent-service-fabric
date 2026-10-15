@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "ContainerQualificationDiagnosticTests.test_currentness_vocabulary_matches_existing_rust_public_contract",
+    "ContainerQualificationDiagnosticTests.test_exact_closed_currentness_reasons_survive",
+    "ContainerQualificationDiagnosticTests.test_failure_preserves_original_fields_storage_order_and_command",
+    "ContainerQualificationDiagnosticTests.test_original_operation_and_absolute_deadline_bounds_remain",
+    "ContainerQualificationDiagnosticTests.test_original_route_cas_and_manifest_are_forwarded_without_retry",
+    "ContainerQualificationDiagnosticTests.test_original_storage_error_still_precedes_status_assertion_and_stderr",
+    "ContainerQualificationDiagnosticTests.test_short_original_deadline_is_not_extended",
+    "ContainerQualificationDiagnosticTests.test_stderr_failure_is_best_effort_and_preserves_original_status_assertion",
+    "ContainerQualificationDiagnosticTests.test_success_and_allowed_not_found_keep_original_results_without_diagnostics",
+    "ContainerQualificationDiagnosticTests.test_unknown_lookalike_and_malformed_reasons_are_not_disclosed",
+    "ContainerQualificationDiagnosticTests.test_unknown_outcome_keeps_original_assertion_without_failure_diagnostic"
+  ],
+  "guards": {
+    "ContainerQualificationDiagnosticTests.test_currentness_vocabulary_matches_existing_rust_public_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    },
+    "ContainerQualificationDiagnosticTests.test_exact_closed_currentness_reasons_survive": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    },
+    "ContainerQualificationDiagnosticTests.test_failure_preserves_original_fields_storage_order_and_command": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    },
+    "ContainerQualificationDiagnosticTests.test_original_operation_and_absolute_deadline_bounds_remain": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    },
+    "ContainerQualificationDiagnosticTests.test_original_route_cas_and_manifest_are_forwarded_without_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    },
+    "ContainerQualificationDiagnosticTests.test_original_storage_error_still_precedes_status_assertion_and_stderr": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    },
+    "ContainerQualificationDiagnosticTests.test_short_original_deadline_is_not_extended": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    },
+    "ContainerQualificationDiagnosticTests.test_stderr_failure_is_best_effort_and_preserves_original_status_assertion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    },
+    "ContainerQualificationDiagnosticTests.test_success_and_allowed_not_found_keep_original_results_without_diagnostics": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    },
+    "ContainerQualificationDiagnosticTests.test_unknown_lookalike_and_malformed_reasons_are_not_disclosed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    },
+    "ContainerQualificationDiagnosticTests.test_unknown_outcome_keeps_original_assertion_without_failure_diagnostic": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:94664c8468e4ec50e6dc712de087a4312791e0656b8ac6a4ce008ddd4f12bbf7",
+        "class:setup-sha256:0543d7a213d16ff81c02fcde27436eea23f692710f9313f0412dd9008dde2008"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_container_qualification_diagnostics.py",
+  "reviewReason": "Review eleven additive closed diagnostic controls: preserve original command/CAS identity, status and certainty assertions, absolute deadlines and call caps, same-point failure storage, best-effort stderr and source-closed currentness reasons without secrets, retries or native qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

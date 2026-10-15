@@ -233,7 +233,11 @@ public final class RpcClient implements Management.ClientProfile, TransactionCli
                 var settings = io.grpc.CallOptions.DEFAULT.withDeadline(deadline).withMaxInboundMessageSize(responseLimit)
                         .withMaxOutboundMessageSize(requestLimit).withStreamTracerFactory(new ClientStreamTracer.Factory() {
                             @Override public ClientStreamTracer newClientStreamTracer(ClientStreamTracer.StreamInfo info, Metadata headers) {
-                                return new ClientStreamTracer() { @Override public void outboundHeaders() { state.dispatched = true; } };
+                                return new ClientStreamTracer() {
+                                    @Override public void streamCreated(io.grpc.Attributes attributes, Metadata headers) { state.transportCreated = true; }
+                                    @Override public void outboundHeaders() { state.dispatched = true; }
+                                    @Override public void inboundTrailers(Metadata trailers) { state.dispatched = true; }
+                                };
                             }
                         });
                 state.transport = channel.newCall(checked, settings);
@@ -270,6 +274,7 @@ public final class RpcClient implements Management.ClientProfile, TransactionCli
         private boolean observed;
         private boolean closed;
         private boolean receivedHeaders;
+        private volatile boolean transportCreated;
         private volatile boolean dispatched;
         private volatile String cancellation;
 
@@ -321,8 +326,11 @@ public final class RpcClient implements Management.ClientProfile, TransactionCli
             catch (Protocol.Invalid failure) { if (invalid == null) invalid = failure; category = Management.FailureCategory.DECODE; }
             Optional<Management.UnsupportedWireValue> unsupported = invalid == null ? Optional.empty() : invalid.unsupported;
             Optional<String> rawStatus = audit.status().or(() -> unsupported.filter(value -> value.field().equals("audit.status")).map(Management.UnsupportedWireValue::value));
-            return new Management.ClientFailure(category, "bounded client failure", code, platform, dispatched,
-                    !dispatched ? Management.OutcomeKnowledge.NOT_DISPATCHED : observed ? Management.OutcomeKnowledge.OBSERVED : Management.OutcomeKnowledge.UNKNOWN,
+            boolean dispatchedSnapshot = dispatched;
+            // A real stream makes execution uncertain before socket-write confirmation.
+            boolean executionPossible = dispatchedSnapshot || transportCreated;
+            return new Management.ClientFailure(category, "bounded client failure", code, platform, dispatchedSnapshot,
+                    !executionPossible ? Management.OutcomeKnowledge.NOT_DISPATCHED : observed ? Management.OutcomeKnowledge.OBSERVED : Management.OutcomeKnowledge.UNKNOWN,
                     identity, audit.ack(), rawStatus, unsupported, audit.attempt());
         }
 

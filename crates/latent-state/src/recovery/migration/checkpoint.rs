@@ -25,10 +25,21 @@ impl VerifiedMigrationCheckpoint {
         deadline: Instant,
         row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
         linked: impl FnOnce(&ReadView) -> Result<SnapshotClosure, MigrationError>,
-        mut artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError>,
+        artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError>,
     ) -> Result<Self, MigrationError> {
         let receipt =
             snapshot::inspect_snapshot(input, deadline, row).map_err(MigrationError::Review)?;
+        Self::from_inspected(view, receipt, linked, artifact)
+    }
+
+    /// Only the protected file owner may supply its already inspected scoped
+    /// receipt; exact linked closure and required artifacts remain mandatory.
+    pub(crate) fn from_inspected(
+        view: &ReadView,
+        receipt: SnapshotReceipt,
+        linked: impl FnOnce(&ReadView) -> Result<SnapshotClosure, MigrationError>,
+        mut artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError>,
+    ) -> Result<Self, MigrationError> {
         linked(view)?
             .require_declared(&receipt.manifest.metadata)
             .map_err(MigrationError::Review)?;

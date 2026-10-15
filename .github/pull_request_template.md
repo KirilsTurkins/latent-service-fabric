@@ -21,3 +21,8 @@ Link the relevant ADR or RFC.
 ## Verification
 
 List conformance tests, schema checks, benchmarks, or review evidence.
+
+- [ ] I reviewed the final commits and diff against the target branch, reconciled
+  already delivered parent commits, and checked that authorship and validation
+  claims describe the exact source, following
+  [Commit history and evidence](../CONTRIBUTING.md#commit-history-and-evidence).

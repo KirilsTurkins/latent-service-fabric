@@ -441,6 +441,8 @@ impl PreparedDispatcherControl {
                     state.pending_control = pending.take();
                     // Both pause and resume remain paused until the flush succeeds.
                     state.paused = true;
+                    state.startup.operator_paused = true;
+                    state.startup.operator_selected = true;
                     Ok(())
                 },
             )?;
@@ -485,7 +487,9 @@ impl PreparedDispatcherControl {
             && !state.restore_review.is_required()
             && time.continuity_proven
             && time.unix_millis >= receipt.observed_at_millis();
-        state.paused = self.request.action == DispatcherControlAction::Pause || !can_resume;
+        state.startup.operator_paused =
+            self.request.action == DispatcherControlAction::Pause || !can_resume;
+        state.paused = state.startup.suppressed || state.startup.operator_paused;
         state.pending_control = None;
         let paused = state.paused;
         drop(state);

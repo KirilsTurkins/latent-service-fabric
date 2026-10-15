@@ -85,13 +85,12 @@ fn next<S>(control: &Control<S>, recovery: bool) -> Action<S> {
     }
 }
 
-fn finished_job<S>(control: &Control<S>, kind: StoreIoKind) {
+pub(super) fn finish_active_job<S>(control: &Control<S>, kind: StoreIoKind) {
     control
         .state
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
         .running(kind, false);
-    control.notify();
 }
 
 pub(super) fn run<S: Send + Sync + 'static>(
@@ -102,8 +101,8 @@ pub(super) fn run<S: Send + Sync + 'static>(
     loop {
         match next(&control, recovery) {
             Action::Run(queued) => {
-                queued.work.run(&store);
-                finished_job(&control, queued.kind);
+                queued.work.run(&store, queued.kind);
+                control.notify();
             }
             Action::Reject(queued) => {
                 queued.work.reject();

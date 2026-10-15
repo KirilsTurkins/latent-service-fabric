@@ -3,6 +3,7 @@ mod abort_recovery;
 mod admission;
 mod completion;
 mod policy;
+pub(super) mod pre_host_conflict;
 mod replay;
 mod retry;
 mod selection;
@@ -112,6 +113,7 @@ enum State {
     Pending {
         claim: Option<AdmittedCommand>,
         role: Arc<super::command_role::CommandRole>,
+        conflict: Option<pre_host_conflict::OriginalConflict>,
     },
     Ready(Option<TransactionAdmissionResult>),
     Failed,
@@ -131,6 +133,7 @@ pub struct NativeTransactionAdmission {
     retention: Mutex<Option<Arc<TransactionRetention>>>,
     ingress: Mutex<Option<NativeReservation>>,
     validator: Option<Arc<dyn TransactionOutcomeValidator>>,
+    cancellation_abort: Mutex<Option<Arc<super::cancellation::CancellationAbortSlot>>>,
 }
 impl NativeTransactionAdmission {
     pub fn new(
@@ -148,6 +151,7 @@ impl NativeTransactionAdmission {
             retention: Mutex::new(None),
             ingress: Mutex::new(None),
             validator: None,
+            cancellation_abort: Mutex::new(None),
         })
     }
 
@@ -200,10 +204,15 @@ impl NativeTransactionAdmission {
             .map_err(|_| super::authorization::denied())?;
         Ok(match &mut *state {
             State::Ready(result) => result.take(),
-            State::Pending { claim, role } => claim.take().map(|claim| {
+            State::Pending {
+                claim,
+                role,
+                conflict,
+            } => claim.take().map(|claim| {
                 TransactionAdmissionResult::Pending(super::PendingCommandAdmission {
                     claim,
                     role: Arc::clone(role),
+                    conflict: conflict.take(),
                 })
             }),
             State::Fresh(_) | State::Failed => None,
@@ -272,6 +281,29 @@ impl NativeTransactionAdmission {
             .as_ref()
             .cloned()
             .ok_or_else(authorization::denied)
+    }
+
+    #[cfg(all(test, unix))]
+    pub(super) fn original_host_for_native_test(&self) -> Arc<StateTransactionHost> {
+        match &*self.state.lock().unwrap() {
+            State::Ready(Some(TransactionAdmissionResult::Command { host, .. })) => host.clone(),
+            _ => panic!("actual original native host absent"),
+        }
+    }
+    #[cfg(all(test, unix))]
+    pub(super) fn take_cancel_candidate_for_native_test(
+        &self,
+        record: &CommandRecord,
+        host: &StateTransactionHost,
+        control: &crate::TransactionCommitControl,
+    ) -> super::cancellation::PendingCancellationAbort {
+        self.cancellation_abort
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .take_original(record, host, control)
+            .unwrap()
     }
 }
 

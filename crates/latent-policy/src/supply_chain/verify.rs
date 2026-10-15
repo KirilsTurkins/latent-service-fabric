@@ -2,7 +2,7 @@ use latent_artifacts::package::LayerRole;
 use latent_artifacts::{
     decode_contract_metadata, AdmissionBinding, AdmissionEvidence, AdmissionStorageLimits,
     ArtifactDescriptor, CapsuleArtifact, ContractMetadataLimits, PackageAdmissionUpload,
-    VerifiedAdmission,
+    ReleaseEvidenceUpload, VerifiedAdmission,
 };
 use latent_core::{ArtifactReference, PlatformError, ReleaseDigest, TenantId};
 use latent_manifest::{JsonManifestCodec, ManifestCodec, ManifestLimits};
@@ -109,6 +109,23 @@ pub(super) fn prepare_with_profile(
         provenance,
         sboms,
     })
+}
+
+pub(super) fn prepare_retained(retained: super::receipt::Retained) -> Prepared {
+    let (
+        bundle,
+        ReleaseEvidenceUpload {
+            signatures,
+            provenance,
+            sboms,
+        },
+    ) = retained.into_parts();
+    Prepared {
+        bundle,
+        signatures,
+        provenance,
+        sboms,
+    }
 }
 
 // Only current policy/signature verification and grant creation share the fence;

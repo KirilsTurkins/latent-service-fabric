@@ -9,9 +9,7 @@ use crate::{
     embedded::{ReadView, RowKey, StoreError},
     recovery::{
         restore::RestoreWindow,
-        snapshot::{
-            inspect_snapshot, RequiredArtifact, SnapshotClosure, SnapshotError, SnapshotReceipt,
-        },
+        snapshot::{RequiredArtifact, SnapshotClosure, SnapshotError, SnapshotReceipt},
     },
     store_io::{StoreIoError, StoreIoKind},
 };
@@ -203,10 +201,11 @@ impl ProtectedStoreOwner {
         if expected.snapshot_digest == [0; 32] || expected.manifest_digest == [0; 32] {
             return Err(ProtectedStoreError::InvalidConfiguration);
         }
+        let work = snapshot.custody.maximum_job_bytes();
         let inner = self.with_custody(
             snapshot.custody,
             StoreIoKind::RecoveryRead,
-            8 * 1024 * 1024,
+            work,
             move |file, store| {
                 let Some(file) = file else {
                     return Ok(Err(SnapshotError::Review(StoreError::Invalid)));
@@ -240,10 +239,9 @@ fn review(
     owners.current().map_err(SnapshotError::Review)?;
     file.check()
         .map_err(|_| SnapshotError::Review(StoreError::Unavailable))?;
-    let snapshot = inspect_snapshot(&mut file.cursor(), file.deadline(), |key, bytes| {
-        owners.archive_row(key, bytes)
-    })
-    .map_err(SnapshotError::Review)?;
+    let snapshot = file
+        .inspect(|key, bytes| owners.archive_row(key, bytes))
+        .map_err(SnapshotError::Review)?;
     if snapshot.snapshot_digest != expected.snapshot_digest
         || snapshot.manifest_digest != expected.manifest_digest
     {

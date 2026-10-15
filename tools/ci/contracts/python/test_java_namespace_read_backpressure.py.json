@@ -1,0 +1,218 @@
+{
+  "cases": [
+    "NamespaceReadBackpressureControls.test_busy_at_cutoff_and_sleep_crossing_cutoff_cannot_make_another_read",
+    "NamespaceReadBackpressureControls.test_busy_then_success_keeps_one_original_cutoff_and_identical_request",
+    "NamespaceReadBackpressureControls.test_eight_busy_reads_fail_without_a_namespace_or_a_ninth_attempt",
+    "NamespaceReadBackpressureControls.test_expired_and_late_success_cutoffs_never_supply_namespace_proof",
+    "NamespaceReadBackpressureControls.test_global_deadline_is_not_renewed_by_a_busy_read",
+    "NamespaceReadBackpressureControls.test_invalid_publication_is_refused_before_any_read",
+    "NamespaceReadBackpressureControls.test_malformed_busy_envelopes_never_authorize_another_read",
+    "NamespaceReadBackpressureControls.test_namespace_classifier_does_not_expand_original_allowlist_or_mutation_authority",
+    "NamespaceReadBackpressureControls.test_original_256_call_limit_still_blocks_the_next_busy_observation",
+    "NamespaceReadBackpressureControls.test_original_cancellation_before_first_or_next_read_never_spawns_after_refusal",
+    "NamespaceReadBackpressureControls.test_other_errors_are_fatal_without_another_read",
+    "NamespaceReadBackpressureControls.test_process_failure_is_not_caught_or_retried",
+    "NamespaceReadBackpressureControls.test_real_campaign_still_compares_final_successful_count_after_all_four_refusals",
+    "NamespaceReadBackpressureControls.test_real_recording_client_retains_busy_bytes_and_reaps_same_request",
+    "NamespaceReadBackpressureControls.test_single_real_success_keeps_original_namespace_and_operator_request",
+    "NamespaceReadBackpressureControls.test_success_requires_known_result_and_original_namespace_count"
+  ],
+  "guards": {
+    "NamespaceReadBackpressureControls.test_busy_at_cutoff_and_sleep_crossing_cutoff_cannot_make_another_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_busy_then_success_keeps_one_original_cutoff_and_identical_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_eight_busy_reads_fail_without_a_namespace_or_a_ninth_attempt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_expired_and_late_success_cutoffs_never_supply_namespace_proof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_global_deadline_is_not_renewed_by_a_busy_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_invalid_publication_is_refused_before_any_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_malformed_busy_envelopes_never_authorize_another_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_namespace_classifier_does_not_expand_original_allowlist_or_mutation_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_original_256_call_limit_still_blocks_the_next_busy_observation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_original_cancellation_before_first_or_next_read_never_spawns_after_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_other_errors_are_fatal_without_another_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_process_failure_is_not_caught_or_retried": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_real_campaign_still_compares_final_successful_count_after_all_four_refusals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_real_recording_client_retains_busy_bytes_and_reaps_same_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_single_real_success_keeps_original_namespace_and_operator_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    },
+    "NamespaceReadBackpressureControls.test_success_requires_known_result_and_original_namespace_count": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:87998fc4d4635e5f609389b7153d9ea825f46b8745c11c286970c57906288828",
+        "class:setup-sha256:da53a15f98b8edcf0c6156c29c5017af23c7c034e79032927338a3ea85a42f44"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_namespace_read_backpressure.py",
+  "reviewReason": "Review sixteen namespace-only read controls: exact closed ResourceExhausted observations share the original 25-second cutoff and eight-read bound, preserve current caller/publication/namespace and all existing read/mutation guards, and require real final namespace/count equality.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

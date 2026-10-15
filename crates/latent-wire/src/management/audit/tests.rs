@@ -172,3 +172,63 @@ fn audit_resource_class_wire_numbers_remain_stable_and_stream_is_distinct() {
         proto::AuditCapabilityResourceClass::Http
     );
 }
+
+#[test]
+fn command_cancel_audit_projects_distinct_action_and_preserves_existing_wire_numbers() {
+    use latent_audit::AuditControlAction as A;
+    use prost::Message;
+    for (action, number) in [
+        (A::Publish, 1),
+        (A::Revoke, 2),
+        (A::Retire, 3),
+        (A::RenewEvidence, 4),
+        (A::DeploymentApply, 5),
+        (A::Rollout, 6),
+        (A::Promotion, 7),
+        (A::Rollback, 8),
+        (A::DeploymentDelete, 9),
+        (A::CapabilityCall, 10),
+        (A::TriggerApply, 11),
+        (A::TriggerDelete, 12),
+        (A::NamespaceCreate, 13),
+        (A::NamespaceQuiesce, 14),
+        (A::NamespaceRetire, 15),
+        (A::NamespaceDestroy, 16),
+        (A::NamespaceRecreate, 17),
+        (A::NamespaceInspect, 18),
+        (A::DispatcherInspect, 19),
+        (A::DispatcherPause, 20),
+        (A::DispatcherResume, 21),
+        (A::DispatcherOperationRead, 22),
+        (A::EffectPlan, 23),
+        (A::EffectReconcile, 24),
+        (A::EffectRedrive, 25),
+        (A::EffectTerminate, 26),
+        (A::StateOperationRead, 27),
+        (A::StateCheckpoint, 28),
+        (A::PayloadPurge, 29),
+        (A::CommandFloorRelease, 30),
+        (A::CommandCancel, 31),
+    ] {
+        let wire = proto::Phase2AuditAttempt {
+            action: enums::action(action),
+            ..Default::default()
+        };
+        let bytes = wire.encode_to_vec();
+        assert_eq!(wire.action, number);
+        assert_eq!(
+            proto::Phase2AuditAttempt::decode(bytes.as_slice())
+                .unwrap()
+                .action,
+            number
+        );
+        assert_eq!(
+            proto::AuditControlAction::try_from(number).unwrap() as i32,
+            number
+        );
+    }
+    assert_eq!(
+        proto::AuditControlAction::CommandCancel.as_str_name(),
+        "AUDIT_CONTROL_ACTION_COMMAND_CANCEL"
+    );
+}

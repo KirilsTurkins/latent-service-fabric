@@ -131,19 +131,21 @@ impl StateTransactionHost {
             }
         };
         let view_token = owned.payload.view_token.clone();
-        let (context, info, work) = command.map_or((None, None, None), |mut command| {
-            command.info.view = latent_executor::transaction::ViewIdentity {
-                namespace: scope.namespace.0.clone(),
-                incarnation: scope.incarnation.to_string(),
-                version: view_token.clone(),
-                state_schema: scope.state_schema.clone(),
-            };
-            (
-                Some(command.context),
-                Some(command.info),
-                Some(command.work),
-            )
-        });
+        let (context, info, work, staging_identity) =
+            command.map_or((None, None, None, None), |mut command| {
+                command.info.view = latent_executor::transaction::ViewIdentity {
+                    namespace: scope.namespace.0.clone(),
+                    incarnation: scope.incarnation.to_string(),
+                    version: view_token.clone(),
+                    state_schema: scope.state_schema.clone(),
+                };
+                (
+                    Some(command.context),
+                    Some(command.info),
+                    Some(command.work),
+                    Some(command.staging_identity),
+                )
+            });
         Ok(Arc::new(Self {
             activation,
             mode,
@@ -160,6 +162,8 @@ impl StateTransactionHost {
             technical_fault: AtomicBool::new(false),
             context,
             command: info,
+            staging_identity,
+            staging_observer: Mutex::new(None),
             effects,
             time,
             retained_bytes,

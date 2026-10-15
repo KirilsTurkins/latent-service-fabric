@@ -288,9 +288,10 @@ pub(super) fn installation_footprint(
         .checked_mul(super::INSTALLATION_METADATA_BYTES + super::INSTALLATION_SELECTION_BYTES)
         .and_then(|bytes| bytes.checked_add(leases as u64 * NATIVE_RESERVATION_METADATA_BYTES))
         .ok_or_else(|| invalid("native"))?;
-    let capture = super::INSTALLATION_CAPTURE_WORK_BYTES
+    let profile = super::installation_profile(store);
+    let capture = super::installation_capture_work(profile)
         + super::INSTALLATION_CAPTURE_REQUEST_BYTES
-        + latent_artifacts::TRANSACTION_ASSET_RESPONSE_BYTES
+        + profile.response_bytes()
         + NATIVE_RESERVATION_METADATA_BYTES;
     let largest_resident = operations.min(super::INSTALLATION_OPERATIONS_PER_LEASE) as u64
         * (super::INSTALLATION_METADATA_BYTES + super::INSTALLATION_SELECTION_BYTES)

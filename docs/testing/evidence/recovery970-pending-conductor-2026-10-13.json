@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "latent.recovery970.pending-conductor.v1",
+  "committedBase": "e3e7b3107dfbce36ae561704cc603eaa67faef6d",
+  "executedSource": "authored source files below",
+  "sourceFiles": {
+    "crates/latent-policy/examples/capsule_authoring/current_java.rs": "412a256c4ad4c5b5fe2725655cd44de3f7096eea064ffb3475eaaa2a473f2728",
+    "tools/java_transaction_qualification/lifecycle.py": "776df287ef7a1db2ae828b496c8ddc17c0ce00031fc6c1306ea320a04f089ca9",
+    "tools/java_transaction_qualification/recovery.py": "5a128aa588688d38d2d81bd30953473d08536b170d9ed0ed9e988c1b568480c6",
+    "tools/run_java_transaction_http_qualification.py": "580b788a7f4e5e4543d617264c6ed7f6da0a75170eb41fdd0ecb5f67c2c24a2f",
+    "tools/java_transaction_qualification/pending_campaign.py": "92a12e72fe2bbdba48aa41f5ad19ea6905e20dfd8b1fc0a326bb03f259ab5f7c",
+    "tools/java_transaction_qualification/pending_controls.py": "2e0c3a35a925c994c0740b2fed50cb4e35d87343778c9454af97c594ac48c444",
+    "tools/run_java_pending_recovery_qualification.py": "2cd15e84d5d5955b2bbbd1c72669c167eb8ce9ff570ea5afa6b3a5f779388542",
+    "tools/tests/test_java_pending_recovery.py": "0ad5385fdf5ac8443dc43d91dd7f40929ac6e1690dad98a5a77c57c3a4cf9133",
+    "tools/ci/contracts/python/test_java_pending_recovery.py.json": "a4b0f67a322d2f02055f976b3ec0f70df3e7fadc021fc85c5b37ae4f71e6a9f6"
+  },
+  "controls": {
+    "pythonPassed": 41,
+    "newPendingControls": 10,
+    "existingCurrentAndRecoveryControls": 31,
+    "rustfmt": "Rust1.97.1, edition2021 and maintained rustfmt.toml check passed",
+    "ciCoverage": {
+      "baseline": 88,
+      "current": 285,
+      "delegatedOwners": 151
+    }
+  },
+  "nodePrograms": {
+    "terminalOrdinary": 14,
+    "terminalRestoreAuthority": 1,
+    "legacyOrdinary": 6,
+    "pendingOrdinary": [
+      "publish",
+      "authority",
+      "namespace-create",
+      "legacy-runtime",
+      "pending-original-runtime",
+      "pending-restored-runtime"
+    ],
+    "pendingRestoreAuthority": 1,
+    "pendingRestoreAuthorityPosition": 5
+  },
+  "nativeActions": [
+    "inspect-namespace",
+    "snapshot",
+    "resume",
+    "inspect-restore",
+    "restore",
+    "inspect-namespace",
+    "inspect-close-effects",
+    "close-effects",
+    "close-effects",
+    "review",
+    "inspect-namespace",
+    "resume"
+  ],
+  "retainedSixSigningFailure": {
+    "nativeSource": "1d7f130b9776727b7900bbf76e6019e1391a6d90",
+    "signerSha256": "37596237ecaec8d53303d7d7d4b9723206676573f2ec39ff1c0195f9d4e66c66",
+    "stage": "actual-six-package-signing",
+    "message": "current Java fixture package, world or service mismatch",
+    "originalCapturedService": "examples/transaction-java-forbidden-http",
+    "originalComponentDigest": "sha256:717712f8976aa0be1fcc01cb425116f8372832937bedcf63d52b21e509d22767",
+    "preservedPrivateReceipt": "pr970-six-signing-controls-1d7-r1-20261013/qualification.json",
+    "correctedSixSigningStillPending": true
+  },
+  "qualificationBoundary": "Closed data observers and bounded current program only; actual signed pending/close execution and six-package signing retain separate receipts.",
+  "signedPendingRestoreCloseQualified": false,
+  "immediateHttpDenialQualified": false,
+  "originalPostStageImmediateHttpRollbackQualified": false,
+  "packagedOperatorQualified": false,
+  "productionApproval": false,
+  "issueClosure": false
+}

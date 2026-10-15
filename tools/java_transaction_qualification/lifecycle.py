@@ -15,23 +15,96 @@ from tools.phase2_operator_process import Process, read_json, stopped_record, wr
 from tools.phase2_operator_scenario import NODE_ID, TOKEN, receipt, stop
 from tools.rust_capsule_project import read_file
 
-from . import configuration as cfg
+from . import configuration as cfg, read_observer
 from .evidence import native
 from .inputs import decode, digest, require
 
 KEY = b"aggregate/count"
 PATHS = {"command": "/transaction/command", "query": "/transaction/query",
          "scan": "/transaction/scan", "result": "/transaction/result"}
+CURRENT_NODE_PROGRAM = (
+    'publish', 'authority', 'namespace-create', 'legacy-runtime',
+    'diagnostic-metadata', 'diagnostic-runtime', 'legacy-metadata', 'legacy-after-diagnostic',
+    'compatible-metadata', 'compatible-runtime', 'compatible-after-crash',
+    'writer-metadata', 'writer-runtime', 'restored-runtime',
+)
+CURRENT_METADATA_SESSIONS = {'publish', 'authority', 'diagnostic-metadata', 'legacy-metadata',
+                             'compatible-metadata', 'writer-metadata'}
+CURRENT_HTTP_TERMINAL_NODE_PROGRAM = (
+    *CURRENT_NODE_PROGRAM[:11],
+    'cancellation-legacy-metadata', 'cancellation-legacy-runtime',
+    'cancellation-compatible-metadata', 'cancellation-compatible-runtime',
+    *CURRENT_NODE_PROGRAM[11:],
+)
+CURRENT_HTTP_TERMINAL_METADATA_SESSIONS = CURRENT_METADATA_SESSIONS | {
+    'cancellation-legacy-metadata', 'cancellation-compatible-metadata'}
+PENDING_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
+                        'pending-original-runtime', 'pending-restored-runtime')
+EARLY_HTTP_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'early-http-runtime')
 
 
 class Node:
-    def __init__(self, client, executable: Path, directory: Path):
+    def __init__(self, client, executable: Path, directory: Path, *, current_publication_program=False,
+                 current_program='terminal'):
+        require(type(current_publication_program) is bool
+                and (not current_publication_program or getattr(client, 'phase4', False)),
+                'explicit-current-node-program')
+        require(type(current_program) is str and current_program in {'terminal', 'pending-close', 'early-http'}
+                and (current_program == 'terminal' or current_publication_program),
+                'closed-current-node-program-selection')
         self.client, self.executable, self.directory = client, executable, directory
         self.process, self.ordinal = None, 0
         self.shutdown = []
+        self.restore_authority_sessions = 0
+        self.current_publication_program = current_publication_program
+        self.current_program = current_program
+        self.program = {'terminal': CURRENT_NODE_PROGRAM, 'pending-close': PENDING_NODE_PROGRAM,
+                        'early-http': EARLY_HTTP_NODE_PROGRAM}[current_program]
+        self.metadata_sessions = CURRENT_METADATA_SESSIONS
+        self.current_activation = None
 
-    def start(self, configuration: Path):
-        require(self.process is None and self.ordinal < 6, "bounded-exclusive-node-session")
+    def select_current_http_terminal_program(self):
+        require(self.current_publication_program and self.current_program == 'terminal'
+                and self.ordinal == 0 and self.process is None and self.restore_authority_sessions == 0
+                and self.program is CURRENT_NODE_PROGRAM and self.metadata_sessions is CURRENT_METADATA_SESSIONS,
+                'prestart-current-http-terminal-program')
+        self.program = CURRENT_HTTP_TERMINAL_NODE_PROGRAM
+        self.metadata_sessions = CURRENT_HTTP_TERMINAL_METADATA_SESSIONS
+
+    def start(self, configuration: Path, *, restore_authority=False, current_session=None):
+        require(type(restore_authority) is bool, "explicit-restore-authority-session")
+        if restore_authority:
+            require(self.current_program != 'early-http', 'early-http-cannot-install-restore-authority')
+            settings = read_json(configuration)
+            state = settings.get("state")
+            require(not self.current_publication_program
+                    or self.ordinal - self.restore_authority_sessions == len(self.program) - 1,
+                    'current-restore-authority-after-writer-retirement')
+            require(current_session is None and self.process is None and self.restore_authority_sessions == 0
+                    and isinstance(state, dict) and type(state.get("formatVersion")) is int
+                    and state.get("formatVersion") == 2
+                    and state.get("operations") == [] and state.get("createIfMissing") is False,
+                    "bounded-current-restore-authority-session")
+            self.restore_authority_sessions += 1
+        elif self.current_publication_program:
+            position = self.ordinal - self.restore_authority_sessions
+            require(self.process is None and position < len(self.program)
+                    and current_session == self.program[position], 'bounded-current-node-session-program')
+            settings = read_json(configuration)
+            state = settings.get('state')
+            require(isinstance(state, dict) and type(state.get('formatVersion')) is int
+                    and state['formatVersion'] == 2 and isinstance(state.get('operations'), list),
+                    'current-node-session-state-owner')
+            operations = state['operations']
+            if current_session in self.metadata_sessions:
+                require(operations == [], 'metadata-session-cannot-install-runtime')
+            else:
+                require(len(operations) == 3 and len({row['publication'] for row in operations}) == 1
+                        and {row['function'] for row in operations} == {'update', 'query', 'scan'},
+                        'one-current-runtime-per-session')
+        else:
+            require(current_session is None and self.process is None and self.ordinal - self.restore_authority_sessions < 6,
+                    "bounded-exclusive-node-session")
         self.ordinal += 1
         process = Process([str(self.executable), "serve", "--config", str(configuration)], self.directory,
             dict(self.client.environment, HOME=str(self.directory)), self.client.cancellation, maximum=262144)
@@ -112,24 +185,43 @@ class Node:
 
 
 class Peer:
-    def __init__(self, client, directory: Path, tls: Path, credential: Path, incarnation: str, *, session=1, port=0):
+    def __init__(self, client, directory: Path, tls: Path, credential: Path, incarnation: str, *, session=1, port=0,
+                 current_declaration: Path | None = None):
         require(type(session) is int and 1 <= session <= 3 and type(port) is int and 0 <= port <= 65535,
                 "original-counted-recipient-session")
         self.client, self.directory, self.incarnation = client, directory, incarnation
+        self.current_http = current_declaration is not None
         self.session = session
         self.prefix = "recipient" if session == 1 else f"recipient-{session}"
         environment = dict(client.environment, PYTHONPATH=str(Path(__file__).resolve().parents[2]))
-        self.process = Process([sys.executable, "-m", "tools.java_transaction_qualification.provider",
+        arguments = [sys.executable, "-m", "tools.java_transaction_qualification.provider",
             "--root", str(directory), "--tls", str(tls), "--token-file", str(credential),
             "--incarnation", incarnation, "--deadline", str(client.deadline),
-            "--session", str(session), "--port", str(port)], client.directory,
+            "--session", str(session), "--port", str(port)]
+        if self.current_http:
+            from .current_recipient import endpoint
+            require(current_declaration.is_absolute() and current_declaration.is_file()
+                    and not current_declaration.is_symlink(), "owned-current-recipient-declaration")
+            declaration = decode(read_file(current_declaration, 8192), 8192)
+            require(declaration == endpoint(declaration["origin"], incarnation)
+                    and declaration["origin"]["port"] == port, "exact-current-recipient-listener")
+            arguments = [sys.executable, "-m", "tools.java_transaction_qualification.current_recipient",
+                         "--root", str(directory), "--tls", str(tls), "--credential-file", str(credential),
+                         "--declaration", str(current_declaration), "--deadline", str(client.deadline),
+                         "--session", str(session)]
+        self.process = Process(arguments, client.directory,
             environment, client.cancellation, maximum=262144)
         self.shutdown = None
         try:
             started = self.process.line(min(client.deadline, time.monotonic() + 10))
-            require(set(started) == {"port", "providerIncarnation"}
+            fields = {"port", "providerIncarnation"} if not self.current_http else {
+                "schemaVersion", "port", "endpointIncarnation"}
+            require(set(started) == fields
                     and type(started["port"]) is int and 1 <= started["port"] <= 65535
-                    and started["providerIncarnation"] == incarnation and (port == 0 or started["port"] == port),
+                    and started["endpointIncarnation" if self.current_http else "providerIncarnation"] == incarnation
+                    and (not self.current_http or started["schemaVersion"] ==
+                         "latent.synthetic.current-post-recipient-started.v1")
+                    and (port == 0 or started["port"] == port),
                     "actual-owned-recipient-listener")
             self.port = started["port"]
             client.evidence.record(self.prefix + "-started", started)
@@ -144,7 +236,10 @@ class Peer:
             lines = bytes(self.process.buffers[0]).splitlines()
             require(len(lines) == 1, "original-recipient-stopped-record")
             observed = decode(lines[0], 8192)
-            from .provider import stopped_observation
+            if self.current_http:
+                from .current_recipient import stopped_observation
+            else:
+                from .provider import stopped_observation
             stopped_observation(observed, self.incarnation)
             require(self.process.closed and self.process.owner.finished
                     and self.process.owner.process.returncode == 0, "actual-recipient-retirement")
@@ -163,7 +258,9 @@ class Peer:
 
 def admission_lease_interval(client):
     # This is the original configured five-second supply-chain lease, not a
-    # readiness witness. Reopening occurs only after actual clean retirement.
+    # readiness witness. Call only after physical retirement of the original
+    # process, including a reaped controlled crash; this wait supplies no clean
+    # shutdown report.
     until = time.monotonic() + 6
     require(until < client.deadline, "original-admission-lease-interval")
     while time.monotonic() < until:
@@ -200,11 +297,17 @@ def publish(client, signed: Path, items) -> dict[str, str]:
     return result
 
 
-def inspect(client, node: Path, configuration: Path, operations, *, stage="transaction-host-inspection"):
+def inspect(client, node: Path, configuration: Path, operations, *, stage="transaction-host-inspection",
+            intent_operation="put-once"):
     from .policies import ObservedHosts
     value = decode(native(client, node, stage, "inspect-transaction-hosts",
                           "--config", configuration, timeout=120), 262144)
-    return ObservedHosts.read(value, operations, diagnostic=len(operations) == 15)
+    observed = ObservedHosts.read(value, operations, diagnostic=len(operations) == 15,
+                                  intent_operation=intent_operation)
+    # Business inspection still opens/retire the real control catalog owner.
+    # Its persisted clock floor cannot be reused immediately by another boot.
+    admission_lease_interval(client)
+    return observed
 
 
 def namespace_arguments(publication: str):
@@ -248,13 +351,27 @@ def create_namespace(client, item, publication):
 
 
 def inspect_namespace(client, publication):
-    value = client.call("state", "inspect", *namespace_arguments(publication))["data"]["namespace"]
+    arguments = ("state", "inspect", *namespace_arguments(publication))
+    cutoff = min(client.deadline, time.monotonic() + 25)
+    for attempt in range(8):
+        require(time.monotonic() < cutoff, "original-namespace-inspection-cutoff")
+        result = client.call(*arguments, codes=(0, 5),
+                            timeout=min(25, cutoff - time.monotonic()), cutoff=cutoff)
+        state = read_observer.namespace_kind(result)
+        require(time.monotonic() < cutoff, "original-namespace-inspection-cutoff")
+        if state == "success":
+            break
+        if attempt < 7:
+            read_observer.pause(cutoff, "original-namespace-inspection-cutoff")
+    else:
+        raise ValueError("original-namespace-inspection-read-bound")
+    value = result["data"]["namespace"]
     require(isinstance(value, dict) and re.fullmatch(r"0|[1-9][0-9]*", value["commandCount"]),
             "actual-namespace-command-count")
     return value
 
 
-def deploy(client, signed: Path, item, publication: str, grants, authority: str):
+def deployment_metadata(client, signed: Path, item, publication: str, grants):
     manifest = read_json(signed / ("java718-" + item.name) / "deployment.json")
     require(manifest["spec"]["release"] == item.component_digest, "original-deployment-component")
     manifest["spec"].update(publication=publication, grants=grants)
@@ -272,10 +389,22 @@ def deploy(client, signed: Path, item, publication: str, grants, authority: str)
     target = {"service": cfg.SERVICE, "contract": cfg.CONTRACT, "route": cfg.DEPLOYMENT,
         "publication": publication, "revision": selected[0]["revisions"][0]["revisionId"],
         "deploymentGeneration": int(deployed["generation"])}
+    return deployed, target
+
+
+def bind_http_routes(client, authority: str, item, target):
     for mode in PATHS:
         function = mode if mode in {"query", "scan"} else "update"
         _trigger(client, authority, item, dict(target, function=function), mode)
-    client.evidence.passed("deploy-" + item.name, {"deployment": deployed, "selectedTarget": target})
+
+
+def deploy(client, signed: Path, item, publication: str, grants, authority: str):
+    deployed, target = deployment_metadata(client, signed, item, publication, grants)
+    bind_http_routes(client, authority, item, target)
+    case = 'deploy-' + item.name
+    if case in getattr(client.evidence, 'cases', []):
+        case += '-generation-' + deployed['generation']
+    client.evidence.passed(case, {"deployment": deployed, "selectedTarget": target})
     return target
 
 
@@ -318,7 +447,8 @@ def as_user(client, subject=cfg.ALICE):
 def lookup(client, publication, original_key):
     with as_user(client):
         return client.call("transaction", "lookup", *namespace_arguments(publication),
-                           "--operation", "update", "--client-key", original_key)["data"]["command"]
+                           "--operation", "update", "--client-key", original_key,
+                           codes=(0, 3))["data"]["command"]
 
 
 def effect(client, publication, original_key, effect_id):
@@ -337,6 +467,17 @@ def require_retirement(report):
                  "liveHostStates", "liveInstances", "liveTemporaryBuffers", "liveCancellationProbes"):
         require(type(report[name]) is int and report[name] == 0, "actual-node-retired-owner-counter")
     state = report.get("state")
+    if isinstance(state, dict) and "storePhysicallyRetired" in state:
+        counts = {"liveStorageWorkers", "liveStorageOwners", "queuedStorageRetirements",
+                  "acceptedStorageJobs", "storageRetainedBytes", "ordinaryNativeReservations",
+                  "recoveryNativeReservations", "ordinaryNativeBytes", "recoveryNativeBytes", "namespaceOwners"}
+        require(set(state) == counts | {"clean", "quarantined", "storePhysicallyRetired", "nativePhysicallyRetired"}
+                and state["clean"] is True and state["quarantined"] is False
+                and state["storePhysicallyRetired"] is True and state["nativePhysicallyRetired"] is True,
+                "actual-current-state-physical-retirement")
+        require(all(type(state[name]) is int and state[name] == 0 for name in counts),
+                "actual-current-state-retired-owner-counters")
+        return
     require(isinstance(state, dict) and state["clean"] is True
             and state["nativeQuarantined"] is False and state["storeQuarantined"] is False
             and state["storeEngine"] == "closed" and state["storeThreadsJoined"] > 0,

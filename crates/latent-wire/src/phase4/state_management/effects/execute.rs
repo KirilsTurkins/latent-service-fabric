@@ -22,19 +22,20 @@ pub(super) async fn run(
     )?);
     access.before_lookup().map_err(native)?;
     let mut pending = audit::begin(&access, &context, &request).await?;
-    let mut prepared = match lookup::prepare(Arc::clone(&access), request.clone()).await {
-        Ok(value) => value,
-        Err(error) => {
-            let finish = pending.finish(
-                latent_audit::AuditOperationResult::Rejected,
-                latent_audit::AuditReason::Rejected,
-                None,
-                false,
-            );
-            let _ = state_audit::ack(finish).await;
-            return Err(error);
-        }
-    };
+    let mut prepared =
+        match lookup::prepare(Arc::clone(&access), request.clone(), context.clone()).await {
+            Ok(value) => value,
+            Err(error) => {
+                let finish = pending.finish(
+                    latent_audit::AuditOperationResult::Rejected,
+                    latent_audit::AuditReason::Rejected,
+                    None,
+                    false,
+                );
+                let _ = state_audit::ack(finish).await;
+                return Err(error);
+            }
+        };
     // Replay/read from coherent durable originals before action permission or
     // expiry checks. Current operator and data-read authority still fence it.
     if let Some(outcome) = replay(&request, &mut prepared) {

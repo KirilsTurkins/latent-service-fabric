@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/compile_transaction_guests.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reconcile accepted Java capture squash ancestry with all current lifecycle and diagnostic commands retained",
+  "reviewReason": "Retain exact accepted Java read-only cache, lifecycle, diagnostic and current HTTP selections; add separate Java-only early HTTP capture without changing original variants, budgets or commands.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9c24e537f73745520165fe3f21c6f5476b7faf08c9c8d792532da97b777ecb98"
+  "sha256": "83747450f74144f5685cea9b43cd1668fda7fd23fdf894a77c380c1c8eb2e4de"
 }

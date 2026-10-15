@@ -188,13 +188,17 @@ pub(in crate::standalone::http) fn recover(
     invocation: Invocation,
     revision: latent_routing::ResolvedRevision,
     lease: latent_control_store::http_routes::TriggerReadLease,
+    clock: &dyn latent_core::ActivationClock,
 ) -> Result<latent_core::BoxFuture<'static, Result<http::Delivery, u16>>, u16> {
     let installation =
         selected(services, route, &revision).map_err(super::super::dispatch::status)?;
     let principal = invocation.context().principal().clone();
     let deadline = invocation.deadline();
+    let sample = clock.sample();
+    let (unix, expiry) =
+        result_read_deadline(deadline.unix_millis(), deadline.monotonic(), sample)?;
     let context = latent_wire::invocation::AuthenticatedInvocationContext::new(principal)
-        .with_transport_deadline_at(deadline.unix_millis(), deadline.monotonic());
+        .with_transport_deadline_at(unix, expiry);
     let request = t::LookupCommandRequest {
         profile: Some(latent_rpc::phase4::current_profile()),
         command: Some(t::CommandSelector {
@@ -224,9 +228,53 @@ pub(in crate::standalone::http) fn recover(
     }))
 }
 
+fn result_read_deadline(
+    original_unix: u64,
+    original: std::time::Instant,
+    sample: latent_core::ClockSample,
+) -> Result<(u64, std::time::Instant), u16> {
+    let maximum = sample.monotonic() + std::time::Duration::from_secs(30);
+    let expiry = original.min(maximum);
+    let millis = u64::try_from(
+        expiry
+            .saturating_duration_since(sample.monotonic())
+            .as_millis(),
+    )
+    .map_err(|_| 400u16)?;
+    Ok((
+        original_unix.min(sample.unix_millis().saturating_add(millis)),
+        expiry,
+    ))
+}
+
 fn denied() -> PlatformError {
     crate::standalone::error(
         PlatformErrorCode::PermissionDenied,
         "transaction-http-binding-not-installed",
     )
+}
+
+#[cfg(test)]
+mod result_deadline_tests {
+    use super::*;
+
+    #[test]
+    fn retained_result_read_narrows_long_http_deadline_and_preserves_earlier_originals() {
+        let now = std::time::Instant::now();
+        let sample = latent_core::ClockSample::new(1000, now);
+        let seconds = |n| std::time::Duration::from_secs(n);
+        assert_eq!(
+            result_read_deadline(121_000, now + seconds(120), sample).unwrap(),
+            (31_000, now + seconds(30))
+        );
+        assert_eq!(
+            result_read_deadline(2000, now + seconds(1), sample).unwrap(),
+            (2000, now + seconds(1))
+        );
+        let expired = now.checked_sub(seconds(1)).unwrap();
+        assert_eq!(
+            result_read_deadline(999, expired, sample).unwrap(),
+            (999, expired)
+        );
+    }
 }

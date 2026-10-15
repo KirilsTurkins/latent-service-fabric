@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "latent.java.early-http-compiler-capture.v1",
+  "sourceCommit": "47e4e60778d7fdd033d5f1d6c05595752713c971",
+  "sourceTree": "e10561c5a7340b6de674378d77d88b6db644c32e",
+  "variant": "forbidden-http-before-stage",
+  "materials": {
+    "report": {
+      "sha256": "sha256:bd40833f7f527f42d5f4a088cbcc093bdcd023060e91fb948f2505f8aaf5d2b7",
+      "bytes": 20952
+    },
+    "component": {
+      "sha256": "sha256:0fb2662569299abb5e022aab0f7f53bb5f4f11f75d845cf5b048271a54f6404c",
+      "bytes": 984422
+    },
+    "sourceInputs": {
+      "sha256": "sha256:218ddeb701ca7052147abfa3819b2303d67cc8e823daae86e8f28c97bdbbb08a",
+      "bytes": 25803
+    },
+    "recipeInputs": {
+      "sha256": "sha256:6275d58255d76391c025e17a232909d368c8e79a3a314600ebaf75001dc5eb2e",
+      "bytes": 8741
+    },
+    "compilerInputs": {
+      "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+      "bytes": 2952146
+    },
+    "sourceArchive": {
+      "sha256": "sha256:f2f059ac4dee615aba86f9d3471ee5f124c4e186c8063dfc0f8742ca9fb3ada5",
+      "bytes": 136383
+    },
+    "capsuleSource": {
+      "sha256": "sha256:4edfb96fcd6ce531877eecb9fdff474cfdeeb4e9403b5d76a5c5756f68aad579",
+      "bytes": 4360
+    },
+    "companion": {
+      "sha256": "sha256:1169abe0b6b6e621208798c06cd61b0e9ede51feb3858baec075685f16fbbf56",
+      "bytes": 1013
+    },
+    "declaration": {
+      "sha256": "sha256:81a0ace713ac452d8dc05ad04b4dac4be8cf9477bb5fcac6e6a63eaf849f9226",
+      "bytes": 807
+    },
+    "sdkLock": {
+      "sha256": "sha256:315646ef3954057655b8dbed1e067c827ed2c2b898f7b15389e95ad7f572a62c",
+      "bytes": 26739
+    }
+  },
+  "actualImports": [
+    "latent:clock/monotonic@0.1.0",
+    "latent:clock/wall@0.1.0",
+    "latent:http/client@0.2.0",
+    "latent:intents/staging@0.1.0",
+    "latent:state/key-value@0.2.0"
+  ],
+  "limits": {
+    "cpuFuel": 1000000000,
+    "memoryBytes": 67108864,
+    "wallTimeLimitMillis": 120000,
+    "childCalls": 0,
+    "outboundRequests": 0,
+    "stateReadBytes": 4194304,
+    "stateWriteBytes": 2097152,
+    "blobReadBytes": 0,
+    "blobWriteBytes": 0,
+    "logBytes": 0,
+    "effectCount": 32
+  },
+  "compilerExecuted": true,
+  "signedNodeExecutionQualified": false,
+  "immediateHttpDenialQualified": false,
+  "postStageRollbackQualified": false,
+  "productionApproval": false,
+  "issueClosure": false,
+  "captureKind": "new-authentic-capture-after-external-environment-loss-2026-10-15",
+  "historicalCapturePacketSha256": "sha256:eb187ea9456acc0daf9ccf428b748d2c9af5e0269287a5961602eadb5305e481",
+  "componentBytesEqualHistoricalCapture": true,
+  "reportAndCompilerClosureAreNew": false,
+  "actualCaptureReceiptSHA256": "sha256:f10e2666434093d1bbc85246a2675fe25811bc5b45c84b262eb96b6d8efc2b57",
+  "selectedPublicMaterialRoot": "/work/pr970-fresh-early-java-materials-r1-20261015",
+  "authoredSourceAndContractsEqualHistorical": true,
+  "completeEarlyLoaderValidated": true,
+  "reportIsNew": true,
+  "compilerClosureByteExactHistorical": true,
+  "metadataCorrection": {
+    "predecessorPacketSHA256": "sha256:0c1e31983b2884d402edd8785f5c869364ea4b62930bd783f88838352f8fd013",
+    "reason": "The inherited composite flag incorrectly described the byte-identical compiler closure as new; only the report identity changed.",
+    "actualMaterialPinsChanged": false
+  }
+}

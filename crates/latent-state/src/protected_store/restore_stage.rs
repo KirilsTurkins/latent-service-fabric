@@ -16,9 +16,7 @@ use crate::{
     recovery::{
         guard_key,
         restore::RestoreWindow,
-        snapshot::{
-            inspect_snapshot, visit_snapshot_rows, RequiredArtifact, SnapshotError, SnapshotReceipt,
-        },
+        snapshot::{RequiredArtifact, SnapshotError, SnapshotReceipt},
         RecoveryGuard,
     },
     store_identity::{ExternalCheckpoint, StoreIdentity},
@@ -36,7 +34,6 @@ use std::{
 
 mod receipt;
 
-const WORK_BYTES: u64 = 8 * 1024 * 1024;
 const ROOT_RESOURCE_BYTES: u64 = 64 * 1024;
 const CONTROL_BYTES: usize = 1024 * 1024;
 
@@ -333,13 +330,64 @@ impl ProtectedStoreOwner {
         validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
         current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
     ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        self.open_snapshot_for_restore_limited(
+            config,
+            destination,
+            original,
+            validate_row,
+            current,
+            crate::recovery::snapshot::SNAPSHOT_FILE_BYTES,
+        )
+    }
+
+    /// Current source custody with a stricter original operator file ceiling.
+    #[allow(clippy::too_many_arguments)]
+    pub fn open_snapshot_for_restore_limited(
+        &self,
+        config: ProtectedSnapshotConfig,
+        destination: ProtectedRestoreDestinationConfig,
+        original: Arc<NativeReservation>,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+        maximum_file_bytes: u64,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        self.open_snapshot_for_restore_profile(
+            config,
+            destination,
+            original,
+            validate_row,
+            current,
+            maximum_file_bytes,
+            super::ProtectedSnapshotProfile::General,
+        )
+    }
+
+    /// Stricter installed single-namespace producer on the SAME native custody.
+    #[allow(clippy::too_many_arguments)]
+    pub fn open_snapshot_for_restore_profile(
+        &self,
+        config: ProtectedSnapshotConfig,
+        destination: ProtectedRestoreDestinationConfig,
+        original: Arc<NativeReservation>,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+        maximum_file_bytes: u64,
+        profile: super::ProtectedSnapshotProfile,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
         let bytes = config
             .validate()?
             .checked_add(destination.resource_bytes()?)
             .ok_or(ProtectedStoreError::InvalidConfiguration)?;
-        let custody = self.reserve_custody(bytes, WORK_BYTES, Arc::clone(&original))?;
-        let inner = self.initialize_custody_with(custody, WORK_BYTES, move |store| {
-            let file = match SnapshotFile::open_existing(store, config, original, current) {
+        let custody = self.reserve_custody(bytes, profile.work_bytes(), Arc::clone(&original))?;
+        let inner = self.initialize_custody_with(custody, profile.work_bytes(), move |store| {
+            let file = match SnapshotFile::open_existing_profile(
+                store,
+                config,
+                original,
+                current,
+                maximum_file_bytes,
+                profile,
+            ) {
                 Ok(file) => file,
                 Err(SnapshotError::Source(error)) => return Err(error),
                 Err(error) => return Ok((None, Err(error))),
@@ -348,8 +396,7 @@ impl ProtectedStoreOwner {
                 .lock()
                 .map_err(|_| StoreError::Unavailable)?
                 .config = Some(destination);
-            let receipt = inspect_snapshot(&mut file.cursor(), file.deadline(), validate_row)
-                .map_err(SnapshotError::Review);
+            let receipt = file.inspect(validate_row).map_err(SnapshotError::Review);
             Ok((Some(file), receipt))
         })?;
         Ok(ProtectedSnapshotJob { inner })
@@ -365,13 +412,13 @@ impl ProtectedStoreOwner {
         request: RestoreStageRequest,
         owners: Arc<dyn RestoreStageOwners>,
     ) -> Result<ProtectedRestoreStageJob, ProtectedStoreError> {
-        let inner =
-            self.with_physical_custody(snapshot.custody, WORK_BYTES, move |file, source| {
-                let Some(file) = file else {
-                    return Ok(Err(RestoreStageError::Review(StoreError::Invalid)));
-                };
-                Ok(stage(source, file, input, &request, owners))
-            })?;
+        let work = snapshot.custody.maximum_job_bytes();
+        let inner = self.with_physical_custody(snapshot.custody, work, move |file, source| {
+            let Some(file) = file else {
+                return Ok(Err(RestoreStageError::Review(StoreError::Invalid)));
+            };
+            Ok(stage(source, file, input, &request, owners))
+        })?;
         Ok(ProtectedRestoreStageJob { inner })
     }
 }
@@ -491,11 +538,12 @@ fn review_stage(
     }
     let operation_digest = request.digest(input).map_err(RestoreStageError::Review)?;
     current(file, input, owners.as_ref())?;
-    let actual = inspect_snapshot(&mut file.cursor(), file.deadline(), |key, bytes| {
-        check_owners(owners.as_ref())?;
-        owners.archive_row(key, bytes)
-    })
-    .map_err(RestoreStageError::Review)?;
+    let actual = file
+        .inspect(|key, bytes| {
+            check_owners(owners.as_ref())?;
+            owners.archive_row(key, bytes)
+        })
+        .map_err(RestoreStageError::Review)?;
     if &actual != input.snapshot() {
         return Err(RestoreStageError::Review(StoreError::Conflict));
     }
@@ -622,10 +670,8 @@ fn import_rows(
         )
         .map_err(|error| RestoreStageError::Review(protected_error(error)))?;
     let mut imported_rows = 0;
-    visit_snapshot_rows(
-        &mut file.cursor(),
+    file.visit_rows(
         &review.snapshot,
-        file.deadline(),
         |key, bytes| {
             check_owners(owners)?;
             owners.archive_row(key, bytes)
@@ -917,10 +963,8 @@ fn verify_import(
     window: &RestoreWindow,
     owners: &dyn RestoreStageOwners,
 ) -> Result<(), StoreError> {
-    visit_snapshot_rows(
-        &mut file.cursor(),
+    file.visit_rows(
         snapshot,
-        file.deadline(),
         |key, bytes| {
             check_owners(owners)?;
             owners.archive_row(key, bytes)

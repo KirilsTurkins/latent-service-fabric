@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "latent.java.isolated-aot-profile-diagnosis.v1",
+  "nativeWorkerSourceCommit": "5b6e6e71f8b1236d8ba3d580c11e052b3dc7a21e",
+  "configurationConductorSourceCommit": "1641e0eccae13f0f670c66b5939dce103bba8df9",
+  "guestCompilerSourceCommit": "9bae83952d9513c965a88d375b2a533916a98473",
+  "inputSelectionDigest": "sha256:c6d246875575fa12d63f71844ff2f89f246d3b537c8642391235dcd7b84f5d28",
+  "workerDigest": "sha256:a0ac3ac86809b7a2994e7360daf53df72d5fb9c917dd7143ab601df061b1bbfd",
+  "componentDigest": "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd",
+  "componentBytes": 1051617,
+  "sandboxProfile": "lsf-linux-x86_64-landlock3-seccomp-v1",
+  "limits": {
+    "addressSpaceBytes": 4294967296,
+    "cpuSeconds": 300,
+    "stackBytes": 8388608,
+    "maximumFds": 16,
+    "maximumComponentBytes": 33554432,
+    "maximumOutputBytes": 134217728,
+    "wallTimeoutMillis": 300000,
+    "coreFileBytes": 0,
+    "fileSizeBytes": 0
+  },
+  "onlyCompilerSettingsChange": {
+    "javaGuest": {
+      "ordinary": false,
+      "java": true
+    }
+  },
+  "observations": [
+    {
+      "name": "ordinary",
+      "bootstrapDigest": "sha256:b7bef5bf75b7568c1c67d4e639217e1ddf556d26cc9abcf70fe2548d5d88981e",
+      "runningExecutableAuthenticated": true,
+      "exactReadinessMatched": true,
+      "enforcedProcessStatus": {
+        "NoNewPrivs": 1,
+        "Seccomp": 2,
+        "Seccomp_filters": 2,
+        "Threads": 1
+      },
+      "fixedWorkerDiagnostic": "aot compiler worker failed: component compilation failed\n",
+      "exitCode": 2,
+      "nativeOutputBytes": null,
+      "nativeOutputDigest": null,
+      "seconds": 0.096521,
+      "childPhysicallyReaped": true,
+      "engineCompatibility": "sha256:3e40fc1ec4a9f1c0b9b7529c700e4b4b50e84e340eb80c0e19e860756f12a254",
+      "nativeCompilationSucceeded": false
+    },
+    {
+      "name": "java",
+      "bootstrapDigest": "sha256:5fa3ae21b45f5f4931e9b548c9eb720827638b00f6f01d7acf2b6e9ca4533143",
+      "runningExecutableAuthenticated": true,
+      "exactReadinessMatched": true,
+      "enforcedProcessStatus": {
+        "NoNewPrivs": 1,
+        "Seccomp": 2,
+        "Seccomp_filters": 2,
+        "Threads": 1
+      },
+      "fixedWorkerDiagnostic": "",
+      "exitCode": 0,
+      "nativeOutputBytes": 2393840,
+      "nativeOutputDigest": "sha256:5d822a15194ecb8aa1b308295780e558dd9619cbd167db63e1a958839d7576e3",
+      "seconds": 5.376523,
+      "childPhysicallyReaped": true,
+      "engineCompatibility": "sha256:a6684a84003cc896b2ca0f65f10a1e9c2dc868682afbe5e20555d630c8fea20a",
+      "nativeCompilationSucceeded": true
+    }
+  ],
+  "workerBytesUnchanged": true,
+  "nativeOutputLoaded": false,
+  "nativeOutputAuthenticatedOrSigned": false,
+  "guestExecuted": false,
+  "signedGuestExecutionQualified": false,
+  "packagedDistributionQualified": false,
+  "reproducerSources": {
+    "bootstrap.rs": "sha256:52b80e62bb293877281e4eca8d8631320fd6526ce46ec36f01bed7fb0df6691a",
+    "reproduce.py": "sha256:4c3b28bc936562d89979394b589f724a83f0ebae49c699119ff82db3a0d8f9ea"
+  },
+  "privateReceiptDigests": {
+    "ordinary": "sha256:4bd35d7c5e1342e1311c4b988c9250879223e8fe47d9b84c4e8e301e4dc5855d",
+    "java": "sha256:a3cb41bc038eddf2dc56d622a79dca05325e58db3f25539f8be7bf4809ad9804"
+  },
+  "reproducerKind": "source-bound-bounded-worker-protocol"
+}

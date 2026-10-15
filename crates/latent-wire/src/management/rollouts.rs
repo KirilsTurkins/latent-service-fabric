@@ -13,7 +13,7 @@ mod tests;
 
 use latent_control_store::rollouts as domain;
 use latent_core::{DeploymentId, PlatformError, PlatformErrorCode};
-use latent_manifest::{ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::ManifestValidator;
 use latent_rollout::{MutationPreview, MutationResult, RolloutHandle};
 use tonic::{Request, Response, Status};
 
@@ -70,7 +70,7 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
             selected.deployment.expect("validated candidate"),
         )
         .map_err(|_| Status::invalid_argument("invalid rollout candidate representation"))?;
-        Phase1ManifestValidator
+        self.manifest_profile
             .validate_deployment(&candidate)
             .map_err(|_| Status::invalid_argument("invalid rollout candidate"))?;
         candidate.normalize_storage_fields();

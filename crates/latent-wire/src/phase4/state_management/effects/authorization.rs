@@ -45,6 +45,7 @@ impl Access {
             entity: command.entity.clone(),
             node,
             data,
+            target: std::sync::OnceLock::new(),
             actions: std::sync::OnceLock::new(),
             action: input::action(original.mutation)?,
             deadline,
@@ -72,12 +73,41 @@ impl Access {
             deadline: self.deadline,
             input_bytes: request.encoded_len(),
         };
+        let seal = |operation| match self.target.get() {
+            Some(bound) => target.seal_target(operation, bound.target.kind, &bound.target.scope),
+            None => target.seal(operation),
+        };
         self.actions
             .set(Actions {
-                mutation: target.seal(input::operation(self.action))?,
-                planning: planning.then(|| target.seal("effect-plan")).transpose()?,
+                mutation: seal(input::operation(self.action))?,
+                planning: planning.then(|| seal("effect-plan")).transpose()?,
             })
             .map_err(|_| invalid())
+    }
+
+    pub(super) fn bind_target(
+        &self,
+        context: &AuthenticatedInvocationContext,
+        target: super::data_target::DataTarget,
+        input_bytes: usize,
+    ) -> Result<(), Error> {
+        let read = state_authorization::EffectDecision {
+            services: &self.inner.services,
+            binding: &self.namespace.binding,
+            context,
+            caller: &self.caller,
+            entity: self.entity.as_deref(),
+            deadline: self.deadline,
+            input_bytes,
+        }
+        .seal_target("inspect-effect", target.kind, &target.scope)
+        .map_err(|error| match error.code {
+            super::PlatformErrorCode::PermissionDenied => Error::NotFound,
+            _ => gate(&error),
+        })?;
+        self.target
+            .set(super::data_target::BoundTarget { target, read })
+            .map_err(|_| Error::InvalidAuthorizationFence)
     }
 
     fn state(
@@ -99,6 +129,9 @@ impl Access {
                     .ok_or_else(denied)?,
             );
         }
+        if let Some(bound) = self.target.get() {
+            captured.push(&bound.read);
+        }
         self.inner
             .services
             .policy
@@ -114,18 +147,21 @@ impl Access {
                     self.entity.as_deref(),
                 )?;
                 if phase != Phase::Read {
-                    self.tuple(
+                    self.action_tuple(
                         inputs[2],
                         input::operation(self.action),
-                        &self.caller,
                         self.entity.as_deref(),
                     )?;
                 }
                 if phase == Phase::Plan {
-                    self.tuple(
-                        inputs[3],
-                        "effect-plan",
-                        &self.caller,
+                    self.action_tuple(inputs[3], "effect-plan", self.entity.as_deref())?;
+                }
+                if let Some(bound) = self.target.get() {
+                    self.tuple_scope(
+                        inputs.last().ok_or_else(denied)?,
+                        "inspect-effect",
+                        bound.target.kind,
+                        &bound.target.scope,
                         self.entity.as_deref(),
                     )?;
                 }
@@ -140,6 +176,35 @@ impl Access {
         caller: &CallerScope,
         entity: Option<&str>,
     ) -> Result<(), PlatformError> {
+        self.tuple_scope(actual, operation, caller.kind, &caller.scope, entity)
+    }
+
+    fn action_tuple(
+        &self,
+        actual: &EvaluationInput<'_>,
+        operation: &str,
+        entity: Option<&str>,
+    ) -> Result<(), PlatformError> {
+        match self.target.get() {
+            Some(bound) => self.tuple_scope(
+                actual,
+                operation,
+                bound.target.kind,
+                &bound.target.scope,
+                entity,
+            ),
+            None => self.tuple(actual, operation, &self.caller, entity),
+        }
+    }
+
+    fn tuple_scope(
+        &self,
+        actual: &EvaluationInput<'_>,
+        operation: &str,
+        kind: latent_policy::capability::RecoveryScopeKind,
+        scope: &str,
+        entity: Option<&str>,
+    ) -> Result<(), PlatformError> {
         let binding = &self.namespace.binding;
         let valid = matches!(actual.resource, ResourceTarget::State {
             namespace, incarnation, entity: actual_entity, recovery_kind,
@@ -147,8 +212,8 @@ impl Access {
         } if namespace == binding.namespace.0
             && incarnation == binding.incarnation
             && actual_entity == entity
-            && recovery_kind == caller.kind
-            && recovery_scope == caller.scope
+            && recovery_kind == kind
+            && recovery_scope == scope
             && result_policy == binding.result_policy);
         if !valid
             || actual.principal.subject != self.principal.subject

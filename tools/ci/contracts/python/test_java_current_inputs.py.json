@@ -6,9 +6,18 @@
     "CurrentJavaInputs.test_declared_import_profile_and_selection_bounds_refuse",
     "CurrentJavaInputs.test_failed_missing_stages_and_claimed_signed_execution_refuse_even_with_reselected_report_digest",
     "CurrentJavaInputs.test_independent_selected_report_and_source_materials_preserve_original_bytes",
+    "CurrentJavaNativeMemoryPackaging.test_native_memory_signing_rejects_mixed_sources_profiles_and_old_report_substitution",
+    "CurrentJavaNativeMemoryPackaging.test_native_memory_signing_requires_complete_new_report_set_under_its_source",
+    "CurrentJavaNativeMemoryPackaging.test_terminal_and_pending_identity_bind_native_memory_custody_packet_bytes",
+    "CurrentJavaPackaging.test_current_forbidden_preparation_preserves_signature_without_claiming_execution_denial",
     "CurrentJavaPackaging.test_current_package_selects_explicit_compiler_source_without_historical_fallback",
     "CurrentJavaPackaging.test_current_selection_requires_both_original_and_forbidden_before_any_signing",
-    "CurrentJavaPackaging.test_duplicate_variant_or_mixed_source_refuses_without_invoking_signer"
+    "CurrentJavaPackaging.test_duplicate_variant_or_mixed_source_refuses_without_invoking_signer",
+    "CurrentJavaPackaging.test_fresh_http_custody_profile_mixed_reports_and_foreign_source_refuse",
+    "CurrentJavaPackaging.test_fresh_http_signing_requires_one_complete_closed_capture_report_set",
+    "CurrentJavaPackaging.test_package_retains_exact_current_marker_and_negative_source_as_signed_assets",
+    "CurrentJavaPackaging.test_recompiled_signing_requires_complete_exact_report_set",
+    "CurrentJavaPackaging.test_separate_early_capture_keeps_original_six_selection_closed_and_rejects_claims_or_late_call"
   ],
   "guards": {
     "CurrentJavaCampaign.test_current_campaign_refuses_partial_duplicate_mixed_source_or_claimed_authority": {
@@ -83,6 +92,54 @@
       ],
       "skipSites": []
     },
+    "CurrentJavaNativeMemoryPackaging.test_native_memory_signing_rejects_mixed_sources_profiles_and_old_report_substitution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:43d31cb666e06e9318770936c9edfd7cff11f09e6ef756ae57046926dce9e2a8"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaNativeMemoryPackaging.test_native_memory_signing_requires_complete_new_report_set_under_its_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:43d31cb666e06e9318770936c9edfd7cff11f09e6ef756ae57046926dce9e2a8"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaNativeMemoryPackaging.test_terminal_and_pending_identity_bind_native_memory_custody_packet_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:43d31cb666e06e9318770936c9edfd7cff11f09e6ef756ae57046926dce9e2a8"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_current_forbidden_preparation_preserves_signature_without_claiming_execution_denial": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
+      ],
+      "skipSites": []
+    },
     "CurrentJavaPackaging.test_current_package_selects_explicit_compiler_source_without_historical_fallback": {
       "bases": [
         "unittest.TestCase"
@@ -91,7 +148,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
       ],
       "skipSites": []
     },
@@ -103,7 +160,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
       ],
       "skipSites": []
     },
@@ -115,13 +172,73 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_fresh_http_custody_profile_mixed_reports_and_foreign_source_refuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_fresh_http_signing_requires_one_complete_closed_capture_report_set": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_package_retains_exact_current_marker_and_negative_source_as_signed_assets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_recompiled_signing_requires_complete_exact_report_set": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
+      ],
+      "skipSites": []
+    },
+    "CurrentJavaPackaging.test_separate_early_capture_keeps_original_six_selection_closed_and_rejects_claims_or_late_call": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f42e2369f442bca3969973aac3821179fde47987ea244227f4fa0aae16cd5dd9",
+        "class:setup-sha256:3c8eadb3601902c2147c1f8eef331ea9251ca12967b34283bc320bbcc3237fad"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_current_inputs.py",
-  "reviewReason": "Retain original fixture guards and cases while registering installed transaction capture and finite diagnostic controls.",
+  "reviewReason": "Bind the fourth closed custody packet in terminal and pending collector identities; retain every original control and guard",
   "schemaVersion": "latent.ci.contracts.v1"
 }

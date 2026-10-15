@@ -2,6 +2,9 @@ use super::{contract, invalid, missing, PlatformError};
 use latent_commit::atomic::{CommandRecord, DurableResult, Outcome};
 use latent_rpc::{invocation::v1 as i, transaction::v1 as t};
 
+#[cfg(test)]
+mod tests;
+
 pub(super) fn response(
     request: &contract::Request,
     record: &CommandRecord,
@@ -65,12 +68,9 @@ fn retained(
             metadata: value.metadata.iter().cloned().collect(),
         }),
         Outcome::Aborted => R::TechnicalFailure(i::PlatformError {
-            code: if result.code() == Some("state-conflict") {
-                "state-conflict"
-            } else {
-                "unavailable"
-            }
-            .into(),
+            code: crate::phase4::local_transaction::projection::retained_abort_code(result)
+                .wire_code()
+                .into(),
             message: "transaction result unavailable".into(),
             retryable: false,
             ..Default::default()

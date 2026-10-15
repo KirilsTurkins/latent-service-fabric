@@ -16,7 +16,7 @@ pub(super) enum Bootstrap {
 }
 
 pub(super) trait Work<S>: Send {
-    fn run(self: Box<Self>, store: &S);
+    fn run(self: Box<Self>, store: &S, kind: StoreIoKind);
     fn reject(self: Box<Self>);
 }
 
@@ -44,6 +44,7 @@ pub(super) struct State<S> {
     pub physical_owners: usize,
     pub accepted: usize,
     pub retained_bytes: u64,
+    pub retained_operation_bytes: u64,
     pub active_reads: usize,
     pub active_writes: usize,
     pub live_workers: usize,
@@ -90,6 +91,7 @@ impl<S> State<S> {
             physical_owners: 0,
             accepted: 0,
             retained_bytes,
+            retained_operation_bytes: 0,
             active_reads: 0,
             active_writes: 0,
             live_workers: 0,
@@ -114,7 +116,7 @@ impl<S> State<S> {
         if self.custody.is_some() {
             return Err(StoreIoError::CustodyBusy);
         }
-        self.admit_capacity(recovery, bytes)
+        self.admit_capacity(recovery, bytes, false)
     }
 
     pub fn admit_custody(
@@ -130,7 +132,15 @@ impl<S> State<S> {
         if now >= custody.deadline {
             return Err(StoreIoError::CustodyExpired);
         }
-        self.admit_capacity(true, bytes)
+        self.admit_capacity(true, bytes, false)
+    }
+
+    /// A private exclusive resource holds the actual destination cache and
+    /// descriptors across callbacks. Its full bytes consume the SAME retained
+    /// partition; each active callback independently keeps the fixed job limit.
+    pub fn admit_custody_resource(&self, bytes: u64) -> Result<(), StoreIoError> {
+        self.require_idle_custody()?;
+        self.admit_capacity(true, bytes, true)
     }
 
     pub fn require_idle_custody(&self) -> Result<(), StoreIoError> {
@@ -176,7 +186,12 @@ impl<S> State<S> {
         }
     }
 
-    fn admit_capacity(&self, recovery: bool, bytes: u64) -> Result<(), StoreIoError> {
+    fn admit_capacity(
+        &self,
+        recovery: bool,
+        bytes: u64,
+        custody_resource: bool,
+    ) -> Result<(), StoreIoError> {
         if self.closed {
             return Err(StoreIoError::AdmissionClosed);
         }
@@ -219,7 +234,7 @@ impl<S> State<S> {
         if accepted >= maximum_accepted {
             return Err(StoreIoError::AcceptedFull);
         }
-        if bytes > job_bytes {
+        if !custody_resource && bytes > job_bytes {
             return Err(StoreIoError::JobTooLarge);
         }
         if current_bytes
@@ -232,6 +247,10 @@ impl<S> State<S> {
     }
 
     pub fn reserve(&mut self, recovery: bool, bytes: u64) {
+        self.retained_operation_bytes = self
+            .retained_operation_bytes
+            .checked_add(bytes)
+            .expect("accepted operation byte accounting overflow");
         self.accepted += 1;
         self.retained_bytes += bytes;
         if recovery {
@@ -276,6 +295,9 @@ impl<S> State<S> {
     }
 
     pub fn snapshot(&self) -> StoreIoSnapshot {
+        debug_assert!(self.retained_operation_bytes <= self.retained_bytes);
+        debug_assert!(self.recovery_retained_bytes <= self.retained_operation_bytes);
+        debug_assert!(self.accepted != 0 || self.retained_operation_bytes == 0);
         StoreIoSnapshot {
             queued: self.queue.len() + self.recovery_queue.len(),
             recovery_queued: self.recovery_queue.len(),
@@ -287,6 +309,7 @@ impl<S> State<S> {
             active_writes: self.active_writes,
             accepted: self.accepted,
             retained_bytes: self.retained_bytes,
+            retained_operation_bytes: self.retained_operation_bytes,
             physical_owners: self.physical_owners,
             queued_retirements: self.retirements.len() + self.recovery_retirements.len(),
             custody_active: self.custody.is_some(),

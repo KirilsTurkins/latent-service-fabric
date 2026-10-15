@@ -1,5 +1,5 @@
 //! Private native startup diagnostic. It runs ordinary owners and shutdown;
-//! unsupported offline modes refuse without opening the configured store.
+//! bounded offline actions use exact signed selectors and current store owners.
 use clap::Parser;
 use latent_core::TenantId;
 use latentd::{
@@ -33,8 +33,8 @@ fn main() -> ExitCode {
     }
 }
 fn run(args: Arguments) -> Result<(), &'static str> {
-    if args.request_file.is_some() || !args.diagnose_startup {
-        return Err("offline-recovery-adapter-unavailable");
+    if args.request_file.is_none() && !args.diagnose_startup {
+        return Err("native-recovery-mode-required");
     }
     let settings = NodeConfig::load(&args.config)
         .and_then(|input| input.derive())
@@ -54,16 +54,81 @@ fn run(args: Arguments) -> Result<(), &'static str> {
         .build()
         .map_err(|_| "native-runtime-refused")?;
     let grace = settings.shutdown_grace();
-    let result = encode(runtime.block_on(StandaloneNode::diagnose_startup(
-        settings,
-        credential,
-        &TenantId(args.tenant),
-        runtime.handle().clone(),
-        RuntimeThreads::default(),
-    )));
+    let result = if let Some(path) = &args.request_file {
+        recover(&runtime, settings, credential, &args.tenant, path)
+    } else {
+        encode(runtime.block_on(StandaloneNode::diagnose_startup(
+            settings,
+            credential,
+            &TenantId(args.tenant),
+            runtime.handle().clone(),
+            RuntimeThreads::default(),
+        )))
+        .map(Output::Diagnosis)
+    };
     runtime.shutdown_timeout(grace);
-    println!("{}", result?);
+    let result = result?;
+    let mut output = std::io::stdout().lock();
+    output
+        .write_all(result.bytes())
+        .and_then(|()| output.write_all(b"\n"))
+        .map_err(|_| "diagnosis-output-refused")?;
     Ok(())
+}
+
+enum Output {
+    Diagnosis(String),
+    Recovery(latent_core::native_capacity::NativeBuffer<Vec<u8>>),
+}
+impl Output {
+    fn bytes(&self) -> &[u8] {
+        match self {
+            Self::Diagnosis(value) => value.as_bytes(),
+            Self::Recovery(value) => value.get(),
+        }
+    }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn recover(
+    runtime: &tokio::runtime::Runtime,
+    settings: latentd::config::NodeSettings,
+    credential: &str,
+    tenant: &str,
+    path: &std::path::Path,
+) -> Result<Output, &'static str> {
+    let bytes = latent_protected_files::read(
+        path,
+        16_384,
+        latent_protected_files::ProtectedFilePolicy::Integrity,
+        "nativeRecoveryRequest",
+    )
+    .map_err(|_| "protected-request-refused")?;
+    let request = latentd::standalone::NativeRecoveryRequest::decode(&bytes)
+        .map_err(|_| "native-request-refused")?;
+    let report = runtime
+        .block_on(StandaloneNode::recover_namespace(
+            settings,
+            credential,
+            &TenantId(tenant.into()),
+            request,
+            runtime.handle().clone(),
+        ))
+        .map_err(|_| "native-operator-recovery-refused")?;
+    report
+        .encode()
+        .map(Output::Recovery)
+        .map_err(|_| "recovery-encoding-refused")
+}
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+fn recover(
+    _runtime: &tokio::runtime::Runtime,
+    _settings: latentd::config::NodeSettings,
+    _credential: &str,
+    _tenant: &str,
+    _path: &std::path::Path,
+) -> Result<Output, &'static str> {
+    Err("native-recovery-platform-refused")
 }
 
 fn encode<T: serde::Serialize>(

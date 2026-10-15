@@ -1,0 +1,59 @@
+{
+  "apiVersion": "latent.dev/v1alpha1",
+  "kind": "Capsule",
+  "metadata": {
+    "tenant": "examples",
+    "name": "examples/transaction-java-aggregate"
+  },
+  "component": {
+    "digest": "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+    "version": "2.0.0",
+    "world": "examples:transactional-aggregate/service@1.0.0"
+  },
+  "exports": [
+    "examples:transactional-aggregate/api@1.0.0"
+  ],
+  "imports": [
+    {
+      "contract": "latent:clock/monotonic@0.1.0",
+      "optional": false
+    },
+    {
+      "contract": "latent:clock/wall@0.1.0",
+      "optional": false
+    },
+    {
+      "contract": "latent:intents/staging@0.1.0",
+      "optional": false
+    },
+    {
+      "contract": "latent:state/key-value@0.2.0",
+      "optional": false
+    }
+  ],
+  "execution": {
+    "backend": "wasm-component",
+    "threading": "single-threaded",
+    "stateModel": "stateless",
+    "limits": {
+      "cpuFuel": 1000000000,
+      "memoryBytes": 67108864,
+      "wallTimeLimitMillis": 120000,
+      "childCalls": 0,
+      "outboundRequests": 0,
+      "stateReadBytes": 4194304,
+      "stateWriteBytes": 2097152,
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "logBytes": 0,
+      "effectCount": 1
+    },
+    "hostCallDepthMaximum": 8,
+    "componentCallDepthMaximum": 4,
+    "snapshotEligible": false,
+    "fusionEligible": false
+  },
+  "compatibility": {
+    "minimumFabricVersion": "0.1.0"
+  }
+}

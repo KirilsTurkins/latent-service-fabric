@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "PendingClaimHistory.test_actual_paused_acknowledged_shape_keeps_completed_claim_history",
+    "PendingClaimHistory.test_each_real_physical_owner_still_refuses_with_the_same_claim_history",
+    "PendingClaimHistory.test_generation_audit_and_failure_guards_cannot_be_replaced_by_history",
+    "PendingClaimHistory.test_health_pause_and_current_control_guards_are_independent_of_history",
+    "PendingClaimHistory.test_held_owner_cannot_renew_the_original_global_deadline",
+    "PendingClaimHistory.test_missing_noncanonical_and_out_of_range_claim_history_remain_fatal",
+    "PendingClaimHistory.test_physical_release_must_be_observed_without_resetting_history",
+    "PendingClaimHistory.test_valid_uint64_history_is_preserved_at_zero_one_and_maximum"
+  ],
+  "guards": {
+    "PendingClaimHistory.test_actual_paused_acknowledged_shape_keeps_completed_claim_history": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:44e5c8eb47121d06ca34b66e5c6ce6108ed51456f9fdb2b2626851c0b712e5c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingClaimHistory.test_each_real_physical_owner_still_refuses_with_the_same_claim_history": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:44e5c8eb47121d06ca34b66e5c6ce6108ed51456f9fdb2b2626851c0b712e5c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingClaimHistory.test_generation_audit_and_failure_guards_cannot_be_replaced_by_history": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:44e5c8eb47121d06ca34b66e5c6ce6108ed51456f9fdb2b2626851c0b712e5c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingClaimHistory.test_health_pause_and_current_control_guards_are_independent_of_history": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:44e5c8eb47121d06ca34b66e5c6ce6108ed51456f9fdb2b2626851c0b712e5c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingClaimHistory.test_held_owner_cannot_renew_the_original_global_deadline": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:44e5c8eb47121d06ca34b66e5c6ce6108ed51456f9fdb2b2626851c0b712e5c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingClaimHistory.test_missing_noncanonical_and_out_of_range_claim_history_remain_fatal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:44e5c8eb47121d06ca34b66e5c6ce6108ed51456f9fdb2b2626851c0b712e5c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingClaimHistory.test_physical_release_must_be_observed_without_resetting_history": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:44e5c8eb47121d06ca34b66e5c6ce6108ed51456f9fdb2b2626851c0b712e5c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PendingClaimHistory.test_valid_uint64_history_is_preserved_at_zero_one_and_maximum": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:44e5c8eb47121d06ca34b66e5c6ce6108ed51456f9fdb2b2626851c0b712e5c8",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_pending_claim_history.py",
+  "reviewReason": "Classify cumulative dispatcher claims without changing physical retirement gates",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

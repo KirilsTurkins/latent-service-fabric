@@ -27,7 +27,7 @@ def precondition(result):
     return '"' + base64.b64encode(bytes(key["some"])).decode() + '"'
 
 
-def rpc_result(record, result, publication, key):
+def rpc_command(record, result, publication, key):
     require(record["commandId"] == result["command-id"] and record["attemptId"] == result["attempt-id"]
             and record["metadataDurable"] is True
             and record["source"]["publicationId"] == publication
@@ -36,6 +36,10 @@ def rpc_result(record, result, publication, key):
                                       else "COMMAND_OUTCOME_REJECTED")
             and record["applicationStateCommitted"] is (result["disposition"] == "committed"),
             "actual-original-durable-command-inspection")
+
+
+def rpc_result(record, result, publication, key):
+    rpc_command(record, result, publication, key)
     retained = record["retainedResult"]
     require(retained["kind"] == ("success" if result["disposition"] == "committed" else "business-rejection")
             and retained["value"]["payload"] == {"encoding": "base64", "data": result["result"]["body-base64"]},
@@ -44,7 +48,9 @@ def rpc_result(record, result, publication, key):
 
 class Campaign:
     def __init__(self, client, configuration, full_path, signed, items, publications,
-                 proposals, policy_receipts, peer, node):
+                 proposals, policy_receipts, peer, node, *, service=cfg.SERVICE):
+        require(service in {cfg.SERVICE, cfg.EARLY_HTTP_SERVICE}, "explicit-java-campaign-service")
+        self.service = service
         self.client, self.configuration, self.signed = client, configuration, signed
         self.items = {item.name: item for item in items}
         self.publications, self.proposals, self.policy_receipts = publications, proposals, policy_receipts
@@ -85,7 +91,7 @@ class Campaign:
         except ValueError:
             if observed.get("status") in {400, 401, 403, 404, 405, 502, 503}:
                 from .refusal_observation import observe
-                observe(self.client)
+                observe(self.client, service=self.service)
             raise
 
     def query(self, count, *, minimum=None, original_key=None):
@@ -120,16 +126,30 @@ class Campaign:
         raise ValueError("actual-effect-disposition-not-observed")
 
     def peer_record(self, effect_id):
+        if getattr(self.peer, "current_http", False):
+            from .current_recipient import retained_record
+            row = retained_record(self.peer.directory / ("lsf-effect-" + effect_id + ".json"),
+                                  self.peer.incarnation)
+            require(row["bodyDigest"] == digest(provider.PAYLOAD)[7:],
+                    "actual-current-recipient-original-payload")
+            return row
         row = provider.retained_record(self.peer.directory / (effect_id + ".json"), self.peer.incarnation, effect_id)
         require(row["state"] == "applied" and row["bodySha256"] == digest(provider.PAYLOAD)[7:],
                 "actual-original-recipient-acceptance")
         return row
 
+    def recipient_observation(self):
+        if getattr(self.peer, "current_http", False):
+            from .current_recipient import OBSERVATION, bounded_observation
+            from tools.rust_capsule_project import read_file
+            return bounded_observation(decode(read_file(self.peer.directory / OBSERVATION, 8192), 8192),
+                                       self.peer.incarnation)
+        return provider.observed_recipient(self.peer.directory / provider.OBSERVATION, self.peer.incarnation)
+
     def execute(self):
         legacy = "put-once-legacy-v1"
         publication = self.publications[legacy]
-        lifecycle.deploy(self.client, self.signed, self.items[legacy], publication,
-                         self.proposals["deploymentGrants"], self.configuration.authority)
+        self.deploy(legacy)
         before = lifecycle.inspect_namespace(self.client, publication)
         view, initial = self.query(0)
         require(initial["key-version"] == {"none": None}, "fresh-namespace-key-is-absent")
@@ -155,6 +175,13 @@ class Campaign:
         return {"httpRequests": self.transport.requests,
                 "qualifiedDiagnosticScenarios": diagnostic_scenarios,
                 "originalCommands": {key: value for key, value in self.originals.items()}}
+
+    def deploy(self, name):
+        activation = getattr(self.node, 'current_activation', None)
+        if activation is not None:
+            return activation.switch(self, name)
+        return lifecycle.deploy(self.client, self.signed, self.items[name], self.publications[name],
+                                self.proposals['deploymentGrants'], self.configuration.authority)
 
     def _lost_and_duplicate(self, publication, initial):
         key, condition = "java-original-1", precondition(initial)
@@ -264,8 +291,7 @@ class Campaign:
         require(lifecycle.schema(self.items[compatible]) == lifecycle.schema(self.items["put-once-legacy-v1"]),
                 "actual-compatible-original-schema")
         publication = self.publications[compatible]
-        lifecycle.deploy(self.client, self.signed, self.items[compatible], publication,
-                         self.proposals["deploymentGrants"], self.configuration.authority)
+        self.deploy(compatible)
         for key in ("java-original-1", "java-original-rejection"):
             retained = self.original(key)
             http.replay(self.originals[key], retained)
@@ -297,9 +323,14 @@ class Campaign:
         # lookup. The same original IDs/receipt/horizon remain authoritative.
         with mode.open("wb") as output:
             output.write(b"reply")
-        self.node.start(self.full_path)
+        lifecycle.admission_lease_interval(self.client)
+        self.node.start(self.full_path, **({'current_session': 'compatible-after-crash'}
+                        if getattr(self.node, 'current_publication_program', False) else {}))
         http.replay(committed, self.original(key))
         self.query(4)
+        if getattr(self.peer, 'current_http', False) and getattr(self.node, 'current_program', None) == 'terminal':
+            from .effect_reconciliation import reconcile
+            reconcile(self, publication, key, committed, actual)
         recovered = self.wait_effect(publication, key, committed)
         require(self.peer_record(committed["effect-ids"][0]) == peer, "restart-preserves-original-provider-acceptance")
         rpc_result(lifecycle.lookup(self.client, publication, key), committed, publication, key)
@@ -309,12 +340,26 @@ class Campaign:
     def _retained_cancellation(self):
         key = "java-original-1"
         original = self.originals[key]
-        publication = self.publications["put-once-compatible-v2"]
+        publication = self.publications["put-once-legacy-v1"]
+        current = getattr(self.node, "current_publication_program", False)
+        if current:
+            require(getattr(self.node, "current_program", None) == "terminal"
+                    and getattr(self.node, "current_activation", None) is not None,
+                    "current-retained-cancellation-original-selection")
+            self.node.current_activation.switch(self, "put-once-legacy-v1", retained_cancellation=True)
         with lifecycle.as_user(self.client):
             result = self.client.call("transaction", "cancel", *lifecycle.namespace_arguments(publication),
                 "--operation", "update", "--client-key", key, "--attempt-id", original["attempt-id"],
                 "--reason", "cancelled")["data"]
-        rpc_result(result["command"], original, self.publications["put-once-legacy-v1"], key)
+        require(result["cancellationDisposition"] == "COMMAND_CANCEL_DISPOSITION_ALREADY_COMMITTED",
+                "retained-cancellation-is-already-committed")
+        command = result["command"]
+        if command["retainedResult"] is None:
+            rpc_command(command, original, publication, key)
+            command = lifecycle.lookup(self.client, publication, key)
+        rpc_result(command, original, publication, key)
+        if current:
+            self.node.current_activation.switch(self, "put-once-compatible-v2", retained_cancellation=True)
         http.replay(original, self.original(key))
         self.query(4)
         self.client.evidence.passed("cancellation-after-commit", result)

@@ -37,11 +37,39 @@ def schema_assets(files):
                     ("publicationReviewGranted", "componentCompiled", "stateExecutionQualified")),
             "captured-schema-declaration-is-not-native-review")
     selected = {path: files[path] for path in SCHEMA_ASSETS}
+    if declaration.get("effect") == "current-http":
+        from tools.transaction_guest_project import CURRENT_HTTP_PROFILE
+        require(CURRENT_HTTP_PROFILE in files and 0 < len(files[CURRENT_HTTP_PROFILE]) <= 8192,
+                "signed-current-http-profile-marker-required")
+        marker = decode(files[CURRENT_HTTP_PROFILE], 8192)
+        require(set(marker) == {"schemaVersion", "idempotencyProfile"}
+                and marker["schemaVersion"] == "latent.java.current-http-source-input.v1",
+                "closed-signed-current-http-marker")
+        selected[CURRENT_HTTP_PROFILE] = files[CURRENT_HTTP_PROFILE]
     if declaration["variant"] != "legacy-v1":
         require(CODEC_ASSET in files and 0 < len(files[CODEC_ASSET]) <= 262144,
                 "original-compatible-reader-codec-required")
         selected[CODEC_ASSET] = files[CODEC_ASSET]
     return selected
+
+
+def captured_assets(item, files):
+    assets = {path: raw for path, raw in files.items() if path.startswith('wit/') and path.endswith('.wit')}
+    assets.update({name: files[name] for name in ('state-schema.json', 'transaction-profile.json')})
+    assets.update(schema_assets(files))
+    if item.requirements_digest:
+        assets['deferred-http-requirements.json'] = files['deferred-http-requirements.json']
+    if 'java-current-http-profile.json' in files:
+        require(item.requirements_digest is not None, 'current-marker-requires-signed-effect-requirements')
+        assets['java-current-http-profile.json'] = files['java-current-http-profile.json']
+    if item.name in {'forbidden-http', 'forbidden-http-before-stage'}:
+        require('java-current-http-profile.json' not in files and item.requirements_digest is None
+                and 0 < len(files[SCHEMA_ASSETS[-1]]) <= 262144,
+                'original-forbidden-source-without-effect-marker')
+        assets[SCHEMA_ASSETS[-1]] = files[SCHEMA_ASSETS[-1]]
+        if item.name == 'forbidden-http-before-stage':
+            assets['java-early-http-denial-input.json'] = files['java-early-http-denial-input.json']
+    return assets
 
 
 def prepare(item: ComponentInput, output: Path, contracts: Path, signer: Path, command: Commands):
@@ -73,11 +101,7 @@ def prepare(item: ComponentInput, output: Path, contracts: Path, signer: Path, c
               for name, (role, media) in LAYER_MEDIA.items()]
     companion = package_companion(output, project, files)
     require(companion == ("transaction-binding.json", "asset", COMPANION_MEDIA), "actual-companion-layer-contract")
-    assets = {path: raw for path, raw in files.items() if path.startswith("wit/") and path.endswith(".wit")}
-    assets.update({name: files[name] for name in ("state-schema.json", "transaction-profile.json")})
-    assets.update(schema_assets(files))
-    if item.requirements_digest:
-        assets["deferred-http-requirements.json"] = files["deferred-http-requirements.json"]
+    assets = captured_assets(item, files)
     if "transaction-diagnostic-inputs.json" in files:
         from .diagnostic_inputs import declaration
         declaration(files["transaction-diagnostic-inputs.json"], files)
@@ -176,15 +200,21 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
               "compiledAgain": False, "signedNodeExecutionQualified": False, "packagedDistributionQualified": False,
               "inputs": [item.observation() for item in items], "profileRejections": [],
               "tools": [file_identity(contracts_tool,"contracts-tool"), file_identity(signer,"signer")]}
+    if compiler_source is not None:
+        record['currentPreparationControls'] = []
+        record['immediateHttpDenialQualified'] = False
     start = time.monotonic()
     try:
         for item in items:
             if item.name == "forbidden-http":
-                _forbidden_profile(item, output, contracts_tool, signer, command, record)
+                if compiler_source is None:
+                    _forbidden_profile(item, output, contracts_tool, signer, command, record)
+                else:
+                    _current_forbidden_preparation(item, output, contracts_tool, signer, command, record)
             else:
                 prepare(item, output / item.name, contracts_tool, signer, command)
         accepted = [item for item in items if item.name != "forbidden-http"]
-        mode = "fixture-sign-java-inputs" if compiler_source is None else "fixture-sign-current-java-inputs"
+        mode = "fixture-sign-java-inputs" if compiler_source is None else current_signing_mode(accepted)
         arguments = [] if compiler_source is None else [compiler_source]
         command.run(mode, signer, mode, output / "signed", *arguments, *[output / item.name for item in accepted])
         signed = decode(read_file(output / "signed/release-set.json"))
@@ -201,6 +231,81 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
     finally:
         record["commands"], record["seconds"] = command.records, round(time.monotonic()-start,6)
         write_json(output / "package-fixture-receipt.json", record)
+
+
+def current_signing_mode(items):
+    actual = {item.name: digest(read_file(item.directory / 'report.json', 262144)) for item in items}
+    require(len(items) == 5 and len(actual) == len(items), 'five-distinct-current-capture-reports')
+    reconstructed = {
+        'aggregate': 'sha256:e5cbc55017e1b833d231400cd80c9f9ccb49c285908f0a6cd9ec36e67fb864fd',
+        'put-once-legacy-v1': 'sha256:f44162b5e510d4af32d0395e9ead6eef2f9eb9b358d1b6906b3434940202ba01',
+        'put-once-compatible-v2': 'sha256:6aec64ed88abc403b080e7afa1a75ed62c2adf26db5e63e14ff2bc1203d47e62',
+        'put-once-writer-v2': 'sha256:da0bcfa30741ac40ce71a1027f7e2d94b14e84fb88d23d8210871298090205bf',
+        'put-once-diagnostics': 'sha256:c46e8e79f549422cbbd6142b44a3c831340d4b500f38ac984855007a92198479',
+    }
+    if actual == reconstructed:
+        packet = decode(read_file(Path(__file__).resolve().parents[2] /
+            'docs/testing/evidence/java-current-http-reconstructed-capture-2026-10-15.json'))['captures']
+        require(packet['sourceCommit'] == 'eba0d96e9439028aacd6c1f9a85d4ce0118a19bc'
+                and packet['nativeIdempotencyProfile'] ==
+                    'qualified-http-v1:2da352e29a0c7981e96f4eb3678ce600a71717bb777b056de93d7365793b7a11',
+                'reconstructed-current-custody-source-and-profile')
+        expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
+                    if name != 'forbidden-http'}
+        require(actual == expected and all(item.compiler_source == packet['sourceCommit']
+                and item.component_digest == packet['variants'][item.name]['materials']['component']['sha256']
+                for item in items), 'reconstructed-current-captured-report-component-and-source')
+        return 'fixture-sign-reconstructed-current-java-inputs'
+    modes = (
+        ('docs/development/phase4-handoffs/2026-10-12/pr970-current-post-evidence.json',
+         'fixture-sign-current-java-inputs',
+         'qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161',
+         '9bae83952d9513c965a88d375b2a533916a98473'),
+        ('docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json',
+         'fixture-sign-rebuilt-current-java-inputs',
+         'qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161',
+         '9bae83952d9513c965a88d375b2a533916a98473'),
+        ('docs/testing/evidence/java-current-fresh-http-capture-2026-10-13.json',
+         'fixture-sign-fresh-http-current-java-inputs',
+         'qualified-http-v1:74c19c60dccdecdca0b94eb8c88776516aa77c261b21dc978dab9793f9600cc5',
+         '9bae83952d9513c965a88d375b2a533916a98473'),
+        ('docs/testing/evidence/java-current-native-memory-capture-2026-10-14.json',
+         'fixture-sign-native-memory-current-java-inputs',
+         'qualified-http-v1:74c19c60dccdecdca0b94eb8c88776516aa77c261b21dc978dab9793f9600cc5',
+         'eba0d96e9439028aacd6c1f9a85d4ce0118a19bc'),
+    )
+    matched = []
+    for path, mode, profile, source in modes:
+        packet = decode(read_file(Path(__file__).resolve().parents[2] / path))['captures']
+        require(packet['nativeIdempotencyProfile'] == profile, 'closed-current-custody-profile')
+        require(packet['sourceCommit'] == source, 'closed-current-custody-source')
+        expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
+                    if name != 'forbidden-http'}
+        if actual == expected:
+            require(all(item.compiler_source == packet['sourceCommit'] for item in items),
+                    'closed-current-captured-source')
+            matched.append(mode)
+    require(len(matched) == 1, 'one-complete-closed-current-capture-report-set')
+    return matched[0]
+
+
+def _current_forbidden_preparation(item, output, contracts, signer, command, record):
+    # Current metadata recognizes the supported HTTP signature. Only actual
+    # strict execution can prove its immediate send was denied.
+    prepare(item, output / item.name, contracts, signer, command)
+    surface = decode(read_file(output / item.name / 'derived/surface.json'))
+    require(set(surface) == {'world', 'imports', 'exports'} and surface['world'] == WORLD
+            and surface['imports'] == sorted({
+                'latent:state/key-value@0.2.0', 'latent:intents/staging@0.1.0',
+                'latent:http/client@0.2.0', 'latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0'})
+            and surface['exports'] == ['examples:transactional-aggregate/api@1.0.0'],
+            'exact-current-forbidden-signature-preparation')
+    observed = {'variant': item.name, 'componentDigest': item.component_digest,
+                'stage': 'native-contract-preparation', 'surface': surface,
+                'signed': False, 'executionAuthorized': False, 'requestDispatched': False,
+                'immediateHttpDenialQualified': False, 'signedNodeExecutionQualified': False}
+    record['currentPreparationControls'].append(observed)
+    write_json(output / item.name / 'current-preparation-control.json', observed)
 
 
 def _forbidden_profile(item, output, contracts, signer, command, record):

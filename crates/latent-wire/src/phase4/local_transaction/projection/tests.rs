@@ -1,5 +1,6 @@
 use super::*;
 use latent_core::{ErrorDetail, Metadata};
+mod durable_abort;
 
 fn charged() -> BudgetConsumption {
     BudgetConsumption {

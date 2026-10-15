@@ -3,6 +3,7 @@ use super::*;
 use crate::standalone::state::{kernel::tests::Fixture as KernelFixture, AdapterClock};
 use latent_artifacts::{
     AdmissionStorageLimits, ArtifactRepository, DirectoryArtifactRepositoryConfig,
+    TRANSACTION_ASSET_RESPONSE_BYTES,
 };
 use latent_core::{BudgetProfile, TenantId};
 use latent_manifest::{
@@ -19,6 +20,7 @@ use serde_json::json;
 use std::time::{Duration, Instant};
 
 // Reuse the existing actual package, signature, provenance and trust fixture.
+mod compact;
 mod http;
 #[path = "../../../../../../crates/latent-policy/src/supply_chain/tests/support.rs"]
 #[allow(
@@ -27,6 +29,9 @@ mod http;
     reason = "Reuse the upstream signed fixture including its separately ignored exporters"
 )]
 mod signed;
+pub(in crate::standalone::state) mod startup;
+
+pub(in crate::standalone) use signed::Fixture as SignedFixture;
 
 fn declaration() -> Vec<u8> {
     serde_json::to_vec(&json!({"apiVersion":"latent.dev/v1","kind":"TransactionBinding",
@@ -37,13 +42,14 @@ fn declaration() -> Vec<u8> {
             {"operation":"uninstalled","mode":"fresh-query","inputFormat":"lsf-wit-values-v1","resultFormat":"lsf-wit-values-v1"}]})).unwrap()
 }
 
-struct Setup {
-    fixture: KernelFixture,
-    services: InstalledStateServices,
-    policy: Arc<PolicyStore>,
-    kernel: StateKernel,
-    effects: EffectRuntime,
-    owners: Arc<TransactionAdmissionOwners>,
+pub(in crate::standalone::state) struct Setup {
+    pub(in crate::standalone::state) fixture: KernelFixture,
+    pub(in crate::standalone::state) services: InstalledStateServices,
+    pub(in crate::standalone::state) policy: Arc<PolicyStore>,
+    pub(in crate::standalone::state) kernel: StateKernel,
+    pub(in crate::standalone::state) effects: EffectRuntime,
+    pub(in crate::standalone::state) owners: Arc<TransactionAdmissionOwners>,
+    pub(in crate::standalone::state) authority: latent_effects::authority::EffectAuthorityOwner,
 }
 impl Setup {
     async fn new() -> Self {
@@ -54,14 +60,39 @@ impl Setup {
         Self::configured(document, false).await
     }
 
+    async fn configured(document: Option<Vec<u8>>, executable: bool) -> Self {
+        Self::configured_profile(document, executable, false).await
+    }
+
+    async fn configured_profile(
+        document: Option<Vec<u8>>,
+        executable: bool,
+        compact: bool,
+    ) -> Self {
+        Self::configured_installation(document, executable, compact, None).await
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "The real signed fixture composes each independent original owner before admission"
     )]
-    async fn configured(document: Option<Vec<u8>>, executable: bool) -> Self {
+    async fn configured_installation(
+        document: Option<Vec<u8>>,
+        executable: bool,
+        compact: bool,
+        deferred: Option<&startup::HttpFixture>,
+    ) -> Self {
         let mut fixture = KernelFixture::new();
-        let companion = declaration();
+        let companion = deferred.map_or_else(declaration, |_| startup::declaration());
+        let deferred_configuration =
+            deferred.map(|deferred| deferred.configuration(document.as_deref().unwrap()));
         let signed = match document {
+            Some(document) if deferred.is_some() => {
+                signed::Fixture::transactional_deferred_http_with_companion(
+                    companion.clone(),
+                    document,
+                )
+            }
             Some(document) => {
                 signed::Fixture::transactional_with_http_companion(companion.clone(), document)
             }
@@ -125,6 +156,10 @@ impl Setup {
         input["createIfMissing"] = true.into();
         input["startupTimeoutMillis"] = 20_000.into();
         input["checkpointRoot"] = json!(fixture.settings.checkpoint_root);
+        if compact {
+            input["store"]["recovery"]["maximumJobBytes"] = (8 * 1024 * 1024 + 8192).into();
+            input["store"]["recovery"]["retainedBytes"] = (16 * 1024 * 1024).into();
+        }
         input["tenantQuotas"][0]["tenant"] = "tests".into();
         let operation = &mut input["operations"][0];
         operation["tenant"] = "tests".into();
@@ -138,10 +173,14 @@ impl Setup {
             .to_string()
             .into();
         operation["statePolicies"] = json!(["state"]);
+        if let Some(configuration) = deferred_configuration {
+            operation["deferredHttp"] = configuration;
+        }
         fixture.settings =
             crate::config::state::derive(&serde_json::from_value(input).unwrap(), fixture.root())
                 .unwrap();
         let bootstrap = fixture.bootstrap();
+        let authority = bootstrap.authority.clone();
         artifacts
             .lifecycle_authority()
             .install_rejection_observer(bootstrap.authority.rejection_observer())
@@ -164,6 +203,9 @@ impl Setup {
             .install_rejection_observer(bootstrap.authority.rejection_observer())
             .unwrap();
         install_policy(&policy, &fixture.settings, &publication);
+        if let Some(deferred) = deferred {
+            deferred.install_policy(&policy, &publication);
+        }
         let deployments = Arc::new(
             DirectoryDeploymentRepository::open_with_catalog(
                 fixture.root().join("installed-deployments"),
@@ -200,16 +242,32 @@ impl Setup {
             deployment["spec"]["grants"][0]["operations"] =
                 json!(["acquire-query", "query-info", "read-result"]);
         }
+        if deferred.is_some() {
+            deployment["spec"]["grants"]
+                .as_array_mut()
+                .unwrap()
+                .push(json!({
+                "capability":latent_capabilities::namespace::INTENT_CONTRACT,
+                "policy":"stage","operations":["stage"]}));
+        }
         let manifest = JsonManifestCodec::default()
             .decode_deployment(&serde_json::to_vec(&deployment).unwrap())
             .unwrap();
         deployments.apply(manifest).await.unwrap();
+        let http = deferred.map_or_else(
+            super::super::InstalledHttpEffects::empty,
+            startup::HttpFixture::installation,
+        );
         let (kernel, effects) = StateKernel::start(
             bootstrap,
             &fixture.settings,
             fixture.authority.clone(),
-            Vec::new(),
-            &AdapterClock::default(),
+            http.adapters
+                .iter()
+                .cloned()
+                .map(|adapter| adapter as Arc<dyn latent_effects::runtime::DeferredEffectAdapter>)
+                .collect(),
+            &http.clock,
             tokio::runtime::Handle::current(),
         )
         .await
@@ -222,7 +280,7 @@ impl Setup {
             deployments,
             clock: fixture.clock.clone(),
             audit: None,
-            http: super::super::InstalledHttpEffects::empty(),
+            http,
         };
         Self {
             fixture,
@@ -231,15 +289,20 @@ impl Setup {
             kernel,
             effects,
             owners,
+            authority,
         }
     }
-    fn services(&self) -> InstalledStateServices {
+    pub(in crate::standalone::state) fn services(&self) -> InstalledStateServices {
         InstalledStateServices {
             artifacts: Arc::clone(&self.services.artifacts),
             deployments: Arc::clone(&self.services.deployments),
             clock: Arc::clone(&self.services.clock),
             audit: None,
-            http: super::super::InstalledHttpEffects::empty(),
+            http: super::super::InstalledHttpEffects {
+                clock: Arc::clone(&self.services.http.clock),
+                adapters: self.services.http.adapters.clone(),
+                registry: Arc::clone(&self.services.http.registry),
+            },
         }
     }
     async fn finish(mut self) {
@@ -247,6 +310,7 @@ impl Setup {
         drop(self.owners);
         assert!(self.effects.shutdown(deadline).await.unwrap().clean);
         drop(self.effects);
+        drop(self.authority);
         assert!(self.kernel.shutdown(deadline).await.unwrap().clean);
     }
 }

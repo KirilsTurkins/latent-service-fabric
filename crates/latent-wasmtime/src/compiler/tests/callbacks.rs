@@ -69,7 +69,10 @@ fn stopping_drops_already_delivered_ready_result_outside_waiter_and_registry_loc
             self.woke.store(true, Ordering::Release);
         }
     }
-    let pool = pool(&config());
+    let mut configuration = config();
+    // Keep the lock probe isolated from idle worker contention.
+    configuration.compiler_workers = Some(1);
+    let pool = pool(&configuration);
     let (future, _) = waiting(&pool, "stopping", None);
     let (started, release) = blocked(&pool, &future);
     started.recv_timeout(Duration::from_secs(5)).unwrap();

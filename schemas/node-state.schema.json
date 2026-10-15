@@ -407,6 +407,15 @@
         },
         "dispatchPolicies": {
           "$ref": "#/$defs/policies"
+        },
+        "dispatchAuthority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["formatVersion", "mode"],
+          "properties": {
+            "formatVersion": {"const": 1},
+            "mode": {"const": "signed-service-integration"}
+          }
         }
       }
     },

@@ -80,6 +80,14 @@ impl AuditRuntime {
     pub(super) fn handle(&self) -> AuditHandle {
         self.handle.clone()
     }
+    #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+    pub(super) fn retirement_observer(&self) -> Self {
+        Self {
+            handle: self.handle(),
+            worker: Arc::clone(&self.worker),
+            runtime: self.runtime.clone(),
+        }
+    }
     pub(super) async fn shutdown(
         &self,
         grace: Duration,

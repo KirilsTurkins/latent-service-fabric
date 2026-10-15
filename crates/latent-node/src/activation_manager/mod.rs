@@ -45,6 +45,7 @@ pub use inbound::InboundActivationReservation;
 use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
+pub(crate) use transaction::OriginalCancellationMetadataFence;
 pub use transaction::{TransactionActivationAdmission, TransactionCommitControl};
 pub use transport_stop::ActivationTransportInterruption;
 use transport_stop::TransportStop;
@@ -373,6 +374,36 @@ impl LocalActivationManager {
         self.inner
             .journal
             .cancel_with(tenant, id, || self.inner.cancellations.cancel(id, reason))
+    }
+
+    /// Caller must freshly authorize this exact protected record for cancellation.
+    /// Association and request remain linearized with original registration reuse.
+    pub fn cancel_original_command(
+        &self,
+        tenant: &TenantId,
+        command: &latent_commit::atomic::CommandRecord,
+        store: &latent_state::protected_store::ProtectedStoreOwner,
+        reason: &str,
+    ) -> Result<crate::transaction_runtime::OriginalCommandCancelDisposition, PlatformError> {
+        self.inner
+            .journal
+            .cancel_original_command(tenant, command, store, reason)
+    }
+
+    /// The actual installed management owner supplies its still-current purpose
+    /// and prepaid reservation. Only the first original request may retain it.
+    pub fn cancel_original_command_authorized(
+        &self,
+        tenant: &TenantId,
+        command: &latent_commit::atomic::CommandRecord,
+        store: &latent_state::protected_store::ProtectedStoreOwner,
+        reason: &str,
+        authority: Arc<dyn crate::transaction_runtime::CommandCancellationAuthority>,
+        before: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<crate::transaction_runtime::OriginalCommandCancelDisposition, PlatformError> {
+        self.inner
+            .journal
+            .cancel_original_command_authorized(tenant, command, store, reason, authority, before)
     }
 
     fn validate_query_size(

@@ -4,14 +4,27 @@
 mod bootstrap;
 mod clock;
 mod configuration;
+pub(in crate::standalone) mod inspection;
 mod installations;
+pub use inspection::ConfiguredHttpEffectInspection;
+pub use inspection::{
+    NativeDeferredEffectHostInspection, NativeHttpCallerInspection, NativeTransactionHostInspection,
+};
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(in crate::standalone) use installations::SignedFixture;
 mod kernel;
 mod maintenance;
 mod preparation;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod recovery;
 mod runtime;
 mod stateless;
 mod store;
 mod validation;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(in crate::standalone) use recovery::{recover, RecoveryOwners};
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub use recovery::{NativeRecoveryReport, NativeRecoveryRequest};
 
 pub(super) use bootstrap::StateBootstrap;
 use clock::AdapterClock;

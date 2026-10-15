@@ -16,6 +16,7 @@ use std::sync::{
 
 mod pending;
 pub(super) use pending::PendingBinding;
+mod transaction_imports;
 
 /// Wire lookup data. Knowing or constructing this value grants no authority.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -226,7 +227,13 @@ fn check_envelope(
             .is_some_and(|limit| deadline.unix_millis().is_none_or(|actual| actual > limit))
         || budget.granted() != &request.budget
         || request.activation.budget != request.budget
-        || !imports_match(plan, request, publication.web_projection().is_some())
+        || !transaction_imports::matches(
+            plan,
+            request,
+            publication.web_projection().is_some(),
+            cancellation,
+            budget,
+        )
     {
         return Err(denied());
     }

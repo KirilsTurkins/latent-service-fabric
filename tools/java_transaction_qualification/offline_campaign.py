@@ -10,9 +10,10 @@ from pathlib import Path
 
 from tools.phase2_operator_process import read_json, write_json
 
-from . import configuration as cfg, http, lifecycle, provider, recovery
+from . import configuration as cfg, http, lifecycle, policies, provider, recovery
+from . import restore_authority, restore_installation
 from .campaign import command_input, precondition, rpc_result
-from .inputs import require
+from .inputs import digest, require
 
 
 def generation(value):
@@ -61,14 +62,52 @@ def restored_configuration(original, destination):
     return settings
 
 
+def restored_resume_request(view, file, snapshot, acknowledgement, migration_operation=None):
+    request = {'action': 'resume', 'operationId': 'java-restored-resume',
+               'expectedView': recovery.original_view(view)}
+    if migration_operation is not None:
+        require(migration_operation == 'java-schema-v1-to-v2', 'original-current-migration-operation')
+        require(isinstance(file, dict) and set(file) == {'root', 'name'}, 'original-restored-snapshot-file')
+        request.update(action='resume-restored-migration', migrationOperationId=migration_operation,
+            file=dict(file), snapshotDigest=recovery.original_digest(snapshot['snapshotDigest']),
+            manifestDigest=recovery.original_digest(snapshot['manifestDigest']),
+            windowAcknowledgement=recovery.original_digest(acknowledgement))
+    return request
+
+
+def restored_migration_result(result, request, review_digest):
+    fields = {'action', 'receipt', 'view', 'replay', 'snapshotDigest', 'manifestDigest',
+              'windowAcknowledgement', 'reviewDigest', 'resourcePhysicallyRetired'}
+    require(isinstance(result, dict) and set(result) == fields
+            and result['action'] == request['action'] == 'resume-restored-migration'
+            and result['replay'] is False and result['resourcePhysicallyRetired'] is True,
+            'closed-first-restored-migration-activation-result')
+    receipt = recovery.byte_array(result['receipt'], 8192)
+    require(len(receipt) > 4 and receipt.startswith(b'RMA\x01'), 'new-attributed-restored-migration-receipt')
+    for field in ('snapshotDigest', 'manifestDigest', 'windowAcknowledgement'):
+        require(recovery.original_digest(result[field]) == request[field], 'original-restored-activation-identities')
+    require(recovery.original_digest(result['reviewDigest']) == recovery.original_digest(review_digest),
+            'current-accepted-restored-review-identity')
+    before = bytes(recovery.original_view(request['expectedView']))
+    after = bytes(recovery.original_view(result['view']))
+    require(after[:43] == before[:43] and after[51:] == before[51:]
+            and int.from_bytes(after[43:51], 'little') == int.from_bytes(before[43:51], 'little') + 1,
+            'restored-activation-advances-only-namespace-generation')
+    return result
+
+
 class OfflineCampaign:
     def __init__(self, campaign, helper, directory):
         self.campaign, self.directory = campaign, directory
         self.client, self.node = campaign.client, campaign.node
-        self.native = recovery.Recovery(self.client, helper, campaign.configuration, directory, self.node)
+        self.current_v2 = read_json(campaign.full_path)["state"]["formatVersion"] == 2
+        selection = {} if not self.current_v2 else {
+            "sources": recovery.decoder_sources(campaign.items, campaign.publications)}
+        self.native = recovery.Recovery(self.client, helper, campaign.configuration, directory, self.node, **selection)
         self.writer = "put-once-writer-v2"
         self.publication = campaign.publications[self.writer]
         self.configuration = campaign.full_path
+        self.migration_operation = None
 
     def action(self, request, *, action=None):
         original = self.native.run(self.configuration, self.publication, request)
@@ -82,8 +121,7 @@ class OfflineCampaign:
         return result
 
     def recipient(self, label):
-        observed = provider.observed_recipient(self.campaign.peer.directory / provider.OBSERVATION,
-                                              self.campaign.peer.incarnation)
+        observed = self.campaign.recipient_observation()
         self.client.evidence.record(label + "-recipient-observation", observed)
         return observed
 
@@ -93,7 +131,7 @@ class OfflineCampaign:
             "--operation-id", operation, "--expected-generation", generation(before["generation"]))
         receipt = result["data"]["receipt"]
         require(result["outcomeKnown"] is True and receipt["operationId"] == operation
-                and receipt["authenticatedOperator"] == cfg.OPERATOR
+                and receipt["authenticatedOperator"] == (lifecycle.operator_actor() if self.current_v2 else cfg.OPERATOR)
                 and result["data"]["auditAcknowledgement"] is not None,
                 "actual-current-authorized-quiesce")
         self.client.evidence.passed(operation, {"originalNamespace": before, "actualReceipt": result["data"]})
@@ -101,7 +139,13 @@ class OfflineCampaign:
         lifecycle.admission_lease_interval(self.client)
 
     def snapshot(self, name, operation):
-        file = {"root": str(self.directory), "name": name}
+        root = self.directory
+        if self.current_v2:
+            from . import snapshot_destination_root
+            root, observed = snapshot_destination_root.provision(
+                self.client, self.node, self.directory, operation)
+            self.client.evidence.record('snapshot-root-' + digest(operation.encode('ascii'))[7:], observed)
+        file = {"root": str(root), "name": name}
         result = self.action({"action": "snapshot", "operationId": operation, "file": file})
         return file, original_snapshot(result, operation)
 
@@ -119,29 +163,53 @@ class OfflineCampaign:
         before, _ = self.campaign.query(count)
         recipient = self.recipient("schema-before")
         self.quiesce(self.campaign.publications["put-once-compatible-v2"], "java-schema-quiesce")
+        activation = getattr(self.node, 'current_activation', None)
+        if activation is not None:
+            self.configuration = activation.select_metadata(self.writer, 'writer-metadata')
         observed = self.inspect()
         file, checkpoint = self.snapshot("schema-checkpoint-v1.snapshot", "java-schema-checkpoint")
         migration = {"operationId": "java-schema-v1-to-v2", "file": file,
             "expectedView": recovery.original_view(observed["view"]),
             "checkpointDigest": checkpoint["snapshotDigest"],
             "checkpointManifestDigest": checkpoint["manifestDigest"]}
-        staged = self.action(dict(migration, action="stage-migration"), action="migration")
+        self.migration_operation = migration['operationId']
+        staged = self.action(dict(migration, action="stage-migration"),
+                             action="stage-migration" if self.current_v2 else "migration")
         require(staged["completed"] is False, "actual-native-migration-staged")
-        completed = self.action(dict(migration, action="complete-migration"), action="migration")
+        completed = self.action(dict(migration, action="complete-migration"),
+                                action="complete-migration" if self.current_v2 else "migration")
         require(completed["completed"] is True, "actual-native-migration-completed")
         after = self.inspect()
-        epoch_advanced(observed["view"], after["view"], "schema")
+        if self.current_v2:
+            from . import schema_view
+            schema_view.advanced(observed["view"], after["view"],
+                self.campaign.items["put-once-legacy-v1"], self.campaign.items[self.writer])
+        else:
+            epoch_advanced(observed["view"], after["view"], "schema")
         # Capture the quiesced V2 state before any later command. All effects in
         # this profile were already positively acknowledged by the base campaign.
         snapshot_file, snapshot = self.snapshot("restore-checkpoint-v2.snapshot", "java-restore-checkpoint")
-        resumed = self.action({"action": "resume", "operationId": "java-schema-resume",
-            "expectedView": recovery.original_view(after["view"])})
-        self.node.start(self.configuration)
-        lifecycle.deploy(self.client, self.campaign.signed, self.campaign.items[self.writer], self.publication,
-            self.campaign.proposals["deploymentGrants"], self.campaign.configuration.authority)
-        current, _ = self.campaign.query(count)
-        self.campaign.refusal("schema-refuses-stale-query-minimum",
-            self.campaign.socket("query", minimum=before["state-view"]), {409})
+        resume_request = {"action": "resume", "operationId": "java-schema-resume",
+                          "expectedView": recovery.original_view(after["view"])}
+        if self.current_v2:
+            resume_request.update(action="resume-migration", migrationOperationId=migration["operationId"],
+                                  file=file, migrationExpectedView=migration["expectedView"],
+                                  checkpointDigest=migration["checkpointDigest"],
+                                  checkpointManifestDigest=migration["checkpointManifestDigest"])
+        resumed = self.action(resume_request)
+        if activation is not None:
+            activation.start(self.campaign, self.writer, 'writer-runtime')
+        else:
+            self.node.start(self.configuration)
+            lifecycle.deploy(self.client, self.campaign.signed, self.campaign.items[self.writer], self.publication,
+                self.campaign.proposals["deploymentGrants"], self.campaign.configuration.authority)
+        if self.current_v2:
+            current = schema_view.minimum_refused(self.campaign, count, before, observed["view"], after["view"],
+                self.campaign.items["put-once-legacy-v1"], self.campaign.items[self.writer])
+        else:
+            current, _ = self.campaign.query(count)
+            self.campaign.refusal("schema-refuses-stale-query-minimum",
+                self.campaign.socket("query", minimum=before["state-view"]), {409})
         self.originals("schema")
         require(self.recipient("schema-after") == recipient, "schema-and-replay-create-no-provider-request")
         self.client.evidence.passed("actual-java-schema-migration", {
@@ -161,11 +229,35 @@ class OfflineCampaign:
         self.campaign.query(count + 1)
         self.quiesce(self.publication, "java-restore-quiesce")
         original_settings = read_json(self.configuration)
+        target_identity = (restore_installation.requested_identity(original_settings)
+                           if self.current_v2 else None)
         destination = self.directory / "restored-state"
+        checkpoint_destination = None
+        data_destination = None
+        if self.current_v2:
+            data_destination = self.directory / "restored-data"
+            source_data = Path(original_settings["dataDirectory"])
+            if not source_data.is_absolute():
+                source_data = (self.configuration.parent / source_data).resolve(strict=True)
+            copied = restore_installation.catalogs(self.client, self.node,
+                source_data, data_destination,
+                Path(original_settings["state"]["checkpointRoot"]))
+            self.client.evidence.record("stopped-catalog-custody-copy", copied)
+            destination = data_destination / "state"
+            checkpoint_destination = self.directory / "restored-checkpoint"
         require(destination.is_absolute() and not destination.exists() and not destination.is_symlink(),
                 "fresh-native-restore-destination")
         request = {"file": file, "destinationRoot": str(destination),
             "operationId": "java-explicit-restore", "snapshotDigest": snapshot["snapshotDigest"]}
+        if self.current_v2:
+            request.update(destinationCheckpointRoot=str(checkpoint_destination),
+                           manifestDigest=snapshot["manifestDigest"])
+        if target_identity is not None:
+            request['destinationStoreIdentity'] = target_identity
+            from . import restore_destination_roots
+            provisioned = restore_destination_roots.provision(
+                self.client, self.node, self.directory, destination, checkpoint_destination)
+            self.client.evidence.record('restore-destination-directories', provisioned)
         window = self.action(dict(request, action="inspect-restore"))
         require(window["snapshot"]["snapshotDigest"] == snapshot["snapshotDigest"]
                 and window["snapshot"]["manifestDigest"] == snapshot["manifestDigest"],
@@ -174,8 +266,14 @@ class OfflineCampaign:
         restored = self.action(dict(request, action="restore", windowAcknowledgement=acknowledgement))
         require(restored["snapshotDigest"] == snapshot["snapshotDigest"]
                 and restored["manifestDigest"] == snapshot["manifestDigest"], "original-native-restored-snapshot")
+        if target_identity is not None:
+            require(restored['destinationIdentity'] == request['destinationStoreIdentity'],
+                    'actual-restored-store-identity')
         require(self.recipient("restored-before-review") == recipient, "restored-history-does-not-redrive-before-review")
-        settings = restored_configuration(original_settings, destination)
+        settings = (restore_installation.selection(original_settings, data_destination, checkpoint_destination,
+                                                   identity=(restored['destinationIdentity']
+                                                             if target_identity is not None else None))
+                    if self.current_v2 else restored_configuration(original_settings, destination))
         self.configuration = self.campaign.full_path.parent / "restored-node.json"
         write_json(self.configuration, settings)
         self.configuration.chmod(0o600)
@@ -184,17 +282,28 @@ class OfflineCampaign:
             "originalDestinationIdentity": restored["destinationIdentity"],
             "originalDataDirectory": original_settings["dataDirectory"],
             "creationNarrowed": True, "currentAuthorityInferred": False})
+        if self.current_v2:
+            self.refresh_authority(settings)
         reviewed = self.action({"action": "review"})
         observed = self.inspect()
         requested = recovery.original_view(observed["view"])
         epoch_advanced(list(http.view_token(current["state-view"])), requested, "recovery")
-        resumed = self.action({"action": "resume", "operationId": "java-restored-resume",
-            "expectedView": requested})
-        self.node.start(self.configuration)
+        resume_request = restored_resume_request(requested, file, snapshot, acknowledgement,
+            self.migration_operation if getattr(self.node, 'current_activation', None) is not None else None)
+        resumed = self.action(resume_request)
+        if resume_request['action'] == 'resume-restored-migration':
+            restored_migration_result(resumed, resume_request, reviewed['reviewDigest'])
+        self.node.start(self.configuration, **({'current_session': 'restored-runtime'}
+                        if getattr(self.node, 'current_publication_program', False) else {}))
         self.campaign.full_path = self.configuration
         recovered, _ = self.campaign.query(count)
-        self.campaign.refusal("restore-refuses-stale-query-minimum",
-            self.campaign.socket("query", minimum=current["state-view"]), {409})
+        if self.current_v2:
+            from . import restored_view
+            restored_view.minimum_refused(self.campaign, count, current, requested, resumed["view"],
+                                          recovered, self.campaign.items[self.writer])
+        else:
+            self.campaign.refusal("restore-refuses-stale-query-minimum",
+                self.campaign.socket("query", minimum=current["state-view"]), {409})
         self.originals("restore")
         # The data-loss window is deliberate: this command/effect occurred
         # after the snapshot. Never rerun it or infer a durable abort/not-sent.
@@ -207,8 +316,58 @@ class OfflineCampaign:
             "postBackupOriginal": changed, "postBackupResultStatus": lost["status"],
             "originalCommandRerun": False, "pendingEffectRestoreQualified": False})
 
+    def refresh_authority(self, settings):
+        require(settings["state"]["formatVersion"] == 2 and not settings["state"]["createIfMissing"],
+                "current-restored-configuration-required")
+        operations = settings["state"]["operations"]
+        inspection = self.configuration
+        activation = getattr(self.node, 'current_activation', None)
+        if activation is not None:
+            operations = copy.deepcopy(activation.operations)
+            descriptive = copy.deepcopy(settings)
+            descriptive['state']['operations'] = operations
+            inspection = self.configuration.parent / 'restored-descriptive-hosts.json'
+            write_json(inspection, descriptive)
+            inspection.chmod(0o600)
+        hosts = lifecycle.inspect(self.client, self.node.executable, inspection, operations,
+                                  stage="restored-transaction-host-inspection", intent_operation="http")
+        diagnostic = len(operations) == 15
+        selection = {} if activation is None else {
+            'current_http_endpoint': settings['providers']['http']['deferred'][0]}
+        proposals = policies.documents(hosts, self.campaign.publications, diagnostic=diagnostic, **selection)
+        paused = copy.deepcopy(settings)
+        paused["state"]["operations"] = []
+        path = self.configuration.parent / "restored-authority-node.json"
+        write_json(path, paused)
+        path.chmod(0o600)
+        self.node.start(path, restore_authority=True)
+        try:
+            directory = self.directory / "restored-authority-inputs"
+            directory.mkdir(mode=0o700)
+            program = restore_authority.prepare(self.client, proposals, directory)
+            self.client.evidence.record("restored-current-authority-program", program)
+            receipts = restore_authority.apply(self.client, proposals, directory, program)
+            self.campaign.proposals = proposals
+            self.campaign.policy_receipts = receipts
+            self.client.evidence.passed("restored-current-authority-mutations", receipts)
+        finally:
+            self.node.stop()
+        lifecycle.admission_lease_interval(self.client)
+
     def execute(self):
         count = 2**32 + 3
+        _, aggregate = self.campaign.query(4)
+        key = 'java-before-schema-wide-value'
+        changed = self.campaign.result(self.campaign.socket('command', original_key=key,
+            body=command_input(2**32 - 1), condition=precondition(aggregate)))
+        require(changed['disposition'] == 'committed' and http.aggregate(changed)['count'] == str(count),
+                'actual-wide-java-value-before-schema')
+        publication = self.campaign.publications['put-once-compatible-v2']
+        effect = self.campaign.wait_effect(publication, key, changed)
+        rpc_result(lifecycle.lookup(self.client, publication, key), changed, publication, key)
+        self.client.evidence.passed('actual-wide-java-value-before-schema', {
+            'original': changed, 'effect': effect,
+            'recipientAcceptance': self.campaign.peer_record(changed['effect-ids'][0])})
         file, snapshot, current = self.schema(count)
         self.restore(count, file, snapshot, current)
         require(self.native.calls == 12, "original-bounded-recovery-sequence")

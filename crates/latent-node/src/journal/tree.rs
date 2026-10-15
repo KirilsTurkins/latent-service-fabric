@@ -30,6 +30,7 @@ pub struct ActivationTreeNode {
     pub effective_deadline_unix_millis: Option<u64>,
     pub target_service: latent_core::ServiceId,
     pub received_at_unix_millis: u64,
+    pub transaction_staging: Option<super::TransactionStagingWitness>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -147,15 +148,19 @@ impl LocalActivationJournal {
                 .expect("lineage entry owns a retained record");
             // IDs are already bounded on admission; this protects embeddings
             // with a larger request limit without cloning an oversized atom.
-            let node_bytes = 1024
-                + id.0.len()
-                + record.root.0.len()
-                + record.parent.as_ref().map_or(0, |parent| parent.0.len())
-                + record.target_service.0.len()
-                + record
-                    .caller_service
-                    .as_ref()
-                    .map_or(0, |service| service.0.len());
+            let node_bytes =
+                1024 + if record.staging.is_some() {
+                    super::staging::RECORD_BYTES
+                } else {
+                    0
+                } + id.0.len()
+                    + record.root.0.len()
+                    + record.parent.as_ref().map_or(0, |parent| parent.0.len())
+                    + record.target_service.0.len()
+                    + record
+                        .caller_service
+                        .as_ref()
+                        .map_or(0, |service| service.0.len());
             if nodes.len() == maximum || bytes + node_bytes > MAXIMUM_TREE_BYTES {
                 more = true;
                 break;
@@ -198,6 +203,10 @@ impl LocalActivationJournal {
                 effective_deadline_unix_millis: record.effective_deadline_unix_millis,
                 target_service: record.target_service.clone(),
                 received_at_unix_millis: record.events[0].occurred_at_unix_millis,
+                transaction_staging: record
+                    .staging
+                    .as_ref()
+                    .and_then(|staging| staging.witness(record.serial)),
             });
             bytes += node_bytes;
             last = *serial;
@@ -317,14 +326,18 @@ impl LocalActivationJournal {
                 last = (*root, *serial);
                 continue;
             }
-            let node_bytes = 1024
-                + id.0.len()
-                + record.root.0.len()
-                + record.target_service.0.len()
-                + record
-                    .caller_service
-                    .as_ref()
-                    .map_or(0, |value| value.0.len());
+            let node_bytes =
+                1024 + if record.staging.is_some() {
+                    super::staging::RECORD_BYTES
+                } else {
+                    0
+                } + id.0.len()
+                    + record.root.0.len()
+                    + record.target_service.0.len()
+                    + record
+                        .caller_service
+                        .as_ref()
+                        .map_or(0, |value| value.0.len());
             if bytes + node_bytes > MAXIMUM_TREE_BYTES {
                 more = true;
                 break;
@@ -362,6 +375,10 @@ impl LocalActivationJournal {
                 effective_deadline_unix_millis: record.effective_deadline_unix_millis,
                 target_service: record.target_service.clone(),
                 received_at_unix_millis: record.events[0].occurred_at_unix_millis,
+                transaction_staging: record
+                    .staging
+                    .as_ref()
+                    .and_then(|staging| staging.witness(record.serial)),
             });
             bytes += node_bytes;
             last = (*root, *serial);

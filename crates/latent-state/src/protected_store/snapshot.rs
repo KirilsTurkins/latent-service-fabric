@@ -12,8 +12,8 @@ use super::custody::{ProtectedCustodyJob, ProtectedStoreCustody};
 use super::{ProtectedStoreError, ProtectedStoreOwner};
 use crate::embedded::{ReadView, RowKey, StoreError};
 use crate::recovery::snapshot::{
-    export_reviewed_snapshot, inspect_snapshot, RequiredArtifact, SnapshotClosure, SnapshotError,
-    SnapshotMetadata, SnapshotReceipt,
+    export_reviewed_snapshot, RequiredArtifact, SnapshotClosure, SnapshotError, SnapshotMetadata,
+    SnapshotReceipt,
 };
 use crate::store_io::{StoreIoError, StoreIoKind, StoreIoRetirement, StoreIoRetirementWitness};
 
@@ -27,6 +27,34 @@ pub use response::{
 
 const RESOURCE_BYTES: u64 = 64 * 1024;
 const WORK_BYTES: u64 = 8 * 1024 * 1024;
+
+/// Closed host decoder footprints. The scoped profile admits one namespace
+/// and refuses rows above the current node's 2 MiB framing before allocation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProtectedSnapshotProfile {
+    General,
+    SingleNamespace,
+}
+impl ProtectedSnapshotProfile {
+    pub(super) const fn work_bytes(self) -> u64 {
+        match self {
+            Self::General => WORK_BYTES,
+            Self::SingleNamespace => 7 * 1024 * 1024,
+        }
+    }
+    pub(super) const fn row_bytes(self) -> usize {
+        match self {
+            Self::General => 4 * 1024 * 1024,
+            Self::SingleNamespace => 2 * 1024 * 1024,
+        }
+    }
+    pub(super) const fn namespaces(self) -> usize {
+        match self {
+            Self::General => crate::recovery::snapshot::SNAPSHOT_NAMESPACES,
+            Self::SingleNamespace => 1,
+        }
+    }
+}
 
 /// Trusted operator configuration. A transport resolves a bounded configured
 /// destination ID to this private root; client paths are never accepted here.
@@ -122,8 +150,39 @@ impl ProtectedStoreOwner {
                 Err(SnapshotError::Source(error)) => return Err(error),
                 Err(error) => return Ok((None, Err(error))),
             };
-            let receipt = inspect_snapshot(&mut file.cursor(), file.deadline(), validate_row)
-                .map_err(SnapshotError::Review);
+            let receipt = file.inspect(validate_row).map_err(SnapshotError::Review);
+            Ok((Some(file), receipt))
+        })?;
+        Ok(ProtectedSnapshotJob { inner })
+    }
+
+    /// Same protected reader/custody with an explicitly narrower decoder and
+    /// authenticated operator file ceiling. No allowance or clock is renewed.
+    pub fn open_snapshot_profile(
+        &self,
+        config: ProtectedSnapshotConfig,
+        original: Arc<NativeReservation>,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+        maximum_file_bytes: u64,
+        profile: ProtectedSnapshotProfile,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        let bytes = config.validate()?;
+        let custody = self.reserve_custody(bytes, profile.work_bytes(), Arc::clone(&original))?;
+        let inner = self.initialize_custody_with(custody, profile.work_bytes(), move |store| {
+            let file = match SnapshotFile::open_existing_profile(
+                store,
+                config,
+                original,
+                current,
+                maximum_file_bytes,
+                profile,
+            ) {
+                Ok(file) => file,
+                Err(SnapshotError::Source(error)) => return Err(error),
+                Err(error) => return Ok((None, Err(error))),
+            };
+            let receipt = file.inspect(validate_row).map_err(SnapshotError::Review);
             Ok((Some(file), receipt))
         })?;
         Ok(ProtectedSnapshotJob { inner })
@@ -176,11 +235,73 @@ impl ProtectedStoreOwner {
         validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
         current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
     ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        self.create_reviewed_snapshot_limited(
+            config,
+            metadata,
+            original,
+            validate,
+            verify_artifact,
+            validate_row,
+            current,
+            crate::recovery::snapshot::SNAPSHOT_FILE_BYTES,
+        )
+    }
+
+    /// Narrow the current protected file ceiling to the actual original grant.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_reviewed_snapshot_limited(
+        &self,
+        config: ProtectedSnapshotConfig,
+        metadata: SnapshotMetadata,
+        original: Arc<NativeReservation>,
+        validate: impl FnOnce(&ReadView) -> Result<SnapshotClosure, SnapshotError> + Send + 'static,
+        verify_artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError> + Send + 'static,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+        maximum_file_bytes: u64,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        self.create_reviewed_snapshot_profile(
+            config,
+            metadata,
+            original,
+            validate,
+            verify_artifact,
+            validate_row,
+            current,
+            maximum_file_bytes,
+            super::ProtectedSnapshotProfile::General,
+        )
+    }
+
+    /// Stricter installed single-namespace producer on the SAME native custody.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_reviewed_snapshot_profile(
+        &self,
+        config: ProtectedSnapshotConfig,
+        metadata: SnapshotMetadata,
+        original: Arc<NativeReservation>,
+        validate: impl FnOnce(&ReadView) -> Result<SnapshotClosure, SnapshotError> + Send + 'static,
+        verify_artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError> + Send + 'static,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+        maximum_file_bytes: u64,
+        profile: super::ProtectedSnapshotProfile,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
         let bytes = config.validate()?;
         metadata.validate().map_err(ProtectedStoreError::Store)?;
-        let custody = self.reserve_custody(bytes, WORK_BYTES, Arc::clone(&original))?;
-        let inner = self.initialize_custody_with(custody, WORK_BYTES, move |store| {
-            let file = match SnapshotFile::create(store, config, Arc::clone(&original), current) {
+        if self.limits.maximum_value_bytes > profile.row_bytes() {
+            return Err(ProtectedStoreError::InvalidConfiguration);
+        }
+        let custody = self.reserve_custody(bytes, profile.work_bytes(), Arc::clone(&original))?;
+        let inner = self.initialize_custody_with(custody, profile.work_bytes(), move |store| {
+            let file = match SnapshotFile::create_profile(
+                store,
+                config,
+                Arc::clone(&original),
+                current,
+                maximum_file_bytes,
+                profile,
+            ) {
                 Ok(file) => file,
                 Err(SnapshotError::Source(error)) => return Err(error),
                 Err(error) => return Ok((None, Err(error))),
@@ -210,18 +331,16 @@ impl ProtectedStoreOwner {
         snapshot: ProtectedSnapshot,
         validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
     ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        let work = snapshot.custody.maximum_job_bytes();
         let inner = self.with_custody(
             snapshot.custody,
             StoreIoKind::RecoveryRead,
-            WORK_BYTES,
+            work,
             move |file, _| {
                 let Some(file) = file else {
                     return Ok(Err(SnapshotError::Review(StoreError::Invalid)));
                 };
-                Ok(
-                    inspect_snapshot(&mut file.cursor(), file.deadline(), validate_row)
-                        .map_err(SnapshotError::Review),
-                )
+                Ok(file.inspect(validate_row).map_err(SnapshotError::Review))
             },
         )?;
         Ok(ProtectedSnapshotJob { inner })

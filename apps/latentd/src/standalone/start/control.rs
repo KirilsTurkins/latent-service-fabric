@@ -16,6 +16,14 @@ pub(super) struct StartupControl {
 }
 
 impl StartupControl {
+    #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+    pub(super) fn task_observer(&self) -> tokio::task::AbortHandle {
+        self.sampler
+            .as_ref()
+            .expect("startup owns its one sampler")
+            .task_observer()
+    }
+
     pub(super) fn start(
         authority: Arc<SupplyChainAuthority>,
         interval: Duration,

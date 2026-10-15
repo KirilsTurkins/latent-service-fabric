@@ -61,23 +61,23 @@ jobs:
       - name: Verify production pages, theme and source-backed controls
         working-directory: website
         run: |
-          # Each suite owns separate servers, browsers and evidence directories.
-          # Run the complete five-suite matrix concurrently on the hosted VM.
-          npm run test:versions &
-          versions_pid=$!
+          # Keep the long discovery audit away from the synthetic version build.
+          # Both waves retain every suite and its original process deadline.
+          npm run test:discovery &
+          discovery_pid=$!
           npm run test:build &
           build_pid=$!
+          status=0
+          wait "$build_pid" || status=$?
+          wait "$discovery_pid" || status=$?
+          npm run test:versions &
+          versions_pid=$!
           npm run test:theme &
           theme_pid=$!
           npm run test:examples &
           examples_pid=$!
-          npm run test:discovery &
-          discovery_pid=$!
-          status=0
-          wait "$build_pid" || status=$?
           wait "$theme_pid" || status=$?
           wait "$examples_pid" || status=$?
-          wait "$discovery_pid" || status=$?
           wait "$versions_pid" || status=$?
           exit "$status"
       - name: Retain only the tested site and compact browser receipts

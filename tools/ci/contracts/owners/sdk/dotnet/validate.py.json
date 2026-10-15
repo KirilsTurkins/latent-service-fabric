@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "sdk/dotnet/validate.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Integrate all-six transaction client models and bridges while preserving current pinned toolchains, required run blocks and guards.",
+  "reviewReason": "Refresh only the exact SDK and runtime pins to the October security release while preserving all qualification checks",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "33450a18af5090ded4656b17fad5a15a9b830367d114df214c9e4f4c6e22f0ef"
+  "sha256": "9ed7ef59cfe4971a834a3dbd5f542bf5a6cc3f7ed07d9a188e1d31a8ce37e09d"
 }

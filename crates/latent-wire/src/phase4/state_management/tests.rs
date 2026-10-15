@@ -357,6 +357,8 @@ async fn durable_typed_audit_precedes_mutation_and_closed_audit_cannot_create() 
         matches!(&created.response,contract::Response::MutateNamespace(value) if value.audit_ack.as_ref().unwrap().status==c::AuditAckStatus::Durable as i32 && value.audit_ack.as_ref().unwrap().attempt_sequence.is_some())
     );
     let handle = fixture.audit.as_ref().unwrap().0.clone();
+    let query_deadline = deadline();
+    assert!(handle.wait_until_idle_for_test(query_deadline).unwrap());
     let page = handle
         .query(
             latent_audit::AuditQueryRequest {
@@ -366,7 +368,7 @@ async fn durable_typed_audit_precedes_mutation_and_closed_audit_cannot_create() 
                 maximum_bytes: 65536,
                 cursor: None,
             },
-            deadline(),
+            query_deadline,
         )
         .unwrap()
         .wait()

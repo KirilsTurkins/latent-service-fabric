@@ -17,6 +17,7 @@ class UnavailableObservationOracle(unittest.TestCase):
                 "nodes": [root], "nextPageToken": None}})
             subject = campaign.Campaign.__new__(campaign.Campaign)
             subject.client = client
+            subject.service = cfg.SERVICE
             with self.assertRaisesRegex(ValueError, "host-owned-transaction-response-headers"):
                 subject.result({"status": 503, "body": b"Unavailable\n", "headers": [
                     ("Content-Type", "text/plain; charset=utf-8"), ("Cache-Control", "no-store")]})

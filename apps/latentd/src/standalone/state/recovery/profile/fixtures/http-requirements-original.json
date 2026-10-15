@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "protocol": "lsf-atomic-idempotent-http-v1",
+  "capsule": "examples/transaction-java-aggregate",
+  "deployment": "transaction-java-aggregate",
+  "stateBinding": "transaction-java-aggregate",
+  "namespace": "transactional-aggregate",
+  "companionDigest": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+  "binding": "qualified-http",
+  "operation": "http",
+  "adapter": "qualified-http-effect-v1",
+  "payloadFormat": "http-body-value-v1",
+  "idempotencyProfile": "qualified-http-v1:96de426fb7aebd66c97033631e9aec1f85d4eac11f581637e67b7f25239bd161",
+  "ceiling": {
+    "maximum_payload_bytes": 27,
+    "maximum_response_bytes": 2048,
+    "maximum_attempts": 3,
+    "maximum_age_millis": 600000,
+    "attempt_timeout_millis": 2000
+  }
+}

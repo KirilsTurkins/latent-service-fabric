@@ -75,6 +75,20 @@ pub(super) fn command(
         contract::Request::LookupCommit(value) => {
             return Ok(Some(value.command.as_ref().ok_or_else(invalid)?))
         }
+        contract::Request::GetEffect(value) => {
+            return Ok(Some(value.command.as_ref().ok_or_else(invalid)?))
+        }
+        contract::Request::CancelCommand(value) => {
+            return Ok(Some(
+                value
+                    .command
+                    .as_ref()
+                    .ok_or_else(invalid)?
+                    .command
+                    .as_ref()
+                    .ok_or_else(invalid)?,
+            ))
+        }
         _ => {}
     }
     let original = match request {

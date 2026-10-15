@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "SnapshotEvidenceNames.test_existing_hashed_receipt_stays_exclusive_and_empty_failed_root_is_retained",
+    "SnapshotEvidenceNames.test_legacy_snapshot_keeps_original_path_without_directory_receipt",
+    "SnapshotEvidenceNames.test_live_or_unreaped_owner_refuses_before_directory_and_evidence",
+    "SnapshotEvidenceNames.test_malformed_or_overlong_operation_never_writes_or_calls_native",
+    "SnapshotEvidenceNames.test_maximum_and_uppercase_operations_preserve_case_within_evidence_cap",
+    "SnapshotEvidenceNames.test_native_failure_keeps_exact_record_and_never_retries_original_action",
+    "SnapshotEvidenceNames.test_original_cutoff_and_cancellation_refuse_without_new_roots_or_receipts",
+    "SnapshotEvidenceNames.test_real_evidence_old_fixed_label_cannot_accept_two_snapshot_receipts",
+    "SnapshotEvidenceNames.test_repeated_same_operation_refuses_before_a_second_action_or_record",
+    "SnapshotEvidenceNames.test_two_real_snapshots_keep_distinct_exclusive_records_and_original_operations"
+  ],
+  "guards": {
+    "SnapshotEvidenceNames.test_existing_hashed_receipt_stays_exclusive_and_empty_failed_root_is_retained": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a27a324cfd5a41b8020c4f89cdbfb64d534416a2575dce0f0aa1dcd7c1ab9d5b",
+        "class:setup-sha256:be954842ec9431e1ca47442a890a4e0cb519e228d949cb48dd592101fc9385d3"
+      ],
+      "skipSites": []
+    },
+    "SnapshotEvidenceNames.test_legacy_snapshot_keeps_original_path_without_directory_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a27a324cfd5a41b8020c4f89cdbfb64d534416a2575dce0f0aa1dcd7c1ab9d5b",
+        "class:setup-sha256:be954842ec9431e1ca47442a890a4e0cb519e228d949cb48dd592101fc9385d3"
+      ],
+      "skipSites": []
+    },
+    "SnapshotEvidenceNames.test_live_or_unreaped_owner_refuses_before_directory_and_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a27a324cfd5a41b8020c4f89cdbfb64d534416a2575dce0f0aa1dcd7c1ab9d5b",
+        "class:setup-sha256:be954842ec9431e1ca47442a890a4e0cb519e228d949cb48dd592101fc9385d3"
+      ],
+      "skipSites": []
+    },
+    "SnapshotEvidenceNames.test_malformed_or_overlong_operation_never_writes_or_calls_native": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a27a324cfd5a41b8020c4f89cdbfb64d534416a2575dce0f0aa1dcd7c1ab9d5b",
+        "class:setup-sha256:be954842ec9431e1ca47442a890a4e0cb519e228d949cb48dd592101fc9385d3"
+      ],
+      "skipSites": []
+    },
+    "SnapshotEvidenceNames.test_maximum_and_uppercase_operations_preserve_case_within_evidence_cap": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a27a324cfd5a41b8020c4f89cdbfb64d534416a2575dce0f0aa1dcd7c1ab9d5b",
+        "class:setup-sha256:be954842ec9431e1ca47442a890a4e0cb519e228d949cb48dd592101fc9385d3"
+      ],
+      "skipSites": []
+    },
+    "SnapshotEvidenceNames.test_native_failure_keeps_exact_record_and_never_retries_original_action": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a27a324cfd5a41b8020c4f89cdbfb64d534416a2575dce0f0aa1dcd7c1ab9d5b",
+        "class:setup-sha256:be954842ec9431e1ca47442a890a4e0cb519e228d949cb48dd592101fc9385d3"
+      ],
+      "skipSites": []
+    },
+    "SnapshotEvidenceNames.test_original_cutoff_and_cancellation_refuse_without_new_roots_or_receipts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a27a324cfd5a41b8020c4f89cdbfb64d534416a2575dce0f0aa1dcd7c1ab9d5b",
+        "class:setup-sha256:be954842ec9431e1ca47442a890a4e0cb519e228d949cb48dd592101fc9385d3"
+      ],
+      "skipSites": []
+    },
+    "SnapshotEvidenceNames.test_real_evidence_old_fixed_label_cannot_accept_two_snapshot_receipts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a27a324cfd5a41b8020c4f89cdbfb64d534416a2575dce0f0aa1dcd7c1ab9d5b",
+        "class:setup-sha256:be954842ec9431e1ca47442a890a4e0cb519e228d949cb48dd592101fc9385d3"
+      ],
+      "skipSites": []
+    },
+    "SnapshotEvidenceNames.test_repeated_same_operation_refuses_before_a_second_action_or_record": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a27a324cfd5a41b8020c4f89cdbfb64d534416a2575dce0f0aa1dcd7c1ab9d5b",
+        "class:setup-sha256:be954842ec9431e1ca47442a890a4e0cb519e228d949cb48dd592101fc9385d3"
+      ],
+      "skipSites": []
+    },
+    "SnapshotEvidenceNames.test_two_real_snapshots_keep_distinct_exclusive_records_and_original_operations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a27a324cfd5a41b8020c4f89cdbfb64d534416a2575dce0f0aa1dcd7c1ab9d5b",
+        "class:setup-sha256:be954842ec9431e1ca47442a890a4e0cb519e228d949cb48dd592101fc9385d3"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_snapshot_evidence_names.py",
+  "reviewReason": "Retain distinct bounded operation-derived snapshot-root records with actual exclusive Evidence and filesystem controls; preserve original naming, owner, cutoff, legacy and refusal obligations.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

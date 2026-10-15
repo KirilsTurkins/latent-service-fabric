@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "latent.java.application-schema-inputs.v1",
+  "variant": "legacy-v1",
+  "effect": "current-http",
+  "readers": [
+    "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f"
+  ],
+  "writers": [
+    "sha256:bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f"
+  ],
+  "sourceDigest": "sha256:ac4a89a75bc9868350f21924eefcf2c20ceefd6dc200b0b9c3c4e6064c51b1d8",
+  "publicationReviewGranted": false,
+  "componentCompiled": false,
+  "stateExecutionQualified": false
+}

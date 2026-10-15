@@ -211,12 +211,22 @@ impl OriginalAccess<'_> {
         operation: &str,
         incarnation: u64,
     ) -> Result<OwnedPolicyDecision, PlatformError> {
+        self.seal_target(operation, incarnation, self.caller.kind, &self.caller.scope)
+    }
+
+    fn seal_target(
+        &self,
+        operation: &str,
+        incarnation: u64,
+        kind: latent_policy::capability::RecoveryScopeKind,
+        scope: &str,
+    ) -> Result<OwnedPolicyDecision, PlatformError> {
         let OriginalAccess {
             services,
             binding,
             context,
             publication,
-            caller,
+            caller: _,
             entity,
             deadline,
             input_bytes,
@@ -245,8 +255,8 @@ impl OriginalAccess<'_> {
                     namespace: &binding.namespace.0,
                     incarnation,
                     entity,
-                    recovery_kind: caller.kind,
-                    recovery_scope: &caller.scope,
+                    recovery_kind: kind,
+                    recovery_scope: scope,
                     result_policy: &binding.result_policy,
                 },
             },
@@ -282,6 +292,15 @@ pub(super) struct EffectDecision<'a> {
 }
 impl EffectDecision<'_> {
     pub fn seal(&self, operation: &str) -> Result<OwnedPolicyDecision, PlatformError> {
+        self.seal_target(operation, self.caller.kind, &self.caller.scope)
+    }
+
+    pub fn seal_target(
+        &self,
+        operation: &str,
+        kind: latent_policy::capability::RecoveryScopeKind,
+        scope: &str,
+    ) -> Result<OwnedPolicyDecision, PlatformError> {
         let publication = self
             .services
             .artifacts
@@ -300,7 +319,7 @@ impl EffectDecision<'_> {
             deadline: self.deadline,
             input_bytes: self.input_bytes,
         }
-        .seal(operation, self.binding.incarnation)
+        .seal_target(operation, self.binding.incarnation, kind, scope)
     }
 }
 pub(super) fn mutation_operation(kind: i32) -> Result<&'static str, PlatformError> {

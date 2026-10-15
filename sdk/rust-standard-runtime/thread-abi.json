@@ -3,7 +3,7 @@
   "target": "wasm32-unknown-unknown",
   "compiler": "1.97.1",
   "componentEncoder": "0.259.0",
-  "engine": "48.0.5",
+  "engine": "48.0.6",
   "contextSlot": 1,
   "preservedWitBindgenContextSlot": 0,
   "contextPrefix": {

@@ -1,12 +1,11 @@
 # Canonical protected state startup
 
-This source milestone connects the checked `state` settings to the actual
-standalone startup and shutdown owners. It does not complete Phase 4
-installation or qualification. The production caller currently accepts only an
-empty operation list and empty tenant declarations; configured installations
-fail before opening the business engine or accepting listeners. Their signed
-selection, current policy and protected credential producers still need to be
-composed through the original admission owners.
+The checked `state` settings connect to the actual standalone startup and
+shutdown owners. Configured signed operations and tenant declarations compose
+through the original selected publication, namespace, current policy and
+protected credential owners. An empty operation list supports metadata startup
+without installing execution rules. This source integration does not complete
+the broader Phase 4 installation or qualification gates.
 
 ## Configuration boundary
 
@@ -28,7 +27,7 @@ the transactional manifest and admission owners still refuse immediate
 child, outbound and blob grants. Configuration fields cannot grant continuity,
 restore approval, caller authority or deferred execution permission.
 
-The explicit bounded native profile used by the source fixtures has 128 ordinary
+The bounded native profile in the qualification declaration has 128 ordinary
 slots, a 256 MiB ordinary aggregate and a 64 MiB per-reservation ceiling. Recovery
 has eight slots, a 96 MiB aggregate and a 32 MiB per-reservation ceiling. Derivation
 checks the real initializer, validator, engine-resident, namespace-resident and effect-rule
@@ -36,11 +35,28 @@ footprints, plus separately usable headroom for a complete 32 MiB management
 request. A larger engine cache needs corresponding explicit native capacity; no
 fallback capacity owner or unlimited budget is installed.
 
+Native `inspect-restore` and `restore` action data may include
+`request.destinationStoreIdentity`. The original `StoreIdentity` parser
+requires one through 128 ASCII letters, digits, dots, underscores or hyphens
+and checks the original owned string capacity. This is descriptive action
+data, not a new CLI or RPC flag, grant or restore approval. Omission retains
+the legacy inspection/refusal behavior.
+
+Use the same explicit destination identity for inspection and restore. The
+original source validation stays bound to the source identity; target
+validation uses only that same immutable action's selected identity. Actual
+protected staging still requires a fresh distinct target, current original
+authority, the reviewed window acknowledgement and the original clock,
+checkpoint, quota and native fences. A successful inspection is not approval.
+Require the actual restore receipt's `destinationIdentity` to equal the
+requested identity, then select that actual value as the restored node's
+`state.storeIdentity`; do not keep the source label or derive a replacement.
+
 ## Ordered ownership
 
 One empty effect-authority owner is created before artifact and policy exposure.
-Both original catalogs attach its rejection-only observer before their first
-read or mutation. Reusing preopened catalogs requires exact observer identity;
+Both original catalogs attach its rejection-only observer before exposing
+reads, decisions or mutations. Reusing preopened catalogs requires exact observer identity;
 attaching a replacement after exposure is refused. No deferred rule is produced
 from the descriptive configuration epoch, binding digest or credential name.
 
@@ -50,6 +66,10 @@ store already bound to that same native owner. A coherent bounded validation
 checks supported producer codecs and cross-row ownership without repairing
 counters or accepting unknown opaque records. Retained namespace metadata then
 uses that original reservation.
+
+The original configured bootstrap deadline is computed once and reused for
+installation and readiness. Retaining an owner after expiry keeps its paid
+physical capacity; it cannot renew admission or extend that deadline.
 
 The early effect authority also reserves its actual finite rule, rejection and
 closed-namespace metadata on that same original Work admission before allocation.
@@ -99,8 +119,13 @@ Exactly one dispatcher returns paused, with the same protected store, native
 owner and early effect authority. The production caller retains the existing
 `TransactionAdmissionOwners` factory. It checks the original deadline and current
 clock/role before one readiness cutover; closing the actual role removes its
-readiness without releasing engine residency. The empty bootstrap keeps dispatch
-paused and installs no execution rule.
+readiness without releasing engine residency. For configured HTTP execution,
+readiness clears only startup suppression, preserving actual operator Pause
+and refusing restore review. Empty or non-HTTP readiness retains the safety
+pause unless a genuinely accepted control in the current owner epoch selected
+otherwise. A historical restored Resume alone cannot remove that safety pause.
+Readiness writes no operator receipt, and the empty bootstrap installs no
+execution rule.
 
 On failure, already-opened owners drain against the original boot deadline. A
 dropped waiter cannot cancel native work or prove physical retirement. Normal
@@ -142,12 +167,48 @@ An installation must acquire its own resident control retention before moving
 these values out of their transient result; this API creates no additional quota,
 execution rule or readiness approval.
 
+The following registration notes preserve the earlier source milestones and
+their original pending-test statements. Later validation on source
+`1d3edbec72cf5049c24ad933a59f95605198887b` discovered all 401 `latentd` cases:
+371 passed and all 30 original ignores remained. Its complete eleven-library
+run passed 1,994 active cases, retained 66 original ignores and passed three
+real Rust guest controls; all six default roles built from that same source.
+The signed early HTTP programme passed. Complete terminal and pending recovery
+programmes remained failed at their first current-authority restart, so those
+native controls do not establish their acceptance or packaged qualification.
+Later source changes require their own source-bound runtime evidence.
+
+A later complete run on source
+`1e9fa9cdfa02e2a1e8098d2325908cc460fa2de2` again passed all 1,994 active
+cases across eleven libraries, retained the same 66 ignores and completed
+36 supervised executions, including three actual Rust guest controls. All six
+default roles were genuinely built from that source with the original compiler
+profiles and ownership guards. These checks do not establish complete signed
+terminal or pending recovery acceptance, packaged distribution or full-ticket
+qualification.
+
+The restore-target milestone was natively tested on source
+`bd7da024e55a955cba0ca0a7fae6cd5b728dbfcf`, tree
+`eaf48f2df5b2e46df483670d20efa3ba8f04a209`: all seven new identity/target
+controls and all 378 active `latentd` cases passed, with the 30 original
+ignores unchanged. Pinned native formatting and strict maintained `latentd`
+Clippy passed. The unchanged supporting collector sources passed 46 focused
+Python controls on leaf `e5f947af2da815488ce99c74027626c9d341c807`; the
+later fixture-only correction changed no Python source. Integrated commit
+`bad50d1e64df83a9c7c5bb45a1aae2ca2cb923be` has that exact tested tree. These
+protected target-view controls do not qualify a complete restore programme.
+These changes still require a fresh complete eleven-library run, coherent
+six-role tuple and normal signed terminal/pending recovery programmes on the
+delivered final source.
+Packaged and broader-ticket qualification remain open.
+
 Five policy-generation, five original credential-generation and six signed
 companion schedules are additional registered source. The companion cases use
 real Ed25519 publisher/provenance admission, including a payload larger than
 the retained response, corruption, malformed or oversized declarations, exact
 selection, expired or closed native ownership and physical last-owner retirement.
-Their native compilation, discovery and execution remain required.
+At that earlier milestone, native compilation, discovery and execution
+were still required.
 
 Three actual rejection-registry and five retained effect-control schedules are
 also registered source. They cover foreign owners, empty-map policy rejection,
@@ -155,13 +216,13 @@ actual credential/rule rotation and namespace closure, finite original capture
 capacity, busy fences, clock rollback, expiry, close, overflow, callback unwind
 and the final physical owner drop. Source checks cannot qualify these schedules.
 
-The source registers 54 additional `latentd` cases, retaining all 246 previous
-cases and their ignore states. They include real protected-engine/checkpoint
+At the earlier registration milestone, 54 additional `latentd` cases were
+registered, retaining all 246 previous cases and their ignore states. They include real protected-engine/checkpoint
 startup, missing and malformed checkpoint recovery, same-owner factory admission,
 one-time readiness, pre-I/O installation refusal, original-deadline refusal and
 a paused native worker retaining capacity after failed drain. Registration and
 formatting are not native test execution. Compilation, exact native discovery,
-these schedules and strict Clippy remain pending under the shared compiler hold.
+these schedules and strict Clippy were then pending under the shared compiler hold.
 Eight additional native storage schedules cover marker initialization,
 byte-exact reopen, premature business writes, missing/malformed refusal,
 foreign capacity, expiry and a detached waiter retaining the original charge
@@ -171,7 +232,7 @@ parents without creation, existing entries, linked or replaced ancestors,
 original expiry, and a detached waiter retaining actual catalog exclusivity
 and native capacity. The actual local and observed catalog callers also refuse
 omitted state settings before deployment or policy exposure. These schedules
-are registered source; they have not been compiled or executed.
+were registered source; compilation and execution were then pending.
 
 The focused schema checks cover closed owner declarations, finite counters,
 immutable target pins, rejected authority flags and Phase 4 report identity.
@@ -201,12 +262,15 @@ reservations, original expiry and physical destruction. Their injected host
 admission fixture verifies no signatures; the original six Policy signed-asset
 schedules retain that separate boundary. These metadata leaves do not qualify
 the configured protected-worker capture path, complete native node installation,
-recovery, current wire requests or the milestone gate. Compilation, exact native
-discovery, execution and strict Clippy remain pending for these new schedules.
+recovery, current wire requests or the milestone gate. At that earlier
+registration milestone, compilation, exact native discovery, execution and
+strict Clippy were still pending for these schedules.
 
-The remaining production work includes integrating the sealed signed-operation
-and protected-credential captures into actual installation, their current policy publication
-fence, original request/response integration with the Phase 4 wire runtime, and
-bootstrap-pause release that preserves durable operator pause and restore review,
-and native qualification of the stateless rejection probe on supported targets.
-Those omissions are tracked explicitly; this milestone closes no Phase 4 issue.
+The current installed caller connects the sealed signed-operation and
+protected-credential captures, the final publication and native fences, and
+original request/response ownership to the Phase 4 wire runtime. Its guarded
+startup release preserves operator pause and restore review as described above.
+Complete signed terminal and pending recovery programmes, qualification of the
+stateless rejection probe on supported targets, packaged distributions and
+broader ticket acceptance remain explicit evidence requirements. These source
+and native controls alone close no Phase 4 issue.

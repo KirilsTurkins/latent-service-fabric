@@ -1,6 +1,16 @@
 use super::*;
 use crate::broker::tests::audit::Journal;
 use latent_audit::{AuditProviderOutcome, AuditRecordData, Phase2AuditEventKind};
+use std::time::Instant;
+
+fn idle_audit_worker(journal: &Journal) {
+    // Optional observations may refuse a busy sink. Observe the isolated writer
+    // parked before exercising the one original grant or provider observation.
+    assert!(journal
+        .handle
+        .wait_until_idle_for_test(Instant::now() + Duration::from_secs(2))
+        .unwrap());
+}
 
 #[tokio::test]
 async fn clock_contention_has_one_terminal_grant_and_one_work_observation() {
@@ -18,6 +28,7 @@ async fn clock_contention_has_one_terminal_grant_and_one_work_observation() {
         let before = f.base.broker.snapshot();
         let timer = Timer::new();
         f.fence.hold_at.store(2, Ordering::SeqCst);
+        idle_audit_worker(&journal);
         let mut future = Box::pin(session.begin_host_clock(f.clock, &timer));
         pending(future.as_mut());
         for _ in 0..3 {
@@ -35,6 +46,7 @@ async fn clock_contention_has_one_terminal_grant_and_one_work_observation() {
             Phase2AuditEventKind::CapabilityGrantAllowed
         );
         drop(page);
+        idle_audit_worker(&journal);
         if cancel {
             drop(future);
         } else {
@@ -97,6 +109,7 @@ async fn dropped_binding_wait_observes_one_denied_grant_without_provider_outcome
     timer.advance(Duration::from_millis(10));
     pending(future.as_mut());
     assert_eq!(journal.query("a").await.records().len(), 0);
+    idle_audit_worker(&journal);
     drop(future);
     journal.drained().await;
     let page = journal.query("a").await;

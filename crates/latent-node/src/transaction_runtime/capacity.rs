@@ -43,11 +43,17 @@ fn request_bytes(input_capacity: usize) -> Result<u64, PlatformError> {
 /// A sealed physical retention guard. It contains no guest Store or cell.
 /// Moving or cloning its Arc never admits another operation or renews a deadline.
 pub struct TransactionRetention {
-    _memory: Arc<HostMemoryReservation>,
+    memory: Arc<HostMemoryReservation>,
     native: NativeReservation,
 }
 
 impl TransactionRetention {
+    pub(super) fn memory(&self) -> Arc<HostMemoryReservation> {
+        Arc::clone(&self.memory)
+    }
+    pub(super) fn native(&self) -> &NativeReservation {
+        &self.native
+    }
     pub(super) fn reserve(
         owner: &NativeCapacityOwner,
         envelope: &ActivationEnvelope,
@@ -97,7 +103,7 @@ impl TransactionRetention {
             .reserve_host_memory(retained_bytes)
             .map_err(|error| error.to_platform_error())?;
         Ok(Arc::new(Self {
-            _memory: Arc::new(memory),
+            memory: Arc::new(memory),
             native,
         }))
     }

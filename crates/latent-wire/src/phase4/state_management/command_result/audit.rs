@@ -23,6 +23,14 @@ pub(super) async fn begin(
             hash.update(b"commit\0");
             hash.update(value.encode_to_vec());
         }
+        contract::Request::GetEffect(value) => {
+            hash.update(b"effect\0");
+            hash.update(value.encode_to_vec());
+        }
+        contract::Request::CancelCommand(value) => {
+            hash.update(b"cancel\0");
+            hash.update(value.encode_to_vec());
+        }
         _ => return Err(invalid()),
     }
     super::super::audit::begin_operation(
@@ -40,8 +48,18 @@ pub(super) async fn begin(
                 component: Some(binding.component.clone()),
                 ..Default::default()
             },
-            operation_id: super::super::audit::read_operation_id("command-result")?,
-            action: AuditControlAction::StateOperationRead,
+            operation_id: super::super::audit::read_operation_id(
+                if matches!(request, contract::Request::CancelCommand(_)) {
+                    "command-cancel"
+                } else {
+                    "command-result"
+                },
+            )?,
+            action: if matches!(request, contract::Request::CancelCommand(_)) {
+                AuditControlAction::CommandCancel
+            } else {
+                AuditControlAction::StateOperationRead
+            },
             expected: None,
             request_digest: format!(
                 "sha256:{:x}",

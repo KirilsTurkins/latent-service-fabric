@@ -1,0 +1,560 @@
+{
+  "schemaVersion": "latent.current-native-recovery-progress.v1",
+  "recordedAtUtc": "2026-10-14T10:26:10.421228+00:00",
+  "sourceCommit": "6a380a5990b0d0138fc138e74125c4cf2fe01bea",
+  "sourceTree": "75971ef5753fb1271f6f59925d0883bab589e9ba",
+  "trackedFilesVerified": 9494,
+  "trackedGitBlobMapSha256": "sha256:a772eadde88b31dde703200bd13250acb5067325063e4658fbe58b9bacc5b1c1",
+  "trackedGitBlobMapEncoding": "UTF-8 JSON, sorted keys, compact separators, source selection file order",
+  "suiteRegistrySha256": "sha256:178ef78307e3cc6cf6adc56703cc6592d5138dfb58a35a442f79ce644d2e4514",
+  "nativeCompiler": "rustc1.97.1",
+  "nativeCargoJobs": 2,
+  "testReceiptSha256": "sha256:eb8223426d21eb8d675d4e7bb701d02445011eb040341dc8c37d00c778d647f7",
+  "activeCases": 1958,
+  "ignoredCases": 66,
+  "libraries": [
+    {
+      "id": "latent-audit.lib.latent-audit",
+      "sha256": "a70be4440881274ea7cb9b514dc9b5cc18bf9b4d334e40b08c31a32dd8eda194",
+      "cases": 50,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [
+        "test-support"
+      ],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-capabilities.lib.latent-capabilities",
+      "sha256": "6f58bc83beb6b0dd111309bdac95bce49c86b47597482b8e28ab4737769ac071",
+      "cases": 173,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [
+        "test-support"
+      ],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-core.lib.latent-core",
+      "sha256": "d684ea2d66fb0c878ef855594ce07d1b170b772dfab8d465394e752d3db00e84",
+      "cases": 134,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [
+        "test-support"
+      ],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-effects.lib.latent-effects",
+      "sha256": "432782c131acfe9edc18cfd454a3eb8ff3808c71a639c0648ab08ead8e1d141c",
+      "cases": 150,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-node.lib.latent-node",
+      "sha256": "3d2d93076e649831a4a2f115beb6230be7fca064c896a75230e9f378f9058251",
+      "cases": 175,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [
+        "transaction-test-observation"
+      ],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-policy.lib.latent-policy",
+      "sha256": "54e6219e30a0958b58ed519dd5d3a0c44cc79515d95e8e7e2e2d4a98de3c3136",
+      "cases": 148,
+      "ignored": 7,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [
+        "development-test-host"
+      ],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-rpc.lib.latent-rpc",
+      "sha256": "2e8e94a34f7128c54d03b4b2d345cd9c5cab23c4a692cbbc05231b822d5f9102",
+      "cases": 31,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-state.lib.latent-state",
+      "sha256": "dfd06eb328fdd282ba4bcc329c372209562867d80f6f0c6f0bf1c5f430213c28",
+      "cases": 374,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent-wire.lib.latent-wire",
+      "sha256": "16e8f601e8aad1bfe18c4c4c78d07b2a773d83d85f57c3dcd55d4063f185be36",
+      "cases": 242,
+      "ignored": 29,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latent.lib.latent",
+      "sha256": "32ae468c5f264e1fa655df9d0f1c10afbd4a0dadfe5028c2b50326decaae913a",
+      "cases": 163,
+      "ignored": 0,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    },
+    {
+      "id": "latentd.lib.latentd",
+      "sha256": "77ce830c0effb4c92123ad5c55632021f2ecd5b0f7e2c83dca05ee9680ad01fd",
+      "cases": 384,
+      "ignored": 30,
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [
+        "development-outbound-streams",
+        "development-test-node"
+      ],
+      "fresh": false,
+      "exactRegisteredInventory": true,
+      "exitCode": 0
+    }
+  ],
+  "actualGuestControls": [
+    {
+      "case": "phase4::local_transaction::tests::staging::actual_guest_post_insertion_staging_reaches_original_manager_and_privileged_wire",
+      "exitCode": 0,
+      "guestSha256": "637b3c53834a5ef679b40d15bcbdef55f5858d700f27ac6e276475b1f81c4698",
+      "guestBytes": 108412,
+      "guestUnchanged": true,
+      "stdoutSha256": "0c7650cf9c922738124b16bceca7d6e0820c27a1dd53eed01755517f7b607b5e"
+    },
+    {
+      "case": "phase4::local_transaction::tests::cancellation::actual_guest_installed_cancellation_reaches_only_original_live_command",
+      "exitCode": 0,
+      "guestSha256": "637b3c53834a5ef679b40d15bcbdef55f5858d700f27ac6e276475b1f81c4698",
+      "guestBytes": 108412,
+      "guestUnchanged": true,
+      "stdoutSha256": "37c63b515fd344c74169dccfc03e0143ebec3e908b01095b43c8face1152d8b2"
+    },
+    {
+      "case": "phase4::local_transaction::tests::cancellation::actual_guest_cancellation_denial_and_retired_pending_owner_remain_unknown",
+      "exitCode": 0,
+      "guestSha256": "637b3c53834a5ef679b40d15bcbdef55f5858d700f27ac6e276475b1f81c4698",
+      "guestBytes": 108412,
+      "guestUnchanged": true,
+      "stdoutSha256": "2ab390685b6b2fd693ad39e2a3ae6d2601e73a8357b2a8e8774bdbc5467ac8a3"
+    }
+  ],
+  "allNativeExecutionsReaped": true,
+  "sixToolManifestSha256": "sha256:44a86f6edd7b35a26d9dc17049b3bb80e7c8286a0fc331db7cae2b3a62ab0857",
+  "frozenRoles": [
+    {
+      "role": "node",
+      "sha256": "a4c6a60f4045cedde496c28b3f61ba82c00a80577ef2567ddb2fecf872febce4",
+      "bytes": 182211992,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    },
+    {
+      "role": "recovery_helper",
+      "sha256": "b52a138b8816e33c1c49fa72a07bc3531ce73b6f3808b0bfad0403247ea6fe90",
+      "bytes": 186979864,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    },
+    {
+      "role": "cli",
+      "sha256": "478dd8a58855fa2cc5bc6ce97ac9ee4c675755baf9145f4fde8e152f7d99e6cd",
+      "bytes": 69345040,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    },
+    {
+      "role": "contracts_tool",
+      "sha256": "09c45de84904bc7e23ca44334add82639e0564b8cb4ad52f17c3d22718082205",
+      "bytes": 7904536,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    },
+    {
+      "role": "aot_compiler",
+      "sha256": "2209f0d389eb8cd35f70603a79c15d8384860f0ab134594b68c096358256918f",
+      "bytes": 41789424,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    },
+    {
+      "role": "signer",
+      "sha256": "f3618468ad495a318af55f71dfe9c18e137f3c4b781ae65e03a8790708e53872",
+      "bytes": 24830528,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "freezeMethod": "independent-regular-copy"
+    }
+  ],
+  "coherentSourceAndCopiedProductsVerified": true,
+  "programmes": [
+    {
+      "mode": "terminal",
+      "attempt": 1,
+      "passed": false,
+      "qualificationFlag": "signedGuestExecutionQualified",
+      "qualificationPassed": false,
+      "nativeSourceCommit": "6a380a5990b0d0138fc138e74125c4cf2fe01bea",
+      "conductorSourceCommit": "6a380a5990b0d0138fc138e74125c4cf2fe01bea",
+      "compilerSourceCommit": "eba0d96e9439028aacd6c1f9a85d4ce0118a19bc",
+      "guestCompiledAgain": false,
+      "selectionDigest": "sha256:e2988a4e9bd216854f15f5b07380d784a08ba2dfd8d3c616a0547aad1db25538",
+      "campaignReceiptSha256": "sha256:b10ab332809dd9fad4ca6fdddd81fbcab52afc16973867970ff57d6776de093e",
+      "executionReceiptSha256": "sha256:e199031ae514449a349b220bd2a52ef58c88b86ff7625b73e51f0974cffa9ac7",
+      "seconds": 104.210897,
+      "cliProcesses": 96,
+      "measuredCases": [
+        "publish-aggregate",
+        "publish-put-once-legacy-v1",
+        "publish-put-once-compatible-v2",
+        "publish-put-once-writer-v2",
+        "publish-put-once-diagnostics",
+        "namespace-create",
+        "deploy-put-once-legacy-v1-legacy-runtime",
+        "fresh-query-no-command",
+        "deploy-put-once-diagnostics-diagnostic-runtime",
+        "deploy-put-once-legacy-v1-legacy-after-diagnostic",
+        "actual-post-stage-trap",
+        "actual-post-stage-fuel",
+        "actual-post-stage-cancel",
+        "actual-post-stage-memory",
+        "lost-response-after-commit",
+        "canonical-duplicate-original",
+        "changed-input-same-id",
+        "declared-rejection-after-change"
+      ],
+      "collectorDigests": {
+        "tools/run_java_transaction_http_qualification.py": "sha256:c6072c3e4550dd300ab1d290992b6369c1474e80d0348e684fb9bf46b432f848",
+        "tools/phase2_operator_process.py": "sha256:5ee4304a9b20d54a05f655114b6a358c72cae3bfe0292e8b213bf4af6197e659",
+        "tools/phase2_operator_scenario.py": "sha256:70e8b624eb9dfd967812cfc0f37684d5994dd53e24b0f0b31ae7a2f55fe63ee1",
+        "tools/build_process_linux.py": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "tools/build_process_signals.py": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "tools/static_api/node.py": "sha256:4d71864114f7650daa046a9eb3f4d85d77c400d5ee5f78ed353b30a5829732f5",
+        "tools/java_transaction_qualification/inputs.py": "sha256:6bd8a9bcb2b27991e487c90bda4105eaa4d882e1f7ec533759bd1d1526852158",
+        "tools/java_transaction_qualification/packaging.py": "sha256:ad3b74959558079d16c5cdd45c127b28cb9e6273b687c94f7802b005914d9fe4",
+        "tools/java_transaction_qualification/evidence.py": "sha256:1a504e5c09cff0505fbf753704f5600c2323e71b1480e88cb8e03ea96dc33b02",
+        "tools/java_transaction_qualification/configuration.py": "sha256:660231c7291b0fc03957f5bca978c9c03c51b96ddc4e1c47401ee4a992542fac",
+        "tools/java_transaction_qualification/policies.py": "sha256:1417a5b640ac1425f597e1d1d696ceb5b923d0c41e6ea874d1f29572b55aafdb",
+        "tools/java_transaction_qualification/lifecycle.py": "sha256:f406d4bc9e05a36a92df3e21010abc9f08e7e036ff237eb4be3c5a63f242afd1",
+        "tools/java_transaction_qualification/http.py": "sha256:222bfd17715cef7f5c9a86e9a6fe0d65b9c12046ae0f2d981a09c6045afd2f56",
+        "tools/java_transaction_qualification/campaign.py": "sha256:d8fd8ee8c4e0cc410c6e16a94a51337a7c5db31620c31e6ae608d917dd84769e",
+        "tools/java_transaction_qualification/provider.py": "sha256:99b166554b70ebc62d25ef6af79d0bddb19c92ec90baa3f1667fd5f2c4f6cdda",
+        "tools/java_transaction_qualification/recovery.py": "sha256:cbea865b276e0227f3109c977f2267827620da3c191b01158a1aaa4a683924b7",
+        "tools/java_transaction_qualification/offline_campaign.py": "sha256:57d45cc5d25282545ab2545b41d215fb307f08bf3b5d71ef052f657a93b49e38",
+        "tools/java_transaction_qualification/staging.py": "sha256:308fdf4d679c22e8dfee8e01fcb1e284beee1ce4538cadffeea31de5f5f2a827",
+        "tools/java_transaction_qualification/native_store.py": "sha256:0603eed86b6ba2a06a33c00a0ed6e777263dede705da8e60c9243c987721435e",
+        "tools/java_transaction_qualification/diagnostic_inputs.py": "sha256:3d806a8a22b618755685e6d8f61c2feb296b9909b0bf8e2274768374f551f343",
+        "tools/java_transaction_qualification/diagnostic_campaign.py": "sha256:9cd889ae67c47fad982fca76484bc17cd542550c800fb8e23ac678cb7c2ee37f",
+        "tools/java_transaction_qualification/current_inputs.py": "sha256:297f4704165b13e45ad94f5a05ae7c0a392d52d94c8f00b637bd96ecaf0dba53",
+        "tools/java_transaction_qualification/current_campaign.py": "sha256:bcbc78fa4c42264ce4abdfcd7f8a9daf841c659f81683212d6781727394fba82",
+        "tools/java_transaction_qualification/refusal_observation.py": "sha256:34cb5c409ab7f6507f0cd08e61f4ad8d0bb6246be4f83104b843aff28e9c24c5",
+        "tools/java_transaction_qualification/state_configuration.py": "sha256:367a494d6b63d90ce6ccead9e5d08e0dda30bc78a44b91c6dde8b3e6b73337dd",
+        "tools/java_transaction_qualification/restore_installation.py": "sha256:868ff34c462c02edc21aa20d30d439308bac4f105fb3c27071ba85f8f3086799",
+        "tools/java_transaction_qualification/restore_authority.py": "sha256:5c5b65a0032aa343fc443615272fba7481719a72ab7d65bdef034be7c4a249a9",
+        "tools/java_transaction_qualification/current_recipient.py": "sha256:25e483199833fc0a320035a0e01e0b98d341b9c9dfe3704c17fafe8ab50cf866",
+        "tools/java_transaction_qualification/current_activation.py": "sha256:d9838d76db1a558f29a2e86cafc831493f2f07bec96b9a08b6742e6d8a020823",
+        "docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json": "sha256:8a422031a4d121369bc96a917d3e6165af923a82d7848499ae3359f4b1c05ec0",
+        "docs/testing/evidence/java-current-fresh-http-capture-2026-10-13.json": "sha256:99f267e94cd82124e95b9bad269cec917f547b40a3812564c6656c16a737763a",
+        "tools/java_transaction_qualification/read_observer.py": "sha256:99b7e02be16937406870e4a455fc34121c4bd42138bf86fb15cde7bd051c6f1f",
+        "docs/testing/evidence/java-current-native-memory-capture-2026-10-14.json": "sha256:9d5c75156cfed078be75c32b054c3e30e3f7e4b1419c248b3810f72be02715d0"
+      },
+      "productsUnchanged": true,
+      "cleanSourceBeforeAndAfter": true,
+      "allOwnedProcessesReaped": true,
+      "packagedDistributionQualified": false,
+      "signedGuestExecutionQualified": false,
+      "failedStage": "actual-http",
+      "fixedFailureReason": "stale-edit-original-abort-proof"
+    },
+    {
+      "mode": "pending",
+      "attempt": 1,
+      "passed": false,
+      "qualificationFlag": "signedPendingRestoreCloseQualified",
+      "qualificationPassed": false,
+      "nativeSourceCommit": "6a380a5990b0d0138fc138e74125c4cf2fe01bea",
+      "conductorSourceCommit": "6a380a5990b0d0138fc138e74125c4cf2fe01bea",
+      "compilerSourceCommit": "eba0d96e9439028aacd6c1f9a85d4ce0118a19bc",
+      "guestCompiledAgain": false,
+      "selectionDigest": "sha256:e2988a4e9bd216854f15f5b07380d784a08ba2dfd8d3c616a0547aad1db25538",
+      "campaignReceiptSha256": "sha256:7ce88a229ecb60e6092890cf1c7a0d99f814cbbee2ed179a0ba9edf6aa1c2f34",
+      "executionReceiptSha256": "sha256:bc698ffd5b17dfbc740858c02735701df6189bf080761ab191a2f559536e9ba5",
+      "seconds": 92.079102,
+      "cliProcesses": 46,
+      "measuredCases": [
+        "publish-aggregate",
+        "publish-put-once-legacy-v1",
+        "publish-put-once-compatible-v2",
+        "publish-put-once-writer-v2",
+        "publish-put-once-diagnostics",
+        "namespace-create",
+        "deploy-put-once-legacy-v1-legacy-runtime",
+        "java-pending-before-command-pause",
+        "java-pending-backup-quiesce"
+      ],
+      "collectorDigests": {
+        "tools/run_java_transaction_http_qualification.py": "sha256:c6072c3e4550dd300ab1d290992b6369c1474e80d0348e684fb9bf46b432f848",
+        "tools/phase2_operator_process.py": "sha256:5ee4304a9b20d54a05f655114b6a358c72cae3bfe0292e8b213bf4af6197e659",
+        "tools/phase2_operator_scenario.py": "sha256:70e8b624eb9dfd967812cfc0f37684d5994dd53e24b0f0b31ae7a2f55fe63ee1",
+        "tools/build_process_linux.py": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "tools/build_process_signals.py": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "tools/static_api/node.py": "sha256:4d71864114f7650daa046a9eb3f4d85d77c400d5ee5f78ed353b30a5829732f5",
+        "tools/java_transaction_qualification/inputs.py": "sha256:6bd8a9bcb2b27991e487c90bda4105eaa4d882e1f7ec533759bd1d1526852158",
+        "tools/java_transaction_qualification/packaging.py": "sha256:ad3b74959558079d16c5cdd45c127b28cb9e6273b687c94f7802b005914d9fe4",
+        "tools/java_transaction_qualification/evidence.py": "sha256:1a504e5c09cff0505fbf753704f5600c2323e71b1480e88cb8e03ea96dc33b02",
+        "tools/java_transaction_qualification/configuration.py": "sha256:660231c7291b0fc03957f5bca978c9c03c51b96ddc4e1c47401ee4a992542fac",
+        "tools/java_transaction_qualification/policies.py": "sha256:1417a5b640ac1425f597e1d1d696ceb5b923d0c41e6ea874d1f29572b55aafdb",
+        "tools/java_transaction_qualification/lifecycle.py": "sha256:f406d4bc9e05a36a92df3e21010abc9f08e7e036ff237eb4be3c5a63f242afd1",
+        "tools/java_transaction_qualification/http.py": "sha256:222bfd17715cef7f5c9a86e9a6fe0d65b9c12046ae0f2d981a09c6045afd2f56",
+        "tools/java_transaction_qualification/campaign.py": "sha256:d8fd8ee8c4e0cc410c6e16a94a51337a7c5db31620c31e6ae608d917dd84769e",
+        "tools/java_transaction_qualification/provider.py": "sha256:99b166554b70ebc62d25ef6af79d0bddb19c92ec90baa3f1667fd5f2c4f6cdda",
+        "tools/java_transaction_qualification/recovery.py": "sha256:cbea865b276e0227f3109c977f2267827620da3c191b01158a1aaa4a683924b7",
+        "tools/java_transaction_qualification/offline_campaign.py": "sha256:57d45cc5d25282545ab2545b41d215fb307f08bf3b5d71ef052f657a93b49e38",
+        "tools/java_transaction_qualification/staging.py": "sha256:308fdf4d679c22e8dfee8e01fcb1e284beee1ce4538cadffeea31de5f5f2a827",
+        "tools/java_transaction_qualification/native_store.py": "sha256:0603eed86b6ba2a06a33c00a0ed6e777263dede705da8e60c9243c987721435e",
+        "tools/java_transaction_qualification/diagnostic_inputs.py": "sha256:3d806a8a22b618755685e6d8f61c2feb296b9909b0bf8e2274768374f551f343",
+        "tools/java_transaction_qualification/diagnostic_campaign.py": "sha256:9cd889ae67c47fad982fca76484bc17cd542550c800fb8e23ac678cb7c2ee37f",
+        "tools/java_transaction_qualification/current_inputs.py": "sha256:297f4704165b13e45ad94f5a05ae7c0a392d52d94c8f00b637bd96ecaf0dba53",
+        "tools/java_transaction_qualification/current_campaign.py": "sha256:bcbc78fa4c42264ce4abdfcd7f8a9daf841c659f81683212d6781727394fba82",
+        "tools/java_transaction_qualification/refusal_observation.py": "sha256:34cb5c409ab7f6507f0cd08e61f4ad8d0bb6246be4f83104b843aff28e9c24c5",
+        "tools/java_transaction_qualification/state_configuration.py": "sha256:367a494d6b63d90ce6ccead9e5d08e0dda30bc78a44b91c6dde8b3e6b73337dd",
+        "tools/java_transaction_qualification/restore_installation.py": "sha256:868ff34c462c02edc21aa20d30d439308bac4f105fb3c27071ba85f8f3086799",
+        "tools/java_transaction_qualification/restore_authority.py": "sha256:5c5b65a0032aa343fc443615272fba7481719a72ab7d65bdef034be7c4a249a9",
+        "tools/java_transaction_qualification/current_recipient.py": "sha256:25e483199833fc0a320035a0e01e0b98d341b9c9dfe3704c17fafe8ab50cf866",
+        "tools/java_transaction_qualification/current_activation.py": "sha256:d9838d76db1a558f29a2e86cafc831493f2f07bec96b9a08b6742e6d8a020823",
+        "docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json": "sha256:8a422031a4d121369bc96a917d3e6165af923a82d7848499ae3359f4b1c05ec0",
+        "docs/testing/evidence/java-current-fresh-http-capture-2026-10-13.json": "sha256:99f267e94cd82124e95b9bad269cec917f547b40a3812564c6656c16a737763a",
+        "tools/java_transaction_qualification/read_observer.py": "sha256:99b7e02be16937406870e4a455fc34121c4bd42138bf86fb15cde7bd051c6f1f",
+        "docs/testing/evidence/java-current-native-memory-capture-2026-10-14.json": "sha256:9d5c75156cfed078be75c32b054c3e30e3f7e4b1419c248b3810f72be02715d0",
+        "tools/run_java_pending_recovery_qualification.py": "sha256:2cd15e84d5d5955b2bbbd1c72669c167eb8ce9ff570ea5afa6b3a5f779388542",
+        "tools/java_transaction_qualification/pending_campaign.py": "sha256:92a12e72fe2bbdba48aa41f5ad19ea6905e20dfd8b1fc0a326bb03f259ab5f7c",
+        "tools/java_transaction_qualification/pending_controls.py": "sha256:ffbfab94156730ca7bbbe9cf32fb6896890dd9c734dd806aa7a0d5c9414bf16a"
+      },
+      "productsUnchanged": true,
+      "cleanSourceBeforeAndAfter": true,
+      "allOwnedProcessesReaped": true,
+      "packagedDistributionQualified": false,
+      "immediateHttpDenialQualified": false,
+      "postStageImmediateHttpRollbackQualified": false,
+      "signedPendingRestoreCloseQualified": false,
+      "signedGuestExecutionQualified": false,
+      "failedStage": "actual-signed-pending-recovery",
+      "fixedFailureReason": "actual-native-offline-action-required"
+    },
+    {
+      "mode": "early",
+      "attempt": 1,
+      "passed": true,
+      "qualificationFlag": "immediateHttpDenialQualified",
+      "qualificationPassed": true,
+      "nativeSourceCommit": "6a380a5990b0d0138fc138e74125c4cf2fe01bea",
+      "conductorSourceCommit": "6a380a5990b0d0138fc138e74125c4cf2fe01bea",
+      "compilerSourceCommit": "47e4e60778d7fdd033d5f1d6c05595752713c971",
+      "guestCompiledAgain": false,
+      "selectionDigest": "sha256:d7e5e480523c47c7cdb55b6fd587a1af46b47f74e66dc842ddb32e4acb5085f0",
+      "campaignReceiptSha256": "sha256:25d904117d401117636752e406aa2693fb2425b43ccfb5fed379ca69bfad1f39",
+      "executionReceiptSha256": "sha256:6e0c8971722355b4581a5d5f5d0d9599b0d90479f5775d26f4e7874e64dd1e4a",
+      "seconds": 39.801851,
+      "cliProcesses": 24,
+      "measuredCases": [
+        "publish-early-http",
+        "namespace-create",
+        "signed-early-http-typed-denial",
+        "early-physical-retirement"
+      ],
+      "collectorDigests": {
+        "tools/run_java_transaction_http_qualification.py": "sha256:c6072c3e4550dd300ab1d290992b6369c1474e80d0348e684fb9bf46b432f848",
+        "tools/phase2_operator_process.py": "sha256:5ee4304a9b20d54a05f655114b6a358c72cae3bfe0292e8b213bf4af6197e659",
+        "tools/phase2_operator_scenario.py": "sha256:70e8b624eb9dfd967812cfc0f37684d5994dd53e24b0f0b31ae7a2f55fe63ee1",
+        "tools/build_process_linux.py": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "tools/build_process_signals.py": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "tools/static_api/node.py": "sha256:4d71864114f7650daa046a9eb3f4d85d77c400d5ee5f78ed353b30a5829732f5",
+        "tools/java_transaction_qualification/inputs.py": "sha256:6bd8a9bcb2b27991e487c90bda4105eaa4d882e1f7ec533759bd1d1526852158",
+        "tools/java_transaction_qualification/packaging.py": "sha256:ad3b74959558079d16c5cdd45c127b28cb9e6273b687c94f7802b005914d9fe4",
+        "tools/java_transaction_qualification/evidence.py": "sha256:1a504e5c09cff0505fbf753704f5600c2323e71b1480e88cb8e03ea96dc33b02",
+        "tools/java_transaction_qualification/configuration.py": "sha256:660231c7291b0fc03957f5bca978c9c03c51b96ddc4e1c47401ee4a992542fac",
+        "tools/java_transaction_qualification/policies.py": "sha256:1417a5b640ac1425f597e1d1d696ceb5b923d0c41e6ea874d1f29572b55aafdb",
+        "tools/java_transaction_qualification/lifecycle.py": "sha256:f406d4bc9e05a36a92df3e21010abc9f08e7e036ff237eb4be3c5a63f242afd1",
+        "tools/java_transaction_qualification/http.py": "sha256:222bfd17715cef7f5c9a86e9a6fe0d65b9c12046ae0f2d981a09c6045afd2f56",
+        "tools/java_transaction_qualification/campaign.py": "sha256:d8fd8ee8c4e0cc410c6e16a94a51337a7c5db31620c31e6ae608d917dd84769e",
+        "tools/java_transaction_qualification/provider.py": "sha256:99b166554b70ebc62d25ef6af79d0bddb19c92ec90baa3f1667fd5f2c4f6cdda",
+        "tools/java_transaction_qualification/recovery.py": "sha256:cbea865b276e0227f3109c977f2267827620da3c191b01158a1aaa4a683924b7",
+        "tools/java_transaction_qualification/offline_campaign.py": "sha256:57d45cc5d25282545ab2545b41d215fb307f08bf3b5d71ef052f657a93b49e38",
+        "tools/java_transaction_qualification/staging.py": "sha256:308fdf4d679c22e8dfee8e01fcb1e284beee1ce4538cadffeea31de5f5f2a827",
+        "tools/java_transaction_qualification/native_store.py": "sha256:0603eed86b6ba2a06a33c00a0ed6e777263dede705da8e60c9243c987721435e",
+        "tools/java_transaction_qualification/diagnostic_inputs.py": "sha256:3d806a8a22b618755685e6d8f61c2feb296b9909b0bf8e2274768374f551f343",
+        "tools/java_transaction_qualification/diagnostic_campaign.py": "sha256:9cd889ae67c47fad982fca76484bc17cd542550c800fb8e23ac678cb7c2ee37f",
+        "tools/java_transaction_qualification/current_inputs.py": "sha256:297f4704165b13e45ad94f5a05ae7c0a392d52d94c8f00b637bd96ecaf0dba53",
+        "tools/java_transaction_qualification/current_campaign.py": "sha256:bcbc78fa4c42264ce4abdfcd7f8a9daf841c659f81683212d6781727394fba82",
+        "tools/java_transaction_qualification/refusal_observation.py": "sha256:34cb5c409ab7f6507f0cd08e61f4ad8d0bb6246be4f83104b843aff28e9c24c5",
+        "tools/java_transaction_qualification/state_configuration.py": "sha256:367a494d6b63d90ce6ccead9e5d08e0dda30bc78a44b91c6dde8b3e6b73337dd",
+        "tools/java_transaction_qualification/restore_installation.py": "sha256:868ff34c462c02edc21aa20d30d439308bac4f105fb3c27071ba85f8f3086799",
+        "tools/java_transaction_qualification/restore_authority.py": "sha256:5c5b65a0032aa343fc443615272fba7481719a72ab7d65bdef034be7c4a249a9",
+        "tools/java_transaction_qualification/current_recipient.py": "sha256:25e483199833fc0a320035a0e01e0b98d341b9c9dfe3704c17fafe8ab50cf866",
+        "tools/java_transaction_qualification/current_activation.py": "sha256:d9838d76db1a558f29a2e86cafc831493f2f07bec96b9a08b6742e6d8a020823",
+        "docs/testing/evidence/java-current-rebuilt-capture-2026-10-13.json": "sha256:8a422031a4d121369bc96a917d3e6165af923a82d7848499ae3359f4b1c05ec0",
+        "docs/testing/evidence/java-current-fresh-http-capture-2026-10-13.json": "sha256:99f267e94cd82124e95b9bad269cec917f547b40a3812564c6656c16a737763a",
+        "tools/java_transaction_qualification/read_observer.py": "sha256:99b7e02be16937406870e4a455fc34121c4bd42138bf86fb15cde7bd051c6f1f",
+        "docs/testing/evidence/java-current-native-memory-capture-2026-10-14.json": "sha256:9d5c75156cfed078be75c32b054c3e30e3f7e4b1419c248b3810f72be02715d0",
+        "tools/run_java_early_http_qualification.py": "sha256:f1f64ce6120d07c046667d3ebd1b1431922d84ba38a134f4af479c99769dd4e9",
+        "tools/java_transaction_qualification/early_http_inputs.py": "sha256:0f889cb9c98e77174c3490dc86f7a05ad80aec6d0f349bbc13d2618d00d4bdb2",
+        "tools/java_transaction_qualification/early_http_campaign.py": "sha256:0d12944bed7a1c3fc2ceade949bab984a99223779a14a9815b6eea54362ac983",
+        "docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json": "sha256:eb187ea9456acc0daf9ccf428b748d2c9af5e0269287a5961602eadb5305e481"
+      },
+      "productsUnchanged": true,
+      "cleanSourceBeforeAndAfter": true,
+      "allOwnedProcessesReaped": true,
+      "packagedDistributionQualified": false,
+      "immediateHttpDenialQualified": true,
+      "postStageRollbackQualified": false,
+      "signedGuestExecutionQualified": true
+    }
+  ],
+  "historicalPacketsAndFailedAttemptsPreserved": true,
+  "boundary": "historical 6a controlled native regressions and bounded signed trusted-local Java progress: early passed; terminal and pending failed; no complete programme or ticket acceptance",
+  "completeTerminalAndPendingQualified": false,
+  "packagedDistributionQualified": false,
+  "issueAcceptance": false
+}

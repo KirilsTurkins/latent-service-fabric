@@ -116,7 +116,7 @@ async fn get(request: proto::GetDeploymentRequest, session: &Session) -> Result<
     }
     let durability = value.durability.map(durability).transpose()?;
     let found = value.deployment.is_some();
-    let data = json!({"deployment":value.deployment.map(response::deployment).transpose()?,"stateVersion":value.state_version.map(|v|v.to_string()),"routeGeneration":value.route_generation.map(|v|v.to_string()),"durability":durability});
+    let data = json!({"deployment":value.deployment.map(|value| response::deployment(value, session.manifest_profile())).transpose()?,"stateVersion":value.state_version.map(|v|v.to_string()),"routeGeneration":value.route_generation.map(|v|v.to_string()),"durability":durability});
     let mut output = if found {
         Outcome::success(data)
     } else {
@@ -181,7 +181,7 @@ async fn apply(
         None
     };
     let mut output = Outcome::success(
-        json!({"deployment":response::deployment(value.deployment.ok_or_else(invalid_response)?)?,"warnings":value.warnings,"receipt":value.receipt.map(Project::project),"replayed":value.replayed,"durability":state,"auditAck":value.audit_ack.map(Project::project)}),
+        json!({"deployment":response::deployment(value.deployment.ok_or_else(invalid_response)?, session.manifest_profile())?,"warnings":value.warnings,"receipt":value.receipt.map(Project::project),"replayed":value.replayed,"durability":state,"auditAck":value.audit_ack.map(Project::project)}),
     );
     output.outcome_known = state != Some("uncertain");
     Ok(output)

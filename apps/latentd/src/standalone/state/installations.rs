@@ -1,15 +1,17 @@
 //! Installed targets are captured by the original protected recovery worker.
-mod http;
-mod policy;
+pub(in crate::standalone::state) mod http;
+pub(in crate::standalone::state) mod policy;
 mod selection;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
-mod tests;
+pub(in crate::standalone::state) mod tests;
 #[cfg(test)]
 use latent_policy::supply_chain::{SupplyChainClock, SupplyChainPolicy};
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(in crate::standalone) use tests::SignedFixture;
 
 use std::sync::Arc;
 
-use latent_artifacts::{DirectoryArtifactRepository, TRANSACTION_ASSET_RESPONSE_BYTES};
+use latent_artifacts::DirectoryArtifactRepository;
 use latent_capabilities::namespace::RecoverySelection;
 use latent_commit::atomic::{ReplayPolicy, ResultPolicy};
 use latent_control_store::{DeploymentStore, DirectoryDeploymentRepository};
@@ -142,11 +144,12 @@ pub(super) async fn load(
     }
     let mut installations = Vec::with_capacity(settings.operations.len());
     let mut bindings: Vec<StateManagementBinding> = Vec::with_capacity(settings.operations.len());
+    let recovery = RecoverySelection::OriginalCaller;
     let mut http_rules = false;
     for (index, operation) in settings.operations.iter().enumerate() {
         let resident = &residents[index / state::INSTALLATION_OPERATIONS_PER_LEASE];
         let (installation, binding) = capture(
-            kernel, settings, operation, owners, &services, resident, &policy, effects,
+            kernel, settings, operation, owners, &services, resident, &policy, effects, &recovery,
         )
         .await?;
         if let Some(installation) = installation {
@@ -175,7 +178,7 @@ pub(super) async fn load(
         None
     } else {
         Some(
-            StateManagementBackend::new(
+            StateManagementBackend::new_with_captured_effect_recovery(
                 StateManagementServices {
                     store: Arc::clone(&kernel.store),
                     namespaces: Arc::clone(&kernel.namespaces),
@@ -195,15 +198,16 @@ pub(super) async fn load(
                     audit: services.audit,
                 },
                 bindings,
-            )?
-            .with_dispatcher(effects.management_port())?
-            .with_command_recovery(effects.command_admission_source())?
-            .with_resident_metadata(
+                &recovery,
                 residents
                     .into_iter()
                     .map(|resident| resident.metadata)
                     .collect(),
-            )?,
+                settings.operations.len() as u64
+                    * latent_artifacts::TRANSACTION_ASSET_RESPONSE_BYTES,
+            )?
+            .with_dispatcher(effects.management_port())?
+            .with_command_recovery(effects.command_admission_source())?,
         )
     };
     Ok(InstalledState {
@@ -230,8 +234,10 @@ async fn capture(
     resident: &Resident,
     policy: &Arc<PolicyStore>,
     effects: &EffectRuntime,
+    recovery: &RecoverySelection,
 ) -> Result<(Option<TransactionInstallation>, StateManagementBinding), PlatformError> {
     let deadline = kernel.original_deadline()?;
+    let profile = state::installation_profile(&settings.store);
     let original = Arc::new(
         kernel
             .native
@@ -239,8 +245,8 @@ async fn capture(
                 NativeAdmissionClass::Recovery,
                 NativeReservationRequest {
                     request_bytes: state::INSTALLATION_CAPTURE_REQUEST_BYTES,
-                    work_bytes: state::INSTALLATION_CAPTURE_WORK_BYTES,
-                    response_bytes: TRANSACTION_ASSET_RESPONSE_BYTES,
+                    work_bytes: state::installation_capture_work(profile),
+                    response_bytes: profile.response_bytes(),
                 },
                 deadline,
             )
@@ -253,7 +259,10 @@ async fn capture(
         )
         .map_err(|_| super::unavailable())?;
     let scratch = original
-        .reserve_buffer(NativeBufferClass::Work, 2 * 1024 * 1024)
+        .reserve_buffer(
+            NativeBufferClass::Work,
+            state::installation_scratch(profile),
+        )
         .map_err(|_| super::unavailable())?;
     let deployment = tokio::time::timeout_at(
         deadline.into(),
@@ -276,26 +285,28 @@ async fn capture(
     let resident_original = Arc::clone(&resident.original);
     let metadata_memory = Arc::clone(&resident.metadata);
     let charge = state::INSTALLATION_CAPTURE_REQUEST_BYTES
-        + state::INSTALLATION_CAPTURE_WORK_BYTES
-        + TRANSACTION_ASSET_RESPONSE_BYTES;
+        + state::installation_capture_work(profile)
+        + profile.response_bytes();
     let worker_original = Arc::clone(&original);
     let owners = Arc::clone(owners);
     let policy = Arc::clone(policy);
     let adapters = services.http.adapters.clone();
     let registry = Arc::clone(&services.http.registry);
     let authority = effects.command_admission_source().effect_authority();
+    let recovery = recovery.clone();
     let job = kernel
         .store
         .with_store_retaining(StoreIoKind::RecoveryRead, charge, original, move |engine| {
             // Invalid selectors do not corrupt or quarantine an otherwise valid store.
             let mut storage_failure = None;
             let result = (|| {
-                let asset = artifacts.capture_selected_transaction_asset(
+                let asset = artifacts.capture_selected_transaction_asset_profile(
                     &operation.tenant,
                     &operation.component,
                     &operation.publication,
                     &native,
                     Arc::clone(&worker_original),
+                    profile,
                 )?;
                 policy::check_asset(asset.get(), &operation, &deployment.manifest)?;
                 let target = InvocationTarget {
@@ -371,7 +382,7 @@ async fn capture(
                             publication,
                             Arc::new(state_binding),
                             intents,
-                            RecoverySelection::OriginalCaller,
+                            recovery,
                             operation.result_policy,
                             ResultPolicy {
                                 replay: ReplayPolicy::Full,

@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "CancellationOptionalPayload.test_absent_or_malformed_original_source_cannot_trigger_fallback",
+    "CancellationOptionalPayload.test_complete_cancellation_payload_keeps_original_no_lookup_path",
+    "CancellationOptionalPayload.test_foreign_lookup_identity_durability_outcome_or_source_fails_full_check",
+    "CancellationOptionalPayload.test_full_rpc_result_remains_strict_outside_optional_cancel_path",
+    "CancellationOptionalPayload.test_lookup_payload_kind_encoding_and_exact_original_body_stay_mandatory",
+    "CancellationOptionalPayload.test_missing_or_expired_lookup_result_is_not_retried_or_treated_as_cancel_proof",
+    "CancellationOptionalPayload.test_missing_or_nonnull_malformed_payload_is_not_a_fallback_signal",
+    "CancellationOptionalPayload.test_non_already_committed_null_receipt_does_not_read_or_claim",
+    "CancellationOptionalPayload.test_null_receipt_reads_original_once_as_user_before_compatible_and_full_http_replay",
+    "CancellationOptionalPayload.test_return_selection_failure_after_valid_read_does_not_claim_http_replay",
+    "CancellationOptionalPayload.test_single_lookup_failure_or_cancellation_restores_user_without_retry_or_switch",
+    "CancellationOptionalPayload.test_wrong_cancellation_identity_durability_outcome_or_source_refuses_before_read"
+  ],
+  "guards": {
+    "CancellationOptionalPayload.test_absent_or_malformed_original_source_cannot_trigger_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_complete_cancellation_payload_keeps_original_no_lookup_path": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_foreign_lookup_identity_durability_outcome_or_source_fails_full_check": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_full_rpc_result_remains_strict_outside_optional_cancel_path": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_lookup_payload_kind_encoding_and_exact_original_body_stay_mandatory": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_missing_or_expired_lookup_result_is_not_retried_or_treated_as_cancel_proof": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_missing_or_nonnull_malformed_payload_is_not_a_fallback_signal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_non_already_committed_null_receipt_does_not_read_or_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_null_receipt_reads_original_once_as_user_before_compatible_and_full_http_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_return_selection_failure_after_valid_read_does_not_claim_http_replay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_single_lookup_failure_or_cancellation_restores_user_without_retry_or_switch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    },
+    "CancellationOptionalPayload.test_wrong_cancellation_identity_durability_outcome_or_source_refuses_before_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f4a8ea8d97b8d126c098c060f3e01af933657bda464883486eecee7c6799661a",
+        "class:setup-sha256:aefb1b6cf65ea078b8d7ba2bf98237e8f426e1ddafa85276d3ef44569bbb5f42"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_cancellation_result.py",
+  "reviewReason": "Preserve original cancellation identity and require one same-User full lookup only for an authentic null payload before replay",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

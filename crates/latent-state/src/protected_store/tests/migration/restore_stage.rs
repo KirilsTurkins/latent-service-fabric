@@ -176,6 +176,84 @@ fn original_authenticated_snapshot_imports_only_into_private_fresh_paused_destin
 }
 
 #[test]
+fn scoped_fresh_restore_keeps_eight_mib_cache_and_the_original_sixteen_mib_recovery_ceiling() {
+    let setup = Setup::with_finite_restore_profile();
+    let (root, _) = super::super::fixture();
+    let (checkpoint, _) = super::super::fixture();
+    let destination = destination(root.path(), checkpoint.path(), 8 * 1024 * 1024);
+    let (exported, owners, input_request) = setup.checkpoint();
+    setup.retire(exported);
+    let row = Arc::clone(&owners);
+    let file = ProtectedSnapshotConfig {
+        root: setup.checkpoint_path().parent().unwrap().to_path_buf(),
+        file_name: "original-migration.v2".into(),
+    };
+    let refused = setup.owner.open_snapshot_for_restore(
+        file.clone(),
+        destination.clone(),
+        Arc::clone(setup.original()),
+        move |key, bytes| row.row(key, bytes),
+        Arc::new(|| Ok(())),
+    );
+    assert!(
+        matches!(
+            refused,
+            Err(ProtectedStoreError::Io(
+                crate::store_io::StoreIoError::ByteBudget
+            ))
+        ),
+        "general admission: {:?}",
+        refused.as_ref().err()
+    );
+    assert!(!root.path().join("transaction-state.redb").exists());
+    setup
+        .owner
+        .ready
+        .wait_test_custody_retirement(Instant::now() + WATCHDOG);
+    let row = Arc::clone(&owners);
+    let opened = setup
+        .owner
+        .open_snapshot_for_restore_profile(
+            file,
+            destination,
+            Arc::clone(setup.original()),
+            move |key, bytes| row.row(key, bytes),
+            Arc::new(|| Ok(())),
+            crate::recovery::snapshot::SNAPSHOT_FILE_BYTES,
+            ProtectedSnapshotProfile::SingleNamespace,
+        )
+        .unwrap();
+    let (snapshot, read) = wait(opened).unwrap();
+    read.unwrap().unwrap();
+    let (snapshot, reviewed) = wait(
+        setup
+            .owner
+            .review_restore_window(snapshot, restore_input(&input_request), owners.clone())
+            .unwrap(),
+    )
+    .unwrap();
+    let input = reviewed.unwrap().unwrap();
+    let request = RestoreStageRequest {
+        operation_id: "restore-original-backup".into(),
+        operator_id: "restore-operator".into(),
+        runtime_digest: input.snapshot().manifest.metadata.runtime_digest,
+        loss_window_acknowledgement: input.window().digest().unwrap(),
+    };
+    let stage = Arc::new(StageOwners::new(&setup, &owners));
+    let (snapshot, result) = wait(job(&setup, snapshot, input, &stage, request)).unwrap();
+    let result = result.unwrap().unwrap();
+    assert!(result.imported_rows() > 0);
+    assert!(root
+        .path()
+        .join(crate::protected_store::STATE_MODE_FILE)
+        .is_file());
+    drop(result);
+    setup.retire(snapshot);
+    assert_eq!(setup.owner.snapshot().unwrap().accepted, 0);
+    assert_eq!(setup.owner.snapshot().unwrap().custody_active, false);
+}
+
+#[test]
 fn fresh_restore_refuses_old_empty_unknown_and_linked_root_entries_without_overwrite() {
     for kind in 0..3 {
         let setup = Setup::with_restore_destination();

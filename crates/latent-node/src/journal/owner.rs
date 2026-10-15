@@ -24,6 +24,23 @@ pub(crate) struct JournalOwner {
 }
 
 impl JournalOwner {
+    pub(crate) fn bind_original_command_cancellation(
+        &self,
+        original: crate::transaction_runtime::OriginalCommandCancellation,
+        owner: crate::cancellation::WeakCancellationOwner,
+    ) -> Result<(), PlatformError> {
+        super::command_cancellation::bind(&self.journal, &self.id, self.serial, original, owner)
+    }
+
+    pub(crate) fn staging_observer(
+        &self,
+        identity: latent_executor::transaction::TransactionStagingIdentity,
+    ) -> Result<
+        std::sync::Arc<dyn latent_executor::transaction::TransactionStagingObserver>,
+        PlatformError,
+    > {
+        super::staging::bind(&self.journal, &self.id, self.serial, identity)
+    }
     pub(crate) fn record_grant(&self, budget: &latent_core::ActivationBudget) {
         let mut state = self.journal.inner.lock();
         let record = state.records.get_mut(&self.id).expect("live journal owner");
@@ -172,6 +189,9 @@ impl JournalOwner {
             .max(record.status.last_updated_unix_millis);
         record.status.terminal_state = Some(terminal_state);
         record.active_budget = None;
+        if record.command_cancellation.take().is_some() {
+            record.bytes -= super::command_cancellation::RECORD_BYTES;
+        }
         record.status.terminal_outcome = Some(outcome.retained_terminal_outcome());
         record.status.final_consumption = Some(consumption(&outcome).clone());
         record.status.last_updated_unix_millis = now;

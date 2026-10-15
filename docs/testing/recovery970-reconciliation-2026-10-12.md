@@ -9,8 +9,13 @@ recorded in the accompanying source-bound receipt.
 
 The initial merge exposed 325 conflicts across older and current foundations.
 Original index stages, index bytes, working/staged patches and feature sources
-were preserved privately before resolution. The original checkpoint remains in
-the merge ancestry. No competing older node/store/transaction runtime is restored.
+were preserved privately before resolution. The original checkpoint and its
+integration history remain recoverable on preservation refs. The subsequent
+history reconciliation rebuilt the intended tree on accepted development;
+the old history is retained at
+[`054a0dd7`](https://github.com/KirilsTurkins/latent-service-fabric/tree/preserve/pr970-before-history-reconcile-20261013).
+Historical receipts retain the source IDs they actually tested. No competing
+older node/store/transaction runtime is restored.
 
 ## Distinct behavior retained on current owners
 
@@ -30,22 +35,50 @@ relabelled as current protected snapshots. The current state bootstrap, native
 capacity, namespace ownership, installed transaction path and stateless behavior
 remain the delivered owners.
 
-## Concrete current-owner feasibility boundary
+## Original boundary and current gateway continuation
 
 The original [authenticated gateway](https://github.com/KirilsTurkins/latent-service-fabric/blob/fd8853fd0e51235d17661079720faf4c810cd6bb/apps/latentd/src/standalone/state/recovery/mod.rs),
 [current-authority close action](https://github.com/KirilsTurkins/latent-service-fabric/blob/fd8853fd0e51235d17661079720faf4c810cd6bb/apps/latentd/src/standalone/state/recovery/reconciliation.rs)
 and original decoder/catalog/request graph remain recoverable at the exact
 checkpoint. Their absence from current source does not prove safe supersession.
 
-The current [native example](../../apps/latentd/examples/transaction_recovery.rs)
-explicitly refuses offline requests and supports startup diagnosis only. The
-current [StateKernel](../../apps/latentd/src/standalone/state/kernel.rs) and
-[transaction runtime](../../apps/latentd/src/standalone/state/runtime.rs) have no
-equivalent admitted offline gateway/RecoveryCodecs installation. Reintroducing
-the older graph would compete with current signed installation, tenant accounting
-and startup ownership. This reconciliation preserves the useful lower-level
-operation and marks the installed gateway as an implementation gap; it claims
-neither replacement equivalence nor complete installed recovery qualification.
+The initial reconciled source checkpoint retained startup diagnosis and the
+lower-level controls while identifying the missing installed gateway. The
+[current gateway continuation](recovery970-current-gateway-2026-10-12.md) now
+wraps current signed installation, tenant accounting, protected checkpoint,
+physical Fresh restore and purpose-specific authorization owners. It retains
+the old byte approval boundary and adds separate current proposal inspection.
+The [2026-10-15 progress packet](evidence/recovery970-current-progress-2026-10-15.json)
+records separate native build and collector identities: EARLY HTTP passes,
+ordinary terminal and pending recovery fail at protected-store startup, and
+the hosted publication browser observes a required `503` response. These
+failures remain unresolved. The complete signed/operator campaign remains
+unqualified; the earlier native receipt below retains its original source.
+
+The [2026-10-14 clean-source progress packet](evidence/recovery970-current-progress-2026-10-14.json)
+records 1,958 passing active controls, 66 preserved ignores, three real guest
+controls and six native tools on exact source `6a380a5990b0`. Its separate early
+HTTP programme passed. The complete terminal programme failed at pre-host stale
+conflict abort persistence, and the pending restore/close programme failed at a
+nested publication/policy fence during original resume. All four individual
+post-stage fault cases passed, including measured native memory exhaustion and
+its original durable abort. Those individual results do not qualify either
+failed complete programme or transfer to later source changes.
+
+The [clean signed early HTTP receipt](evidence/java-early-http-clean-source-2026-10-13.json)
+records source `7c4a0dcc`, compiler source `47e4e607`, and six separately frozen
+native tools. Five actual HTTP exchanges prove typed immediate denial,
+byte-identical duplicate and retained-result replay, unchanged business state,
+zero TCP contact and physical retirement of four node sessions. The protected
+clock concurrency regression failed on the original source and passed after
+sampling and publication were serialized. This qualifies the separate early
+fixture on that source only; terminal recovery, pending restore/close, original post-stage
+rollback and packaged distribution acceptance remain unqualified.
+
+Earlier early-fixture zero-root failure observations queried the ordinary
+service. They cannot establish rejection before activation acceptance. The
+observer now explicitly records and queries the selected campaign service;
+the original failed attempts remain preserved with their original bytes.
 
 ## Actual controlled workload and acceptance limits
 

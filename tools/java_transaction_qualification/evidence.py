@@ -97,17 +97,23 @@ class RecordingClient(Client):
     No argv or credential bytes are recorded. Failed or uncertain mutations are
     never retried. The inherited process owner positively reaps every CLI.
     """
-    def __init__(self, executable, directory, cancellation, deadline, evidence):
+    def __init__(self, executable, directory, cancellation, deadline, evidence, *, phase4=False):
+        require(type(phase4) is bool, "explicit-cli-transaction-profile")
         super().__init__(executable, directory, cancellation, deadline)
         self.evidence = evidence
+        self.phase4 = phase4
 
-    def call(self, *arguments, codes=(0,), timeout=25):
+    def call(self, *arguments, codes=(0,), timeout=25, cutoff=None):
         self.cancellation.check()
-        require(self.calls < 256 and time.monotonic() < self.deadline,
+        until = min(self.deadline, self.deadline if cutoff is None else cutoff)
+        require(self.calls < 256 and time.monotonic() < until,
                 "original-cli-campaign-bound")
         if self.node:
             self.node.drain()
+        require(time.monotonic() < until, 'original-cli-campaign-bound')
         prefix = [self.executable, "--output", "json"]
+        if self.phase4:
+            prefix.append("--phase4")
         if self.config:
             prefix += ["--config", str(self.config), "--profile", "operator"]
         self.calls += 1
@@ -116,7 +122,7 @@ class RecordingClient(Client):
                           self.environment, self.cancellation, maximum=1048576)
         result = None
         try:
-            result = process.complete(min(self.deadline, time.monotonic() + timeout))
+            result = process.complete(min(until, time.monotonic() + timeout))
         finally:
             process.close()
             self.evidence.write(f"cli-{ordinal:03d}.stdout", bytes(process.buffers[0]))

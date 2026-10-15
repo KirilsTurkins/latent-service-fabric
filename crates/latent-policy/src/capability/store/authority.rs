@@ -186,7 +186,16 @@ impl PolicyStore {
         decisions: &[&SealedPolicyDecision<'_>],
         action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        if decisions.is_empty() || decisions.len() > 16 {
+        self.with_current_decisions_dependencies(decisions, &[], action)
+    }
+
+    fn with_current_decisions_dependencies(
+        &self,
+        decisions: &[&SealedPolicyDecision<'_>],
+        dependencies: &[ReleaseUseEligibility],
+        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if decisions.is_empty() || decisions.len() > 16 || dependencies.len() > 11 {
             return Err(capacity());
         }
         for decision in decisions {
@@ -203,10 +212,25 @@ impl PolicyStore {
             decision.snapshot.check()?;
             decision.publication.check_for_catalog(&self.catalog)?;
         }
+        for dependency in dependencies {
+            dependency.check_for_catalog(&self.catalog)?;
+            for decision in decisions {
+                let explicit_service = decision.input.capability == "latent:service/invoke@0.1.0"
+                    && decision.input.operation == "call"
+                    && matches!(decision.input.resource, ResourceTarget::Service { publication, .. }
+                        if publication == dependency.publication().as_str());
+                if !explicit_service {
+                    dependency.authorize_tenant(&decision.snapshot.tenant)?;
+                }
+            }
+        }
         decisions[0].publication.with_current(&mut |checker| {
             for decision in decisions {
                 checker.check_eligibility(decision.publication)?;
                 decision.snapshot.check()?;
+            }
+            for dependency in dependencies {
+                checker.check_eligibility(dependency)?;
             }
             action(&inputs)
         })

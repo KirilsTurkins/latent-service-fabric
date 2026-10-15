@@ -54,6 +54,58 @@ impl DispatcherOwner {
         minimum_checkpoint: Option<(u64, u64)>,
         runtime: tokio::runtime::Handle,
     ) -> Result<Self, DispatcherError> {
+        Self::start_owned(
+            config,
+            store,
+            authority,
+            adapters,
+            time,
+            minimum_checkpoint,
+            runtime,
+            false,
+        )
+        .await
+    }
+
+    /// The protected composition root retains a separate temporary hold until
+    /// its actual current installations and readiness checks have completed.
+    /// Configured and durably restored operator pause remain independent.
+    pub async fn start_with_startup_suppression(
+        config: DispatcherConfig,
+        store: Arc<ProtectedStoreOwner>,
+        authority: EffectAuthorityOwner,
+        adapters: Vec<Arc<dyn DeferredEffectAdapter>>,
+        time: Arc<dyn EffectTimeSource>,
+        minimum_checkpoint: Option<(u64, u64)>,
+        runtime: tokio::runtime::Handle,
+    ) -> Result<Self, DispatcherError> {
+        Self::start_owned(
+            config,
+            store,
+            authority,
+            adapters,
+            time,
+            minimum_checkpoint,
+            runtime,
+            true,
+        )
+        .await
+    }
+
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "The original owners and the trusted startup suppression remain separately explicit"
+    )]
+    async fn start_owned(
+        config: DispatcherConfig,
+        store: Arc<ProtectedStoreOwner>,
+        authority: EffectAuthorityOwner,
+        adapters: Vec<Arc<dyn DeferredEffectAdapter>>,
+        time: Arc<dyn EffectTimeSource>,
+        minimum_checkpoint: Option<(u64, u64)>,
+        runtime: tokio::runtime::Handle,
+        startup_suppressed: bool,
+    ) -> Result<Self, DispatcherError> {
         config.validate()?;
         if adapters.len() > 32
             || adapters.iter().enumerate().any(|(index, adapter)| {
@@ -98,6 +150,7 @@ impl DispatcherOwner {
         };
         let (was_paused, review) = restored.unwrap_or((false, false));
         let shared = Arc::new(Shared::new(
+            startup_suppressed,
             config.start_paused || was_paused,
             epoch,
             config.start_in_restore_review || review,
@@ -156,6 +209,7 @@ impl DispatcherOwner {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         state.paused = true;
+        state.startup.operator_paused = true;
         match state.control_generation.next() {
             Ok(next) => state.control_generation = next,
             Err(_) => {
@@ -190,6 +244,61 @@ impl DispatcherOwner {
             .next()
             .map_err(|_| DispatcherError::InvalidConfiguration)?;
         state.paused = false;
+        state.startup.suppressed = false;
+        state.startup.operator_paused = false;
+        drop(state);
+        self.wake();
+        Ok(())
+    }
+
+    /// Release only this owner's temporary startup suppression. The live
+    /// operator latch comes from the actual durable control row and subsequent
+    /// current control acceptance/publication; readiness cannot resume it.
+    /// This port writes no receipt and grants no authority over restore review.
+    pub fn release_startup(&self) -> Result<(), DispatcherError> {
+        self.finish_startup(false)
+    }
+
+    /// Retire the temporary hold while retaining the non-HTTP caller's default
+    /// safety pause. Only an actual current accepted operator selection
+    /// takes precedence; this creates no operator receipt or resume authority.
+    pub fn finish_startup_paused(&self) -> Result<(), DispatcherError> {
+        self.finish_startup(true)
+    }
+
+    fn finish_startup(&self, keep_default_pause: bool) -> Result<(), DispatcherError> {
+        let time = self.services.time.observe();
+        let mut state = self
+            .services
+            .shared
+            .state
+            .lock()
+            .map_err(|_| DispatcherError::AdmissionClosed)?;
+        if state.closed || state.pending_control.is_some() {
+            return Err(DispatcherError::AdmissionClosed);
+        }
+        if state.restore_review.is_required() {
+            return Err(DispatcherError::CheckpointRequired);
+        }
+        if let Some(error) = state.failure {
+            return Err(error);
+        }
+        if !time.continuity_proven || time.unix_millis < state.command_clock_floor {
+            return Err(crate::authority::AuthorityError::ClockDiscontinuity.into());
+        }
+        if !state.startup.suppressed {
+            return Ok(());
+        }
+        if !keep_default_pause {
+            state.control_generation = state
+                .control_generation
+                .next()
+                .map_err(|_| DispatcherError::InvalidConfiguration)?;
+        } else if !state.startup.operator_selected {
+            state.startup.operator_paused = true;
+        }
+        state.startup.suppressed = false;
+        state.paused = state.startup.operator_paused;
         drop(state);
         self.wake();
         Ok(())

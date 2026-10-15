@@ -478,19 +478,56 @@ fn visit_view_checked<E>(
 pub fn inspect_snapshot(
     input: &mut (impl Read + Seek),
     deadline: Instant,
-    mut validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+    validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
 ) -> Result<SnapshotReceipt, StoreError> {
+    inspect_snapshot_bounded(
+        input,
+        deadline,
+        validate_row,
+        4 * 1024 * 1024,
+        SNAPSHOT_NAMESPACES,
+    )
+}
+
+pub(crate) fn inspect_snapshot_bounded(
+    input: &mut (impl Read + Seek),
+    deadline: Instant,
+    mut validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+    row_bytes: usize,
+    namespace_count: usize,
+) -> Result<SnapshotReceipt, StoreError> {
+    if row_bytes == 0
+        || row_bytes > 4 * 1024 * 1024
+        || namespace_count == 0
+        || namespace_count > SNAPSHOT_NAMESPACES
+    {
+        return Err(StoreError::Capacity);
+    }
     input
         .seek(SeekFrom::Start(0))
         .map_err(|_| StoreError::Unavailable)?;
-    let first = inspect_stream(input, deadline, &mut validate_row, None)?;
+    let first = inspect_stream(
+        input,
+        deadline,
+        &mut validate_row,
+        None,
+        row_bytes,
+        namespace_count,
+    )?;
     // The manifest follows the row stream. A second bounded pass compares its
     // current history projections with the actual archived NSH rows, retaining
     // only the finite namespace roster rather than all historical row bodies.
     input
         .seek(SeekFrom::Start(0))
         .map_err(|_| StoreError::Unavailable)?;
-    let second = inspect_stream(input, deadline, &mut validate_row, Some(&first.manifest))?;
+    let second = inspect_stream(
+        input,
+        deadline,
+        &mut validate_row,
+        Some(&first.manifest),
+        row_bytes,
+        namespace_count,
+    )?;
     if first != second {
         return Err(StoreError::Corrupt);
     }
@@ -502,20 +539,32 @@ fn inspect_stream(
     deadline: Instant,
     validate_row: &mut impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
     expected: Option<&SnapshotManifest>,
+    row_bytes: usize,
+    namespace_count: usize,
 ) -> Result<SnapshotReceipt, StoreError> {
-    inspect_stream_with_visit(input, deadline, validate_row, expected, &mut |_, _| Ok(()))
+    inspect_stream_with_visit(
+        input,
+        deadline,
+        validate_row,
+        expected,
+        &mut |_, _| Ok(()),
+        row_bytes,
+        namespace_count,
+    )
 }
 
 /// The caller has already fully inspected this SAME protected input. Rows move
 /// into one bounded private destination transaction without cloning a 4 MiB
 /// value or accumulating an archive-wide batch. Final digest/readback equality
 /// is mandatory; any changed/truncated stream leaves staging unusable.
-pub(crate) fn visit_snapshot_rows(
+pub(crate) fn visit_snapshot_rows_bounded(
     input: &mut (impl Read + Seek),
     expected: &SnapshotReceipt,
     deadline: Instant,
     mut validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
     mut visit: impl FnMut(RowKey, Vec<u8>) -> Result<(), StoreError>,
+    row_bytes: usize,
+    namespace_count: usize,
 ) -> Result<(), StoreError> {
     input
         .seek(SeekFrom::Start(0))
@@ -526,6 +575,8 @@ pub(crate) fn visit_snapshot_rows(
         &mut validate_row,
         Some(&expected.manifest),
         &mut visit,
+        row_bytes,
+        namespace_count,
     )?;
     if &actual != expected {
         return Err(StoreError::Corrupt);
@@ -539,6 +590,8 @@ fn inspect_stream_with_visit(
     validate_row: &mut impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
     expected: Option<&SnapshotManifest>,
     visit: &mut impl FnMut(RowKey, Vec<u8>) -> Result<(), StoreError>,
+    row_bytes: usize,
+    namespace_count: usize,
 ) -> Result<SnapshotReceipt, StoreError> {
     validate_deadline(deadline)?;
     let mut histories = expected_histories(expected)?;
@@ -547,6 +600,8 @@ fn inspect_stream_with_visit(
         hash: Sha256::new(),
         bytes: 0,
         deadline,
+        row_bytes,
+        namespace_count,
     };
     if reader.read(MAGIC.len())? != MAGIC {
         return Err(StoreError::UnsupportedFormat);
@@ -607,7 +662,7 @@ fn inspect_stream_with_visit(
             source_store_identity = Some(value.clone());
         }
         if family == Family::Namespace && key.key.starts_with(b"ns-v1\0") {
-            if namespaces.len() == SNAPSHOT_NAMESPACES {
+            if namespaces.len() == namespace_count {
                 return Err(StoreError::Capacity);
             }
             NamespaceCatalog::validate_row(&key, &value).map_err(|_| StoreError::Corrupt)?;
@@ -659,7 +714,7 @@ impl SnapshotRowHeader {
             rest[3..7].try_into().map_err(|_| StoreError::Corrupt)?,
         ))
         .map_err(|_| StoreError::Capacity)?;
-        if key_bytes == 0 || key_bytes > 4096 || value_bytes > 4 * 1024 * 1024 {
+        if key_bytes == 0 || key_bytes > 4096 || value_bytes > reader.row_bytes {
             return Err(StoreError::Capacity);
         }
         Ok(Self {
@@ -798,6 +853,8 @@ struct SnapshotWriter<'a, W> {
 }
 
 struct SnapshotReader<'a, R> {
+    row_bytes: usize,
+    namespace_count: usize,
     input: &'a mut R,
     hash: Sha256,
     bytes: u64,
@@ -816,11 +873,19 @@ impl<R: Read> SnapshotReader<'_, R> {
             self.read(4)?.try_into().map_err(|_| StoreError::Corrupt)?,
         ))
         .map_err(|_| StoreError::Capacity)?;
-        if manifest_bytes == 0 || manifest_bytes > MANIFEST_BYTES {
+        let metadata_limit = if self.namespace_count == 1 {
+            64 * 1024
+        } else {
+            MANIFEST_BYTES
+        };
+        if manifest_bytes == 0 || manifest_bytes > metadata_limit {
             return Err(StoreError::Capacity);
         }
         let encoded = self.read(manifest_bytes)?;
         let manifest = SnapshotManifest::decode(&encoded)?;
+        if manifest.namespaces.len() > self.namespace_count {
+            return Err(StoreError::Capacity);
+        }
         let manifest_digest: [u8; 32] = Sha256::digest(&encoded).into();
         if self.read(32)? != manifest_digest
             || manifest.rows != rows

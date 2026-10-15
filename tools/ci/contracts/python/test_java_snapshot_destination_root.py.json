@@ -1,0 +1,328 @@
+{
+  "cases": [
+    "SnapshotDestinationRoot.test_actual_foreign_uid_refuses_without_creation",
+    "SnapshotDestinationRoot.test_actual_nonprivate_scope_refuses_without_chmod_or_creation",
+    "SnapshotDestinationRoot.test_cancellation_after_creation_retains_empty_root_and_suppresses_action",
+    "SnapshotDestinationRoot.test_canonical_operation_boundary_does_not_truncate_original_identity",
+    "SnapshotDestinationRoot.test_creation_error_preserves_original_error_and_suppresses_action",
+    "SnapshotDestinationRoot.test_current_collectors_use_three_separate_roots_and_one_original_action",
+    "SnapshotDestinationRoot.test_cutoff_after_validation_suppresses_creation_and_action_without_renewal",
+    "SnapshotDestinationRoot.test_dangling_and_existing_root_symlink_cannot_redirect_creation",
+    "SnapshotDestinationRoot.test_distinct_offline_operations_get_fresh_roots_with_the_same_original_scope",
+    "SnapshotDestinationRoot.test_existing_empty_or_nonempty_root_is_preserved_without_reuse",
+    "SnapshotDestinationRoot.test_existing_file_is_preserved_and_refused",
+    "SnapshotDestinationRoot.test_failed_native_handoff_retains_created_root_without_retry_or_snapshot_claim",
+    "SnapshotDestinationRoot.test_legacy_format_one_keeps_its_original_request_and_delegation",
+    "SnapshotDestinationRoot.test_manual_identity_fixture_releases_provision_mock_after_its_error",
+    "SnapshotDestinationRoot.test_missing_original_stopped_owner_refuses_before_creation_or_action",
+    "SnapshotDestinationRoot.test_missing_scope_is_not_created_or_widened_to_its_parent",
+    "SnapshotDestinationRoot.test_original_cutoff_or_cancellation_refuses_before_creation_or_action",
+    "SnapshotDestinationRoot.test_path_or_noncanonical_operation_ids_refuse_before_creation",
+    "SnapshotDestinationRoot.test_real_created_root_replacement_refuses_and_retains_both_directories",
+    "SnapshotDestinationRoot.test_real_scope_replacement_before_creation_refuses_without_action",
+    "SnapshotDestinationRoot.test_same_current_operation_is_not_reused_or_sent_again",
+    "SnapshotDestinationRoot.test_symlinked_scope_cannot_redirect_creation"
+  ],
+  "guards": {
+    "SnapshotDestinationRoot.test_actual_foreign_uid_refuses_without_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(hasattr(os, 'geteuid'), 'owned UID requires a POSIX host')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": [
+        "skip-control-sha256:6236d6fbabb933c25586cfc4b37c0402da79e2cb9e0fc37f28130c62800e8751",
+        "unittest.skipUnless(hasattr(os, 'geteuid'), 'owned UID requires a POSIX host')"
+      ]
+    },
+    "SnapshotDestinationRoot.test_actual_nonprivate_scope_refuses_without_chmod_or_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(os.name == 'posix', 'POSIX private directory mode requires a POSIX host')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": [
+        "skip-control-sha256:9f2ccc273da9fb0b953a1d99f195d60b562360e5f440c8960820bc75ba4b52d0",
+        "unittest.skipUnless(os.name == 'posix', 'POSIX private directory mode requires a POSIX host')"
+      ]
+    },
+    "SnapshotDestinationRoot.test_cancellation_after_creation_retains_empty_root_and_suppresses_action": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_canonical_operation_boundary_does_not_truncate_original_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_creation_error_preserves_original_error_and_suppresses_action": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_current_collectors_use_three_separate_roots_and_one_original_action": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_cutoff_after_validation_suppresses_creation_and_action_without_renewal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_dangling_and_existing_root_symlink_cannot_redirect_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_distinct_offline_operations_get_fresh_roots_with_the_same_original_scope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_existing_empty_or_nonempty_root_is_preserved_without_reuse": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_existing_file_is_preserved_and_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_failed_native_handoff_retains_created_root_without_retry_or_snapshot_claim": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_legacy_format_one_keeps_its_original_request_and_delegation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_manual_identity_fixture_releases_provision_mock_after_its_error": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_missing_original_stopped_owner_refuses_before_creation_or_action": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_missing_scope_is_not_created_or_widened_to_its_parent": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_original_cutoff_or_cancellation_refuses_before_creation_or_action": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_path_or_noncanonical_operation_ids_refuse_before_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_real_created_root_replacement_refuses_and_retains_both_directories": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_real_scope_replacement_before_creation_refuses_without_action": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_same_current_operation_is_not_reused_or_sent_again": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    },
+    "SnapshotDestinationRoot.test_symlinked_scope_cannot_redirect_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:97a10ea15f1efad42e674d6349d8e72f7f979bdc72b146678447c524ab66997a",
+        "class:setup-sha256:f8d82081af7440048828ca90731ecd8cccc2d198b36a9d933ea959779828ebd8",
+        "class:skip:self.skipTest('host does not permit a file-system symlink')"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_snapshot_destination_root.py",
+  "reviewReason": "Actual stopped-owner operation-scoped private snapshot roots preserve native ancestry separation, original handoffs and deadlines; filesystem refusal and fixture-mock lifetime controls are unqualified source checks.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

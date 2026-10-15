@@ -106,3 +106,96 @@ fn actual_lease_renewal_cannot_revive_a_clock_that_already_lost_coverage() {
     assert!(authority.covered_clock().is_ok());
     assert!(!admitted.observe().continuity_proven);
 }
+
+struct PausedSample {
+    entered: std::sync::mpsc::SyncSender<()>,
+    release: std::sync::mpsc::Receiver<()>,
+}
+
+struct InterleavedClock {
+    current: Mutex<ClockSample>,
+    pause: Mutex<Option<PausedSample>>,
+}
+
+impl ActivationClock for InterleavedClock {
+    fn sample(&self) -> ClockSample {
+        let sample = *self.current.lock().unwrap();
+        let pause = self.pause.lock().unwrap().take();
+        if let Some(pause) = pause {
+            pause.entered.send(()).unwrap();
+            pause.release.recv_timeout(Duration::from_secs(2)).unwrap();
+        }
+        sample
+    }
+
+    fn monotonic_now(&self) -> Instant {
+        self.current.lock().unwrap().monotonic()
+    }
+}
+
+impl SupplyChainClock for InterleavedClock {
+    fn now(&self) -> Result<u64, PlatformError> {
+        Ok(self.current.lock().unwrap().unix_millis() / 1000)
+    }
+}
+
+#[test]
+fn concurrent_clock_observers_cannot_publish_a_false_rollback() {
+    let root = tempfile::tempdir().unwrap();
+    let start = Instant::now();
+    let original = Arc::new(InterleavedClock {
+        current: Mutex::new(ClockSample::new(START_MILLIS, start)),
+        pause: Mutex::new(None),
+    });
+    let authority =
+        Arc::new(SupplyChainAuthority::open(root.path(), policy(), original.clone(), 5).unwrap());
+    let admitted = ProtectedEffectClock::admit(original.clone(), authority, None).unwrap();
+    *original.current.lock().unwrap() =
+        ClockSample::new(START_MILLIS + 1, start + Duration::from_millis(1));
+    let (entered, sampled) = std::sync::mpsc::sync_channel(1);
+    let (release, resume) = std::sync::mpsc::sync_channel(1);
+    *original.pause.lock().unwrap() = Some(PausedSample {
+        entered,
+        release: resume,
+    });
+
+    std::thread::scope(|scope| {
+        let first = scope.spawn(|| admitted.sample());
+        sampled.recv_timeout(Duration::from_secs(2)).unwrap();
+        *original.current.lock().unwrap() =
+            ClockSample::new(START_MILLIS + 2, start + Duration::from_millis(2));
+        let serialized = match admitted.observation.try_lock() {
+            Ok(state) => {
+                drop(state);
+                false
+            }
+            Err(std::sync::TryLockError::WouldBlock) => true,
+            Err(std::sync::TryLockError::Poisoned(error)) => panic!("{error}"),
+        };
+        let (started, starting) = std::sync::mpsc::sync_channel(1);
+        let (finished, finishing) = std::sync::mpsc::sync_channel(1);
+        let second_clock = Arc::clone(&admitted);
+        let second = scope.spawn(move || {
+            started.send(()).unwrap();
+            let result = second_clock.sample();
+            finished.send(()).unwrap();
+            result
+        });
+        starting.recv_timeout(Duration::from_secs(2)).unwrap();
+        if !serialized {
+            // Without serialization, publish the newer real sample before the
+            // paused earlier caller can reach observation publication.
+            finishing.recv_timeout(Duration::from_secs(2)).unwrap();
+        }
+        release.send(()).unwrap();
+        assert_eq!(
+            first.join().unwrap().unwrap().unix_millis(),
+            START_MILLIS + 1
+        );
+        assert_eq!(
+            second.join().unwrap().unwrap().unix_millis(),
+            START_MILLIS + 2
+        );
+    });
+    assert!(admitted.observe().continuity_proven);
+}

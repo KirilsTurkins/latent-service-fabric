@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "NativeReadinessTimeouts.test_completed_timeout_then_strict_ready_keeps_the_original_poll_window",
+    "NativeReadinessTimeouts.test_final_timeout_is_clipped_to_remaining_setup_and_poll_budget",
+    "NativeReadinessTimeouts.test_invalid_reply_after_timeout_stays_fatal_without_a_third_read",
+    "NativeReadinessTimeouts.test_other_errors_and_cleanup_faults_remain_fatal_without_another_read",
+    "NativeReadinessTimeouts.test_repeated_completed_timeouts_exhaust_the_original_absolute_cutoff",
+    "NativeReadinessTimeouts.test_timeout_cannot_qualify_wrong_identity_profile_readiness_or_load"
+  ],
+  "guards": {
+    "NativeReadinessTimeouts.test_completed_timeout_then_strict_ready_keeps_the_original_poll_window": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef205a69ff128c1808d54d884210b986653d67299dcff991b81279cc716f872a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeReadinessTimeouts.test_final_timeout_is_clipped_to_remaining_setup_and_poll_budget": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef205a69ff128c1808d54d884210b986653d67299dcff991b81279cc716f872a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeReadinessTimeouts.test_invalid_reply_after_timeout_stays_fatal_without_a_third_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef205a69ff128c1808d54d884210b986653d67299dcff991b81279cc716f872a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeReadinessTimeouts.test_other_errors_and_cleanup_faults_remain_fatal_without_another_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef205a69ff128c1808d54d884210b986653d67299dcff991b81279cc716f872a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeReadinessTimeouts.test_repeated_completed_timeouts_exhaust_the_original_absolute_cutoff": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef205a69ff128c1808d54d884210b986653d67299dcff991b81279cc716f872a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeReadinessTimeouts.test_timeout_cannot_qualify_wrong_identity_profile_readiness_or_load": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:ef205a69ff128c1808d54d884210b986653d67299dcff991b81279cc716f872a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_native_readiness_timeout.py",
+  "reviewReason": "Add bounded readiness timeout observations while preserving every existing case and guard",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

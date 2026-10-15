@@ -7,6 +7,8 @@ use super::*;
 
 #[path = "tests/broker_lineage.rs"]
 mod broker_lineage;
+#[path = "tests/staging.rs"]
+mod staging;
 mod support;
 #[path = "tests/tree.rs"]
 mod tree;

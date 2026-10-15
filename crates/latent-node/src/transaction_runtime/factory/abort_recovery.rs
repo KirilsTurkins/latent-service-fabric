@@ -18,6 +18,9 @@ const WORK_BYTES: u64 = 256 * 1024;
 const RESPONSE_BYTES: u64 = 16 * 1024;
 type Publication = Option<(PreparedDisposition, Arc<StateAuthorization>)>;
 
+#[cfg(test)]
+mod tests;
+
 struct AbortWriter {
     original: Arc<StateAuthorization>,
     namespaces: Arc<NamespaceCatalog>,
@@ -29,29 +32,59 @@ struct AbortWriter {
     // The frozen original host-memory envelope covers metadata work. Its
     // physically retired guest/session can never be reopened by this owner.
     _host: Arc<StateTransactionHost>,
+    cancellation: Mutex<Option<super::super::cancellation::PendingCancellationAbort>>,
 }
 
 impl NativeTransactionAdmission {
-    pub(super) async fn persist_conflict_abort(
+    pub(super) async fn persist_terminal_abort(
         &self,
         disposition: CommandCompletionDisposition,
         host: &Arc<StateTransactionHost>,
+        failure_code: Option<latent_core::PlatformErrorCode>,
+        control: &crate::TransactionCommitControl,
+        original_failure: Option<&latent_activation::ActivationOutcome>,
     ) -> CommandCompletionDisposition {
         let CommandCompletionDisposition::Retired {
             command,
             proof,
-            reason: AtomicError::Conflict,
+            reason,
             retained,
             retained_native,
         } = disposition
         else {
             return disposition;
         };
-        let Ok(writer) = AbortWriter::new(self, host, &command) else {
+        let code = match (reason, failure_code) {
+            (AtomicError::Conflict, _) => latent_core::PlatformErrorCode::StateConflict,
+            (AtomicError::Unavailable, Some(code)) => code,
+            _ => {
+                return CommandCompletionDisposition::Retired {
+                    command,
+                    proof,
+                    reason,
+                    retained,
+                    retained_native,
+                };
+            }
+        };
+        let cancelled_failure = original_failure.is_some_and(|outcome| {
+            matches!(outcome,
+            latent_activation::ActivationOutcome::Failed {
+                terminal_state: latent_core::ActivationTerminalState::Cancelled, error, ..
+            } if error.code == latent_core::PlatformErrorCode::Cancelled)
+        });
+        let cancellation = (code == latent_core::PlatformErrorCode::Cancelled && cancelled_failure)
+            .then(|| {
+                let slot = self.cancellation_abort.lock().ok()?.as_ref()?.clone();
+                slot.take_original(&command, host, control)
+            })
+            .flatten();
+        let Ok(writer) = AbortWriter::new_with_cancellation(self, host, &command, cancellation)
+        else {
             return CommandCompletionDisposition::Retired {
                 command,
                 proof,
-                reason: AtomicError::Conflict,
+                reason,
                 retained,
                 retained_native,
             };
@@ -63,7 +96,7 @@ impl NativeTransactionAdmission {
             StoreIoKind::RecoveryWrite,
             WORK_BYTES,
             keeper,
-            move |store| active.publish(store, *proof, &identity),
+            move |store| active.publish(store, *proof, &identity, code),
         );
         let observed = match job {
             Ok(job) => job.await.ok().and_then(Result::ok),
@@ -88,10 +121,20 @@ impl NativeTransactionAdmission {
 }
 
 impl AbortWriter {
+    #[cfg(test)]
     fn new(
         admission: &NativeTransactionAdmission,
         host: &Arc<StateTransactionHost>,
         command: &CommandRecord,
+    ) -> Result<Arc<Self>, AtomicError> {
+        Self::new_with_cancellation(admission, host, command, None)
+    }
+
+    fn new_with_cancellation(
+        admission: &NativeTransactionAdmission,
+        host: &Arc<StateTransactionHost>,
+        command: &CommandRecord,
+        cancellation: Option<super::super::cancellation::PendingCancellationAbort>,
     ) -> Result<Arc<Self>, AtomicError> {
         let deadline = host.authorization.authority.deadline();
         let reservation = Arc::new(
@@ -134,6 +177,7 @@ impl AbortWriter {
             reservation,
             _buffers: buffers,
             _host: Arc::clone(host),
+            cancellation: Mutex::new(cancellation),
         }))
     }
 
@@ -142,6 +186,7 @@ impl AbortWriter {
         store: &EmbeddedStore,
         proof: RetiredAttempt,
         identity: &CommandRecord,
+        code: latent_core::PlatformErrorCode,
     ) -> Result<Publication, StoreError> {
         let view = store.snapshot()?;
         let namespace = NamespaceCatalog::read_in(
@@ -151,17 +196,40 @@ impl AbortWriter {
         )
         .map_err(|_| StoreError::Corrupt)?
         .ok_or(StoreError::Corrupt)?;
-        let Ok(authorization) =
-            self.original
-                .fresh_abort_authority(namespace, &self.namespaces, &self.selection)
-        else {
-            return Ok(None);
-        };
         let Ok(envelope) = CompleteEnvelope::technical_abort(
             &view,
             proof,
-            "state-conflict".into(),
+            code.wire_code().into(),
             self.time.sample(),
+        ) else {
+            return Ok(None);
+        };
+        if envelope.command().id() != identity.id()
+            || envelope.command().attempt() != identity.attempt()
+            || envelope.command().transaction_id() != identity.transaction_id()
+            || envelope.command().key() != identity.key()
+            || envelope.command().source() != identity.source()
+            || envelope.command().fingerprint() != identity.fingerprint()
+        {
+            return Ok(None);
+        }
+        let cancellation = self
+            .cancellation
+            .lock()
+            .map_err(|_| StoreError::Unavailable)?
+            .take();
+        let cancellation = match cancellation {
+            Some(candidate) => match candidate.promote(identity, envelope.command()) {
+                Ok(permit) => Some(permit),
+                Err(_) => return Ok(None),
+            },
+            None => None,
+        };
+        let Ok(authorization) = self.original.fresh_abort_authority(
+            namespace,
+            &self.namespaces,
+            &self.selection,
+            cancellation,
         ) else {
             return Ok(None);
         };
@@ -178,7 +246,14 @@ impl AbortWriter {
             mutations: Vec::new(),
         };
         let disposition = envelope.publish(store, |_| {
-            self.role.with_current(|_| {
+            self.role.with_current(|time| {
+                if authorization.cancelled_metadata.is_some()
+                    && (!time.continuity_proven
+                        || time.unix_millis < identity.clock_floor()
+                        || time.unix_millis >= identity.identity_expires())
+                {
+                    return Err(AtomicError::PermissionDenied);
+                }
                 authorization
                     .with_completion_decision(|decision| {
                         let acceptance = authorization.authority.prepare_commit_io(
@@ -193,8 +268,8 @@ impl AbortWriter {
                             .accept_with_final(
                                 || Ok(()),
                                 || {
-                                    self.reservation
-                                        .with_live(|| ())
+                                    authorization
+                                        .with_metadata_native_acceptance(&self.reservation)
                                         .map_err(|_| NamespaceError::PermissionDenied)
                                 },
                             )

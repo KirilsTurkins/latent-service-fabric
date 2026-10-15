@@ -671,3 +671,19 @@ remain unchanged. The six transaction models and Node descriptor retain both
 additions and exact current source identities. A descriptive enum value grants
 no floor-release authority; the protected clock, native owner and audited
 maintenance receipt still determine whether a release can run.
+
+## Original command cancellation audit
+
+`AuditControlAction.AUDIT_CONTROL_ACTION_COMMAND_CANCEL` adds the previously
+unused number 31. Its durable action is `command-cancel`; all previous enum
+numbers, durable action spellings, messages, services and historical records
+retain their meanings. Removing only this enum entry restores the previous
+descriptor contract. The selected SDK model surfaces and transaction profiles
+are unchanged; the current supporting-source digest follows the new audit
+definition.
+
+The existing command cancellation RPC requests cancellation on the original
+managed owner after fresh authorization and protected original-record lookup.
+`Requested` describes only the accepted request. Missing live ownership or
+already accepted commit I/O remains `RecoveryRequired`; neither a staging
+observation nor a cancellation request proves a durable abort.

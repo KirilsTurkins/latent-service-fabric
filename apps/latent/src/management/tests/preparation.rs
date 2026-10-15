@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
+use clap::Parser;
 use latent_artifacts::content_digest;
 use latent_manifest::ManifestCodec;
 
@@ -48,7 +49,57 @@ fn config() -> ResolvedConfig {
         connect_timeout: Duration::from_secs(1),
         rpc_timeout: Duration::from_secs(1),
         limits: InputLimits::default(),
+        manifest_profile: latent_manifest::ManifestValidationProfile::default(),
     }
+}
+
+#[test]
+fn transaction_deployment_preparation_keeps_default_refusal_and_exact_preconditions() {
+    let files = Files::new();
+    let mut manifest: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../../../examples/echo-contract/deployment.json"
+    ))
+    .unwrap();
+    manifest["spec"]["publication"] =
+        serde_json::json!(format!("publication:sha256:{}", "a".repeat(64)));
+    manifest["spec"]["resources"]["stateReadBytes"] = serde_json::json!(4096);
+    manifest["spec"]["resources"]["stateWriteBytes"] = serde_json::json!(8192);
+    let file = files.put("deployment.json", &serde_json::to_vec(&manifest).unwrap());
+    let command = Command::Deployment(DeploymentCommand::Apply(ApplyArgs {
+        file: file.clone(),
+        expected_generation: Some(0),
+        operation: DeploymentOperationArgs {
+            operation_id: Some("transaction-install".to_owned()),
+            expected_state_version: Some(u64::MAX),
+        },
+    }));
+    let original = fs::read(&file).unwrap();
+    assert!(prepare::prepare(&command, &config()).is_err());
+    let mut selected = config();
+    selected.manifest_profile =
+        crate::args::Cli::try_parse_from(["latent", "--phase4", "node", "list"])
+            .unwrap_or_else(|_| panic!("test command"))
+            .manifest_profile()
+            .unwrap();
+    let Operation::ApplyDeployment(request) = prepare::prepare(&command, &selected).unwrap() else {
+        panic!("deployment operation");
+    };
+    assert_eq!(request.expected_generation, Some(0));
+    assert_eq!(
+        request.operation.unwrap().expected_state_version,
+        Some(u64::MAX)
+    );
+    let deployment = request.deployment.unwrap();
+    let resources = deployment.resources.unwrap();
+    assert_eq!(resources.state_read_bytes, 4096);
+    assert_eq!(resources.state_write_bytes, 8192);
+    assert_eq!(fs::read(&file).unwrap(), original);
+    selected.tenant = "foreign".to_owned();
+    assert!(prepare::prepare(&command, &selected).is_err());
+    manifest["spec"]["routeWeight"] = serde_json::json!(10_001);
+    fs::write(&file, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    selected.tenant = "examples".to_owned();
+    assert!(prepare::prepare(&command, &selected).is_err());
 }
 
 #[test]
@@ -103,12 +154,20 @@ fn local_validation_needs_neither_profile_nor_connection_and_rejects_unknown_fie
         "deployment.json",
         include_bytes!("../../../../../examples/echo-contract/deployment.json"),
     );
-    assert!(prepare::validate(&ValidateCommand::Deployment(FileArgs { file: good })).is_ok());
+    assert!(prepare::validate(
+        &ValidateCommand::Deployment(FileArgs { file: good }),
+        latent_manifest::ManifestValidationProfile::default(),
+    )
+    .is_ok());
     let bad = files.put(
         "invalid.json",
         br#"{"apiVersion":"latent.dev/v1alpha1","kind":"Deployment","unknown":"secret"}"#,
     );
-    assert!(prepare::validate(&ValidateCommand::Deployment(FileArgs { file: bad })).is_err());
+    assert!(prepare::validate(
+        &ValidateCommand::Deployment(FileArgs { file: bad }),
+        latent_manifest::ManifestValidationProfile::default(),
+    )
+    .is_err());
 }
 
 #[test]

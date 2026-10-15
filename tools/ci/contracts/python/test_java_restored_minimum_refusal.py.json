@@ -1,0 +1,283 @@
+{
+  "cases": [
+    "RestoredMinimumRefusalControls.test_200_403_409_other_gateway_codes_and_noninteger_status_do_not_qualify",
+    "RestoredMinimumRefusalControls.test_actual_restore_callsite_uses_existing_left_query_and_keeps_legacy_refusal_and_native_actions",
+    "RestoredMinimumRefusalControls.test_changed_ready_generation_scope_or_epochs_after_refusal_cannot_claim_stability",
+    "RestoredMinimumRefusalControls.test_current_history_or_its_future_generation_minimum_cannot_be_the_old_history_case",
+    "RestoredMinimumRefusalControls.test_each_minimum_native_and_ready_token_requires_exact_writer_scope",
+    "RestoredMinimumRefusalControls.test_each_original_transport_error_propagates_without_retry_or_passed_case",
+    "RestoredMinimumRefusalControls.test_even_matching_foreign_or_old_schema_tokens_do_not_replace_writer_companion",
+    "RestoredMinimumRefusalControls.test_first_resume_must_advance_exactly_once_without_generation_overflow",
+    "RestoredMinimumRefusalControls.test_fresh_ready_generation_cannot_precede_actual_native_resume",
+    "RestoredMinimumRefusalControls.test_malformed_minimum_native_tokens_and_nonquery_original_are_fatal",
+    "RestoredMinimumRefusalControls.test_original_409_guard_is_red_and_restore_specific_refusal_uses_real_query_parser",
+    "RestoredMinimumRefusalControls.test_other_service_and_generic_refusal_keep_original_403_409_contract",
+    "RestoredMinimumRefusalControls.test_real_bounded_http_normal_return_omits_loss_flag_and_closes_all_three_connections",
+    "RestoredMinimumRefusalControls.test_retained_writer_companion_changed_or_missing_is_fatal",
+    "RestoredMinimumRefusalControls.test_schema_epoch_mismatch_at_each_boundary_is_not_this_restore",
+    "RestoredMinimumRefusalControls.test_terminal_pending_and_early_collector_identities_bind_new_helper_bytes",
+    "RestoredMinimumRefusalControls.test_three_queries_keep_alice_original_minimum_and_no_command_or_body",
+    "RestoredMinimumRefusalControls.test_unchanged_regressed_or_inconsistent_recovery_epoch_never_sends_stale_minimum",
+    "RestoredMinimumRefusalControls.test_wrong_caller_cannot_supply_the_left_healthy_query",
+    "RestoredMinimumRefusalControls.test_wrong_count_or_unhealthy_query_on_either_side_is_not_masked_by_refusal",
+    "RestoredMinimumRefusalControls.test_wrong_missing_or_application_body_and_every_malformed_loss_flag_are_fatal"
+  ],
+  "guards": {
+    "RestoredMinimumRefusalControls.test_200_403_409_other_gateway_codes_and_noninteger_status_do_not_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_actual_restore_callsite_uses_existing_left_query_and_keeps_legacy_refusal_and_native_actions": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_changed_ready_generation_scope_or_epochs_after_refusal_cannot_claim_stability": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_current_history_or_its_future_generation_minimum_cannot_be_the_old_history_case": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_each_minimum_native_and_ready_token_requires_exact_writer_scope": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_each_original_transport_error_propagates_without_retry_or_passed_case": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_even_matching_foreign_or_old_schema_tokens_do_not_replace_writer_companion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_first_resume_must_advance_exactly_once_without_generation_overflow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_fresh_ready_generation_cannot_precede_actual_native_resume": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_malformed_minimum_native_tokens_and_nonquery_original_are_fatal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_original_409_guard_is_red_and_restore_specific_refusal_uses_real_query_parser": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_other_service_and_generic_refusal_keep_original_403_409_contract": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_real_bounded_http_normal_return_omits_loss_flag_and_closes_all_three_connections": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_retained_writer_companion_changed_or_missing_is_fatal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_schema_epoch_mismatch_at_each_boundary_is_not_this_restore": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_terminal_pending_and_early_collector_identities_bind_new_helper_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_three_queries_keep_alice_original_minimum_and_no_command_or_body": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_unchanged_regressed_or_inconsistent_recovery_epoch_never_sends_stale_minimum": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_wrong_caller_cannot_supply_the_left_healthy_query": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_wrong_count_or_unhealthy_query_on_either_side_is_not_masked_by_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    },
+    "RestoredMinimumRefusalControls.test_wrong_missing_or_application_body_and_every_malformed_loss_flag_are_fatal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:beb738264933748f05a4ef2c40c9504234a33ae94cbef476313dc8a87242dd94",
+        "class:setup-sha256:867dd2290aa58a8f552964d5998aa1c12f41c6ac2dd41252be613c7d2ae83f9c"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_restored_minimum_refusal.py",
+  "reviewReason": "Add restore-specific stale-minimum controls with exact retained writer association, native recovery transition, original Alice request, strict redacted refusal and healthy unchanged-view bracket; preserve legacy/generic refusal and every earlier Python control, and bind the new helper in terminal/pending/early collector identities. Synthetic controls do not qualify native execution.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

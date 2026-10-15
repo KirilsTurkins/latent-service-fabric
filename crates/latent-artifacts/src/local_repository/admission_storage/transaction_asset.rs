@@ -11,9 +11,7 @@ use crate::local_repository::{
 use crate::package::{
     decode_referrer, inspect_package, EvidenceKind, LayerRole, PackageKind, PackageLimits,
 };
-use crate::selected_transaction_asset::{
-    COMPANION_BYTES, COMPANION_MEDIA_TYPE, COMPANION_PATH, CONTROL_METADATA_BYTES, DOCUMENT_BYTES,
-};
+use crate::selected_transaction_asset::{COMPANION_BYTES, COMPANION_MEDIA_TYPE, COMPANION_PATH};
 use crate::{
     decode_contract_metadata, ContractMetadataLimits, ReleaseUseEligibility,
     VerifiedArtifactMetadata,
@@ -26,6 +24,59 @@ type TransactionAssets = (
 );
 
 impl StoredAdmission {
+    pub(in crate::local_repository) fn selected_asset_layers(
+        &self,
+        directory: &Path,
+        grant: &ReleaseUseEligibility,
+        names: &[&str],
+        check: &dyn Fn() -> Result<(), PlatformError>,
+    ) -> Result<crate::SelectedTransactionLayers, PlatformError> {
+        check()?;
+        let manifest = read_blob(directory, &self.manifest, 64 * 1024)?;
+        let configuration = read_blob(directory, &self.configuration, 64 * 1024)?;
+        let layout = inspect_package(&manifest, &configuration, PackageLimits::default())?;
+        if grant.package() != Some(layout.digest())
+            || grant.release().0 != self.release
+            || grant.tenant().map(|tenant| tenant.0.as_str()) != Some(self.tenant.as_str())
+        {
+            return Err(corrupt("transaction-layer-package-association"));
+        }
+        let mut layers = Vec::with_capacity(names.len());
+        let mut total = manifest.len() + configuration.len();
+        for name in names {
+            check()?;
+            let layer = layout
+                .config()
+                .layers
+                .iter()
+                .find(|layer| layer.path == *name)
+                .filter(|layer| layer.role == LayerRole::Asset && layer.size <= 64 * 1024)
+                .ok_or_else(|| corrupt("transaction-layer-shape"))?;
+            let stored = self
+                .layers
+                .iter()
+                .find(|stored| stored.path == *name)
+                .ok_or_else(|| corrupt("transaction-layer-missing"))?;
+            if layer.digest.as_str() != stored.blob.digest || layer.size != stored.blob.size {
+                return Err(corrupt("transaction-layer-association"));
+            }
+            total = total
+                .checked_add(layer.size as usize + name.len())
+                .filter(|total| *total <= 768 * 1024)
+                .ok_or_else(|| resource_exhausted("transaction-layer-byte-limit"))?;
+            layers.push((
+                (*name).to_owned(),
+                read_blob(directory, &stored.blob, 64 * 1024)?,
+            ));
+        }
+        check()?;
+        Ok(crate::SelectedTransactionLayers {
+            manifest,
+            configuration,
+            layers,
+        })
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "Independent package, layer, metadata and detached evidence associations remain explicit"
@@ -37,10 +88,11 @@ impl StoredAdmission {
         metadata: &VerifiedArtifactMetadata,
         codec: &JsonManifestCodec,
         check: &dyn Fn() -> Result<(), PlatformError>,
+        profile: crate::TransactionAssetProfile,
     ) -> Result<TransactionAssets, PlatformError> {
         check()?;
-        let manifest = read_blob(directory, &self.manifest, DOCUMENT_BYTES)?;
-        let configuration = read_blob(directory, &self.configuration, DOCUMENT_BYTES)?;
+        let manifest = read_blob(directory, &self.manifest, profile.document_bytes())?;
+        let configuration = read_blob(directory, &self.configuration, profile.document_bytes())?;
         let layout = inspect_package(&manifest, &configuration, PackageLimits::default())?;
         if grant.tenant().map(|tenant| tenant.0.as_str()) != Some(self.tenant.as_str())
             || grant.package().map(latent_core::PackageDigest::as_str)
@@ -81,11 +133,11 @@ impl StoredAdmission {
                     }
                 }
                 LayerRole::CapsuleManifest => {
-                    let bytes = read_blob(directory, &stored.blob, DOCUMENT_BYTES)?;
+                    let bytes = read_blob(directory, &stored.blob, profile.document_bytes())?;
                     drop(parse_control_document(
                         &bytes,
-                        DOCUMENT_BYTES,
-                        CONTROL_METADATA_BYTES,
+                        profile.document_bytes(),
+                        profile.metadata_bytes(),
                     )?);
                     let actual = codec
                         .decode_capsule(&bytes)
@@ -95,12 +147,12 @@ impl StoredAdmission {
                     }
                 }
                 LayerRole::Contracts => {
-                    let bytes = read_blob(directory, &stored.blob, DOCUMENT_BYTES)?;
+                    let bytes = read_blob(directory, &stored.blob, profile.document_bytes())?;
                     let actual = decode_contract_metadata(
                         &bytes,
                         ContractMetadataLimits {
-                            max_document_bytes: DOCUMENT_BYTES,
-                            max_retained_bytes: CONTROL_METADATA_BYTES,
+                            max_document_bytes: profile.document_bytes(),
+                            max_retained_bytes: profile.metadata_bytes(),
                             ..ContractMetadataLimits::default()
                         },
                     )?;
@@ -144,9 +196,9 @@ impl StoredAdmission {
         ] {
             for entry in entries {
                 check()?;
-                let bytes = read_blob(directory, &entry.manifest, DOCUMENT_BYTES)?;
+                let bytes = read_blob(directory, &entry.manifest, profile.document_bytes())?;
                 let evidence = decode_referrer(&bytes, PackageLimits::default())?;
-                let config = read_blob(directory, &entry.configuration, DOCUMENT_BYTES)?;
+                let config = read_blob(directory, &entry.configuration, profile.document_bytes())?;
                 if evidence.artifact_type != kind.artifact_type()
                     || evidence.subject.digest != *layout.digest()
                     || evidence.subject.size != manifest.len() as u64

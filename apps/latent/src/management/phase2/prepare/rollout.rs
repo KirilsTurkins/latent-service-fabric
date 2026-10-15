@@ -7,7 +7,7 @@ use crate::{
     operation::Operation,
 };
 use latent_control_store::VersionedDeployment;
-use latent_manifest::{ManifestCodec, ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::{ManifestCodec, ManifestValidator};
 
 pub(in crate::management) fn rollout(
     command: &R,
@@ -88,7 +88,8 @@ fn start(
     let manifest = crate::management::prepare::codec()
         .decode_deployment(&bytes)
         .map_err(|_| invalid_input())?;
-    Phase1ManifestValidator
+    config
+        .manifest_profile
         .validate_deployment(&manifest)
         .map_err(|_| invalid_input())?;
     if args.weights.first().copied() != Some(u32::from(manifest.route_weight)) {

@@ -228,6 +228,7 @@ async fn actual_signed_http_query_keeps_snapshot_scope_and_denies_other_caller_w
     .unwrap();
     owner.handle().start_accepting().unwrap();
     let input = URL_SAFE_NO_PAD.encode(br#"[{"outcome":{"err":3},"count":7}]"#);
+    setup.fixture.clock.advance_to(Instant::now());
     let response = request(
         owner.local_addr(),
         &input,
@@ -253,6 +254,7 @@ async fn actual_signed_http_query_keeps_snapshot_scope_and_denies_other_caller_w
     );
     let stores = backend.resource_snapshot().stores_created;
     assert_eq!(stores, 1);
+    setup.fixture.clock.advance_to(Instant::now());
     let refused = request(
         owner.local_addr(),
         &input,

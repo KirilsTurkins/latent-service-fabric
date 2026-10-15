@@ -28,8 +28,11 @@ class CurrentSelection:
     compiler_inputs_digest: str
 
     def validate(self):
+        self._validate(NAMES)
+
+    def _validate(self, names):
         require(re.fullmatch(r"[0-9a-f]{40}", self.source_commit or "")
-                and self.variant in NAMES, "explicit-current-java-source-and-variant")
+                and self.variant in names, "explicit-current-java-source-and-variant")
         require(all(isinstance(value, str) and re.fullmatch(r"sha256:[0-9a-f]{64}", value)
                     for value in (self.report_digest, self.component_digest, self.compiler_inputs_digest)),
                 "explicit-current-java-material-digests")
@@ -37,7 +40,11 @@ class CurrentSelection:
 
 def validate_materials(files: dict[str, bytes], selected: CurrentSelection) -> dict:
     """Bounded digest/shape validation only; synthetic callers gain no execution claim."""
-    selected.validate()
+    return _validate_materials(files, selected, NAMES)
+
+
+def _validate_materials(files, selected, names):
+    selected._validate(names)
     required = {"report.json", "component.wasm", "source-inputs.json", "source.tar.gz", "recipe-inputs.json", "compiler-inputs.json"}
     require(isinstance(files, dict) and required <= set(files) and len(files) <= 4096
             and all(isinstance(name, str) and isinstance(raw, bytes) for name, raw in files.items()),
@@ -97,7 +104,8 @@ def validate_materials(files: dict[str, bytes], selected: CurrentSelection) -> d
     require(isinstance(imports, list) and 0 < len(imports) <= 16 and len(imports) == len(set(imports))
             and all(isinstance(item, str) for item in imports) and REQUIRED_IMPORTS <= set(imports)
             and set(imports) <= REQUIRED_IMPORTS | {"latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "latent:http/client@0.2.0"}
-            and (("latent:http/client@0.2.0" in imports) == (selected.variant == "forbidden-http")),
+            and (("latent:http/client@0.2.0" in imports) ==
+                 (selected.variant in {'forbidden-http', 'forbidden-http-before-stage'})),
             "current-java-actual-transaction-imports")
     details = report.get("details")
     commands = details.get("commands") if isinstance(details, dict) else None
@@ -109,8 +117,24 @@ def validate_materials(files: dict[str, bytes], selected: CurrentSelection) -> d
         requirements = project.get("deferred-http-requirements.json")
         require(requirements is not None and digest(requirements) == report.get("deferredHttpRequirementsDigest"),
                 "current-java-original-effect-requirements")
-        require(decode(requirements).get("authority") == {"installed": False, "ruleGranted": False, "executionQualified": False},
-                "current-java-requirements-create-no-authority")
+        from tools.transaction_guest_project import CURRENT_HTTP_PROFILE, current_java_http_requirements
+        if CURRENT_HTTP_PROFILE in project:
+            marker = decode(project[CURRENT_HTTP_PROFILE], 8192)
+            require(set(marker) == {"schemaVersion", "idempotencyProfile"}
+                    and marker["schemaVersion"] == "latent.java.current-http-source-input.v1"
+                    and report.get("nativeEffectProfile") == "current-v2-http"
+                    and report.get("nativeEffectOperation") == "http"
+                    and report.get("currentHttpProfileInputDigest") == digest(project[CURRENT_HTTP_PROFILE]),
+                    "explicit-current-java-http-source-and-report")
+            descriptor = decode(project["capsule-project.json"])
+            expected = current_java_http_requirements(descriptor, project["transaction-binding.json"],
+                                                     marker["idempotencyProfile"])
+            require(decode(requirements, 8192) == expected, "exact-current-java-http-requirements")
+        else:
+            require(report.get("nativeEffectProfile") is None and report.get("nativeEffectOperation") is None
+                    and report.get("currentHttpProfileInputDigest") is None
+                    and decode(requirements).get("authority") == {"installed": False, "ruleGranted": False, "executionQualified": False},
+                    "current-java-requirements-create-no-authority")
     return report
 
 

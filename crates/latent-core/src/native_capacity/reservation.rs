@@ -123,6 +123,34 @@ impl NativeReservation {
         Ok(action())
     }
 
+    /// Check two existing reservations under their one actual owner fence.
+    /// No admission, quota transfer or deadline renewal is performed.
+    pub fn with_live_pair_until<T>(
+        &self,
+        other: &Self,
+        deadline: Instant,
+        action: impl FnOnce() -> T,
+    ) -> Result<T, NativeCapacityError> {
+        if !Arc::ptr_eq(&self.lease.owner, &other.lease.owner) {
+            return Err(NativeCapacityError::InvalidRequest);
+        }
+        let state = self
+            .lease
+            .owner
+            .state
+            .lock()
+            .map_err(|_| NativeCapacityError::Poisoned)?;
+        self.lease
+            .owner
+            .check(&state, self.lease.class, self.lease.deadline.min(deadline))?;
+        other.lease.owner.check(
+            &state,
+            other.lease.class,
+            other.lease.deadline.min(deadline),
+        )?;
+        Ok(action())
+    }
+
     /// Reserve before allocating the actual buffer. Parts cannot borrow each
     /// other's quota; even zero-byte owner shells have a finite sixteen-guard cap.
     pub fn reserve_buffer(

@@ -11,9 +11,10 @@ use std::time::Duration;
 
 pub(super) struct ReadAuthority {
     pub binding: Arc<StateManagementBinding>,
-    pub decision: OwnedPolicyDecision,
+    pub decision: Arc<OwnedPolicyDecision>,
     pub key: CommandKey,
     pub deadline: Instant,
+    pub command_manager: Option<latent_node::LocalActivationManager>,
     // Original installation metadata and RPC capacity retire after all values.
     pub inner: Arc<Inner>,
     pub permit: Arc<dyn StateManagementReservation>,
@@ -68,7 +69,7 @@ impl ResultWindow {
             },
         }
     }
-    fn cutoff(
+    pub(super) fn cutoff(
         &self,
         source: &CommandAdmissionSource,
         clock: &dyn ActivationClock,
@@ -90,7 +91,7 @@ impl ResultWindow {
 }
 
 pub(super) struct ResponseOwner {
-    pub namespace: NamespaceRead,
+    pub namespace: Arc<NamespaceRead>,
     pub lifecycle: NamespaceLifecycleHandle,
     pub window: ResultWindow,
     pub read: Arc<ReadAuthority>,

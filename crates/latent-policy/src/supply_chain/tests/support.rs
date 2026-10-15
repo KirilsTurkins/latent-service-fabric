@@ -1,4 +1,8 @@
 #![allow(dead_code)]
+#[path = "support/captured_java.rs"]
+mod captured_java;
+#[path = "support/fresh.rs"]
+mod fresh;
 #[path = "operator_fixture.rs"]
 mod operator_fixture;
 #[path = "../../../../latent-packaging/tests/fixtures/mod.rs"]
@@ -23,6 +27,11 @@ use std::sync::{
 };
 
 pub const NOW: u64 = 1100;
+#[derive(Clone, Copy)]
+enum TransactionShape {
+    Standard,
+    DeferredHttp,
+}
 pub struct Clock(pub AtomicU64);
 impl Clock {
     pub fn set(&self, now: u64) {
@@ -91,6 +100,21 @@ impl Fixture {
             false,
         )
     }
+    pub fn transactional_deferred_http_with_companion(
+        bytes: Vec<u8>,
+        http_document: Vec<u8>,
+    ) -> Self {
+        Self::configured_http_shape(
+            "builder-a",
+            true,
+            None,
+            true,
+            Some((bytes, false)),
+            Some(http_document),
+            false,
+            TransactionShape::DeferredHttp,
+        )
+    }
     pub fn transactional_executable_with_companion(bytes: Vec<u8>) -> Self {
         Self::configured_http(
             "builder-a",
@@ -119,10 +143,6 @@ impl Fixture {
             false,
         )
     }
-    #[expect(
-        clippy::too_many_lines,
-        reason = "One isolated cryptographic fixture signs the actual package under its explicit test policy"
-    )]
     fn configured_http(
         builder_id: &str,
         with_inventory: bool,
@@ -132,7 +152,39 @@ impl Fixture {
         http_document: Option<Vec<u8>>,
         executable: bool,
     ) -> Self {
-        let mut input = if transactional {
+        Self::configured_http_shape(
+            builder_id,
+            with_inventory,
+            requirements,
+            transactional,
+            companion,
+            http_document,
+            executable,
+            TransactionShape::Standard,
+        )
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        reason = "One isolated cryptographic fixture signs the actual package under its explicit test policy"
+    )]
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Existing package options and the explicit deferred test shape remain separate"
+    )]
+    fn configured_http_shape(
+        builder_id: &str,
+        with_inventory: bool,
+        requirements: Option<Value>,
+        transactional: bool,
+        companion: Option<(Vec<u8>, bool)>,
+        http_document: Option<Vec<u8>>,
+        executable: bool,
+        shape: TransactionShape,
+    ) -> Self {
+        let mut input = if matches!(shape, TransactionShape::DeferredHttp) {
+            packaging::transactional_capsule_with_intents()
+        } else if transactional {
             packaging::transactional_capsule()
         } else {
             packaging::capsule(packaging::component::Options::default())
@@ -299,6 +351,46 @@ impl Fixture {
             }],
             sboms: vec![],
         }
+    }
+    pub fn annotated_upload(&self, annotation: &str) -> PackageAdmissionUpload {
+        let mut upload = self.upload();
+        let mut manifest: Value = serde_json::from_slice(&upload.manifest).unwrap();
+        manifest["annotations"]["tests.native-recovery-fence"] = annotation.into();
+        upload.manifest = serde_json::to_vec(&manifest).unwrap();
+        let subject = PackageSigningSubject::from_package(
+            &upload.manifest,
+            &upload.configuration,
+            PackageLimits::default(),
+        )
+        .unwrap();
+        let validity = SignatureValidity {
+            issued_at: 1000,
+            expires_at: 2000,
+        };
+        let signature = self
+            .publisher_signer
+            .sign_package(&subject, validity, SignatureLimits::default())
+            .unwrap();
+        let provenance = self
+            .builder_signer
+            .sign_build(
+                &subject,
+                &observation(&subject),
+                validity,
+                ProvenanceLimits::default(),
+            )
+            .unwrap();
+        upload.signatures = vec![AdmissionEvidence {
+            manifest: signature.manifest_bytes().to_vec(),
+            configuration: b"{}".to_vec(),
+            payload: signature.payload_bytes().to_vec(),
+        }];
+        upload.provenance = vec![AdmissionEvidence {
+            manifest: provenance.manifest_bytes().to_vec(),
+            configuration: b"{}".to_vec(),
+            payload: provenance.payload_bytes().to_vec(),
+        }];
+        upload
     }
     pub fn wrong_subject_upload(&self) -> PackageAdmissionUpload {
         let mut input = packaging::capsule(packaging::component::Options::default());

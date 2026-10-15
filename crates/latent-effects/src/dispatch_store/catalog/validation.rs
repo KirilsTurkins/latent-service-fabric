@@ -289,7 +289,7 @@ impl DispatchCatalog {
     }
 }
 
-fn validate_effect(
+pub(super) fn validate_effect(
     view: &ReadView,
     owner: Option<OwnerRecord>,
     key: &RowKey,

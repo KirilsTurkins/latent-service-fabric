@@ -16,6 +16,68 @@ def observed():
 
 
 class NativeRecoveryOracle(unittest.TestCase):
+    def test_current_recovery_waits_original_catalog_clock_interval_after_success_or_failure(self):
+        from pathlib import Path
+        import tempfile
+        import time
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        for failed, retired, current in ((False, True, True), (True, True, True),
+                                         (False, False, True), (False, True, False)):
+            value = observed()
+            if current:
+                value['schemaVersion'] = 'latent.native-transaction-recovery.v2'
+            value['catalogsRetired'] = retired
+            if failed:
+                value.update(operationSucceeded=False, result=None,
+                    failure={'code': 'unavailable', 'message': 'storage:commitUncertain', 'retryable': True})
+            with self.subTest(failed=failed, retired=retired, current=current), tempfile.TemporaryDirectory() as temporary:
+                events = []
+                client = SimpleNamespace(node=None, deadline=time.monotonic() + 10,
+                    evidence=SimpleNamespace(write=lambda *_: None,
+                        record=lambda *_: events.append('record')))
+                native = recovery.Recovery.__new__(recovery.Recovery)
+                native.client, native.node, native.calls = client, object(), 0
+                native.directory, native.helper = Path(temporary), Path('helper')
+                native.credential, native.sources = Path('credential'), None
+                with patch.object(recovery, 'require_stopped_owner'), \
+                     patch.object(recovery, 'native', return_value=json.dumps(value).encode()), \
+                     patch.object(recovery.lifecycle, 'admission_lease_interval',
+                         side_effect=lambda actual: (self.assertIs(actual, client), events.append('lease'))):
+                    if current and not retired:
+                        with self.assertRaisesRegex(ValueError, 'current-native-control-catalog-retirement-required'):
+                            native.run(Path('configuration'), 'publication:sha256:' + 'a' * 64,
+                                       {'action': 'inspect-namespace'})
+                    else:
+                        actual = native.run(Path('configuration'), 'publication:sha256:' + 'a' * 64,
+                                            {'action': 'inspect-namespace'})
+                        self.assertEqual(actual, value)
+                self.assertEqual(events, ['record', 'lease'] if current and retired else ['record'])
+                self.assertEqual(native.calls, 1)
+
+    def test_current_report_keeps_original_failure_retryability_and_separate_retirement(self):
+        value = observed()
+        value.update(schemaVersion='latent.native-transaction-recovery.v2', operationSucceeded=False,
+                     result=None, failure={'code': 'unavailable', 'message': 'storage:commitUncertain', 'retryable': True})
+        actual = recovery.report(json.dumps(value).encode())
+        self.assertEqual(actual, value)
+        self.assertNotIn('knownNotCommitted', actual)
+        with self.assertRaises(ValueError):
+            recovery.require_success(actual)
+
+    def test_current_report_refuses_extra_approval_unbounded_message_and_historical_failure_alias(self):
+        value = observed()
+        value.update(schemaVersion='latent.native-transaction-recovery.v2', operationSucceeded=False,
+                     result=None, failure={'code': 'unavailable', 'message': 'storage:commitUncertain', 'retryable': False})
+        for field, changed in (('approved', True), ('retryable', 0), ('message', 'x' * 1025), ('code', 'unknown')):
+            invalid = copy.deepcopy(value)
+            invalid['failure'][field] = changed
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                recovery.report(json.dumps(invalid).encode())
+        value['failure'] = {'stage': 'target', 'failure': {'owner': 'storage', 'reason': 'commitUncertain'}}
+        with self.assertRaises(ValueError):
+            recovery.report(json.dumps(value).encode())
+
     def test_absent_client_node_and_elapsed_time_do_not_prove_native_retirement(self):
         from types import SimpleNamespace
         client = SimpleNamespace(node=None)

@@ -12,6 +12,10 @@ use std::sync::Arc;
 mod tests;
 
 impl NativeTransactionAdmission {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Keep the original affine completion and its optional cancellation metadata proof in one explicit disposition match"
+    )]
     pub(super) async fn complete_native(
         &self,
         outcome: ActivationOutcome,
@@ -22,6 +26,7 @@ impl NativeTransactionAdmission {
             _ => outcome,
         };
         let consumption = outcome_consumption(&outcome);
+        let original_failure = original_failed_outcome(&outcome);
         let admitted = match self.take_result() {
             Ok(Some(admitted)) => admitted,
             Ok(None) => return outcome,
@@ -38,7 +43,7 @@ impl NativeTransactionAdmission {
                     host.clone(),
                     self.owners.effects.clone(),
                     self.owners.time.clone(),
-                    control,
+                    control.clone(),
                 );
                 let disposition = match completion {
                     Ok(completion) => completion.finish(outcome).await,
@@ -48,8 +53,17 @@ impl NativeTransactionAdmission {
                         cleanup_failure: host.retire().await.err(),
                     },
                 };
-                let disposition = self.persist_conflict_abort(disposition, &host).await;
-                let observation = command_observation(&disposition, consumption);
+                let failure_code = original_failure.as_ref().and_then(platform_failure_code);
+                let disposition = self
+                    .persist_terminal_abort(
+                        disposition,
+                        &host,
+                        failure_code,
+                        &control,
+                        original_failure.as_ref(),
+                    )
+                    .await;
+                let observation = command_observation(&disposition, consumption, original_failure);
                 (
                     TransactionCompletionResult::Command(disposition),
                     observation,
@@ -95,18 +109,16 @@ impl NativeTransactionAdmission {
                 )
             }
             TransactionAdmissionResult::Pending(pending) => {
-                let command = pending.record().clone();
-                let proof = pending.retire_without_guest().map(Box::new);
-                // This proof still needs a fresh authorized recovery writer to
-                // persist Aborted. It is never exposed as a durable abort here.
-                (
-                    TransactionCompletionResult::PendingRetired {
-                        command,
-                        proof,
-                        retained: Arc::clone(&retained),
-                    },
-                    outcome,
-                )
+                let result = self
+                    .complete_pre_host(pending, &outcome, &control, Arc::clone(&retained))
+                    .await;
+                let observation = match &result {
+                    TransactionCompletionResult::Command(disposition) => {
+                        command_observation(disposition, consumption, original_failure)
+                    }
+                    _ => outcome,
+                };
+                (result, observation)
             }
         };
         self.publish_completion(result, observation)
@@ -136,6 +148,17 @@ impl NativeTransactionAdmission {
     }
 }
 
+fn platform_failure_code(outcome: &ActivationOutcome) -> Option<PlatformErrorCode> {
+    match outcome {
+        ActivationOutcome::Failed { error, .. } => Some(error.code),
+        _ => None,
+    }
+}
+
+fn original_failed_outcome(outcome: &ActivationOutcome) -> Option<ActivationOutcome> {
+    platform_failure_code(outcome).map(|_| outcome.clone())
+}
+
 fn with_completion_binding(
     binding: Result<(), PlatformError>,
     observation: ActivationOutcome,
@@ -153,11 +176,12 @@ fn with_completion_binding(
 fn command_observation(
     disposition: &CommandCompletionDisposition,
     consumption: BudgetConsumption,
+    original_failure: Option<ActivationOutcome>,
 ) -> ActivationOutcome {
     match disposition {
         CommandCompletionDisposition::Durable { result, .. } => match result.outcome() {
-            Outcome::Committed => empty_success(consumption),
-            Outcome::Rejected => ActivationOutcome::DeclaredError {
+            Outcome::Committed if original_failure.is_none() => empty_success(consumption),
+            Outcome::Rejected if original_failure.is_none() => ActivationOutcome::DeclaredError {
                 error: DeclaredError {
                     code: result.code().unwrap_or("rejected").into(),
                     message: String::new(),
@@ -167,21 +191,49 @@ fn command_observation(
                 },
                 consumption,
             },
-            Outcome::Aborted if result.code() == Some("state-conflict") => {
-                failure_for_platform_error(
-                    super::error(
-                        PlatformErrorCode::StateConflict,
-                        "transaction-state-conflict",
-                    ),
-                    consumption,
-                )
-            }
+            Outcome::Aborted => aborted_observation(result.code(), consumption, original_failure),
             _ => unavailable(consumption),
         },
         CommandCompletionDisposition::Retired {
             reason: AtomicError::Conflict,
             ..
-        } => failure_for_platform_error(
+        } => conflict_observation(consumption, original_failure.as_ref()),
+        _ => unavailable(consumption),
+    }
+}
+
+fn conflict_observation(
+    consumption: BudgetConsumption,
+    original_failure: Option<&ActivationOutcome>,
+) -> ActivationOutcome {
+    if original_failure.is_some() {
+        return unavailable(consumption);
+    }
+    failure_for_platform_error(
+        super::error(
+            PlatformErrorCode::StateConflict,
+            "transaction-state-conflict",
+        ),
+        consumption,
+    )
+}
+
+fn aborted_observation(
+    code: Option<&str>,
+    consumption: BudgetConsumption,
+    original_failure: Option<ActivationOutcome>,
+) -> ActivationOutcome {
+    match original_failure {
+        Some(ActivationOutcome::Failed {
+            terminal_state,
+            error,
+            ..
+        }) if code == Some(error.code.wire_code()) => ActivationOutcome::Failed {
+            terminal_state,
+            error,
+            consumption,
+        },
+        None if code == Some("state-conflict") => failure_for_platform_error(
             super::error(
                 PlatformErrorCode::StateConflict,
                 "transaction-state-conflict",

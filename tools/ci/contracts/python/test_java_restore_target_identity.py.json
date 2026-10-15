@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "RestoreTargetIdentity.test_invalid_receipt_identity_cannot_mutate_original_selection",
+    "RestoreTargetIdentity.test_omitted_selection_identity_retains_original_identity_and_all_old_limits",
+    "RestoreTargetIdentity.test_pending_foreign_receipt_stops_before_configuration_or_authority_selection",
+    "RestoreTargetIdentity.test_pending_uses_one_explicit_target_then_actual_receipt_identity_for_selection",
+    "RestoreTargetIdentity.test_selection_changes_only_roots_creation_and_actual_target_identity",
+    "RestoreTargetIdentity.test_store_identity_retains_original_ascii_grammar_and_128_byte_boundary",
+    "RestoreTargetIdentity.test_terminal_foreign_receipt_stops_before_configuration_or_authority_selection",
+    "RestoreTargetIdentity.test_terminal_uses_one_explicit_target_then_actual_receipt_identity_for_selection"
+  ],
+  "guards": {
+    "RestoreTargetIdentity.test_invalid_receipt_identity_cannot_mutate_original_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
+      ],
+      "skipSites": []
+    },
+    "RestoreTargetIdentity.test_omitted_selection_identity_retains_original_identity_and_all_old_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
+      ],
+      "skipSites": []
+    },
+    "RestoreTargetIdentity.test_pending_foreign_receipt_stops_before_configuration_or_authority_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
+      ],
+      "skipSites": []
+    },
+    "RestoreTargetIdentity.test_pending_uses_one_explicit_target_then_actual_receipt_identity_for_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
+      ],
+      "skipSites": []
+    },
+    "RestoreTargetIdentity.test_selection_changes_only_roots_creation_and_actual_target_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
+      ],
+      "skipSites": []
+    },
+    "RestoreTargetIdentity.test_store_identity_retains_original_ascii_grammar_and_128_byte_boundary": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
+      ],
+      "skipSites": []
+    },
+    "RestoreTargetIdentity.test_terminal_foreign_receipt_stops_before_configuration_or_authority_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
+      ],
+      "skipSites": []
+    },
+    "RestoreTargetIdentity.test_terminal_uses_one_explicit_target_then_actual_receipt_identity_for_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35bbdebcbf552419e8767c0cc6422bbfa3f739a8d756443c19764f088c96e0c3",
+        "class:setup-sha256:24c8582d67564b1336db9e963c3b4719254aa5216133ae1987bf7b8dcac200c4"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_restore_target_identity.py",
+  "reviewReason": "Explicit review: the identity-only provisioning mock is lexical around invoke, including errors from manually-created TestCase fixtures; all eight original test methods, assertions, skip predicates and the six compatibility methods remain unchanged.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

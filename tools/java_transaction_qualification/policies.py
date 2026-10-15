@@ -12,6 +12,7 @@ from .inputs import require
 
 STATE_CONTRACT = "latent:state/key-value@0.2.0"
 INTENT_CONTRACT = "latent:intents/staging@0.1.0"
+HTTP_CONTRACT = "latent:http/client@0.2.0"
 DATA_OPERATIONS = ["acquire-command", "acquire-query", "info", "query-info", "get", "get-query",
                    "scan", "scan-query", "describe-page", "page-next", "put", "delete", "commit", "read-result"]
 MANAGEMENT_OPERATIONS = ["namespace-create", "namespace-inspect", "namespace-list", "namespace-quiesce",
@@ -56,7 +57,8 @@ class ObservedHosts:
     effects: tuple[dict, ...]
 
     @classmethod
-    def read(cls, value: dict, operations: list[dict], *, diagnostic=False):
+    def read(cls, value: dict, operations: list[dict], *, diagnostic=False, intent_operation="put-once"):
+        require(intent_operation in {"put-once", "http"}, "explicit-native-effect-operation")
         require(isinstance(value, dict) and set(value) == INSPECTION_FIELDS
                 and value["schemaVersion"] == "latent.transaction-host-inspection.v1", "actual-native-host-inspection")
         identifier(value["stateProviderProfile"])
@@ -108,7 +110,7 @@ class ObservedHosts:
             require(effect["tenant"] == TENANT and effect["service"] == SERVICE
                     and effect["namespace"] == NAMESPACE and effect["incarnation"] == configured["incarnation"]
                     and effect["resultPolicy"] == RESULT_POLICY and effect["logicalBinding"] == "qualified-http"
-                    and effect["operation"] == "put-once"
+                    and effect["operation"] == intent_operation
                     and effect["stagingBinding"] == deferred["stagingBinding"]
                     and effect["dispatchBinding"] == deferred["dispatchBinding"]
                     and effect["dispatchRecoveryKind"] == "service-integration", "same-native-effect-scope-and-purpose")
@@ -149,7 +151,8 @@ def rule(name, kind, subject, publications, capability, operations, resources, *
                         "outputBytes": output_bytes, "wallTimeMillis": wall}}
 
 
-def documents(hosts: ObservedHosts, publications: dict[str, str], *, diagnostic=False) -> dict:
+def documents(hosts: ObservedHosts, publications: dict[str, str], *, diagnostic=False,
+              current_http_endpoint=None) -> dict:
     """Reviewed test policy proposals only; they become authority solely via apply."""
     pubs = sorted(publications.values())
     from .diagnostic_inputs import NAME
@@ -200,6 +203,27 @@ def documents(hosts: ObservedHosts, publications: dict[str, str], *, diagnostic=
                  kind=row["dispatchRecoveryKind"], recovery=row["dispatchRecoveryScope"])]},
              input_bytes=27, output_bytes=2048, calls=1, wall=2000)
         for index, row in enumerate(hosts.effects)]}
+    if current_http_endpoint is not None:
+        from .current_recipient import endpoint
+        require(isinstance(current_http_endpoint, dict)
+                and current_http_endpoint == endpoint(current_http_endpoint['origin'],
+                                                       current_http_endpoint['endpointIncarnation'])
+                and all(row['operation'] == 'http' for row in hosts.effects),
+                'exact-current-http-policy-endpoint-and-signed-operations')
+        result['deploymentGrants'].extend([
+            {'capability': STATE_CONTRACT, 'policy': STATE_POLICY, 'operations': list(DATA_OPERATIONS)},
+            {'capability': INTENT_CONTRACT, 'policy': STAGING_POLICY, 'operations': ['stage']},
+        ])
+        provider = hosts.providers['http']
+        result['bindings']['java-dispatch-installed'] = binding(HTTP_CONTRACT, provider['profile'],
+            provider['configurationDigest'], epoch(provider['configurationEpoch'], decimal=True), ['send'])
+        resources = {'kind': 'http', 'origins': [dict(current_http_endpoint['origin'])],
+                     'methods': ['GET', 'POST'], 'paths': [current_http_endpoint['operationPath']],
+                     'pathPrefixes': [current_http_endpoint['lookupPrefix']]}
+        result['policies'][DISPATCH_POLICY] = {'formatVersion': 1, 'tenant': TENANT, 'rules': [
+            rule(f'original-source-{index}', 'service', row['dispatchSubject'], [row['publication']],
+                 HTTP_CONTRACT, ['send'], resources, input_bytes=27, output_bytes=2048, calls=1, wall=2000)
+            for index, row in enumerate(hosts.effects)]}
     return result
 
 

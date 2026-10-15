@@ -1,0 +1,237 @@
+{
+  "schemaVersion": "latent.recovery970.default-tuple.v1",
+  "source": {
+    "head": "f7d7d67df0998a36487ee37c21d9d0e941fe6c19",
+    "tree": "ab79c54a765a622102d0e22bde2dae2798a162ee",
+    "archive": "default-source-f7d7d67df0998a36487ee37c21d9d0e941fe6c19.tar",
+    "archiveSha256": "1e5ae00efdf40655487457fd6f372b35e60673f9a38c690a7c8e654940ebaab7",
+    "sourceRoot": "/work/recovery970-default-f7d7d67df099-20261013",
+    "binaryRoot": "/work/recovery970-default-binaries-f7d7d67df099-20261013"
+  },
+  "manifestSha256": "de9c11d38f43e1c2b170b1b7b76e03d49f59e11a93eef1cdd3f206bee4c1fd72",
+  "roles": [
+    {
+      "role": "contracts_tool",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latent-packaging",
+        "--example",
+        "capsule_contracts",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "80cba43b7b864fb32147ba341153de463fb8b0d7f3a6fb7e48e8b66cf35af817",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "b1e549df73bb694fc42a10a7e3f3ebb007d96d0d18d0b413ea0f964df6c87396",
+      "stderrSha256": "27f92b3f51d0139c1dc7d6d800f13135dadd107855eee1bc7774f47ab698e776",
+      "bytes": 7819784,
+      "artifactGraphSha256": "37d0d6b143fb40a8cbbbec3cc86e883c283f2b6417d97d8f0bb5071e87ae380c",
+      "immediateOriginalToCopyEqualityVerified": true
+    },
+    {
+      "role": "node",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latentd",
+        "--bin",
+        "latentd",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "effc5f62b296ddaebb15595a93ad3b63697083a442adc20094dc17115354bb40",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "ec5d646256dd833a530a155823b4439f60b99e340b3f77d11f7c6ef7384896f4",
+      "stderrSha256": "08fd74656ec27da96cc16ec53b87e7ed4e769a4247ace20ce0dba28b4528c4ea",
+      "bytes": 179422248,
+      "artifactGraphSha256": "90c80efb62029e69566e726d7a9367455af4fd606713bf0076a93c4a0270e477",
+      "immediateOriginalToCopyEqualityVerified": true
+    },
+    {
+      "role": "recovery_helper",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latentd",
+        "--example",
+        "transaction_recovery",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "07a5d3aa9bb348eb834947b810e98b080241cd5b1027ddf790b43361f961eefe",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "c7011ba84e2f73f8b87cee8d4843782abb95c57d4ebd5782b55230125bdab5f0",
+      "stderrSha256": "23d2edb854c4387a6c3ade370deaf4a87a52f68e771b82ad4991a4e8855d10fb",
+      "bytes": 184160528,
+      "artifactGraphSha256": "50c7276084916eec9fcc3df3d2b4c741510d5ab2e715d16252cd196722266eec",
+      "immediateOriginalToCopyEqualityVerified": true
+    },
+    {
+      "role": "cli",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latent",
+        "--bin",
+        "latent",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "569e87cec384867c9526a0ac8a4ebb134d9206202f63b91d00116c47ddc14913",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "044ee5c7c986c845b18902ab270707a52cec2667c961c0b20e00829d8b74a289",
+      "stderrSha256": "05c331b38b61aeac71ed4ea620847fd7539440da2de2d0583586d2b6d6eb42e8",
+      "bytes": 67024792,
+      "artifactGraphSha256": "2201f3970f94fde1777ee9052115df39fe22849ca1f2e6cd8fbbb4bd7cb2c9f8",
+      "immediateOriginalToCopyEqualityVerified": true
+    },
+    {
+      "role": "aot_compiler",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latent-wasmtime",
+        "--bin",
+        "latent-aot-compiler",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "f962343848bb11d115b0cfd33e8eeba0dadf1f0e206d7bf55bf82bc0d72b6961",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "7193bcc3ec546a31ecfffccc2d0124a8d4c117af7f604c459e898af36e1509a4",
+      "stderrSha256": "c94615a9212c98fe4ad403300d18c3d038ad87a09cf4042cc524db1e0874981a",
+      "bytes": 41721920,
+      "artifactGraphSha256": "8678b91ce16cad50cc72cacdaeddd82f44fa914db922f0e7f0024e2277f821be",
+      "immediateOriginalToCopyEqualityVerified": true
+    },
+    {
+      "role": "signer",
+      "command": [
+        "cargo",
+        "+1.97.1",
+        "build",
+        "-p",
+        "latent-policy",
+        "--example",
+        "capsule_authoring",
+        "--locked",
+        "--offline",
+        "--message-format=json"
+      ],
+      "environment": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true"
+      },
+      "exitCode": 0,
+      "sha256": "9a42d8c59feeeca65b799b3c2234572e95a8cb2ab02bca87ac3d100bcd32e5c4",
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "stdoutSha256": "6b69d5fb342102ddc4a268f63aa8edc6de89f3a7812b4d8f2f6f82c78fed3be1",
+      "stderrSha256": "661b51ce57d69dc4f3d1bc8242ed4b76fd45235671afb80cfb981c5421c89c11",
+      "bytes": 22481320,
+      "artifactGraphSha256": "66abf1d40b3e5d8dfc863edf872828a7781e8ceed1d991087e014ccb6b2bc6a0",
+      "immediateOriginalToCopyEqualityVerified": true
+    }
+  ],
+  "materialCeilingBytes": 268435456,
+  "transformed": false,
+  "privateFullManifest": "default-f7-source-manifest.json with all six actual Cargo artifact graphs",
+  "qualificationBoundary": "Default-feature executable custody, not signed-node/operator qualification; subsequent collector runs keep their own source and original failures.",
+  "signedCampaignQualified": false,
+  "productionApproval": false,
+  "issueClosure": false
+}

@@ -531,12 +531,12 @@ impl AdmissionAuthority for SupplyChainAuthority {
         // Structural history is checked under the single verification owner,
         // outside the currentness fence, before any policy/clock denial that may
         // retain non-authorizing historical metadata (as for web recovery).
-        let upload = receipt::Receipt::validate_retained_with_profile(
+        let retained = receipt::Receipt::validate_retained_with_profile(
             binding,
             upload,
             self.inner.manifest_profile,
         )?;
-        let prepared = verify::prepare_with_profile(upload, self.inner.manifest_profile)?;
+        let prepared = verify::prepare_retained(retained);
         let ledger = self
             .inner
             .ledger

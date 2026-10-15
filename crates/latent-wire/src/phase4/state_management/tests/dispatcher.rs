@@ -242,7 +242,10 @@ async fn actual_authenticated_dispatcher_receipt_is_historical_and_audit_failure
         }))
         .await
         .unwrap();
-    assert!(inspected.get_ref().dispatcher.as_ref().unwrap().paused);
+    let snapshot = inspected.get_ref().dispatcher.as_ref().unwrap();
+    assert!(snapshot.paused);
+    assert_eq!(snapshot.retained_attempt_bytes, 0);
+    assert!(snapshot.live_workers > 0);
     assert_eq!(capacity.snapshot().unwrap().recovery.slots, 1);
     drop(inspected);
     let original = control(&owner, "original-resume", c::DispatcherAction::Resume);

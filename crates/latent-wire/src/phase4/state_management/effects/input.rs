@@ -74,7 +74,7 @@ pub(super) fn native_request(
         actor_subject: actor(access),
         namespace: access.namespace.binding.namespace.0.clone(),
         incarnation: access.namespace.binding.incarnation,
-        caller_scope: access.caller.scope.clone(),
+        caller_scope: record.key().recovery_scope.clone(),
         command: record.id().hex(),
         command_attempt: record.attempt(),
         effect: effect.effect_id.clone(),

@@ -71,6 +71,7 @@ pub struct ManagementServices {
 pub struct ManagementServiceAdapter {
     services: ManagementServices,
     limits: ManagementLimits,
+    manifest_profile: latent_manifest::ManifestValidationProfile,
     policies: Option<latent_policy::capability::PolicyControlHandle>,
     capabilities: Option<capabilities::Inspection>,
     http: Option<Arc<latent_control_store::DirectoryDeploymentRepository>>,
@@ -101,6 +102,7 @@ impl ManagementServiceAdapter {
         Ok(Self {
             services,
             limits,
+            manifest_profile: latent_manifest::ManifestValidationProfile::default(),
             policies: None,
             capabilities: None,
             http: None,
@@ -108,6 +110,17 @@ impl ManagementServiceAdapter {
             web_backend: None,
             activations: None,
         })
+    }
+
+    /// Select the composition root's existing manifest profile. Requests cannot
+    /// change this immutable selection or create catalog or execution authority.
+    #[must_use]
+    pub const fn with_manifest_profile(
+        mut self,
+        profile: latent_manifest::ManifestValidationProfile,
+    ) -> Self {
+        self.manifest_profile = profile;
+        self
     }
 
     /// Attach the manager's existing bounded journal. This opens no observer,

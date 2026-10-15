@@ -17,6 +17,7 @@ mod restore_adoption;
 mod restore_receipt;
 mod restore_response;
 mod restore_stage;
+mod restored_resume;
 mod resume;
 
 fn restore_input(

@@ -19,6 +19,27 @@ CALLS = 0
 MAXIMUM_CALLS = 64
 
 
+# Exact public vocabulary from latent_core::error::ADMISSION_CURRENTNESS_REASONS.
+CURRENTNESS_REASONS = (
+    'admission-authority-busy', 'admission-authority-poisoned', 'admission-control-busy',
+    'admission-clock-lease-uncovered', 'admission-clock-regression', 'admission-durability-uncertain',
+    'admission-owner-retired', 'admission-restart-clock-floor', 'admission-verification-busy',
+    'signature-clock-regression', 'signature-trust-conflict', 'signature-stale-proof',
+)
+
+
+def currentness_reason(result):
+    details = result.get('error', {}).get('details', ())
+    if isinstance(details, list):
+        for detail in details:
+            if isinstance(detail, dict) and detail.get('kind') == 'admission.currentness':
+                fields = detail.get('fields')
+                reason = fields.get('reason') if isinstance(fields, dict) else None
+                if isinstance(reason, str) and reason in CURRENTNESS_REASONS:
+                    return reason
+    return None
+
+
 def call(*arguments, codes=(0,)):
     global CALLS
     CALLS += 1
@@ -30,9 +51,16 @@ def call(*arguments, codes=(0,)):
     if status not in codes:
         # Test-only evidence: retain closed native outcome metadata, never the
         # private credential, full command arguments or application payload.
-        files.replace(Path('/var/cache/lsf/qualification-command-failure.json'), encode({
+        diagnostic = {
             'exitCode': status, 'category': result.get('category'), 'code': result.get('error', {}).get('code'),
-            'outcomeKnown': result.get('outcomeKnown'), 'nativeCall': CALLS}))
+            'outcomeKnown': result.get('outcomeKnown'), 'nativeCall': CALLS,
+            'phase': 'trigger.apply' if arguments[:2] == ('trigger', 'apply') else 'unmapped',
+            'currentnessReason': currentness_reason(result)}
+        files.replace(Path('/var/cache/lsf/qualification-command-failure.json'), encode(diagnostic))
+        try:
+            print('container-qualification-command-failure: ' + json.dumps(diagnostic), file=sys.stderr, flush=True)
+        except (OSError, ValueError):
+            pass
     require(status in codes, 'container-qualification-command-failed')
     require(result.get('outcomeKnown') is True, 'container-qualification-unknown-outcome')
     return result

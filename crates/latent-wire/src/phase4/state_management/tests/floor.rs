@@ -487,10 +487,12 @@ async fn another_namespace_current_permission_cannot_disclose_original_floor_ope
     let mut binding = fixture::binding(first.publication.clone(), first.component.clone());
     binding.namespace = latent_core::StateNamespaceId("other-orders".into());
     super::super::authorization::validate_binding(&binding).unwrap();
-    Arc::get_mut(&mut fixture.backend.0)
-        .unwrap()
-        .bindings
-        .push(Arc::new(binding));
+    Arc::get_mut(&mut fixture.backend.0).unwrap().bindings.push(
+        super::super::captured_binding::CapturedBinding {
+            binding: Arc::new(binding),
+            recovery: None,
+        },
+    );
     let mut document = fixture.document.clone();
     for rule in document["rules"].as_array_mut().unwrap() {
         let scopes = rule["resources"]["scopes"].as_array_mut().unwrap();

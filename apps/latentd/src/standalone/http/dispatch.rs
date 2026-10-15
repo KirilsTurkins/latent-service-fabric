@@ -142,6 +142,7 @@ pub(super) fn begin(
                 invocation,
                 revision,
                 lease,
+                shared.services.clock.as_ref(),
             )?));
         }
     }

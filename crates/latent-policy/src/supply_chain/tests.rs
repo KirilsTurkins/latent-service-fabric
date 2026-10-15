@@ -21,6 +21,8 @@ mod preparation;
 #[cfg(target_os = "linux")]
 mod publications;
 #[cfg(target_os = "linux")]
+mod retained_recovery;
+#[cfg(target_os = "linux")]
 mod runtime;
 mod support;
 #[cfg(target_os = "linux")]

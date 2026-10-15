@@ -48,8 +48,9 @@ def source_variant(original: str) -> str:
     return source
 
 
-def create(directory: Path, name: str = "transaction-java-aggregate") -> Path:
-    project = create_schema(directory, "legacy-v1", name, effect="put-once")
+def create(directory: Path, name: str = "transaction-java-aggregate", *, http_profile: str | None = None) -> Path:
+    project = create_schema(directory, "legacy-v1", name,
+                            effect="current-http" if http_profile is not None else "put-once", http_profile=http_profile)
     original = read_file(project / SOURCE)
     source = source_variant(original.decode("utf-8")).encode("utf-8")
     (project / SOURCE).write_bytes(source)

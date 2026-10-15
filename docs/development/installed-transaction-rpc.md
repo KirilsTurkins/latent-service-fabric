@@ -47,6 +47,16 @@ revocation, original deadlines and retention cutoffs remain enforced through
 the final response frame. Receipt-only lookup follows identity retention after
 payload expiry.
 
+`GetEffect` requires current `inspect-effect` permission for the original caller
+scope and installed authorization publication. It uses the same protected
+recovery lane and retained namespace, policy and response owners. The getter
+validates the original command/attempt/commit/effect association and complete
+durable effect closure. It returns bounded metadata without a payload or any
+dispatch permission. Response or delivery-horizon expiry cannot change the
+persisted effect disposition, and an uncertain attempt supplies no inferred
+provider acknowledgement. Final response frames retain the original read
+authority and command identity cutoff.
+
 State-only commands and fresh queries are installed here. Deferred HTTP intent
 installation and application HTTP routes remain the #828/#409 integration.
 The preserved Java continuation collector still uses older HTTP/offline

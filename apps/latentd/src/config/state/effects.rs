@@ -13,7 +13,22 @@ pub struct DeferredHttpConfig {
     pub staging_policies: Vec<String>,
     pub dispatch_binding: String,
     pub dispatch_policies: Vec<String>,
+    #[serde(default, deserialize_with = "authority_present")]
+    pub dispatch_authority: Option<DeferredDispatchAuthority>,
 }
+}
+
+configuration_object! {
+#[derive(Clone)]
+pub struct DeferredDispatchAuthority {
+    pub format_version: u32,
+    pub mode: String,
+}
+}
+fn authority_present<'de, D: serde::Deserializer<'de>>(
+    source: D,
+) -> Result<Option<DeferredDispatchAuthority>, D::Error> {
+    DeferredDispatchAuthority::deserialize(source).map(Some)
 }
 
 pub(super) fn present<'de, D: serde::Deserializer<'de>>(
@@ -24,6 +39,13 @@ pub(super) fn present<'de, D: serde::Deserializer<'de>>(
 impl DeferredHttpConfig {
     pub(super) fn validate(&self) -> Result<(), PlatformError> {
         super::checked_digest(&self.requirements_digest)?;
+        if self.dispatch_authority.as_ref().is_some_and(|authority| {
+            authority.format_version != 1 || authority.mode != "signed-service-integration"
+        }) {
+            return Err(super::super::invalid(
+                "state.deferredHttp.dispatchAuthority",
+            ));
+        }
         if self.provider_incarnation.len() != 64
             || !self
                 .provider_incarnation
@@ -54,5 +76,8 @@ impl DeferredHttpConfig {
             }
         }
         Ok(())
+    }
+    pub(crate) fn service_integration(&self) -> bool {
+        self.dispatch_authority.is_some()
     }
 }

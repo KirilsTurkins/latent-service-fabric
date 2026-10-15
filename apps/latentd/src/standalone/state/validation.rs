@@ -153,10 +153,14 @@ fn only_initial_identity(
 
 type Validator = fn(&ReadView, &RowKey, &[u8]) -> Result<(), StoreError>;
 
-fn foreign_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+pub(in crate::standalone::state) fn foreign_row(
+    view: &ReadView,
+    key: &RowKey,
+    bytes: &[u8],
+) -> Result<(), StoreError> {
     // Only UnsupportedFormat delegates. A malformed owned row cannot be
     // rescued by another codec, a prefix label, or permissive opaque storage.
-    let validators: [Validator; 7] = [
+    let validators: [Validator; 11] = [
         latent_wire::phase4::StateManagementBackend::validate_operation_row,
         tenant::validate_row,
         latent_state::session::validate_row,
@@ -164,6 +168,22 @@ fn foreign_row(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreE
         |_, key, bytes| RecoveryGuard::validate_row(key, bytes),
         |_, key, bytes| StoreIdentity::validate_row(key, bytes),
         |_, key, bytes| latent_effects::dispatch_store::validate_row(key, bytes),
+        |_, key, bytes| {
+            latent_state::recovery::migration::AggregateMigrationProgress::validate_row(key, bytes)
+        },
+        |_, key, bytes| {
+            latent_state::recovery::resume::MigrationResumeReceipt::validate_row(key, bytes)
+        },
+        |_, key, bytes| {
+            latent_state::recovery::namespace_resume::NamespaceResumeReceipt::validate_row(
+                key, bytes,
+            )
+        },
+        |_, key, bytes| {
+            latent_state::recovery::restored_resume::RestoredMigrationResumeReceipt::validate_row(
+                key, bytes,
+            )
+        },
     ];
     for validator in validators {
         match validator(view, key, bytes) {

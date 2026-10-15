@@ -24,8 +24,18 @@ pub struct StateAuthorization {
     pub(super) budget: ActivationBudget,
     pub(super) role: Option<Arc<super::command_role::CommandRole>>,
     pub(super) retention: Option<Arc<super::TransactionRetention>>,
+    pub(super) cancelled_metadata: Option<Arc<super::cancellation::CancellationAbortPermit>>,
 }
 impl StateAuthorization {
+    pub(super) fn principal_kind(&self) -> latent_core::PrincipalKind {
+        self.principal.kind
+    }
+    pub(super) fn subject(&self) -> &str {
+        &self.principal.subject
+    }
+    pub(super) fn service(&self) -> &str {
+        &self.service
+    }
     pub(super) fn publication(&self) -> &str {
         self.publication.publication().as_str()
     }
@@ -91,6 +101,7 @@ impl StateAuthorization {
             budget,
             role: None,
             retention: None,
+            cancelled_metadata: None,
         })
     }
 
@@ -190,7 +201,13 @@ impl StateAuthorization {
             }
         }
         let cancelled = if completion {
-            self.budget.retained_authority_is_cancelled_at(now)
+            match &self.cancelled_metadata {
+                Some(permit) if matches!(operation, "commit" | "read-result") => {
+                    now >= permit.cutoff()?
+                }
+                Some(_) => true,
+                None => self.budget.retained_authority_is_cancelled_at(now),
+            }
         } else {
             self.budget.deadline().is_expired_at(now) || self.budget.descendant_is_cancelled()
         };
@@ -267,6 +284,30 @@ impl StateAuthorization {
             return Err(denied());
         }
         action(&decision)
+    }
+
+    pub(super) fn with_response_native(
+        &self,
+        native: &latent_core::native_capacity::NativeReservation,
+        cutoff: Instant,
+        publish: &mut dyn FnMut(),
+    ) -> Result<(), PlatformError> {
+        match &self.cancelled_metadata {
+            None => native
+                .with_live_until(cutoff, publish)
+                .map_err(|_| denied()),
+            Some(permit) => permit.with_native_pair_until(native, cutoff, publish),
+        }
+    }
+
+    pub(super) fn with_metadata_native_acceptance(
+        &self,
+        native: &latent_core::native_capacity::NativeReservation,
+    ) -> Result<(), PlatformError> {
+        match &self.cancelled_metadata {
+            Some(permit) => permit.with_native_pair(native, &mut || {}),
+            None => native.with_live(|| ()).map_err(|_| denied()),
+        }
     }
 
     pub(super) fn policy(&self) -> &PolicyStore {

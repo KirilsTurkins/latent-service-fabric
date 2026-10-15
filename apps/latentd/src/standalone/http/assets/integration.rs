@@ -186,6 +186,38 @@ impl Harness {
         let status = headers.split_whitespace().nth(1).unwrap().parse().unwrap();
         (status, headers, bytes[end..].to_vec())
     }
+    pub(super) async fn previous_response_retired(&self) {
+        loop {
+            let snapshot = self.owner.handle().snapshot();
+            if snapshot.connections == 0
+                && snapshot.exchanges == 0
+                && self.store().snapshot().active_reads == 0
+                && self
+                    .repository
+                    .web_read_snapshot()
+                    .is_ok_and(|reads| reads.active_reads == 0)
+            {
+                return;
+            }
+            tokio::task::yield_now().await;
+        }
+    }
+    pub(super) async fn serial_call(
+        &self,
+        method: &str,
+        path: &str,
+        extra: &str,
+        token: &str,
+    ) -> (u16, String, Vec<u8>) {
+        // Socket EOF precedes destruction of the captured route/read owner.
+        // One deadline covers its retirement and one request, without retries.
+        tokio::time::timeout_at(Instant::now() + Duration::from_secs(8), async {
+            self.previous_response_retired().await;
+            self.call(method, path, extra, token).await
+        })
+        .await
+        .expect("previous response retirement and one request")
+    }
     pub(super) async fn finish(self) {
         node_fixture::wait(|| {
             let snapshot = self.owner.handle().snapshot();

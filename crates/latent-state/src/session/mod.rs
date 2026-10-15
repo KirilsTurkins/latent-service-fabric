@@ -30,6 +30,7 @@ use std::{
 };
 pub use validation::validate_row;
 pub use validation::{inspect_cell, inspect_usage, tenant_for_row, ObservedCell, StateUsage};
+pub use validation::{inspect_cell_in_namespace, validate_row_in_namespace};
 static NEXT_SESSION: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -332,6 +333,11 @@ impl StateSession {
     #[must_use]
     pub fn charged_bytes(&self) -> (usize, usize) {
         (self.read_charge, self.stage_charge)
+    }
+    /// Actual distinct pending mutations; neither a sealed plan nor persistence.
+    #[must_use]
+    pub fn staged_mutation_count(&self) -> usize {
+        self.staged.len()
     }
     fn access(
         &mut self,

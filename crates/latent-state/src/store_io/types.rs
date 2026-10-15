@@ -168,7 +168,11 @@ pub struct StoreIoSnapshot {
     pub active_reads: usize,
     pub active_writes: usize,
     pub accepted: usize,
+    /// All charged bytes, including the resident engine and worker allocation.
     pub retained_bytes: u64,
+    /// Accepted work and affine resources, charged through physical destruction.
+    /// Excludes resident allocation; zero does not establish engine retirement.
+    pub retained_operation_bytes: u64,
     pub live_workers: usize,
     pub physical_owners: usize,
     pub queued_retirements: usize,

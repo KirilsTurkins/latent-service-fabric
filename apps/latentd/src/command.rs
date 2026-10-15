@@ -1,4 +1,6 @@
 //! Product command dispatch.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod inspection;
 #[cfg(target_os = "linux")]
 mod serve;
 #[cfg(any(target_os = "linux", test))]
@@ -35,6 +37,16 @@ enum Command {
         #[arg(long, value_name = "PATH")]
         config: PathBuf,
     },
+    /// Read checked current host proposals without opening the state engine.
+    InspectTransactionHosts {
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+    },
+    /// Preview actual configured HTTP effect fingerprints without publications.
+    InspectConfiguredHttpEffects {
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+    },
 }
 
 /// Handles the supported standalone node commands.
@@ -61,11 +73,31 @@ pub fn main_entry() -> ExitCode {
     let result = match command {
         Command::CheckConfig { config } => run_check_config(&config),
         Command::Serve { config } => run_serve(&config),
+        Command::InspectTransactionHosts { config } => run_inspection(&config),
+        Command::InspectConfiguredHttpEffects { config } => run_http_effect_inspection(&config),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(failure) => report_failure(failure),
     }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn run_inspection(path: &std::path::Path) -> Result<(), Failure> {
+    inspection::run(path)
+}
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+fn run_inspection(_path: &std::path::Path) -> Result<(), Failure> {
+    Err(Failure::new("platform", PlatformErrorCode::Unavailable))
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn run_http_effect_inspection(path: &std::path::Path) -> Result<(), Failure> {
+    inspection::http_effects(path)
+}
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+fn run_http_effect_inspection(_path: &std::path::Path) -> Result<(), Failure> {
+    Err(Failure::new("platform", PlatformErrorCode::Unavailable))
 }
 
 #[cfg(target_os = "linux")]

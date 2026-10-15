@@ -12,6 +12,35 @@ use latent_state::{
 };
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn two_kib_encoded_reply_keeps_the_complete_physical_provider_reservation() {
+    let fixture = Fixture::with_response_ceiling(Fault::HoldPostReply, 2048).await;
+    assert_eq!(fixture.rule.ceiling.maximum_response_bytes, 2048);
+    let mut too_small = fixture.rule.ceiling;
+    too_small.maximum_response_bytes = 2047;
+    assert!(fixture
+        .adapter
+        .rule(fixture.rule.scope.clone(), 1, 1, too_small)
+        .is_err());
+    let before = fixture.pool_snapshot().await;
+    let effect = fixture.commit("bounded-encoded-response").await;
+    fixture.owner.as_ref().unwrap().resume().unwrap();
+    fixture.proxy.wait_gate().await;
+    let held = fixture.pool_snapshot().await;
+    assert_eq!(held.running_requests, 1);
+    assert!(
+        held.metadata_bytes - before.metadata_bytes
+            >= super::super::qualification::RESPONSE_RESERVATION_BYTES as usize
+    );
+    assert_eq!(fixture.endpoint.counter().await, 1);
+    fixture.proxy.release();
+    fixture
+        .settled(&effect, Disposition::ProviderAcknowledged)
+        .await;
+    assert_eq!(fixture.pool_snapshot().await.running_requests, 0);
+    fixture.finish().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn declared_rejection_and_positive_abort_commit_no_http_intent_or_mutation() {
     let fixture = Fixture::new(Fault::Normal).await;
     terminal_without_delivery(&fixture, false).await;

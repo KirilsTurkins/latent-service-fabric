@@ -149,6 +149,21 @@ impl PolicyStore {
         self.with_current_decisions(&[&captured.borrowed(), operation], action)
     }
 
+    /// The original capture, a fresh operation and one retained extra authority
+    /// share one current policy/publication fence, without recursive locking.
+    pub fn with_captured_and_retained(
+        &self,
+        captured: &OwnedPolicyDecision,
+        operation: &SealedPolicyDecision<'_>,
+        retained: &OwnedPolicyDecision,
+        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        self.with_current_decisions(
+            &[&captured.borrowed(), operation, &retained.borrowed()],
+            action,
+        )
+    }
+
     /// Recheck the original retained owner, row stamps and publication under the
     /// existing short currentness fence. This does not acquire a replacement
     /// grant or expose a reusable borrowed authorization object. The callback
@@ -172,6 +187,19 @@ impl PolicyStore {
         captured: &[&OwnedPolicyDecision],
         action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
+        self.with_retained_decisions_and_dependencies(captured, &[], action)
+    }
+
+    /// Retain the original decisions and exact selected dependencies under one
+    /// policy/catalog/publication fence. Dependencies receive currentness checks,
+    /// never execution permission or a replacement policy decision. The bounded
+    /// callback must not wait, perform I/O or recursively enter either owner.
+    pub fn with_retained_decisions_and_dependencies(
+        &self,
+        captured: &[&OwnedPolicyDecision],
+        dependencies: &[ReleaseUseEligibility],
+        action: &mut dyn FnMut(&[&EvaluationInput<'_>]) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
         if captured.is_empty() || captured.len() > 8 {
             return Err(denied());
         }
@@ -180,7 +208,7 @@ impl PolicyStore {
             .map(|decision| decision.borrowed())
             .collect();
         let references: Vec<_> = borrowed.iter().collect();
-        self.with_current_decisions(&references, action)
+        self.with_current_decisions_dependencies(&references, dependencies, action)
     }
 }
 

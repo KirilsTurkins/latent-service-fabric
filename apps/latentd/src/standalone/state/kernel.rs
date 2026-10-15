@@ -82,7 +82,7 @@ impl StateKernel {
     }
 
     pub(super) fn is_running(&self, effects: &EffectRuntime) -> bool {
-        self.clock.sample().is_ok()
+        self.clock.is_live()
             && self.store.snapshot().is_ok_and(|snapshot| {
                 !snapshot.admission_closed
                     && !snapshot.quarantined
@@ -91,7 +91,10 @@ impl StateKernel {
             && effects
                 .snapshot()
                 .is_ok_and(|snapshot| !snapshot.admission_closed && !snapshot.quarantined)
-            && effects.command_admission_source().command_time().is_ok()
+            // This exact protected clock was sealed into the dispatcher at
+            // startup. Its serialized observations dominate the command floor;
+            // actual commands still recheck that floor under their own fence.
+            && effects.command_admission_source().check_liveness().is_ok()
     }
 
     /// The early empty authority in `bootstrap` is the same owner already
@@ -147,8 +150,13 @@ impl StateKernel {
             retire_failed_bootstrap(bootstrap).await;
             return Err(super::unavailable());
         }
+        // StateSettings derives this bit solely as a bootstrap hold, not an
+        // operator choice. The dedicated protected constructor installs that
+        // hold before spawning; durable operator intent remains separate.
+        let mut dispatcher = settings.dispatcher.clone();
+        dispatcher.start_paused = false;
         let protected = EffectRuntime::start_protected(ProtectedEffectStartup {
-            dispatcher: settings.dispatcher.clone(),
+            dispatcher,
             store: Arc::clone(&store),
             authority: bootstrap.authority.clone(),
             adapters,

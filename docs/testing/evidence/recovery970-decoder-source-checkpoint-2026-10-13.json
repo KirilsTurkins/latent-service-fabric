@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "latent.recovery970.decoder-source-checkpoint.v1",
+  "qualification": "bounded-native-library-controls-and-separate-ELF-product-transformation-only",
+  "sourceBoundary": {
+    "baseHead": "80341f5a67f3bc6223a9295bfa97427bf64f7520",
+    "sourceOverlayFileSha256": {
+      "apps/latentd/src/standalone/state/recovery/assets.rs": "c575ef9c86c0c3f3e8bfa7f3dac8db3c2fc9c380a3bdbc9698f3c6470d40e692",
+      "apps/latentd/src/standalone/state/recovery/authority.rs": "75d6f7a6431ae17ec4a2774bc3a76d6afb457d576b643adfd6b2eaa6fd66e62f",
+      "apps/latentd/src/standalone/state/recovery/catalog.rs": "a26a5ef291633e478d3f9176ab33a109c5edbf0061d3bdbac2b8e08bf3261e93",
+      "apps/latentd/src/standalone/state/recovery/codecs.rs": "651ddacb5b27f9d975cbdc1c55bb15ad8f8304bf74853a4b868bd40f66d12473",
+      "apps/latentd/src/standalone/state/recovery/operation.rs": "26aa480c4ea0358b5034ee10e380d7f0049d6013b2addf60fb00c1ddec725473",
+      "apps/latentd/src/standalone/state/recovery/profile.rs": "c55516cfc17b56874d47bfcbcd9127baa7ad44f778fa0ac77d162b5ecf402b8f",
+      "apps/latentd/src/standalone/state/recovery/request.rs": "54eedc3c8c14a764f6180dfcd2b7eb16fa097419bb03affacd054bc7cecfa034",
+      "apps/latentd/src/standalone/state/recovery/selection.rs": "30e0b226f884eb42745133f314a853c9a6fb54d334feb7bd0937552ce6387bce",
+      "crates/latent-policy/examples/capsule_authoring/current_java.rs": "18ab422159bf0fc0634f320c013e9f1a9b0f8c1e29365888704f35274b62c3c0",
+      "crates/latent-policy/examples/capsule_authoring/inputs.rs": "4686c6bced2cb43c1a3991af1d99929e6622e67b978ff059ead41170eda0c6f9",
+      "crates/latent-policy/examples/capsule_authoring/mod.rs": "3f2a7cf217fc50ea6277028741461f3fb29a2c86afe54958abefc917f627cb4a"
+    },
+    "postExecutionFormattingOnly": [
+      {
+        "path": "apps/latentd/src/standalone/state/recovery/profile.rs",
+        "executedFileSha256": "c4ca4faa877e23f84980dce6d9f922b184fe477c8560f2f4cffb095b0cd050bc",
+        "formattedFileSha256": "c55516cfc17b56874d47bfcbcd9127baa7ad44f778fa0ac77d162b5ecf402b8f",
+        "change": "rustfmt wraps one test string argument without changing its bytes"
+      }
+    ],
+    "completeCommittedExecutableTupleQualified": false
+  },
+  "nativeLibrary": {
+    "buildAttempt": 13,
+    "target": "latentd",
+    "features": [
+      "development-outbound-streams",
+      "development-test-node"
+    ],
+    "binarySha256": "502dcb0366c705b8b6777b1b35ab374ca6e465bde36cf44f5ec2c608c37455f1",
+    "passed": 326,
+    "failed": 0,
+    "existingIgnored": 30,
+    "outputSha256": "e9d7df0a745db624a59919b39b20536594e9ee4a72fd4e258438d235fad3869f"
+  },
+  "maintainedClippy": {
+    "command": [
+      "cargo",
+      "+1.97.1",
+      "clippy",
+      "-p",
+      "latentd",
+      "--all-targets",
+      "--all-features",
+      "--locked",
+      "--offline",
+      "--no-deps",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exitCode": 0,
+    "outputSha256": "1b6afbefbacb5008cdbe9d96a2753cdfde3cd1cd09b1037974bcd39b3cbae17f"
+  },
+  "defaultRawAndTransformedProducts": {
+    "source": {
+      "head": "a37aa97780a15aee55b049cdb23833b0474386d6",
+      "tree": "b195ad41fcc31c84144b3610bc60afafd7236ed3",
+      "archive": "default-source-a37aa97780a15aee55b049cdb23833b0474386d6.tar",
+      "archiveSha256": "4c0174a1cbad834aba6693b7bb1f7fd209095604f852971d11ae98c8f66c0d44",
+      "sourceRoot": "/work/recovery970-default-a37aa97780a1-20261013",
+      "binaryRoot": "/work/recovery970-default-binaries-a37aa97780a1-20261013"
+    },
+    "tool": {
+      "path": "/usr/bin/x86_64-linux-gnu-strip",
+      "sha256": "6e44c8c1a99c9fe1eabee43c488ecd8bbc8147b2543ba91668990327ba4d24f8",
+      "version": "GNU strip (GNU Binutils for Debian) 2.40"
+    },
+    "rawCargoManifestSha256": "d8393cfff24ff95857e6f515c7e794e0227f4a76ef94faa66e24ca6c8c04703d",
+    "transformationReceiptSha256": "02896ebd3e27d6ff90f6addea070547c75f10a2ea2f80bc0f46404b8133c8337",
+    "originalMaterialCeilingBytes": 268435456,
+    "products": [
+      {
+        "role": "contracts_tool",
+        "rawSha256": "8a235072784b10d616dd8eaffd3a7d0ec536b93bb096bed2452bc9c9b32befd1",
+        "rawBytes": 104818624,
+        "sha256": "8a235072784b10d616dd8eaffd3a7d0ec536b93bb096bed2452bc9c9b32befd1",
+        "bytes": 104818624,
+        "features": [],
+        "allocatedSectionsAndProgramHeadersIdentical": true,
+        "transformation": "unchanged exact copy",
+        "allocatedElfAndProgramHeaderIdentitySha256": "f27524ee7c5563b7ef5c6cef140c5533fae39ca050af4dfc5837efe53f65fcba"
+      },
+      {
+        "role": "node",
+        "rawSha256": "1ef7ae4c3782a417a6bc61ff8f01c52e76f8c32de7994d24d022885a46362983",
+        "rawBytes": 929970312,
+        "sha256": "cd8b5d97522c7b96c70ba6161b64069e1ec4e3d9463a3796f63724b598c1429e",
+        "bytes": 185690104,
+        "features": [],
+        "allocatedSectionsAndProgramHeadersIdentical": true,
+        "transformation": "strip --strip-debug",
+        "allocatedElfAndProgramHeaderIdentitySha256": "017dd6fb44b7a647059bc1f45d53aba8a3732fb7fa45b5c824b6aae0ac18b28f"
+      },
+      {
+        "role": "recovery_helper",
+        "rawSha256": "149aa80ad87671ae00c2b5d2c6652009aa66a90f5514537208d303319fd549c4",
+        "rawBytes": 954865592,
+        "sha256": "ee0a594f436e4ba126fdcb637e7bc00b12cba6a4bd2033dbff0145cef7bedcbc",
+        "bytes": 190097560,
+        "features": [],
+        "allocatedSectionsAndProgramHeadersIdentical": true,
+        "transformation": "strip --strip-debug",
+        "allocatedElfAndProgramHeaderIdentitySha256": "10a60e2bce4c1f3ab389a5ba37d4f37d70e6294c424b304e11e81ad669ccc154"
+      },
+      {
+        "role": "cli",
+        "rawSha256": "4d2f40d6b030252befad71ec15c509a84d2b21d12a25a59a3cdb5b75169c4817",
+        "rawBytes": 457571984,
+        "sha256": "0ba815e76ca69fc28e5afb25239326598ec6726aa5766436ec302bd7c21f0812",
+        "bytes": 68671256,
+        "features": [],
+        "allocatedSectionsAndProgramHeadersIdentical": true,
+        "transformation": "strip --strip-debug",
+        "allocatedElfAndProgramHeaderIdentitySha256": "5c820b54b6156abc4861c37dc423a81560772ea5c8ffe4c06916a3cd28ff3ce6"
+      },
+      {
+        "role": "aot_compiler",
+        "rawSha256": "ff0d2e8b6931bb9852ff85ca73aa34d74665b98f2a5badeeaf82838bd31106a5",
+        "rawBytes": 484946056,
+        "sha256": "ef889c264c251b32d4b04b8d43980da9a85ee144724c6b207a53e3e5c69ea363",
+        "bytes": 42155984,
+        "features": [],
+        "allocatedSectionsAndProgramHeadersIdentical": true,
+        "transformation": "strip --strip-debug",
+        "allocatedElfAndProgramHeaderIdentitySha256": "aeeb766b17ae8fb6b6427f7b2f0e524d7573963f71ee85dd70fa2773911010f2"
+      },
+      {
+        "role": "signer",
+        "rawSha256": "6672717d6d2239c8627329954ba86082639908eb59ddd30ff2ed2d5144c83440",
+        "rawBytes": 146104192,
+        "sha256": "6672717d6d2239c8627329954ba86082639908eb59ddd30ff2ed2d5144c83440",
+        "bytes": 146104192,
+        "features": [],
+        "allocatedSectionsAndProgramHeadersIdentical": true,
+        "transformation": "unchanged exact copy",
+        "allocatedElfAndProgramHeaderIdentitySha256": "d3c141edfccbd1574287357e583ec959c2e42ab54a5c7ec154da9ae22347e617"
+      }
+    ],
+    "originalCargoArtifactsPreserved": true,
+    "allocatedElfSectionsAndProgramHeadersPreserved": true,
+    "executableCodeOptimized": false,
+    "guestOptimizationChanged": false
+  },
+  "remaining": [
+    "actual one-publication bootstrap sequence",
+    "complete authenticated current Java backup/restore/close campaign with fresh native tuple",
+    "restored-node explicit policy reauthorization",
+    "clean-host packaged operator qualification and independent acceptance review"
+  ]
+}

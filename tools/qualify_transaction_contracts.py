@@ -161,7 +161,7 @@ def compile_contract(language: str, output: Path, commands: Commands, *, tools: 
     work = project(language, output)
     # The captured project owns global.json/go.mod and its exact SDK selection.
     # Running managed compiler probes in ROOT can instead select the operator's
-    # .NET SDK 8.0.425; execute from the same source root as its maintained build.
+    # .NET SDK 8.0.426; execute from the same source root as its maintained build.
     commands.root = work
     if language == "go":
         from tools.go_guest.compiler import Compiler

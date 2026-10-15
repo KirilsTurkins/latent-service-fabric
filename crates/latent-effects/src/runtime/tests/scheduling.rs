@@ -149,7 +149,10 @@ async fn pause_and_current_revocation_prevent_claim_without_refunding_unrelated_
         fixture.record(&authority).await.disposition(),
         Disposition::Pending
     );
-    assert_eq!(dispatcher.snapshot().unwrap().claims, 0);
+    let paused = dispatcher.snapshot().unwrap();
+    assert_eq!(paused.claims, 0);
+    assert_eq!(paused.retained_attempt_bytes, 0);
+    assert!(paused.live_workers > 0);
     let mut revoked = rule("tenant-a", "publication", profile("test.v1"));
     revoked.policy_revision = 2;
     revoked.enabled = false;

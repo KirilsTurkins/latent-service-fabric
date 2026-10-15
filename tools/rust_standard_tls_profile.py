@@ -21,8 +21,8 @@ ORIGINALS = {
     'std/src/rt.rs': 'f435576c645fb30eaca560e819c2a113b556452d79c0303f49ffd4487018c01f',
 }
 PINS = {
-    'wasmtime': ('48.0.5', 'b94eda6b1c1d8ade526a67e4ce50cc6234d1c7af68e5d7bf13f40bc07e70daba'),
-    'wasmtime-environ': ('48.0.5', '84ca4865ece3a37abb34c2df96c741ff4aed308d35744d84095cff79848752d4'),
+    'wasmtime': ('48.0.6', '3a26206e1b2f1403d4d17c8fa7e736b693d7e9b1a7b9a5bf860e1c580472704d'),
+    'wasmtime-environ': ('48.0.6', 'ca61f6e56877ffa9633e0d1ee3ee01c4b5dd08d8e1609417a245b496163526af'),
     'wit-bindgen': ('0.62.0', '53cb4b5556c3a791e86838ea287782bdafa704d55b0e68b5b81a3a16b9ea5f4b'),
 }
 RECIPE = ('tools/rust_standard_tls_profile.py', 'sdk/rust-standard-runtime/tls.rs',

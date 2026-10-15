@@ -247,5 +247,23 @@ pub(crate) fn require_no_incomplete(
     Ok(())
 }
 
+/// A completed current migration has its own protected checkpoint/activation
+/// owner. Generic restored-namespace resume cannot substitute an old receipt.
+pub(crate) fn require_no_retained_migration(
+    view: &ReadView,
+    namespace: &NamespaceRecord,
+) -> Result<(), StoreError> {
+    require_no_incomplete(view, namespace)?;
+    let mut prefix = PROGRESS_PREFIX.to_vec();
+    prefix.extend_from_slice(
+        &namespace_record_key(&namespace.tenant, &namespace.id).map_err(|_| StoreError::Invalid)?,
+    );
+    prefix.extend_from_slice(&namespace.version.incarnation.to_le_bytes());
+    if view.contains_prefix(Family::Maintenance, &prefix)? {
+        return Err(StoreError::UnsupportedFormat);
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 pub(crate) mod tests;

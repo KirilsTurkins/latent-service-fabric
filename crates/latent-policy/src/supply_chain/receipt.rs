@@ -5,6 +5,7 @@ use latent_artifacts::package::{
 };
 use latent_artifacts::{
     AdmissionBinding, AdmissionEvidence, AdmissionStorageLimits, PackageAdmissionUpload,
+    ReleaseEvidenceUpload,
 };
 use latent_core::{ArtifactBlobDigest, PackageDigest, PlatformError, PlatformErrorCode};
 use latent_packaging::{
@@ -42,6 +43,41 @@ pub(super) struct Receipt {
     pub verified_at: u64,
     pub valid_until: u64,
 }
+/// Checked retained content and historical association, never current authority.
+/// Only the retained receipt validator constructs this same-profile owner.
+pub(super) struct Retained {
+    bundle: PackageBundle,
+    evidence: ReleaseEvidenceUpload,
+}
+
+impl Retained {
+    pub(super) fn into_parts(self) -> (PackageBundle, ReleaseEvidenceUpload) {
+        (self.bundle, self.evidence)
+    }
+
+    #[cfg(test)]
+    fn into_upload(self) -> PackageAdmissionUpload {
+        let BundleInput {
+            manifest,
+            configuration,
+            layers,
+        } = self.bundle.into_input();
+        let ReleaseEvidenceUpload {
+            signatures,
+            provenance,
+            sboms,
+        } = self.evidence;
+        PackageAdmissionUpload {
+            manifest,
+            configuration,
+            layers,
+            signatures,
+            provenance,
+            sboms,
+        }
+    }
+}
+
 impl Receipt {
     /// Binds historical display fields to the original checked bytes before a
     /// current policy denial may retain non-authorizing history. Parsed identity
@@ -56,13 +92,14 @@ impl Receipt {
             upload,
             latent_manifest::ManifestValidationProfile::default(),
         )
+        .map(Retained::into_upload)
     }
 
     pub fn validate_retained_with_profile(
         binding: &AdmissionBinding,
         upload: PackageAdmissionUpload,
         manifest_profile: latent_manifest::ManifestValidationProfile,
-    ) -> Result<PackageAdmissionUpload, PlatformError> {
+    ) -> Result<Retained, PlatformError> {
         let old = Self::validate_history(binding)?;
         AdmissionStorageLimits::default().check_upload(&upload, 64 * 1024 * 1024)?;
         if upload.signatures.len() != 1 || upload.provenance.len() != 1 {
@@ -103,18 +140,13 @@ impl Receipt {
         }
         old.check_signatures(&subject, &signatures[0], &provenance[0], &bundle)?;
         old.check_sboms(&bundle, &sboms)?;
-        let BundleInput {
-            manifest,
-            configuration,
-            layers,
-        } = bundle.into_input();
-        Ok(PackageAdmissionUpload {
-            manifest,
-            configuration,
-            layers,
-            signatures,
-            provenance,
-            sboms,
+        Ok(Retained {
+            bundle,
+            evidence: ReleaseEvidenceUpload {
+                signatures,
+                provenance,
+                sboms,
+            },
         })
     }
 

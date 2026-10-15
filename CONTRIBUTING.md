@@ -81,6 +81,40 @@ Normal validation excludes expensive ignored acceptance tests; request
 100,000-release catalog scaling, native profiling, and long resource soaks only
 through their documented explicit commands or manual workflow inputs.
 
+## Commit history and evidence
+
+For temporary stacked review, target the parent branch and identify the parent
+PR in the description. Review only the child leaf with
+`git log origin/<parent-branch>..HEAD` and
+`git diff origin/<parent-branch>...HEAD`. Preserve temporary integration history
+on separate refs while the parent is under review.
+
+After the parent has actually been squash-merged, reconstruct the reviewed leaf
+on current `development` and restore the PR base to `development`. Before final
+review, inspect both `git log origin/development..HEAD` and
+`git diff origin/development...HEAD`: they must describe the actual PR diff
+without presenting the parent's original commits, checkpoint merges or already
+delivered work as new changes. Run fresh main and security CI on that final
+head and base. Branch-filtered security workflows may not run against a
+temporary parent base; earlier stacked checks do not replace final-base CI.
+
+Use factual commit messages. Describe what the commit changes; claim a test,
+qualification, merge or issue closure only when the recorded evidence establishes
+that outcome for its exact source. A compiler build, signed package or focused
+test pass does not establish full runtime or ticket acceptance. Do not fabricate
+authors, dates, test results or completion claims to make a history appear clean.
+
+Before rewriting an existing PR branch, coordinate ownership, preserve its exact
+old head on a separate ref, and compare the resulting tree and diff against the
+intended source. Push with an explicit `--force-with-lease` for the observed old
+head; stop if another writer has advanced it. Do not discard another contributor's
+work or erase failed attempts and source snapshots to simplify the history.
+
+Rewritten commit IDs do not change what historical evidence tested. Keep its
+original source IDs and artifact digests, rerun the affected checks, and require
+fresh CI on the rewritten head. Review is incomplete until the PR description,
+commit history, final diff and validation claims agree.
+
 For the isolated compiler and native-cache tests, see the
 [prepared AOT test input guide](docs/development/aot-test-inputs.md) for build-free
 execution, exact executable authentication, and explicit equal-case cost comparisons.

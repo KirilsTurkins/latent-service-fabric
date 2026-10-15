@@ -307,6 +307,16 @@ impl Fixture {
         fault: proxy::Fault,
         authorization: Option<Arc<dyn super::super::DeferredHttpAuthorization>>,
     ) -> Self {
+        Self::configured(fault, authorization, 32768).await
+    }
+    pub async fn with_response_ceiling(fault: proxy::Fault, maximum_response_bytes: u64) -> Self {
+        Self::configured(fault, None, maximum_response_bytes).await
+    }
+    async fn configured(
+        fault: proxy::Fault,
+        authorization: Option<Arc<dyn super::super::DeferredHttpAuthorization>>,
+        maximum_response_bytes: u64,
+    ) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
         let root = tempfile::tempdir_in(base).unwrap();
@@ -364,7 +374,7 @@ impl Fixture {
                 1,
                 DispatchCeiling {
                     maximum_payload_bytes: 8192,
-                    maximum_response_bytes: 32768,
+                    maximum_response_bytes,
                     maximum_attempts: 3,
                     maximum_age_millis: 10_000,
                     attempt_timeout_millis: 5000,

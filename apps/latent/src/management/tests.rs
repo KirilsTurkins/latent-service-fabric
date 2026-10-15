@@ -61,6 +61,7 @@ fn activation_tree_preserves_future_enums_numeric_presence_and_history_gaps() {
     let node = &value["nodes"][0];
     assert_eq!(node["lastUpdatedUnixMillis"], u64::MAX.to_string());
     assert!(node["grantedBudget"].is_null());
+    assert!(node["transactionStaging"].is_null());
     assert!(!node["diagnosticIsTerminal"].as_bool().unwrap());
     let diagnostic = &node["diagnostic"];
     assert_eq!(diagnostic["stage"], 777);
@@ -82,6 +83,49 @@ fn activation_tree_preserves_future_enums_numeric_presence_and_history_gaps() {
     assert_eq!(gap["historyAvailable"], false);
     assert_eq!(gap["cursorExpired"], true);
     assert_eq!(gap["externalCompletion"], "unknown");
+}
+
+#[test]
+fn activation_tree_staging_preserves_original_claim_and_full_width_unsigned_progress() {
+    let witness = proto::TransactionStagingWitness {
+        schema_version: 1,
+        activation_serial: u64::MAX,
+        command_id: "1".repeat(64),
+        attempt_id: "2".into(),
+        transaction_id: "3".repeat(64),
+        publication_id: format!("publication:sha256:{}", "4".repeat(64)),
+        staged_mutations: 2,
+        captured_intents: 2,
+        state_write_bytes: u64::MAX,
+        observed_at_unix_millis: u64::MAX,
+    };
+    let value = response::activation_tree(proto::InspectActivationTreeResponse {
+        schema_version: 1,
+        retained_history_only: true,
+        history_available: true,
+        page: Some(proto::PageResponse::default()),
+        nodes: vec![proto::ActivationTreeNode {
+            activation_id: "command".into(),
+            root_activation_id: "command".into(),
+            transaction_staging: Some(witness.clone()),
+            ..proto::ActivationTreeNode::default()
+        }],
+        ..proto::InspectActivationTreeResponse::default()
+    })
+    .unwrap()
+    .data;
+    let actual = &value["nodes"][0]["transactionStaging"];
+    assert_eq!(actual["schemaVersion"], 1);
+    assert_eq!(actual["activationSerial"], u64::MAX.to_string());
+    assert_eq!(actual["commandId"], witness.command_id);
+    assert_eq!(actual["attemptId"], witness.attempt_id);
+    assert_eq!(actual["transactionId"], witness.transaction_id);
+    assert_eq!(actual["publicationId"], witness.publication_id);
+    assert_eq!(actual["stagedMutations"], 2);
+    assert_eq!(actual["capturedIntents"], 2);
+    assert_eq!(actual["stateWriteBytes"], u64::MAX.to_string());
+    assert_eq!(actual["observedAtUnixMillis"], u64::MAX.to_string());
+    assert_eq!(value["externalCompletion"], "unknown");
 }
 
 fn deployment() -> proto::Deployment {
@@ -127,7 +171,11 @@ fn unrepresentable_publication_receipts_are_rejected_without_coercion() {
 fn deployment_version_is_exact_and_manifest_numeric_fields_stay_canonical() {
     let expected = deployment();
     bounds::checked(&expected, 4096).unwrap();
-    let value = response::deployment(expected).unwrap();
+    let value = response::deployment(
+        expected,
+        latent_manifest::ManifestValidationProfile::default(),
+    )
+    .unwrap();
     assert_eq!(value["generation"], u64::MAX.to_string());
     assert_eq!(value["manifest"]["metadata"]["name"], "echo-production");
     assert_eq!(value["manifest"]["spec"]["resources"]["cpuFuel"], 1_000_000);
@@ -135,13 +183,46 @@ fn deployment_version_is_exact_and_manifest_numeric_fields_stay_canonical() {
 }
 
 #[test]
+fn transaction_deployment_projection_requires_selected_profile_without_relaxing_identity() {
+    use clap::Parser;
+    let profile = crate::args::Cli::try_parse_from(["latent", "--phase4", "node", "list"])
+        .unwrap_or_else(|_| panic!("test command"))
+        .manifest_profile()
+        .unwrap();
+    let mut expected = deployment();
+    expected.resources.as_mut().unwrap().state_read_bytes = 4096;
+    expected.resources.as_mut().unwrap().state_write_bytes = 8192;
+    assert!(response::deployment(
+        expected.clone(),
+        latent_manifest::ManifestValidationProfile::default()
+    )
+    .is_err());
+    let value = response::deployment(expected.clone(), profile).unwrap();
+    assert_eq!(
+        value["manifest"]["spec"]["resources"]["stateReadBytes"],
+        4096
+    );
+    assert_eq!(
+        value["manifest"]["spec"]["resources"]["stateWriteBytes"],
+        8192
+    );
+    assert_eq!(value["generation"], u64::MAX.to_string());
+    expected.id = "different-deployment".to_owned();
+    assert!(response::deployment(expected, profile).is_err());
+}
+
+#[test]
 fn malformed_deployment_identity_and_missing_budget_fail_conversion() {
     let mut value = deployment();
     value.id = "another-deployment".to_owned();
-    assert!(response::deployment(value).is_err());
+    assert!(
+        response::deployment(value, latent_manifest::ManifestValidationProfile::default()).is_err()
+    );
     let mut value = deployment();
     value.resources = None;
-    assert!(response::deployment(value).is_err());
+    assert!(
+        response::deployment(value, latent_manifest::ManifestValidationProfile::default()).is_err()
+    );
     let mut value = deployment();
     value.generation = 0;
     assert!(bounds::checked(&value, 4096).is_err());

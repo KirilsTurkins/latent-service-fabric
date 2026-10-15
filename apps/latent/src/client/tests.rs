@@ -18,6 +18,7 @@ fn session(allowance: Duration) -> Session {
         dispatched: AtomicBool::new(false),
         maximum_request: 4096,
         maximum_response: 4096,
+        manifest_profile: latent_manifest::ManifestValidationProfile::default(),
     }
 }
 

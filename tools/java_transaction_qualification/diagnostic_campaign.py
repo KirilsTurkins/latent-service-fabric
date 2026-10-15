@@ -12,7 +12,7 @@ import socket
 import threading
 import time
 
-from . import configuration as cfg, http, lifecycle, provider
+from . import configuration as cfg, http, lifecycle, provider, read_observer
 from .diagnostic_inputs import LIMITS, NAME
 from .inputs import require
 
@@ -30,13 +30,18 @@ STAGING_FIELDS = {"schemaVersion", "activationSerial", "commandId", "attemptId",
                   "publicationId", "stagedMutations", "capturedIntents", "stateWriteBytes", "observedAtUnixMillis"}
 
 
+def stage_write_bytes(operation):
+    require(operation in {"put-once", "http"}, "explicit-captured-intent-operation")
+    return STAGE_WRITE_BYTES - len("put-once") + len(operation)
+
+
 def unsigned(value):
     require(isinstance(value, str) and re.fullmatch(r"0|[1-9][0-9]{0,19}", value)
             and int(value) <= 2**64 - 1, "original-terminal-unsigned-consumption")
     return int(value)
 
 
-def staging_witness(node, record, original=None):
+def staging_witness(node, record, original=None, *, intent_operation="put-once"):
     """Consume privileged original-host evidence; accounting cannot create it."""
     witness = node.get("transactionStaging")
     require(isinstance(witness, dict) and set(witness) == STAGING_FIELDS,
@@ -51,7 +56,10 @@ def staging_witness(node, record, original=None):
             and isinstance(witness["publicationId"], str)
             and re.fullmatch(r"publication:sha256:[0-9a-f]{64}", witness["publicationId"]),
             "original-staging-serial-and-immutable-claim-identity")
-    require(isinstance(record, dict) and record.get("metadataDurable") is True
+    require(isinstance(record, dict) and (record.get("outcome") == "COMMAND_OUTCOME_ABORTED"
+                and record.get("metadataDurable") is True
+            or record.get("outcome") == "COMMAND_OUTCOME_RECOVERY_REQUIRED"
+                and record.get("metadataDurable") is False)
             and isinstance(record.get("source"), dict)
             and witness["commandId"] == record.get("commandId")
             and witness["attemptId"] == record.get("attemptId")
@@ -63,6 +71,13 @@ def staging_witness(node, record, original=None):
                 and witness["attemptId"] == proof.get("attemptId")
                 and witness["transactionId"] == proof.get("transactionId"),
                 "staging-witness-matches-original-abort-transaction")
+    else:
+        require(record.get("outcome") == "COMMAND_OUTCOME_RECOVERY_REQUIRED"
+                and isinstance(record.get("retention"), dict)
+                and isinstance(record["retention"].get("requiredRecordIds"), list)
+                and len(record["retention"]["requiredRecordIds"]) == 3
+                and witness["transactionId"] == record["retention"]["requiredRecordIds"][2],
+                "staging-witness-matches-original-pending-transaction")
     grant = node.get("grantedBudget")
     require(isinstance(grant, dict) and set(grant) == set(LIMITS), "actual-original-staging-grant")
     for name, expected in LIMITS.items():
@@ -70,7 +85,7 @@ def staging_witness(node, record, original=None):
         require(type(value) is int and value == expected, "original-diagnostic-grant-unchanged")
     require(type(witness["stagedMutations"]) is int and witness["stagedMutations"] == 1
             and type(witness["capturedIntents"]) is int and witness["capturedIntents"] == grant["effectCount"] == 1
-            and STAGE_WRITE_BYTES < unsigned(witness["stateWriteBytes"]) <= unsigned(grant["stateWriteBytes"])
+            and stage_write_bytes(intent_operation) < unsigned(witness["stateWriteBytes"]) <= unsigned(grant["stateWriteBytes"])
             and unsigned(witness["observedAtUnixMillis"]) >= unsigned(node["receivedAtUnixMillis"]),
             "actual-post-insertion-state-put-and-captured-intent-progress")
     if original is not None:
@@ -78,7 +93,7 @@ def staging_witness(node, record, original=None):
     return dict(witness)
 
 
-def staged_terminal(status, node, kind, record, original_witness=None):
+def staged_terminal(status, node, kind, record, original_witness=None, *, intent_operation="put-once"):
     require(kind in EXPECTED and status["activationId"] == node["activationId"]
             and status["phase"] == node["phase"] == "running" and node["targetService"] == cfg.SERVICE
             and node["parentActivationId"] is None and node["rootActivationId"] == status["activationId"]
@@ -91,7 +106,7 @@ def staged_terminal(status, node, kind, record, original_witness=None):
     require(isinstance(record, dict) and record.get("outcome") == "COMMAND_OUTCOME_ABORTED"
             and record.get("applicationStateCommitted") is False and isinstance(record.get("provenAbort"), dict),
             "original-terminal-durable-abort-required")
-    witness = staging_witness(node, record, original_witness)
+    witness = staging_witness(node, record, original_witness, intent_operation=intent_operation)
     require(unsigned(witness["observedAtUnixMillis"]) <= unsigned(status["terminalAtUnixMillis"]),
             "captured-intent-observation-precedes-original-terminal-record")
     consumption, budget = status["finalConsumption"], node["grantedBudget"]
@@ -105,7 +120,7 @@ def staged_terminal(status, node, kind, record, original_witness=None):
     for name, expected in LIMITS.items():
         value = budget[name] if name in NARROW else unsigned(budget[name])
         require(type(value) is int and value == expected, "original-diagnostic-grant-unchanged")
-    require(used["effectCount"] == 1 and used["stateWriteBytes"] > STAGE_WRITE_BYTES
+    require(used["effectCount"] == 1 and used["stateWriteBytes"] > stage_write_bytes(intent_operation)
             and 0 < used["cpuFuel"] <= LIMITS["cpuFuel"] and 0 < used["peakMemoryBytes"] <= LIMITS["memoryBytes"]
             and 0 < used["wallTimeMicros"] <= LIMITS["wallTimeLimitMillis"] * 1000
             and used["stateReadBytes"] <= LIMITS["stateReadBytes"]
@@ -145,10 +160,15 @@ def aborted(record, result, item, publication, key):
             "same-original-durable-server-issued-abort-fence")
 
 
-def unchanged(before, after, recipient_before, recipient_after):
+def unchanged(before, after, recipient_before, recipient_after, *, current_http=False):
     require(before["count"] == after["count"] and before["key-version"] == after["key-version"],
             "post-stage-abort-preserves-original-business-state")
-    require(all(recipient_before[name] == recipient_after[name] == 0 for name in provider.COUNTERS),
+    require(type(current_http) is bool, "explicit-post-stage-recipient-protocol")
+    if current_http:
+        from .current_recipient import COUNTERS
+    else:
+        COUNTERS = provider.COUNTERS
+    require(all(recipient_before[name] == recipient_after[name] == 0 for name in COUNTERS),
             "no-recipient-put-or-external-effect-after-staged-abort")
 
 
@@ -235,6 +255,7 @@ class PendingHttp:
 class DiagnosticCampaign:
     def __init__(self, campaign, diagnostic):
         self.campaign, self.client, self.input = campaign, campaign.client, diagnostic
+        self.intent_operation = "http" if getattr(campaign.peer, "current_http", False) else "put-once"
         self.publication = campaign.publications[NAME]
 
     def terminal(self, identity, kind, record, original_witness=None):
@@ -243,7 +264,8 @@ class DiagnosticCampaign:
         require(tree["schemaVersion"] == 1 and tree["historyAvailable"] is True and not tree["cursorExpired"]
                 and tree["nextPageToken"] is None and len(tree["nodes"]) == 1,
                 "one-original-terminal-command-activation")
-        staged_terminal(status, tree["nodes"][0], kind, record, original_witness)
+        staged_terminal(status, tree["nodes"][0], kind, record, original_witness,
+                        intent_operation=getattr(self, "intent_operation", "put-once"))
         return {"status": status, "tree": tree}
 
     def cancel(self, pending, before, key):
@@ -261,10 +283,7 @@ class DiagnosticCampaign:
         else:
             raise ValueError("original-cancel-root-not-observed")
         record = self.original_attempt(pending, key, until)
-        require(record["outcome"] == "COMMAND_OUTCOME_IN_PROGRESS" and record["metadataDurable"] is True
-                and record["source"]["publicationId"] == self.publication
-                and record["source"]["componentDigest"] == self.input.item.component_digest
-                and record["key"]["clientKey"] == key, "actual-original-precommit-command-attempt")
+        read_observer.pending_claim(record, self.publication, self.input.item.component_digest, key)
         live = self.live_staging(pending, identity, record, until)
         with lifecycle.as_user(self.client):
             result = self.client.call("transaction", "cancel", *lifecycle.namespace_arguments(self.publication),
@@ -296,7 +315,8 @@ class DiagnosticCampaign:
                     "original-precommit-root-and-current-live-stage")
             if node.get("transactionStaging") is not None:
                 require(node["phase"] == "running", "original-running-captured-intent-host")
-                return staging_witness(node, record)
+                return staging_witness(node, record,
+                    intent_operation=getattr(self, "intent_operation", "put-once"))
             remaining = until - time.monotonic()
             require(remaining > 0, "original-staging-observation-expired")
             time.sleep(min(0.05, remaining))
@@ -305,20 +325,24 @@ class DiagnosticCampaign:
     def original_attempt(self, pending, key, until):
         # Root admission precedes preparation and the durable claim. These are
         # finite reads of the same key, never another mutation or new deadline.
-        for _ in range(8):
+        until = min(until, self.client.deadline)
+        for attempt in range(8):
             require(pending.thread.is_alive() and time.monotonic() < until,
                     "original-command-not-running-for-cancel")
             with lifecycle.as_user(self.client):
                 observed = self.client.call("transaction", "lookup", *lifecycle.namespace_arguments(self.publication),
-                    "--operation", "update", "--client-key", key, codes=(0, 6))
-            require(observed["outcomeKnown"] is True, "original-command-lookup-certainty")
-            if observed["category"] == "success":
-                return observed["data"]["command"]
-            require(observed["category"] == "not-found" and observed["data"].get("command") is None,
-                    "original-command-lookup-refusal")
-            remaining = until - time.monotonic()
-            require(remaining > 0, "original-command-not-running-for-cancel")
-            time.sleep(min(0.05, remaining))
+                    "--operation", "update", "--client-key", key, codes=(0, 5, 6),
+                    timeout=min(25, until - time.monotonic()), cutoff=until)
+            state = read_observer.kind(observed, "transaction lookup", missing=True)
+            require(pending.thread.is_alive() and time.monotonic() < until,
+                    "original-command-lookup-within-same-cutoff")
+            if state == 'success':
+                require(observed['outcomeKnown'] is False and set(observed['data']) == {'command'},
+                        'original-pending-command-lookup-certainty')
+                return read_observer.pending_claim(observed['data']['command'], self.publication,
+                    self.input.item.component_digest, key)
+            if attempt < 7:
+                read_observer.pause(until, "original-command-not-running-for-cancel")
         raise ValueError("original-durable-attempt-not-observed")
 
     def case(self, kind, selector):
@@ -326,7 +350,7 @@ class DiagnosticCampaign:
         c = self.campaign
         _, before_value = c.query(0)
         condition = precondition(before_value)
-        before_recipient = provider.observed_recipient(c.peer.directory / provider.OBSERVATION, c.peer.incarnation)
+        before_recipient = c.recipient_observation()
         before_roots = roots(self.client)
         key = "java-post-stage-" + kind
         arguments = {"original_key": key, "body": command_input(int(selector)), "condition": condition}
@@ -351,8 +375,9 @@ class DiagnosticCampaign:
                 and record["retainedResult"]["value"]["code"] == EXPECTED[kind][1],
                 "original-durable-fault-code-matches-terminal-producer")
         _, after_value = c.query(0)
-        after_recipient = provider.observed_recipient(c.peer.directory / provider.OBSERVATION, c.peer.incarnation)
-        unchanged(before_value, after_value, before_recipient, after_recipient)
+        after_recipient = c.recipient_observation()
+        unchanged(before_value, after_value, before_recipient, after_recipient,
+                  current_http=getattr(c.peer, "current_http", False))
         return {"originalClientKey": key, "selector": selector, "originalPrecondition": condition,
                 "transportStatus": observed["status"], "terminal": terminal, "command": record, "result": result,
                 "beforeQuery": before_value, "afterQuery": after_value,
@@ -360,8 +385,7 @@ class DiagnosticCampaign:
 
     def execute(self):
         c = self.campaign
-        lifecycle.deploy(self.client, c.signed, self.input.item, self.publication,
-                         c.proposals["deploymentGrants"], c.configuration.authority)
+        c.deploy(self.input.item.name)
         selected = {"trap": "trapAfterStage", "fuel": "loopAfterStage", "cancel": "loopAfterStage"}
         if "memoryAfterStage" in self.input.selectors:
             selected["memory"] = "memoryAfterStage"
@@ -370,10 +394,10 @@ class DiagnosticCampaign:
         # the same store, current policies, recipient and nonrenewable deadline.
         c.node.stop()
         retired = c.node.shutdown[-1]
-        c.node.start(c.full_path)
+        if getattr(c.node, 'current_activation', None) is None:
+            c.node.start(c.full_path)
         legacy = c.items["put-once-legacy-v1"]
-        lifecycle.deploy(self.client, c.signed, legacy, c.publications[legacy.name],
-                         c.proposals["deploymentGrants"], c.configuration.authority)
+        c.deploy(legacy.name)
         _, fresh = c.query(0)
         for kind, observed in observations.items():
             self.client.evidence.passed("actual-post-stage-" + kind, dict(observed,

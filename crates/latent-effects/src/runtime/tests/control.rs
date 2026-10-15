@@ -1,6 +1,6 @@
 use super::*;
 
-fn request(
+pub(super) fn request(
     owner: &DispatcherOwner,
     operation: &str,
     action: DispatcherControlAction,
@@ -15,7 +15,7 @@ fn request(
     .unwrap()
 }
 
-async fn apply(
+pub(super) async fn apply(
     owner: &DispatcherOwner,
     request: DispatcherControlRequest,
 ) -> DispatcherControlOutcome {

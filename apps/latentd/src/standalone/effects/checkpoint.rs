@@ -100,13 +100,12 @@ impl EffectRuntime {
     /// Dispatch remains paused for the caller's normal readiness sequence;
     /// restore review still requires its independent authenticated operation.
     pub async fn start_protected(
-        mut startup: super::ProtectedEffectStartup,
+        startup: super::ProtectedEffectStartup,
     ) -> Result<(Self, Arc<ProtectedEffectClock>), PlatformError> {
         let mut guard = StartupGuard {
             store: Arc::clone(&startup.store),
             complete: false,
         };
-        startup.dispatcher.start_paused = true;
         let deadline = startup.original_deadline;
         let result = tokio::time::timeout_at(deadline.into(), admitted(startup))
             .await
@@ -177,7 +176,7 @@ async fn admitted(
         .checkpoint
         .as_ref()
         .map(|old| (old.dispatch_owner_epoch(), old.clock_floor_millis()));
-    let effects = EffectRuntime::start(
+    let owner = latent_effects::runtime::DispatcherOwner::start_with_startup_suppression(
         startup.dispatcher,
         Arc::clone(store),
         startup.authority,
@@ -186,7 +185,9 @@ async fn admitted(
         minimum,
         startup.control_runtime,
     )
-    .await?;
+    .await
+    .map_err(super::runtime_error)?;
+    let effects = EffectRuntime { owner };
     effects.bind_native_capacity(&native)?;
     let (checkpoint, advanced) = store
         .advance_checkpoint(

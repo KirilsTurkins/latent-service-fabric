@@ -58,6 +58,7 @@ impl CheckpointFile {
                     root: self.root.identity(),
                     file: self.fence.identity(),
                     lock: self.lock_fence.identity(),
+                    mode: None,
                 },
             )
         }

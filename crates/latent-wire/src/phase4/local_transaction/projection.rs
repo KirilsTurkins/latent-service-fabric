@@ -217,13 +217,20 @@ fn result_outcome(
             },
             consumption,
         },
-        Outcome::Aborted if result.code() == Some("state-conflict") => ActivationOutcome::Failed {
+        Outcome::Aborted => ActivationOutcome::Failed {
             terminal_state: ActivationTerminalState::PlatformFailed,
-            error: error(PlatformErrorCode::StateConflict),
+            error: error(retained_abort_code(result)),
             consumption,
         },
-        _ => failure(consumption),
+        Outcome::Pending => failure(consumption),
     })
+}
+
+pub(in crate::phase4) fn retained_abort_code(result: &DurableResult) -> PlatformErrorCode {
+    result
+        .code()
+        .and_then(PlatformErrorCode::from_wire_code)
+        .unwrap_or(PlatformErrorCode::Unavailable)
 }
 
 pub(super) fn source(value: &SourceIdentity) -> t::SourceIdentity {

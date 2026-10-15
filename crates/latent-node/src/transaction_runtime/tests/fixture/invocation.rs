@@ -44,6 +44,19 @@ impl latent_core::BudgetCancellationProbe for Cancellation {
 }
 
 impl Fixture {
+    pub fn original_cancellation_owner(
+        &self,
+        envelope: &ActivationEnvelope,
+    ) -> crate::cancellation::WeakCancellationOwner {
+        self.registrations
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|entry| entry.activation_id() == &envelope.activation_id)
+            .unwrap()
+            .weak_owner()
+    }
+
     pub fn cancel_original(&self, envelope: &ActivationEnvelope) {
         assert_eq!(
             self.cancellations
@@ -112,7 +125,37 @@ impl Fixture {
         ActivationEnvelope,
         ActivationBudget,
     ) {
-        let resources = resources(query);
+        self.invocation_config_with_grants(query, key, minimum, native, (0, 0))
+    }
+
+    pub fn invocation_with_external_grants(
+        &self,
+        key: &str,
+        child_calls: u32,
+        outbound_requests: u32,
+    ) -> (
+        Arc<NativeTransactionAdmission>,
+        ActivationEnvelope,
+        ActivationBudget,
+    ) {
+        self.invocation_config_with_grants(false, key, None, None, (child_calls, outbound_requests))
+    }
+
+    fn invocation_config_with_grants(
+        &self,
+        query: bool,
+        key: &str,
+        minimum: Option<Vec<u8>>,
+        native: Option<latent_core::native_capacity::NativeReservation>,
+        external: (u32, u32),
+    ) -> (
+        Arc<NativeTransactionAdmission>,
+        ActivationEnvelope,
+        ActivationBudget,
+    ) {
+        let mut resources = resources(query);
+        resources.child_calls = external.0;
+        resources.outbound_requests = external.1;
         let grant = EffectiveActivationBudget::admit_profile_at(
             BudgetProfile::Phase4,
             &resources,

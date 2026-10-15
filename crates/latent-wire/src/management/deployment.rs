@@ -11,7 +11,7 @@ mod tests;
 
 use latent_control_store::{DeploymentPageRequest, VersionedDeployment};
 use latent_core::{DeploymentId, ServiceId};
-use latent_manifest::{ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::ManifestValidator;
 use tonic::{Request, Response, Status};
 
 use super::errors::platform_status;
@@ -68,9 +68,9 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
         let mut manifest =
             deployment_manifest_from_proto(request.deployment.expect("validated deployment"))
                 .map_err(|_| Status::invalid_argument("invalid deployment representation"))?;
-        Phase1ManifestValidator
+        self.manifest_profile
             .validate_deployment(&manifest)
-            .map_err(|_| Status::invalid_argument("invalid Phase 1 deployment"))?;
+            .map_err(|_| Status::invalid_argument("invalid deployment"))?;
         // Use the catalog codec's exact normalization before binding an audit
         // attempt. This preserves accepted uppercase digests and unordered sets.
         manifest.normalize_storage_fields();
@@ -107,6 +107,7 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
             &tenant,
             &preflight_limits,
             self.services.audit.is_some(),
+            self.manifest_profile,
         )?;
         if prost::Message::encoded_len(&preflight) > preflight_limits.max_response_bytes {
             return Err(super::bounds::exhausted());
@@ -134,6 +135,7 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
                     &tenant,
                     &self.limits,
                     self.services.audit.is_some(),
+                    self.manifest_profile,
                 )?;
                 if !audit.matches(&receipt.deployment, receipt.catalog_generation) {
                     return Err(Status::internal(
@@ -187,7 +189,12 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
                 .get_versioned(&tenant, &id)
                 .await
                 .map_err(|error| platform_status(error, &self.limits))?;
-            self.response(response::get(value.as_ref(), &tenant, &self.limits)?)
+            self.response(response::get(
+                value.as_ref(),
+                &tenant,
+                &self.limits,
+                self.manifest_profile,
+            )?)
         }
     }
 
@@ -217,7 +224,13 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
             })
             .await
             .map_err(|error| platform_status(error, &self.limits))?;
-        self.response(response::page(&page, &tenant, page_size, &self.limits)?)
+        self.response(response::page(
+            &page,
+            &tenant,
+            page_size,
+            &self.limits,
+            self.manifest_profile,
+        )?)
     }
 
     async fn delete_deployment(
@@ -258,7 +271,13 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
             .ok()
             .map(|receipt| {
                 let mut budget = RequestBudget::for_response::<proto::Empty>(&self.limits)?;
-                validation::domain(&receipt.deleted, &tenant, &mut budget, &self.limits)?;
+                validation::domain(
+                    &receipt.deleted,
+                    &tenant,
+                    &mut budget,
+                    &self.limits,
+                    self.manifest_profile,
+                )?;
                 if !audit.matches(&receipt.deleted, receipt.catalog_generation) {
                     return Err(Status::internal(
                         "deployment deletion receipt changed the audited request",

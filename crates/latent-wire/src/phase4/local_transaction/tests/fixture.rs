@@ -64,12 +64,16 @@ impl EffectTimeSource for Clock {
         }
     }
 }
-struct Management;
+#[derive(Default)]
+struct Management(std::sync::Mutex<Option<crate::phase4::StateManagementBackend>>);
 impl Phase4Runtime for Management {
     fn execute(
         &self,
-        _call: Phase4Call,
+        call: Phase4Call,
     ) -> BoxFuture<'_, Result<OwnedPhase4Response, PlatformError>> {
+        if let Some(backend) = self.0.lock().unwrap().clone() {
+            return Box::pin(async move { backend.execute(call).await });
+        }
         Box::pin(async { Err(error(PlatformErrorCode::PermissionDenied)) })
     }
 }
@@ -82,6 +86,7 @@ pub(super) struct Fixture {
     pub clock: Arc<Clock>,
     pub quotas: LocalQuotaProvider,
     pub manager: LocalActivationManager,
+    management: Arc<Management>,
     catalog: Arc<DirectoryArtifactRepository>,
     routes: Arc<DirectoryDeploymentRepository>,
     installation: Arc<TransactionInstallation>,
@@ -99,6 +104,25 @@ pub(super) struct Fixture {
     _root: tempfile::TempDir,
 }
 impl Fixture {
+    pub(super) fn inspection_adapter(&self) -> crate::management::ManagementServiceAdapter {
+        crate::management::ManagementServiceAdapter::new(
+            crate::management::ManagementServices {
+                audit: None,
+                rollouts: None,
+                artifacts: self.catalog.clone(),
+                deployments: self.routes.clone(),
+                routes: self.routes.clone(),
+                inventory: Arc::new(InspectionOnlyInventory),
+                principals: Arc::new(LocalPrincipalPolicy),
+                authorization: Arc::new(LocalManagementPolicy),
+                clock: Arc::new(SystemActivationClock),
+            },
+            ManagementLimits::default(),
+        )
+        .unwrap()
+        .with_activation_journal(self.manager.journal())
+    }
+
     pub async fn new(paused: bool) -> Self {
         Self::with_quota(paused, NamespaceQuota::default()).await
     }
@@ -401,6 +425,7 @@ impl Fixture {
             clock,
             quotas,
             manager,
+            management: Arc::new(Management::default()),
             catalog,
             routes,
             installation,
@@ -459,7 +484,7 @@ impl Fixture {
             cleanup.handle(),
             owners,
             vec![Arc::clone(&self.installation)],
-            Arc::new(Management),
+            self.management.clone(),
             limits.clone(),
             LocalTransactionServices {
                 clock: Arc::new(SystemActivationClock),
@@ -502,6 +527,14 @@ impl Fixture {
     }
 
     pub async fn recovery_backend(&self) -> crate::phase4::StateManagementBackend {
+        self.result_backend(false).await
+    }
+
+    pub async fn install_cancellation_management(&self) {
+        *self.management.0.lock().unwrap() = Some(self.result_backend(true).await);
+    }
+
+    async fn result_backend(&self, cancellation: bool) -> crate::phase4::StateManagementBackend {
         use crate::phase4::{
             StateManagementBackend, StateManagementBinding, StateManagementRecoveryAdmission,
             StateManagementServices,
@@ -556,7 +589,15 @@ impl Fixture {
                     profile: "namespace-v1".into(),
                     configuration_digest: format!("sha256:{}", "2".repeat(64)),
                     configuration_epoch: 1,
-                    operations: vec!["namespace-inspect".into(), "read-result".into()],
+                    operations: if cancellation {
+                        vec![
+                            "namespace-inspect".into(),
+                            "read-result".into(),
+                            "cancel-command".into(),
+                        ]
+                    } else {
+                        vec!["namespace-inspect".into(), "read-result".into()]
+                    },
                     deployment: GrantRestriction {
                         operations: Vec::new(),
                         resources: None,
@@ -712,6 +753,7 @@ impl Fixture {
     }
     async fn retire(&mut self) {
         drop(self.adapter.take());
+        self.management.0.lock().unwrap().take();
         self.cleanup
             .take()
             .unwrap()
@@ -768,6 +810,12 @@ impl Fixture {
             self.executions() + self.backend.imports.queries.load(Ordering::SeqCst)
         );
         eprintln!("actual-guest command-executions={} query-executions={} stores-created={} live-stores={}",self.executions(),self.backend.imports.queries.load(Ordering::SeqCst),runtime.stores_created,runtime.live_stores);
+    }
+}
+struct InspectionOnlyInventory;
+impl latent_node::InventoryReporter for InspectionOnlyInventory {
+    fn snapshot(&self) -> BoxFuture<'_, Result<latent_node::NodeInventory, PlatformError>> {
+        Box::pin(async { Err(error(PlatformErrorCode::PermissionDenied)) })
     }
 }
 

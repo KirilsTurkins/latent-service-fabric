@@ -14,6 +14,7 @@ mod resource;
 mod restore_adoption;
 mod restore_input;
 mod restore_stage;
+mod restored_resume;
 mod resume;
 mod snapshot;
 mod startup;
@@ -46,13 +47,18 @@ pub use restore_stage::{
     RestoreStageControls, RestoreStageError, RestoreStageOwners, RestoreStageReceipt,
     RestoreStageRequest, RestoreWriteFence, RestoreWriteKind,
 };
+pub use restored_resume::{
+    ProtectedRestoredMigrationResumeJob, ProtectedRestoredMigrationResumeReceipt,
+    RestoredMigrationResumeCommitFence, RestoredMigrationResumeOwners,
+};
 pub use resume::{
     MigrationResumeCommitFence, ProtectedMigrationResumeJob, ProtectedMigrationResumeReceipt,
 };
 pub use snapshot::{
     ProtectedSnapshot, ProtectedSnapshotConfig, ProtectedSnapshotJob,
-    ProtectedSnapshotManifestFrame, ProtectedSnapshotReceipt, ProtectedSnapshotReceiptJob,
-    SnapshotReceiptOwners, SnapshotReceiptReadFence, SNAPSHOT_RECEIPT_RESPONSE_BYTES,
+    ProtectedSnapshotManifestFrame, ProtectedSnapshotProfile, ProtectedSnapshotReceipt,
+    ProtectedSnapshotReceiptJob, SnapshotReceiptOwners, SnapshotReceiptReadFence,
+    SNAPSHOT_RECEIPT_RESPONSE_BYTES,
 };
 pub use startup::{ProtectedStoreDrain, ProtectedStoreStartup};
 pub use startup_memory::ProtectedStoreStartupMemory;

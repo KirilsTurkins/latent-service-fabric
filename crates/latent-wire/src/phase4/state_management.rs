@@ -1,6 +1,7 @@
 //! Actual namespace management over the node's single protected engine.
 mod audit;
 mod authorization;
+mod captured_binding;
 mod clock;
 mod command_result;
 mod floor_release;
@@ -75,6 +76,16 @@ pub trait StateManagementReservation: Send + Sync {
     ) -> Result<(), PlatformError> {
         Err(unsupported())
     }
+    /// Joint currentness of this original management reservation and another
+    /// reservation from the same actual owner. Implementations fail closed.
+    fn with_live_pair_until(
+        &self,
+        _other: &latent_core::native_capacity::NativeReservation,
+        _deadline: Instant,
+        _action: &mut dyn FnMut(),
+    ) -> Result<(), PlatformError> {
+        Err(unsupported())
+    }
 }
 
 /// Trusted installed target constraints. Descriptive configuration grants no
@@ -104,7 +115,7 @@ pub struct StateManagementServices {
 }
 struct Inner {
     services: StateManagementServices,
-    bindings: Vec<Arc<StateManagementBinding>>,
+    bindings: Vec<captured_binding::CapturedBinding>,
     dispatcher: Option<latent_effects::runtime::DispatcherManagementPort>,
     recovery_bindings: Option<Vec<StateManagementRecoveryBinding>>,
     command_source: Option<latent_effects::runtime::CommandAdmissionSource>,
@@ -124,6 +135,15 @@ const WORK_BYTES: usize = 8 * 1024 * 1024;
 const RESPONSE_BYTES: usize = 4 * contract::MAX_RESPONSE_BYTES + 16384;
 
 impl StateManagementBackend {
+    /// Closed archive byte/key decoder only. Complete current namespace linkage
+    /// is still required by validate_operation_row and the original census.
+    pub fn validate_operation_bytes(
+        key: &latent_state::embedded::RowKey,
+        bytes: &[u8],
+    ) -> Result<(), latent_state::embedded::StoreError> {
+        state_receipt::validated_bytes(key, bytes).map(|_| ())
+    }
+
     pub fn validate_operation_row(
         view: &latent_state::embedded::ReadView,
         key: &latent_state::embedded::RowKey,
@@ -145,6 +165,47 @@ impl StateManagementBackend {
         services: StateManagementServices,
         bindings: Vec<StateManagementBinding>,
     ) -> Result<Self, PlatformError> {
+        Self::construct(services, bindings, None, Vec::new())
+    }
+
+    /// Actual inline vector footprint, paid before captured bindings allocate.
+    pub fn captured_effect_binding_bytes(capacity: usize) -> Result<u64, PlatformError> {
+        captured_binding::bytes(capacity)
+    }
+
+    /// Input/captured vector overlap, existing Arc cells and actual owned
+    /// capacities. The original asset metadata remains separately covered.
+    pub fn captured_effect_binding_peak_bytes(
+        bindings: &Vec<StateManagementBinding>,
+    ) -> Result<u64, PlatformError> {
+        captured_binding::peak_bytes(bindings)
+    }
+
+    /// Trusted source capture only. This tag selects no caller and grants no
+    /// permission; each original effect still needs exact current data access.
+    pub fn new_with_captured_effect_recovery(
+        services: StateManagementServices,
+        bindings: Vec<StateManagementBinding>,
+        selection: &latent_capabilities::namespace::RecoverySelection,
+        memory: Vec<Arc<latent_core::native_capacity::NativeBufferPermit>>,
+        retained_asset_bytes: u64,
+    ) -> Result<Self, PlatformError> {
+        let mode = captured_binding::prepaid(
+            &services,
+            selection,
+            &memory,
+            &bindings,
+            retained_asset_bytes,
+        )?;
+        Self::construct(services, bindings, Some(mode), memory)
+    }
+
+    fn construct(
+        services: StateManagementServices,
+        bindings: Vec<StateManagementBinding>,
+        recovery: Option<latent_policy::capability::RecoveryScopeKind>,
+        memory: Vec<Arc<latent_core::native_capacity::NativeBufferPermit>>,
+    ) -> Result<Self, PlatformError> {
         if !services
             .store
             .uses_native_capacity(&services.admission.native_capacity())
@@ -164,12 +225,21 @@ impl StateManagementBackend {
                 return Err(invalid());
             }
         }
+        let mut captured = Vec::with_capacity(bindings.len());
+        captured.extend(
+            bindings
+                .into_iter()
+                .map(|binding| captured_binding::CapturedBinding {
+                    binding: Arc::new(binding),
+                    recovery,
+                }),
+        );
         Ok(Self(Arc::new(Inner {
             services,
-            bindings: bindings.into_iter().map(Arc::new).collect(),
+            bindings: captured,
             dispatcher: None,
             recovery_bindings: None,
-            resident_metadata: Vec::new(),
+            resident_metadata: memory,
             command_source: None,
         })))
     }
@@ -261,6 +331,15 @@ impl StateManagementBackend {
         context: AuthenticatedInvocationContext,
         request: contract::Request,
     ) -> BoxFuture<'static, Result<OwnedPhase4Response, PlatformError>> {
+        self.execute_with_command_manager(context, request, None)
+    }
+
+    fn execute_with_command_manager(
+        &self,
+        context: AuthenticatedInvocationContext,
+        request: contract::Request,
+        command_manager: Option<latent_node::LocalActivationManager>,
+    ) -> BoxFuture<'static, Result<OwnedPhase4Response, PlatformError>> {
         let admission = self.admit(context, request);
         let inner = Arc::clone(&self.0);
         Box::pin(async move {
@@ -292,6 +371,7 @@ impl StateManagementBackend {
                     binding,
                     deadline,
                     permit,
+                    command_manager,
                 )
                 .await;
             }
@@ -474,7 +554,7 @@ impl StateManagementBackend {
                     && binding.namespace.0 == selector.namespace
                     && binding.incarnation.to_string() == selector.incarnation
             })
-            .cloned()
+            .map(|binding| Arc::clone(&binding.binding))
             .ok_or_else(denied)?;
         Ok(Some(binding))
     }
@@ -484,8 +564,8 @@ impl Phase4Runtime for StateManagementBackend {
         &self,
         call: Phase4Call,
     ) -> BoxFuture<'_, Result<OwnedPhase4Response, PlatformError>> {
-        let (context, request) = call.into_parts();
-        self.execute_state(context, request)
+        let (context, request, command_manager) = call.into_state_parts();
+        self.execute_with_command_manager(context, request, command_manager)
     }
 }
 struct RequestedTarget<'a> {
@@ -502,6 +582,17 @@ fn target(request: &contract::Request) -> Result<RequestedTarget<'_>, PlatformEr
             value.command.as_ref(),
             value.authorization_publication.as_ref(),
         )),
+        contract::Request::GetEffect(value) => Some((
+            value.command.as_ref(),
+            value.authorization_publication.as_ref(),
+        )),
+        contract::Request::CancelCommand(value) => {
+            let original = value.command.as_ref().ok_or_else(invalid)?;
+            Some((
+                original.command.as_ref(),
+                original.authorization_publication.as_ref(),
+            ))
+        }
         _ => None,
     };
     if let Some((command, publication)) = lookup {

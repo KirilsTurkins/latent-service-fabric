@@ -7,6 +7,40 @@ fn parse(arguments: &[&str]) -> Cli {
 }
 
 #[test]
+fn transaction_manifest_profile_requires_explicit_operator_selection() {
+    let args = [
+        "latent",
+        "release",
+        "publish-package",
+        "package",
+        "--operation-id",
+        "publish-a",
+        "--expected-generation",
+        "0",
+    ];
+    assert!(!parse(&args).manifest_profile().unwrap().transactional());
+    for args in [
+        vec![
+            "latent",
+            "--phase4",
+            "release",
+            "publish-package",
+            "package",
+            "--operation-id",
+            "publish-a",
+            "--expected-generation",
+            "0",
+        ],
+        vec!["latent", "deployment", "get", "current", "--phase4"],
+    ] {
+        let cli = parse(&args);
+        assert!(cli.validate().is_ok());
+        assert!(cli.manifest_profile().unwrap().transactional());
+    }
+    assert!(Cli::try_parse_from(["latent", "--phase4=false", "node", "list"]).is_err());
+}
+
+#[test]
 fn activation_tree_has_one_bounded_page_without_cancellation_authority() {
     let cli = parse(&[
         "latent",

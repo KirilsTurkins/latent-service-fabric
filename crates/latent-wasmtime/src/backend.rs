@@ -51,6 +51,7 @@ mod result_lifetime_tests;
 mod start;
 use preparation_context::PreparationContext;
 mod store;
+mod transaction_access;
 use owned::WasmtimePreparedUse;
 pub use preparation::PreparationActivitySnapshot;
 use preparation::{Compilation, ComponentIntegrity, PreparationCounters};
@@ -431,12 +432,13 @@ impl WasmtimeBackend {
     async fn invoke_inner_timed(
         &self,
         mut request: ExecutionRequest,
-        cancellation: &dyn ExecutionCancellation,
+        ownership: transaction_access::InvocationOwnership<'_>,
         timing: &mut Phase0InvocationTiming,
         prepared: Option<WasmtimePreparedUse>,
         input_trace: Option<&InputTrace>,
         capability_observer: &mut Option<latent_capabilities::broker::CapabilitySessionObserver>,
     ) -> Result<GuestOutcome, PlatformError> {
+        let cancellation = ownership.cancellation;
         let setup_started = Instant::now();
         let _active_invocation = self.shared.resources.active_invocation();
 
@@ -495,7 +497,7 @@ impl WasmtimeBackend {
             Err(outcome) => return Ok(outcome),
         };
         let function = self.requested_function(&runtime, &request)?;
-        let transaction = cancellation.transaction_host();
+        let transaction = ownership.transaction.host();
         let needs_transaction = runtime
             .surface
             .imports
@@ -511,7 +513,7 @@ impl WasmtimeBackend {
                 false,
             ));
         }
-        if let Some(host) = &transaction {
+        if let Some(host) = transaction {
             if !self.config.transactional_state
                 || !needs_transaction
                 || host.activation_id() != &request.activation.activation_id
@@ -568,7 +570,7 @@ impl WasmtimeBackend {
             &stop,
             accounting,
             capabilities,
-            transaction,
+            ownership.transaction,
             runtime.surface.hostcall_fuel,
         )?);
         // Decoding and every borrowed validation have completed. The Store now
@@ -715,7 +717,7 @@ impl WasmtimeBackend {
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
         capabilities: Option<latent_capabilities::broker::CapabilitySession>,
-        transaction: Option<Arc<dyn latent_executor::transaction::TransactionHost>>,
+        mut transaction: transaction_access::GuestAccess,
         hostcall_fuel: usize,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
@@ -753,7 +755,7 @@ impl WasmtimeBackend {
         );
 
         host_state.capabilities = crate::host::capabilities::HostCapabilities::new(capabilities);
-        if let Some(transaction) = transaction {
+        if let Some(transaction) = transaction.take_host() {
             host_state.transaction = crate::host::transaction::Access::attach(transaction);
         }
         host_state.currentness_read_wait = self.shared.currentness_read_wait.clone();

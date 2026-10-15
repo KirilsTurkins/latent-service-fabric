@@ -71,7 +71,8 @@ impl DeferredEffectAdapter for Adapter {
             let receipt = AttemptReceipt {
                 disposition: provider.original,
                 reason: "controlled-native-outcome".into(),
-                provider_receipt: None,
+                provider_receipt: (provider.original == Disposition::ProviderAcknowledged)
+                    .then(|| "controlled-positive-provider-receipt".into()),
                 observed_at_millis: provider.time.load(Ordering::SeqCst),
             };
             drop(owned);

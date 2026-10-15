@@ -47,6 +47,7 @@ pub struct DispatcherShutdown {
 pub(super) struct State {
     pub closed: bool,
     pub paused: bool,
+    pub startup: StartupState,
     pub failure: Option<DispatcherError>,
     pub control_generation: DispatcherControlGeneration,
     pub pending_control: Option<super::control::PendingControl>,
@@ -61,6 +62,12 @@ pub(super) struct State {
     pub counts: DispatchCounts,
     pub counts_time: u64,
     pub scheduling_retired: bool,
+}
+
+pub(super) struct StartupState {
+    pub suppressed: bool,
+    pub operator_paused: bool,
+    pub operator_selected: bool,
 }
 
 pub(super) struct Shared {
@@ -126,7 +133,8 @@ impl Shared {
         })
     }
     pub fn new(
-        paused: bool,
+        startup_suppressed: bool,
+        operator_paused: bool,
         epoch: crate::dispatch_store::DispatchEpoch,
         restore_review: bool,
         maximum_command_owners: usize,
@@ -134,7 +142,12 @@ impl Shared {
     ) -> Self {
         Self {
             state: Mutex::new(State {
-                paused: paused || restore_review,
+                paused: startup_suppressed || operator_paused || restore_review,
+                startup: StartupState {
+                    suppressed: startup_suppressed,
+                    operator_paused,
+                    operator_selected: false,
+                },
                 closed: false,
                 failure: None,
                 control_generation: DispatcherControlGeneration::initial(epoch.generation()),
@@ -216,7 +229,7 @@ impl Shared {
             counts_observed_at_millis: state.counts_time,
             queued: jobs.queued,
             active_jobs: jobs.active_reads + jobs.active_writes,
-            retained_attempt_bytes: jobs.retained_bytes,
+            retained_attempt_bytes: jobs.retained_operation_bytes,
             live_workers: jobs.live_workers,
             accepted_effects: state.effects.len(),
             live_tenants: state.tenants.len()

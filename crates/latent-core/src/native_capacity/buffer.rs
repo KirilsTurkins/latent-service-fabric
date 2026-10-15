@@ -37,6 +37,12 @@ impl NativeBufferPermit {
         self.lease.class
     }
 
+    /// The actual affine subcharge kind; observing it reserves no capacity.
+    #[must_use]
+    pub const fn buffer_class(&self) -> NativeBufferClass {
+        self.class
+    }
+
     /// Trusted native constructors must stay within the already admitted bound.
     /// Owned value destruction precedes this permit's physical quota release.
     pub fn attach<T>(self, value: T) -> NativeBuffer<T> {

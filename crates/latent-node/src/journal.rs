@@ -1,9 +1,12 @@
 //! One bounded record per activation, with writes held by its lifecycle owner.
 
 mod bytes;
+mod command_cancellation;
 mod lineage;
 mod owner;
+mod staging;
 mod state;
+pub use staging::TransactionStagingWitness;
 mod tree;
 pub use tree::{ActivationTreeNode, ActivationTreePage};
 #[cfg(test)]

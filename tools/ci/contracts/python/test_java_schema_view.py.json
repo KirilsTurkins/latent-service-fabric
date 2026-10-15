@@ -1,0 +1,205 @@
+{
+  "cases": [
+    "SchemaViewControls.test_actual_closed_schema_views_old_guard_red_and_exact_scope_check_green",
+    "SchemaViewControls.test_copying_old_binding_to_new_view_is_not_a_schema_transition",
+    "SchemaViewControls.test_current_schema_uses_exact_original_and_writer_descriptors_before_further_work",
+    "SchemaViewControls.test_generation_must_advance_exactly_once_without_overflow",
+    "SchemaViewControls.test_incorrect_original_target_or_unchanged_schema_cannot_match",
+    "SchemaViewControls.test_legacy_schema_path_keeps_strict_original_binding_guard",
+    "SchemaViewControls.test_malformed_present_schema_is_fatal_without_legacy_fallback",
+    "SchemaViewControls.test_malformed_zero_or_boolean_view_fields_are_refused",
+    "SchemaViewControls.test_new_view_foreign_tenant_or_namespace_is_refused",
+    "SchemaViewControls.test_old_view_foreign_tenant_or_namespace_is_refused",
+    "SchemaViewControls.test_original_recovery_guard_still_refuses_schema_or_scope_changes",
+    "SchemaViewControls.test_other_entity_and_even_matching_foreign_incarnation_are_refused",
+    "SchemaViewControls.test_retained_companion_is_rechecked_and_missing_or_changed_bytes_fail",
+    "SchemaViewControls.test_schema_epoch_must_advance_exactly_once_without_overflow",
+    "SchemaViewControls.test_schema_transition_cannot_advance_or_regress_recovery_epoch"
+  ],
+  "guards": {
+    "SchemaViewControls.test_actual_closed_schema_views_old_guard_red_and_exact_scope_check_green": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_copying_old_binding_to_new_view_is_not_a_schema_transition": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_current_schema_uses_exact_original_and_writer_descriptors_before_further_work": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_generation_must_advance_exactly_once_without_overflow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_incorrect_original_target_or_unchanged_schema_cannot_match": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_legacy_schema_path_keeps_strict_original_binding_guard": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_malformed_present_schema_is_fatal_without_legacy_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_malformed_zero_or_boolean_view_fields_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_new_view_foreign_tenant_or_namespace_is_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_old_view_foreign_tenant_or_namespace_is_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_original_recovery_guard_still_refuses_schema_or_scope_changes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_other_entity_and_even_matching_foreign_incarnation_are_refused": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_retained_companion_is_rechecked_and_missing_or_changed_bytes_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_schema_epoch_must_advance_exactly_once_without_overflow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    },
+    "SchemaViewControls.test_schema_transition_cannot_advance_or_regress_recovery_epoch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f03202a0aaf3c2710697651ad2b8b9999e7872924752384cf5569dac9281ebd",
+        "class:setup-sha256:98154723dd7ef2efd26dc08fadb553b66f44411965c3e5917d5efb7fa14adaab"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_schema_view.py",
+  "reviewReason": "Validate both exact retained schema-bound namespace views during current-v2 migration; preserve legacy/recovery checks and original authority, epochs, scope, and overflow refusals.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

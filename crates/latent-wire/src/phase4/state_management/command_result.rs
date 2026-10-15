@@ -1,6 +1,8 @@
 //! Original-result reads share the protected store and recovery capacity owner.
 mod audit;
 mod authority;
+mod cancellation;
+mod effect;
 mod projection;
 
 use super::{
@@ -56,7 +58,10 @@ impl ReadError {
 pub(super) fn handles(request: &contract::Request) -> bool {
     matches!(
         request,
-        contract::Request::LookupCommand(_) | contract::Request::LookupCommit(_)
+        contract::Request::LookupCommand(_)
+            | contract::Request::LookupCommit(_)
+            | contract::Request::GetEffect(_)
+            | contract::Request::CancelCommand(_)
     )
 }
 
@@ -71,6 +76,7 @@ pub(super) async fn execute(
     binding: Arc<StateManagementBinding>,
     deadline: Instant,
     permit: Arc<dyn StateManagementReservation>,
+    command_manager: Option<latent_node::LocalActivationManager>,
 ) -> Result<OwnedPhase4Response, PlatformError> {
     let selector = selector(&request)?;
     let caller =
@@ -85,7 +91,7 @@ pub(super) async fn execute(
         deadline,
         input_bytes: request.encoded_len(),
     }
-    .seal("read-result")?;
+    .seal(operation(&request))?;
     let mut policy_deadline = None;
     inner
         .services
@@ -117,14 +123,15 @@ pub(super) async fn execute(
         entity: selector.entity.clone(),
         client_key: selector.client_key.clone(),
     };
-    let pending = audit::begin(&inner, &context, &binding, &request).await?;
+    let mut pending = audit::begin(&inner, &context, &binding, &request).await?;
     let read = Arc::new(ReadAuthority {
         inner: Arc::clone(&inner),
         binding,
-        decision,
+        decision: Arc::new(decision),
         permit,
         key,
         deadline,
+        command_manager,
     });
     read.before_lookup()?;
     let keeper = Arc::clone(&read);
@@ -136,7 +143,7 @@ pub(super) async fn execute(
             WORK_BYTES as u64,
             read,
             move |engine| {
-                let result = lookup(Arc::clone(&keeper), &request, engine);
+                let result = lookup(Arc::clone(&keeper), &request, engine, &mut pending);
                 let (conclusion, reason) = match &result {
                     Ok(_) => (AuditOperationResult::Committed, AuditReason::Verified),
                     Err(ReadError::Store(_)) => (
@@ -153,7 +160,12 @@ pub(super) async fn execute(
                     }
                     Err(_) => (AuditOperationResult::Rejected, AuditReason::Rejected),
                 };
-                let finish = pending.finish(conclusion, reason, None, true);
+                let finish = pending.finish(
+                    conclusion,
+                    reason,
+                    None,
+                    !matches!(request, contract::Request::CancelCommand(_)),
+                );
                 if let Err(ReadError::Store(error)) = &result {
                     return Err(*error);
                 }
@@ -185,7 +197,23 @@ fn selector(request: &contract::Request) -> Result<&t::CommandSelector, Platform
     match request {
         contract::Request::LookupCommand(value) => value.command.as_ref().ok_or_else(invalid),
         contract::Request::LookupCommit(value) => value.command.as_ref().ok_or_else(invalid),
+        contract::Request::GetEffect(value) => value.command.as_ref().ok_or_else(invalid),
+        contract::Request::CancelCommand(value) => value
+            .command
+            .as_ref()
+            .ok_or_else(invalid)?
+            .command
+            .as_ref()
+            .ok_or_else(invalid),
         _ => Err(invalid()),
+    }
+}
+
+fn operation(request: &contract::Request) -> &'static str {
+    match request {
+        contract::Request::CancelCommand(_) => "cancel-command",
+        contract::Request::GetEffect(_) => "inspect-effect",
+        _ => "read-result",
     }
 }
 
@@ -193,6 +221,7 @@ fn lookup(
     read: Arc<ReadAuthority>,
     request: &contract::Request,
     engine: &EmbeddedStore,
+    pending: &mut super::audit::Pending,
 ) -> Result<(contract::Response, Arc<ResponseOwner>), ReadError> {
     let source = read.inner.command_source.as_ref().ok_or_else(unsupported)?;
     // Original command time is sampled outside Policy/Namespace/Native fences.
@@ -223,7 +252,7 @@ fn lookup(
         if record.is_some_and(|record| record.key() != &read.key) {
             return Err(AtomicError::Corrupt);
         }
-        if record.is_some_and(|record| !record_matches(&read, record)) {
+        if record.is_some_and(|record| !record_matches(&read, record, request)) {
             return Err(AtomicError::PermissionDenied);
         }
         read.with_namespace(&namespace, &lifecycle, read.deadline, &mut || {})
@@ -238,25 +267,56 @@ fn lookup(
             result,
             value.attempt_id.as_deref(),
             time,
+            request,
+        )?,
+        contract::Request::CancelCommand(value) => historical(
+            &view,
+            &read,
+            record,
+            result,
+            value
+                .command
+                .as_ref()
+                .ok_or_else(invalid)?
+                .attempt_id
+                .as_deref(),
+            time,
+            request,
         )?,
         _ => (record, result),
     };
     let payload = matches!(request, contract::Request::LookupCommand(_));
     let window = ResultWindow::capture(&record, result.as_ref().filter(|_| payload));
     let owner = Arc::new(ResponseOwner {
-        namespace,
+        namespace: Arc::new(namespace),
         lifecycle,
         window,
         read,
     });
-    let response = projection::response(request, &record, result.as_ref())?;
+    let response = match request {
+        contract::Request::GetEffect(value) => effect::response(&view, &record, value, time)?,
+        contract::Request::CancelCommand(value) => {
+            cancellation::response(value, &record, &owner, pending)?
+        }
+        _ => projection::response(request, &record, result.as_ref())?,
+    };
     Ok((response, owner))
 }
 
-fn record_matches(read: &ReadAuthority, record: &CommandRecord) -> bool {
+fn record_matches(
+    read: &ReadAuthority,
+    record: &CommandRecord,
+    request: &contract::Request,
+) -> bool {
     record.key() == &read.key
         && record.result_read_policy() == read.binding.result_policy
-        && record.source().state_schema == read.binding.state_schema
+        // Result bytes keep their original source schema. Current namespace
+        // schema and read authority were checked separately above; result reads
+        // do not reinterpret those bytes as current application state.
+        && (matches!(
+            request,
+            contract::Request::LookupCommand(_) | contract::Request::LookupCommit(_)
+        ) || record.source().state_schema == read.binding.state_schema)
 }
 
 fn historical(
@@ -266,6 +326,7 @@ fn historical(
     current_result: Option<DurableResult>,
     requested: Option<&str>,
     time: CommandTime,
+    request: &contract::Request,
 ) -> Result<(CommandRecord, Option<DurableResult>), ReadError> {
     let Some(requested) = requested else {
         return Ok((current, current_result));
@@ -284,7 +345,7 @@ fn historical(
     if record.id() != current.id() || record.attempt() != attempt {
         return Err(StoreError::Corrupt.into());
     }
-    if !record_matches(read, &record) {
+    if !record_matches(read, &record, request) {
         return Err(denied().into());
     }
     if !time.continuity_proven || time.unix_millis < record.clock_floor() {

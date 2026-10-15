@@ -71,6 +71,9 @@ fn recovery_worker_and_admission_progress_with_all_ordinary_workers_and_quotas_f
             })
             .unwrap();
         assert!(wait(status).unwrap().starts_with("latent-store-recovery-"));
+        owner.wait_for_snapshot(WATCHDOG, |snapshot| {
+            snapshot.active_recovery_reads == 0 && snapshot.recovery_accepted == 0
+        });
         let held = owner.snapshot().unwrap();
         assert_eq!(held.active_reads, 1);
         assert_eq!(held.active_writes, 1);

@@ -1,3 +1,4 @@
+use super::table::Reserved;
 use super::{
     checkpoint, convert_error, synchronize, trap, wit, AsContextMut, Error, HostState, Instant,
     Kind, Resource, Value,
@@ -16,54 +17,45 @@ pub(super) fn read(
                     let mut store = access.as_context_mut();
                     checkpoint(&mut store)?;
                     let result = (|| {
-                        let chunk = store.data_mut().capabilities.streams.reserve(Kind::Chunk)?;
+                        let reservation = store
+                            .data_mut()
+                            .capabilities
+                            .streams
+                            .reserve_guarded(Kind::Chunk)?;
                         match store
                             .data_mut()
                             .capabilities
                             .streams
                             .take(rep, Kind::Body, false)
                         {
-                            Ok(value) => Ok((chunk, value)),
-                            Err(error) => {
-                                store
-                                    .data_mut()
-                                    .capabilities
-                                    .streams
-                                    .remove(chunk, Kind::Chunk)?;
-                                Err(error)
-                            }
+                            Ok(value) => Ok(Reserved { value, reservation }),
+                            Err(error) => Err(error),
                         }
                     })();
                     synchronize(&mut store)?;
                     Ok::<_, wasmtime::Error>(result)
                 })?;
                 let result = match body {
-                    Ok((
-                        chunk,
-                        Value::Body {
-                            mut value,
-                            trailers_delivered,
-                        },
-                    )) => {
+                    Ok(mut pending) => {
+                        let Value::Body { value, .. } = &mut pending.value else {
+                            return Err(trap(Error::InvalidState));
+                        };
                         let result = value.read(maximum as usize).await;
-                        Ok((chunk, value, trailers_delivered, result))
+                        Ok(Reserved {
+                            value: (pending.value, result),
+                            reservation: pending.reservation,
+                        })
                     }
-                    Ok(_) => return Err(trap(Error::InvalidState)),
                     Err(error) => Err(error),
                 };
                 access.with(|mut access| {
                     let mut store = access.as_context_mut();
                     checkpoint(&mut store)?;
-                    let result = result.and_then(|(chunk, body, trailers_delivered, result)| {
+                    let result = result.and_then(|pending| {
+                        let chunk = pending.reservation.rep();
+                        let (body, result) = pending.value;
                         let table = &mut store.data_mut().capabilities.streams;
-                        table.put(
-                            rep,
-                            Kind::Body,
-                            Value::Body {
-                                value: body,
-                                trailers_delivered,
-                            },
-                        )?;
+                        table.put(rep, Kind::Body, body)?;
                         match result {
                             Ok(Some(value)) => {
                                 table.put(

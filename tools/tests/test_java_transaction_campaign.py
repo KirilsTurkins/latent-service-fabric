@@ -32,6 +32,39 @@ def retirement():
 
 
 class CampaignOracle(unittest.TestCase):
+    def test_refusal_observation_uses_the_actual_early_or_ordinary_service(self):
+        from tools.java_transaction_qualification import configuration as cfg, refusal_observation
+        from unittest.mock import Mock
+        import time
+        for service in (cfg.SERVICE, cfg.EARLY_HTTP_SERVICE):
+            with self.subTest(service=service):
+                client = Mock(deadline=time.monotonic() + 5)
+                client.call.return_value = {'category': 'success', 'data': {
+                    'nodes': [{'targetService': service}, {'targetService': 'other-service'}],
+                    'nextPageToken': None}}
+                refusal_observation.observe(client, service=service)
+                self.assertEqual(client.call.call_args.args, ('activation', 'roots', '--service', service, '--page-size', '8'))
+                summary = client.evidence.record.call_args.args[1]
+                self.assertEqual(summary['requestedService'], service)
+                self.assertEqual(summary['rootCount'], 2)
+                self.assertEqual([row['targetMatchesCurrentService'] for row in summary['roots']], [True, False])
+
+    def test_current_state_retirement_requires_both_physical_witnesses_and_every_zero_owner(self):
+        report = retirement()
+        counts = ('liveStorageWorkers', 'liveStorageOwners', 'queuedStorageRetirements', 'acceptedStorageJobs',
+                  'storageRetainedBytes', 'ordinaryNativeReservations', 'recoveryNativeReservations',
+                  'ordinaryNativeBytes', 'recoveryNativeBytes', 'namespaceOwners')
+        report['state'] = dict.fromkeys(counts, 0)
+        report['state'].update(clean=True, quarantined=False, storePhysicallyRetired=True, nativePhysicallyRetired=True)
+        lifecycle.require_retirement(report)
+        for name, value in (('storePhysicallyRetired', False), ('nativePhysicallyRetired', False),
+                            ('quarantined', True), ('liveStorageOwners', 1), ('namespaceOwners', 1),
+                            ('storageRetainedBytes', True), ('storeEngine', 'closed'), ('approved', True)):
+            changed = copy.deepcopy(report)
+            changed['state'][name] = value
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                lifecycle.require_retirement(changed)
+
     def test_original_evidence_is_exclusive_and_never_overwritten(self):
         with tempfile.TemporaryDirectory() as temporary:
             collector = evidence.Evidence(Path(temporary) / "evidence")
@@ -64,6 +97,14 @@ class CampaignOracle(unittest.TestCase):
                 campaign.rpc_result(changed, value, "original-signed-publication", "original-id")
 
     def test_current_rpc_result_bytes_must_equal_original_http_payload(self):
+        from contextlib import nullcontext
+        from unittest.mock import Mock, patch
+        client = Mock()
+        original = {'outcome': 'COMMAND_OUTCOME_REJECTED'}
+        client.call.return_value = {'data': {'command': original}}
+        with patch.object(lifecycle, 'as_user', return_value=nullcontext()):
+            self.assertIs(lifecycle.lookup(client, 'publication:sha256:' + 'a' * 64, 'key'), original)
+        self.assertEqual(client.call.call_args.kwargs['codes'], (0, 3))
         value = result()
         changed = inspection(value)
         changed["retainedResult"]["value"]["payload"]["data"] = "W10="

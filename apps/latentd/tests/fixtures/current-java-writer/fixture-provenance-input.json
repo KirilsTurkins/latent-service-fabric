@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "latent.component.signing-fixture-input.v1",
+  "evidenceKind": "synthetic-native-package-trust",
+  "compilerSource": "eba0d96e9439028aacd6c1f9a85d4ce0118a19bc",
+  "compilerReportDigest": "sha256:ea60323a913fd8b864b55efd989d05704864aad79a4b81cfa8ad8a1a01cd17ae",
+  "sourceArchiveDigest": "sha256:71dc6dd83f4aaa60ab445339477e077a7f3dd3c44b40b4eb164314aca3fca439",
+  "sourceSnapshotDigest": "sha256:1807ce866b354d239d3999ba426277ba4dfad6d059a23adcc33add69c484f864",
+  "componentDigest": "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+  "companionDigest": "sha256:e5719a610fb20811a402aed0531d13d71547978104048d9e275ae7b7ae061c49",
+  "requirementsDigest": "sha256:4b4e375e4834be64784c71da140da42540bd901d8bc33a8ff813a9a2e18c6f1b",
+  "compilerExecutedBySigner": false,
+  "packagedDistributionQualified": false,
+  "signedNodeExecutionQualified": false,
+  "provenanceModel": {
+    "formatVersion": 1,
+    "buildType": "https://latent.dev/build/java-capsule/v1",
+    "source": {
+      "repository": "https://github.com/KirilsTurkins/latent-service-fabric",
+      "revision": "1807ce866b354d239d3999ba426277ba4dfad6d059a23adcc33add69c484f864",
+      "snapshotDigest": "sha256:1807ce866b354d239d3999ba426277ba4dfad6d059a23adcc33add69c484f864",
+      "repositoryTrust": "operator-asserted",
+      "capture": "explicit-input-files"
+    },
+    "componentDigest": "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+    "componentSize": 1050523,
+    "materials": [
+      {
+        "name": "build-recipe",
+        "digest": "sha256:32bbd6a630b8ce8c777dfbf11c2bd31ef6017d8f0bc5858518336e20f0ee4899",
+        "size": 9463
+      },
+      {
+        "name": "clang",
+        "digest": "sha256:0ed7eeb0e922f6effcee5ebfa87cedf961676b78962291884cdac68d9138d5c4",
+        "size": 118680
+      },
+      {
+        "name": "compiler-closure",
+        "digest": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+        "size": 2952146
+      },
+      {
+        "name": "contracts-tool",
+        "digest": "sha256:302d855e7c6dac050c7ad3333b3418c32ebc09c3570cd22307193a3583c56e14",
+        "size": 7904536
+      },
+      {
+        "name": "dependency-lock",
+        "digest": "sha256:4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+        "size": 16525
+      },
+      {
+        "name": "generated-bindings",
+        "digest": "sha256:468a079573c5bdf4769791038aec44bbdaf5b20f9fd9bdfd786b398ee33497ef",
+        "size": 4893
+      },
+      {
+        "name": "gradle",
+        "digest": "sha256:0b088fd5c9c972089c80c691b28cc4c65def93e1b814fc9f60f0734493954caf",
+        "size": 8700
+      },
+      {
+        "name": "java",
+        "digest": "sha256:7380ce48ed5013735d2c8414db54adb8f981e7933ff594bd36f3baccddaafba3",
+        "size": 16264
+      },
+      {
+        "name": "package-inputs",
+        "digest": "sha256:4898e1508b1b056e405e269d9d46e991ced5c161c4de61711b478f76dbe46759",
+        "size": 2510
+      },
+      {
+        "name": "packager",
+        "digest": "sha256:43efe03cabe7409b666e4aab1cc1b2f83e50c7476b9652660e44dc58094bf2a2",
+        "size": 24829400
+      },
+      {
+        "name": "source-snapshot",
+        "digest": "sha256:1807ce866b354d239d3999ba426277ba4dfad6d059a23adcc33add69c484f864",
+        "size": 26635
+      },
+      {
+        "name": "toolchain-config",
+        "digest": "sha256:faf5d9882a3cc322ea40de1019997165dcbd8e5d321f77e261bdcc48d3b83bd6",
+        "size": 1044
+      },
+      {
+        "name": "wasm-tools",
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "size": 20231696
+      },
+      {
+        "name": "wit-bindgen",
+        "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+        "size": 19856344
+      }
+    ],
+    "parameters": {
+      "compiler": "teavm-c",
+      "entryPoint": "dev.latent.app.Capsule",
+      "target": "wasm32-wasip1",
+      "bindings": "lsf-java-wit-v1",
+      "optimization": "O2",
+      "javaHeapBytes": 4194304
+    },
+    "startedAt": 0,
+    "finishedAt": 0,
+    "reproducibility": "not-checked",
+    "hermetic": false,
+    "dependencyCompleteness": "declared-inputs-incomplete"
+  }
+}

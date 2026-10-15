@@ -2,6 +2,8 @@ use super::*;
 #[cfg(unix)]
 mod capability;
 #[cfg(unix)]
+mod command_cancellation;
+#[cfg(unix)]
 mod effect_management;
 #[cfg(unix)]
 mod namespace;

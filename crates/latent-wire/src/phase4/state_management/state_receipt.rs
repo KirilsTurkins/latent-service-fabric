@@ -232,7 +232,7 @@ pub(super) fn tenant_contribution(
     })
 }
 
-fn validated_row(view: &ReadView, row: &RowKey, bytes: &[u8]) -> Result<Receipt, StoreError> {
+pub(super) fn validated_bytes(row: &RowKey, bytes: &[u8]) -> Result<Receipt, StoreError> {
     if row.family != Family::Namespace || !row.key.starts_with(PREFIX) {
         return Err(StoreError::UnsupportedFormat);
     }
@@ -240,6 +240,11 @@ fn validated_row(view: &ReadView, row: &RowKey, bytes: &[u8]) -> Result<Receipt,
     if *row != key(&receipt.context()) {
         return Err(StoreError::Corrupt);
     }
+    Ok(receipt)
+}
+
+fn validated_row(view: &ReadView, row: &RowKey, bytes: &[u8]) -> Result<Receipt, StoreError> {
+    let receipt = validated_bytes(row, bytes)?;
     let current = NamespaceCatalog::read_in(
         view,
         &TenantId(receipt.after.tenant.0.clone()),

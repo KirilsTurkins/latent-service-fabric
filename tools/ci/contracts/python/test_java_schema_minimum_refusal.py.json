@@ -1,0 +1,231 @@
+{
+  "cases": [
+    "SchemaMinimumRefusalControls.test_changed_ready_view_after_refusal_cannot_claim_no_mutation",
+    "SchemaMinimumRefusalControls.test_current_callsite_uses_helper_and_legacy_preserves_sole_original_409",
+    "SchemaMinimumRefusalControls.test_current_schema_minimum_and_future_generation_are_not_old_history",
+    "SchemaMinimumRefusalControls.test_foreign_scope_or_entity_minimum_never_makes_a_request",
+    "SchemaMinimumRefusalControls.test_foreign_stale_or_wrong_epoch_success_cannot_precede_the_negative_query",
+    "SchemaMinimumRefusalControls.test_malformed_missing_and_nonquery_original_minima_are_fatal",
+    "SchemaMinimumRefusalControls.test_minimum_incarnation_schema_and_recovery_epoch_mismatches_are_fatal",
+    "SchemaMinimumRefusalControls.test_native_scope_or_recovery_transition_cannot_substitute_for_schema_migration",
+    "SchemaMinimumRefusalControls.test_old_409_guard_red_and_current_closed_refusal_green_with_real_query_parser",
+    "SchemaMinimumRefusalControls.test_other_503_bodies_missing_body_and_loss_are_not_the_intended_refusal",
+    "SchemaMinimumRefusalControls.test_real_http_normal_return_omits_loss_flag_while_explicit_malformed_flags_fail",
+    "SchemaMinimumRefusalControls.test_three_requests_keep_same_alice_path_and_original_minimum_without_body_or_command",
+    "SchemaMinimumRefusalControls.test_transport_or_following_query_failure_is_never_retried_or_recorded",
+    "SchemaMinimumRefusalControls.test_wrong_200_409_403_and_boolean_status_never_record_the_case_or_query_again",
+    "SchemaMinimumRefusalControls.test_wrong_count_before_or_after_refusal_fails_the_actual_query_oracle",
+    "SchemaMinimumRefusalControls.test_wrong_service_and_unrelated_503_contexts_do_not_expand_generic_refusal",
+    "SchemaMinimumRefusalControls.test_wrong_subject_denial_cannot_supply_the_required_positive_query"
+  ],
+  "guards": {
+    "SchemaMinimumRefusalControls.test_changed_ready_view_after_refusal_cannot_claim_no_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_current_callsite_uses_helper_and_legacy_preserves_sole_original_409": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_current_schema_minimum_and_future_generation_are_not_old_history": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_foreign_scope_or_entity_minimum_never_makes_a_request": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_foreign_stale_or_wrong_epoch_success_cannot_precede_the_negative_query": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_malformed_missing_and_nonquery_original_minima_are_fatal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_minimum_incarnation_schema_and_recovery_epoch_mismatches_are_fatal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_native_scope_or_recovery_transition_cannot_substitute_for_schema_migration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_old_409_guard_red_and_current_closed_refusal_green_with_real_query_parser": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_other_503_bodies_missing_body_and_loss_are_not_the_intended_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_real_http_normal_return_omits_loss_flag_while_explicit_malformed_flags_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_three_requests_keep_same_alice_path_and_original_minimum_without_body_or_command": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_transport_or_following_query_failure_is_never_retried_or_recorded": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_wrong_200_409_403_and_boolean_status_never_record_the_case_or_query_again": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_wrong_count_before_or_after_refusal_fails_the_actual_query_oracle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_wrong_service_and_unrelated_503_contexts_do_not_expand_generic_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    },
+    "SchemaMinimumRefusalControls.test_wrong_subject_denial_cannot_supply_the_required_positive_query": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:acceb35b3c27337be3553f6d0e217592fb8aefd94983fefb0b4d8aca3d4a7558",
+        "class:setup-sha256:f86b1963ebd4c4a3e4aaf529ae7843e1302f3bde4ba9f8c94955bb8dce9e67bf"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_schema_minimum_refusal.py",
+  "reviewReason": "Preserve all sixteen schema-minimum controls and their guards; add real Http.request normal-return coverage with omitted bodyLost and explicit malformed flags, without expanding any status, body, token, authority, deadline or retry behavior.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

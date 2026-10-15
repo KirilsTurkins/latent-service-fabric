@@ -29,7 +29,7 @@ pub struct ProtectedEffectClock {
 }
 
 impl ProtectedEffectClock {
-    pub(super) fn admit(
+    pub(in crate::standalone) fn admit(
         original: Arc<dyn ActivationClock>,
         authority: Arc<SupplyChainAuthority>,
         checkpoint: Option<&ExternalCheckpoint>,
@@ -62,11 +62,14 @@ impl ProtectedEffectClock {
     /// The authority uses its bounded currentness read, without filesystem I/O
     /// or renewal. No consumer substitutes a later wall-clock sample.
     pub fn sample(&self) -> Result<ClockSample, PlatformError> {
+        // Sampling and publication share one order. Otherwise a concurrent
+        // caller can publish a newer sample before this one obtains the lock,
+        // making an earlier real observation look like a clock rollback.
+        let mut state = self.observation.lock().map_err(|_| unavailable())?;
         let sample = self.original.sample();
         // This exact original owner's sealed metadata remains readable inside
         // its current admission fence, without recursively locking its ledger.
         let coverage = self.coverage.sample();
-        let mut state = self.observation.lock().map_err(|_| unavailable())?;
         if state.rejected || !continuous(&state, sample) {
             state.rejected = true;
             return Err(unavailable());
@@ -93,7 +96,15 @@ impl ProtectedEffectClock {
         Ok(sample)
     }
 
-    pub(super) fn covered_epoch(&self) -> Result<u64, PlatformError> {
+    /// A contended observation grants no time or authority, but is not death.
+    pub(in crate::standalone) fn is_live(&self) -> bool {
+        match self.sample() {
+            Ok(_) => true,
+            Err(error) => authority_busy(&error),
+        }
+    }
+
+    pub(in crate::standalone) fn covered_epoch(&self) -> Result<u64, PlatformError> {
         self.sample()?;
         let state = self.observation.lock().map_err(|_| unavailable())?;
         if state.rejected {
@@ -101,6 +112,18 @@ impl ProtectedEffectClock {
         }
         Ok(state.authority_epoch)
     }
+}
+
+fn authority_busy(error: &PlatformError) -> bool {
+    let [detail] = error.details.as_slice() else {
+        return false;
+    };
+    error.code == PlatformErrorCode::Unavailable
+        && error.retryable
+        && error.message == "admission-authority-busy"
+        && detail.kind == "admission.currentness"
+        && detail.fields.len() == 1
+        && detail.fields.get("reason").map(String::as_str) == Some("admission-authority-busy")
 }
 
 impl EffectTimeSource for ProtectedEffectClock {

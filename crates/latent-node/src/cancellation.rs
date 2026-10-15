@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, Weak};
 
 use latent_core::{
     ActivationId, ActivationTerminalState, BoxFuture, CancelDisposition, ErrorDetail, Metadata,
@@ -117,6 +117,14 @@ impl ActivationCancellationRegistry {
         let Some(state) = state else {
             return Ok(CancelDisposition::NotFound);
         };
+        self.request_state(&state, reason)
+    }
+
+    fn request_state(
+        &self,
+        state: &CancellationState,
+        reason: &str,
+    ) -> Result<CancelDisposition, PlatformError> {
         match state.request_cancellation(self.bound_reason(reason)) {
             CancellationRequest::Installed | CancellationRequest::AlreadyAccepted => {
                 Ok(CancelDisposition::Accepted)
@@ -184,6 +192,12 @@ pub struct CancellationRegistration {
 }
 
 impl CancellationRegistration {
+    pub(crate) fn weak_owner(&self) -> WeakCancellationOwner {
+        WeakCancellationOwner {
+            registry: Arc::downgrade(&self.registry.inner),
+            state: Arc::downgrade(&self.state),
+        }
+    }
     #[must_use]
     pub fn activation_id(&self) -> &ActivationId {
         &self.activation_id
@@ -247,7 +261,122 @@ pub struct CancellationHandle {
     maximum_reason_bytes: usize,
 }
 
+#[derive(Clone)]
+pub(crate) struct WeakCancellationOwner {
+    registry: Weak<RegistryInner>,
+    state: Weak<CancellationState>,
+}
+
+/// Read-only view of the original accepted cancellation. It retains neither
+/// the registration table nor an activation/guest owner.
+pub(crate) struct CancellationMetadataProbe(Weak<CancellationState>);
+
+impl CancellationMetadataProbe {
+    pub(crate) fn is_current(&self) -> bool {
+        self.0.upgrade().is_some_and(|state| {
+            matches!(
+                &*state.lock_lifecycle(),
+                CancellationLifecycle::CancellationAccepted { .. }
+                    | CancellationLifecycle::Terminal {
+                        state: ActivationTerminalState::Cancelled,
+                        cancellation_reason: Some(_),
+                    }
+            )
+        })
+    }
+}
+
+impl WeakCancellationOwner {
+    pub(crate) fn matches_handle(&self, handle: &CancellationHandle) -> bool {
+        self.state
+            .upgrade()
+            .is_some_and(|state| Arc::ptr_eq(&state, &handle.state))
+    }
+    pub(crate) fn matches_activation(&self, activation: &ActivationId) -> bool {
+        self.state
+            .upgrade()
+            .is_some_and(|original| &original.activation_id == activation)
+    }
+
+    pub(crate) fn cancel(
+        &self,
+        reason: &str,
+    ) -> crate::transaction_runtime::OriginalCommandCancelDisposition {
+        use crate::transaction_runtime::OriginalCommandCancelDisposition as D;
+        let (Some(inner), Some(original)) = (self.registry.upgrade(), self.state.upgrade()) else {
+            return D::RecoveryRequired;
+        };
+        let registry = ActivationCancellationRegistry { inner };
+        let registrations = registry.lock_registrations();
+        if !registrations
+            .get(&original.activation_id)
+            .is_some_and(|current| Arc::ptr_eq(current, &original))
+        {
+            return D::RecoveryRequired;
+        }
+        // The real registration remains current through the same cancellation
+        // transition used by activation control and commit I/O acceptance.
+        let result = match original.request_cancellation(registry.bound_reason(reason)) {
+            CancellationRequest::Installed | CancellationRequest::AlreadyAccepted => D::Requested,
+            CancellationRequest::AlreadyTerminal(_) | CancellationRequest::CommitIoAccepted => {
+                D::RecoveryRequired
+            }
+        };
+        drop(registrations);
+        result
+    }
+
+    pub(crate) fn cancel_authorized(
+        &self,
+        reason: &str,
+        install: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<crate::transaction_runtime::OriginalCommandCancelDisposition, PlatformError> {
+        use crate::transaction_runtime::OriginalCommandCancelDisposition as D;
+        let (Some(inner), Some(original)) = (self.registry.upgrade(), self.state.upgrade()) else {
+            return Ok(D::RecoveryRequired);
+        };
+        let registry = ActivationCancellationRegistry { inner };
+        let registrations = registry.lock_registrations();
+        if !registrations
+            .get(&original.activation_id)
+            .is_some_and(|current| Arc::ptr_eq(current, &original))
+        {
+            return Ok(D::RecoveryRequired);
+        }
+        let mut lifecycle = original.lock_lifecycle();
+        let installed = matches!(*lifecycle, CancellationLifecycle::Live);
+        let result = match &*lifecycle {
+            CancellationLifecycle::Live => {
+                install()?;
+                *lifecycle = CancellationLifecycle::CancellationAccepted {
+                    reason: registry.bound_reason(reason),
+                };
+                D::Requested
+            }
+            CancellationLifecycle::CancellationAccepted { .. } => D::Requested,
+            CancellationLifecycle::CommitAccepted | CancellationLifecycle::Terminal { .. } => {
+                D::RecoveryRequired
+            }
+        };
+        drop(lifecycle);
+        drop(registrations);
+        if installed {
+            original.signal.send_replace(true);
+        }
+        Ok(result)
+    }
+}
+
 impl CancellationHandle {
+    pub(crate) fn metadata_probe(&self) -> CancellationMetadataProbe {
+        CancellationMetadataProbe(Arc::downgrade(&self.state))
+    }
+    pub(crate) fn accepted_cancellation(&self) -> bool {
+        matches!(
+            *self.state.lock_lifecycle(),
+            CancellationLifecycle::CancellationAccepted { .. }
+        )
+    }
     #[must_use]
     pub fn activation_id(&self) -> &ActivationId {
         &self.state.activation_id
@@ -592,6 +721,49 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
+
+    #[test]
+    fn original_command_weak_owner_cannot_cancel_a_reused_registration() {
+        use crate::transaction_runtime::OriginalCommandCancelDisposition as D;
+        let registry = ActivationCancellationRegistry::default();
+        let id = ActivationId("original-command-reuse".into());
+        let registration = registry.register(id.clone()).unwrap();
+        let original = registration.weak_owner();
+        let retained = registration.token();
+        drop(registration);
+        let replacement = registry.register(id).unwrap();
+        assert_eq!(original.cancel("stale"), D::RecoveryRequired);
+        assert!(!replacement.token().is_cancelled());
+        assert!(!retained.is_cancelled());
+        assert_eq!(replacement.weak_owner().cancel("current"), D::Requested);
+        assert!(replacement.token().is_cancelled());
+        assert!(!retained.is_cancelled());
+    }
+
+    #[test]
+    fn original_command_weak_owner_preserves_commit_acceptance_and_terminal_unknown() {
+        use crate::transaction_runtime::OriginalCommandCancelDisposition as D;
+        let registry = ActivationCancellationRegistry::default();
+        let registration = registry
+            .register(ActivationId("original-command-commit".into()))
+            .unwrap();
+        let original = registration.weak_owner();
+        assert!(registration
+            .handle()
+            .accept_commit(ActivationTerminalState::Completed, || true));
+        assert_eq!(original.cancel("after accepted IO"), D::RecoveryRequired);
+        assert!(registration.commit_accepted());
+        assert!(!registration.token().is_cancelled());
+        assert_eq!(registration.state.terminal_state(), None);
+        let terminal = registration.publish_terminal(ActivationTerminalState::PlatformFailed);
+        assert_eq!(terminal.state, ActivationTerminalState::PlatformFailed);
+        assert_eq!(
+            original.cancel("only registry terminal"),
+            D::RecoveryRequired
+        );
+        drop(registration);
+        assert_eq!(original.cancel("missing live owner"), D::RecoveryRequired);
+    }
 
     #[test]
     fn commit_acceptance_keeps_registration_live_and_preserves_actual_disposition() {
