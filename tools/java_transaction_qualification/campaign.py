@@ -27,7 +27,7 @@ def precondition(result):
     return '"' + base64.b64encode(bytes(key["some"])).decode() + '"'
 
 
-def rpc_result(record, result, publication, key):
+def rpc_command(record, result, publication, key):
     require(record["commandId"] == result["command-id"] and record["attemptId"] == result["attempt-id"]
             and record["metadataDurable"] is True
             and record["source"]["publicationId"] == publication
@@ -36,6 +36,10 @@ def rpc_result(record, result, publication, key):
                                       else "COMMAND_OUTCOME_REJECTED")
             and record["applicationStateCommitted"] is (result["disposition"] == "committed"),
             "actual-original-durable-command-inspection")
+
+
+def rpc_result(record, result, publication, key):
+    rpc_command(record, result, publication, key)
     retained = record["retainedResult"]
     require(retained["kind"] == ("success" if result["disposition"] == "committed" else "business-rejection")
             and retained["value"]["payload"] == {"encoding": "base64", "data": result["result"]["body-base64"]},
@@ -349,7 +353,11 @@ class Campaign:
                 "--reason", "cancelled")["data"]
         require(result["cancellationDisposition"] == "COMMAND_CANCEL_DISPOSITION_ALREADY_COMMITTED",
                 "retained-cancellation-is-already-committed")
-        rpc_result(result["command"], original, publication, key)
+        command = result["command"]
+        if command["retainedResult"] is None:
+            rpc_command(command, original, publication, key)
+            command = lifecycle.lookup(self.client, publication, key)
+        rpc_result(command, original, publication, key)
         if current:
             self.node.current_activation.switch(self, "put-once-compatible-v2", retained_cancellation=True)
         http.replay(original, self.original(key))
