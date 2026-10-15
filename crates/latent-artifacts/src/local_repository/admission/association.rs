@@ -3,10 +3,10 @@
 use latent_core::PlatformError;
 use latent_manifest::{JsonManifestCodec, ManifestCodec};
 
-use super::super::corrupt;
+use super::super::{admission_storage::read::CheckedUpload, corrupt};
 use crate::package::{
     artifact_blob_digest, decode_referrer, inspect_package, verify_layer_bytes, EvidenceKind,
-    LayerRole, PackageKind, PackageLimits,
+    LayerRole, PackageKind, PackageLayer, PackageLimits,
 };
 use crate::{
     decode_contract_metadata, AdmissionBinding, AdmissionEvidence, ContractMetadataLimits,
@@ -19,6 +19,56 @@ pub(in crate::local_repository) fn verify(
     metadata: &VerifiedArtifactMetadata,
     codec: &JsonManifestCodec,
 ) -> Result<(), PlatformError> {
+    verify_input(binding, Input::Raw(upload), metadata, codec)
+}
+
+pub(in crate::local_repository) fn verify_checked(
+    binding: &AdmissionBinding,
+    upload: CheckedUpload<'_>,
+    metadata: &VerifiedArtifactMetadata,
+    codec: &JsonManifestCodec,
+) -> Result<PackageAdmissionUpload, PlatformError> {
+    verify_input(binding, Input::Checked(&upload), metadata, codec)?;
+    Ok(upload.into_upload())
+}
+
+enum Input<'upload, 'record> {
+    Raw(&'upload PackageAdmissionUpload),
+    Checked(&'upload CheckedUpload<'record>),
+}
+
+impl Input<'_, '_> {
+    fn upload(&self) -> &PackageAdmissionUpload {
+        match self {
+            Self::Raw(upload) => upload,
+            Self::Checked(upload) => upload.as_upload(),
+        }
+    }
+
+    fn verify_layer(
+        &self,
+        index: usize,
+        layer: &PackageLayer,
+        limits: PackageLimits,
+    ) -> Result<(), PlatformError> {
+        if let Self::Checked(upload) = self {
+            // inspect_package has checked these exact layer fields/limits.
+            // Only the unchanged owned bytes' already-proved hash is reused.
+            if upload.layer_matches(index, layer) {
+                return Ok(());
+            }
+        }
+        verify_layer_bytes(layer, &self.upload().layers[index].1, limits)
+    }
+}
+
+fn verify_input(
+    binding: &AdmissionBinding,
+    input: Input<'_, '_>,
+    metadata: &VerifiedArtifactMetadata,
+    codec: &JsonManifestCodec,
+) -> Result<(), PlatformError> {
+    let upload = input.upload();
     let limits = PackageLimits::default();
     let layout = inspect_package(&upload.manifest, &upload.configuration, limits)?;
     if layout.digest() != &binding.package
@@ -34,11 +84,17 @@ pub(in crate::local_repository) fn verify(
     {
         return Err(corrupt("retained-package-association"));
     }
-    for (layer, (path, bytes)) in layout.config().layers.iter().zip(&upload.layers) {
+    for (index, (layer, (path, bytes))) in layout
+        .config()
+        .layers
+        .iter()
+        .zip(&upload.layers)
+        .enumerate()
+    {
         if &layer.path != path {
             return Err(corrupt("retained-package-layer-set"));
         }
-        verify_layer_bytes(layer, bytes, limits)?;
+        input.verify_layer(index, layer, limits)?;
         match layer.role {
             LayerRole::Component => {
                 if layer.digest.as_str() != binding.release.0

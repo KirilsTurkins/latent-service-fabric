@@ -1117,7 +1117,12 @@
         "web::tests::static_contract_fixtures_agree_with_json_schema_acceptance",
         "web::tests::static_routing_is_closed_signed_browser_metadata_with_html_documents",
         "web::tests::unknown_fields_and_duplicate_keys_are_rejected_even_in_an_integrity_checked_package",
-        "web::tests::xml_sitemaps_are_inert_exact_media_and_legacy_fonts_remain_rejected"
+        "web::tests::xml_sitemaps_are_inert_exact_media_and_legacy_fonts_remain_rejected",
+        "local_repository::tests::admission::checked_upload::checked_storage_bytes_keep_owned_buffers_and_raw_mutations_require_fresh_hashes",
+        "local_repository::tests::admission::checked_upload::recomputed_storage_and_completion_digests_cannot_replace_package_layer_identity",
+        "local_repository::tests::admission::checked_upload::checked_storage_proof_cannot_cross_package_release_or_embedded_tenant_binding",
+        "local_repository::tests::admission::checked_upload::checked_storage_association_preserves_field_limits_paths_and_evidence_refusals",
+        "local_repository::tests::admission::checked_upload::checked_upload_keeps_fresh_file_digest_and_component_capacity_failures"
       ],
       "expectedIgnored": [
         "local_repository::tests::one_hundred_thousand_index_adoptions_are_bounded"
@@ -1128,7 +1133,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-artifacts/Cargo.toml",
-      "minimumCases": 272,
+      "minimumCases": 277,
       "mode": "libtest",
       "package": "latent-artifacts",
       "platforms": [
@@ -4577,7 +4582,8 @@
         "supply_chain::tests::retained_recovery::retained_recovery_preserves_raw_capacity_cardinality_and_error_precedence",
         "supply_chain::tests::retained_recovery::retained_recovery_does_not_hide_corruption_behind_expired_or_revoked_history",
         "supply_chain::tests::retained_recovery::retained_structural_history_never_replaces_current_policy_clock_or_owner",
-        "supply_chain::tests::retained_recovery::retained_transaction_history_cannot_choose_a_more_permissive_manifest_profile"
+        "supply_chain::tests::retained_recovery::retained_transaction_history_cannot_choose_a_more_permissive_manifest_profile",
+        "supply_chain::tests::catalog::checked_upload::checked_catalog_recovery_keeps_current_revocations_tenant_policy_and_expiry"
       ],
       "expectedIgnored": [
         "supply_chain::tests::support::operator_fixture::export_operator_workflow_fixture",
@@ -4600,7 +4606,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 153,
+      "minimumCases": 154,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [

@@ -14,6 +14,8 @@ use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest, TenantId};
 
 use super::{Fixture, SupplyChainAuthority, NOW};
 
+mod checked_upload;
+
 struct Noop;
 impl Wake for Noop {
     fn wake(self: Arc<Self>) {}
