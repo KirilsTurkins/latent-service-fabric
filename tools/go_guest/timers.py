@@ -45,7 +45,9 @@ def async_source(text, sdk):
         '\t\t\tcase STATUS_RETURNED:\n\t\t\t\tif lsfHandleTimerEvent(event1) { break }\n\t\t\t\twaitableJoin(event1, 0)')
     text = replace_once(text, '\t\t// Block this goroutine until the scheduler wakes us up.',
         '\t\tevent0 = EVENT_NONE\n\n\t\t// Block this goroutine until the scheduler wakes us up.')
-    text = replace_once(text, '\t\t(<-state.channel)\n', '\t\t(<-state.channel)\n\t\tif lsfStartTimerWait() { continue }\n')
+    text = replace_once(text, '\t\t(<-state.channel)\n',
+        '\t\t(<-state.channel)\n\t\trefreshTimers := lsfStartTimerWait()\n'
+        '\t\tif refreshTimers || lsfRunnableActivationTasks() { runtime.Gosched(); continue }\n')
     if text.count('len(state.pending) == 0') != 2:
         raise ValueError('go-timer-dispatcher-pending-shape-drift')
     text = text.replace('len(state.pending) == 0', 'len(state.pending) + len(state.timerWaits) == 0')

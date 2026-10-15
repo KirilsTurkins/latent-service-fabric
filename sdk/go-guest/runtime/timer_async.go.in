@@ -10,6 +10,9 @@ type lsfTimerWait struct {
 //go:linkname lsfNextTimer runtime.lsfNextTimer
 func lsfNextTimer() (uint64, uint64)
 
+//go:linkname lsfRunnableActivationTasks runtime.lsfRunnableActivationTasks
+func lsfRunnableActivationTasks() bool
+
 //go:wasmimport latent:runtime/activation@0.1.0 [async-lower]timer-next
 //go:noescape
 func lsfTimerNext(generation, id int64, result unsafe.Pointer) uint32
@@ -79,7 +82,6 @@ func lsfStartTimerWait() bool {
         return false
     case STATUS_RETURNED:
         lsfCompleteTimerWait(wait)
-        runtime.Gosched()
         return true
     default:
         panic("LSF timer-next canonical status")

@@ -63,7 +63,7 @@ async fn signed_standard_timers_contexts_and_rearm_keep_original_heap_owners() {
     )
     .await;
     for iteration in 0..2 {
-        for mode in [0, 1, 2, 3, 4, 5, 6, 9, 11, 12] {
+        for mode in [0, 1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 14] {
             let began = std::time::Instant::now();
             let receipt = success(
                 f.manager

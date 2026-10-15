@@ -137,5 +137,16 @@ func lsfNextTimer() (uint64, uint64) {
     return selected.lsfToken[0], selected.lsfToken[1]
 }
 
+// A timer may publish its callback after the idle sender woke the dispatcher.
+// The old idle signal cannot authorize WAIT/EXIT while that owned work is
+// already runnable. Parked unknown work is deliberately not treated runnable.
+//go:linkname lsfRunnableActivationTasks
+func lsfRunnableActivationTasks() bool {
+    for _, gp := range allgs {
+        if gp.lsfOwner[1] != 0 && readgstatus(gp) &^ _Gscan == _Grunnable { return true }
+    }
+    return false
+}
+
 func lsfActivationTimerFence(generation, id uint64)
 func lsfActivationTimerStopped(generation, id uint64)

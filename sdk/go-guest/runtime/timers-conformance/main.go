@@ -87,6 +87,20 @@ func Run(which uint32) uint32 {
             timer.Reset(time.Hour)
             if !timer.Stop() { panic("timer reset/stop") }
         }
+    case 13:
+        var group sync.WaitGroup
+        group.Add(1)
+        time.AfterFunc(0, group.Done)
+        group.Wait()
+    case 14:
+        // Expiry can enqueue a callback between the runtime's idle send and
+        // dispatcher receive. Each iteration needs a fresh quiescence round.
+        for range 64 {
+            var group sync.WaitGroup
+            group.Add(1)
+            time.AfterFunc(0, group.Done)
+            group.Wait()
+        }
     }
     return 42
 }
