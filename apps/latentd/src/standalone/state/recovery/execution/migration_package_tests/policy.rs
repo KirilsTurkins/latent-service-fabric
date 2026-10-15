@@ -54,6 +54,7 @@ pub(super) fn revoke(fixture: &Fixture) {
         .policy
         .outcome("examples", "native", fixture.cutoff())
         .unwrap()
+        .value()
         .as_ref()
         .unwrap()
         .revision;
