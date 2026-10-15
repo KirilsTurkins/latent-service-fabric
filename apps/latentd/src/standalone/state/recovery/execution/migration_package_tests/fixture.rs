@@ -170,6 +170,8 @@ impl Fixture {
         loop {
             let physical = self.store.snapshot().unwrap();
             if physical.accepted == 0
+                && physical.active_reads == 0
+                && physical.active_writes == 0
                 && physical.retained_operation_bytes == 0
                 && !physical.custody_active
             {

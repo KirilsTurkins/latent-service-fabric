@@ -333,7 +333,6 @@ fn custody_panic_quarantines_without_reopening_admission_or_skipping_native_clea
         .unwrap();
     assert!(matches!(wait(failed), Err(StoreIoError::RecoveryRequired)));
     metadata_retired(&owner);
-    assert!(witness.has_retired());
     assert_eq!(
         owner
             .submit(StoreIoKind::Read, 0, |_| ())
@@ -344,6 +343,7 @@ fn custody_panic_quarantines_without_reopening_admission_or_skipping_native_clea
     );
     let report = finish(&owner);
     assert!(!report.clean && report.snapshot.physically_retired());
+    assert!(witness.has_retired());
 }
 
 #[test]
