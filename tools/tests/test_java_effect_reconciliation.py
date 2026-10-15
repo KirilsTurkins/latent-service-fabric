@@ -40,6 +40,7 @@ def fixture():
     audit = {'status': 'AUDIT_ACK_STATUS_DURABLE', 'attemptSequence': '13'}
     planning = reply('state plan-effect', {'plan': plan, 'replayed': False, 'auditAcknowledgement': audit})
     recovery = {'family': 'state', 'operationId': flow.OPERATION, 'namespace': receipt['namespace'],
+        'tenant': original['effect']['command']['namespace']['tenant'],
         'authorizationPublication': original['effect']['authorizationPublication'], 'recordId': receipt['recordId'],
         'expectedVersion': original['expectedVersion'], 'expectedPolicyDigest': policy, 'action': flow.ACTION,
         'originalEffectPlan': plan, 'automaticRetry': False}
@@ -235,6 +236,22 @@ class EffectReconciliationTests(unittest.TestCase):
             flow.policy_proposal(changed, hosts, publication)
         with self.assertRaises(ValueError):
             flow.policy_proposal(proposals, hosts, 'publication:sha256:' + '2' * 64)
+
+    def test_recovery_tenant_must_match_original_scope_without_missing_or_foreign_fallback(self):
+        _, _, _, _, planning, applying, _ = fixture()
+        plan = planning['data']['plan']
+        tenant = plan['original']['effect']['command']['namespace']['tenant']
+        self.assertEqual(applying['data']['recovery']['tenant'], tenant)
+        self.assertEqual(flow.receipt(applying, 'state apply-effect', plan), applying['data']['receipt'])
+        for replacement in [None, '', 'foreign-tenant', 1]:
+            changed = deepcopy(applying)
+            changed['data']['recovery']['tenant'] = replacement
+            with self.assertRaisesRegex(ValueError, 'original-effect-reconciliation-no-retry'):
+                flow.receipt(changed, 'state apply-effect', plan)
+        changed = deepcopy(applying)
+        del changed['data']['recovery']['tenant']
+        with self.assertRaisesRegex(ValueError, 'original-effect-reconciliation-no-retry'):
+            flow.receipt(changed, 'state apply-effect', plan)
 
 
 if __name__ == '__main__':

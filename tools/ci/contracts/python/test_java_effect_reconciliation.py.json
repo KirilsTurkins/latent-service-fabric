@@ -8,6 +8,7 @@
     "EffectReconciliationTests.test_original_byte_and_uint64_contracts_refuse_malformed_or_overflow_values",
     "EffectReconciliationTests.test_plan_selectors_kind_action_stamp_and_actual_encoded_plan_cannot_be_substituted",
     "EffectReconciliationTests.test_receipt_requires_exact_real_operator_original_plan_and_positive_provider_fact",
+    "EffectReconciliationTests.test_recovery_tenant_must_match_original_scope_without_missing_or_foreign_fallback",
     "EffectReconciliationTests.test_target_rule_is_separate_purpose_limited_and_preserves_default_proposal",
     "EffectReconciliationTests.test_unknown_transport_replayed_or_missing_durable_audit_is_fatal"
   ],
@@ -19,7 +20,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -31,7 +32,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -43,7 +44,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -55,7 +56,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -67,7 +68,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -79,7 +80,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -91,7 +92,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -103,7 +104,19 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EffectReconciliationTests.test_recovery_tenant_must_match_original_scope_without_missing_or_foreign_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -115,7 +128,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -127,7 +140,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:49cfc6c9fc04981ef0113d50f17a3b4da588ecaa705fe6eba7f0aa2c704de83c",
+        "module:setup-sha256:c2b9c8d1b111c7730c670b322a22fbd900db202ff0e00a2d5e69e877338b8b83",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -135,6 +148,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_effect_reconciliation.py",
-  "reviewReason": "Add finite explicit current-admin original-effect reconciliation controls without changing existing caller isolation or original test guards",
+  "reviewReason": "Reconcile the existing CLI recovery tenant with the original plan, add closed tenant negatives, and preserve all previous test predicates",
   "schemaVersion": "latent.ci.contracts.v1"
 }

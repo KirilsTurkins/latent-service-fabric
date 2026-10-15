@@ -184,6 +184,7 @@ def receipt(value, command, actual_plan):
     if applying:
         require(result['replayed'] is False and result['recovery'] == {
             'family': 'state', 'operationId': OPERATION, 'namespace': actual['namespace'],
+            'tenant': expected['effect']['command']['namespace']['tenant'],
             'authorizationPublication': expected['effect']['authorizationPublication'], 'recordId': actual['recordId'],
             'expectedVersion': expected['expectedVersion'], 'expectedPolicyDigest': expected['expectedPolicyDigest'],
             'action': ACTION, 'originalEffectPlan': actual_plan, 'automaticRetry': False},
