@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "checkpointKind": "source-specific recovery continuation after owner-directed baseline merge",
+  "recordedAtUTC": "2026-10-15T20:30:57.697380+00:00",
+  "continuation": {
+    "branch": "fix/recovery-startup-qualification-20261015",
+    "baseCommit": "6f637e989864766ab298f902ada3d331d9959d29",
+    "baseTree": "2d109e9f37413b4fecc390120717d1ff5f87b278",
+    "initialProductionFixPresent": false,
+    "wholeHeadQualified": false,
+    "packagedDistributionQualified": false,
+    "ticketClosureClaimed": false
+  },
+  "baselineStack": [
+    {
+      "pullRequest": 970,
+      "sourceHead": "5e51bc73aba7ab3965b29b690c938ee42942cb26",
+      "squashCommit": "9cb1fb8d897e3241f4bb35af1c6e84faefa10eb1"
+    },
+    {
+      "pullRequest": 986,
+      "sourceHead": "bf49ff837c09a51405783cc4c4cb0be4b92b29de",
+      "squashCommit": "1990f812052928c6d6420c99264498b8cdd8476d"
+    },
+    {
+      "pullRequest": 988,
+      "sourceHead": "3a2829f62dfcfa74f502dbea46a0280e5c4455a2",
+      "squashCommit": "6f637e989864766ab298f902ada3d331d9959d29"
+    }
+  ],
+  "historicalObservedImplementation": {
+    "sourceHead": "5e51bc73aba7ab3965b29b690c938ee42942cb26",
+    "sourceTree": "f5a5f60b13c41d71f4dda1ccba1d042a58c432e0",
+    "validationAttribution": "These observed results belong to actual5e source and separately identified private overlays. They do not qualify the later merged baseline or continuation head.",
+    "fullNativeSuites": {
+      "registeredSuites": 8,
+      "activePassed": 1240,
+      "originalIgnored": 38,
+      "receiptSHA256": "19620a567697d79e15c83aacc5f091e9fba851b23958e7dbf28a1a7351c4dd0a",
+      "scopedStaticsPassed": true
+    },
+    "sixDefaultBuilds": {
+      "sourceHeads": {
+        "node": "5e51bc73aba7ab3965b29b690c938ee42942cb26",
+        "recovery_helper": "5e51bc73aba7ab3965b29b690c938ee42942cb26",
+        "cli": "5e51bc73aba7ab3965b29b690c938ee42942cb26",
+        "contracts_tool": "5e51bc73aba7ab3965b29b690c938ee42942cb26",
+        "aot_compiler": "5e51bc73aba7ab3965b29b690c938ee42942cb26",
+        "signer": "5e51bc73aba7ab3965b29b690c938ee42942cb26"
+      },
+      "receiptSHA256": "0482d15e3c356b680f831a85a4b145629d0f8bc988cb5bb5e5339fe9bae68246",
+      "hostArchiveIndexSHA256": "ade4a76c98ce18faeef1217725078d4b1948cd3ce0347f899e4bfd42bf63ccdf",
+      "hostArchiveSHA256": "c1e0abd05ea819e8f0e7545d219dae649bceba8601336c7760b12290a7c06371"
+    },
+    "hostedRequiredResults": {
+      "ci": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38792417221/job/116628064872",
+      "security": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38792417028/job/116620630698",
+      "bothObservedSuccessful": true,
+      "sourceHead": "5e51bc73aba7ab3965b29b690c938ee42942cb26"
+    },
+    "ordinaryProgrammes": [
+      {
+        "mode": "terminal",
+        "passed": false,
+        "failedStage": "actual-http",
+        "fixedFailureReason": "node-startup-exit-unavailable",
+        "measuredCases": 32,
+        "cliProcesses": 129,
+        "nativeActions": 0,
+        "seconds": 206.301634,
+        "trackedProcesses": 85,
+        "normalPhysicalRetirementReports": 10,
+        "intentionalCrashRecords": [
+          {
+            "file": "node-10-crash.json",
+            "exitStatus": -9,
+            "reaped": true,
+            "cleanShutdownObserved": false,
+            "nativeRetirementReportObserved": false
+          }
+        ],
+        "startupFailureObservations": [
+          {
+            "file": "evidence/node-12-startup.stderr",
+            "nodeOrdinal": "node-12",
+            "rawSHA256": "cb4deb9b40a9b09044c9c577d898c3f9f6e236dc7e10c273d2c5a732e6620bbd",
+            "startupSucceeded": false,
+            "terminalFailure": {
+              "owner": "platform",
+              "reason": "unavailable"
+            },
+            "observations": [
+              {
+                "stage": "protectedStoreStartup",
+                "failure": {
+                  "owner": "platform",
+                  "reason": "unavailable"
+                }
+              },
+              {
+                "stage": "nodeServices",
+                "failure": {
+                  "owner": "platform",
+                  "reason": "unavailable"
+                }
+              }
+            ],
+            "truncated": false,
+            "shutdownReportPresent": false
+          }
+        ],
+        "allPostGuards": {
+          "conductorSourceUnchanged": true,
+          "nativeProductsUnchanged": true,
+          "nativeManifestUnchanged": true,
+          "currentSelectionUnchanged": true,
+          "conductorSelectionUnchanged": true,
+          "freshSixRoleHostArchiveIndexUnchanged": true
+        },
+        "ownerBoundaryPassed": true,
+        "safeSummarySHA256": "0e89336244af8a39ab3c2abfe121774e70fd46318ed1491ccf46ad8e6f1fb8cb",
+        "hostVerificationSHA256": "83340ff4be4dd3387f3c4b9a9780493aeb905f7bca8123ed4264292bdbc8f78d"
+      },
+      {
+        "mode": "pending",
+        "passed": false,
+        "failedStage": "actual-signed-pending-recovery",
+        "fixedFailureReason": "node-startup-exit-unavailable",
+        "measuredCases": 13,
+        "cliProcesses": 58,
+        "nativeActions": 5,
+        "seconds": 178.85154,
+        "trackedProcesses": 55,
+        "normalPhysicalRetirementReports": 5,
+        "intentionalCrashRecords": [],
+        "startupFailureObservations": [
+          {
+            "file": "evidence/node-6-startup.stderr",
+            "nodeOrdinal": "node-6",
+            "rawSHA256": "cb4deb9b40a9b09044c9c577d898c3f9f6e236dc7e10c273d2c5a732e6620bbd",
+            "startupSucceeded": false,
+            "terminalFailure": {
+              "owner": "platform",
+              "reason": "unavailable"
+            },
+            "observations": [
+              {
+                "stage": "protectedStoreStartup",
+                "failure": {
+                  "owner": "platform",
+                  "reason": "unavailable"
+                }
+              },
+              {
+                "stage": "nodeServices",
+                "failure": {
+                  "owner": "platform",
+                  "reason": "unavailable"
+                }
+              }
+            ],
+            "truncated": false,
+            "shutdownReportPresent": false
+          }
+        ],
+        "allPostGuards": {
+          "conductorSourceUnchanged": true,
+          "nativeProductsUnchanged": true,
+          "nativeManifestUnchanged": true,
+          "currentSelectionUnchanged": true,
+          "conductorSelectionUnchanged": true,
+          "freshSixRoleHostArchiveIndexUnchanged": true
+        },
+        "ownerBoundaryPassed": true,
+        "safeSummarySHA256": "4977959c948a92cbd04e885bb6bc544321aefa2cea80c97c83812a1801aac5fd",
+        "hostVerificationSHA256": "1cd6b47138e2de084ec411e10e9ff774cd2c0bba145f4ec041abee8274802f46"
+      },
+      {
+        "mode": "early",
+        "passed": true,
+        "failedStage": null,
+        "fixedFailureReason": null,
+        "measuredCases": 4,
+        "cliProcesses": 24,
+        "nativeActions": 0,
+        "seconds": 56.879663,
+        "trackedProcesses": 21,
+        "normalPhysicalRetirementReports": 4,
+        "intentionalCrashRecords": [],
+        "startupFailureObservations": [],
+        "allPostGuards": {
+          "conductorSourceUnchanged": true,
+          "nativeProductsUnchanged": true,
+          "nativeManifestUnchanged": true,
+          "currentSelectionUnchanged": true,
+          "conductorSelectionUnchanged": true,
+          "freshSixRoleHostArchiveIndexUnchanged": true
+        },
+        "ownerBoundaryPassed": true,
+        "safeSummarySHA256": "eead362b83d7f9ac0a5afe82301073d517b37f5577c8d70013db0304b9d76599",
+        "hostVerificationSHA256": "c9a9af6484700bda9aa40f363ea8b260828e7a9698664dc471d768ca1dcb6350"
+      }
+    ],
+    "normalPhysicalRetirementReports": 19,
+    "intentionalCrashReapedNotNormalShutdown": 1,
+    "failedStartupsHaveShutdownReports": false,
+    "allOwnedProcessesReaped": 161,
+    "combinedClosedOutcomeSHA256": "263fc02b7d901fd1aca410047ecb6414ae86d1ad0c68bc26247bfdad8ee45d9e",
+    "wholeHeadQualified": false
+  },
+  "unresolved": {
+    "current": [
+      "Terminal Node12 startup: protectedStoreStartup then nodeServices, platform/unavailable; inner cause unknown",
+      "Pending Node6 startup: same generic boundary; inner cause unknown"
+    ],
+    "historical": [
+      "Earlier snapshot-output and installation-loading failures have no isolated causes",
+      "Earlier effect-read/currentness failures have no isolated causes; later private observations do not establish their repair"
+    ],
+    "broaderAcceptance": [
+      "Complete retention-expiry and crash-before-commit coverage",
+      "Complete packaged distribution and all six guest implementation acceptance"
+    ],
+    "noHistoricalFailureCauseTransferredByInference": true
+  },
+  "preservedPrivateStartupDiagnostic": {
+    "actualBase": "5e51bc73aba7ab3965b29b690c938ee42942cb26",
+    "privateOnly": true,
+    "overriddenFiles": 6,
+    "sourcePatchSHA256": "0c03e0c4761f05a3f6e72431d5685ed0a9cb02aa98a8ea47a39489a84cb49c24",
+    "buildReceiptSHA256": "999aa262883a9cbb37b0a15383c9befe39b1e663e6af8557862e46d8069a923c",
+    "nodeELFSHA256": "601bbb46cbccc88593aeb011e14536a6b1a990733151c918615ff84d49efaeb4",
+    "hostArchiveSHA256": "13ba43a087692bc64a83070416c7cc90f2bada810751f512a4130828e356ddd1",
+    "reportSchema": "latent.startup-failure-observation.v2",
+    "strictClosedFreezerSHA256": "35d5f4688155faab048281039661848d069ea8346ea06050736e9478ac3084ac",
+    "executedAtCheckpoint": false,
+    "originalDeadlinePreserved": true,
+    "maximumRetainedFailureAndPhaseEventsTogether": 32,
+    "maximumAddedObservationalInstantReads": 32,
+    "productionFixOrOrdinaryQualification": false
+  },
+  "nextWork": [
+    "Run the preserved source-specific diagnostic with explicit actual5e attribution; do not relabel it as continuation-head qualification",
+    "Implement an evidence-supported production fix on the continuation branch",
+    "Validate the actual fixed source with relevant full suites, fresh default roles and complete ordinary recovery under original bounds",
+    "Update related open tickets with results and remaining acceptance"
+  ],
+  "openIssueHandoffs": [
+    {
+      "issue": 707,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/707#issuecomment-6201259856"
+    },
+    {
+      "issue": 399,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/399#issuecomment-6201297710"
+    },
+    {
+      "issue": 388,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/388#issuecomment-6201298566"
+    },
+    {
+      "issue": 391,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/391#issuecomment-6201299335"
+    },
+    {
+      "issue": 709,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/709#issuecomment-6201300173"
+    },
+    {
+      "issue": 718,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/718#issuecomment-6201300962"
+    },
+    {
+      "issue": 398,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/398#issuecomment-6201312801"
+    },
+    {
+      "issue": 409,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/409#issuecomment-6201313580"
+    },
+    {
+      "issue": 397,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/397#issuecomment-6201314377"
+    },
+    {
+      "issue": 710,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/710#issuecomment-6201315171"
+    },
+    {
+      "issue": 389,
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/issues/389#issuecomment-6201315882"
+    }
+  ],
+  "historicalPublicPackets": [
+    "https://github.com/KirilsTurkins/latent-service-fabric/blob/5e51bc73aba7ab3965b29b690c938ee42942cb26/docs/testing/evidence/recovery970-current-progress-2026-10-14.json",
+    "https://github.com/KirilsTurkins/latent-service-fabric/blob/5e51bc73aba7ab3965b29b690c938ee42942cb26/docs/testing/evidence/recovery970-current-progress-2026-10-15.json"
+  ]
+}
