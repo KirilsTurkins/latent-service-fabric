@@ -86,6 +86,40 @@ class StandardFacilities(unittest.TestCase):
                 facilities.stage(source, 'service', destination, platform)
             self.assertEqual(project.snapshot(root), before)
 
+    def test_external_standard_library_probe_compiles_only_captured_closure_and_explicit_profile(self):
+        from tools import application_dependencies as dependencies
+        from tools.c_standard_facilities_probe import prepare
+        from tools.c_application_dependencies import selected
+        from tools.guest_runtime_profiles import profiles
+        root = project.create(self.root / 'project', 'greeting')
+        proof = prepare(root)
+        self.assertTrue(proof['originalLibraryRemoved'])
+        files = project.snapshot(root)
+        value, _, _ = project.validate(files)
+        self.assertEqual(value['runtimeProfile'], facilities.PROFILE)
+        output, work = self.root / 'output', self.root / 'work'
+        output.mkdir(); work.mkdir()
+        closure = dependencies.prepare(root, work, output, 'c')
+        observed = selected(closure, compiler_digest=digest(b'compiler'), runtime_digest=digest(b'runtime'),
+                            runtime_profile=facilities.PROFILE)
+        self.assertEqual(observed.receipt['runtimeProfile'], facilities.PROFILE)
+        self.assertEqual(observed.sources[0].name, 'clock_probe.c')
+        self.assertIn(b'getentropy(bytes, 256)', observed.sources[0].read_bytes())
+        self.assertNotIn(b'latent_', observed.sources[0].read_bytes())
+        self.assertEqual(profiles('c')['random'][2], 'bytes')
+        self.assertEqual(profiles('go')['random'][2], 'u64-value')
+        self.assertEqual(profiles('dotnet'), {'clockMonotonic': profiles('c')['clockMonotonic']})
+        closure.check_unchanged()
+
+    def test_c_execution_profile_cannot_be_selected_for_another_language_or_with_implicit_consent(self):
+        from tools.run_rust_capsule_workflow import run
+        for language, selected in (('java', True), ('c', 1), ('c', 'yes')):
+            destination = self.root / 'must-not-exist'
+            with self.subTest(language=language, selected=selected), self.assertRaisesRegex(RuntimeError, 'c-standard-facilities-language'):
+                run(Path('missing'), Path('missing'), Path('missing'), destination,
+                    language=language, c_standard_facilities=selected)
+            self.assertFalse(destination.exists())
+
     def test_receipt_cannot_borrow_profile_or_original_runtime_after_rehash(self):
         root = project.create(self.root / 'project', 'greeting')
         files = project.snapshot(root)

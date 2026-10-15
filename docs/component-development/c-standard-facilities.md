@@ -11,6 +11,26 @@ required before runtime compatibility is advertised. This profile does not
 complete [resource and runtime facilities #681](https://github.com/KirilsTurkins/latent-service-fabric/issues/681)
 or [C runtime #744](https://github.com/KirilsTurkins/latent-service-fabric/issues/744).
 
+The maintained contributor qualification captures a new outside-checkout
+library using ordinary libc calls, removes its original sources, builds all
+five existing C authoring controls and signs them on an explicitly selected
+ordinary native tuple. It adds sequential missing-grant observations and eight
+finite clock/entropy error and budget probes to the existing node suite. Run
+as an unprivileged user on the supported Linux compiler host with the pinned
+tools and bubblewrap containment:
+
+```bash
+python3 tools/qualify_c_standard_facilities.py \
+  --native-directory "$NATIVE" --native-tuple "$NATIVE/native-tuple.json" \
+  --zig "$C_TOOLS/zig/zig" --wit-bindgen "$C_TOOLS/wit-bindgen" \
+  --wasm-tools "$C_TOOLS/wasm-tools" --output /tmp/c-standard-qualification
+```
+
+This explicit disposable test setup grants random byte input/output ceilings
+of 128 and 65,536 bytes to exercise the provider's existing activation limit;
+it does not change application budgets or install application grants. All
+original authoring cases and failed attempts remain part of the result.
+
 Set `runtimeProfile` in the captured `capsule-project.json` to
 `c-standard-clock-entropy-v1`. If the application has a dependency lock whose
 selection declares a runtime profile, select the same profile and resolve and

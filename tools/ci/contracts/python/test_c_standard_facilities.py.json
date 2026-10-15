@@ -1,14 +1,28 @@
 {
   "cases": [
     "StandardFacilities.test_ambiguous_world_and_explicit_profile_import_cannot_gain_duplicate_contracts",
+    "StandardFacilities.test_c_execution_profile_cannot_be_selected_for_another_language_or_with_implicit_consent",
     "StandardFacilities.test_dependency_graph_must_select_same_runtime_as_captured_application",
     "StandardFacilities.test_derived_contracts_cannot_modify_captured_source_or_platform_inputs",
     "StandardFacilities.test_derived_world_retains_originals_and_exact_typed_dependency_closure",
+    "StandardFacilities.test_external_standard_library_probe_compiles_only_captured_closure_and_explicit_profile",
     "StandardFacilities.test_profile_is_explicit_closed_and_part_of_original_source",
     "StandardFacilities.test_receipt_cannot_borrow_profile_or_original_runtime_after_rehash"
   ],
   "guards": {
     "StandardFacilities.test_ambiguous_world_and_explicit_profile_import_cannot_gain_duplicate_contracts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:269d849038de39837a01ee18d467af4cf0b0d88e876ffaddd9e427168158f71e",
+        "class:setup-sha256:e66d634e4c04416fb18984b391c56214c557911adecd26b7ec5424751b7dfc03"
+      ],
+      "skipSites": []
+    },
+    "StandardFacilities.test_c_execution_profile_cannot_be_selected_for_another_language_or_with_implicit_consent": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -56,6 +70,18 @@
       ],
       "skipSites": []
     },
+    "StandardFacilities.test_external_standard_library_probe_compiles_only_captured_closure_and_explicit_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:269d849038de39837a01ee18d467af4cf0b0d88e876ffaddd9e427168158f71e",
+        "class:setup-sha256:e66d634e4c04416fb18984b391c56214c557911adecd26b7ec5424751b7dfc03"
+      ],
+      "skipSites": []
+    },
     "StandardFacilities.test_profile_is_explicit_closed_and_part_of_original_source": {
       "bases": [
         "unittest.TestCase"
@@ -83,6 +109,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_c_standard_facilities.py",
-  "reviewReason": "Guard explicit C profile dependency validation including malformed selection types",
+  "reviewReason": "Retain C authority guards and add captured standard library and explicit finite execution profile controls",
   "schemaVersion": "latent.ci.contracts.v1"
 }

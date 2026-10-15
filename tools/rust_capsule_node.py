@@ -141,7 +141,8 @@ def configure(directory, fixture, port, *, runtime_grants=False, language="rust"
         "maximumReadOwners": 64, "maximumPageRecords": 16}
     if runtime_grants:
         from tools.guest_runtime_grants import configure as configure_runtime
-        configure_runtime(settings, ("greeting", "word-count", "shipping", "http-status", "recovery"), language=language)
+        templates = ("greeting",) if language == "c" else ("greeting", "word-count", "shipping", "http-status", "recovery")
+        configure_runtime(settings, templates, language=language)
     if noncrypto_entropy:
         from tools.dotnet_guest.entropy_grants import configure as configure_entropy
         configure_entropy(settings)
