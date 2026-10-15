@@ -342,7 +342,7 @@ class Campaign:
             require(getattr(self.node, "current_program", None) == "terminal"
                     and getattr(self.node, "current_activation", None) is not None,
                     "current-retained-cancellation-original-selection")
-            self.deploy("put-once-legacy-v1")
+            self.node.current_activation.switch(self, "put-once-legacy-v1", retained_cancellation=True)
         with lifecycle.as_user(self.client):
             result = self.client.call("transaction", "cancel", *lifecycle.namespace_arguments(publication),
                 "--operation", "update", "--client-key", key, "--attempt-id", original["attempt-id"],
@@ -351,7 +351,7 @@ class Campaign:
                 "retained-cancellation-is-already-committed")
         rpc_result(result["command"], original, publication, key)
         if current:
-            self.deploy("put-once-compatible-v2")
+            self.node.current_activation.switch(self, "put-once-compatible-v2", retained_cancellation=True)
         http.replay(original, self.original(key))
         self.query(4)
         self.client.evidence.passed("cancellation-after-commit", result)

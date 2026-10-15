@@ -26,10 +26,13 @@ CURRENT_NODE_PROGRAM = (
     'publish', 'authority', 'namespace-create', 'legacy-runtime',
     'diagnostic-metadata', 'diagnostic-runtime', 'legacy-metadata', 'legacy-after-diagnostic',
     'compatible-metadata', 'compatible-runtime', 'compatible-after-crash',
+    'cancellation-legacy-metadata', 'cancellation-legacy-runtime',
+    'cancellation-compatible-metadata', 'cancellation-compatible-runtime',
     'writer-metadata', 'writer-runtime', 'restored-runtime',
 )
 CURRENT_METADATA_SESSIONS = {'publish', 'authority', 'diagnostic-metadata', 'legacy-metadata',
-                             'compatible-metadata', 'writer-metadata'}
+                             'compatible-metadata', 'writer-metadata',
+                             'cancellation-legacy-metadata', 'cancellation-compatible-metadata'}
 PENDING_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
                         'pending-original-runtime', 'pending-restored-runtime')
 EARLY_HTTP_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'early-http-runtime')

@@ -60,8 +60,9 @@ class CurrentActivation:
                                    {'deployment': deployed, 'selectedTarget': target})
         return target
 
-    def switch(self, campaign, name):
-        if self.active == name and self.node.process is not None:
+    def switch(self, campaign, name, *, retained_cancellation=False):
+        require(type(retained_cancellation) is bool, 'explicit-retained-cancellation-transition')
+        if not retained_cancellation and self.active == name and self.node.process is not None:
             require(campaign.full_path == self.path(name), 'same-current-runtime-configuration')
             return self.metadata[name][1]
         sessions = {
@@ -69,6 +70,14 @@ class CurrentActivation:
             'put-once-legacy-v1': ('legacy-metadata', 'legacy-after-diagnostic'),
             'put-once-compatible-v2': ('compatible-metadata', 'compatible-runtime'),
         }
+        if retained_cancellation:
+            require(self.node.current_publication_program and self.node.current_program == 'terminal'
+                    and name in {'put-once-legacy-v1', 'put-once-compatible-v2'},
+                    'bounded-current-retained-cancellation-transition')
+            sessions = {
+                'put-once-legacy-v1': ('cancellation-legacy-metadata', 'cancellation-legacy-runtime'),
+                'put-once-compatible-v2': ('cancellation-compatible-metadata', 'cancellation-compatible-runtime'),
+            }
         require(name in sessions, 'bounded-current-publication-transition')
         if self.node.process is not None:
             self.node.stop()
