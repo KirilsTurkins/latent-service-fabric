@@ -141,7 +141,7 @@ async fn actual_old_schema_result_keeps_caller_scope_and_all_selected_key_fields
             "shared-scope" => command.shared_recovery_scope = Some("uninstalled-scope".into()),
             "publication" => {
                 selected.authorization_publication.as_mut().unwrap().id =
-                    format!("publication:sha256:{}", "9".repeat(64))
+                    format!("publication:sha256:{}", "9".repeat(64));
             }
             _ => unreachable!(),
         }

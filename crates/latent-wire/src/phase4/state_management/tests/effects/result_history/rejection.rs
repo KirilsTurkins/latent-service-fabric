@@ -25,7 +25,7 @@ pub(super) async fn transition_while_held(fixture: &HistoryFixture) {
             after.state_schema = format!("sha256:{}", "5".repeat(64));
             after.version.generation = after.version.generation.checked_add(1).unwrap();
             let (mut history, old_history) = NamespaceHistory::capture(&view, before.record())?;
-            history.state_schema = after.state_schema.clone();
+            history.state_schema.clone_from(&after.state_schema);
             history.epochs.schema = history.epochs.schema.checked_add(1).unwrap();
             let history_key =
                 history_key(&after.tenant, &after.id, after.version.incarnation).unwrap();
