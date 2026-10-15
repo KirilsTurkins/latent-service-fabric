@@ -195,12 +195,16 @@ Makefile aggregate remains available:
 python3.13 -m venv .venv
 . .venv/bin/activate
 python -m pip install --requirement tools/requirements.lock
-make validate
+make validate WORKSPACE_ROOT=target/make/my-review-run
 ```
 
-[The Makefile](Makefile) expands this to formatting, locked workspace checking,
-Clippy, workspace tests, contract validation and SDK checks. It is not a synonym
-for every Actions matrix, website/browser, packaged or native-release programme.
+[The Makefile](Makefile) requires clean tracked source and a fresh owned output
+root. It runs source/docs/CI contracts, shared Rust build/lint/helper checks,
+contract and client SDK validation, then explicit workspace/AOT preparation,
+exact discovery and checked workspace, doctest and signing execution. Use the
+[Make command guide](docs/development/make-commands.md) for individual targets
+and retained logs. This is not every Actions matrix, website/browser, packaged
+or native-release programme.
 Contract preparation rewrites its generated output, so do not run competing
 fixture writers against the same target root. Generators use `target/` or Cargo
 `OUT_DIR`, never handwritten contract sources.

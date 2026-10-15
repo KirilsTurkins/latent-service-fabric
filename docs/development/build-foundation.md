@@ -112,19 +112,15 @@ python3.13 -m venv .venv
 . .venv/bin/activate
 python -m pip install --requirement tools/requirements.lock
 
-make phase1-foundation
-make sdks
+make validate WORKSPACE_ROOT=target/make/foundation-review
 ```
 
-`make validate` is the equivalent complete command. The foundation-only command expands to:
-
-```bash
-cargo fmt --all --check
-cargo check --workspace --all-targets --all-features --locked
-cargo clippy --workspace --all-targets --all-features --locked
-cargo test --workspace --all-targets --all-features --locked
-tools/validate_contracts.sh
-```
+Use a clean tracked checkout and a fresh owned output root. The
+[Make command guide](make-commands.md) describes source/Rust/contracts/client
+checks followed by explicit workspace/AOT preparation, exact discovery and the
+separate workspace, doctest and signing result checks. `make validate-source`
+and `make check-rust` select narrower source and build/helper checks. Neither is
+a declaration of complete runtime, provider/browser or packaged acceptance.
 
 Focused generation checks are available as:
 

@@ -23,6 +23,26 @@ class FoundationRecipeTests(unittest.TestCase):
         self.foundation.validate_cargo_workflow(self.workflow)
         self.assertEqual(self.foundation.ERRORS, [])
 
+    def test_current_make_entrypoints_satisfy_foundation_without_the_retired_phase_alias(self):
+        self.foundation.validate_ci_and_docs(cargo.ROOT)
+        self.assertEqual(self.foundation.ERRORS, [])
+
+    def test_comment_only_make_targets_cannot_satisfy_the_foundation_contract(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workflow = root / '.github/workflows/ci.yml'
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text(self.workflow)
+            for name in self.foundation.REQUIRED_DOCS:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('fixture documentation')
+            (root / 'Makefile').write_text('\n'.join(
+                ('# ' if target == 'workspace-prepare' else '') + target + ':'
+                for target in self.foundation.REQUIRED_MAKE_TARGETS))
+            self.foundation.validate_ci_and_docs(root)
+            self.assertEqual(self.foundation.ERRORS, ['Makefile foundation target missing: workspace-prepare:'])
+
     def test_comment_cannot_replace_binding_execution(self):
         self.foundation.validate_cargo_workflow(self.workflow.replace(
             "run: python3 tools/ci_cargo.py run bindings",

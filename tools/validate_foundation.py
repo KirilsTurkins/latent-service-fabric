@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Validate Phase 1 build-foundation ownership and dependency invariants."""
+"""Validate current build-foundation ownership and dependency invariants."""
 
 from __future__ import annotations
 
 import sys
 import shlex
+import re
 import yaml
 import tomllib
 from collections.abc import Iterator
@@ -27,6 +28,10 @@ except ModuleNotFoundError as error:
 
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
+REQUIRED_MAKE_TARGETS = (
+    "rpc-bindings", "component-bindings", "guest-bindings", "bindings",
+    "validate-source", "check-rust", "workspace-prepare", "aot-prepare", "test", "validate",
+)
 
 PROTO_INPUT_MANIFEST = Path("api/proto/latent-api.protos")
 GENERATED_BINDING_OWNERS: dict[str, tuple[str, ...]] = {
@@ -279,9 +284,9 @@ def validate_ci_and_docs(root: Path = ROOT) -> None:
         validate_cargo_workflow(workflow)
 
     makefile = (root / "Makefile").read_text(encoding="utf-8")
-    for target in ("rpc-bindings:", "component-bindings:", "phase1-foundation:"):
-        if target not in makefile:
-            fail(f"Makefile foundation target missing: {target}")
+    for target in REQUIRED_MAKE_TARGETS:
+        if not re.search(rf"(?m)^{re.escape(target)}:", makefile):
+            fail(f"Makefile foundation target missing: {target}:")
 
     for relative in REQUIRED_DOCS:
         if not (root / relative).is_file():

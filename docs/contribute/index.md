@@ -52,6 +52,10 @@ qualified feature.
 
 Choose checks that exercise your change:
 
+Bare `make` shows the [current command guide](../development/make-commands.md).
+Use focused targets while editing; broad workspace/AOT validation has explicit
+clean-source and preparation requirements.
+
 | Change | Start here |
 | --- | --- |
 | Markdown, links or diagrams | [Documentation checks](../development/website.md), [SVG conventions](../svg-style.md). |

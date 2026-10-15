@@ -101,8 +101,10 @@ fixture double does not establish signed live-node or packaged qualification.
 [VALIDATION.md](VALIDATION.md) owns check selection. The complete changed-path
 and dependency graph selects `docs`, `website`, `fast` or `full`; a crate name or
 Markdown extension alone cannot waive obligations. Follow the emitted package
-list and [CI profile guide](docs/development/ci-profiles.md). `make help` lists
-root commands; `make validate` is a broad Linux aggregate, not every CI,
+list and [CI profile guide](docs/development/ci-profiles.md). Bare `make` lists
+commands; the [Make guide](docs/development/make-commands.md) covers focused tests,
+explicit preparation and website targets. `make validate` requires a clean tracked
+Linux checkout and a fresh owned output root; it is not every CI,
 website/browser, native or packaged acceptance programme. Expensive scale probes,
 profiling, calibration and resource soaks remain explicit selections.
 
