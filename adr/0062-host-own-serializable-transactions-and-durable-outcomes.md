@@ -8,6 +8,31 @@
 - Supersedes: guest-controlled begin/commit in the unsupported original state declaration and the incomplete transaction/outcome model described by ADR-0013
 - Retains: [ADR-0014](0014-do-not-promise-universal-exactly-once-external-effects.md), [ADR-0025](0025-separate-immediate-capability-operations-from-transactional-effect-intents.md), [ADR-0028](0028-retain-activation-ownership-across-asynchronous-waits.md) and current stateless contracts
 
+## Implementation status and restore identity
+
+Development now has an explicitly installed protected command/query/effect
+runtime; the [installed runtime](../docs/development/installed-transaction-rpc.md)
+and [recovery qualification](../docs/testing/installed-transaction-recovery.md)
+describe its current scope. The original decision and threat table below retain
+their accepted wording and do not establish completed collective qualification.
+
+There is a specific implementation variance to reconcile before closing the
+restore/collective gates: this decision calls for older-history restore to change
+namespace incarnation. The installed [history owner](../crates/latent-state/src/namespace/history.rs)
+instead preserves business incarnation and original command/effect/inbox IDs,
+advances a separate recovery epoch to `max(snapshot,current)+1`, invalidates old
+live tokens and starts restored histories paused. The
+[restore-window owner](../crates/latent-state/src/recovery/restore.rs) checks the
+same source identity/namespace roster/incarnation; it refuses arbitrary identity
+replacement. [Namespace history](../docs/architecture/namespace-history-epochs.md)
+and [reviewed restore](../docs/architecture/reviewed-older-history-restore.md)
+describe the implemented contract.
+
+This note records the source difference without silently changing the accepted
+decision. An explicit scoped ADR decision must reconcile the restore identity
+contract before #398/#399/#407 acceptance; focused engine tests or this audit
+cannot approve that architectural change or qualify a public restore profile.
+
 ## Context and availability
 
 Phase 3 gate #240 is complete. The six maintained guest SDKs (#544–#549), six

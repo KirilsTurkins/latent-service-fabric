@@ -57,6 +57,11 @@ opaque scope/incarnation/schema/recovery-aware versions and are distinct from
 activation OCC.
 Clients and recovery never silently refresh the original expected version.
 
+ADR-0062's original restore-incarnation wording differs from this installed
+epoch split; its [implementation note](../../adr/0062-host-own-serializable-transactions-and-durable-outcomes.md#implementation-status-and-restore-identity)
+records the variance and required explicit decision before restore/collective
+acceptance. This source description does not approve that architectural change.
+
 ## Host-owned transaction lifecycle
 
 ```text

@@ -51,6 +51,12 @@ Dates, original rationale and historical measurements remain useful decision
 history. Current guides and reference pages must use the implemented contract;
 old implementation snapshots are not setup instructions.
 
+ADR-0062 also records an explicit [restore identity variance](0062-host-own-serializable-transactions-and-durable-outcomes.md#implementation-status-and-restore-identity):
+its original decision changes incarnation, while current protected restore
+preserves business identity and advances recovery epoch. Current guides describe
+the installed owner; they do not silently amend that accepted decision. The
+restore/collective gates still need an explicit scoped ADR resolution.
+
 ## Decision index
 
 ### Runtime and authority
