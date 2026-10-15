@@ -150,7 +150,8 @@ class Inputs:
 
 
 def selected(closure: Closure | None, *, compiler_digest: str, runtime_digest: str,
-             compiler_distribution_digest: str | None = None) -> Inputs:
+             compiler_distribution_digest: str | None = None,
+             runtime_profile: str = "closed-synchronous-v1") -> Inputs:
     sources, includes, archives, defines, receipts, symbols, symbol_bytes = [], [], [], [], [], set(), 0
     if closure is None:
         return Inputs((), (), (), (), {"formatVersion": 1, "artifacts": []})
@@ -221,4 +222,4 @@ def selected(closure: Closure | None, *, compiler_digest: str, runtime_digest: s
         raise DependencyError("c-dependency-recipe-limit")
     return Inputs(tuple(sources), tuple(includes), tuple(archives), tuple(defines), {
         "formatVersion": 1, "artifacts": receipts, "target": "wasm32-wasi", "networkResolution": False,
-        "runtimeProfile": "closed-synchronous-v1", "generatedBuildExecution": "disabled"})
+        "runtimeProfile": runtime_profile, "generatedBuildExecution": "disabled"})

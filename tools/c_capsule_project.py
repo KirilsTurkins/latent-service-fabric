@@ -59,9 +59,11 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if not {"capsule-project.json", "sdk-lock.json", "src/main.c", "wit/world.wit"} <= files.keys():
         raise ValueError("incomplete C capsule project")
     project, lock = (decode_json(files[name]) for name in ("capsule-project.json", "sdk-lock.json"))
-    if (not isinstance(project, dict) or set(project) != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    if (not isinstance(project, dict) or set(project) - {"runtimeProfile"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
+    from tools.c_guest.standard_facilities import selected_profile
+    selected_profile(project)
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid C capsule name")
     if not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "tenant", "service", "world")):

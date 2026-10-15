@@ -268,6 +268,10 @@ canonical async task frames. An imported effect is allowed only
 by host policy. Pending calls retain their budget until the host releases them;
 cancelling a subtask never proves an external effect did not occur.
 
+The opt-in [standard clock and entropy profile](c-standard-facilities.md)
+describes ordinary libc calls, captured profile selection and its current
+qualification boundary.
+
 If a build fails, inspect `BUILD-FAILED.json` and `logs/` in that attempt's output.
 SDK binding drift means the SDK and generator pins disagree; do not edit the lock
 to bypass it. A denied publication commonly means the policy expired, the exact
