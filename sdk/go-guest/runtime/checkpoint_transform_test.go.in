@@ -1,0 +1,78 @@
+package main
+
+import (
+    "go/ast"
+    "go/parser"
+    "go/token"
+    "os"
+    "path/filepath"
+    "strings"
+    "testing"
+)
+
+func adaptControl(t *testing.T, source string) (result, []byte) {
+    t.Helper()
+    root := t.TempDir()
+    input := filepath.Join(root, "ordinary.go")
+    original := []byte(source)
+    if err := os.WriteFile(input, original, 0600); err != nil { t.Fatal(err) }
+    row, err := transform(inputRow(input), root)
+    if err != nil { t.Fatal(err) }
+    unchanged, err := os.ReadFile(input)
+    if err != nil || string(unchanged) != source { t.Fatal("source changed", err) }
+    if row.UpstreamDigest != digest(original) { t.Fatal("source identity") }
+    if len(row.Sites) == 0 { return row, nil }
+    adapted, err := os.ReadFile(row.Adapted)
+    if err != nil || row.AdaptedDigest != digest(adapted) { t.Fatal("adapted identity", err) }
+    return row, adapted
+}
+
+func inputRow(path string) input { return input{Path: path, Diagnostic: "selected/module/ordinary.go"} }
+
+func TestEntryLoopRangeAndClosureSites(t *testing.T) {
+    row, adapted := adaptControl(t, "package control\nfunc f(){for {}\nfor range []int{1} {}\n_ = func(){}\n}\n")
+    if len(row.Sites) != 4 { t.Fatalf("sites: %+v", row.Sites) }
+    for _, site := range row.Sites { if !site.Suspendable { t.Fatal("ordinary site rejected") } }
+    if !strings.Contains(string(adapted), "runtime.lsfCheckpoint") { t.Fatal("missing compiler link") }
+    if _, err := parser.ParseFile(token.NewFileSet(), "adapted.go", adapted, parser.ParseComments); err != nil { t.Fatal(err) }
+}
+
+func TestNonSuspendablePathsRetainReachableRejection(t *testing.T) {
+    row, _ := adaptControl(t, "package control\n//go:nosplit\nfunc f(){for{}}\nfunc g(){for{}}\n")
+    if len(row.Sites) != 4 || row.Sites[0].Suspendable || row.Sites[1].Suspendable || !row.Sites[2].Suspendable || !row.Sites[3].Suspendable {
+        t.Fatalf("sites: %+v", row.Sites)
+    }
+}
+
+func TestOriginalDiagnosticCoordinatesAndUnsafeImport(t *testing.T) {
+    row, adapted := adaptControl(t, "package control\nimport _ \"unsafe\"\nfunc f() {\n\tfor true {\n\t\tmissing()\n\t}\n}\n")
+    if strings.Count(string(adapted), "import _ \"unsafe\"") != 1 { t.Fatal("duplicate import") }
+    positions := token.NewFileSet()
+    file, err := parser.ParseFile(positions, "compiler-copy.go", adapted, 0)
+    if err != nil { t.Fatal(err) }
+    found := false
+    ast.Inspect(file, func(node ast.Node) bool {
+        if identifier, ok := node.(*ast.Ident); ok && identifier.Name == "missing" {
+            position := positions.Position(identifier.Pos())
+            if position.Filename != "selected/module/ordinary.go" || position.Line != 5 || position.Column != 3 { t.Fatalf("diagnostic: %+v", position) }
+            found = true
+        }
+        return true
+    })
+    if !found || len(row.Sites) != 2 { t.Fatal("missing original diagnostic site") }
+}
+
+func TestReservedCompilerNamesAndLinksFailClosed(t *testing.T) {
+    root := t.TempDir()
+    source := filepath.Join(root, "input.go")
+    if err := os.WriteFile(source, []byte("package control\nfunc __lsf_checkpoint_shadow(){}\n"), 0600); err != nil { t.Fatal(err) }
+    if _, err := transform(inputRow(source), root); err == nil || !strings.Contains(err.Error(), "compiler-name-reserved") { t.Fatal(err) }
+    link := filepath.Join(root, "link.go")
+    if err := os.Symlink(source, link); err != nil { t.Fatal(err) }
+    if _, err := transform(inputRow(link), root); err == nil || !strings.Contains(err.Error(), "bounded-regular-file") { t.Fatal(err) }
+}
+
+func TestDeclarationOnlySourceIsUnchanged(t *testing.T) {
+    row, adapted := adaptControl(t, "package control\ntype Value struct{ N int }\n")
+    if len(row.Sites) != 0 || row.Adapted != "" || adapted != nil { t.Fatalf("unnecessary source rewrite: %+v", row) }
+}
