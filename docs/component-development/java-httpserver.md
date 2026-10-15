@@ -241,3 +241,25 @@ does not supply a finite handler export or preserve the loop's continuation and
 counter across fresh activations. An unused accept method does not block an
 otherwise supported HttpServer registration. No socket loop is silently certified
 by HttpServer compilation.
+
+The installed-tool qualification creates a fresh server through the shipped
+`java_capsule.py new-server`, compiles with the installed Java recipe, then uses
+the normal controller package/provenance join before signing. It preserves the
+compiler's original observation and executes the installed `server_capsule.py`
+plan/apply/inspect/remove commands against a real TLS shared listener:
+
+```bash
+python3 tools/qualify_java_server_toolkit.py \
+  --tools /opt/latent-java-tools \
+  --native-directory /tmp/java-server-lifecycle/selected-native \
+  --native-tuple /tmp/java-server-lifecycle/native/native-tuple.json \
+  --output /tmp/java-installed-server
+```
+
+Supply the exact recorded ordinary default native tuple, an extracted verified
+Java tool bundle and a fresh output directory. The helper neither downloads a
+compiler nor builds native products. It retains failed original operations,
+rechecks the installed tool inventory and native tuple, and does not retry failed
+route mutations. Local source-candidate bundles have no publisher authentication
+or release-publication claim. The [October 15 receipt](../testing/evidence/java-installed-server-2026-10-15.json)
+records that limited qualification independently of released frontend operation.
