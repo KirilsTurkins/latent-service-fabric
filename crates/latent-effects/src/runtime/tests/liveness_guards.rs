@@ -49,7 +49,7 @@ async fn unchanged_command_floor_rejects_rewound_time_before_any_writer_callback
         )
     };
     let time_denied = denied(time.map(|_| ()));
-    let capture_denied = denied(captured.map(|guard| guard.retire()));
+    let capture_denied = denied(captured.map(CommandAdmission::retire));
     let current_denied = denied(current.map(|_| ()));
     fixture.clock.millis.store(101, Ordering::SeqCst);
     original.retire();
