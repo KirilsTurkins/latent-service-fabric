@@ -45,3 +45,41 @@ retains the actual qualifier, component and ordinary native-product identities.
 Its separate approved annotation-processor control retains source-owner denials,
 host containment and signed generated-source execution. These finite observations
 do not establish release qualification or the remaining issue requirements.
+
+For authenticated private Maven input, use the separate private-feed control.
+It first preserves the local-JAR control, then serves those exact original JARs
+under new private Maven coordinates with a real transitive POM. The finite HTTPS
+peer uses an isolated synthetic TLS identity from the selected native tuple.
+Missing/wrong credentials, an incomplete credential pair and an untrusted CA
+must fail without replacing the prior accepted capture. Resolver credentials
+and the private TLS key must be absent from captured application bytes.
+
+```bash
+: "${JAVA_PRIVATE_RUN:?Set another fresh output directory outside the checkout}"
+python3 tools/qualify_java_private_dependencies.py --resolve-only \
+  --output "$JAVA_PRIVATE_RUN" \
+  --native-directory "$NATIVE_DIRECTORY" --native-tuple "$NATIVE_TUPLE"
+```
+
+After the peer has been physically reaped, disable external networking and run
+the same ordinary component/package/signing/node boundary on that exact private
+closure:
+
+```bash
+python3 tools/qualify_java_private_dependencies.py --offline \
+  --output "$JAVA_PRIVATE_RUN" \
+  --native-directory "$NATIVE_DIRECTORY" --native-tuple "$NATIVE_TUPLE" \
+  --wasi-sdk "$WASI_SDK_PATH" --read-only-cache "$JAVA_COMPILER_CACHE"
+```
+
+Certificate or captured private-JAR drift must fail, and restoring the exact
+preimage must restore the captured identity. The ordinary node executes the
+private direct/transitive code and its resource after originals and the peer
+are unavailable. These controls retain installed update/remove/watch and the
+full trap/exhaustion/cancellation lifecycle as separate acceptance gates.
+
+The [15 October private control](evidence/java-private-dependency-ingestion-2026-10-15.json)
+retains six actual authentication/trust/integrity denials, the reaped peer and
+the subsequent network-disabled signed private-library/resource execution.
+It records the earlier fixture setup failures without bypassing certificate
+verification or rewriting their outcomes.
