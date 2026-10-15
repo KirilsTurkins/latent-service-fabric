@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind explicit v3 timer overlay while retaining authenticated default/v1/v2 profile boundaries",
+  "reviewReason": "Bind explicit v4 initialization overlay; preserve every earlier profile and authenticated runtime source check",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9ad0cf0b8e5ad69560f0ae754fae3752a4588e353b263bdef03bbed29f0d3a99"
+  "sha256": "6dfe40fcdcee0f906270d09219081fdd27b7e334c452be0241d495e4dbbadc5e"
 }

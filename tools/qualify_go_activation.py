@@ -24,6 +24,8 @@ def fixture_reference(output, commands, compiler, source, fixture):
         # exits immediately, whereas the component profile requires drain.
         # Failure/cancellation modes have their own signed-node assertions.
         modes = [0, 1, 2, 3, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17]
+    elif fixture == 'initializers':
+        modes = [0]
     else:
         raise ValueError('Go-native-reference-unreviewed-fixture')
     reference = output / 'native-reference'
@@ -54,9 +56,9 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
     if runtime_profile not in PROFILES:
         raise ValueError('unsupported-Go-activation-qualification-profile')
     output.mkdir(parents=True, exist_ok=False)
-    if fixture not in {'ordinary', 'checkpoints', 'timers'}:
+    if fixture not in {'ordinary', 'checkpoints', 'timers', 'initializers'}:
         raise ValueError('unsupported-Go-activation-fixture')
-    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance'}[fixture]
+    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance', 'initializers': 'initializers-conformance'}[fixture]
     source = (original / 'main.go').read_bytes()
     (output / 'src').mkdir()
     (output / 'src/main.go').write_bytes(source)
@@ -87,6 +89,8 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         if fixture == 'timers' and runtime_profile == 'go-component-activation-v3':
             record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
+        if fixture == 'initializers' and runtime_profile == 'go-component-activation-v4':
+            record['nativeReference'] = fixture_reference(output, commands, compiler, source, fixture)
         write_json(output / 'GO-ACTIVATION-COMPILE.json', record)
         return record
     except BaseException as error:
@@ -99,7 +103,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--offline-cache', type=Path)
     parser.add_argument('--runtime-profile', choices=sorted(PROFILES), default=PROFILE)
-    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers'), default='ordinary')
+    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers', 'initializers'), default='ordinary')
     args = parser.parse_args()
     print(json.dumps(compile_fixture(args.output, offline_cache=args.offline_cache,
         runtime_profile=args.runtime_profile, fixture=args.fixture)))

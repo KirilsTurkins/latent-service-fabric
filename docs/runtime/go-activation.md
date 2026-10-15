@@ -147,6 +147,45 @@ LSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE=/tmp/go-checkpoints \
   -- --ignored --exact --nocapture
 ```
 
+The additional source candidate `go-component-activation-v4` moves the original
+linked module initialization graph into the first admitted async root, before
+its ordinary handler. Go runtime bootstrap and GC enablement remain in their
+original startup order. Module variables and `init` functions retain the
+linker's exact dependency order and run once per fresh component Store. An
+initializer can create an ordinary goroutine, block on a condition/channel or
+use a timer after the async dispatcher and original task owner exist. It needs
+no application initialization hook or transitive-source edit. Compiler material
+records `first-admitted-async-root` initialization for captured modules.
+
+This profile preserves logical component initialization; native main-thread
+affinity is unsupported. Reached application `runtime.LockOSThread` or
+`UnlockOSThread` fails explicitly. Application finalizers/cleanup and unknown
+background work keep the same explicit boundaries as the earlier profiles.
+An initializer worker waiting for future work remains accepted work: an hour
+ticker does not make that worker managed idle, and root return must not discard
+it. The original deadline and cancellation apply during initialization too.
+
+The candidate's source transformation has been checked against the exact pinned
+upstream files. It has not yet passed emitted-component or signed-node
+qualification. Its maintained gate requires the unchanged fixture's native Go
+reference and eight signed activations covering blocking variable initialization,
+condition signaling, ordered init functions, an initializer-created ticker
+worker, explicit shutdown, pending cancellation, unretired-work deadline,
+preallocation task exhaustion, unsupported affinity and fresh state. The earlier
+v1, v2 and v3 gates remain required. This candidate does not complete #742's
+runtime-cost, approved networking and unchanged published transitive-module
+acceptance requirements.
+
+```bash
+python3 tools/qualify_go_activation.py --output /tmp/go-owned-initializers \
+  --runtime-profile go-component-activation-v4 --fixture initializers
+LSF_GUEST_SDK_LANGUAGE=go LSF_GO_INITIALIZER_FIXTURE=/tmp/go-owned-initializers \
+  cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime \
+  --test local_service \
+  runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation \
+  -- --ignored --exact --nocapture
+```
+
 Run the maintained emitted-component preparation with the pinned tools on PATH:
 
 ```bash

@@ -8,7 +8,9 @@ from tools.go_guest.runtime import checked_sources, replace_once
 PROFILE = 'go-component-activation-v1'
 CHECKPOINT_PROFILE = 'go-component-activation-v2'
 TIMER_PROFILE = 'go-component-activation-v3'
-CHECKPOINT_PROFILES = {CHECKPOINT_PROFILE, TIMER_PROFILE}
+INITIALIZER_PROFILE = 'go-component-activation-v4'
+TIMER_PROFILES = {TIMER_PROFILE, INITIALIZER_PROFILE}
+CHECKPOINT_PROFILES = {CHECKPOINT_PROFILE, *TIMER_PROFILES}
 PROFILES = {PROFILE, *CHECKPOINT_PROFILES}
 PREIMAGES = {
     'runtime/runtime2.go': '7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da',
@@ -24,7 +26,7 @@ PREIMAGES = {
 ASYNC_SHA256 = '0ab89732e936c9f766ca571e7f56d6406b1fd0a2d28931f5c8d2c86bdedf786b'
 
 
-def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path, *, checkpoints=False, timers=False):
+def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path, *, checkpoints=False, timers=False, initializers=False):
     sources.update(checked_sources(goroot, PREIMAGES))
     sources['runtime/runtime2.go'] = replace_once(sources['runtime/runtime2.go'],
         '\tvalgrindStackID uintptr\n}', '\tvalgrindStackID uintptr\n\tlsfOwner [2]uint64\n\tlsfParked bool\n}')
@@ -74,9 +76,12 @@ def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path, *, checkpo
     if timers:
         from tools.go_guest.timers import runtime_sources as timer_sources
         timer_sources(goroot, sources, sdk)
+    if initializers:
+        from tools.go_guest.initializers import runtime_sources as initializer_sources
+        initializer_sources(sources, sdk)
 
 
-def async_source(dependency: Path, sdk: Path, *, checkpoints=False, timers=False) -> tuple[Path, str]:
+def async_source(dependency: Path, sdk: Path, *, checkpoints=False, timers=False, initializers=False) -> tuple[Path, str]:
     path = dependency / 'wit/async/async.go'
     raw = path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != ASYNC_SHA256:
@@ -95,6 +100,9 @@ def async_source(dependency: Path, sdk: Path, *, checkpoints=False, timers=False
     if timers:
         from tools.go_guest.timers import async_source as timer_source
         text = timer_source(text, sdk)
+    if initializers:
+        from tools.go_guest.initializers import async_source as initializer_source
+        text = initializer_source(text)
     return path, text + '\n' + (sdk / 'runtime/activation_async.go.in').read_text()
 
 

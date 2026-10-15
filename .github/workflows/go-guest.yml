@@ -221,6 +221,10 @@ jobs:
         run: |
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-standard-timers" --runtime-profile go-component-activation-v3 --fixture timers
           LSF_GUEST_SDK_LANGUAGE=go LSF_GO_TIMER_FIXTURE="$RUNNER_TEMP/go-standard-timers" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners -- --ignored --exact --nocapture
+      - name: Qualify ordinary module initialization under original activation ownership
+        run: |
+          python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-owned-initializers" --runtime-profile go-component-activation-v4 --fixture initializers
+          LSF_GUEST_SDK_LANGUAGE=go LSF_GO_INITIALIZER_FIXTURE="$RUNNER_TEMP/go-owned-initializers" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation -- --ignored --exact --nocapture
       - name: Test captured Go native graphs and namespace
         run: |
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_application_dependencies tools.tests.test_captured_compiler_isolation
@@ -301,6 +305,14 @@ jobs:
             ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-panic-bit-*.json
             ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-panic-confirm-*.json
             ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-PANIC-REASON.json
+            ${{ runner.temp }}/go-owned-initializers/GO-ACTIVATION-*.json
+            ${{ runner.temp }}/go-owned-initializers/src/
+            ${{ runner.temp }}/go-owned-initializers/wit/
+            ${{ runner.temp }}/go-owned-initializers/logs/
+            ${{ runner.temp }}/go-owned-initializers/native-reference/
+            ${{ runner.temp }}/go-owned-initializers/build/component.wasm
+            ${{ runner.temp }}/go-owned-initializers/build/component.wit
+            ${{ runner.temp }}/go-owned-initializers/build/runtime-overlay/
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn

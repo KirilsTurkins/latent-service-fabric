@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_activation.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add plain GC, stopped timer GC and retained timer GC reference controls before the original collected weak-timer case; preserve every prior ordinary checkpoint/timer native-reference mode and all source/compiler/signed gates.",
+  "reviewReason": "Bind reviewed ordinary initializer fixture and native reference selection alongside unchanged checkpoint/timer fixtures",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a6930765c06e6d7964e387d5c88a48bfb1198df98de182088772044cffb4a7e8"
+  "sha256": "b5ce5ea2a922dda3f338e506bb2d148293040fc88038230ee9d0226019a9d379"
 }
