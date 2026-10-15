@@ -1,0 +1,183 @@
+﻿{
+    "schemaVersion":  "latent.java-library-ingestion.native-controls.v1",
+    "status":  "passed",
+    "scope":  "signed pure/transitive/local-library/resource execution and declared-error recovery",
+    "source":  {
+                   "baseCommit":  "6f637e989864766ab298f902ada3d331d9959d29",
+                   "qualifier":  {
+                                     "sha256":  "sha256:21a7ec54575e9a5382a192f3137f350a704445c374d610cd16500b24ebbf4e6f",
+                                     "bytes":  17672
+                                 },
+                   "qualifierTrackedAfterExecution":  true,
+                   "native":  {
+                                  "receipt":  {
+                                                  "sha256":  "sha256:4b4cc872d422c34bbf083f498f7a1b1fc8b81f0d3a1ef71b29be9d5d791465fc",
+                                                  "bytes":  1494
+                                              },
+                                  "sourceHead":  "a49bbf172e08c13ed7bd5588e2323064652f9366",
+                                  "sourceTree":  "5696ad304208a902ed115f27120609fc8d4f9f04",
+                                  "tupleRole":  "ordinary-defaults",
+                                  "hostAbiProfile":  "lsf-host-abi-phase3-v5",
+                                  "wasmtimeVersion":  "48.0.6",
+                                  "binaries":  {
+                                                   "latent":  {
+                                                                  "sha256":  "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+                                                                  "bytes":  69976672,
+                                                                  "actualFeatures":  [
+
+                                                                                     ]
+                                                              },
+                                                   "latentd":  {
+                                                                   "sha256":  "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+                                                                   "bytes":  182386208,
+                                                                   "actualFeatures":  [
+
+                                                                                      ]
+                                                               },
+                                                   "package":  {
+                                                                   "sha256":  "sha256:c361aad3ed1aa9371e6acd657368ab216a72a66aa5fecba8b0f5d3169291940f",
+                                                                   "bytes":  19100192,
+                                                                   "actualFeatures":  [
+
+                                                                                      ]
+                                                               },
+                                                   "capsule_contracts":  {
+                                                                             "sha256":  "sha256:60e42c99f6286ed4e6254a05156963c2e50e543414e9fa5f108eede7bb4e397e",
+                                                                             "bytes":  7967376,
+                                                                             "actualFeatures":  [
+
+                                                                                                ]
+                                                                         },
+                                                   "capsule_authoring":  {
+                                                                             "sha256":  "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+                                                                             "bytes":  24994784,
+                                                                             "actualFeatures":  [
+
+                                                                                                ]
+                                                                         }
+                                               }
+                              }
+               },
+    "host":  {
+                 "python":  "3.13.5",
+                 "compiler":  "TeaVM 0.15.0 C to Wasm component",
+                 "java":  "25.0.4.1+1",
+                 "gradle":  "9.1.0",
+                 "wasiSdk":  "29.0",
+                 "compilationNetwork":  "Docker --network none",
+                 "compilerCache":  "exact pinned captured read-only modules-2; mutable Gradle homes private"
+             },
+    "capture":  {
+                    "inputIdentity":  "sha256:2db43e4c3d27b9b93e31eb813007581e0be3530e3f5be30ef3fbed91b9d50dfa",
+                    "exactCaptureReceipt":  {
+                                                "sha256":  "sha256:84c1a1f00a499aece3cd2c19fd98e2bcf9eb341566b65dd6db92b74cdd168377",
+                                                "bytes":  856
+                                            },
+                    "originalLocalJarsDeleted":  true,
+                    "libraryStartupOnBuildHost":  false,
+                    "catalogueRegistration":  false,
+                    "independentDirectMavenLibraries":  [
+                                                            "org.apache.commons:commons-text:1.12.0",
+                                                            "commons-codec:commons-codec:1.17.1"
+                                                        ],
+                    "actualTransitive":  "org.apache.commons:commons-lang3:3.14.0",
+                    "externalLocalGraph":  [
+                                               "outside-owner-primary/2026.10.15",
+                                               "outside-owner-child/2026.10.15"
+                                           ]
+                },
+    "negativeInputs":  [
+                           {
+                               "case":  "missing-transitive",
+                               "status":  "known-failure",
+                               "reason":  "dependency-artifact-missing-resolve-explicitly"
+                           },
+                           {
+                               "case":  "tampered-transitive",
+                               "status":  "known-failure",
+                               "reason":  "dependency-artifact-integrity"
+                           }
+                       ],
+    "component":  {
+                      "sha256":  "sha256:22d6844ad1ea9c9b00d31eab89a3a2ae2c1c78986bf17e07968ded6f852ae259",
+                      "bytes":  2279668
+                  },
+    "unsignedPublicationDenied":  "permission-denied",
+    "runtimeGrantDenied":  "permission-denied",
+    "calls":  [
+                  {
+                      "activation":  "library-call-0",
+                      "exitCode":  0,
+                      "output":  [
+                                     {
+                                         "ok":  "42/53444b/KDS"
+                                     }
+                                 ],
+                      "outcomeKnown":  true,
+                      "processReaped":  true,
+                      "elapsedNanos":  "61900109"
+                  },
+                  {
+                      "activation":  "library-call-1",
+                      "exitCode":  0,
+                      "output":  [
+                                     {
+                                         "ok":  "private captured resource\n"
+                                     }
+                                 ],
+                      "outcomeKnown":  true,
+                      "processReaped":  true,
+                      "elapsedNanos":  "62378437"
+                  },
+                  {
+                      "activation":  "library-call-2",
+                      "exitCode":  3,
+                      "output":  [
+                                     {
+                                         "err":  "Please enter a name."
+                                     }
+                                 ],
+                      "outcomeKnown":  true,
+                      "processReaped":  true,
+                      "elapsedNanos":  "51340157"
+                  },
+                  {
+                      "activation":  "library-call-3",
+                      "exitCode":  0,
+                      "output":  [
+                                     {
+                                         "ok":  "42/416461/adA"
+                                     }
+                                 ],
+                      "outcomeKnown":  true,
+                      "processReaped":  true,
+                      "elapsedNanos":  "84251806"
+                  }
+              ],
+    "shutdown":  {
+                     "clean":  true,
+                     "reaped":  true
+                 },
+    "exactExecutionReceipt":  {
+                                  "sha256":  "sha256:b83c6b3024f6024cf17e880f27363d489998aec5a316e7c68dd295f498d92ea3",
+                                  "bytes":  10178
+                              },
+    "priorAttempt":  {
+                         "status":  "failed",
+                         "scope":  "earlier local qualifier revision",
+                         "originalFailure":  "runtime-imports-require-explicit-grants",
+                         "observedRpc":  "rpc-timeout",
+                         "outcomeKnown":  false,
+                         "transportAllowanceMillis":  5000,
+                         "finalSupportedTransportAllowanceMillis":  120000,
+                         "applicationWallBudgetMillis":  120000,
+                         "originalOutcomeRewritten":  false
+                     },
+    "remainingAcceptance":  [
+                                "authenticated-private-feed",
+                                "installed-update-remove-watch",
+                                "approved-processor-containment",
+                                "trap-memory-fuel-cancellation-recovery"
+                            ],
+    "issue682Complete":  false
+}
