@@ -26,7 +26,7 @@ governs lifetime; the guest supplies no URL, credential or retry loop.
 The captured `deferred-http-requirements.json` is included as an ordinary signed
 package Asset beside the byte-identical transaction companion. It records the
 required native contract and limits, with installation, rule and execution
-claims explicitly false. The [current reconciliation](../../docs/development/phase4-handoffs/2026-10-10/pr802-reconciliation.md)
+claims explicitly false. The [current reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-10/pr802-reconciliation.md)
 records the maintained compiler path and remaining installed qualification.
 
 The original writer stores an eight-byte unsigned little-endian count with v1

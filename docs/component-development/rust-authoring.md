@@ -17,7 +17,7 @@ For application dependencies, exact lock review and the maintained test/watch
 commands, see [Rust application library inputs](rust-library-authoring.md).
 
 The ordinary recipe below keeps its selected stateless profile. The explicit
-[Rust standard-runtime source](../development/rust-runtime-reconciliation/2026-10-12/README.md)
+[Original Rust standard-runtime evidence](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/rust-runtime-reconciliation/2026-10-12/README.md)
 has finite signed clock coverage and separate outstanding thread, executor,
 reactor and third-party HTTP-client requirements. It is not automatically
 selected by adding a Cargo dependency.

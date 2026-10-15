@@ -1,9 +1,10 @@
 # Angular renderer qualification observation
 
-The current security baseline selects **Wasmtime 48.0.4**. References below to
-47.0.4 describe the earlier qualification, not the current supported dependency.
-See the [security update](../development/wasmtime-security-update.md)
-for the Rust 1.95.0 minimum and prepared-artifact invalidation boundary.
+Use the current engine and compiler pins in the
+[toolchain baseline](../development/toolchain.md#selected-versions). Historical
+renderer receipts retain their exact source and engine identities; the
+[security update record](../development/wasmtime-security-update.md) describes
+prepared-artifact invalidation across engine changes.
 
 Recorded 2026-09-15 for Phase 3 #224, based on development
 `e9ac2b970e9f02c92ef45013ddacc44120d98a23` plus the qualification sources retained
