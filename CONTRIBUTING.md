@@ -19,7 +19,7 @@ Maintainer planning and acceptance records are collected separately in
 
 Follow the [Code of Conduct](CODE_OF_CONDUCT.md) in issues, reviews and other
 project spaces. Its [reporting section](CODE_OF_CONDUCT.md#reporting) explains
-conduct reports and the current limits of private project reporting.
+how to raise conduct concerns through the SolutionWCMD contact form.
 
 Report suspected vulnerabilities through [SECURITY.md](SECURITY.md), keeping
 credentials, exploit details and business snapshots out of public issues and PRs.

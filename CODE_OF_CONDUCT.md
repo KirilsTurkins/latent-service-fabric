@@ -37,26 +37,25 @@ restrictions through other accounts or channels.
 
 ## Reporting
 
+Report project conduct concerns through the
+[SolutionWCMD contact form](https://www.solutionwcmd.com/studio/contact/).
+Identify the project as **Latent Service Fabric (LSF)** and the message as a
+**Code of Conduct report**. Include links, approximate dates, a brief description
+of what happened, any immediate safety concerns and how you can be contacted
+privately. Share only the information needed to understand the incident.
+
+Keep sensitive conduct reports out of public community channels, issues and
+pull requests. Do not repost abusive material, private correspondence,
+credentials or unrelated personal details publicly. You do not need to confront
+the person involved before reporting.
+
 For abuse on GitHub, use **Report content** or **Report abuse**, or the
 [GitHub Support abuse form](https://support.github.com/contact/report-abuse).
 See [GitHub's reporting instructions](https://docs.github.com/en/communities/maintaining-your-safety-on-github/reporting-abuse-or-spam)
 for the available controls. These reports go to GitHub for enforcement of its
-platform policies; they are not a private project inbox. This route is also
-available if the concern involves the repository owner.
-
-The project does not currently publish a dedicated private conduct contact.
-If you already have a private way to contact the
-[repository owner, @KirilsTurkins](https://github.com/KirilsTurkins), you may use
-it for a project conduct concern. For a moderation request about an existing
-public thread, you may ask the owner to review it if you are comfortable doing
-so, without reposting abusive material or personal information. Do not open a
-public issue or pull request to submit a sensitive conduct report. You do not
-need to confront the person involved before reporting.
-
-Provide links, approximate dates, a brief description of what happened and any
-immediate safety or contact concerns. Share only the information needed to
-understand the incident; avoid copying private correspondence, credentials or
-unrelated personal details into public threads.
+platform policies; they are separate from project conduct reports through
+SolutionWCMD. This route is also available if the concern involves the
+repository owner.
 
 Report suspected software vulnerabilities through [SECURITY.md](SECURITY.md).
 Private security advisories are for vulnerability disclosure, not interpersonal
@@ -64,12 +63,13 @@ conduct reports.
 
 ## Review and enforcement
 
-The repository owner is responsible for project moderation. Maintainers handling
-a concern must consider the available context, severity, repetition and safety
-of those affected, and apply this policy consistently, including to their own
-behavior. They may seek clarification from the people involved. Private report
-information must be shared only as needed to assess and address the concern;
-absolute confidentiality cannot be guaranteed.
+The [repository owner, @KirilsTurkins](https://github.com/KirilsTurkins), is
+responsible for project moderation. Maintainers handling a concern must consider
+the available context, severity, repetition and safety of those affected, and
+apply this policy consistently, including to their own behavior. They may seek
+clarification from the people involved. Private report information must be
+shared only as needed to assess and address the concern; absolute
+confidentiality cannot be guaranteed.
 
 Depending on the behavior, maintainers may:
 
