@@ -42,4 +42,10 @@ impl io::poll::GuestPollable for ClosedPoll {
 }
 include!("../../../sdk/dotnet-guest/runtime/closed_io.rs");
 include!("../../../sdk/dotnet-guest/runtime/closed_support.rs");
+impl io::poll::Guest for ClosedRuntime {
+    type Pollable = ClosedPoll;
+    fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {
+        ClosedPoll::poll(inputs)
+    }
+}
 export!(ClosedRuntime);

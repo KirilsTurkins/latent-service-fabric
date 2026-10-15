@@ -5,6 +5,10 @@ wit_bindgen::generate!({
     path: "../../sdk/dotnet-guest/runtime/wit",
     world: "runtime",
     generate_all,
+    async: [
+        "export:wasi:io/poll@0.2.6#poll",
+        "export:wasi:io/poll@0.2.6#[method]pollable.block",
+    ],
 });
 
 #[path = "../../../sdk/dotnet-guest/runtime/http/denied.rs"]
@@ -23,4 +27,10 @@ mod timer;
 use poll::Pollable as ClosedPoll;
 include!("../../../sdk/dotnet-guest/runtime/closed_io.rs");
 include!("../../../sdk/dotnet-guest/runtime/closed_support.rs");
+impl io::poll::Guest for ClosedRuntime {
+    type Pollable = ClosedPoll;
+    async fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {
+        ClosedPoll::poll(inputs)
+    }
+}
 export!(ClosedRuntime);

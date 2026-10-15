@@ -5,6 +5,12 @@ wit_bindgen::generate!({
     path: "../../sdk/dotnet-guest/runtime/wit",
     world: "http",
     generate_all,
+    async: [
+        "export:wasi:io/poll@0.2.6#poll",
+        "export:wasi:io/poll@0.2.6#[method]pollable.block",
+        "export:wasi:io/streams@0.2.6#[method]input-stream.blocking-read",
+        "export:wasi:io/streams@0.2.6#[method]output-stream.blocking-flush",
+    ],
 });
 
 #[path = "../../../sdk/dotnet-guest/runtime/http/io.rs"]
@@ -30,4 +36,10 @@ struct ClosedError {
     _slot: quota::Slot,
 }
 include!("../../../sdk/dotnet-guest/runtime/closed_support.rs");
+impl io::poll::Guest for ClosedRuntime {
+    type Pollable = ClosedPoll;
+    async fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {
+        ClosedPoll::poll(inputs)
+    }
+}
 export!(ClosedRuntime);

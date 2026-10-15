@@ -1,1 +1,8 @@
-{"kind":"owner","path":"tools/dotnet_guest_bindings.py","reviewBoundary":"committed-fingerprint","reviewReason":"Prove exact selected-world linker metadata against the authoritative nominal types and async signatures; unchanged single-world contracts and physical output ownership remain required","schemaVersion":"latent.ci.contracts.v1","sha256":"d9f5f4e183a39e0cdc3d845dbe4b2b48ca2fd82e6070df9abfbb4000aa4aafb9"}
+{
+  "kind": "owner",
+  "path": "tools/dotnet_guest_bindings.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve declared async exports with source-bound stackful canonical task bridges; retain all existing nominal type, selected-world, ownership and drift checks without changing the C# application interface.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "5fa463945473ce3364f1c1d5623d3b81a67eb2543a7a68987bc95e697101d3b9"
+}
