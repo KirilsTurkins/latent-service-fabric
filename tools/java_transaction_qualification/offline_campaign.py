@@ -203,9 +203,13 @@ class OfflineCampaign:
             self.node.start(self.configuration)
             lifecycle.deploy(self.client, self.campaign.signed, self.campaign.items[self.writer], self.publication,
                 self.campaign.proposals["deploymentGrants"], self.campaign.configuration.authority)
-        current, _ = self.campaign.query(count)
-        self.campaign.refusal("schema-refuses-stale-query-minimum",
-            self.campaign.socket("query", minimum=before["state-view"]), {409})
+        if self.current_v2:
+            current = schema_view.minimum_refused(self.campaign, count, before, observed["view"], after["view"],
+                self.campaign.items["put-once-legacy-v1"], self.campaign.items[self.writer])
+        else:
+            current, _ = self.campaign.query(count)
+            self.campaign.refusal("schema-refuses-stale-query-minimum",
+                self.campaign.socket("query", minimum=before["state-view"]), {409})
         self.originals("schema")
         require(self.recipient("schema-after") == recipient, "schema-and-replay-create-no-provider-request")
         self.client.evidence.passed("actual-java-schema-migration", {

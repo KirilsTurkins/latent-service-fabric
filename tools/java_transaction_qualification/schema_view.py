@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 
-from . import configuration as cfg, lifecycle, recovery
+from . import configuration as cfg, http, lifecycle, recovery
 from .inputs import require
 
 
@@ -36,3 +36,37 @@ def advanced(previous, current, original_item, target_item):
             and int.from_bytes(new[43:51], "little") == generation + 1
             and int.from_bytes(new[51:59], "little") == epoch + 1
             and new[59:67] == old[59:67], "actual-native-schema-history-advanced")
+
+
+def minimum_refused(campaign, count, before, original_view, migrated_view, original_item, target_item):
+    """Observe this schema-history refusal, without inferring its private cause."""
+    require(campaign.service == cfg.SERVICE, "current-terminal-schema-minimum-observation")
+    advanced(original_view, migrated_view, original_item, target_item)
+    original, migrated = bytes(recovery.original_view(original_view)), bytes(recovery.original_view(migrated_view))
+    minimum = http.view_token(before["state-view"])
+    require(before["disposition"] == "query" and minimum[:43] == original[:43]
+            and minimum[51:67] == original[51:67]
+            and int.from_bytes(minimum[43:51], "little") <= int.from_bytes(original[43:51], "little"),
+            "original-pre-schema-query-minimum")
+    current, _ = campaign.query(count)
+    ready = http.view_token(current["state-view"])
+    require(current["disposition"] == "query" and ready[:43] == migrated[:43]
+            and ready[51:67] == migrated[51:67]
+            and int.from_bytes(ready[43:51], "little") >= int.from_bytes(migrated[43:51], "little"),
+            "actual-ready-migrated-query-view")
+    refusal = campaign.socket("query", minimum=before["state-view"], subject=cfg.ALICE)
+    # The native minimum-view contract rejects incompatible schema/history as
+    # Unavailable. Future-generation conflict remains the separate 409 contract.
+    require(type(refusal["status"]) is int and refusal["status"] == 503
+            and refusal.get("bodyLost") is False and refusal.get("body") == b"Unavailable\n",
+            "actual-incompatible-schema-minimum-refusal")
+    following, _ = campaign.query(count)
+    require(following["disposition"] == "query"
+            and http.view_token(following["state-view"]) == ready,
+            "schema-minimum-refusal-preserves-ready-view")
+    campaign.client.evidence.passed("schema-refuses-stale-query-minimum", {
+        "status": refusal["status"], "platformBodyBytes": len(refusal["body"]),
+        "originalMinimum": before["state-view"], "originalNativeView": original_view,
+        "migratedNativeView": migrated_view, "freshQueryBefore": current, "freshQueryAfter": following,
+        "underlyingPlatformError": "unobserved-redacted-http"})
+    return current
