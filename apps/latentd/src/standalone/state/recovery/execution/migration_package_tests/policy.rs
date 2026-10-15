@@ -50,6 +50,13 @@ pub(super) fn install(
 }
 
 pub(super) fn revoke(fixture: &Fixture) {
+    let revision = fixture
+        .policy
+        .outcome("examples", "native", fixture.cutoff())
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .revision;
     fixture
         .policy
         .mutate(
@@ -59,7 +66,7 @@ pub(super) fn revoke(fixture: &Fixture) {
                 id: "native",
                 kind: RecordKind::Policy,
                 operation_id: "withdraw-native",
-                expected_revision: 1,
+                expected_revision: revision,
                 document: None,
             },
             fixture.cutoff(),
