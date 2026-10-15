@@ -28,7 +28,7 @@ async fn measured_binding_peak_and_all_selection_slices_fit_the_same_unchanged_r
             .reserve_buffer(NativeBufferClass::Work, count * metadata_bytes)
             .unwrap(),
     );
-    let mut bindings = Vec::with_capacity(count as usize);
+    let mut bindings = Vec::with_capacity(usize::try_from(count).unwrap());
     for index in 0..count {
         let mut binding = fixture::binding(&effect.fixture.backend.0.bindings[0]);
         binding.incarnation += index;

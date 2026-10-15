@@ -123,12 +123,9 @@ pub(super) async fn grant(effect: &mut FixtureEffect, operations: &[&str]) {
     let contract::Response::InspectNamespace(value) = &response.response else {
         panic!("actual namespace inspection");
     };
-    effect.policy_digest = value
-        .namespace
-        .as_ref()
-        .unwrap()
-        .namespace_policy_digest
-        .clone();
+    effect
+        .policy_digest
+        .clone_from(&value.namespace.as_ref().unwrap().namespace_policy_digest);
     drop(response);
 }
 

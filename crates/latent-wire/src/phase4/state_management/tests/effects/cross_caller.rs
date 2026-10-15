@@ -526,7 +526,7 @@ async fn captured_original_source_component_schema_and_publication_cannot_be_sub
             _ => {
                 binding.publication.id = format!("publication:sha256:{}", "f".repeat(64))
                     .parse()
-                    .unwrap()
+                    .unwrap();
             }
         }
         let request = fixture::request(&effect, "exact-original-source-capture");
@@ -544,8 +544,10 @@ async fn captured_original_source_component_schema_and_publication_cannot_be_sub
 #[tokio::test]
 async fn cross_caller_expired_original_transport_and_plan_cannot_refresh_authority() {
     let mut effect = fixture::setup(true).await;
-    let actor =
-        operator("bob").with_transport_deadline_at(1, Instant::now() - Duration::from_secs(1));
+    let actor = operator("bob").with_transport_deadline_at(
+        1,
+        Instant::now().checked_sub(Duration::from_secs(1)).unwrap(),
+    );
     let request = fixture::request(&effect, "expired-original-transport");
     fixture::assert_refused(
         &mut effect,
