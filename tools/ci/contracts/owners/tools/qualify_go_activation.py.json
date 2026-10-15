@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_activation.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind selected profile and reviewed native reference plus compiler checkpoint fixture while retaining ordinary v1 qualification",
+  "reviewReason": "Bind reviewed finite ordinary Go timer native-reference modes and retained unchanged checkpoint controls",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4fd91c87f5556f3c35c65285abbb135e52e872c7b98a633f8fce1d8b222e4681"
+  "sha256": "64d62311f4007c3574e4f1bbb44fcd0871283944cb24ee6b78790aec971e14cd"
 }

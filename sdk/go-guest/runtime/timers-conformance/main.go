@@ -101,6 +101,39 @@ func Run(which uint32) uint32 {
             time.AfterFunc(0, group.Done)
             group.Wait()
         }
+    case 15:
+        var group sync.WaitGroup
+        group.Add(1)
+        timer := time.AfterFunc(time.Hour, group.Done)
+        if !timer.Stop() || timer.Stop() { panic("stop callback timer") }
+        if timer.Reset(time.Millisecond) { panic("reset stopped callback timer") }
+        group.Wait()
+    case 16:
+        // Reset after a callback starts permits a second callback to overlap.
+        // The first remains accepted work until its actual goroutine exits.
+        started, second, release := make(chan struct{}), make(chan struct{}), make(chan struct{})
+        var calls atomic.Uint32
+        var group sync.WaitGroup
+        group.Add(2)
+        timer := time.AfterFunc(time.Millisecond, func(){
+            defer group.Done()
+            switch calls.Add(1) {
+            case 1: close(started); <-release
+            case 2: close(second)
+            default: panic("extra callback")
+            }
+        })
+        <-started
+        if timer.Reset(time.Millisecond) { panic("reset running callback timer") }
+        <-second
+        close(release)
+        group.Wait()
+    case 17:
+        deadline, cancel := context.WithTimeout(context.Background(), time.Hour)
+        cancel()
+        <-deadline.Done()
+        if deadline.Err() != context.Canceled { panic("canceled context became elapsed timer") }
+        <-time.After(time.Millisecond)
     }
     return 42
 }

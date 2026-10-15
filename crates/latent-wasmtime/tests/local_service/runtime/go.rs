@@ -30,10 +30,14 @@ fn checkpoint_component(
         record["sourceDigest"],
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
-    if profile == "go-component-activation-v2" {
+    if profile == "go-component-activation-v2" || timers {
         assert_eq!(
             record["nativeReference"]["modes"],
-            serde_json::json!([0, 1, 4])
+            if timers {
+                serde_json::json!([0, 1, 2, 3, 5, 6, 9, 11, 12, 13, 14, 15, 16, 17])
+            } else {
+                serde_json::json!([0, 1, 4])
+            }
         );
         assert_eq!(record["nativeReference"]["output"], 42);
         assert_eq!(record["nativeReference"]["freshProcessPerMode"], true);
@@ -63,7 +67,7 @@ async fn signed_standard_timers_contexts_and_rearm_keep_original_heap_owners() {
     )
     .await;
     for iteration in 0..2 {
-        for mode in [0, 1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 14] {
+        for mode in [0, 1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 14, 15, 16, 17] {
             let began = std::time::Instant::now();
             let receipt = success(
                 f.manager

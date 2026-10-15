@@ -40,7 +40,7 @@ host owns readiness. Cancellation, a narrower policy deadline and the root
 deadline do not report requested elapsed success. There is no guest busy wait,
 WASI polling, host sleeping worker, detached timer or new deadline.
 
-This slice does not implement `time.NewTimer`, `After`, `AfterFunc` or `Ticker`:
+The v1 profile does not implement `time.NewTimer`, `After`, `AfterFunc` or `Ticker`:
 their timer heap, rearm and callback ownership require further runtime work.
 Those APIs fail explicitly during an active invocation. Cooperative Go
 scheduling in v1 does not supply compiler safe-point preemption for CPU-only
@@ -69,6 +69,44 @@ the build host. Reachable `//go:nosplit` and `//go:nowritebarrier` functions fai
 explicitly rather than invoke an unsafe suspension. Native assembly, CGo and
 unsupported runtime operations retain their existing boundaries. This profile
 does not add standard timer APIs or initializer goroutine support.
+
+The source candidate `go-component-activation-v3` adds the pinned Go timer heap
+beneath `time.NewTimer`, `After`, `AfterFunc`, `NewTicker`, timer/ticker Stop and
+Reset, and `context.WithTimeout`. Each timer reserves its original host owner
+before allocation. The existing Go heap retains synchronous timer-channel
+semantics, recurrence, missed-tick coalescing and callback scheduling; the
+dispatcher waits on the corresponding canonical `timer-next` operation. This
+creates no host sleeping worker or replacement application timer API.
+
+AfterFunc creates an admitted ordinary goroutine with the exact timer's
+continuation. Root return drains accepted callback tasks and future callback
+timers; channel timers with no remaining application task are stopped during
+result sealing. A weak inventory does not keep otherwise collectable Go timers
+alive. Explicit Stop/Reset retains pending physical readiness and its buffer
+until the exact canonical subtask returns and is dropped, then resumes its
+fence. Root cancellation and deadline errors cannot become elapsed success.
+The dispatcher checks actual runnable owned goroutines after every scheduler
+idle notification: a callback published after the notification requires a fresh
+quiescence round before WAIT or EXIT. Unknown parked work still fails.
+
+The candidate's native reference and signed test cover timer/channel Stop and
+Reset, recurrence, callbacks, resetting a running callback with permitted
+overlap, context cancellation, GC collection, timer limits, callback panic,
+root drain, cancellation and deadline. These commands are qualification gates;
+source preparation alone does not establish successful execution. In
+particular, the latest timer source still needs a successful complete signed
+replay before it is a qualified profile. Initializer background work, standard
+networking and the complete #742 acceptance matrix remain unfinished.
+
+```bash
+python3 tools/qualify_go_activation.py --output /tmp/go-standard-timers \
+  --runtime-profile go-component-activation-v3 --fixture timers
+LSF_GUEST_SDK_LANGUAGE=go LSF_GO_TIMER_FIXTURE=/tmp/go-standard-timers \
+  cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime \
+  --test local_service \
+  runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners \
+  -- --ignored --exact --nocapture
+```
 
 The checkpoint qualification compiles the same ordinary CPU source both with
 v2 and without checkpoints. Real signed execution requires sibling progress

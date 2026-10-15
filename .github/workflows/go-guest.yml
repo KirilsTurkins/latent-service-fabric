@@ -214,6 +214,10 @@ jobs:
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-checkpoints" --runtime-profile go-component-activation-v2 --fixture checkpoints
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-no-checkpoints" --runtime-profile go-component-activation-v1 --fixture checkpoints
           LSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE="$RUNNER_TEMP/go-checkpoints" LSF_GO_NO_CHECKPOINT_FIXTURE="$RUNNER_TEMP/go-no-checkpoints" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation -- --ignored --exact --nocapture
+      - name: Qualify standard timer heap callbacks and physical readiness retirement
+        run: |
+          python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-standard-timers" --runtime-profile go-component-activation-v3 --fixture timers
+          LSF_GUEST_SDK_LANGUAGE=go LSF_GO_TIMER_FIXTURE="$RUNNER_TEMP/go-standard-timers" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners -- --ignored --exact --nocapture
       - name: Test captured Go native graphs and namespace
         run: |
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_application_dependencies tools.tests.test_captured_compiler_isolation
@@ -271,6 +275,14 @@ jobs:
             ${{ runner.temp }}/go-activation/build/runtime-overlay/
             ${{ runner.temp }}/go-checkpoints/
             ${{ runner.temp }}/go-no-checkpoints/
+            ${{ runner.temp }}/go-standard-timers/GO-ACTIVATION-*.json
+            ${{ runner.temp }}/go-standard-timers/src/
+            ${{ runner.temp }}/go-standard-timers/wit/
+            ${{ runner.temp }}/go-standard-timers/logs/
+            ${{ runner.temp }}/go-standard-timers/native-reference/
+            ${{ runner.temp }}/go-standard-timers/build/component.wasm
+            ${{ runner.temp }}/go-standard-timers/build/component.wit
+            ${{ runner.temp }}/go-standard-timers/build/runtime-overlay/
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn
