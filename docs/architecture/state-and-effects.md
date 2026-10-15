@@ -30,6 +30,12 @@ are separate six-language obligations; one matrix cannot substitute for the othe
 | Entity command | The same transaction path with an active-only ownership lane. Lane state exists while work is queued/active, then disappears; it is not a persistent actor or outbox dispatcher. |
 | Durable workflow | Phase 6 explicit continuation/state-machine work. An invocation-local wait or dispatcher retry does not provide it. |
 
+[Continuation-eviction research](../runtime/continuation-eviction-research.md)
+investigates compiler-generated state capture over a proposed durable handoff.
+The current state/outbox/outcome commit path does not implement workflow
+checkpointing, wait registration or exclusive resume, and an open transaction
+cannot be serialized across a durable wait.
+
 Namespace identity is independent of executable/package/publication deduplication.
 No key, entity ID, historical receipt or same-tenant identity grants namespace or
 result authority. Cross-namespace/service and distributed atomic transactions are

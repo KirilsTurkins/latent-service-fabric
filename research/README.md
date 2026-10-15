@@ -18,6 +18,17 @@ use in-process dispatch and compiled bindings. No fused artifact, optimizer or
 measured LSF speedup is delivered; fresh state, authority, admission, failure,
 accounting and cleanup remain obligations at logical call boundaries.
 
+## Continuation eviction
+
+The [continuation-eviction investigation](continuation-eviction/README.md)
+separates retained asynchronous waits, explicit durable workflows, compiler
+capture and history replay. It adds a [primary-source review](continuation-eviction/upstream-review.md),
+[durable handoff model](continuation-eviction/handoff-model.md) and
+[evaluation gates](continuation-eviction/evaluation-plan.md) for complete Store
+retirement, wakeup delivery, exclusive resume, current authority and recovery.
+The workflow crate supplies interfaces, not a durable engine. No capture/restore
+compiler, checkpoint experiment or measured eviction benefit is delivered.
+
 ## Native software fault isolation
 
 The [native-SFI investigation](native-sfi/README.md) reviews restricted native

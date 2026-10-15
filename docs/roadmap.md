@@ -104,10 +104,14 @@ partition availability need executed multi-node evidence.
 Explicit workflow state machines, durable timers, continuations, awaited effects,
 replay and compensation remain planned. Invocation-local timers, provider retries
 and consumer cursors do not supply workflow suspension or replay.
+The [continuation-eviction investigation](runtime/continuation-eviction-research.md)
+keeps the durable transition substrate separate from compiler capture and ordinary
+same-invocation waits.
 
 ## Phase 7: research promotion candidates
 
-User-space paging, continuation eviction,
+User-space paging,
+[continuation eviction](runtime/continuation-eviction-research.md),
 [call-graph fusion](runtime/call-graph-fusion-research.md), immutable shared
 blobs, adaptive materialization,
 [native software fault isolation](runtime/native-sfi-research.md) and

@@ -77,6 +77,11 @@ node's existing grace timeout reports quarantine if cleanup is not acknowledged.
 Reclaiming a retained response later does not automatically unquarantine a cell.
 Neither budget finalization nor a timeout response proves reclamation.
 
+[Continuation-eviction research](continuation-eviction-research.md) investigates
+a different handoff that would release a complete Store at approved durable
+boundaries. Ordinary provider suspension does not perform that handoff or make
+its pending future serializable.
+
 ## Buffers, backpressure and terminal behavior
 
 `IoBuffer` owns initialized, fixed-capacity, zeroizing storage. The adapter

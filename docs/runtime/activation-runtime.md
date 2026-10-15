@@ -170,3 +170,10 @@ and private attempts remain retained.
 The initial [Java fiber integration](java-activation-fibers.md) exercises ordinary
 threads in signed components through this bridge. Its broader standard-runtime
 profile remains unqualified.
+
+[Continuation eviction](continuation-eviction-research.md) is separate research.
+These Store-local tokens, timers and language continuations do not provide a
+durable representation for recreating an activation after Store destruction.
+A durable workflow needs an
+explicit checkpoint/wait transition, fresh host owners and an exclusive-resume
+protocol; this bridge does not supply them.
