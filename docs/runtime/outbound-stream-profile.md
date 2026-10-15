@@ -184,7 +184,7 @@ recognition only, not provider execution or standard-library compatibility.
 | --- | --- | --- |
 | Rust #743 | `std::net::TcpStream`; lettre 0.11.23 default SMTP transport with explicitly captured feature selection | Rust 1.97.1 wasm sysroot/reactor; guest rustls TLS/pinning/entropy and allocator |
 | C #744 | `socket/connect/read/write/poll`; libcurl ordinary SMTP factory and write callback for message data only | Pinned WASI SDK/libc port; exact libcurl and TLS closure selected by capture, no custom socket callback |
-| Go #742 | `net.Dial/net.Conn`; Go 1.27.1 `smtp.Dial`, `crypto/tls` STARTTLS | Exact patched compiler/sysroot; goroutine/wait/deadline/TLS ownership, not the historical native POC |
+| Go #742 | `net.Dial/net.Conn`; Go 1.27.2 `smtp.Dial`, `crypto/tls` STARTTLS | Exact patched compiler/sysroot; goroutine/wait/deadline/TLS ownership, not the historical native POC |
 | Java #741 | `Socket/InputStream/OutputStream`; Angus normal SMTP transport including scheduled write timeout | TeaVM 0.15.0 classlib/socket/crypto/runtime patch; service-loader/resource graph captured |
 | TypeScript #745 | Finite Node `net.Socket`/`tls`/timers slice; Nodemailer normal `createTransport` | Actual selected engine/runtime/bundler with bounded callback/stream/TLS semantics, not browser fetch alone |
 | .NET #746 | `Socket/NetworkStream/SslStream`; MailKit ordinary host/port `Connect` | Captured Componentize.NET/NativeAOT BCL/native/TLS/Task closure; no injected Stream |
