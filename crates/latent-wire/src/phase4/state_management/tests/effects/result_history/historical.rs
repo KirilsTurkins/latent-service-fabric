@@ -55,7 +55,7 @@ fn confirmed(
     }) else {
         panic!("original durable disposition required")
     };
-    command
+    *command
 }
 
 pub(super) async fn seed(fixture: &HistoryFixture) -> t::CommandSelector {
