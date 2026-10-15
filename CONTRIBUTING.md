@@ -17,6 +17,10 @@ interfaces and historical measurements do not establish a delivered feature.
 Maintainer planning and acceptance records are collected separately in
 [engineering records](docs/development/engineering-records.md).
 
+Follow the [Code of Conduct](CODE_OF_CONDUCT.md) in issues, reviews and other
+project spaces. Its [reporting section](CODE_OF_CONDUCT.md#reporting) explains
+conduct reports and the current limits of private project reporting.
+
 Report suspected vulnerabilities through [SECURITY.md](SECURITY.md), keeping
 credentials, exploit details and business snapshots out of public issues and PRs.
 

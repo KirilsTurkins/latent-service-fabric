@@ -4,6 +4,10 @@ You can contribute a bug fix, a clearer guide, a test or a new capability. This
 page takes you from choosing a change to opening a pull request against
 `development`.
 
+Follow the [Code of Conduct](../../CODE_OF_CONDUCT.md) when participating in
+project spaces. Use its [reporting guidance](../../CODE_OF_CONDUCT.md#reporting)
+for conduct concerns; keep sensitive reports out of public issues and PRs.
+
 ## 1. Choose a change
 
 Start with the [open issues](https://github.com/KirilsTurkins/latent-service-fabric/issues)
