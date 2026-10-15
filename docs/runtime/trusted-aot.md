@@ -31,6 +31,11 @@ The parent parser, configured compiler, native loader, Wasmtime and OS remain
 trusted; a separate compiler process does not make its native output untrusted
 code safe to execute in the node.
 
+The [native-SFI investigation](native-sfi-research.md) considers a separate,
+unimplemented backend for restricted native guests. These Wasmtime AOT receipts,
+cache entries and compiler controls do not admit such artifacts or establish
+their sandbox boundary.
+
 ## Host API and input authority
 
 Create a `ValidatedAotProfile` from a validated `WasmtimeConfig`, configure a

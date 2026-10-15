@@ -84,6 +84,12 @@ keeps handles in an activation-owned table. The current `local-experimental-v1` 
 node, Wasmtime, host bindings and operating system. Guest Store limits constrain
 guest-visible resources; they are not a complete process-RSS boundary.
 
+[Native-SFI](../runtime/native-sfi-research.md) remains a research candidate,
+distinct from the delivered Wasmtime native-AOT path. An executor abstraction
+does not qualify a new artifact format or sandbox. Any future backend must
+preserve this activation, authority, interruption and cleanup model; current
+security profile names do not enable it.
+
 This default covers T0 operator-trusted preparation and execution. Supporting
 external/adversarial capsule admission also requires the enforced admission,
 protected configuration and isolated compilation of the supported

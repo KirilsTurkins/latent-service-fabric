@@ -108,6 +108,7 @@ and consumer cursors do not supply workflow suspension or replay.
 ## Phase 7: research promotion candidates
 
 User-space paging, continuation eviction, call-graph fusion, immutable shared
-blobs, adaptive materialization, native software fault isolation and hardware
+blobs, adaptive materialization,
+[native software fault isolation](runtime/native-sfi-research.md) and hardware
 capability backends remain [research](../research/README.md) candidates. Promotion
 requires a separate accepted decision and qualification.
