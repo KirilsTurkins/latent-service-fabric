@@ -177,6 +177,7 @@ public final class Capsule {
 
     private static Long cachedAndStandardWaits() {
         try {
+            rejectedFactoryAdmission();
             require(TimeUnit.NANOSECONDS.convert(Duration.ofSeconds(-1, 999_999_999)) == -1);
             require(TimeUnit.MICROSECONDS.convert(Duration.ofSeconds(-1, 999_999_999)) == 0);
             require(TimeUnit.SECONDS.convert(Duration.ofSeconds(-2, 500_000_000)) == -1);
@@ -230,5 +231,26 @@ public final class Capsule {
             // intentionally supplies no application shutdown hook.
             return 42L;
         } catch (InterruptedException | ExecutionException error) { throw new IllegalStateException(error); }
+    }
+
+    private static void rejectedFactoryAdmission() throws InterruptedException, ExecutionException {
+        var cause = new IllegalStateException("factory-start-rejected");
+        int[] attempts = {0};
+        int[] calls = {0};
+        try (ExecutorService pool = Executors.newSingleThreadExecutor(command -> {
+            if (attempts[0]++ < 8) return new Thread(command) {
+                @Override public void start() { throw cause; }
+            };
+            return new Thread(command);
+        })) {
+            // Rejections exceed the declared five-task activation ceiling but
+            // accept no workers or callbacks and must consume no task slots.
+            for (int attempt = 0; attempt < 8; attempt++) {
+                try { pool.submit(() -> ++calls[0]); throw new IllegalStateException("factory-start-error-missing"); }
+                catch (IllegalStateException error) { require(error == cause); }
+            }
+            require(calls[0] == 0);
+            require(pool.submit(() -> 42).get() == 42 && calls[0] == 0);
+        }
     }
 }
