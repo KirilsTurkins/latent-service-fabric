@@ -16,15 +16,22 @@ See the [architecture overview](../docs/architecture/overview.md),
 [execution profiles](../docs/runtime/execution-security-profiles.md) and
 [current host ABI](../docs/runtime/host-abi-profile.md) for the supported boundary.
 
-Application transactions, durable effect dispatch and clustered control remain
-planned. A fixed execution-host backend for process-compromise containment is
-also unavailable. A compiler sandbox does not supply that guest boundary.
+Development also provides explicitly installed host-owned transactions, fresh
+queries and separately authorized deferred HTTP dispatch. The protected store,
+signed operation companion, namespace and current policies remain required;
+the [installed runtime](../docs/development/installed-transaction-rpc.md) and
+[recovery qualification](../docs/testing/installed-transaction-recovery.md)
+describe the implementation and outstanding terminal/pending and packaged gates.
+
+Clustered control and durable workflow execution remain planned. A fixed
+execution-host backend for process-compromise containment is unavailable;
+a compiler sandbox does not supply that guest boundary.
 
 ## Read superseded decisions in context
 
 - ADR-0027 replaces the original one-component/one-publication association with
   exact tenant-scoped publication authority.
-- ADR-0025 separates immediate capability calls from future transactional intents.
+- ADR-0025 separates immediate capability calls from transactional intents.
 - ADR-0029 adds an explicitly configured Bearer transport alongside the restricted
   static OCI profile. Its tested topology does not imply support for every registry.
 - ADR-0032/0033 extend the original ABI with exact HTTP/blob resource ownership;

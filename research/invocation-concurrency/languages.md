@@ -17,7 +17,7 @@ components. Toolchain changes require fresh evidence.
 
 ## Pinned profiles and standard library patterns
 
-| Language | Reviewed compiler/runtime context | Current evidence and unchanged-source qualification targets |
+| Language | Reviewed compiler/runtime context | Baseline evidence and unchanged-source qualification targets |
 | --- | --- | --- |
 | Rust | Rust 1.97.1, `wasm32-unknown-unknown`, wit-bindgen 0.62.0, wasm-tools 1.254.0; host Wasmtime 48.0.3. [SDK](../../sdk/rust-guest/README.md). | **Profile:** typed `latent-guest` async host calls. **Experiment:** `std::future::Future`, `poll_fn`, bounded join and actual `std::thread::spawn` rejection. **Target:** an LSF runtime target, standard-library and maintained executor integration for ordinary thread/join/synchronization and default library runtime paths; not a requirement to adopt the research join or inject an executor. Tokio/Rayon or arbitrary futures are not qualified by that experiment. |
 | Java | TeaVM 0.15.0 C backend, Temurin 25.0.4.1+1, Gradle 9.1.0, WASI SDK 29/Clang 21.1.4 and generated C component bindings. [SDK](../../sdk/java-guest/README.md). No deployed JVM. | **Profile:** synchronous-looking capability calls suspend on the host; LSF traps scheduling hooks. **Upstream source:** low-level `TThread.start` queues a fiber; `Fiber` and `EventQueue` supply continuation/event machinery. **Target:** actual `Thread.start`/`join`, interruption, thread locals, monitors, executor/future/default-pool and timeout behavior, including `CompletableFuture.supplyAsync` where the class-library implementation is completed. No such target API is newly certified here. |
@@ -118,7 +118,9 @@ but cannot count as default-path compatibility. Publish the corpus, unsupported
 cases and measured costs; source inventory alone establishes no compatibility rate.
 The prototype's eight-task cap is an experiment bound, not a product-wide policy.
 
-The six linked SDK sources and their build provenance describe current profiles.
+The linked SDK sources have evolved since this recorded baseline. Use the
+[Development changes guide](../../docs/start/development-changes.md) for the
+maintained runtime entry points and their separate qualification boundaries.
 [`host/service.rs`](../../crates/latent-wasmtime/src/host/service.rs) installs
 concurrent host callbacks with brief Store checkpoints and owned completion.
 [`backend.rs`](../../crates/latent-wasmtime/src/backend.rs) and
@@ -126,7 +128,9 @@ concurrent host callbacks with brief Store checkpoints and owned completion.
 fuel, limits, Store reclamation, prepared-state ownership and capacity. None
 installs the proposed language-runtime compatibility layer.
 
-The Rust research fixture uses the workspace's locked Wasmtime 48.0.3 API. An
+At the recorded baseline, the Rust research fixture used Wasmtime 48.0.3. The
+current workspace engine is pinned in the
+[toolchain baseline](../../docs/development/toolchain.md#selected-versions). An
 upstream Component Model mechanism or moving engine documentation is not a
 qualification of that version. Compiler, binding, runtime and dependency changes
 need new actual-component evidence. Preserve original receipts and negative cases;
