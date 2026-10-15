@@ -18,6 +18,17 @@ use in-process dispatch and compiled bindings. No fused artifact, optimizer or
 measured LSF speedup is delivered; fresh state, authority, admission, failure,
 accounting and cleanup remain obligations at logical call boundaries.
 
+## User-space state paging
+
+The [userfault-pager investigation](userfault-pager/README.md) reviews optional
+state materialization and dirty tracking against existing selective reads,
+kernel-managed mappings and prefetch. Its [primary-source review](userfault-pager/upstream-review.md),
+[mapping/transaction model](userfault-pager/mapping-model.md) and
+[evaluation gates](userfault-pager/evaluation-plan.md) cover blocked-worker
+recovery, authority/view lifetime, integrity, tracking epochs and stale resolution
+after address reuse. No pager or mapped-state guest profile is implemented.
+Explicit capability calls remain portable; paging does not evict a complete Store.
+
 ## Continuation eviction
 
 The [continuation-eviction investigation](continuation-eviction/README.md)

@@ -110,7 +110,7 @@ same-invocation waits.
 
 ## Phase 7: research promotion candidates
 
-User-space paging,
+[User-space paging](runtime/userfault-pager-research.md),
 [continuation eviction](runtime/continuation-eviction-research.md),
 [call-graph fusion](runtime/call-graph-fusion-research.md), immutable shared
 blobs, adaptive materialization,

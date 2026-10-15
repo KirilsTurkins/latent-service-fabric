@@ -128,6 +128,12 @@ composition does not enable MPK. The
 [hardware-capability investigation](hardware-capabilities-research.md) considers
 separate optional experiments against this baseline, not an available backend.
 
+[Userfault-pager research](userfault-pager-research.md) is also separate from
+copy-on-write initialization and normal memory allocation. The selected engine's
+custom-memory hook covers host memories and on-demand instance allocation; it
+is not a drop-in pooled-instance pager. Fault recovery, growth/reset and engine
+ownership need independent qualification before integration.
+
 Prepared entries retain compiled components and pre-instantiation/export
 metadata, never running stores or component instances. The internal preparation
 identity also binds a deterministic, engine-version-scoped fingerprint of

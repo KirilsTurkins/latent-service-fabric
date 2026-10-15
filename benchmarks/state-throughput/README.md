@@ -1,6 +1,15 @@
 # Transactional keyed-state throughput
 
-This is a Phase 4 benchmark specification. Transactional keyed state and commit coordination are not implemented by the completed stateless Phase 1 runtime.
+**Status: specified, not a new benchmark result.** Development implements
+configured transactional state, bounded queries and host-owned commit/recovery
+paths; see the [current architecture](../../docs/architecture/state-and-effects.md).
+This directory's `benchmark.toml` still specifies a throughput campaign and does
+not establish completion of Phase 4 qualification.
+
+[Userfault-pager research](../../research/userfault-pager/evaluation-plan.md)
+defines a separate comparison against these existing selective operations,
+explicit chunks and kernel-managed mappings. Page-fault/dirty counts cannot
+substitute for logical read/write budgets, conflict checks or commit metrics.
 
 ## Required metrics
 

@@ -36,6 +36,12 @@ The current state/outbox/outcome commit path does not implement workflow
 checkpointing, wait registration or exclusive resume, and an open transaction
 cannot be serialized across a durable wait.
 
+[Userfault-pager research](../runtime/userfault-pager-research.md) investigates
+optional data materialization and private dirty overlays. Current reads already
+select bounded records; a dirty-page set is neither a logical read set nor an
+alternative state/outbox/outcome commit. A mapped-state interface and persistent
+image representation would need separate semantics and qualification.
+
 Namespace identity is independent of executable/package/publication deduplication.
 No key, entity ID, historical receipt or same-tenant identity grants namespace or
 result authority. Cross-namespace/service and distributed atomic transactions are

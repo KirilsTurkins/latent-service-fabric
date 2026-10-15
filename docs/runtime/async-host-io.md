@@ -82,6 +82,11 @@ a different handoff that would release a complete Store at approved durable
 boundaries. Ordinary provider suspension does not perform that handoff or make
 its pending future serializable.
 
+[Userfault paging](userfault-pager-research.md) is a different execution boundary:
+an unresolved memory fault blocks an OS thread rather than returning a pending
+host future. It needs independent bounded progress, failure and retirement proof;
+the existing async owner does not make a page fault cancellable.
+
 ## Buffers, backpressure and terminal behavior
 
 `IoBuffer` owns initialized, fixed-capacity, zeroizing storage. The adapter
