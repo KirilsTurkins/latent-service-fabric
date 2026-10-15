@@ -20,7 +20,10 @@ pub(super) fn input(annotation: &str) -> (PackageInput, BuildObservation) {
         let bytes = bytes(file["path"].as_str().unwrap());
         assert_eq!(bytes.len() as u64, file["bytes"].as_u64().unwrap());
         assert_eq!(
-            format!("{:x}", Sha256::digest(bytes)),
+            format!(
+                "{:x}",
+                latent_core::digest::HexDigest(Sha256::digest(bytes).into())
+            ),
             file["sha256"].as_str().unwrap()
         );
     }
@@ -45,7 +48,10 @@ pub(super) fn input(annotation: &str) -> (PackageInput, BuildObservation) {
         serde_json::from_value(model["provenanceModel"].clone()).unwrap();
     assert_eq!(
         observed.component_digest,
-        format!("sha256:{:x}", Sha256::digest(bytes("component.wasm")))
+        format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(Sha256::digest(bytes("component.wasm")).into())
+        )
     );
     (
         PackageInput {
