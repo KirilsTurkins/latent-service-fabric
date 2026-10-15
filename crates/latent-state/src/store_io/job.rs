@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 
 use super::state::{Control, Work};
-use super::StoreIoError;
+use super::{StoreIoError, StoreIoKind};
 
 pub(super) struct Reservation<S> {
     pub control: Arc<Control<S>>,
@@ -102,7 +102,7 @@ pub(super) struct TypedWork<S, T, F> {
 impl<S: Send + Sync + 'static, T: Send + 'static, F: FnOnce(&S) -> T + Send> Work<S>
     for TypedWork<S, T, F>
 {
-    fn run(self: Box<Self>, store: &S) {
+    fn run(self: Box<Self>, store: &S, kind: StoreIoKind) {
         let Self {
             operation,
             completion,
@@ -113,6 +113,10 @@ impl<S: Send + Sync + 'static, T: Send + 'static, F: FnOnce(&S) -> T + Send> Wor
         if result.is_err() {
             reservation.control.fail(StoreIoError::RecoveryRequired);
         }
+        // The callback and panic handling have ended. Publish readiness only
+        // after the same worker retires its active-kind bookkeeping; the result
+        // reservation still retains its original slot, bytes and keeper.
+        super::worker::finish_active_job(&reservation.control, kind);
         completion.finish(result, Box::new(reservation));
     }
 

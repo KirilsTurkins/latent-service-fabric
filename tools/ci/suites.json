@@ -5895,14 +5895,16 @@
         "tenant::tests::missing_changed_or_malformed_tenant_record_refuses_instead_of_auto_upgrading_legacy",
         "tenant::tests::noisy_tenant_saturation_and_stale_counter_fence_do_not_consume_another_tenant_or_partial_business_commit",
         "tenant::tests::same_atomic_envelope_merges_state_and_command_counter_once_and_rejects_overflow_without_partial_rows",
-        "tenant::tests::typed_accounting_reads_and_setup_existence_checks_refuse_oversized_bytes_before_copying_values"
+        "tenant::tests::typed_accounting_reads_and_setup_existence_checks_refuse_oversized_bytes_before_copying_values",
+        "store_io::tests::ready_handoff::ready_delivery_retires_callback_kind_before_exclusive_custody_without_early_refund",
+        "store_io::tests::ready_handoff::panicking_callback_retires_its_kind_before_error_delivery_without_reopening_quarantine"
       ],
       "expectedIgnored": [],
       "id": "latent-state.lib.latent-state",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-state/Cargo.toml",
-      "minimumCases": 374,
+      "minimumCases": 376,
       "mode": "libtest",
       "package": "latent-state",
       "platforms": [

@@ -13,6 +13,7 @@ use super::*;
 mod custody;
 mod initialization;
 mod ownership;
+mod ready_handoff;
 mod recovery;
 mod retirement;
 mod shutdown;
