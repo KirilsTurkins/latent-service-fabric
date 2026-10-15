@@ -71,9 +71,11 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if not {"capsule-project.json", "sdk-lock.json", "src/main.go", "wit/world.wit", "go.mod", "go.sum"} <= files.keys():
         raise ValueError("incomplete Go capsule project")
     project, lock = (decode_json(files[name]) for name in ("capsule-project.json", "sdk-lock.json"))
-    if (not isinstance(project, dict) or set(project) != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
+    if (not isinstance(project, dict) or set(project) - {"runtimeProfile"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
+    if project.get('runtimeProfile', 'go-component-async-v1') not in {'go-component-async-v1', 'go-component-activation-v1'}:
+        raise ValueError('go-runtime-profile-not-installed')
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid Go capsule name")
     if not all(isinstance(project[key], str) and 0 < len(project[key]) <= 512 for key in ("version", "service", "world")):

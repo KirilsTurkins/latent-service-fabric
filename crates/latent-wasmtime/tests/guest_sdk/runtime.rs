@@ -230,6 +230,24 @@ impl Runtime {
         call_wall_millis: u64,
         clocks: bool,
     ) -> Self {
+        Self::activation_scoped_with_effects(
+            broker,
+            policies,
+            tenant,
+            scopes,
+            call_wall_millis,
+            (clocks, false),
+        )
+    }
+
+    pub fn activation_scoped_with_effects(
+        broker: &ActivationCapabilityBroker,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+        (clocks, random): (bool, bool),
+    ) -> Self {
         let mut owner = Self::default();
         let profile = latent_core::activation_runtime::PROFILE;
         let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
@@ -272,6 +290,16 @@ impl Runtime {
                 owner.add(registration.reference(), operation);
                 owner.clocks.push(registration);
             }
+        }
+        if random {
+            let provider = RandomProvider::system(
+                broker,
+                1,
+                latent_capabilities::broker::random::RandomLimits::default(),
+            )
+            .unwrap();
+            owner.add(provider.reference(), "u64-value");
+            owner.random = Some(provider);
         }
         owner.authorize(policies, tenant, scopes, call_wall_millis);
         owner

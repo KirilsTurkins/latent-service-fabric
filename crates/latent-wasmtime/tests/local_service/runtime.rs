@@ -22,6 +22,10 @@ pub(super) mod support;
 #[path = "runtime/typescript.rs"]
 mod typescript;
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[path = "runtime/go.rs"]
+mod go;
+
 fn limits() -> RuntimeLimits {
     // Deliberately small test ceilings; these are not a language/product default.
     RuntimeLimits {

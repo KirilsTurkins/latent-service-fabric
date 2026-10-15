@@ -90,7 +90,12 @@ class Compiler:
                    if self.isolation is not None else [self.paths[tool], *arguments])
         return self.commands.run(label, *command).decode("utf-8")
 
-    def compile(self, source: Path, wit: Path, world: str, output: Path) -> tuple[Path, dict]:
+    def compile(self, source: Path, wit: Path, world: str, output: Path,
+                *, runtime_profile: str = 'go-component-async-v1') -> tuple[Path, dict]:
+        from tools.go_guest.activation import PROFILE, exports
+        if runtime_profile not in {'go-component-async-v1', PROFILE}:
+            raise ValueError('go-runtime-profile-not-installed')
+        activation = runtime_profile == PROFILE
         output.mkdir()
         generated = output / "module"
         comparison = output / "independent-bindings"
@@ -100,6 +105,10 @@ class Compiler:
         originals = snapshot(generated)
         if originals != snapshot(comparison):
             raise ValueError("non-reproducible-go-binding-generation")
+        if activation:
+            if not (generated / 'latent_runtime_activation/wit_bindings.go').is_file():
+                raise ValueError('go-activation-requires-explicit-runtime-import')
+            exports(generated)
         # No other module graph can be selected by a generated or handwritten
         # go.mod. The single reviewed package is vendored before runtime overlay.
         module = (generated / "go.mod").read_text()
@@ -200,7 +209,8 @@ class Compiler:
                 raise ValueError("unreviewed-go-dependency-checksum")
             self.run("vendor-locked-module", "go", "mod", "vendor")
             overlay_path = overlay(self.goroot, output / "runtime-overlay",
-                                   generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk)
+                                   generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk,
+                                   activation=activation)
             self.commands.environment["GOFLAGS"] = "-mod=vendor -overlay=" + str(overlay_path)
             if selected_module is not None:
                 if selected_module["tags"]:
