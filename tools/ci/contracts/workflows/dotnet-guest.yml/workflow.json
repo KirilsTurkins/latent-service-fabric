@@ -30,6 +30,10 @@
           "examples/rust-capsules/transactional-aggregate/**",
           "tools/dotnet_guest*",
           "tools/dotnet_guest/**",
+          "examples/dotnet-standard-http/**",
+          "tools/dotnet_standard_http*.py",
+          "tools/qualify_dotnet_standard_http.py",
+          "tools/standard_http/**",
           "tools/dotnet_capsule.py",
           "tools/dotnet_application_dependencies.py",
           "tools/dotnet_dependency_authoring.py",
@@ -69,7 +73,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Select the new NuGet owner and source controls with the existing NativeAOT workflow; preserve policy and required job",
+  "reviewReason": "Preserve both merged NuGet authoring and signed default HttpClient trigger sets with all non-path workflow policy and required jobs unchanged.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

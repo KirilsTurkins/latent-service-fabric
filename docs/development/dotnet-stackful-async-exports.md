@@ -42,6 +42,23 @@ it does not replace the pinned Linux NativeAOT 10.0.100 compiler. Synthetic
 component encoder controls validate the async callback/task-return calling
 shape; they are not emitted managed applications.
 
+The maintained `qualify_dotnet_standard_http.py` gate creates an independent
+captured project with `new HttpClient()` and a declared async component root.
+It parses JSON inside the guest, preserves the default client timeout and
+tests normal/error status, Unicode domain values, POST bytes, truncation,
+oversize, malformed JSON, forbidden headers, early body disposal, cancellation
+while headers/body are pending, uncertain mutation, destination denial and a
+fresh static counter. No handler, transport, proxy, resolver or Task pump is
+injected into application code. The signed node checks every activation's
+physical provider owners, cleanup slots, quotas and topology before proceeding;
+the controlled peer verifies contact/mutation counts and no secondary contact.
+The compiler is bounded to 900 seconds and the node/peer to 300 seconds under a
+1200 second enclosing deadline. It reuses the unchanged five native products
+from the successful ordinary authoring qualification; it does not rebuild or
+instrument a host. The existing hosted job retains all prior commands, its
+75 minute limit and failed inputs. This gate has been added but has not yet
+completed native execution.
+
 Normal adapter compilation, signed/admitted ordinary HttpClient execution,
 pending cancellation/disposal, closing/drain, physical ownership and the full
 shared HTTP matrix remain required execution gates. The original failed managed
