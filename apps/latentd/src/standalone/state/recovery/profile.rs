@@ -2,10 +2,12 @@
 //! Native codec conformance is separate from actual Java execution evidence.
 mod http_custody;
 mod native_memory;
+mod reconstructed_http;
 pub(super) use http_custody::CurrentHttpInput;
 use http_custody::HttpCustody;
 use latent_core::PlatformError;
 use latent_state::namespace::compatibility::{ReviewedSchema, SchemaDeclaration, SchemaId};
+use reconstructed_http::SelectedHttpCustody;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
@@ -114,7 +116,7 @@ impl Profile {
         let (variant, source_digest) = self.source();
         let (readers, writers) = self.schemas()?;
         let custody = match (self.current_http(), http) {
-            (true, Some(input)) => Some(HttpCustody::select(self, &input)?),
+            (true, Some(input)) => Some(SelectedHttpCustody::select(self, &input)?),
             (false, None) => None,
             _ => return Err(super::denied()),
         };
@@ -153,8 +155,11 @@ impl Profile {
         // Execute the installed reader/writer and fixed-recipe conformance on
         // every construction. The signed association alone is insufficient.
         let proof = match custody {
-            Some(HttpCustody::Fresh) => {
+            Some(SelectedHttpCustody::Historical(HttpCustody::Fresh)) => {
                 self.conformance_with_marker(HttpCustody::Fresh.marker())?
+            }
+            Some(SelectedHttpCustody::Reconstructed) => {
+                self.conformance_with_marker(reconstructed_http::MARKER)?
             }
             _ => self.conformance()?,
         };

@@ -4,6 +4,7 @@ mod freshness;
 mod inputs;
 mod policy;
 
+pub(super) use current_java::sign_reconstructed_current_java;
 pub(super) use current_java::{
     sign_current_java, sign_current_java_with_negative, sign_fresh_http_current_java,
     sign_native_memory_current_java, sign_rebuilt_current_java,
