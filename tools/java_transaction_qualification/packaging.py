@@ -236,6 +236,26 @@ def _package_items(items, output, contracts_tool, signer, *, timeout, compiler_s
 def current_signing_mode(items):
     actual = {item.name: digest(read_file(item.directory / 'report.json', 262144)) for item in items}
     require(len(items) == 5 and len(actual) == len(items), 'five-distinct-current-capture-reports')
+    reconstructed = {
+        'aggregate': 'sha256:e5cbc55017e1b833d231400cd80c9f9ccb49c285908f0a6cd9ec36e67fb864fd',
+        'put-once-legacy-v1': 'sha256:f44162b5e510d4af32d0395e9ead6eef2f9eb9b358d1b6906b3434940202ba01',
+        'put-once-compatible-v2': 'sha256:6aec64ed88abc403b080e7afa1a75ed62c2adf26db5e63e14ff2bc1203d47e62',
+        'put-once-writer-v2': 'sha256:da0bcfa30741ac40ce71a1027f7e2d94b14e84fb88d23d8210871298090205bf',
+        'put-once-diagnostics': 'sha256:c46e8e79f549422cbbd6142b44a3c831340d4b500f38ac984855007a92198479',
+    }
+    if actual == reconstructed:
+        packet = decode(read_file(Path(__file__).resolve().parents[2] /
+            'docs/testing/evidence/java-current-http-reconstructed-capture-2026-10-15.json'))['captures']
+        require(packet['sourceCommit'] == 'eba0d96e9439028aacd6c1f9a85d4ce0118a19bc'
+                and packet['nativeIdempotencyProfile'] ==
+                    'qualified-http-v1:2da352e29a0c7981e96f4eb3678ce600a71717bb777b056de93d7365793b7a11',
+                'reconstructed-current-custody-source-and-profile')
+        expected = {name: row['materials']['report']['sha256'] for name, row in packet['variants'].items()
+                    if name != 'forbidden-http'}
+        require(actual == expected and all(item.compiler_source == packet['sourceCommit']
+                and item.component_digest == packet['variants'][item.name]['materials']['component']['sha256']
+                for item in items), 'reconstructed-current-captured-report-component-and-source')
+        return 'fixture-sign-reconstructed-current-java-inputs'
     modes = (
         ('docs/development/phase4-handoffs/2026-10-12/pr970-current-post-evidence.json',
          'fixture-sign-current-java-inputs',
