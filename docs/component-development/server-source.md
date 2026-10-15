@@ -153,8 +153,11 @@ component nor grants authority, and each trigger still uses the server's current
 catalog CAS. An installed replacement publication cannot be selected implicitly
 as the rollback target.
 `remove NAME ...` deletes only owned objects, using original operation lookup
-for its full receipt. Removed mounts must be explicitly selected before a plan
-can replace the set. There is no atomic multi-route publication promise: a
+for its full receipt. It checks the entire selected set for ownership and
+concurrent changes before the first deletion, then rechecks each object at its
+own catalog CAS. A later race can still leave earlier confirmed deletions in
+place; recovery never replays them. Removed mounts must be explicitly selected
+before a plan can replace the set. There is no atomic multi-route publication promise: a
 later failure can leave earlier individually confirmed writes in place.
 
 `inspect` distinguishes declared input from currently published manifests and
