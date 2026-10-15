@@ -256,6 +256,7 @@ class SessionFixture:
             evidence=self.collector, role='operator', call=Mock(side_effect=self.call))
         self.node = lifecycle.Node(self.client, self.root / 'mock-node', self.root,
                                    current_publication_program=True)
+        self.node.select_current_http_terminal_program()
         names = ('aggregate', 'put-once-legacy-v1', 'put-once-compatible-v2',
                  'put-once-writer-v2', 'put-once-diagnostics')
         self.publications = {name: 'publication:sha256:' + str(index + 1) * 64

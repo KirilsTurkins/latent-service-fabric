@@ -26,13 +26,18 @@ CURRENT_NODE_PROGRAM = (
     'publish', 'authority', 'namespace-create', 'legacy-runtime',
     'diagnostic-metadata', 'diagnostic-runtime', 'legacy-metadata', 'legacy-after-diagnostic',
     'compatible-metadata', 'compatible-runtime', 'compatible-after-crash',
-    'cancellation-legacy-metadata', 'cancellation-legacy-runtime',
-    'cancellation-compatible-metadata', 'cancellation-compatible-runtime',
     'writer-metadata', 'writer-runtime', 'restored-runtime',
 )
 CURRENT_METADATA_SESSIONS = {'publish', 'authority', 'diagnostic-metadata', 'legacy-metadata',
-                             'compatible-metadata', 'writer-metadata',
-                             'cancellation-legacy-metadata', 'cancellation-compatible-metadata'}
+                             'compatible-metadata', 'writer-metadata'}
+CURRENT_HTTP_TERMINAL_NODE_PROGRAM = (
+    *CURRENT_NODE_PROGRAM[:11],
+    'cancellation-legacy-metadata', 'cancellation-legacy-runtime',
+    'cancellation-compatible-metadata', 'cancellation-compatible-runtime',
+    *CURRENT_NODE_PROGRAM[11:],
+)
+CURRENT_HTTP_TERMINAL_METADATA_SESSIONS = CURRENT_METADATA_SESSIONS | {
+    'cancellation-legacy-metadata', 'cancellation-compatible-metadata'}
 PENDING_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'legacy-runtime',
                         'pending-original-runtime', 'pending-restored-runtime')
 EARLY_HTTP_NODE_PROGRAM = ('publish', 'authority', 'namespace-create', 'early-http-runtime')
@@ -55,7 +60,16 @@ class Node:
         self.current_program = current_program
         self.program = {'terminal': CURRENT_NODE_PROGRAM, 'pending-close': PENDING_NODE_PROGRAM,
                         'early-http': EARLY_HTTP_NODE_PROGRAM}[current_program]
+        self.metadata_sessions = CURRENT_METADATA_SESSIONS
         self.current_activation = None
+
+    def select_current_http_terminal_program(self):
+        require(self.current_publication_program and self.current_program == 'terminal'
+                and self.ordinal == 0 and self.process is None and self.restore_authority_sessions == 0
+                and self.program is CURRENT_NODE_PROGRAM and self.metadata_sessions is CURRENT_METADATA_SESSIONS,
+                'prestart-current-http-terminal-program')
+        self.program = CURRENT_HTTP_TERMINAL_NODE_PROGRAM
+        self.metadata_sessions = CURRENT_HTTP_TERMINAL_METADATA_SESSIONS
 
     def start(self, configuration: Path, *, restore_authority=False, current_session=None):
         require(type(restore_authority) is bool, "explicit-restore-authority-session")
@@ -82,7 +96,7 @@ class Node:
                     and state['formatVersion'] == 2 and isinstance(state.get('operations'), list),
                     'current-node-session-state-owner')
             operations = state['operations']
-            if current_session in CURRENT_METADATA_SESSIONS:
+            if current_session in self.metadata_sessions:
                 require(operations == [], 'metadata-session-cannot-install-runtime')
             else:
                 require(len(operations) == 3 and len({row['publication'] for row in operations}) == 1

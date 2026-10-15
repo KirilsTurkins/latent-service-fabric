@@ -278,8 +278,11 @@ def prepare_environment(client, args, work, signed, *, node_program='terminal'):
             # Inspection retires its actual control catalogs and persisted
             # supply-chain clock floor before the next ordinary node owner.
             lifecycle.admission_lease_interval(client)
-        return peer, configuration, lifecycle.Node(client, args.node, node_root,
+        node = lifecycle.Node(client, args.node, node_root,
             current_publication_program=endpoint is not None, current_program=node_program)
+        if endpoint is not None and node_program == 'terminal':
+            node.select_current_http_terminal_program()
+        return peer, configuration, node
     except BaseException:
         peer.close()
         raise
