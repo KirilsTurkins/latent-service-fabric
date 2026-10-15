@@ -488,3 +488,16 @@ bytes fail and restoring the original bytes restores the captured identity.
 The fixture preserved SDK and JDK inputs and found no credential or private TLS
 key in the captured project. This capture proof does not qualify installed
 frontend test/watch or annotation-processor execution.
+
+Contributors can repeat the selected pure-library, resource and declared-error
+boundary with the separate [native dependency control](../testing/java-library-ingestion.md).
+It captures two public direct libraries, their transitive closure and two
+independent local JARs before a network-disabled compile and signed node run.
+
+The [15 October native control](../testing/evidence/java-dependency-ingestion-2026-10-15.json)
+records a fresh network-disabled build and enforced ordinary-node execution of
+that exact library graph, resource and declared-error recovery. The independent
+approved annotation-processor control also passed actual source-ownership
+negatives, host containment and three signed-node calls with clean shutdown.
+Both controls retain their actual source, component and native-product identities;
+the remaining installed/private and failure-lifecycle gates stay explicit.
