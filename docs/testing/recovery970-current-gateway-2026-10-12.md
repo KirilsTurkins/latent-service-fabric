@@ -2,10 +2,13 @@
 
 PR #970 retains the original authenticated graph and restored-effect receipt
 owners, and now wraps the current protected store instead of reinstalling a
-competing runtime. The latest [clean-source progress packet](evidence/recovery970-current-progress-2026-10-14.json)
-records passing native and early HTTP controls, with the complete terminal and
-pending restore/close programmes still unqualified. Every receipt keeps its
-actual tested source; the earlier 573-case receipt binds its earlier checkpoint.
+competing runtime. The [2026-10-15 progress packet](evidence/recovery970-current-progress-2026-10-15.json)
+keeps the actual native `403f5efc`/`f4fbee98` build identities and separately
+verified `0f794aef` collector. EARLY HTTP and 84 focused collector controls pass;
+ordinary terminal and pending programmes fail during protected-store startup,
+and the hosted publication browser fails on a required `503` response. These
+causes remain unresolved. Every historical receipt keeps its actual source;
+the complete recovery programmes and packaged distribution remain unqualified.
 
 The gateway authenticates the protected-file administrator credential, exact
 tenant and configured publication. It retains current publication/package

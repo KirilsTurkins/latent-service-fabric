@@ -48,8 +48,12 @@ lower-level controls while identifying the missing installed gateway. The
 wraps current signed installation, tenant accounting, protected checkpoint,
 physical Fresh restore and purpose-specific authorization owners. It retains
 the old byte approval boundary and adds separate current proposal inspection.
-Its complete signed/operator campaign is still pending; the earlier native
-receipt below does not qualify these new gateway bytes.
+The [2026-10-15 progress packet](evidence/recovery970-current-progress-2026-10-15.json)
+records separate native build and collector identities: EARLY HTTP passes,
+ordinary terminal and pending recovery fail at protected-store startup, and
+the hosted publication browser observes a required `503` response. These
+failures remain unresolved. The complete signed/operator campaign remains
+unqualified; the earlier native receipt below retains its original source.
 
 The [2026-10-14 clean-source progress packet](evidence/recovery970-current-progress-2026-10-14.json)
 records 1,958 passing active controls, 66 preserved ignores, three real guest

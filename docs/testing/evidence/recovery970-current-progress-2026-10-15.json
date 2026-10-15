@@ -1,0 +1,409 @@
+{
+  "schemaVersion": "latent.current-native-recovery-progress.v2",
+  "recordedAtUtc": "2026-10-15T18:21:57.016622+00:00",
+  "boundary": "Source-scoped progress only: ordinary EARLY passed; ordinary terminal and pending failed before recovery; hosted publication browser failed. No whole-head, packaged distribution or ticket acceptance.",
+  "conductorSource": {
+    "commit": "0f794aef8b559071a01b4b4e11fa21a325ba2c81",
+    "tree": "dcc5c50ff54d393d4826d7e241c9e35f7638bf34",
+    "trackedFilesVerified": 9612,
+    "sourceSelectionSha256": "sha256:8ea6427687d2a4cf6fe9298cd30789e45224e141e55f376fc26121d08c976936",
+    "rootAllTrackedBlobAndRawShaVerificationSha256": "sha256:39017da33be4638a627eb57a381759816890f0cdebf390117166438fdd03e00b"
+  },
+  "sourceCompatibility": {
+    "nativeBaseCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+    "allSixStockRoleProjectionSha256": "sha256:db7bcb80a1adc2a224b1a1d7278b4e6d49b4016f4b4b9780be31a0de6337996e",
+    "priorF4To403ProjectionSha256": "sha256:5544f1f947765be51fe50b36a237896c0c1b3f7db992e6b2ca6d62b4f33083bd",
+    "changedTrackedPaths": [
+      "tools/ci/contracts/python/test_java_restored_minimum_refusal.py.json",
+      "tools/java_transaction_qualification/offline_campaign.py",
+      "tools/java_transaction_qualification/restored_view.py",
+      "tools/run_java_transaction_http_qualification.py",
+      "tools/tests/test_java_restored_minimum_refusal.py"
+    ],
+    "allOtherTrackedModesAndBlobsUnchanged": true,
+    "nativeCargoBuildAndEmbeddedGuestInputsUnchanged": true,
+    "actualBuildSourcesPreserved": true,
+    "nativeBuildPerformedForConductor": false
+  },
+  "frozenRoles": [
+    {
+      "role": "cli",
+      "actualBuildSourceCommit": "f4fbee982fe4c15d5f04c53f1fd936c59a55c8d8",
+      "sha256": "sha256:458843d131c2692f07c6b36b800b95bb35966b411cd98cc73a6c398b95d791ba",
+      "bytes": 69364608,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "newlyBuiltForConductor": false
+    },
+    {
+      "role": "contracts_tool",
+      "actualBuildSourceCommit": "f4fbee982fe4c15d5f04c53f1fd936c59a55c8d8",
+      "sha256": "sha256:bc5d9afc0c17317ddb4a6b4b6c8e66136d1098fa4595cf240fa47efa173193da",
+      "bytes": 7904520,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "newlyBuiltForConductor": false
+    },
+    {
+      "role": "aot_compiler",
+      "actualBuildSourceCommit": "f4fbee982fe4c15d5f04c53f1fd936c59a55c8d8",
+      "sha256": "sha256:91c75a4b0664076f8224514c65428935ce42ba4eefe615186f7bedc76e446a63",
+      "bytes": 41772392,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "newlyBuiltForConductor": false
+    },
+    {
+      "role": "node",
+      "actualBuildSourceCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+      "sha256": "sha256:57f29e94a0e46a1848c95639f0f688388d920ddf06e47711bbb9abec8b40262a",
+      "bytes": 182371944,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "newlyBuiltForConductor": false
+    },
+    {
+      "role": "recovery_helper",
+      "actualBuildSourceCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+      "sha256": "sha256:617f2f33051c4ab23d94e46c1a6b7fe7afa0973b99bc20f03c7fe4cf524a16c8",
+      "bytes": 187158936,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "newlyBuiltForConductor": false
+    },
+    {
+      "role": "signer",
+      "actualBuildSourceCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+      "sha256": "sha256:a0645b63f24cc91fe3ec41e678c67d39ebfd21f6a900b7b5e3a3f615d52790bd",
+      "bytes": 24853152,
+      "features": [],
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 0,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": false
+      },
+      "newlyBuiltForConductor": false
+    }
+  ],
+  "collectorFollowup": {
+    "commit": "0f794aef8b559071a01b4b4e11fa21a325ba2c81",
+    "change": "Restore-specific CURRENT minimum refusal binds original writer schema, namespace incarnation, native restore recovery epoch, resumed generation and healthy unchanged query; original generic and legacy refusal assertions remain unchanged.",
+    "windowsFocusedCasesPassed": 84,
+    "linuxFocusedCasesPassed": 84,
+    "skipped": 0,
+    "newControls": 21,
+    "existingControls": 63,
+    "maintainedPythonModulesValidated": 413,
+    "maintainedPythonCasesValidated": 4622,
+    "linuxReceiptSha256": "sha256:79321209c06a95cb67f1e7d6756a2eaba57da5bdd87e1dd791fc0ec9ac01fb88",
+    "newRestoreMinimumBranchReachedByOrdinaryRecovery": false
+  },
+  "reconstructedCaptures": [
+    {
+      "kind": "CURRENT",
+      "compilerSourceCommit": "eba0d96e9439028aacd6c1f9a85d4ce0118a19bc",
+      "report": "java-current-http-reconstructed-capture-2026-10-15.json",
+      "reportSha256": "sha256:014a607edd532e7a5c53d35d3a19158a2e0cc0645d214b2a8a44ba56a974a693",
+      "publicArtifactArchiveSha256": "sha256:3e4715a04a1497ec156e2c47c365e22f6f6124bf6117f51b6d76da8d2bfe6b55",
+      "captureMaterialClosure": true,
+      "runtimeQualificationInferred": false
+    },
+    {
+      "kind": "EARLY",
+      "compilerSourceCommit": "47e4e60778d7fdd033d5f1d6c05595752713c971",
+      "report": "java-early-http-reconstructed-capture-2026-10-15.json",
+      "reportSha256": "sha256:a2d37eb966f631a8614650839fcd95b3588855a71cc8243d42b04ab977eb1798",
+      "publicArtifactArchiveSha256": "sha256:0600f78c5aab2a2a64e49b193f31874e29623c5c9d67637d3fe68d0fef8748c3",
+      "captureMaterialClosure": true,
+      "runtimeQualificationInferred": false
+    }
+  ],
+  "ordinaryProgrammes": [
+    {
+      "mode": "terminal",
+      "attempt": 1,
+      "ordinaryProgrammePassed": false,
+      "nativeSourceCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+      "conductorSourceCommit": "0f794aef8b559071a01b4b4e11fa21a325ba2c81",
+      "campaignReceiptSha256": "sha256:eeed7c1e9649f7f03a9fe60c9ced59b22d80227e39f92d775773f0742ca72009",
+      "executionReceiptSha256": "sha256:825b0dee6f36420d9879e69cd210a59aa183591315f34020d6573aa4bff89698",
+      "closedSummarySha256": "sha256:fa21b064c3d19abcc249e5182c6bc7064aabc06ed5f8f1ba361c8454b5314816",
+      "hostCustodyVerificationSha256": "sha256:b05035e2af330ef381c83533030258403ad87432788ecfd586914d1fe63ac386",
+      "seconds": 64.089195,
+      "cliProcesses": 34,
+      "measuredCases": 5,
+      "nativeActionsAttempted": 0,
+      "failedStage": "current-authority",
+      "failureReason": "node-startup-exit-unavailable",
+      "startupFailureObservations": [
+        {
+          "nodeOrdinal": "node-3",
+          "rawSHA256": "cb4deb9b40a9b09044c9c577d898c3f9f6e236dc7e10c273d2c5a732e6620bbd",
+          "startupSucceeded": false,
+          "terminalFailure": {
+            "owner": "platform",
+            "reason": "unavailable"
+          },
+          "observations": [
+            {
+              "stage": "protectedStoreStartup",
+              "failure": {
+                "owner": "platform",
+                "reason": "unavailable"
+              }
+            },
+            {
+              "stage": "nodeServices",
+              "failure": {
+                "owner": "platform",
+                "reason": "unavailable"
+              }
+            }
+          ],
+          "truncated": false,
+          "shutdownReportPresent": false
+        }
+      ],
+      "innerStartupCauseEstablished": false,
+      "allSixSourceSelectionAndProductGuardsPassed": true,
+      "allOwnedProcessesReaped": true,
+      "ownedProcesses": 29,
+      "timedOut": false,
+      "forcedCleanup": false,
+      "normalNodePhysicalShutdownReports": 2,
+      "normalNodeReportsAllClean": true,
+      "failedStartupHasNativeShutdownReport": false,
+      "intentionalCrashRecords": 0,
+      "privateObserverUsed": false,
+      "packagedDistributionQualified": false
+    },
+    {
+      "mode": "pending",
+      "attempt": 1,
+      "ordinaryProgrammePassed": false,
+      "nativeSourceCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+      "conductorSourceCommit": "0f794aef8b559071a01b4b4e11fa21a325ba2c81",
+      "campaignReceiptSha256": "sha256:34e45ce25e839c45e54867e6419872b13bed2268a5c19b23ea458047d0a32325",
+      "executionReceiptSha256": "sha256:f1074640cb23bca35d8209bb6d59b0bc3f683251a5da943d74e2e5264f427e3f",
+      "closedSummarySha256": "sha256:d18306033b3cabffef9560d652fd9fbeffac4dc89b0bfa744b6a1afde65420c9",
+      "hostCustodyVerificationSha256": "sha256:28a4c7c849cc7acbedb8bbfd9abff8321442cede5f855db3857da5fa96f4a24c",
+      "seconds": 57.901515,
+      "cliProcesses": 11,
+      "measuredCases": 5,
+      "nativeActionsAttempted": 0,
+      "failedStage": "current-authority",
+      "failureReason": "node-startup-exit-unavailable",
+      "startupFailureObservations": [
+        {
+          "nodeOrdinal": "node-2",
+          "rawSHA256": "cb4deb9b40a9b09044c9c577d898c3f9f6e236dc7e10c273d2c5a732e6620bbd",
+          "startupSucceeded": false,
+          "terminalFailure": {
+            "owner": "platform",
+            "reason": "unavailable"
+          },
+          "observations": [
+            {
+              "stage": "protectedStoreStartup",
+              "failure": {
+                "owner": "platform",
+                "reason": "unavailable"
+              }
+            },
+            {
+              "stage": "nodeServices",
+              "failure": {
+                "owner": "platform",
+                "reason": "unavailable"
+              }
+            }
+          ],
+          "truncated": false,
+          "shutdownReportPresent": false
+        }
+      ],
+      "innerStartupCauseEstablished": false,
+      "allSixSourceSelectionAndProductGuardsPassed": true,
+      "allOwnedProcessesReaped": true,
+      "ownedProcesses": 20,
+      "timedOut": false,
+      "forcedCleanup": false,
+      "normalNodePhysicalShutdownReports": 1,
+      "normalNodeReportsAllClean": true,
+      "failedStartupHasNativeShutdownReport": false,
+      "intentionalCrashRecords": 0,
+      "privateObserverUsed": false,
+      "packagedDistributionQualified": false
+    },
+    {
+      "mode": "early",
+      "attempt": 1,
+      "ordinaryProgrammePassed": true,
+      "nativeSourceCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+      "conductorSourceCommit": "0f794aef8b559071a01b4b4e11fa21a325ba2c81",
+      "campaignReceiptSha256": "sha256:5cb5a27bffe2927c67eb46bed6bd19388eec1954d798a5cafd5551feac4d8f80",
+      "executionReceiptSha256": "sha256:8e0145fc03ebd2a9fc8e484af3843bb8b47c02fb89480896578ec72b8b96a349",
+      "closedSummarySha256": "sha256:1aa2a7b4d140aad3114a6643214a90e5ee8959cf489fe026a17f697575fda333",
+      "hostCustodyVerificationSha256": "sha256:ca7ebd3c6eef5e53b12376960b3f9d9df0bc9cc6a4628603527f4de1ce6e902d",
+      "seconds": 57.762402,
+      "cliProcesses": 24,
+      "measuredCases": 4,
+      "nativeActionsAttempted": 0,
+      "failedStage": null,
+      "failureReason": null,
+      "startupFailureObservations": [],
+      "innerStartupCauseEstablished": null,
+      "allSixSourceSelectionAndProductGuardsPassed": true,
+      "allOwnedProcessesReaped": true,
+      "ownedProcesses": 23,
+      "timedOut": false,
+      "forcedCleanup": false,
+      "normalNodePhysicalShutdownReports": 4,
+      "normalNodeReportsAllClean": true,
+      "failedStartupHasNativeShutdownReport": null,
+      "intentionalCrashRecords": 0,
+      "privateObserverUsed": false,
+      "packagedDistributionQualified": false
+    }
+  ],
+  "originalBounds": {
+    "programmeDeadlineSeconds": 1200,
+    "outerDeadlineSeconds": 1250,
+    "headroomFloorBytes": 3221225472,
+    "headroomSampleIntervalSeconds": 1,
+    "processIdentity": "pidfd",
+    "retriesAdded": false,
+    "assertionsOrBudgetsRelaxed": false
+  },
+  "hostedCi": {
+    "headCommit": "0f794aef8b559071a01b4b4e11fa21a325ba2c81",
+    "actualCheckoutCommit": "7b8a991a8faf137f5f46cb47d7c01b16fee688ec",
+    "checkoutParents": [
+      "90cf1f4c87ca24e9a64b077dc2eb501dcef22441",
+      "0f794aef8b559071a01b4b4e11fa21a325ba2c81"
+    ],
+    "checkoutTree": "dcc5c50ff54d393d4826d7e241c9e35f7638bf34",
+    "checkoutTreeEqualsHeadTree": true,
+    "currentHeadQualified": false,
+    "failedChecks": [
+      {
+        "name": "Rust 1.97.1 (publications)",
+        "conclusion": "FAILURE",
+        "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38780752246/job/116580108421"
+      },
+      {
+        "name": "CI result",
+        "conclusion": "FAILURE",
+        "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38780752246/job/116588183608"
+      }
+    ],
+    "publicationFailure": {
+      "job": 116580108421,
+      "logSha256": "sha256:d97330789c08dad1ed0a83e249407861ef7d0aacbcc016417b3945ed15b9db3c",
+      "requiredPublicFrameworkRequestStatus": 503,
+      "requestPath": "redacted in original log",
+      "separateAbortedRequest": "de/assets/js/17896441.89c367e9.js",
+      "sameRequestCorrelationEstablished": false,
+      "underlyingRefusalCauseEstablished": false,
+      "browserAssertionsChanged": false
+    },
+    "earlierAll53Success": {
+      "headCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+      "receiptSha256": "sha256:665e49c018e7c2692503ce0fe1627c17c1b6feda2eae1aecf954f72997455e8e",
+      "qualifiesCurrentHead": false
+    }
+  },
+  "earlierOrdinary403Attempts": [
+    {
+      "mode": "terminal",
+      "nativeAndConductorCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+      "passed": false,
+      "nativeActionsSucceeded": 5,
+      "nativeActionsAttempted": 6,
+      "failure": "Second post-migration snapshot: protected-snapshot:Output",
+      "causeEstablished": false,
+      "closedSummarySha256": "sha256:7e4184e234772b7eea16502b34f28c6b2773f8468e82c4c45412b0b7e1224c31"
+    },
+    {
+      "mode": "pending",
+      "nativeAndConductorCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+      "passed": false,
+      "nativeActionsSucceeded": 12,
+      "nativeActionsAttempted": 12,
+      "failure": "Seventh node startup: stateOperations then nodeServices unavailable",
+      "causeEstablished": false,
+      "closedSummarySha256": "sha256:133150a0b42b7f79a21b0f24e49b10c365ab164743ed343ee797c80fc458962a"
+    },
+    {
+      "mode": "early",
+      "nativeAndConductorCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+      "passed": true,
+      "nativeActionsAttempted": 0,
+      "cases": 4,
+      "cliProcesses": 24,
+      "closedSummarySha256": "sha256:2017f20ff40275b61f454c8aa5403346987a0096143892581b4985e0f0c72daa"
+    }
+  ],
+  "privateDiagnostics": {
+    "ordinaryQualification": false,
+    "latestPairBaseSourceCommit": "403f5efc9ea221ea4b68360e9f2dd6a87ea876cb",
+    "latestPairNodeObserverPatchSha256": "sha256:5d93b36309b25155c6861e2eb43c861d58fa4e0cb4a6a83e2dc5860c6d352a53",
+    "latestPairHelperObserverPatchSha256": "sha256:99478b94dddebbfec7835464d143d31d6538ecc468863c7eea829ecaa6580d6c",
+    "latestPairAll12NativeActionsSucceeded": true,
+    "latestPairCompletedWholeProgramme": false,
+    "latestPairFirstUnmet": "HTTP063 restore minimum: exact redacted503Unavailable while old generic collector expected409",
+    "latestPairUnderlyingHttpCauseEstablished": false,
+    "latestPairNormalNodePhysicalShutdownReports": 18,
+    "latestPairIntentionalSigkillReaped": 1,
+    "latestPairIntentionalCrashHadNativeShutdownReport": false,
+    "latestPairClosedSummarySha256": "sha256:5b07176336642dccc6e8b8646c1c8488951e43d859eb3ea166ee2beb6d3002fa",
+    "earlierSnapshotCurrentnessStartupAndEffectReadFailuresPreserved": true,
+    "nonreproductionIsNotAProvenFix": true
+  },
+  "historicalPackets": [
+    {
+      "path": "recovery970-current-progress-2026-10-14.json",
+      "sourceCommit": "6a380a5990b0d0138fc138e74125c4cf2fe01bea",
+      "sha256": "sha256:115f38ea5bc39443d96c57cfe02ff206f61078510cdfad92f90d683a6b614a23",
+      "unchanged": true
+    }
+  ],
+  "historicalPacketsAndFailedAttemptsPreserved": true,
+  "completeTerminalAndPendingQualified": false,
+  "wholeHeadQualified": false,
+  "packagedDistributionQualified": false,
+  "issueAcceptance": false,
+  "ticketsClosed": []
+}
