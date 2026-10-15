@@ -1,89 +1,92 @@
-# Fixed aggregate offline migration
+# Fixed aggregate migration
 
-The first bounded recipe changes the single `count` value from the exact
-[aggregate-v1 definition](../../contracts/state/application-aggregate-v1.schema.json)
-to the exact [aggregate-v2 definition](../../contracts/state/application-aggregate-v2.schema.json).
-It preserves the unsigned 64-bit count, logical/physical business key, tenant,
-namespace, incarnation, quota, pins and original command/effect/inbox identities.
-The closed [recipe](../../contracts/state/aggregate-v1-to-v2-migration.json) is
-immutable source evidence. It does not run a shell, guest, plugin or provider.
-Additional keys/entities, missing/tombstoned values, unexpected media/metadata,
-inconsistent usage, insufficient quota and arbitrary opaque formats refuse.
+The protected v2 migration selects one closed host recipe:
 
-The configured host must first stop relevant admissions and dispatch, retire
-actual command/query/commit/consumer/maintenance owners and close the normal
-engine owner. `OfflineRecoverySource` then acquires the existing protected root
-exclusively on the existing fixed storage workers. A long retained view or live
-physical owner cannot be replaced by an idle flag. This operation exposes no
-ordinary business ports.
+| Recipe | Fixed business key | Immutable definition |
+| --- | --- | --- |
+| `lsf.aggregate-migration.v2` | `count` | [Protected aggregate recipe](../../contracts/state/aggregate-v1-to-v2-protected-migration.json) |
+| `lsf.java-aggregate-migration.v2` | `aggregate/count` | [Protected Java aggregate recipe](../../contracts/state/java-aggregate-v1-to-v2-protected-migration.json) |
 
-The pre-migration checkpoint is an actual protected logical snapshot captured
-through the selected engine's consistent view. Its closed manifest contains the
-full retained-work and payload/decoder closure, runtime/store identities, old/new
-schema definitions, exact selected package and recipe artifacts. Public manifest
-descriptions do not construct `VerifiedMigrationCheckpoint`; that private type
-comes from inspecting actual bounded checkpoint bytes with installed row,
-linked-inventory and artifact validation. The source canonical row digest also
-matches every namespace/state/result/attempt/inbox/outbox/maintenance family,
-including changes that do not increment namespace generation.
+Both preserve the unsigned 64-bit count while changing the exact
+[aggregate-v1](../../contracts/state/application-aggregate-v1.schema.json)
+eight-byte value to the tagged twelve-byte
+[aggregate-v2](../../contracts/state/application-aggregate-v2.schema.json) value.
+Tenant, namespace, incarnation, physical/logical key, original command/effect/
+inbox identity and retained payload/source associations stay intact. These are
+fixed single-cell transforms, not a shell, guest, plugin, request-selected key or
+arbitrary application migration. Extra state cells/entities, wrong media/bytes,
+missing values, unsupported retained formats and insufficient quota refuse.
 
-`OfflineAggregateMigrationRequest` carries the protected checkpoint reference,
-authenticated operator/operation, exact old opaque namespace token, checkpoint
-and manifest digests, exact target package digest and immutable review evidence.
-The installed `RecoveryCodecs::migration_schema` supplies tested `ReviewedSchema`
-evidence for that actual package: both old/new readers and the new writer. A
-request's schema declaration or an authoring fixture's descriptive flags cannot
-provide this evidence. Installed `review_migration` also reviews present grants,
-conservative clock continuity and retained work; every original required decoder
-association must remain available. Current authority is rechecked through the
-short no-I/O `accept_migration` callback at the actual physical writer fence.
-These new installed callbacks default to refusal.
+## Original checkpoint and current owners
 
-Two attributable commands form the path:
+Close relevant admissions and drain actual command/query/commit/consumer/
+dispatch/maintenance owners before exclusive custody. A flag, timeout or dropped
+waiter is not retirement proof. The current
+[ProtectedStoreOwner::migrate_aggregate](../../crates/latent-state/src/protected_store/migration.rs)
+uses the same protected snapshot custody, native reservation, fixed Recovery
+workers and original absolute deadline; it does not reopen an arbitrary engine.
 
-1. `stage_aggregate_migration` verifies the checkpoint, exact source generation,
-   recipe support, current evidence and quota, then atomically publishes a
-   paused history and bounded durable progress. Business bytes/schema remain
-   unchanged. Repeating this stage returns the same progress; it does not finish
-   the migration. Incomplete progress blocks namespace resume.
-2. `complete_aggregate_migration` explicitly continues the same reviewed
-   operation. It reinspects the checkpoint and all original linked rows,
-   normalizing only its own attributable staged marker. One bounded atomic
-   envelope updates the existing state cell and usage codec, namespace schema,
-   schema epoch and completion receipt. It preserves the recovery epoch and
-   increments the actual namespace generation. The namespace remains quiesced
-   and its history remains paused for separately reviewed resume.
+[VerifiedMigrationCheckpoint](../../crates/latent-state/src/recovery/migration/checkpoint.rs)
+comes from inspecting actual bounded snapshot-v2 bytes and their installed row,
+linked inventory and immutable artifact owners. The source row digest covers
+namespace, state, results, attempts, inbox, outbox and maintenance changes,
+including those without a business-generation increment. A manifest description
+or application schema declaration cannot construct that checkpoint authority.
 
-Each accepted command retains its original deadline, worker, protected root,
-checkpoint lock and charged buffers until physical retirement. A detached waiter
-does not refund them. Each command uses one physical commit with named-root/file
-checks before and after the commit. Interruption, disk/quota failure or final
-revocation leaves either unchanged source or durable paused progress; restart
-never automatically completes or activates it. Source input/authorization refusal
-does not poison a valid current engine. Uncertain irreversible completion remains
-recovery-required and uses the same operation key.
+The request retains operator/operation, exact old opaque view token, checkpoint
+and manifest digests, target package digest and immutable review evidence.
+`ReviewedSchema` must cover the actual old/new readers and new writer. Installed
+`AggregateMigrationOwners` validate artifacts, original linked work, current
+publication/policy/audit and conservative clock continuity. Their short `accept`
+fence must consume the same native gate under those authority fences. No
+callback may run guest/provider work or renew the operation's deadline.
 
-Progress has an independent canonical closed codec and retained checkpoint
-identity `lsf.aggregate-migration.v1`, with at most 16 KiB per operation and a
-finite 128-entry per-namespace resume inventory. No trimming occurs. A completed
-operation retry preserves its original namespace/history/view token after current
-authorization; it neither repeats the transformation nor substitutes a later
-business generation. Changed input, evidence, checkpoint or operation meaning
-conflicts. Pending effect IDs, rejection results, inbox identity, ordering and
-payload associations are copied unchanged, never interpreted by the new business
-schema or moved to the new publication.
+## Stage, complete and resume
 
-Old-reader rollback rejects after the actual tagged data/schema change. Automatic
-business-data downgrade and reversal of remote effects are unsupported. A
-separate explicit older-history restore retains original business IDs, changes
-the recovery epoch and stays paused for external reconciliation.
+1. Stage validates the exact source, recipe, quota and checkpoint, then atomically
+   publishes paused history and durable progress. Business bytes and schema stay
+   unchanged. Repeating Stage returns original progress and cannot complete it.
+2. Complete explicitly continues that reviewed operation. It reinspects the same
+   checkpoint and linked rows, normalizing only its attributable stage marker.
+   One atomic envelope changes the fixed cell, namespace schema/schema epoch,
+   business generation, progress and exact tenant-accounting category deltas.
+   Recovery epoch is preserved. History and namespace remain paused.
+3. [Migration resume](../../crates/latent-state/src/protected_store/resume.rs)
+   separately rechecks the original checkpoint, completed progress, current
+   schema/publication, retained work, clock, policy and audit. Its review/accept
+   hooks default to refusal. A restored migrated history uses the distinct
+   [restored migration resume](../../crates/latent-state/src/protected_store/restored_resume.rs)
+   with the acknowledged restore window. Generic namespace resume cannot replace
+   either original checkpoint-bound owner.
 
-The maintained portable fixtures exercise the fixed recipe, interruption/reopen,
-actual byte/media change, stale checkpoint/linked-row refusal, immutable replay,
-input/quota limits and final-fence revocation. The [native receipt](../testing/recovery398-migration-native-evidence.json)
-records all 153 State cases and protected-engine execution against the exact
-immutable source `0c9a700eb809158e73633a35b29ba6bcc3f3512a`. Their host package
-reviewer is a concrete synthetic test owner. Actual compiled signed Java v1/v2 capsule
-execution, deployment/apply/canary/rollback integration, public management/CLI
-and complete retained-effect/inbox campaigns remain required acceptance work;
-the authoring and finite engine fixtures do not claim those outcomes.
+The current progress has a closed version-2 codec bounded to **8 KiB** and the
+retained format identity `latent.aggregate-migration.v2`. Recipe identity and
+progress-format identity are separate. Replay preserves original operation,
+namespace/history and receipt associations after current authorization; changed
+input, checkpoint or review conflicts. Accepted physical work and response bytes
+stay charged through actual retirement, even after waiter loss. Interrupted
+progress never automatically completes or activates on restart. Possible
+commitment uses original durable recovery rather than a new operation key.
+
+Old-reader rollback refuses after the actual tagged schema change. Code rollout
+cannot downgrade business data or reverse external effects. Explicit
+[older-history restore](reviewed-older-history-restore.md) preserves original
+business identities, advances recovery epoch and stays paused for reconciliation.
+
+## Retained v1 profile and qualification
+
+The original [v1 recipe](../../contracts/state/aggregate-v1-to-v2-migration.json),
+`OfflineRecoverySource::stage_aggregate_migration`/`complete_aggregate_migration`,
+`lsf.aggregate-migration.v1` retained identity and 16 KiB progress remain under
+[recovery::v1](../../crates/latent-state/src/recovery/v1/migration.rs).
+They are not the protected v2 producer. V1 writers reject installed v2 accounting
+or progress; there is no automatic fallback or format upgrade.
+
+The [earlier native receipt](../testing/recovery398-migration-native-evidence.json)
+records 153 State cases at its immutable source
+`0c9a700eb809158e73633a35b29ba6bcc3f3512a` with a synthetic host reviewer. It
+cannot qualify later v2 custody, signed Java execution or deployment/canary/
+rollback integration. The [installed gateway](../testing/installed-transaction-recovery.md)
+now composes explicit migration/resume actions with reviewed signed Java sources;
+full retained-effect/inbox, terminal/pending native and packaged campaigns retain
+their separate acceptance gates.

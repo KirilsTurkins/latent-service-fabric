@@ -58,6 +58,7 @@ The implemented storage and execution owners have different authority:
 | [Raw cache](../reference/raw-artifact-cache.md) | Replaceable digest-addressed manifests/blobs with file pins and verified buffers. A hit grants no trust and cannot evict catalog content. |
 | Native cache | Locally authenticated serialized output plus a bounded receipt locator. Exact source, compiler, host and engine checks precede loading. |
 | Prepared cache | Linked immutable runtime preparation, with use pins that may outlive eviction. It retains no guest store. |
+| Protected business store | Durable namespace/state/command/outbox/inbox rows and bounded engine caches. Its reserved recovery lane and current authority are separate from package/catalog and prepared-code ownership. |
 | Activation | Fresh store, host state, transfer values and execution permits; released or quarantined after actual cleanup. |
 
 The default runtime compiles portable components in process. Opt-in
@@ -127,6 +128,12 @@ identity under current result-read authority without invoking the guest. The
 [commit protocol](../protocol/commit-protocol.md) and
 [state/effect architecture](state-and-effects.md) define these separate paths;
 their complete native/application and packaged acceptance remains outstanding.
+
+The concrete [activation manager](../../crates/latent-node/src/activation_manager/mod.rs),
+[transaction runtime](../../crates/latent-node/src/transaction_runtime/mod.rs) and
+[effect runtime](../../crates/latent-effects/src/runtime.rs) own these distinct
+lifetimes. No activation terminal code combines durable disposition, provider
+acknowledgement and physical retirement into one success claim.
 
 ## Unsupported execution models
 

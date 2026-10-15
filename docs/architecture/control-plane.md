@@ -136,6 +136,15 @@ owners truthfully rather than refunding resources still in use.
 
 ## Current and future boundaries
 
+Installed [namespace and transaction management](../protocol/state-management.md)
+uses the protected business-store owner and its current purpose-specific policy.
+It is distinct from deployment catalog CAS, release lifecycle receipts and audit
+history. An accepted deployment does not create a namespace, enable a strict
+command, restore business history or authorize outbox dispatch. The
+[installed transaction configuration](../development/installed-transaction-rpc.md)
+captures its exact deployment/companion/source at startup; a changed deployment
+requires a new startup selection rather than silently retargeting that runtime.
+
 The node reports bounded local identity, runtime, class, cell, queue, cache and
 control-owner observations. Shared provider pools, durable capability
 policy, exact bindings and application ingress have their own finite owners.
@@ -143,6 +152,11 @@ Cluster inventory, region/zone placement, state affinity and a separate
 persistent control service are not implemented. A local snapshot remains usable only while its own lifecycle, trust and
 runtime requirements remain valid; loss of a remote control service cannot
 turn stale authority into permission.
+
+The concrete local publication owner is
+[DirectoryDeploymentRepository](../../crates/latent-control-store/src/deployments/mod.rs);
+the [standalone composition](../../apps/latentd/src/standalone.rs) installs its
+optional audit, rollout, policy, ingress and state owners explicitly.
 
 ## Disconnected authorization handoff
 

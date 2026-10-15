@@ -33,6 +33,13 @@ the published alpha.5 toolkit; clustering and durable workflows remain planned.
 Maintainer acceptance and historical
 measurements are collected in [engineering records](docs/development/engineering-records.md).
 
+## Execution, delivery and authority
+
+Start with the overview, then follow the owner of the behavior being changed.
+These pages describe Development; the [release changes guide](docs/start/development-changes.md)
+separates it from the published toolkit. Accepted ADRs record decisions, while
+the linked implementation and qualification pages establish availability.
+
 - [Overview](docs/architecture/overview.md)
 - [Control plane](docs/architecture/control-plane.md)
 - [Data plane](docs/architecture/data-plane.md)
@@ -43,10 +50,34 @@ measurements are collected in [engineering records](docs/development/engineering
 - [Angular server rendering](docs/component-development/angular-build.md)
 - [Identity and capabilities](docs/architecture/identity-and-capabilities.md)
 - [Blob model](docs/architecture/blob-model.md)
-- [State, transactions and durable effects](docs/architecture/state-and-effects.md)
-- [Planned cluster topology](docs/architecture/cluster-topology.md)
 - [Security model](docs/architecture/security.md)
 - [Versioning and deployment](docs/architecture/versioning-and-deployment.md)
+
+## Transactional state and recovery
+
+These opt-in profiles share one protected engine and fixed storage workers.
+Commands, queries, result lookup, deferred dispatch and operator recovery have
+separate current authority and physical ownership. Engine tests do not establish
+the complete native, application or packaged acceptance gates.
+
+- [State, transactions and durable effects](docs/architecture/state-and-effects.md)
+- [Application schema and retained-format compatibility](docs/architecture/application-schema-compatibility.md)
+- [Namespace history, schema and recovery epochs](docs/architecture/namespace-history-epochs.md)
+- [Response retention and reserved recovery capacity](docs/architecture/transaction-retention.md)
+- [Logical snapshot format and bounds](docs/architecture/logical-recovery-snapshot.md)
+- [Paused recovery guard](docs/architecture/offline-recovery-guard.md)
+- [Protected physical recovery and explicit resume](docs/architecture/protected-offline-recovery.md)
+- [Reviewed older-history restore](docs/architecture/reviewed-older-history-restore.md)
+- [Fixed aggregate migration](docs/architecture/fixed-aggregate-offline-migration.md)
+
+For installed actions and the remaining native campaigns, use
+[recovery qualification](docs/testing/installed-transaction-recovery.md).
+Older-history restore preserves business incarnation and advances a separate
+recovery epoch; it never renews historical grants. The retained v1 offline facade
+and current protected v2 workflow have distinct formats and approval boundaries.
+
+## Protocols, decisions and evidence
+
 - [API surface](docs/api-surface.md)
 - [Activation lifecycle](docs/protocol/activation-lifecycle.md)
 - [Host-owned commit protocol](docs/protocol/commit-protocol.md)
@@ -54,3 +85,11 @@ measurements are collected in [engineering records](docs/development/engineering
 - [Testing invariants](docs/testing/invariants.md)
 - [Engineering records and roadmap](docs/development/engineering-records.md)
 - [Architecture decision records](adr/README.md)
+
+## Planned cluster architecture
+
+The standalone node supplies local authority fences, not replicated state,
+remote invocation, distributed leases or durable workflow execution.
+
+- [Cluster topology](docs/architecture/cluster-topology.md)
+- [Distributed freshness implementation and conformance handoff](docs/architecture/cluster-freshness-handoff.md)

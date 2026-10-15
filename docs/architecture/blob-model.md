@@ -30,3 +30,10 @@ The capability broker binds each reader to its original tenant and activation. E
 ## Ownership and retention
 
 A guest reference identifies its exact SHA-256, size and media type; the current tenant and configured provider namespace determine its authority. Retention, pinning, replication, and garbage collection are platform concerns independent of capsule execution lifetime.
+
+Guest blob references, package/cache blobs and [durable effect payloads](state-and-effects.md#incoming-identity-formats-and-linked-retention)
+have separate owners. A tenant-scoped blob reference does not prove that the
+transaction store retained a payload or grant a dispatcher access to it.
+Strict commands reject unreviewed immediate writes; they stage approved intents
+instead. Snapshot/GC must preserve the actual linked payload closure in the
+selected engine, independently of application result expiry or raw-cache eviction.

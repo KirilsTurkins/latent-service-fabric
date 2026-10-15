@@ -10,7 +10,11 @@ are available in `latent-component-bindings::{host::web, web_guest}`.
 The standalone node's optional [shared HTTP/TLS listener](../reference/http-ingress.md)
 uses this mapping with [durable exact-target routes](../reference/http-triggers.md).
 The node owns transport, authentication and connection limits; an application's
-WIT export creates no listener. Angular renderer adaptation remains #233.
+WIT export creates no listener. The installed [Angular renderer](../runtime/angular-renderer-runtime.md)
+uses a separately qualified closed adapter over that ingress; it is not a
+general Node.js server. Explicit [transaction HTTP routes](../development/transaction-http-v1.md)
+use their own command/query/result profile rather than extending `buffered-v1`
+with implicit transactions.
 
 ## Records and authority
 

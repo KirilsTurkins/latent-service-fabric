@@ -1,10 +1,10 @@
 # Response retention and reserved storage recovery
 
-This implemented first retention profile uses the existing
+The response-expiry and explicit reviewed-retention ports use the existing
 [atomic command envelope](../../crates/latent-commit/src/atomic/mod.rs),
 [protected storage owner](../../crates/latent-state/src/protected_store.rs) and
-[serializable transaction contract](state-and-effects.md). It contributes the
-linked response-expiry and physical recovery-capacity parts of #397.
+[serializable transaction contract](state-and-effects.md). They contribute the
+linked retention and physical recovery-capacity parts of #397.
 
 ## Linked response expiry
 
@@ -29,8 +29,33 @@ metadata. An original key with such dependencies remains an existing command;
 changed input conflicts. A native reader still sees its original snapshot and
 prevents compaction until physical view retirement. This profile retains the
 protective metadata under the existing finite admission quotas. Identity/payload
-purge and destructive namespace retirement require the broader declared-horizon
-and audited reconciliation operations; #397 remains open for those operations.
+purge and destructive namespace retirement require the separate declared-horizon
+and audited reconciliation operations below. Response expiry does not invoke them.
+
+## Explicit terminalization, purge and identity floors
+
+The same maintenance owner also implements separately host-authorized
+[terminalization and purge](../../crates/latent-commit/src/atomic/retention/review.rs).
+`RetentionRequest` binds the original command digest, actor, operation, policy
+and retention horizon. Each physical callback advances at most one effect or
+prior attempt, persisting attributable progress in the original atomic envelope.
+Terminalization stops future sends without claiming provider success; original
+receipts and uncertainty remain historical facts.
+
+Purge requires the completed terminalization review, a separate current
+destructive-policy check, the original provider/inbox horizon, no live claim and
+physically retired native views. It cannot discard an unresolved dependency
+because the application result body expired. The final protective command floor
+continues to reject reuse of the original key. [Floor release](../../crates/latent-commit/src/atomic/retention/review/release.rs)
+is a separate prepared operation for the namespace destruction owner: it requires
+a retired namespace, exact version, drained original dependencies, current
+destroy permission and its composed audit/receipt batch. Quiescing, deployment
+deletion and ordinary expiry cannot release it.
+
+These are implemented lower-level ports, not an automatic node janitor or an
+assertion that every management/CLI workflow and #397 gate is complete. The
+installed integration must supply current authority and the actual physical
+recovery owner; a retained request or maintenance flag grants neither.
 
 ## Conservative time and current permission
 

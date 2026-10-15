@@ -36,7 +36,7 @@ export function buildSidebars(pages) {
     'how-to/exercise-provider-failure-and-recovery']);
   for (const page of pages.filter(page => page.source.startsWith('docs/'))) {
     let group = 'understand';
-    if (page.id === 'roadmap' || /^(phase-[01]-|phase-[23]-.*(?:completion|review)$|phase3-management-integration$|evidence\/|architecture\/cluster-freshness-handoff$|protocol\/phase-1-contract-hardening$)/.test(page.id)
+    if (page.id === 'roadmap' || /^(phase-[01]-|phase-[23]-.*(?:completion|review)$|phase3-management-integration$|evidence\/|protocol\/phase-1-contract-hardening$)/.test(page.id)
       || /^development\/documentation-audit-/.test(page.id)) group = 'records';
     else if (start.has(page.id) || page.id.startsWith('start/')) group = 'start';
     else if (references.has(page.id)) group = 'reference';
@@ -94,7 +94,14 @@ export function buildSidebars(pages) {
     {label: 'Rollouts and recovery', match: id => id.startsWith('phase-2-')},
   ], 'Protocols and management');
   sidebars.understand = sections(sidebars.understand, [
-    {label: 'Architecture', match: id => id.startsWith('architecture/')},
+    {label: 'Architecture', ids: ['overview', 'control-plane', 'data-plane', 'execution-cells',
+      'contracts-and-bindings', 'ingress-and-triggers', 'identity-and-capabilities', 'blob-model',
+      'security', 'versioning-and-deployment'].map(name => `architecture/${name}`)},
+    {label: 'Transactional state and recovery', ids: ['state-and-effects', 'application-schema-compatibility',
+      'namespace-history-epochs', 'transaction-retention', 'logical-recovery-snapshot', 'offline-recovery-guard',
+      'protected-offline-recovery', 'reviewed-older-history-restore', 'fixed-aggregate-offline-migration']
+      .map(name => `architecture/${name}`)},
+    {label: 'Planned cluster architecture', ids: ['architecture/cluster-topology', 'architecture/cluster-freshness-handoff']},
     {label: 'Runtime and capabilities', match: id => id.startsWith('runtime/')},
     {label: 'Security and trust', match: id => /^(?:security|trust)(?:\/|-)/.test(id)},
   ], 'Execution and data models');
