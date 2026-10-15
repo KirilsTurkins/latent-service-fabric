@@ -2066,6 +2066,7 @@
       "boundary": "host",
       "expectedCases": [
         "activation_runtime::tests::close_allows_bounded_live_continuations_and_rejects_independent_work",
+        "activation_runtime::tests::continuations_require_live_original_generation_before_any_admission",
         "activation_runtime::tests::foreign_store_token_and_opaque_sleeping_work_cannot_establish_quiescence",
         "activation_runtime::tests::lazy_path_allocates_no_records_and_accepted_owners_share_finite_limits",
         "activation_runtime::tests::recurring_timer_coalesces_storms_and_cancelled_waits_keep_physical_ownership",
@@ -2205,7 +2206,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 134,
+      "minimumCases": 135,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [

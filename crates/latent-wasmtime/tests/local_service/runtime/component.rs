@@ -621,6 +621,10 @@ fn guest() -> Module {
         success(b, SECOND);
         token(b, WAKE, None);
         error(b, UNIT, 1, 6);
+        // A stale continuation must not become independent accepted work just
+        // because another task still keeps this activation running.
+        register(b, 6, true, THIRD);
+        error(b, THIRD, 8, 6);
         remember(b, SECOND);
     });
     case(&mut body, 7, |b| {

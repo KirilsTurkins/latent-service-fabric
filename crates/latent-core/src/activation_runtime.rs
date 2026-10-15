@@ -241,7 +241,13 @@ impl ActivationRuntime {
         kind: OwnerKind,
         continuation: Option<RuntimeToken>,
     ) -> Result<RuntimeOwner, PlatformError> {
-        let inherited = continuation.is_some_and(|token| self.record(state, token).is_some());
+        let inherited = match continuation {
+            Some(token) if self.record(state, token).is_some() => true,
+            Some(_) => {
+                return Err(error(PlatformErrorCode::InvalidArgument, "runtime-token"));
+            }
+            None => false,
+        };
         match state.phase {
             RuntimePhase::Running | RuntimePhase::Waiting => {}
             RuntimePhase::Closing | RuntimePhase::Draining if inherited => {}
