@@ -1,34 +1,25 @@
 # Exact CI suites and host correctness
 
-The current integration was refreshed against development
-`9a99d1f364eb0c5d09b879fa857811820c8bb005`, plus the publication lease
-regression from #458 at `7b3d9a4b1d3635538572e2203aaf737d939b35ed`: a successful whole-workspace
-all-target/all-feature build and exact executable listings found **165 targets,
-2,831 libtest cases and 149 explicit ignores**. The raw current discovery and binary
-identities are in `tools/ci/evidence/current-discovery.json`; the older baseline
-receipt remains historical. The two custom harness contracts are counted separately from libtest. The
-compiler supervisor now provides an exact 23-case custom listing and completion
-records; the sandbox retains its separate fixed completion marker. This is build/discovery evidence, not an ordinary
-execution PASS. The shared deterministic tests moved to `latent-core`; their
-compatibility tests, current AOT input validation, Angular fixture and physical
-metadata owner are registered without dropping their execution contracts.
+The current catalogue is `tools/ci/suites.json` plus bounded additive fragments
+under `tools/ci/suites.d/`. The [loader](../../tools/ci_suite_inventory.py) checks
+the combined contract; fragments can add target suites but cannot replace shared
+recipes, selections or existing identities. Use `tools/test.py list` and `plan`
+for the selected checkout rather than treating a historical target/case count
+as today's inventory. Listing metadata is not executable discovery or a pass.
 
-Website and MDX selection now retains the required site job in every profile,
-including the host correctness profile. The aggregate independently checks the
-complete job set. The reviewed command contracts preserve historical replacement
-obligations alongside current run blocks and delegated script owners. The
-validator reports the current counts; the issue #732 migration baseline is
-recorded in the [ownership-local contract guide](ci-command-contracts.md). The
-temporary upstream-discovery workflow has been retired; the maintained CI owns
-future build, discovery and execution receipts.
+Website validation is required in every profile, including host correctness.
+The result aggregator independently checks the complete expected job set.
+Workflow command contracts preserve historical replacement obligations alongside
+current run blocks and delegated owners. Their current counts come from
+`tools/ci_coverage.py`, not a copied count in a guide. See the
+[ownership-local contract guide](ci-command-contracts.md) for scoped review.
 
-
-The repaired runner also completed the actual narrow five-package selection:
-formatting, Cargo check, Clippy, build/discovery and all **88 active host tests**
-passed. Cargo's diagnostic stderr is retained separately from its JSON artifact
-stdout under one combined output bound. Source-file identities use explicit
-`sha256` fields; scanning the updated inventory with pinned Gitleaks 8.30.1
-reported no leaks. The complete maintained CI remains required.
+The retained `tools/ci/evidence/current-discovery.json` filename denotes an
+original build/discovery snapshot at `9a99d1f3`, not current-head qualification.
+The later publication regression and shared-helper/AOT integrations retained
+separate exact sources and cases. Earlier host execution receipts below also
+keep their original source; the maintained CI produces fresh discovery and
+execution receipts for subsequent changes.
 
 The versioned contracts live in `tools/ci/suites.json` and
 `tools/ci/contracts/`. The former identifies Cargo artifacts and exact test
@@ -54,13 +45,14 @@ The 100,000-release catalog campaign remains explicitly dispatched; the bounded
 resource gate remains required in the full profile. Release/security workflows
 retain their original triggers and commands. Branch protection is not changed.
 
-Only source changes whose *entire reverse-dependent closure* is confined to the
-currently isolated state/effects/commit/workflows interface packages can select
-the host-only profile. Their shared core suite is nonempty; their test-free
-interface artifacts are explicitly registered as compile-only, not presented as
-passing tests. As soon as a runtime package depends on one of these interfaces,
-the manifest-derived closure selects full validation. This is intentionally a
-small initial rollout, not a claim that provider-only changes are host-only.
+Only source changes whose *entire reverse-dependent closure* fits the current
+`narrowPackages` allowlist can select the host-only profile. The larger
+`fastPackages` set supplies candidate feedback for full changes too; it is not a
+host-only permission list. Current state/core edits require full validation,
+while an isolated workflows edit can remain narrow. The actual manifests decide,
+not the package's historical interface role. Empty test targets must be explicitly
+compile-only; they cannot become successful zero-test execution. Provider-only
+changes are not implicitly host-only.
 
 ## Exact selection and discovery
 
@@ -73,18 +65,19 @@ silently turn into a successful zero-test invocation. Explicit selected ignored
 cases are recorded once in the inventory and consumed by the existing artifact
 runner. Provider fixture creation and cleanup stay with their existing runners.
 
-The artifact and exact-list primitives are reused from issue #238 / PR #374's
-`tools/phase3_security_artifacts.py` at `d70057996e1ec86bdb892184d80e1c60e4c1f791`.
-Its accepted registered target kinds and Cargo-owned example directory are
-extended to cover the complete workspace. Its security case matrix is **not** copied or replaced. Merging that
-work should retain this shared selector module rather than introduce a second
-security runner.
+The [artifact reader](../../tools/ci_rust_artifacts.py) and shared discovery owner
+validate exact Cargo package/target/source, executable and runtime-library
+identities. Security selections consume the same primitives while retaining
+their own case matrix. Do not introduce a competing selector or replace a real
+security/runtime case with an inventory-only success.
 
-Both `harness = false` AOT executables have an explicit **no-list** contract,
-source identity and exact success marker. They are never called with `--list` or
-libtest arguments. Their execution remains in the ordinary full Cargo command;
-a subsequent check requires both real markers exactly once. An empty custom
-executable or a zero-test libtest summary cannot substitute for either harness.
+The two `harness = false` AOT executables have distinct contracts. The supervisor
+implements the registered **custom-list** protocol with exact custom case names
+and completion records. The sandbox declares listing **unsupported** and uses
+its separate production sandbox success marker. Neither is treated as ordinary
+libtest or a successful zero-test target. Full Cargo execution and the prepared
+AOT runner retain their exact listing/completion checks; see
+[prepared AOT inputs](../development/aot-test-inputs.md).
 
 The admission and scheduler compile-fail doctests remain a separate required
 invocation. The signing suite still runs separately with
@@ -101,9 +94,11 @@ packages. The actual build artifact list is checked again for Wasmtime,
 Cranelift, renderer and `latent-testkit` dependencies; convenience helpers cannot
 quietly enlarge the host-only build into a runtime-fixture build.
 
-WIT, Protobuf, fixtures, scripts, SDK sources, MDX, unknown paths and shared build
-infrastructure conservatively select full validation. Existing documentation-only
-rules are unchanged. Website validation/publication remains owned by issue #355.
+WIT, Protobuf, fixtures, scripts, SDK sources, unknown paths and shared build
+infrastructure conservatively select full validation. Pure reviewed website/MDX
+changes select the website profile; mixing them with product inputs selects full.
+Approved prose/SVG changes retain the docs profile. Every profile requires the
+website validation job; publication remains a separate operation.
 The deterministic fixtures cover Rust-only, provider-only, renderer, docs/MDX,
 mixed, deletion/rename, protocol, fixture, manifest and unknown changes.
 
@@ -121,20 +116,30 @@ unexpected skips fail the gate. Only intentionally unselected jobs may report
 
 ## Execution evidence and contributor commands
 
-Run the bounded tooling regression suite without a Rust build:
+Run the bounded tooling regression suite on Linux x86_64 without a Rust build.
+Python runner/process fixtures can still require Linux ownership, Bash and
+filesystem behavior; running Python on Windows does not qualify those paths:
 
 ```sh
 python3 -m unittest tools.tests.test_ci_profile tools.tests.test_ci_rust_artifacts tools.tests.test_ci_suite_inventory tools.tests.test_ci_suite_discovery tools.tests.test_ci_result tools.tests.test_ci_coverage tools.tests.test_ci_contracts
 python3 tools/ci_coverage.py
 ```
 
-The existing classifier emits the selected package JSON. The execution command
-consumes it; it is not a preview or a classifier:
+For an explicitly selected host-only workflows change, derive the current
+package JSON from the existing classifier. The following execution command
+consumes that selection; it is not itself a preview or classifier. It compiles
+and executes tests and needs the pinned Linux toolchain:
 
 ```sh
+packages="$(python3 - <<'PYCODE'
+from tools.ci_profile import classify_paths
+decision = classify_paths(['crates/latent-workflows/src/lib.rs'])
+assert decision.profile == 'fast'
+print(decision.outputs()['fast_packages'])
+PYCODE
+)"
 GITHUB_SHA="$(git rev-parse HEAD)" python3 tools/ci_fast.py \
-  --packages-json '["latent-commit","latent-core","latent-effects","latent-state","latent-workflows"]' \
-  --output target/ci-fast
+  --packages-json "$packages" --output target/ci-fast
 ```
 
 Use the pinned toolchain. Receipts include exact executed command arguments,
@@ -145,6 +150,11 @@ retains workspace discovery and ordinary/custom execution logs separately. On a
 full change, the fast job additionally executes the genuinely narrow
 reverse-dependent regression fixture and retains a separate receipt. That replay
 does not waive the full affected CI jobs.
+
+## Historical discovery and execution
+
+These observations retain their recorded sources and original package roles.
+They do not define current counts, package selections or runtime support.
 
 Baseline GitHub Actions run `35516070488` successfully built and discovered the
 workspace at `047035f5d6007b8f4f1e84ff3ddd02a529ae3077`: **160 executable targets,
@@ -212,8 +222,8 @@ when `fast` omits `contracts`; the full profile still runs them once through
 The inventories and this map are review inputs: the validator does not
 silently regenerate or bless modified commands, ignored cases or test lists.
 
-The integration with merged #449 preserves its three inventory-owned process
-contracts and every OCI/renderer prerequisite, normal/fault check and diagnostic
-upload. Deterministic dependency checks remain in the documentation job. The
-supervisor completion validator was checked against the actual failing CI log:
-all 23 cases and the separate production sandbox marker are present.
+The catalogue retains its three inventory-owned OCI/renderer process contracts,
+their prerequisites, normal/fault controls and diagnostics. Deterministic
+dependency checks remain in the documentation job. Completion is checked against
+the actual current listing and execution logs, never inferred from an earlier
+successful or failing workflow.
