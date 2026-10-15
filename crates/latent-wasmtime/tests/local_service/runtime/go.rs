@@ -9,16 +9,22 @@ fn checkpoint_component(
         std::env::var_os(variable).expect("compile the Go checkpoint fixture"),
     );
     let source = std::fs::read(prepared.join("src/main.go")).unwrap();
-    assert_eq!(
-        source.as_slice(),
+    let timers = profile == "go-component-activation-v3";
+    let expected: &[u8] = if timers {
+        include_bytes!("../../../../../sdk/go-guest/runtime/timers-conformance/main.go")
+    } else {
         include_bytes!("../../../../../sdk/go-guest/runtime/checkpoints-conformance/main.go")
-    );
+    };
+    assert_eq!(source.as_slice(), expected);
     let record: serde_json::Value = serde_json::from_slice(
         &std::fs::read(prepared.join("GO-ACTIVATION-COMPILE.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(record["profile"], profile);
-    assert_eq!(record["fixture"], "checkpoints");
+    assert_eq!(
+        record["fixture"],
+        if timers { "timers" } else { "checkpoints" }
+    );
     assert_eq!(record["sourceUnchanged"], true);
     assert_eq!(
         record["sourceDigest"],
@@ -43,6 +49,96 @@ fn checkpoint_component(
     );
     let wit = std::fs::read_to_string(prepared.join("wit/world.wit")).unwrap();
     (packages::go_activation_runtime(bytes, &wit), source)
+}
+
+#[tokio::test]
+#[ignore = "requires the pinned Go standard timer fixture and explicit go profile"]
+async fn signed_standard_timers_contexts_and_rearm_keep_original_heap_owners() {
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    let root = tempfile::tempdir().unwrap();
+    let f = prepare_checkpoint_fixture(
+        root.path(),
+        "LSF_GO_TIMER_FIXTURE",
+        "go-component-activation-v3",
+    )
+    .await;
+    for iteration in 0..2 {
+        for mode in [0, 1, 2, 3, 4, 5, 6, 9, 11, 12] {
+            let began = std::time::Instant::now();
+            let receipt = success(
+                f.manager
+                    .start(f.request(&format!("go-timers-{iteration}-{mode}"), mode))
+                    .unwrap()
+                    .await,
+            );
+            assert_eq!(
+                serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+                [42]
+            );
+            assert!(receipt.consumption.cpu_fuel > 0);
+            assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+            if mode == 4 {
+                assert!(
+                    began.elapsed() >= Duration::from_millis(20),
+                    "accepted AfterFunc escaped result drain"
+                );
+            }
+            eprintln!(
+                "go-component-activation-v3 iteration={iteration} mode={mode} consumption={:?}",
+                receipt.consumption
+            );
+            f.idle().await;
+            assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+        }
+    }
+    for mode in [8, 10] {
+        assert_eq!(
+            failure(
+                f.manager
+                    .start(f.request(&format!("go-timer-reject-{mode}"), mode))
+                    .unwrap()
+                    .await
+            )
+            .code,
+            PlatformErrorCode::GuestTrap
+        );
+        f.idle().await;
+        assert_eq!(
+            value(
+                f.manager
+                    .start(f.request(&format!("go-timer-fresh-{mode}"), 0))
+                    .unwrap()
+                    .await
+            ),
+            42
+        );
+        f.idle().await;
+    }
+    let id = ActivationId("go-cancel-standard-timer".into());
+    let mut invocation = Box::pin(f.manager.start(f.request(&id.0, 7)).unwrap());
+    pending_timer(invocation.as_mut(), &f).await;
+    f.manager
+        .cancel_for(&TenantId("tenant-a".into()), &id, "go-timer-cancel")
+        .unwrap();
+    assert_eq!(failure(invocation.await).code, PlatformErrorCode::Cancelled);
+    f.idle().await;
+    let mut deadline = f.request("go-timer-original-root-deadline", 7);
+    deadline.budget.wall_time_limit_millis = Some(100);
+    assert_eq!(
+        failure(f.manager.start(deadline).unwrap().await).code,
+        PlatformErrorCode::DeadlineExceeded
+    );
+    f.idle().await;
+    assert_eq!(
+        value(
+            f.manager
+                .start(f.request("go-timer-fresh-after-cancel-deadline", 0))
+                .unwrap()
+                .await
+        ),
+        42
+    );
+    f.idle().await;
 }
 
 async fn prepare_checkpoint_fixture(

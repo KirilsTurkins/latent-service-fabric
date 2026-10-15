@@ -74,7 +74,7 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if (not isinstance(project, dict) or set(project) - {"runtimeProfile"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
-    if project.get('runtimeProfile', 'go-component-async-v1') not in {'go-component-async-v1', 'go-component-activation-v1', 'go-component-activation-v2'}:
+    if project.get('runtimeProfile', 'go-component-async-v1') not in {'go-component-async-v1', 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3'}:
         raise ValueError('go-runtime-profile-not-installed')
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid Go capsule name")

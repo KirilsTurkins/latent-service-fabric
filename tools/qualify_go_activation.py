@@ -45,9 +45,9 @@ def compile_fixture(output: Path, *, offline_cache: Path | None = None, runtime_
     if runtime_profile not in PROFILES:
         raise ValueError('unsupported-Go-activation-qualification-profile')
     output.mkdir(parents=True, exist_ok=False)
-    if fixture not in {'ordinary', 'checkpoints'}:
+    if fixture not in {'ordinary', 'checkpoints', 'timers'}:
         raise ValueError('unsupported-Go-activation-fixture')
-    original = ROOT / 'sdk/go-guest/runtime' / ('conformance' if fixture == 'ordinary' else 'checkpoints-conformance')
+    original = ROOT / 'sdk/go-guest/runtime' / {'ordinary': 'conformance', 'checkpoints': 'checkpoints-conformance', 'timers': 'timers-conformance'}[fixture]
     source = (original / 'main.go').read_bytes()
     (output / 'src').mkdir()
     (output / 'src/main.go').write_bytes(source)
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--offline-cache', type=Path)
     parser.add_argument('--runtime-profile', choices=sorted(PROFILES), default=PROFILE)
-    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints'), default='ordinary')
+    parser.add_argument('--fixture', choices=('ordinary', 'checkpoints', 'timers'), default='ordinary')
     args = parser.parse_args()
     print(json.dumps(compile_fixture(args.output, offline_cache=args.offline_cache,
         runtime_profile=args.runtime_profile, fixture=args.fixture)))

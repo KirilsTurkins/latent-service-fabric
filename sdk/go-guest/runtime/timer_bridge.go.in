@@ -1,0 +1,141 @@
+// The pinned Go heap retains channel synchronization, recurrence and GC roots.
+// This bounded weak inventory owns only original host timer tokens. It does not
+// retain an otherwise unreachable Go timer/channel or execute application code.
+type lsfTimerSlot struct { token [2]uint64; weak unsafe.Pointer; callback bool }
+var lsfTimerSlots []lsfTimerSlot
+var lsfTimerCallbacks uint32
+var lsfTimerParent [2]uint64
+
+//go:wasmimport latent:runtime/activation@0.1.0 timer-start
+//go:noescape
+func lsfTimerStart(delay int64, periodic int32, period int64, parent int32, generation, id int64, result unsafe.Pointer)
+//go:wasmimport latent:runtime/activation@0.1.0 timer-stop
+//go:noescape
+func lsfTimerStop(generation, id int64, result unsafe.Pointer)
+
+func lsfReserveTimer(when, period int64) [2]uint64 {
+    if !lsfActivationActive || getg().lsfOwner[1] == 0 { lsfFail("LSF initializer timer is not qualified") }
+    lsfSweepCollectedTimers()
+    delay := when - nanotime()
+    if delay < 0 { delay = 0 }
+    periodic := int32(0)
+    if period > 0 { periodic = 1 }
+    parent := getg().lsfOwner
+    var result lsfTokenResult
+    lsfTimerStart(delay, periodic, period, 1, int64(parent[0]), int64(parent[1]), unsafe.Pointer(&result))
+    if result.tag != 0 || result.id == 0 { lsfFail("LSF timer admission denied") }
+    return [2]uint64{result.generation, result.id}
+}
+
+func lsfInstallTimer(t *timer, token [2]uint64) {
+    weak := internal_weak_runtime_registerWeakPointer(unsafe.Pointer(t))
+    slot := len(lsfTimerSlots)
+    for index := range lsfTimerSlots {
+        if lsfTimerSlots[index].token[1] == 0 { slot = index; break }
+    }
+    if slot == len(lsfTimerSlots) { lsfTimerSlots = append(lsfTimerSlots, lsfTimerSlot{}) }
+    lsfTimerSlots[slot] = lsfTimerSlot{token, weak, !t.isChan}
+    t.lsfToken, t.lsfSlot = token, uint32(slot + 1)
+    if !t.isChan { lsfTimerCallbacks++ }
+}
+
+// This runs on ordinary Go stacks. Weak-to-strong conversion may cooperate
+// with GC; it must never be moved into a scheduler/g0 callback.
+func lsfSweepCollectedTimers() {
+    for index := range lsfTimerSlots {
+        slot := &lsfTimerSlots[index]
+        if slot.token[1] != 0 && internal_weak_runtime_makeStrongFromWeak(slot.weak) == nil {
+            token := slot.token
+            lsfStopTimerSlot(uint32(index + 1), token)
+            lsfActivationTimerFence(token[0], token[1])
+        }
+    }
+}
+
+// The physical next-readiness owner remains charged until the canonical
+// dispatcher drops that exact subtask. Stop on g0 only marks that retirement;
+// public Stop/Reset additionally wait for the dispatcher fence on a Go stack.
+//go:nosplit
+func lsfStopTimerSlot(index uint32, token [2]uint64) {
+    if token[1] == 0 { return }
+    if index == 0 || int(index) > len(lsfTimerSlots) { lsfFail("LSF timer slot missing") }
+    slot := &lsfTimerSlots[index - 1]
+    if slot.token != token { lsfFail("LSF stale timer slot") }
+    lsfActivationTimerStopped(token[0], token[1])
+    var result lsfUnitResult
+    lsfTimerStop(int64(token[0]), int64(token[1]), unsafe.Pointer(&result))
+    if result.tag != 0 { lsfFail("LSF timer retirement unconfirmed") }
+    if slot.callback {
+        if lsfTimerCallbacks == 0 { lsfFail("LSF callback timer count underflow") }
+        lsfTimerCallbacks--
+    }
+    *slot = lsfTimerSlot{}
+    lsfMaybeWakeTimerDrain()
+}
+
+//go:nosplit
+func lsfRetireTimer(t *timer) [2]uint64 {
+    token := t.lsfToken
+    if token[1] != 0 {
+        lsfStopTimerSlot(t.lsfSlot, token)
+        t.lsfToken, t.lsfSlot = [2]uint64{}, 0
+    }
+    return token
+}
+
+//go:nosplit
+func lsfBeforeTimerCallback(t *timer) {
+    if lsfTimerParent[1] != 0 { lsfFail("LSF timer callback overlap") }
+    lsfTimerParent = t.lsfToken
+}
+
+//go:nosplit
+func lsfAfterTimerCallback(t *timer) {
+    lsfTimerParent = [2]uint64{}
+    if t.period == 0 { lsfRetireTimer(t) }
+}
+
+//go:nosplit
+func lsfMaybeWakeTimerDrain() {
+    if lsfActivationTasks == 1 && lsfTimerCallbacks == 0 && lsfActivationDrain != nil {
+        drain := lsfActivationDrain
+        lsfActivationDrain = nil
+        ready(drain, 0, true)
+    }
+}
+
+func lsfStopIdleChannelTimers() {
+    lsfSweepCollectedTimers()
+    for index := range lsfTimerSlots {
+        slot := &lsfTimerSlots[index]
+        if slot.token[1] == 0 { continue }
+        pointer := internal_weak_runtime_makeStrongFromWeak(slot.weak)
+        if pointer == nil { lsfFail("LSF timer collection changed during drain") }
+        t := (*timer)(pointer)
+        if !t.isChan { lsfFail("LSF callback timer remains during result seal") }
+        t.stop()
+        token := lsfRetireTimer(t)
+        lsfActivationTimerFence(token[0], token[1])
+        KeepAlive(t)
+    }
+}
+
+// Called by the normal dispatcher goroutine after the scheduler's idle signal.
+// The pinned wasm target has one scheduler thread. The Go heap itself holds
+// every timer whose channel currently has a receiver or callback may fire.
+//go:linkname lsfNextTimer
+func lsfNextTimer() (uint64, uint64) {
+    var selected *timer
+    for _, pp := range allp {
+        for _, entry := range pp.timers.heap {
+            t := entry.timer
+            if t.lsfToken[1] == 0 || t.when == 0 || t.state&timerZombie != 0 { continue }
+            if selected == nil || t.when < selected.when { selected = t }
+        }
+    }
+    if selected == nil { return 0, 0 }
+    return selected.lsfToken[0], selected.lsfToken[1]
+}
+
+func lsfActivationTimerFence(generation, id uint64)
+func lsfActivationTimerStopped(generation, id uint64)

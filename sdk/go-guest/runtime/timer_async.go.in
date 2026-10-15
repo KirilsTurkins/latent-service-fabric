@@ -1,0 +1,87 @@
+type lsfTimerWait struct {
+    token [2]uint64
+    subtask uint32
+    result unsafe.Pointer
+    pinner runtime.Pinner
+    stopped bool
+    fences []chan unit
+}
+
+//go:linkname lsfNextTimer runtime.lsfNextTimer
+func lsfNextTimer() (uint64, uint64)
+
+//go:wasmimport latent:runtime/activation@0.1.0 [async-lower]timer-next
+//go:noescape
+func lsfTimerNext(generation, id int64, result unsafe.Pointer) uint32
+
+//go:linkname lsfActivationTimerStopped runtime.lsfActivationTimerStopped
+//go:nosplit
+func lsfActivationTimerStopped(generation, id uint64) {
+    if state == nil { return }
+    for _, wait := range state.timerWaits {
+        if wait.token == [2]uint64{generation, id} { wait.stopped = true }
+    }
+}
+
+//go:linkname lsfActivationTimerFence runtime.lsfActivationTimerFence
+func lsfActivationTimerFence(generation, id uint64) {
+    if id == 0 || state == nil { return }
+    for _, wait := range state.timerWaits {
+        if wait.token == [2]uint64{generation, id} {
+            fence := make(chan unit)
+            wait.fences = append(wait.fences, fence)
+            (<-fence)
+            return
+        }
+    }
+}
+
+func lsfCompleteTimerWait(wait *lsfTimerWait) {
+    tag := *(*byte)(wait.result)
+    code := *(*byte)(unsafe.Add(wait.result, 8))
+    if tag != 0 && !(tag == 1 && code == 3 && wait.stopped) {
+        panic("LSF timer readiness failed or root deadline won")
+    }
+    wait.pinner.Unpin()
+    for _, fence := range wait.fences { close(fence) }
+}
+
+func lsfHandleTimerEvent(event uint32) bool {
+    for index, wait := range state.timerWaits {
+        if wait.subtask != event { continue }
+        waitableJoin(event, 0)
+        subtaskDrop(event)
+        state.timerWaits = append(state.timerWaits[:index], state.timerWaits[index + 1:]...)
+        lsfCompleteTimerWait(wait)
+        return true
+    }
+    return false
+}
+
+// At most one next is pending for each admitted original timer. The runtime
+// timer/Wait ceilings bound this inventory independently from Go goroutines.
+// A synchronous completion asks the Go scheduler to check its heap again.
+func lsfStartTimerWait() bool {
+    generation, id := lsfNextTimer()
+    if id == 0 { return false }
+    for _, wait := range state.timerWaits {
+        if wait.token == [2]uint64{generation, id} { return false }
+    }
+    wait := &lsfTimerWait{token: [2]uint64{generation, id}}
+    wait.result = witRuntime.Allocate(&wait.pinner, 16, 8)
+    status := lsfTimerNext(int64(generation), int64(id), wait.result)
+    wait.subtask = status >> 4
+    switch status & 15 {
+    case STATUS_STARTING, STATUS_STARTED:
+        if state.waitableSet == 0 { state.waitableSet = waitableSetNew() }
+        waitableJoin(wait.subtask, state.waitableSet)
+        state.timerWaits = append(state.timerWaits, wait)
+        return false
+    case STATUS_RETURNED:
+        lsfCompleteTimerWait(wait)
+        runtime.Gosched()
+        return true
+    default:
+        panic("LSF timer-next canonical status")
+    }
+}
