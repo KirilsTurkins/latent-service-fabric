@@ -103,8 +103,9 @@ remain unchanged. Paths in the merged-PR inventory describe those original
 commits, including files subsequently consolidated or removed.
 
 Current SDK/build/security references now use the authoritative engine baseline,
-and the API, WIT, SDK and example indexes expose implemented transaction and
-activation surfaces. The older Java qualification narrative is replaced by the
+and the API, WIT, SDK, decision and example indexes expose implemented transaction
+and activation surfaces. The research inventory keeps its recorded engine/source
+baseline distinct from the current toolchain. The older Java qualification narrative is replaced by the
 current version-2 conductor boundary; it no longer recommends the removed
 `state.stateRoot` override or describes the installed recovery adapter as absent.
 The native action guide includes explicit destination identity and receipt checks.
