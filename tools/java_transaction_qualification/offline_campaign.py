@@ -13,7 +13,7 @@ from tools.phase2_operator_process import read_json, write_json
 from . import configuration as cfg, http, lifecycle, policies, provider, recovery
 from . import restore_authority, restore_installation
 from .campaign import command_input, precondition, rpc_result
-from .inputs import require
+from .inputs import digest, require
 
 
 def generation(value):
@@ -144,7 +144,7 @@ class OfflineCampaign:
             from . import snapshot_destination_root
             root, observed = snapshot_destination_root.provision(
                 self.client, self.node, self.directory, operation)
-            self.client.evidence.record('snapshot-destination-directory', observed)
+            self.client.evidence.record('snapshot-root-' + digest(operation.encode('ascii'))[7:], observed)
         file = {"root": str(root), "name": name}
         result = self.action({"action": "snapshot", "operationId": operation, "file": file})
         return file, original_snapshot(result, operation)
