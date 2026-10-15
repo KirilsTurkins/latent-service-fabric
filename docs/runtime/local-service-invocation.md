@@ -6,6 +6,10 @@ checked application export through the broker and the normal node activation
 manager. Each child gets a fresh Store and activation state. Compiled code may
 be shared; permission, identity, cells and budgets remain activation-owned.
 
+[Call-graph fusion](call-graph-fusion-research.md) investigates optional future
+composition over this path. It is not implemented, and a manifest eligibility
+declaration does not bypass the child boundaries described here.
+
 ## Installation and exact target selection
 
 A trusted node composition installs one provider registration with the above

@@ -7,6 +7,17 @@ from the [implemented runtime and planned phases](../docs/roadmap.md). A
 prototype, source inspection or historical measurement does not establish a
 delivered standalone capability.
 
+## Call-graph fusion
+
+The [fusion investigation](call-graph-fusion/README.md) distinguishes joint
+preparation, guarded component composition and deeper activation merging.
+It includes [primary-source and tooling research](call-graph-fusion/upstream-review.md),
+[semantic evaluation gates](call-graph-fusion/evaluation-plan.md) and the
+[benchmark protocol](../benchmarks/fusion/README.md). Existing local calls already
+use in-process dispatch and compiled bindings. No fused artifact, optimizer or
+measured LSF speedup is delivered; fresh state, authority, admission, failure,
+accounting and cleanup remain obligations at logical call boundaries.
+
 ## Native software fault isolation
 
 The [native-SFI investigation](native-sfi/README.md) reviews restricted native
