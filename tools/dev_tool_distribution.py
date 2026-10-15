@@ -123,6 +123,11 @@ def recipe(payload: Path, language: str) -> None:
     names.add(guest_compatibility_build.HOST_MANIFESTS[HOST_ABI])
     if language in {"java", "dotnet", "go", "typescript"}:
         names.add("tools/dev_managed_tools.py")
+    if language == "java":
+        # Server builds already emit declarations. Ship their existing scoped
+        # operator tool alongside the recipe, without putting it in guest code.
+        names.update({"tools/server_capsule.py", "tools/server_routes.py",
+                      "tools/dev_workflow/client.py", "tools/dev_workflow/process.py"})
     for name in sorted(names):
         copy(ROOT / name, payload / "recipe" / name)
     (payload / "recipe/tools/__init__.py").write_bytes(b"")
