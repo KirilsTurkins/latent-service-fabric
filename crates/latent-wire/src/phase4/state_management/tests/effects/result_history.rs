@@ -116,16 +116,16 @@ async fn actual_old_schema_result_keeps_caller_scope_and_all_selected_key_fields
     let mut fixture = HistoryFixture::new().await;
     fixture.advance().await;
     let before = rows(&fixture.effect).await;
-    for kind in [
-        "caller",
-        "tenant",
-        "namespace",
-        "incarnation",
-        "operation",
-        "entity",
-        "client-key",
-        "shared-scope",
-        "publication",
+    for (kind, expected) in [
+        ("caller", PlatformErrorCode::NotFound),
+        ("tenant", PlatformErrorCode::InvalidArgument),
+        ("namespace", PlatformErrorCode::PermissionDenied),
+        ("incarnation", PlatformErrorCode::PermissionDenied),
+        ("operation", PlatformErrorCode::NotFound),
+        ("entity", PlatformErrorCode::PermissionDenied),
+        ("client-key", PlatformErrorCode::NotFound),
+        ("shared-scope", PlatformErrorCode::PermissionDenied),
+        ("publication", PlatformErrorCode::PermissionDenied),
     ] {
         let mut selected = request(&fixture.effect);
         let command = selected.command.as_mut().unwrap();
@@ -151,13 +151,7 @@ async fn actual_old_schema_result_keeps_caller_scope_and_all_selected_key_fields
             .await
             .err()
             .unwrap();
-        assert!(
-            matches!(
-                error.code,
-                PlatformErrorCode::PermissionDenied | PlatformErrorCode::NotFound
-            ),
-            "{kind}"
-        );
+        assert_eq!(error.code, expected, "{kind}: {}", error.code.wire_code());
         assert_eq!(rows(&fixture.effect).await, before);
     }
     fixture.finish().await;
