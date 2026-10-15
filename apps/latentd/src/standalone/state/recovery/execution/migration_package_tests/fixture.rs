@@ -9,8 +9,8 @@ pub(super) use crate::config::state::{OperationSettings, StateSettings};
 use crate::standalone::effects::ProtectedEffectClock;
 pub(super) use latent_core::{
     native_capacity::{
-        NativeAdmissionClass, NativeBuffer, NativeBufferClass, NativeCapacityLimits,
-        NativeCapacityOwner, NativeReservationRequest,
+        NativeAdmissionClass, NativeBuffer, NativeBufferClass, NativeBufferPermit,
+        NativeCapacityLimits, NativeCapacityOwner, NativeReservation, NativeReservationRequest,
     },
     InvocationPrincipal, Metadata, PrincipalKind, SystemActivationClock, TenantId,
 };
@@ -54,114 +54,15 @@ impl Fixture {
         let root = tempfile::tempdir().unwrap();
         let packages = super::configuration::packages(root.path(), count).await;
         let policy = super::configuration::policy(root.path(), &packages);
-        let mut config = ProtectedStoreConfig::bounded_linux(root.path().join("state"));
-        config.create_if_missing = true;
-        config.engine.cache_bytes = 1024 * 1024;
-        config.io.resident_bytes = config.engine.cache_bytes as u64 + 64 * 1024;
-        private_directory(&config.root);
-        private_directory(&root.path().join("snapshots"));
-        let settings = super::configuration::settings(root.path(), config.clone());
-        let work_bytes = super::configuration::work_bytes(&config, root.path());
-        let native = NativeCapacityOwner::with_clock(
-            NativeCapacityLimits::default(),
-            Arc::new(SystemActivationClock),
-        )
-        .unwrap();
-        let cutoff = Instant::now() + settings.startup_timeout;
-        let original = Arc::new(
-            native
-                .reserve(
-                    NativeAdmissionClass::Recovery,
-                    NativeReservationRequest {
-                        request_bytes: 32 * 1024,
-                        work_bytes,
-                        response_bytes: 14 * 1024 * 1024,
-                    },
-                    cutoff,
-                )
-                .unwrap(),
-        );
-        assert_eq!(original.original_deadline(), cutoff);
-        assert!(original.reserved_bytes() <= settings.native.recovery.maximum_reservation_bytes);
-        eprintln!(
-            "migration-package-admission: {}",
-            json!({
-                "requestBytes":original.request_bytes(),"workBytes":original.work_bytes(),
-                "responseBytes":original.response_bytes(),"reservedBytes":original.reserved_bytes(),
-                "maximumReservationBytes":settings.native.recovery.maximum_reservation_bytes,
-                "originalCutoffMillis":settings.startup_timeout.as_millis(),
-            })
-        );
-        let store = Arc::new(
-            ProtectedStoreOwner::start_bound_retained_validated_view_with_clock(
-                config,
-                settings.store_identity.clone(),
-                ProtectedStoreStartupMemory::new(&native, original.clone()).unwrap(),
-                0,
-                |_| Ok(()),
-                Arc::new(SystemActivationClock),
-            )
-            .unwrap()
-            .await
-            .unwrap(),
-        );
-        let quotas = crate::standalone::state::validation::quotas(&settings);
-        let quota = quotas[0].clone();
-        let seed_memory = original
-            .reserve_buffer(NativeBufferClass::Work, 8 * 1024 * 1024)
-            .unwrap();
-        store
-            .with_store_retaining(
-                StoreIoKind::RecoveryWrite,
-                8 * 1024 * 1024,
-                original.clone(),
-                move |engine| {
-                    let _memory = seed_memory;
-                    super::seed::populate(engine, quota)
-                },
-            )
-            .unwrap()
-            .await
-            .unwrap()
-            .unwrap();
-        let input = super::configuration::operation(
-            &packages.publications[0].0,
-            &packages.publications[0].1,
-        );
-        let deployment = super::configuration::deployment(&input);
-        let metadata = original
-            .reserve_buffer(NativeBufferClass::Work, 1024 * 1024)
-            .unwrap();
-        let current = selection::capture_current(
-            &packages.artifacts,
-            &settings,
-            input,
-            &deployment,
-            native.clone(),
-            original.clone(),
-        )
-        .unwrap();
-        let mut sources = vec![current.clone()];
-        for (publication, component) in packages.publications.iter().skip(1) {
-            sources.push(
-                selection::capture_decoder(
-                    &packages.artifacts,
-                    &current,
-                    &super::super::super::request::DecoderSource {
-                        component_digest: component.0.clone(),
-                        publication: publication.id.as_str().into(),
-                    },
-                )
-                .unwrap(),
-            );
-        }
-        let catalog = Catalog::capture(
-            &packages.artifacts,
-            &sources,
-            Vec::new(),
-            current.publication().publication().as_str(),
-        )
-        .unwrap();
+        let Started {
+            settings,
+            native,
+            original,
+            store,
+            quotas,
+        } = open_store(root.path()).await;
+        let (current, catalog, metadata) =
+            capture_catalog(&packages, &settings, &native, &original);
         let principal = InvocationPrincipal {
             subject: "operator".into(),
             kind: PrincipalKind::Administrator,
@@ -203,25 +104,7 @@ impl Fixture {
             },
         )
         .unwrap();
-        let selected = current.clone();
-        let namespace = store
-            .with_store_retaining(
-                StoreIoKind::RecoveryRead,
-                1024 * 1024,
-                original.clone(),
-                move |engine| {
-                    latent_state::recovery::namespace_resume::NamespaceRecoveryView::capture(
-                        &engine.snapshot()?,
-                        &selected.target().tenant,
-                        &latent_core::StateNamespaceId(selected.namespace().into()),
-                    )
-                    .map(|observed| observed.namespace)
-                },
-            )
-            .unwrap()
-            .await
-            .unwrap()
-            .unwrap();
+        let namespace = capture_namespace(&store, &current, &original).await;
         let (runtime, review) = Codecs::identities(&catalog, &authority.actor).unwrap();
         let checkpoint =
             ExternalCheckpoint::initial(settings.store_identity.clone(), 1, 1, 1_100_000).unwrap();
@@ -374,6 +257,165 @@ impl Fixture {
         assert_eq!(snapshot.recovery.bytes, 0);
         true
     }
+}
+
+struct Started {
+    settings: StateSettings,
+    native: NativeCapacityOwner,
+    original: Arc<NativeReservation>,
+    store: Arc<ProtectedStoreOwner>,
+    quotas: Vec<latent_state::tenant::TenantQuota>,
+}
+
+async fn open_store(root: &std::path::Path) -> Started {
+    let mut config = ProtectedStoreConfig::bounded_linux(root.join("state"));
+    config.create_if_missing = true;
+    config.engine.cache_bytes = 1024 * 1024;
+    config.io.resident_bytes = config.engine.cache_bytes as u64 + 64 * 1024;
+    private_directory(&config.root);
+    private_directory(&root.join("snapshots"));
+    let settings = super::configuration::settings(root, config.clone());
+    let work_bytes = super::configuration::work_bytes(&config, root);
+    let native = NativeCapacityOwner::with_clock(
+        NativeCapacityLimits::default(),
+        Arc::new(SystemActivationClock),
+    )
+    .unwrap();
+    let cutoff = Instant::now() + settings.startup_timeout;
+    let original = Arc::new(
+        native
+            .reserve(
+                NativeAdmissionClass::Recovery,
+                NativeReservationRequest {
+                    request_bytes: 32 * 1024,
+                    work_bytes,
+                    response_bytes: 14 * 1024 * 1024,
+                },
+                cutoff,
+            )
+            .unwrap(),
+    );
+    assert_eq!(original.original_deadline(), cutoff);
+    assert!(original.reserved_bytes() <= settings.native.recovery.maximum_reservation_bytes);
+    eprintln!(
+        "migration-package-admission: {}",
+        json!({
+            "requestBytes":original.request_bytes(),"workBytes":original.work_bytes(),
+            "responseBytes":original.response_bytes(),"reservedBytes":original.reserved_bytes(),
+            "maximumReservationBytes":settings.native.recovery.maximum_reservation_bytes,
+            "originalCutoffMillis":settings.startup_timeout.as_millis(),
+        })
+    );
+    let store = Arc::new(
+        ProtectedStoreOwner::start_bound_retained_validated_view_with_clock(
+            config,
+            settings.store_identity.clone(),
+            ProtectedStoreStartupMemory::new(&native, original.clone()).unwrap(),
+            0,
+            |_| Ok(()),
+            Arc::new(SystemActivationClock),
+        )
+        .unwrap()
+        .await
+        .unwrap(),
+    );
+    let quotas = crate::standalone::state::validation::quotas(&settings);
+    let quota = quotas[0].clone();
+    let seed_memory = original
+        .reserve_buffer(NativeBufferClass::Work, 8 * 1024 * 1024)
+        .unwrap();
+    store
+        .with_store_retaining(
+            StoreIoKind::RecoveryWrite,
+            8 * 1024 * 1024,
+            original.clone(),
+            move |engine| {
+                let _memory = seed_memory;
+                super::seed::populate(engine, quota)
+            },
+        )
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    Started {
+        settings,
+        native,
+        original,
+        store,
+        quotas,
+    }
+}
+
+fn capture_catalog(
+    packages: &super::configuration::Packages,
+    settings: &StateSettings,
+    native: &NativeCapacityOwner,
+    original: &Arc<NativeReservation>,
+) -> (Arc<selection::RecoverySource>, Catalog, NativeBufferPermit) {
+    let input =
+        super::configuration::operation(&packages.publications[0].0, &packages.publications[0].1);
+    let deployment = super::configuration::deployment(&input);
+    let metadata = original
+        .reserve_buffer(NativeBufferClass::Work, 1024 * 1024)
+        .unwrap();
+    let current = selection::capture_current(
+        &packages.artifacts,
+        settings,
+        input,
+        &deployment,
+        native.clone(),
+        original.clone(),
+    )
+    .unwrap();
+    let mut sources = vec![current.clone()];
+    for (publication, component) in packages.publications.iter().skip(1) {
+        sources.push(
+            selection::capture_decoder(
+                &packages.artifacts,
+                &current,
+                &super::super::super::request::DecoderSource {
+                    component_digest: component.0.clone(),
+                    publication: publication.id.as_str().into(),
+                },
+            )
+            .unwrap(),
+        );
+    }
+    let catalog = Catalog::capture(
+        &packages.artifacts,
+        &sources,
+        Vec::new(),
+        current.publication().publication().as_str(),
+    )
+    .unwrap();
+    (current, catalog, metadata)
+}
+
+async fn capture_namespace(
+    store: &ProtectedStoreOwner,
+    current: &Arc<selection::RecoverySource>,
+    original: &Arc<NativeReservation>,
+) -> latent_state::namespace::NamespaceRecord {
+    let selected = current.clone();
+    store
+        .with_store_retaining(
+            StoreIoKind::RecoveryRead,
+            1024 * 1024,
+            original.clone(),
+            move |engine| {
+                latent_state::recovery::namespace_resume::NamespaceRecoveryView::capture(
+                    &engine.snapshot()?,
+                    &selected.target().tenant,
+                    &latent_core::StateNamespaceId(selected.namespace().into()),
+                )
+                .map(|observed| observed.namespace)
+            },
+        )
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap()
 }
 
 pub(super) fn private_directory(path: &std::path::Path) {

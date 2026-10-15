@@ -18,7 +18,7 @@ pub(super) fn install(
             "namespace-inspect-restore","namespace-restore"],
         "resources":{"kind":"state","scopes":[{"namespace":"transactional-aggregate","incarnation":1,
             "entity":null,"recoveryKind":"original-caller","recoveryScope":caller.scope,"resultPolicy":"visibility-v1"}]},
-        "ceiling":{"operations":1,"inputBytes":67108864,"outputBytes":67108864,"wallTimeMillis":30000}}]});
+        "ceiling":{"operations":1,"inputBytes":67_108_864,"outputBytes":67_108_864,"wallTimeMillis":30000}}]});
     let binding = json!({"formatVersion":1,"tenant":"examples","capability":STATE_CONTRACT,
         "providerProfile":profile,"configurationDigest":digest,"configurationEpoch":1,
         "restriction":{"operations":[]}});

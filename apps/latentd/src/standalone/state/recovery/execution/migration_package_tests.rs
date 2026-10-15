@@ -154,7 +154,7 @@ async fn rejected_artifact(kind: &str) {
                     .publication()
                     .publication()
                     .as_str()
-            )
+            );
         }
         "foreign" => artifact.identity = format!("package:sha256:{}", "1".repeat(64)),
         _ => unreachable!(),
@@ -241,16 +241,20 @@ async fn actual_four_selected_packages_fit_original_paid_metadata() {
     let peak = original + 3 * vector_bytes(&metadata) + 2 * encoded.capacity();
     let conservative_artifact_peak =
         5 * 128 * (size_of::<RequiredArtifact>() + 256) + 4 * 128 * 512;
-    assert_eq!(fixture.codecs._metadata.bytes(), 1024 * 1024);
-    assert!(fixture.codecs._metadata.is_from_owner(&fixture.native));
+    let Codecs {
+        _metadata: paid_metadata,
+        ..
+    } = fixture.codecs.as_ref();
+    assert_eq!(paid_metadata.bytes(), 1024 * 1024);
+    assert!(paid_metadata.is_from_owner(&fixture.native));
     assert!(peak <= conservative_artifact_peak);
-    assert!(conservative_artifact_peak < fixture.codecs._metadata.bytes() as usize);
+    assert!(conservative_artifact_peak < usize::try_from(paid_metadata.bytes()).unwrap());
     eprintln!(
         "migration-package-metadata: {}",
         json!({
             "sources":4,"requiredArtifacts":metadata.len(),"vectorCapacity":metadata.capacity(),
             "actualArtifactPeakBytes":peak,"conservativeArtifactPeakBytes":conservative_artifact_peak,
-            "originalPaidMetadataBytes":fixture.codecs._metadata.bytes(),
+            "originalPaidMetadataBytes":paid_metadata.bytes(),
         })
     );
     let snapshot = fixture.snapshot().await;

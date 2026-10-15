@@ -106,7 +106,7 @@ pub(super) fn settings(root: &std::path::Path, store: ProtectedStoreConfig) -> S
             "tenant":"examples","limits":{"stateKeys":32,"stateBytes":65536,
             "tombstoneKeys":32,"tombstoneBytes":65536,"resultRows":32,"resultBytes":65536,
             "effectRows":32,"effectBytes":65536,"payloadBytes":65536,"recoveryBytes":65536,
-            "metadataRows":128,"metadataBytes":1048576}
+            "metadataRows":128,"metadataBytes":1_048_576}
         }))
         .unwrap()],
     }

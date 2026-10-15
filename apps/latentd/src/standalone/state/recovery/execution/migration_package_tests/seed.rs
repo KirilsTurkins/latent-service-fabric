@@ -7,7 +7,7 @@ use latent_state::{
         catalog::{NamespaceCatalog, NamespaceMutation, NamespaceOperationContext},
         NamespaceQuota, NamespaceTransition,
     },
-    session::{StateMode, StateScope, StateSession},
+    session::{SessionLimits, StateMode, StateScope, StateSession},
     tenant::TenantQuota,
 };
 
@@ -62,7 +62,7 @@ pub(super) fn populate(engine: &EmbeddedStore, quota: TenantQuota) -> Result<(),
             entity: None,
             mode: StateMode::Command,
         },
-        Default::default(),
+        SessionLimits::default(),
         |_, _| Ok(()),
     )
     .unwrap();
