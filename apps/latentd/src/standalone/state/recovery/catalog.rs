@@ -118,6 +118,66 @@ impl Catalog {
     pub fn primary(&self) -> &SchemaEvidence {
         &self.schemas[self.selected]
     }
+    pub fn snapshot_artifacts(&self) -> Result<Vec<RequiredArtifact>, PlatformError> {
+        let capacity = self
+            .artifacts
+            .len()
+            .checked_add(self.schemas.len())
+            .filter(|capacity| *capacity <= latent_state::recovery::snapshot::SNAPSHOT_ARTIFACTS)
+            .ok_or_else(super::capacity)?;
+        let mut artifacts = Vec::new();
+        artifacts
+            .try_reserve_exact(capacity)
+            .map_err(|_| super::capacity())?;
+        if artifacts.capacity() > latent_state::recovery::snapshot::SNAPSHOT_ARTIFACTS {
+            return Err(super::capacity());
+        }
+        artifacts.extend(self.artifacts.iter().cloned());
+        for evidence in &self.schemas {
+            let package = evidence
+                .operation
+                .publication()
+                .package()
+                .ok_or_else(super::denied)?;
+            let required = RequiredArtifact {
+                identity: format!("package:{package}"),
+                digest: evidence.schema.declaration().package_digest,
+            };
+            if !self.authenticates_migration_package(&required) {
+                return Err(super::denied());
+            }
+            if let Some(prior) = artifacts
+                .iter()
+                .find(|prior| prior.identity == required.identity)
+            {
+                if prior != &required {
+                    return Err(super::denied());
+                }
+            } else {
+                artifacts.push(required);
+            }
+        }
+        Ok(artifacts)
+    }
+    pub fn authenticates_migration_package(&self, artifact: &RequiredArtifact) -> bool {
+        let Some(identity) = artifact.identity.strip_prefix("package:") else {
+            return false;
+        };
+        self.schemas.iter().any(|evidence| {
+            evidence
+                .operation
+                .publication()
+                .package()
+                .is_some_and(|package| {
+                    package.as_str() == identity
+                        && evidence.schema.declaration().package_digest == artifact.digest
+                        && self
+                            .artifacts
+                            .iter()
+                            .any(|bare| bare.identity == identity && bare.digest == artifact.digest)
+                })
+        })
+    }
     fn scope(&self) -> Scope<'_> {
         let operation = &self.primary().operation;
         Scope {

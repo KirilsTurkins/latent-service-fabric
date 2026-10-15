@@ -1,0 +1,31 @@
+{
+  "apiVersion": "latent.dev/v1",
+  "kind": "TransactionBinding",
+  "capsule": "examples/transaction-java-aggregate",
+  "deployment": "transaction-java-aggregate",
+  "binding": "transaction-java-aggregate",
+  "profile": "lsf-transaction-v1",
+  "hostAbiDigest": "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35",
+  "namespace": "transactional-aggregate",
+  "stateSchema": "sha256:5465983620116dc20476955ea815d665e2868421f6bed705760f12225bada6eb",
+  "operations": [
+    {
+      "operation": "update",
+      "mode": "strict-command",
+      "inputFormat": "lsf-wit-values-v1",
+      "resultFormat": "lsf-wit-values-v1"
+    },
+    {
+      "operation": "query",
+      "mode": "fresh-query",
+      "inputFormat": "lsf-wit-values-v1",
+      "resultFormat": "lsf-wit-values-v1"
+    },
+    {
+      "operation": "scan",
+      "mode": "fresh-query",
+      "inputFormat": "lsf-wit-values-v1",
+      "resultFormat": "lsf-wit-values-v1"
+    }
+  ]
+}

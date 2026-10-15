@@ -143,7 +143,9 @@ impl Codecs {
     }
     pub fn artifact(&self, artifact: &RequiredArtifact) -> Result<(), StoreError> {
         self.check()?;
-        if self.catalog.artifacts.contains(artifact) {
+        if self.catalog.artifacts.contains(artifact)
+            || self.catalog.authenticates_migration_package(artifact)
+        {
             Ok(())
         } else {
             Err(StoreError::UnsupportedFormat)

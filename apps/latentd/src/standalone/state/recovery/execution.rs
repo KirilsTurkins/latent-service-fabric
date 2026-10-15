@@ -25,6 +25,9 @@ use latent_state::{
 use serde::Serialize;
 use std::{sync::Arc, time::Instant};
 
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod migration_package_tests;
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NativeRecoveryReport {
@@ -577,7 +580,7 @@ async fn snapshot(
         operator_id: codecs.authority.actor.clone(),
         runtime_digest: codecs.runtime,
         decoder_formats: codecs.catalog.formats.clone(),
-        required_artifacts: codecs.catalog.artifacts.clone(),
+        required_artifacts: codecs.catalog.snapshot_artifacts()?,
     };
     let view = Arc::clone(&codecs);
     let artifact = Arc::clone(&codecs);

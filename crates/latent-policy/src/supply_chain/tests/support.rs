@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+#[path = "support/captured_java.rs"]
+mod captured_java;
 #[path = "support/fresh.rs"]
 mod fresh;
 #[path = "operator_fixture.rs"]

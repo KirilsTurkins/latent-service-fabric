@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "purpose": "captured-public-inputs-for-native-package-metadata-tests",
+  "componentSHA256": "05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+  "files": [
+    {
+      "path": "application-schema-inputs.json",
+      "bytes": 591,
+      "sha256": "3c9b9439afc4d81be04685b11f8165be508b85a199ca4706b1eaf32c1ef17b70"
+    },
+    {
+      "path": "capsule.json",
+      "bytes": 1434,
+      "sha256": "fe35ac13ae276095ab863bb2d3e64cb240c6b1e95de6a4895fbcb4784f936fa7"
+    },
+    {
+      "path": "component.wasm",
+      "bytes": 1050523,
+      "sha256": "05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d"
+    },
+    {
+      "path": "contracts.json",
+      "bytes": 1465,
+      "sha256": "9b9ebe3b2c2ae272edfcbf260668cb42be63ab73479942c8e80df5dc2c8c6701"
+    },
+    {
+      "path": "deferred-http-requirements.json",
+      "bytes": 787,
+      "sha256": "4b4e375e4834be64784c71da140da42540bd901d8bc33a8ff813a9a2e18c6f1b"
+    },
+    {
+      "path": "fixture-provenance-input.json",
+      "bytes": 4227,
+      "sha256": "b589b6dfc6254b778c19c882cf658c55b2586d8a4e2af28fd18e173e32f35102"
+    },
+    {
+      "path": "java-current-http-profile.json",
+      "bytes": 176,
+      "sha256": "c62dd813a48cd7ab58246c87e06aca500b004421eb5a9b324f6e89a061556c9b"
+    },
+    {
+      "path": "package-source.json",
+      "bytes": 3401,
+      "sha256": "018412f6ce9093f6c8deef1a471bca931ec373e477e528b1ce1d6239eaedbb60"
+    },
+    {
+      "path": "schemas/application-aggregate-v1.schema.json",
+      "bytes": 278,
+      "sha256": "bd60ba56c67d2a016b07c61418fa5530a71ce4fec0555e262c6a98ff79138a1f"
+    },
+    {
+      "path": "schemas/application-aggregate-v2.schema.json",
+      "bytes": 318,
+      "sha256": "5465983620116dc20476955ea815d665e2868421f6bed705760f12225bada6eb"
+    },
+    {
+      "path": "src/dev/latent/app/AggregateCodec.java",
+      "bytes": 1428,
+      "sha256": "c551c777b8cc96c1a32558e262f0137aece8692061e5ea062bca2385bf3d6237"
+    },
+    {
+      "path": "src/dev/latent/app/Capsule.java",
+      "bytes": 3818,
+      "sha256": "2ea02a9201cad1a5214724315e36fbb128aee101878568826918363bf3f0f743"
+    },
+    {
+      "path": "transaction-binding.json",
+      "bytes": 959,
+      "sha256": "e5719a610fb20811a402aed0531d13d71547978104048d9e275ae7b7ae061c49"
+    },
+    {
+      "path": "transaction-profile.json",
+      "bytes": 9418,
+      "sha256": "1c1d8aad840be4a5c33a5d82dfe5a9aebcf27bffedada4b5fcdc83b8f177936a"
+    },
+    {
+      "path": "wit-lock.json",
+      "bytes": 960,
+      "sha256": "d0ff4df4b524c3560c7cb47bc9f66d8a4ff7e74ceecb0ad3280556a63b8ef4ee"
+    },
+    {
+      "path": "wit/deps/clock/package.wit",
+      "bytes": 139,
+      "sha256": "a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+    },
+    {
+      "path": "wit/deps/intents/package.wit",
+      "bytes": 1142,
+      "sha256": "182a2a982c470a4bd8603fba8d3e2e54e93a167dda2501de02c77b10066ea636"
+    },
+    {
+      "path": "wit/deps/state/package.wit",
+      "bytes": 3134,
+      "sha256": "56b0a1304a9987395e0ea3f07e3dde4cbae5e70e5c9837ffcc6ae3b3cb9b7f25"
+    },
+    {
+      "path": "wit/world.wit",
+      "bytes": 1020,
+      "sha256": "6642bc853129a8d1c84322eb9af59964bc7cbb8641a95ff4feae8837c1c7f539"
+    }
+  ],
+  "copiedBytes": 1085218,
+  "compilerExecutedForTests": false,
+  "keysCopied": false,
+  "guestExecutionQualified": false,
+  "packageTrust": "fresh-synthetic-test-signatures-over-exact-captured-inputs"
+}
