@@ -87,7 +87,7 @@ async fn signed_standard_goroutines_sleep_and_drain_use_original_activation_owne
             f.idle().await;
         }
     }
-    for mode in [1, 2, 3, 6] {
+    for mode in [1, 2, 3, 6, 8, 9] {
         assert_eq!(
             failure(
                 f.manager

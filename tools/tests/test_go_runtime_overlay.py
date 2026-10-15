@@ -27,6 +27,37 @@ def sources():
 
 
 class GoRuntimeOverlayTests(unittest.TestCase):
+    def test_activation_dispatcher_rejects_changed_dependency_before_transformation(self):
+        from tools.go_guest import activation
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'wit/async/async.go'
+            source.parent.mkdir(parents=True)
+            source.write_text('package async // substituted dispatcher')
+            with self.assertRaisesRegex(ValueError, 'dispatcher-source-drift'):
+                activation.async_source(root, runtime.ROOT / 'sdk/go-guest')
+            self.assertEqual(source.read_text(), 'package async // substituted dispatcher')
+
+    def test_activation_export_refuses_missing_and_synchronous_entry_before_writing(self):
+        from tools.go_guest import activation
+        for source in ('package main\nfunc main() {}\n',
+                       '//go:wasmexport execute\nfunc execute() { wasm_export_task_return_run() }\n'):
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                path = root / 'wit_exports.go'
+                path.write_text(source)
+                with self.assertRaisesRegex(ValueError, 'go-activation-'):
+                    activation.exports(root)
+                self.assertEqual(path.read_text(), source)
+
+    def test_activation_selection_is_explicit_and_retains_default_profile(self):
+        from tools.go_guest import activation
+        from tools.go_application_dependencies import selection
+        self.assertEqual(selection()['runtimeProfile'], 'go-component-async-v1')
+        self.assertEqual(selection({'runtimeProfile': activation.PROFILE})['runtimeProfile'], activation.PROFILE)
+        with self.assertRaisesRegex(ValueError, 'profile-not-installed'):
+            selection({'runtimeProfile': 'unbounded-native-threads'})
+
     def fixture(self, root, prepared=True):
         text = sources()
         if prepared:

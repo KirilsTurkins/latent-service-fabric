@@ -8,19 +8,36 @@ var lsfActivationDrain *g
 type lsfTokenResult struct { tag, padding uint32; generation, id uint64 }
 type lsfUnitResult struct { tag, failure byte }
 
+// The closed WASI adapter has no stderr. runtime.throw tries to print through
+// fd_write, whose denial recursively throws. A profile violation must trap
+// immediately and leave uncertain owners charged to the original Store.
+//go:nosplit
+func lsfFail(_ string) { abort() }
+
 //go:wasmimport latent:runtime/activation@0.1.0 register
 //go:noescape
 func lsfRegister(kind int32, hasParent int32, generation, id int64, result unsafe.Pointer)
 //go:wasmimport latent:runtime/activation@0.1.0 settle
 //go:noescape
 func lsfSettle(generation, id int64, result unsafe.Pointer)
+//go:wasmimport latent:runtime/activation@0.1.0 park
+//go:noescape
+func lsfPark(generation, id int64, result unsafe.Pointer)
+//go:wasmimport latent:runtime/activation@0.1.0 wake
+//go:noescape
+func lsfWake(generation, id int64, result unsafe.Pointer)
 //go:wasmimport latent:runtime/activation@0.1.0 close
 //go:noescape
 func lsfClose(result unsafe.Pointer)
 
+//go:nosplit
 func lsfTrustedIdle(pc uintptr) bool {
 	switch funcname(findfunc(pc)) {
-	case "runtime.forcegchelper", "runtime.bgsweep", "runtime.bgscavenge", "runtime.gcBgMarkWorker":
+	case "runtime.forcegchelper", "runtime.bgsweep", "runtime.bgscavenge", "runtime.gcBgMarkWorker", "runtime.runFinalizers", "runtime.runCleanups":
+		return true
+	case "runtime.gcenable.gowrap1", "runtime.gcenable.gowrap2", "runtime.gcBgMarkStartWorkers.gowrap1":
+		return true
+	case "runtime.updateMaxProcsGoroutine":
 		return true
 	}
 	return false
@@ -28,37 +45,43 @@ func lsfTrustedIdle(pc uintptr) bool {
 
 //go:linkname lsfActivationEnter
 func lsfActivationEnter() {
-	if lsfActivationActive || lsfActivationTasks != 0 { throw("LSF activation overlap") }
+	if lsfActivationActive || lsfActivationTasks != 0 { lsfFail("LSF activation overlap") }
 	current := getg()
 	for _, gp := range allgs {
 		status := readgstatus(gp) &^ _Gscan
 		if gp != current && status != _Gdead && !lsfTrustedIdle(gp.startpc) {
-			throw("LSF initializer background goroutine is unsupported")
+			lsfFail("LSF initializer background goroutine is unsupported")
 		}
 	}
 	lsfActivationActive = true
 }
 
 // Reservation happens on g0 before gfget, malg, or publication to a run queue.
+//go:nosplit
 func lsfNewTask(fn *funcval, parent *g) [2]uint64 {
-	if !lsfActivationActive || lsfTrustedIdle(fn.fn) { return [2]uint64{} }
+	if lsfTrustedIdle(fn.fn) { return [2]uint64{} }
+	if !lsfActivationActive {
+		if funcname(findfunc(fn.fn)) == "runtime.main" { return [2]uint64{} }
+		lsfFail("LSF initializer goroutines are not qualified")
+	}
 	var result lsfTokenResult
 	hasParent := int32(0)
 	if parent.lsfOwner[1] != 0 { hasParent = 1 }
 	lsfRegister(0, hasParent, int64(parent.lsfOwner[0]), int64(parent.lsfOwner[1]), unsafe.Pointer(&result))
-	if result.tag != 0 || result.id == 0 { throw("LSF goroutine admission denied") }
-	if lsfActivationTasks == ^uint32(0) { throw("LSF goroutine count overflow") }
+	if result.tag != 0 || result.id == 0 { lsfFail("LSF goroutine admission denied") }
+	if lsfActivationTasks == ^uint32(0) { lsfFail("LSF goroutine count overflow") }
 	lsfActivationTasks++
 	return [2]uint64{result.generation, result.id}
 }
 
+//go:nosplit
 func lsfTaskDestroyed(gp *g) {
 	if gp.lsfOwner[1] == 0 { return }
 	var result lsfUnitResult
 	lsfSettle(int64(gp.lsfOwner[0]), int64(gp.lsfOwner[1]), unsafe.Pointer(&result))
-	if result.tag != 0 { throw("LSF goroutine settlement unconfirmed") }
+	if result.tag != 0 { lsfFail("LSF goroutine settlement unconfirmed") }
 	gp.lsfOwner = [2]uint64{}
-	if lsfActivationTasks == 0 { throw("LSF goroutine count underflow") }
+	if lsfActivationTasks == 0 { lsfFail("LSF goroutine count underflow") }
 	lsfActivationTasks--
 	if lsfActivationTasks == 1 && lsfActivationDrain != nil {
 		drain := lsfActivationDrain
@@ -67,17 +90,37 @@ func lsfTaskDestroyed(gp *g) {
 	}
 }
 
+//go:nosplit
+func lsfTaskPark(gp *g) {
+	if gp.lsfOwner[1] == 0 { return }
+	if gp.lsfParked { lsfFail("LSF duplicate goroutine park") }
+	var result lsfUnitResult
+	lsfPark(int64(gp.lsfOwner[0]), int64(gp.lsfOwner[1]), unsafe.Pointer(&result))
+	if result.tag != 0 { lsfFail("LSF goroutine park denied") }
+	gp.lsfParked = true
+}
+
+//go:nosplit
+func lsfTaskWake(gp *g) {
+	if gp.lsfOwner[1] == 0 { return }
+	if !gp.lsfParked { lsfFail("LSF goroutine wake without park") }
+	var result lsfUnitResult
+	lsfWake(int64(gp.lsfOwner[0]), int64(gp.lsfOwner[1]), unsafe.Pointer(&result))
+	if result.tag != 0 { lsfFail("LSF goroutine wake denied") }
+	gp.lsfParked = false
+}
+
 //go:linkname lsfActivationFinish
 func lsfActivationFinish() {
-	if !lsfActivationActive || getg().lsfOwner[1] == 0 { throw("LSF unowned result") }
+	if !lsfActivationActive || getg().lsfOwner[1] == 0 { lsfFail("LSF unowned result") }
 	var result lsfUnitResult
 	lsfClose(unsafe.Pointer(&result))
-	if result.tag != 0 { throw("LSF activation close denied") }
+	if result.tag != 0 { lsfFail("LSF activation close denied") }
 	if lsfActivationTasks > 1 {
 		lsfActivationDrain = getg()
 		gopark(nil, nil, waitReasonChanReceive, traceBlockChanRecv, 1)
 	}
-	if lsfActivationTasks != 1 { throw("LSF result drain incomplete") }
+	if lsfActivationTasks != 1 { lsfFail("LSF result drain incomplete") }
 }
 
 // Called when the component dispatcher has no runnable work or host subtask.
@@ -85,7 +128,7 @@ func lsfActivationFinish() {
 //go:linkname lsfActivationLeave
 func lsfActivationLeave() {
 	if !lsfActivationActive || lsfActivationTasks != 0 || lsfActivationDrain != nil {
-		throw("LSF activation has unretired goroutines")
+		lsfFail("LSF activation has unretired goroutines")
 	}
 	lsfActivationActive = false
 }
@@ -93,7 +136,7 @@ func lsfActivationLeave() {
 //go:linkname lsfCurrentOwner
 func lsfCurrentOwner() (uint64, uint64) {
 	gp := getg()
-	if !lsfActivationActive || gp.lsfOwner[1] == 0 { throw("LSF unowned sleep") }
+	if !lsfActivationActive || gp.lsfOwner[1] == 0 { lsfFail("LSF unowned sleep") }
 	return gp.lsfOwner[0], gp.lsfOwner[1]
 }
 

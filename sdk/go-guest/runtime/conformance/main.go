@@ -1,6 +1,7 @@
 package export_tests_caller_api
 
 import (
+	"runtime"
 	"sync"
 	"time"
 )
@@ -37,6 +38,12 @@ func Run(which uint32) uint32 {
 	case 7:
 		time.Sleep(10 * time.Second)
 		panic("root deadline reported elapsed success")
+	case 8:
+		runtime.SetFinalizer(new(int), func(*int) {})
+		return 42
+	case 9:
+		runtime.AddCleanup(new(int), func(int) {}, 0)
+		return 42
 	}
 	var group sync.WaitGroup
 	var mutex sync.Mutex

@@ -8372,6 +8372,7 @@
         "runtime::cancellation_at_actual_timer_barrier_reclaims_original_store_and_cell",
         "runtime::canonical_timer_allows_sibling_work_and_bounds_recurrence_cancellation_and_storms",
         "runtime::completed_fixed_results_release_original_calls_before_the_next_import",
+        "runtime::go::signed_standard_goroutines_sleep_and_drain_use_original_activation_owners",
         "runtime::malformed_fixed_result_destinations_reclaim_original_calls",
         "runtime::narrower_timer_policy_deadline_preserves_root_and_allows_owner_settlement",
         "runtime::pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanly",
@@ -8388,6 +8389,7 @@
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
       "expectedIgnored": [
+        "runtime::go::signed_standard_goroutines_sleep_and_drain_use_original_activation_owners",
         "runtime::signed_java_completable_futures_use_default_activation_executor",
         "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
         "runtime::typescript::signed_async_service_import_preserves_sibling_progress_and_actual_child_owners",
@@ -8402,11 +8404,12 @@
         "signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
         "signed_pending_exports_timers_rejections_and_fresh_state_use_real_node_owners",
         "signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
+        "signed_standard_goroutines_sleep_and_drain_use_original_activation_owners",
         "signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 37,
+      "minimumCases": 38,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

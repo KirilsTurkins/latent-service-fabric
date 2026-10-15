@@ -136,6 +136,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 for name in ("application-dependencies.json", "compiler-containment.json", "go-module-build-inputs.json"):
                     data = read_file(output / name, 16 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            transformations = read_file(output / 'go-runtime-transformations.json', 65536)
+            materials.append({'name': 'go-runtime-transformations', 'digest': digest(transformations), 'size': len(transformations)})
             materials.append(guest_runtime_receipts.emit(output, 'go', runtime_profile, files,
                 source_inputs, component, materials, graph=closure.lock if closure is not None else None,
                 binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],
