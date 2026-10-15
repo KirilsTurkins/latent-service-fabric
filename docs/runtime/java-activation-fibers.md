@@ -40,6 +40,16 @@ future keeps its pending-result owner until the callable's physical `finally`
 finishes. Completed results and returned queued tasks stay inside the accounted
 Java heap. All logical ceilings come from the explicit host runtime configuration.
 
+Internal managed-thread startup rolls back its reservation only before the
+maintained start hook accepts the worker and after host settlement confirms it.
+Failures after that hook or denied settlement keep the original owner charged.
+Private source-ledger controls establish those failure paths, separately from
+signed component execution. Custom factory threads overriding public `start()`
+remain unqualified: the pinned JDK 25 pool starts through its internal thread
+container, bypassing that override, while this port currently invokes it.
+The ordinary four-mode reference fixture preserves its qualified source paths;
+this internal rollback does not establish custom-factory equivalence for #741.
+
 The activation-owned default `CompletableFuture` facility grows workers lazily
 under those same task and queue ceilings. Its idle workers use untimed waits
 and retire during root drain, leaving finite timer slots for application waits.
