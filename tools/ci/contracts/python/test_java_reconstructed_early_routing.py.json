@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "ReconstructedEarlyControls.test_collector_identity_adds_the_exact_packet_and_preserves_old_prefix",
+    "ReconstructedEarlyControls.test_exact_new_report_uses_only_the_fixed_reconstructed_signer",
+    "ReconstructedEarlyControls.test_historical_report_keeps_its_original_signer",
+    "ReconstructedEarlyControls.test_identical_component_with_an_unmatched_report_cannot_select_new_mode",
+    "ReconstructedEarlyControls.test_incomplete_new_packet_cannot_authorize_the_new_report",
+    "ReconstructedEarlyControls.test_missing_new_packet_never_falls_back_to_an_old_signer",
+    "ReconstructedEarlyControls.test_mixed_new_report_and_old_public_packet_are_rejected",
+    "ReconstructedEarlyControls.test_new_report_refuses_a_different_compiler_source",
+    "ReconstructedEarlyControls.test_new_report_refuses_a_different_component",
+    "ReconstructedEarlyControls.test_original_d7_report_keeps_its_rebuilt_signer",
+    "ReconstructedEarlyControls.test_public_packet_changes_only_the_actual_report_and_preserves_material_and_limits",
+    "ReconstructedEarlyControls.test_real_package_path_forwards_new_mode_once_and_never_signs_refused_identity"
+  ],
+  "guards": {
+    "ReconstructedEarlyControls.test_collector_identity_adds_the_exact_packet_and_preserves_old_prefix": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_exact_new_report_uses_only_the_fixed_reconstructed_signer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_historical_report_keeps_its_original_signer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_identical_component_with_an_unmatched_report_cannot_select_new_mode": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_incomplete_new_packet_cannot_authorize_the_new_report": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_missing_new_packet_never_falls_back_to_an_old_signer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_mixed_new_report_and_old_public_packet_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_new_report_refuses_a_different_compiler_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_new_report_refuses_a_different_component": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_original_d7_report_keeps_its_rebuilt_signer": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_public_packet_changes_only_the_actual_report_and_preserves_material_and_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    },
+    "ReconstructedEarlyControls.test_real_package_path_forwards_new_mode_once_and_never_signs_refused_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:01545cfefb9a64e3e7883939a94aa42bdb4746c6e2e548e08023a3508335854b",
+        "class:setup-sha256:f9c589f7993d7aa6cf46ac7952166f02daff211d141dc11bb61ad3b63af76046"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_reconstructed_early_routing.py",
+  "reviewReason": "Add twelve closed EARLY report-routing controls for the authentic reconstructed capture; preserve historical modes and all existing cases, guards, deadlines and authority.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

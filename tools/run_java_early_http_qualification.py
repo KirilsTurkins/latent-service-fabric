@@ -29,7 +29,8 @@ from tools.rust_capsule_project import fresh, read_file
 EXTRA_COLLECTORS = ('tools/run_java_early_http_qualification.py',
                     'tools/java_transaction_qualification/early_http_inputs.py',
                     'tools/java_transaction_qualification/early_http_campaign.py',
-                    'docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json')
+                    'docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json',
+                    'docs/testing/evidence/java-early-http-reconstructed-capture-2026-10-15.json')
 
 
 def selection(path, expected):
@@ -108,6 +109,14 @@ def signing_mode(item):
     packet = read_json(Path(__file__).resolve().parents[1] /
         'docs/testing/evidence/java-early-http-rebuilt-capture-2026-10-13.json')
     report = inputs.digest(read_file(item.directory / 'report.json', 262144))
+    if report == 'sha256:bd40833f7f527f42d5f4a088cbcc093bdcd023060e91fb948f2505f8aaf5d2b7':
+        reconstructed = read_json(Path(__file__).resolve().parents[1] /
+            'docs/testing/evidence/java-early-http-reconstructed-capture-2026-10-15.json')
+        inputs.require(report == reconstructed['materials']['report']['sha256']
+                       and item.compiler_source == reconstructed['sourceCommit']
+                       and item.component_digest == reconstructed['materials']['component']['sha256'],
+                       'reconstructed-early-captured-component-and-source')
+        return 'fixture-sign-reconstructed-early-http-input'
     rebuilt = packet['materials']['report']['sha256']
     if report == rebuilt:
         inputs.require(item.compiler_source == packet['sourceCommit']
