@@ -22,7 +22,7 @@ pub(super) fn input(annotation: &str) -> (PackageInput, BuildObservation) {
         assert_eq!(
             format!(
                 "{:x}",
-                latent_core::digest::HexDigest(Sha256::digest(bytes).into())
+                latent_core::digest::HexDigest(Sha256::digest(bytes))
             ),
             file["sha256"].as_str().unwrap()
         );
@@ -50,7 +50,7 @@ pub(super) fn input(annotation: &str) -> (PackageInput, BuildObservation) {
         observed.component_digest,
         format!(
             "sha256:{:x}",
-            latent_core::digest::HexDigest(Sha256::digest(bytes("component.wasm")).into())
+            latent_core::digest::HexDigest(Sha256::digest(bytes("component.wasm")))
         )
     );
     (
