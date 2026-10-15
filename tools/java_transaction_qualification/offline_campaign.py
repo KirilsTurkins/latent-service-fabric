@@ -297,8 +297,13 @@ class OfflineCampaign:
                         if getattr(self.node, 'current_publication_program', False) else {}))
         self.campaign.full_path = self.configuration
         recovered, _ = self.campaign.query(count)
-        self.campaign.refusal("restore-refuses-stale-query-minimum",
-            self.campaign.socket("query", minimum=current["state-view"]), {409})
+        if self.current_v2:
+            from . import restored_view
+            restored_view.minimum_refused(self.campaign, count, current, requested, resumed["view"],
+                                          recovered, self.campaign.items[self.writer])
+        else:
+            self.campaign.refusal("restore-refuses-stale-query-minimum",
+                self.campaign.socket("query", minimum=current["state-view"]), {409})
         self.originals("restore")
         # The data-loss window is deliberate: this command/effect occurred
         # after the snapshot. Never rerun it or infer a durable abort/not-sent.
