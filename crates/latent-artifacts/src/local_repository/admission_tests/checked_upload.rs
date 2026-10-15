@@ -74,8 +74,11 @@ impl Disk {
 
     fn replace_blob(&mut self, pointer: &str, bytes: &[u8]) {
         let blob = self.record.pointer_mut(pointer).unwrap();
-        let file = blob["file"].as_str().unwrap();
-        fs::write(self.directory.join(file), bytes).unwrap();
+        let file = self.directory.join(blob["file"].as_str().unwrap());
+        // Equal-content publication files can share one hard-linked inode.
+        // Detach this entry so only the selected descriptor's bytes change.
+        fs::remove_file(&file).unwrap();
+        fs::write(file, bytes).unwrap();
         blob["size"] = u64::try_from(bytes.len()).unwrap().into();
         blob["digest"] = content_digest(bytes).0.into();
     }
