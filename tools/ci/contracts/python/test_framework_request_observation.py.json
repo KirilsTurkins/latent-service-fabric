@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "FrameworkRequestObservationTests.test_actual_redactor_erases_old_absolute_path_and_retains_new_public_path",
+    "FrameworkRequestObservationTests.test_backslashes_windows_paths_and_relative_urls_are_unmapped",
+    "FrameworkRequestObservationTests.test_controls_unicode_and_header_like_path_text_are_unmapped",
+    "FrameworkRequestObservationTests.test_dotfiles_and_double_slashes_cannot_escape_the_public_path_projection",
+    "FrameworkRequestObservationTests.test_encoded_traversal_separators_and_control_bytes_are_not_exposed",
+    "FrameworkRequestObservationTests.test_foreign_origin_scheme_and_port_cannot_be_reported_as_local_public_paths",
+    "FrameworkRequestObservationTests.test_nonstring_values_and_invalid_expected_origin_fail_to_fixed_label",
+    "FrameworkRequestObservationTests.test_origin_userinfo_query_and_fragment_are_never_returned",
+    "FrameworkRequestObservationTests.test_public_hashed_assets_keep_exact_case_and_filename_characters",
+    "FrameworkRequestObservationTests.test_raw_dot_segments_are_rejected_before_url_normalization",
+    "FrameworkRequestObservationTests.test_relative_path_and_input_size_bounds_retain_no_truncated_private_suffix",
+    "FrameworkRequestObservationTests.test_root_localized_and_mounted_public_paths_survive_actual_outer_redaction"
+  ],
+  "guards": {
+    "FrameworkRequestObservationTests.test_actual_redactor_erases_old_absolute_path_and_retains_new_public_path": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_backslashes_windows_paths_and_relative_urls_are_unmapped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_controls_unicode_and_header_like_path_text_are_unmapped": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_dotfiles_and_double_slashes_cannot_escape_the_public_path_projection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_encoded_traversal_separators_and_control_bytes_are_not_exposed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_foreign_origin_scheme_and_port_cannot_be_reported_as_local_public_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_nonstring_values_and_invalid_expected_origin_fail_to_fixed_label": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_origin_userinfo_query_and_fragment_are_never_returned": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_public_hashed_assets_keep_exact_case_and_filename_characters": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_raw_dot_segments_are_rejected_before_url_normalization": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_relative_path_and_input_size_bounds_retain_no_truncated_private_suffix": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    },
+    "FrameworkRequestObservationTests.test_root_localized_and_mounted_public_paths_survive_actual_outer_redaction": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:fdd0f69e2ba8232a81a6603ede6532960c17cbc59c62164f8a2c748fdd8e6320",
+        "class:setup-sha256:b4e36e2fda7fc2dd65284e52a804185ff9300842bb8994c99a9378821180af63"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_framework_request_observation.py",
+  "reviewReason": "Register twelve source-only controls executing the actual framework public-path projector and outer redactor, preserving required browser failures and excluding private or escaping URL data.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

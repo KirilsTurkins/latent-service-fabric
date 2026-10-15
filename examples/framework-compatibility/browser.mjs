@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright-core';
+import {publicRequestPath} from './request-observation.mjs';
 
 const [chrome, angular, docs, output] = process.argv.slice(2);
 assert.ok(chrome && angular && docs && output);
@@ -70,7 +71,7 @@ try {
         reason: request.failure()?.errorText.slice(0, 128)});
     });
     page.on('response', response => {
-      if (response.status() >= 400 && badResponses.length < 16) badResponses.push({url: new URL(response.url()).pathname, status: response.status()});
+      if (response.status() >= 400 && badResponses.length < 16) badResponses.push({path: publicRequestPath(response.url(), origin), status: response.status()});
       if (response.request().resourceType() === 'script' && response.status() === 200) scripts.add(response.url());
     });
     const origin = kind === 'angular' ? angular : docs;
