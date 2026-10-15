@@ -19,6 +19,10 @@ The foundation provides:
 
 Code generation runs only as a Cargo build step and writes generated Rust to `OUT_DIR`; linking its output allocates no runtime resources. The implemented scheduler, execution cells, adapters, and Linux service process are separate consumers of this foundation. See [the current API surface](../api-surface.md) and [standalone node](../reference/standalone-node.md) for their runtime ownership and startup boundaries.
 
+The [workspace package guide](workspace-packages.md) traces those consumers and
+links the complete [package README index](../../crates/README.md). Package pages
+describe their own modules, ownership, feature/target gates and source tests.
+
 ## Pinned Rust inputs
 
 Use the [selected toolchain versions](toolchain.md#selected-versions),

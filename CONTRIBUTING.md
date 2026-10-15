@@ -78,6 +78,10 @@ not require the old implementation to remain.
 9. Experimental paging, continuation eviction, fusion and native software fault isolation stay under `research/` until promoted by ADR and conformance evidence. The implemented isolated compiler is a separate boundary.
 
 Use the owning [generation workflow](docs/development/build-foundation.md).
+The [workspace package index](crates/README.md) and
+[package architecture guide](docs/development/workspace-packages.md) identify
+implementation owners and their feature/target boundaries. Update the owning
+package README when changing its API, lifecycle or architecture.
 Update authoritative WIT/Protobuf/schema inputs, exhaustive input manifests and
 affected generated projections together. Regenerate checked-in SDK models with
 their owning generator; do not hand-edit them or introduce another wire schema.

@@ -14,6 +14,11 @@ implemented components and the [node reference](docs/reference/standalone-node.m
 for configuration. Provider availability depends on the configured standalone
 or trusted Rust embedding profile.
 
+For implementation navigation, use the [workspace package index](crates/README.md)
+and [package architecture walkthrough](docs/development/workspace-packages.md).
+Every Rust workspace package has a README mapping its modules, ownership,
+dependencies, feature/target gates, tests and related contracts.
+
 The [container profile](docs/operations/container-runtime.md) runs the same
 standalone node as a non-root process. Optional node-level adapters provide
 [private readiness probes](docs/operations/readiness-probes.md),

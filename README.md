@@ -118,6 +118,10 @@ WIT defines guest interfaces, Protobuf defines RPCs, and JSON Schema defines
 declarative documents. SDKs and generated bindings consume those authorities;
 they do not define independent wire contracts.
 
+The [workspace package index](crates/README.md) links a detailed README for every
+Rust package. Use the [package architecture walkthrough](docs/development/workspace-packages.md)
+to trace publication, activation and transaction flows across their owners.
+
 ## Contribute and validate
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md) for the change workflow and
