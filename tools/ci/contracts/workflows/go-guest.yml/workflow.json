@@ -41,6 +41,7 @@
           "tools/qualify_go_capsules.py",
           "tools/qualify_go_activation.py",
           "tools/diagnose_go_timer_failure.py",
+          "tools/qualify_go_runtime_dependencies.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
@@ -92,6 +93,7 @@
           "tools/qualify_go_capsules.py",
           "tools/qualify_go_activation.py",
           "tools/diagnose_go_timer_failure.py",
+          "tools/qualify_go_runtime_dependencies.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
@@ -125,7 +127,7 @@
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Retain existing Go workflow paths and add the failure-only timer frame observer trigger",
+  "reviewReason": "Preserve all prior Go workflow paths, including timer failure-only observer, and add published runtime dependency qualifier trigger.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

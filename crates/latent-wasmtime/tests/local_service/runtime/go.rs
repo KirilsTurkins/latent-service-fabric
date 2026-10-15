@@ -10,8 +10,11 @@ fn checkpoint_component(
     );
     let source = std::fs::read(prepared.join("src/main.go")).unwrap();
     let timers = profile == "go-component-activation-v3";
-    let initializers = profile == "go-component-activation-v4";
-    let expected: &[u8] = if initializers {
+    let published = variable == "LSF_GO_PUBLISHED_FIXTURE";
+    let initializers = profile == "go-component-activation-v4" && !published;
+    let expected: &[u8] = if published {
+        include_bytes!("../../../../../sdk/go-guest/runtime/published-conformance/main.go")
+    } else if initializers {
         include_bytes!("../../../../../sdk/go-guest/runtime/initializers-conformance/main.go")
     } else if timers {
         include_bytes!("../../../../../sdk/go-guest/runtime/timers-conformance/main.go")
@@ -26,7 +29,9 @@ fn checkpoint_component(
     assert_eq!(record["profile"], profile);
     assert_eq!(
         record["fixture"],
-        if initializers {
+        if published {
+            "published"
+        } else if initializers {
             "initializers"
         } else if timers {
             "timers"
@@ -39,10 +44,12 @@ fn checkpoint_component(
         record["sourceDigest"],
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
-    if profile == "go-component-activation-v2" || timers || initializers {
+    if profile == "go-component-activation-v2" || timers || initializers || published {
         assert_eq!(
             record["nativeReference"]["modes"],
-            if initializers {
+            if published {
+                serde_json::json!([0, 2, 3])
+            } else if initializers {
                 serde_json::json!([0])
             } else if timers {
                 serde_json::json!([0, 1, 2, 3, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17])
@@ -57,6 +64,34 @@ fn checkpoint_component(
             record["sourceDigest"]
         );
     }
+    if published {
+        let native = std::fs::read(prepared.join("project/go-resolved.lock.json")).unwrap();
+        let lock = std::fs::read(prepared.join("project/latent.dependencies.lock.json")).unwrap();
+        assert_eq!(
+            record["dependencyClosure"]["nativeGraphDigest"],
+            latent_artifacts::package::artifact_blob_digest(&native).as_str()
+        );
+        assert_eq!(
+            record["dependencyClosure"]["lockDigest"],
+            latent_artifacts::package::artifact_blob_digest(&lock).as_str()
+        );
+        assert_eq!(record["containment"]["network"], "denied");
+        assert_eq!(record["nativeReference"]["runtimeOverlay"], false);
+        assert_eq!(
+            record["dependencyClosure"]["runtimeSources"]
+                .as_array()
+                .unwrap()
+                .len(),
+            4
+        );
+        assert_eq!(
+            record["dependencyClosure"]["applicationLibraries"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
+    }
     let bytes = std::fs::read(prepared.join("build/component.wasm")).unwrap();
     assert_eq!(
         record["componentDigest"],
@@ -64,6 +99,86 @@ fn checkpoint_component(
     );
     let wit = std::fs::read_to_string(prepared.join("wit/world.wit")).unwrap();
     (packages::go_activation_runtime(bytes, &wit), source)
+}
+
+#[tokio::test]
+#[ignore = "requires captured published RxGo/backoff component and explicit go profile"]
+async fn signed_published_retry_workers_and_default_timers_keep_original_activation_owners() {
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    let root = tempfile::tempdir().unwrap();
+    let f = prepare_checkpoint_fixture(
+        root.path(),
+        "LSF_GO_PUBLISHED_FIXTURE",
+        "go-component-activation-v4",
+    )
+    .await;
+    for iteration in 0..3 {
+        for mode in [0, 2, 3] {
+            let receipt = success(
+                f.manager
+                    .start(f.request(&format!("go-published-{iteration}-{mode}"), mode))
+                    .unwrap()
+                    .await,
+            );
+            assert_eq!(
+                serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+                [42]
+            );
+            assert!(receipt.consumption.cpu_fuel > 0);
+            assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+            eprintln!(
+                "go-published-rxgo-backoff iteration={iteration} mode={mode} consumption={:?}",
+                receipt.consumption
+            );
+            f.idle().await;
+            assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+        }
+    }
+    let id = ActivationId("go-published-cancel-library-default-timer".into());
+    let mut invocation = Box::pin(f.manager.start(f.request(&id.0, 1)).unwrap());
+    pending_timer(invocation.as_mut(), &f).await;
+    f.manager
+        .cancel_for(&TenantId("tenant-a".into()), &id, "go-published-cancel")
+        .unwrap();
+    assert_eq!(failure(invocation.await).code, PlatformErrorCode::Cancelled);
+    f.idle().await;
+    let mut deadline = f.request("go-published-original-root-deadline", 1);
+    deadline.budget.wall_time_limit_millis = Some(100);
+    assert_eq!(
+        failure(f.manager.start(deadline).unwrap().await).code,
+        PlatformErrorCode::DeadlineExceeded
+    );
+    f.idle().await;
+    let limited_root = tempfile::tempdir().unwrap();
+    let limited = prepare_owned_fixture(
+        limited_root.path(),
+        "LSF_GO_PUBLISHED_FIXTURE",
+        "go-component-activation-v4",
+        2,
+    )
+    .await;
+    assert_eq!(
+        failure(
+            limited
+                .manager
+                .start(limited.request("go-published-reject-before-producer-stack", 0))
+                .unwrap()
+                .await
+        )
+        .code,
+        PlatformErrorCode::GuestTrap
+    );
+    limited.idle().await;
+    assert_eq!(
+        value(
+            f.manager
+                .start(f.request("go-published-fresh-after-retirement", 0))
+                .unwrap()
+                .await
+        ),
+        42
+    );
+    f.idle().await;
 }
 
 #[tokio::test]

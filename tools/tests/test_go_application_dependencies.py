@@ -222,5 +222,62 @@ class DirectApplicationLibraries(unittest.TestCase):
             self.select(self.declaration, self.native, self.artifacts, self.required)
 
 
+class PublishedRuntimeEvidence(unittest.TestCase):
+    def setUp(self):
+        from tools.qualify_go_runtime_dependencies import LIBRARIES, RUNTIME_SOURCES, library_evidence
+        self.verify = library_evidence
+        root = 'reviewed.example.test/app'
+        self.declaration = {'Module': {'Path': root}, 'Require': []}
+        self.native = {'module': root, 'nodes': [{'id': 'root', 'path': root, 'main': True}], 'edges': []}
+        self.artifacts = []
+        for index, (module, (version, _api)) in enumerate(LIBRARIES.items()):
+            identifier = 'go/published-' + str(index)
+            self.declaration['Require'].append({'Path': module, 'Version': version})
+            self.native['nodes'].append({'id': identifier, 'path': module, 'version': version, 'indirect': False})
+            self.native['edges'].append({'owner': root, 'dependency': module + '@' + version, 'selected': identifier})
+            self.artifacts.append({'id': identifier, 'role': 'application', 'metadata': {
+                'module': module, 'version': version, 'effectiveModule': module, 'effectiveVersion': version,
+                'assetType': 'selected-module-source'}, 'files': [
+                    {'path': name, 'digest': digest(name.encode()), 'size': len(name)}
+                    for name in RUNTIME_SOURCES[module]]})
+        first, second = list(LIBRARIES.items())
+        self.native['edges'].append({'owner': first[0] + '@' + first[1][0],
+            'dependency': second[0] + '@' + second[1][0], 'selected': self.artifacts[1]['id']})
+
+    def test_published_runtime_keeps_direct_api_selections_and_the_real_library_edge(self):
+        result = self.verify(self.declaration, self.native, self.artifacts)
+        self.assertEqual(len(result['runtimeSources']), 4)
+        self.assertEqual(result['libraryEdge']['selected'], self.artifacts[1]['id'])
+        self.assertEqual([row['selection'] for row in result['applicationLibraries']],
+                         ['application-root-direct', 'application-root-direct'])
+        self.assertEqual(result['runtimeCallPath'][-1], 'time.NewTimer/Reset/Stop')
+
+    def test_root_presence_without_the_published_runtime_edge_is_insufficient(self):
+        self.native['edges'].pop()
+        with self.assertRaisesRegex(ValueError, 'library-edge-missing'):
+            self.verify(self.declaration, self.native, self.artifacts)
+
+    def test_local_or_replaced_modules_cannot_impersonate_published_runtime_sources(self):
+        self.artifacts[0]['metadata']['assetType'] = 'local-module'
+        with self.assertRaisesRegex(ValueError, 'original-module-zip'):
+            self.verify(self.declaration, self.native, self.artifacts)
+        self.artifacts[0]['metadata']['assetType'] = 'selected-module-source'
+        self.native['nodes'][1]['replacement'] = {'path': 'another.example.test/fork', 'version': 'v2.5.0'}
+        with self.assertRaisesRegex(ValueError, 'original-module-zip'):
+            self.verify(self.declaration, self.native, self.artifacts)
+        self.native['nodes'][1]['replacement'] = None
+        self.artifacts[0]['metadata']['effectiveVersion'] = 'v2.5.1'
+        with self.assertRaisesRegex(ValueError, 'original-module-zip'):
+            self.verify(self.declaration, self.native, self.artifacts)
+
+    def test_missing_or_ambiguous_timer_source_cannot_satisfy_runtime_evidence(self):
+        source = self.artifacts[1]['files'].pop()
+        with self.assertRaisesRegex(ValueError, 'source-not-captured'):
+            self.verify(self.declaration, self.native, self.artifacts)
+        self.artifacts[1]['files'].extend([source, source])
+        with self.assertRaisesRegex(ValueError, 'source-not-captured'):
+            self.verify(self.declaration, self.native, self.artifacts)
+
+
 if __name__ == '__main__':
     unittest.main()

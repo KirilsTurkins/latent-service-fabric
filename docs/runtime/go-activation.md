@@ -202,6 +202,38 @@ LSF_GUEST_SDK_LANGUAGE=go LSF_GO_INITIALIZER_FIXTURE=/tmp/go-owned-initializers 
   -- --ignored --exact --nocapture
 ```
 
+The additional published workload captures unchanged RxGo `v2.5.0` and backoff
+`v4.0.0` through the normal native MVS, module zip, `h1` verification and reviewed
+dependency lock. RxGo's ordinary `Defer` producer and `BackOffRetry` worker call
+backoff's `Retry`, whose default timer uses standard `time.NewTimer`, `Reset`
+and `Stop`. The application supplies a normal retry policy, without an LSF
+executor, dispatcher, timer implementation or shutdown adapter. Both modules
+are direct native API requirements; the retained graph also verifies RxGo's
+dependency edge to backoff, without relabeling either selection as indirect.
+Failed attempts in this fixed workload emit an error and have no external
+effect. Its retry policy does not authorize repeating an external operation.
+
+The maintained gate builds the reviewed business source on native Go with the
+same captured graph offline, then builds the component inside the existing
+network-denied compiler namespace. Component checkpoints are recorded as
+derived overlays; the captured published source bytes stay unchanged. Signed
+execution must pass nine successful activations covering repeated timer reuse,
+retry exhaustion and ordinary context cancellation, then original activation
+cancellation, root deadline, preallocation task exhaustion and fresh reuse.
+The receipt binds the graph, original runtime source files, compiler inputs,
+native reference and component separately. This gate has been added as source;
+acquisition, component compilation and signed execution have not yet completed.
+It preserves the existing pure-module and all earlier runtime gates.
+
+```bash
+python3 tools/qualify_go_runtime_dependencies.py --output /tmp/go-published-runtime
+LSF_GUEST_SDK_LANGUAGE=go LSF_GO_PUBLISHED_FIXTURE=/tmp/go-published-runtime \
+  cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime \
+  --test local_service \
+  runtime::go::signed_published_retry_workers_and_default_timers_keep_original_activation_owners \
+  -- --ignored --exact --nocapture
+```
+
 Run the maintained emitted-component preparation with the pinned tools on PATH:
 
 ```bash
