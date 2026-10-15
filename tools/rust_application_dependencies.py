@@ -6,16 +6,37 @@ import os
 from pathlib import Path
 import re
 import shutil
+import ssl
 import tempfile
 import tomllib
 from urllib.parse import parse_qs, urlsplit
 
 from tools.application_dependencies import LOCK, MANIFEST, MAX_LOCK, capture, validate_manifest
-from tools.application_dependency_store import DependencyError, Store, directory_files, read_bytes, regular_path, tree_identity
+from tools.application_dependency_store import DependencyError, Store, directory_files, path_name, read_bytes, regular_path, tree_identity
 from tools.build_observation import build_environment, file_identity
 from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
 from tools.rust_capsule_project import ROOT, snapshot
+
+MAX_REGISTRY_CA = 2 * 1024 * 1024
+CERTIFICATE = rb'-----BEGIN CERTIFICATE-----\r?\n[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----'
+
+
+def registry_trust(project: Path, value: dict) -> tuple[str, bytes]:
+    """Select public CA bytes explicitly, without changing machine trust."""
+    if not isinstance(value, dict) or set(value) != {'caFile'} or not isinstance(value['caFile'], str):
+        raise DependencyError('cargo-registry-trust-declaration-invalid')
+    name = path_name(value['caFile'])
+    if name.split('/')[0] in {'vendor', 'target', '.git', 'dependency-inputs', 'dependencies', 'application-vendor'}:
+        raise DependencyError('cargo-registry-certificate-path-invalid')
+    raw = read_bytes(regular_path(project / name), MAX_REGISTRY_CA)
+    if not 1 <= len(re.findall(CERTIFICATE, raw)) <= 256 or re.sub(CERTIFICATE, b'', raw).strip():
+        raise DependencyError('cargo-registry-public-certificate-required')
+    try:
+        ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT).load_verify_locations(cadata=raw.decode('ascii'))
+    except (UnicodeError, ValueError, ssl.SSLError):
+        raise DependencyError('cargo-registry-public-certificate-required') from None
+    return name, raw
 
 
 def package_identity(package: dict) -> str:
@@ -151,13 +172,15 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     cargo = regular_path(Path(located)).resolve(strict=True)
     registries = {}
     registry_bytes = None
+    trust_name, trust_raw = None, None
     if registry_config is not None:
         registry_config = regular_path(registry_config)
         if registry_config.is_relative_to(owner):
             raise DependencyError('cargo-private-registry-config-must-stay-outside-project')
         registry_bytes = read_bytes(registry_config)
         declaration = json.loads(registry_bytes)
-        if not isinstance(declaration, dict) or set(declaration) != {'registries'} or not isinstance(declaration['registries'], dict):
+        if (not isinstance(declaration, dict) or not {'registries'} <= set(declaration) <= {'registries', 'tlsTrust'}
+                or not isinstance(declaration['registries'], dict)):
             raise DependencyError('cargo-registry-configuration-invalid')
         registries = declaration['registries']
         if len(registries) > 16:
@@ -172,6 +195,8 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         aliases = {*registries, 'crates-io'}
         if len({alias.upper().replace('-', '_') for alias in aliases}) != len(aliases):
             raise DependencyError('cargo-registry-credential-slot-ambiguous')
+        if 'tlsTrust' in declaration:
+            trust_name, trust_raw = registry_trust(project, declaration['tlsTrust'])
     with tempfile.TemporaryDirectory(prefix='lsf-cargo-resolve-') as temporary:
         temporary = Path(temporary)
         environment = build_environment(temporary)
@@ -183,6 +208,10 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         paths.write_new(temporary / 'git-empty.config', b'')
         # Private registry credentials are resolver-only opt-in environment.
         configuration_lines = []
+        if trust_raw is not None:
+            certificate = temporary / 'private-registry-public-ca.pem'
+            paths.write_new(certificate, trust_raw)
+            configuration_lines += ['[http]', 'ssl-verify = true', 'cainfo = ' + json.dumps(str(certificate))]
         for alias, entry in registries.items():
             configuration_lines += ['[registries.' + json.dumps(alias) + ']',
                                     'index = ' + json.dumps(entry['index']), 'credential-provider = "cargo:token"']
@@ -218,6 +247,9 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                     'registryConfigurationDigest': digest(canonical(registries)), 'recipe': recipe_before}
         if registry_bytes is not None:
             resolver['registryConfigurationInputDigest'] = digest(registry_bytes)
+        if trust_raw is not None:
+            resolver['tlsTrust'] = {'profile': 'cargo-explicit-registry-ca-v1', 'caFile': trust_name,
+                                    'digest': digest(trust_raw), 'size': len(trust_raw), 'verification': 'required'}
         artifacts, graph = analyze(metadata, project, vendor, resolver)
         graph['selectedResolve'] = json.loads(selected_raw)['resolve']
         mappings = {Path(package['manifest_path']).parent.resolve(): Path(row['mount'])
@@ -266,22 +298,34 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         graph['sourceReplacement'] = config
         graph['selection'] = selected
         prefix = project.relative_to(owner).as_posix() + '/' if project != owner else ''
+        native_names = ['Cargo.lock', 'cargo-resolved.lock.json'] + ([trust_name] if trust_name else [])
         manifest = {'formatVersion': 1, 'language': 'rust', 'selection': selected,
-                    'nativeLocks': [prefix + name for name in ('Cargo.lock', 'cargo-resolved.lock.json')],
+                    'nativeLocks': [prefix + name for name in native_names],
                     'artifacts': artifacts, 'transformations': transforms}
         manifest_raw, graph_raw = canonical(manifest) + b'\n', canonical(graph) + b'\n'
         # Resolve into an owned review view first. Failed captures preserve all
         # accepted application inputs, and native Cargo never edits SDK bytes.
         staged = temporary / 'capture'
         staged.mkdir(mode=0o700)
-        for name, raw_input in ((MANIFEST, manifest_raw), (prefix + 'Cargo.lock', original_lock),
-                                (prefix + 'cargo-resolved.lock.json', graph_raw)):
+        stage_inputs = [(MANIFEST, manifest_raw), (prefix + 'Cargo.lock', original_lock),
+                        (prefix + 'cargo-resolved.lock.json', graph_raw)]
+        if trust_raw is not None:
+            stage_inputs.append((prefix + trust_name, trust_raw))
+        for name, raw_input in stage_inputs:
             target = staged / name
             target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             paths.write_new(target, raw_input)
         locked = capture(staged, cache=owner / 'dependency-inputs/objects')
         # Captured directory originals survive removal of resolver temp paths.
         # The manifest source is provenance only; verification reconstructs CAS.
+        if trust_raw is not None:
+            try:
+                current_trust = read_bytes(regular_path(project / trust_name), MAX_REGISTRY_CA)
+                copied_trust = read_bytes(regular_path(certificate), MAX_REGISTRY_CA)
+            except (OSError, DependencyError):
+                raise DependencyError('cargo-registry-certificate-mutated') from None
+            if current_trust != trust_raw or copied_trust != trust_raw:
+                raise DependencyError('cargo-registry-certificate-mutated')
         if snapshot(project) != before:
             raise DependencyError('cargo-resolution-input-mutated')
         if optional(owner, MANIFEST) != previous_manifest or optional(owner, LOCK) != previous_lock:
