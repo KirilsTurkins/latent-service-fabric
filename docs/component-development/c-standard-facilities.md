@@ -93,3 +93,7 @@ CPU-time emulation, pthreads, sockets, concurrent callbacks and persistent
 workers are outside this profile. No larger execution budget is implied.
 See the [C authoring guide](c-authoring.md) and
 [library compatibility and runtime selection](library-compatibility.md).
+
+The separate [standard stdio logging profile](c-standard-logging.md) selects
+only the bounded log contract; it does not implicitly select these clocks or
+entropy providers.

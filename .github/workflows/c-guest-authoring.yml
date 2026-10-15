@@ -206,6 +206,10 @@ jobs:
         run: |
           python3 -m unittest tools.tests.test_c_standard_facilities
           python3 tools/qualify_c_standard_facilities.py --build-native --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-facilities"
+      - name: Execute ordinary bounded stdio through the same frozen default products
+        run: |
+          python3 -m unittest tools.tests.test_c_standard_logging
+          python3 tools/qualify_c_standard_facilities.py --standard-logging --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-logging"
       - name: Retain bounded C standard runtime proof including failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -225,5 +229,15 @@ jobs:
             ${{ runner.temp }}/c-standard-facilities/builds/*/component.wasm
             ${{ runner.temp }}/c-standard-facilities/builds/*/logs/**
             ${{ runner.temp }}/c-standard-facilities/node/public-workflow.json
+            ${{ runner.temp }}/c-standard-logging/qualified.json
+            ${{ runner.temp }}/c-standard-logging/FAILED.json
+            ${{ runner.temp }}/c-standard-logging/logs/**
+            ${{ runner.temp }}/c-standard-logging/builds/*/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-standard-logging/builds/*/BUILD-FAILED.json
+            ${{ runner.temp }}/c-standard-logging/builds/*/compatibility*.json
+            ${{ runner.temp }}/c-standard-logging/builds/*/standard-runtime-selection.json
+            ${{ runner.temp }}/c-standard-logging/builds/*/component.wasm
+            ${{ runner.temp }}/c-standard-logging/builds/*/logs/**
+            ${{ runner.temp }}/c-standard-logging/node/public-workflow.json
           if-no-files-found: warn
           retention-days: 7
