@@ -36,12 +36,27 @@ The control rejects missing or changed transitive JARs, builds the actual
 component, signs an isolated fixture, checks unsigned publication and missing
 runtime-grant denial, invokes library and resource paths, and observes owner
 retirement after each call and node shutdown. Repeated calls check fresh static
-application state and recovery after a declared error. Its receipt explicitly
-retains the separate private-feed, installed update/remove/watch, processor and
-trap/exhaustion/cancellation gates; a successful run does not close #682.
+application state and recovery after a declared error. The earlier baseline
+receipt retains the separate private-feed, installed update/remove/watch,
+processor and trap/exhaustion/cancellation gates; a successful run does not close
+#682.
 
 The [15 October native control](evidence/java-dependency-ingestion-2026-10-15.json)
 retains the actual qualifier, component and ordinary native-product identities.
 Its separate approved annotation-processor control retains source-owner denials,
 host containment and signed generated-source execution. These finite observations
 do not establish release qualification or the remaining issue requirements.
+
+The current control additionally invokes intentional uncaught Java heap
+allocation exhaustion, an uncaught exception, a 64 KiB Wasm memory limit and a
+10,000,000-fuel spin. It observes the original cancellation activation running
+before sending one cancellation. Every case must retire activation owners,
+quotas and cell reservations, then execute a fresh actual library invocation.
+The [recovery receipt](evidence/java-dependency-recovery-2026-10-15.json) binds the
+offline component, both qualifier sources and unchanged ordinary native products.
+
+The allocation control checks the bounded heap and cleanup after an uncaught
+failure. An earlier attempt to catch `OutOfMemoryError` instead produced an
+unreachable-code guest trap. That failed attempt remains recorded; this control
+does not establish catchable allocation failure semantics for the selected TeaVM
+C runtime. The independent runtime implementation owner is #741.
