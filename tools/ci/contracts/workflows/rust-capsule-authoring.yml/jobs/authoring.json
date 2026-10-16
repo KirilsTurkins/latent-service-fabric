@@ -94,6 +94,10 @@
         "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml test --locked -p latent-wire --lib phase4::local_transaction::tests:: -- --ignored --test-threads=1 --nocapture 2>&1 | tee \"$RUNNER_TEMP/transaction-guests-rust/node-dedup-executions.log\"\n"
       },
       {
+        "name": "Preserve typed host-result uncertainty and original technical aborts",
+        "run": "cargo --config .cargo/managed-guest.toml test --locked -p latent-executor --lib tests::existing_report_constructors_keep_host_result_observed -- --exact\ncargo --config .cargo/managed-guest.toml test --locked -p latent-node --lib transaction_runtime::tests::technical_abort:: -- --test-threads=1 --nocapture\ncargo --config .cargo/managed-guest.toml test --locked -p latent-node --lib activation_runner::diagnostics::tests::codec_metadata_alone_never_classifies_guest_traps -- --exact\n"
+      },
+      {
         "name": "Execute complete outside-checkout authoring qualification",
         "run": "python3 tools/qualify_rust_capsules.py --output \"$RUNNER_TEMP/rust-capsule-authoring\"\n"
       },
@@ -134,7 +138,7 @@
   },
   "jobId": "authoring",
   "kind": "job",
-  "reviewReason": "Preserve the exact transaction test command and all assertions, strengthen its pipeline to propagate native failures, and add actual locked offline private archive metadata controls",
+  "reviewReason": "Add closed host-result uncertainty and existing real trap fuel memory abort controls; preserve every original command and 35 minute budget",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }
