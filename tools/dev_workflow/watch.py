@@ -18,6 +18,9 @@ def run(workspace: Path, connection, source: Path, tool_root: str, *, build, emi
     current = state.load(workspace, "watch-deployment.json") if (workspace / "watch-deployment.json").exists() else None
     def event(name: str, **fields):
         emit({"event": name, "workspace": workspace.name, "currentDeployment": current, **fields})
+    def observation():
+        trusted = state.load(workspace, "trust.json") if (workspace / "trust.json").exists() else None
+        return build_client.selection(source), trusted
     with owned_cancellation() as cancellation:
         while True:
             cancellation.check()
@@ -26,13 +29,14 @@ def run(workspace: Path, connection, source: Path, tool_root: str, *, build, emi
             if observed.get("state") != "ready":
                 return observed
             try:
-                selected = build_client.selection(source)
-                if selected == last_observed:
+                observed_source = observation()
+                selected = observed_source[0]
+                if observed_source == last_observed:
                     time.sleep(0.25)
                     continue
                 # Two coherent full observations; only the latest identity is pending.
                 time.sleep(0.2)
-                if build_client.selection(source) != selected:
+                if observation() != observed_source:
                     continue
             except (DevError, OSError, ValueError) as error:
                 code = error.code if isinstance(error, DevError) else "source-unavailable-during-edit"
@@ -41,13 +45,13 @@ def run(workspace: Path, connection, source: Path, tool_root: str, *, build, emi
                     last_error = code
                 time.sleep(0.25)
                 continue
-            last_observed, last_error = selected, None
+            last_observed, last_error = observed_source, None
             phase = "build"
             try:
                 with state.lock(workspace):
                     built = build(workspace, connection, source, tool_root, selected=selected,
                                   editor_diagnostics=editor_diagnostics)
-                    require(build_client.selection(source) == selected, "guest-build-superseded")
+                    require(observation() == observed_source, "guest-build-superseded")
                     require(connection.call("status", {}).get("state") == "ready", "workspace-stopped-before-deployment")
                     phase = "deploy"
                     # Once dispatched, this mutation completes or becomes uncertain.
