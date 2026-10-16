@@ -36,10 +36,10 @@ def without_private(text: str) -> str:
     return restored
 
 
-def private_import(graph: dict) -> bool:
+def _private_interface(graph: dict, direction: str) -> bool:
     from tools.dotnet_guest.internal_io import interface_name
     identifiers = {item['interface']['id']
-        for world in graph['worlds'] for item in world['imports'].values()
+        for world in graph['worlds'] for item in world[direction].values()
         if 'interface' in item and interface_name(graph, item['interface']['id']) == IDENTITY}
     if not identifiers:
         return False
@@ -49,10 +49,30 @@ def private_import(graph: dict) -> bool:
     if interface['types']:
         raise ValueError('dotnet-retirement-private-interface-shape')
     row = interface['functions']
-    if (set(row) != {'drain'} or row['drain']['kind'] != 'async-freestanding'
+    if (set(row) != {'drain'} or row['drain'].get('name') != 'drain'
+            or row['drain']['kind'] != 'async-freestanding'
             or row['drain']['params'] != [] or row['drain'].get('result') is not None):
-        raise ValueError('dotnet-retirement-private-import-shape')
+        raise ValueError('dotnet-retirement-private-'+direction.removesuffix('s')+'-shape')
     return True
+
+
+def private_import(graph: dict) -> bool:
+    return _private_interface(graph, 'imports')
+
+
+def composition_edges(consumer: dict, primary: dict, selected: bool) -> tuple[str, ...]:
+    """Connect only the compiler-selected, exact private root retirement port.
+
+    `selected` comes from prepare's authenticated binding-source projection,
+    never from an application capability declaration. The primary adapter must
+    supply the exact async value-free drain; additional facets cannot own it.
+    """
+    if type(selected) is not bool:
+        raise ValueError('dotnet-retirement-composition-profile')
+    consumed = private_import(consumer)
+    if consumed != selected or (selected and not _private_interface(primary, 'exports')):
+        raise ValueError('dotnet-retirement-composition-profile-or-edge')
+    return (IDENTITY,) if selected else ()
 
 
 def prepare(compiler, source: Path, world: str, output: Path, declared: list[str]):

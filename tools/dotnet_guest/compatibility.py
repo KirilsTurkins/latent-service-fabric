@@ -38,9 +38,12 @@ def members(graph: dict, direction: str) -> dict:
     return result
 
 
-def coverage(raw: dict, adapter: dict, *, additional_adapters=(), additional_names=()) -> dict:
+def coverage(raw: dict, adapter: dict, *, additional_adapters=(), additional_names=(),
+             owned_retirement: bool = False) -> dict:
     """Member presence is a necessary check; WAC still checks all type signatures."""
     required, supplied = members(raw, 'imports'), members(adapter, 'exports')
+    from tools.dotnet_guest.retirement import composition_edges
+    private_edges = composition_edges(raw, adapter, owned_retirement)
     require(len(additional_adapters) <= 4, 'dotnet-runtime-additional-adapter-limit')
     require(not additional_names or (len(additional_names) == len(additional_adapters)
             and len(set(additional_names)) == len(additional_names)), 'dotnet-runtime-additional-adapter-name')
@@ -59,7 +62,7 @@ def coverage(raw: dict, adapter: dict, *, additional_adapters=(), additional_nam
             for row in supplied.values()) <= 4096, 'dotnet-runtime-member-limit')
     gaps = []
     for name, row in sorted(required.items()):
-        if not name.startswith('wasi:'):
+        if not name.startswith('wasi:') and name not in private_edges:
             continue  # Declared LSF capabilities are checked on the final graph.
         if name not in supplied:
             gaps.append({'interface': name, 'kind': 'interface'})
@@ -68,8 +71,11 @@ def coverage(raw: dict, adapter: dict, *, additional_adapters=(), additional_nam
             for symbol in sorted(set(row[kind]) - set(supplied[name][kind])):
                 gaps.append({'interface': name, 'kind': kind, 'symbol': symbol})
     require(len(gaps) <= 4096, 'dotnet-runtime-gap-limit')
-    return {'requiredImports': sorted(required), 'adapterExports': sorted(supplied), 'gaps': gaps,
-            'analysisCompleteness': 'required-member-names', 'authority': 'none'}
+    result = {'requiredImports': sorted(required), 'adapterExports': sorted(supplied), 'gaps': gaps,
+              'analysisCompleteness': 'required-member-names', 'authority': 'none'}
+    if private_edges:
+        result['compilerPrivateImports'] = list(private_edges)
+    return result
 
 
 def findings(value: dict) -> list:
@@ -81,7 +87,7 @@ def findings(value: dict) -> list:
     return result
 
 
-def inspect(compiler, raw: Path, *, additional_adapters=()) -> dict:
+def inspect(compiler, raw: Path, *, additional_adapters=(), owned_retirement: bool = False) -> dict:
     raw_bytes, adapter_bytes = read_file(raw, 64 * 1024 * 1024), read_file(compiler.runtime, 64 * 1024 * 1024)
     raw_graph = compiler.run('native-aot-raw-wit', compiler.wasm, 'component', 'wit', raw, '--json')
     adapter_graph = compiler.run('closed-runtime-adapter-wit', compiler.wasm, 'component', 'wit', compiler.runtime, '--json')
@@ -98,7 +104,8 @@ def inspect(compiler, raw: Path, *, additional_adapters=()) -> dict:
         original.append((path, body))
         (compiler.commands.output / source).write_bytes(graph)
     value = coverage(decode(raw_graph, MAX_GRAPH), decode(adapter_graph, MAX_GRAPH),
-                     additional_adapters=graphs, additional_names=[row['name'] for row in extra])
+                     additional_adapters=graphs, additional_names=[row['name'] for row in extra],
+                     owned_retirement=owned_retirement)
     require(read_file(raw, 64 * 1024 * 1024) == raw_bytes
             and read_file(compiler.runtime, 64 * 1024 * 1024) == adapter_bytes, 'dotnet-runtime-coverage-stale-input')
     require(all(read_file(path, 64 * 1024 * 1024) == body for path, body in original),
@@ -147,9 +154,13 @@ def retain_failure(output: Path) -> None:
         graph = read_file(output / row['witSource'], MAX_GRAPH)
         require(digest(graph) == row['witDigest'], 'dotnet-runtime-coverage-stale-receipt')
         graphs.append(decode(graph, MAX_GRAPH))
+    from tools.dotnet_guest.retirement import IDENTITY
+    private_edges = value.get('compilerPrivateImports', [])
+    require(private_edges in ([], [IDENTITY]), 'dotnet-retirement-composition-receipt')
     actual = coverage(decode(read_file(output / 'native-aot-raw.wit.json', MAX_GRAPH), MAX_GRAPH),
                       decode(read_file(output / 'closed-runtime-adapter.wit.json', MAX_GRAPH), MAX_GRAPH),
-                      additional_adapters=graphs, additional_names=[row['name'] for row in extra])
+                      additional_adapters=graphs, additional_names=[row['name'] for row in extra],
+                      owned_retirement=private_edges == [IDENTITY])
     require(all(actual[key] == value[key] for key in actual), 'dotnet-runtime-coverage-stale-receipt')
     source = output / 'source-inputs.json'
     if not source.exists():

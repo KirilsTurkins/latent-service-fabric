@@ -253,5 +253,118 @@ class WallFacetCompositionTests(unittest.TestCase):
             self.assertEqual(calls, [])
 
 
+class RetirementCompositionTests(unittest.TestCase):
+    def fixture(self, root, *, selected=True, consumer=True, primary=True, extra=False,
+                consumer_change=None, provider_change=None):
+        from tools.dotnet_guest.retirement import IDENTITY, PACKAGE
+        values = ExactCompositionTests().fixture(root)
+        compiler, paths, evidence, component, coverage, calls, protected = values
+        names = ("native-aot-raw.wit.json", "closed-runtime-adapter.wit.json",
+                 "additional-runtime-entropy.wit.json")
+        graphs = [json.loads((evidence / name).read_bytes()) for name in names]
+        for observed, direction, enabled, changed in ((graphs[0], "imports", consumer, consumer_change),
+                (graphs[1], "exports", primary, provider_change), (graphs[2], "exports", extra, None)):
+            if not enabled:
+                continue
+            function = {"name": "drain", "kind": "async-freestanding", "params": []}
+            function.update(changed or {})
+            index = len(observed["interfaces"])
+            observed["interfaces"].append({"name": "owner", "package": len(observed["packages"]),
+                "functions": {"drain": function}, "types": {}})
+            observed["packages"].append({"name": PACKAGE})
+            observed["worlds"][0][direction]["retirement"] = {"interface": {"id": index}}
+        for name, observed in zip(names, graphs):
+            (evidence / name).write_bytes(json.dumps(observed).encode())
+        coverage["rawWitDigest"] = digest((evidence / names[0]).read_bytes())
+        coverage["runtimeWitDigest"] = digest((evidence / names[1]).read_bytes())
+        coverage["additionalAdapters"][0]["witDigest"] = digest((evidence / names[2]).read_bytes())
+        if selected:
+            coverage["compilerPrivateImports"] = [IDENTITY]
+        return (*values, graphs)
+
+    def test_selected_private_owner_has_one_primary_edge_and_no_new_host_authority(self):
+        from tools.dotnet_guest.retirement import IDENTITY
+        with tempfile.TemporaryDirectory() as temporary:
+            compiler, paths, evidence, component, coverage, calls, _protected, _graphs = self.fixture(Path(temporary))
+            result = compose_exact(compiler, paths["raw"], component, coverage,
+                additional_adapters=[("entropy", paths["entropy"])], owned_retirement=True)
+            source = (evidence / "runtime-composition.wac").read_bytes()
+            self.assertEqual(source.count((json.dumps(IDENTITY) + ": runtime0").encode()), 1)
+            self.assertEqual([row for row in result["edges"] if row["interface"] == IDENTITY],
+                [{"interface": IDENTITY, "adapter": "primary"}])
+            self.assertEqual(result["unmodifiedHostImports"], [CLOCK])
+            self.assertNotIn((json.dumps(CLOCK) + ":").encode(), source)
+            self.assertEqual(len(calls), 1)
+
+    def test_private_port_requires_selected_compiler_profile_and_exact_primary_provider(self):
+        for changed in ({"selected": False}, {"consumer": False}, {"primary": False},
+                        {"primary": False, "extra": True}, {"extra": True}):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as temporary:
+                compiler, paths, _evidence, component, coverage, calls, _protected, _graphs = self.fixture(
+                    Path(temporary), **changed)
+                with self.assertRaisesRegex(ValueError, "retirement-composition-profile-or-edge|duplicate-export"):
+                    compose_exact(compiler, paths["raw"], component, coverage,
+                        additional_adapters=[("entropy", paths["entropy"])],
+                        owned_retirement=changed.get("selected", True))
+                self.assertEqual(calls, [])
+                self.assertFalse(component.exists())
+
+    def test_sync_parameter_result_or_renamed_private_drain_is_rejected_on_either_side(self):
+        for side in ("consumer_change", "provider_change"):
+            for changed in ({"kind": "freestanding"}, {"params": [{"name": "value", "type": "u32"}]},
+                            {"result": "u32"}, {"name": "different"}):
+                with self.subTest(side=side, changed=changed), tempfile.TemporaryDirectory() as temporary:
+                    compiler, paths, _evidence, component, coverage, calls, _protected, _graphs = self.fixture(
+                        Path(temporary), **{side: changed})
+                    with self.assertRaisesRegex(ValueError, "private-import-shape|private-export-shape"):
+                        compose_exact(compiler, paths["raw"], component, coverage,
+                            additional_adapters=[("entropy", paths["entropy"])], owned_retirement=True)
+                    self.assertEqual(calls, [])
+
+    def test_private_port_receipt_cannot_enable_or_hide_an_unselected_edge(self):
+        from tools.dotnet_guest.retirement import IDENTITY
+        for selected, marker in ((True, []), (True, [IDENTITY, CLOCK]), (False, [IDENTITY])):
+            with self.subTest(selected=selected, marker=marker), tempfile.TemporaryDirectory() as temporary:
+                compiler, paths, _evidence, component, coverage, calls, _protected, _graphs = self.fixture(
+                    Path(temporary), selected=selected, consumer=selected, primary=selected)
+                coverage["compilerPrivateImports"] = marker
+                with self.assertRaisesRegex(ValueError, "retirement-composition-receipt"):
+                    compose_exact(compiler, paths["raw"], component, coverage,
+                        additional_adapters=[("entropy", paths["entropy"])], owned_retirement=selected)
+                self.assertEqual(calls, [])
+
+    def test_member_coverage_checks_the_private_consumer_and_primary_signature(self):
+        from tools.dotnet_guest.compatibility import coverage as member_coverage
+        from tools.dotnet_guest.retirement import IDENTITY
+        with tempfile.TemporaryDirectory() as temporary:
+            *_values, graphs = self.fixture(Path(temporary))
+            raw, primary, extra = graphs
+            result = member_coverage(raw, primary, additional_adapters=[extra],
+                additional_names=["entropy"], owned_retirement=True)
+            self.assertEqual(result["gaps"], [])
+            self.assertEqual(result["compilerPrivateImports"], [IDENTITY])
+            with self.assertRaisesRegex(ValueError, "retirement-composition-profile-or-edge"):
+                member_coverage(raw, primary, additional_adapters=[extra], additional_names=["entropy"])
+            primary["interfaces"][-1]["functions"]["drain"]["kind"] = "freestanding"
+            with self.assertRaisesRegex(ValueError, "private-export-shape"):
+                member_coverage(raw, primary, additional_adapters=[extra],
+                    additional_names=["entropy"], owned_retirement=True)
+
+    def test_unselected_composition_source_and_host_edges_are_byte_identical(self):
+        sources, imports = [], []
+        with tempfile.TemporaryDirectory() as temporary:
+            for ordinal, keywords in enumerate(({}, {"owned_retirement": False})):
+                root = Path(temporary) / str(ordinal)
+                root.mkdir()
+                compiler, paths, evidence, component, coverage, _calls, _protected = ExactCompositionTests().fixture(root)
+                result = compose_exact(compiler, paths["raw"], component, coverage,
+                    additional_adapters=[("entropy", paths["entropy"])], **keywords)
+                sources.append((evidence / "runtime-composition.wac").read_bytes())
+                imports.append(result["unmodifiedHostImports"])
+        self.assertEqual(sources[0], sources[1])
+        self.assertNotIn(b"dotnet-retirement", sources[0])
+        self.assertEqual(imports, [[CLOCK], [CLOCK]])
+
+
 if __name__ == "__main__":
     unittest.main()

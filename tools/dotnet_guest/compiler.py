@@ -376,10 +376,12 @@ class Compiler:
         write_json(command.output / "runtime-profile.json", selection)
         component = output / "component.wasm"
         self.runtime = adapter
-        coverage = inspect_runtime(self, raw, additional_adapters=additional)
+        coverage = inspect_runtime(self, raw, additional_adapters=additional,
+                                   owned_retirement=retirement_port is not None)
         if additional:
             from tools.dotnet_guest.composer import compose_exact
-            compose_exact(self, raw, component, coverage, additional_adapters=additional)
+            compose_exact(self, raw, component, coverage, additional_adapters=additional,
+                          owned_retirement=retirement_port is not None)
         else:
             self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter, "-o", component)
         self.run("validate", self.wasm, "validate", component)
@@ -388,6 +390,8 @@ class Compiler:
         final = final_interfaces['imports']
         if retirement.IDENTITY in final_interfaces['exports']:
             raise ValueError('compiler-private-retirement-export-escaped-composition')
+        if retirement_port is not None and retirement.IDENTITY in final:
+            raise ValueError('compiler-private-retirement-import-escaped-composition')
         if not set(final) <= set(declared):
             raise ValueError("runtime adapter introduced undeclared authority:" +
                              ",".join(sorted(set(final) - set(declared))))

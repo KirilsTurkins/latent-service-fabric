@@ -156,6 +156,19 @@ and errors. These are codec, generator and host type checks; the normal Linux
 NativeAOT build, signed pending cancellation/disposal matrix and physical
 retirement observations remain required before this candidate is qualified.
 
+The [first actual retirement build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38857166351/job/116831132298)
+compiled NativeAOT, composed the runtime and passed final component validation,
+then rejected the private owner import as undeclared authority. The exact
+multi-facet composer had connected only WASI imports. It now receives the
+compiler's authenticated retirement selection, checks both exact parameterless
+async `drain` signatures with no result or types, and connects that private
+import exactly once to the primary runtime. Additional facets cannot provide
+or duplicate it. The final private-import/export and undeclared-authority
+checks remain in place. Six new composition controls retain all eleven earlier
+cases and guards, including byte-identical unselected composition and the
+existing denial controls. Corrected actual composition and signed execution
+remain pending; the original failed graph and receipts remain retained.
+
 ## Joined Task wait candidate
 
 The pinned WASI CoreLib has a concrete additional boundary: direct
