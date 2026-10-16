@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "latent.c-standard-facilities.compiler-failure.v1",
+  "status": "failed",
+  "runtimeQualified": false,
+  "pullRequest": 1016,
+  "candidateHead": "49c2e49b3460d72aa8f00419ae728fc9e390bdf0",
+  "testedMerge": "ef1afee75c7721df2610fde819dffe061b00c81c",
+  "testedTree": "59b03723e524f123e6f7fd4b1d16a701d6094785",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38822452457/job/116721982727",
+  "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38822452457/artifacts/12014713272",
+  "artifactBytes": 43325,
+  "artifactSha256": "5194b45bf8266d3f8963c52685474bbe8b947524a6bdd00af6c47604d652ec9f",
+  "stage": "compile",
+  "classification": "target-compiler-incompatibility",
+  "source": "application-vendor/standard-probe/clock_probe.c",
+  "line": 21,
+  "symbol": "CLOCK_PROCESS_CPUTIME_ID",
+  "diagnostic": "use of undeclared identifier 'CLOCK_PROCESS_CPUTIME_ID'",
+  "disposition": "Retain the unsupported POSIX declaration as a compiler limitation. A separate raw WASI clock-ID denial probe requires ENOTSUP and an unchanged output value; it does not claim POSIX CPU-time support.",
+  "originalLimitsChanged": false,
+  "signedNodeExecution": "not-run-because-compilation-failed",
+  "subsequentAttempts": [
+    {
+      "candidateHead": "6408e376ebaae651feb505e2dd4982d91dedce0a",
+      "testedMerge": "6e5188031b4d95a3d89810a6d2c74957388f0068",
+      "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38826779587/job/116736256765",
+      "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38826779587/artifacts/12016447982",
+      "artifactBytes": 43325,
+      "artifactSha256": "840ea35f3e399f5fa39b13c8f9332804fe95165d293f5ea6b434849d0c999211",
+      "stage": "link",
+      "diagnostic": "import module mismatch for symbol: __imported_wasi_snapshot_preview1_random_get",
+      "disposition": "The raw ABI fixture declaration must match pinned libc's wasi_snapshot_preview1 module and random_get import name. Preserve the SDK implementation, raw null/zero checks and original limits.",
+      "signedNodeExecution": "not-run-because-linking-failed",
+      "correctedExecution": "pending"
+    },
+    {
+      "candidateHead": "c7c630da685ae6defd455de3e3de1ab16498f4f3",
+      "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38830784950/job/116749047628",
+      "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38830784950/artifacts/12018429001",
+      "artifactBytes": 2402386,
+      "artifactSha256": "757f224dd0d4db1b8d6bc7c9bed9fced0c01fa5300938eb9cd968efee94d2b61",
+      "stage": "signed-node-grant-denials",
+      "classification": "qualification-expectation-mismatch",
+      "observed": "All five C applications compiled; the first two ungranted clock activations were rejected with permission-denied and zero fuel/memory. The subsequent random-grant probe asserted a guest declared error and failed. Its response was not appended before the old assertion and is not reconstructed as evidence.",
+      "disposition": "Use the same original pre-execution missing-grant contract for all imported capabilities, including random. Require rejected state, known outcome and zero guest execution. Append every denial before checking it so failed expectations retain their response.",
+      "originalLimitsChanged": false,
+      "correctedExecution": "pending"
+    }
+  ]
+}

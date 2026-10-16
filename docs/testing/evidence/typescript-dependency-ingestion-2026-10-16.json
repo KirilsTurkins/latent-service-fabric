@@ -1,0 +1,844 @@
+{
+  "schemaVersion": "latent.sdk.typescript-dependency-evidence.v1",
+  "date": "2026-10-16",
+  "status": "passed",
+  "issue": 685,
+  "scope": "signed public-sync npm ESM/CJS/transitive/resource and fresh-state execution",
+  "qualificationComplete": false,
+  "publisherAuthenticated": false,
+  "cleanHost": false,
+  "sourceCommit": "6f637e989864766ab298f902ada3d331d9959d29",
+  "qualifier": {
+    "path": "tools/qualify_typescript_dependencies.py",
+    "sha256": "sha256:3cc46f30dbc2f8eb285f539b247acfbb06eaf10d071dce28d6b14371f47b3070",
+    "bytes": 12824
+  },
+  "executionEnvironment": {
+    "network": "Docker network none",
+    "initProcess": true,
+    "ambientHostUid": 0,
+    "applicationCompiler": "explicit Bubblewrap namespace closure",
+    "runtimeProfile": "spidermonkey-public-sync-v1",
+    "nativePromiseOrImportEngine": false,
+    "checkout": "exact source archive used by contributor qualifier; no installed-bundle claim"
+  },
+  "capture": {
+    "thirdParty": "@jridgewell/trace-mapping/0.3.31",
+    "transitives": [
+      "@jridgewell/resolve-uri/3.1.2",
+      "@jridgewell/sourcemap-codec/1.6.0"
+    ],
+    "developerOwned": "outside-qualification-module/1.0.0",
+    "catalogueRegistration": false,
+    "packageApis": [
+      "ESM exports",
+      "CommonJS require",
+      "JSON source map",
+      "UTF-8 resource name",
+      "text import",
+      "binary import"
+    ],
+    "ignoredLifecycleScripts": [
+      "prepare"
+    ],
+    "originalLocalPackageRemovedBeforeCompile": true,
+    "libraryStartupOnBuildHost": false,
+    "receipt": {
+      "sha256": "sha256:3a9933eff7323d2f63b418c5611d21857a2c308075cce5e810cc31b69323cab9",
+      "bytes": 1898
+    }
+  },
+  "compilerAcquisition": {
+    "status": "captured",
+    "scope": "unchanged maintained Node/npm compiler closure acquisition",
+    "sourceCommit": "6f637e989864766ab298f902ada3d331d9959d29",
+    "nodeArchive": {
+      "sha256": "sha256:f625d97cd707df4ff96254916fbc5ff014f09c09effe5a1e0ca8f6d41a8789d4",
+      "bytes": 57409532
+    },
+    "managedInputs": {
+      "sha256": "sha256:29d22ef1d2fe28f7bc328e6ca05dd922db1bc067deafadefbf4d8d50c0b1d3db",
+      "bytes": 1904393
+    },
+    "managedArchive": {
+      "sha256": "sha256:d2ba2183094975ceffe18dc42d9efb39fa352785f77839ba7e615797c723b77c",
+      "bytes": 162422792
+    },
+    "elapsedSeconds": 37.49763017999794,
+    "runtimeQualification": false,
+    "applicationDependencyQualification": false,
+    "earlierAttempt": "r1 npm compiler acquisition completed; pack failed because caller omitted required payload/sdk directory. FAILED retained."
+  },
+  "recipeInputs": {
+    "count": 98,
+    "allExactGitBlobs": true,
+    "files": {
+      "examples/echo-contract/capsule.json": {
+        "digest": "sha256:92a55f1185902458d3e5418ab464ce651a12779fc90bf5ab3433e2eb2a5ca85d",
+        "size": 1294
+      },
+      "examples/echo-contract/deployment.json": {
+        "digest": "sha256:2f14e5feb3eabfb56c4ec5e445f5fa02c42aa8f201828b78812ea399b36f9f3a",
+        "size": 1104
+      },
+      "sdk/profile/transaction-requirements-v1.json": {
+        "digest": "sha256:b9885e4948b4a6b23bc9fd256f23b89075fa138a5150ecae53cb6d81f879b5b4",
+        "size": 9418
+      },
+      "sdk/typescript-guest/activation/async_import_descriptor.rs": {
+        "digest": "sha256:27873dad4fe5e9027f1a743e2c1663351dff8cc97cec33c21037a7f970aac1fd",
+        "size": 10427
+      },
+      "sdk/typescript-guest/activation/async_import_splice.rs": {
+        "digest": "sha256:63ff8bae771e4abcda56d95d9a622f996a6bb685ce32965edd7124793e8f522e",
+        "size": 12163
+      },
+      "sdk/typescript-guest/activation/broker_accounting.h": {
+        "digest": "sha256:5771507a3bf4905b3707d31426675ad0bcd699a1fa96799541c98b7755eddc33",
+        "size": 9391
+      },
+      "sdk/typescript-guest/activation/broker_import_accounting.h": {
+        "digest": "sha256:d06c3a53bc789ac68b87475ac83543da37f42b6ac61c5a96f63c21c99b4f3ec1",
+        "size": 3204
+      },
+      "sdk/typescript-guest/activation/clock-globals.d.ts": {
+        "digest": "sha256:200c8e3d6be9c33a56101b8c5ce9b2d7e252b27c7fb8631884b4654fbb227cc7",
+        "size": 159
+      },
+      "sdk/typescript-guest/activation/clock_globals.js": {
+        "digest": "sha256:883fb57b1266b9643f3f61e817cf2f4c0e51fdbde80d2edbf3acb95f3d9badbd",
+        "size": 984
+      },
+      "sdk/typescript-guest/activation/clock_values.h": {
+        "digest": "sha256:8e85831a0817eda3a1375fda790df22a6b343277ee102e64ef7b2be37df0bb42",
+        "size": 1238
+      },
+      "sdk/typescript-guest/activation/native_cancel.h": {
+        "digest": "sha256:59397ab2badf02d292e517157c9686a730cd7ebe582ea1d5a7b4c81be57b7438",
+        "size": 479
+      },
+      "sdk/typescript-guest/activation/native_clock_engine.cpp": {
+        "digest": "sha256:897d1611ac4e9d4557756447355d0aad7110b02f863c378df48ca28a755e1885",
+        "size": 1859
+      },
+      "sdk/typescript-guest/activation/native_clocks.h": {
+        "digest": "sha256:2a318536a65272343a7c7579c0baecdac42a0a22e307e30ec7146a2df288659a",
+        "size": 1584
+      },
+      "sdk/typescript-guest/activation/native_engine.cpp": {
+        "digest": "sha256:7dd1b56450d6e0af4c874e7a73fee01a59968095ddc452093cc2b9a1dcf85a6f",
+        "size": 12438
+      },
+      "sdk/typescript-guest/activation/native_engine.h": {
+        "digest": "sha256:f87f03ba595f1ec17bf368400156892f3c6c4678105be0aaa32176448ece0a38",
+        "size": 1813
+      },
+      "sdk/typescript-guest/activation/native_import_bridge.cpp": {
+        "digest": "sha256:8a372b13338d7b05d04943ac5135048e967bfd80a99da02150f8a2138b0cf5b2",
+        "size": 2848
+      },
+      "sdk/typescript-guest/activation/native_import_globals.cpp": {
+        "digest": "sha256:b3805f336b3989d683c8b9037f0f74154430a4522561570a32715e9f756c03b7",
+        "size": 2418
+      },
+      "sdk/typescript-guest/activation/native_import_lifecycle.h": {
+        "digest": "sha256:c17bbf0f1c3f3de8353741ac4f9cdbde40f232198377a467fec6560ef55d6537",
+        "size": 5845
+      },
+      "sdk/typescript-guest/activation/native_import_values.h": {
+        "digest": "sha256:5b98e85df356d7005ab6a3085fc9c12ad4e5f6cc8d00ddf33095f4683fc0ea24",
+        "size": 2390
+      },
+      "sdk/typescript-guest/activation/native_imports.h": {
+        "digest": "sha256:40b5737a75a9c8c06511a2ea36df14110b3577fb7f7098b202940e5abc839dd7",
+        "size": 9865
+      },
+      "sdk/typescript-guest/activation/native_job_queue.h": {
+        "digest": "sha256:f7498c93b6240e5965101eabd62775f229fdff06b08a8629bf2e68a58800845c",
+        "size": 8857
+      },
+      "sdk/typescript-guest/activation/native_objects.h": {
+        "digest": "sha256:081afe123537c0555d0d29d20a85181dcb7feb62ce85251d4de7e2932427d039",
+        "size": 1028
+      },
+      "sdk/typescript-guest/activation/native_ownership.h": {
+        "digest": "sha256:476b5db1f88bf96637221e199e0dbbd44deb3d924d7f3389ef4b7f3bccf472ed",
+        "size": 615
+      },
+      "sdk/typescript-guest/activation/native_readiness.h": {
+        "digest": "sha256:d38d7d66ed3b16d25c3e1705f2858923ed47ef1a374c88ee9049a98ce04801f3",
+        "size": 8450
+      },
+      "sdk/typescript-guest/activation/native_retirement.h": {
+        "digest": "sha256:5921cccf4dd2cd6a11ad070383247a4e186cbd15e21f955a56069149297d24b6",
+        "size": 4294
+      },
+      "sdk/typescript-guest/activation/native_timeout.h": {
+        "digest": "sha256:f5b1e996dc1e7fa9a535760a13d00829854773eb11b0676727365582cfaad2d9",
+        "size": 1416
+      },
+      "sdk/typescript-guest/activation/native_timers.h": {
+        "digest": "sha256:5413bb498d1c0ca713d87eb171c4e4ca19e330831de3db069cf96d5b5a5b32a3",
+        "size": 11314
+      },
+      "sdk/typescript-guest/activation/promise_accounting.h": {
+        "digest": "sha256:1451f4d6d53a300e378a0a371810021ded638d683bf0b3dc145671ec0d5060b9",
+        "size": 2406
+      },
+      "sdk/typescript-guest/activation/promise_hooks.h": {
+        "digest": "sha256:37417b24250854e41d6c320d978daf8338bf7393526dab70b725e8f1fb06654e",
+        "size": 2147
+      },
+      "sdk/typescript-guest/activation/promise_records.h": {
+        "digest": "sha256:9bbe75a1f2e7475ae5cbbaf0bf5e3b39d405a69127fd8839edd5be77b39911c0",
+        "size": 4590
+      },
+      "sdk/typescript-guest/activation/reaction_records.h": {
+        "digest": "sha256:a7b6372c234af5ef87ad3619c991775381e63c7861426fb30995d8e043675a3f",
+        "size": 5052
+      },
+      "sdk/typescript-guest/activation/runtime-globals.d.ts": {
+        "digest": "sha256:589cf515d06c16454916ecd28a5b1b785db30034300d67e0676b66ca4bcdfb7b",
+        "size": 1215
+      },
+      "tools/application_dependencies.py": {
+        "digest": "sha256:6f1b808a4d11e5ec3b356b267bf2dae37fd91754b910ec39ae6667ea727ba381",
+        "size": 28224
+      },
+      "tools/application_dependency_approval.py": {
+        "digest": "sha256:70126c2b142a74f4fe169ceff32642008b843d668c66b7c5addac66dc1e14209",
+        "size": 1996
+      },
+      "tools/application_dependency_store.py": {
+        "digest": "sha256:6129623f653c7e9671d22a5205766c98527bdedd1cd2a6a5ca5f69494c4a142d",
+        "size": 11625
+      },
+      "tools/application_dependency_tools.py": {
+        "digest": "sha256:4b4b26044e185269feed5344cd333a0dbffec76927b7ca9ad779fefb33aa94f9",
+        "size": 5192
+      },
+      "tools/build_observation.py": {
+        "digest": "sha256:c9fe0843aabb9a026b2005134b121bf2e53abc909a2da3e5e5fe90fdc3096db0",
+        "size": 7868
+      },
+      "tools/build_process.py": {
+        "digest": "sha256:86a5f8465c7afdf3bbdd70972f0799187e550fd4c56d0235f9bb951ce6b033a2",
+        "size": 9063
+      },
+      "tools/build_process_linux.py": {
+        "digest": "sha256:e3d45b83b7dfe213135491b8a094925179b884df11615ea0dcb64af6451d08ce",
+        "size": 3853
+      },
+      "tools/build_process_signals.py": {
+        "digest": "sha256:96dddca07cc20b77b0b6b93a3524c047877a4fcdd7442fe8c635024ade13cdb2",
+        "size": 3012
+      },
+      "tools/build_process_windows.py": {
+        "digest": "sha256:3de6d1a259112579d0da53b90614233fd27d57daf3cf75582d9ac774f13b31fd",
+        "size": 7409
+      },
+      "tools/build_snapshot.py": {
+        "digest": "sha256:a0c3db3b1facb673c11fc51a68bc4c920246163e2d6f1a9bd800b07d7aee2b9f",
+        "size": 12887
+      },
+      "tools/captured_compiler_isolation.py": {
+        "digest": "sha256:c3573d04c1fb16752aa0079a6d3c8e7d076e81801371c8481db38e059c5c8e0a",
+        "size": 14166
+      },
+      "tools/dev_workflow/__init__.py": {
+        "digest": "sha256:83994d5549a6b1de4ef471c2e8fa9db700b731807f8e9b806c71b9bcf594eaf2",
+        "size": 98
+      },
+      "tools/dev_workflow/common.py": {
+        "digest": "sha256:f398999c39fc80606ca3ec0d47db5a9e32debe96367a87a9aa72b70089f13a28",
+        "size": 3129
+      },
+      "tools/dev_workflow/dependencies.py": {
+        "digest": "sha256:6c2b1e343e05d10b43fead70d017193dedd6d0a7bde7db0a4c110d3d51a67b7b",
+        "size": 6022
+      },
+      "tools/dev_workflow/paths.py": {
+        "digest": "sha256:0f483ce64d95d80abd773b6eee08b2a43b1a64872c92db0022b3d6bf3f5d9538",
+        "size": 6807
+      },
+      "tools/dev_workflow/project.py": {
+        "digest": "sha256:0867f8ded6f515b2ed6fb3a76d78fed77141bcfcce931227aa201930d2e19137",
+        "size": 7395
+      },
+      "tools/dev_workflow/resource_inputs.py": {
+        "digest": "sha256:aa847812a09cd13558277a8d4a07888f96ee70375651a7f7802b7102c9090aaf",
+        "size": 2645
+      },
+      "tools/dev_workflow/snapshot.py": {
+        "digest": "sha256:c8c3967d3a067c19748e657889362f694683445e61c2ee1fd9ff4e3d5a39acbe",
+        "size": 7519
+      },
+      "tools/dev_workflow/state.py": {
+        "digest": "sha256:19ae59fbd3b94e9ddff4565a4da98ff04308448e7f660ecadb20f123d2f3626e",
+        "size": 3683
+      },
+      "tools/dev_workflow/transaction_binding.py": {
+        "digest": "sha256:d758bd2b904f9ff53d61398afe4910230d457afc1f14748080a3930f06cf38aa",
+        "size": 3588
+      },
+      "tools/dev_workflow/windows.py": {
+        "digest": "sha256:88f584e03e560395027f5d59a8358dbf57ce3daf64c68d56f5af2a98cee5f473",
+        "size": 6584
+      },
+      "tools/guest_authoring_frontend.py": {
+        "digest": "sha256:50fb4567e172a9a8b8b72ce4b964912f980d1406979267b5d59e3545fad869c7",
+        "size": 9578
+      },
+      "tools/guest_compatibility.py": {
+        "digest": "sha256:f9bb6683190e4b7969d1e246f72d2014c6561e8e3ae5a9ed577bbfdce586f8a1",
+        "size": 12175
+      },
+      "tools/guest_compatibility_build.py": {
+        "digest": "sha256:73b12e057ac4123ac650bb6860d9d96ccd6b5aaf12c915cfbb15c476a7941619",
+        "size": 18007
+      },
+      "tools/guest_compatibility_context.py": {
+        "digest": "sha256:4e0563408f8f9283c8b831b8a74b73b3fe6ce5456a39ca1dc689671aa316c657",
+        "size": 6687
+      },
+      "tools/guest_compatibility_context_build.py": {
+        "digest": "sha256:62a413a13f575b489ca1473da25e55b8a24f699b4ac400107a4363bf1b7e1e02",
+        "size": 6930
+      },
+      "tools/guest_dependency_inputs.py": {
+        "digest": "sha256:38d9d3b47d4e4b3e8155742d4a769517d1b38660225b09f86509a8b6be086867",
+        "size": 9725
+      },
+      "tools/guest_emitted_code.py": {
+        "digest": "sha256:211c7ef2b359b2ec2e2227cae1e4212b57c020dc4f02649302c976e0eb85dbbd",
+        "size": 20181
+      },
+      "tools/guest_resources.py": {
+        "digest": "sha256:37866d60d9eda8708c0dd3759e2acc4fe85b9c7d88bbe12baed4d630d214a114",
+        "size": 12779
+      },
+      "tools/guest_runtime_receipts.py": {
+        "digest": "sha256:19eeb61f798837a1c7676308522dca1c6920f17ee9b118db9ef0d3003af0848f",
+        "size": 11196
+      },
+      "tools/phase2_operator_process.py": {
+        "digest": "sha256:5ee4304a9b20d54a05f655114b6a358c72cae3bfe0292e8b213bf4af6197e659",
+        "size": 15043
+      },
+      "tools/phase3_resource_identity.py": {
+        "digest": "sha256:ca979a245b623bd588fe6ce32aec1de3a45a00e8bb0d6e49c6554417051327b0",
+        "size": 3354
+      },
+      "tools/phase3_resource_profile.py": {
+        "digest": "sha256:633a3eb3e639014ef221cf5180a533ea595cca32a761d53fe2d4e305d658a818",
+        "size": 9743
+      },
+      "tools/rust_capsule_build.py": {
+        "digest": "sha256:3c7c6f0eca2d9fafe2df4c2bfc348193d52bf1cb572169c39bd48a565e30afe2",
+        "size": 33153
+      },
+      "tools/rust_capsule_project.py": {
+        "digest": "sha256:5481ee94854861279eb8921d2c46967fe975afd3226d4ad88b7ee5a304f731da",
+        "size": 11478
+      },
+      "tools/stage_runtime_wit.py": {
+        "digest": "sha256:a44bcfc7054c8a63a43e3b9ad6428e7d4ac1bb551420020bc29015c9333b9828",
+        "size": 4194
+      },
+      "tools/transaction_guest_project.py": {
+        "digest": "sha256:8f70d19a6181e3d078d42944d0957f5512ab7a4b426befaffbb73b2cec874f39",
+        "size": 10287
+      },
+      "tools/typescript_application_dependencies.py": {
+        "digest": "sha256:23bc25ecf0337ab803b722739d9111bd1891b497f6f7f26982f6631cd27f085b",
+        "size": 23942
+      },
+      "tools/typescript_capsule.py": {
+        "digest": "sha256:6d204a309170d61773ce78f3d4841fcdda2b9ac22306bab884870d76fa3b5410",
+        "size": 12607
+      },
+      "tools/typescript_dependency_authoring.py": {
+        "digest": "sha256:f525bc60ef43cf5e3705df20f2152dac7f3a06fa01bc6bf205946287c11c6abd",
+        "size": 11477
+      },
+      "tools/typescript_generator_authoring.py": {
+        "digest": "sha256:a80543c5d49d9617b8cd4e69e51f41238e1a739f8799027394c48dc0e7c81f56",
+        "size": 14785
+      },
+      "tools/typescript_guest/abort_engine.py": {
+        "digest": "sha256:1ca796a7c902c99e186baa10df6a19df23626d464972773a242e4f7eedd3ec4b",
+        "size": 4020
+      },
+      "tools/typescript_guest/activation_engine.py": {
+        "digest": "sha256:449242586e04b173f152745d80928ef7953bfb5f2a80cc14ed2fc25a96c050b0",
+        "size": 14930
+      },
+      "tools/typescript_guest/async_waiters.mjs": {
+        "digest": "sha256:9ab0d9b713a7c22a0cbf7eceea1bb85b593a2bd2e8b5b97d325777ff1084cae2",
+        "size": 3705
+      },
+      "tools/typescript_guest/build.py": {
+        "digest": "sha256:22b04e8a510ce46c918c89e297f247958ca36a590dbe670d3e9f282a2f260cb8",
+        "size": 20398
+      },
+      "tools/typescript_guest/bundle.mjs": {
+        "digest": "sha256:16f1180c6b4b3742c2ce90e7bbf6899ee5367ddd94cbeebeb921365f49695713",
+        "size": 6830
+      },
+      "tools/typescript_guest/clock_engine.py": {
+        "digest": "sha256:c9d75ae50b8290e380f1b5d9d33729df931767ca2efb59dcd556c05df96af669",
+        "size": 7780
+      },
+      "tools/typescript_guest/compiler.py": {
+        "digest": "sha256:7efbadc44cf08086d06d924aa3c22346a3bdb808bf8d28e9a84382311e0c1808",
+        "size": 26707
+      },
+      "tools/typescript_guest/componentize.mjs": {
+        "digest": "sha256:64c5ce89d0bffc848e2b60747e5add2877dd77bbbddf813afdc8b31702655cac",
+        "size": 6523
+      },
+      "tools/typescript_guest/event_engine.py": {
+        "digest": "sha256:4a8384c24089600e13595d68a0e8313b3e21fa44ac45efdc316d5b484642cd22",
+        "size": 14171
+      },
+      "tools/typescript_guest/import_bindgen.py": {
+        "digest": "sha256:12b5b49c4cd77a5fc3998ba4adc52c1a4cb246b845a7a8b670d7e6dd4601c8d7",
+        "size": 17313
+      },
+      "tools/typescript_guest/import_engine.py": {
+        "digest": "sha256:a7661eb4a73ba55b19c72beb4b6f76c581c3aa77f29aebf050c42a5c062dbd9e",
+        "size": 5330
+      },
+      "tools/typescript_guest/import_profile.py": {
+        "digest": "sha256:049391920f3308f22226e5441458f490ae753785e6785910489901ee8aa5b53a",
+        "size": 4324
+      },
+      "tools/typescript_guest/probe.py": {
+        "digest": "sha256:535a99c354e65b17b2bcf9d60a5cf9273634d130f23a243ed847aa678d02842c",
+        "size": 5948
+      },
+      "tools/typescript_guest/project.py": {
+        "digest": "sha256:acc09ae99e1344857706435bc93725c2d57d3d3f79cf675ac27aa688e440f0f7",
+        "size": 8912
+      },
+      "tools/typescript_guest/promise_engine.py": {
+        "digest": "sha256:c90fed6c34c07b9342bb5fb0267f6c8304fd86aed2b0f702486d37ba52f33752",
+        "size": 10149
+      },
+      "tools/typescript_guest/resources.mjs": {
+        "digest": "sha256:14e01f582cbadbe37e722b692e6b57b7bceb45d884e01ffae273aa8e7977d9b9",
+        "size": 1830
+      },
+      "tools/typescript_guest/runtime_bundle.py": {
+        "digest": "sha256:33e3413769ecff9603bd24345cd193eeb086834b89acebffb891c56529da1fa5",
+        "size": 4363
+      },
+      "tools/typescript_guest/runtime_profile.py": {
+        "digest": "sha256:b5e27506c900e451d2bda333c97624ba1efa3c2c2ac5742c2269d33c6ca28573",
+        "size": 18506
+      },
+      "tools/typescript_guest/signed64.mjs": {
+        "digest": "sha256:52ef7eb6c6b963d7f577d614cdb1dc19dcb54b437d8edc6115ac0e717de8fc22",
+        "size": 1641
+      },
+      "tools/typescript_guest/source_splicer.mjs": {
+        "digest": "sha256:d5d5fa4bcfc79adf63eb208d99868ad5e65cf327a38e6877fd22f2c091982283",
+        "size": 464
+      },
+      "tools/typescript_guest/splicer_input.py": {
+        "digest": "sha256:13dad90d3ea9ce55d767c38edab78a693e471868de9e596a88c2e7a01f8c32b2",
+        "size": 3070
+      },
+      "tools/typescript_guest/text_codec_engine.py": {
+        "digest": "sha256:22493a4a4d254e86f296493069094b3d27bf890b0eee84cf190f19b11f431e78",
+        "size": 2178
+      },
+      "tools/typescript_guest/timer_engine.py": {
+        "digest": "sha256:d24094ced9bb6ec3e11b80308bddc569d0daefa8449892d3d22a058bd9702277",
+        "size": 4996
+      },
+      "wit/host-abi-phase3-v4.json": {
+        "digest": "sha256:3cfbd9bf55248f972d53598cc71ceccf068aa9234de4e1fce488d458271a937d",
+        "size": 4523
+      },
+      "wit/host-abi-phase4-v1.json": {
+        "digest": "sha256:bcd825ff31de472c8b09dc9901cd04c9e98771034bf3d6ff99e8d96fb09fcc74",
+        "size": 2559
+      }
+    }
+  },
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:4b4cc872d422c34bbf083f498f7a1b1fc8b81f0d3a1ef71b29be9d5d791465fc",
+      "bytes": 1494
+    },
+    "sourceHead": "a49bbf172e08c13ed7bd5588e2323064652f9366",
+    "sourceTree": "5696ad304208a902ed115f27120609fc8d4f9f04",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.6",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+        "bytes": 69976672,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+        "bytes": 182386208,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:c361aad3ed1aa9371e6acd657368ab216a72a66aa5fecba8b0f5d3169291940f",
+        "bytes": 19100192,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:60e42c99f6286ed4e6254a05156963c2e50e543414e9fa5f108eede7bb4e397e",
+        "bytes": 7967376,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+        "bytes": 24994784,
+        "actualFeatures": []
+      }
+    }
+  },
+  "component": {
+    "sha256": "sha256:6a90e42fc3ee8254ec45edb2f2a13a9ed0cc53201f4fa340cf7a5361866cd3d1",
+    "bytes": 12699952
+  },
+  "negativeInputs": [
+    {
+      "case": "missing-original-transitive",
+      "status": "known-failure",
+      "reason": "dependency-artifact-missing-resolve-explicitly"
+    },
+    {
+      "case": "tampered-original-transitive",
+      "status": "known-failure",
+      "reason": "dependency-artifact-integrity"
+    }
+  ],
+  "unsignedDenied": {
+    "category": "platform-failure",
+    "command": "release publish-package",
+    "data": {
+      "auditAck": {
+        "attemptSequence": "2",
+        "status": "durable"
+      },
+      "recovery": {
+        "expectedGeneration": "0",
+        "family": "release",
+        "operationId": "unsigned-denied",
+        "tenant": "examples"
+      }
+    },
+    "error": {
+      "code": "permission-denied",
+      "details": [],
+      "message": "The platform reported a failure.",
+      "retryable": false
+    },
+    "outcomeKnown": true,
+    "requestDispatched": true,
+    "schemaVersion": "latent.cli.result.v1"
+  },
+  "actualCalls": [
+    {
+      "activation": "typescript-library-0",
+      "exitCode": 0,
+      "startedAtUnixMillis": "1792103749071",
+      "elapsedNanos": "50629942619",
+      "decoded": [
+        {
+          "ok": "Hello, SDK!"
+        }
+      ],
+      "response": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "typescript-library-0",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "3738796",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "50610520"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "operator-workflow-test:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "22",
+            "data": "W3sib2siOiJIZWxsbywgU0RLISJ9XQ==",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:4d583bbb473c789d543786ce3c03c591f09e065ba451515f22c22b9ab1a710c3",
+            "releaseDigest": "sha256:6a90e42fc3ee8254ec45edb2f2a13a9ed0cc53201f4fa340cf7a5361866cd3d1",
+            "revisionId": "revision-v1:sha256:f9a412b7b881a56a8f6b95a4b22f4c7e7c2eb82fd3186830a9b4407504a1f2c8",
+            "routeGeneration": "1"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    },
+    {
+      "activation": "typescript-library-1",
+      "exitCode": 3,
+      "startedAtUnixMillis": "1792103799717",
+      "elapsedNanos": "26807426",
+      "decoded": [
+        {
+          "err": "Please enter a name."
+        }
+      ],
+      "response": {
+        "category": "declared-error",
+        "command": "invoke",
+        "data": {
+          "activationId": "typescript-library-1",
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "2767449",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "10666"
+          },
+          "declaredError": {
+            "code": "declared-error",
+            "message": "component returned a declared error",
+            "metadata": {},
+            "payload": {
+              "byteLength": "32",
+              "data": "W3siZXJyIjoiUGxlYXNlIGVudGVyIGEgbmFtZS4ifV0=",
+              "encoding": "base64",
+              "mediaType": "application/vnd.latent.wit-values.v1+json"
+            }
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:4d583bbb473c789d543786ce3c03c591f09e065ba451515f22c22b9ab1a710c3",
+            "releaseDigest": "sha256:6a90e42fc3ee8254ec45edb2f2a13a9ed0cc53201f4fa340cf7a5361866cd3d1",
+            "revisionId": "revision-v1:sha256:f9a412b7b881a56a8f6b95a4b22f4c7e7c2eb82fd3186830a9b4407504a1f2c8",
+            "routeGeneration": "1"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    },
+    {
+      "activation": "typescript-library-2",
+      "exitCode": 0,
+      "startedAtUnixMillis": "1792103799763",
+      "elapsedNanos": "32050975",
+      "decoded": [
+        {
+          "ok": "Hello, Ada!"
+        }
+      ],
+      "response": {
+        "category": "success",
+        "command": "invoke",
+        "data": {
+          "activationId": "typescript-library-2",
+          "committedStateVersion": null,
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "3738796",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "9502720",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "16079"
+          },
+          "effectIds": [],
+          "metadata": {
+            "cell-disposition": "released",
+            "cell-id": "operator-workflow-test:phase0:standard:00000000"
+          },
+          "payload": {
+            "byteLength": "22",
+            "data": "W3sib2siOiJIZWxsbywgQWRhISJ9XQ==",
+            "encoding": "base64",
+            "mediaType": "application/vnd.latent.wit-values.v1+json"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:4d583bbb473c789d543786ce3c03c591f09e065ba451515f22c22b9ab1a710c3",
+            "releaseDigest": "sha256:6a90e42fc3ee8254ec45edb2f2a13a9ed0cc53201f4fa340cf7a5361866cd3d1",
+            "revisionId": "revision-v1:sha256:f9a412b7b881a56a8f6b95a4b22f4c7e7c2eb82fd3186830a9b4407504a1f2c8",
+            "routeGeneration": "1"
+          }
+        },
+        "error": null,
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    }
+  ],
+  "shutdown": {
+    "processId": 435,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 108,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 3,
+          "maximum_waiters_per_job": 3,
+          "maximum_ready_preparations": 3,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 1,
+          "jobs_completed": 1,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 4,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 0,
+          "completed": 0,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "rawQualification": {
+    "sha256": "sha256:4a7a87c54e45090a9165a08870e471a477c11304f347ed2271c8663edc0c4646",
+    "bytes": 15747
+  },
+  "rawNodeQualification": {
+    "sha256": "sha256:32674782d2ebc2e8ff399e5fee777d308ffe84031d092f07dc3bea3a371f58a0",
+    "bytes": 6341
+  },
+  "ownerObservations": "Guarded complete topology/cells/queue/quota observations after every invocation returned idle; no resident application owner; normal node shutdown reported every runtime owner retired.",
+  "earlierAttempts": [
+    "Compiler acquisition r1 omitted the caller-owned payload/sdk directory; r2 used normal preparation without source changes",
+    "Exploratory node setup tried create-only write_json on existing node configuration and failed before node startup; preserved separately"
+  ],
+  "remainingAcceptance": [
+    "authenticated-private-registry",
+    "installed-update-remove-watch",
+    "memory-fuel-cancellation-and-native-runtime-paths",
+    "explicit-generator-containment"
+  ]
+}

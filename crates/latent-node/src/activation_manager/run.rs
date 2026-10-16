@@ -360,6 +360,9 @@ impl Inner {
             control.transport(),
         )
         .await;
+        if let Some(host) = lifecycle.transaction_host.as_ref() {
+            host.observe_host_result(report.host_result);
+        }
         let disposition = match report.cleanup {
             ExecutionCleanup::Reusable => "released",
             ExecutionCleanup::Quarantine { reason } => {

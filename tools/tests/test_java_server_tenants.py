@@ -84,6 +84,12 @@ class SharedTenantServer(unittest.TestCase):
             selected = json.loads((output / "deployment.json").read_bytes())
             deployment["metadata"]["tenant"] = "examples"
             self.assertEqual(selected, deployment)
+            from tools.java_server_tenants import foreign_deployment
+            foreign = foreign_deployment(selected)
+            self.assertEqual(foreign["metadata"]["tenant"], "foreign")
+            self.assertEqual(foreign["metadata"]["name"], selected["metadata"]["name"] + "-foreign")
+            self.assertEqual(foreign["spec"], selected["spec"])
+            self.assertEqual(selected, deployment)
             self.assertEqual((output / "capsule.json").read_bytes(), signed_metadata)
             self.assertEqual(snapshot(project), files)
             selected_bytes = (output / "deployment.json").read_bytes()

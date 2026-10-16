@@ -144,6 +144,10 @@ pub trait TransactionHost: Send + Sync {
     ) -> Result<(), StateFailure> {
         Err(StateFailure::UnsupportedVersion)
     }
+    /// Trusted execution completion only. There is no guest-visible WIT method
+    /// for this signal; implementations retain unavailable observations
+    /// monotonically, even after guest access has physically closed.
+    fn observe_host_result(&self, disposition: crate::HostResultDisposition);
     fn activation_id(&self) -> &ActivationId;
     fn mode(&self) -> Mode;
     fn budget(&self) -> &ActivationBudget;

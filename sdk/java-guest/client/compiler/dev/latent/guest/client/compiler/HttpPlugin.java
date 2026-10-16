@@ -26,6 +26,16 @@ public final class HttpPlugin implements TeaVMPlugin, ClassHolderTransformer {
     private static final String REPLACEMENT = "dev.latent.guest.client.StreamHandler";
     @Override public void install(TeaVMHost host) { host.add(this); }
     @Override public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
+        if (cls.getName().startsWith(HttpSubstitution.STANDARD)
+                && HttpSubstitution.API.contains(cls.getName().substring(HttpSubstitution.STANDARD.length()))) {
+            ClassHolder normalized = new ClassRefsRenamer(new ReferenceCache(), name -> {
+                if (!name.startsWith(HttpSubstitution.SDK)) return name;
+                String suffix = name.substring(HttpSubstitution.SDK.length());
+                return HttpSubstitution.API.contains(suffix) ? HttpSubstitution.STANDARD + suffix : name;
+            }).rename(cls);
+            if (normalized != cls) throw changed();
+            return;
+        }
         if (cls.getName().equals("java.net.URLConnection")) {
             bridge(cls, "getContentLengthLong", "contentLength", ValueType.LONG);
             bridge(cls, "getHeaderFieldLong", "headerLong", ValueType.object("java.lang.String"),
@@ -42,6 +52,8 @@ public final class HttpPlugin implements TeaVMPlugin, ClassHolderTransformer {
             return;
         }
         if (!cls.getName().equals("java.net.URL")) return;
+        bridge(cls, "openConnection", "openConnection", ValueType.object("java.net.Proxy"),
+            ValueType.object("java.net.URLConnection"));
         var setup = cls.getMethod(new MethodDescriptor("setupStreamHandler", ValueType.VOID));
         if (setup == null || setup.getProgram() == null) throw changed();
         int constructs = 0, constructors = 0;

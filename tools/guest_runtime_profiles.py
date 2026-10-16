@@ -8,8 +8,10 @@ RUNTIME = {
 
 
 def profiles(language):
-    if language not in {"go", "dotnet", "java"}:
+    if language not in {"go", "dotnet", "java", "c"}:
         raise ValueError("runtime-grant-language")
+    if language == "c":
+        return {**RUNTIME, "random": (*RUNTIME["random"][:2], "bytes", "random")}
     if language == "java":
         return {name: value for name, value in RUNTIME.items() if name != "random"}
     return RUNTIME if language == "go" else {"clockMonotonic": RUNTIME["clockMonotonic"]}

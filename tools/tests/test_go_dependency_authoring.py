@@ -264,6 +264,18 @@ class GoDependencyAuthoring(unittest.TestCase):
             self.assertEqual(environment['GONOPROXY'], 'none')
         self.assertNotIn(token.encode(), canonical(authoring.resolved(self.owner, candidate, lock)))
 
+    def test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution(self):
+        config = self.root / 'private-proxy.json'
+        for ordinal, (variable, secret) in enumerate((('LSF_PROXY_TOKEN', 'bad\x01token'),
+                ('LSF_PROXY_TOKEN', 'bad\x7ftoken'), ('', 'selected-token'),
+                (None, 'selected-token'), (7, 'selected-token'))):
+            config.write_bytes(canonical({'proxy': 'https://private.example.test', 'sumdb': 'off',
+                'authorizationEnv': variable}))
+            with self.subTest(ordinal=ordinal), patch.dict(os.environ, {'LSF_PROXY_TOKEN': secret}), \
+                    self.assertRaisesRegex(DependencyError, 'go-proxy-authorization-(format|unavailable)'):
+                self.capture(proxy_config=config)
+            self.assertEqual(len(self.calls), 0)
+
     def test_proxy_config_must_stay_outside_project_and_never_embed_url_credentials(self):
         for location, policy in ((self.app / 'proxy.json', {'proxy': 'https://proxy.example.test', 'sumdb': 'off'}),
                 (self.root / 'proxy.json', {'proxy': 'https://name:secret@private.example.test', 'sumdb': 'off'})):

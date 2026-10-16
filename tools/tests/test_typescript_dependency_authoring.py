@@ -307,6 +307,24 @@ class NpmDependencyAuthoring(unittest.TestCase):
             self.assertNotEqual(environment['HOME'], token)
         self.assertNotIn(token.encode(), canonical(authoring.resolved(self.owner, candidate, lock)))
 
+    def test_raw_registry_url_cannot_inject_config_or_run_native_commands(self):
+        self.reviewed()
+        accepted = {name: (self.owner / name).read_bytes() for name in
+            (inputs.MANIFEST, inputs.LOCK, 'npm-resolved.lock.json', 'sdk-lock.json')}
+        config = self.root / 'untrusted-url-policy.json'
+        for url in ('https://example.invalid/\nstrict-ssl=false',
+                'https://example.invalid/\r\nregistry=http://other.invalid',
+                'https://example.invalid/\x00ignored', 'https://example.invalid/\x7f',
+                'https://example.invalid/\x85', 'https://example.invalid/\u2028strict-ssl=false',
+                'https://example.invalid/a b', 'https://example.invalid/' + 'a' * 4096, 42):
+            config.write_bytes(canonical({'registries': [{'url': url}]}))
+            with self.subTest(url=repr(url)[:90]), patch.object(native, 'run_bounded',
+                    side_effect=AssertionError('invalid endpoint must not execute a native tool')) as executed:
+                with self.assertRaisesRegex(DependencyError, 'npm-registry-endpoint-invalid'):
+                    self.capture(registry_config=config)
+            executed.assert_not_called()
+            self.assertEqual({name: (self.owner / name).read_bytes() for name in accepted}, accepted)
+
     def test_selected_conditions_are_reviewed_without_changing_installed_runtime_profile(self):
         candidate, lock = self.capture(selected={'conditions': ['private', 'private']})
         result = authoring.review(self.owner, candidate, digest(candidate.read_bytes()))

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_standard_clocks.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add authenticated rebuilt ordinary SystemTime/Instant signed grant, two fresh Store, revocation and owner-retirement gate; preserve existing authoring commands, source controls, jobs, limits, cache policy and historical CI obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e38b723e63a31f736f3fe26a85d7997afc36ed5bf28431edc9130714cb65bf20"
+}

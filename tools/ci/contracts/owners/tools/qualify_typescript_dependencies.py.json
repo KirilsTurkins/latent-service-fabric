@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_dependencies.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Delegate the additive real npm integrity and two isolated offline builds with exact completed source/native admission, identical compiler-input inventories, fresh activation state and physical cleanup; preserve all prior command deadlines.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "44c9cd56e8c3fe505d02f28ef0cefaa083482b874b020bc9f41f5900005c6a9f"
+}

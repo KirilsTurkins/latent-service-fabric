@@ -96,6 +96,29 @@ public final class Ownership {
             require(expected.getCause() instanceof HttpFailure && ((HttpFailure)expected.getCause()).externalCompletionUncertain());
         }
         require(Bindings.opens==1 && Bindings.finishes==1); connection.disconnect(); cases++;
+
+        Bindings.reset();
+        var local = new URL(null, "http://fixture.test/", new java.net.URLStreamHandler() {
+            @Override protected URLConnection openConnection(URL url) { return new Connection(url); }
+        });
+        var direct = StandardMembers.openConnection(local, java.net.Proxy.NO_PROXY);
+        require(direct instanceof Connection && ((Connection) direct).getResponseCode()==200);
+        ((Connection) direct).disconnect(); require(Bindings.opens==1); cases++;
+
+        Bindings.reset();
+        try { StandardMembers.openConnection(local, null); throw new AssertionError(); }
+        catch(IllegalArgumentException expected) { }
+        var proxy = new java.net.Proxy(java.net.Proxy.Type.HTTP, new java.net.InetSocketAddress("127.0.0.1", 1));
+        try { StandardMembers.openConnection(local, proxy); throw new AssertionError(); }
+        catch(UnsupportedOperationException expected) { require(expected.getMessage().equals("java-proxy-transport-not-qualified")); }
+        require(Bindings.opens==0); cases++;
+
+        var marker = dev.latent.guest.client.net.Proxy.NO_PROXY;
+        require(marker.type()==dev.latent.guest.client.net.Proxy.Type.DIRECT && marker.address()==null
+            && marker.toString().equals("DIRECT"));
+        try { new dev.latent.guest.client.net.InetSocketAddress("must-not-resolve.invalid", 25); throw new AssertionError(); }
+        catch(UnsupportedOperationException expected) { require(expected.getMessage().equals("java-proxy-address-resolution-not-qualified")); }
+        require(Bindings.opens==0); cases++;
         System.out.println("NATIVE_MODEL_CONTROLS="+cases+"; COMPONENT_QUALIFICATION=pending");
     }
 }

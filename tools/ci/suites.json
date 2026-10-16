@@ -2417,14 +2417,15 @@
         "prepared_readiness::tests::legacy_fallback_moves_original_owner_and_import_allocation",
         "prepared_use::tests::an_unpolled_future_and_unwind_drop_the_original_owner",
         "prepared_use::tests::ownership_survives_failed_downcast_and_is_released_exactly_once",
-        "tests::budget_dimensions_have_deterministic_interruption_mappings"
+        "tests::budget_dimensions_have_deterministic_interruption_mappings",
+        "tests::existing_report_constructors_keep_host_result_observed"
       ],
       "expectedIgnored": [],
       "id": "latent-executor.lib.latent-executor",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-executor/Cargo.toml",
-      "minimumCases": 9,
+      "minimumCases": 10,
       "mode": "libtest",
       "package": "latent-executor",
       "platforms": [
@@ -3298,14 +3299,15 @@
         "transaction_runtime::factory::pre_host_conflict::tests::original_transport_and_policy_are_rechecked_for_each_confirmed_abort_frame",
         "transaction_runtime::factory::pre_host_conflict::tests::physical_original_attempt_owner_blocks_abort_until_real_retirement",
         "transaction_runtime::factory::pre_host_conflict::tests::protected_original_clock_is_sampled_before_publication_and_response_fences",
-        "transaction_runtime::factory::pre_host_conflict::tests::protected_original_deadline_cannot_be_replaced_by_recovery_time"
+        "transaction_runtime::factory::pre_host_conflict::tests::protected_original_deadline_cannot_be_replaced_by_recovery_time",
+        "transaction_runtime::tests::technical_abort::successful_return_with_unavailable_host_result_preserves_original_pending_command"
       ],
       "expectedIgnored": [],
       "id": "latent-node.lib.latent-node",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 187,
+      "minimumCases": 188,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -7806,20 +7808,23 @@
         "dropping_real_session_currentness_wait_retires_prepared_owner_without_guest",
         "legacy_clock_without_explicit_timer_still_fails_closed_on_real_fence",
         "legacy_session_without_timer_fails_closed_before_store_or_guest",
+        "monotonic::ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
         "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores",
         "real_session_currentness_wait_precedes_store_registration_and_calls_guest_once",
         "real_session_wait_keeps_original_cancellation_and_lease_expiry"
       ],
       "expectedIgnored": [
+        "monotonic::ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
         "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores"
       ],
       "id": "latent-wasmtime.test.clock-admission",
       "ignoredLeaves": [
+        "ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
         "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 10,
+      "minimumCases": 11,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -8374,6 +8379,7 @@
         "runtime::cancellation_at_actual_timer_barrier_reclaims_original_store_and_cell",
         "runtime::canonical_timer_allows_sibling_work_and_bounds_recurrence_cancellation_and_storms",
         "runtime::completed_fixed_results_release_original_calls_before_the_next_import",
+        "runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "runtime::go::signed_standard_goroutines_sleep_and_drain_use_original_activation_owners",
         "runtime::malformed_fixed_result_destinations_reclaim_original_calls",
         "runtime::narrower_timer_policy_deadline_preserves_root_and_allows_owner_settlement",
@@ -8391,6 +8397,7 @@
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
       "expectedIgnored": [
+        "runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "runtime::go::signed_standard_goroutines_sleep_and_drain_use_original_activation_owners",
         "runtime::signed_java_completable_futures_use_default_activation_executor",
         "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
@@ -8401,6 +8408,7 @@
       ],
       "id": "latent-wasmtime.test.local-service",
       "ignoredLeaves": [
+        "signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "signed_async_service_import_preserves_sibling_progress_and_actual_child_owners",
         "signed_java_completable_futures_use_default_activation_executor",
         "signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
@@ -8411,7 +8419,7 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 38,
+      "minimumCases": 39,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
