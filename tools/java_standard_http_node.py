@@ -215,6 +215,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('uncertain', 1, '/conformance/mutation/close', '1:transport:uncertain'),
                      ('alternate-denied', 0, f"http://{secondary['host']}:{secondary['port']}/conformance/denied-target",
                          '1:transport:permission-denied'),
+                     ('direct-factory', 4, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()),
                      ('fresh', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode())]
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
@@ -240,7 +241,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             peer.stop()
             observation = json.loads(bytes(peer.buffers[0]).splitlines()[0])
             validate_peer(observation)
-            require(observation['startedRequests'] == 10 and observation['rejectedRequests'] == 0
+            require(observation['startedRequests'] == 11 and observation['rejectedRequests'] == 0
                 and observation['committedMutations'] == 1
                 and all(row['role'] == 'primary' for row in observation['requests']),
                 'standard-java-peer-contact-count')
