@@ -2,6 +2,7 @@
   "cases": [
     "AuthoringSelection.test_default_builder_never_selects_activation_or_rewrites_application",
     "AuthoringSelection.test_explicit_selection_reaches_real_compiler_boundary_without_app_adapter",
+    "AuthoringSelection.test_io_selection_reaches_real_compiler_and_binds_new_bridge_recipe",
     "AuthoringSelection.test_mutually_exclusive_cache_modes_fail_before_source_or_output",
     "AuthoringSelection.test_observed_compiler_profile_must_match_explicit_selection_before_packaging",
     "AuthoringSelection.test_read_only_cache_is_selected_without_an_offline_copy",
@@ -28,6 +29,18 @@
       "skipSites": []
     },
     "AuthoringSelection.test_explicit_selection_reaches_real_compiler_boundary_without_app_adapter": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:24dd9f4253e1f9e5a6ddd27c606684152990d8898610f0369ef9fa6789dc0f47",
+        "class:setup-sha256:7577db4d31f200f2f505ecd913828f309c16a4ff2a0463d6319acd63e8684b87"
+      ],
+      "skipSites": []
+    },
+    "AuthoringSelection.test_io_selection_reaches_real_compiler_and_binds_new_bridge_recipe": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -174,6 +187,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_activation_authoring.py",
-  "reviewReason": "Preserve every prior Java profile and capture refusal control; add original source-capture error retention and no-success-marker regression coverage.",
+  "reviewReason": "Add explicit Java fiber host imports and four signed pending/overlap/root-drain/interrupt modes; preserve all existing Java commands, 55-minute job, runtime limits and Python guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

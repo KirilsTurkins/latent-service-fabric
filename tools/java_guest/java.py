@@ -125,7 +125,7 @@ def codec(graph: Graph, index: int) -> list[str]:
             f"private static {jtype} read{suffix}(Wire.Reader input) {{", *read, "}"]
 
 
-def generate(graph: Graph, *, activation_profile: bool = False) -> str:
+def generate(graph: Graph, *, activation_profile: bool = False, fiber_io_profile: bool = False) -> str:
     output = ["// Generated from authoritative WIT and maintained wit-bindgen C. DO NOT EDIT.",
               "package dev.latent.generated;", "import dev.latent.guest.*;", "import org.teavm.interop.Address;",
               "import org.teavm.interop.Export;", "import org.teavm.interop.Function;",
@@ -144,10 +144,34 @@ def generate(graph: Graph, *, activation_profile: bool = False) -> str:
             output.append("public static " + graph.jtype(function.get("result")) + " " + jident(function["name"]) + "(" + arguments + ") {")
             output.append("try (Wire.Writer arguments = new Wire.Writer()) {")
             output.extend(writer(graph, p["type"], "arg" + str(i), "arguments") for i, p in enumerate(function["params"]))
-            output.append(f"try (Wire.Reader input = arguments.call({function['operation']})) {{")
+            call = (f"arguments.call(dev.latent.guest.runtime.HostCalls::call, {function['operation']}, false)"
+                    if function.get('asyncLowered') else f"arguments.call({function['operation']})")
+            output.append(f"try (Wire.Reader input = {call}) {{")
             output.extend([graph.jtype(function.get("result")) + " result = " + reader(graph, function.get("result")) + ";",
                            "input.finish(); return result;", "} } }"])
         output.append("}")
+    if activation_profile:
+        for function in graph.imports:
+            interface = graph.data['interfaces'][function['interface']]
+            package = graph.data['packages'][interface['package']]['name']
+            if package != 'latent:runtime@0.1.0' or interface['name'] != 'activation': continue
+            if function['name'] not in {'timer-next', 'wait-for'}: continue
+            parameters = ", ".join(graph.jtype(p['type']) + ' arg' + str(i) for i, p in enumerate(function['params']))
+            result = graph.jtype(function.get('result'))
+            helper = 'lsfRootTimerNext' if function['name'] == 'timer-next' else 'lsfRootWaitFor'
+            output.append(f'public static Option<{result}> {helper}({parameters}) {{')
+            if fiber_io_profile:
+                if not function.get('asyncLowered'): raise ValueError('root wait requires its real async ABI')
+                output.append('try (Wire.Writer arguments = new Wire.Writer()) {')
+                output.extend(writer(graph, p['type'], 'arg' + str(i), 'arguments') for i, p in enumerate(function['params']))
+                output.append(f'try (Wire.Reader input = arguments.call(dev.latent.guest.runtime.HostCalls::waitRoot, {function["operation"]}, true)) {{')
+                output.append('if (input == null) return Option.none();')
+                output.append(result + ' result = ' + reader(graph, function.get('result')) + ';')
+                output.append('input.finish(); return Option.some(result); } } }')
+            else:
+                arguments = ', '.join('arg' + str(i) for i, _p in enumerate(function['params']))
+                output.append('return Option.some(' + graph.interface_names[function['interface']] + '.'
+                              + jident(function['name']) + '(' + arguments + ')); }')
     output.extend(["public abstract static class Dispatch extends Function { public abstract Address apply(int operation, Address data, int length); }",
                    'public static void main(String[] args) { Function.get(Dispatch.class, Bindings.class, "dispatch"); }'])
     if activation_profile:
