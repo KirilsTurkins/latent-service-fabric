@@ -1,0 +1,85 @@
+{
+  "profile": "lsf.java.bounded-standard-logging.v1",
+  "status": "locked-model-and-host-source-controls-passed",
+  "standardConsoleClasses": 2,
+  "sourceChecks": 39,
+  "jarDigests": {
+    "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410",
+    "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+    "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49",
+    "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f",
+    "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c",
+    "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140",
+    "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b",
+    "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018",
+    "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6"
+  },
+  "componentExecutionPerformedByTheseControls": false,
+  "undeclaredCapabilityControl": "passed-without-bindings",
+  "ordinaryJdkReference": [
+    {
+      "iteration": 0,
+      "mode": 0
+    },
+    {
+      "iteration": 0,
+      "mode": 1
+    },
+    {
+      "iteration": 0,
+      "mode": 2
+    },
+    {
+      "iteration": 0,
+      "mode": 6
+    },
+    {
+      "iteration": 1,
+      "mode": 0
+    },
+    {
+      "iteration": 1,
+      "mode": 1
+    },
+    {
+      "iteration": 1,
+      "mode": 2
+    },
+    {
+      "iteration": 1,
+      "mode": 6
+    },
+    {
+      "iteration": 2,
+      "mode": 0
+    },
+    {
+      "iteration": 2,
+      "mode": 1
+    },
+    {
+      "iteration": 2,
+      "mode": 2
+    },
+    {
+      "iteration": 2,
+      "mode": 6
+    }
+  ],
+  "schemaVersion": "latent.java.standard-logging.source-controls.v1",
+  "environment": "Windows JDK25.0.3 with exact locked TeaVM0.15.0 model tooling",
+  "nativeComponentExecution": "pending",
+  "signedComponentInvocationsSelected": 16,
+  "actualGeneratedBindings": "wit-bindgen0.62.0 and wasm-tools1.254.0",
+  "originalNineSdkComponents": "preserved",
+  "jobTimeoutMinutes": 55,
+  "sourceSha256": {
+    "sdk/java-guest/facilities/compiler/dev/latent/guest/facilities/compiler/LoggingPlugin.java": "12c178be47c589b0bd98e9c79d2f553e64595b6cadfbb66bfc90a315b307fd77",
+    "sdk/java-guest/facilities/templates/StandardLog.java.in": "7076fbdbd3ea422a880f922da49f77198d28621f42bd2fcf387b9c31885961b9",
+    "sdk/java-guest/examples/logging.java": "9cc158a4c0f2c0a843ae3cb4ac73068f0b9ef430e9d458956e6b62acacb9d9e8",
+    "sdk/java-guest/facilities/conformance/logging.wit": "3e32a90bdf8aed4ea04632487433de60071ab863e5ad0da8ce1bb02834c4fe16",
+    "tools/qualify_java_logging.py": "46f79d6760d007fc59e01eaac46969e72de65ae487e6cfad660f407efddeafc7",
+    "tools/java_guest/facilities.py": "8d101f290af12114d1eb251937e38fd47a9499ad44c40acfe6258de4af34f033",
+    "crates/latent-wasmtime/tests/guest_sdk/logging.rs": "a945a4965647b89d64b3e18726ee94b7f56eefba22c8570612ab31784275e0bc"
+  }
+}

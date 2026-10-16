@@ -325,6 +325,9 @@ jobs:
             ${{ runner.temp }}/java-guest-bindings/standard-entropy-controls/controls.json
             ${{ runner.temp }}/java-guest-bindings/standard-entropy-controls/reference-bindings/
             ${{ runner.temp }}/java-guest-bindings/compiled/standard-entropy-profile.json
+            ${{ runner.temp }}/java-guest-bindings/standard-logging-controls/controls.json
+            ${{ runner.temp }}/java-guest-bindings/standard-logging-controls/reference-bindings/
+            ${{ runner.temp }}/java-guest-bindings/compiled/standard-logging-profile.json
             ${{ runner.temp }}/java-server-native/**
             ${{ runner.temp }}/java-guest-bindings/compiled/bindings/
             ${{ runner.temp }}/java-guest-bindings/compiled/component.wasm
