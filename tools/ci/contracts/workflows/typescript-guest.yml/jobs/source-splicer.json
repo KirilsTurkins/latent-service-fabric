@@ -46,6 +46,16 @@
         "run": "python3 tools/build_typescript_source_splicer.py --tools \"$RUNNER_TEMP/typescript-splicer-tools\" --output \"$RUNNER_TEMP/typescript-source-splicer\""
       },
       {
+        "name": "Freeze reusable source compiler products",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "typescript-source-splicer-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-source-splicer/*.json\n${{ runner.temp }}/typescript-source-splicer/splicer/**\n${{ runner.temp }}/typescript-source-splicer/licenses/**\n",
+          "retention-days": 7
+        }
+      },
+      {
         "if": "always()",
         "name": "Retain actual source compiler products and failed attempts",
         "uses": "actions/upload-artifact",
@@ -61,7 +71,7 @@
   },
   "jobId": "source-splicer",
   "kind": "job",
-  "reviewReason": "Build the exact authenticated async import compiler through locked upstream Cargo and JCO; retain actual products and failures under a new twenty minute bound",
+  "reviewReason": "Retain original source compiler commands and failure evidence while freezing reusable exact-run compiler inputs",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

@@ -34,6 +34,14 @@ derived sources and every captured compiler file after the build. The resulting
 `splicer-input.json` binds the generated JS/Wasm bytes and successful command
 receipts. The independent 20-minute source-splicer CI job executes this build;
 its products remain compiler inputs until the signed runtime matrix passes.
+The native engine builder accepts this completed build explicitly through
+`--source-splicer-build`. It verifies the input and source/build/transpilation
+receipts before and after compilation and binds `compilerSplicerInputDigest` in
+the import engine envelope. This selection adds only the two internal import
+bridge sources. The original native TextCodec definitions remain selected by
+upstream CMake, with their source preimages and generated installation order
+checked. The existing clock-engine build still runs before this additional
+import-engine build; source compiler completion is a strict prerequisite.
 
 The pinned SpiderMonkey derivation exports `ActivationPromiseHooks.h` through
 its normal `js/src/moz.build` header list. The exact upstream build descriptor

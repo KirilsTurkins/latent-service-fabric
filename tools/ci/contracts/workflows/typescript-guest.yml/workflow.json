@@ -123,7 +123,7 @@
     "promise-library",
     "source-splicer"
   ],
-  "reviewReason": "Compose merged npm integrity and source-owned engine/splicer trigger sets with all permissions and concurrency unchanged; preserve the exact merged boundary job75-minute limit, Promise source job60-minute limit and new source compiler job20-minute limit.",
+  "reviewReason": "Preserve merged integrity and engine/splicer trigger union, unchanged permissions/concurrency, exact boundary job75-minute limit, Promise job60-minute limit and source compiler job20-minute limit; bind the import engine to the completed source compiler prerequisite.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

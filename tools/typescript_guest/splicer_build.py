@@ -61,6 +61,13 @@ def derive(source: Path) -> tuple[dict[str,bytes],dict]:
     return selected, record
 
 
+def recipe_paths() -> tuple[str,...]:
+    return ('tools/build_typescript_source_splicer.py','tools/typescript_guest/splicer_build.py',
+            'tools/typescript_guest/import_profile.py','tools/typescript_guest/promise_library.py',
+            'tools/typescript_guest/native_build.py','tools/typescript_guest/splicer_input.py',
+            *splicer_input.input_paths())
+
+
 def build(output: Path, tools: Path, *, node: str = 'node') -> dict:
     if sys.platform != 'linux':
         raise ValueError('typescript-source-splicer-linux-builder-required')
@@ -74,14 +81,11 @@ def build(output: Path, tools: Path, *, node: str = 'node') -> dict:
     environment = build_environment(output)
     environment.update(CARGO_HOME=str(output/'cargo-home'),CARGO_TARGET_DIR=str(output/'target'),
         CARGO_BUILD_JOBS='2',CARGO_INCREMENTAL='0',RUSTUP_TOOLCHAIN='1.97.1')
-    recipe_paths = ('tools/build_typescript_source_splicer.py','tools/typescript_guest/splicer_build.py',
-                    'tools/typescript_guest/import_profile.py','tools/typescript_guest/promise_library.py',
-                    'tools/typescript_guest/native_build.py',
-                    'tools/typescript_guest/splicer_input.py',*splicer_input.input_paths())
+    recipe = recipe_paths()
     record = {'schemaVersion':'latent.typescript.source-splicer-build.v1','status':'in-progress',
         'scope':'source-built-compiler-input-only','qualification':'unknown','apiSupport':'not-evaluated',
         'limits':{'overallSeconds':900,'cargoSeconds':600,'transpileSeconds':180,'jobs':2},
-        'recipe':{name:file_identity(ROOT/name) for name in recipe_paths}}
+        'recipe':{name:file_identity(ROOT/name) for name in recipe}}
 
     def run(label,*command,seconds=90,cwd=output):
         remaining = min(seconds,deadline-time.monotonic())
@@ -143,7 +147,7 @@ def build(output: Path, tools: Path, *, node: str = 'node') -> dict:
                 read_file(source/'crates/spidermonkey-embedding-splicer/wit/spidermonkey-embedding-splicer.wit') != original_wit
                 or any(read_file(source/name)!=raw for name,raw in selected.items())):
             raise ValueError('typescript-source-splicer-original-or-derived-input-changed')
-        if record['recipe'] != {name:file_identity(ROOT/name) for name in recipe_paths}:
+        if record['recipe'] != {name:file_identity(ROOT/name) for name in recipe}:
             raise ValueError('typescript-source-splicer-recipe-changed')
         if tool_inputs != {name:file_identity(path) for name,path in (
                 ('jco-package',package),('jco-entry',jco),('compiler-lock',tools/'package-lock.json'))}:
