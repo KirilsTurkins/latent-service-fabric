@@ -180,7 +180,7 @@ def main() -> int:
         require(state.workspace(source_probe.helper.root_directory(), workspace_name, create=True) == node_root,
                 'explicit-source-node-workspace-mismatch')
         source_probe.stage_runtime(node_root, args.source_node)
-        front(label + '-tgo', 'tgo', '--project', application)
+        front(label + '-trust', 'trust', '--project', application)
         front(label + '-build', 'build', '--project', application, '--tool-root', installed)
         front(label + '-prepare-explicit-signed-profile', 'prepare-test', '--consent-test-fixtures',
               '--admission', 'signed-fixture', '--tool-root', installed)
@@ -268,10 +268,10 @@ raise SystemExit(main())
         review('updated')
         fixture.remove_original(inputs)
         tests('43/SDK/captured watch data')
-        offset, denied = await_event(offset, lambda value: value.get('code') == 'workspace-recipe-tdotnet-required',
-                                     'updated-recipe-tgo', 30)
-        report['updateBeforeTgo'] = denied
-        front('updated-explicit-tgo', 'tgo', '--project', application)
+        offset, denied = await_event(offset, lambda value: value.get('code') == 'workspace-recipe-trust-required',
+                                     'updated-recipe-trust', 30)
+        report['updateBeforeTrust'] = denied
+        front('updated-explicit-trust', 'trust', '--project', application)
         offset, denied = await_event(offset, lambda value: value.get('code') == 'signed-test-build-changed-use-new-workspace',
                                      'updated-signature-boundary')
         report['updateBeforeNewSignedWorkspace'] = denied
@@ -284,10 +284,10 @@ raise SystemExit(main())
         capsule.write_text(fixture.application_source(removed=True), encoding='utf-8')
         tests('removed/SDK')
         review('removed')
-        offset, denied = await_event(offset, lambda value: value.get('code') == 'workspace-recipe-tdotnet-required',
-                                     'removed-recipe-tgo', 30)
-        report['removeBeforeTgo'] = denied
-        front('removed-explicit-tgo', 'tgo', '--project', application)
+        offset, denied = await_event(offset, lambda value: value.get('code') == 'workspace-recipe-trust-required',
+                                     'removed-recipe-trust', 30)
+        report['removeBeforeTrust'] = denied
+        front('removed-explicit-trust', 'trust', '--project', application)
         offset, denied = await_event(offset, lambda value: value.get('code') == 'signed-test-build-changed-use-new-workspace',
                                      'removed-signature-boundary')
         report['removeBeforeNewSignedWorkspace'] = denied

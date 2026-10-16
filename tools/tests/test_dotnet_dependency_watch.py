@@ -98,3 +98,24 @@ class DotnetDependencyWatchFixture(unittest.TestCase):
         self.assertIs(fence.call(lambda: receipt), receipt)
         with self.assertRaisesRegex(ValueError, 'already-attempted-no-retry'):
             fence.call(lambda: self.fail('replayed confirmed mutation'))
+
+    def test_watch_delegation_operations_exist_in_maintained_frontend(self):
+        import argparse
+        import ast
+        import inspect
+        from tools import qualify_dotnet_dependency_watch as programme
+        from tools.dev_workflow.cli import parser
+        root = parser()
+        groups = next(row for row in root._actions if isinstance(row, argparse._SubParsersAction))
+        commands = next(row for row in groups.choices['dev']._actions
+            if isinstance(row, argparse._SubParsersAction)).choices
+        tree = ast.parse(inspect.getsource(programme))
+        operations = [row.args[1].value for row in ast.walk(tree)
+            if isinstance(row, ast.Call) and isinstance(row.func, ast.Name) and row.func.id == 'front'
+            and len(row.args) > 1 and isinstance(row.args[1], ast.Constant)]
+        self.assertTrue(operations)
+        self.assertLessEqual(set(operations), set(commands))
+        self.assertIn('trust', operations)
+        codes = {row.value for row in ast.walk(tree) if isinstance(row, ast.Constant)
+            and isinstance(row.value, str) and row.value.startswith('workspace-recipe-')}
+        self.assertEqual(codes, {'workspace-recipe-trust-required'})
