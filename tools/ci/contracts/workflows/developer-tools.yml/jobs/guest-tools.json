@@ -78,6 +78,27 @@
       },
       {
         "if": "matrix.language == 'typescript'",
+        "name": "Prepare selected TypeScript captured-compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install -y bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'typescript'",
+        "name": "Exercise delivered TypeScript dependency review and signed watch",
+        "run": "python -m unittest tools.tests.test_typescript_dependency_watch\nsudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_typescript_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/typescript-dependency-watch\" --qualifier tools/qualify_typescript_dependency_watch.py --fixture tools/typescript_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py\n"
+      },
+      {
+        "if": "always() && matrix.language == 'typescript'",
+        "name": "Retain public TypeScript dependency watch receipts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-dependency-watch-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-dependency-watch/public-qualification.json\n${{ runner.temp }}/typescript-dependency-watch/ci-account.json\n${{ runner.temp }}/typescript-dependency-watch/initial-build.stdout\n${{ runner.temp }}/typescript-dependency-watch/initial-build.stderr\n",
+          "retention-days": 7
+        }
+      },
+      {
+        "if": "matrix.language == 'typescript'",
         "uses": "actions/setup-node",
         "with": {
           "node-version": "24.19.0"
@@ -295,7 +316,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Preserve all required compiler, fixture and artifact commands and original conditions; qualify the explicit Java diagnostic variant and retain the reviewed cache action update.",
+  "reviewReason": "Add explicit TypeScript compiler containment and signed dependency watch inside unchanged60min matrix; retain every original command",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

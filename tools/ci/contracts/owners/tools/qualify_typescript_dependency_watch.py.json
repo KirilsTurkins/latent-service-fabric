@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_typescript_dependency_watch.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review explicit digest-bound watch source fixture; compiler and signing use unchanged delivered controller",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "d2de2018e29c87dcfa83283e3f02e2dee874a6f447801873cddd373b1ac493bf"
+}
