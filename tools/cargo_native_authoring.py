@@ -92,6 +92,52 @@ def sdk_configuration(value):
             'profile': value.get('profile'), 'maintained': {name: maintained.get(name) for name in ('wit-bindgen', 'latent-guest')}}
 
 
+def workspace_sections(raw: bytes) -> tuple[str, str]:
+    """Separate explicit workspace tables; final semantic equality is mandatory."""
+    workspace, remainder, selected = [], [], False
+    for line in raw.decode('utf-8').splitlines(keepends=True):
+        if re.match(r'^\s*\[', line):
+            try:
+                header = tomllib.loads(line)
+            except tomllib.TOMLDecodeError:
+                pass
+            else:
+                selected = set(header) == {'workspace'}
+        (workspace if selected else remainder).append(line)
+    return ''.join(workspace), ''.join(remainder)
+
+
+def preserve_workspace_recipe(original: bytes, selected: bytes) -> bytes:
+    """Undo only Cargo remove's pruning of unchanged workspace dependencies."""
+    before, after = tomllib.loads(original.decode()), tomllib.loads(selected.decode())
+    prior, current = before.get('workspace', {}), after.get('workspace', {})
+    if prior == current:
+        return selected
+    if not isinstance(prior, dict) or not isinstance(current, dict):
+        raise DependencyError('cargo-native-authoring-mutated-sdk-recipe')
+    prior_dependencies, current_dependencies = prior.get('dependencies', {}), current.get('dependencies', {})
+    if (not isinstance(prior_dependencies, dict) or not isinstance(current_dependencies, dict)
+            or not prior_dependencies or len(current_dependencies) >= len(prior_dependencies)
+            or any(name not in prior_dependencies or prior_dependencies[name] != value
+                   for name, value in current_dependencies.items())
+            or {name: value for name, value in prior.items() if name != 'dependencies'}
+               != {name: value for name, value in current.items() if name != 'dependencies'}):
+        raise DependencyError('cargo-native-authoring-mutated-sdk-recipe')
+    expected = dict(after, workspace=prior)
+    if sdk_configuration(expected) != sdk_configuration(before):
+        raise DependencyError('cargo-native-authoring-mutated-sdk-recipe')
+    original_workspace, _ = workspace_sections(original)
+    _, selected_remainder = workspace_sections(selected)
+    restored = (selected_remainder.rstrip() + '\n\n' + original_workspace.rstrip() + '\n').encode()
+    try:
+        value = tomllib.loads(restored.decode())
+    except tomllib.TOMLDecodeError:
+        raise DependencyError('cargo-native-authoring-workspace-preservation-unsupported-layout') from None
+    if value != expected:
+        raise DependencyError('cargo-native-authoring-workspace-preservation-semantic-mismatch')
+    return restored
+
+
 def author(project: Path, operation: str, *, identity: str | None = None, version: str | None = None,
            local: Path | None = None, section='dependencies', target: str | None = None,
            features: list[str] | None = None, no_default_features=False, optional=False,
@@ -196,6 +242,8 @@ def author(project: Path, operation: str, *, identity: str | None = None, versio
             run_bounded([str(cargo), 'generate-lockfile', *manifest], owned, environment, 600, 4 * 1024 * 1024)
             reverse = {mapped: source for source, mapped in mappings.items()}
             raw_manifest = native.selected_manifest(read_bytes(work / 'Cargo.toml'), work / 'Cargo.toml', app / 'Cargo.toml', reverse)
+            if operation == 'remove':
+                raw_manifest = preserve_workspace_recipe(before['Cargo.toml'], raw_manifest)
             selected_configuration = tomllib.loads(raw_manifest.decode())
             if sdk_configuration(selected_configuration) != sdk_configuration(configuration):
                 raise DependencyError('cargo-native-authoring-mutated-sdk-recipe')

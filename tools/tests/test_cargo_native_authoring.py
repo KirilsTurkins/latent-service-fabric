@@ -198,3 +198,64 @@ class CargoNativeAuthoring(unittest.TestCase):
         finally:
             os.chdir(previous)
         self.assertEqual(self.commands, [])
+
+
+class WorkspaceRecipePreservation(unittest.TestCase):
+    original = b'''[package]
+name="app"
+version="1.0.0"
+[workspace]
+[workspace.package]
+license="Apache-2.0"
+[workspace.dependencies]
+serde={version="=1.0.229",features=["derive"]}
+[workspace.dependencies."wit-bindgen"]
+version="=0.62.0"
+[profile.release]
+panic="abort"
+[dependencies]
+outside={path="../outside",version="0.1.0"}
+'''
+    removed = b'''[package]
+name="app"
+version="1.0.0"
+[workspace]
+[workspace.package]
+license="Apache-2.0"
+[profile.release]
+panic="abort"
+[dependencies]
+'''
+
+    def test_only_pruned_workspace_entries_are_restored_and_native_removal_is_preserved(self):
+        restored = locking.preserve_workspace_recipe(self.original, self.removed)
+        value = tomllib.loads(restored.decode())
+        self.assertEqual(value['workspace'], tomllib.loads(self.original.decode())['workspace'])
+        self.assertEqual(locking.sdk_configuration(value), locking.sdk_configuration(tomllib.loads(self.original.decode())))
+        self.assertNotIn('outside', value['dependencies'])
+        self.assertIn(b'[workspace.dependencies."wit-bindgen"]\nversion="=0.62.0"', restored)
+
+    def test_unchanged_workspace_never_rewrites_native_manifest(self):
+        self.assertIs(locking.preserve_workspace_recipe(self.original, self.original), self.original)
+
+    def test_new_or_modified_workspace_and_sdk_changes_are_not_repaired(self):
+        candidates = [
+            self.removed.replace(b'[workspace.package]', b'[workspace.dependencies]\nunapproved="1.0.0"\n[workspace.package]'),
+            self.removed.replace(b'[workspace.package]', b'[workspace.dependencies]\nserde="=9.9.9"\n[workspace.package]'),
+            self.removed.replace(b'Apache-2.0', b'changed'),
+            self.removed.replace(b'panic="abort"', b'panic="unwind"'),
+            self.removed.replace(b'name="app"', b'name="changed"'),
+        ]
+        for selected in candidates:
+            with self.subTest(selected=selected), self.assertRaisesRegex(DependencyError, 'mutated-sdk-recipe'):
+                locking.preserve_workspace_recipe(self.original, selected)
+
+    def test_inline_layout_and_header_like_string_content_cannot_change_unrelated_semantics(self):
+        original = b'workspace={dependencies={serde="=1.0.229"}}\n[package]\nname="app"\n'
+        selected = b'workspace={}\n[package]\nname="app"\n'
+        with self.assertRaisesRegex(DependencyError, 'workspace-preservation'):
+            locking.preserve_workspace_recipe(original, selected)
+        original = self.original.replace(b'license="Apache-2.0"', b'license="Apache-2.0"\n[workspace.metadata]\ntext="""\n[dependencies]\n"""')
+        selected = self.removed.replace(b'license="Apache-2.0"', b'license="Apache-2.0"\n[workspace.metadata]\ntext="""\n[dependencies]\n"""')
+        with self.assertRaisesRegex(DependencyError, 'workspace-preservation'):
+            locking.preserve_workspace_recipe(original, selected)

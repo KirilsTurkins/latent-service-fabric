@@ -21,6 +21,12 @@ Authoring supports an explicit dependency section, target, features, optional/de
 
 `add`, `update`, `remove` and `lock` preserve the previous accepted application capture. A changed declaration/lock invalidates that capture until another resolve and exact review. After editing, repeat the capture/review sequence; frontend `test` and `watch` verify the accepted bytes and retain explicit recipe trust. Apply the same `--registry-config` to authoring and resolution for a private registry. Adding build dependencies still requires separate executable-tool approval at compilation.
 
+The pinned Cargo `remove` command also prunes unused workspace dependencies.
+Authoring retains the original immutable SDK workspace sections when Cargo
+only deletes unchanged entries. It verifies the complete restored TOML meaning
+before publication and still rejects new or modified workspace entries, SDK
+settings and unrelated semantic changes. Ambiguous layouts fail closed.
+
 Supply private endpoint configuration outside the project with `--registry-config`.
 Select credentials separately through a declared alias's environment slot, such as
 `CARGO_REGISTRIES_TEAM_TOKEN`. For a private certificate authority, the same
