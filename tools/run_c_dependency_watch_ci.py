@@ -71,7 +71,7 @@ def run(payload: Path, supplied: Path, output: Path, *, qualifier: Path, fixture
         # that namespace. No compiler/feed can reach an original network source.
         result = process.run(['/usr/bin/unshare', '--net', '/bin/sh', '-c',
             '/usr/sbin/ip link set lo up && exec "$@"', 'c-watch-offline', *command],
-            home, timeout=2450, graceful=30, maximum=262144)
+            home, timeout=2450, graceful=15, maximum=262144)
     finally:
         output.mkdir(mode=0o755)
         public = observed / 'public-qualification.json'

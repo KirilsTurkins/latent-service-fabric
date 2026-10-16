@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_c_dependency_watch_ci.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind every explicit C watch fixture to reviewed source fingerprints while retaining all previous CI commands and guards",
+  "reviewReason": "Use existing fifteen second process graceful termination ceiling before offline C watch starts without changing any product deadline or guard",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e178f96a9fa955644fe542dd8e17bc023eadca43bf2b97a80abec849b4721eea"
+  "sha256": "c7a3a2d9e714e8ee280ff562d6cc4ab957ba48d7acbcdd681db667fd9803910b"
 }
