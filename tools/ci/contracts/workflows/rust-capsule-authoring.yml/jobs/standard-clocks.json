@@ -1,0 +1,79 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Rebuilt Rust standard clocks and signed grants",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "name": "Restore compiled Rust dependencies",
+        "uses": "Swatinem/rust-cache",
+        "with": {
+          "cache-all-crates": false,
+          "cache-bin": false,
+          "cache-on-failure": false,
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "name": "Verify standard source and executable ownership controls",
+        "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_rust_standard_clock_profile tools.tests.test_rust_standard_tls_profile tools.tests.test_rust_standard_sysroot_source tools.tests.test_rust_standard_sysroot_build tools.tests.test_rust_standard_clock_gate\ncargo fetch --locked\n"
+      },
+      {
+        "name": "Build the exact current signed clock test harness",
+        "run": "cargo test --locked -p latent-wasmtime --test clock_admission --no-run --message-format=json > \"$RUNNER_TEMP/rust-standard-clock-native.json\"\ncargo test --locked -p latent-wasmtime --test clock_admission -- --test-threads=1\n"
+      },
+      {
+        "name": "Execute rebuilt ordinary SystemTime and Instant components",
+        "run": "python3 tools/qualify_rust_standard_clocks.py --cargo-inventory \"$RUNNER_TEMP/rust-standard-clock-native.json\" --native-target \"$GITHUB_WORKSPACE/target\" --rust-bin \"$(dirname \"$(rustup which rustc)\")\" --wasm-tools \"$(command -v wasm-tools)\" --output \"$RUNNER_TEMP/rust-standard-clocks\"\n"
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded standard clock evidence including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-standard-clocks-${{ github.run_id }}",
+          "path": "${{ runner.temp }}/rust-standard-clock-native.json\n${{ runner.temp }}/rust-standard-clocks/report.json\n${{ runner.temp }}/rust-standard-clocks/**/qualification.json\n${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json\n${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json\n${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json\n${{ runner.temp }}/rust-standard-clocks/**/component.wasm\n${{ runner.temp }}/rust-standard-clocks/**/project/**\n${{ runner.temp }}/rust-standard-clocks/**/logs/**\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 25
+  },
+  "jobId": "standard-clocks",
+  "kind": "job",
+  "reviewReason": "Add authenticated rebuilt ordinary SystemTime/Instant signed grant, two fresh Store, revocation and owner-retirement gate; preserve existing authoring commands, source controls, jobs, limits, cache policy and historical CI obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml"
+}

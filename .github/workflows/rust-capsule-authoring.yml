@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/rust-capsule-authoring.yml'
       - 'sdk/rust-guest/**'
+      - 'sdk/rust-standard-runtime/**'
       - 'sdk/transaction-contract/**'
       - 'crates/**'
       - 'apps/**'
@@ -20,6 +21,7 @@ on:
     paths:
       - '.github/workflows/rust-capsule-authoring.yml'
       - 'sdk/rust-guest/**'
+      - 'sdk/rust-standard-runtime/**'
       - 'sdk/transaction-contract/**'
       - 'crates/**'
       - 'apps/**'
@@ -49,6 +51,64 @@ env:
   CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
 
 jobs:
+  standard-clocks:
+    name: Rebuilt Rust standard clocks and signed grants
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Verify standard source and executable ownership controls
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -m unittest tools.tests.test_rust_standard_clock_profile tools.tests.test_rust_standard_tls_profile tools.tests.test_rust_standard_sysroot_source tools.tests.test_rust_standard_sysroot_build tools.tests.test_rust_standard_clock_gate
+          cargo fetch --locked
+      - name: Build the exact current signed clock test harness
+        run: |
+          cargo test --locked -p latent-wasmtime --test clock_admission --no-run --message-format=json > "$RUNNER_TEMP/rust-standard-clock-native.json"
+          cargo test --locked -p latent-wasmtime --test clock_admission -- --test-threads=1
+      - name: Execute rebuilt ordinary SystemTime and Instant components
+        run: |
+          python3 tools/qualify_rust_standard_clocks.py --cargo-inventory "$RUNNER_TEMP/rust-standard-clock-native.json" --native-target "$GITHUB_WORKSPACE/target" --rust-bin "$(dirname "$(rustup which rustc)")" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/rust-standard-clocks"
+      - name: Retain bounded standard clock evidence including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rust-standard-clocks-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/rust-standard-clock-native.json
+            ${{ runner.temp }}/rust-standard-clocks/report.json
+            ${{ runner.temp }}/rust-standard-clocks/**/qualification.json
+            ${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json
+            ${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json
+            ${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json
+            ${{ runner.temp }}/rust-standard-clocks/**/component.wasm
+            ${{ runner.temp }}/rust-standard-clocks/**/project/**
+            ${{ runner.temp }}/rust-standard-clocks/**/logs/**
+          if-no-files-found: warn
+          retention-days: 3
   authoring:
     name: Standalone Rust capsule authoring
     runs-on: ubuntu-24.04
