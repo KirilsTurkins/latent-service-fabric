@@ -500,6 +500,10 @@ jobs:
           PY
           python3 tools/phase2_gate_resource.py --cli "${resource_bin}/latent" --node "${resource_bin}/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
           python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+      - name: Fetch locked Angular target dependencies
+        if: matrix.lane == 'angular-t1' && needs.profile.outputs.renderer == 'true'
+        timeout-minutes: 5
+        run: cargo fetch --locked --target wasm32-unknown-unknown
       - name: Prepare fresh actual Angular package for T1
         if: matrix.lane == 'angular-t1' && needs.profile.outputs.renderer == 'true'
         run: |
