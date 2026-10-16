@@ -49,3 +49,30 @@ The previous storage-interrupted local attempts remain retained separately.
 Engine linkage, compiler splicer identity and signed ordinary-node runtime/HTTP
 cases remain required by [#745](https://github.com/KirilsTurkins/latent-service-fabric/issues/745)
 and [#691](https://github.com/KirilsTurkins/latent-service-fabric/issues/691).
+
+The subsequent maintained `tools/build_typescript_native_engine.py` consumes
+that successful original library receipt and authenticates its exact archive,
+library, recipe and normal installed-header identities. It captures the exact
+ComponentizeJS and StarlingMonkey source carriers, generates the current jobs
+and clocks C ABI with the pinned generator, and applies the existing reviewed
+activation and clock source derivations. It combines the original library with
+the exact supporting object list from the pinned upstream CMake source. Headers
+are materialized into private staging; the original library output is unchanged.
+
+The normal upstream CMake configure/build produces `starlingmonkey_embedding`
+in Release mode, with the upstream debugger and Weval options disabled. The
+upstream Corrosion import additionally requires the existing Cargo lock.
+Configure is limited to 600 seconds, build to 900 seconds with two jobs, and the
+whole engine operation to 1200 seconds. The same existing 60-minute source job
+runs both stages; the original library and application compiler limits remain
+intact. All normal command output, failure receipts and the generated engine
+input envelope remain separate from runtime acceptance.
+
+An actual source-only control verified both original carriers, all source
+preimages, the exact fresh clock-binding pins and the 22 original supporting
+object paths. Four additional controls cover object-list injection, retained
+original header/configuration bytes, deadlines and source-carrier preservation.
+Normal Linux engine linkage has not yet passed. Even an emitted validated core
+is an explicitly unqualified Promise/clock compiler input. Source-built async
+import splicing, ordinary signed lifecycle/drain cases, and the default Fetch
+and HTTP consumer matrix remain required; this stage does not supply them.

@@ -41,6 +41,8 @@
           "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
           "tools/build_typescript_promise_library.py",
+          "tools/build_typescript_native_engine.py",
+          "tools/tests/test_typescript_native_build.py",
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
           "tools/*rust_capsule*.py",
@@ -84,6 +86,8 @@
           "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
           "tools/build_typescript_promise_library.py",
+          "tools/build_typescript_native_engine.py",
+          "tools/tests/test_typescript_native_build.py",
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
           "tools/*rust_capsule*.py",
@@ -110,7 +114,7 @@
     "boundary",
     "promise-library"
   ],
-  "reviewReason": "Retain the existing TypeScript qualification job, all path triggers and75-minute limit; add separate finite actual SpiderMonkey Promise-hook source compilation with immutable upstream identities and no API qualification claim.",
+  "reviewReason": "Add only native engine builder and input-control triggers to the existing source job; retain all required jobs and original library/application commands and limits",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
