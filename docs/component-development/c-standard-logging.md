@@ -34,6 +34,17 @@ source control; it did not execute Wasm or qualify namespace containment or
 signed runtime behavior. See the [closed-adapter evidence](../testing/evidence/c-standard-logging-closed-adapter-2026-10-16.json).
 Fresh maintained signed execution remains required.
 
+The next [signed-node attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38860192883/job/116840734073)
+compiled, validated and signed the logging component. Its first missing-grant
+call was correctly rejected before guest admission with zero fuel, memory and
+log-byte consumption. The fixture had incorrectly expected an initializer to
+execute without that grant. The corrected programme requires the original
+pre-admission denial, then checks the ordinary initializer after explicit
+authorization. It does not change the adapter or admission rules; fresh signed
+execution of the corrected programme is pending. The
+[retained admission receipt](../testing/evidence/c-standard-logging-admission-failed-2026-10-16.json)
+records the component identity, actual rejection and source-control boundary.
+
 Set `runtimeProfile` to `c-standard-stdio-v1` in `capsule-project.json` and in any
 captured dependency selection. Resolve and review the new lock, then use the
 normal build, signing and admission workflow. The operator must separately
@@ -73,9 +84,10 @@ build host. No logging handle survives activation retirement.
 The contributor fixture captures an independently named outside-project C
 library, removes its original files and compiles from verified captured bytes.
 Its default-priority initializer also calls ordinary `printf`; a separate
-missing-grant invocation must observe its native failure, rather than buffered
-success. Its ordinary `printf` path must fail without authority and work after explicit
-operator policy. Eleven additional actual component probes cover descriptor,
+missing-grant invocation must be rejected before guest execution. After an
+explicit operator grant, a separate invocation must observe the initializer's
+accepted ordinary write. The ordinary `printf` entry likewise requires authority.
+Eleven additional actual component probes cover descriptor,
 UTF-8, vector, size, memory, empty-write, budget, seek and stderr behavior;
 subsequent fresh invocations and normal node shutdown remain mandatory. The
 fixture explicitly selects a 16-KiB log budget while preserving its existing

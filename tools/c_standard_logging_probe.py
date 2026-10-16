@@ -22,7 +22,7 @@ __attribute__((constructor)) static void ordinary_library_initializer(void) {
     initializer_accepted = printf("ordinary library initializer") >= 0;
 }
 int standard_log_probe(unsigned mode) {
-    if (mode == 12) return !initializer_accepted;
+    if (mode == 12) return initializer_accepted;
     if (!initializer_accepted) return 0;
     unsigned char bytes[4097]; memset(bytes, 'a', sizeof(bytes));
     __wasi_ciovec_t vector = {.buf = bytes, .buf_len = 1};
@@ -100,7 +100,7 @@ def prepare(project: Path) -> dict:
         raise ValueError('c-standard-logging-requires-original-greeting-template')
     branches = ''.join(f'    if (name->len == {len("log:" + name)} && memcmp(name->ptr, "log:{name}", name->len) == 0) mode = {i};\n'
                        for i, name in enumerate(CASES, 1))
-    branches += '    if (name->len == 22 && memcmp(name->ptr, "log:initializer-denied", name->len) == 0) mode = 12;\n'
+    branches += '    if (name->len == 15 && memcmp(name->ptr, "log:initializer", name->len) == 0) mode = 12;\n'
     body = '\n    static unsigned calls;\n    unsigned mode = 0;\n' + branches + '''
     if (++calls != 1 || !standard_log_probe(mode)) {
         probe_string_free(name); lsf_text_error(error, "standard-logging-probe-failed"); return false;
@@ -117,15 +117,16 @@ def prepare(project: Path) -> dict:
 
 
 def grant_and_probe(client, node, fixture, targets, publications, result):
+    from tools.c_standard_facilities_probe import require_denied_before_guest
     from tools.phase2_operator_process import require
     from tools.rust_capsule_node import assert_value, call, deploy, provider_idle
     target = targets['greeting']
-    initialization = call(client, target, 'greeting', 'greet', ['log:initializer-denied'], 'c-stdio-initializer-without-grant')
+    initialization = call(client, target, 'greeting', 'greet', ['log:initializer'], 'c-stdio-initializer-without-grant')
     result['invocations'].append(initialization)
-    assert_value(client, initialization, [{'ok': '1'}])
+    require_denied_before_guest(initialization)
     denied = call(client, target, 'greeting', 'greet', ['Ada'], 'c-stdio-without-log-grant')
     result['invocations'].append(denied)
-    assert_value(client, denied, [{'err': 'standard-logging-probe-failed'}], 3)
+    require_denied_before_guest(denied)
     policy = client.directory / 'standard-stdio-policy.json'
     capability = 'latent:log/log@0.1.0'
     write_json(policy, {'formatVersion': 1, 'tenant': 'examples', 'rules': [{
@@ -139,6 +140,10 @@ def grant_and_probe(client, node, fixture, targets, publications, result):
         generation=str(target['generation']), grants=[{'capability': capability, 'policy': 'standard-stdio'}])
     targets['greeting'] = target
     result['cStandardLoggingGrant'] = {'capability': capability, 'policy': 'standard-stdio'}
+    initialization = call(client, target, 'greeting', 'greet', ['log:initializer'], 'c-stdio-initializer-with-grant')
+    result['invocations'].append(initialization)
+    assert_value(client, initialization, [{'ok': '1'}])
+    result['providerIdle'].append(provider_idle(client))
     for ordinal, name in enumerate(CASES):
         row = call(client, target, 'greeting', 'greet', ['log:' + name], 'c-stdio-' + str(ordinal))
         result['invocations'].append(row)
