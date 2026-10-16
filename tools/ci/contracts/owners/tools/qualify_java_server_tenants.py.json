@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_server_tenants.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bounded normal server compiler and signed two-tenant TLS owner with exact five default products and original 64MiB 1Bfuel120s declarations",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "0c88108f2c1722ad4e4e07a12b4335ae797556dc9745c5c5120f41d1a05ba829"
+}

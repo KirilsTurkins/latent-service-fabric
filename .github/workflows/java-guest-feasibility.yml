@@ -188,6 +188,15 @@ jobs:
         run: |
           set -o pipefail
           python3 tools/qualify_java_server_lifecycle_suite.py --output "$RUNNER_TEMP/java-server-lifecycle" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-server-lifecycle.log"
+      - name: Qualify shared-node Java state and credentials in two admitted tenants
+        run: |
+          set -euo pipefail
+          python3 tools/qualify_java_server_tenants.py \
+            --output "$RUNNER_TEMP/java-server-tenants" \
+            --native-directory "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
+            --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-server-tenants.log"
       - name: Qualify exact-approved contained processors and signed generated Java source
         run: |
           set -euo pipefail
@@ -264,6 +273,20 @@ jobs:
             ${{ runner.temp }}/java-server-lifecycle/build-*/logs/**
             ${{ runner.temp }}/java-server-lifecycle/build-*/component.wasm
             ${{ runner.temp }}/java-server-lifecycle/execution/**/*.json
+            ${{ runner.temp }}/java-server-tenants.log
+            ${{ runner.temp }}/java-server-tenants/qualification.json
+            ${{ runner.temp }}/java-server-tenants/signed/release-set.json
+            ${{ runner.temp }}/java-server-tenants/build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/java-server-tenants/build/BUILD-FAILED.json
+            ${{ runner.temp }}/java-server-tenants/build/source-inputs.json
+            ${{ runner.temp }}/java-server-tenants/build/recipe-inputs.json
+            ${{ runner.temp }}/java-server-tenants/build/server-source.json
+            ${{ runner.temp }}/java-server-tenants/build/server-profile.json
+            ${{ runner.temp }}/java-server-tenants/build/compiler-inputs.json
+            ${{ runner.temp }}/java-server-tenants/build/compiler-logs/**
+            ${{ runner.temp }}/java-server-tenants/build/component.wasm
+            ${{ runner.temp }}/java-server-tenants/logs/**
+            ${{ runner.temp }}/java-server-tenants/execution/**/*.json
             ${{ runner.temp }}/java-aggregate-encoding/vectors.log
             ${{ runner.temp }}/java-transaction-diagnostic-schemas.tar.gz
             ${{ runner.temp }}/java-aggregate-encoding/diagnostic-vectors.log
