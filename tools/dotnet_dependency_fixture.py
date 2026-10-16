@@ -115,15 +115,40 @@ public partial class CapturedPayload {
 }
 '''
     source.write_bytes(after)
-    declaration = project / 'Capsule.csproj'
-    declaration.write_bytes(declaration.read_bytes().replace(b'</Project>',
-        ('<ItemGroup><PackageReference Include="' + identity + '" Version="[1.0.0]" />'
-         '<PackageReference Include="' + application + '" Version="[' + version + ']" /></ItemGroup></Project>').encode()))
+    from tools import dotnet_dependency_authoring as authoring
+    authoring.edit(project, 'add', identity=identity, version='1.0.0')
+    authoring.edit(project, 'add', identity=application, version=version)
     candidate = project / 'target/qualification.candidate.json'
-    candidate.parent.mkdir()
+    candidate.parent.mkdir(exist_ok=True)
     lock = resolve(project, candidate, dotnet=compiler.dotnet, tools=tools,
         policy={'sources': [{'name': 'developer', 'path': str(feed), 'patterns': [identity]}]})
-    (project / LOCK).write_bytes(canonical(lock) + b'\n')
+    reviewed = authoring.review(project, candidate, digest(candidate.read_bytes()))
+    if reviewed['status'] != 'reviewed' or authoring.status(project)['status'] != 'verified':
+        raise ValueError('normal NuGet exact review did not accept the captured graph')
+    # Actual captured native graph: declaration edits must preserve the accepted
+    # lock while making it unusable; only exact reviewed source restoration revives it.
+    declaration = project / 'Capsule.csproj'
+    reviewed_source, reviewed_lock = declaration.read_bytes(), (project / LOCK).read_bytes()
+    controls = []
+    from tools.application_dependency_store import DependencyError
+    for operation, selected_version in (('update', '2.0.0'), ('remove', None)):
+        try:
+            authoring.edit(project, operation, identity=identity, version=selected_version)
+            try:
+                authoring.status(project)
+            except DependencyError as error:
+                if str(error) != 'dependency-native-lock-drift':
+                    raise
+            else:
+                raise ValueError('changed NuGet declaration reused an accepted native graph')
+            if (project / LOCK).read_bytes() != reviewed_lock:
+                raise ValueError('NuGet dependency editing replaced the accepted lock')
+            controls.append({'operation': operation, 'acceptedLockPreserved': True,
+                'staleGraphRejected': True, 'compilerExecution': False})
+        finally:
+            declaration.write_bytes(reviewed_source)
+        if authoring.status(project)['status'] != 'verified':
+            raise ValueError('exact reviewed NuGet declarations did not restore verification')
     selected = {row['metadata']['package'] for row in lock['artifacts']}
     if not {identity.lower(), application.lower(), *(name.lower() for name in transitive)} <= selected:
         raise ValueError('native NuGet qualification graph did not capture actual transitive/local packages')
@@ -143,4 +168,7 @@ public partial class CapturedPayload {
         'declaredNoncryptoEntropy': 'latent:random/random@0.1.0',
         'sourceDigest': digest(source.read_bytes()), 'offlineOriginals': 'unavailable-after-capture',
         'nativeGraphDigest': digest((project / 'nuget-resolved.lock.json').read_bytes()),
-        'preparationCommands': commands.records}
+        'preparationCommands': commands.records,
+        'authoringWorkflow': {'commands': ['add', 'resolve', 'review-lock', 'dependencies'],
+            'exactCandidateDigest': reviewed['candidateDigest'], 'declarationChanges': controls,
+            'exactReviewedSourceRestored': True, 'acceptedLockDigest': digest(reviewed_lock)}}

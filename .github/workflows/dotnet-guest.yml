@@ -16,6 +16,7 @@ on:
       - 'tools/dotnet_guest/**'
       - 'tools/dotnet_capsule.py'
       - 'tools/dotnet_application_dependencies.py'
+      - 'tools/dotnet_dependency_authoring.py'
       - 'tools/dotnet_dependency_fixture.py'
       - 'tools/dotnet_compiler_isolation.py'
       - 'tools/application_dependenc*.py'
@@ -29,6 +30,7 @@ on:
       - 'tools/tests/test_dotnet_http_errors.py'
       - 'tools/probe_dotnet_http_errors.py'
       - 'tools/tests/test_dotnet_application_dependencies.py'
+      - 'tools/tests/test_dotnet_dependency_authoring.py'
       - 'docs/component-development/dotnet-authoring.md'
       - 'docs/component-development/dotnet-dependencies.md'
       - 'crates/latent-signing/**'
@@ -152,6 +154,8 @@ jobs:
           python3 tools/probe_dotnet_http_errors.py \
             --tools "$RUNNER_TEMP/dotnet-authoring-tools" \
             --output "$RUNNER_TEMP/dotnet-http-error-port"
+      - name: Test exact NuGet authoring and transactional review
+        run: python3 -m unittest tools.tests.test_dotnet_dependency_authoring
       - name: Test captured NuGet selection and compiler isolation
         run: |
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_dotnet_application_dependencies tools.tests.test_captured_compiler_isolation

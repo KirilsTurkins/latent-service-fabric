@@ -80,6 +80,19 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
     return directory
 
 
+def validate_sdk_inputs(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
+    lock = decode_json(files["sdk-lock.json"])
+    if (not isinstance(lock, dict) or set(lock) != {"formatVersion", "language", "sdk", "template"}
+            or type(lock["formatVersion"]) is not int or lock["formatVersion"] != 1 or lock["language"] != "dotnet"):
+        raise ValueError("unsupported C# SDK lock")
+    vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
+    if json.loads(inventory(vendor)) != lock["sdk"]:
+        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    if files.get("global.json") != vendor["sdk/dotnet-guest/global.json"]:
+        raise ValueError("application .NET SDK version differs from its pinned template")
+    return lock, vendor, tomllib.loads(vendor["tools/toolchain.toml"].decode())
+
+
 def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if not {"capsule-project.json", "sdk-lock.json", "src/Main.cs", "wit/world.wit"} <= files.keys():
         raise ValueError("incomplete C# capsule project")
@@ -93,12 +106,7 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
         raise ValueError("invalid capsule identity")
     if project["tenant"] is not None and not (isinstance(project["tenant"], str) and 0 < len(project["tenant"]) <= 512):
         raise ValueError("invalid optional tenant identity")
-    if (not isinstance(lock, dict) or set(lock) != {"formatVersion", "language", "sdk", "template"}
-            or type(lock["formatVersion"]) is not int or lock["formatVersion"] != 1 or lock["language"] != "dotnet"):
-        raise ValueError("unsupported C# SDK lock")
-    vendor = {path.removeprefix("vendor/lsf/"): data for path, data in files.items() if path.startswith("vendor/lsf/")}
-    if json.loads(inventory(vendor)) != lock["sdk"]:
-        raise ValueError("vendored SDK changed; review and regenerate the SDK source lock")
+    lock, vendor, _pins = validate_sdk_inputs(files)
     captured = "latent.dependencies.json" in files
     if captured:
         from tools.application_dependencies import validate_manifest
