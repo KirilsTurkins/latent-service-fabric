@@ -69,6 +69,10 @@
           "tools/dotnet_capsule.py",
           "tools/dotnet_guest/**",
           "tools/dotnet_guest_bindings.py",
+          "tools/run_go_dependency_watch_ci.py",
+          "tools/qualify_go_dependency_watch.py",
+          "tools/go_dependency_watch_fixture.py",
+          "tools/tests/test_go_dependency_watch.py",
           "tools/go_capsule*.py",
           "tools/go_guest/**",
           "tools/typescript_capsule.py",
@@ -140,7 +144,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Keep every developer workflow gate and discover original explicit Java processor controls",
+  "reviewReason": "Add Go watch helper triggers preserving existing matrix, jobs and conditions",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/go_dependency_watch_fixture.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind exact outside Go module revisions passed as explicit CLI fixture",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "3cd9cf30a78472b2f8a01685ef7272184e3346ed2c338d3e2ce1daa157269bd1"
+}
