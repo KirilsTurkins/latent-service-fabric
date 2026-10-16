@@ -177,13 +177,26 @@ jobs:
         env:
           LSF_TRANSACTION_GUEST_ROOT: ${{ runner.temp }}/transaction-guests-rust
         run: |
+          set -o pipefail
           cargo --config .cargo/managed-guest.toml test --locked -p latent-wire --lib phase4::local_transaction::tests:: -- --ignored --test-threads=1 --nocapture 2>&1 | tee "$RUNNER_TEMP/transaction-guests-rust/node-dedup-executions.log"
+      - name: Preserve typed host-result uncertainty and original technical aborts
+        run: |
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-executor --lib tests::existing_report_constructors_keep_host_result_observed -- --exact
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-node --lib transaction_runtime::tests::technical_abort:: -- --test-threads=1 --nocapture
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-node --lib activation_runner::diagnostics::tests::codec_metadata_alone_never_classifies_guest_traps -- --exact
       - name: Execute complete outside-checkout authoring qualification
         run: |
           python3 tools/qualify_rust_capsules.py --output "$RUNNER_TEMP/rust-capsule-authoring"
       - name: Qualify captured Rust libraries and approved generators
         run: |
           python3 tools/qualify_rust_capsules.py --application-dependencies --output "$RUNNER_TEMP/rust-capsule-dependencies"
+      - name: Qualify authenticated private Cargo capture and offline signed execution
+        run: |
+          python3 tools/qualify_rust_private_dependencies.py \
+            --prepared-qualification "$RUNNER_TEMP/rust-capsule-dependencies" \
+            --output "$RUNNER_TEMP/rust-private-dependencies"
+      - name: Verify published private archive semantics with locked offline Cargo metadata
+        run: python3 -m unittest tools.tests.test_rust_private_archives
       - name: Exercise developer cache with the actual operator and compiled Rust package inputs
         run: >-
           python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent
@@ -200,6 +213,22 @@ jobs:
         with:
           name: rust-capsule-authoring-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/rust-private-dependencies/qualification.json
+            ${{ runner.temp }}/rust-private-dependencies/FAILED.json
+            ${{ runner.temp }}/rust-private-dependencies/capture.json
+            ${{ runner.temp }}/rust-private-dependencies/integrity-controls.json
+            ${{ runner.temp }}/rust-private-dependencies/registry-observations.json
+            ${{ runner.temp }}/rust-private-dependencies/native-lock-preparation.json
+            ${{ runner.temp }}/rust-private-dependencies/*-candidate.json.failed.json
+            ${{ runner.temp }}/rust-private-dependencies/logs/**
+            ${{ runner.temp }}/rust-private-dependencies/first/*.json
+            ${{ runner.temp }}/rust-private-dependencies/first/logs/**
+            ${{ runner.temp }}/rust-private-dependencies/first/component.wasm
+            ${{ runner.temp }}/rust-private-dependencies/offline-rebuild/*.json
+            ${{ runner.temp }}/rust-private-dependencies/offline-rebuild/logs/**
+            ${{ runner.temp }}/rust-private-dependencies/offline-rebuild/component.wasm
+            ${{ runner.temp }}/rust-private-dependencies/node/workflow.json
+            ${{ runner.temp }}/rust-private-dependencies/node/FAILED.json
             ${{ runner.temp }}/transaction-guests-rust/node-dedup-executions.log
             ${{ runner.temp }}/transaction-guests-rust/**/report.json
             ${{ runner.temp }}/transaction-guests-rust/**/source-inputs.json

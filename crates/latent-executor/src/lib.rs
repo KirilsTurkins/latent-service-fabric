@@ -195,11 +195,24 @@ pub enum ExecutionCleanup {
     Quarantine { reason: String },
 }
 
+/// Host observation of the actual guest return, independent of diagnostics.
+/// Only a trusted execution backend produces this value; no WIT import or
+/// guest-provided trap metadata can select it.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum HostResultDisposition {
+    #[default]
+    Observed,
+    /// The guest call completed successfully, but its result could not be
+    /// encoded by the host. This does not certify a terminal guest fault.
+    UnavailableAfterReturn,
+}
+
 /// Invocation result plus the backend's cleanup proof.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecutionReport {
     pub outcome: Result<GuestOutcome, PlatformError>,
     pub cleanup: ExecutionCleanup,
+    pub host_result: HostResultDisposition,
 }
 
 impl ExecutionReport {
@@ -208,6 +221,7 @@ impl ExecutionReport {
         Self {
             outcome,
             cleanup: ExecutionCleanup::Reusable,
+            host_result: HostResultDisposition::Observed,
         }
     }
 
@@ -221,6 +235,7 @@ impl ExecutionReport {
             cleanup: ExecutionCleanup::Quarantine {
                 reason: reason.into(),
             },
+            host_result: HostResultDisposition::Observed,
         }
     }
 }
@@ -412,6 +427,16 @@ pub trait ExecutionBackendRegistry: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn existing_report_constructors_keep_host_result_observed() {
+        for report in [
+            ExecutionReport::reusable(Err(owned_preparation_unsupported())),
+            ExecutionReport::quarantine(Err(owned_preparation_unsupported()), "cleanup"),
+        ] {
+            assert_eq!(report.host_result, HostResultDisposition::Observed);
+        }
+    }
 
     #[test]
     fn budget_dimensions_have_deterministic_interruption_mappings() {

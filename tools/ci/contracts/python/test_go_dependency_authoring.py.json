@@ -15,6 +15,7 @@
     "GoDependencyAuthoring.test_outer_and_app_entries_bind_exact_original_and_transformed_module_paths",
     "GoDependencyAuthoring.test_private_proxy_tokens_are_opaque_and_do_not_replace_go_control_environment",
     "GoDependencyAuthoring.test_proxy_config_must_stay_outside_project_and_never_embed_url_credentials",
+    "GoDependencyAuthoring.test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution",
     "GoDependencyAuthoring.test_public_failed_receipts_never_echo_resolver_credentials",
     "GoDependencyAuthoring.test_resolve_preserves_each_accepted_lock_until_exact_update_and_remove_review",
     "GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command",
@@ -277,10 +278,22 @@
         "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
       ],
       "skipSites": []
+    },
+    "GoDependencyAuthoring.test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_go_dependency_authoring.py",
-  "reviewReason": "Explicit AST review: existing assertions and predicates are retained; only Go version constants become 1.27.2. New source-assembly/overlay controls verify immutable sources and exact separation of scheduler versus authority, plus refusal on drift.",
+  "reviewReason": "Reject malformed explicit Go proxy authorization and control tokens before native resolver dispatch",
   "schemaVersion": "latent.ci.contracts.v1"
 }

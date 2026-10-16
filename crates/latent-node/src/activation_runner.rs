@@ -276,7 +276,9 @@ impl Phase0ActivationRunner {
         let report = self.backend.invoke_contained(request, &cancellation).await;
         drop(running_guard);
 
-        let ExecutionReport { outcome, cleanup } = report;
+        let ExecutionReport {
+            outcome, cleanup, ..
+        } = report;
         let outcome = apply_execution_precedence(outcome, &cancellation, effective_deadline);
         let disposition_name = match &cleanup {
             ExecutionCleanup::Reusable => "released",
