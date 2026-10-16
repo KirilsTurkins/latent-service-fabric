@@ -110,6 +110,10 @@ class StandardTlsSource(unittest.TestCase):
 
     def test_root_and_child_source_abi_binds_exact_owned_prefix_without_enabling_threads(self):
         abi = json.loads(self.recipe()['sdk/rust-standard-runtime/thread-abi.json'])
+        self.assertEqual(abi['coreTransform'], {'wasmEncoder': '0.259.0', 'wasmParser': '0.259.0'})
+        self.assertEqual(abi['componentAssembly']['tool'], 'wasm-tools 1.254.0')
+        self.assertEqual(abi['componentAssembly']['observedWitComponentProducer'], '0.254.0')
+        self.assertFalse(abi['componentAssembly']['qualifiedOwnedRustComponent'])
         prefix = abi['contextPrefix']
         self.assertEqual((prefix['bytes'], prefix['alignment']), (40, 8))
         self.assertEqual([prefix[name] for name in ('pointerOffset', 'lowOffset', 'highOffset', 'phaseOffset',

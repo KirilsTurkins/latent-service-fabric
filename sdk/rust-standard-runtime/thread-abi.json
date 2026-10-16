@@ -2,7 +2,15 @@
   "schemaVersion": "latent.rust.owned-thread-source-abi.v2",
   "target": "wasm32-unknown-unknown",
   "compiler": "1.97.1",
-  "componentEncoder": "0.259.0",
+  "coreTransform": {
+    "wasmEncoder": "0.259.0",
+    "wasmParser": "0.259.0"
+  },
+  "componentAssembly": {
+    "tool": "wasm-tools 1.254.0",
+    "observedWitComponentProducer": "0.254.0",
+    "qualifiedOwnedRustComponent": false
+  },
   "engine": "48.0.6",
   "contextSlot": 1,
   "preservedWitBindgenContextSlot": 0,
