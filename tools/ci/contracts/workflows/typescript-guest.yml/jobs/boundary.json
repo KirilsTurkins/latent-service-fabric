@@ -110,6 +110,10 @@
         "run": "python3 tools/qualify_typescript_capsules.py --output \"$RUNNER_TEMP/typescript-capsule-authoring\" --tools \"$RUNNER_TEMP/typescript-guest-tools\"\n"
       },
       {
+        "name": "Test controlled native npm lock authoring",
+        "run": "python3 -m unittest tools.tests.test_npm_lock_authoring"
+      },
+      {
         "name": "Test reviewed npm lifecycle and selected frontend",
         "run": "python3 -m unittest tools.tests.test_typescript_dependency_authoring tools.tests.test_guest_authoring_frontend\n"
       },
@@ -137,7 +141,7 @@
   },
   "jobId": "boundary",
   "kind": "job",
-  "reviewReason": "Preserve all historical TypeScript commands and current development qualification, and add the explicit runtime controls plus actual lazy-waiter and selected-WIT packaging regressions without changing skips or limits.",
+  "reviewReason": "Preserve all existing native/component commands and 75-minute budget; add controlled native npm authoring controls before unchanged signing and node gate",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
