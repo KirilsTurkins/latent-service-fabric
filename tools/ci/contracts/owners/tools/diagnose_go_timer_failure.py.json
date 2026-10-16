@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_timer_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Failure-only fixed throw ABI with full-literal confirmation and explicit diagnostic candidate limits; all normal effects, authority, source guards and600s/1MiB bounds preserved.",
+  "reviewReason": "Authenticate terminal panic ABI and data; bounded public-family matching requires fresh confirmation without runtime-origin or baseline-cause claims, preserving recovery, authority and 600s/1MiB limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "14531400b2d829c59d6a8a4df55972b9cc9dafb7b495cb4c2050fa20903e9f2b"
+  "sha256": "5d97ccc336c740f72bd0ff7fb6032d1b83a0793bc78c3271ca10dffc6b168a13"
 }

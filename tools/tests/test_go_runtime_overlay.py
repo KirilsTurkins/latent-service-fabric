@@ -27,6 +27,80 @@ def sources():
 
 
 class GoRuntimeOverlayTests(unittest.TestCase):
+    def test_terminal_panic_probe_executes_checked_pointer_type_and_decimal_guards(self):
+        import shutil
+        import subprocess
+        from tools.go_guest import panic_probe
+        from tools.diagnose_go_timer_failure import leb
+        node = shutil.which('node')
+        if not node:
+            self.skipTest('Node unavailable for isolated Wasm instruction controls')
+        rows = panic_probe.reasons()
+        self.assertEqual(len(rows), 68)
+        self.assertEqual([row['id'] for row in rows], list(range(1, 69)))
+        def core(body):
+            result = bytearray(b'\0asm\x01\0\0\0')
+            for kind, payload in [(1, b'\x01\x60\x01\x7f\x01\x7f'), (3, b'\x01\0'),
+                    (5, b'\x01\0\x02'), (6, b'\x01\x7f\x01\x41\x80\x08\x0b'),
+                    (7, b'\x02\x05probe\0\0\x06memory\x02\0'), (10, b'\x01' + leb(len(body)) + body)]:
+                result.append(kind); result.extend(leb(len(payload))); result.extend(payload)
+            return bytes(result)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for bit in range(7):
+                (root / f'bit-{bit}.wasm').write_bytes(core(panic_probe.body(bit)))
+            for row in rows:
+                (root / f'confirm-{row["id"]}.wasm').write_bytes(core(panic_probe.body(0, candidate=row['id'])))
+            (root / 'rows.json').write_text(json.dumps(rows), encoding='utf-8')
+            result = subprocess.run([node, str(runtime.ROOT / 'tools/tests/fixtures/go_terminal_panic_probe.cjs'), str(root)],
+                check=True, capture_output=True, text=True, timeout=30)
+            self.assertEqual(json.loads(result.stdout), {'checks': 1705, 'normalComponentExecuted': False})
+        for bit in (-1, 7, True, '0'):
+            with self.subTest(bit=bit), self.assertRaisesRegex(ValueError, 'bit-bound'):
+                panic_probe.body(bit)
+        for selected in (0, 69, True):
+            with self.subTest(selected=selected), self.assertRaisesRegex(ValueError, 'candidate-bound'):
+                panic_probe.body(0, candidate=selected)
+
+    def test_terminal_panic_candidate_requires_separate_confirmation_and_never_exports_payload(self):
+        from tools import diagnose_go_timer_failure as diagnostic
+        from tools.go_guest import panic_probe
+        selected = 1
+        row = panic_probe.reasons()[selected - 1]
+        terminal = {'publicObservation': {'completedOrdinaryModes': [0, 1, 2, 18, 19, 20]}}
+        reason = {'status': 'candidate-supported-by-fresh-confirmation', 'confirmedCandidate': {
+            'literalDigest': 'sha256:7ae8886b4fc9611bf0a852f79761ac8976a9cb65002d0eb02542f45c8dfdf7b8'}}
+        def probe(*_args, panic_bit=None, panic_id=None, **_options):
+            matched = panic_id == selected if panic_id is not None else bool(selected >> panic_bit & 1)
+            return {'privateComponentDigest': 'controlled-component', 'compilerErrorCodes': [],
+                    'publicObservation': {'nativeCaseStarted': True,
+                        'completedOrdinaryModes': terminal['publicObservation']['completedOrdinaryModes'],
+                        'trapKinds': ['integer-division-by-zero' if matched else 'unreachable-code']}}, 1
+        with tempfile.TemporaryDirectory() as directory, patch.object(diagnostic, 'ordinary_terminal_diagnostic', side_effect=probe):
+            value, used = diagnostic.known_panic_diagnostic(None, Path(directory), None, None, None,
+                lambda: 1, terminal, reason, 0)
+            self.assertEqual(value['status'], 'terminal-panic-family-supported-by-fresh-confirmation')
+            self.assertEqual(value['confirmedCandidate'], {key: row[key] for key in ('id', 'patternDigest', 'sources')}
+                             | {'containsNumericFields': any('decimal' in x for x in row['segments'])})
+            self.assertEqual(used, 8)
+            self.assertFalse(value['baselineCauseProven'])
+            self.assertFalse(value['bitRunsSameCauseProven'])
+            self.assertFalse(value['runtimeOriginProven'])
+            self.assertTrue(value['numericBoundsAreDiagnosticOnly'])
+            self.assertFalse(value['rawGuestMessageRetained'])
+            self.assertFalse(value['rawNumericPayloadRetained'])
+            def unconfirmed(*args, **options):
+                result, count = probe(*args, **options)
+                if options.get('panic_id') is not None:
+                    result['publicObservation']['trapKinds'] = ['unreachable-code']
+                return result, count
+            with patch.object(diagnostic, 'ordinary_terminal_diagnostic', side_effect=unconfirmed):
+                second = Path(directory) / 'unconfirmed'; second.mkdir()
+                failed, _ = diagnostic.known_panic_diagnostic(None, second, None, None, None,
+                    lambda: 1, terminal, reason, 0)
+            self.assertEqual(failed['status'], 'candidate-not-confirmed')
+            self.assertNotIn('confirmedCandidate', failed)
+
     def test_terminal_public_metadata_preserves_only_closed_traps_and_exact_completed_modes(self):
         from tools.diagnose_go_timer_failure import terminal_metadata
         self.assertEqual(terminal_metadata(b'private arbitrary panic\nrunning 1 test\n'

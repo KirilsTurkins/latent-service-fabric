@@ -250,19 +250,31 @@ def throw_reason_body(rows: list[dict], bit: int, *, candidate: int | None = Non
 
 
 def terminal_component(original: bytes, *, reason_bit: int | None = None,
-                       reason_id: int | None = None) -> tuple[bytes, dict]:
-    """Replace only two named noreturn Go terminal paths, never normal effects."""
+                       reason_id: int | None = None, panic_bit: int | None = None,
+                       panic_id: int | None = None) -> tuple[bytes, dict]:
+    """Replace authenticated noreturn terminal paths, never panic recovery."""
+    from tools.go_guest import panic_probe
     component = sections(original, b'\0asm\x0d\0\x01\0')
     replacements = {'runtime.throw': b'\0\0\x0b',  # no locals; unreachable; end
                     'runtime.fatal': b'\0\x41\0\x41\0\x6e\x1a\0\x0b'}  # u32 div zero
     if reason_bit is not None and reason_id is not None:
         raise ValueError('Go-private-throw-ambiguous-probe')
+    panic = panic_bit is not None or panic_id is not None
+    if panic and (reason_bit is not None or reason_id is not None
+                  or panic_bit is not None and panic_id is not None):
+        raise ValueError('Go-private-panic-ambiguous-probe')
     if reason_bit is not None or reason_id is not None:
         replacements['runtime.throw'] = throw_reason_body(closed_throw_reasons(),
             reason_bit if reason_bit is not None else 0, candidate=reason_id)
         # A fatal path during the reason probe has a distinct closed classifier.
         replacements['runtime.fatal'] = (b'\0\x41' + signed_leb(-2147483648)
                                          + b'\x41\x7f\x6d\x1a\0\x0b')
+    if panic:
+        replacements['runtime.fatalpanic'] = panic_probe.body(panic_bit if panic_bit is not None else 0,
+                                                            candidate=panic_id)
+        replacements['runtime.fatal'] = (b'\0\x41' + signed_leb(-2147483648)
+                                         + b'\x41\x7f\x6d\x1a\0\x0b')
+    proof_names = set(panic_probe.PROOFS) if panic else set()
     result, changed = bytearray(original[:8]), []
     for kind, payload in component:
         if kind == 1:
@@ -286,7 +298,7 @@ def terminal_component(original: bytes, *, reason_bit: int | None = None,
                             raise ValueError('Go-private-terminal-function-name-count')
                         for _ in range(count):
                             index, cursor = u32(body, cursor); label, cursor = name(body, cursor)
-                            if label in replacements:
+                            if label in replacements or label in proof_names:
                                 if label in names:
                                     raise ValueError('Go-private-terminal-duplicate-name')
                                 names[label] = index
@@ -303,8 +315,12 @@ def terminal_component(original: bytes, *, reason_bit: int | None = None,
                         _, offset = u32(imports, offset + 1)
                     if offset != len(imports):
                         raise ValueError('Go-private-terminal-import-tail')
-                if set(names) != set(replacements) or imported is None or changed:
+                if set(names) != set(replacements) | proof_names or imported is None or changed:
                     raise ValueError('Go-private-terminal-functions-not-unique')
+                if panic:
+                    data = [body for section, body in module if section == 11]
+                    if len(data) != 1 or digest(data[0]) != 'sha256:' + panic_probe.DATA_SHA256:
+                        raise ValueError('Go-private-panic-type-data-preimage')
                 output = bytearray(payload[:8]); saw_code = False
                 for section, body in module:
                     if section == 10:
@@ -320,6 +336,10 @@ def terminal_component(original: bytes, *, reason_bit: int | None = None,
                             before = body[offset:end]; after = before
                             for label, target in names.items():
                                 if target == imported + index:
+                                    if label in proof_names and digest(before) != 'sha256:' + panic_probe.PROOFS[label]:
+                                        raise ValueError('Go-private-panic-ABI-preimage')
+                                    if label not in replacements:
+                                        continue
                                     if ((reason_bit is not None or reason_id is not None) and label == 'runtime.throw'
                                             and digest(before) != THROW_BODY_DIGEST):
                                         raise ValueError('Go-private-throw-ABI-preimage')
@@ -331,16 +351,21 @@ def terminal_component(original: bytes, *, reason_bit: int | None = None,
                             raise ValueError('Go-private-terminal-code-tail')
                         body = bytes(code)
                     output.append(section); output.extend(leb(len(body))); output.extend(body)
-                if not saw_code or len(changed) != 2:
+                if not saw_code or len(changed) != len(replacements):
                     raise ValueError('Go-private-terminal-code-missing')
                 payload = bytes(output)
         result.append(kind); result.extend(leb(len(payload))); result.extend(payload)
-    if len(changed) != 2:
+    if len(changed) != len(replacements):
         raise ValueError('Go-private-terminal-no-runtime-functions')
     derived = bytes(result)
-    return derived, {'originalComponentDigest': digest(original), 'privateComponentDigest': digest(derived),
-                     'mutations': changed, 'normalFunctionBodiesPreserved': True,
-                     'importsAndAuthorityChanged': False, 'qualification': False}
+    receipt = {'originalComponentDigest': digest(original), 'privateComponentDigest': digest(derived),
+               'mutations': changed, 'normalFunctionBodiesPreserved': True,
+               'importsAndAuthorityChanged': False, 'qualification': False}
+    if panic:
+        receipt['terminalPanicAbi'] = {'functionBodySha256': panic_probe.PROOFS,
+            'coreDataSha256': panic_probe.DATA_SHA256, 'builtinStringType': panic_probe.STRING_TYPE,
+            'maximumStringBytes': 256, 'requiresSinglePanic': True, 'normalPanicRecoveryUnchanged': True}
+    return derived, receipt
 
 
 def terminal_metadata(output: bytes) -> dict:
@@ -355,11 +380,15 @@ def terminal_metadata(output: bytes) -> dict:
 
 
 def ordinary_terminal_diagnostic(fixture, output, record, environment, cargo, remaining_seconds,
-                                 *, reason_bit=None, reason_id=None, output_limit=1024 * 1024):
+                                 *, reason_bit=None, reason_id=None, panic_bit=None, panic_id=None,
+                                 output_limit=1024 * 1024):
     original = (fixture / 'build/component.wasm').read_bytes()
-    derived, mutations = terminal_component(original, reason_bit=reason_bit, reason_id=reason_id)
-    suffix = (f'-confirm-{reason_id}' if reason_id is not None
-              else '' if reason_bit is None else f'-bit-{reason_bit}')
+    derived, mutations = terminal_component(original, reason_bit=reason_bit, reason_id=reason_id,
+                                            panic_bit=panic_bit, panic_id=panic_id)
+    suffix = (f'-panic-confirm-{panic_id}' if panic_id is not None else
+              f'-panic-bit-{panic_bit}' if panic_bit is not None else
+              f'-confirm-{reason_id}' if reason_id is not None else
+              '' if reason_bit is None else f'-bit-{reason_bit}')
     private = output / ('terminal-fixture' + suffix)
     for name in ('src/main.go', 'wit/world.wit'):
         target = private / name
@@ -455,6 +484,65 @@ def known_throw_diagnostic(fixture, output, record, environment, cargo, remainin
     return result, used
 
 
+def known_panic_diagnostic(fixture, output, record, environment, cargo, remaining_seconds, terminal, reason, used):
+    from tools.go_guest import panic_probe
+    rows = panic_probe.reasons()
+    result = {'scope': 'failure-only-typed-unrecoverable-panic-public-format-comparison',
+        'qualification': False, 'catalogDigest': 'sha256:' + panic_probe.CATALOGUE_SHA256,
+        'rawGuestMessageRetained': False, 'rawNumericPayloadRetained': False,
+        'acceptanceFailure': 'unchanged', 'baselineCauseProven': False,
+        'bitRunsSameCauseProven': False, 'independentCallerEvidenceRequired': True,
+        'runtimeOriginProven': False, 'numericBoundsAreDiagnosticOnly': True, 'bits': []}
+    # A fresh throw-literal confirmation, not the trap class alone, gates this
+    # narrower ABI. Other outcomes retain their original diagnosis unchanged.
+    if (reason.get('status') != 'candidate-supported-by-fresh-confirmation'
+            or reason.get('confirmedCandidate', {}).get('literalDigest') !=
+               'sha256:7ae8886b4fc9611bf0a852f79761ac8976a9cb65002d0eb02542f45c8dfdf7b8'):
+        result['status'] = 'not-the-confirmed-closed-descriptor-throw'
+        return result, used
+    expected_modes = terminal['publicObservation']['completedOrdinaryModes']
+    selected = 0
+    for bit in range(len(rows).bit_length()):
+        if used >= 1024 * 1024:
+            raise ValueError('Go-private-panic-diagnostic-output-budget')
+        probe, count = ordinary_terminal_diagnostic(fixture, output, record, environment, cargo,
+            remaining_seconds, panic_bit=bit, output_limit=1024 * 1024 - used)
+        used += count
+        public = probe['publicObservation']
+        kinds = public['trapKinds']
+        result['bits'].append({'bit': bit, 'componentDigest': probe['privateComponentDigest'],
+                              'trapKinds': kinds, 'nativeCaseStarted': public['nativeCaseStarted']})
+        if (not public['nativeCaseStarted'] or probe['compilerErrorCodes']
+                or public['completedOrdinaryModes'] != expected_modes
+                or kinds not in (['unreachable-code'], ['integer-division-by-zero'])):
+            result['status'] = 'inconclusive-control-divergence'
+            break
+        if kinds == ['integer-division-by-zero']:
+            selected |= 1 << bit
+    else:
+        result['status'] = 'candidate-selected' if 1 <= selected <= len(rows) else 'unknown-panic-family'
+        if result['status'] == 'candidate-selected':
+            if used >= 1024 * 1024:
+                raise ValueError('Go-private-panic-diagnostic-output-budget')
+            probe, count = ordinary_terminal_diagnostic(fixture, output, record, environment, cargo,
+                remaining_seconds, panic_id=selected, output_limit=1024 * 1024 - used)
+            used += count
+            public = probe['publicObservation']
+            result['confirmation'] = {'componentDigest': probe['privateComponentDigest'],
+                'trapKinds': public['trapKinds'], 'nativeCaseStarted': public['nativeCaseStarted']}
+            if (not public['nativeCaseStarted'] or probe['compilerErrorCodes']
+                    or public['completedOrdinaryModes'] != expected_modes
+                    or public['trapKinds'] != ['integer-division-by-zero']):
+                result['status'] = 'candidate-not-confirmed'
+            else:
+                row = rows[selected - 1]
+                result['status'] = 'terminal-panic-family-supported-by-fresh-confirmation'
+                result['confirmedCandidate'] = {key: row[key] for key in ('id', 'patternDigest', 'sources')}
+                result['confirmedCandidate']['containsNumericFields'] = any('decimal' in x for x in row['segments'])
+    write_json(output / 'GO-PRIVATE-PANIC-REASON.json', result)
+    return result, used
+
+
 def diagnose(fixture: Path, output: Path) -> dict:
     deadline = time.monotonic() + 600
     def remaining_seconds():
@@ -463,6 +551,8 @@ def diagnose(fixture: Path, output: Path) -> dict:
             raise ValueError('Go-private-terminal-diagnostic-budget-exhausted')
         return remaining
     recipe = Path(__file__).read_bytes()
+    support = {name: digest((ROOT / name).read_bytes()) for name in (
+        'tools/go_guest/panic_probe.py', 'tools/go_guest/terminal_panic_reasons.json')}
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     fixture = fixture.resolve(strict=True)
@@ -497,6 +587,8 @@ def diagnose(fixture: Path, output: Path) -> dict:
     terminal, used = ordinary_terminal_diagnostic(fixture, output, record, environment, cargo, remaining_seconds)
     reason, used = known_throw_diagnostic(fixture, output, record, environment, cargo,
                                          remaining_seconds, terminal, used)
+    panic, used = known_panic_diagnostic(fixture, output, record, environment, cargo,
+                                        remaining_seconds, terminal, reason, used)
     if used >= 1024 * 1024:
         raise ValueError('Go-private-terminal-diagnostic-output-budget-exhausted')
     result = run_bounded_result(command, ROOT, environment, remaining_seconds(), 1024 * 1024 - used)
@@ -508,6 +600,8 @@ def diagnose(fixture: Path, output: Path) -> dict:
         raise ValueError('Go-private-frame-observer-component-mutated')
     if Path(__file__).read_bytes() != recipe:
         raise ValueError('Go-private-terminal-recipe-mutated')
+    if any(digest((ROOT / name).read_bytes()) != expected for name, expected in support.items()):
+        raise ValueError('Go-private-terminal-supporting-input-mutated')
     observation = {'formatVersion': 1, 'qualification': False, 'scope': 'failure-only-private-source-overlay',
         'observerRecipeDigest': digest(recipe),
         'mode': 9, 'componentDigest': record['componentDigest'], 'sourceDigest': record['sourceDigest'],
@@ -517,7 +611,8 @@ def diagnose(fixture: Path, output: Path) -> dict:
         'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', result.stderr)))[:16],
         'executionMetadata': execution_metadata(result.stderr + b'\n' + result.stdout),
         'frames': frames, 'rawNativeBacktraceRetained': False, 'acceptanceFailure': 'unchanged',
-        'terminalDiagnostic': terminal, 'throwReasonDiagnostic': reason}
+        'terminalDiagnostic': terminal, 'throwReasonDiagnostic': reason,
+        'terminalPanicDiagnostic': panic, 'observerSupportingInputs': support}
     write_json(output / 'GO-PRIVATE-FRAMES-initial.json', observation)
     if 'invoked' not in observation['executionMetadata']['stages']:
         observation['privateFramesStatus'] = 'not-run-before-guest-invocation'

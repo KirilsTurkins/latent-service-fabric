@@ -298,6 +298,9 @@ jobs:
             ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-bit-*.json
             ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-confirm-*.json
             ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-THROW-REASON.json
+            ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-panic-bit-*.json
+            ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-panic-confirm-*.json
+            ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-PANIC-REASON.json
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn

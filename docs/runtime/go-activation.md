@@ -180,3 +180,20 @@ prove neither the baseline cause nor a common cause across bit runs. Unknown or 
 observations remain inconclusive; no normal function body, import, authority or
 acceptance assertion changes. All diagnostic executions share the existing
 600-second and 1 MiB output bounds. These observations do not qualify v3.
+
+The fresh confirmation on component `3a8776b49b5fa93be27c5797205088a0e43433e4d4d6a889b2d1c1211486f315`
+matched the public `fd_write failed` literal in pinned `runtime/os_wasip1.go`.
+This can be a secondary failure while printing an earlier ordinary panic. The
+next failure-only probe leaves `gopanic`, recovery, defers and `preprintpanics`
+unchanged and authenticates their emitted bodies plus the entire core data
+section. It replaces only the already unrecoverable `fatalpanic` body, alongside
+the two existing terminal throw/fatal probes. Checked 64-bit pointers, a fixed
+builtin-string type, a single-panic chain and a 256-byte limit precede comparison
+with 68 reviewed public string or decimal-format families. Every path traps.
+Only a family digest and source locations can leave this probe; numeric values
+and guest strings are never exported. A separate fresh full-family match is
+required. Application strings can match the same family, so confirmation proves
+neither runtime origin nor the cause of the original failed invocation. Decimal
+widths bound the diagnostic and establish neither integer-range validity nor
+complete runtime-error coverage. The original mode 9 acceptance case and all existing
+control modes remain required; this added probe has no native qualification yet.
