@@ -8127,7 +8127,9 @@
         "random::generated_random_binding_and_reused_cell",
         "secrets::secret_owner_typed_denial_cancellation_and_cell_recovery",
         "service::typed_service_outcomes_use_node_admission_and_reused_cells",
-        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop"
+        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop",
+        "random::standard_java_entropy_preserves_provider_length_and_activation_budget_failures",
+        "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells"
       ],
       "expectedIgnored": [
         "all_rust_examples_are_exact_signed_phase2_packages",
@@ -8139,7 +8141,9 @@
         "random::generated_random_binding_and_reused_cell",
         "secrets::secret_owner_typed_denial_cancellation_and_cell_recovery",
         "service::typed_service_outcomes_use_node_admission_and_reused_cells",
-        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop"
+        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop",
+        "random::standard_java_entropy_preserves_provider_length_and_activation_budget_failures",
+        "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells"
       ],
       "id": "latent-wasmtime.test.guest-sdk",
       "ignoredLeaves": [
@@ -8152,11 +8156,13 @@
         "secret_owner_typed_denial_cancellation_and_cell_recovery",
         "streaming_ownership_and_independent_chunks_survive_body_drop",
         "typed_event_receipt_denial_and_uncertainty_do_not_retry",
-        "typed_service_outcomes_use_node_admission_and_reused_cells"
+        "typed_service_outcomes_use_node_admission_and_reused_cells",
+        "standard_java_entropy_preserves_provider_length_and_activation_budget_failures",
+        "standard_java_entropy_uses_original_system_provider_and_fresh_cells"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 10,
+      "minimumCases": 12,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -10175,7 +10181,12 @@
         "standalone::state::recovery::profile::reconstructed_http::tests::authentic_reconstructed_tuple_keeps_all_four_compiler_source_and_codec_associations",
         "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_review_uses_new_marker_proof_and_preserves_original_codec",
         "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_tuple_refuses_mixed_historical_or_foreign_associations",
-        "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_review_retains_all_original_declaration_and_codec_gates"
+        "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_review_retains_all_original_declaration_and_codec_gates",
+        "config::tests::providers::scalar_aliases::aliases_are_explicit_and_keep_each_binding_in_its_exact_tenant_and_service",
+        "config::tests::providers::scalar_aliases::aliases_cannot_change_epoch_chain_sources_or_duplicate_any_identity_or_scope",
+        "config::tests::providers::scalar_aliases::aliases_never_supply_missing_or_stateful_implementations",
+        "config::tests::providers::scalar_aliases::aliases_preserve_original_fourteen_descriptor_slots_and_closed_input",
+        "standalone::start::tests::provider_startup::scalar_aliases_keep_one_configuration_and_reap_without_creating_guest_owners"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10244,7 +10255,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 432,
+      "minimumCases": 437,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

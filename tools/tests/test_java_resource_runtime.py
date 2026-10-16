@@ -208,8 +208,13 @@ class JavaResourceRuntime(unittest.TestCase):
         for name in ('META-INF/services/org.teavm.vm.spi.TeaVMPlugin',
                      'META-INF/services/org.teavm.extension.spi.substitution.SubstitutionPolicy'):
             expected = (self.sdk / 'server/services' / name).read_bytes().splitlines()
+            facilities = (self.sdk / 'facilities/services' / name).read_bytes().splitlines()
             if name.endswith('TeaVMPlugin'):
+                self.assertEqual(facilities, [b'dev.latent.guest.facilities.compiler.EntropyPlugin'])
                 expected = (self.sdk / 'resources/services' / name).read_bytes().splitlines() + expected
+            else:
+                self.assertEqual(facilities, [b'dev.latent.guest.facilities.compiler.EntropySubstitution'])
+            expected = facilities + expected
             self.assertEqual((project / 'src/main/resources' / name).read_bytes().splitlines(), expected)
         self.assertTrue((project / 'src/main/java/dev/latent/guest/server/http/HttpServer.java').is_file())
         self.assertTrue((project / 'src/main/java/dev/latent/guest/resources/ImmutableResources.java').is_file())
