@@ -249,6 +249,16 @@ async fn legacy_session_without_timer_fails_closed_before_store_or_guest() {
 #[tokio::test]
 #[ignore = "requires explicitly rebuilt std clock guest from the pinned infrastructure source"]
 async fn ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores() {
+    ordinary_clock(false).await;
+}
+
+#[tokio::test]
+#[ignore = "requires explicitly rebuilt std clock guest and controlled native-stack profile"]
+async fn ordinary_std_systemtime_with_owned_native_stack() {
+    ordinary_clock(true).await;
+}
+
+async fn ordinary_clock(owned_native_stacks: bool) {
     use sha2::{Digest, Sha256};
     let directory = std::path::PathBuf::from(
         std::env::var_os("LSF_RUST_STD_CLOCK_GUEST")
@@ -273,7 +283,7 @@ async fn ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores(
     // Cryptographic test publisher/builder admission and actual production
     // broker execution. The separate build marker is an input witness, not
     // proof of production builder trust or std/thread runtime qualification.
-    let signed = signed::Fixture::with_component(true, &bytes).await;
+    let signed = signed::Fixture::with_component_profile(true, &bytes, owned_native_stacks).await;
     let f = &signed.guest;
     for id in ["ordinary-clock-first", "ordinary-clock-fresh"] {
         let (request, control) = f.request(id);
@@ -300,7 +310,8 @@ async fn ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores(
             serde_json::json!({"schemaVersion":"latent.rust.std-clock-execution.v1",
             "activation":id,"clockKind":marker["clockKind"],"componentDigest":marker["componentDigest"],
             "fuel":consumption.cpu_fuel,"peakWasmBytes":consumption.peak_memory_bytes,
-            "wallMicros":consumption.wall_time_micros,"sampledPhysicalOwnersRetired":true})
+            "wallMicros":consumption.wall_time_micros,"sampledPhysicalOwnersRetired":true,
+            "ownedNativeStacks":owned_native_stacks})
         );
     }
     assert_eq!(f.clock.calls.load(Ordering::Acquire), 4);
