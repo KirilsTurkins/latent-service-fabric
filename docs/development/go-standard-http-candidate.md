@@ -27,11 +27,15 @@ The first candidate accepts HTTP URLs only. HTTPS and negotiated TLS/protocol
 state are unqualified; Response protocol/TLS fields remain unavailable instead
 of inventing wire metadata. Direct or transitive raw net, TLS sockets, HTTP/2/3,
 custom dialers, proxy use, wire tracing, custom Host, legacy Request.Cancel,
-upload trailers and transfer encoding are explicitly unsupported. Configured
-response-header timeout uses the calling request context and original timer
-ownership. The maximum body is1MiB, header count32, header storage8KiB, and each
-guest-owned read/upload chunk is at most16KiB. Positive buffer sizes may lower
-that chunk bound. Unsupported values fail before dispatch.
+upload trailers and transfer encoding are explicitly unsupported.
+Client and request-context timeouts retain their original deadline ownership.
+Nonzero ResponseHeaderTimeout, MaxResponseHeaderBytes, ReadBufferSize and
+WriteBufferSize fail before dispatch: this typed ABI does not expose their
+distinct wire phases, wire header size or physical socket buffers. A timeout
+around the whole typed Finish would incorrectly include DNS/connect time.
+The maximum body is1MiB, header count32, header storage8KiB, and each
+guest-owned read/upload chunk is at most16KiB. These guest chunk bounds do not
+claim to implement the native wire-buffer fields. Unsupported values fail before dispatch.
 
 The typed contract reserves wire compression/credential/framing headers. The
 compiler sets DisableCompression true on the default Transport and replaces its
@@ -50,7 +54,6 @@ HTTP profile and budget. A nonzero MaxConnsPerHost is rejected because a logical
 request limiter is not proof of a concrete connection limit. DisableKeepAlives
 or Request.Close true is rejected
 before dispatch because host reuse is not controlled by that guest field.
-Negative MaxResponseHeaderBytes is also rejected instead of silently ignored.
 Invalid negative request lengths and positive lengths without a body fail
 before upload creation instead of being replaced with a different length.
 HTTP-only requests do not execute TLS-specific fields. Other protocol/custom connection state
@@ -101,12 +104,13 @@ and size failures cannot be hidden by an early JSON syntax error. A static
 counter rejects reuse of a previous activation's state. The early-close case
 uses ordinary ReadFull for four bytes instead of assuming one Read fills them.
 
-Twenty-five cases cover domain JSON, HTTP error status, truncation, oversize,
+Twenty-nine cases cover domain JSON, HTTP error status, truncation, oversize,
 malformed JSON, forbidden headers, early Close, pending header/body cancellation,
 POST bytes, uncertain mutation, target denial, pre-cancelled contexts, sibling
 cancellation, concrete Transport, DefaultTransport.Clone, a separate custom
 RoundTripper, custom-dialer denial without invocation, physical nonreuse and
 negative-header-limit and inconsistent-body-length denial, and fresh state.
+Wire-header deadline/limit and socket-buffer options also fail before contact.
 Every activation checks actual provider counters,
 cleanup slots and topology. The controlled peer must report exactly 15 primary
 contacts, one committed mutation and no secondary contact. These observations

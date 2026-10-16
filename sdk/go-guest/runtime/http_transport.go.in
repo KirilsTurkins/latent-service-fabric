@@ -76,13 +76,11 @@ func lsfTransportRoundTrip(t *Transport, req *Request) (*Response, error) {
 	}
 	if !t.DisableCompression { return nil, lsfHTTPUnsupported("automatic compression; DisableCompression must be true") }
 	if t.DisableKeepAlives || req.Close { return nil, lsfHTTPUnsupported("physical connection nonreuse") }
-	if t.MaxResponseHeaderBytes < 0 { return nil, lsfHTTPUnsupported("negative response header limit") }
+	if t.ResponseHeaderTimeout != 0 || t.MaxResponseHeaderBytes != 0 || t.WriteBufferSize != 0 || t.ReadBufferSize != 0 {
+		return nil, lsfHTTPUnsupported("wire-level header deadline, header limit or buffer configuration")
+	}
 	if req.ContentLength < -1 || req.ContentLength > 0 && (req.Body == nil || req.Body == NoBody) {
 		return nil, errors.New("http: invalid request content length")
-	}
-	if t.ResponseHeaderTimeout < 0 { return nil, lsfHTTPUnsupported("negative response header timeout") }
-	if t.WriteBufferSize < 0 || t.ReadBufferSize < 0 || t.WriteBufferSize > lsfHTTPChunk || t.ReadBufferSize > lsfHTTPChunk {
-		return nil, lsfHTTPUnsupported("buffer size outside the finite chunk profile")
 	}
 	if t.Proxy != nil {
 		proxy, err := t.Proxy(req)
@@ -127,9 +125,7 @@ func lsfTransportRoundTrip(t *Transport, req *Request) (*Response, error) {
 	upload := opened.Ok()
 	defer upload.Close()
 	if req.Body != nil && req.Body != NoBody {
-		bufferSize := lsfHTTPChunk
-		if t.WriteBufferSize > 0 { bufferSize = t.WriteBufferSize }
-		buffer := make([]byte, bufferSize)
+		buffer := make([]byte, lsfHTTPChunk)
 		var total int64
 		empty := 0
 		for {
@@ -148,12 +144,8 @@ func lsfTransportRoundTrip(t *Transport, req *Request) (*Response, error) {
 		}
 		if req.ContentLength > 0 && total != req.ContentLength { return nil, errors.New("http: request content length mismatch") }
 	}
-	headerContext := req.Context()
-	headerCancel := func() {}
-	if t.ResponseHeaderTimeout > 0 { headerContext, headerCancel = context.WithTimeout(headerContext, t.ResponseHeaderTimeout) }
-	finished := upload.FinishContext(headerContext)
-	if finished.IsErr() { err := lsfHTTPFailure(headerContext, finished.Err()); headerCancel(); return nil, err }
-	headerCancel()
+	finished := upload.FinishContext(req.Context())
+	if finished.IsErr() { return nil, lsfHTTPFailure(req.Context(), finished.Err()) }
 	value := finished.Ok()
 	if len(value.Headers) > 32 { value.Body.Close(); return nil, errors.New("lsf-http-response-too-large") }
 	header := make(Header)
@@ -162,7 +154,7 @@ func lsfTransportRoundTrip(t *Transport, req *Request) (*Response, error) {
 	if invalid := validateHeaders(header); invalid != "" { value.Body.Close(); return nil, errors.New("http: invalid response header") }
 	bytes := int64(0)
 	for key, values := range header { for _, value := range values { bytes += int64(len(key)+len(value)+4) } }
-	if len(header) > 32 || bytes > 8192 || t.MaxResponseHeaderBytes > 0 && bytes > t.MaxResponseHeaderBytes {
+	if len(header) > 32 || bytes > 8192 {
 		value.Body.Close(); return nil, errors.New("lsf-http-response-too-large")
 	}
 	length := int64(-1)
@@ -175,7 +167,6 @@ func lsfTransportRoundTrip(t *Transport, req *Request) (*Response, error) {
 	bodyContext, bodyCancel := context.WithCancel(req.Context())
 	trailer := make(Header)
 	body := &lsfHTTPResponseBody{ctx:bodyContext, cancel:bodyCancel, value:value.Body, trailer:trailer, maximum:lsfHTTPChunk}
-	if t.ReadBufferSize > 0 { body.maximum = t.ReadBufferSize }
 	response := &Response{StatusCode:int(value.Status), Status:fmt.Sprintf("%d %s", value.Status, StatusText(int(value.Status))),
 		Header:header, Body:body, ContentLength:length, Request:req, Trailer:trailer}
 	// The typed ABI exposes no negotiated protocol or TLS connection state.

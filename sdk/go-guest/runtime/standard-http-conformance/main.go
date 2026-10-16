@@ -54,6 +54,10 @@ func Run(which uint32, address string) string {
 	if which == 14 { request.Close = true }
 	if which == 15 { request.ContentLength = -2 }
 	if which == 16 { request.ContentLength = 1 }
+	if which == 17 { client.Transport = &http.Transport{DisableCompression:true,ResponseHeaderTimeout:time.Millisecond} }
+	if which == 18 { client.Transport = &http.Transport{DisableCompression:true,MaxResponseHeaderBytes:1024} }
+	if which == 19 { client.Transport = &http.Transport{DisableCompression:true,ReadBufferSize:4} }
+	if which == 20 { client.Transport = &http.Transport{DisableCompression:true,WriteBufferSize:4} }
 	response, err := client.Do(request)
 	if which == 11 { if dialed { return "custom-dialer-invoked" }; if err == nil { response.Body.Close(); return "custom-dialer-accepted" }; return "custom-dialer-denied" }
 	if err != nil { if ctx.Err() != nil { return "cancelled" }; return "transport-error" }
