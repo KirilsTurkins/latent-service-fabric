@@ -24,8 +24,11 @@ on:
       - tools/probe_go_authoring.py
       - tools/qualify_go_capsules.py
       - tools/qualify_go_activation.py
-      - tools/diagnose_go_timer_failure.py
+      - tools/qualify_go_http_context.py
+      - tools/tests/test_go_http_context.py
+      - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
+      - tools/diagnose_go_timer_failure.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
       - tools/guest_runtime_grants.py
@@ -35,6 +38,7 @@ on:
       - schemas/**
       - docs/component-development/go-authoring.md
       - docs/development/go-capsule-qualification.md
+      - docs/development/go-http-context-cancellation.md
       - crates/latent-wasmtime/**
       - crates/latent-control-store/**
       - crates/latent-artifacts/**
@@ -72,8 +76,11 @@ on:
       - tools/probe_go_authoring.py
       - tools/qualify_go_capsules.py
       - tools/qualify_go_activation.py
-      - tools/diagnose_go_timer_failure.py
+      - tools/qualify_go_http_context.py
+      - tools/tests/test_go_http_context.py
+      - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
+      - tools/diagnose_go_timer_failure.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
       - tools/guest_runtime_grants.py
@@ -83,6 +90,7 @@ on:
       - schemas/**
       - docs/component-development/go-authoring.md
       - docs/development/go-capsule-qualification.md
+      - docs/development/go-http-context-cancellation.md
       - crates/latent-wasmtime/**
       - crates/latent-control-store/**
       - crates/latent-artifacts/**
@@ -218,6 +226,10 @@ jobs:
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-checkpoints" --runtime-profile go-component-activation-v2 --fixture checkpoints
           python3 tools/qualify_go_activation.py --output "$RUNNER_TEMP/go-no-checkpoints" --runtime-profile go-component-activation-v1 --fixture checkpoints
           LSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE="$RUNNER_TEMP/go-checkpoints" LSF_GO_NO_CHECKPOINT_FIXTURE="$RUNNER_TEMP/go-no-checkpoints" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation -- --ignored --exact --nocapture
+      - name: Compile context-aware typed HTTP ownership without claiming default transport qualification
+        run: |
+          python3 -m unittest tools.tests.test_go_http_context
+          python3 tools/qualify_go_http_context.py --output "$RUNNER_TEMP/go-http-context"
       - name: Qualify standard timer heap callbacks and physical readiness retirement
         id: standard_timers
         run: |
@@ -255,6 +267,18 @@ jobs:
         with:
           name: go-guest-upstream-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/go-http-context/qualification.json
+            ${{ runner.temp }}/go-http-context/FAILED.json
+            ${{ runner.temp }}/go-http-context/recipe-inputs.json
+            ${{ runner.temp }}/go-http-context/src/**
+            ${{ runner.temp }}/go-http-context/wit/**
+            ${{ runner.temp }}/go-http-context/logs/**
+            ${{ runner.temp }}/go-http-context/build/component.wasm
+            ${{ runner.temp }}/go-http-context/build/component.wit
+            ${{ runner.temp }}/go-http-context/build/module/**/wit_bindings.go
+            ${{ runner.temp }}/go-http-context/build/module/lsf/streaming/**
+            ${{ runner.temp }}/go-http-context/build/runtime-overlay/**
+            ${{ runner.temp }}/go-http-context/go-runtime-transformations.json
             ${{ runner.temp }}/transaction-guests-go/**/report.json
             ${{ runner.temp }}/transaction-guests-go/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-go/**/recipe-inputs.json

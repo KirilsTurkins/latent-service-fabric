@@ -1,0 +1,53 @@
+// SubtaskWaitContext keeps the original argument/result pins alive until the
+// canonical call has returned or acknowledged cancellation. It parks only the
+// calling goroutine through the existing activation dispatcher.
+func SubtaskWaitContext(ctx lsfHTTPContext.Context, packed uint32) uint32 {
+	handle, status := packed >> 4, packed & 0xF
+	if status == STATUS_RETURNED { return status }
+	if status != STATUS_STARTING && status != STATUS_STARTED {
+		panic("unexpected initial HTTP subtask status")
+	}
+	if ctx.Done() == nil { SubtaskWait(packed); return STATUS_RETURNED }
+	if state.waitableSet == 0 { state.waitableSet = waitableSetNew() }
+	waitableJoin(handle, state.waitableSet)
+	channel := make(chan uint32)
+	if _, exists := state.pending[handle]; exists { panic("duplicate HTTP subtask owner") }
+	state.pending[handle] = channel
+	select {
+	case status = <-channel:
+		return lsfHTTPCompletion(status)
+	case <-ctx.Done():
+		// The dispatcher removes the entry and drops the subtask before sending
+		// its terminal event. If delivery won, receive that exact event; never
+		// cancel a handle which has already been dropped or possibly reused.
+		if registered, pending := state.pending[handle]; !pending || registered != channel {
+			return lsfHTTPCompletion(<-channel)
+		}
+		waitableJoin(handle, 0)
+		status = lsfHTTPSubtaskCancel(handle)
+		if status == 0xffffffff {
+			// Cancellation can itself be pending. Keep both the original entry
+			// and all caller-owned buffers until the real terminal callback.
+			waitableJoin(handle, state.waitableSet)
+			return lsfHTTPCompletion(<-channel)
+		}
+		status = lsfHTTPCompletion(status)
+		delete(state.pending, handle)
+		subtaskDrop(handle)
+		return status
+	}
+}
+
+func lsfHTTPCompletion(status uint32) uint32 {
+	if status != STATUS_RETURNED && status != LSF_HTTP_START_CANCELLED && status != LSF_HTTP_RETURN_CANCELLED {
+		panic("HTTP subtask cancellation did not reach a terminal state")
+	}
+	return status
+}
+
+const LSF_HTTP_START_CANCELLED uint32 = 3
+const LSF_HTTP_RETURN_CANCELLED uint32 = 4
+
+//go:wasmimport $root [async-lower][subtask-cancel]
+//go:noescape
+func lsfHTTPSubtaskCancel(handle uint32) uint32
