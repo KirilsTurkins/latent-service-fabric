@@ -150,11 +150,13 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         raise DependencyError('cargo-resolver-not-installed')
     cargo = regular_path(Path(located)).resolve(strict=True)
     registries = {}
+    registry_bytes = None
     if registry_config is not None:
         registry_config = regular_path(registry_config)
         if registry_config.is_relative_to(owner):
             raise DependencyError('cargo-private-registry-config-must-stay-outside-project')
-        declaration = json.loads(read_bytes(registry_config))
+        registry_bytes = read_bytes(registry_config)
+        declaration = json.loads(registry_bytes)
         if not isinstance(declaration, dict) or set(declaration) != {'registries'} or not isinstance(declaration['registries'], dict):
             raise DependencyError('cargo-registry-configuration-invalid')
         registries = declaration['registries']
@@ -167,6 +169,9 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             parsed = urlsplit(entry['index'].removeprefix('sparse+'))
             if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
                 raise DependencyError('cargo-registry-credentials-or-endpoint-denied')
+        aliases = {*registries, 'crates-io'}
+        if len({alias.upper().replace('-', '_') for alias in aliases}) != len(aliases):
+            raise DependencyError('cargo-registry-credential-slot-ambiguous')
     with tempfile.TemporaryDirectory(prefix='lsf-cargo-resolve-') as temporary:
         temporary = Path(temporary)
         environment = build_environment(temporary)
@@ -184,7 +189,10 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         for alias in {*registries, 'crates-io'}:
             key = 'CARGO_REGISTRIES_' + alias.upper().replace('-', '_') + '_TOKEN'
             if key in os.environ:
-                environment[key] = os.environ[key]
+                token = os.environ[key]
+                if not 1 <= len(token) <= 16384 or re.search(r'[\x00-\x1f\x7f]', token):
+                    raise DependencyError('cargo-registry-token-invalid')
+                environment[key] = token
         Path(environment['CARGO_HOME']).mkdir()
         (Path(environment['CARGO_HOME']) / 'config.toml').write_text('\n'.join(configuration_lines) + '\n', encoding='utf-8')
         version = run_bounded([str(cargo), '--version'], project, environment, 10, 16384).stdout.decode().strip()
@@ -208,6 +216,8 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         resolver = {'cargo': file_identity(cargo, 'cargo-resolver'), 'version': version,
                     'metadataDigest': digest(raw), 'selectedMetadataDigest': digest(selected_raw), 'nativeLockDigest': digest(original_lock),
                     'registryConfigurationDigest': digest(canonical(registries)), 'recipe': recipe_before}
+        if registry_bytes is not None:
+            resolver['registryConfigurationInputDigest'] = digest(registry_bytes)
         artifacts, graph = analyze(metadata, project, vendor, resolver)
         graph['selectedResolve'] = json.loads(selected_raw)['resolve']
         mappings = {Path(package['manifest_path']).parent.resolve(): Path(row['mount'])
@@ -280,6 +290,13 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             raise DependencyError('cargo-resolver-mutated')
         if file_identity(Path(__file__), 'cargo-capture-recipe') != recipe_before:
             raise DependencyError('cargo-capture-recipe-mutated')
+        if registry_config is not None:
+            try:
+                current_registry_bytes = read_bytes(registry_config)
+            except OSError:
+                raise DependencyError('cargo-registry-configuration-mutated') from None
+            if current_registry_bytes != registry_bytes:
+                raise DependencyError('cargo-registry-configuration-mutated')
         unchanged(owner, sdk)
         for row in artifacts:
             if row['format'] == 'directory' and candidate.is_relative_to(Path(row['source']['path'])):
