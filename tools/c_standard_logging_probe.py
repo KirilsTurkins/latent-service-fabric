@@ -15,7 +15,8 @@ LIBRARY = r'''#include "log_probe.h"
 #include <string.h>
 #include <unistd.h>
 #include <wasi/api.h>
-extern int32_t __imported_wasi_snapshot_preview1_fd_write(int32_t, int32_t, int32_t, int32_t);
+extern int32_t __imported_wasi_snapshot_preview1_fd_write(int32_t, int32_t, int32_t, int32_t)
+    __attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")));
 static int initializer_accepted;
 __attribute__((constructor)) static void ordinary_library_initializer(void) {
     initializer_accepted = printf("ordinary library initializer") >= 0;
