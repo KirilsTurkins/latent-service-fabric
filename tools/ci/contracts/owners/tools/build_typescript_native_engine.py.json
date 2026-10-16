@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/build_typescript_native_engine.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Keep real upstream source pins, normal library/ownership rechecks, locked Cargo CMake build and explicit unqualified engine envelope as one reviewable maintained source owner",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "da52719837ad2d2c47f05d42383ff80429f4b958bba63bcac58e4ab2c64b0100"
+}

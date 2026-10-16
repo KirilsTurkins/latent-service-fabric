@@ -3,8 +3,8 @@
 // observe object retirement without changing the original object/class ABI.
 // Application Promise constructors and Promise.prototype.then remain original.
 #pragma once
-#include "js/TypeDecls.h"
 #include "js/RootingAPI.h"
+#include "js/TypeDecls.h"
 
 namespace JS {
 struct ActivationPromiseHooks {
