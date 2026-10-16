@@ -21,6 +21,7 @@ class SharedTenantServer(unittest.TestCase):
             files = snapshot(project)
             declaration, _lock, _pins = validate(files)
             self.assertIsNone(declaration["tenant"])
+            self.assertEqual(declaration["service"], "tenant-isolation-server")
             self.assertEqual(declaration["limits"]["outboundRequests"], 0)
             self.assertEqual(declaration["limits"]["memoryBytes"], 67108864)
             self.assertEqual(declaration["limits"]["cpuFuel"], 1000000000)
@@ -54,6 +55,29 @@ class SharedTenantServer(unittest.TestCase):
         self.assertTrue(all(row["identity"]["tenant"] == "foreign" for row in aliases))
         self.assertNotIn("activationRuntime", settings["providers"])
         self.assertNotIn("http", settings["providers"])
+
+    def test_real_package_metadata_keeps_neutral_service_and_omits_tenant_without_rewriting_source(self):
+        from unittest.mock import patch
+        from tools.rust_capsule_build import package_inputs
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = create(root / "project")
+            files = snapshot(project)
+            declaration, _lock, _pins = validate(files)
+            output = root / "package-inputs"; output.mkdir()
+            # Only unrelated compatibility/resource assembly is isolated here;
+            # the real shared metadata emitter and fixture inputs remain in use.
+            with patch("tools.rust_capsule_build.guest_compatibility_build.package_report"), \
+                    patch("tools.rust_capsule_build.guest_resources.assemble", return_value=[]):
+                package_inputs(output, declaration, {"exports": [], "imports": []}, files, b"metadata-control")
+            manifest = json.loads((output / "capsule.json").read_bytes())
+            deployment = json.loads((output / "deployment.json").read_bytes())
+            self.assertEqual(manifest["metadata"]["name"], "tenant-isolation-server")
+            self.assertNotIn("tenant", manifest["metadata"])
+            self.assertNotIn("tenant", deployment["metadata"])
+            self.assertEqual(deployment["spec"]["service"], manifest["metadata"]["name"])
+            self.assertEqual(manifest["component"]["world"], declaration["world"])
+            self.assertEqual(snapshot(project), files)
 
     def test_grants_require_exact_descriptor_tenant_and_separate_trigger_and_publication(self):
         with tempfile.TemporaryDirectory() as temporary:

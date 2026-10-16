@@ -5,6 +5,15 @@ independently admitted tenant publications on the same node. Native execution
 is pending the maintained Linux job. Source controls and JDK API compilation
 alone do not establish isolation.
 
+The first hosted candidate compiled and validated the actual Java component,
+then failed at package assembly before signing or invocation. The fixture had
+removed its tenant but retained an `examples/` service prefix, contrary to the
+existing manifest scope rule. The corrected fixture uses an unqualified service
+name; the manifest validator is unchanged. A metadata regression uses the real
+shared emitter, while the next run also retains the previously omitted packager
+stderr. The [original failure](evidence/java-server-tenants-package-failed-2026-10-16.json)
+does not establish tenant isolation or a signed pass.
+
 The normal project creator, compiler, package builder and fresh-store runtime
 remain in use. The application adds an ordinary helper that retains a request
 marker, a byte array and a static call counter. Alternating successful HTTPS

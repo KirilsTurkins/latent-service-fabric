@@ -46,7 +46,8 @@ def main(argv=None):
     try:
         project = create(output / "source")
         declaration, _lock, _pins = validate(snapshot(project))
-        require(declaration["tenant"] is None and declaration["limits"]["memoryBytes"] == 67108864
+        require(declaration["tenant"] is None and "/" not in declaration["service"]
+                and declaration["limits"]["memoryBytes"] == 67108864
                 and declaration["limits"]["cpuFuel"] == 1000000000
                 and declaration["limits"]["wallTimeLimitMillis"] == 120000
                 and declaration["limits"]["outboundRequests"] == 0,

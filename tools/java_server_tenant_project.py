@@ -48,5 +48,6 @@ def create(directory: Path) -> Path:
     (helper / "TenantRoutes.java").write_text(SOURCE, encoding="utf-8")
     project = json.loads((root / "capsule-project.json").read_bytes())
     project["tenant"] = None
+    project["service"] = "tenant-isolation-server"
     (root / "capsule-project.json").write_bytes(canonical(project) + b"\n")
     return root

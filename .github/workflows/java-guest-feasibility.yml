@@ -284,6 +284,13 @@ jobs:
             ${{ runner.temp }}/java-server-tenants/build/server-profile.json
             ${{ runner.temp }}/java-server-tenants/build/compiler-inputs.json
             ${{ runner.temp }}/java-server-tenants/build/compiler-logs/**
+            ${{ runner.temp }}/java-server-tenants/build/logs/**
+            ${{ runner.temp }}/java-server-tenants/build/package-source.json
+            ${{ runner.temp }}/java-server-tenants/build/capsule.json
+            ${{ runner.temp }}/java-server-tenants/build/deployment.json
+            ${{ runner.temp }}/java-server-tenants/build/contracts.json
+            ${{ runner.temp }}/java-server-tenants/build/wit-lock.json
+            ${{ runner.temp }}/java-server-tenants/build/surface.json
             ${{ runner.temp }}/java-server-tenants/build/component.wasm
             ${{ runner.temp }}/java-server-tenants/logs/**
             ${{ runner.temp }}/java-server-tenants/execution/**/*.json
