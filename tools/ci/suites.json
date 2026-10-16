@@ -3354,8 +3354,12 @@
         "identity::malformed_identity_and_foreign_principal_fail_without_lifecycle_or_backend_work",
         "identity::spare_input_and_context_capacity_is_rejected_before_accepting_an_owner",
         "identity::untrusted_ancestry_is_rejected_without_lifecycle_or_backend_work",
+        "inbound::abandoning_an_unstarted_inbound_reservation_is_still_cancellation",
         "inbound::an_expired_pull_cannot_receive_a_fresh_activation_deadline",
         "inbound::full_admission_refuses_another_pull_and_drop_returns_actual_capacity",
+        "inbound::late_cancellation_cannot_replace_an_inbound_refusal",
+        "inbound::pre_execution_refusals_preserve_producer_diagnostics_and_release_capacity",
+        "inbound::rejection_preserves_original_deadline_and_accepted_cancellation_winners",
         "inbound::reserve_before_receiving_pins_route_budget_and_input_without_preparing_a_guest",
         "inbound::reserved_input_is_subject_to_policy_and_cannot_grow_at_dispatch",
         "inbound::selected_inbound_keeps_exact_weighted_choice_and_policy_across_cutover",
@@ -3401,7 +3405,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-node/Cargo.toml",
-      "minimumCases": 67,
+      "minimumCases": 71,
       "mode": "libtest",
       "package": "latent-node",
       "platforms": [
@@ -10168,7 +10172,8 @@
         "standalone::state::recovery::profile::reconstructed_http::tests::authentic_reconstructed_tuple_keeps_all_four_compiler_source_and_codec_associations",
         "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_review_uses_new_marker_proof_and_preserves_original_codec",
         "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_tuple_refuses_mixed_historical_or_foreign_associations",
-        "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_review_retains_all_original_declaration_and_codec_gates"
+        "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_review_retains_all_original_declaration_and_codec_gates",
+        "standalone::state::installations::tests::http::refusal::actual_native_ingress_refusal_keeps_resource_exhausted_in_the_signed_http_root"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10237,7 +10242,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 432,
+      "minimumCases": 433,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
