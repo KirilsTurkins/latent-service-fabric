@@ -49,6 +49,12 @@ async fn owned_stack_fixture_selects_original_phase3_without_expanding_finite_gr
             assert_eq!(control.budget.host_memory_bytes(), 4096);
             drop(reservation);
             assert_eq!(control.budget.host_memory_bytes(), 0);
+            let lineage = control.budget.descendant_snapshot().unwrap();
+            assert_eq!(lineage.depth, 0);
+            assert_eq!(lineage.live_descendants, 0);
+            assert!(!control.budget.descendant_is_cancelled());
+            control.probe.cancel();
+            assert!(control.budget.descendant_is_cancelled());
         } else {
             assert!(matches!(
                 reservation,
@@ -246,7 +252,7 @@ async fn real_session_wait_keeps_original_cancellation_and_lease_expiry() {
         let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
         pending_at_fence(invocation.as_mut(), &held).await;
         if cancelled {
-            control.probe.0.store(true, Ordering::Release);
+            control.probe.cancel();
         } else {
             signed.expire_original_lease();
         }

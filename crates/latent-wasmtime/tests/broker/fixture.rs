@@ -63,13 +63,43 @@ impl CapabilityPlanSource for Plans {
         Ok(self.plan.clone())
     }
 }
-pub struct Probe(pub AtomicBool);
+pub struct Probe {
+    cancelled: AtomicBool,
+    signal: tokio::sync::Notify,
+}
+impl Probe {
+    pub fn cancel(&self) {
+        self.cancelled.store(true, Ordering::Release);
+        self.signal.notify_waiters();
+    }
+}
 impl ExecutionCancellationProbe for Probe {
     fn is_cancelled(&self) -> bool {
-        self.0.load(Ordering::Acquire)
+        self.cancelled.load(Ordering::Acquire)
     }
     fn reason(&self) -> Option<String> {
         None
+    }
+}
+impl latent_core::BudgetCancellationProbe for Probe {
+    fn is_cancelled(&self) -> bool {
+        ExecutionCancellationProbe::is_cancelled(self)
+    }
+    fn cancelled(&self) -> latent_core::BoxFuture<'_, ()> {
+        Box::pin(async move {
+            loop {
+                let ready = self.signal.notified();
+                tokio::pin!(ready);
+                ready.as_mut().enable();
+                if ExecutionCancellationProbe::is_cancelled(self) {
+                    return;
+                }
+                ready.await;
+            }
+        })
+    }
+    fn mark_terminal(&self) {
+        self.cancel();
     }
 }
 pub struct Control {
@@ -334,6 +364,15 @@ impl Fixture {
             profile,
         )
         .unwrap();
+        let probe = Arc::new(Probe {
+            cancelled: AtomicBool::new(false),
+            signal: tokio::sync::Notify::new(),
+        });
+        if self.owned_native_stacks {
+            budget
+                .enable_descendants(latent_core::DelegationLimits::default(), probe.clone())
+                .unwrap();
+        }
         let mut request = support::request(
             self.prepared.clone(),
             &id,
@@ -348,14 +387,7 @@ impl Fixture {
             contract: component::CAP.into(),
             opaque_handle: "descriptive-only".into(),
         });
-        (
-            request,
-            Control {
-                id,
-                budget,
-                probe: Arc::new(Probe(AtomicBool::new(false))),
-            },
-        )
+        (request, Control { id, budget, probe })
     }
     pub fn idle(&self) {
         let resources = self.backend.resource_snapshot();

@@ -7817,6 +7817,7 @@
         "monotonic::ordinary_std_instant_with_owned_native_stack",
         "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores",
         "ordinary_std_systemtime_with_owned_native_stack",
+        "owned_stack_fixture_selects_original_phase3_without_expanding_finite_grant",
         "real_session_currentness_wait_precedes_store_registration_and_calls_guest_once",
         "real_session_wait_keeps_original_cancellation_and_lease_expiry"
       ],
@@ -7835,7 +7836,7 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 13,
+      "minimumCases": 14,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
