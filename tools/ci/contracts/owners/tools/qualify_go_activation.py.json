@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_activation.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve all timer GC controls and unchanged terminal observer while adding admitted initializers and published retry worker qualification.",
+  "reviewReason": "Review unchanged initializer/published fixture selection and preserved GC controls against committed LF bytes after Windows conflict resolution.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0daf9e2d0e6ddb9d7e42b7c9a9682350a8a2f6c5701ac3155d454b8f9376fac3"
+  "sha256": "8748319ec27b68bfc190677299dddb7475b96449aa1a07bc4c8bc29cfe8144a4"
 }
