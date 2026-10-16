@@ -116,23 +116,50 @@ def projection(text: str, graph: dict, world: str, project_graph):
 
 CLASS = re.compile(r'(?ms)^(?P<indent>[ \t]*)public static class (?P<name>[A-Za-z_][A-Za-z0-9_]*)'
                    r'(?: \{|\n(?P=indent)\{)\n.*?^(?P=indent)\}')
-METHOD = re.compile(r'(?ms)^(?P<indent>[ \t]*)public static (?P<signature>(?:async Task |unsafe uint )[^\n{}]+)\n'
+METHOD = re.compile(r'(?ms)^(?P<indent>[ \t]*)public static (?P<signature>(?:async Task |unsafe uint )[^{}]+?)\n'
                     r'(?P=indent)\{\n(?P<body>.*?)^(?P=indent)\}')
 WRAPPER = re.compile(r'(?ms)^(?P<indent>[ \t]*)public static unsafe int (?P<name>wasmExport[A-Za-z0-9_]+)'
                      r'\((?P<params>[^\n]*)\) \{\n(?P<body>.*?)^(?P=indent)\}')
 
 
+def task_call(body: str) -> tuple[int, int, str]:
+    """Read one generated invocation, including multiline record arguments.
+
+    Only the balanced call expression is consumed. Statements/comments or
+    literals inside this generated argument projection are not accepted;
+    the original pinned completion tail is checked separately by the caller.
+    """
+    start = re.search(r'(?m)^\s*var task = ([A-Za-z_][A-Za-z0-9_]*Async)\(',body)
+    if start is None:
+        raise ValueError('dotnet-async-export-pinned-entry-drift')
+    depth = 1
+    for offset in range(start.end(),len(body)):
+        token = body[offset]
+        if token in ';{}\'"/':
+            raise ValueError('dotnet-async-export-pinned-entry-drift')
+        if token == '(':
+            depth += 1
+        elif token == ')':
+            depth -= 1
+            if depth == 0:
+                if body[offset+1:offset+3] != ';\n':
+                    raise ValueError('dotnet-async-export-pinned-entry-drift')
+                return start.start(),offset+3,body[start.start(1):offset+1]
+    raise ValueError('dotnet-async-export-pinned-entry-drift')
+
+
 def bridge_class(text: str) -> tuple[str, int]:
     """Keep upstream argument/result marshalling, changing only task lifetime."""
-    calls = set()
+    calls = {}
     count = 0
 
     def entry(match):
         nonlocal count
+        previous = text[:match.start()].rstrip().splitlines()[-1]
+        if 'EntryPoint = "[async-lift]' not in previous:
+            return match[0]
         body = match['body']
-        invocation = re.search(r'(?m)^\s*var task = ([A-Za-z_][A-Za-z0-9_]*Async\([^\n]*\));\n', body)
-        if invocation is None:
-            raise ValueError('dotnet-async-export-pinned-entry-drift')
+        invocation_start, invocation_end, call = task_call(body)
         expected = ('                if (task.IsCompletedSuccessfully)\n'
                     '                {\n                    return (int)CallbackCode.Exit;\n                }\n\n'
                     '                // TODO: Defer dropping borrowed resources until a result is returned.\n'
@@ -141,13 +168,20 @@ def bridge_class(text: str) -> tuple[str, int]:
         # Compare normalized indentation as classes for interface/resource
         # exports can nest. Extra work between invocation and exit is rejected.
         normalize = lambda value: '\n'.join(line.strip() for line in value.splitlines()).strip()
-        if normalize(body[invocation.end():]) != normalize(expected):
+        if normalize(body[invocation_end:]) != normalize(expected):
             raise ValueError('dotnet-async-export-pinned-entry-drift')
-        call = invocation[1]
-        calls.add(call.partition('(')[0])
+        parameters = match['params']
+        parsed = [] if not parameters else parameters.split(', ')
+        if any(re.fullmatch(r'(?:int|long|float|double|nint) p[0-9]+',value) is None for value in parsed):
+            raise ValueError('dotnet-async-export-pinned-core-parameters-drift')
+        arguments = [value.partition(' ')[2] for value in parsed]
+        helper = call.partition('(')[0]
+        if helper in calls or len(arguments) != len(set(arguments)):
+            raise ValueError('dotnet-async-export-duplicate-generated-helper')
+        calls[helper] = (parameters,body[:invocation_start])
         count += 1
         return (match['indent'] + 'public static unsafe int ' + match['name'] + '(' + match['params'] + ') {\n'
-                + body[:invocation.start()] + match['indent'] + '    ' + call + ';\n'
+                + match['indent'] + '    ' + helper + '(' + ', '.join(arguments) + ');\n'
                 + match['indent'] + '    return 0;\n' + match['indent'] + '}')
 
     result = WRAPPER.sub(entry, text)
@@ -158,7 +192,7 @@ def bridge_class(text: str) -> tuple[str, int]:
     def method(match):
         nonlocal callbacks
         signature, body = match['signature'], match['body']
-        helper = re.fullmatch(r'async Task ([A-Za-z_][A-Za-z0-9_]*Async)\(([^\n]*)\)', signature)
+        helper = re.fullmatch(r'async Task ([A-Za-z_][A-Za-z0-9_]*Async)\(([\s\S]*)\)', signature)
         if helper and helper[1] in calls:
             helpers.add(helper[1])
             # With --with-wit-results the pinned generator emits a direct
@@ -167,7 +201,13 @@ def bridge_class(text: str) -> tuple[str, int]:
                           r'\1\2;', body)
             if re.search(r'\bawait\b', body):
                 raise ValueError('dotnet-async-export-pinned-helper-drift')
-            signature = 'unsafe void ' + helper[1] + '(' + helper[2] + ')'
+            # The pinned generator uses lifted record expressions as formal
+            # parameter names. Keep its original raw core parameter list and
+            # original argument lifting together instead of inventing a C#
+            # type mapping or changing the authoritative implementation API.
+            parameters, preamble = calls[helper[1]]
+            signature = 'unsafe void ' + helper[1] + '(' + parameters + ')'
+            body = preamble + body
         elif re.fullmatch(r'unsafe uint [A-Za-z_][A-Za-z0-9_]*Callback\(int eventRaw, uint waitable, uint code\)', signature):
             expected = ('EventWaitable e = new EventWaitable((EventCode)eventRaw, waitable, code);\n\n'
                         'return (uint)AsyncSupport.Callback(e);')
@@ -180,7 +220,7 @@ def bridge_class(text: str) -> tuple[str, int]:
         return match['indent'] + 'public static ' + signature + '\n' + match['indent'] + '{\n' + body + match['indent'] + '}'
 
     result = METHOD.sub(method, result)
-    if helpers != calls or callbacks != count or any(token in result for token in
+    if helpers != set(calls) or callbacks != count or any(token in result for token in
             ('AsyncSupport.', 'CallbackCode.', 'ContextTask', 'async Task')):
         raise ValueError('dotnet-async-export-unaccounted-generated-task-support')
     return result, count

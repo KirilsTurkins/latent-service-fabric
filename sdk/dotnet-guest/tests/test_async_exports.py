@@ -17,7 +17,9 @@ class AsyncExportTests(unittest.TestCase):
     def test_pinned_marshalling_runs_real_work_before_task_return_and_unpins_after(self):
         result, count = exports.bridge(self.baseline, self.asynchronous)
         self.assertEqual(count, 1)
-        self.assertIn('public static unsafe void RunAsync(string str)', result)
+        self.assertIn('public static unsafe void RunAsync(nint p0, int p1)', result)
+        self.assertEqual(result.count('UTF8.GetString((byte*)p0, p1)'),1)
+        self.assertLess(result.index('UTF8.GetString((byte*)p0, p1)'),result.index('ApiExportsImpl.Run((str))'))
         work = result.index('var ret = ApiExportsImpl.Run((str));')
         pin = result.index('GCHandle.Alloc(utf8Bytes')
         returned = result.index('RunTaskReturn(strPtr.ToInt32(), length);')
@@ -65,6 +67,27 @@ class AsyncExportTests(unittest.TestCase):
     def test_synchronous_bindings_do_not_gain_an_async_task(self):
         result, count = exports.bridge(self.baseline, self.baseline)
         self.assertEqual((result, count), (self.baseline, 0))
+
+    def test_pinned_aggregate_record_arguments_retain_original_lifting_and_result_lowering(self):
+        root = Path(__file__).parent/'fixtures'
+        baseline = (root/'stackful-record-baseline-export.cs').read_text()
+        asynchronous = (root/'stackful-record-async-export.cs').read_text()
+        result, count = exports.bridge(baseline,asynchronous)
+        self.assertEqual(count,3)
+        self.assertIn('public static unsafe void UpdateAsync(int p0, int p1)',result)
+        self.assertIn('UpdateAsync(p0, p1);',result)
+        self.assertIn('var ret = ApiExportsImpl.Update((new global::',result)
+        self.assertIn('unchecked((uint)(p0)), (p1 != 0))));',result)
+        self.assertEqual(result.count('new byte[p1]'),1)
+        self.assertEqual(result.count('ScanTaskReturn(lowered28, lowered29, lowered30, lowered31, lowered32, lowered33, lowered34, lowered35);'),1)
+        self.assertNotIn('async Task',result)
+        self.assertNotIn('var task =',result)
+
+    def test_unbalanced_or_statement_injected_record_call_is_rejected(self):
+        for call in ('RunAsync((record); Unexpected());','RunAsync((record);','RunAsync(/* hidden */record);'):
+            changed = self.asynchronous.replace('RunAsync((str));',call)
+            with self.subTest(call=call), self.assertRaisesRegex(ValueError,'pinned-entry-drift'):
+                exports.bridge(self.baseline,changed)
 
     def graph(self):
         function = {'name': 'run', 'kind': 'async-freestanding', 'params': [], 'result': 'u64'}

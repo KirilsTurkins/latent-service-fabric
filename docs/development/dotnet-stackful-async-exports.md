@@ -25,6 +25,11 @@ expected graph. Only the selected export interop classes are replaced; public
 C# interfaces and ordinary application methods remain the original baseline.
 The bridge retains the pinned argument/result marshalling, executes the actual
 application method, calls canonical `task.return`, then releases result pins.
+It retains the original raw core parameters and moves the generator's argument
+lifting into the synchronous helper. This also handles the pinned generator's
+malformed async record-parameter declarations without inventing a C# type mapping.
+The original completion tail must match exactly, and generated calls must have
+balanced parentheses with no injected statements or comments.
 It creates no completed Task, application executor or new invocation budget.
 An unexpected stackless callback traps instead of inventing completion.
 
@@ -68,7 +73,17 @@ exports within component/instance type definitions. Actual pinned parser,
 validator and complete-graph roundtrip controls cover both forms. The failed
 attempt remains retained; fresh NativeAOT qualification is still required.
 
-Twelve source regressions cover retained marshalling/pin order, unchanged C#
+The [following hosted attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38837686118)
+reached C# generation for the original authored aggregate and rejected its
+multiline record argument. Actual pinned generation reproduced both that
+shape and the malformed async helper parameter declaration. The bridge now
+retains the exact raw core parameter list and argument-lifting prelude together.
+The original three-operation aggregate, complete graph checks, generated-output
+drift check, unchanged application and SDK facades pass host Roslyn 10.0.303
+compilation with zero warnings/errors. This is a generator/type control;
+NativeAOT and signed node execution remain separate required checks.
+
+Fourteen source regressions cover retained marshalling/pin order, unchanged C#
 interfaces, real export names, imported versus exported kinds and fail-closed
 generator/source drift. Separate actual pinned generator controls cover scalar,
 string, result-less, inline-interface and large-import-parameter contracts. A
