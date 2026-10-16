@@ -25,6 +25,8 @@ on:
       - 'tools/captured_compiler_isolation.py'
       - 'tools/build_typescript_guest_capsules.py'
       - 'tools/build_typescript_promise_library.py'
+      - 'tools/build_typescript_native_engine.py'
+      - 'tools/tests/test_typescript_native_build.py'
       - 'tools/tests/test_typescript_promise_library.py'
       - 'tools/qualify_typescript_capsules.py'
       - 'tools/qualify_typescript_dependencies.py'
@@ -66,6 +68,8 @@ on:
       - 'tools/captured_compiler_isolation.py'
       - 'tools/build_typescript_guest_capsules.py'
       - 'tools/build_typescript_promise_library.py'
+      - 'tools/build_typescript_native_engine.py'
+      - 'tools/tests/test_typescript_native_build.py'
       - 'tools/tests/test_typescript_promise_library.py'
       - 'tools/qualify_typescript_capsules.py'
       - 'tools/qualify_typescript_dependencies.py'
@@ -130,6 +134,15 @@ jobs:
           sudo apt-get install --yes clang-18 llvm-18 lld-18 autoconf2.13 m4 libffi-dev python3-dev
       - name: Compile the actual patched intrinsic Promise implementation
         run: python3 tools/build_typescript_promise_library.py --output "$RUNNER_TEMP/typescript-promise-library"
+      - name: Check normal engine library and header ownership boundaries
+        run: python3 -m unittest tools.tests.test_typescript_native_build -v
+      - name: Install the exact maintained engine bindings generator
+        run: python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/typescript-promise-tools"
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Link the actual source-owned Promise and clock engine
+        run: python3 tools/build_typescript_native_engine.py --library "$RUNNER_TEMP/typescript-promise-library" --output "$RUNNER_TEMP/typescript-native-engine" --wit-bindgen "$RUNNER_TEMP/typescript-promise-tools/wit-bindgen"
       - name: Retain source identities, normal products and failed attempts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -148,6 +161,16 @@ jobs:
             ${{ runner.temp }}/typescript-promise-library/obj/dist/include/**
             ${{ runner.temp }}/typescript-promise-library/obj/config.log
             ${{ runner.temp }}/typescript-promise-library/obj/config.status
+            ${{ runner.temp }}/typescript-native-engine/*.json
+            ${{ runner.temp }}/typescript-native-engine/*.log
+            ${{ runner.temp }}/typescript-native-engine/engine.wasm
+            ${{ runner.temp }}/typescript-native-engine/licenses/**
+            ${{ runner.temp }}/typescript-native-engine/build/CMakeCache.txt
+            ${{ runner.temp }}/typescript-native-engine/build/compile_commands.json
+            ${{ runner.temp }}/typescript-native-engine/build/starling-raw.wasm/Cargo.lock
+            ${{ runner.temp }}/typescript-native-engine/build/starling-raw.wasm/Cargo.toml
+            ${{ runner.temp }}/typescript-native-engine/jobs-generated/**
+            ${{ runner.temp }}/typescript-native-engine/clocks-generated/**
           if-no-files-found: error
           retention-days: 7
   boundary:
