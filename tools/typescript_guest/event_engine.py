@@ -8,6 +8,8 @@ PREIMAGES = {
     'StarlingMonkey/builtins/web/event/event-target.h': 'ca9f9ed1fc9facad0308be0e8e86daada19d8b1715c727f90da8db4e60141e63',
     'StarlingMonkey/builtins/web/abort/abort-signal.h': 'ba8b1ce78deaabf0e86dae56b9eaf79e59e55f179b8a0deda3ef6bed4f8f9b46',
     'StarlingMonkey/builtins/web/event/global-event-target.cpp': 'ed9af74351155434a340f9489395c63a4a609e78bf706e13e6b02a2a7053fe9c',
+    'StarlingMonkey/builtins/web/fetch/fetch-api.cpp': '0992832f377bd45986e79447f463f1de2ff609f32d53723e0ef04de2c7178cf2',
+    'StarlingMonkey/builtins/web/fetch/request-response.cpp': 'eefae62cdbc31616df620d2d788ba3d27ccbeaf47a58fb53b04aefc08fff05b5',
 }
 
 
@@ -127,6 +129,67 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'    delete static_cast<OwnedListenerList *>(slot.toPrivate());\n'
         b'    JS::SetReservedSlot(self, std::to_underlying(Slots::Listeners), JS::UndefinedValue());\n'
         b'  }\n', 'physical-listener-vector-destruction-before-safe-ack')
+    result[name] = source
+
+    # The pinned carrier has two more AbortAlgorithm subclasses in fetch.
+    # Every derived allocation transfers an admitted lease into the base;
+    # adding an uncharged default constructor would hide missing ownership.
+    name = 'StarlingMonkey/builtins/web/fetch/fetch-api.cpp'
+    source = replace_once(original[name],
+        b'  Terminator(const mozilla::WeakPtr<ResponseFutureTask>& task) : task(task) {}',
+        b'  Terminator(lsf::typescript::activation::NativeObjectLease&& owner,\n'
+        b'             const mozilla::WeakPtr<ResponseFutureTask>& task)\n'
+        b'      : AbortAlgorithm(std::move(owner)), task(task) {}', 'fetch-terminator-owned-base')
+    source = replace_once(source,
+        b'                 HostString method, HostString url) {\n',
+        b'                 HostString method, HostString url) {\n'
+        b'  lsf::typescript::activation::NativeObjectLease abort_owner;\n'
+        b'  if (!lsf::typescript::activation::admit_native_object(cx, abort_owner)) return false;\n',
+        'fetch-abort-owner-before-request-and-send')
+    source = replace_once(source,
+        b'    AbortSignal::add_algorithm(signal, js::MakeUnique<Terminator>(weak));\n',
+        b'    auto algorithm = js::MakeUnique<Terminator>(std::move(abort_owner), weak);\n'
+        b'    if (!algorithm) { JS_ReportOutOfMemory(cx); return false; }\n'
+        b'    if (!AbortSignal::add_algorithm(signal, std::move(algorithm))) return false;\n',
+        'fetch-terminator-allocation-and-publication-results')
+    publication = (b'  SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::ResponsePromise),\n'
+                   b'                  ObjectValue(*response_promise));\n'
+                   b'  SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::PendingResponseHandle),\n'
+                   b'                  PrivateValue(pending_handle));\n')
+    source = replace_once(source, publication, b'', 'fetch-original-task-context-publication')
+    anchor = b'  // If the request body is streamed, we need to wait for streaming to complete\n'
+    source = replace_once(source, anchor, publication+b'\n'+anchor,
+        'fetch-task-context-before-accepted-work-and-fallible-abort-allocation')
+    result[name] = source
+
+    name = 'StarlingMonkey/builtins/web/fetch/request-response.cpp'
+    source = replace_once(original[name],
+        b'  ResponseAborter(HandleObject promise, HandleObject response, HandleObject signal)\n'
+        b'      : promise(promise), response(response), signal(signal) {}',
+        b'  ResponseAborter(lsf::typescript::activation::NativeObjectLease&& owner,\n'
+        b'                  HandleObject promise, HandleObject response, HandleObject signal)\n'
+        b'      : abort::AbortAlgorithm(std::move(owner)), promise(promise), response(response), signal(signal) {}',
+        'response-aborter-owned-base')
+    source = replace_once(source,
+        b'  RootedObject response_promise(cx, Request::response_promise(request));\n\n'
+        b'  auto res = future_->maybe_response();',
+        b'  RootedObject response_promise(cx, Request::response_promise(request));\n'
+        b'  RootedObject signal(cx, Request::signal(request));\n'
+        b'  lsf::typescript::activation::NativeObjectLease abort_owner;\n'
+        b'  if (AbortSignal::is_instance(signal) &&\n'
+        b'      !lsf::typescript::activation::admit_native_object(cx, abort_owner)) return false;\n\n'
+        b'  auto res = future_->maybe_response();', 'response-abort-owner-before-future-result')
+    source = replace_once(source,
+        b'  RootedObject signal(cx, Request::signal(request));\n'
+        b'  if (AbortSignal::is_instance(signal)) {\n'
+        b'    auto algorithm = js::MakeUnique<ResponseAborter>(response_promise, response_obj, signal);\n'
+        b'    AbortSignal::add_algorithm(signal, std::move(algorithm));\n',
+        b'  if (AbortSignal::is_instance(signal)) {\n'
+        b'    auto algorithm = js::MakeUnique<ResponseAborter>(\n'
+        b'        std::move(abort_owner), response_promise, response_obj, signal);\n'
+        b'    if (!algorithm) { JS_ReportOutOfMemory(cx); return false; }\n'
+        b'    if (!AbortSignal::add_algorithm(signal, std::move(algorithm))) return false;\n',
+        'response-aborter-allocation-and-publication-results')
     result[name] = source
 
     name = 'StarlingMonkey/builtins/web/abort/abort-signal.cpp'

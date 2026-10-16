@@ -81,8 +81,22 @@ original header/configuration bytes, deadlines and source-carrier preservation.
 The latest actual normal-mach library is535,993,684bytes; its22 required support
 objects total2,863,676bytes. Combining those valid inputs exceeded the reused
 512MiB library-input bound before CMake. The original failed receipt is retained;
-the combined product now has its separately derived bound above. Engine linkage
-on that correction remains pending.
+the combined product now has its separately derived bound above.
+
+The [next normal source build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38853667517/job/116820238856)
+passed the library stage and CMake configure, then failed compilation of the
+original fetch `Terminator`: its `AbortAlgorithm` base requires an admitted
+native lease. An audit of every original C++ declaration and allocation found
+three subclasses. The event-listener subclass already transfers its lease;
+both fetch subclasses now do the same. Their exact pinned original files,
+callback bodies and trace bodies are retained. Fetch admission precedes the
+request effect; response admission precedes consuming the future result.
+Allocation and algorithm-list insertion failures propagate. The original
+response promise and pending handle are published before the accepted task
+enters the engine queue, including on either later failure path. No default
+uncharged constructor is added. Twelve source controls retain all nine earlier
+cases and guards. Actual engine compilation on this correction remains pending.
+
 Normal Linux engine linkage has not yet passed. Even an emitted validated core
 is an explicitly unqualified Promise/clock compiler input. Source-built async
 import splicing, ordinary signed lifecycle/drain cases, and the default Fetch
