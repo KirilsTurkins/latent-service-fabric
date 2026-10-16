@@ -10,6 +10,7 @@ import hashlib
 from tools.typescript_guest.activation_engine import identity, replace_once, FIREFOX_COMMIT
 
 PREIMAGES = {
+    "js/src/moz.build": "97630e2e9f1b0ef54dc586dcd08d9d5a9a897237dd526f43fe433986873fc004",
     "js/src/builtin/Promise.cpp": "03a0a7d9bd2a2bdd6b373486c9e86c99f35baae9d76814048c873bd8004d0649",
     "js/src/vm/PromiseObject.h": "92a691bff5bb06319c5e95a6ab21fe0e4cdbe32fc18cd2f51f748033d3d9cffd",
 }
@@ -56,9 +57,14 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
         raise ValueError("explicit native Promise hook ABI required")
     result = dict(original)
 
+    result["js/src/moz.build"] = replace_once(result["js/src/moz.build"],
+        b'EXPORTS.js += [\n    "!../public/PrefsGenerated.h",\n',
+        b'EXPORTS.js += [\n    "!../public/PrefsGenerated.h",\n'
+        b'    "../public/ActivationPromiseHooks.h",\n',
+        "native-hook-header-export")
     source = result["js/src/builtin/Promise.cpp"]
-    source = replace_once(source, b'#include "builtin/Promise.h"\n',
-        b'#include "builtin/Promise.h"\n#include "js/ActivationPromiseHooks.h"\n', "promise-hook-include")
+    source = replace_once(source, b'#include "js/CallAndConstruct.h"',
+        b'#include "js/ActivationPromiseHooks.h"\n#include "js/CallAndConstruct.h"', "promise-hook-include")
     source = replace_once(source, b"using namespace js;\n", b"using namespace js;\n" + HOOK_SUPPORT,
                           "native-hook-install")
     source = replace_once(source,
@@ -162,6 +168,7 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
         "originalPromiseAndReactionClassOperationsUnchanged": True,
         "GCObservation": "original-weak-pointer-api-then-actual-collection-end",
         "newSourceBuiltSpiderMonkeyRequired": True,
+        "nativeHookHeaderExportedByNormalBuild": True,
         "priorPublicQueueProofQualifiesTheseNewHooks": False,
         "supportedAsyncProfile": False,
         "remaining": ["source-built-library-and-real-intrinsic-hook-controls",
