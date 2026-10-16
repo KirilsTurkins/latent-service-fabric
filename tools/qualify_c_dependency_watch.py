@@ -13,7 +13,6 @@ import importlib.util
 import json
 import os
 from pathlib import Path
-import re
 import shutil
 import signal
 import subprocess
@@ -61,17 +60,41 @@ raise SystemExit(main())
 
 
 def public_watch_events(values):
+    allowed = {
+        'event': {'edit-failed', 'deployed', 'post-deploy-tests',
+                  'post-deploy-tests-not-selected', 'build-superseded'},
+        'phase': {'source', 'build', 'deploy', 'test'},
+        'code': {'success', 'composition-checks-failed', 'required-tests-failed',
+                 'interrupted-inspect-workspace-status', 'invalid-or-unavailable-input-inspect-doctor',
+                 'source-unavailable-during-edit', 'guest-build-superseded',
+                 'workspace-stopped-before-deployment', 'workspace-recipe-trust-required',
+                 'signed-test-build-changed-use-new-workspace',
+                 'guest-build-failed-last-deployment-retained', 'guest-build-cleanup-unconfirmed',
+                 'build-deadline-exceeded', 'language-adapter-result-invalid',
+                 'guest-tool-digest-mismatch', 'guest-tool-inventory-changed-during-build',
+                 'guest-tool-unrecorded-directory', 'private-state-directory-required',
+                 'source-file-unavailable-or-unsafe', 'compiler-process-failed',
+                 'compiler-cleanup-unconfirmed', 'compiler-cancelled', 'compiler-input-or-build-failed'},
+    }
     result = []
     for value in values[-32:]:
         if not isinstance(value, dict):
             continue
-        row = {key: value[key] for key in ('event', 'phase', 'code')
-               if isinstance(value.get(key), str) and re.fullmatch('[a-z0-9-]{1,128}', value[key])}
+        row = {key: value[key] for key, vocabulary in allowed.items()
+               if isinstance(value.get(key), str) and value[key] in vocabulary}
         if type(value.get('uncertain')) is bool:
             row['uncertain'] = value['uncertain']
         if row:
             result.append(row)
     return result
+
+
+def add_public_watch_events(public, observe):
+    """An optional event projection cannot replace the qualification result."""
+    try:
+        public['watchEvents'] = public_watch_events(observe())
+    except Exception:
+        pass
 
 
 def main() -> int:
@@ -335,7 +358,6 @@ def main() -> int:
             outsideInputs=report.get('outsideInputs', {}),
             originalInputsRemovedBeforeCompile=report.get('originalInputsRemovedBeforeCompile', False),
             normalDownAttempts=len(shutdown_attempts), cleanup=report.get('cleanup', 'not-performed'),
-            watchEvents=public_watch_events(observed()),
             deploymentCount=len(report['stages']),
             shutdowns=[{'id': row['id'], 'watchExitCode': row['watchExitCode'],
                         'state': row['result']['state'], 'reaped': row['result']['reaped'],
@@ -343,6 +365,7 @@ def main() -> int:
             stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
         if 'failure' in report:
             public['failure'] = report['failure']
+        add_public_watch_events(public, observed)
         write(root / 'public-qualification.json', public)
 
 

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Prevent the explicit source frontend from mutating the delivered Python SDK with bytecode; retain all watch, signing, inventory and once-only shutdown guards. Bind the normalized committed source bytes, including unchanged Linux line endings.",
+  "reviewReason": "Review exact public watch vocabularies and optional Exception-only observer; preserve qualification behavior.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4fc92dd1878afeb8acd2bf3ae071ccf4199c848d6f1784b267cb1c295977b694"
+  "sha256": "89fd17dba2ef852c0316f146b195b4a991903afc0aece6d2a52ac3cbb8c4d685"
 }

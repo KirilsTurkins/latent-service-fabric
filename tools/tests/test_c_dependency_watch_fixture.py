@@ -153,5 +153,68 @@ class FrontendRuntime(unittest.TestCase):
             self.assertFalse((root / 'ambient-bytecode').exists())
 
 
+class PublicWatchDiagnostics(unittest.TestCase):
+    def test_private_fields_and_credential_shaped_labels_never_enter_the_projection(self):
+        from tools.qualify_c_dependency_watch import public_watch_events
+        values = [None, [], {'event': 'edit-failed', 'phase': 'build',
+            'code': 'guest-build-failed-last-deployment-retained', 'uncertain': False,
+            'path': '/private/token', 'payload': 'token-secret'},
+            {'event': 'token-secret', 'phase': 'a' * 64, 'code': 'token-secret', 'uncertain': 1},
+            {'event': 'a' * 64, 'phase': 'token-secret', 'code': 'a' * 64},
+            {'code': 'success', 'uncertain': 'false'}]
+        observed = public_watch_events(values)
+        self.assertEqual(observed, [{'event': 'edit-failed', 'phase': 'build',
+            'code': 'guest-build-failed-last-deployment-retained', 'uncertain': False}, {'code': 'success'}])
+        for secret in ('token-secret', 'a' * 64, '/private/token', 'payload'):
+            self.assertNotIn(secret, json.dumps(observed))
+
+    def test_projection_keeps_only_the_last_thirty_two_observations(self):
+        from tools.qualify_c_dependency_watch import public_watch_events
+        values = [{'code': 'success'} for _ in range(8)] + [
+            {'code': 'workspace-recipe-trust-required'} for _ in range(32)]
+        self.assertEqual(public_watch_events(values), values[-32:])
+
+    def test_public_vocabulary_contains_only_actual_frontend_producer_literals(self):
+        import ast
+        import inspect
+        from tools.qualify_c_dependency_watch import public_watch_events
+        tree = ast.parse(inspect.getsource(public_watch_events))
+        table = next(node.value for node in ast.walk(tree) if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == 'allowed' for target in node.targets))
+        allowed = ast.literal_eval(table)
+        self.assertEqual(set(allowed), {'event', 'phase', 'code'})
+        self.assertEqual(tuple(len(allowed[key]) for key in ('event', 'phase', 'code')), (5, 4, 23))
+        root = Path(__file__).resolve().parents[2]
+        actual = set()
+        for name in ('tools/dev_workflow/cli.py', 'tools/dev_workflow/watch.py',
+                     'tools/dev_workflow/build.py', 'tools/dev_workflow/build_client.py',
+                     'tools/dev_workflow/node_test_signing.py', 'tools/dev_workflow/tool_inventory.py',
+                     'tools/dev_workflow/paths.py', 'tools/dev_guest_recipe.py'):
+            actual.update(node.value for node in ast.walk(ast.parse((root / name).read_text()))
+                if isinstance(node, ast.Constant) and isinstance(node.value, str))
+        self.assertLessEqual(set().union(*allowed.values()), actual)
+
+    def test_observer_and_bounded_json_errors_preserve_the_original_failure(self):
+        from tools.qualify_c_dependency_watch import add_public_watch_events
+        nested = '[' * 3000 + '0' + ']' * 3000
+        self.assertLess(len(nested.encode()), 4096 * 1024)
+        with self.assertRaises(RecursionError):
+            json.loads(nested)
+        for failure in (RuntimeError('private-observer'), RecursionError('private-parser'), nested):
+            original = ValueError('original-qualification-failure')
+            public = {'passed': False, 'failure': 'original-qualification-failure'}
+            def observe():
+                if isinstance(failure, str):
+                    return json.loads(failure)
+                raise failure
+            with self.assertRaises(ValueError) as observed:
+                try:
+                    raise original
+                finally:
+                    add_public_watch_events(public, observe)
+            self.assertIs(observed.exception, original)
+            self.assertEqual(public, {'passed': False, 'failure': 'original-qualification-failure'})
+
+
 if __name__ == '__main__':
     unittest.main()
