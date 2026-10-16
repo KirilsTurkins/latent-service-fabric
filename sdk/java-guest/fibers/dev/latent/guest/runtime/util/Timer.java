@@ -30,13 +30,19 @@ public class Timer implements Activation.ManagedPool {
         }
     }
 
+    private static final class Worker implements Runnable {
+        private final Timer timer;
+        Worker(Timer timer) { this.timer = timer; }
+        @Override public void run() { timer.work(); }
+    }
+
     private static synchronized String nextName() { return "Timer-" + serial++; }
     public Timer() { this(nextName(), false); }
     public Timer(boolean daemon) { this(nextName(), daemon); }
     public Timer(String name) { this(name, false); }
     public Timer(String name, boolean daemon) {
         Objects.requireNonNull(name);
-        worker = new Thread(this::work, name);
+        worker = new Thread(new Worker(this), name);
         worker.setDaemon(daemon);
         owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
         try {

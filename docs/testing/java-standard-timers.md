@@ -65,8 +65,23 @@ passed TeaVM and C compilation, then exposed missing closed descriptor functions
 The adapter now covers the exact compiled module's descriptor imports, returning
 `BADF` without changing caller memory or acquiring an ambient resource. The
 retained real core successfully encodes as a component and validates with pinned
-wasm-tools 1.254.0. Fresh compilation and signed timer execution remain pending
-the maintained Linux gate.
+wasm-tools 1.254.0. The next maintained gate compiled and validated the component,
+then exhausted the original 10-billion fuel ceiling in its first signed timer
+mode. No timer mode is counted as qualified by that failed run.
+
+The retained component and an isolated run of the actual locked C dependency
+analyzer both lacked the worker introduced by a method-reference lambda in the
+replacement constructor. The constructor now uses an explicit private worker,
+with its captured timer reference normalized to the same standard class. The
+new compiler graph regression retains the worker and application callback and
+emits C without compiler problems; the identical control rejects the retained
+original implementation at its missing-worker assertion. All original model
+guards, three reference and SDK source rounds, twelve signed modes, runtime
+limits and the 55-minute job remain intact. This source control verifies the
+existing 70-JAR compiler lock (33,296,002 bytes) before loading the dependency
+analyzer; it executes no Wasm or application initializer. See the
+[failure and compiler regression evidence](evidence/java-standard-timer-worker-2026-10-16.json).
+Fresh signed execution remains required for the correction.
 
 This slice does not complete issue #741. Fiber-aware pending host I/O, two
 unchanged published libraries that create default workers, the broader

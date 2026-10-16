@@ -19,7 +19,8 @@ from tools.java_guest.compiler import Compiler
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file, write_json
 
 
-def locked_model_classpath(compiler: Compiler, *, include_platform: bool = False) -> tuple[str, dict[str, str]]:
+def locked_model_classpath(compiler: Compiler, *, include_platform: bool = False,
+                           include_dependency_analysis: bool = False) -> tuple[str, dict[str, str]]:
     """Verify the compiler's own locked model tooling before any host loading."""
     names = {"teavm-classlib", "teavm-core", "teavm-extension-spi", "teavm-interop",
              "teavm-relocated-libs-asm", "teavm-relocated-libs-asm-analysis",
@@ -30,6 +31,10 @@ def locked_model_classpath(compiler: Compiler, *, include_platform: bool = False
                  if Path(item["path"]).parts[-3] in names and item["path"].startswith("org/teavm/")]
     if (len(artifacts) != len(names) or {Path(item["path"]).parts[-3] for item in artifacts} != names):
         raise ValueError("Java runtime model requires the exact locked tooling closure")
+    if include_dependency_analysis:
+        artifacts = [item for item in lock["artifacts"] if item["path"].endswith(".jar")]
+        if not artifacts or len(artifacts) > 96 or sum(item["size"] for item in artifacts) > 32 * 1024 * 1024:
+            raise ValueError("Java compiler graph requires a bounded locked tooling closure")
     cache = getattr(compiler, "dependency_cache", compiler.directory / "gradle-home/caches/modules-2/files-2.1")
     jars, identities = [], {}
     for item in sorted(artifacts, key=lambda row: row["path"]):
@@ -307,10 +312,11 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
 
 def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
     """Resolve substituted standard APIs against actual verified TeaVM models."""
-    classpath, identities = locked_model_classpath(compiler, include_platform=True)
+    classpath, identities = locked_model_classpath(compiler, include_platform=True, include_dependency_analysis=True)
     output.mkdir()
     sources = [*sorted((compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler").glob("*.java")),
-        compiler.sdk / "fibers/conformance/compiler/StandardTimerModelControl.java"]
+        compiler.sdk / "fibers/conformance/compiler/StandardTimerModelControl.java",
+        compiler.sdk / "fibers/conformance/compiler/StandardTimerCompilerGraphControl.java"]
     sources += [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
                 for name in ("Timer", "TimerTask")]
     sources += [compiler.sdk / ("fibers/conformance/compiler/standard-timer-control/" + name)
@@ -321,7 +327,7 @@ def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run("standard-timer-model-control", "java", "-Xmx256m", "-cp",
         str(output) + os.pathsep + classpath, "dev.latent.guest.runtime.compiler.StandardTimerModelControl").strip()
     if result != ("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;"
-                  "resolved-method-and-field-types;unsupported-no-fallback;models=3"):
+                  "resolved-method-and-field-types;unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback"):
         raise ValueError("Java standard timer model control did not complete")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java timer model control inputs changed during execution")

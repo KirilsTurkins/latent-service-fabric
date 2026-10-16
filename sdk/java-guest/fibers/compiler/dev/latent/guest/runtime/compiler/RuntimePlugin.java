@@ -176,6 +176,7 @@ public final class RuntimePlugin implements TeaVMPlugin {
 
     private static String timerReference(String name) {
         if (name.equals("java.util.Timer$Entry")) return "dev.latent.guest.runtime.util.Timer$Entry";
+        if (name.equals("java.util.Timer$Worker")) return "dev.latent.guest.runtime.util.Timer$Worker";
         for (String api : new String[] {"Timer", "TimerTask"})
             if (name.equals("dev.latent.guest.runtime.util." + api)) return "java.util." + api;
         return name;
@@ -184,7 +185,8 @@ public final class RuntimePlugin implements TeaVMPlugin {
     private static void normalizeOwnedTimerReferences(ClassHolder cls) {
         String name = cls.getName();
         if (!name.equals("java.util.Timer") && !name.equals("java.util.TimerTask")
-                && !name.equals("dev.latent.guest.runtime.util.Timer$Entry")) return;
+                && !name.equals("dev.latent.guest.runtime.util.Timer$Entry")
+                && !name.equals("dev.latent.guest.runtime.util.Timer$Worker")) return;
         ClassHolder normalized = new ClassRefsRenamer(new ReferenceCache(), RuntimePlugin::timerReference).rename(cls);
         if (normalized != cls) throw new IllegalStateException("unexpected-owned-timer-class-alias");
     }
