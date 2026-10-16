@@ -2,6 +2,10 @@
   "cases": [
     "CapturedCompilerIdentity.test_changed_original_or_captured_compiler_is_rejected",
     "CapturedCompilerIdentity.test_relocated_exact_compiler_copy_is_accepted",
+    "DeliveredCompilerHostPath.test_absent_or_invalid_commands_path_never_inherits_parent_path",
+    "DeliveredCompilerHostPath.test_absent_selected_shell_refuses_before_staging_without_ambient_fallback",
+    "DeliveredCompilerHostPath.test_actual_stage_transports_explicit_path_to_shell_and_namespace_tool_capture",
+    "DeliveredCompilerHostPath.test_selected_shell_mutation_is_rejected_by_original_identity_guard",
     "DotnetDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed",
     "DotnetDependencyWatchFixture.test_prepared_archive_identity_and_revision_are_preserved_after_original_removal",
     "DotnetDependencyWatchFixture.test_removal_entry_keeps_normal_export_and_fresh_state_without_library_reference",
@@ -33,6 +37,54 @@
       "fixtureGuards": [
         "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DeliveredCompilerHostPath.test_absent_or_invalid_commands_path_never_inherits_parent_path": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:8eb1e4a2f312f25826f0dcf284afb304723d6b65df055ea630b076fee026362b"
+      ],
+      "skipSites": []
+    },
+    "DeliveredCompilerHostPath.test_absent_selected_shell_refuses_before_staging_without_ambient_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:8eb1e4a2f312f25826f0dcf284afb304723d6b65df055ea630b076fee026362b"
+      ],
+      "skipSites": []
+    },
+    "DeliveredCompilerHostPath.test_actual_stage_transports_explicit_path_to_shell_and_namespace_tool_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:8eb1e4a2f312f25826f0dcf284afb304723d6b65df055ea630b076fee026362b"
+      ],
+      "skipSites": []
+    },
+    "DeliveredCompilerHostPath.test_selected_shell_mutation_is_rejected_by_original_identity_guard": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:8eb1e4a2f312f25826f0dcf284afb304723d6b65df055ea630b076fee026362b"
       ],
       "skipSites": []
     },
@@ -135,6 +187,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_dependency_watch.py",
-  "reviewReason": "Accept only byte-identical isolated compiler relocation, retain both executable drift fences and captured network-none execution, and export bounded preparation diagnostics; preserve prior obligations.",
+  "reviewReason": "Add portable explicit compiler-host PATH selection, absence/invalid-input, unchanged-default and original identity controls; preserve all native namespace guards and every original case/skip.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

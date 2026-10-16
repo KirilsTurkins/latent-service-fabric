@@ -209,3 +209,128 @@ class FrontendRuntime(unittest.TestCase):
                 'noBytecode': True, 'cachePrefix': None})
             self.assertEqual(events.read_bytes(), result.stdout)
             self.assertFalse((root / 'ambient-bytecode').exists())
+
+
+class DeliveredCompilerHostPath(unittest.TestCase):
+    def setUp(self):
+        from contextlib import ExitStack
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import dotnet_compiler_isolation as isolation
+        from tools import captured_compiler_isolation as captured
+        from tools.dotnet_guest.runtime import ADAPTERS
+        self.isolation = isolation
+        self.captured = captured
+        temporary = tempfile.TemporaryDirectory(prefix='dotnet-host-path-')
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.workspace = self.root / 'workspace'; self.workspace.mkdir()
+        self.host_path = str(self.root / 'selected host tools')
+        self.selected = {}
+        for name in ('sh', 'bwrap', 'ldd', 'dotnet', 'wasm-tools', 'wit-bindgen', 'python'):
+            path = self.root / name; path.write_bytes(('selected-' + name).encode())
+            self.selected[name] = path
+        roots = {}
+        for name in ('dotnet-sdk', 'dotnet-runtime', 'dotnet-ref', 'dotnet-ref-aspnet', 'dotnet-hostfxr',
+                     'component-composer', 'wasi-sdk'):
+            path = self.root / name; path.mkdir(); (path / 'input').write_bytes(name.encode()); roots[name] = path
+        (roots['component-composer'] / 'wac').write_bytes(b'selected-composer')
+        runtimes = {}
+        for name in ADAPTERS:
+            path = self.root / ('runtime-' + name); path.write_bytes(('adapter-' + name).encode()); runtimes[name] = path
+        stdlib = self.root / 'stdlib'; stdlib.mkdir(); (stdlib / 'selected.py').write_bytes(b'# selected stdlib')
+        self.compiler = SimpleNamespace(roots=roots, dotnet=self.selected['dotnet'], runtimes=runtimes,
+            wasi_sdk=roots['wasi-sdk'], wasm=self.selected['wasm-tools'], bindgen=self.selected['wit-bindgen'],
+            compiler_patches=[], commands=SimpleNamespace(environment={'PATH': self.host_path}))
+        self.stack = ExitStack(); self.addCleanup(self.stack.close)
+        self.stack.enter_context(patch.object(isolation.sys, 'platform', 'linux'))
+        self.stack.enter_context(patch.object(isolation.sys, 'executable', str(self.selected['python'])))
+        self.stack.enter_context(patch.object(isolation.sysconfig, 'get_path', return_value=str(stdlib)))
+        self.stack.enter_context(patch.object(isolation.sysconfig, 'get_config_var', return_value=0))
+        self.stack.enter_context(patch.object(isolation.os, 'getuid', return_value=1001, create=True))
+        self.stack.enter_context(patch.object(isolation.os, 'getgid', return_value=1001, create=True))
+        self.stack.enter_context(patch.dict(isolation.os.environ, {'PATH': '/nonexistent'}))
+        self.loader = self.stack.enter_context(patch.object(captured, 'run_bounded_result',
+            return_value=SimpleNamespace(returncode=0, stdout=b'statically linked', stderr=b'')))
+
+    def lookup(self, name, *, path=None):
+        if path is None:
+            return None
+        self.assertEqual(path, self.host_path)
+        return str(self.selected[name])
+
+    def capture_stage(self):
+        from unittest.mock import patch, call
+        captured = {}
+        class NamespaceBoundary(Exception):
+            pass
+        def capture(workspace, tools, distributions, **arguments):
+            captured.update(workspace=workspace, tools=tools, distributions=distributions, arguments=arguments)
+            raise NamespaceBoundary()
+        # Stop before the maintained Linux loader-directory boundary. Windows
+        # drive paths cannot represent that namespace's colon-separated paths.
+        with patch.object(self.isolation.shutil, 'which', side_effect=self.lookup) as lookup, \
+                patch.object(self.isolation, 'DotnetIsolation', side_effect=capture) as constructor, \
+                self.assertRaises(NamespaceBoundary):
+            self.isolation.stage(self.compiler, self.workspace)
+        constructor.assert_called_once()
+        self.assertEqual(lookup.call_args_list, [call('sh', path=self.host_path)])
+        self.loader.assert_not_called()
+        return captured
+
+    def selected_boundary(self, captured):
+        from unittest.mock import patch
+        # Exercise the real base constructor with the actual selected shell and
+        # transported search path; loader probes are mocked before execution.
+        with patch.object(self.isolation.shutil, 'which', side_effect=self.lookup):
+            return self.captured.Isolation(captured['workspace'], {'shell': captured['tools']['shell']}, {},
+                host_tool_path=captured['arguments']['host_tool_path'])
+
+    def test_actual_stage_transports_explicit_path_to_shell_and_namespace_tool_capture(self):
+        from tools.build_observation import file_identity
+        captured = self.capture_stage()
+        self.assertEqual(captured['tools']['shell'], self.selected['sh'].resolve())
+        self.assertEqual(captured['arguments'], {'host_tool_path': self.host_path,
+            'loader_directories': (self.workspace / 'captured-dotnet-tools/python/lib',)})
+        self.assertEqual(captured['distributions']['compiler-python-stdlib'],
+                         self.workspace / 'captured-dotnet-tools/python')
+        boundary = self.selected_boundary(captured)
+        self.assertEqual(boundary.tool_before['shell'], file_identity(self.selected['sh'], 'shell'))
+        self.assertEqual(boundary.sandbox, self.selected['bwrap'].resolve())
+        self.assertEqual(boundary.receipt['loaderObserver'],
+                         file_identity(self.selected['ldd'], 'loader-dependency-observer'))
+        self.assertEqual(self.compiler.commands.environment['PATH'], self.host_path)
+        self.assertEqual(self.isolation.os.environ['PATH'], '/nonexistent')
+        self.assertTrue(self.loader.called)
+        boundary.check_unchanged()
+
+    def test_absent_selected_shell_refuses_before_staging_without_ambient_fallback(self):
+        from unittest.mock import patch, call
+        def missing(name, *, path=None):
+            return str(self.selected[name]) if path is None else None
+        with patch.object(self.isolation.shutil, 'which', side_effect=missing) as lookup, \
+                self.assertRaisesRegex(self.isolation.DependencyError, 'compiler-shell-unavailable'):
+            self.isolation.stage(self.compiler, self.workspace)
+        self.assertEqual(lookup.call_args_list, [call('sh', path=self.host_path)])
+        self.assertFalse((self.workspace / 'captured-dotnet-tools').exists())
+        self.loader.assert_not_called()
+
+    def test_absent_or_invalid_commands_path_never_inherits_parent_path(self):
+        from unittest.mock import patch
+        for path in (None, '', 'bad\0path', 1, []):
+            if path is None:
+                self.compiler.commands.environment.pop('PATH', None)
+            else:
+                self.compiler.commands.environment['PATH'] = path
+            with self.subTest(path=path), patch.object(self.isolation.shutil, 'which') as lookup, \
+                    self.assertRaisesRegex(self.isolation.DependencyError, 'host-tool-path-invalid'):
+                self.isolation.stage(self.compiler, self.workspace)
+            lookup.assert_not_called()
+        self.assertFalse((self.workspace / 'captured-dotnet-tools').exists())
+        self.loader.assert_not_called()
+
+    def test_selected_shell_mutation_is_rejected_by_original_identity_guard(self):
+        boundary = self.selected_boundary(self.capture_stage())
+        self.selected['sh'].write_bytes(b'changed-selected-shell')
+        with self.assertRaisesRegex(self.isolation.DependencyError, 'compiler-executable-mutated'):
+            boundary.check_unchanged()

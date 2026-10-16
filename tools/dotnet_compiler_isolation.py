@@ -201,6 +201,13 @@ def stage_adapters(runtimes: dict[str, Path], destination: Path) -> dict[str, Pa
 
 def stage(compiler, workspace: Path) -> DotnetIsolation:
     """Build a compiler distribution containing only selected SDK inputs."""
+    host_tool_path = compiler.commands.environment.get('PATH')
+    if not isinstance(host_tool_path, str) or not host_tool_path or '\0' in host_tool_path:
+        raise DependencyError('compiler-host-tool-path-invalid')
+    selected_shell = shutil.which('sh', path=host_tool_path)
+    if selected_shell is None:
+        raise DependencyError('dotnet-compiler-shell-unavailable')
+    shell = Path(selected_shell).resolve(strict=True)
     root = workspace / 'captured-dotnet-tools'
     root.mkdir()
     dotnet_root = root / 'dotnet'
@@ -251,7 +258,6 @@ def stage(compiler, workspace: Path) -> DotnetIsolation:
     selected['compiler-python-stdlib'] = python_root
     helpers = root / 'bin'
     helpers.mkdir()
-    shell = Path(shutil.which('sh') or 'missing-sh').resolve(strict=True)
     tools = {'dotnet': dotnet_root / 'dotnet', 'python': python_bin, 'shell': shell,
              'wasm-tools': compiler.wasm, 'wit-bindgen': compiler.bindgen}
     # SDK processes may start these helpers by name. The owned wrappers are
@@ -303,7 +309,7 @@ def stage(compiler, workspace: Path) -> DotnetIsolation:
     # tool cache. Resolve both ldd and namespace execution against the already
     # captured Python library, without exposing the original host directory.
     isolation = DotnetIsolation(workspace, tools, selected,
-                                loader_directories=(python_root / 'lib',))
+                                loader_directories=(python_root / 'lib',), host_tool_path=host_tool_path)
     isolation.namespace_identity_files = {identity / name: '/etc/' + name for name in ('passwd', 'group', 'nsswitch.conf')}
     isolation.enable_children(helpers)
     isolation.receipt['distributionObserver'] = {'profile': 'dotnet-compiler-internal-links-v1', 'maximumEntries': 65536, 'maximumBytes': 4 * 1024**3}
