@@ -37,7 +37,10 @@ class HostAbiProfileTests(unittest.TestCase):
         source = (ROOT / "crates/latent-core/src/host_profile.rs").read_text(encoding="utf-8")
         self.assertIn("pub const PHASE3_HOST_ABI_CURRENT: HostAbiProfile = PHASE3_HOST_ABI_V5;", source)
         engine = (ROOT / "crates/latent-wasmtime/src/config/engine.rs").read_text(encoding="utf-8")
-        self.assertIn("wasm_component_model_threading(false)", engine)
+        self.assertIn("wasm_component_model_threading(self.owned_native_threads())", engine)
+        self.assertIn(".owned_native_threads\n", engine)
+        configuration = (ROOT / "crates/latent-wasmtime/src/config.rs").read_text(encoding="utf-8")
+        self.assertIn("owned_native_threads: false", configuration)
 
     def check_matrix(self, version, world_directory, native_profile=False):
         path = ROOT / f"wit/host-abi-phase3-v{version}.json"

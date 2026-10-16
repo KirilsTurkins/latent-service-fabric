@@ -89,6 +89,10 @@ impl WasmtimeConfig {
         }
         if self.owned_native_threads {
             fields.insert(
+                "component-thread-authentication".into(),
+                crate::component_threading::PROFILE.into(),
+            );
+            fields.insert(
                 "native-thread-profile".into(),
                 crate::host::native::PROFILE.into(),
             );

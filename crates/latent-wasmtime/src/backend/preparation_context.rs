@@ -396,6 +396,12 @@ impl PreparationContext {
                 .join(","),
         );
         metadata.insert("component-digest".to_owned(), component_digest);
+        if self.config.owned_native_threads {
+            metadata.insert(
+                crate::component_threading::METADATA.into(),
+                crate::component_threading::PROFILE.into(),
+            );
+        }
         metadata.insert(
             "cache".to_owned(),
             if self.config.prepared_cache_enabled {

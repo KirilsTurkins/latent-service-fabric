@@ -70,13 +70,17 @@
         "run": "python3 -m unittest tools.tests.test_owned_native_stacks\ncargo test --locked -p latent-wasmtime --lib native_stacks::tests:: -- --test-threads=1 --nocapture\npython3 tools/qualify_owned_native_stacks.py --cargo-inventory \"$RUNNER_TEMP/rust-standard-clock-native.json\" --native-target \"$GITHUB_WORKSPACE/target\" --clocks \"$RUNNER_TEMP/rust-standard-clocks\" --output \"$RUNNER_TEMP/owned-native-stacks\"\n"
       },
       {
+        "name": "Qualify authenticated canonical child admission and physical retirement",
+        "run": "python3 -m unittest tools.tests.test_owned_native_threads\ncargo test --locked -p latent-wasmtime --lib component_threading::tests:: -- --test-threads=1\ncargo test --locked -p latent-wasmtime --lib config::engine::tests:: -- --test-threads=1\ncargo test --locked -p latent-core --lib activation_runtime::tests::task_support_admission_checks_original_kind_and_liveness_under_the_same_lock -- --exact\ncargo test --locked -p latent-wasmtime --test local_service --no-run --message-format=json > \"$RUNNER_TEMP/owned-native-child-native.json\"\npython3 tools/qualify_owned_native_threads.py --transformer \"$RUNNER_TEMP/rust-stack-transform/debug/latent-rust-std-stack-source-transform\" --wasm-tools \"$(command -v wasm-tools)\" --cargo-inventory \"$RUNNER_TEMP/owned-native-child-native.json\" --native-target \"$GITHUB_WORKSPACE/target\" --output \"$RUNNER_TEMP/owned-native-children\"\n"
+      },
+      {
         "if": "always()",
         "name": "Retain bounded standard clock evidence including failures",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "rust-standard-clocks-${{ github.run_id }}",
-          "path": "${{ runner.temp }}/rust-standard-clock-native.json\n${{ runner.temp }}/rust-standard-clocks/report.json\n${{ runner.temp }}/rust-standard-clocks/**/qualification.json\n${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json\n${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json\n${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json\n${{ runner.temp }}/rust-standard-clocks/**/component.wasm\n${{ runner.temp }}/rust-standard-clocks/**/project/**\n${{ runner.temp }}/rust-standard-clocks/**/logs/**\n${{ runner.temp }}/owned-native-stacks/**\n${{ runner.temp }}/rust-tls-reference/reference.json\n${{ runner.temp }}/rust-thread-routing/**\n",
+          "path": "${{ runner.temp }}/rust-standard-clock-native.json\n${{ runner.temp }}/rust-standard-clocks/report.json\n${{ runner.temp }}/rust-standard-clocks/**/qualification.json\n${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json\n${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json\n${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json\n${{ runner.temp }}/rust-standard-clocks/**/component.wasm\n${{ runner.temp }}/rust-standard-clocks/**/project/**\n${{ runner.temp }}/rust-standard-clocks/**/logs/**\n${{ runner.temp }}/owned-native-stacks/**\n${{ runner.temp }}/rust-tls-reference/reference.json\n${{ runner.temp }}/rust-thread-routing/**\n${{ runner.temp }}/owned-native-child-native.json\n${{ runner.temp }}/owned-native-children/**\n",
           "retention-days": 3
         }
       }
@@ -85,7 +89,7 @@
   },
   "jobId": "standard-clocks",
   "kind": "job",
-  "reviewReason": "Extract the unchanged Rust source-profile transforms into one shared workspace crate; add its20 original unit controls before the preserved facade CLI command. Retain every prior command,17 actual encoded-routing controls, source/TLS/signed-clock/physical-retirement obligations, job policy and limits. Engine remains disabled and C remains unqualified.",
+  "reviewReason": "Preserve every existing clock/sysroot/TLS/routing/native-stack command and deadline; add exact host-verifier unit controls plus current signed canonical-child mechanism campaign and bounded evidence.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

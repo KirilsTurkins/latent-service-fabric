@@ -121,6 +121,10 @@ impl super::super::PreparationContext {
             )
         })?;
         self.validate_renderer_component(artifact)?;
+        let threading = crate::component_threading::Authentication::verify(
+            self.config.owned_native_threads,
+            &artifact.component_bytes,
+        )?;
         let compilation = job.stage(PreparationStage::ComponentNew);
         let component = Component::new(&self.engine, &artifact.component_bytes);
         if component.is_ok() {
@@ -141,6 +145,7 @@ impl super::super::PreparationContext {
             input,
             job,
             CompiledCode::Local(component),
+            threading,
             wait,
         )
     }
@@ -162,6 +167,10 @@ impl super::super::PreparationContext {
         })?;
         WorkerWindow::check(wait, || checked.check())?;
         self.validate_renderer_component(checked.artifact())?;
+        let threading = crate::component_threading::Authentication::verify(
+            self.config.owned_native_threads,
+            &checked.artifact().component_bytes,
+        )?;
         let service = self
             .native_aot
             .as_ref()
@@ -174,12 +183,17 @@ impl super::super::PreparationContext {
             input,
             job,
             CompiledCode::Native(code),
+            threading,
             wait,
         )?;
         WorkerWindow::check(wait, || checked.check())?;
         Ok(runtime)
     }
 
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "The immutable final-byte proof accompanies the existing compiled image and checked preparation inputs."
+    )]
     fn link_runtime(
         &self,
         artifact: &CapsuleArtifact,
@@ -187,6 +201,7 @@ impl super::super::PreparationContext {
         input: Compilation,
         job: &PreparationJob,
         code: CompiledCode,
+        threading: crate::component_threading::Authentication,
         wait: Option<&WorkerWindow>,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         let component = code.component();
@@ -239,19 +254,21 @@ impl super::super::PreparationContext {
         let metadata_bytes = input
             .metadata_bytes
             .checked_add(surface.retained_bytes)
+            .and_then(|bytes| bytes.checked_add(threading.retained_bytes()))
             .ok_or_else(metadata_overflow)?;
-        let pre = self.link_component(component, &surface.type_imports)?;
-        if self.profile.id == PHASE0_BACKEND_ID {
-            crate::phase0::validate_prepared(&pre)?;
-        }
-        let image = component.image_range();
-        let image_bytes = image.end.addr().saturating_sub(image.start.addr());
         let descriptor = self.prepared_descriptor(
             artifact,
             key.clone(),
             input.handle.clone(),
             input.component_digest,
         );
+        threading.check(self.config.owned_native_threads, &descriptor)?;
+        let pre = self.link_component(component, &surface.type_imports)?;
+        if self.profile.id == PHASE0_BACKEND_ID {
+            crate::phase0::validate_prepared(&pre)?;
+        }
+        let image = component.image_range();
+        let image_bytes = image.end.addr().saturating_sub(image.start.addr());
         // Keep the ordered component/permit owner through every fallible setup.
         let lifetime_charge = self
             .runtime_ledger
@@ -277,6 +294,7 @@ impl super::super::PreparationContext {
             descriptor,
             authentication: input.authentication,
             eligibility: input.eligibility,
+            threading,
             metadata_bytes,
             image_bytes,
             imports,

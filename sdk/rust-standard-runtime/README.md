@@ -156,9 +156,10 @@ allocation under the same original host-memory budget.
 The explicitly selected `owned_native_threads` profile recognizes the separately
 authorized V6 support start operation and requires the guarded-stack profile and
 original activation limits. It grants no authority; CURRENT stays V5 and frozen
-activation WIT is unchanged. Canonical thread creation remains disabled until
-the authenticated sole-consumer compiler shim is checked. The ordinary thread,
-futex and executor ports and actual compiler/signed execution remain required.
+activation WIT is unchanged. Only this explicit profile enables canonical thread
+creation, and every executable component must first pass the shared final-byte
+sole-consumer verifier. The ordinary Rust thread, futex and executor ports
+remain required; this finite host mechanism is separate from those ports.
 
 The staged post-link source transform now routes every linked-core call,
 function reference, export and table/global initializer reference to raw
@@ -190,7 +191,7 @@ The encoded-Wasm transform controls and separately executed native TLS source
 reference cases exercise these source mechanisms. They do not establish a
 rebuilt thread sysroot, accepted-work drain,
 the std thread/futex API or actual signed child execution. Those requirements
-remain open, and canonical thread creation remains disabled. The internal V2
+remain open. The internal V2
 context prefix is recorded in [thread-abi.json](thread-abi.json); CURRENT V5 and
 the frozen activation interface remain unchanged.
 
@@ -215,6 +216,27 @@ removing its previous sysroot, signed clock or physical stack controls.
 
 This is a source-routing proof over transparent WAT controls, rather than a
 rebuilt ordinary Rust thread program. The verifier emits no permission or
-supported-profile claim. Production host consumption, a rebuilt thread sysroot,
-ordinary synchronization and actual signed child execution remain unfinished;
-canonical thread creation stays disabled until those requirements are met.
+supported-profile claim. The explicit host profile consumes the same verifier
+before ordinary `Component::new`, isolated-worker precompilation and native AOT
+loading, including the sole authenticated native loader. Its closed compiler
+bootstrap rejects unknown profile versions before allocating an Engine. A shared
+factory Engine can exist before any component is known; no component is compiled,
+loaded or instantiated until its final bytes are authenticated. The immutable
+digest proof stays with `InstancePre`, is charged as retained metadata, and is
+checked against the exact descriptor and selected profile on prepared-cache,
+readiness, activation-start and immediate instantiation boundaries. Profile,
+context ABI, one-Task-start policy and V6 interface identity enter ordinary and
+native compatibility keys; default V5 identities retain their previous fields.
+
+`tools/qualify_owned_native_threads.py` prepares a separate transparent WAT
+mechanism fixture through the normal pinned encoder and the fixed transforms.
+Its maintained signed node case exercises a real canonical child, per-context
+stack accesses, the original protected Task/Native imports, fresh Stores and
+prepared-cache reuse. It also requires child trap/fuel cleanup, copied-token and
+total-start quota denial, wrong-kind denial, unstarted accepted work rejection,
+a missing grant, and two correctly encoded but unauthenticated component
+rejections before Store creation. All cases retain the existing finite 4 MiB
+grant; the explicitly selected mechanism uses 256 KiB native stacks and three
+Task/two Native slots. Actual native execution is required before claiming this
+gate passed. This fixture executes no Rust/std source and establishes no ordinary
+thread, TLS, mutex, condition variable or executor compatibility.

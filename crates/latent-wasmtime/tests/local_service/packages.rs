@@ -80,6 +80,17 @@ pub fn activation_runtime(bytes: Vec<u8>) -> PackageBundle {
         &[ACTIVATION],
     )
 }
+
+pub fn owned_native_threads(bytes: Vec<u8>) -> PackageBundle {
+    build(
+        "caller", bytes,
+        "package tests:caller@1.0.0; interface api { run: async func(which: u32) -> u32; } world service { import latent:runtime/activation@0.1.0; import latent:runtime-native/threads@0.1.0; export api; }",
+        component::CALLER,
+        vec![function("run", true,
+            vec![json!({"name":"which","value_type":"U32","documentation":null})], json!("U32"))],
+        &[ACTIVATION, "latent:runtime-native/threads@0.1.0"],
+    )
+}
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub fn outbound_streams(bytes: Vec<u8>) -> PackageBundle {
     build(
@@ -191,9 +202,12 @@ fn build(
     ];
     let mut dependencies = vec![];
     for import in imports {
-        let spec = latent_core::PHASE3_HOST_ABI_CURRENT
-            .interface(import)
-            .unwrap();
+        let host = if *import == "latent:runtime-native/threads@0.1.0" {
+            latent_core::PHASE3_HOST_ABI_V6
+        } else {
+            latent_core::PHASE3_HOST_ABI_CURRENT
+        };
+        let spec = host.interface(import).unwrap();
         let wit = spec.wit;
         let (package, version) = import.rsplit_once('@').unwrap();
         let package = package.split('/').next().unwrap();
