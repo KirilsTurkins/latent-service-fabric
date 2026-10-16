@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_dependency_watch_fixture.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Prepare actual outside library DLLs with the delivered pinned contained compiler",
+  "reviewReason": "Accept only byte-identical isolated compiler relocation, retain both executable drift fences and captured network-none execution, and export bounded preparation diagnostics; preserve prior obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4a79fb0375bd840afc0b672174b0ea04a970c968a25aae7bee196b172d0e49ac"
+  "sha256": "0cbc0221a3e7419c836969f482ce87c9998bd11bb12d50082c96a5e371127e7b"
 }

@@ -75,7 +75,8 @@ def run(payload: Path, supplied: Path, output: Path, *, qualifier: Path, fixture
         public = observed / 'public-qualification.json'
         if public.is_file() and not public.is_symlink():
             (output / public.name).write_bytes(files.read(public, 1024 * 1024, owners={0, account.pw_uid}))
-        for filename in ('initial-build.stdout', 'initial-build.stderr'):
+        for filename in ('initial-build.stdout', 'initial-build.stderr',
+                         'prepare-reviewed-external-libraries.stdout', 'prepare-reviewed-external-libraries.stderr'):
             diagnostic = observed / filename
             if diagnostic.is_file() and not diagnostic.is_symlink():
                 (output / filename).write_bytes(files.read(diagnostic, 1024 * 1024, owners={0, account.pw_uid}))

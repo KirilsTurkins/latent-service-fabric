@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/run_dotnet_dependency_watch_ci.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Run delivered .NET watch through a source-bound private CI account",
+  "reviewReason": "Accept only byte-identical isolated compiler relocation, retain both executable drift fences and captured network-none execution, and export bounded preparation diagnostics; preserve prior obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ba1e114b0f79ca471d6b2dd81246729d4da4ff5876d454f56604379541fe80a7"
+  "sha256": "9a11fd97c16494d3f63c3f519ceeff32a3cef8df86edc8f7561e0e2f14adbc28"
 }

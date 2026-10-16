@@ -48,16 +48,24 @@ def package(number: int, assembly: bytes) -> bytes:
     return value.getvalue()
 
 
+def verify_compiler_copy(original: Path, captured: Path, expected: dict) -> None:
+    from tools.build_observation import file_identity
+    if (file_identity(original, 'delivered-dotnet') != expected
+            or file_identity(captured, 'delivered-dotnet') != expected):
+        raise ValueError('delivered library compiler identity changed')
+
+
 def prepare(app: Path, output: Path, tools: Path, dotnet: Path, sdk_bin: Path, recipe: Path) -> None:
     if output.exists():
         raise ValueError('fresh library preparation required')
     output.mkdir(mode=0o700)
     sys.path.insert(0, str(recipe))
-    from tools.build_observation import build_environment
+    from tools.build_observation import build_environment, file_identity
     from tools.dotnet_guest.compiler import Compiler
     from tools.dotnet_guest.entropy_grants import declare
     from tools.rust_capsule_build import Commands
     declare(app)
+    compiler_identity = file_identity(dotnet, 'delivered-dotnet')
     records = []
     for number in (1, 2):
         root = output / ('v' + str(number)); root.mkdir(mode=0o700)
@@ -78,12 +86,12 @@ def prepare(app: Path, output: Path, tools: Path, dotnet: Path, sdk_bin: Path, r
         environment['PATH'] = str(dotnet.parent) + os.pathsep + str(sdk_bin) + os.pathsep + os.defpath
         commands = Commands(library, evidence, environment)
         compiler = Compiler(tools, commands, app / 'vendor/lsf', offline=True, captured=True)
-        if compiler.dotnet != dotnet.resolve(strict=True):
-            raise ValueError('delivered library compiler identity changed')
+        verify_compiler_copy(dotnet, compiler.dotnet, compiler_identity)
         compiler.run('reviewed-library-build', compiler.dotnet, 'build', library / 'Library.csproj', '-c', 'Release',
             '-p:RestoreConfigFile=' + str(library / 'nuget.config'), '-p:NuGetAudit=false', '-nodeReuse:false',
             '-p:UseSharedCompilation=false', '-p:ImportDirectoryBuildProps=false', '-p:ImportDirectoryBuildTargets=false')
         compiler.check_unchanged()
+        verify_compiler_copy(dotnet, compiler.dotnet, compiler_identity)
         assembly = (library / 'bin/Release/net10.0/Library.dll').read_bytes()
         raw = package(number, assembly)
         location = root / (PRIMARY.lower() + '.' + version(number) + '.nupkg')

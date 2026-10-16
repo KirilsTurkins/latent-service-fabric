@@ -120,6 +120,32 @@ class DotnetDependencyWatchFixture(unittest.TestCase):
             and isinstance(row.value, str) and row.value.startswith('workspace-recipe-')}
         self.assertEqual(codes, {'workspace-recipe-trust-required'})
 
+class CapturedCompilerIdentity(unittest.TestCase):
+    def test_relocated_exact_compiler_copy_is_accepted(self):
+        from tools.build_observation import file_identity
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original, captured = root / 'original', root / 'captured'
+            original.write_bytes(b'compiler identity control; never executed')
+            captured.write_bytes(original.read_bytes())
+            self.assertNotEqual(original.resolve(), captured.resolve())
+            fixture.verify_compiler_copy(original, captured, file_identity(original, 'delivered-dotnet'))
+
+    def test_changed_original_or_captured_compiler_is_rejected(self):
+        from tools.build_observation import file_identity
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            original, captured = root / 'original', root / 'captured'
+            raw = b'compiler identity control; never executed'
+            for changed in (original, captured):
+                original.write_bytes(raw)
+                captured.write_bytes(raw)
+                expected = file_identity(original, 'delivered-dotnet')
+                changed.write_bytes(raw + b'mutated')
+                with self.subTest(changed=changed.name), self.assertRaisesRegex(ValueError, 'compiler identity changed'):
+                    fixture.verify_compiler_copy(original, captured, expected)
+
+
 class FrontendRuntime(unittest.TestCase):
     def test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode(self):
         import ast

@@ -232,6 +232,8 @@ jobs:
           path: |
             ${{ runner.temp }}/dotnet-dependency-watch/public-qualification.json
             ${{ runner.temp }}/dotnet-dependency-watch/ci-account.json
+            ${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stdout
+            ${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stderr
           if-no-files-found: warn
           retention-days: 3
       - name: Qualify the static site and TypeScript API in Chromium

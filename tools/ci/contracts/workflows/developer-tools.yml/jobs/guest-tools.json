@@ -100,7 +100,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "dotnet-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}",
-          "path": "${{ runner.temp }}/dotnet-dependency-watch/public-qualification.json\n${{ runner.temp }}/dotnet-dependency-watch/ci-account.json\n",
+          "path": "${{ runner.temp }}/dotnet-dependency-watch/public-qualification.json\n${{ runner.temp }}/dotnet-dependency-watch/ci-account.json\n${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stdout\n${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stderr\n",
           "retention-days": 3
         }
       },
@@ -316,7 +316,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Add .NET-only namespace preparation and signed watch inside original60 minute matrix",
+  "reviewReason": "Accept only byte-identical isolated compiler relocation, retain both executable drift fences and captured network-none execution, and export bounded preparation diagnostics; preserve prior obligations.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
