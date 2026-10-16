@@ -14,16 +14,25 @@ or [C runtime #744](https://github.com/KirilsTurkins/latent-service-fabric/issue
 
 The [first actual attempt](../testing/evidence/c-standard-logging-failed-2026-10-16.json)
 passed the clock/entropy programme and stdio C compilation, then found an
-unresolved `fd_close` during component assembly. The selected profile now uses
-explicit linker wrappers for its four reviewed public libc and raw descriptor
-operations. Failed assembly retains the bounded original core for import
-inspection. Fresh native compilation and signed stdio execution remain pending.
+unresolved `fd_close` during component assembly. Failed assembly retains the
+bounded original core for import inspection.
 
 The [follow-up run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38845078653/job/116793655937)
 rejected the `--wrap` argument in Zig's driver before compiling the stdio guest.
-The candidate now passes the single-hyphen `-Wl,-wrap,<symbol>` form for those
-same eight symbols. The clock/entropy programme passed before that failure;
-the corrected stdio build and signed calls still require a fresh run.
+An actual pinned-compiler probe then showed that the accepted single-hyphen
+form did not route the calls: the complete fixture still failed component
+encoding on `fd_close`. The selected profile now uses a closed four-function
+core adapter. It forwards the descriptor calls to explicit exports of the
+existing bounded implementation in the same main module. It owns no memory,
+resource or host grant. Default and clock/entropy profiles do not use it.
+
+The current `Compiler.compile` implementation compiled the captured outside
+library and complete logging fixture, encoded and validated the component with
+the pinned tools, and rejected ambient WASI in its public surface. The SDK and
+captured dependency remained byte-identical throughout. This is a compiler
+source control; it did not execute Wasm or qualify namespace containment or
+signed runtime behavior. See the [closed-adapter evidence](../testing/evidence/c-standard-logging-closed-adapter-2026-10-16.json).
+Fresh maintained signed execution remains required.
 
 Set `runtimeProfile` to `c-standard-stdio-v1` in `capsule-project.json` and in any
 captured dependency selection. Resolve and review the new lock, then use the

@@ -62,10 +62,14 @@ class StandardLogging(unittest.TestCase):
                          facilities.LOGGING_PROFILE)
         with self.assertRaisesRegex(ValueError, 'selection-mismatch'):
             facilities.selected_profile({'runtimeProfile': facilities.PROFILE}, graph)
-        path = root / 'vendor/lsf/sdk/c-guest/src/standard-stdio.c'
-        path.write_bytes(path.read_bytes() + b'\n')
-        with self.assertRaisesRegex(ValueError, 'vendored SDK changed'):
-            project.validate(project.snapshot(root))
+        for name in ('standard-stdio.c', 'standard-stdio.wat'):
+            path = root / 'vendor/lsf/sdk/c-guest/src' / name
+            original = path.read_bytes()
+            path.write_bytes(original + b'\n')
+            with self.subTest(adapter=name), self.assertRaisesRegex(ValueError, 'vendored SDK changed'):
+                project.validate(project.snapshot(root))
+            path.write_bytes(original)
+        project.validate(project.snapshot(root))
 
     def test_logging_execution_requires_explicit_c_only_selection(self):
         from tools.run_rust_capsule_workflow import run

@@ -171,10 +171,6 @@ class Compiler:
         for directory in include_directories:
             command.extend(["-I", str(directory)])
         command.extend("-D" + define for define in defines)
-        if runtime_profile == standard_facilities.LOGGING_PROFILE:
-            for function in ('fd_write', 'fd_fdstat_get', 'fd_seek', 'fd_close'):
-                for prefix in ('__wasi_', '__imported_wasi_snapshot_preview1_'):
-                    command.append('-Wl,-wrap,' + prefix + function)
         command.extend(map(str, static_libraries))
         if trap:
             command.append(str(self.sdk / "src/trap.c"))
@@ -198,7 +194,12 @@ class Compiler:
                 {row["path"]: row for row in observed}.values(), key=lambda row: row["path"])
         self.run("zig", *command)
         try:
-            self.run("wasm-tools", "component", "new", str(core), "-o", str(component))
+            component_command = ["component", "new", str(core), "-o", str(component)]
+            if runtime_profile == standard_facilities.LOGGING_PROFILE:
+                adapter = destination / "standard-stdio-adapter.wasm"
+                self.run("wasm-tools", "parse", str(self.sdk / "src/standard-stdio.wat"), "-o", str(adapter))
+                component_command.extend(["--adapt", "wasi_snapshot_preview1=" + str(adapter)])
+            self.run("wasm-tools", *component_command)
         except BaseException:
             if self.commands is not None:
                 try:
