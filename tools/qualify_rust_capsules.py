@@ -42,7 +42,7 @@ def inputs(language="rust"):
         helpers += ("application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "rust_application_dependencies.py", "captured_compiler_isolation.py",
                     "rust_dependency_fixture.py", "rust_dependency_authoring.py", "cargo_native_authoring.py",
-                    "rust_dependency_recovery.py")
+                    "rust_dependency_recovery.py", "rust_dependency_failures.py")
     elif language == "c":
         helpers += ("c_capsule.py", "c_capsule_project.py", "c_capsule_build.py",
                     "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py",
@@ -386,6 +386,12 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
             language=language, noncrypto_entropy=language == "dotnet",
             captured_dependency_recovery=language == "rust" and application_dependencies)
+        if language == "rust" and application_dependencies:
+            from tools.rust_dependency_failures import qualify as qualify_ffi
+            stage = "captured-native-ffi-failure"
+            result["applicationDependencies"]["nativeFfi"] = qualify_ffi(output / "projects/greeting",
+                output / "native-ffi", binaries["examples/capsule_contracts"], binaries["examples/package"],
+                paths["wasm-tools"], commands)
         if language == "dotnet":
             result["embeddedResources"]["runtimeExecution"] = "signed-admitted-component"
         if approved_generator:

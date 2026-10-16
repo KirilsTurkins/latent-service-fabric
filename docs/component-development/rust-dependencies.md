@@ -94,3 +94,12 @@ must retire its owners before a fresh successful call. This finite programme
 keeps the original runtime budgets and does not claim panic unwinding or
 unqualified standard thread/I/O support. Its hosted result, rather than source
 controls alone, establishes execution for the recorded inputs.
+
+If actual core-module compilation succeeds but component assembly rejects it,
+the Rust builder retains at most 64 MiB of the original core with its source
+and byte digests. Supplementary retention cannot replace the original failure.
+The captured-library qualification selects a reachable external native symbol
+and requires its exact import in the pinned tool's original-core inspection
+before attributing that selected path as target-incompatible. It keeps the
+original generic compatibility report and does not infer a package-wide ban,
+a native implementation, or elimination of untested paths.

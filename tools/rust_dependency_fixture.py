@@ -94,6 +94,8 @@ pub fn prefix() -> String {
     assert_eq!(value, outside_qualification_macro::captured_prefix!());
     value
 }
+extern "C" { fn outside_native_cpu() -> u32; }
+pub fn native_value() -> u32 { unsafe { outside_native_cpu() } }
 pub fn exercise(which: &str) {
     match which {
         "panic" => panic!("captured library panic-abort control"),

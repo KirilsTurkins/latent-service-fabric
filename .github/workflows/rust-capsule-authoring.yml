@@ -166,6 +166,8 @@ jobs:
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_rust_application_dependencies tools.tests.test_application_dependency_approval tools.tests.test_captured_compiler_isolation
       - name: Test captured Rust fault and fresh-invocation protocol boundaries
         run: python3 -m unittest tools.tests.test_rust_dependency_recovery
+      - name: Test bounded Rust original-core and native FFI diagnostic boundaries
+        run: python3 -m unittest tools.tests.test_rust_raw_core_retention tools.tests.test_rust_dependency_failures
       - name: Test reviewed Rust dependency authoring and selected frontend
         run: python3 -m unittest tools.tests.test_rust_dependency_authoring tools.tests.test_guest_authoring_frontend
       - name: Qualify proposed transaction shapes with the maintained Rust compiler and HTTP preparation
