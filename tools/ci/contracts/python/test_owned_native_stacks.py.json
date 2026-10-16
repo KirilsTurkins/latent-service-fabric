@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "OwnedStackInputs.test_exact_passed_component_and_native_identity_are_required",
+    "OwnedStackInputs.test_failed_baseline_or_result_and_mismatched_sysroot_cannot_qualify",
+    "OwnedStackInputs.test_unknown_profile_kind_rejects_before_accessing_files"
+  ],
+  "guards": {
+    "OwnedStackInputs.test_exact_passed_component_and_native_identity_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74632da44ef777e99d5d5068150734b5298e4842648dafab489472afe3c04b66",
+        "class:setup-sha256:eaabec74bd91a0811e90f50363bac0d58105bb98fae6c3d0d67aa1159dd48ca7"
+      ],
+      "skipSites": []
+    },
+    "OwnedStackInputs.test_failed_baseline_or_result_and_mismatched_sysroot_cannot_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74632da44ef777e99d5d5068150734b5298e4842648dafab489472afe3c04b66",
+        "class:setup-sha256:eaabec74bd91a0811e90f50363bac0d58105bb98fae6c3d0d67aa1159dd48ca7"
+      ],
+      "skipSites": []
+    },
+    "OwnedStackInputs.test_unknown_profile_kind_rejects_before_accessing_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:74632da44ef777e99d5d5068150734b5298e4842648dafab489472afe3c04b66",
+        "class:setup-sha256:eaabec74bd91a0811e90f50363bac0d58105bb98fae6c3d0d67aa1159dd48ca7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_owned_native_stacks.py",
+  "reviewReason": "Add controlled original-activation root native-stack admission, actual pending/cancelled Wasmtime ownership controls and signed rebuilt-clock execution through physical StackMemory destruction; preserve all prior CI commands, tests, limits and gates. This profile does not enable canonical threads or qualify standard executors.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
