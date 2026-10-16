@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Prevent source frontend bytecode writes to the delivered tool inventory using isolated no-bytecode interpreter flags; preserve every watch, signing and shutdown guard. Bind the reviewed owner fingerprint to the committed LF-normalized Git blob; source behavior and all guards are unchanged.",
+  "reviewReason": "Expose the unchanged exact frontend writer as a directly callable qualification helper; retain real isolated/no-bytecode executable controls without evaluating extracted source.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "cf853e1240b95dc46d502cf225d3bf681ffd9056216355d89351ddefb29c2ef9"
+  "sha256": "28a0359272595555874d88e88a2f9292e7188f63d5312fa9afe05639e7a7282d"
 }
