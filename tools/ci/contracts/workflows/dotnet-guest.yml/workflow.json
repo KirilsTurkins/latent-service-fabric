@@ -74,7 +74,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Preserve merged NuGet authoring plus paired private I/O and signed default HttpClient obligations; both exact command records and artifact sets, original75-minute ceiling and full workflow trigger sets remain required.",
+  "reviewReason": "Compose actual merged NuGet authoring and existing async/I-O/HttpClient source obligations; preserve every old command record, artifact path, trigger, runner, environment, guard and original75-minute deadline.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

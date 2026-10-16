@@ -240,6 +240,8 @@ jobs:
             ${{ runner.temp }}/transaction-guests-dotnet/**/component.wasm
             ${{ runner.temp }}/transaction-guests-dotnet/**/component.wit
             ${{ runner.temp }}/transaction-guests-dotnet/**/compiler-inputs.json
+            ${{ runner.temp }}/transaction-guests-dotnet/**/native-aot-original.wit.json
+            ${{ runner.temp }}/transaction-guests-dotnet/**/internal-io-selected.wat
             ${{ runner.temp }}/transaction-guests-dotnet/**/logs/**
             ${{ runner.temp }}/transaction-guests-dotnet/**/compiler/*.log
             ${{ runner.temp }}/transaction-guests-dotnet/**/compiler/*.command.json
@@ -252,6 +254,8 @@ jobs:
             ${{ runner.temp }}/transaction-contract-dotnet/component.wit
             ${{ runner.temp }}/transaction-contract-dotnet/preparation.json
             ${{ runner.temp }}/transaction-contract-dotnet/compiler-inputs.json
+            ${{ runner.temp }}/transaction-contract-dotnet/native-aot-original.wit.json
+            ${{ runner.temp }}/transaction-contract-dotnet/internal-io-selected.wat
             ${{ runner.temp }}/transaction-contract-dotnet/logs/**
             ${{ runner.temp }}/transaction-contract-dotnet/compiler/*.log
             ${{ runner.temp }}/transaction-contract-dotnet/compiler/*.command.json

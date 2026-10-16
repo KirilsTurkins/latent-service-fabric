@@ -107,8 +107,8 @@ def named_export_syntax(text):
     original core bytes are independently compared after actual encoding.
     """
     edits = []
-    def walk(node):
-        if (node.head('export') and len(node.items) == 4
+    def walk(node, *, type_body=False):
+        if (type_body and node.head('export') and len(node.items) == 4
                 and isinstance(node.items[1], str) and node.items[1].startswith('$')
                 and isinstance(node.items[2], str) and node.items[2].startswith('"')
                 and isinstance(node.items[3], Node)):
@@ -121,7 +121,9 @@ def named_export_syntax(text):
             edits.append((node.start, node.end, '(export ' + node.items[2] + ' ' + body + ')'))
             return
         for item in node.items:
-            if isinstance(item, Node): walk(item)
+            if isinstance(item, Node):
+                nested_type = type_body or node.head('type') and (item.head('instance') or item.head('component'))
+                walk(item, type_body=nested_type)
     walk(tree(text))
     for start, end, value in sorted(edits, reverse=True): text = text[:start]+value+text[end:]
     return text
@@ -333,6 +335,7 @@ def prepare(compiler, raw: Path, adapter: Path, output: Path, original: dict):
     if time.monotonic() >= compiler.commands.deadline: raise ValueError('dotnet-internal-io-original-deadline')
     text = adapted_text(named_export_syntax(read_file(output/'unbundled.wat', MAX_TEXT).decode()), selected)
     (output/'selected.wat').write_text(text, encoding='utf-8')
+    (compiler.commands.output/'internal-io-selected.wat').write_text(text, encoding='utf-8', newline='\n')
     component = output/'selected.wasm'
     compiler.run('internal-io-encode', compiler.wasm, 'parse', output/'selected.wat', '-o', output/'unbundled-selected.wasm')
     component.write_bytes(rebundle(read_file(output/'unbundled-selected.wasm', MAX_BINARY), modules))

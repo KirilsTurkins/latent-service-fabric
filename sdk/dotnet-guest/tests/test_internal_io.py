@@ -87,5 +87,13 @@ class InternalIoTests(unittest.TestCase):
         for raw in (b'', b'\0asm\x0d\0\x01\0\x01\x80', b'\0asm\x0d\0\x01\0\x01\x7f'):
             with self.subTest(raw=raw), self.assertRaises(ValueError): port.core_modules(raw)
 
+    def test_real_component_export_alias_is_preserved_while_type_export_identifier_is_repaired(self):
+        original = ('(component (type $api (instance (export $owned "owned" (type (sub resource))))) '
+            '(import "api" (instance $original (type $api))) '
+            '(export $api-export "api" (instance $original)))')
+        selected = port.named_export_syntax(original)
+        self.assertIn('(export "owned" (type $owned (sub resource)))', selected)
+        self.assertIn('(export $api-export "api" (instance $original))', selected)
+
 
 if __name__ == '__main__': unittest.main()

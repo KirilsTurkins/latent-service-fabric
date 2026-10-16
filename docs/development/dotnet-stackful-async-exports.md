@@ -55,9 +55,18 @@ export's name, which its own text parser rejects. The finite reconstruction
 moves only those identifiers into their item signatures. The final graph and
 core-byte comparisons independently guard this syntax normalization. No code is
 disassembled, no validator check is skipped, and no engine blocking rule changes.
-Six source controls and an actual finite synthetic component projection check
+Seven source controls and an actual finite synthetic component projection check
 these boundaries. The normal independent Smoke probe uses the same owner before
 its existing composition steps; their commands and limits remain intact.
+
+The [next hosted attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38833208836)
+compiled the normal adapters, then reached the real NativeAOT transaction
+component. It exposed a reconstruction error: real component export aliases
+must retain their identifier before the export string, whereas type-signature
+exports need the syntax normalization above. The traversal now repairs only
+exports within component/instance type definitions. Actual pinned parser,
+validator and complete-graph roundtrip controls cover both forms. The failed
+attempt remains retained; fresh NativeAOT qualification is still required.
 
 Twelve source regressions cover retained marshalling/pin order, unchanged C#
 interfaces, real export names, imported versus exported kinds and fail-closed
