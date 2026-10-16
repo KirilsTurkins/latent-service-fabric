@@ -493,3 +493,82 @@ class DeliveredGoCacheSelection(unittest.TestCase):
                 self.invoke()
             version.assert_called_once_with('go-version', 'go', 'version')
             process.assert_not_called()
+
+class PublicPostDeployFailures(unittest.TestCase):
+    def test_projection_keeps_actual_failure_tokens_booleans_and_digests_without_private_data(self):
+        from tools.qualify_go_dependency_watch import public_test_failure
+        secret = 'token-secret'
+        observed = public_test_failure([{'event': 'post-deploy-tests', 'report': {
+            'passed': False, 'identity': {'secret': secret}, 'selection': [secret],
+            'results': [{'id': secret, 'status': 'failed', 'category': 'platform-failure',
+                'platformCode': 'permission-denied', 'reason': 'ValueError', 'outcomeKnown': True,
+                'targetMatches': False, 'inputSha256': 'sha256:' + '1' * 64,
+                'payloadSha256': 'sha256:' + '2' * 64, 'payload': secret, 'error': secret,
+                'expectedRevision': secret, 'resolvedRevision': secret},
+                {'status': secret, 'category': 'a' * 64, 'platformCode': secret, 'reason': '/private/path',
+                 'outcomeKnown': 1, 'targetMatches': 'true', 'inputSha256': secret, 'payloadSha256': secret}]}}])
+        self.assertFalse(observed['passed'])
+        self.assertIs(observed['qualification'], False)
+        self.assertEqual(observed['results'][0], {'ordinal': 1, 'status': 'failed',
+            'category': 'platform-failure', 'platformCode': 'permission-denied', 'reason': 'ValueError',
+            'outcomeKnown': True, 'targetMatches': False, 'inputSha256': 'sha256:' + '1' * 64,
+            'payloadSha256': 'sha256:' + '2' * 64})
+        self.assertEqual(set(observed['results'][1]), {'ordinal', 'statusSha256', 'categorySha256',
+            'platformCodeSha256', 'reasonSha256'})
+        for value in (secret, 'a' * 64, '/private/path', 'expectedRevision', 'resolvedRevision'):
+            self.assertNotIn(value, str(observed))
+        for row in observed['results']:
+            for key in ('id', 'payload', 'error', 'expectedRevision', 'resolvedRevision'):
+                self.assertNotIn(key, row)
+
+    def test_projection_retains_last_failing_report_eight_ordinals_and_ignores_success_or_malformed(self):
+        from tools.qualify_go_dependency_watch import public_test_failure
+        failed = {'event': 'post-deploy-tests', 'report': {'passed': False,
+            'results': [{'status': 'failed'} for _ in range(10)]}}
+        values = [failed, {'event': 'post-deploy-tests', 'report': {'passed': True,
+            'results': [{'status': 'passed'}]}}]
+        observed = public_test_failure(values)
+        self.assertEqual([row['ordinal'] for row in observed['results']], list(range(3, 11)))
+        self.assertEqual(len(observed['results']), 8)
+        self.assertEqual(public_test_failure([failed] + [{} for _ in range(32)]), {})
+        self.assertEqual(public_test_failure([None, [], {'event': 'post-deploy-tests', 'report': []},
+            {'event': 'post-deploy-tests', 'report': {'passed': 0}}]), {})
+        self.assertEqual(public_test_failure([{'event': 'post-deploy-tests',
+            'report': {'passed': False, 'results': 'private'}}]),
+            {'qualification': False, 'passed': False, 'results': []})
+
+    def test_failed_test_projection_errors_preserve_original_exception_and_success_never_collects(self):
+        from unittest.mock import patch
+        from tools import qualify_go_dependency_watch as qualifier
+        original = ValueError('initial-actual-node-test-failed')
+        public = {'passed': False, 'failure': str(original)}
+        with patch.object(qualifier, 'public_test_failure', side_effect=RuntimeError('private')):
+            with self.assertRaises(ValueError) as observed:
+                try:
+                    raise original
+                finally:
+                    qualifier.add_public_diagnostics(public, lambda: [], None, lambda: None)
+        self.assertIs(observed.exception, original)
+        self.assertEqual(public, {'passed': False, 'failure': 'initial-actual-node-test-failed', 'watchEvents': []})
+        with patch.object(qualifier, 'public_test_failure', side_effect=AssertionError('successful receipt observed failure')):
+            qualifier.add_public_diagnostics({'passed': True}, lambda: [], None, lambda: None)
+
+    def test_projected_vocabulary_matches_actual_report_and_cli_producers(self):
+        import ast
+        import inspect
+        import re
+        from tools import qualify_go_dependency_watch as qualifier
+        from tools.dev_workflow.node_diagnostics import TRAP_CODES
+        tree = ast.parse(inspect.getsource(qualifier.public_test_failure))
+        table = next(node.value for node in ast.walk(tree) if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == 'vocabulary' for target in node.targets))
+        vocabulary = ast.literal_eval(table)
+        root = Path(__file__).resolve().parents[2]
+        producer = ast.parse((root / 'tools/dev_workflow/scenarios.py').read_text())
+        actual = {node.value for node in ast.walk(producer) if isinstance(node, ast.Constant) and isinstance(node.value, str)}
+        actual.update(node.id for node in ast.walk(producer) if isinstance(node, ast.Name))
+        self.assertLessEqual(vocabulary['status'] | vocabulary['category'] | vocabulary['reason'], actual)
+        cli_codes = set(re.findall(r'Code::[A-Za-z]+\s*=>\s*"([a-z-]+)"',
+            (root / 'apps/latent/src/error.rs').read_text()))
+        self.assertEqual(len(vocabulary['platformCode']), 22)
+        self.assertLessEqual(vocabulary['platformCode'], cli_codes | TRAP_CODES)

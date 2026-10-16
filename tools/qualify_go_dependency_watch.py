@@ -68,6 +68,51 @@ def public_events(values):
     return result
 
 
+def public_test_failure(values):
+    """Retain only the last actual failing report, never scenario names or payloads."""
+    vocabulary = {
+        'status': {'passed', 'failed', 'not-run', 'unsupported'},
+        'category': {'success', 'declared-error', 'platform-failure', 'transport-failure'},
+        'platformCode': {'cancelled', 'unknown', 'deadline-exceeded', 'unimplemented', 'internal',
+            'unavailable', 'data-loss', 'out-of-range', 'resource-exhausted', 'ok', 'invalid-argument',
+            'not-found', 'already-exists', 'permission-denied', 'unauthenticated',
+            'failed-precondition', 'aborted', 'guest-trap', 'guest-runtime-error',
+            'budget-accounting-failed', 'result-limit-exceeded', 'invalid-component-result'},
+        'reason': {'earlier-adapter-failure', 'earlier-outcome-unknown-no-new-invocation',
+            'test-run-deadline', 'required-scenario-unsupported', 'ValueError', 'OSError', 'KeyboardInterrupt'},
+    }
+    for event in reversed(values[-32:]):
+        if not isinstance(event, dict) or event.get('event') != 'post-deploy-tests':
+            continue
+        report = event.get('report')
+        if not isinstance(report, dict) or report.get('passed') is not False:
+            continue
+        result = {'qualification': False, 'passed': False, 'results': []}
+        rows = report.get('results')
+        if not isinstance(rows, list):
+            return result
+        start = max(0, len(rows) - 8)
+        for ordinal, row in enumerate(rows[start:], start + 1):
+            if not isinstance(row, dict):
+                continue
+            selected = {'ordinal': ordinal}
+            for key, allowed in vocabulary.items():
+                value = row.get(key)
+                if isinstance(value, str) and value in allowed:
+                    selected[key] = value
+                elif isinstance(value, str) and len(value.encode('utf-8')) <= 4096:
+                    selected[key + 'Sha256'] = 'sha256:' + hashlib.sha256(value.encode('utf-8')).hexdigest()
+            for key in ('outcomeKnown', 'targetMatches'):
+                if type(row.get(key)) is bool:
+                    selected[key] = row[key]
+            for key in ('inputSha256', 'payloadSha256'):
+                if isinstance(row.get(key), str) and re.fullmatch('sha256:[0-9a-f]{64}', row[key]):
+                    selected[key] = row[key]
+            result['results'].append(selected)
+        return result
+    return {}
+
+
 def public_build_failure(value):
     """Keep bounded failure taxonomy; never retain compiler reasons or arguments."""
     if not isinstance(value, dict):
@@ -176,7 +221,12 @@ def collect_build_failures(workspace, output_root):
 def add_public_diagnostics(public, observe, workspace, output_root):
     """Observe fixed bounded metadata without replacing qualification/cleanup errors."""
     try:
-        public['watchEvents'] = public_events(observe())
+        values = observe()
+        public['watchEvents'] = public_events(values)
+        if not public['passed']:
+            failure = public_test_failure(values)
+            if failure:
+                public['postDeployTestFailure'] = failure
     except Exception:
         pass
     if not public['passed'] and workspace is not None:

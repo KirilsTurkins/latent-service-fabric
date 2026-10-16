@@ -20,6 +20,10 @@
     "PublicBuildFailures.test_parser_and_runtime_observer_errors_preserve_original_exception_identity",
     "PublicBuildFailures.test_projection_retains_only_bounded_taxonomy_and_hashes_private_reason",
     "PublicBuildFailures.test_public_codes_and_command_labels_are_closed_real_builder_literals",
+    "PublicPostDeployFailures.test_failed_test_projection_errors_preserve_original_exception_and_success_never_collects",
+    "PublicPostDeployFailures.test_projected_vocabulary_matches_actual_report_and_cli_producers",
+    "PublicPostDeployFailures.test_projection_keeps_actual_failure_tokens_booleans_and_digests_without_private_data",
+    "PublicPostDeployFailures.test_projection_retains_last_failing_report_eight_ordinals_and_ignores_success_or_malformed",
     "PublicWatchEvents.test_projection_rejects_private_fields_invalid_codes_and_non_bool_uncertainty",
     "PublicWatchEvents.test_projection_retains_only_the_last_32_observations",
     "PublicWatchEvents.test_public_event_phase_and_code_vocabulary_has_only_real_producer_literals"
@@ -265,6 +269,54 @@
       ],
       "skipSites": []
     },
+    "PublicPostDeployFailures.test_failed_test_projection_errors_preserve_original_exception_and_success_never_collects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublicPostDeployFailures.test_projected_vocabulary_matches_actual_report_and_cli_producers": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublicPostDeployFailures.test_projection_keeps_actual_failure_tokens_booleans_and_digests_without_private_data": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublicPostDeployFailures.test_projection_retains_last_failing_report_eight_ordinals_and_ignores_success_or_malformed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "PublicWatchEvents.test_projection_rejects_private_fields_invalid_codes_and_non_bool_uncertainty": {
       "bases": [
         "unittest.TestCase"
@@ -304,6 +356,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_dependency_watch.py",
-  "reviewReason": "Preserve all original cases and guards; private attempt fixtures, closed event vocabularies and observer/parser exception identity",
+  "reviewReason": "Retain original diagnostic/private-fixture guards and add bounded failing post-deploy report privacy, source-vocabulary and failure-identity controls",
   "schemaVersion": "latent.ci.contracts.v1"
 }
