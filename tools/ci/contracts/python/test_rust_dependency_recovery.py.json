@@ -1,11 +1,37 @@
 {
   "cases": [
+    "RustDependencyRecovery.test_actual_fixture_emits_zero_page_wasm_spin_and_preserves_resource_authority",
     "RustDependencyRecovery.test_all_four_faults_require_idle_and_fresh_component_calls",
+    "RustDependencyRecovery.test_already_fuel_terminal_never_dispatches_cancellation_or_reports_recovery",
     "RustDependencyRecovery.test_failure_requires_terminal_identity_reaping_and_original_memory_bound",
     "RustDependencyRecovery.test_wrong_identity_and_unknown_cancel_never_retry_or_report_recovery"
   ],
   "guards": {
+    "RustDependencyRecovery.test_actual_fixture_emits_zero_page_wasm_spin_and_preserves_resource_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5dca45822a198817a6f709617b029d1f555146f7506fd53c4ddca863dd709c33",
+        "class:setup-sha256:a6f3864c1f6bceddb98c5eb41ce51658f75d4452d4197863021e4b21593be05f"
+      ],
+      "skipSites": []
+    },
     "RustDependencyRecovery.test_all_four_faults_require_idle_and_fresh_component_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5dca45822a198817a6f709617b029d1f555146f7506fd53c4ddca863dd709c33",
+        "class:setup-sha256:a6f3864c1f6bceddb98c5eb41ce51658f75d4452d4197863021e4b21593be05f"
+      ],
+      "skipSites": []
+    },
+    "RustDependencyRecovery.test_already_fuel_terminal_never_dispatches_cancellation_or_reports_recovery": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -44,6 +70,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_dependency_recovery.py",
-  "reviewReason": "Explicit fixture review: unchanged three cases, no skips or decorator/module guard changes; only select tight fuel path independently of bounded-copy cancellation. Existing cancellation identity and no-replay assertions preserved.",
+  "reviewReason": "Retain all three existing recovery guards exactly; add already-terminal no-cancel and actual fixture zero-page/original-authority controls. No skip, timeout, budget or cancellation acceptance change.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

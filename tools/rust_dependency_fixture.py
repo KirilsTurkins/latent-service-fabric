@@ -104,13 +104,14 @@ pub fn exercise(which: &str) {
             std::hint::black_box(&mut bytes);
         }
         "fuel" => loop { std::hint::spin_loop(); },
-        "spin" => {
-            let source = vec![1_u8; 128 * 1024];
-            let mut destination = vec![0_u8; source.len()];
-            loop {
-                destination.copy_from_slice(std::hint::black_box(&source));
-                std::hint::black_box(&mut destination);
-            }
+        "spin" => loop {
+            // The original fuel ceiling must outlast the read-only observer.
+            // Wasmtime charges bulk copies per byte; zero-page growth adds
+            // no memory or authority and retains the ordinary runtime path.
+            #[cfg(target_arch = "wasm32")]
+            std::hint::black_box(core::arch::wasm32::memory_grow::<0>(std::hint::black_box(0)));
+            #[cfg(not(target_arch = "wasm32"))]
+            std::hint::spin_loop();
         },
         _ => {}
     }
