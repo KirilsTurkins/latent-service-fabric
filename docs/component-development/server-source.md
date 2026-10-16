@@ -118,6 +118,15 @@ original ledger/deadline and uncertainty; HTTP grants never become stream grants
 Build and sign/admit/deploy the actual component with the existing toolkit.
 Then use the maintained `latent` binary and explicit protected client profile:
 
+Newly built Java guest-tool bundles retain the same operator command at
+`recipe/tools/server_capsule.py`, including its route journal and process owners.
+On the supported Linux compiler host, use that installed script with the pinned
+Python runtime in place of the source-checkout path below. Its bytes are covered
+by the authenticated tool inventory. Operator configuration and native `latent`
+selection remain explicit; a compiler bundle grants no route permission. This
+addition does not change the standalone developer frontend's backend protocol or
+provide a server template in an older released bundle.
+
 ```text
 python tools/server_capsule.py --binary /sdk/bin/latent --config client.json --state /private/server-route-state --tenant examples --route server plan --declaration build/server-source.json --component build/component.wasm --source-inputs build/source-inputs.json --profile build/server-profile.json --mounts mounts.json
 ```

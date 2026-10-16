@@ -209,7 +209,7 @@ def verify_tls_fixture(directory: Path) -> list[dict]:
 
 
 def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: Path, *, helper=False,
-        tls_tool: Path | None = None, lifecycle=None, tls=False) -> dict:
+        tls_tool: Path | None = None, lifecycle=None, tls=False, routes_factory=None) -> dict:
     evidence = fresh(evidence)
     record = read_json(fixture / "release-set.json")["releases"][0]
     result = {"schemaVersion": "lsf.java.server.node-conformance.v1", "status": "in-progress", "http": [],
@@ -299,7 +299,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             manifests = server_routes.plan(declaration, json.dumps(mounts, separators=(",", ":")).encode(), selected,
                 source_digest=digest(source), profile_digest=digest(profile))
             owner = {"tenant": "examples", "route": deployed["name"], "clientConfigDigest": digest(read_file(client.config))}
-            routes = server_routes.Routes(root / "routes", route_cli, owner)
+            routes = (server_routes.Routes(root / "routes", route_cli, owner) if routes_factory is None
+                      else routes_factory(root / "routes", route_cli, owner, mounts=mounts))
             with state.lock(root / "routes", "server-routes.lock"): result["routes"] = routes.apply(manifests)
             endpoint = node.startup_record["httpEndpoint"]
 
