@@ -1,0 +1,241 @@
+// Compiler-owned finite net/http backend over the declared typed HTTP import.
+// Client remains responsible for redirects, cookies, authentication and retries.
+package http
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http/httptrace"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+
+	lsfHTTP "@module@/lsf/streaming"
+	lsfWit "go.bytecodealliance.org/pkg/wit/types"
+)
+
+const lsfHTTPMaximumBody = 1024 * 1024
+const lsfHTTPChunk = 16 * 1024
+
+func lsfHTTPUnsupported(feature string) error {
+	return fmt.Errorf("lsf net/http profile does not support %s", feature)
+}
+
+func lsfHTTPFailure(ctx context.Context, failure lsfHTTP.HttpError) error {
+	if ctx.Err() != nil { return ctx.Err() }
+	if failure.Tag() == lsfHTTP.HttpErrorUnexpectedEof { return io.ErrUnexpectedEOF }
+	if failure.Tag() == lsfHTTP.HttpErrorCancelled { return context.Canceled }
+	if failure.Tag() == lsfHTTP.HttpErrorDeadlineExceeded { return context.DeadlineExceeded }
+	names := []string{"invalid-url", "invalid-request", "permission-denied", "request-too-large",
+		"response-too-large", "deadline-exceeded", "cancelled", "budget-exhausted", "dns-failed",
+		"tls-failed", "connection-failed", "unavailable", "uncertain", "invalid-state",
+		"unexpected-eof", "unsupported-encoding"}
+	if int(failure.Tag()) >= len(names) { panic("foreign typed HTTP error") }
+	return errors.New("lsf-http-" + names[failure.Tag()])
+}
+
+func lsfHTTPReserved(name string) bool {
+	switch strings.ToLower(name) {
+	case "host", "content-length", "content-encoding", "accept-encoding", "authorization",
+		"cookie", "set-cookie", "expect", "x-api-key", "x-auth-token", "x-amz-security-token",
+		"connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "proxy-connection",
+		"te", "trailer", "transfer-encoding", "upgrade":
+		return true
+	}
+	return false
+}
+
+func lsfTransportRoundTrip(t *Transport, req *Request) (*Response, error) {
+	if req.URL == nil || req.Header == nil { req.closeBody(); return nil, errors.New("http: nil URL or Header") }
+	// A registered protocol is an ordinary public extension, separate from the
+	// default backend. Never replay it after ErrSkipAltProtocol may have consumed
+	// request bytes or performed an external operation.
+	if alternative := t.alternateRoundTripper(req); alternative != nil {
+		response, err := alternative.RoundTrip(req)
+		if err == ErrSkipAltProtocol { return nil, lsfHTTPUnsupported("alternate transport fallback") }
+		return response, err
+	}
+	// This owns the original request body even when validation denies dispatch.
+	// Registered custom transports retain their original independent ownership.
+	if req.Body != nil { defer req.Body.Close() }
+	if req.Context().Err() != nil { return nil, req.Context().Err() }
+	if req.URL.Scheme != "http" { return nil, lsfHTTPUnsupported("HTTPS or alternate URL scheme") }
+	if req.URL.Host == "" || req.URL.User != nil || req.URL.Opaque != "" {
+		return nil, lsfHTTPUnsupported("URL authority, credentials or opaque URL")
+	}
+	if req.Host != "" && req.Host != req.URL.Host { return nil, lsfHTTPUnsupported("custom Host") }
+	if req.RequestURI != "" || len(req.Trailer) != 0 || len(req.TransferEncoding) != 0 || req.Cancel != nil {
+		return nil, lsfHTTPUnsupported("RequestURI, upload trailers, transfer encoding or legacy cancellation")
+	}
+	if httptrace.ContextClientTrace(req.Context()) != nil { return nil, lsfHTTPUnsupported("wire-level httptrace") }
+	if t.DialContext != nil || t.Dial != nil || t.MaxConnsPerHost != 0 || t.Protocols != nil || t.HTTP2 != nil {
+		return nil, lsfHTTPUnsupported("custom dialer, connection concurrency or wire protocol selection")
+	}
+	if !t.DisableCompression { return nil, lsfHTTPUnsupported("automatic compression; DisableCompression must be true") }
+	if t.ResponseHeaderTimeout < 0 { return nil, lsfHTTPUnsupported("negative response header timeout") }
+	if t.WriteBufferSize < 0 || t.ReadBufferSize < 0 || t.WriteBufferSize > lsfHTTPChunk || t.ReadBufferSize > lsfHTTPChunk {
+		return nil, lsfHTTPUnsupported("buffer size outside the finite chunk profile")
+	}
+	if t.Proxy != nil {
+		proxy, err := t.Proxy(req)
+		if err != nil { return nil, err }
+		if proxy != nil { return nil, lsfHTTPUnsupported("HTTP proxy") }
+	}
+	method := req.Method
+	if method == "" { method = MethodGet }
+	methods := map[string]lsfHTTP.Method{MethodGet: lsfHTTP.MethodGet, MethodHead: lsfHTTP.MethodHead,
+		MethodPost: lsfHTTP.MethodPost, MethodPut: lsfHTTP.MethodPut, MethodPatch: lsfHTTP.MethodPatch,
+		MethodDelete: lsfHTTP.MethodDelete, MethodOptions: lsfHTTP.MethodOptions}
+	selected, supported := methods[method]
+	if !supported { return nil, lsfHTTPUnsupported("request method") }
+	if invalid := validateHeaders(req.Header); invalid != "" { return nil, errors.New("http: invalid request header") }
+	request := lsfHTTP.Request{Method:selected}
+	address := *req.URL
+	address.Fragment, address.RawFragment = "", ""
+	request.Url = address.String()
+	keys := make([]string, 0, len(req.Header))
+	for key := range req.Header { keys = append(keys, key) }
+	sort.Strings(keys)
+	for _, key := range keys {
+		if lsfHTTPReserved(key) { return nil, lsfHTTPUnsupported("reserved request header") }
+		values := req.Header[key]
+		switch strings.ToLower(key) {
+		case "content-type", "idempotency-key":
+			if len(values) != 1 { return nil, errors.New("http: ambiguous structured header") }
+			if strings.EqualFold(key, "content-type") { request.BodyMediaType = lsfWit.Some(values[0])
+			} else { request.IdempotencyKey = lsfWit.Some(values[0]) }
+		default:
+			for _, value := range values { request.Headers = append(request.Headers, lsfHTTP.Header{Name:key, Value:value}) }
+		}
+	}
+	if len(request.Headers) > 32 { return nil, errors.New("lsf-http-request-too-large") }
+	if req.Body == nil || req.Body == NoBody { request.BodyLength = lsfWit.Some(uint64(0))
+	} else if req.ContentLength > 0 {
+		if req.ContentLength > lsfHTTPMaximumBody { return nil, errors.New("lsf-http-request-too-large") }
+		request.BodyLength = lsfWit.Some(uint64(req.ContentLength))
+	}
+	opened := lsfHTTP.OpenContext(req.Context(), request)
+	if opened.IsErr() { return nil, lsfHTTPFailure(req.Context(), opened.Err()) }
+	upload := opened.Ok()
+	defer upload.Close()
+	if req.Body != nil && req.Body != NoBody {
+		bufferSize := lsfHTTPChunk
+		if t.WriteBufferSize > 0 { bufferSize = t.WriteBufferSize }
+		buffer := make([]byte, bufferSize)
+		var total int64
+		empty := 0
+		for {
+			count, err := req.Body.Read(buffer)
+			if count < 0 || count > len(buffer) { return nil, errors.New("http: invalid request reader count") }
+			total += int64(count)
+			if total > lsfHTTPMaximumBody { return nil, errors.New("lsf-http-request-too-large") }
+			if count > 0 {
+				empty = 0
+				written := upload.WriteContext(req.Context(), buffer[:count])
+				if written.IsErr() { return nil, lsfHTTPFailure(req.Context(), written.Err()) }
+			} else { empty++ }
+			if err == io.EOF { break }
+			if err != nil { return nil, err }
+			if empty >= 100 { return nil, io.ErrNoProgress }
+		}
+		if req.ContentLength > 0 && total != req.ContentLength { return nil, errors.New("http: request content length mismatch") }
+	}
+	headerContext := req.Context()
+	headerCancel := func() {}
+	if t.ResponseHeaderTimeout > 0 { headerContext, headerCancel = context.WithTimeout(headerContext, t.ResponseHeaderTimeout) }
+	finished := upload.FinishContext(headerContext)
+	if finished.IsErr() { err := lsfHTTPFailure(headerContext, finished.Err()); headerCancel(); return nil, err }
+	headerCancel()
+	value := finished.Ok()
+	if len(value.Headers) > 32 { value.Body.Close(); return nil, errors.New("lsf-http-response-too-large") }
+	header := make(Header)
+	for _, item := range value.Headers { header.Add(item.Name, item.Value) }
+	if value.BodyMediaType.IsSome() && header.Get("Content-Type") == "" { header.Set("Content-Type", value.BodyMediaType.Some()) }
+	if invalid := validateHeaders(header); invalid != "" { value.Body.Close(); return nil, errors.New("http: invalid response header") }
+	bytes := int64(0)
+	for key, values := range header { for _, value := range values { bytes += int64(len(key)+len(value)+4) } }
+	if len(header) > 32 || bytes > 8192 || t.MaxResponseHeaderBytes > 0 && bytes > t.MaxResponseHeaderBytes {
+		value.Body.Close(); return nil, errors.New("lsf-http-response-too-large")
+	}
+	length := int64(-1)
+	if values := header.Values("Content-Length"); len(values) != 0 {
+		var err error
+		if len(values) != 1 { value.Body.Close(); return nil, errors.New("http: ambiguous response content length") }
+		length, err = strconv.ParseInt(values[0], 10, 64)
+		if err != nil || length < 0 { value.Body.Close(); return nil, errors.New("http: invalid response content length") }
+	}
+	bodyContext, bodyCancel := context.WithCancel(req.Context())
+	trailer := make(Header)
+	body := &lsfHTTPResponseBody{ctx:bodyContext, cancel:bodyCancel, value:value.Body, trailer:trailer, maximum:lsfHTTPChunk}
+	if t.ReadBufferSize > 0 { body.maximum = t.ReadBufferSize }
+	response := &Response{StatusCode:int(value.Status), Status:fmt.Sprintf("%d %s", value.Status, StatusText(int(value.Status))),
+		Header:header, Body:body, ContentLength:length, Request:req, Trailer:trailer}
+	// The typed ABI exposes no negotiated protocol or TLS connection state.
+	// Leave those unavailable instead of inventing a wire-level result.
+	if method == MethodHead { body.Close(); response.Body = NoBody }
+	return response, nil
+}
+
+type lsfHTTPResponseBody struct {
+	mutex sync.Mutex
+	ctx context.Context
+	cancel context.CancelFunc
+	value *lsfHTTP.Body
+	buffer []byte
+	trailer Header
+	total int
+	maximum int
+	closed bool
+	eof bool
+}
+
+func (body *lsfHTTPResponseBody) closeLocked() {
+	if !body.closed { body.closed = true; body.value.Close(); body.buffer = nil; body.cancel() }
+}
+
+func (body *lsfHTTPResponseBody) Close() error {
+	// Wake a pending Read through its original canonical cancellation fence,
+	// then acquire its mutex before physically dropping the borrowed body.
+	body.cancel()
+	body.mutex.Lock()
+	defer body.mutex.Unlock()
+	body.closeLocked()
+	return nil
+}
+
+func (body *lsfHTTPResponseBody) Read(target []byte) (int, error) {
+	body.mutex.Lock()
+	defer body.mutex.Unlock()
+	if len(target) == 0 { return 0, nil }
+	if body.eof { return 0, io.EOF }
+	if body.closed { return 0, errors.New("http: read on closed response body") }
+	if body.ctx.Err() != nil { err := body.ctx.Err(); body.closeLocked(); return 0, err }
+	if len(body.buffer) == 0 {
+		read := body.value.ReadContext(body.ctx, uint32(body.maximum))
+		if read.IsErr() { err := lsfHTTPFailure(body.ctx, read.Err()); body.closeLocked(); return 0, err }
+		if read.Ok().IsNone() {
+			trailers := body.value.TrailersContext(body.ctx)
+			if trailers.IsErr() { err := lsfHTTPFailure(body.ctx, trailers.Err()); body.closeLocked(); return 0, err }
+			if len(trailers.Ok()) > 32 { body.closeLocked(); return 0, errors.New("lsf-http-response-too-large") }
+			bytes := 0
+			for _, item := range trailers.Ok() { bytes += len(item.Name)+len(item.Value)+4; body.trailer.Add(item.Name, item.Value) }
+			if bytes > 8192 || validateHeaders(body.trailer) != "" { body.closeLocked(); return 0, errors.New("http: invalid response trailers") }
+			body.eof = true
+			body.closeLocked()
+			return 0, io.EOF
+		}
+		bytes := read.Ok().Some().BytesContext(body.ctx)
+		if bytes.IsErr() { err := lsfHTTPFailure(body.ctx, bytes.Err()); body.closeLocked(); return 0, err }
+		body.buffer = bytes.Ok()
+		body.total += len(body.buffer)
+		if len(body.buffer) == 0 || len(body.buffer) > body.maximum || body.total > lsfHTTPMaximumBody {
+			body.closeLocked(); return 0, errors.New("lsf-http-response-too-large")
+		}
+	}
+	count := copy(target, body.buffer)
+	body.buffer = body.buffer[count:]
+	return count, nil
+}

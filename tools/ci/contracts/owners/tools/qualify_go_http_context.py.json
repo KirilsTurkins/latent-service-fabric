@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_http_context.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Fingerprint maintained bounded typed HTTP context compilation with explicit compile-only result and unchanged source, SDK and recipe checks.",
+  "reviewReason": "Retain original context fixture and add explicitly compile-only ordinary net/http fixture selection",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "61ea914c076da6b0d3f9bcc295197435359f3d30c64a06872803b0cd638570d5"
+  "sha256": "15d5a0299a025cccc893b91b73a05a1a45475ec5817248f320a6f58df4f4be64"
 }

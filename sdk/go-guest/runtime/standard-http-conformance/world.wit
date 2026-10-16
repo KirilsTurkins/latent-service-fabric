@@ -1,0 +1,14 @@
+package tests:go-standard-http@1.0.0;
+
+interface api {
+    run: async func(which: u32, url: string) -> string;
+}
+
+world service {
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    import latent:random/random@0.1.0;
+    import latent:runtime/activation@0.1.0;
+    import latent:http/streaming@0.3.0;
+    export api;
+}

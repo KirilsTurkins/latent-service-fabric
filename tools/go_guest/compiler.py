@@ -229,6 +229,11 @@ class Compiler:
             if selected_module is not None and selected_module["tags"]:
                 self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])
             replacements = json.loads(overlay_path.read_bytes())["Replace"]
+            if http_context and initializers:
+                from tools.go_guest.http import prepare as prepare_http
+                module_identity = selected_module['module'] if selected_module is not None else 'wit_component'
+                replacements.update(prepare_http(self.goroot, self.sdk, output/'standard-http', module_identity))
+                overlay_path.write_text(json.dumps({'Replace': replacements}, indent=2, sort_keys=True) + '\n')
             if checkpoints:
                 from tools.go_application_dependencies import json_stream
                 from tools.go_guest.checkpoints import transform

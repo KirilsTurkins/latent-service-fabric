@@ -26,6 +26,8 @@ on:
       - tools/qualify_go_activation.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
+      - tools/tests/test_go_standard_http.py
+      - tools/tests/fixtures/go-standard-http/**
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
       - tools/diagnose_go_timer_failure.py
@@ -78,6 +80,8 @@ on:
       - tools/qualify_go_activation.py
       - tools/qualify_go_http_context.py
       - tools/tests/test_go_http_context.py
+      - tools/tests/test_go_standard_http.py
+      - tools/tests/fixtures/go-standard-http/**
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
       - tools/diagnose_go_timer_failure.py
@@ -230,6 +234,10 @@ jobs:
         run: |
           python3 -m unittest tools.tests.test_go_http_context
           python3 tools/qualify_go_http_context.py --output "$RUNNER_TEMP/go-http-context"
+      - name: Compile ordinary default net/http sources through the finite typed backend
+        run: |
+          python3 -m unittest tools.tests.test_go_standard_http
+          python3 tools/qualify_go_http_context.py --output "$RUNNER_TEMP/go-standard-http" --fixture standard-http-conformance
       - name: Qualify standard timer heap callbacks and physical readiness retirement
         id: standard_timers
         run: |
@@ -360,6 +368,17 @@ jobs:
             ${{ runner.temp }}/go-published-runtime/build/component.wasm
             ${{ runner.temp }}/go-published-runtime/build/component.wit
             ${{ runner.temp }}/go-published-runtime/build/runtime-overlay/
+            ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-FRAMES.json
+            ${{ runner.temp }}/go-standard-http/qualification.json
+            ${{ runner.temp }}/go-standard-http/FAILED.json
+            ${{ runner.temp }}/go-standard-http/recipe-inputs.json
+            ${{ runner.temp }}/go-standard-http/src/
+            ${{ runner.temp }}/go-standard-http/wit/
+            ${{ runner.temp }}/go-standard-http/logs/
+            ${{ runner.temp }}/go-standard-http/build/component.wasm
+            ${{ runner.temp }}/go-standard-http/build/component.wit
+            ${{ runner.temp }}/go-standard-http/build/standard-http/
+            ${{ runner.temp }}/go-standard-http/build/runtime-overlay/
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn
