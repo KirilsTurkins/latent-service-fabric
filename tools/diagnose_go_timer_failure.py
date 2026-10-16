@@ -30,29 +30,47 @@ PATHS = ('crates/latent-wasmtime/src/containment.rs', 'crates/latent-wasmtime/sr
 # mount namespace only supplies private source files; production policy still
 # sees the original user namespace, root ownership and system temporary path.
 FRAME_PREFLIGHT = '''import hashlib,json,os,pathlib,stat,sys,tempfile
-expected=json.loads(sys.argv[1]); cargo=sys.argv[2:]
-def require(value):
-    if not value: raise SystemExit("Go-private-frame-host-preflight-refused")
-require(os.getuid()==os.geteuid()==expected["uid"]!=0)
-require(os.getgid()==os.getegid()==expected["gid"])
-require(set(os.getgroups())<=set(expected["groups"]))
-status=pathlib.Path("/proc/self/status").read_text()
-for key in ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"):
-    fields=[line.split(":",1)[1].strip() for line in status.splitlines() if line.startswith(key+":")]
-    require(len(fields)==1 and int(fields[0],16)==0)
-require("NoNewPrivs:\\t1" in status)
-require(hashlib.sha256(pathlib.Path("/proc/self/uid_map").read_bytes()).hexdigest()==expected["uidMapDigest"])
-root=pathlib.Path("/").stat()
-require([root.st_uid,root.st_gid,stat.S_IMODE(root.st_mode)]==expected["root"])
-temporary=pathlib.Path(tempfile.gettempdir()).resolve(strict=True)
-for path in (*reversed(temporary.parents),temporary):
-    value=path.stat(); require(stat.S_ISDIR(value.st_mode))
-    require(value.st_uid in (0,expected["uid"]))
-    require(not value.st_mode & 0o022 or value.st_uid==0 and bool(value.st_mode & stat.S_ISVTX))
-require(all(key not in os.environ for key in ("TEMP","TMP","TMPDIR")))
-print("LSF_GO_DIAG_HOST "+json.dumps({"uid":os.getuid(),"gid":os.getgid(),"sameUserNamespace":True,
-    "capabilitiesDropped":True,"rootOwnershipPreserved":True,"temporaryAncestorsAccepted":True}),flush=True)
-os.execve(cargo[0],cargo,dict(os.environ))
+phase="arguments"; code="exception"
+def require(value,reason):
+    global code
+    if not value:
+        code=reason
+        raise SystemExit("Go-private-frame-host-preflight-refused")
+try:
+    expected=json.loads(sys.argv[1]); cargo=sys.argv[2:]
+    phase="credentials"
+    require(os.getuid()==os.geteuid()==expected["uid"]!=0,"uid")
+    require(os.getgid()==os.getegid()==expected["gid"],"gid")
+    require(set(os.getgroups())<=set(expected["groups"]),"groups")
+    phase="capsets"
+    status=pathlib.Path("/proc/self/status").read_text()
+    for key in ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"):
+        fields=[line.split(":",1)[1].strip() for line in status.splitlines() if line.startswith(key+":")]
+        require(len(fields)==1 and int(fields[0],16)==0,key)
+    require("NoNewPrivs:\\t1" in status,"no-new-privs")
+    phase="uid-map"
+    require(hashlib.sha256(pathlib.Path("/proc/self/uid_map").read_bytes()).hexdigest()==expected["uidMapDigest"],"uid-map")
+    phase="root-stat"
+    root=pathlib.Path("/").stat()
+    require([root.st_uid,root.st_gid,stat.S_IMODE(root.st_mode)]==expected["root"],"root-stat")
+    phase="temp-ancestors"
+    temporary=pathlib.Path(tempfile.gettempdir()).resolve(strict=True)
+    for path in (*reversed(temporary.parents),temporary):
+        value=path.stat(); require(stat.S_ISDIR(value.st_mode),"temporary-directory")
+        require(value.st_uid in (0,expected["uid"]),"temporary-owner")
+        require(not value.st_mode & 0o022 or value.st_uid==0 and bool(value.st_mode & stat.S_ISVTX),"temporary-mode")
+    require(all(key not in os.environ for key in ("TEMP","TMP","TMPDIR")),"temporary-environment")
+    print("LSF_GO_DIAG_HOST "+json.dumps({"uid":os.getuid(),"gid":os.getgid(),"sameUserNamespace":True,
+        "capabilitiesDropped":True,"rootOwnershipPreserved":True,"temporaryAncestorsAccepted":True}),flush=True)
+    phase="native-start"
+    os.execve(cargo[0],cargo,dict(os.environ))
+except BaseException as error:
+    kind=type(error).__name__
+    if kind not in ("SystemExit","ValueError","JSONDecodeError","KeyError","IndexError","TypeError","PermissionError",
+                    "FileNotFoundError","NotADirectoryError","OSError","RuntimeError"):
+        kind="Other"
+    print("LSF_GO_DIAG_HOST_FAILURE "+json.dumps({"phase":phase,"code":code,"exception":kind}),file=sys.stderr,flush=True)
+    raise SystemExit("Go-private-frame-host-preflight-refused") from None
 '''
 
 
@@ -115,6 +133,47 @@ def frame_host_observation(data: bytes) -> dict | None:
             or any(value[key] is not True for key in value.keys() - {'uid', 'gid'})):
         raise ValueError('Go-private-frame-observer-host-shape')
     return value
+
+
+def frame_launch_observation(data: bytes) -> dict:
+    """Export finite launcher/preflight categories without retaining raw output."""
+    prefix = b'LSF_GO_DIAG_HOST_FAILURE '
+    rows = [line.removeprefix(prefix) for line in data.splitlines() if line.startswith(prefix)]
+    failure = None
+    if rows:
+        if len(rows) != 1 or len(rows[0]) > 512:
+            raise ValueError('Go-private-frame-observer-failure-shape')
+        failure = json.loads(rows[0])
+        allowed = {'phase': {'arguments', 'credentials', 'capsets', 'uid-map', 'root-stat', 'temp-ancestors', 'native-start'},
+            'code': {'exception', 'uid', 'gid', 'groups', 'CapInh', 'CapPrm', 'CapEff', 'CapBnd', 'CapAmb',
+                'no-new-privs', 'uid-map', 'root-stat', 'temporary-directory', 'temporary-owner',
+                'temporary-mode', 'temporary-environment'},
+            'exception': {'SystemExit', 'ValueError', 'JSONDecodeError', 'KeyError', 'IndexError', 'TypeError', 'PermissionError',
+                'FileNotFoundError', 'NotADirectoryError', 'OSError', 'RuntimeError', 'Other'}}
+        if not isinstance(failure, dict) or set(failure) != set(allowed) or any(type(failure[key]) is not str or failure[key] not in values
+                for key, values in allowed.items()):
+            raise ValueError('Go-private-frame-observer-failure-shape')
+    families, categories = set(), set()
+    for line in data.splitlines():
+        family = next((name for name in ('bwrap', 'setpriv', 'sudo', 'python')
+                       if re.match(rb'^(?:[^\s:]+/)?' + name.encode() + rb'(?:[0-9.]*)?:', line)), None)
+        if family is None:
+            continue
+        families.add(family)
+        lowered = line[:4096].lower()
+        patterns = {'permission-denied': (b'operation not permitted', b'permission denied', b'not allowed'),
+            'authentication': (b'password', b'authentication'),
+            'namespace-setup': (b'namespace', b'mount', b'pivot root'),
+            'capability-drop': (b'capabilit', b'capset', b'bounding set'),
+            'credential-transition': (b'setuid', b'setgid', b'setgroups', b'setresuid', b'setresgid'),
+            'process-exec': (b'execvp', b'execute', b'no such file', b'shared libraries'),
+            'read-only-filesystem': (b'read-only file system', b'read-only filesystem'),
+            'invalid-argument': (b'invalid argument',),
+            'command-option': (b'unrecognized option', b'unknown option', b'invalid option')}
+        matched = {name for name, tokens in patterns.items() if any(token in lowered for token in tokens)}
+        categories.update(matched or {'other'})
+    return {'preflightFailure': failure, 'launcherFamilies': sorted(families),
+            'launcherCategories': sorted(categories), 'rawLauncherOutputRetained': False}
 
 
 def once(text, old, new):
@@ -693,6 +752,7 @@ def diagnose(fixture: Path, output: Path) -> dict:
         'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', result.stderr)))[:16],
         'executionMetadata': execution_metadata(result.stderr + b'\n' + result.stdout),
         'hostPreflight': frame_host_observation(result.stderr + b'\n' + result.stdout),
+        'launchObservation': frame_launch_observation(result.stderr + b'\n' + result.stdout),
         'frames': frames, 'rawNativeBacktraceRetained': False, 'acceptanceFailure': 'unchanged',
         'terminalDiagnostic': terminal, 'throwReasonDiagnostic': reason,
         'terminalPanicDiagnostic': panic, 'observerSupportingInputs': support}

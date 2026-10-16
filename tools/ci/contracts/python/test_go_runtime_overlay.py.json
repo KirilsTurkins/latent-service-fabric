@@ -1,7 +1,7 @@
 {
   "schemaVersion": "latent.ci.contracts.v2",
   "kind": "python",
-  "reviewReason": "Preserve every prior runtime/terminal diagnostic control. Add command-boundary and functional host-preflight negatives for UID/GID, all capability sets, no-new-privileges, original user namespace/root ownership and safe system temporary ancestors; no privileged execution is claimed by these controls.",
+  "reviewReason": "Preserve all 23 prior runtime and terminal diagnostic controls and their guards. Add closed launcher-category/redaction controls and verify host-preflight refusals and private exceptions emit only finite phase/code/class metadata; privileged or native execution is not claimed.",
   "module": "tools/tests/test_go_runtime_overlay.py",
   "cases": [
     "GoRuntimeOverlayTests.test_activation_dispatcher_rejects_changed_dependency_before_transformation",
@@ -14,6 +14,7 @@
     "GoRuntimeOverlayTests.test_private_frame_command_drops_privilege_before_cargo_without_replacing_user_namespace",
     "GoRuntimeOverlayTests.test_private_frame_host_context_refuses_local_execution_before_inspecting_privilege",
     "GoRuntimeOverlayTests.test_private_frame_host_preflight_refuses_wrong_credentials_caps_maps_or_temporary_ancestors",
+    "GoRuntimeOverlayTests.test_private_frame_launch_observation_exports_only_closed_failure_categories",
     "GoRuntimeOverlayTests.test_private_frame_observer_refuses_drift_before_writing_a_partial_overlay",
     "GoRuntimeOverlayTests.test_private_frame_output_excludes_native_messages_and_rejects_unbounded_or_unexpected_data",
     "GoRuntimeOverlayTests.test_private_frame_preparation_failure_keeps_ordinary_terminal_record_without_overwriting",
@@ -51,9 +52,22 @@
     "GoRuntimeOverlayTests.test_protected_roots_and_existing_output_refuse_without_modifying_sources": "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
     "GoRuntimeOverlayTests.test_private_frame_command_drops_privilege_before_cargo_without_replacing_user_namespace": "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
     "GoRuntimeOverlayTests.test_private_frame_host_preflight_refuses_wrong_credentials_caps_maps_or_temporary_ancestors": "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_private_frame_host_context_refuses_local_execution_before_inspecting_privilege": "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1"
+    "GoRuntimeOverlayTests.test_private_frame_host_context_refuses_local_execution_before_inspecting_privilege": "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
+    "GoRuntimeOverlayTests.test_private_frame_launch_observation_exports_only_closed_failure_categories": "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1"
   },
   "guardDefinitions": {
+    "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ]
+    },
     "0177d9a48a22c684dd444ce31a6941a0866fc3493ebe3aa5f58a340291445028": {
       "bases": [
         "unittest.TestCase"
@@ -64,18 +78,6 @@
         "self.skipTest('Node unavailable for isolated Wasm instruction controls')",
         "skip-control-sha256:bfa0e4dd4d1d6cc23088273caf021ad84e12a55842fbe8be40281d7a1cf6abf3"
       ],
-      "fixtureGuards": [
-        "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
-        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
-      ]
-    },
-    "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
         "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
