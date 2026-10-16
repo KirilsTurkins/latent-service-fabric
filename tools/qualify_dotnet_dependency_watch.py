@@ -204,7 +204,7 @@ def main() -> int:
     try:
         # No controller or recipe is imported from a checkout. The explicit
         # wrapper verifies the helper and delegates to its unchanged CLI.
-        frontend.write_text('#!' + str(python) + '''
+        frontend.write_text('#!' + str(python) + ' -IB' + '''
 import hashlib,io,pathlib,sys
 p=pathlib.Path(''' + repr(str(args.helper)) + ''')
 assert 'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()==''' + repr(args.helper_sha256) + '''

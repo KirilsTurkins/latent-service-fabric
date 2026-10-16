@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Restore actual frontend trust delegation and exact maintained trust error boundary",
+  "reviewReason": "Prevent source frontend bytecode writes to the delivered tool inventory using isolated no-bytecode interpreter flags; preserve every watch, signing and shutdown guard.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "60ed893f25ac8d1f0b1c4ed49828f2816d4f0383640969b5a1c8965e6977ce6c"
+  "sha256": "b331224363b09e3b78ddcde6e0a5c8d89c311121c2a5c419735b2fc65f804e97"
 }

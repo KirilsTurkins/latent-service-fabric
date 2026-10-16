@@ -6,7 +6,8 @@
     "DotnetDependencyWatchFixture.test_revision_and_cleanup_refuse_unknown_or_changed_owners",
     "DotnetDependencyWatchFixture.test_tampered_preparation_never_deletes_original_or_creates_capture_source",
     "DotnetDependencyWatchFixture.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved",
-    "DotnetDependencyWatchFixture.test_watch_delegation_operations_exist_in_maintained_frontend"
+    "DotnetDependencyWatchFixture.test_watch_delegation_operations_exist_in_maintained_frontend",
+    "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode"
   ],
   "guards": {
     "DotnetDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed": {
@@ -92,10 +93,22 @@
         "class:setup-sha256:2bb6e6880ac32a2367a97f7c551209d026c4b8d8ec334a4133958fd8ec657bab"
       ],
       "skipSites": []
+    },
+    "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5db60538a969be757d4a70e6e03754561435bcec6b0276e39ccdce75fc228508",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_dependency_watch.py",
-  "reviewReason": "Check all delegated watch operations against actual maintained frontend parser choices",
+  "reviewReason": "Execute the generated source frontend under adversarial Python settings; preserve every original case, fixture, decorator and skip guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
