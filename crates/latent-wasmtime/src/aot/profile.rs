@@ -38,6 +38,24 @@ impl ValidatedAotProfile {
         config: &WasmtimeConfig,
         limits: AotCompilerLimits,
     ) -> Result<Self, PlatformError> {
+        let (engine, profile) = Self::with_engine(config, limits, compiler_engine)?;
+        drop(engine);
+        Ok(profile)
+    }
+
+    /// Derives both owners from the same configuration without a spare Engine.
+    pub(crate) fn with_runtime_engine(
+        config: &WasmtimeConfig,
+        limits: AotCompilerLimits,
+    ) -> Result<(Engine, Self), PlatformError> {
+        Self::with_engine(config, limits, |_| config.runtime_engine())
+    }
+
+    fn with_engine(
+        config: &WasmtimeConfig,
+        limits: AotCompilerLimits,
+        build: impl FnOnce(&CompilerEngineSettings) -> Result<Engine, PlatformError>,
+    ) -> Result<(Engine, Self), PlatformError> {
         let limits = limits.validate()?;
         config.validate()?;
         limits.identity(&config.target_triple)?;
@@ -46,16 +64,16 @@ impl ValidatedAotProfile {
         let declared = config.profile_with_runtime(DispatchMode::Generic, Some(&runtime));
         let policy = declared_digest(&declared, limits)?;
         let settings = CompilerEngineSettings::from_config(config);
-        let engine = compiler_engine(&settings)?;
+        settings.validate_compiler()?;
+        let engine = build(&settings)?;
         let engine_identity = hash::engine(&engine);
-        drop(engine);
         let capabilities = capabilities(config);
         let mut digest = Sha256::new();
         digest.update(b"lsf-validated-aot-profile-v1\0");
         for value in [&policy, &engine_identity, &capabilities, runtime.digest()] {
             frame(&mut digest, value);
         }
-        Ok(Self {
+        let profile = Self {
             identity: digest.finalize().into(),
             engine: engine_identity,
             policy,
@@ -66,7 +84,8 @@ impl ValidatedAotProfile {
                 engine_compatibility: blob(engine_identity).into_string(),
                 settings,
             },
-        })
+        };
+        Ok((engine, profile))
     }
     #[must_use]
     pub const fn digest(&self) -> &[u8; 32] {
