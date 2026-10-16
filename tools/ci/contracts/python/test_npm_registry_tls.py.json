@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "NpmCapturedTrust.test_exact_public_ca_is_native_lock_and_changed_bytes_deny_offline_status",
+    "NpmCapturedTrust.test_native_command_mutating_certificate_cannot_publish_candidate",
+    "NpmRegistryTrust.test_ca_paths_and_undeclared_trust_shapes_are_rejected",
+    "NpmRegistryTrust.test_certificate_or_derived_bundle_mutation_is_detected",
+    "NpmRegistryTrust.test_explicit_public_ca_augments_pinned_node_roots_with_verified_owned_bundle",
+    "NpmRegistryTrust.test_no_declared_ca_never_inherits_ambient_extra_roots",
+    "NpmRegistryTrust.test_private_keys_multiple_certificates_malformed_x509_and_overflow_fail",
+    "NpmRegistryTrust.test_public_trust_helper_is_shipped_and_bound_by_normal_recipe",
+    "NpmRegistryTrust.test_tls_config_injection_and_unprepared_roots_fail_before_native_tools"
+  ],
+  "guards": {
+    "NpmCapturedTrust.test_exact_public_ca_is_native_lock_and_changed_bytes_deny_offline_status": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:079fe227e584f7e7c5982ed0042c0acae02354020e051333de17f6084a767282",
+        "class:setup-sha256:6fac2213e51cae5638b9051f45c63b861e19c559b6d6acf7da6f55ff076d58b1"
+      ],
+      "skipSites": []
+    },
+    "NpmCapturedTrust.test_native_command_mutating_certificate_cannot_publish_candidate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:079fe227e584f7e7c5982ed0042c0acae02354020e051333de17f6084a767282",
+        "class:setup-sha256:6fac2213e51cae5638b9051f45c63b861e19c559b6d6acf7da6f55ff076d58b1"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryTrust.test_ca_paths_and_undeclared_trust_shapes_are_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:079fe227e584f7e7c5982ed0042c0acae02354020e051333de17f6084a767282",
+        "class:setup-sha256:80f462e6dea13222749a89da85bda55ce6c5767105f060baa32fddfc02e2061d"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryTrust.test_certificate_or_derived_bundle_mutation_is_detected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:079fe227e584f7e7c5982ed0042c0acae02354020e051333de17f6084a767282",
+        "class:setup-sha256:80f462e6dea13222749a89da85bda55ce6c5767105f060baa32fddfc02e2061d"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryTrust.test_explicit_public_ca_augments_pinned_node_roots_with_verified_owned_bundle": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:079fe227e584f7e7c5982ed0042c0acae02354020e051333de17f6084a767282",
+        "class:setup-sha256:80f462e6dea13222749a89da85bda55ce6c5767105f060baa32fddfc02e2061d"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryTrust.test_no_declared_ca_never_inherits_ambient_extra_roots": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:079fe227e584f7e7c5982ed0042c0acae02354020e051333de17f6084a767282",
+        "class:setup-sha256:80f462e6dea13222749a89da85bda55ce6c5767105f060baa32fddfc02e2061d"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryTrust.test_private_keys_multiple_certificates_malformed_x509_and_overflow_fail": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:079fe227e584f7e7c5982ed0042c0acae02354020e051333de17f6084a767282",
+        "class:setup-sha256:80f462e6dea13222749a89da85bda55ce6c5767105f060baa32fddfc02e2061d"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryTrust.test_public_trust_helper_is_shipped_and_bound_by_normal_recipe": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:079fe227e584f7e7c5982ed0042c0acae02354020e051333de17f6084a767282",
+        "class:setup-sha256:80f462e6dea13222749a89da85bda55ce6c5767105f060baa32fddfc02e2061d"
+      ],
+      "skipSites": []
+    },
+    "NpmRegistryTrust.test_tls_config_injection_and_unprepared_roots_fail_before_native_tools": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:079fe227e584f7e7c5982ed0042c0acae02354020e051333de17f6084a767282",
+        "class:setup-sha256:80f462e6dea13222749a89da85bda55ce6c5767105f060baa32fddfc02e2061d"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_npm_registry_tls.py",
+  "reviewReason": "Explicit bounded public CA capture and native lock drift, malformed input and credential isolation controls",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

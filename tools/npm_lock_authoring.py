@@ -135,7 +135,9 @@ def create_lock(project: Path, *, node: Path | None = None, npm: Path | None = N
             raise DependencyError('npm-registry-configuration-invalid')
         with tempfile.TemporaryDirectory(prefix='lsf-npm-native-lock-') as temporary:
             owned = Path(temporary)
-            environment = native.fetch_environment(owned, policy)
+            from tools.npm_registry_tls import Trust
+            trust = Trust(app, policy, owned)
+            environment = native.fetch_environment(owned, policy, trust=trust)
             environment['NPM_CONFIG_IGNORE_SCRIPTS'] = 'true'
             for source, original in observed.items():
                 target = native._mirror(source, owned)
@@ -167,6 +169,7 @@ def create_lock(project: Path, *, node: Path | None = None, npm: Path | None = N
                     or {name: file_identity(path, name) for name, path in recipes.items()} != recipe_before
                     or registry_config is not None and read_bytes(registry_config) != policy_bytes):
                 raise DependencyError('npm-native-lock-source-tool-or-policy-mutated')
+            trust.check_unchanged()
             authoring.unchanged(owner, sdk)
             prefix = app.relative_to(owner).as_posix() + '/' if app != owner else ''
             authoring.replace(owner, private, prefix + 'package-lock.json', raw, previous, sdk)
@@ -174,4 +177,5 @@ def create_lock(project: Path, *, node: Path | None = None, npm: Path | None = N
                     'nativeLockDigest': digest(raw), 'configurationDigest': digest(before['package.json']), 'fetchPolicyDigest': digest(canonical(policy)),
                     'sdkLockDigest': digest(sdk[0]), 'captureRequired': True, 'reviewRequired': True,
                     'previousLockPreserved': True, 'compilerExecution': False, 'installScripts': 'never-executed',
-                    'node': node_before, 'npm': npm_before, 'npmVersion': npm_version, 'recipe': recipe_before}
+                    'node': node_before, 'npm': npm_before, 'npmVersion': npm_version, 'recipe': recipe_before,
+                    **({'resolutionTrust': trust.identity} if trust.identity is not None else {})}

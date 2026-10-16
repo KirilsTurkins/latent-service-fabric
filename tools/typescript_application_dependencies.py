@@ -158,7 +158,7 @@ def local_path(source: str, project: Path) -> Path:
     return regular_path(project / value).resolve(strict=True)
 
 
-def fetch_environment(owned: Path, registries: dict) -> dict:
+def fetch_environment(owned: Path, registries: dict, *, trust=None) -> dict:
     cache = owned / 'npm-cache'
     environment = build_environment(owned)
     environment.update(HOME=str(owned / 'home'), USERPROFILE=str(owned / 'home'),
@@ -167,10 +167,15 @@ def fetch_environment(owned: Path, registries: dict) -> dict:
         GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
     (owned / 'empty.npmrc').write_bytes(b'')
     (owned / 'git-empty.config').write_bytes(b'')
-    configuration = []
+    configuration = ['strict-ssl=true']
     for ordinal, row in enumerate(registries['registries']):
-        if not isinstance(row, dict) or set(row) - {'scope', 'url', 'authorizationEnv'} or 'url' not in row:
+        if not isinstance(row, dict) or set(row) - {'scope', 'url', 'authorizationEnv', 'tlsTrust'} or 'url' not in row:
             raise DependencyError('npm-registry-configuration-invalid')
+        if (not isinstance(row['url'], str) or not 1 <= len(row['url']) <= 4096
+                or any(ord(char) <= 32 or ord(char) == 127 for char in row['url'])):
+            raise DependencyError('npm-registry-endpoint-invalid')
+        if 'tlsTrust' in row and trust is None:
+            raise DependencyError('npm-registry-explicit-trust-preparation-required')
         parsed = urlsplit(row['url'])
         if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise DependencyError('npm-registry-endpoint-invalid')
@@ -191,6 +196,8 @@ def fetch_environment(owned: Path, registries: dict) -> dict:
             environment[selected_variable] = secret
             configuration.append('//' + parsed.netloc + parsed.path.rstrip('/') + '/:_authToken=${' + selected_variable + '}')
     (owned / 'registry.npmrc').write_text('\n'.join(configuration) + '\n', encoding='utf-8')
+    if trust is not None:
+        trust.inject(environment)
     return environment
 
 
@@ -242,7 +249,9 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         owned = Path(temporary)
         work, cache = _mirror(project, owned), owned / 'npm-cache'
         work.mkdir(parents=True)
-        environment = fetch_environment(owned, registries)
+        from tools.npm_registry_tls import Trust
+        trust = Trust(project, registries, owned)
+        environment = fetch_environment(owned, registries, trust=trust)
         # Preserve native relative path semantics in an owned mirror. No project
         # npmrc, global cache, or package lifecycle hook reaches this stage.
         local_paths = {project}
@@ -354,6 +363,9 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             fetchLockDigest=digest(read_bytes(work / 'package-lock.json')),
             configurationDigest=digest(canonical(registries)), filesDigest=digest(canonical([
                 {'path': name, 'digest': digest(data), 'size': len(data)} for name, data in sorted(files.items())])))
+        trust.check_unchanged()
+        if trust.identity is not None:
+            native['resolutionTrust'] = trust.identity
         native_bytes = canonical(native) + b'\n'
         artifacts.append({'id': 'npm-selected/' + digest(original['package-lock.json'])[7:31], 'role': 'application',
             'format': 'directory', 'mount': 'dependencies/npm/node_modules', 'source': {'path': str(modules)},
@@ -361,14 +373,14 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                 'nodeResolution': 'native-lock-physical-tree', 'installScripts': 'never-executed'}})
         prefix = project.relative_to(owner).as_posix() + '/' if owner != project else ''
         manifest = {'formatVersion': 1, 'language': 'typescript', 'selection': selected,
-                    'nativeLocks': [prefix + name for name in ('package.json', 'package-lock.json', 'npm-resolved.lock.json')],
+                    'nativeLocks': [prefix + name for name in ('package.json', 'package-lock.json', 'npm-resolved.lock.json', *trust.sources)],
                     'artifacts': artifacts, 'transformations': []}
         validate_manifest(manifest, 'typescript')
         manifest_bytes = canonical(manifest) + b'\n'
         check = owned / 'capture-inputs'
         check.mkdir(mode=0o700)
         (check / MANIFEST).write_bytes(manifest_bytes)
-        for name, raw in {**original, 'npm-resolved.lock.json': native_bytes}.items():
+        for name, raw in {**original, **trust.sources, 'npm-resolved.lock.json': native_bytes}.items():
             target = check / (prefix + name)
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(raw)
@@ -378,6 +390,7 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
                 or (registry_config is not None and read_bytes(registry_config) != registry_bytes)
                 or optional(owner, MANIFEST) != previous_manifest or optional(owner, LOCK) != previous_lock):
             raise DependencyError('npm-declaration-lock-tool-or-capture-input-mutated')
+        trust.check_unchanged()
         unchanged(owner, sdk)
         replace(owner, private, prefix + 'npm-resolved.lock.json', native_bytes, previous_graph, sdk)
         replace(owner, private, MANIFEST, manifest_bytes, previous_manifest, sdk)
