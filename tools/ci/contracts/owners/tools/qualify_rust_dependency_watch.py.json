@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Never replay uncertain external down in Rust watch qualification cleanup",
+  "reviewReason": "Use the isolated no-bytecode interpreter flags so the source frontend preserves the delivered tool inventory without changing watch, signing or shutdown guards.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "613569143c38bf33745c7927888a40484a3c4624126c06490dd940851f56454d"
+  "sha256": "c96c8f3f51d16bd387afef7015c558abe4d78f59f23adf6fac8bf7016c13d006"
 }
