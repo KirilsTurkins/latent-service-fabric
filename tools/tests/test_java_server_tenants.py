@@ -164,6 +164,78 @@ class SharedTenantServer(unittest.TestCase):
                 grant_runtime(client, node, {"service": "server"}, "foreign-publication",
                     tenant="foreign", principal="foreign-caller", suffix="-foreign")
 
+    def test_runtime_grant_denial_requires_zero_guest_work_and_at_most_one_original_lease(self):
+        import copy
+        from tools.java_server_tenants import require_runtime_grant_denial
+        consumption = {key: "0" for key in ("cpuFuel", "peakMemoryBytes", "stateReadBytes",
+            "stateWriteBytes", "blobReadBytes", "blobWriteBytes", "logBytes")}
+        consumption.update(childCalls=0, outboundRequests=0, effectCount=0, wallTimeMicros="17")
+        observed = {"terminalState": "rejected", "terminalOutcome": {"kind": "platform-failure",
+            "error": {"code": "permission-denied", "retryable": False}}, "finalConsumption": consumption}
+        before = {"cells": [{"class": "standard", "granted": "2"}]}
+        after = {"cells": [{"class": "standard", "granted": "3"}]}
+        self.assertEqual(require_runtime_grant_denial(observed, before, after), {"standard": 1})
+        self.assertEqual(require_runtime_grant_denial(observed, before, before), {"standard": 0})
+        for field in consumption.keys() - {"wallTimeMicros"}:
+            for value in (1, "1", False, None):
+                changed = copy.deepcopy(observed)
+                changed["finalConsumption"][field] = value
+                with self.subTest(field=field, value=value), self.assertRaisesRegex(ValueError, "entered-guest"):
+                    require_runtime_grant_denial(changed, before, after)
+            changed = copy.deepcopy(observed)
+            del changed["finalConsumption"][field]
+            with self.subTest(missing=field), self.assertRaisesRegex(ValueError, "entered-guest"):
+                require_runtime_grant_denial(changed, before, after)
+        for field, value in (("terminalState", "completed"), ("terminalOutcome", None), ("finalConsumption", None)):
+            changed = copy.deepcopy(observed); changed[field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                require_runtime_grant_denial(changed, before, after)
+        for field, value in (("kind", "success"), ("error", None)):
+            changed = copy.deepcopy(observed); changed["terminalOutcome"][field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                require_runtime_grant_denial(changed, before, after)
+        for field, value in (("code", "unavailable"), ("retryable", True)):
+            changed = copy.deepcopy(observed); changed["terminalOutcome"]["error"][field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                require_runtime_grant_denial(changed, before, after)
+        for rows in ([{"class": "standard", "granted": "4"}],
+                     [{"class": "standard", "granted": "1"}],
+                     [{"class": "other", "granted": "3"}], after["cells"] * 2, []):
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                require_runtime_grant_denial(observed, before, {"cells": rows})
+
+    def test_runtime_grant_workflow_observes_the_original_foreign_root_and_pin(self):
+        from unittest.mock import Mock, patch
+        from tools import java_server_tenants as tenants
+        foreign, client = object(), object()
+        pin, expected = {"tenant": "foreign"}, {"selected": "original-foreign-pin"}
+        before = {"cells": [{"class": "standard", "granted": "2"}]}
+        after = {"cells": [{"class": "standard", "granted": "3"}]}
+        consumption = {key: "0" for key in ("cpuFuel", "peakMemoryBytes", "stateReadBytes",
+            "stateWriteBytes", "blobReadBytes", "blobWriteBytes", "logBytes")}
+        consumption.update(childCalls=0, outboundRequests=0, effectCount=0)
+        observed = {"terminalState": "rejected", "terminalOutcome": {"kind": "platform-failure",
+            "error": {"code": "permission-denied", "retryable": False}}, "finalConsumption": consumption}
+        calls = []
+        check = Mock(side_effect=lambda *args, **kwargs: calls.append((args, kwargs)))
+        with patch.object(tenants, "roots", return_value=[{"activationId": "prior"}]) as roots, \
+                patch.object(tenants, "execution_pin", return_value=expected) as select, \
+                patch.object(tenants, "observe_idle", side_effect=[before, after]) as idle, \
+                patch.object(tenants, "one_new_root", return_value="original-foreign-root") as root, \
+                patch.object(tenants, "status", return_value=observed) as status:
+            result = tenants.runtime_grant_denial(foreign, client, "server", pin, Path("evidence"), check)
+        roots.assert_called_once_with(foreign, "server")
+        select.assert_called_once_with(foreign, pin)
+        root.assert_called_once_with(foreign, "server", {"prior"})
+        status.assert_called_once_with(foreign, "original-foreign-root", expected, terminal="rejected")
+        self.assertEqual(idle.call_args_list[0].args, (client, Path("evidence"), "before-foreign-runtime-grant-denial"))
+        self.assertEqual(idle.call_args_list[1].args, (client, Path("evidence"), "after-foreign-runtime-grant-denial"))
+        self.assertEqual(calls, [(("GET", "/hey", 403), {"authority": "foreign.server.test"})])
+        self.assertEqual(result["retained"], observed)
+        self.assertEqual(result["expectedPin"], expected)
+        self.assertEqual(result["cellLeaseDelta"], {"standard": 1})
+        self.assertEqual(result["status"], "denied-before-guest")
+
 
 if __name__ == "__main__":
     unittest.main()

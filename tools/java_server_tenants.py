@@ -25,6 +25,51 @@ def select_foreign_deployment(source):
     return selected
 
 
+def require_runtime_grant_denial(observed, before, after):
+    outcome = observed.get("terminalOutcome")
+    require(isinstance(outcome, dict), "tenant-isolation-missing-grants-must-reject")
+    failure = outcome.get("error")
+    require(isinstance(failure, dict) and observed.get("terminalState") == "rejected"
+            and outcome.get("kind") == "platform-failure"
+            and failure.get("code") == "permission-denied"
+            and failure.get("retryable") is False,
+            "tenant-isolation-missing-grants-must-reject")
+    consumption = observed.get("finalConsumption")
+    fields = ("cpuFuel", "peakMemoryBytes", "childCalls", "outboundRequests", "effectCount",
+              "stateReadBytes", "stateWriteBytes", "blobReadBytes", "blobWriteBytes", "logBytes")
+    require(isinstance(consumption, dict) and all(
+        type(consumption.get(key)) is int and consumption[key] == 0
+        or type(consumption.get(key)) is str and consumption[key] == "0" for key in fields),
+        "tenant-isolation-missing-grants-entered-guest")
+    counters = []
+    for observation in (before, after):
+        selected = {}
+        for row in observation["cells"]:
+            require(row["class"] not in selected, "tenant-isolation-duplicate-cell-class")
+            selected[row["class"]] = server_routes.counter(row["granted"])
+        counters.append(selected)
+    require(counters[0].keys() == counters[1].keys() and bool(counters[0]),
+            "tenant-isolation-denial-cell-classes-changed")
+    deltas = {name: counters[1][name] - value for name, value in counters[0].items()}
+    require(all(value >= 0 for value in deltas.values()) and sum(deltas.values()) <= 1,
+            "tenant-isolation-denial-extra-cell-leases")
+    return deltas
+
+
+def runtime_grant_denial(foreign, client, service, pin, evidence, check):
+    prior = {row["activationId"] for row in roots(foreign, service)}
+    expected = execution_pin(foreign, pin)
+    before = observe_idle(client, evidence, "before-foreign-runtime-grant-denial")
+    check("GET", "/hey", 403, authority="foreign.server.test")
+    after = observe_idle(client, evidence, "after-foreign-runtime-grant-denial")
+    activation = one_new_root(foreign, service, prior)
+    observed = status(foreign, activation, expected, terminal="rejected")
+    deltas = require_runtime_grant_denial(observed, before, after)
+    return {"case": "foreign-needs-independent-grants", "status": "denied-before-guest",
+            "activationId": activation, "expectedPin": expected, "retained": observed,
+            "cellLeaseDelta": deltas, "retirement": after}
+
+
 class TenantControls:
     def __init__(self, fixture: Path):
         self.fixture = fixture
@@ -105,8 +150,8 @@ class TenantControls:
                 foreign_routes.apply(foreign_triggers)
             # Examples grants and the same physical scalar registrations do not
             # authorize an admitted foreign publication or its trigger principal.
-            denied_without_cell("GET", "/hey", 403, authority="foreign.server.test")
-            observations["cases"].append({"case": "foreign-needs-independent-grants", "status": "denied-before-cell"})
+            observations["cases"].append(runtime_grant_denial(
+                foreign, client, record["service"], foreign_pin, evidence, check))
             foreign_grants = grant_runtime(foreign, node, record, foreign_publication,
                 tenant="foreign", principal="foreign-caller", suffix="-foreign")
             foreign_deployment = deploy(foreign, foreign_manifest, foreign_publication,

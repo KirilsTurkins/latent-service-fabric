@@ -32,11 +32,24 @@ selects the tenant without changing the signed package or captured build.
 
 Explicit [scalar aliases](../reference/standalone-providers.md) reuse the same
 clock and context registrations. Examples-tenant policies must not authorize the
-foreign publication: its first request is denied before acquiring a cell. Only
+foreign publication: its first request must be rejected before guest execution.
+The ordinary admission path may reserve one cell lease before validating the
+revision's capability session. The control identifies the original foreign
+activation and resolved revision, requires the exact permission-denied rejection
+and zero guest fuel, memory and other work consumption, then verifies physical
+retirement. It permits at most one original lease and no new cell class. Ingress
+route and credential refusals retain their separate no-cell assertions. Only
 separate exact provider-binding policies, trigger principals, publication policies
 and deployment grants permit positive foreign requests. An operator token from
 the wrong tenant cannot select foreign control resources, and an operator bearer
 token does not authorize an HTTP handler.
+
+The [retained first execution](evidence/java-server-tenants-runtime-grant-boundary-2026-10-16.json)
+returned the expected foreign HTTP 403 but failed the earlier blanket no-cell
+assertion. That source-bound record distinguishes the observed lease increase
+from the before-Store refusal established by source inspection. A fresh hosted
+foreign activation receipt is still required; the examples-tenant zero-work
+receipt does not substitute for it.
 
 The programme retains the original one-cell, queue, audit and provider ceilings,
 the 64 MiB application limit, one billion fuel and 120-second guest deadline.
