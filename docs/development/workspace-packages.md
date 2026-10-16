@@ -1,7 +1,7 @@
 # Workspace package architecture
 
 Use this guide to find the implementation owner before changing a Rust package.
-The [package index](../../crates/README.md) links all 52 workspace members,
+The [package index](../../crates/README.md) links all 53 workspace members,
 including applications, SDKs and tools outside `crates/`. Each package README
 maps its public surface, modules, execution/ownership flow, dependency and feature
 gates, source tests and related specifications.

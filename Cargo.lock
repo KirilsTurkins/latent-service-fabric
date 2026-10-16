@@ -1635,6 +1635,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-component-threading"
+version = "0.1.0-alpha.5"
+dependencies = [
+ "sha2 0.10.9",
+ "wasm-encoder 0.259.0",
+ "wasmparser 0.259.0",
+]
+
+[[package]]
 name = "latent-contracts"
 version = "0.1.0-alpha.5"
 dependencies = [
@@ -4070,6 +4079,7 @@ dependencies = [
  "hashbrown 0.17.1",
  "indexmap",
  "semver",
+ "serde",
 ]
 
 [[package]]

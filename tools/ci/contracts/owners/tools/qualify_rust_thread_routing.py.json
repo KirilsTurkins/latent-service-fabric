@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_thread_routing.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bounded actual encoder graph campaign authenticates final main/thunk/fixup bytes; validates every malicious component before counting rejection, rechecks all source and tool identities, preserves failure receipt, and explicitly leaves engine/std qualification false.",
+  "reviewReason": "Review only source-recipe identities after moving the five byte-preserved implementation files into latent-component-threading; include both manifests/locks and retained Rust facade/CLI. Every original actual encoder command,17cases, validated-negative guard, output bound and disabled-engine result is preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8202cd52d243ff5d8912b9057198fc217ab2f740c6030f90194d099e7831701f"
+  "sha256": "88d137e14154d27c585c757046f3e421b61e65b29961fef0dc992cf46bc11f29"
 }

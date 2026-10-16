@@ -51,7 +51,7 @@
       },
       {
         "name": "Execute owned Rust stack transforms and TLS source reference",
-        "run": "python3 -m unittest tools.tests.test_rust_tls_reference\ncargo test --locked --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --target-dir \"$RUNNER_TEMP/rust-stack-transform\"\npython3 tools/run_rust_tls_reference.py --rustc \"$(rustup which rustc)\" --output \"$RUNNER_TEMP/rust-tls-reference\"\n"
+        "run": "python3 -m unittest tools.tests.test_rust_tls_reference\ncargo test --locked -p latent-component-threading --target-dir \"$RUNNER_TEMP/rust-stack-transform\"\ncargo test --locked --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --target-dir \"$RUNNER_TEMP/rust-stack-transform\"\npython3 tools/run_rust_tls_reference.py --rustc \"$(rustup which rustc)\" --output \"$RUNNER_TEMP/rust-tls-reference\"\n"
       },
       {
         "name": "Authenticate actual complete thread component routing",
@@ -85,7 +85,7 @@
   },
   "jobId": "standard-clocks",
   "kind": "job",
-  "reviewReason": "Add bounded actual final-component routing authentication controls with normally encoded root/interface positives and validated malicious graph negatives; preserve all existing source, signed clock, stack physical retirement, job deadline, cache and artifact obligations. Engine remains disabled.",
+  "reviewReason": "Extract the unchanged Rust source-profile transforms into one shared workspace crate; add its20 original unit controls before the preserved facade CLI command. Retain every prior command,17 actual encoded-routing controls, source/TLS/signed-clock/physical-retirement obligations, job policy and limits. Engine remains disabled and C remains unqualified.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }
