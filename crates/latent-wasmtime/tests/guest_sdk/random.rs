@@ -33,7 +33,9 @@ async fn standard_java_entropy_uses_original_system_provider_and_fresh_cells() {
     let publication = package::publish(root.path(), "java-random").await;
     let f = Fixture::with_publication(None, Default::default(), None, Some(publication)).await;
     for iteration in 0..2 {
-        for (mode, expected, bytes) in [(3, 32, 32), (4, 32, 32), (5, 42, 0), (6, 42, 24)] {
+        // Pinned TeaVM RandomGenerator.nextBoolean calls nextInt, consuming
+        // four bytes. The numeric sequence therefore consumes 4+8+4+3+8.
+        for (mode, expected, bytes) in [(3, 32, 32), (4, 32, 32), (5, 42, 0), (6, 42, 27)] {
             let before = f.provider.snapshot().generated_bytes;
             let (mut request, control) =
                 f.request(&format!("java-entropy-{iteration}-{mode}"), 0, 0, 0);

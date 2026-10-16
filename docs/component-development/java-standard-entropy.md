@@ -40,6 +40,17 @@ buffer preservation, fresh statics and original-owner retirement. Its existing
 direct-binding cases remain unchanged. Actual compilation and that signed gate
 are pending; this candidate does not complete #681 or the concurrent #741 matrix.
 
+The [first signed attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38857653138/job/116832770215)
+on immutable `5ec238dd` compiled the component and passed eleven SDK cases. The
+numeric entropy case returned its expected result but failed the provider counter
+assertion: 27 bytes were generated, while the test expected 24. The pinned TeaVM
+`RandomGenerator.nextBoolean()` delegates to `nextInt()`, consuming four bytes.
+The complete sequence consumes exactly 4 + 8 + 4 + 3 + 8 = 27 bytes. The corrected
+assertion retains that exact total, and the locked model control verifies the
+inherited method's delegation. The JDK reference establishes numeric behavior,
+not an identical entropy byte cost. Fresh hosted execution of the correction
+remains required.
+
 The supported and narrowed API behavior is described against the
 [JDK SecureRandom contract](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/security/SecureRandom.html)
 and the pinned

@@ -37,6 +37,26 @@ public final class EntropyModelControl {
                     && call.getMethod().getName().equals("nextBytes")) originalFallback = true;
         }
         require(originalFallback, "original-c-backend-fallback-negative");
+        // The actual inherited implementation determines the broker byte cost.
+        // JDK Random's next(1) is not this pinned TeaVM default method.
+        var nextBoolean = new MethodDescriptor("nextBoolean", ValueType.BOOLEAN);
+        var random = source.get("java.util.Random");
+        require(random != null && random.getMethod(nextBoolean) == null,
+            "pinned-random-inherits-boolean");
+        var generator = source.get("java.util.random.RandomGenerator");
+        var booleanMethod = generator == null ? null : generator.getMethod(nextBoolean);
+        require(booleanMethod != null && booleanMethod.getProgram() != null,
+            "pinned-generator-boolean-body");
+        int booleanCalls = 0;
+        for (var block : booleanMethod.getProgram().getBasicBlocks()) for (var instruction : block) {
+            if (instruction instanceof InvokeInstruction call) {
+                require(call.getMethod().getClassName().equals("java.util.random.RandomGenerator")
+                    && call.getMethod().getDescriptor().equals(new MethodDescriptor("nextInt", ValueType.INTEGER)),
+                    "pinned-boolean-delegates-to-standard-next-int");
+                booleanCalls++;
+            }
+        }
+        require(booleanCalls == 1, "pinned-boolean-consumes-one-next-int");
         var originalMethods = List.copyOf(original.getMethods());
         var originalPrograms = originalMethods.stream().map(MethodHolder::getProgram).toList();
         var template = source.get("dev.latent.guest.facilities.EntropyRandom");

@@ -43,6 +43,7 @@ public final class EntropySourceControl {
         require(Bindings.calls == calls);
         require(EntropyRandom.getInstance("LSF-BoundedEntropy").getAlgorithm().equals("LSF-BoundedEntropy"));
         require(random.nextInt() == 0xa7a7a7a7);
+        require(Bindings.last.length == 4);
         float small = random.nextFloat(); double large = random.nextDouble();
         require(small >= 0 && small < 1 && large >= 0 && large < 1);
         require(random.generateSeed(32).length == 32);
