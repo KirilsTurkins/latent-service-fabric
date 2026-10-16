@@ -16,6 +16,8 @@ on:
       - tools/go_capsule*.py
       - tools/go_application_dependencies.py
       - tools/go_dependency_authoring.py
+      - tools/go_native_authoring.py
+      - tools/tests/test_go_native_authoring.py
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
       - tools/go_dependency_fixture.py
@@ -32,6 +34,7 @@ on:
       - tools/tests/test_build_provenance_schemas.py
       - schemas/**
       - docs/component-development/go-authoring.md
+      - docs/component-development/go-dependencies.md
       - docs/development/go-capsule-qualification.md
       - crates/latent-wasmtime/**
       - crates/latent-control-store/**
@@ -62,6 +65,8 @@ on:
       - tools/go_capsule*.py
       - tools/go_application_dependencies.py
       - tools/go_dependency_authoring.py
+      - tools/go_native_authoring.py
+      - tools/tests/test_go_native_authoring.py
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
       - tools/go_dependency_fixture.py
@@ -78,6 +83,7 @@ on:
       - tools/tests/test_build_provenance_schemas.py
       - schemas/**
       - docs/component-development/go-authoring.md
+      - docs/component-development/go-dependencies.md
       - docs/development/go-capsule-qualification.md
       - crates/latent-wasmtime/**
       - crates/latent-control-store/**
@@ -223,6 +229,8 @@ jobs:
       - name: Test reviewed module lifecycle and selected frontend
         run: |
           python3 -m unittest tools.tests.test_go_dependency_authoring tools.tests.test_guest_authoring_frontend
+      - name: Test controlled native Go declaration and lock authoring
+        run: python3 -m unittest tools.tests.test_go_native_authoring
       - name: Qualify captured Go libraries in signed components
         run: |
           python3 tools/qualify_go_capsules.py --application-dependencies --output "$RUNNER_TEMP/go-capsule-dependencies"

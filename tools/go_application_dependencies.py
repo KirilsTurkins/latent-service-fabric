@@ -159,6 +159,50 @@ def _mirror(source: Path, owned: Path) -> Path:
     return owned / 'mirror' / (source.drive.replace(':', '') or 'posix') / Path(*source.parts[1:])
 
 
+def fetch_environment(owner: Path, owned: Path, proxy_config: Path | None = None) -> tuple[dict, dict, bytes | None]:
+    """One explicit proxy/checksum policy for native module selection and locking."""
+    proxy_bytes = None
+    if proxy_config is not None:
+        proxy_config = regular_path(proxy_config).resolve(strict=True)
+        if proxy_config.is_relative_to(owner):
+            raise DependencyError('go-proxy-configuration-must-stay-outside-project')
+        proxy_bytes = read_bytes(proxy_config)
+    policy = json.loads(proxy_bytes) if proxy_bytes is not None else {'proxy': 'https://proxy.golang.org', 'sumdb': 'sum.golang.org'}
+    if (not isinstance(policy, dict) or set(policy) - {'proxy', 'sumdb', 'private', 'authorizationEnv', 'username'}
+            or not {'proxy', 'sumdb'} <= set(policy)):
+        raise DependencyError('go-proxy-policy-invalid')
+    proxy = urlsplit(policy['proxy'])
+    if proxy.scheme != 'https' or not proxy.hostname or proxy.username or proxy.password or proxy.query or proxy.fragment:
+        raise DependencyError('go-proxy-endpoint-invalid')
+    if not isinstance(policy['sumdb'], str) or not re.fullmatch(r'(?:off|[a-zA-Z0-9.+/_=-]{1,512})', policy['sumdb']):
+        raise DependencyError('go-checksum-policy-invalid')
+    private_modules = policy.get('private', [])
+    if not isinstance(private_modules, list) or len(private_modules) > 32 or any(not isinstance(value, str)
+            or not re.fullmatch(r'[A-Za-z0-9_./*?\[\]-]{1,512}', value) for value in private_modules):
+        raise DependencyError('go-private-module-policy-invalid')
+    environment = build_environment(owned)
+    environment.update(GOTOOLCHAIN='local', GOWORK='off', GOENV='off', CGO_ENABLED='0', GOFLAGS='-mod=readonly',
+        GOCACHE=str(owned / 'cache'), GOMODCACHE=str(owned / 'modules'), HOME=str(owned / 'home'),
+        USERPROFILE=str(owned / 'home'), GOPROXY=policy['proxy'], GOSUMDB=policy['sumdb'],
+        GOPRIVATE=','.join(private_modules), GONOPROXY='none', GONOSUMDB=','.join(private_modules), GOAUTH='netrc',
+        GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
+    (owned / 'git-empty.config').write_bytes(b'')
+    if 'authorizationEnv' in policy:
+        variable = policy['authorizationEnv']
+        username = policy.get('username', 'token')
+        if (not isinstance(variable, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable)
+                or not isinstance(username, str) or not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}', username)):
+            raise DependencyError('go-proxy-authorization-unavailable')
+        secret = os.environ[variable]
+        if not re.fullmatch(r'[^\s]{1,8192}', secret) or any(ord(char) < 32 or ord(char) == 127 for char in secret):
+            raise DependencyError('go-proxy-authorization-format')
+        netrc = owned / 'resolver.netrc'
+        netrc.write_text('machine ' + proxy.hostname + ' login ' + username + ' password ' + secret + '\n')
+        netrc.chmod(0o600)
+        environment['NETRC'] = str(netrc)
+    return environment, policy, proxy_bytes
+
+
 def resolve(project: Path, candidate: Path, *, go: Path | None = None, selected: dict | None = None,
             proxy_config: Path | None = None) -> dict:
     from tools.go_dependency_authoring import transaction
@@ -184,46 +228,9 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     recipe_before = file_identity(Path(__file__), 'go-module-capture-recipe')
     go = regular_path(go or Path(shutil.which('go') or 'missing-go')).resolve(strict=True)
     go_before = file_identity(go, 'native-module-resolver')
-    proxy_bytes = None
-    if proxy_config is not None:
-        proxy_config = regular_path(proxy_config).resolve(strict=True)
-        if proxy_config.is_relative_to(owner):
-            raise DependencyError('go-proxy-configuration-must-stay-outside-project')
-        proxy_bytes = read_bytes(proxy_config)
-    policy = json.loads(proxy_bytes) if proxy_bytes is not None else {'proxy': 'https://proxy.golang.org', 'sumdb': 'sum.golang.org'}
-    if (not isinstance(policy, dict) or set(policy) - {'proxy', 'sumdb', 'private', 'authorizationEnv', 'username'}
-            or not {'proxy', 'sumdb'} <= set(policy)):
-        raise DependencyError('go-proxy-policy-invalid')
-    proxy = urlsplit(policy['proxy'])
-    if proxy.scheme != 'https' or not proxy.hostname or proxy.username or proxy.password or proxy.query or proxy.fragment:
-        raise DependencyError('go-proxy-endpoint-invalid')
-    if not isinstance(policy['sumdb'], str) or not re.fullmatch(r'(?:off|[a-zA-Z0-9.+/_=-]{1,512})', policy['sumdb']):
-        raise DependencyError('go-checksum-policy-invalid')
-    private_modules = policy.get('private', [])
-    if not isinstance(private_modules, list) or len(private_modules) > 32 or any(not isinstance(value, str)
-            or not re.fullmatch(r'[A-Za-z0-9_./*?\[\]-]{1,512}', value) for value in private_modules):
-        raise DependencyError('go-private-module-policy-invalid')
     with tempfile.TemporaryDirectory(prefix='lsf-go-module-resolve-') as temporary:
         owned = Path(temporary)
-        environment = build_environment(owned)
-        environment.update(GOTOOLCHAIN='local', GOWORK='off', GOENV='off', CGO_ENABLED='0', GOFLAGS='-mod=readonly',
-            GOCACHE=str(owned / 'cache'), GOMODCACHE=str(owned / 'modules'), HOME=str(owned / 'home'),
-            USERPROFILE=str(owned / 'home'), GOPROXY=policy['proxy'], GOSUMDB=policy['sumdb'],
-            GOPRIVATE=','.join(private_modules), GONOPROXY='none', GONOSUMDB=','.join(private_modules), GOAUTH='netrc',
-            GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
-        (owned / 'git-empty.config').write_bytes(b'')
-        if variable := policy.get('authorizationEnv'):
-            username = policy.get('username', 'token')
-            if (not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable)
-                    or not isinstance(username, str) or not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}', username)):
-                raise DependencyError('go-proxy-authorization-unavailable')
-            secret = os.environ[variable]
-            if not re.fullmatch(r'[^\s]{1,8192}', secret):
-                raise DependencyError('go-proxy-authorization-format')
-            netrc = owned / 'resolver.netrc'
-            netrc.write_text('machine ' + proxy.hostname + ' login ' + username + ' password ' + secret + '\n')
-            netrc.chmod(0o600)
-            environment['NETRC'] = str(netrc)
+        environment, policy, proxy_bytes = fetch_environment(owner, owned, proxy_config)
         version = run_bounded([str(go), 'version'], owned, environment, 10, 16384).stdout.decode().strip()
         if version.split()[2:3] != [pins['go']['version']]:
             raise DependencyError('go-module-resolver-version-not-pinned')
