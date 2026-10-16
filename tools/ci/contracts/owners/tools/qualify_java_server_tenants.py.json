@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_server_tenants.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain bounded original tenant gate and reject tenant-qualified neutral fixture before compiler dispatch",
+  "reviewReason": "Preserve neutral signed package while selecting examples only in the signer-created operator deployment; keep original budgets, authority checks and nine tenant cases",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0d8a8c7149d752d51d33461dc633894d9fdcbd98ef2697c3621be9e07f1edea5"
+  "sha256": "509b8408e9ecf0a2fced2b8a3e28261a14bc0d1386345d12cc049aaca0d16844"
 }

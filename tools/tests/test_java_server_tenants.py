@@ -78,6 +78,18 @@ class SharedTenantServer(unittest.TestCase):
             self.assertEqual(deployment["spec"]["service"], manifest["metadata"]["name"])
             self.assertEqual(manifest["component"]["world"], declaration["world"])
             self.assertEqual(snapshot(project), files)
+            from tools.qualify_java_server_tenants import select_initial_tenant
+            signed_metadata = (output / "capsule.json").read_bytes()
+            select_initial_tenant(output / "deployment.json")
+            selected = json.loads((output / "deployment.json").read_bytes())
+            deployment["metadata"]["tenant"] = "examples"
+            self.assertEqual(selected, deployment)
+            self.assertEqual((output / "capsule.json").read_bytes(), signed_metadata)
+            self.assertEqual(snapshot(project), files)
+            selected_bytes = (output / "deployment.json").read_bytes()
+            with self.assertRaisesRegex(ValueError, "tenant-isolation-neutral-deployment"):
+                select_initial_tenant(output / "deployment.json")
+            self.assertEqual((output / "deployment.json").read_bytes(), selected_bytes)
 
     def test_grants_require_exact_descriptor_tenant_and_separate_trigger_and_publication(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -26,6 +26,15 @@ from tools.rust_capsule_project import ROOT, fresh, read_json, snapshot, write_j
 PRODUCTS = ("latent", "latentd", "package", "capsule_contracts", "capsule_authoring")
 
 
+def select_initial_tenant(path: Path):
+    deployment = read_json(path)
+    require(deployment["metadata"].get("tenant") is None, "tenant-isolation-neutral-deployment")
+    deployment["metadata"]["tenant"] = "examples"
+    # The signer already created this operator manifest. Replace only this
+    # selected deployment; the signed package and its evidence are unchanged.
+    path.write_bytes(json.dumps(deployment, indent=2).encode("utf-8") + b"\n")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("output", "wasi-sdk", "native-directory", "native-tuple", "read-only-cache"):
@@ -68,10 +77,7 @@ def main(argv=None):
         # Deployment metadata is an operator input. The signed neutral package,
         # original build and build observation stay byte-identical for both.
         selected = fixture / record["name"] / "deployment.json"
-        deployment = read_json(selected)
-        require(deployment["metadata"].get("tenant") is None, "tenant-isolation-neutral-deployment")
-        deployment["metadata"]["tenant"] = "examples"
-        write_json(selected, deployment)
+        select_initial_tenant(selected)
         stage = "actual-two-tenant-shared-node"
         execution = run(binaries["latent"], binaries["latentd"], fixture, output / "build", output / "execution",
             helper=True, tls_tool=binaries["capsule_authoring"], lifecycle=TenantControls(fixture))
