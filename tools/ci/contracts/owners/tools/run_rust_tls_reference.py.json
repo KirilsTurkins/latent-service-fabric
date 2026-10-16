@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "owner",
+  "path": "tools/run_rust_tls_reference.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bounded trusted-source reference runner compiles the actual TLS PAL harness and executes every exact case in a separate owned process; rejects skipped/substituted discovery and rechecks source/compiler identities. No guest or physical-native qualification inferred.",
+  "sha256": "23ff1004197e942f8874b6d2154924afce6c259e6ca8d050ea51d72962bb024f"
+}

@@ -16,6 +16,10 @@ use wasmparser::{Encoding, ExternalKind, Operator, Parser, Payload, TypeRef, Val
 
 mod thread_entry;
 pub use thread_entry::{ThreadEntryReceipt, transform_owned_thread_entry};
+mod admission;
+pub use admission::{AdmissionReceipt, transform_owned_thread_admission};
+mod root;
+pub use root::{RootReceipt, transform_owned_root_bootstrap};
 
 pub const MAX_BYTES: usize = 8 * 1024 * 1024;
 pub const MAX_FUNCTIONS: u32 = 65_534; // two new helpers stay within65,536

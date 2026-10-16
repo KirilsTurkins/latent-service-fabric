@@ -75,6 +75,7 @@ class StandardTlsSource(unittest.TestCase):
     def test_canonical_return_area_matches_real_pinned_generator_reference(self):
         abi = json.loads(self.recipe()['sdk/rust-standard-runtime/activation-abi.json'])
         self.assertEqual(abi['ownerKindNative'], 7)
+        self.assertEqual(abi['ownerKindTask'], 0)
         self.assertEqual(abi['register']['flatParameters'], ['i32', 'i32', 'i64', 'i64', 'pointer32'])
         self.assertEqual((abi['register']['returnBytes'], abi['register']['returnAlignment']), (24, 8))
         self.assertEqual((abi['register']['discriminantOffset'], abi['register']['generationOffset'], abi['register']['idOffset'], abi['register']['errorOffset']), (0, 8, 16, 8))
@@ -106,6 +107,21 @@ class StandardTlsSource(unittest.TestCase):
         selected = profile.overlay(self.originals(), self.tls())
         self.assertNotIn('std/src/sys/thread/unsupported.rs', selected)
         self.assertNotIn('std/src/sys/sync/mutex/no_threads.rs', selected)
+
+    def test_root_and_child_source_abi_binds_exact_owned_prefix_without_enabling_threads(self):
+        abi = json.loads(self.recipe()['sdk/rust-standard-runtime/thread-abi.json'])
+        prefix = abi['contextPrefix']
+        self.assertEqual((prefix['bytes'], prefix['alignment']), (40, 8))
+        self.assertEqual([prefix[name] for name in ('pointerOffset', 'lowOffset', 'highOffset', 'phaseOffset',
+            'continuationGenerationOffset', 'continuationIdOffset', 'nativeAdmissionResultOffset', 'creationStartedOffset')],
+            [0, 4, 8, 12, 16, 24, 32, 34])
+        self.assertFalse(abi['nativeAdmission']['wholeComponentRoutingAuthenticated'])
+        self.assertFalse(abi['nativeAdmission']['canonicalThreadCreationEnabled'])
+        self.assertFalse(abi['root']['acceptedWorkDrainImplemented'])
+        self.assertTrue(abi['root']['holdsOriginalTaskThroughFinalRustEpilogue'])
+        self.assertFalse(abi['root']['reaperRefundsPhysicalHostStack'])
+        self.assertFalse(abi['rootExportBootstrapQualified'])
+        self.assertFalse(abi['supportedRuntimeProfile'])
 
 
 if __name__ == '__main__': unittest.main()

@@ -153,3 +153,29 @@ original activation limits. It grants no authority; CURRENT stays V5 and frozen
 activation WIT is unchanged. Canonical thread creation remains disabled until
 the authenticated sole-consumer compiler shim is checked. The ordinary thread,
 futex and executor ports and actual compiler/signed execution remain required.
+
+The staged post-link source transform now routes every linked-core call,
+function reference, export and table/global initializer reference to raw
+canonical creation through one exact stackless admission body. It validates
+the prepared context, original Task token, canonical result and one-shot start
+guard before invoking the actual primitive. The original ledger checks the
+Task's live kind and admits Native support under the same registration lock.
+No guest flag releases the resulting host reservation.
+
+The separate root transform requires the linker's exact immutable
+`__stack_low` and initial `__stack_pointer` range. It installs an admitted
+Task/Native TLS context before the original Rust body, preserves numeric flat
+return values, runs TLS cleanup on that live context, and detaches only after
+the last translated frame. A final System-only postlude frees the logical
+context before settling its owners. Bootstrap/reaper stack helpers accept the
+original stack only while the lifecycle permits it and canonical context is
+empty; active children retain their own checked stack. This logical cleanup
+does not refund physical Wasmtime stack capacity.
+
+The encoded-Wasm transform controls and separately executed native TLS source
+reference cases exercise these source mechanisms. They do not establish a
+rebuilt thread sysroot, whole-component canonical routing, accepted-work drain,
+the std thread/futex API or actual signed child execution. Those requirements
+remain open, and canonical thread creation remains disabled. The internal V2
+context prefix is recorded in [thread-abi.json](thread-abi.json); CURRENT V5 and
+the frozen activation interface remain unchanged.
