@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Prevent source frontend bytecode writes to the delivered tool inventory using isolated no-bytecode interpreter flags; preserve every watch, signing and shutdown guard. Bind the reviewed owner fingerprint to the committed LF-normalized Git blob; source behavior and all guards are unchanged.",
+  "reviewReason": "Expose the unchanged exact frontend writer as a directly callable qualification helper; retain real isolated/no-bytecode executable controls without evaluating extracted source.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "163c3acf98be099aa9085cdcad83cd97445bd066806fb5728d0943978d9ba4ea"
+  "sha256": "e441acfd4eed0114091b6aa25cdd9b6c185ef7eaec1664b85ee923cd17b32191"
 }
