@@ -9,7 +9,10 @@ mod validation;
 use latent_audit::{AuditFilter, AuditQueryRequest, AuditScope};
 use tonic::{Request, Response, Status};
 
-use super::{errors::platform_status, proto, ManagementOperation, ManagementServiceAdapter};
+use super::{
+    errors::{refusal_status, RefusalStage},
+    proto, ManagementOperation, ManagementServiceAdapter,
+};
 pub use lease::AuditResponseService;
 
 pub(super) const MAX_REQUEST_BYTES: usize = 8192;
@@ -55,10 +58,10 @@ impl proto::audit_service_server::AuditService for ManagementServiceAdapter {
             .as_ref()
             .expect("query checked audit owner")
             .query(query, deadline)
-            .map_err(|error| platform_status(error, &self.limits))?
+            .map_err(|error| refusal_status(error, &self.limits, RefusalStage::AuditQueryReservation))?
             .wait()
             .await
-            .map_err(|error| platform_status(error, &self.limits))?;
+            .map_err(|error| refusal_status(error, &self.limits, RefusalStage::AuditQueryCompletion))?;
         validation::completed(deadline)?;
         let (records, coverage, cursor, lease) = page.into_parts();
         conversion::scope(&records, &scope)?;

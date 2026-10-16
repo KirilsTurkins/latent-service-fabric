@@ -9083,7 +9083,10 @@
         "phase4::state_management::tests::effects::result_history::actual_result_response_cannot_survive_a_later_namespace_lifecycle_change",
         "phase4::state_management::tests::effects::result_history::actual_original_schema_result_retains_distinct_body_identity_and_clock_floor_limits",
         "phase4::state_management::tests::effects::result_history::actual_corrupt_original_result_link_never_becomes_readable_after_schema_change",
-        "phase4::state_management::tests::effects::result_history::actual_effect_and_cancel_keep_original_schema_refusal_after_result_read_succeeds"
+        "phase4::state_management::tests::effects::result_history::actual_effect_and_cancel_keep_original_schema_refusal_after_result_read_succeeds",
+        "management::errors::control_refusal::tests::disabled_capture_and_writer_failure_preserve_the_original_error",
+        "management::errors::control_refusal::tests::marker_vocabulary_and_process_capture_are_bounded",
+        "management::errors::control_refusal::tests::only_resource_refusals_consume_the_closed_record_allowance"
       ],
       "expectedIgnored": [
         "phase4::local_transaction::tests::actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_commit_and_effect",
@@ -9150,7 +9153,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 267,
+      "minimumCases": 270,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

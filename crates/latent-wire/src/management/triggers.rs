@@ -5,7 +5,9 @@ mod response;
 mod tests;
 mod validation;
 use super::{
-    control_audit, errors::platform_status, proto, DeploymentResponseService, ManagementOperation,
+    control_audit,
+    errors::{platform_status, refusal_status, RefusalStage},
+    proto, DeploymentResponseService, ManagementOperation,
     ManagementServiceAdapter,
 };
 use latent_control_store::{
@@ -88,7 +90,7 @@ impl proto::trigger_service_server::TriggerService for ManagementServiceAdapter 
         let store = self.trigger_store()?;
         let _request_lease = store
             .reserve_trigger_request()
-            .map_err(|e| platform_status(e, &self.limits))?;
+            .map_err(|e| refusal_status(e, &self.limits, RefusalStage::TriggerRequest))?;
         let command = validation::apply_with_profile(
             request.into_inner(),
             principal,
@@ -111,7 +113,7 @@ impl proto::trigger_service_server::TriggerService for ManagementServiceAdapter 
         let store = self.trigger_store()?;
         let _request_lease = store
             .reserve_trigger_request()
-            .map_err(|e| platform_status(e, &self.limits))?;
+            .map_err(|e| refusal_status(e, &self.limits, RefusalStage::TriggerRequest))?;
         let command = validation::delete(request.into_inner(), principal, &self.limits)?;
         let (result, ack) = execute(self, command, expires).await?;
         let (value, lease) = result.into_parts();
@@ -210,12 +212,12 @@ async fn execute(
     let store = adapter.trigger_store()?;
     let prepared = store
         .prepare_trigger_operation(request)
-        .map_err(|e| platform_status(e, &adapter.limits))?;
+        .map_err(|e| refusal_status(e, &adapter.limits, RefusalStage::TriggerPreparation))?;
     response::preflight(adapter, &prepared)?;
     let mut audit =
         ManagedTriggerAudit::begin(audit, prepared.preview(), prepared.replayed(), expires)
             .await
-            .map_err(|e| platform_status(e, &adapter.limits))?;
+            .map_err(|e| refusal_status(e, &adapter.limits, RefusalStage::TriggerAuditBegin))?;
     let result = audit.commit(store, prepared, expires);
     let matches = result
         .as_ref()
@@ -240,5 +242,10 @@ async fn execute(
     }
     result
         .map(|r| (r, ack))
-        .map_err(|e| control_audit::status(platform_status(e, &adapter.limits), ack))
+        .map_err(|e| {
+            control_audit::status(
+                refusal_status(e, &adapter.limits, RefusalStage::TriggerCommit),
+                ack,
+            )
+        })
 }
