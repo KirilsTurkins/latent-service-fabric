@@ -59,12 +59,14 @@ signed runtime log are retained even on failure.
 
 Reference JDK 25.0.3 and SDK host source controls passed three times locally on
 2026-10-16. The actual locked model control also passed with the ten tooling JARs
-verified against the existing compiler lock. Component compilation and signed execution of this candidate are
-pending the maintained Linux gate. The [retained encoder failure](evidence/java-standard-timer-encoder-failed-2026-10-16.json)
-passed TeaVM and C compilation, then found that the closed adapter lacked
-`fd_close`. The corrected adapter returns `BADF` for every descriptor and
-acquires no ambient resource. Its module validates with the pinned wasm-tools;
-the complete timer component and signed execution remain pending.
+verified against the existing compiler lock. The [first encoder failure](evidence/java-standard-timer-encoder-failed-2026-10-16.json)
+and the [subsequent actual-core inspection and repair](evidence/java-standard-timer-adapter-2026-10-16.json)
+passed TeaVM and C compilation, then exposed missing closed descriptor functions.
+The adapter now covers the exact compiled module's descriptor imports, returning
+`BADF` without changing caller memory or acquiring an ambient resource. The
+retained real core successfully encodes as a component and validates with pinned
+wasm-tools 1.254.0. Fresh compilation and signed timer execution remain pending
+the maintained Linux gate.
 
 This slice does not complete issue #741. Fiber-aware pending host I/O, two
 unchanged published libraries that create default workers, the broader

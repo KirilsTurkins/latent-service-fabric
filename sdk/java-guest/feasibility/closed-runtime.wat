@@ -13,6 +13,10 @@
   ;; No descriptor is owned by this clock-only adapter. Even stdio close must
   ;; report BADF instead of acknowledging an ambient resource operation.
   (func (export "fd_close") (param i32) (result i32) i32.const 8)
+  (func (export "fd_prestat_get") (param i32 i32) (result i32) i32.const 8)
+  (func (export "fd_prestat_dir_name") (param i32 i32 i32) (result i32) i32.const 8)
+  (func (export "fd_seek") (param i32 i64 i32 i32) (result i32) i32.const 8)
+  (func (export "fd_write") (param i32 i32 i32 i32) (result i32) i32.const 8)
   (func (export "clock_time_get") (param $clock i32) (param i64) (param $out i32) (result i32)
     (local $time i64)
     local.get $clock i32.eqz
