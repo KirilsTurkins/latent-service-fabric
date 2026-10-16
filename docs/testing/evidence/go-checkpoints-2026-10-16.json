@@ -1,0 +1,234 @@
+{
+  "baseCommit": "5aec74bca531a93c8d4f9e3c49c17bc80fb508ac",
+  "completeGoRuntimePort": false,
+  "formatVersion": 1,
+  "issue": 742,
+  "observedDate": "2026-10-16",
+  "prepared": {
+    "bindingDigest": "sha256:82a839378608abf8dbd8b9ba4ee59055da630c38051786d8416f560387535c1b",
+    "componentDigest": "sha256:07999906e5b7a5b1bc2242d5bee726f7fd5bc7e9c0a02304dbcc1d77ae9695a6",
+    "fixture": "checkpoints",
+    "formatVersion": 1,
+    "nativeReference": {
+      "binaryDigest": "sha256:dab4fa6b5dcb2bc797671cad9764adce4f78156d6888333460587db8d0efc450",
+      "freshProcessPerMode": true,
+      "modes": [
+        0,
+        1,
+        4
+      ],
+      "output": 42,
+      "qualification": "reviewed-fixture-only",
+      "sourceDigest": "sha256:6e187e699cb4278cc64a33e6a46d32a049e6dd5f8deb28bfc0a27075d1af67b1"
+    },
+    "ordinarySource": true,
+    "profile": "go-component-activation-v2",
+    "qualification": "compile-only",
+    "signedExecution": "not-run",
+    "sourceDigest": "sha256:6e187e699cb4278cc64a33e6a46d32a049e6dd5f8deb28bfc0a27075d1af67b1",
+    "sourceUnchanged": true,
+    "tools": {
+      "componentize-go": {
+        "digest": "sha256:b41803a645e54845bc8eacef9a69e0eeb8c2c4a9a61964c831ed544e85c137cb",
+        "name": "componentize-go",
+        "size": 13330416
+      },
+      "go": {
+        "digest": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0",
+        "name": "go",
+        "size": 17164055
+      },
+      "go-checkpoints": {
+        "digest": "sha256:55c3dc9ffc90c6d23257e8739ff1d9b596184910476b77027514490d759355a0",
+        "name": "go-checkpoints",
+        "size": 4800112
+      },
+      "wasm-tools": {
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "name": "wasm-tools",
+        "size": 20231696
+      }
+    },
+    "transformations": [
+      {
+        "adaptedDigest": "sha256:90fdc86b3f42ee7ee034aa3e0370a4f603e5b8e1d8ff8b978992e2982526ece2",
+        "upstreamDigest": "sha256:6e187e699cb4278cc64a33e6a46d32a049e6dd5f8deb28bfc0a27075d1af67b1"
+      },
+      {
+        "adaptedDigest": "sha256:d7d075c80b141a5abd4a39e319905fc43abcc3a85e54e99188229e441d10291d",
+        "upstreamDigest": "sha256:0ab89732e936c9f766ca571e7f56d6406b1fd0a2d28931f5c8d2c86bdedf786b"
+      },
+      {
+        "adaptedDigest": "sha256:73abcc4cd10d65374a780e5bbec8086e70538cddae06a1c6d0b5605102e822e1",
+        "upstreamDigest": "sha256:abff1455a417b51e77e83e01da34fe1048330a9fe0e7d607bb5265f2162eb9b5"
+      },
+      {
+        "adaptedDigest": "sha256:877dd004355c475e8805b5700061604558422da057037556e0cf6edeb36ab7ec",
+        "upstreamDigest": "sha256:877dd004355c475e8805b5700061604558422da057037556e0cf6edeb36ab7ec"
+      },
+      {
+        "adaptedDigest": "sha256:b0f86c66fc0598546c54e4db32d9e1479b77e66e67539872870fe41a3d413798",
+        "upstreamDigest": "sha256:b0f86c66fc0598546c54e4db32d9e1479b77e66e67539872870fe41a3d413798"
+      },
+      {
+        "adaptedDigest": "sha256:32537875a1bae14517f33ca4fa5cb37daa4fb375da655a534d9e8dc6da3dbed8",
+        "upstreamDigest": "sha256:32537875a1bae14517f33ca4fa5cb37daa4fb375da655a534d9e8dc6da3dbed8"
+      },
+      {
+        "adaptedDigest": "sha256:284889789238c412c9f2e2c99e10912641fac591523a462659c9ec49ab905239",
+        "upstreamDigest": "sha256:284889789238c412c9f2e2c99e10912641fac591523a462659c9ec49ab905239"
+      },
+      {
+        "adaptedDigest": "sha256:720415791179802557117471740f92cddf4b8a8aa0ebfdba1322bbc621e1f62c",
+        "upstreamDigest": "sha256:720415791179802557117471740f92cddf4b8a8aa0ebfdba1322bbc621e1f62c"
+      },
+      {
+        "adaptedDigest": "sha256:0e1ed8be1fbd272ac1bf2e6dd1d4f962046c055a8c8d6fde15ec43d4efbc2895",
+        "upstreamDigest": "sha256:bda3732f12dc16750994d6ce6b10b6844beb2ea1aa854c3407be757097f04207"
+      },
+      {
+        "adaptedDigest": "sha256:34accb50082159bdcd927a896ba4dc5491d0bcd2158fdd31784c7fee654c85c8",
+        "upstreamDigest": "sha256:49d40539afdd927355c9cfbfabc7130c561d0a19e68ca5e621082e58e9d96cd7"
+      },
+      {
+        "adaptedDigest": "sha256:b1cb75ff1b5da577a1af442d5c52da2a08328510e4e70f66cb88d92e02a5b33e",
+        "upstreamDigest": "sha256:b1cb75ff1b5da577a1af442d5c52da2a08328510e4e70f66cb88d92e02a5b33e"
+      },
+      {
+        "adaptedDigest": "sha256:8d462284b9cc551410de1d19b910e4d263d29869596314c0a8dc4af8f8afa25b",
+        "upstreamDigest": "sha256:8d462284b9cc551410de1d19b910e4d263d29869596314c0a8dc4af8f8afa25b"
+      },
+      {
+        "adaptedDigest": "sha256:81139b39aeacd63e86bdadb6e921882e871bb30c87479b454aa5d82adc0c91aa",
+        "upstreamDigest": "sha256:81139b39aeacd63e86bdadb6e921882e871bb30c87479b454aa5d82adc0c91aa"
+      },
+      {
+        "adaptedDigest": "sha256:9d14e23ff1c6cb63aea57bb4bd9aa71748545a4588a36d63a947e5d6e96295e5",
+        "upstreamDigest": "sha256:c8ddc4ddc00af788539897f9a75c814d9c7fcfe9416dbf977f896631c158a3ca"
+      },
+      {
+        "adaptedDigest": "sha256:6f638fb797edb1ed42601f11a086c8f6a34f095d7c85b9f53773e59528ff38bd",
+        "upstreamDigest": "sha256:6f638fb797edb1ed42601f11a086c8f6a34f095d7c85b9f53773e59528ff38bd"
+      },
+      {
+        "adaptedDigest": "sha256:427091ef6fc1ff55ee1d80b6a02f2dafba957c4b117d7804cd30c1ff645246ca",
+        "upstreamDigest": "sha256:64e0822a2f8b8a6ed6e764e5c0f224b392e3a1343a328d30d7b34441ae7c9cef"
+      },
+      {
+        "adaptedDigest": "sha256:7d1bf63a1359344d7e00ec3cc60aaee35fbeb5896e3e6e5435383c833ebb7676",
+        "upstreamDigest": "sha256:7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da"
+      },
+      {
+        "adaptedDigest": "sha256:9a3692b2bda4a228f2bcd0084fcdfb50b900a97b29214281bf9855d659c0b30f",
+        "upstreamDigest": "sha256:cf2ae4e953a3315c226499f553a8e8e1529d27ceac166b4fb75e8d7b3a4fa682"
+      },
+      {
+        "adaptedDigest": "sha256:a1a4acb32932f8eb90860ae34539241134b13787135c6190818627b75836fd4a",
+        "upstreamDigest": "sha256:5cf5a98b3361c2d839e084b183366849cd276c9585620f04cc3c75e35a371448"
+      },
+      {
+        "adaptedDigest": "sha256:276ef99951d812ee658ed26fe6b22b8badc6be6c13fa9c12fbd86291a7705066",
+        "upstreamDigest": "sha256:2017243455e2f7f62bdd0c36040be61af3989b5d96ab81d115d24228657ed1b1"
+      }
+    ]
+  },
+  "profile": "go-component-activation-v2",
+  "qualification": "signed-standard-api-checkpoint-slice",
+  "remaining": [
+    "standard timers and Stop/Reset",
+    "initializer goroutines and runtime owner accounting",
+    "independent queue admission",
+    "full net/DNS/Conn/TLS port and downstream qualification"
+  ],
+  "signedExecution": {
+    "activations": 15,
+    "cells": 1,
+    "cpuCancellationOutcome": "cancelled",
+    "cpuFuelLimit": 10000000000,
+    "cpuReadWaitOwners": 0,
+    "cpuRootDeadlineMillis": 100,
+    "cpuRootDeadlineOutcome": "deadline-exceeded",
+    "defaultFeatures": true,
+    "idleAndFreshActivationChecks": true,
+    "memoryLimitBytes": 67108864,
+    "negativeComponentDigest": "sha256:3d516e256b7ebe88f813eafad10dec73072610b8d6f1ae4816f24511019cc06a",
+    "negativeFuelLimit": 5000000,
+    "negativeOutcome": "resource-exhausted",
+    "negativeProfile": "go-component-activation-v1",
+    "negativeSourceDigest": "sha256:6e187e699cb4278cc64a33e6a46d32a049e6dd5f8deb28bfc0a27075d1af67b1",
+    "nonSuspendableOutcome": "guest-trap",
+    "peakMemoryBytes": 3015800,
+    "positiveFuelRange": [
+      953970,
+      1132609
+    ],
+    "positiveModes": [
+      0,
+      1,
+      4
+    ],
+    "positiveWallMicrosRange": [
+      4716,
+      9321
+    ],
+    "productionEngineSettings": true,
+    "repetitionsPerPositive": 3,
+    "result": "passed",
+    "seconds": 17.39,
+    "taskLimit": 4,
+    "test": "runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
+    "timerLimit": 2,
+    "waitLimit": 4,
+    "wallLimitMillis": 120000
+  },
+  "sourceInputs": [
+    {
+      "path": "tools/go_guest/activation.py",
+      "sha256": "ec2e2df4cbf8dbc08633ffc2a8eb59d635d29a300a25055677f58ba8600a5b64"
+    },
+    {
+      "path": "tools/go_guest/checkpoints.py",
+      "sha256": "82842d6869f2dfeb894e5c6d6fcbfc6b2b119def5ae3c6f1d309bad592b9033f"
+    },
+    {
+      "path": "tools/go_guest/compiler.py",
+      "sha256": "136273edb86d85d6565ce0a92bb98997518a28eecd798b9ee5e19e49bd8cec6c"
+    },
+    {
+      "path": "tools/go_guest/runtime.py",
+      "sha256": "fd5f9dda2e4643cc664691d69304efb7bdb782c4f823fe89e3d41452bfcaf15f"
+    },
+    {
+      "path": "tools/qualify_go_activation.py",
+      "sha256": "4fd91c87f5556f3c35c65285abbb135e52e872c7b98a633f8fce1d8b222e4681"
+    },
+    {
+      "path": "sdk/go-guest/runtime/checkpoint_async.go.in",
+      "sha256": "ea15d7acb007f314d876a434ceeb7c9e6b30180159959bb255e3be737e99f8b2"
+    },
+    {
+      "path": "sdk/go-guest/runtime/checkpoint_bridge.go.in",
+      "sha256": "8f2741c3efb838c23ae573cc81abed9ed20d7f23f0fc158a93eefe6612e56efa"
+    },
+    {
+      "path": "sdk/go-guest/runtime/checkpoint_transform.go.in",
+      "sha256": "06bfb9573843feaeaae139dbafa3a423d954732bb1a02ca4874b316289fc7b7c"
+    },
+    {
+      "path": "sdk/go-guest/runtime/checkpoint_transform_test.go.in",
+      "sha256": "fd33f596633cbb4160e3e4e52a095ca097cdbaa70a5b44959075ede3e29e489b"
+    },
+    {
+      "path": "sdk/go-guest/runtime/checkpoints-conformance/main.go",
+      "sha256": "6e187e699cb4278cc64a33e6a46d32a049e6dd5f8deb28bfc0a27075d1af67b1"
+    },
+    {
+      "path": "sdk/go-guest/runtime/checkpoints-conformance/world.wit",
+      "sha256": "6131a90e287e49eb6cf8863eb64c062d691f18e69d5e0c0b673258c0f6ad16c5"
+    },
+    {
+      "path": "crates/latent-wasmtime/tests/local_service/runtime/go.rs",
+      "sha256": "3cff79e82438101ad581338735014572179bef0df2f147f7adb23a0589c80aee"
+    }
+  ]
+}

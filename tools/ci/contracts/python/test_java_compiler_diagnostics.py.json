@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "JavaCompilerDiagnostics.test_duplicate_omission_and_log_bounds_remain_explicit",
+    "JavaCompilerDiagnostics.test_native_method_uses_selected_original_class_owner_without_package_catalogue",
+    "JavaCompilerDiagnostics.test_observed_report_preserves_original_unknown_failure_and_issues_no_authority",
+    "JavaCompilerDiagnostics.test_stale_source_compiler_or_classpath_never_receives_attribution",
+    "JavaCompilerDiagnostics.test_standard_runtime_missing_methods_and_classes_are_separate_from_missing_libraries",
+    "JavaCompilerDiagnostics.test_unknown_partial_and_injected_diagnostics_cannot_create_authority_or_elimination",
+    "JavaCompilerDiagnostics.test_unrelated_or_successful_compiler_stages_never_satisfy_native_failure_evidence"
+  ],
+  "guards": {
+    "JavaCompilerDiagnostics.test_duplicate_omission_and_log_bounds_remain_explicit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a40e0549c1001c10a5517f89e7c28e162c275be6d7e1bf283ca2ab9e1d1bde9",
+        "class:setup-sha256:04d886dfff53c395a054e4bcc362415622d24f01f46456875b86d549aaa0563e"
+      ],
+      "skipSites": []
+    },
+    "JavaCompilerDiagnostics.test_native_method_uses_selected_original_class_owner_without_package_catalogue": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a40e0549c1001c10a5517f89e7c28e162c275be6d7e1bf283ca2ab9e1d1bde9",
+        "class:setup-sha256:04d886dfff53c395a054e4bcc362415622d24f01f46456875b86d549aaa0563e"
+      ],
+      "skipSites": []
+    },
+    "JavaCompilerDiagnostics.test_observed_report_preserves_original_unknown_failure_and_issues_no_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a40e0549c1001c10a5517f89e7c28e162c275be6d7e1bf283ca2ab9e1d1bde9",
+        "class:setup-sha256:04d886dfff53c395a054e4bcc362415622d24f01f46456875b86d549aaa0563e"
+      ],
+      "skipSites": []
+    },
+    "JavaCompilerDiagnostics.test_stale_source_compiler_or_classpath_never_receives_attribution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a40e0549c1001c10a5517f89e7c28e162c275be6d7e1bf283ca2ab9e1d1bde9",
+        "class:setup-sha256:04d886dfff53c395a054e4bcc362415622d24f01f46456875b86d549aaa0563e"
+      ],
+      "skipSites": []
+    },
+    "JavaCompilerDiagnostics.test_standard_runtime_missing_methods_and_classes_are_separate_from_missing_libraries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a40e0549c1001c10a5517f89e7c28e162c275be6d7e1bf283ca2ab9e1d1bde9",
+        "class:setup-sha256:04d886dfff53c395a054e4bcc362415622d24f01f46456875b86d549aaa0563e"
+      ],
+      "skipSites": []
+    },
+    "JavaCompilerDiagnostics.test_unknown_partial_and_injected_diagnostics_cannot_create_authority_or_elimination": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a40e0549c1001c10a5517f89e7c28e162c275be6d7e1bf283ca2ab9e1d1bde9",
+        "class:setup-sha256:04d886dfff53c395a054e4bcc362415622d24f01f46456875b86d549aaa0563e"
+      ],
+      "skipSites": []
+    },
+    "JavaCompilerDiagnostics.test_unrelated_or_successful_compiler_stages_never_satisfy_native_failure_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8a40e0549c1001c10a5517f89e7c28e162c275be6d7e1bf283ca2ab9e1d1bde9",
+        "class:setup-sha256:04d886dfff53c395a054e4bcc362415622d24f01f46456875b86d549aaa0563e"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_compiler_diagnostics.py",
+  "reviewReason": "Add seven compiler diagnostic attribution controls for original class ownership, standard versus application misses, bounded redaction and omission, stale evidence, failure-stage separation and preserving original unknown reports.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

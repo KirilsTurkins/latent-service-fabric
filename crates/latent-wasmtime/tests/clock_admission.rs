@@ -7,6 +7,8 @@ mod component;
 #[path = "broker/fixture.rs"]
 #[allow(dead_code)]
 mod fixture;
+#[path = "clock_admission/monotonic.rs"]
+mod monotonic;
 #[path = "clock_admission/signed.rs"]
 mod signed;
 #[path = "generic_backend/support.rs"]
@@ -293,6 +295,13 @@ async fn ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores(
             .violation()
             .is_none());
         f.idle();
+        println!(
+            "{}",
+            serde_json::json!({"schemaVersion":"latent.rust.std-clock-execution.v1",
+            "activation":id,"clockKind":marker["clockKind"],"componentDigest":marker["componentDigest"],
+            "fuel":consumption.cpu_fuel,"peakWasmBytes":consumption.peak_memory_bytes,
+            "wallMicros":consumption.wall_time_micros,"sampledPhysicalOwnersRetired":true})
+        );
     }
     assert_eq!(f.clock.calls.load(Ordering::Acquire), 4);
     assert_eq!(f.backend.resource_snapshot().stores_created, 2);

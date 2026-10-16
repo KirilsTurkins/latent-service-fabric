@@ -32,6 +32,9 @@ struct Host {
     imports: Arc<Imports>,
 }
 impl TransactionHost for Host {
+    fn observe_host_result(&self, disposition: latent_executor::HostResultDisposition) {
+        self.inner.observe_host_result(disposition);
+    }
     fn activation_id(&self) -> &ActivationId {
         self.inner.activation_id()
     }

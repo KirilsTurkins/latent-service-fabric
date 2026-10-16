@@ -12,6 +12,7 @@ import time
 from tools.build_observation import build_environment, file_identity, public_repository
 from tools.build_process import BuildProcessError
 from tools.c_guest.compiler import Compiler
+from tools.c_guest import standard_facilities
 from tools.c_capsule_project import validate
 from tools.application_dependencies import prepare
 from tools.c_application_dependencies import selected
@@ -43,6 +44,7 @@ RECIPE += guest_dependency_inputs.RECIPE
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/c_generator_authoring.py",)
+RECIPE += standard_facilities.RECIPE
 
 
 def binding_check(work: Path, lock: dict, commands: Commands, generator: Path) -> str:
@@ -88,6 +90,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands = Commands(work, output, build_environment(temporary))
             stage = "application-dependencies"
             closure = prepare(dependency_root, work, output, "c")
+            runtime_profile = standard_facilities.selected_profile(project, closure.lock if closure is not None else None)
             if packager is None:
                 write_json(output / "diagnostic-source.json", {"capturedSource": str(work), "requestedSource": str(project_path)})
             compiler = Compiler(temporary / "compiler", 900, sdk=work / "vendor/lsf/sdk/c-guest",
@@ -95,7 +98,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             if closure is not None:
                 stage = "captured-compiler-isolation"
                 isolated_inputs = compiler.enable_captured_isolation(temporary)
-            application = selected(closure, compiler_digest=compiler.materials["zig"]["digest"],
+            application = selected(closure, runtime_profile=runtime_profile,
+                                   compiler_digest=compiler.materials["zig"]["digest"],
                                    runtime_digest=digest(inventory(snapshot(work / "vendor/lsf/sdk/c-guest"))),
                                    compiler_distribution_digest=digest(json.dumps(isolated_inputs["distributions"],
                                         sort_keys=True, separators=(",", ":")).encode()) if closure is not None else None)
@@ -110,19 +114,32 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "compile"
             sources = [work / name for name in files if name.startswith("src/") and name.endswith(".c")]
             sources.extend(application.sources)
-            component_path, generated = compiler.compile(sources, work / "wit", project["world"], temporary / "compiled",
+            compile_wit, defines = work / "wit", application.defines
+            if runtime_profile in standard_facilities.PROFILE_IMPORTS:
+                adapter = ('standard-clock-entropy.c' if runtime_profile == standard_facilities.PROFILE
+                           else 'standard-stdio.c')
+                sources.append(work / "vendor/lsf/sdk/c-guest/src" / adapter)
+                compile_wit = standard_facilities.stage(compile_wit, project["world"], temporary / "standard-wit",
+                                                       work / "vendor/lsf/wit/platform", profile=runtime_profile)
+                profile_defines = ('_POSIX_C_SOURCE=200809L', '_DEFAULT_SOURCE')
+                defines = (*defines, *(value for value in profile_defines if not any(
+                    item.split('=', 1)[0] == value.split('=', 1)[0] for item in defines)))
+            component_path, generated = compiler.compile(sources, compile_wit, project["world"], temporary / "compiled",
                                                           memory_bytes=64 * 1024 * 1024,
                                                           include_directories=application.includes,
-                                                          static_libraries=application.archives, defines=application.defines)
+                                                          static_libraries=application.archives, defines=defines,
+                                                          runtime_profile=runtime_profile)
             if closure is not None:
                 write_json(output / "compiler-inputs.json", isolated_inputs)
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
             write_json(output / "bindings.json", generated)
             stage = "contracts"
+            wit_files = {"wit/" + path: data for path, data in snapshot(temporary / "compiled/wit").items()}
+            package_files = {**files, **wit_files} if runtime_profile in standard_facilities.PROFILE_IMPORTS else files
             wit_input = temporary / "wit-inputs.json"
             write_json(wit_input, {"world": project["world"], "sources": [
-                {"path": path, "content": data.decode()} for path, data in files.items() if path.startswith("wit/") and path.endswith(".wit")]})
+                {"path": path, "content": data.decode()} for path, data in package_files.items() if path.startswith("wit/") and path.endswith(".wit")]})
             derived = temporary / "derived"
             commands.run("contracts", paths["contracts-tool"], wit_input, derived)
             for name in ("contracts.json", "wit-lock.json", "surface.json"):
@@ -132,7 +149,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             stage = "compatibility"
             guest_compatibility_build.inspect(commands, compiler.paths["wasm-tools"], output, surface,
                 host_abi_profile=guest_compatibility_build.declared_host_abi(surface))
-            package_inputs(output, project, surface, files, component)
+            package_inputs(output, project, surface, package_files, component)
             if packager is not None:
                 stage = "package"
                 commands.run("package", paths["packager"], "build", output / "package-source.json", output, output / "package", *packaging_arguments(files))
@@ -166,9 +183,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 data = files["c-generated-inputs.json"]
                 materials.append({"name": "c-generator-inputs",
                                   "digest": digest(data), "size": len(data)})
-            materials.append(guest_runtime_receipts.emit(output, 'c', 'closed-synchronous-v1', files,
+            runtime_bindings = (digest(json.dumps({'sdkBindings': binding_digest, 'applicationBindings': generated},
+                sort_keys=True, separators=(',', ':')).encode()) if runtime_profile in standard_facilities.PROFILE_IMPORTS else binding_digest)
+            materials.append(guest_runtime_receipts.emit(output, 'c', runtime_profile, files,
                 source_inputs, component, materials, graph=closure.lock if closure is not None else None,
-                binding_digest=binding_digest, configuration={"profile": 'closed-synchronous-v1', "world": project['world'],
+                binding_digest=runtime_bindings, configuration={"profile": runtime_profile, "world": project['world'],
                     "target": "wasm32-wasi", "selection": closure.lock['selection'] if closure is not None else {}}))
             finished = int(time.time())
             if finished < started or finished - started > 900 or time.monotonic() - start > 900:
