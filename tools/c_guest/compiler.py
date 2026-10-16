@@ -174,7 +174,7 @@ class Compiler:
         if runtime_profile == standard_facilities.LOGGING_PROFILE:
             for function in ('fd_write', 'fd_fdstat_get', 'fd_seek', 'fd_close'):
                 for prefix in ('__wasi_', '__imported_wasi_snapshot_preview1_'):
-                    command.append('-Wl,--wrap=' + prefix + function)
+                    command.append('-Wl,-wrap,' + prefix + function)
         command.extend(map(str, static_libraries))
         if trap:
             command.append(str(self.sdk / "src/trap.c"))

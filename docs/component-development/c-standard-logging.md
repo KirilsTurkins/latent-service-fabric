@@ -19,6 +19,12 @@ explicit linker wrappers for its four reviewed public libc and raw descriptor
 operations. Failed assembly retains the bounded original core for import
 inspection. Fresh native compilation and signed stdio execution remain pending.
 
+The [follow-up run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38845078653/job/116793655937)
+rejected the `--wrap` argument in Zig's driver before compiling the stdio guest.
+The candidate now passes the single-hyphen `-Wl,-wrap,<symbol>` form for those
+same eight symbols. The clock/entropy programme passed before that failure;
+the corrected stdio build and signed calls still require a fresh run.
+
 Set `runtimeProfile` to `c-standard-stdio-v1` in `capsule-project.json` and in any
 captured dependency selection. Resolve and review the new lock, then use the
 normal build, signing and admission workflow. The operator must separately
