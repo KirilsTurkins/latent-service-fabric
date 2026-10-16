@@ -11,9 +11,12 @@ LSF transport or executor. The compiler replaces the default browser HTTP handle
 at its standard runtime boundary; it preserves URL parsing and application/JAR
 identities. User-supplied URL handlers remain optional guest extensions.
 
-This is an implementation candidate. Native Java ownership controls passed;
-the actual TeaVM-emitted component, signed provider runs and unchanged published
-client libraries have **not** qualified this profile. Issue #688 remains open.
+This is an implementation candidate. Native Java ownership controls and a
+[finite signed ordinary-API provider gate](../testing/java-standard-http.md)
+passed, including actual TeaVM component execution, HTTP errors, denied targets,
+body failures/early close, uncertain POST and physical retirement. Unchanged
+published/private client libraries and the complete profile remain unqualified.
+Issue #688 remains open.
 It is independent of the listener-free Java HttpServer profile. Selecting both
 profiles merges their SDK compiler provider lists without replacing either list.
 

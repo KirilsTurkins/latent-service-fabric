@@ -433,6 +433,15 @@ generated lookup index contains exactly the reviewed bytes, with no directory,
 repository or host-filesystem fallback. Names are case sensitive. A missing name
 returns `null`; a null name follows the standard null-argument failure.
 
+JAR manifests, `META-INF/INDEX.LIST`, module descriptors, signatures and legal
+metadata retain their own JAR identity. The
+[JAR index](https://docs.oracle.com/en/java/javase/17/docs/specs/jar/jar.html#jar-index)
+is a class-loading hint; it does not replace the captured native dependency
+graph. Each original and selected JAR retains its exact index bytes, while the
+merged immutable-resource namespace excludes those indexes. Ordinary duplicate
+classes and resources still fail. Resolve and review again if an older capture
+treated an index as an application resource; the changed selection fails closed.
+
 Each successful open owns a fresh byte array and `ByteArrayInputStream`.
 Resources use the existing guest heap and fuel budgets. Capture bounds do not
 guarantee that opening a large resource fits a particular invocation's heap.
@@ -488,3 +497,16 @@ bytes fail and restoring the original bytes restores the captured identity.
 The fixture preserved SDK and JDK inputs and found no credential or private TLS
 key in the captured project. This capture proof does not qualify installed
 frontend test/watch or annotation-processor execution.
+
+Contributors can repeat the selected pure-library, resource and declared-error
+boundary with the separate [native dependency control](../testing/java-library-ingestion.md).
+It captures two public direct libraries, their transitive closure and two
+independent local JARs before a network-disabled compile and signed node run.
+
+The [15 October native control](../testing/evidence/java-dependency-ingestion-2026-10-15.json)
+records a fresh network-disabled build and enforced ordinary-node execution of
+that exact library graph, resource and declared-error recovery. The independent
+approved annotation-processor control also passed actual source-ownership
+negatives, host containment and three signed-node calls with clean shutdown.
+Both controls retain their actual source, component and native-product identities;
+the remaining installed/private and failure-lifecycle gates stay explicit.

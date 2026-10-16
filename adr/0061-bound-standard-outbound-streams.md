@@ -58,7 +58,7 @@ catalogue can attest that guest bytes are TLS or infer a protocol permission.
 Go's [versioned SMTP source](https://github.com/golang/go/blob/go1.26.1/src/net/smtp/smtp.go)
 uses `net.Dial` in its ordinary `Dial` factory and wraps the connection in
 `crypto/tls` for STARTTLS. This source observation motivates the TLS placement;
-it is not qualification of LSF's selected Go 1.27.1 compiler or port. The finite
+it is not qualification of LSF's selected Go 1.27.2 compiler or port. The finite
 matrix requires the actual selected compiler graph in every receipt.
 
 ## Authority and ownership

@@ -19,6 +19,12 @@ later source-bound successes. Broader #728 acceptance and clean packaged fronten
 qualification remain separate. The profile is not a completed milestone gate,
 general JDK networking support or an executor-enabled server profile.
 
+The [2026-10-15 execution summary](../development/java-runtime-reconciliation/2026-10-15/pr996-evidence.json)
+refreshes the 52 baseline requests and 12 revision-lifecycle cases against the
+recorded ordinary Wasmtime 48.0.6 native tuple. It retains exact source and
+component identities, zero sampled dormant owners, clean reaped shutdown and
+the remaining installed-frontend and cross-tenant acceptance boundaries.
+
 The current suite includes the accepted 65,536-byte binary body, oversize denial
 and physical cleanup. The earlier
 [retained-component replay failure](../testing/evidence/java-server-tls-replay-2026-10-01.json)
@@ -44,6 +50,29 @@ python tools/java_capsule.py build /work/capsules/my-server \
 The compiler host is the pinned Linux x86-64 recipe from that guide. Build
 execution, signing/admission and route authorization remain separate steps.
 Keep `vendor/lsf` immutable and review a changed SDK lock explicitly.
+
+Newly built Java guest-tool bundles also carry the complete captured authoring
+inputs. On the supported Linux compiler host, the same creator and maintained
+offline recipe run without a source checkout:
+
+```bash
+TOOLS=/opt/latent-java-tools
+ATTEMPT=/work/my-server-attempt
+mkdir -m 700 "$ATTEMPT"
+"$TOOLS/sdk/bin/python" -I -B "$TOOLS/recipe/tools/java_capsule.py" \
+  new-server "$ATTEMPT/app" --name my-server
+mkdir -m 700 "$ATTEMPT/build-cache"
+"$TOOLS/sdk/bin/python" -I -B "$TOOLS/recipe/tools/dev_guest_recipe.py" \
+  --language java --project "$ATTEMPT/app" --output "$ATTEMPT/output"
+```
+
+Use a fresh private attempt directory. The recipe verifies and expands its
+captured `sdk/managed.zip` into that attempt's compiler cache; it does not resolve
+compiler dependencies from the network. Inspect the emitted source/profile
+declarations and explicitly authorize deployment with the bundled route operator
+described below. This advanced recipe path does not add an HTTP scenario or route
+operation to the standalone frontend protocol. Older released bundles do not gain
+these source inputs, and a locally assembled candidate is not a signed release.
 
 The created source registers `/hey` on a logical wildcard endpoint, port 8080,
 backlog 0, and returns `Hey!` with an exact positive response length. Port and
@@ -218,3 +247,25 @@ does not supply a finite handler export or preserve the loop's continuation and
 counter across fresh activations. An unused accept method does not block an
 otherwise supported HttpServer registration. No socket loop is silently certified
 by HttpServer compilation.
+
+The installed-tool qualification creates a fresh server through the shipped
+`java_capsule.py new-server`, compiles with the installed Java recipe, then uses
+the normal controller package/provenance join before signing. It preserves the
+compiler's original observation and executes the installed `server_capsule.py`
+plan/apply/inspect/remove commands against a real TLS shared listener:
+
+```bash
+python3 tools/qualify_java_server_toolkit.py \
+  --tools /opt/latent-java-tools \
+  --native-directory /tmp/java-server-lifecycle/selected-native \
+  --native-tuple /tmp/java-server-lifecycle/native/native-tuple.json \
+  --output /tmp/java-installed-server
+```
+
+Supply the exact recorded ordinary default native tuple, an extracted verified
+Java tool bundle and a fresh output directory. The helper neither downloads a
+compiler nor builds native products. It retains failed original operations,
+rechecks the installed tool inventory and native tuple, and does not retry failed
+route mutations. Local source-candidate bundles have no publisher authentication
+or release-publication claim. The [October 15 receipt](../testing/evidence/java-installed-server-2026-10-15.json)
+records that limited qualification independently of released frontend operation.

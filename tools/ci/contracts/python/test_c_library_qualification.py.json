@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "CapturedCLibraryInputs.test_changed_application_or_sdk_is_rejected_before_native_selection_or_dispatch",
+    "CapturedCLibraryInputs.test_incomplete_capture_is_rejected_before_reading_or_creating_execution_inputs"
+  ],
+  "guards": {
+    "CapturedCLibraryInputs.test_changed_application_or_sdk_is_rejected_before_native_selection_or_dispatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0950d5f4e0a3bcea169525d72fc18578f1320f6c883c7fd4fa26c9d40d1b8ff",
+        "class:setup-sha256:f53074f001246ec6905549781be95fb1b385aafaeda71bc18bb73a1b17a5ce52"
+      ],
+      "skipSites": []
+    },
+    "CapturedCLibraryInputs.test_incomplete_capture_is_rejected_before_reading_or_creating_execution_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0950d5f4e0a3bcea169525d72fc18578f1320f6c883c7fd4fa26c9d40d1b8ff",
+        "class:setup-sha256:f53074f001246ec6905549781be95fb1b385aafaeda71bc18bb73a1b17a5ce52"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_library_qualification.py",
+  "reviewReason": "Reject changed application SDK and incomplete captures before native selection or compiler signing and node dispatch",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

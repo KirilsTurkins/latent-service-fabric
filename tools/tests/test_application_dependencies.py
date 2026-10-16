@@ -206,6 +206,48 @@ class Archives(unittest.TestCase):
         with self.assertRaisesRegex(DependencyError, "entry-denied"):
             archive_files(stream.getvalue(), "zip")
 
+    def test_zip_empty_unix_directory_sentinel_preserves_files(self):
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w") as archive:
+            for name in ("META-INF/maven/", "META-INF/maven/ordinary/",
+                         "META-INF/maven/ordinary/library/"):
+                info = zipfile.ZipInfo(name)
+                info.create_system = 3
+                info.external_attr = 0xffff0010
+                archive.writestr(info, b"")
+            archive.writestr("META-INF/maven/ordinary/library/pom.xml", b"original metadata")
+            archive.writestr("ordinary/Library.class", b"original class")
+        self.assertEqual(archive_files(stream.getvalue(), "zip"), {
+            "META-INF/maven/ordinary/library/pom.xml": b"original metadata",
+            "ordinary/Library.class": b"original class",
+        })
+        with patch("tools.application_dependency_store.MAX_FILES", 2):
+            with self.assertRaisesRegex(DependencyError, "entry-limit"):
+                archive_files(stream.getvalue(), "zip")
+
+    def test_zip_directory_sentinel_keeps_hostile_entry_guards(self):
+        cases = [("marker", 3, 0xffff0010, b"", None),
+                 ("marker/", 0, 0xffff0010, b"", None),
+                 ("marker/", 3, 0xffff0000, b"", None),
+                 ("marker/", 3, 0xffff0010, b"payload", None),
+                 ("../escape/", 3, 0xffff0010, b"", None),
+                 ("Marker/", 3, 0xffff0010, b"", "marker/file"),
+                 ("parent/child/", 3, 0xffff0010, b"", "parent")]
+        cases.extend(("marker/", 3, (kind | 0o777) << 16 | 0x10, b"", None)
+                     for kind in (stat.S_IFLNK, stat.S_IFBLK, stat.S_IFCHR, stat.S_IFIFO))
+        for name, system, attributes, payload, other in cases:
+            with self.subTest(name=name, system=system, attributes=attributes, payload=payload, other=other):
+                stream = io.BytesIO()
+                with zipfile.ZipFile(stream, "w") as archive:
+                    info = zipfile.ZipInfo(name)
+                    info.create_system = system
+                    info.external_attr = attributes
+                    archive.writestr(info, payload)
+                    if other:
+                        archive.writestr(other, b"file")
+                with self.assertRaises(DependencyError):
+                    archive_files(stream.getvalue(), "zip")
+
     def test_tar_hardlinks_and_symlinks_denied(self):
         for kind in (tarfile.LNKTYPE, tarfile.SYMTYPE):
             stream = io.BytesIO()

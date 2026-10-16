@@ -1,0 +1,376 @@
+{
+  "schemaVersion": "latent.c-library-execution-evidence.v1",
+  "status": "passed",
+  "qualificationSource": "91d96300a63bee15d84b8763ca1b8365eaae048b",
+  "qualifier": {
+    "sha256": "sha256:dfed631b567d9e9f16500cbbb3c5084d5df3c2ba2e77081a2aab0fd1e72ed2b5"
+  },
+  "qualificationReceipt": {
+    "sha256": "sha256:adc4356f894b48a74e09870dd60f316d50dd873ae98557da94810d4f99e5cd22",
+    "bytes": 25076
+  },
+  "captureReceipt": {
+    "sha256": "sha256:548792bbc89445f452d1de2c403c896eca2ff6851678c181fba4984d2cc6f192",
+    "bytes": 1237
+  },
+  "executionEnvironment": {
+    "operatingSystem": "linux",
+    "architecture": "x86_64",
+    "python": "3.13.5",
+    "effectiveUser": 1000,
+    "externalNetwork": "Docker network none",
+    "compilerIsolation": "linux-captured-compiler-namespaces-v1",
+    "compilerNetwork": "denied",
+    "compilerAmbientHome": "absent",
+    "compilerCredentials": "not-inherited",
+    "boundary": "trusted-single-user-compiler-host-not-hardened-multitenant-vm"
+  },
+  "library": {
+    "formatVersion": 1,
+    "thirdParty": "zserge/jsmn/1.1.0",
+    "thirdPartyDigest": "sha256:1ed6154dedf009212a08a397e9c4ed50a0ce31d5a8301bb294e137ae3188c13b",
+    "developerOwned": "developer-owned/qualification/1",
+    "directApplicationCalls": [
+      "zserge/jsmn/1.1.0",
+      "developer-owned/qualification/1"
+    ],
+    "transitiveCalls": [
+      "developer-owned/qualification/1 -> zserge/jsmn/1.1.0"
+    ],
+    "resourceDigest": "sha256:fc9519a8958152b8d82a052b717393ab625fafa402213920ef6d1fbf6f4f9a68",
+    "offlineOriginals": "unavailable-after-capture",
+    "sourceDigest": "sha256:7255cfd5f1c44aca47828ea9fe2f987b5afa33c9afca00a025fe728733675dc6"
+  },
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:4b4cc872d422c34bbf083f498f7a1b1fc8b81f0d3a1ef71b29be9d5d791465fc",
+      "bytes": 1494
+    },
+    "sourceHead": "a49bbf172e08c13ed7bd5588e2323064652f9366",
+    "sourceTree": "5696ad304208a902ed115f27120609fc8d4f9f04",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.6",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+        "bytes": 69976672,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+        "bytes": 182386208,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:c361aad3ed1aa9371e6acd657368ab216a72a66aa5fecba8b0f5d3169291940f",
+        "bytes": 19100192,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:60e42c99f6286ed4e6254a05156963c2e50e543414e9fa5f108eede7bb4e397e",
+        "bytes": 7967376,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+        "bytes": 24994784,
+        "actualFeatures": []
+      }
+    }
+  },
+  "compilerTools": {
+    "zig": {
+      "name": "zig",
+      "digest": "sha256:2317bbb91798556d9d0f38aabdac23db83f0979b25f767259ae474546724087c",
+      "size": 172641672
+    },
+    "wit-bindgen": {
+      "name": "wit-bindgen",
+      "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+      "size": 19856344
+    },
+    "wasm-tools": {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    }
+  },
+  "compilerInventory": {
+    "sha256": "sha256:227ba9104cd7feaafcb168cef46033d9a1ea5df2ac008b53e8bd612c4c86bdcc",
+    "bytes": 3818700
+  },
+  "builds": {
+    "greeting": {
+      "formatVersion": 1,
+      "observationDigest": "sha256:f10d647ade0b52b77addbe77027090f250be523c2f97b579e1e3b7e704af4349",
+      "sourceDigest": "sha256:3ecf212663f74a7ca340e49549ca47e3ea52718771333044a5585031710e70ac",
+      "componentDigest": "sha256:69dfea17cb10cce6df5d5f2ea14e0ed722efc364a28435065441ef7a80f61c94",
+      "sdkBindingDigest": "sha256:e45314736a5292b2368f9a13bba92d7faed3724f2076ee44ac39b726b2922f79",
+      "buildSeconds": 26.808928,
+      "packageAssembled": true
+    },
+    "word-count": {
+      "formatVersion": 1,
+      "observationDigest": "sha256:3592cbf9557ca1d02d4601d2d6e6728dd2d583d79022b1ffa8389797bb50f0fc",
+      "sourceDigest": "sha256:81553e9a1696046dafc1e32b3aaf19a193bb4d4c13a02deb0628762dd2afc193",
+      "componentDigest": "sha256:0151a95e15992c7d823612bddae0c0787a7ce830d0d52887e1456a84c4f38b52",
+      "sdkBindingDigest": "sha256:e45314736a5292b2368f9a13bba92d7faed3724f2076ee44ac39b726b2922f79",
+      "buildSeconds": 10.013777,
+      "packageAssembled": true
+    },
+    "shipping": {
+      "formatVersion": 1,
+      "observationDigest": "sha256:ab8fae872d1d8c5ecfd3d2d564e4f88ae00f9c071b2d9dbeb55a8433af9cb28b",
+      "sourceDigest": "sha256:00b5d802f30f5392f5871e8aba71d356b31bca13be22bbaa53473a2b0df2085f",
+      "componentDigest": "sha256:12910ab023dfee07faed80951ed827dd03ae453a2baedf61dfcf92a92302e239",
+      "sdkBindingDigest": "sha256:e45314736a5292b2368f9a13bba92d7faed3724f2076ee44ac39b726b2922f79",
+      "buildSeconds": 10.180488,
+      "packageAssembled": true
+    },
+    "http-status": {
+      "formatVersion": 1,
+      "observationDigest": "sha256:3d11e38a789fa1819a375ae72d7a2dc17c5a593ecf74f14b2221a7a369763d73",
+      "sourceDigest": "sha256:6a9b9802d5d5b2eb98c7ed3fcd9646ef77c870b82330df056f088c077385a0cd",
+      "componentDigest": "sha256:61efe686562fbb30ed6211e2795571ddc3332eef3955ee70fc0f56882c66af5c",
+      "sdkBindingDigest": "sha256:e45314736a5292b2368f9a13bba92d7faed3724f2076ee44ac39b726b2922f79",
+      "buildSeconds": 10.222945,
+      "packageAssembled": true
+    },
+    "recovery": {
+      "formatVersion": 1,
+      "observationDigest": "sha256:70c508b4d03b0ef739e763eb301a504f219cbfe6df3ba14d8898e1b743883e3f",
+      "sourceDigest": "sha256:0af4230bffa190a2b2ca4a1ac20227f7e8a58ca78321f414004d7cbe6326073c",
+      "componentDigest": "sha256:d9dc7917054916d7e5bccc19a48ed00196a2cbc47a9c3e5980ac0326effa6bae",
+      "sdkBindingDigest": "sha256:e45314736a5292b2368f9a13bba92d7faed3724f2076ee44ac39b726b2922f79",
+      "buildSeconds": 12.160118,
+      "packageAssembled": true
+    },
+    "greeting-static": {
+      "formatVersion": 1,
+      "observationDigest": "sha256:03ba600e86c5dfa6b651fc5489ca969335efa09643ee4b4860cbc78e9231d976",
+      "sourceDigest": "sha256:be5e5e8d4fec0fba843eb2911fcda6b30f51197d927cb03116046f2fe0a7251b",
+      "componentDigest": "sha256:e94163f6489241c9f52bf7c0e98a3d449e78c78c875b337cdf9b1d27fcd2e8b4",
+      "sdkBindingDigest": "sha256:e45314736a5292b2368f9a13bba92d7faed3724f2076ee44ac39b726b2922f79",
+      "buildSeconds": 34.91423,
+      "packageAssembled": true
+    }
+  },
+  "offlineRebuild": {
+    "receipt": {
+      "sha256": "sha256:aa2693e83a4d87b116f6247c8c201105a1fe14fe0f68dd99193f3342cc25f7a8",
+      "bytes": 2056
+    },
+    "sameComponentBytes": false
+  },
+  "staticLibrary": {
+    "formatVersion": 1,
+    "archiveProfileDigest": "sha256:756b4ed93db36b15fb4fbaac36a7f2a5ef383e70aa2c506e657f8a6907d08672",
+    "sourceLibraryInventoryDigest": "sha256:868e92dbf4f39fa93b4e41f7464b9989bd9ecb5119a7027626ae0d4e46f4b344",
+    "libraryIdentity": "outside-independent-c-library/2026.10",
+    "archiveDigest": "sha256:2e89d2aac043aedb197460b4fe92e53983f0c8742253db16a17720e2332065b5",
+    "lockDigest": "sha256:c31a358c168d737f426d5d6374d9db4c6135aa8690885c132f6c8e9c9ad54579",
+    "originalHeaderAndResource": "unavailable-after-capture",
+    "directApplicationCalls": [
+      "zserge/jsmn/1.1.0",
+      "outside-independent-c-library/2026.10"
+    ]
+  },
+  "objectAndGeneratorControls": {
+    "status": "passed",
+    "count": 21,
+    "receipt": {
+      "sha256": "sha256:f10372cbb602a4544ebafa0575d9cb245c31fc008ccf334b6a4de596e49e0d23",
+      "bytes": 4044021
+    }
+  },
+  "source": {
+    "receipt": {
+      "sha256": "sha256:9aa26aa1e41c9c2f621b992b4510dc30468db650b7453cf024c3bc340c1b1eea",
+      "bytes": 248998
+    },
+    "invocations": 27,
+    "nodeReaped": true,
+    "cleanNodeShutdown": true,
+    "providerShutdown": {
+      "clean": true,
+      "controlOwners": 0,
+      "connections": 0,
+      "pendingRequests": 0,
+      "runningRequests": 0,
+      "workers": 0,
+      "cleanupJobs": 0,
+      "failedCleanup": 0,
+      "sessions": 0,
+      "handles": 0,
+      "calls": 0,
+      "results": 0,
+      "ioCalls": 0,
+      "ioRetainedBytes": 0,
+      "blobStages": 0,
+      "blobHandles": 0,
+      "blobWork": 0,
+      "secretGenerations": 0,
+      "secretReferences": 0,
+      "streamOwners": 0,
+      "streamConnections": 0,
+      "streamPendingOperations": 0,
+      "streamRetainedChunks": 0,
+      "streamMaintenanceOwners": 0
+    },
+    "peer": {
+      "requests": 8,
+      "authorized": 8,
+      "unexpected": 0,
+      "holds": 3,
+      "closedHolds": 3
+    },
+    "sampleCount": 24,
+    "samplePhases": [
+      "empty",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "after-tutorials",
+      "after-fault-0",
+      "after-fault-1",
+      "after-fault-0",
+      "after-fault-2",
+      "after-fault-0",
+      "after-fault-3",
+      "after-fault-0",
+      "after-deadline",
+      "active-cancel",
+      "after-cancel",
+      "active-disconnect",
+      "after-disconnect",
+      "after-delete"
+    ],
+    "finalCells": [
+      {
+        "accepting": true,
+        "active": 0,
+        "available": 1,
+        "cancellations": "2",
+        "class": "standard",
+        "expired": "0",
+        "granted": "28",
+        "maxWaitMicros": "244",
+        "observationAvailable": true,
+        "oldestLeaseAgeMicros": "0",
+        "quarantined": 0,
+        "queueCapacity": 2,
+        "queueDepth": 0,
+        "queuedTenants": 0,
+        "rejected": "0",
+        "total": 1,
+        "totalWaitMicros": "3472"
+      }
+    ],
+    "physicalObservationLimit": "Finite original inventories and non-atomic Linux process samples; no universal allocation bound or multi-tenant qualification."
+  },
+  "static": {
+    "receipt": {
+      "sha256": "sha256:868c8736cb3d8842c1025c72b26e2d791369892debfab92faaa9a9e5d0a3889c",
+      "bytes": 249043
+    },
+    "invocations": 27,
+    "nodeReaped": true,
+    "cleanNodeShutdown": true,
+    "providerShutdown": {
+      "clean": true,
+      "controlOwners": 0,
+      "connections": 0,
+      "pendingRequests": 0,
+      "runningRequests": 0,
+      "workers": 0,
+      "cleanupJobs": 0,
+      "failedCleanup": 0,
+      "sessions": 0,
+      "handles": 0,
+      "calls": 0,
+      "results": 0,
+      "ioCalls": 0,
+      "ioRetainedBytes": 0,
+      "blobStages": 0,
+      "blobHandles": 0,
+      "blobWork": 0,
+      "secretGenerations": 0,
+      "secretReferences": 0,
+      "streamOwners": 0,
+      "streamConnections": 0,
+      "streamPendingOperations": 0,
+      "streamRetainedChunks": 0,
+      "streamMaintenanceOwners": 0
+    },
+    "peer": {
+      "requests": 8,
+      "authorized": 8,
+      "unexpected": 0,
+      "holds": 3,
+      "closedHolds": 3
+    },
+    "sampleCount": 24,
+    "samplePhases": [
+      "empty",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "dormant",
+      "after-tutorials",
+      "after-fault-0",
+      "after-fault-1",
+      "after-fault-0",
+      "after-fault-2",
+      "after-fault-0",
+      "after-fault-3",
+      "after-fault-0",
+      "after-deadline",
+      "active-cancel",
+      "after-cancel",
+      "active-disconnect",
+      "after-disconnect",
+      "after-delete"
+    ],
+    "finalCells": [
+      {
+        "accepting": true,
+        "active": 0,
+        "available": 1,
+        "cancellations": "2",
+        "class": "standard",
+        "expired": "0",
+        "granted": "28",
+        "maxWaitMicros": "216",
+        "observationAvailable": true,
+        "oldestLeaseAgeMicros": "0",
+        "quarantined": 0,
+        "queueCapacity": 2,
+        "queueDepth": 0,
+        "queuedTenants": 0,
+        "rejected": "0",
+        "total": 1,
+        "totalWaitMicros": "2688"
+      }
+    ],
+    "physicalObservationLimit": "Finite original inventories and non-atomic Linux process samples; no universal allocation bound or multi-tenant qualification."
+  },
+  "boundaries": [
+    "Local ordinary native tuple, no release publication.",
+    "Offline rebuild retained source and SDK identity; binary equality was false and reproducibility is not claimed.",
+    "Actual library executes in greeting; recovery and provider faults use existing maintained C scenarios.",
+    "Installed frontend update/remove/watch and complete private-feed workflow remain unqualified here.",
+    "C pthread/default socket/TLS ports and cross-tenant reuse remain separate open requirements."
+  ]
+}

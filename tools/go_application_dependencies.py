@@ -39,9 +39,10 @@ def selection(value: dict | None = None) -> dict:
     if (not isinstance(tags, list) or len(tags) > 32 or any(not isinstance(tag, str)
             or not re.fullmatch(r'[A-Za-z0-9_]{1,64}', tag) for tag in tags)):
         raise DependencyError('go-build-tags-invalid')
-    if value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or value.get('runtimeProfile', PROFILE) != PROFILE:
+    profile = value.get('runtimeProfile', PROFILE)
+    if value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or profile not in {PROFILE, 'go-component-activation-v1'}:
         raise DependencyError('go-runtime-profile-not-installed')
-    return {'target': 'wasip1/wasm', 'runtimeProfile': PROFILE, 'tags': sorted(set(tags))}
+    return {'target': 'wasip1/wasm', 'runtimeProfile': profile, 'tags': sorted(set(tags))}
 
 
 def json_stream(data: bytes) -> list[dict]:

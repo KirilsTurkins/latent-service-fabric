@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reviewed Go 1.27.2 security update and exact async source assembly; original limits, checked upstream identity and authority remain enforced.",
+  "reviewReason": "Add explicit authenticated activation overlay option; preserve default runtime and all original source hashes",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8e1cbb1ce034c1c036fa8e4450dbfe043a11c06e71cb51ea94bffe3b20b7f518"
+  "sha256": "79977ed138aab680a8ebebdec811e1c1dc7a20057ecd3d98cecbc87f02dc16ce"
 }

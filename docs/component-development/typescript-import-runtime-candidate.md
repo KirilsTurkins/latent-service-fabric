@@ -42,7 +42,12 @@ ordinary failure cases remain guest traps, and both service cases execute a real
 child. The input classification remains unknown/not-evaluated; the finite matrix
 does not upgrade it to a supported distribution.
 
-Broader exhaustion/cancellation/late-wake behavior, default fetch/body ownership,
+The [compiler-owned buffered fetch candidate](typescript-fetch-candidate.md)
+adds automatic global HTTP APIs when this runtime and the exact streaming HTTP
+import are selected. Its native semantic controls are separate from the signed
+matrix above; actual fetch/library/provider qualification remains pending.
+
+Broader exhaustion/cancellation/late-wake behavior, complete default fetch/body ownership,
 complete private/update/watch workflows, automatic runtime selection and clean
 installed distributions remain separate ticket requirements. This page does
 not advertise a supported release or full Node environment.

@@ -92,6 +92,20 @@ pub fn outbound_streams(bytes: Vec<u8>) -> PackageBundle {
     )
 }
 pub fn java_activation_runtime(bytes: Vec<u8>, source: &str) -> PackageBundle {
+    managed_activation_runtime(bytes, source, false)
+}
+pub fn go_activation_runtime(bytes: Vec<u8>, source: &str) -> PackageBundle {
+    managed_activation_runtime(bytes, source, true)
+}
+fn managed_activation_runtime(bytes: Vec<u8>, source: &str, random: bool) -> PackageBundle {
+    let mut imports = vec![
+        ACTIVATION,
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+    ];
+    if random {
+        imports.push("latent:random/random@0.1.0");
+    }
     build(
         "caller",
         bytes,
@@ -103,11 +117,7 @@ pub fn java_activation_runtime(bytes: Vec<u8>, source: &str) -> PackageBundle {
             vec![json!({"name":"which","value_type":"U32","documentation":null})],
             json!("U32"),
         )],
-        &[
-            ACTIVATION,
-            "latent:clock/monotonic@0.1.0",
-            "latent:clock/wall@0.1.0",
-        ],
+        &imports,
     )
 }
 #[expect(

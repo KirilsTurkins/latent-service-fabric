@@ -131,7 +131,7 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     timer = compiler.run("timer-readiness-source-control", "java", "-Xmx256m", "-cp",
                          str(timer_output) + os.pathsep + classpath, "TimerReadinessSourceControl").strip()
     if timer != ("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;"
-                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback"):
+                 "stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback"):
         raise ValueError("Java timer readiness source control did not complete")
     return {"status": "actual-locked-classlib-model-passed", "nativeCallbackPairs": 2,
             "pluginOrder": ["runtime", "platform"], "asyncLoweredOwnedPairs": 2,

@@ -9,6 +9,13 @@ for an editable project, package/sign/admit/deploy/invoke/cleanup path.
 This guest SDK is separate from the external Node client and closed Angular
 renderer. It does not embed Node, a browser, or application-owned host threads.
 
+The explicit source-owned async-import runtime can automatically install the
+[buffered fetch candidate](../../docs/component-development/typescript-fetch-candidate.md)
+under ordinary dependency global lookups when streaming HTTP is declared.
+This implementation candidate has native semantic controls; signed default-client
+and provider qualification remain open under #691. The synchronous profile below
+retains its existing boundaries.
+
 The explicit [transactional aggregate template](../../docs/component-development/transactional-authoring.md)
 adds `state.Command`, `state.Query`, `state.Page` and the logical `intents.Intent`
 builder. Versions remain `Uint8Array`, full-width sequences remain `bigint`,

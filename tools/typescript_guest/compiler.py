@@ -122,7 +122,7 @@ class Compiler:
             self.tools = staged
             self.recipe = isolated_workspace / "compiler-recipe"
             self.recipe.mkdir()
-            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs"):
+            for name in ("bundle.mjs", "componentize.mjs", "signed64.mjs", "resources.mjs", "source_splicer.mjs", "async_waiters.mjs", "fetch.mjs"):
                 (self.recipe / name).write_bytes(read_file(ROOT / "tools/typescript_guest" / name))
         modules = self.tools / "node_modules"
         self.jco = modules / "@bytecodealliance/jco/dist/jco.js"
@@ -298,6 +298,14 @@ class Compiler:
                 if self.runtime_profile in runtime.CLOCK_PROFILES:
                     (directory/'clock-runtime-globals.d.ts').write_bytes(
                         read_file(ROOT/'sdk/typescript-guest/activation/clock-globals.d.ts'))
+        imports = import_identities(binding_graph, binding_world)
+        from tools.typescript_guest import fetch_profile
+        if fetch_profile.selected(self.runtime_profile, imports):
+            declaration = read_file(ROOT/'sdk/typescript-guest/activation/fetch-globals.d.ts')
+            if read_file(work/'vendor/lsf/sdk/typescript-guest/activation/fetch-globals.d.ts') != declaration:
+                raise ValueError('captured TypeScript fetch declarations differ from the selected backend')
+            for directory in (generated, second):
+                (directory/'fetch-runtime-globals.d.ts').write_bytes(declaration)
         first_identity = tree_identity(generated)
         if first_identity != tree_identity(second):
             raise ValueError("generated binding drift between identical inputs")
@@ -306,7 +314,6 @@ class Compiler:
             match = re.search(r"@module Interface ([^ ]+)", path.read_text())
             if match:
                 paths[match[1]] = ["./" + path.relative_to(work).as_posix()]
-        imports = import_identities(binding_graph, binding_world)
         missing = [name for name in imports if name not in paths]
         if missing:
             raise ValueError("unsupported or colliding generated WIT import identities: " + ", ".join(missing))
@@ -324,7 +331,8 @@ class Compiler:
         write_json(allowed, imports)
         bundle = output / "application.mjs"
         bundle_configuration = output / "bundle-configuration.json"
-        write_json(bundle_configuration, application_modules or {})
+        write_json(bundle_configuration, fetch_profile.bundle_configuration(
+            application_modules or {}, self.runtime_profile, imports))
         if self.isolation is not None:
             self.isolation.protect_inputs(work)
         command.run("bundle", self.node, self.recipe / "bundle.mjs", self.esbuild,
