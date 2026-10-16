@@ -38,12 +38,12 @@ async fn all_rust_examples_are_exact_signed_phase2_packages() {
 
 #[path = "guest_sdk/blob.rs"]
 mod blob;
+#[path = "guest_sdk/logging.rs"]
+mod logging;
 #[path = "guest_sdk/metrics.rs"]
 mod metrics;
 #[path = "guest_sdk/random.rs"]
 mod random;
-#[path = "guest_sdk/logging.rs"]
-mod logging;
 #[path = "generic_backend/support.rs"]
 #[allow(dead_code)]
 mod support;
