@@ -234,6 +234,17 @@ panic="abort"
         self.assertEqual(locking.sdk_configuration(value), locking.sdk_configuration(tomllib.loads(self.original.decode())))
         self.assertNotIn('outside', value['dependencies'])
         self.assertIn(b'[workspace.dependencies."wit-bindgen"]\nversion="=0.62.0"', restored)
+        package_profiles = b'\n[profile.dev.package.cranelift-codegen]\nopt-level=3\n[profile.dev.package.wasmparser]\nopt-level=3\n'
+        for original, selected in ((self.original + package_profiles, self.removed),
+                                   (self.original + package_profiles, self.original)):
+            with self.subTest(workspace_changed=original != self.original):
+                repaired = tomllib.loads(locking.preserve_workspace_recipe(original, selected).decode())
+                expected = tomllib.loads(selected.decode())
+                expected['workspace'] = tomllib.loads(original.decode())['workspace']
+                expected['profile'] = tomllib.loads(original.decode())['profile']
+                self.assertEqual(repaired, expected)
+                self.assertEqual(locking.sdk_configuration(repaired),
+                                 locking.sdk_configuration(tomllib.loads(original.decode())))
 
     def test_unchanged_workspace_never_rewrites_native_manifest(self):
         self.assertIs(locking.preserve_workspace_recipe(self.original, self.original), self.original)
@@ -245,10 +256,17 @@ panic="abort"
             self.removed.replace(b'Apache-2.0', b'changed'),
             self.removed.replace(b'panic="abort"', b'panic="unwind"'),
             self.removed.replace(b'name="app"', b'name="changed"'),
+            self.removed + b'\n[profile.dev.package.changed]\nopt-level=3\n',
         ]
         for selected in candidates:
             with self.subTest(selected=selected), self.assertRaisesRegex(DependencyError, 'mutated-sdk-recipe'):
                 locking.preserve_workspace_recipe(self.original, selected)
+        original = self.original + b'\n[profile.dev.package.compiler]\nopt-level=3\n'
+        for selected in (self.removed + b'\n[profile.dev.package.compiler]\nopt-level=1\n',
+                         self.removed + b'\n[profile.dev]\nopt-level=3\n',
+                         self.removed.replace(b'panic="abort"', b'panic="unwind"')):
+            with self.subTest(selected=selected), self.assertRaisesRegex(DependencyError, 'mutated-sdk-recipe'):
+                locking.preserve_workspace_recipe(original, selected)
 
     def test_inline_layout_and_header_like_string_content_cannot_change_unrelated_semantics(self):
         original = b'workspace={dependencies={serde="=1.0.229"}}\n[package]\nname="app"\n'

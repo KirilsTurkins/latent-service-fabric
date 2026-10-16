@@ -93,7 +93,7 @@ def sdk_configuration(value):
 
 
 def workspace_sections(raw: bytes) -> tuple[str, str]:
-    """Separate explicit workspace tables; final semantic equality is mandatory."""
+    """Separate explicit immutable recipe tables; final equality is mandatory."""
     workspace, remainder, selected = [], [], False
     for line in raw.decode('utf-8').splitlines(keepends=True):
         if re.match(r'^\s*\[', line):
@@ -102,28 +102,47 @@ def workspace_sections(raw: bytes) -> tuple[str, str]:
             except tomllib.TOMLDecodeError:
                 pass
             else:
-                selected = set(header) == {'workspace'}
+                selected = set(header) in ({'workspace'}, {'profile'})
         (workspace if selected else remainder).append(line)
     return ''.join(workspace), ''.join(remainder)
 
 
 def preserve_workspace_recipe(original: bytes, selected: bytes) -> bytes:
-    """Undo only Cargo remove's pruning of unchanged workspace dependencies."""
+    """Undo only Cargo remove's unused dependencies/package-profile pruning."""
     before, after = tomllib.loads(original.decode()), tomllib.loads(selected.decode())
     prior, current = before.get('workspace', {}), after.get('workspace', {})
-    if prior == current:
+    prior_profiles, current_profiles = before.get('profile', {}), after.get('profile', {})
+    if prior == current and prior_profiles == current_profiles:
         return selected
     if not isinstance(prior, dict) or not isinstance(current, dict):
         raise DependencyError('cargo-native-authoring-mutated-sdk-recipe')
     prior_dependencies, current_dependencies = prior.get('dependencies', {}), current.get('dependencies', {})
-    if (not isinstance(prior_dependencies, dict) or not isinstance(current_dependencies, dict)
+    if prior != current and (not isinstance(prior_dependencies, dict) or not isinstance(current_dependencies, dict)
             or not prior_dependencies or len(current_dependencies) >= len(prior_dependencies)
             or any(name not in prior_dependencies or prior_dependencies[name] != value
                    for name, value in current_dependencies.items())
             or {name: value for name, value in prior.items() if name != 'dependencies'}
                != {name: value for name, value in current.items() if name != 'dependencies'}):
         raise DependencyError('cargo-native-authoring-mutated-sdk-recipe')
+    if not isinstance(prior_profiles, dict) or not isinstance(current_profiles, dict):
+        raise DependencyError('cargo-native-authoring-mutated-sdk-recipe')
+    for name in set(prior_profiles) | set(current_profiles):
+        original_profile, selected_profile = prior_profiles.get(name), current_profiles.get(name, {})
+        if original_profile == selected_profile:
+            continue
+        if not isinstance(original_profile, dict) or not isinstance(selected_profile, dict):
+            raise DependencyError('cargo-native-authoring-mutated-sdk-recipe')
+        original_packages, selected_packages = original_profile.get('package', {}), selected_profile.get('package', {})
+        if (not isinstance(original_packages, dict) or not isinstance(selected_packages, dict)
+                or not original_packages or len(selected_packages) >= len(original_packages)
+                or any(package not in original_packages or original_packages[package] != value
+                       for package, value in selected_packages.items())
+                or {key: value for key, value in original_profile.items() if key != 'package'}
+                   != {key: value for key, value in selected_profile.items() if key != 'package'}):
+            raise DependencyError('cargo-native-authoring-mutated-sdk-recipe')
     expected = dict(after, workspace=prior)
+    if 'profile' in before:
+        expected['profile'] = prior_profiles
     if sdk_configuration(expected) != sdk_configuration(before):
         raise DependencyError('cargo-native-authoring-mutated-sdk-recipe')
     original_workspace, _ = workspace_sections(original)
