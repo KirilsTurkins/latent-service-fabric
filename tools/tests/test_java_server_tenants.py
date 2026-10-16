@@ -84,8 +84,8 @@ class SharedTenantServer(unittest.TestCase):
             selected = json.loads((output / "deployment.json").read_bytes())
             deployment["metadata"]["tenant"] = "examples"
             self.assertEqual(selected, deployment)
-            from tools.java_server_tenants import foreign_deployment
-            foreign = foreign_deployment(selected)
+            from tools.java_server_tenants import select_foreign_deployment
+            foreign = select_foreign_deployment(selected)
             self.assertEqual(foreign["metadata"]["tenant"], "foreign")
             self.assertEqual(foreign["metadata"]["name"], selected["metadata"]["name"] + "-foreign")
             self.assertEqual(foreign["spec"], selected["spec"])
@@ -96,6 +96,47 @@ class SharedTenantServer(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "tenant-isolation-neutral-deployment"):
                 select_initial_tenant(output / "deployment.json")
             self.assertEqual((output / "deployment.json").read_bytes(), selected_bytes)
+
+    def test_actual_tenant_workflow_creates_a_distinct_foreign_object_before_routes(self):
+        from unittest.mock import Mock, patch
+        from tools.phase2_operator_process import write_json
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fixture, client_root, route_root = (root / name for name in ("fixture", "client", "routes"))
+            for directory in (fixture, client_root, route_root):
+                directory.mkdir(mode=0o700)
+            write_json(fixture / "release-set.json", {"tenant": None, "tenants": ["examples", "foreign"],
+                "trust": "isolated-neutral-server-two-tenant-test-only"})
+            name = "tenant-isolation-server"
+            package = fixture / name
+            package.mkdir()
+            source = {"metadata": {"name": name, "tenant": "examples"},
+                "spec": {"service": name, "grants": [], "resources": {"outboundRequests": 0}}}
+            write_json(package / "deployment.json", source)
+            original = (package / "deployment.json").read_bytes()
+            client = SimpleNamespace(directory=client_root, executable="unused",
+                cancellation=None, deadline=0)
+            foreign = SimpleNamespace(directory=client_root / "foreign", call=Mock(return_value={
+                "data": {"operation": {"publication": {"id": "foreign-publication"}}}}))
+            captured = []
+            def deploy(selected_client, path, publication):
+                self.assertIs(selected_client, foreign)
+                self.assertEqual(publication, "foreign-publication")
+                captured.append(json.loads(path.read_bytes()))
+                return {"name": captured[-1]["metadata"]["name"], "generation": "1"}
+            with patch("tools.java_server_tenants.RecordingClient", return_value=foreign), \
+                    patch("tools.java_server_tenants.deploy", side_effect=deploy), \
+                    patch("tools.java_server_tenants.RecordedRouteClient", side_effect=RuntimeError("route-boundary")), \
+                    self.assertRaisesRegex(RuntimeError, "^route-boundary$"):
+                TenantControls(fixture)(client=client, node=SimpleNamespace(startup_record={"endpoint": "127.0.0.1:1"}),
+                    record={"name": name}, publication="examples-publication", deployment={},
+                    build=root / "unused-build", routes=SimpleNamespace(root=route_root, remove=Mock()),
+                    manifests=[], mounts={}, route_client=None, evidence=root / "evidence",
+                    check=None, denied_without_cell=None, grants=[], tls_context=object())
+            self.assertEqual(len(captured), 1)
+            self.assertEqual(captured[0]["metadata"], {"name": name + "-foreign", "tenant": "foreign"})
+            self.assertEqual(captured[0]["spec"], source["spec"])
+            self.assertEqual((package / "deployment.json").read_bytes(), original)
 
     def test_grants_require_exact_descriptor_tenant_and_separate_trigger_and_publication(self):
         with tempfile.TemporaryDirectory() as temporary:

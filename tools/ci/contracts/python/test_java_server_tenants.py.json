@@ -1,5 +1,6 @@
 {
   "cases": [
+    "SharedTenantServer.test_actual_tenant_workflow_creates_a_distinct_foreign_object_before_routes",
     "SharedTenantServer.test_grants_require_exact_descriptor_tenant_and_separate_trigger_and_publication",
     "SharedTenantServer.test_neutral_project_retains_original_sdk_helper_and_zero_egress_limits",
     "SharedTenantServer.test_original_standard_api_handler_compiles_with_published_jdk_surface",
@@ -71,10 +72,22 @@
         "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ]
+    },
+    "SharedTenantServer.test_actual_tenant_workflow_creates_a_distinct_foreign_object_before_routes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_java_server_tenants.py",
-  "reviewReason": "Keep all original tenant controls and add real shared emitter regression for neutral unqualified service metadata",
+  "reviewReason": "Exercise the actual tenant workflow through independent foreign object creation; retain all original test execution guards",
   "schemaVersion": "latent.ci.contracts.v1"
 }

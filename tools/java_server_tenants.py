@@ -16,7 +16,7 @@ from tools.rust_capsule_project import read_file
 FOREIGN_TOKEN = "LSF-PUBLIC-JAVA-SERVER-FOREIGN-TEST-ONLY"
 
 
-def foreign_deployment(source):
+def select_foreign_deployment(source):
     require(source["metadata"].get("tenant") == "examples", "tenant-isolation-original-deployment-scope")
     selected = json.loads(json.dumps(source))
     # Deployment IDs share one catalog. A second tenant creates its own
@@ -82,7 +82,7 @@ class TenantControls:
             "--expected-generation", "0", timeout=125)
         foreign_publication = published["data"]["operation"]["publication"]["id"]
         require(foreign_publication != publication, "tenant-isolation-publication-scopes-must-differ")
-        foreign_source = foreign_deployment(read_json(package / "deployment.json"))
+        foreign_source = select_foreign_deployment(read_json(package / "deployment.json"))
         foreign_manifest = foreign_directory / "deployment.json"
         write_json(foreign_manifest, foreign_source)
         foreign_deployment = deploy(foreign, foreign_manifest, foreign_publication)
