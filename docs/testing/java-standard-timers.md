@@ -81,7 +81,8 @@ limits and the 55-minute job remain intact. This source control verifies the
 existing 70-JAR compiler lock (33,296,002 bytes) before loading the dependency
 analyzer; it executes no Wasm or application initializer. See the
 [failure and compiler regression evidence](evidence/java-standard-timer-worker-2026-10-16.json).
-Fresh signed execution remains required for the correction.
+This compiler control alone did not qualify signed timer execution; the later
+maintained execution is recorded below.
 
 The next hosted attempt stopped before compilation of the timer fixture: the
 model helper demanded every reviewed JAR, while the C compiler had resolved 26
@@ -95,8 +96,21 @@ the old missing-JAR failure, then passed the unchanged model and actual C
 dependency-analysis controls with the correction. No dependency was acquired
 for that host check. The [resolved-closure evidence](evidence/java-standard-timer-resolved-closure-2026-10-16.json)
 records the retained inputs and the distinction between reconstruction and the
-hosted cache, whose full member inventory was not uploaded. Fresh signed Timer
-execution remains pending.
+hosted cache, whose full member inventory was not uploaded. These dated controls
+retain their original scope.
+
+The later [full Java job passed](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38967705374/job/117198192508)
+at source `c7cd14cf284236a9558cb1a8c9e1462eb4ea5c22`, testing merge
+`e2743d1a4410e567a503d2ebf52ca1ed8ea393ea`. The Timer component
+`sha256:fbdde7e44564d1dee10ccace72242714807b0f153ff355a38eed48f9e30cea92`
+passed all four modes in three fresh activations each, with the unchanged owner,
+fuel, memory, deadline and physical-idle checks above. All twelve SDK runtime
+tests passed with no ignores. Retained receipts verify unchanged before/after
+inputs, 354 authoring source paths, all 359 selected Git paths and nineteen
+recipe inputs. All selected paths match the tested merge and reviewed current
+development composition. These observations bind to those exact source and
+compiler inputs; future changes to selected inputs require their own
+qualification. They do not establish release installation or publication.
 
 This slice does not complete issue #741. Fiber-aware pending host I/O, two
 unchanged published libraries that create default workers, the broader
