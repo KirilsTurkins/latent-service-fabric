@@ -74,6 +74,24 @@ class DotnetDependencyWatchFixture(unittest.TestCase):
             self.assertIn('Result<string,string>', source)
             self.assertIn('calls++ != 0', source)
             self.assertNotIn('unsafe', source)
+        from tools.dotnet_guest import project
+        from tools.dotnet_guest.runtime import RANDOM
+        from tools.rust_capsule_project import snapshot
+        with tempfile.TemporaryDirectory() as temporary:
+            app = project.create(Path(temporary) / 'application', 'greeting')
+            before = snapshot(app / 'vendor')
+            fixture.declare_entropy(app)
+            self.assertIn('import ' + RANDOM + ';', (app / 'wit/world.wit').read_text())
+            self.assertEqual(snapshot(app / 'wit/deps/random'),
+                             snapshot(app / 'vendor/lsf/wit/platform/random'))
+            self.assertEqual(snapshot(app / 'vendor'), before)
+            with self.assertRaisesRegex(ValueError, 'fixture-world'):
+                fixture.declare_entropy(app)
+            world = (app / 'wit/world.wit').read_bytes()
+            next((app / 'vendor/lsf/wit/platform/random').rglob('*.wit')).write_bytes(b'changed')
+            with self.assertRaisesRegex(ValueError, 'vendored SDK changed'):
+                fixture.declare_entropy(app)
+            self.assertEqual((app / 'wit/world.wit').read_bytes(), world)
 
     def test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved(self):
         from tools.qualify_dotnet_dependency_watch import ShutdownOnce
@@ -175,15 +193,7 @@ class FrontendRuntime(unittest.TestCase):
             python = Path(sys.executable)
             args = SimpleNamespace(helper=helper,
                 helper_sha256='sha256:' + hashlib.sha256(helper.read_bytes()).hexdigest())
-            tree = ast.parse(Path(qualifier.__file__).read_text())
-            expressions = [node for node in ast.walk(tree)
-                if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
-                and isinstance(node.value.func, ast.Attribute)
-                and isinstance(node.value.func.value, ast.Name)
-                and node.value.func.value.id == 'frontend' and node.value.func.attr == 'write_text']
-            self.assertEqual(len(expressions), 1)
-            exec(compile(ast.Module(body=expressions, type_ignores=[]), '<actual-frontend>', 'exec'),
-                {'frontend': frontend, 'python': python, 'args': args, 'events': events})
+            qualifier.write_frontend(frontend, python, args, events)
             header = frontend.read_text().splitlines()[0]
             self.assertTrue(header.startswith('#!' + str(python)))
             argument = header[len('#!' + str(python)):].strip()

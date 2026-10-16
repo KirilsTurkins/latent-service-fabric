@@ -45,6 +45,24 @@ class ShutdownOnce:
         return operation()
 
 
+def write_frontend(frontend, python, args, events):
+    frontend.write_text('#!' + str(python) + ' -IB' + '''
+import hashlib,io,pathlib,sys
+p=pathlib.Path(''' + repr(str(args.helper)) + ''')
+assert 'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()==''' + repr(args.helper_sha256) + '''
+class Tee(io.RawIOBase):
+    def writable(self): return True
+    def write(self,raw):
+        with open(''' + repr(str(events)) + ''','ab',buffering=0) as out: out.write(raw)
+        sys.__stdout__.buffer.write(raw); sys.__stdout__.buffer.flush()
+        return len(raw)
+sys.stdout=io.TextIOWrapper(Tee(),encoding='utf-8',write_through=True)
+sys.path.insert(0,str(p))
+from tools.dev_workflow.cli import main
+raise SystemExit(main())
+''', encoding='utf-8')
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--installed', required=True, type=Path)
@@ -204,21 +222,7 @@ def main() -> int:
     try:
         # No controller or recipe is imported from a checkout. The explicit
         # wrapper verifies the helper and delegates to its unchanged CLI.
-        frontend.write_text('#!' + str(python) + ' -IB' + '''
-import hashlib,io,pathlib,sys
-p=pathlib.Path(''' + repr(str(args.helper)) + ''')
-assert 'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()==''' + repr(args.helper_sha256) + '''
-class Tee(io.RawIOBase):
-    def writable(self): return True
-    def write(self,raw):
-        with open(''' + repr(str(events)) + ''','ab',buffering=0) as out: out.write(raw)
-        sys.__stdout__.buffer.write(raw); sys.__stdout__.buffer.flush()
-        return len(raw)
-sys.stdout=io.TextIOWrapper(Tee(),encoding='utf-8',write_through=True)
-sys.path.insert(0,str(p))
-from tools.dev_workflow.cli import main
-raise SystemExit(main())
-''', encoding='utf-8')
+        write_frontend(frontend, python, args, events)
         frontend.chmod(0o700)
         report['frontend'] = digest(frontend)
         template_entry = decode((installed / 'templates.json').read_bytes())['templates']['greeting']

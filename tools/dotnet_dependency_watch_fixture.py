@@ -55,6 +55,29 @@ def verify_compiler_copy(original: Path, captured: Path, expected: dict) -> None
         raise ValueError('delivered library compiler identity changed')
 
 
+def declare_entropy(app: Path) -> None:
+    """Author this fixture's explicit world from the delivered immutable SDK."""
+    from tools.dotnet_guest.project import validate_sdk_inputs
+    from tools.dotnet_guest.runtime import RANDOM
+    from tools.rust_capsule_project import snapshot
+    files = snapshot(app)
+    _lock, vendor, _pins = validate_sdk_inputs(files)
+    world = files['wit/world.wit'].decode('utf-8')
+    if world.count('world service {') != 1 or RANDOM in world:
+        raise ValueError('dotnet-entropy-fixture-world')
+    selected = {name.removeprefix('wit/platform/random/'): raw for name, raw in vendor.items()
+                if name.startswith('wit/platform/random/')}
+    if not selected:
+        raise ValueError('dotnet-entropy-fixture-sdk-wit-missing')
+    (app / 'wit/world.wit').write_text(world.replace('world service {',
+        'world service {\n    import ' + RANDOM + ';'), encoding='utf-8', newline='\n')
+    for name, raw in selected.items():
+        path = app / 'wit/deps/random' / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open('xb') as stream:
+            stream.write(raw)
+
+
 def prepare(app: Path, output: Path, tools: Path, dotnet: Path, sdk_bin: Path, recipe: Path) -> None:
     if output.exists():
         raise ValueError('fresh library preparation required')
@@ -62,9 +85,8 @@ def prepare(app: Path, output: Path, tools: Path, dotnet: Path, sdk_bin: Path, r
     sys.path.insert(0, str(recipe))
     from tools.build_observation import build_environment, file_identity
     from tools.dotnet_guest.compiler import Compiler
-    from tools.dotnet_guest.entropy_grants import declare
     from tools.rust_capsule_build import Commands
-    declare(app)
+    declare_entropy(app)
     compiler_identity = file_identity(dotnet, 'delivered-dotnet')
     records = []
     for number in (1, 2):
