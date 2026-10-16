@@ -40,6 +40,10 @@
           "tools/application_dependenc*.py",
           "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
+          "tools/build_typescript_promise_library.py",
+          "tools/build_typescript_native_engine.py",
+          "tools/tests/test_typescript_native_build.py",
+          "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
           "tools/qualify_typescript_dependencies.py",
           "tools/tests/test_typescript_application_dependencies.py",
@@ -83,6 +87,10 @@
           "tools/application_dependenc*.py",
           "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
+          "tools/build_typescript_promise_library.py",
+          "tools/build_typescript_native_engine.py",
+          "tools/tests/test_typescript_native_build.py",
+          "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
           "tools/qualify_typescript_dependencies.py",
           "tools/tests/test_typescript_application_dependencies.py",
@@ -107,9 +115,10 @@
     }
   },
   "requiredJobs": [
-    "boundary"
+    "boundary",
+    "promise-library"
   ],
-  "reviewReason": "Extend both push and pull-request paths for the maintained npm library integrity qualifier and its new negative native-selection controls; preserve existing triggers, permissions, concurrency and required boundary job.",
+  "reviewReason": "Compose both npm integrity and source-engine trigger sets; preserve the exact merged boundary definition and original 75-minute limit, permissions, concurrency and separate 60-minute Promise source-build job.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
