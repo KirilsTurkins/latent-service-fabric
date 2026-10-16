@@ -170,7 +170,13 @@ pub(super) async fn begin_operation(
             },
         )?;
     }
-    let accepted = audit.try_reserve_critical(&attempt)?.begin().wait().await?;
+    // This bounded control request is outside policy/native publication fences.
+    // Synchronize with journal bookkeeping before checking its actual capacity.
+    let accepted = audit
+        .reserve_control_critical(&attempt)?
+        .begin()
+        .wait()
+        .await?;
     Ok(Pending {
         attempt: Some(accepted),
         identities,
