@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Run explicit native Cargo lock before each initial/update/remove capture review",
+  "reviewReason": "Never replay uncertain external down in Rust watch qualification cleanup",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0dc45e073df4c5c642a07fdbc61eb33d3d49e16092b991192449dd30bbd3cd60"
+  "sha256": "613569143c38bf33745c7927888a40484a3c4624126c06490dd940851f56454d"
 }
