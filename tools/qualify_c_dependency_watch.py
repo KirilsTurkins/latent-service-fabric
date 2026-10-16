@@ -34,6 +34,12 @@ def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
 
 
+def shutdown_once(attempts: set[str], workspace: str, dispatch):
+    require(workspace not in attempts, 'normal-down-already-attempted')
+    attempts.add(workspace)
+    return dispatch()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--installed', required=True, type=Path)
@@ -81,6 +87,7 @@ def main() -> int:
     controller = root / 'controller'
     workspace_prefix = 'test-c-lib-' + root.name
     workspace_name = workspace_prefix + '-initial'
+    shutdown_attempts: set[str] = set()
     application = root / 'application'
     env = {'PATH': '/nonexistent', 'HOME': str(Path.home()), 'LANG': 'C.UTF-8',
            'TMPDIR': str(root), 'TEMP': str(root), 'TMP': str(root)}
@@ -102,8 +109,13 @@ def main() -> int:
         return command(label, [python, '-I', '-B', c_cli, *arguments])
 
     def front(label, operation, *arguments):
-        return command(label, [frontend, '--state-root', controller, 'dev', operation,
-                               '--workspace', workspace_name, *arguments])
+        def dispatch():
+            return command(label, [frontend, '--state-root', controller, 'dev', operation,
+                                   '--workspace', workspace_name, *arguments])
+        if operation == 'down':
+            report['cleanup'] = 'unconfirmed'
+            return shutdown_once(shutdown_attempts, workspace_name, dispatch)
+        return dispatch()
 
     def observed():
         raw = events.read_bytes() if events.exists() else b''
@@ -183,6 +195,7 @@ def main() -> int:
         watcher.wait(timeout=30)
         require(watcher.returncode == 0, 'c-authoring-watch-did-not-complete-normally')
         report.setdefault('shutdowns', []).append({'id': label, 'result': stopped, 'watchExitCode': watcher.returncode})
+        report['cleanup'] = 'confirmed-normal-down'
 
     try:
         # No controller or recipe is imported from a checkout. The explicit
@@ -302,6 +315,7 @@ raise SystemExit(main())
             helper=args.helper_sha256, sourceProbe=args.source_probe_sha256,
             outsideInputs=report.get('outsideInputs', {}),
             originalInputsRemovedBeforeCompile=report.get('originalInputsRemovedBeforeCompile', False),
+            normalDownAttempts=len(shutdown_attempts), cleanup=report.get('cleanup', 'not-performed'),
             deploymentCount=len(report['stages']),
             shutdowns=[{'id': row['id'], 'watchExitCode': row['watchExitCode'],
                         'state': row['result']['state'], 'reaped': row['result']['reaped'],

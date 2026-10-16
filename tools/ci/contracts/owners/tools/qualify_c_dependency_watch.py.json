@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind every explicit C watch fixture to reviewed source fingerprints while retaining all previous CI commands and guards",
+  "reviewReason": "Fence normal down before dispatch on the original workspace; preserve uncertain failure and never retry external shutdown during observer cleanup",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9ebb9bc0512a49ec2a1cbe50f16230dc915a1789cffe674f24fc0ae19eb03ff0"
+  "sha256": "8fc4e725527c7aa8585ee3f41591aa7efd9a60df57715959cdb78c667bc14b53"
 }

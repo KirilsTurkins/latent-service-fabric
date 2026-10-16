@@ -1,5 +1,7 @@
 {
   "cases": [
+    "ShutdownFence.test_confirmed_shutdown_is_once_per_distinct_workspace_and_keeps_original_receipt",
+    "ShutdownFence.test_uncertain_shutdown_preserves_original_error_and_never_replays_dispatch",
     "WatchInputs.test_both_revisions_capture_offline_without_changing_sdk_or_adding_catalogue_entries",
     "WatchInputs.test_closed_remove_requires_new_review_and_retains_sdk_bytes",
     "WatchInputs.test_unexpected_original_input_is_preserved_instead_of_removed"
@@ -11,11 +13,11 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
         "class:setup-sha256:309c259d007a6193336966fd71164963ac30d33a7532a3e5e34db1f10b614560"
-      ],
-      "skipSites": []
+      ]
     },
     "WatchInputs.test_closed_remove_requires_new_review_and_retains_sdk_bytes": {
       "bases": [
@@ -23,11 +25,11 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
         "class:setup-sha256:309c259d007a6193336966fd71164963ac30d33a7532a3e5e34db1f10b614560"
-      ],
-      "skipSites": []
+      ]
     },
     "WatchInputs.test_unexpected_original_input_is_preserved_instead_of_removed": {
       "bases": [
@@ -35,15 +37,39 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
         "class:setup-sha256:309c259d007a6193336966fd71164963ac30d33a7532a3e5e34db1f10b614560"
+      ]
+    },
+    "ShutdownFence.test_uncertain_shutdown_preserves_original_error_and_never_replays_dispatch": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "ShutdownFence.test_confirmed_shutdown_is_once_per_distinct_workspace_and_keeps_original_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_c_dependency_watch_fixture.py",
-  "reviewReason": "Verify ordinary outside C transitive library capture update removal and immutable SDK with all existing tests retained",
+  "reviewReason": "Preserve original capture update remove guards and add two unguarded original-error/receipt and once-per-workspace shutdown controls",
   "schemaVersion": "latent.ci.contracts.v1"
 }

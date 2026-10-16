@@ -80,5 +80,35 @@ class WatchInputs(unittest.TestCase):
         self.assertTrue((path.parent / 'owned_api.h').exists())
 
 
+class ShutdownFence(unittest.TestCase):
+    def test_uncertain_shutdown_preserves_original_error_and_never_replays_dispatch(self):
+        from tools.qualify_c_dependency_watch import shutdown_once
+        attempts, calls = set(), []
+        original = RuntimeError('original-uncertain-down')
+        def dispatch():
+            calls.append('down')
+            raise original
+        with self.assertRaises(RuntimeError) as observed:
+            shutdown_once(attempts, 'initial', dispatch)
+        self.assertIs(observed.exception, original)
+        with self.assertRaisesRegex(ValueError, 'normal-down-already-attempted'):
+            shutdown_once(attempts, 'initial', dispatch)
+        self.assertEqual(calls, ['down'])
+        self.assertEqual(attempts, {'initial'})
+
+    def test_confirmed_shutdown_is_once_per_distinct_workspace_and_keeps_original_receipt(self):
+        from tools.qualify_c_dependency_watch import shutdown_once
+        attempts, calls = set(), []
+        receipt = {'state': 'stopped', 'reaped': True, 'cleanShutdown': True}
+        def dispatch():
+            calls.append('down')
+            return receipt
+        for workspace in ('initial', 'updated', 'removed'):
+            self.assertIs(shutdown_once(attempts, workspace, dispatch), receipt)
+            with self.assertRaisesRegex(ValueError, 'normal-down-already-attempted'):
+                shutdown_once(attempts, workspace, dispatch)
+        self.assertEqual(calls, ['down'] * 3)
+
+
 if __name__ == '__main__':
     unittest.main()
