@@ -296,6 +296,10 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             if 'directory' in source:
                 source['directory'] = 'dependencies/cargo-vendor'
         graph['sourceReplacement'] = config
+        # Cargo's vendor source replacements use registry URLs. Application
+        # manifests still refer to named aliases; preserve their public mapping
+        # so offline compilation never needs an ambient Cargo configuration.
+        graph['registries'] = registries
         graph['selection'] = selected
         prefix = project.relative_to(owner).as_posix() + '/' if project != owner else ''
         native_names = ['Cargo.lock', 'cargo-resolved.lock.json'] + ([trust_name] if trust_name else [])
@@ -382,6 +386,19 @@ def configure(closure, work: Path, home: Path) -> tuple[bytes, dict]:
     (work / 'Cargo.toml').write_bytes(adapted)
     source = graph['sourceReplacement'].get('source', {})
     lines = []
+    registries = graph.get('registries', {})
+    if not isinstance(registries, dict) or len(registries) > 16:
+        raise DependencyError('cargo-captured-registry-configuration-invalid')
+    for name, value in registries.items():
+        if (not re.fullmatch(r'[a-z][a-z0-9_-]{0,63}', name) or not isinstance(value, dict)
+                or set(value) != {'index'} or not isinstance(value['index'], str)):
+            raise DependencyError('cargo-captured-registry-configuration-invalid')
+        parsed = urlsplit(value['index'].removeprefix('sparse+'))
+        if (parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password
+                or parsed.query or parsed.fragment):
+            raise DependencyError('cargo-captured-registry-configuration-invalid')
+        # Authentication providers and CA selection belong only to resolution.
+        lines += ['[registries.' + json.dumps(name) + ']', 'index = ' + json.dumps(value['index'])]
     for name, value in source.items():
         lines.append('[source.' + json.dumps(name) + ']')
         for key, item in value.items():

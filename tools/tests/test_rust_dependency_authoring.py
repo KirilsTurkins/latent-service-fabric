@@ -433,6 +433,28 @@ class RustDependencyAuthoring(unittest.TestCase):
             self.assertFalse(candidate.exists())
             self.assertEqual({name: (self.owner / name).read_bytes() for name in before}, before)
 
+    def test_captured_private_alias_survives_offline_config_without_auth_or_tls_credentials(self):
+        import tomllib
+        registries = self.root / 'private-registry.json'
+        index = 'sparse+https://registry.example.invalid/index/'
+        registries.write_bytes(canonical({'registries': {'team': {'index': index}}}))
+        with patch.dict(os.environ, {'CARGO_REGISTRIES_TEAM_TOKEN': 'private-registry-secret'}):
+            candidate, _lock = self.capture(registry_config=registries)
+            authoring.review(self.owner, candidate, digest(candidate.read_bytes()))
+            work, output, home = (self.root / name for name in ('offline-work', 'offline-output', 'offline-home'))
+            work.mkdir(); output.mkdir()
+            (work / 'Cargo.toml').write_bytes((self.app / 'Cargo.toml').read_bytes())
+            closure = inputs.prepare(self.owner, work, output, 'rust')
+            _adapted, receipt = native.configure(closure, work, home)
+        raw = (home / 'config.toml').read_bytes()
+        selected = tomllib.loads(raw.decode())
+        self.assertEqual(selected['registries'], {'team': {'index': index}})
+        self.assertTrue(selected['net']['offline'])
+        self.assertNotIn('private-registry-secret', raw.decode())
+        self.assertNotIn('credential-provider', raw.decode())
+        self.assertNotIn('http', selected)
+        self.assertFalse(receipt['networkResolution'])
+
     def test_outside_path_matching_sdk_coordinates_cannot_bypass_executable_approval(self):
         import tomllib
         baseline = tomllib.loads((project.ROOT / 'tools/rust_capsule.lock').read_text())['package']

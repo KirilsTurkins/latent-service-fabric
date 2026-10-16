@@ -34,6 +34,15 @@ enabled, rechecks both copies, and records their original digest and policy. It
 does not change machine trust or inherit ambient Cargo TLS overrides. Changed
 certificate bytes require another explicit resolution and lock review. This
 trust input approves no runtime effect and provides no registry token to a guest.
+The native graph retains public registry-alias/index mappings so ordinary
+`registry = "team"` declarations still resolve against their captured vendor
+sources offline. Build configuration contains those mappings and enforced
+offline selection, without registry credentials or TLS acquisition policy.
+
+The [private Cargo programme](../testing/rust-private-dependency-ingestion.md)
+uses an actual authenticated HTTPS sparse registry, original archives and an
+offline signed-node build. Its source and hosted receipts retain their own
+qualification boundary; adding the programme does not assert a successful run.
 
 Outside-project path manifests receive an automatic path-relocation transformation. Original source and original manifest bytes remain in the content store; the selected adapted bytes, preimages, recipe and selection are captured separately. A native path/source change requires resolve and lock review. Ordinary builds need only the captured bytes, so deleted original local paths and absent network caches do not resolve a new graph.
 
