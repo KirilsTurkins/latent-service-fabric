@@ -6,6 +6,12 @@ gate. This is one slice of [#741](https://github.com/KirilsTurkins/latent-servic
 [#736](https://github.com/KirilsTurkins/latent-service-fabric/issues/736) and
 [#744](https://github.com/KirilsTurkins/latent-service-fabric/issues/744).
 
+The [first hosted attempt](evidence/java-fiber-host-io-failed-2026-10-16.json)
+stopped in the existing UTF-8 source control before component compilation. Its
+minimal TeaVM `Address` declaration now includes `toInt()`, matching the real
+dependency. All 9,466 original UTF-8 cases pass on JDK 25.0.3. The maintained
+Linux gate must still establish canonical suspension and signed execution.
+
 The explicit `teavm-activation-fibers-io-v1` selection uses the existing Java
 compiler, the original declared WIT and the owned activation fibers. Normal
 `tools/java_capsule.py build --runtime-profile teavm-activation-fibers-io-v1`
