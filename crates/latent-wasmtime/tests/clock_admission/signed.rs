@@ -4,7 +4,7 @@ use latent_core::PlatformError;
 use latent_manifest::{JsonManifestCodec, ManifestCodec};
 use latent_policy::supply_chain::{SupplyChainAuthority, SupplyChainClock, SystemSupplyChainClock};
 use serde_json::json;
-use std::sync::{atomic::AtomicU64, mpsc};
+use std::sync::{atomic::AtomicU64, mpsc, Mutex};
 
 #[path = "../guest_sdk/package.rs"]
 mod package;

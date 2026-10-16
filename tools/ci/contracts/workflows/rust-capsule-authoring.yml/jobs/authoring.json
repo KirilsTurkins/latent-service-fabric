@@ -5,7 +5,6 @@
   "definition": {
     "name": "Standalone Rust capsule authoring",
     "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 35,
     "steps": [
       {
         "uses": "actions/checkout",
@@ -30,15 +29,15 @@
         "name": "Restore compiled Rust dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
-          "prefix-key": "lsf-ci-dependencies-v2",
-          "shared-key": "host-correctness",
-          "key": "ubuntu-24.04",
-          "cache-targets": true,
-          "cache-bin": false,
-          "cache-workspace-crates": false,
           "cache-all-crates": false,
+          "cache-bin": false,
           "cache-on-failure": false,
-          "save-if": false
+          "cache-targets": true,
+          "cache-workspace-crates": false,
+          "key": "ubuntu-24.04",
+          "prefix-key": "lsf-ci-dependencies-v2",
+          "save-if": false,
+          "shared-key": "host-correctness"
         }
       },
       {
@@ -62,10 +61,10 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\ncargo fetch --locked\n"
       },
       {
-        "name": "Test standalone validation and process ownership",
         "env": {
           "LSF_REQUIRE_COMPILER_ISOLATION": "1"
         },
+        "name": "Test standalone validation and process ownership",
         "run": "python3 -m unittest tools.tests.test_rust_capsule_authoring tools.tests.test_build_process\n"
       },
       {
@@ -77,10 +76,10 @@
         "run": "python3 -m unittest tools.tests.test_rust_dependency_authoring tools.tests.test_guest_authoring_frontend"
       },
       {
-        "name": "Qualify proposed transaction shapes with the maintained Rust compiler and HTTP preparation",
         "env": {
           "LSF_TRANSACTION_PREPARATION_REPORT": "${{ runner.temp }}/transaction-contract-rust/preparation.json"
         },
+        "name": "Qualify proposed transaction shapes with the maintained Rust compiler and HTTP preparation",
         "run": "python3 tools/generate_transaction_contracts.py --check\npython3 tools/qualify_transaction_contracts.py --language rust --output \"$RUNNER_TEMP/transaction-contract-rust\"\ncargo test --locked -p latent-wasmtime --lib values::tests::transactions -- --nocapture\n"
       },
       {
@@ -88,11 +87,15 @@
         "run": "python3 tools/compile_transaction_guests.py --language rust --output \"$RUNNER_TEMP/transaction-guests-rust\""
       },
       {
-        "name": "Count actual guest command executions, commits and effects under duplicate delivery",
         "env": {
           "LSF_TRANSACTION_GUEST_ROOT": "${{ runner.temp }}/transaction-guests-rust"
         },
-        "run": "cargo --config .cargo/managed-guest.toml test --locked -p latent-wire --lib phase4::local_transaction::tests:: -- --ignored --test-threads=1 --nocapture 2>&1 | tee \"$RUNNER_TEMP/transaction-guests-rust/node-dedup-executions.log\"\n"
+        "name": "Count actual guest command executions, commits and effects under duplicate delivery",
+        "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml test --locked -p latent-wire --lib phase4::local_transaction::tests:: -- --ignored --test-threads=1 --nocapture 2>&1 | tee \"$RUNNER_TEMP/transaction-guests-rust/node-dedup-executions.log\"\n"
+      },
+      {
+        "name": "Preserve typed host-result uncertainty and original technical aborts",
+        "run": "cargo --config .cargo/managed-guest.toml test --locked -p latent-executor --lib tests::existing_report_constructors_keep_host_result_observed -- --exact\ncargo --config .cargo/managed-guest.toml test --locked -p latent-node --lib transaction_runtime::tests::technical_abort:: -- --test-threads=1 --nocapture\ncargo --config .cargo/managed-guest.toml test --locked -p latent-node --lib activation_runner::diagnostics::tests::codec_metadata_alone_never_classifies_guest_traps -- --exact\n"
       },
       {
         "name": "Execute complete outside-checkout authoring qualification",
@@ -103,30 +106,39 @@
         "run": "python3 tools/qualify_rust_capsules.py --application-dependencies --output \"$RUNNER_TEMP/rust-capsule-dependencies\"\n"
       },
       {
+        "name": "Qualify authenticated private Cargo capture and offline signed execution",
+        "run": "python3 tools/qualify_rust_private_dependencies.py \\\n  --prepared-qualification \"$RUNNER_TEMP/rust-capsule-dependencies\" \\\n  --output \"$RUNNER_TEMP/rust-private-dependencies\"\n"
+      },
+      {
+        "name": "Verify published private archive semantics with locked offline Cargo metadata",
+        "run": "python3 -m unittest tools.tests.test_rust_private_archives"
+      },
+      {
         "name": "Exercise developer cache with the actual operator and compiled Rust package inputs",
         "run": "python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent --inputs \"$RUNNER_TEMP/rust-capsule-authoring/builds/greeting\" --output \"$RUNNER_TEMP/dev-build-cache\""
       },
       {
-        "name": "Test contract derivation and isolated provenance approvals",
         "if": "success() || failure()",
+        "name": "Test contract derivation and isolated provenance approvals",
         "run": "cargo test --locked -p latent-packaging semantics::authoring\ncargo test --locked -p latent-signing --test guest_provenance\n"
       },
       {
-        "name": "Retain source-bound authoring evidence including failures",
         "if": "always()",
+        "name": "Retain source-bound authoring evidence including failures",
         "uses": "actions/upload-artifact",
         "with": {
-          "name": "rust-capsule-authoring-${{ github.run_id }}",
-          "path": "${{ runner.temp }}/transaction-guests-rust/node-dedup-executions.log\n${{ runner.temp }}/transaction-guests-rust/**/report.json\n${{ runner.temp }}/transaction-guests-rust/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-rust/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-rust/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-rust/**/component.wasm\n${{ runner.temp }}/transaction-guests-rust/**/component.wit\n${{ runner.temp }}/transaction-guests-rust/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-rust/**/logs/**\n${{ runner.temp }}/transaction-guests-rust/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-rust/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-rust/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-rust/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-rust/**/bindings/**\n${{ runner.temp }}/transaction-guests-rust/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-rust/report.json\n${{ runner.temp }}/transaction-contract-rust/source.tar.gz\n${{ runner.temp }}/transaction-contract-rust/component.wit\n${{ runner.temp }}/transaction-contract-rust/preparation.json\n${{ runner.temp }}/transaction-contract-rust/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-rust/logs/**\n${{ runner.temp }}/transaction-contract-rust/compiler/*.log\n${{ runner.temp }}/transaction-contract-rust/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-rust/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-rust/compiled/component.wit\n${{ runner.temp }}/transaction-contract-rust/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-rust/compiled/generated/**\n${{ runner.temp }}/transaction-contract-rust/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-rust/bindings/**\n${{ runner.temp }}/transaction-contract-rust/component.wasm\n${{ runner.temp }}/dev-build-cache/\n${{ runner.temp }}/rust-capsule-dependencies/**\n${{ runner.temp }}/rust-capsule-authoring/*.json\n${{ runner.temp }}/rust-capsule-authoring/*.log\n${{ runner.temp }}/rust-capsule-authoring/*.stdout\n${{ runner.temp }}/rust-capsule-authoring/*.stderr\n${{ runner.temp }}/rust-capsule-authoring/logs/**\n${{ runner.temp }}/rust-capsule-authoring/builds/**\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.json\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.jsonl\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.stderr.txt\n${{ runner.temp }}/rust-capsule-authoring/node/**\n${{ runner.temp }}/rust-capsule-authoring/releases/**\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.json\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/rust-capsule-authoring/guide/logs/**\n${{ runner.temp }}/rust-capsule-authoring/guide/projects/results/**\n",
           "if-no-files-found": "warn",
+          "name": "rust-capsule-authoring-${{ github.run_id }}",
+          "path": "${{ runner.temp }}/rust-private-dependencies/qualification.json\n${{ runner.temp }}/rust-private-dependencies/FAILED.json\n${{ runner.temp }}/rust-private-dependencies/capture.json\n${{ runner.temp }}/rust-private-dependencies/integrity-controls.json\n${{ runner.temp }}/rust-private-dependencies/registry-observations.json\n${{ runner.temp }}/rust-private-dependencies/native-lock-preparation.json\n${{ runner.temp }}/rust-private-dependencies/*-candidate.json.failed.json\n${{ runner.temp }}/rust-private-dependencies/logs/**\n${{ runner.temp }}/rust-private-dependencies/first/*.json\n${{ runner.temp }}/rust-private-dependencies/first/logs/**\n${{ runner.temp }}/rust-private-dependencies/first/component.wasm\n${{ runner.temp }}/rust-private-dependencies/offline-rebuild/*.json\n${{ runner.temp }}/rust-private-dependencies/offline-rebuild/logs/**\n${{ runner.temp }}/rust-private-dependencies/offline-rebuild/component.wasm\n${{ runner.temp }}/rust-private-dependencies/node/workflow.json\n${{ runner.temp }}/rust-private-dependencies/node/FAILED.json\n${{ runner.temp }}/transaction-guests-rust/node-dedup-executions.log\n${{ runner.temp }}/transaction-guests-rust/**/report.json\n${{ runner.temp }}/transaction-guests-rust/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-rust/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-rust/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-rust/**/component.wasm\n${{ runner.temp }}/transaction-guests-rust/**/component.wit\n${{ runner.temp }}/transaction-guests-rust/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-rust/**/logs/**\n${{ runner.temp }}/transaction-guests-rust/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-rust/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-rust/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-rust/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-rust/**/bindings/**\n${{ runner.temp }}/transaction-guests-rust/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-rust/report.json\n${{ runner.temp }}/transaction-contract-rust/source.tar.gz\n${{ runner.temp }}/transaction-contract-rust/component.wit\n${{ runner.temp }}/transaction-contract-rust/preparation.json\n${{ runner.temp }}/transaction-contract-rust/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-rust/logs/**\n${{ runner.temp }}/transaction-contract-rust/compiler/*.log\n${{ runner.temp }}/transaction-contract-rust/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-rust/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-rust/compiled/component.wit\n${{ runner.temp }}/transaction-contract-rust/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-rust/compiled/generated/**\n${{ runner.temp }}/transaction-contract-rust/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-rust/bindings/**\n${{ runner.temp }}/transaction-contract-rust/component.wasm\n${{ runner.temp }}/dev-build-cache/\n${{ runner.temp }}/rust-capsule-dependencies/**\n${{ runner.temp }}/rust-capsule-authoring/*.json\n${{ runner.temp }}/rust-capsule-authoring/*.log\n${{ runner.temp }}/rust-capsule-authoring/*.stdout\n${{ runner.temp }}/rust-capsule-authoring/*.stderr\n${{ runner.temp }}/rust-capsule-authoring/logs/**\n${{ runner.temp }}/rust-capsule-authoring/builds/**\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.json\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.jsonl\n${{ runner.temp }}/rust-capsule-authoring/ownership/*.stderr.txt\n${{ runner.temp }}/rust-capsule-authoring/node/**\n${{ runner.temp }}/rust-capsule-authoring/releases/**\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.json\n${{ runner.temp }}/rust-capsule-authoring/guide/guide.sh\n${{ runner.temp }}/rust-capsule-authoring/guide/logs/**\n${{ runner.temp }}/rust-capsule-authoring/guide/projects/results/**\n",
           "retention-days": 3
         }
       }
-    ]
+    ],
+    "timeout-minutes": 35
   },
   "jobId": "authoring",
   "kind": "job",
-  "reviewReason": "Preserve current full state renderer and narrow graph, actual guest duplicate/commit/effect execution schedule, every prior compiler step, case, artifact and deadline.",
+  "reviewReason": "Add closed host-result uncertainty and existing real trap fuel memory abort controls; preserve every original command and 35 minute budget",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

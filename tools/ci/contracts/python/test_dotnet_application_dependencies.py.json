@@ -13,6 +13,7 @@
     "NativeAotRuntimeCoverage.test_present_names_do_not_claim_signature_or_runtime_qualification",
     "NugetDependencies.test_analyzer_and_build_assets_are_executable_inputs",
     "NugetDependencies.test_application_import_task_and_property_functions_never_evaluate",
+    "NugetDependencies.test_bounded_private_feed_credentials_preserve_xml_values_and_public_redaction",
     "NugetDependencies.test_composer_profile_rejects_stale_selection_and_changed_binary",
     "NugetDependencies.test_embedded_resources_cannot_read_absolute_or_uncaptured_files",
     "NugetDependencies.test_missing_transitive_and_changed_sdk_hash_fail",
@@ -21,6 +22,7 @@
     "NugetDependencies.test_native_transitive_closure_is_selected_without_catalogue",
     "NugetDependencies.test_nuget_standard_archive_metadata_preserves_safe_brackets",
     "NugetDependencies.test_outside_library_fixture_reads_only_its_owned_nested_workspace",
+    "NugetDependencies.test_private_feed_credentials_reject_controls_types_and_limits_before_restore",
     "NugetDependencies.test_private_feed_invalid_credential_and_endpoint_fail_without_fallback",
     "NugetDependencies.test_private_feed_policy_receipt_excludes_location_and_credentials",
     "NugetDependencies.test_resx_processing_is_an_explicit_executable_input",
@@ -73,11 +75,13 @@
     "NugetGeneratedOutputs.test_successful_compiler_capture_is_bound_before_component_exists": "83b18983068d24bf3eaefb7ad88862e5320759ff098ea0dc45fdd767339c1e35",
     "RuntimeAdapterCapture.test_all_three_runtime_adapters_are_captured_under_the_owned_namespace": "808045f1343f61eeb2da184c1736c4028a856f533396a59a0402744eba96812e",
     "RuntimeAdapterCapture.test_changed_source_during_capture_cannot_publish_an_adapter_family": "808045f1343f61eeb2da184c1736c4028a856f533396a59a0402744eba96812e",
-    "RuntimeAdapterCapture.test_missing_or_additional_runtime_profiles_fail_before_staging": "808045f1343f61eeb2da184c1736c4028a856f533396a59a0402744eba96812e"
+    "RuntimeAdapterCapture.test_missing_or_additional_runtime_profiles_fail_before_staging": "808045f1343f61eeb2da184c1736c4028a856f533396a59a0402744eba96812e",
+    "NugetDependencies.test_private_feed_credentials_reject_controls_types_and_limits_before_restore": "bf63b0c0ffdd5d7c43b110f1ccccd6341948ed8ab3905126d15c4e5f94120042",
+    "NugetDependencies.test_bounded_private_feed_credentials_preserve_xml_values_and_public_redaction": "bf63b0c0ffdd5d7c43b110f1ccccd6341948ed8ab3905126d15c4e5f94120042"
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_application_dependencies.py",
-  "reviewReason": "Retain all historical NuGet controls and add actual nested outside-library namespace source-read and ambient-denial regression Review only CapturedCompilerSelection.graph: preserve the reviewed explicit nine callable member names from e5e4ffec, including activation observe, typed HTTP open and outgoing-handler handle. All 51 original case bodies, decorators, skips, controls, assertions and bounds are unchanged; only this derived class setup identity changes. Incoming reviewed obligation: Retain both parent case sets and every execution, decorator and skip guard; review the merged helper/import setup identities. Incoming reviewed obligation: Retain all historical NuGet controls and add actual nested outside-library namespace source-read and ambient-denial regression Store identical case-owned guards using the authenticated shared v2 representation; retain every original case and execution control. Review only CapturedCompilerSelection.graph: add the existing activation observe, typed HTTP open and WASI outgoing-handler handle callable members so its HTTP/entropy fixture reaches the unchanged protected-input/composition assertions. No test body, grant, skip, version, command or bound changes.",
+  "reviewReason": "Reject invalid or unbounded selected NuGet credentials while preserving XML values and redacted public source policy",
   "schemaVersion": "latent.ci.contracts.v2",
   "guardDefinitions": {
     "afc1ee6790754e4624884f836fbdc18b2838fc68eccd45203b63cc470e058055": {
