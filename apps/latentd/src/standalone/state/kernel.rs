@@ -17,6 +17,7 @@ use latent_state::{
 use super::super::effects::{EffectRuntime, ProtectedEffectClock, ProtectedEffectStartup};
 use super::{bootstrap::StateBootstrap, clock::AdapterClock, preparation};
 use crate::config::state::StateSettings;
+use crate::standalone::startup_observation::{platform, record, record_platform, Stage};
 
 /// A kernel is still paused when returned. The caller must validate the actual
 /// signed installations/current permissions and install all original runtime
@@ -108,14 +109,20 @@ impl StateKernel {
         adapter_clock: &AdapterClock,
         control_runtime: tokio::runtime::Handle,
     ) -> Result<(Self, EffectRuntime), PlatformError> {
-        bootstrap.check_live()?;
+        platform(Stage::StateKernelPrecondition, bootstrap.check_live())?;
         if !bootstrap.matches(settings) {
-            return Err(super::unavailable());
+            let failure = super::unavailable();
+            record_platform(Stage::StateKernelPrecondition, &failure);
+            return Err(failure);
         }
-        let store = bootstrap.open_store(settings).await?;
+        let store = bootstrap
+            .open_store(settings)
+            .await
+            .inspect_err(|error| record_platform(Stage::ProtectedStoreOpen, error))?;
         let namespaces = match bootstrap.open_namespaces(settings) {
             Ok(namespaces) => namespaces,
             Err(failure) => {
+                record_platform(Stage::NamespaceCatalog, &failure);
                 retire_failed_bootstrap(bootstrap).await;
                 return Err(failure);
             }
@@ -136,8 +143,9 @@ impl StateKernel {
         // Verify it before checkpoint consumes the once-only witness and before
         // dispatcher history writes. Neither reopened equality nor config may
         // recreate a missing persisted mode marker.
-        let marker =
-            store.ensure_state_mode_marker(settings.store_identity.clone(), bootstrap.original());
+        let marker = store
+            .ensure_state_mode_marker(settings.store_identity.clone(), bootstrap.original())
+            .inspect_err(|error| record(Stage::StateModeAdmission, *error));
         let marker = if let Ok(marker) = marker {
             tokio::time::timeout_at(bootstrap.deadline.into(), marker).await
         } else {
@@ -146,9 +154,18 @@ impl StateKernel {
             return Err(super::unavailable());
         };
         if !matches!(marker, Ok(Ok(Ok(_)))) {
+            match &marker {
+                Ok(Err(error)) => record(Stage::StateModeCompletion, *error),
+                Ok(Ok(Err(error))) => record(Stage::StateModeCompletion, *error),
+                Err(_) | Ok(Ok(Ok(_))) => {}
+            }
             drop(namespaces);
             retire_failed_bootstrap(bootstrap).await;
-            return Err(super::unavailable());
+            let failure = super::unavailable();
+            if marker.is_err() {
+                record_platform(Stage::StateModeDeadline, &failure);
+            }
+            return Err(failure);
         }
         // StateSettings derives this bit solely as a bootstrap hold, not an
         // operator choice. The dedicated protected constructor installs that
@@ -196,13 +213,18 @@ impl StateKernel {
         // clock. No provider is accepted before this binding and cutover.
         let acceptance = adapter_clock
             .bind(Arc::clone(&kernel.clock))
-            .and_then(|()| kernel.check_ready(&effects))
+            .inspect_err(|error| record_platform(Stage::AdapterClockBinding, error))
+            .and_then(|()| platform(Stage::StateKernelReadiness, kernel.check_ready(&effects)))
             .and_then(|()| {
                 kernel
                     .namespaces
                     .uses_native_capacity(&kernel.native)
                     .then_some(())
-                    .ok_or_else(super::unavailable)
+                    .ok_or_else(|| {
+                        let failure = super::unavailable();
+                        record_platform(Stage::NamespaceNativeCapacity, &failure);
+                        failure
+                    })
             });
         if let Err(failure) = acceptance {
             let _retirement = effects.shutdown(deadline).await;
