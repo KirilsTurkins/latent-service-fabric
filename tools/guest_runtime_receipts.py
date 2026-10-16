@@ -161,6 +161,10 @@ def verify_build(value, language, files, source_inputs, component, materials):
         from tools.typescript_guest.runtime_profile import selected_profile
         project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}
         profile = selected_profile(project, graph)
+    if language == 'c':
+        from tools.c_guest.standard_facilities import selected_profile
+        project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}
+        profile = selected_profile(project, graph)
     if language == 'go':
         project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}
         if 'runtimeProfile' in project:
