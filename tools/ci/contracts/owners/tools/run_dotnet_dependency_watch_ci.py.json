@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_dotnet_dependency_watch_ci.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Run delivered .NET watch through a source-bound private CI account",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "ba1e114b0f79ca471d6b2dd81246729d4da4ff5876d454f56604379541fe80a7"
+}

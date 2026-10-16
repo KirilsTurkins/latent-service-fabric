@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_dotnet_dependency_watch.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Fence external shutdown before dispatch and preserve original failure during bounded observer retirement",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "828bc6fd53bf553c2ae75c0b412f5d82a02e2bb0bd6d526f6f27da4849858d92"
+}

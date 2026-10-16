@@ -66,6 +66,10 @@
           "tools/tests/test_java_resource_runtime.py",
           "tools/tests/test_java_private_resolution.py",
           "tools/java_guest/**",
+          "tools/run_dotnet_dependency_watch_ci.py",
+          "tools/qualify_dotnet_dependency_watch.py",
+          "tools/dotnet_dependency_watch_fixture.py",
+          "tools/tests/test_dotnet_dependency_watch.py",
           "tools/dotnet_capsule.py",
           "tools/dotnet_guest/**",
           "tools/dotnet_guest_bindings.py",
@@ -140,7 +144,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Keep every developer workflow gate and discover original explicit Java processor controls",
+  "reviewReason": "Trigger existing developer-tools jobs for .NET dependency watch inputs",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
