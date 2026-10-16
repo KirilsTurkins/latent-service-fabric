@@ -136,6 +136,8 @@ def diagnose(fixture: Path, output: Path) -> dict:
         'mode': 9, 'componentDigest': record['componentDigest'], 'sourceDigest': record['sourceDigest'],
         'preparedRecordDigest': digest((fixture / 'GO-ACTIVATION-COMPILE.json').read_bytes()),
         'sourceOverlays': identities, 'originalSourceUnchanged': True, 'diagnosticExitCode': result.returncode,
+        'nativeCaseStarted': bool(re.search(rb'(?m)^running 1 test\r?$', result.stdout)),
+        'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', result.stderr)))[:16],
         'frames': frames, 'rawNativeBacktraceRetained': False, 'acceptanceFailure': 'unchanged'}
     write_json(output / 'GO-PRIVATE-FRAMES.json', observation)
     return observation
