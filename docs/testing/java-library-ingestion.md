@@ -108,3 +108,14 @@ failure. An earlier attempt to catch `OutOfMemoryError` instead produced an
 unreachable-code guest trap. That failed attempt remains recorded; this control
 does not establish catchable allocation failure semantics for the selected TeaVM
 C runtime. The independent runtime implementation owner is #741.
+
+The maintained workflow also selects `recovery` in a separate dependency matrix
+job using [the suite owner](../../tools/qualify_java_dependency_suite.py). It
+builds and freezes the ordinary five native products, compiles a normal greeting
+to acquire the pinned compiler closure, then supplies only its verified read-only
+cache to the recovery programme. Exact source/native/compiler/cache identities
+are checked before and after; signing directories are excluded from the new
+artifact allowlist. The existing Java job retains its 55-minute limit and
+commands. Each separate attempt has a 35-minute job bound and an 1800-second
+suite deadline. The earlier successful native receipt remains historical until
+the newly added current-source hosted attempt independently passes.

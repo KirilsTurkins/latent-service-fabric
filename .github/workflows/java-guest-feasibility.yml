@@ -378,7 +378,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [private]
+        mode: [private, recovery]
     env:
       PYTHONDONTWRITEBYTECODE: 1
     steps:
