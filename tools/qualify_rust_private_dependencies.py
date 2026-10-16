@@ -69,10 +69,15 @@ def author(*arguments):
     return code, out.getvalue(), err.getvalue()
 
 
-def archive(name: str, source: str, resource: bytes | None = None) -> bytes:
+def archive(name: str, source: str, resource: bytes | None = None, *, registry_index: str | None = None) -> bytes:
     manifest = '[package]\nname="' + name + '"\nversion="' + VERSION + '"\nedition="2021"\nlicense="MIT"\n'
     if name == MAIN:
-        manifest += '[dependencies]\n' + CHILD + '="=' + VERSION + '"\n'
+        # Published Cargo manifests name an alternate transitive registry by
+        # index, rather than a developer-local registry alias. The sparse
+        # index's same-registry dependency and the vendored manifest must agree.
+        manifest += '[dependencies.' + CHILD + ']\nversion="=' + VERSION + '"\n'
+        if registry_index is not None:
+            manifest += 'registry-index=' + json.dumps(registry_index) + '\n'
     files = {'Cargo.toml': manifest.encode(), 'src/lib.rs': source.encode()}
     if resource is not None:
         files['src/greeting.txt'] = resource
@@ -110,11 +115,7 @@ def capture(root: Path, commands: Commands, cargo: Path) -> tuple[Path, dict]:
     ca.write_bytes(Path('/etc/ssl/certs/ca-certificates.crt').read_bytes() + b'\n' + certificate_bytes)
     token, wrong = 'Bearer fixture-' + secrets.token_hex(24), 'Bearer incorrect-' + secrets.token_hex(24)
     confidential = (token.encode(), wrong.encode(), private_key)
-    payloads = {
-        MAIN: archive(MAIN, 'pub fn prefix() -> &\'static str { outside_private_child::prefix() }\n'),
-        CHILD: archive(CHILD, 'pub fn prefix() -> &\'static str { include_str!("greeting.txt") }\n', b'Hello, '),
-    }
-    original = {name: {'digest': digest(raw), 'size': len(raw)} for name, raw in payloads.items()}
+    payloads, original = {}, {}
     requests, assets, controls = [], {}, []
     lock = threading.Lock()
 
@@ -155,6 +156,11 @@ def capture(root: Path, commands: Commands, cargo: Path) -> tuple[Path, dict]:
     owner = threading.Thread(target=peer.serve_forever, kwargs={'poll_interval': .05}, name='private-Cargo-registry')
     owner_started = False
     index = 'sparse+https://127.0.0.1:' + str(port) + '/index/'
+    payloads.update({
+        MAIN: archive(MAIN, 'pub fn prefix() -> &\'static str { outside_private_child::prefix() }\n', registry_index=index),
+        CHILD: archive(CHILD, 'pub fn prefix() -> &\'static str { include_str!("greeting.txt") }\n', b'Hello, '),
+    })
+    original.update({name: {'digest': digest(raw), 'size': len(raw)} for name, raw in payloads.items()})
     assets['/index/config.json'] = canonical({'dl': 'https://127.0.0.1:' + str(port) + '/api/v1/crates', 'auth-required': True})
     for name, raw in payloads.items():
         child = [] if name == CHILD else [{'name': CHILD, 'req': '=' + VERSION, 'features': [],

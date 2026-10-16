@@ -91,7 +91,7 @@
           "LSF_TRANSACTION_GUEST_ROOT": "${{ runner.temp }}/transaction-guests-rust"
         },
         "name": "Count actual guest command executions, commits and effects under duplicate delivery",
-        "run": "cargo --config .cargo/managed-guest.toml test --locked -p latent-wire --lib phase4::local_transaction::tests:: -- --ignored --test-threads=1 --nocapture 2>&1 | tee \"$RUNNER_TEMP/transaction-guests-rust/node-dedup-executions.log\"\n"
+        "run": "set -o pipefail\ncargo --config .cargo/managed-guest.toml test --locked -p latent-wire --lib phase4::local_transaction::tests:: -- --ignored --test-threads=1 --nocapture 2>&1 | tee \"$RUNNER_TEMP/transaction-guests-rust/node-dedup-executions.log\"\n"
       },
       {
         "name": "Execute complete outside-checkout authoring qualification",
@@ -104,6 +104,10 @@
       {
         "name": "Qualify authenticated private Cargo capture and offline signed execution",
         "run": "python3 tools/qualify_rust_private_dependencies.py \\\n  --prepared-qualification \"$RUNNER_TEMP/rust-capsule-dependencies\" \\\n  --output \"$RUNNER_TEMP/rust-private-dependencies\"\n"
+      },
+      {
+        "name": "Verify published private archive semantics with locked offline Cargo metadata",
+        "run": "python3 -m unittest tools.tests.test_rust_private_archives"
       },
       {
         "name": "Exercise developer cache with the actual operator and compiled Rust package inputs",
@@ -130,7 +134,7 @@
   },
   "jobId": "authoring",
   "kind": "job",
-  "reviewReason": "Retain every existing Rust command and35minute limit; add actual private Cargo HTTPS capture, concrete auth/TLS/integrity failures, verified offline rebuilds and signed node via exact preceding frozen products.",
+  "reviewReason": "Preserve the exact transaction test command and all assertions, strengthen its pipeline to propagate native failures, and add actual locked offline private archive metadata controls",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

@@ -117,6 +117,7 @@ jobs:
         env:
           LSF_TRANSACTION_GUEST_ROOT: ${{ runner.temp }}/transaction-guests-rust
         run: |
+          set -o pipefail
           cargo --config .cargo/managed-guest.toml test --locked -p latent-wire --lib phase4::local_transaction::tests:: -- --ignored --test-threads=1 --nocapture 2>&1 | tee "$RUNNER_TEMP/transaction-guests-rust/node-dedup-executions.log"
       - name: Execute complete outside-checkout authoring qualification
         run: |
@@ -129,6 +130,8 @@ jobs:
           python3 tools/qualify_rust_private_dependencies.py \
             --prepared-qualification "$RUNNER_TEMP/rust-capsule-dependencies" \
             --output "$RUNNER_TEMP/rust-private-dependencies"
+      - name: Verify published private archive semantics with locked offline Cargo metadata
+        run: python3 -m unittest tools.tests.test_rust_private_archives
       - name: Exercise developer cache with the actual operator and compiled Rust package inputs
         run: >-
           python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent
