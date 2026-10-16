@@ -64,7 +64,7 @@ class RandomFixture(unittest.TestCase):
 
     def test_only_explicit_byte_operation_and_selected_ceiling_reach_ordinary_policy_owner(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary); (root / 'runtime/config').mkdir(parents=True)
+            root = Path(temporary); (root / 'runtime/config').mkdir(parents=True, mode=0o700)
             installed = self.prepared(root, self.selection()); applied = []
             with patch('tools.dev_workflow.node_test_grants.policy_operations.apply',
                        side_effect=lambda *args: applied.append(args[5])):
@@ -81,7 +81,7 @@ class RandomFixture(unittest.TestCase):
 
     def test_unrequested_grants_do_not_publish_policies_and_default_go_operation_is_preserved(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary); (root / 'runtime/config').mkdir(parents=True)
+            root = Path(temporary); (root / 'runtime/config').mkdir(parents=True, mode=0o700)
             installed = self.prepared(root, self.selection())
             with patch('tools.dev_workflow.node_test_grants.policy_operations.apply') as apply:
                 self.assertEqual(node_test_grants.selection(root, self.descriptor(), 'publication',
@@ -97,7 +97,7 @@ class RandomFixture(unittest.TestCase):
 
     def test_missing_provider_or_invalid_selected_bounds_fail_before_policy_mutation(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary); (root / 'runtime/config').mkdir(parents=True)
+            root = Path(temporary); (root / 'runtime/config').mkdir(parents=True, mode=0o700)
             installed = self.prepared(root, self.selection())
             with patch('tools.dev_workflow.node_test_grants.policy_operations.apply') as apply:
                 with self.assertRaisesRegex(DevError, 'unsupported'):
