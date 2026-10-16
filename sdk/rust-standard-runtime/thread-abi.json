@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "latent.rust.owned-thread-source-abi.v1",
+  "schemaVersion": "latent.rust.owned-thread-source-abi.v2",
   "target": "wasm32-unknown-unknown",
   "compiler": "1.97.1",
   "componentEncoder": "0.259.0",
@@ -7,12 +7,16 @@
   "contextSlot": 1,
   "preservedWitBindgenContextSlot": 0,
   "contextPrefix": {
-    "bytes": 16,
-    "alignment": 4,
+    "bytes": 40,
+    "alignment": 8,
     "pointerOffset": 0,
     "lowOffset": 4,
     "highOffset": 8,
     "phaseOffset": 12,
+    "continuationGenerationOffset": 16,
+    "continuationIdOffset": 24,
+    "nativeAdmissionResultOffset": 32,
+    "creationStartedOffset": 34,
     "phases": {
       "tlsOnly": 0,
       "prepared": 1,
@@ -39,11 +43,34 @@
     "wakesAnyParent": false
   },
   "ownership": {
-    "taskAdmission": "required before thread creation; not implemented or replaced by this wrapper",
+    "taskAdmission": "original Task required before child creation; native host admission checks its kind and liveness atomically",
     "nativeAdmission": "original Native continuation before System stack/context allocation",
     "linearStackBytes": "original Wasm linear-memory limiter",
-    "retirement": "requires actual canonical/native completion proof before parent/reaper cleanup",
+    "retirement": "logical context cleanup requires completed Rust/TLS frames; cached physical native capacity remains charged until actual StackMemory/Store drop",
     "wasmExitedFlagProvesNativeFiberRetirement": false
+  },
+  "nativeAdmission": {
+    "importModule": "latent:runtime-native/threads@0.1.0",
+    "importName": "start",
+    "parameters": ["i64", "i64", "pointer32"],
+    "resultBytes": 2,
+    "soleRawCreationConsumer": "fixed stackless body; verified after remapping every call/ref.func/export/element/global reference",
+    "wholeComponentRoutingAuthenticated": false,
+    "canonicalThreadCreationEnabled": false
+  },
+  "root": {
+    "export": "__lsf_rust_activation_root",
+    "bootstrap": "__lsf_rust_root_bootstrap",
+    "bootstrapParameters": ["i32", "i32"],
+    "bootstrapResult": "pointer32",
+    "linkerStackLow": "__stack_low immutable constant",
+    "linkerStackHigh": "__stack_pointer initial constant",
+    "finish": "__lsf_rust_root_finish",
+    "reap": "__lsf_rust_root_reap",
+    "flatNumericParameterAndResultLimit": 16,
+    "holdsOriginalTaskThroughFinalRustEpilogue": true,
+    "reaperRefundsPhysicalHostStack": false,
+    "acceptedWorkDrainImplemented": false
   },
   "rootExportBootstrapQualified": false,
   "rebuiltSysrootQualified": false,

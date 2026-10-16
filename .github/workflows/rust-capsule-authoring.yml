@@ -85,6 +85,11 @@ jobs:
           python3 -m pip install --requirement tools/requirements.lock
           python3 -m unittest tools.tests.test_rust_standard_clock_profile tools.tests.test_rust_standard_tls_profile tools.tests.test_rust_standard_sysroot_source tools.tests.test_rust_standard_sysroot_build tools.tests.test_rust_standard_clock_gate
           cargo fetch --locked
+      - name: Execute owned Rust stack transforms and TLS source reference
+        run: |
+          python3 -m unittest tools.tests.test_rust_tls_reference
+          cargo test --locked --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --target-dir "$RUNNER_TEMP/rust-stack-transform"
+          python3 tools/run_rust_tls_reference.py --rustc "$(rustup which rustc)" --output "$RUNNER_TEMP/rust-tls-reference"
       - name: Build the exact current signed clock test harness
         run: |
           cargo test --locked -p latent-wasmtime --test clock_admission --no-run --message-format=json > "$RUNNER_TEMP/rust-standard-clock-native.json"
@@ -113,6 +118,7 @@ jobs:
             ${{ runner.temp }}/rust-standard-clocks/**/project/**
             ${{ runner.temp }}/rust-standard-clocks/**/logs/**
             ${{ runner.temp }}/owned-native-stacks/**
+            ${{ runner.temp }}/rust-tls-reference/reference.json
           if-no-files-found: warn
           retention-days: 3
   authoring:

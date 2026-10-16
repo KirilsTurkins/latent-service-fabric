@@ -5,6 +5,7 @@
   "definition": {
     "name": "Rebuilt Rust standard clocks and signed grants",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 25,
     "steps": [
       {
         "uses": "actions/checkout",
@@ -28,15 +29,15 @@
         "name": "Restore compiled Rust dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
@@ -48,6 +49,10 @@
       {
         "name": "Verify standard source and executable ownership controls",
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_rust_standard_clock_profile tools.tests.test_rust_standard_tls_profile tools.tests.test_rust_standard_sysroot_source tools.tests.test_rust_standard_sysroot_build tools.tests.test_rust_standard_clock_gate\ncargo fetch --locked\n"
+      },
+      {
+        "name": "Execute owned Rust stack transforms and TLS source reference",
+        "run": "python3 -m unittest tools.tests.test_rust_tls_reference\ncargo test --locked --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --target-dir \"$RUNNER_TEMP/rust-stack-transform\"\npython3 tools/run_rust_tls_reference.py --rustc \"$(rustup which rustc)\" --output \"$RUNNER_TEMP/rust-tls-reference\"\n"
       },
       {
         "name": "Build the exact current signed clock test harness",
@@ -62,22 +67,21 @@
         "run": "python3 -m unittest tools.tests.test_owned_native_stacks\ncargo test --locked -p latent-wasmtime --lib native_stacks::tests:: -- --test-threads=1 --nocapture\npython3 tools/qualify_owned_native_stacks.py --cargo-inventory \"$RUNNER_TEMP/rust-standard-clock-native.json\" --native-target \"$GITHUB_WORKSPACE/target\" --clocks \"$RUNNER_TEMP/rust-standard-clocks\" --output \"$RUNNER_TEMP/owned-native-stacks\"\n"
       },
       {
-        "if": "always()",
         "name": "Retain bounded standard clock evidence including failures",
+        "if": "always()",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "rust-standard-clocks-${{ github.run_id }}",
-          "path": "${{ runner.temp }}/rust-standard-clock-native.json\n${{ runner.temp }}/rust-standard-clocks/report.json\n${{ runner.temp }}/rust-standard-clocks/**/qualification.json\n${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json\n${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json\n${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json\n${{ runner.temp }}/rust-standard-clocks/**/component.wasm\n${{ runner.temp }}/rust-standard-clocks/**/project/**\n${{ runner.temp }}/rust-standard-clocks/**/logs/**\n${{ runner.temp }}/owned-native-stacks/**\n",
+          "path": "${{ runner.temp }}/rust-standard-clock-native.json\n${{ runner.temp }}/rust-standard-clocks/report.json\n${{ runner.temp }}/rust-standard-clocks/**/qualification.json\n${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json\n${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json\n${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json\n${{ runner.temp }}/rust-standard-clocks/**/component.wasm\n${{ runner.temp }}/rust-standard-clocks/**/project/**\n${{ runner.temp }}/rust-standard-clocks/**/logs/**\n${{ runner.temp }}/owned-native-stacks/**\n${{ runner.temp }}/rust-tls-reference/reference.json\n",
+          "if-no-files-found": "warn",
           "retention-days": 3
         }
       }
-    ],
-    "timeout-minutes": 25
+    ]
   },
   "jobId": "standard-clocks",
   "kind": "job",
-  "reviewReason": "Add controlled original-activation root native-stack admission, actual pending/cancelled Wasmtime ownership controls and signed rebuilt-clock execution through physical StackMemory destruction; preserve all prior CI commands, tests, limits and gates. This profile does not enable canonical threads or qualify standard executors.",
+  "reviewReason": "Add exact encoded-Wasm stack/admission/root controls and separately owned native TLS reference processes under a bounded driver; preserve every prior signed clock/native-stack command, limit, cache and artifact obligation. These source controls do not enable canonical creation or establish a rebuilt thread sysroot.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

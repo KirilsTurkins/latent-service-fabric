@@ -51,7 +51,7 @@ impl StackContext {
         }
         let owner = self
             .runtime
-            .register(OwnerKind::Native, Some(continuation))?;
+            .register_from_task(OwnerKind::Native, continuation)?;
         let memory = self
             .budget
             .reserve_host_memory(self.mapped as u64)

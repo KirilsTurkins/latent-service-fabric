@@ -9,6 +9,7 @@
     "worldAppendix": "\nworld tls-profile { import activation; }\n"
   },
   "ownerKindNative": 7,
+  "ownerKindTask": 0,
   "register": {
     "importModule": "latent:runtime/activation@0.1.0",
     "importName": "register",

@@ -204,7 +204,7 @@ fn check_prefix(body: &mut Function, context: u32, pointer: u32) {
     trap_if(body);
 }
 
-pub(super) fn append_checked_stack_helpers(code: &mut CodeSection, context_get: u32) {
+pub(super) fn checked_stack_helpers(context_get: u32) -> [Function; 2] {
     let mut get = Function::new([(2, ValType::I32)]);
     get.instruction(&Instruction::Call(context_get)).instruction(&Instruction::LocalTee(0))
         .instruction(&Instruction::I32Eqz);
@@ -213,7 +213,6 @@ pub(super) fn append_checked_stack_helpers(code: &mut CodeSection, context_get: 
         .instruction(&Instruction::LocalSet(1));
     check_prefix(&mut get, 0, 1);
     get.instruction(&Instruction::LocalGet(1)).instruction(&Instruction::End);
-    code.function(&get);
     let mut set = Function::new([(1, ValType::I32)]);
     set.instruction(&Instruction::Call(context_get)).instruction(&Instruction::LocalTee(1))
         .instruction(&Instruction::I32Eqz);
@@ -221,7 +220,11 @@ pub(super) fn append_checked_stack_helpers(code: &mut CodeSection, context_get: 
     check_prefix(&mut set, 1, 0);
     set.instruction(&Instruction::LocalGet(1)).instruction(&Instruction::LocalGet(0))
         .instruction(&Instruction::I32Store(address(0))).instruction(&Instruction::End);
-    code.function(&set);
+    [get, set]
+}
+
+pub(super) fn append_checked_stack_helpers(code: &mut CodeSection, context_get: u32) {
+    for function in checked_stack_helpers(context_get) { code.function(&function); }
 }
 
 /// Preserve the original callback/table index while appending its real Rust

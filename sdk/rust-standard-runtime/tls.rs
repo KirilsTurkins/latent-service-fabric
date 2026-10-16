@@ -47,10 +47,14 @@ struct Lease(Token);
 
 impl Lease {
     fn acquire(continuation: Option<Token>) -> Self {
+        Self::acquire_kind(7, continuation)
+    }
+
+    fn acquire_kind(kind: u32, continuation: Option<Token>) -> Self {
         let token = continuation.unwrap_or(Token { generation: 0, id: 0 });
         let mut result = RegisterResult([0xff; 24]);
         unsafe {
-            register(7, continuation.is_some() as u32, token.generation, token.id,
+            register(kind, continuation.is_some() as u32, token.generation, token.id,
                      result.0.as_mut_ptr());
         }
         match result.0[0] {
@@ -92,6 +96,11 @@ struct ShadowStack {
     low: u32,
     high: u32,
     phase: Cell<u32>,
+    // V2 keeps the original16-byte stack prefix and appends one accepted Task
+    // continuation plus the fixed child admission result/one-shot guard.
+    continuation: Token,
+    admission: Cell<[u8; 2]>,
+    creation_started: Cell<u8>,
 }
 
 const STACK_LEGACY_TLS_ONLY: u32 = 0;
@@ -122,7 +131,21 @@ struct Context {
     cleanup_requested: Cell<bool>,
     owner: ManuallyDrop<Lease>,
     stack_allocation: Option<StackAllocation>,
+    // Only a root bootstrap owns this Task. Child Tasks belong to the thread
+    // PAL/join lifecycle; a context never fabricates or settles their tokens.
+    root_task: Option<ManuallyDrop<Lease>>,
 }
+
+// Bind the fixed encoded wrapper's offsets on the actual compiling target,
+// including memory32. A source-reference host alone cannot establish layout.
+const _: () = {
+    assert!(crate::mem::size_of::<ShadowStack>() == 40);
+    assert!(crate::mem::align_of::<ShadowStack>() == 8);
+    assert!(crate::mem::offset_of!(ShadowStack, continuation) == 16);
+    assert!(crate::mem::offset_of!(ShadowStack, admission) == 32);
+    assert!(crate::mem::offset_of!(ShadowStack, creation_started) == 34);
+    assert!(crate::mem::offset_of!(Context, head) == 40);
+};
 
 fn allocate<T>(value: T) -> *mut T {
     // Match pinned os::AlignedSystemBox: a user global allocator may itself
@@ -144,10 +167,13 @@ fn allocate_context(continuation: Option<Token>) -> *mut Context {
     let owner = Lease::acquire(continuation);
     allocate(Context {
         stack: ShadowStack { pointer: Cell::new(0), low: 0, high: 0,
-                             phase: Cell::new(STACK_LEGACY_TLS_ONLY) },
+                             phase: Cell::new(STACK_LEGACY_TLS_ONLY),
+                             continuation: continuation.unwrap_or(Token { generation: 0, id: 0 }),
+                             admission: Cell::new([0xff; 2]), creation_started: Cell::new(0) },
         head: Cell::new(ptr::null_mut()), closing: Cell::new(false),
         cleanup_requested: Cell::new(false), owner: ManuallyDrop::new(owner),
         stack_allocation: None,
+        root_task: None,
     })
 }
 
@@ -168,10 +194,12 @@ pub(crate) fn prepare_borrowed_root_context(continuation: Token, low: u32, high:
     let owner = Lease::acquire(Some(continuation));
     allocate(Context {
         stack: ShadowStack { pointer: Cell::new(high), low, high,
-                             phase: Cell::new(STACK_PREPARED) },
+                             phase: Cell::new(STACK_PREPARED), continuation,
+                             admission: Cell::new([0xff; 2]), creation_started: Cell::new(0) },
         head: Cell::new(ptr::null_mut()), closing: Cell::new(false),
         cleanup_requested: Cell::new(false), owner: ManuallyDrop::new(owner),
         stack_allocation: None,
+        root_task: None,
     }).cast()
 }
 
@@ -196,10 +224,12 @@ pub(crate) fn prepare_stacked_thread_context(continuation: Token, bytes: usize) 
     assert!(low != 0 && low % 16 == 0 && high % 16 == 0);
     allocate(Context {
         stack: ShadowStack { pointer: Cell::new(high), low, high,
-                             phase: Cell::new(STACK_PREPARED) },
+                             phase: Cell::new(STACK_PREPARED), continuation,
+                             admission: Cell::new([0xff; 2]), creation_started: Cell::new(0) },
         head: Cell::new(ptr::null_mut()), closing: Cell::new(false),
         cleanup_requested: Cell::new(false), owner: ManuallyDrop::new(owner),
         stack_allocation: Some(allocation),
+        root_task: None,
     }).cast()
 }
 
@@ -218,12 +248,66 @@ pub(crate) unsafe fn install_thread_context(pointer: *mut u8) {
     unsafe { context_set(pointer); }
 }
 
+/// Called only by the authenticated stackless root wrapper. The linker-owned
+/// range is passed as exact memory32 bounds, before any translated root frame.
+/// This hook admits a real root Task before allocating its Native TLS context.
+/// It does not close/drain accepted work or enable an incomplete std profile.
+#[cfg_attr(target_arch = "wasm32", unsafe(no_mangle))]
+pub unsafe extern "C" fn __lsf_rust_root_bootstrap(low: u32, high: u32) -> *mut u8 {
+    prepare_owned_root_context(low, high)
+}
+
+pub(crate) fn prepare_owned_root_context(low: u32, high: u32) -> *mut u8 {
+    assert!(unsafe { context_get() }.is_null(), "root context must be fresh");
+    assert!(low != 0 && low % 16 == 0 && high % 16 == 0 && high > low
+            && high - low >= 64 * 1024, "invalid linker-owned root stack");
+    let task = Lease::acquire_kind(0, None);
+    let pointer = prepare_borrowed_root_context(task.0, low, high);
+    unsafe { (*pointer.cast::<Context>()).root_task = Some(ManuallyDrop::new(task)); }
+    pointer
+}
+
+/// The root's accepted-work drain must already be complete. Cleanup retains
+/// context and owners through the final translated Rust epilogue.
+#[cfg_attr(target_arch = "wasm32", unsafe(no_mangle))]
+pub unsafe extern "C" fn __lsf_rust_root_finish(pointer: *mut u8) {
+    assert!(!pointer.is_null() && unsafe { context_get() } == pointer,
+            "root finish requires its installed context");
+    let context = unsafe { &*pointer.cast::<Context>() };
+    assert!(context.root_task.is_some() && context.stack_allocation.is_none(),
+            "root finish requires its admitted borrowed stack");
+    unsafe { finish_stacked_thread_tls().expect("root TLS drain failed"); }
+}
+
+/// System-only postlude after the stackless wrapper detached the root and all
+/// translated Rust frames returned. Logical context/Task retirement is distinct
+/// from physical Wasmtime stack retirement: the host retains its reservation
+/// through the actual StackMemory/Store destructor, never this guest flag.
+#[cfg_attr(target_arch = "wasm32", unsafe(no_mangle))]
+pub unsafe extern "C" fn __lsf_rust_root_reap(pointer: *mut u8) {
+    assert!(!pointer.is_null() && unsafe { context_get() }.is_null(),
+            "root reaper requires a detached context");
+    let live = unsafe { &*pointer.cast::<Context>() };
+    assert!(live.root_task.is_some() && live.stack_allocation.is_none()
+            && live.stack.phase.get() == STACK_WASM_FRAMES_EXITED
+            && live.stack.pointer.get() == live.stack.high
+            && live.closing.get() && live.head.get().is_null(),
+            "root reaper requires completed logical TLS/frame retirement");
+    let context = unsafe { deallocate(pointer.cast::<Context>()) };
+    let owner = unsafe { ptr::read(&*context.owner) };
+    let task = unsafe { ptr::read(&**context.root_task.as_ref().unwrap()) };
+    drop(context);
+    drop(owner);
+    drop(task);
+}
+
 /// # Safety
 /// This fresh prepared context was never installed and no TLS frame owns it.
 pub(crate) unsafe fn discard_unstarted_context(pointer: *mut u8) {
     assert!(!pointer.is_null());
     let live = unsafe { &*pointer.cast::<Context>() };
     assert!(live.head.get().is_null() && !live.closing.get());
+    assert!(live.root_task.is_none(), "root context requires its owned root lifecycle");
     assert!(matches!(live.stack.phase.get(), STACK_LEGACY_TLS_ONLY | STACK_PREPARED));
     assert_ne!(unsafe { context_get() }, pointer, "discard requires an uninstalled context");
     let context = unsafe { deallocate(pointer.cast::<Context>()) };
@@ -402,7 +486,7 @@ pub(crate) unsafe fn retire_exited_thread_context(pointer: *mut u8) -> Result<()
             "thread reaping must use a different live context");
     let live = unsafe { &*pointer.cast::<Context>() };
     if live.stack.phase.get() != STACK_WASM_FRAMES_EXITED
-            || !live.closing.get() || !live.head.get().is_null() {
+            || !live.closing.get() || !live.head.get().is_null() || live.root_task.is_some() {
         return Err(RetireError::WrongStackPhase);
     }
     // All Wasm/Rust frames are gone and the caller supplied actual native
