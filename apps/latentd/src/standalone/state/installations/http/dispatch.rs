@@ -70,7 +70,7 @@ impl DeferredHttpAuthorization for DispatchRegistry {
                 },
                 grant.deadline(),
             )
-            .map_err(|_| HttpError::PermissionDenied)
+            .map_err(HttpError::from)
     }
 }
 

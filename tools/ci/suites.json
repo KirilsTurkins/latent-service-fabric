@@ -10185,7 +10185,8 @@
         "standalone::state::recovery::profile::refreshed_http::tests::authentic_refreshed_tuple_keeps_all_four_compiler_source_and_codec_associations",
         "standalone::state::recovery::profile::refreshed_http::tests::refreshed_review_uses_new_marker_proof_and_preserves_original_codec",
         "standalone::state::recovery::profile::refreshed_http::tests::refreshed_tuple_refuses_mixed_historical_or_foreign_associations",
-        "standalone::state::recovery::profile::refreshed_http::tests::refreshed_review_retains_all_original_declaration_and_codec_gates"
+        "standalone::state::recovery::profile::refreshed_http::tests::refreshed_review_retains_all_original_declaration_and_codec_gates",
+        "standalone::state::installations::tests::startup::dispatch_policy::actual_retired_dispatch_policy_preserves_unavailable_without_provider_work"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10254,7 +10255,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 437,
+      "minimumCases": 438,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
