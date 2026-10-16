@@ -46,8 +46,8 @@ FIXED_RESULT_SHA256 = "7122f099bd89829ec74f652620cf61f9710674b1e6deab4a38b4bb4c1
 # another unsafe operation or changing the physical retirement fence needs review.
 NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
 NATIVE_STACK_CHILD = f"{CRATE}/src/native_stacks/children.rs"
-NATIVE_STACK_CHILD_SHA256 = "130fdad6c74f7be053e02ac7e7003d5b623c5139a28b0517a8982024c9256ca0"
-NATIVE_STACK_SHA256 = "be39533048a5b48d20524ce3193d9c4ac3acabe5c0edf29bd6ef95b0bcce5f23"
+NATIVE_STACK_CHILD_SHA256 = "b8718a74d9ecd9dacc1f2eb3848abf5f06baca57c2aaa8fa8bb3b24988c9d406"
+NATIVE_STACK_SHA256 = "c46d0240b995accf7816582850895422a94b7702650bd24c180ad03e303c2247"
 ALLOW = '''#[allow(
     unsafe_code,
     reason = "the sole native loader accepts only a private proof over authenticated immutable bytes"
@@ -125,7 +125,7 @@ def validate(root: Path) -> list[str]:
                 source = ""
         elif relative == NATIVE_STACK_CHILD:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_CHILD_SHA256:
-                errors.append("audited native child admission/retirement changed; review original permits, waits and physical completion")
+                errors.append("audited native child admission/retirement changed; review original permits and host-only post-StoreDrop release")
             # No unsafe allowance is granted to the child state machine.
         if unsafe.search(source) or lowered.search(source):
             errors.append(f"unreviewed unsafe code or allowance in {relative}")

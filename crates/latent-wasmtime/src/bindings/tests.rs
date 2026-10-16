@@ -185,7 +185,7 @@ fn activation_runtime_linker_preserves_exact_shape_and_unknown_profile_denial() 
 }
 
 #[test]
-fn native_runtime_linker_requires_exact_dependency_and_mixed_async_shapes() {
+fn native_runtime_linker_requires_exact_dependency_and_support_start_shape() {
     let engine = engine();
     let spec = latent_core::PHASE3_HOST_ABI_V6
         .interface(crate::host::native::CAPABILITY)
@@ -210,11 +210,8 @@ fn native_runtime_linker_requires_exact_dependency_and_mixed_async_shapes() {
     crate::host::native::install(&mut linker).unwrap();
     linker.instantiate_pre(&component).unwrap();
     for source in [
-        spec.wit.replace("join: async func", "join: func"),
         spec.wit.replace("start: func", "start: async func"),
-        spec.wit.replace("reap: func", "reap: async func"),
-        spec.wit
-            .replace("result<token, error>", "result<u32, error>"),
+        spec.wit.replace("result<_, error>", "result<u32, error>"),
     ] {
         assert_ne!(source, spec.wit);
         assert!(linker

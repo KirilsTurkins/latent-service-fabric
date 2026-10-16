@@ -103,9 +103,9 @@ all = "warn"
         self.write(boundary.NATIVE_STACK_CHILD, source)
         self.assertEqual(boundary.validate(self.root), [])
         for before, after in (
-            ('self.phase.load(Ordering::Acquire) == 2', 'true'),
-            ('runtime.register(OwnerKind::Wait, Some(continuation))?', 'unrelated_runtime.register(OwnerKind::Wait, Some(continuation))?'),
-            ('children.pending.is_some()', 'false'),
+            ('self.active.load(Ordering::Acquire) != 0', 'false'),
+            ('OwnerKind::Native, Some(continuation)', 'OwnerKind::Task, Some(continuation)'),
+            ('children.accepted >= children.maximum', 'false'),
         ):
             with self.subTest(change=before):
                 self.assertIn(before, source)

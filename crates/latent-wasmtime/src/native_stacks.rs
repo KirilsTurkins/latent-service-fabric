@@ -15,8 +15,11 @@ use std::task::{Context, Poll};
 use latent_core::activation_runtime::{ActivationRuntime, OwnerKind, RuntimeOwner};
 use latent_core::{ActivationBudget, HostMemoryReservation, PlatformError, PlatformErrorCode};
 
+// A conservative per-start metadata escrow, not a measured allocator cost.
+// Qualification records the pinned engine's actual cold/parked/native costs.
+pub(crate) const CHILD_METADATA_ESCROW: usize = 8192;
+
 mod children;
-pub(crate) use children::Child;
 
 thread_local! {
     // Only an internal Future poll installs this allocation context. It carries
@@ -31,11 +34,6 @@ struct Permit {
         allow(dead_code)
     )]
     memory: HostMemoryReservation,
-    #[cfg_attr(
-        not(all(target_os = "linux", target_arch = "x86_64")),
-        allow(dead_code)
-    )]
-    child: Option<Arc<Child>>,
 }
 
 pub(crate) struct StackContext {
@@ -84,7 +82,8 @@ impl StackContext {
             .reserve_host_memory(
                 (std::mem::size_of::<Self>()
                     + 64
-                    + maximum_children * std::mem::size_of::<Arc<Child>>()) as u64,
+                    + maximum_children * (std::mem::size_of::<Permit>() + CHILD_METADATA_ESCROW))
+                    as u64,
             )
             .map_err(|e| e.to_platform_error())?;
         let children = children::Children::new(maximum_children)?;
@@ -95,7 +94,6 @@ impl StackContext {
             root: Mutex::new(Some(Permit {
                 _owner: owner,
                 memory,
-                child: None,
             })),
             children: Mutex::new(children),
             size,
@@ -116,7 +114,14 @@ impl StackContext {
                 .take(),
         );
         let owners = self.runtime.snapshot().owners;
-        if owners[..6].iter().any(|n| *n != 0) || owners[6] != self.active.load(Ordering::Acquire) {
+        let retained = self
+            .children
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .retained_count() as u32;
+        if owners[..6].iter().any(|n| *n != 0)
+            || owners[6] != self.active.load(Ordering::Acquire) + retained
+        {
             return Err(failure("native-stack-logical-owners-unretired"));
         }
         self.finalization_requested.store(true, Ordering::Release);
@@ -131,18 +136,17 @@ impl StackContext {
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .take(),
         );
-        drop(
-            self.children
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .pending
-                .take(),
-        );
     }
 
     fn try_retire(&self) {
         if self.finalization_requested.load(Ordering::Acquire)
             && self.active.load(Ordering::Acquire) == 0
+            && self
+                .children
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .retained_count()
+                == 0
             && self.runtime.retire().is_err()
         {
             self.retirement_failed.store(true, Ordering::Release);
@@ -157,6 +161,12 @@ impl StackContext {
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .is_none()
             && !self.retirement_failed.load(Ordering::Acquire)
+            && self
+                .children
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .retained_count()
+                == 0
     }
 }
 
@@ -255,9 +265,6 @@ impl Mapping {
             permit: None,
         };
         permit.memory.confirm();
-        if let Some(child) = &permit.child {
-            child.mapped();
-        }
         // SAFETY: this page-aligned subrange belongs to the new mapping. Its first
         // page remains inaccessible and its remaining pages are private stack data.
         if let Err(error) = unsafe {
@@ -302,19 +309,12 @@ impl Drop for Mapping {
                 .retirement_failed
                 .store(true, Ordering::Release);
             if let Some(permit) = self.permit.take() {
-                if let Some(child) = &permit.child {
-                    child.uncertain();
-                }
                 // Keep actual uncertain native capacity charged and quarantine.
                 std::mem::forget(permit);
             }
             return;
         }
-        let child = self.permit.as_ref().and_then(|permit| permit.child.clone());
         drop(self.permit.take());
-        if let Some(child) = child {
-            child.unmapped();
-        }
         self.context.active.fetch_sub(1, Ordering::AcqRel);
         self.context.try_retire();
     }

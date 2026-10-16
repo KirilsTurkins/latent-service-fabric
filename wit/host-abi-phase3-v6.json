@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "id": "lsf-host-abi-phase3-v6",
   "world": "latent:platform/capsule@0.6.0",
-  "digest": "sha256:0a21faee5603584412355df7ba79edb2eabfe3063f1c6ee2d937b59184caace1",
+  "digest": "sha256:0ab48964b4c617fd03515413628632295962c02cb52f54cda9ee447d54666b09",
   "wasmtimeVersion": "48.0.6",
   "guestGenerator": "wit-bindgen@0.62.0",
   "interfaces": [
@@ -145,9 +145,9 @@
       "interface": "latent:runtime-native/threads@0.1.0",
       "package": "latent:runtime-native",
       "source": "wit/platform/native-runtime/package.wit",
-      "sourceSha256": "sha256:e42a0389ea28b51d672d3bdada387c771d3f8c4c34c7af4f84c9ea87c06b224f",
+      "sourceSha256": "sha256:2433ec06c033be01474fd5bf3275c921622eb6720aac344f1307736d09325eb6",
       "binding": "provider",
-      "asynchronous": true,
+      "asynchronous": false,
       "installed": false
     }
   ]

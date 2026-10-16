@@ -140,7 +140,7 @@ fn operation(contract: &str, name: &str) -> bool {
             "timer-next",
             "timer-stop",
         ],
-        "latent:runtime-native/threads@0.1.0" => &["start", "join", "reap"],
+        "latent:runtime-native/threads@0.1.0" => &["start"],
         "latent:random/random@0.1.0" => &["bytes", "u64-value"],
         "latent:blob/blob@0.2.0" => &[
             "create",
