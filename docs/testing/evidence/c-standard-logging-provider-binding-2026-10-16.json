@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "latent.c-standard-logging.provider-binding-correction.v1",
+  "status": "fresh-signed-qualification-pending",
+  "componentExecutionByThisReceipt": false,
+  "observedFailure": {
+    "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38870206663/job/116872794088",
+    "activation": "c-stdio-initializer-with-grant",
+    "code": "permission-denied",
+    "terminalState": "rejected",
+    "cpuFuel": "0",
+    "peakMemoryBytes": "0",
+    "logBytes": "0"
+  },
+  "sourceFinding": "The isolated authoring node configured HTTP only; a log policy and deployment grant did not install a logging provider or provider binding.",
+  "correction": {
+    "installation": "explicit activation-log-v1 provider for the examples runtime-host",
+    "consumer": "examples/my-greeting",
+    "providerBinding": "log-installed",
+    "bindingIdentity": "actual startup configuration digest and epoch, restricted to write",
+    "capabilityPolicy": "separate explicit standard-stdio policy, after both original admission-denial controls",
+    "productionAdmissionChanged": false,
+    "adapterChanged": false
+  },
+  "sourceControls": {
+    "capturedProfileAndLibraryTests": 13,
+    "retainedActualDenialMutationsRejected": 6,
+    "modeledInvocationSequence": 14,
+    "originalAdditionalCases": 11,
+    "providerBindingIdentityAndControlOrdering": "passed"
+  }
+}
