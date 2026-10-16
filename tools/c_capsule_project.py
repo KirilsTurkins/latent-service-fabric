@@ -10,6 +10,30 @@ from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TU
     fresh, inventory, read_file, snapshot)
 
 
+def sdk_inputs(root: Path) -> dict[str, bytes]:
+    vendor = {}
+    for folder in ("sdk/c-guest/include", "sdk/c-guest/src", "wit/platform"):
+        vendor.update({folder + "/" + path: data for path, data in snapshot(root / folder).items()})
+    for path in ("Cargo.toml", "tools/toolchain.toml", "LICENSE", "NOTICE"):
+        vendor[path] = read_file(root / path)
+    return vendor
+
+
+def authoring_inputs(root: Path) -> dict[str, bytes]:
+    files = sdk_inputs(root)
+    for template in AUTHORING_TEMPLATES:
+        path = ("tools/toolchain-smoke/examples/tutorial_" + template.replace("-", "_")
+                if template in TUTORIALS else "examples/rust-capsules/" + template)
+        files[path + "/world.wit"] = read_file(root / path / "world.wit")
+        path = "sdk/c-guest/templates/" + template + ".c"
+        files[path] = read_file(root / path)
+    for path in ("examples/echo-contract/capsule.json", "tools/guest_bindings.lock.json",
+                 "sdk/profile/transaction-requirements-v1.json",
+                 "examples/rust-capsules/transactional-aggregate/state-schema.json"):
+        files[path] = read_file(root / path)
+    return dict(sorted(files.items()))
+
+
 def create(directory: Path, template: str, name: str | None = None) -> Path:
     if template not in AUTHORING_TEMPLATES:
         raise ValueError("unknown C capsule template")
@@ -18,11 +42,7 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
         raise ValueError("use a lowercase kebab-case capsule name, at most 64 bytes")
     source = (ROOT / "tools/toolchain-smoke/examples" / ("tutorial_" + template.replace("-", "_"))
               if template in TUTORIALS else ROOT / "examples/rust-capsules" / template)
-    vendor = {}
-    for folder in ("sdk/c-guest/include", "sdk/c-guest/src", "wit/platform"):
-        vendor.update({folder + "/" + path: data for path, data in snapshot(ROOT / folder).items()})
-    for path in ("Cargo.toml", "tools/toolchain.toml", "LICENSE", "NOTICE"):
-        vendor[path] = read_file(ROOT / path)
+    vendor = sdk_inputs(ROOT)
     files = {"vendor/lsf/" + path: data for path, data in vendor.items()}
     files.update({"src/main.c": read_file(ROOT / "sdk/c-guest/templates" / (template + ".c")),
                   "wit/world.wit": read_file(source / "world.wit"), ".gitignore": b"/target/\n"})
