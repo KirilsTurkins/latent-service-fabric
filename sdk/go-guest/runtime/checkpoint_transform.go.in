@@ -1,0 +1,135 @@
+// Compiler-owned Go parser. It transforms captured source as data and executes
+// no application initialization, generator or package hook on the build host.
+package main
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
+	"sort"
+	"strconv"
+	"strings"
+)
+
+type input struct { Path string `json:"path"`; Diagnostic string `json:"diagnostic"` }
+type span struct { first, last token.Pos }
+type edit struct { offset int; text string }
+type site struct { Line int `json:"line"`; Column int `json:"column"`; Suspendable bool `json:"suspendable"` }
+type result struct {
+	Path string `json:"path"`
+	Adapted string `json:"adapted"`
+	UpstreamDigest string `json:"upstreamDigest"`
+	AdaptedDigest string `json:"adaptedDigest"`
+	Sites []site `json:"sites"`
+}
+
+func digest(raw []byte) string { sum := sha256.Sum256(raw); return "sha256:" + hex.EncodeToString(sum[:]) }
+func fail(err error) { fmt.Fprintln(os.Stderr, err); os.Exit(1) }
+
+func transform(row input, destination string) (result, error) {
+	info, err := os.Lstat(row.Path)
+	if err != nil { return result{}, err }
+	if !info.Mode().IsRegular() || info.Size() > 32*1024*1024 { return result{}, fmt.Errorf("checkpoint-source-not-bounded-regular-file") }
+	raw, err := os.ReadFile(row.Path)
+	if err != nil { return result{}, err }
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, row.Diagnostic, raw, parser.ParseComments)
+	if err != nil { return result{}, err }
+	if strings.Contains(row.Diagnostic, "\n") || strings.Contains(row.Diagnostic, "\r") {
+		return result{}, fmt.Errorf("checkpoint-diagnostic-path-invalid")
+	}
+	identity := sha256.Sum256([]byte(row.Path))
+	name := "__lsf_checkpoint_" + hex.EncodeToString(identity[:8])
+	blocked := name + "_non_suspendable"
+	var nonSuspendable []span
+	for _, declaration := range file.Decls {
+		fn, ok := declaration.(*ast.FuncDecl)
+		if !ok { continue }
+		if strings.HasPrefix(fn.Name.Name, "__lsf_checkpoint_") {
+			return result{}, fmt.Errorf("%s: checkpoint-compiler-name-reserved", fset.Position(fn.Pos()))
+		}
+		if fn.Doc != nil {
+			for _, comment := range fn.Doc.List {
+				if comment.Text == "//go:nosplit" || strings.HasPrefix(comment.Text, "//go:nowritebarrier") {
+					nonSuspendable = append(nonSuspendable, span{fn.Pos(), fn.End()})
+				}
+			}
+		}
+	}
+	var edits []edit
+	record := result{Path: row.Path, UpstreamDigest: digest(raw), Sites: []site{}}
+	add := func(body *ast.BlockStmt) {
+		if body == nil { return }
+		position := body.Lbrace + 1
+		original := fset.Position(position)
+		suspendable := true
+		for _, interval := range nonSuspendable {
+			if position >= interval.first && position <= interval.last { suspendable = false }
+		}
+		callee := name
+		if !suspendable { callee = blocked }
+		record.Sites = append(record.Sites, site{original.Line, original.Column, suspendable})
+		edits = append(edits, edit{fset.File(position).Offset(position),
+			"\n" + callee + "();\n//line " + row.Diagnostic + ":" + strconv.Itoa(original.Line) + ":" + strconv.Itoa(original.Column) + "\n"})
+	}
+	ast.Inspect(file, func(node ast.Node) bool {
+		switch node := node.(type) {
+		case *ast.FuncDecl: add(node.Body)
+		case *ast.FuncLit: add(node.Body)
+		case *ast.ForStmt: add(node.Body)
+		case *ast.RangeStmt: add(node.Body)
+		}
+		return true
+	})
+	if len(record.Sites) > 65536 { return result{}, fmt.Errorf("checkpoint-sites-per-file-exhausted") }
+	if len(record.Sites) == 0 { return record, nil }
+	hasUnsafe := false
+	for _, imported := range file.Imports {
+		if imported.Path.Value == `"unsafe"` { hasUnsafe = true }
+	}
+	if !hasUnsafe {
+		position := file.Name.End()
+		original := fset.Position(position)
+		edits = append(edits, edit{fset.File(position).Offset(position),
+			"\nimport _ \"unsafe\"\n//line " + row.Diagnostic + ":" + strconv.Itoa(original.Line) + ":" + strconv.Itoa(original.Column) + "\n"})
+	}
+	sort.Slice(edits, func(i, j int) bool { return edits[i].offset > edits[j].offset })
+	adapted := append([]byte{}, raw...)
+	for _, change := range edits {
+		adapted = append(adapted[:change.offset], append([]byte(change.text), adapted[change.offset:]...)...)
+	}
+	adapted = append(adapted, []byte("\n//go:linkname " + name + " runtime.lsfCheckpoint\nfunc " + name + "()\n" +
+		"//go:linkname " + blocked + " runtime.lsfUnsupportedCheckpoint\n//go:nosplit\nfunc " + blocked + "()\n")...)
+	if _, err := parser.ParseFile(token.NewFileSet(), row.Diagnostic, adapted, parser.ParseComments); err != nil { return result{}, err }
+	record.Adapted = filepath.Join(destination, hex.EncodeToString(identity[:]) + ".go")
+	record.AdaptedDigest = digest(adapted)
+	if err := os.WriteFile(record.Adapted, adapted, 0600); err != nil { return result{}, err }
+	return record, nil
+}
+
+func main() {
+	if len(os.Args) != 3 { fail(fmt.Errorf("checkpoint-input-and-output-required")) }
+	raw, err := os.ReadFile(os.Args[1]); if err != nil { fail(err) }
+	if len(raw) > 4*1024*1024 { fail(fmt.Errorf("checkpoint-input-byte-limit")) }
+	var inputs []input
+	if err := json.Unmarshal(raw, &inputs); err != nil { fail(err) }
+	if len(inputs) > 32768 { fail(fmt.Errorf("checkpoint-input-file-limit")) }
+	if err := os.Mkdir(os.Args[2], 0700); err != nil { fail(err) }
+	rows := []result{}
+	total := 0
+	for _, input := range inputs {
+		row, err := transform(input, os.Args[2]); if err != nil { fail(err) }
+		total += len(row.Sites)
+		if total > 262144 { fail(fmt.Errorf("checkpoint-total-sites-exhausted")) }
+		rows = append(rows, row)
+	}
+	encoded, err := json.Marshal(rows); if err != nil { fail(err) }
+	if len(encoded) > 4*1024*1024 { fail(fmt.Errorf("checkpoint-output-byte-limit")) }
+	if _, err := os.Stdout.Write(encoded); err != nil { fail(err) }
+}

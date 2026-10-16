@@ -121,6 +121,8 @@ def recipe(payload: Path, language: str) -> None:
              "tools/dev_workflow/transaction_binding.py",
              "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"}
     names.add(guest_compatibility_build.HOST_MANIFESTS[HOST_ABI])
+    if language == "c":
+        names.update(c_capsule_project.authoring_inputs(ROOT))
     if language in {"java", "dotnet", "go", "typescript"}:
         names.add("tools/dev_managed_tools.py")
     if language == "java":

@@ -193,6 +193,11 @@ assets remain attributed inputs; their presence does not establish reachable JNI
 compatibility. Platform/JDK/SDK class overrides and too-new or malformed bytecode
 fail concretely.
 
+The [captured-JAR compiler programme](../testing/java-library-compiler-negatives.md)
+checks actual reachable native and generic-reflection failures alongside a signed
+ordinary entry point from the same JAR. Its retained compiler failure does not
+turn an unknown compatibility report into an elimination claim.
+
 TeaVM compiler extension services are host executable inputs and fail closed.
 Ordinary guest service-provider resources are preserved; normal compilation
 disables annotation processing. [Explicitly approved source generators and

@@ -13,6 +13,17 @@ Create an independent C project, edit its typed contract, and run its signed
 package on a local node. Your application lives outside the LSF checkout and
 uses a pinned copy of the maintained guest SDK.
 
+New C tool bundles also retain the exact SDK, WIT and template inputs used by
+their advanced `recipe/tools/c_capsule.py new` command. Run it with the bundle's
+`sdk/bin/python -I -B` outside the checkout. All six creators use the same captured
+SDK selection as source authoring, including the transactional schema/profile.
+These inputs participate in the existing authenticated tool inventory; changing
+the created vendor files still invalidates the SDK lock. This command grants no
+runtime authority and does not replace the shared frontend workflow above.
+The [installed library qualification](../testing/c-installed-library.md) records
+source-candidate compilation and declaration-review checks separately from release
+authentication and frontend watch operation.
+
 Use Linux, Python 3.13.5, Zig 0.16.0, Rust 1.97.1 for the host tools,
 wasm-tools 1.254.0 and wit-bindgen-cli
 0.62.0. Follow the [toolchain setup](../development/toolchain.md), install
@@ -267,6 +278,10 @@ including each wrapper's close/drop rules. The C headers in
 canonical async task frames. An imported effect is allowed only
 by host policy. Pending calls retain their budget until the host releases them;
 cancelling a subtask never proves an external effect did not occur.
+
+The opt-in [standard clock and entropy profile](c-standard-facilities.md)
+describes ordinary libc calls, captured profile selection and its current
+qualification boundary.
 
 If a build fails, inspect `BUILD-FAILED.json` and `logs/` in that attempt's output.
 SDK binding drift means the SDK and generator pins disagree; do not edit the lock

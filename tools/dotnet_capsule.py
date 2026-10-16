@@ -75,7 +75,7 @@ def install(directory: Path, wasi_sdk: Path):
     return directory
 
 
-def main():
+def parser():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     tools = commands.add_parser("install-tools")
@@ -92,6 +92,31 @@ def main():
     resolve_.add_argument('--tools', type=Path, required=True)
     resolve_.add_argument('--feed-config', type=Path)
     resolve_.add_argument('--update-lock', action='store_true')
+    for operation in ('add', 'update', 'remove'):
+        command = commands.add_parser(operation, help='Edit exact application PackageReference inputs without restoring')
+        command.add_argument('project', type=Path)
+        command.add_argument('identity')
+        if operation in {'add', 'update'}:
+            command.add_argument('--version', required=True)
+    review = commands.add_parser('review-lock', help='Accept an exact reviewed captured NuGet candidate')
+    review.add_argument('project', type=Path)
+    review.add_argument('--candidate', type=Path, required=True)
+    review.add_argument('--expect', required=True)
+    status = commands.add_parser('dependencies', help='Verify original NuGet inputs offline')
+    status.add_argument('project', type=Path)
+    for operation in ('test', 'watch'):
+        command = commands.add_parser(operation, help='Delegate reviewed inputs to the maintained frontend')
+        command.add_argument('project', type=Path)
+        command.add_argument('--workspace', required=True)
+        command.add_argument('--state-root', type=Path)
+        command.add_argument('--select', action='append', default=[])
+        command.add_argument('--frontend', type=Path)
+        command.add_argument('--frontend-sha256')
+        command.add_argument('--frontend-timeout', type=int, default=600)
+        if operation == 'test':
+            command.add_argument('--environment', choices=('node', 'portable'), default='node')
+        else:
+            command.add_argument('--tool-root')
     compile_ = commands.add_parser("build")
     compile_.add_argument("project", type=Path)
     compile_.add_argument("--tools", type=Path, required=True)
@@ -100,22 +125,81 @@ def main():
     compile_.add_argument('--executable-approval')
     compile_.add_argument("--contracts-tool", type=Path, default=ROOT / "target/debug/examples/capsule_contracts")
     compile_.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parser().parse_args(argv)
+    authoring = args.command in {'add', 'update', 'remove', 'resolve', 'review-lock', 'dependencies', 'test', 'watch'}
     try:
+        if authoring:
+            from tools import dotnet_dependency_authoring as dependencies
+            from tools.build_snapshot import canonical
+            from tools.dev_workflow import paths
+            if args.command in {'test', 'watch'}:
+                from tools import guest_authoring_frontend
+                from tools.guest_dependency_inputs import layout
+                owner, _app, _descriptor = layout(args.project, 'dotnet')
+                delegated = dependencies.frontend(owner, args.command, workspace=args.workspace,
+                    state_root=args.state_root, tool_root=getattr(args, 'tool_root', None),
+                    selections=tuple(args.select), environment=getattr(args, 'environment', 'node'))
+                outcome = guest_authoring_frontend.execute(owner, args.command, delegated,
+                    frontend=args.frontend, expected=args.frontend_sha256, timeout_seconds=args.frontend_timeout)
+                guest_authoring_frontend.emit(outcome)
+                try:
+                    dependencies.record(owner, {**outcome.evidence, 'stage': 'nuget-dependency-' + args.command,
+                        'compilerExecution': 'maintained-frontend'})
+                except (ValueError, OSError):
+                    print('NuGet dependency frontend receipt unavailable; inspect workspace status.', file=sys.stderr)
+                return outcome.exit_code
+            if args.command in {'add', 'update', 'remove'}:
+                result = dependencies.edit(args.project, args.command, identity=args.identity, version=getattr(args, 'version', None))
+            elif args.command == 'resolve':
+                from tools.application_dependency_store import DependencyError
+                from tools.dotnet_application_dependencies import resolve
+                candidate = dependencies.candidate_location(args.project, args.candidate)
+                if any(os.path.lexists(candidate.with_name(candidate.name + suffix)) for suffix in ('.receipt.json', '.failed.json')):
+                    raise DependencyError('nuget-dependency-candidate-use-fresh-attempt')
+                lock = resolve(args.project, candidate, dotnet=args.dotnet, tools=args.tools,
+                    policy=json.loads(read_file(args.feed_config)) if args.feed_config else None, update_lock=args.update_lock)
+                result = dependencies.resolved(args.project, candidate, lock)
+                paths.write_new(candidate.with_name(candidate.name + '.receipt.json'), canonical(result) + b'\n')
+            elif args.command == 'review-lock':
+                result = dependencies.review(args.project, args.candidate, args.expect)
+            else:
+                result = dependencies.status(args.project)
+            receipt = dependencies.record(args.project, result)
+            print(canonical({**result, 'receipt': str(receipt)}).decode())
+            return 0
         if args.command == "install-tools":
             result = install(args.directory, args.wasi_sdk)
         elif args.command == "new":
             result = create(args.directory, args.template, args.name)
-        elif args.command == 'resolve':
-            from tools.dotnet_application_dependencies import resolve
-            result = resolve(args.project, args.candidate, dotnet=args.dotnet, tools=args.tools,
-                policy=json.loads(read_file(args.feed_config)) if args.feed_config else None, update_lock=args.update_lock)
         else:
             result = build(args.project, args.output, args.contracts_tool, args.packager, args.repository, tools=args.tools,
                 executable_approval=args.executable_approval)
         print(result)
         return 0
-    except (ValueError, OSError, RuntimeError) as error:
+    except (ValueError, OSError, RuntimeError, KeyError, TypeError) as error:
+        if authoring:
+            from tools import dotnet_dependency_authoring as dependencies
+            from tools.build_snapshot import canonical
+            from tools.dev_workflow import paths
+            result = dependencies.failure(args.command, error)
+            try:
+                dependencies.record(args.project, result)
+                if args.command == 'resolve' and result['reason'] not in {
+                        'dependency-candidate-exists', 'nuget-dependency-candidate-use-fresh-attempt',
+                        'nuget-candidate-cannot-overwrite-reviewed-input'}:
+                    candidate = dependencies.candidate_location(args.project, args.candidate)
+                    failed = candidate.with_name(candidate.name + '.failed.json')
+                    if not os.path.lexists(failed):
+                        failed.parent.mkdir(parents=True, exist_ok=True)
+                        paths.write_new(failed, canonical(result) + b'\n')
+            except (ValueError, OSError):
+                pass
+            print(canonical(result).decode(), file=sys.stderr)
+            return 1
         print(f"C# capsule authoring failed: {error}", file=sys.stderr)
         return 1
 

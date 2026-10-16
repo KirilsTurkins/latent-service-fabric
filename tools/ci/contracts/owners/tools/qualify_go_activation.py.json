@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_activation.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "New finite-profile ordinary-source compiler owner; retains exact compiler/source/component transformations and failures",
+  "reviewReason": "Bind selected profile and reviewed native reference plus compiler checkpoint fixture while retaining ordinary v1 qualification",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "da14016ef8f455d7292baecfb9a374967b1d1e53ec6c8f8ccc8ba17bc3893113"
+  "sha256": "4fd91c87f5556f3c35c65285abbb135e52e872c7b98a633f8fce1d8b222e4681"
 }

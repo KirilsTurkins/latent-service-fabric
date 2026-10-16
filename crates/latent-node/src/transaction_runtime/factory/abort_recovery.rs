@@ -44,6 +44,16 @@ impl NativeTransactionAdmission {
         control: &crate::TransactionCommitControl,
         original_failure: Option<&latent_activation::ActivationOutcome>,
     ) -> CommandCompletionDisposition {
+        // A successful guest return with an unavailable host-encoded result
+        // cannot certify a terminal guest fault. Keep the original pending
+        // command and retirement proof for explicit recovery, without a fresh
+        // metadata writer or a terminal abort record.
+        if host
+            .result_unavailable_after_return
+            .load(std::sync::atomic::Ordering::Acquire)
+        {
+            return disposition;
+        }
         let CommandCompletionDisposition::Retired {
             command,
             proof,

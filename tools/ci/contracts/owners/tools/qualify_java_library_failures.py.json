@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_library_failures.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review same-original-JAR JNI and generic-reflection compiler failures with validated owner attribution, followed by signed ordinary execution and complete retirement; no elimination or permission inference.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6dd54c467674ff27ffea0dcc393560826df5e71a50b029496a93cbe3379297bd"
+}
