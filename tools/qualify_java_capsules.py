@@ -33,6 +33,7 @@ JAVA_HELPERS = (*HELPERS, "java_capsule.py", "java_capsule_project.py", "java_ca
     "qualify_java_capsules.py", "qualify_java_bridge.py", "build_java_guest_capsules.py", "browser_response_ownership.py",
     "java_guest/compiler.py", "java_guest/bindings.py", "java_guest/model.py", "java_guest/java.py",
     "java_guest/c.py", "java_guest/lock.py", "java_guest/surface.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
+    "java_guest/facilities.py", "qualify_java_entropy.py",
     "build_snapshot.py", "../.cargo/managed-guest.toml", "../contracts/http/browser-response-ownership-v1.json", "java_server_project.py", "java_server_source.py", "java_server_node.py", "server_source.py", "server_routes.py", "server_capsule.py",
     "java_standard_http_project.py", "java_standard_http_node.py", "java_standard_http_peer.py",
     "standard_http/peer.py", "standard_http/protocol.py", "standard_http/vectors.py", "standard_http/observations.py",
