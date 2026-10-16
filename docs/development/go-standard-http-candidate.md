@@ -134,3 +134,7 @@ and authenticate the default backend initializer without admitting custom dialer
 This signed gate has been added and has not yet executed. HTTPS, published
 default-client consumers, the wider matrix and complete #692 acceptance remain
 required; no full-ticket result follows from this candidate.
+
+The [two published client capture gate](go-default-http-libraries.md) adds
+ordinary library request/JSON paths and private transitive workers as a separate
+pending qualification. It preserves this original standard-API gate.

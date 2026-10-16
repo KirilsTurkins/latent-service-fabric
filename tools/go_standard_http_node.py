@@ -148,13 +148,42 @@ def invoke(client, target, which, url, activation):
     return row
 
 
-def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None):
+def library_cases(secondary: dict) -> list[tuple]:
+    cases = []
+    for index,name in enumerate(('sling','requests')):
+        # Sling's original streaming JSON decoder can reject malformed bytes
+        # before its deferred discard encounters the provider's size error.
+        oversized = 'invalid-json' if index == 0 else 'transport-error'
+        for label,mode,path,expected in (
+            ('json',0,'/conformance/json','200:domain:7:caf\u00e9:first|\u03bb'),
+            ('http404',0,'/conformance/status/404','404:error:domain-error'),
+            ('http500',0,'/conformance/status/500','500:error:domain-error'),
+            ('truncated',0,'/conformance/body/truncated','transport-error'),
+            ('oversized',0,'/conformance/body/oversized',oversized),
+            ('malformed-json',0,'/conformance/body/malformed-json','invalid-json'),
+            ('forbidden',3,'/conformance/json','transport-error'),
+            ('cancel-headers',4,'/conformance/hold/headers','cancelled'),
+            ('partial-context-cancel',5,'/conformance/body/partial','cancelled'),
+            ('post',1,'/conformance/echo','200:echo:AAECAw=='),
+            ('uncertain',1,'/conformance/mutation/close','transport-error'),
+            ('alternate-denied',0,f"http://{secondary['host']}:{secondary['port']}/conformance/denied-target",'transport-error'),
+            ('pre-cancelled',6,'/conformance/json','cancelled'),
+            ('sibling-cancel',7,'/conformance/hold/headers','cancelled'),
+            ('fresh',0,'/conformance/json','200:domain:7:caf\u00e9:first|\u03bb')):
+            cases.append((name+'-'+label,index*100+mode,path,expected))
+    return cases
+
+
+def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None,
+        suite: str = 'standard'):
+    require(suite in {'standard','libraries'},'standard-go-unknown-fixture-suite')
     expires = min(time.monotonic()+300, deadline) if deadline is not None else time.monotonic()+300
     require(expires > time.monotonic(), 'standard-go-original-deadline-expired')
     output = fresh(output)
     result = {'schemaVersion': 'latent.go.standard-http.qualification.v1', 'status': 'in-progress',
         'scope': 'ordinary-default-go-client-and-signed-real-provider-subset',
         'unchangedThirdPartyLibraryQualification': False, 'releasePublication': 'not-performed', 'cases': []}
+    result['suite'] = suite
     binaries = ({name: native/name for name in ('latent', 'latentd', 'capsule_authoring')}
                 if isinstance(native, Path) else dict(native))
     require(set(binaries) == {'latent', 'latentd', 'capsule_authoring'}, 'standard-go-native-tuple-required')
@@ -177,9 +206,17 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
         'tools/standard_http/observations.py', 'tools/go_guest/http.py', 'tools/go_guest/http_context.py',
         'sdk/go-guest/runtime/http_async.go.in', 'sdk/go-guest/runtime/http_transport.go.in',
         'tools/static_api/node.py', 'tools/guest_runtime_profiles.py')
+    if suite == 'libraries':
+        source_paths += ('sdk/go-guest/runtime/http-library-conformance/main.go',
+            'tools/go_http_library_fixture.py','tools/qualify_go_http_libraries.py')
     result['sources'] = {name: file_identity(ROOT/name) for name in source_paths}
     result['limitations'] = ['Native process RSS is sampled, not allocator/native/kernel upper-bound proof.',
         'Finite ordinary standard-API controls; no two-client, private-library, all-runtime or full ticket qualification.']
+    if suite == 'libraries':
+        result['limitations'] = ['Native RSS sampling is not an allocator/native/kernel upper-bound proof.',
+            'Shared standard33 gate owns early-close/concrete Transport/custom extension controls.',
+            'Sling partial-response context cancellation does not independently prove the header-return phase.',
+            'No complete runtime, TLS, socket, pool or full ticket qualification.']
     node = peer = client = None
     stage = 'sign'
     try:
@@ -266,6 +303,8 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('user-agent-first', 23, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
                      ('noncanonical-user-agent-denied', 24, '/conformance/json', 'transport-error'),
                      ('fresh', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb')]
+            if suite == 'libraries':
+                cases = library_cases(secondary)
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
                 require(row['exitCode'] == 0 and row['decoded'] == [expected], 'standard-go-'+name+'-result')
@@ -290,16 +329,18 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             peer.stop()
             observation = json.loads(bytes(peer.buffers[0]).splitlines()[0])
             validate_peer(observation)
-            require(observation['acceptedConnections'] == observation['startedRequests'] == 18 and observation['rejectedRequests'] == 0
-                and observation['committedMutations'] == 1
+            contacts = 24 if suite == 'libraries' else 18
+            require(observation['acceptedConnections'] == observation['startedRequests'] == contacts and observation['rejectedRequests'] == 0
+                and observation['committedMutations'] == (2 if suite == 'libraries' else 1)
                 and all(row['role'] == 'primary' for row in observation['requests']),
                 'standard-go-peer-contact-count')
-            expected_agents = (b'Go-http-client/1.1', None, b'fixture-agent/1', b'Go-http-client/1.1')
-            for row, agent in zip(observation['requests'][-4:], expected_agents, strict=True):
-                require(row['userAgent'] == {'present':agent is not None,
-                    'bytes':len(agent) if agent is not None else 0,
-                    'sha256':'sha256:'+hashlib.sha256(agent).hexdigest() if agent is not None else None},
-                    'standard-go-user-agent-semantics')
+            if suite == 'standard':
+                expected_agents = (b'Go-http-client/1.1', None, b'fixture-agent/1', b'Go-http-client/1.1')
+                for row, agent in zip(observation['requests'][-4:], expected_agents, strict=True):
+                    require(row['userAgent'] == {'present':agent is not None,
+                        'bytes':len(agent) if agent is not None else 0,
+                        'sha256':'sha256:'+hashlib.sha256(agent).hexdigest() if agent is not None else None},
+                        'standard-go-user-agent-semantics')
             result['peer'] = observation
             result['peerReaped'] = peer.owner.finished
             peer = None
@@ -310,6 +351,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                 'standard-go-artifact-changed')
         require(result['sources'] == {name: file_identity(ROOT/name) for name in source_paths}, 'standard-go-sources-changed')
         result['status'] = 'passed'
+        result['unchangedThirdPartyLibraryQualification'] = suite == 'libraries'
         write_json(output/'qualification.json', result)
         return result
     except BaseException:

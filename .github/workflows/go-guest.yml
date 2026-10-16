@@ -30,6 +30,9 @@ on:
       - tools/go_standard_http_node.py
       - tools/go_standard_http_project.py
       - tools/qualify_go_standard_http.py
+      - tools/qualify_go_http_libraries.py
+      - tools/go_http_library_fixture.py
+      - tools/tests/test_go_http_libraries.py
       - tools/tests/test_go_standard_http_gate.py
       - tools/tests/fixtures/go-standard-http/**
       - tools/tests/fixtures/go-http-context/**
@@ -88,6 +91,9 @@ on:
       - tools/go_standard_http_node.py
       - tools/go_standard_http_project.py
       - tools/qualify_go_standard_http.py
+      - tools/qualify_go_http_libraries.py
+      - tools/go_http_library_fixture.py
+      - tools/tests/test_go_http_libraries.py
       - tools/tests/test_go_standard_http_gate.py
       - tools/tests/fixtures/go-standard-http/**
       - tools/tests/fixtures/go-http-context/**
@@ -269,6 +275,10 @@ jobs:
         run: python3 -m unittest tools.tests.test_go_standard_http_gate -v
       - name: Qualify ordinary net/http contexts and disposal on the signed node
         run: python3 tools/qualify_go_standard_http.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-standard-http-signed"
+      - name: Check third-party client capture and frozen native product boundaries
+        run: python3 -m unittest tools.tests.test_go_http_libraries -v
+      - name: Qualify two captured default clients and renamed private transitive workers
+        run: python3 tools/qualify_go_http_libraries.py --native-qualification "$RUNNER_TEMP/go-capsule-authoring" --output "$RUNNER_TEMP/go-http-libraries"
       - name: Test reviewed module lifecycle and selected frontend
         run: |
           python3 -m unittest tools.tests.test_go_dependency_authoring tools.tests.test_guest_authoring_frontend
@@ -287,6 +297,29 @@ jobs:
         with:
           name: go-guest-upstream-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/go-http-libraries/qualification.json
+            ${{ runner.temp }}/go-http-libraries/FAILED.json
+            ${{ runner.temp }}/go-http-libraries/*/capture.json
+            ${{ runner.temp }}/go-http-libraries/*/capture-command.json
+            ${{ runner.temp }}/go-http-libraries/*/capture.*.txt
+            ${{ runner.temp }}/go-http-libraries/*/application/src/**
+            ${{ runner.temp }}/go-http-libraries/*/application/go.mod
+            ${{ runner.temp }}/go-http-libraries/*/application/go.sum
+            ${{ runner.temp }}/go-http-libraries/*/application/go-resolved.lock.json
+            ${{ runner.temp }}/go-http-libraries/*/application/latent.dependencies*.json
+            ${{ runner.temp }}/go-http-libraries/*/application/dependency-inputs/**
+            ${{ runner.temp }}/go-http-libraries/*/compiler-command.json
+            ${{ runner.temp }}/go-http-libraries/*/compiler.*.txt
+            ${{ runner.temp }}/go-http-libraries/*/build/BUILD-*.json
+            ${{ runner.temp }}/go-http-libraries/*/build/component.wasm
+            ${{ runner.temp }}/go-http-libraries/*/build/*-inputs.json
+            ${{ runner.temp }}/go-http-libraries/*/build/build-observation.json
+            ${{ runner.temp }}/go-http-libraries/*/build/application-dependencies.json
+            ${{ runner.temp }}/go-http-libraries/*/build/compiler-containment.json
+            ${{ runner.temp }}/go-http-libraries/*/build/go-runtime-transformations.json
+            ${{ runner.temp }}/go-http-libraries/*/build/logs/**
+            ${{ runner.temp }}/go-http-libraries/*/node/*.json
+            ${{ runner.temp }}/go-http-libraries/*/node/controls/**
             ${{ runner.temp }}/go-http-context/qualification.json
             ${{ runner.temp }}/go-http-context/FAILED.json
             ${{ runner.temp }}/go-http-context/recipe-inputs.json
