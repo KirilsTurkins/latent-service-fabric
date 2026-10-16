@@ -14,6 +14,7 @@ from tools import (guest_compatibility_build, guest_resources, guest_dependency_
                    guest_authoring_frontend, java_http_client, java_server_source, server_source)
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
+from tools.java_guest import compiler_diagnostics
 from tools.java_guest import resources as java_resources
 from tools.application_dependencies import prepare, verify_inputs
 from tools.application_dependency_approval import request as execution_request, approve as approve_execution
@@ -34,6 +35,7 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "tools/java_registry_tls.py",
           "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
           "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/class_origin.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
+          "tools/java_guest/compiler_diagnostics.py",
           "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
@@ -299,4 +301,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": (compiler.records if compiler else []) + (commands.records if commands else [])})
         guest_compatibility_build.failure_report(output, "java", stage, files=files)
+        compiler_diagnostics.emit(output, stage,
+            expected_source=source_inputs if stage == 'compile' else None,
+            expected_compiler=compiler.compiler_inputs if compiler is not None else None,
+            expected_classpath=application_inventory if stage == 'compile' else None)
         raise

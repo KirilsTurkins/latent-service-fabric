@@ -200,12 +200,35 @@ jobs:
             --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-annotation-processors.log"
+      - name: Qualify captured original JAR native and reflection compiler failures with a signed ordinary entry
+        run: |
+          set -euo pipefail
+          python3 tools/qualify_java_library_failures.py \
+            --output "$RUNNER_TEMP/java-library-failures" \
+            --native-directory "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
+            --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-library-failures.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/java-library-failures.log
+            ${{ runner.temp }}/java-library-failures/qualification.json
+            ${{ runner.temp }}/java-library-failures/FAILED.json
+            ${{ runner.temp }}/java-library-failures/capture.json
+            ${{ runner.temp }}/java-library-failures/candidate.json
+            ${{ runner.temp }}/java-library-failures/logs/**
+            ${{ runner.temp }}/java-library-failures/native-method/*.json
+            ${{ runner.temp }}/java-library-failures/native-method/compiler-logs/**
+            ${{ runner.temp }}/java-library-failures/generic-reflection/*.json
+            ${{ runner.temp }}/java-library-failures/generic-reflection/compiler-logs/**
+            ${{ runner.temp }}/java-library-failures/ordinary/*.json
+            ${{ runner.temp }}/java-library-failures/ordinary/compiler-logs/**
+            ${{ runner.temp }}/java-library-failures/ordinary/component.wasm
+            ${{ runner.temp }}/java-library-failures/node/**/*.json
             ${{ runner.temp }}/java-annotation-processors.log
             ${{ runner.temp }}/java-annotation-processors/qualification.json
             ${{ runner.temp }}/java-annotation-processors/FAILED.json
