@@ -31,7 +31,12 @@ async fn owned_stack_fixture_selects_original_phase3_without_expanding_finite_gr
         };
         assert_eq!(control.budget.profile(), expected);
         assert_eq!(control.budget.granted(), &request.budget);
-        assert_eq!(request.budget, support::budget());
+        let mut expected_grant = support::budget();
+        if owned {
+            expected_grant.wall_time_limit_millis =
+                Some(support::WATCHDOG.as_millis().try_into().unwrap());
+        }
+        assert_eq!(request.budget, expected_grant);
         assert_eq!(request.activation.budget, request.budget);
         let deadline = control.budget.deadline();
         assert_eq!(

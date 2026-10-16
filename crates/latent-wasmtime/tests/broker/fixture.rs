@@ -343,7 +343,12 @@ impl Fixture {
     }
     pub fn request(&self, id: &str) -> (ExecutionRequest, Control) {
         let id = ActivationId(id.into());
-        let grant = support::budget();
+        let mut grant = support::budget();
+        if self.owned_native_stacks {
+            // A descendant root requires a finite original deadline. Narrow
+            // only this explicit profile to the existing fixture watchdog.
+            grant.wall_time_limit_millis = Some(support::WATCHDOG.as_millis().try_into().unwrap());
+        }
         // Native support reserves host memory in the original Phase3 ledger.
         // Keep the default Phase1 clock path and every finite grant unchanged.
         let profile = if self.owned_native_stacks {
