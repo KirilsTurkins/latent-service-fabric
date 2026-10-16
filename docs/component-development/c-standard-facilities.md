@@ -72,8 +72,14 @@ node execution. Its ungranted clock activations were rejected before guest
 execution. The random-grant probe incorrectly expected a guest declared error;
 the corrected probe requires the original rejected admission receipt for every
 ungranted capability, with known outcome and zero guest fuel and memory. Failed
-denial observations are retained before assertions. The corrected complete
-runtime programme is still pending.
+denial observations are retained before assertions. The [corrected native programme](../testing/evidence/c-standard-facilities-passed-2026-10-16.json)
+passed all 38 invocations: three rejected grant admissions, eight facility
+checks, and the 27 existing tutorial and recovery cases. The five ordinary
+default native products, compiler inputs and actual components are digest
+bound. The source library was removed before compilation. Provider idle checks,
+clean node shutdown, compiler retirement and all three held peer connections
+were confirmed within the original limits. This is an isolated signed fixture;
+it does not claim authenticated publisher access or a production release.
 
 The initial profile supports one selected lower-kebab-case world declaration
 in a root WIT file. Explicit profile imports in that file, duplicate world
