@@ -138,7 +138,12 @@ impl ProviderRuntime {
             for (installation, logging) in [(&config.context, false), (&config.log, true)] {
                 if let Some(installation) = installation {
                     let registration = scalar::core(&broker, installation.identity.epoch, logging)?;
-                    providers.push(owner.record(&installation.identity, registration.reference()));
+                    owner.record_scalar(
+                        config,
+                        &installation.identity,
+                        registration.reference(),
+                        &mut providers,
+                    );
                     owner.registrations.push(registration);
                 }
             }
@@ -148,7 +153,12 @@ impl ProviderRuntime {
                 if let Some(installation) = installation {
                     let registration =
                         scalar::clock(&broker, installation.identity.epoch, monotonic)?;
-                    providers.push(owner.record(&installation.identity, registration.reference()));
+                    owner.record_scalar(
+                        config,
+                        &installation.identity,
+                        registration.reference(),
+                        &mut providers,
+                    );
                     owner.registrations.push(registration);
                 }
             }
@@ -158,7 +168,12 @@ impl ProviderRuntime {
                     installation.identity.epoch,
                     latent_capabilities::broker::random::RandomLimits::default(),
                 )?;
-                providers.push(owner.record(&installation.identity, provider.reference()));
+                owner.record_scalar(
+                    config,
+                    &installation.identity,
+                    provider.reference(),
+                    &mut providers,
+                );
                 owner.runtime.install_random(provider)?;
             }
             if let Some(http) = &config.http {
@@ -295,6 +310,21 @@ impl ProviderRuntime {
             return Err(failure);
         }
         Ok(owner)
+    }
+
+    fn record_scalar(
+        &mut self,
+        config: &crate::config::ConfiguredProviders,
+        identity: &ProviderIdentity,
+        reference: ProviderReference,
+        providers: &mut Vec<ConfiguredBindingProvider>,
+    ) {
+        providers.push(self.record(identity, reference.clone()));
+        for alias in &config.scalar_aliases {
+            if alias.source == identity.id {
+                providers.push(self.record(&alias.identity, reference.clone()));
+            }
+        }
     }
 
     fn record(
