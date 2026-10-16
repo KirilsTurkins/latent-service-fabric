@@ -4,11 +4,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import shutil
+import sys
 import time
 import tomllib
 
 from tools.build_observation import build_environment, file_identity, resolve_tools
-from tools.build_process import run_bounded
+from tools.build_process import BuildProcessError, run_bounded_result
 from tools.build_snapshot import SnapshotError, canonical, digest, is_reparse
 from tools.angular_build.inputs import decode, read
 
@@ -16,6 +17,26 @@ ROOT = Path(__file__).resolve().parents[2]
 NODE_VERSION = '24.19.0'
 ADAPTER_FILES = ('Cargo.toml', 'src/abi.rs', 'src/lib.rs', 'src/wire.rs', 'src/backend.rs', 'wit/adapter.wit',
                  'runtime/bridge.js', 'runtime/timers.js')
+DIAGNOSTIC_STAGES = frozenset(('node-version', 'assembler-profile', 'bundle-configure', 'ngc', 'bundle',
+                               'componentize', 'adapter-cargo', 'component-new', 'compose', 'validate', 'package-build'))
+DIAGNOSTIC_REASONS = frozenset(('command-exit', 'command-deadline', 'command-output-limit', 'process-cleanup',
+                                'process-ownership', 'command-failed', 'build-deadline'))
+
+
+def failure_diagnostic(stage: str, reason: str, exit_kind: str, result=None) -> None:
+    record = {'schemaVersion': 'latent.angular.build-failure.v1', 'qualification': False,
+              'stage': stage, 'reason': reason if reason in DIAGNOSTIC_REASONS else 'other',
+              'exitKind': exit_kind, 'stdout': None, 'stderr': None}
+    if result is not None:
+        for name in ('stdout', 'stderr'):
+            raw = getattr(result, name)
+            record[name] = {'bytes': len(raw), 'digest': digest(raw)}
+    encoded = canonical(record)
+    if len(encoded) <= 1024:
+        try:
+            sys.stderr.write(encoded.decode('ascii') + '\n')
+        except (OSError, ValueError):
+            pass
 
 
 def table(files: list[tuple[str, Path]], name: str) -> tuple[dict, bytes]:
@@ -125,23 +146,36 @@ class BuildTools:
                                  if key in ('PATH', 'SystemRoot', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'ComSpec',
                                             'PATHEXT', 'TEMP', 'TMP', 'TMPDIR', 'LC_ALL', 'TZ')}
         self.node_environment.update({'HOME': str(private_home), 'USERPROFILE': str(private_home)})
-        version = self.call([str(self.paths['node']), '--version'], ROOT, node=True, seconds=30).strip()
+        version = self.call([str(self.paths['node']), '--version'], ROOT,
+                            stage='node-version', node=True, seconds=30).strip()
         if version != ('v' + NODE_VERSION).encode():
             raise SnapshotError('Angular Node version differs from its pin')
-        self.profile = self.cli('package', 'renderer-profile')
+        self.profile = self.cli('package', 'renderer-profile', stage='assembler-profile')
         if self.profile.get('profile') != 'angular-ssr-component-v1':
             raise SnapshotError('package assembler lacks the approved renderer profile')
 
-    def call(self, command: list[str], cwd: Path, *, node=False, seconds=300, maximum=4 * 1024 * 1024) -> bytes:
+    def call(self, command: list[str], cwd: Path, *, stage: str, node=False, seconds=300, maximum=4 * 1024 * 1024) -> bytes:
         self.cancellation.check()
+        if type(stage) is not str or stage not in DIAGNOSTIC_STAGES:
+            raise SnapshotError('Angular build diagnostic stage is invalid')
         remaining = min(seconds, self.deadline - time.monotonic())
         if remaining <= 0:
+            failure_diagnostic(stage, 'build-deadline', 'not-completed')
             raise SnapshotError('Angular build deadline exceeded')
-        return run_bounded(command, cwd=cwd, env=self.node_environment if node else self.environment,
-                           timeout_seconds=remaining, max_output_bytes=maximum).stdout
+        try:
+            result = run_bounded_result(command, cwd=cwd, env=self.node_environment if node else self.environment,
+                                        timeout_seconds=remaining, max_output_bytes=maximum)
+        except BuildProcessError as error:
+            failure_diagnostic(stage, error.reason, 'not-completed')
+            raise
+        if result.returncode != 0:
+            failure_diagnostic(stage, 'command-exit', 'signal' if result.returncode < 0 else 'nonzero', result)
+            raise BuildProcessError('command-exit')
+        return result.stdout
 
-    def cli(self, *arguments: str) -> dict:
-        result = decode(self.call([str(self.paths['package-assembler']), '--output', 'json', *arguments], ROOT))
+    def cli(self, *arguments: str, stage: str) -> dict:
+        result = decode(self.call([str(self.paths['package-assembler']), '--output', 'json', *arguments], ROOT,
+                                  stage=stage))
         if result.get('category') != 'success' or not isinstance(result.get('data'), dict):
             raise SnapshotError('Angular package assembler failed')
         return result['data']

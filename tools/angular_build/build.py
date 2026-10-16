@@ -16,11 +16,12 @@ def compile_application(config: dict, captured: Path, work: Path, tools: BuildTo
     node = str(tools.paths['node'])
     toolchain = str(tools.toolchain)
     bundle = work / 'bundle'
-    for mode in ('configure', 'bundle'):
+    for mode, diagnostic_stage in (('configure', 'bundle-configure'), ('bundle', 'bundle')):
         if mode == 'bundle':
             tools.call([node, str(tools.toolchain / 'node_modules/@angular/compiler-cli/bundles/src/bin/ngc.js'),
-                        '-p', str(bundle / 'tsconfig.json')], captured, node=True)
-        tools.call([node, str(scripts / 'bundle.mjs'), toolchain, str(captured), str(bundle), mode], captured, node=True)
+                        '-p', str(bundle / 'tsconfig.json')], captured, stage='ngc', node=True)
+        tools.call([node, str(scripts / 'bundle.mjs'), toolchain, str(captured), str(bundle), mode], captured,
+                   stage=diagnostic_stage, node=True)
     client = read(bundle, 'client.js', 8 * 1024 * 1024)
     client_path = '/client/' + digest(client)[7:] + '/main.js'
     stage = work / 'component'
@@ -39,18 +40,21 @@ def compile_application(config: dict, captured: Path, work: Path, tools: BuildTo
     ):
         destination.write_bytes(read(source.parent, source.name, 8 * 1024 * 1024))
     (stage / 'assets.js').write_bytes(b'export const clientAsset=' + canonical(client_path) + b';\n')
-    tools.call([node, str(scripts / 'componentize.mjs'), toolchain, str(stage)], stage, node=True, seconds=300)
+    tools.call([node, str(scripts / 'componentize.mjs'), toolchain, str(stage)], stage,
+               stage='componentize', node=True, seconds=300)
     features = ['--features', 'backend-http'] if config.get('backendProfile') == 'scoped-http-get-v1' else []
     cargo_output = tools.call([str(tools.paths['cargo']), 'build', '--locked', '--offline', '-p', 'latent-angular-renderer-adapter',
-                               '--target', 'wasm32-unknown-unknown', '--release', '--message-format=json', *features], ROOT)
+                               '--target', 'wasm32-unknown-unknown', '--release', '--message-format=json', *features], ROOT,
+                              stage='adapter-cargo')
     dependencies = cargo.observe(cargo_output, tools)
     core = Path(tools.environment['CARGO_TARGET_DIR']) / 'wasm32-unknown-unknown/release/latent_angular_renderer_adapter.wasm'
     adapter = stage / 'adapter.wasm'
     component = stage / 'application.wasm'
     composer = str(tools.paths['wasm-tools'])
-    tools.call([composer, 'component', 'new', str(core), '-o', str(adapter)], stage, seconds=60)
-    tools.call([composer, 'compose', str(adapter), '-d', str(stage / 'renderer.wasm'), '-o', str(component)], stage, seconds=60)
-    tools.call([composer, 'validate', str(component)], stage, seconds=60)
+    tools.call([composer, 'component', 'new', str(core), '-o', str(adapter)], stage, stage='component-new', seconds=60)
+    tools.call([composer, 'compose', str(adapter), '-d', str(stage / 'renderer.wasm'), '-o', str(component)], stage,
+               stage='compose', seconds=60)
+    tools.call([composer, 'validate', str(component)], stage, stage='validate', seconds=60)
     materials = [file_identity(path, name, 32 * 1024 * 1024) for name, path in (
         ('angular-client-bundle', bundle / 'client.js'), ('angular-server-bundle', bundle / 'server.js'),
         ('javascript-embedding', stage / 'renderer.wasm'), ('async-adapter', adapter), ('renderer-component', component))]
@@ -65,7 +69,8 @@ def assemble(config: dict, captured: Path, work: Path, output: Path, tools: Buil
     sbom = package.inventory(recipe, inputs, tools.toolchain, source_inventory, tools.executables, dependencies)
     (inputs / 'sbom-inputs.json').write_bytes(sbom)
     summary = tools.cli('package', 'build', '--source', str(inputs / 'package-source.json'), '--input-root', str(inputs),
-                        '--sbom-inputs', str(inputs / 'sbom-inputs.json'), '--output-dir', str(output / 'package'), '--validate-web')
+                        '--sbom-inputs', str(inputs / 'sbom-inputs.json'), '--output-dir', str(output / 'package'), '--validate-web',
+                        stage='package-build')
     if not summary.get('sbomInventoryDigest') or not summary.get('webBuildOutputs') or summary.get('componentDigest') is not None:
         raise SnapshotError('Angular package lacks its exact componentless inventory and output identities')
     return summary, materials
