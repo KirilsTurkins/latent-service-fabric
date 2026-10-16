@@ -83,3 +83,14 @@ retains six actual authentication/trust/integrity denials, the reaped peer and
 the subsequent network-disabled signed private-library/resource execution.
 It records the earlier fixture setup failures without bypassing certificate
 verification or rewriting their outcomes.
+
+The maintained workflow also selects `private` in a separate dependency matrix
+job using [the suite owner](../../tools/qualify_java_dependency_suite.py). It
+builds and freezes the ordinary five native products, compiles a normal greeting
+to acquire the pinned compiler closure, then supplies only its verified read-only
+cache to the private programme. Exact source/native/compiler/cache identities
+are checked before and after; private keys and signing directories are excluded
+from the new artifact allowlist. The existing Java job retains its 55-minute
+limit and commands. Each separate attempt has a 35-minute job bound and an
+1800-second suite deadline. Historical successful receipts retain their source
+scope; the newly added current-source hosted attempt must pass independently.

@@ -347,3 +347,100 @@ jobs:
             ${{ runner.temp }}/java-capsule-authoring/guide/projects/results/**
           if-no-files-found: warn
           retention-days: 14
+
+  dependency-ingestion:
+    name: Captured Java dependency native programme (${{ matrix.mode }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [private]
+    env:
+      PYTHONDONTWRITEBYTECODE: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25.0.4+101.0.LTS'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Prepare pinned native Java tools and compiler namespaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -m unittest tools.tests.test_java_dependency_suite
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap protobuf-compiler pkg-config libssl-dev
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          curl --fail --location --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
+            -o "$RUNNER_TEMP/dependency-gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/dependency-gradle.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/dependency-gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            -o "$RUNNER_TEMP/dependency-wasi-sdk.tar.gz"
+          echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/dependency-wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/dependency-wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dependency-bindgen"
+          echo "$RUNNER_TEMP/dependency-bindgen" >> "$GITHUB_PATH"
+      - name: Capture, compile offline and execute the selected real dependency programme
+        run: |
+          python3 tools/qualify_java_dependency_suite.py --mode "${{ matrix.mode }}" \
+            --output "$RUNNER_TEMP/java-dependency-${{ matrix.mode }}" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Retain bounded public source, compiler and execution observations
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: java-dependency-${{ matrix.mode }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/qualification.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/FAILED.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/source-inputs.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/source-inputs-after.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/compiler-inputs.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/compiler-cache-inputs.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/compiler-acquisition.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/compiler/*.log
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/native/native-tuple.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/capture.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/qualification.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/FAILED.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/PRIVATE-FAILED.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/private-acquisition.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/private-qualification.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/private-peer-observations.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/private-acquisition/logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/acquisition/logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/execution/logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/build/*.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/build/component.wasm
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/build/compiler-logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/build/logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/node/**/*.json
+          if-no-files-found: warn
+          retention-days: 7
