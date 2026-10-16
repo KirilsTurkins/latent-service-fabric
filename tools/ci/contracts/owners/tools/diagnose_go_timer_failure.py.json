@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_timer_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Authenticate terminal panic ABI and data; bounded public-family matching requires fresh confirmation without runtime-origin or baseline-cause claims, preserving recovery, authority and 600s/1MiB limits.",
+  "reviewReason": "Hosted-Linux-only failure diagnostic: require GITHUB_ACTIONS and RUNNER_OS before any sudo command. Preserve original user namespace and policy guards; setpriv drops original UID/GID/groups/all capabilities before host preflight and Cargo. Read-only exact source binds, component identity, unsaved diagnostic cache and 600s/1MiB bound remain required.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5d97ccc336c740f72bd0ff7fb6032d1b83a0793bc78c3271ca10dffc6b168a13"
+  "sha256": "7640d37d99192f8c43fc35966a2aa21a38a2bd2070cbf02dfb2389014002296d"
 }

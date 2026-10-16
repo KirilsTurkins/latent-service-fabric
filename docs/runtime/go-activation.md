@@ -184,7 +184,7 @@ acceptance assertion changes. All diagnostic executions share the existing
 The fresh confirmation on component `3a8776b49b5fa93be27c5797205088a0e43433e4d4d6a889b2d1c1211486f315`
 matched the public `fd_write failed` literal in pinned `runtime/os_wasip1.go`.
 This can be a secondary failure while printing an earlier ordinary panic. The
-next failure-only probe leaves `gopanic`, recovery, defers and `preprintpanics`
+additional failure-only probe leaves `gopanic`, recovery, defers and `preprintpanics`
 unchanged and authenticates their emitted bodies plus the entire core data
 section. It replaces only the already unrecoverable `fatalpanic` body, alongside
 the two existing terminal throw/fatal probes. Checked 64-bit pointers, a fixed
@@ -196,4 +196,20 @@ required. Application strings can match the same family, so confirmation proves
 neither runtime origin nor the cause of the original failed invocation. Decimal
 widths bound the diagnostic and establish neither integer-range validity nor
 complete runtime-error coverage. The original mode 9 acceptance case and all existing
-control modes remain required; this added probe has no native qualification yet.
+control modes remain required. Hosted job 116880644301 executed this probe and
+reported `unknown-panic-family`; it established no runtime cause or repair.
+
+The numeric-frame observer uses a separate private mount view only on the
+Linux GitHub Actions runner. The former user-namespace view stopped at policy
+store preparation before guest execution. Creating mounts while retaining the
+ordinary host user namespace requires `sudo`; the command then uses `setpriv`
+to restore the original runner UID/GID, clear supplementary groups and all
+capabilities, and prohibit gaining privileges before Python or Cargo runs.
+A bounded preflight checks those credentials, the original UID map and root
+ownership, and the unchanged safe system-temporary ancestor rules. Local or
+unsupported contexts refuse this diagnostic. Production policy guards and the
+original signed fixture remain unchanged. Only three source files are bound
+read-only; their original bytes and the original component are checked after
+execution. The writable Cargo cache becomes diagnostic-only: the job saves no
+cache and runs no subsequent acceptance. The original 600-second/1-MiB bounds
+still apply. A configured observer alone supplies no frame or execution proof.

@@ -27,6 +27,106 @@ def sources():
 
 
 class GoRuntimeOverlayTests(unittest.TestCase):
+    def test_private_frame_host_context_refuses_local_execution_before_inspecting_privilege(self):
+        import os
+        from tools import diagnose_go_timer_failure as diagnostic
+        for environment in ({}, {'GITHUB_ACTIONS': 'true'}, {'RUNNER_OS': 'Linux'},
+                            {'GITHUB_ACTIONS': 'false', 'RUNNER_OS': 'Linux'},
+                            {'GITHUB_ACTIONS': 'true', 'RUNNER_OS': 'Windows'}):
+            with self.subTest(environment=environment), patch.dict(os.environ, environment, clear=True), \
+                    patch.object(os, 'getuid', create=True) as getuid:
+                with self.assertRaisesRegex(ValueError, 'hosted-Linux-only'):
+                    diagnostic.frame_host_context()
+                getuid.assert_not_called()
+
+    def test_private_frame_command_drops_privilege_before_cargo_without_replacing_user_namespace(self):
+        from tools import diagnose_go_timer_failure as diagnostic
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            overlays = [(root / 'private' / name, root / name) for name in diagnostic.PATHS]
+            context = {'uid': 1001, 'gid': 118, 'groups': [118], 'uidMapDigest': 'a' * 64,
+                       'root': [0, 0, 0o755]}
+            command = diagnostic.frame_command(root, overlays,
+                {'PATH': '/controlled', 'HOME': '/home/runner', 'TMPDIR': 'unsafe-output'},
+                '/cargo', '/bwrap', '/sudo', '/setpriv', context)
+            self.assertEqual(command[:4], ['/sudo', '-n', '--', '/bwrap'])
+            self.assertNotIn('--unshare-all', command)
+            self.assertNotIn('--unshare-user', command)
+            self.assertNotIn('--uid', command)
+            self.assertNotIn('--gid', command)
+            self.assertNotIn('TMPDIR', command)
+            self.assertIn('--clearenv', command)
+            self.assertEqual(command[command.index('--cap-drop'):command.index('--cap-drop') + 2],
+                             ['--cap-drop', 'ALL'])
+            self.assertEqual([command[i + 1] for i, value in enumerate(command) if value == '--cap-add'],
+                             ['CAP_SETUID', 'CAP_SETGID', 'CAP_SETPCAP'])
+            drop = command.index('/setpriv')
+            self.assertEqual(command[drop:drop + 10], ['/setpriv', '--reuid', '1001', '--regid', '118',
+                '--clear-groups', '--bounding-set=-all', '--inh-caps=-all', '--ambient-caps=-all', '--no-new-privs'])
+            self.assertLess(drop, command.index('/cargo'))
+            self.assertEqual(command.count('--ro-bind'), 3)
+            self.assertIn('--offline', command)
+            self.assertIn('--locked', command)
+            with self.assertRaisesRegex(ValueError, 'source-set'):
+                diagnostic.frame_command(root, overlays[:-1], {}, '/cargo', '/bwrap', '/sudo', '/setpriv', context)
+
+    def test_private_frame_host_preflight_refuses_wrong_credentials_caps_maps_or_temporary_ancestors(self):
+        import contextlib
+        import io
+        import os
+        import pathlib
+        import stat
+        import sys
+        from types import SimpleNamespace
+        from tools import diagnose_go_timer_failure as diagnostic
+        mapping = b'0 0 4294967295\n'
+        expected = {'uid': 1001, 'gid': 118, 'groups': [118],
+                    'uidMapDigest': hashlib.sha256(mapping).hexdigest(), 'root': [0, 0, 0o755]}
+        def run(fault=None):
+            executed = []
+            class Entry:
+                def __init__(self, value): self.value = value
+                def read_text(self):
+                    return '\n'.join(f'{key}:\t{1 if fault == key else 0}' for key in
+                        ('CapInh', 'CapPrm', 'CapEff', 'CapBnd', 'CapAmb')) + '\nNoNewPrivs:\t' + ('0' if fault == 'privs' else '1')
+                def read_bytes(self): return b'changed mapping' if fault == 'mapping' else mapping
+                def resolve(self, **kwargs): return self
+                @property
+                def parents(self): return (Entry('/'),)
+                def stat(self):
+                    mode = 0o755 if self.value == '/' else (0o777 if fault == 'temporary' else 0o1777)
+                    return SimpleNamespace(st_uid=65534 if fault == 'owner' else 0, st_gid=0,
+                                           st_mode=stat.S_IFDIR | mode)
+            output = io.StringIO()
+            with patch.object(pathlib, 'Path', Entry), \
+                    patch.object(os, 'getuid', return_value=1001, create=True), \
+                    patch.object(os, 'geteuid', return_value=0 if fault == 'root' else 1001, create=True), \
+                    patch.object(os, 'getgid', return_value=118, create=True), \
+                    patch.object(os, 'getegid', return_value=118, create=True), \
+                    patch.object(os, 'getgroups', return_value=[0] if fault == 'groups' else [], create=True), \
+                    patch.object(os, 'execve', side_effect=lambda *args: executed.append(args)), \
+                    patch.object(tempfile, 'gettempdir', return_value='/tmp'), \
+                    patch.dict(os.environ, {'TMPDIR': 'unsafe'} if fault == 'environment' else {}, clear=True), \
+                    patch.object(sys, 'argv', ['preflight', json.dumps(expected), '/cargo', '--locked']), \
+                    contextlib.redirect_stdout(output):
+                if fault:
+                    with self.assertRaisesRegex(SystemExit, 'preflight-refused'):
+                        exec(diagnostic.FRAME_PREFLIGHT, {})
+                else:
+                    exec(diagnostic.FRAME_PREFLIGHT, {})
+            self.assertEqual(len(executed), 0 if fault else 1)
+            return output.getvalue().encode()
+        value = diagnostic.frame_host_observation(run())
+        self.assertEqual(value['uid'], 1001)
+        self.assertTrue(value['sameUserNamespace'])
+        for fault in ('root', 'groups', 'CapInh', 'CapPrm', 'CapEff', 'CapBnd', 'CapAmb',
+                      'privs', 'mapping', 'owner', 'temporary', 'environment'):
+            with self.subTest(fault=fault): self.assertIsNone(diagnostic.frame_host_observation(run(fault)))
+        for raw in (b'LSF_GO_DIAG_HOST {}\n', run() * 2,
+                    b'LSF_GO_DIAG_HOST ' + b'x' * 1025):
+            with self.assertRaises((ValueError, json.JSONDecodeError)):
+                diagnostic.frame_host_observation(raw)
+
     def test_terminal_panic_probe_executes_checked_pointer_type_and_decimal_guards(self):
         import shutil
         import subprocess
@@ -135,6 +235,8 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                 return CompletedProcess([], 101, b'running 1 test\nLSF_GO_DIAG_STAGE entered\n',
                     b'panicked at crates/latent-wasmtime/tests/local_service/fixture.rs:506:14: private')
             with patch.object(diagnostic, 'overlay_sources', return_value=({}, [])), \
+                    patch.object(diagnostic, 'frame_host_context', return_value={}), \
+                    patch.object(diagnostic, 'frame_command', return_value=['controlled']), \
                     patch.object(diagnostic.shutil, 'which', return_value='/controlled/tool'), \
                     patch.object(diagnostic.sys, 'platform', 'linux'), \
                     patch.object(diagnostic, 'ordinary_terminal_diagnostic', side_effect=ordinary), \

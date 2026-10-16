@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import sys
 import time
 
@@ -24,6 +25,96 @@ REASONS_DIGEST = 'sha256:ec8b59ada82aab3b1f55bb6b89a510f558d184b2e98a4081531976b
 THROW_BODY_DIGEST = 'sha256:c049e89b86db59031835024047342eaaa3008b47897e6c42c40255f641fe6a3d'
 PATHS = ('crates/latent-wasmtime/src/containment.rs', 'crates/latent-wasmtime/src/config/engine.rs',
          'crates/latent-wasmtime/tests/local_service/runtime/go.rs')
+
+# Executed after Bubblewrap drops to the original unprivileged runner. The
+# mount namespace only supplies private source files; production policy still
+# sees the original user namespace, root ownership and system temporary path.
+FRAME_PREFLIGHT = '''import hashlib,json,os,pathlib,stat,sys,tempfile
+expected=json.loads(sys.argv[1]); cargo=sys.argv[2:]
+def require(value):
+    if not value: raise SystemExit("Go-private-frame-host-preflight-refused")
+require(os.getuid()==os.geteuid()==expected["uid"]!=0)
+require(os.getgid()==os.getegid()==expected["gid"])
+require(set(os.getgroups())<=set(expected["groups"]))
+status=pathlib.Path("/proc/self/status").read_text()
+for key in ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"):
+    fields=[line.split(":",1)[1].strip() for line in status.splitlines() if line.startswith(key+":")]
+    require(len(fields)==1 and int(fields[0],16)==0)
+require("NoNewPrivs:\\t1" in status)
+require(hashlib.sha256(pathlib.Path("/proc/self/uid_map").read_bytes()).hexdigest()==expected["uidMapDigest"])
+root=pathlib.Path("/").stat()
+require([root.st_uid,root.st_gid,stat.S_IMODE(root.st_mode)]==expected["root"])
+temporary=pathlib.Path(tempfile.gettempdir()).resolve(strict=True)
+for path in (*reversed(temporary.parents),temporary):
+    value=path.stat(); require(stat.S_ISDIR(value.st_mode))
+    require(value.st_uid in (0,expected["uid"]))
+    require(not value.st_mode & 0o022 or value.st_uid==0 and bool(value.st_mode & stat.S_ISVTX))
+require(all(key not in os.environ for key in ("TEMP","TMP","TMPDIR")))
+print("LSF_GO_DIAG_HOST "+json.dumps({"uid":os.getuid(),"gid":os.getgid(),"sameUserNamespace":True,
+    "capabilitiesDropped":True,"rootOwnershipPreserved":True,"temporaryAncestorsAccepted":True}),flush=True)
+os.execve(cargo[0],cargo,dict(os.environ))
+'''
+
+
+def frame_host_context() -> dict:
+    if os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('RUNNER_OS') != 'Linux':
+        raise ValueError('Go-private-frame-observer-hosted-Linux-only')
+    if sys.platform != 'linux' or os.getuid() == 0 or os.geteuid() != os.getuid():
+        raise ValueError('Go-private-frame-observer-requires-ordinary-Linux-runner')
+    root = Path('/').stat()
+    mapping = Path('/proc/self/uid_map').read_bytes()
+    if len(mapping) > 4096:
+        raise ValueError('Go-private-frame-observer-uid-map-bound')
+    return {'uid': os.getuid(), 'gid': os.getgid(), 'groups': sorted(os.getgroups()),
+            'uidMapDigest': digest(mapping).removeprefix('sha256:'),
+            'root': [root.st_uid, root.st_gid, stat.S_IMODE(root.st_mode)]}
+
+
+def frame_command(root: Path, overlays: list[tuple[Path, Path]], environment: dict,
+                  cargo: str, sandbox: str, sudo: str, setpriv: str, context: dict) -> list[str]:
+    # sudo is needed only for a mount namespace without changing the user
+    # namespace. Cargo and the unchanged fixture never execute as root.
+    if len(overlays) != len(PATHS) or {p.relative_to(root).as_posix() for _, p in overlays} != set(PATHS):
+        raise ValueError('Go-private-frame-observer-source-set')
+    environment = dict(environment)
+    for key in ('TEMP', 'TMP', 'TMPDIR'):
+        environment.pop(key, None)
+    if len(environment) > 64 or any(not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]{0,63}', key)
+            or not isinstance(value, str) or len(value) > 32768 or '\0' in value
+            for key, value in environment.items()):
+        raise ValueError('Go-private-frame-observer-environment-bound')
+    command = [sudo, '-n', '--', sandbox, '--unshare-pid', '--unshare-ipc', '--unshare-uts',
+               '--die-with-parent', '--new-session', '--bind', '/', '/', '--proc', '/proc',
+               '--dev', '/dev', '--cap-drop', 'ALL', '--cap-add', 'CAP_SETUID',
+               '--cap-add', 'CAP_SETGID', '--cap-add', 'CAP_SETPCAP', '--clearenv']
+    for key, value in sorted(environment.items()):
+        command += ['--setenv', key, value]
+    for private, original in overlays:
+        command += ['--ro-bind', str(private), str(original)]
+    return command + ['--chdir', str(root), setpriv, '--reuid', str(context['uid']),
+        '--regid', str(context['gid']), '--clear-groups', '--bounding-set=-all',
+        '--inh-caps=-all', '--ambient-caps=-all', '--no-new-privs',
+        str(Path(sys.executable).resolve()), '-I', '-B', '-c',
+        FRAME_PREFLIGHT, json.dumps(context, separators=(',', ':')), cargo, '--config',
+        '.cargo/managed-guest.toml', 'test', '--offline', '--locked', '-p', 'latent-wasmtime',
+        '--test', 'local_service', 'runtime::go::' + CASE, '--', '--ignored', '--exact', '--nocapture']
+
+
+def frame_host_observation(data: bytes) -> dict | None:
+    rows = [line.removeprefix(b'LSF_GO_DIAG_HOST ') for line in data.splitlines()
+            if line.startswith(b'LSF_GO_DIAG_HOST ')]
+    if not rows:
+        return None
+    if len(rows) != 1 or len(rows[0]) > 1024:
+        raise ValueError('Go-private-frame-observer-host-shape')
+    value = json.loads(rows[0])
+    if (set(value) != {'uid', 'gid', 'sameUserNamespace', 'capabilitiesDropped',
+            'rootOwnershipPreserved', 'temporaryAncestorsAccepted'}
+            or type(value['uid']) is not int or not 0 < value['uid'] < 2**32
+            or type(value['gid']) is not int or not 0 <= value['gid'] < 2**32
+            or any(value[key] is not True for key in value.keys() - {'uid', 'gid'})):
+        raise ValueError('Go-private-frame-observer-host-shape')
+    return value
 
 
 def once(text, old, new):
@@ -562,20 +653,10 @@ def diagnose(fixture: Path, output: Path) -> dict:
             or record['componentDigest'] != digest(component.read_bytes())):
         raise ValueError('Go-private-frame-observer-component-identity')
     identities, overlays = overlay_sources(ROOT, output)
-    sandbox, cargo = shutil.which('bwrap'), shutil.which('cargo')
-    if not sandbox or not cargo or sys.platform != 'linux':
+    sandbox, cargo, sudo, setpriv = (shutil.which(name) for name in ('bwrap', 'cargo', 'sudo', 'setpriv'))
+    if not sandbox or not cargo or not sudo or not setpriv or sys.platform != 'linux':
         raise ValueError('Go-private-frame-observer-requires-Linux-existing-tools')
-    # Read-only file binds give only this process a private source view at the
-    # original cache paths. Production files are never rewritten or copied in
-    # full, and registry/dependency compilation is reused. This job never saves
-    # the subsequently diagnostic target cache, nor runs acceptance after it.
-    command = [sandbox, '--unshare-all', '--die-with-parent', '--new-session', '--bind', '/', '/',
-               '--proc', '/proc', '--dev', '/dev']
-    for private, original in overlays:
-        command += ['--ro-bind', str(private), str(original)]
-    command += ['--chdir', str(ROOT), cargo, '--config', '.cargo/managed-guest.toml', 'test',
-                '--offline', '--locked', '-p', 'latent-wasmtime', '--test', 'local_service',
-                'runtime::go::' + CASE, '--', '--ignored', '--exact', '--nocapture']
+    context = frame_host_context()
     environment = build_environment(output)
     environment.update(LSF_GUEST_SDK_LANGUAGE='go', LSF_GO_TIMER_FIXTURE=str(fixture),
         CARGO_INCREMENTAL='0', CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
@@ -584,6 +665,7 @@ def diagnose(fixture: Path, output: Path) -> dict:
     for key in ('CARGO_TARGET_DIR',):
         if key in os.environ:
             environment[key] = os.environ[key]
+    command = frame_command(ROOT, overlays, environment, cargo, sandbox, sudo, setpriv, context)
     terminal, used = ordinary_terminal_diagnostic(fixture, output, record, environment, cargo, remaining_seconds)
     reason, used = known_throw_diagnostic(fixture, output, record, environment, cargo,
                                          remaining_seconds, terminal, used)
@@ -610,6 +692,7 @@ def diagnose(fixture: Path, output: Path) -> dict:
         'nativeCaseStarted': bool(re.search(rb'(?m)^running 1 test\r?$', result.stdout)),
         'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', result.stderr)))[:16],
         'executionMetadata': execution_metadata(result.stderr + b'\n' + result.stdout),
+        'hostPreflight': frame_host_observation(result.stderr + b'\n' + result.stdout),
         'frames': frames, 'rawNativeBacktraceRetained': False, 'acceptanceFailure': 'unchanged',
         'terminalDiagnostic': terminal, 'throwReasonDiagnostic': reason,
         'terminalPanicDiagnostic': panic, 'observerSupportingInputs': support}
