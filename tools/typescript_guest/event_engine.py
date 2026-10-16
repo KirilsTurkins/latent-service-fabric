@@ -3,12 +3,14 @@ from __future__ import annotations
 import hashlib
 from tools.typescript_guest.activation_engine import identity, replace_once, STARLING_COMMIT
 
+FETCH_SOURCE_SHA256 = '0992832f377bd45986e79447f463f1de2ff609f32d53723e0ef04de2c7178cf2'
+
 PREIMAGES = {
     'StarlingMonkey/builtins/web/event/event-target.cpp': '0b22572ccb4de19fb1476073d0586d1afe03c856454a466d0d2c6607ace20ffd',
     'StarlingMonkey/builtins/web/event/event-target.h': 'ca9f9ed1fc9facad0308be0e8e86daada19d8b1715c727f90da8db4e60141e63',
     'StarlingMonkey/builtins/web/abort/abort-signal.h': 'ba8b1ce78deaabf0e86dae56b9eaf79e59e55f179b8a0deda3ef6bed4f8f9b46',
     'StarlingMonkey/builtins/web/event/global-event-target.cpp': 'ed9af74351155434a340f9489395c63a4a609e78bf706e13e6b02a2a7053fe9c',
-    'StarlingMonkey/builtins/web/fetch/fetch-api.cpp': '0992832f377bd45986e79447f463f1de2ff609f32d53723e0ef04de2c7178cf2',
+    'StarlingMonkey/builtins/web/fetch/fetch-api.cpp': FETCH_SOURCE_SHA256,
     'StarlingMonkey/builtins/web/fetch/request-response.cpp': 'eefae62cdbc31616df620d2d788ba3d27ccbeaf47a58fb53b04aefc08fff05b5',
 }
 
