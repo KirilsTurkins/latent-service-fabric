@@ -5,10 +5,11 @@ The explicit `c-standard-stdio-v1` compiler profile routes ordinary dependency
 `latent:log/log@0.1.0`. It uses the pinned C libc and compiler beneath unchanged
 dependency code. It adds no filesystem or ambient WASI host.
 
-**Qualification: implemented candidate, unqualified.** Source capture, profile
-and generated binding checks supplement the required signed component run.
-The C standard-facilities CI job retains the actual logging qualification;
-runtime compatibility requires a passing exact-source receipt. This slice does
+**Qualification: signed-node qualification for this finite profile.** The
+[corrected hosted programme](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38931008953/job/117074690334)
+passed all 41 expected invocation outcomes at source
+`760b47fb0d7aeb9c273c66b7d17bef762dbad980`. Its exact component and retirement
+observations are recorded below. This slice does
 not complete [facilities #681](https://github.com/KirilsTurkins/latent-service-fabric/issues/681)
 or [C runtime #744](https://github.com/KirilsTurkins/latent-service-fabric/issues/744).
 
@@ -32,7 +33,7 @@ the pinned tools, and rejected ambient WASI in its public surface. The SDK and
 captured dependency remained byte-identical throughout. This is a compiler
 source control; it did not execute Wasm or qualify namespace containment or
 signed runtime behavior. See the [closed-adapter evidence](../testing/evidence/c-standard-logging-closed-adapter-2026-10-16.json).
-Fresh maintained signed execution remains required.
+The subsequent signed execution is recorded separately below.
 
 The next [signed-node attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38860192883/job/116840734073)
 compiled, validated and signed the logging component. Its first missing-grant
@@ -40,10 +41,20 @@ call was correctly rejected before guest admission with zero fuel, memory and
 log-byte consumption. The fixture had incorrectly expected an initializer to
 execute without that grant. The corrected programme requires the original
 pre-admission denial, then checks the ordinary initializer after explicit
-authorization. It does not change the adapter or admission rules; fresh signed
-execution of the corrected programme is pending. The
+authorization. That fixture correction preserves the adapter and admission
+rules. The
 [retained admission receipt](../testing/evidence/c-standard-logging-admission-failed-2026-10-16.json)
 records the component identity, actual rejection and source-control boundary.
+
+The corrected hosted programme at the exact source above passed all 14 stdio
+invocations alongside the 27 existing authoring and recovery cases. Both
+ungranted calls were rejected before guest execution; the granted initializer
+and all eleven edge probes passed. The signed logging component was
+`sha256:ae20ca5ac59f2f1c525c5216490921b52433e7cb63bbb36fcd01b0068b8d33ff`.
+All 59 retained helper identities matched that source's Git blobs. The public
+workflow recorded clean node shutdown, a reaped process and all controlled peer
+holds closed. These observations qualify the explicit signed source fixture;
+publisher authentication and release publication remain separate boundaries.
 
 Set `runtimeProfile` to `c-standard-stdio-v1` in `capsule-project.json` and in any
 captured dependency selection. Resolve and review the new lock, then use the
