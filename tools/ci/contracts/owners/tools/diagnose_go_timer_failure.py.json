@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_timer_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Review bounded terminal-only exact component mutation and closed outcome/stage metadata with original/private body and recipe identities; preserve source/component acceptance and all ordinary bodies/imports/authority, one combined600s/1MiB budget, and no diagnostic retry before actual invocation.",
+  "reviewReason": "Failure-only exact terminal-body variant now runs first on unchanged ordinary native harness, avoiding namespace-specific durable-policy preparation failure; immutable initial/final receipts prevent create-new overwrite; shared600second1MiBbound, fixed public classifier and original source/component identity fences preserved.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "0436e0533f46d37564dd6bf32769604d2ad443b33f8d3acfb09c20a2e0af21e6"
+  "sha256": "1f806faebc311cac7fa96cba844041ccc86c1112184b3c939e296a687b72caa1"
 }

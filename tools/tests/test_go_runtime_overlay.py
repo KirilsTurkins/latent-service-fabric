@@ -27,6 +27,52 @@ def sources():
 
 
 class GoRuntimeOverlayTests(unittest.TestCase):
+    def test_terminal_public_metadata_preserves_only_closed_traps_and_exact_completed_modes(self):
+        from tools.diagnose_go_timer_failure import terminal_metadata
+        self.assertEqual(terminal_metadata(b'private arbitrary panic\nrunning 1 test\n'
+            b'go-component-activation-v3 iteration=0 mode=20 consumption=private\n'
+            b'guest trapped: unreachable-code\n'),
+            {'trapKinds': ['unreachable-code'], 'completedOrdinaryModes': [20], 'nativeCaseStarted': True})
+        self.assertEqual(terminal_metadata(b'guest trapped: arbitrary private text\n')['trapKinds'], [])
+        for raw in (b'guest trapped: unreachable-code\nguest trapped: memory-out-of-bounds\n',
+                    b'go-component-activation-v3 iteration=0 mode=20 consumption=\n' * 33):
+            with self.assertRaisesRegex(ValueError, 'classifier-bound'):
+                terminal_metadata(raw)
+
+    def test_private_frame_preparation_failure_keeps_ordinary_terminal_record_without_overwriting(self):
+        from subprocess import CompletedProcess
+        from tools import diagnose_go_timer_failure as diagnostic
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fixture = root / 'fixture'; (fixture / 'build').mkdir(parents=True)
+            component = b'actual fixture identity for source-only driver control'
+            (fixture / 'build/component.wasm').write_bytes(component)
+            record = {'profile': 'go-component-activation-v3', 'fixture': 'timers',
+                      'componentDigest': diagnostic.digest(component), 'sourceDigest': 'exact-source'}
+            (fixture / 'GO-ACTIVATION-COMPILE.json').write_text(json.dumps(record))
+            terminal = {'qualification': False, 'publicObservation': {'trapKinds': ['unreachable-code']}}
+            events = []
+            def ordinary(*args):
+                events.append('ordinary-native')
+                return terminal, 64
+            def private(*args):
+                events.append('private-source')
+                return CompletedProcess([], 101, b'running 1 test\nLSF_GO_DIAG_STAGE entered\n',
+                    b'panicked at crates/latent-wasmtime/tests/local_service/fixture.rs:506:14: private')
+            with patch.object(diagnostic, 'overlay_sources', return_value=({}, [])), \
+                    patch.object(diagnostic.shutil, 'which', return_value='/controlled/tool'), \
+                    patch.object(diagnostic.sys, 'platform', 'linux'), \
+                    patch.object(diagnostic, 'ordinary_terminal_diagnostic', side_effect=ordinary), \
+                    patch.object(diagnostic, 'run_bounded_result', side_effect=private):
+                output = root / 'output'
+                value = diagnostic.diagnose(fixture, output)
+            self.assertEqual(events, ['ordinary-native', 'private-source'])
+            self.assertEqual(value['terminalDiagnostic'], terminal)
+            self.assertEqual(value['privateFramesStatus'], 'not-run-before-guest-invocation')
+            self.assertEqual(value['executionMetadata']['stages'], ['entered'])
+            self.assertEqual(json.loads((output / 'GO-PRIVATE-FRAMES.json').read_bytes()), value)
+            self.assertNotIn('privateFramesStatus', json.loads((output / 'GO-PRIVATE-FRAMES-initial.json').read_bytes()))
+
     def test_private_wasm_frame_observer_preserves_original_sources_and_bounds_the_overlay(self):
         from tools.diagnose_go_timer_failure import PATHS, overlay_sources
         original = {name: (runtime.ROOT / name).read_bytes() for name in PATHS}

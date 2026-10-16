@@ -293,6 +293,8 @@ jobs:
             ${{ runner.temp }}/go-standard-timers/build/component.wit
             ${{ runner.temp }}/go-standard-timers/build/runtime-overlay/
             ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-FRAMES.json
+            ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-FRAMES-initial.json
+            ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL.json
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn

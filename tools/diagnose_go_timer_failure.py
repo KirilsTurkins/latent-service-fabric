@@ -260,6 +260,61 @@ def terminal_component(original: bytes) -> tuple[bytes, dict]:
                      'importsAndAuthorityChanged': False, 'qualification': False}
 
 
+def terminal_metadata(output: bytes) -> dict:
+    # Only the public, closed trap classifier and reviewed mode markers are
+    # retained. Native panic messages, errors and backtraces are never exported.
+    kinds = sorted(set(re.findall(rb'guest trapped: (memory-out-of-bounds|unreachable-code|integer-division-by-zero)', output)))
+    modes = [int(value) for value in re.findall(rb'go-component-activation-v3 iteration=0 mode=([0-9]{1,2}) consumption=', output)]
+    if len(kinds) > 1 or len(modes) > 32:
+        raise ValueError('Go-private-terminal-public-classifier-bound')
+    return {'trapKinds': [value.decode() for value in kinds], 'completedOrdinaryModes': modes,
+            'nativeCaseStarted': bool(re.search(rb'(?m)^running 1 test\r?$', output))}
+
+
+def ordinary_terminal_diagnostic(fixture, output, record, environment, cargo, remaining_seconds):
+    original = (fixture / 'build/component.wasm').read_bytes()
+    derived, mutations = terminal_component(original)
+    private = output / 'terminal-fixture'
+    for name in ('src/main.go', 'wit/world.wit'):
+        target = private / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((fixture / name).read_bytes())
+    (private / 'build').mkdir()
+    binary = private / 'build/component.wasm'
+    binary.write_bytes(derived)
+    write_json(private / 'GO-ACTIVATION-COMPILE.json',
+               {**record, 'componentDigest': digest(derived), 'failureOnlyTerminalMutation': mutations})
+    validator = shutil.which('wasm-tools')
+    if not validator:
+        raise ValueError('Go-private-terminal-validator-missing')
+    # Match the ordinary native fixture's existing OS ownership environment.
+    # In particular, do not place a durable policy directory under the build
+    # output or a remapped user namespace merely to inspect a guest failure.
+    native_environment = dict(environment)
+    for name in ('TEMP', 'TMP', 'TMPDIR'):
+        native_environment.pop(name, None)
+    native_environment['LSF_GO_TIMER_FIXTURE'] = str(private)
+    validated = run_bounded_result([validator, 'validate', '--features', 'all', str(binary)],
+        ROOT, native_environment, remaining_seconds(), 1024 * 1024)
+    used = len(validated.stdout) + len(validated.stderr)
+    if validated.returncode != 0 or used >= 1024 * 1024:
+        raise ValueError('Go-private-terminal-derived-component-invalid')
+    command = [cargo, '--config', '.cargo/managed-guest.toml', 'test', '--offline', '--locked',
+               '-p', 'latent-wasmtime', '--test', 'local_service', 'runtime::go::' + CASE,
+               '--', '--ignored', '--exact', '--nocapture']
+    result = run_bounded_result(command, ROOT, native_environment, remaining_seconds(), 1024 * 1024 - used)
+    used += len(result.stdout) + len(result.stderr)
+    receipt = {**mutations, 'scope': 'failure-only-terminal-component-on-ordinary-native-harness',
+        'privateHostSourceOverlay': False, 'exitCode': result.returncode,
+        'publicObservation': terminal_metadata(result.stderr + b'\n' + result.stdout),
+        'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', result.stderr)))[:16],
+        'acceptanceFailure': 'unchanged', 'rawNativeBacktraceRetained': False}
+    if (fixture / 'build/component.wasm').read_bytes() != original:
+        raise ValueError('Go-private-terminal-original-component-mutated')
+    write_json(output / 'GO-PRIVATE-TERMINAL.json', receipt)
+    return receipt, used
+
+
 def diagnose(fixture: Path, output: Path) -> dict:
     deadline = time.monotonic() + 600
     def remaining_seconds():
@@ -299,13 +354,18 @@ def diagnose(fixture: Path, output: Path) -> dict:
     for key in ('CARGO_TARGET_DIR',):
         if key in os.environ:
             environment[key] = os.environ[key]
-    result = run_bounded_result(command, ROOT, environment, remaining_seconds(), 1024 * 1024)
+    terminal, used = ordinary_terminal_diagnostic(fixture, output, record, environment, cargo, remaining_seconds)
+    if used >= 1024 * 1024:
+        raise ValueError('Go-private-terminal-diagnostic-output-budget-exhausted')
+    result = run_bounded_result(command, ROOT, environment, remaining_seconds(), 1024 * 1024 - used)
     frames = frames_from_output(result.stderr + b'\n' + result.stdout)
     for name, identity in identities.items():
         if digest((ROOT / name).read_bytes()) != identity['originalDigest']:
             raise ValueError('Go-private-frame-observer-original-source-mutated')
     if digest(component.read_bytes()) != record['componentDigest']:
         raise ValueError('Go-private-frame-observer-component-mutated')
+    if Path(__file__).read_bytes() != recipe:
+        raise ValueError('Go-private-terminal-recipe-mutated')
     observation = {'formatVersion': 1, 'qualification': False, 'scope': 'failure-only-private-source-overlay',
         'observerRecipeDigest': digest(recipe),
         'mode': 9, 'componentDigest': record['componentDigest'], 'sourceDigest': record['sourceDigest'],
@@ -314,51 +374,13 @@ def diagnose(fixture: Path, output: Path) -> dict:
         'nativeCaseStarted': bool(re.search(rb'(?m)^running 1 test\r?$', result.stdout)),
         'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', result.stderr)))[:16],
         'executionMetadata': execution_metadata(result.stderr + b'\n' + result.stdout),
-        'frames': frames, 'rawNativeBacktraceRetained': False, 'acceptanceFailure': 'unchanged'}
-    write_json(output / 'GO-PRIVATE-FRAMES.json', observation)
+        'frames': frames, 'rawNativeBacktraceRetained': False, 'acceptanceFailure': 'unchanged',
+        'terminalDiagnostic': terminal}
+    write_json(output / 'GO-PRIVATE-FRAMES-initial.json', observation)
     if 'invoked' not in observation['executionMetadata']['stages']:
-        observation['terminalDiagnostic'] = {'status': 'not-run-before-guest-invocation', 'qualification': False}
+        observation['privateFramesStatus'] = 'not-run-before-guest-invocation'
         write_json(output / 'GO-PRIVATE-FRAMES.json', observation)
         return observation
-    # A second failure-only run changes only the terminal runtime.throw/fatal
-    # bodies, avoiding recursive denied fd_write obscuring the first failure.
-    # It shares this observer's original total deadline/output limit and creates
-    # no compiler/tool acquisition, import, grant, success or resumed work path.
-    original_component = component.read_bytes()
-    derived, mutations = terminal_component(original_component)
-    private_fixture = output / 'terminal-fixture'
-    for name in ('src/main.go', 'wit/world.wit'):
-        target = private_fixture / name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes((fixture / name).read_bytes())
-    (private_fixture / 'build').mkdir()
-    private_component = private_fixture / 'build/component.wasm'
-    private_component.write_bytes(derived)
-    private_record = {**record, 'componentDigest': digest(derived), 'failureOnlyTerminalMutation': mutations}
-    write_json(private_fixture / 'GO-ACTIVATION-COMPILE.json', private_record)
-    remaining = 1024 * 1024 - len(result.stdout) - len(result.stderr)
-    if remaining <= 0 or time.monotonic() >= deadline:
-        raise ValueError('Go-private-terminal-diagnostic-budget-exhausted')
-    validator = shutil.which('wasm-tools')
-    if not validator:
-        raise ValueError('Go-private-terminal-validator-missing')
-    validated = run_bounded_result([validator, 'validate', '--features', 'all', str(private_component)],
-        ROOT, environment, remaining_seconds(), remaining)
-    remaining -= len(validated.stdout) + len(validated.stderr)
-    if validated.returncode != 0 or remaining <= 0:
-        raise ValueError('Go-private-terminal-derived-component-invalid')
-    environment['LSF_GO_TIMER_FIXTURE'] = str(private_fixture)
-    terminal = run_bounded_result(command, ROOT, environment, remaining_seconds(), remaining)
-    observation['terminalDiagnostic'] = {**mutations, 'exitCode': terminal.returncode,
-        'nativeCaseStarted': bool(re.search(rb'(?m)^running 1 test\r?$', terminal.stdout)),
-        'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', terminal.stderr)))[:16],
-        'executionMetadata': execution_metadata(terminal.stderr + b'\n' + terminal.stdout),
-        'frames': frames_from_output(terminal.stderr + b'\n' + terminal.stdout)}
-    if component.read_bytes() != original_component:
-        raise ValueError('Go-private-terminal-original-component-mutated')
-    for name, identity in identities.items():
-        if digest((ROOT / name).read_bytes()) != identity['originalDigest']:
-            raise ValueError('Go-private-terminal-original-source-mutated')
     if Path(__file__).read_bytes() != recipe:
         raise ValueError('Go-private-terminal-recipe-mutated')
     write_json(output / 'GO-PRIVATE-FRAMES.json', observation)
