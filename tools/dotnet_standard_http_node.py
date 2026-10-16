@@ -129,6 +129,19 @@ def grants(client, node, publication, origin):
     return runtime, result
 
 
+def managed_failure(decoded):
+    if type(decoded) is not list or len(decoded) != 1 or type(decoded[0]) is not str or len(decoded[0]) > 128:
+        return None
+    parts = decoded[0].split(':')
+    if (len(parts) != 3 or parts[0] != 'managed-failure-v1'
+            or parts[1] not in {'entry', 'request-ready', 'send-begun', 'headers-ready', 'stream-ready',
+                                'body-copied', 'json-parsed', 'result-ready'}
+            or parts[2] not in {'platform-not-supported', 'disposed', 'invalid-operation', 'not-supported',
+                                'argument', 'out-of-memory', 'cancelled', 'http', 'json', 'io', 'other'}):
+        return None
+    return {'formatVersion': 1, 'phase': parts[1], 'exceptionFamily': parts[2], 'qualification': False}
+
+
 def invoke(client, target, which, url, activation):
     path, budget = client.directory/(activation+'.json'), client.directory/(activation+'-budget.json')
     write_json(path, [which, url]); write_json(budget, target['budget'])
@@ -145,6 +158,9 @@ def invoke(client, target, which, url, activation):
     payload = value['data'].get('payload')
     decoded = json.loads(base64.b64decode(payload['data'], validate=True)) if payload else None
     row = {'exitCode': completed.returncode, 'response': value, 'decoded': decoded, 'processReaped': process.owner.finished}
+    failure = managed_failure(decoded)
+    if failure is not None:
+        row['managedFailure'] = failure
     write_json(client.evidence/(activation+'.json'), row)
     return row
 

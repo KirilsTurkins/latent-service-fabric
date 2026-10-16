@@ -28,6 +28,23 @@ class DotnetAuthoringTests(unittest.TestCase):
     def files(self):
         return snapshot(create(self.root / "project", "greeting"))
 
+    def test_http_managed_failure_observation_accepts_only_finite_unqualified_values(self):
+        from tools.dotnet_standard_http_node import managed_failure
+        for phase in ('entry', 'request-ready', 'send-begun', 'headers-ready', 'stream-ready',
+                      'body-copied', 'json-parsed', 'result-ready'):
+            for family in ('platform-not-supported', 'disposed', 'invalid-operation', 'not-supported',
+                           'argument', 'out-of-memory', 'cancelled', 'http', 'json', 'io', 'other'):
+                value = ['managed-failure-v1:' + phase + ':' + family]
+                self.assertEqual(managed_failure(value), {
+                    'formatVersion': 1, 'phase': phase, 'exceptionFamily': family, 'qualification': False})
+        for value in (None, True, {}, [], [1], ['1:200:domain:7:ordinary'],
+                      ['managed-failure-v2:entry:other'], ['managed-failure-v1:unknown:other'],
+                      ['managed-failure-v1:entry:SecretSentinel'], ['managed-failure-v1:entry:other:SecretSentinel'],
+                      ['managed-failure-v1:entry:other\nSecretSentinel'], ['x' * 129],
+                      ['managed-failure-v1:entry:other', 'SecretSentinel']):
+            with self.subTest(value=value):
+                self.assertIsNone(managed_failure(value))
+
     def test_all_templates_capture_actual_source_and_pinned_sdk(self):
         for name in TEMPLATES:
             files = snapshot(create(self.root / name, name))
