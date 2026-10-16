@@ -45,7 +45,7 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             self.assertTrue(all(value['originalDigest'] != value['privateDigest'] for value in identities.values()))
 
     def test_private_frame_output_excludes_native_messages_and_rejects_unbounded_or_unexpected_data(self):
-        from tools.diagnose_go_timer_failure import frames_from_output
+        from tools.diagnose_go_timer_failure import execution_metadata, frames_from_output
         def encode(value):
             return b'LSF_GO_WASM_FRAME ' + json.dumps(value).encode() + b'\n'
         frame = {'function': 'runtime.(*mheap).allocSpan', 'functionIndex': 42,
@@ -59,6 +59,17 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                 frames_from_output(encode(value))
         with self.assertRaisesRegex(ValueError, 'output-shape'):
             frames_from_output(encode(frame) * 33)
+        metadata = execution_metadata(b'private error secret\nLSF_GO_DIAG_STAGE entered\n'
+            b'LSF_GO_DIAG_STAGE prepared\nLSF_GO_DIAG_CLASSIFY {"traceAvailable":false,"trapAvailable":true}\n'
+            b'panicked at crates/latent-wasmtime/tests/local_service/runtime.rs:253:9: secret\n')
+        self.assertEqual(metadata, {'stages': ['entered', 'prepared'],
+            'classifiers': [{'traceAvailable': False, 'trapAvailable': True}],
+            'panicSourceSites': ['crates/latent-wasmtime/tests/local_service/runtime.rs:253:9']})
+        for raw in (b'LSF_GO_DIAG_STAGE prepared\n', b'LSF_GO_DIAG_STAGE entered\n' * 2,
+                    b'LSF_GO_DIAG_CLASSIFY {"traceAvailable":false,"trapAvailable":"secret"}\n',
+                    b'LSF_GO_DIAG_CLASSIFY {"nativeError":"secret"}\n'):
+            with self.subTest(metadata=raw), self.assertRaisesRegex(ValueError, 'shape'):
+                execution_metadata(raw)
 
     def test_private_frame_observer_refuses_drift_before_writing_a_partial_overlay(self):
         from tools.diagnose_go_timer_failure import PATHS, overlay_sources

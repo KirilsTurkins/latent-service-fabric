@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_timer_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve the failed acceptance and isolated numeric Wasm frame observer; add only a test-start boolean and bounded Rust compiler error codes to distinguish private observer compilation failure from an executed guest trap. No raw error messages, native backtraces or configuration enter public diagnostics.",
+  "reviewReason": "Review bounded diagnostic execution stages, boolean classifier presence and relative Rust panic source sites; retain original acceptance, source/component identity, deadline and output bounds and never export arbitrary native errors.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "3922a692511f4e2e6fdfd51443dd2febe2dd35aa40f98f3bc67b8ac8b0a3b0a5"
+  "sha256": "75bc2c1ed22817e500b1795e21c9f0251bbae280d5847edb0093e58b67cb16b4"
 }

@@ -37,6 +37,10 @@ def overlay_sources(root: Path, output: Path) -> tuple[dict, list[tuple[Path, Pa
     offset = text.index(signature, begin) + len(signature)
     observer = '''
     // Private failure-only copy: export numeric Wasm offsets and bounded symbols.
+    eprintln!("LSF_GO_DIAG_CLASSIFY {}", serde_json::json!({
+        "traceAvailable": error.downcast_ref::<wasmtime::WasmBacktrace>().is_some(),
+        "trapAvailable": error.downcast_ref::<wasmtime::Trap>().is_some()
+    }));
     if let Some(trace) = error.downcast_ref::<wasmtime::WasmBacktrace>() {
         for frame in trace.frames().iter().take(32) {
             let function: String = frame.func_name().unwrap_or("").chars()
@@ -57,11 +61,15 @@ def overlay_sources(root: Path, output: Path) -> tuple[dict, list[tuple[Path, Pa
     begin = text.index('async fn ' + CASE + '() {')
     end = text.index('\nasync fn prepare_checkpoint_fixture(', begin)
     focused = '''async fn ''' + CASE + '''() {
+    eprintln!("LSF_GO_DIAG_STAGE entered");
     assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
     let root = tempfile::tempdir().unwrap();
     let f = prepare_checkpoint_fixture(root.path(), "LSF_GO_TIMER_FIXTURE", "go-component-activation-v3").await;
+    eprintln!("LSF_GO_DIAG_STAGE prepared");
     let receipt = f.manager.start(f.request("private-go-gc-frame-diagnostic", 9)).unwrap().await;
+    eprintln!("LSF_GO_DIAG_STAGE invoked");
     f.idle().await;
+    eprintln!("LSF_GO_DIAG_STAGE idle");
     assert!(matches!(receipt.outcome, ActivationOutcome::Succeeded(_)), "private GC diagnostic trapped");
 }
 '''
@@ -91,6 +99,29 @@ def frames_from_output(data: bytes) -> list[dict]:
             raise ValueError('Go-private-frame-observer-output-shape')
         frames.append(value)
     return frames
+
+
+def execution_metadata(data: bytes) -> dict:
+    lines = data.decode('utf-8', errors='replace').splitlines()
+    stages = [line.removeprefix('LSF_GO_DIAG_STAGE ') for line in lines
+              if line.startswith('LSF_GO_DIAG_STAGE ')]
+    require_stages = ('entered', 'prepared', 'invoked', 'idle')
+    if stages != list(require_stages[:len(stages)]) or len(stages) > 4:
+        raise ValueError('Go-private-frame-observer-stage-shape')
+    classifiers = []
+    for line in lines:
+        if not line.startswith('LSF_GO_DIAG_CLASSIFY '):
+            continue
+        value = json.loads(line.removeprefix('LSF_GO_DIAG_CLASSIFY '))
+        if (set(value) != {'traceAvailable', 'trapAvailable'}
+                or any(type(item) is not bool for item in value.values()) or len(classifiers) >= 4):
+            raise ValueError('Go-private-frame-observer-classifier-shape')
+        classifiers.append(value)
+    # Source sites alone distinguish fixture/preparation assertions from guest
+    # execution. No panic message, native backtrace or private config is retained.
+    sites = sorted(set(re.findall(r'crates/[A-Za-z0-9_/.-]{1,180}\.rs:[0-9]{1,6}:[0-9]{1,6}',
+                                 data.decode('utf-8', errors='replace'))))[:8]
+    return {'stages': stages, 'classifiers': classifiers, 'panicSourceSites': sites}
 
 
 def diagnose(fixture: Path, output: Path) -> dict:
@@ -138,6 +169,7 @@ def diagnose(fixture: Path, output: Path) -> dict:
         'sourceOverlays': identities, 'originalSourceUnchanged': True, 'diagnosticExitCode': result.returncode,
         'nativeCaseStarted': bool(re.search(rb'(?m)^running 1 test\r?$', result.stdout)),
         'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', result.stderr)))[:16],
+        'executionMetadata': execution_metadata(result.stderr + b'\n' + result.stdout),
         'frames': frames, 'rawNativeBacktraceRetained': False, 'acceptanceFailure': 'unchanged'}
     write_json(output / 'GO-PRIVATE-FRAMES.json', observation)
     return observation
