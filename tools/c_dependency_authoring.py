@@ -99,8 +99,10 @@ def manifest(value: dict) -> dict:
         inputs.validate_manifest(value, 'c')
     except (KeyError, TypeError):
         raise DependencyError('dependency-artifact-declaration') from None
+    from tools.c_guest.standard_facilities import DEFAULT, PROFILE
+    runtime_profile = value['selection'].get('runtimeProfile', DEFAULT)
     if (value['selection'].get('target', 'wasm32-wasi') != 'wasm32-wasi'
-            or value['selection'].get('runtimeProfile', 'closed-synchronous-v1') != 'closed-synchronous-v1'):
+            or type(runtime_profile) is not str or runtime_profile not in {DEFAULT, PROFILE}):
         raise DependencyError('c-dependency-runtime-profile-not-installed')
     for artifact in value['artifacts']:
         if artifact['role'] not in {'application', 'resource', 'build-tool'}:

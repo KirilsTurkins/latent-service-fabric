@@ -1,6 +1,8 @@
 //! A tiny binary component makes two real calls to the installed wall clock.
 use wasm_encoder::*;
 pub const CAP: &str = "latent:clock/wall@0.1.0";
+pub const PROFILE: &str = "builtin-wall-v1";
+pub const OPERATION: &str = "now-unix-millis";
 pub const CONTRACT: &str = "tests:broker/api@0.1.0";
 pub fn bytes() -> Vec<u8> {
     build(false)
@@ -9,13 +11,16 @@ pub fn spin_after_clocks() -> Vec<u8> {
     build(true)
 }
 fn build(spin: bool) -> Vec<u8> {
+    build_for(CAP, OPERATION, spin)
+}
+pub fn build_for(capability: &str, operation: &str, spin: bool) -> Vec<u8> {
     let mut component = Component::new();
     let mut wall = InstanceType::new();
     wall.ty()
         .function()
         .params([] as [(&str, ComponentValType); 0])
         .result(Some(PrimitiveValType::U64.into()));
-    wall.export("now-unix-millis", ComponentTypeRef::Func(0));
+    wall.export(operation, ComponentTypeRef::Func(0));
     let mut types = ComponentTypeSection::new();
     types.instance(&wall);
     types
@@ -24,13 +29,13 @@ fn build(spin: bool) -> Vec<u8> {
         .result(Some(PrimitiveValType::U64.into()));
     component.section(&types);
     let mut imports = ComponentImportSection::new();
-    imports.import(CAP, ComponentTypeRef::Instance(0));
+    imports.import(capability, ComponentTypeRef::Instance(0));
     component.section(&imports);
     let mut alias = ComponentAliasSection::new();
     alias.alias(Alias::InstanceExport {
         instance: 0,
         kind: ComponentExportKind::Func,
-        name: "now-unix-millis",
+        name: operation,
     });
     component.section(&alias);
     let mut canonical = CanonicalFunctionSection::new();

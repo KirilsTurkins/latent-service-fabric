@@ -15,7 +15,7 @@ from tools.rust_capsule_project import digest, inventory, read_file, snapshot, w
 
 class Compiler:
     def __init__(self, root: Path, sdk: Path, commands, *, offline_cache: Path | None = None,
-                 source_root: Path | None = None, application_closure=None):
+                 source_root: Path | None = None, application_closure=None, runtime_profile='go-component-async-v1'):
         self.root, self.sdk, self.commands = root, sdk, commands
         self.source_root = source_root
         self.application_closure, self.isolation = application_closure, None
@@ -70,6 +70,10 @@ class Compiler:
             raise ValueError("unreviewed-go-component-validator")
         self.goroot = Path(self.run("go-root", "go", "env", "GOROOT").strip())
         checked_sources(self.goroot, PREIMAGES)
+        from tools.go_guest.activation import CHECKPOINT_PROFILE
+        if runtime_profile == CHECKPOINT_PROFILE:
+            from tools.go_guest.checkpoints import prepare
+            prepare(self)
         if application_closure is not None:
             from tools.captured_compiler_isolation import Isolation
             selected_tools = dict(self.paths)
@@ -92,10 +96,13 @@ class Compiler:
 
     def compile(self, source: Path, wit: Path, world: str, output: Path,
                 *, runtime_profile: str = 'go-component-async-v1') -> tuple[Path, dict]:
-        from tools.go_guest.activation import PROFILE, exports
-        if runtime_profile not in {'go-component-async-v1', PROFILE}:
+        from tools.go_guest.activation import PROFILES, CHECKPOINT_PROFILE, exports
+        if runtime_profile not in {'go-component-async-v1', *PROFILES}:
             raise ValueError('go-runtime-profile-not-installed')
-        activation = runtime_profile == PROFILE
+        activation = runtime_profile in PROFILES
+        checkpoints = runtime_profile == CHECKPOINT_PROFILE
+        if checkpoints and 'go-checkpoints' not in self.paths:
+            raise ValueError('go-checkpoint-parser-not-prepared-before-compiler-containment')
         output.mkdir()
         generated = output / "module"
         comparison = output / "independent-bindings"
@@ -214,9 +221,19 @@ class Compiler:
             self.run("vendor-locked-module", "go", "mod", "vendor")
             overlay_path = overlay(self.goroot, output / "runtime-overlay",
                                    generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk,
-                                   activation=activation)
+                                   activation=activation, checkpoints=checkpoints)
             self.commands.environment["GOFLAGS"] = "-mod=vendor -overlay=" + str(overlay_path)
+            if selected_module is not None and selected_module["tags"]:
+                self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])
             replacements = json.loads(overlay_path.read_bytes())["Replace"]
+            if checkpoints:
+                from tools.go_application_dependencies import json_stream
+                from tools.go_guest.checkpoints import transform
+                packages = json_stream(self.run('checkpoint-selected-packages', 'go', 'list', '-deps', '-json', './...').encode())
+                added, checkpoints_inputs = transform(self, generated, packages, application_source_paths, overlay_path.parent)
+                replacements.update(added)
+                overlay_path.write_text(json.dumps({'Replace': replacements}, indent=2, sort_keys=True) + '\n')
+                transforms.extend(checkpoints_inputs)
             for upstream, adapted in sorted(replacements.items()):
                 transforms.append({"name": "go-runtime-overlay/" + Path(adapted).name,
                     "upstreamDigest": digest(read_file(Path(upstream))), "adaptedDigest": digest(read_file(Path(adapted))),
@@ -224,8 +241,6 @@ class Compiler:
             write_json(self.commands.output / 'go-runtime-transformations.json',
                 {'formatVersion': 1, 'profile': runtime_profile, 'automaticTransformations': transforms})
             if selected_module is not None:
-                if selected_module["tags"]:
-                    self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])
                 from tools.go_application_dependencies import json_stream, native_assembly
                 packages = json_stream(self.run("selected-go-packages", "go", "list", "-deps", "-json", "./...").encode())
                 selected_packages = []

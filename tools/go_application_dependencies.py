@@ -40,7 +40,7 @@ def selection(value: dict | None = None) -> dict:
             or not re.fullmatch(r'[A-Za-z0-9_]{1,64}', tag) for tag in tags)):
         raise DependencyError('go-build-tags-invalid')
     profile = value.get('runtimeProfile', PROFILE)
-    if value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or profile not in {PROFILE, 'go-component-activation-v1'}:
+    if value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2'}:
         raise DependencyError('go-runtime-profile-not-installed')
     return {'target': 'wasip1/wasm', 'runtimeProfile': profile, 'tags': sorted(set(tags))}
 
@@ -212,13 +212,14 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
             GOPRIVATE=','.join(private_modules), GONOPROXY='none', GONOSUMDB=','.join(private_modules), GOAUTH='netrc',
             GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
         (owned / 'git-empty.config').write_bytes(b'')
-        if variable := policy.get('authorizationEnv'):
+        if 'authorizationEnv' in policy:
+            variable = policy['authorizationEnv']
             username = policy.get('username', 'token')
-            if (not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable)
+            if (not isinstance(variable, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable)
                     or not isinstance(username, str) or not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}', username)):
                 raise DependencyError('go-proxy-authorization-unavailable')
             secret = os.environ[variable]
-            if not re.fullmatch(r'[^\s]{1,8192}', secret):
+            if not re.fullmatch(r'[^\s]{1,8192}', secret) or any(ord(char) < 32 or ord(char) == 127 for char in secret):
                 raise DependencyError('go-proxy-authorization-format')
             netrc = owned / 'resolver.netrc'
             netrc.write_text('machine ' + proxy.hostname + ' login ' + username + ' password ' + secret + '\n')

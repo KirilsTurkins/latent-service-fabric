@@ -11,6 +11,7 @@ struct Host {
     budget: latent_core::ActivationBudget,
 }
 impl TransactionHost for Host {
+    fn observe_host_result(&self, _: latent_executor::HostResultDisposition) {}
     fn activation_id(&self) -> &latent_core::ActivationId {
         &self.id
     }
