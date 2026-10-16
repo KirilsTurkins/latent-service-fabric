@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_standard_http.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bound the normal Go build/signed node gate; verify exact native products and distinguish unchanged default transport cases from the explicit separate custom RoundTripper control",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "13fb052b670ee4edbeec8fe908d4b55c27c6945f45bb652c21d474cb8d9887c9"
+}

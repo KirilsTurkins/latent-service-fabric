@@ -18,12 +18,15 @@ type domain struct {
 }
 
 type localTransport struct{}
+var invocations uint32
 func (localTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	return &http.Response{StatusCode:200, Header:make(http.Header),
 		Body:io.NopCloser(bytes.NewBufferString(`{"id":7,"name":"café","items":["λ",""],"empty":""}`)), Request:request}, nil
 }
 
 func Run(which uint32, address string) string {
+	invocations++
+	if invocations != 1 { return "stale-state" }
 	client := &http.Client{Timeout:time.Second}
 	defer client.CloseIdleConnections()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -44,20 +47,22 @@ func Run(which uint32, address string) string {
 	response, err := client.Do(request)
 	if err != nil { if ctx.Err() != nil { return "cancelled" }; return "transport-error" }
 	defer response.Body.Close()
-	if which == 2 { first := make([]byte,4); count, _ := response.Body.Read(first); return "early:"+strconv.Itoa(count) }
+	if which == 2 { first := make([]byte,4); count, _ := io.ReadFull(response.Body, first); return "early:"+strconv.Itoa(count) }
 	if which == 5 { go func(){ time.Sleep(20*time.Millisecond); cancel() }() }
+	data, err := io.ReadAll(response.Body)
+	if err != nil { if ctx.Err() != nil { return "cancelled" }; return "transport-error" }
 	if which == 1 {
 		var echo struct { Body string `json:"bodyBase64"`; Method string `json:"method"` }
-		if json.NewDecoder(response.Body).Decode(&echo) != nil || echo.Method != "POST" { return "invalid-json" }
+		if json.Unmarshal(data, &echo) != nil || echo.Method != "POST" { return "invalid-json" }
 		return strconv.Itoa(response.StatusCode)+":echo:"+echo.Body
 	}
 	if response.StatusCode >= 400 {
 		var failure struct { Status int `json:"status"`; Message string `json:"message"` }
-		if json.NewDecoder(response.Body).Decode(&failure) != nil || failure.Status != response.StatusCode { return "invalid-json" }
+		if json.Unmarshal(data, &failure) != nil || failure.Status != response.StatusCode { return "invalid-json" }
 		return strconv.Itoa(response.StatusCode)+":error:"+failure.Message
 	}
 	var value domain
-	if err := json.NewDecoder(response.Body).Decode(&value); err != nil {
+	if err := json.Unmarshal(data, &value); err != nil {
 		if ctx.Err() != nil { return "cancelled" }; return "invalid-json"
 	}
 	if value.ID != 7 || len(value.Items) != 2 || value.Empty != "" { return "invalid-domain" }

@@ -77,3 +77,37 @@ concrete Transport, JSON domain parsing, POST, early Close, cancelled contexts
 and a separate custom RoundTripper. The normal compiler gate is bounded to
 900/600 seconds, retains exact SDK/source/recipe/overlay/component/tool identities,
 and explicitly records compile-only with signedExecution not-run.
+
+The first actual hosted compiler run passed both the context-aware typed fixture
+and this ordinary net/http fixture. It then failed the existing parent timer GC
+case before reaching module-initializer and ordinary authoring qualification.
+Those observations are compile-only; they do not establish HTTP execution or
+qualify the pending scheduler parents. The unchanged timer failure remains in
+[run 38835607597](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38835607597).
+
+The separate `qualify_go_standard_http.py` gate now captures the exact fixture
+through normal project creation and packaging, reuses only the five immutable
+products from successful ordinary Go authoring qualification, demo-signs the
+observed package, and deploys it on the normal enforced node. The fixture reads
+the bounded HTTP body before ordinary guest JSON parsing, so transport truncation
+and size failures cannot be hidden by an early JSON syntax error. A static
+counter rejects reuse of a previous activation's state. The early-close case
+uses ordinary ReadFull for four bytes instead of assuming one Read fills them.
+
+Nineteen cases cover domain JSON, HTTP error status, truncation, oversize,
+malformed JSON, forbidden headers, early Close, pending header/body cancellation,
+POST bytes, uncertain mutation, target denial, pre-cancelled contexts, sibling
+cancellation, concrete Transport, DefaultTransport.Clone, a separate custom
+RoundTripper and fresh state. Every activation checks actual provider counters,
+cleanup slots and topology. The controlled peer must report exactly 15 primary
+contacts, one committed mutation and no secondary contact. These observations
+are distinct from allocator/native/kernel upper-bound qualification.
+
+Compilation retains its normal 900-second enclosing build and 600-second
+command limits. The new gate bounds the node/peer to 300 seconds under a
+1200-second total deadline. It runs after the existing ordinary authoring gate
+and retains every previous command and the original 75-minute workflow limit.
+Two source controls reject changed vendored SDK/native products before execution.
+This signed gate has been added and has not yet executed. HTTPS, published
+default-client consumers, the wider matrix and complete #692 acceptance remain
+required; no full-ticket result follows from this candidate.
