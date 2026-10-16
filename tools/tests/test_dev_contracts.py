@@ -293,6 +293,40 @@ class Transports(unittest.TestCase):
             self.assertEqual(rejected.stdout, b"")
 
 
+class SupervisorCompilerInventory(unittest.TestCase):
+    def test_actual_supervisor_start_disables_bytecode_in_an_isolated_child(self):
+        import subprocess
+        import zipfile
+        from tools.dev_workflow import service
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            helper = root / "helper.pyz"
+            with zipfile.ZipFile(helper, "w") as archive:
+                archive.writestr("__main__.py",
+                    "import json,sys\nprint(json.dumps([sys.flags.isolated,sys.dont_write_bytecode,sys.argv[1:]]))\n")
+            ready = {"state": "ready"}
+            with patch.object(service.checks, "preflight"), \
+                    patch.object(service, "request", side_effect=[FileNotFoundError(), ready]), \
+                    patch.object(service, "disconnected"), \
+                    patch.object(service, "wait_for_restart_lease"), \
+                    patch.object(service, "guest_instance", return_value={"bootId": "control"}), \
+                    patch.object(service.paths, "read", return_value=b'{"securityProfile":"local-experimental-v1"}'), \
+                    patch.object(service.state, "atomic"), \
+                    patch.object(service.subprocess, "Popen") as spawn:
+                spawn.return_value.poll.return_value = None
+                self.assertEqual(service.start(root, helper), ready)
+            spawn.assert_called_once()
+            argv = spawn.call_args.args[0]
+            self.assertEqual(argv, [sys.executable, "-I", "-B", str(helper), "supervise", str(root)])
+            cache = root / "untrusted-cache-prefix"
+            completed = subprocess.run(argv, cwd=root, check=True, capture_output=True, text=True, timeout=10,
+                env={**spawn.call_args.kwargs["env"], "PYTHONPATH": str(root / "ambient-modules"),
+                     "PYTHONPYCACHEPREFIX": str(cache)})
+            self.assertEqual(json.loads(completed.stdout), [1, True, ["supervise", str(root)]])
+            self.assertFalse(cache.exists())
+
+
 class OfflineInputs(unittest.TestCase):
     def test_manifest_rejects_oversized_aliases_and_paths(self):
         for names in (("release/A", "release/a"), ("trust/../escape",), ("unrelated/input",)):
