@@ -7816,7 +7816,7 @@
       ],
       "id": "latent-wasmtime.test.clock-admission",
       "ignoredLeaves": [
-        "monotonic::ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
+        "ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
         "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores"
       ],
       "kind": "test",
