@@ -1,0 +1,144 @@
+{
+  "schema": "recovery-audit-control-source-bound-validation.v1",
+  "recordedAtUtc": "2026-10-16T21:56:13.868712+00:00",
+  "pullRequest": "https://github.com/KirilsTurkins/latent-service-fabric/pull/1047",
+  "status": "AUDIT_CONTROL_RESERVATION_FIXED_ORIGINAL_TERMINAL_RECOVERY_PASS",
+  "source": {
+    "commit": "928f6b4ecc1c5701dda581dc8fbe647aa69c532e",
+    "tree": "e8e73551ec7ddb45c46a83b5419863e4345947ba",
+    "trackedFiles": 9672,
+    "privateObserversUsed": false,
+    "implementationFile": "crates/latent-wire/src/phase4/state_management/audit.rs",
+    "implementationFileSHA256": "e35b396410404f037483a45b18d2f026f8593a9e83ce61defb4b7d44f52b396f",
+    "change": "State-management audit admission uses the existing reserve_control_critical entrypoint outside runtime fences, synchronizing short memory bookkeeping before the unchanged journal capacity checks.",
+    "preserved": [
+      "policy, namespace and native publication fences",
+      "audit queue, singleton pending, record and disk bounds",
+      "durable begin and conclusion records",
+      "error conversion, deadline and currentness checks"
+    ],
+    "historicalHttp065ExactAuditSubtypeEstablished": false,
+    "laterReportCommitDoesNotRelabelRuntimeSource": true
+  },
+  "scopedNativeValidation": {
+    "testedSourceKind": "actual-aab-plus-one-reviewed-production-file",
+    "testedBaseCommit": "aab893c6580068c8de3260fef85938428f320e8c",
+    "onlyReviewedProductionFileOverlay": "crates/latent-wire/src/phase4/state_management/audit.rs",
+    "all9672TestedInputsMatchCommittedSourceTree": true,
+    "canonicalInputMapSHA256": "958cafcf7190f5359aa16e3881b892d470837534caee5d1425dd26294c18b0ae",
+    "originalPartialReceiptSHA256": "167137a72ceb942b8c124bf88e45fbc79db86a02085b07fe705bf44af057dc8e",
+    "auditTestsPassed": 50,
+    "stateManagementTestsPassed": 87,
+    "resultHistoryCasesPassed": 9,
+    "selectedIgnored": 0,
+    "originalPartialCampaign": "All 137 selected tests pass; an additional audit/wire warnings-as-errors check then fails with 22 unchanged-source diagnostics. Its failure remains recorded.",
+    "separateSameSourceCompletionReceiptSHA256": "14362bb96273343e93f944c9c140a6af3efaa3313852df1ac371b227af5efa1b",
+    "completion": "Affected audit/wire ordinary Clippy, the maintained strict check for latent/latentd/latent-testkit/latent-admission, and pinned changed-file formatting pass. No unit tests or test-harness compilation are repeated.",
+    "fullWorkspaceLintClaim": false,
+    "syntheticCombinedSuccessReceipt": false
+  },
+  "freshDefaultBuilds": {
+    "sourceCommit": "928f6b4ecc1c5701dda581dc8fbe647aa69c532e",
+    "sourceSelectionSHA256": "94075393336ceabb8254d80c5ff8ae6abceae9ef2b8510a6a67862390dd0286c",
+    "sourceManifestSHA256": "886cb8242125c8115c3d73aaa069e4b5170abe61be6920ae04812469d3ab8446",
+    "archiveIndexSHA256": "baf3b3f208387c14361bd0db2d5d53706936e9f6117df8f8464ff9cc90210f2a",
+    "archiveSHA256": "d5934ee634ae682ef6800096d711d7c18bdf48d4d6f3f0310f98f5ef798c4e89",
+    "archiveBytes": 517754880,
+    "roles": [
+      {
+        "role": "node",
+        "sha256": "95ddb8ffeb22cf7da110e4833fcc8fcbeeff17fc9f9f8a953e2cae10b76f06db",
+        "bytes": 182412792,
+        "mode": 448
+      },
+      {
+        "role": "recovery_helper",
+        "sha256": "0645a7a5b45af7ab8592f42f287e32a460b44b0125bb92cf48bccf6c91ca46fc",
+        "bytes": 187243480,
+        "mode": 448
+      },
+      {
+        "role": "cli",
+        "sha256": "62fa253b3e34cd070a63f6b4b4a73c6b948a5345d8fd3d873ed606f08854f8a2",
+        "bytes": 69364248,
+        "mode": 448
+      },
+      {
+        "role": "contracts_tool",
+        "sha256": "c7bb55897d325fa8dc680a709038827cf8b52e90bad51af139220d8c8ec61d9a",
+        "bytes": 7904720,
+        "mode": 448
+      },
+      {
+        "role": "aot_compiler",
+        "sha256": "dce007f1f29d6de59d93dd0cb28d251edae4a798b676ee813c821273b349267b",
+        "bytes": 41772864,
+        "mode": 448
+      },
+      {
+        "role": "signer",
+        "sha256": "ae0cb566e55f30c43b69c24ed369776979e6eefefb7cded9001f4ce156fba8a0",
+        "bytes": 24874960,
+        "mode": 448
+      }
+    ],
+    "defaultFeatures": [],
+    "allSixSelectedCargoArtifactsNonTestAndFreshFalse": true,
+    "buildOwnedProcesses": 163,
+    "archiveOwnedProcesses": 1,
+    "allOwnedProcessesRetiredCleanly": true,
+    "allSevenArchivePayloadHashesSizesModesIndependentlyVerified": true
+  },
+  "ordinaryTerminalRecovery": {
+    "sourceCommit": "928f6b4ecc1c5701dda581dc8fbe647aa69c532e",
+    "passed": true,
+    "attempts": 1,
+    "privateObserversUsed": false,
+    "safeSummarySHA256": "78af90442c3a358b1a996977fa762ef93257fa4d0f400b1d7d83933c3220cb8e",
+    "hostVerificationSHA256": "d1063d5975697a4631a869a8fbe5dfd1d05c8a1bb7a11faf1fbcf881b696d2bd",
+    "finiteProjectionSHA256": "8914a9a7b89756130ac69653aa2daaf1a52abe2c2600c5358a8b4d4542555a34",
+    "outerReceiptSHA256": "66ca0fe98ac87cf212679d28592952dafc30568aeadd3009cf8ce9df8d7727f1",
+    "wrapperReceiptSHA256": "ffd4c81858e8b0be17522a07ad55f01ab8df1c10254ef9d4592311c1867b7ed8",
+    "campaignReceiptSHA256": "8613279c2d54381a3336b436f152c71b41c2ebaae38ba57faa630ce81554a541",
+    "casesPassed": 50,
+    "requiredWitnessesPassed": [
+      "ambiguous-provider-acceptance",
+      "crash-restart-original-recovery",
+      "actual-java-schema-migration",
+      "restore-original-commit",
+      "restore-original-rejection",
+      "actual-java-terminal-history-restore",
+      "actual-physical-retirement"
+    ],
+    "cliProcesses": 209,
+    "nativeRecoveryActions": 12,
+    "ownedProcesses": 131,
+    "allOwnedProcessesRetiredCleanly": true,
+    "normalPhysicalRetirementReports": 18,
+    "intentionalCrashesReaped": 1,
+    "intentionalCrashClaimedAsNormalRetirement": false,
+    "startupFailureObservations": 0,
+    "allSixPostguardsPassed": true,
+    "all44HistoricalProductsPreservedBeforeAndAfter": true,
+    "authenticatedClosedHostFiles": 827,
+    "innerDeadlineSeconds": 1200,
+    "outerDeadlineSeconds": 1250,
+    "originalHeadroomFloorBytes": 3221225472,
+    "minimumHostFreeBytes": 74362470400,
+    "wrapperSeconds": 340.520884,
+    "originalProgrammeCommandsRpcOraclesAndCleanupPreserved": true,
+    "javaProviderAndCurrentMaterialsUnchanged": true,
+    "protectedStoreSnapshotTlsAndHttpBusinessPayloadsReadByReviewer": false
+  },
+  "remaining": {
+    "historicalHttp065AuditSubtype": "The earlier private aab893c6 diagnostic identifies read-audit-begin ResourceExhausted, nonretryable. Its exact audit-busy, pending or capacity subtype remains unknown; this pass does not reconstruct it.",
+    "historicalStartupAndPolicyRefusalCauses": "Earlier failures remain source-bound historical observations; no common inner cause is established.",
+    "intermittentHttpReplyFaultTest": "RetryScheduled does not by itself prove that a POST reply fault was reached: legal preaccept KnownFailed also schedules a retry. The old fault iteration and reason are unavailable. Later assertion context preserves them; no production classification defect or deterministic whole-case correction is established.",
+    "pendingAndEarlyOnThisCommit": "Not run. Earlier passes retain their original source identity.",
+    "wholeHeadQualified": false,
+    "packagedDistributionQualified": false,
+    "allLinkedIssueAcceptance": false,
+    "ticketClosures": [],
+    "ciWaitedFor": false
+  }
+}
