@@ -13,7 +13,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:5dca45822a198817a6f709617b029d1f555146f7506fd53c4ddca863dd709c33",
-        "class:setup-sha256:8d92df43a80b357f33fa76313103e5f25094c4fef8dd83204677a017de7e67f5"
+        "class:setup-sha256:a6f3864c1f6bceddb98c5eb41ce51658f75d4452d4197863021e4b21593be05f"
       ],
       "skipSites": []
     },
@@ -25,7 +25,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:5dca45822a198817a6f709617b029d1f555146f7506fd53c4ddca863dd709c33",
-        "class:setup-sha256:8d92df43a80b357f33fa76313103e5f25094c4fef8dd83204677a017de7e67f5"
+        "class:setup-sha256:a6f3864c1f6bceddb98c5eb41ce51658f75d4452d4197863021e4b21593be05f"
       ],
       "skipSites": []
     },
@@ -37,13 +37,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:5dca45822a198817a6f709617b029d1f555146f7506fd53c4ddca863dd709c33",
-        "class:setup-sha256:8d92df43a80b357f33fa76313103e5f25094c4fef8dd83204677a017de7e67f5"
+        "class:setup-sha256:a6f3864c1f6bceddb98c5eb41ce51658f75d4452d4197863021e4b21593be05f"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_rust_dependency_recovery.py",
-  "reviewReason": "Require exact faults terminal identity memory bound owners and one observed cancellation without retry",
+  "reviewReason": "Explicit fixture review: unchanged three cases, no skips or decorator/module guard changes; only select tight fuel path independently of bounded-copy cancellation. Existing cancellation identity and no-replay assertions preserved.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

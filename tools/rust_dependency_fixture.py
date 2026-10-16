@@ -103,7 +103,15 @@ pub fn exercise(which: &str) {
             let mut bytes = vec![1_u8; 64 * 1024 * 1024];
             std::hint::black_box(&mut bytes);
         }
-        "spin" => loop { std::hint::spin_loop(); },
+        "fuel" => loop { std::hint::spin_loop(); },
+        "spin" => {
+            let source = vec![1_u8; 128 * 1024];
+            let mut destination = vec![0_u8; source.len()];
+            loop {
+                destination.copy_from_slice(std::hint::black_box(&source));
+                std::hint::black_box(&mut destination);
+            }
+        },
         _ => {}
     }
 }
@@ -194,7 +202,7 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
             'applicationLibraries': application_libraries,
             'declaredSemantics': {'panic': 'abort', 'drop': 'explicit-normal-scope',
                 'resources': ['UTF-8 include_str', 'binary include_bytes'], 'staticState': 'fresh-per-activation',
-                'faultPaths': ['panic', 'memory', 'spin'], 'unwind': 'unsupported-not-claimed'},
+                'faultPaths': ['panic', 'memory', 'fuel', 'spin'], 'unwind': 'unsupported-not-claimed'},
             'authoringWorkflow': {'add': added, 'nativeLock': locked, 'staleCaptureRejected': stale_controls,
                                  'exactReviewedMetadataRestored': True},
             'resourceDigest': digest(resource), 'sourceDigest': digest(after),
