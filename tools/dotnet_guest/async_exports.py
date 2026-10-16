@@ -246,6 +246,41 @@ def bridge(synchronous: str, asynchronous: str) -> tuple[str, int]:
     result = synchronous
     for start, end, adapted in reversed(sorted(replacements)):
         result = result[:start] + adapted + result[end:]
+    result = memory_support(result, asynchronous)
     if result.count('EntryPoint = "[async-lift]') != count:
         raise ValueError('dotnet-async-export-final-entry-count-drift')
     return result, count
+
+
+def memory_support(synchronous: str, asynchronous: str) -> str:
+    """Retain the pinned pure helper needed by asynchronous list lowering.
+
+    The generator can require this class only in the async projection. Its
+    general async task runtime is deliberately excluded from the selection.
+    Insert the original helper beside its matching return-area class, inside
+    the original namespace; never copy the surrounding async support graph.
+    """
+    expected = ('public static class MemoryHelper\n{\n'
+                'public static unsafe void* AlignStackPtr(void* stackAddress, uint alignment)\n{\n'
+                'return (void*)(((nint)stackAddress) + ((int)alignment - 1) & -(int)alignment);\n}\n}')
+    normalize = lambda value: '\n'.join(line.strip() for line in value.splitlines()).strip()
+    selected = [match for match in CLASS.finditer(asynchronous) if match['name'] == 'MemoryHelper']
+    if not selected:
+        return synchronous
+    if len(selected) != 1 or normalize(selected[0][0]) != expected:
+        raise ValueError('dotnet-async-export-pinned-memory-helper-drift')
+    existing = [match for match in CLASS.finditer(synchronous) if match['name'] == 'MemoryHelper']
+    if existing:
+        if len(existing) != 1 or normalize(existing[0][0]) != expected:
+            raise ValueError('dotnet-async-export-pinned-memory-helper-drift')
+        return synchronous
+    anchors = [match for match in CLASS.finditer(synchronous) if match['name'] == 'InteropReturnArea']
+    original = [match for match in CLASS.finditer(asynchronous) if match['name'] == 'InteropReturnArea']
+    if (len(anchors) != 1 or len(original) != 1
+            or anchors[0]['indent'] != selected[0]['indent']
+            or original[0]['indent'] != selected[0]['indent']
+            or original[0].end() > selected[0].start()
+            or asynchronous[original[0].end():selected[0].start()].strip()):
+        raise ValueError('dotnet-async-export-memory-helper-placement-drift')
+    offset = anchors[0].end()
+    return synchronous[:offset] + '\n\n' + selected[0][0] + synchronous[offset:]

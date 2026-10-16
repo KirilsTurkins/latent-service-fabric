@@ -68,6 +68,32 @@ class AsyncExportTests(unittest.TestCase):
         result, count = exports.bridge(self.baseline, self.baseline)
         self.assertEqual((result, count), (self.baseline, 0))
 
+    def test_smoke_list_result_keeps_original_alignment_helper_in_its_namespace(self):
+        original = (Path(__file__).parent/'fixtures'/'stackful-smoke-memory-support.cs').read_text()
+        helper = next(match[0] for match in exports.CLASS.finditer(original) if match['name'] == 'MemoryHelper')
+        baseline = original.replace('\n\n' + helper, '')
+        selected, count = exports.bridge(baseline, original)
+        self.assertEqual((selected, count), (original, 0))
+        self.assertEqual(exports.bridge(selected, original), (original, 0))
+        for token in ('AsyncSupport', 'TaskCompletionSource', 'ComponentTask'):
+            self.assertNotIn(token, selected)
+
+    def test_alignment_helper_must_remain_the_exact_pure_generator_operation(self):
+        original = (Path(__file__).parent/'fixtures'/'stackful-smoke-memory-support.cs').read_text()
+        changed = original.replace('return (void*)', 'Unexpected(); return (void*)')
+        for baseline, asynchronous in ((original, changed), (changed, original)):
+            with self.subTest(baseline=baseline), self.assertRaisesRegex(ValueError, 'pinned-memory-helper-drift'):
+                exports.bridge(baseline, asynchronous)
+
+    def test_alignment_helper_cannot_escape_its_original_support_class_scope(self):
+        original = (Path(__file__).parent/'fixtures'/'stackful-smoke-memory-support.cs').read_text()
+        helper = next(match[0] for match in exports.CLASS.finditer(original) if match['name'] == 'MemoryHelper')
+        baseline = original.replace('\n\n' + helper, '')
+        for source in (baseline.replace('InteropReturnArea', 'UnexpectedArea'),
+                       baseline.replace('    public static class', '  public static class')):
+            with self.subTest(source=source), self.assertRaisesRegex(ValueError, 'memory-helper-placement-drift'):
+                exports.bridge(source, original)
+
     def test_pinned_aggregate_record_arguments_retain_original_lifting_and_result_lowering(self):
         root = Path(__file__).parent/'fixtures'
         baseline = (root/'stackful-record-baseline-export.cs').read_text()

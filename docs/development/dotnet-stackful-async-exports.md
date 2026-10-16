@@ -21,7 +21,7 @@ The compiler now generates the original stackful bindings and a second export
 projection with wit-bindgen 0.62.0. Imported implementation kinds remain
 synchronous, including imports whose indirect parameters the pinned C# async
 generator cannot implement. The complete reparsed projection must equal the
-expected graph. Only the selected export interop classes are replaced; public
+expected graph. Selected export interop classes are replaced; public
 C# interfaces and ordinary application methods remain the original baseline.
 The bridge retains the pinned argument/result marshalling, executes the actual
 application method, calls canonical `task.return`, then releases result pins.
@@ -83,7 +83,16 @@ drift check, unchanged application and SDK facades pass host Roslyn 10.0.303
 compilation with zero warnings/errors. This is a generator/type control;
 NativeAOT and signed node execution remain separate required checks.
 
-Fourteen source regressions cover retained marshalling/pin order, unchanged C#
+The [Smoke probe build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38850941693)
+then exposed a missing support dependency: asynchronous nested-list result
+lowering needs the pinned `MemoryHelper.AlignStackPtr`, which the synchronous
+projection does not always emit. The bridge retains that exact pure helper
+beside its original return-area class without copying the generator's Task
+runtime. Changed helper bodies and changed placement are rejected. The complete
+original Smoke application and selected generated sources compile under host
+Roslyn 10.0.303 with zero warnings/errors; native execution is still pending.
+
+Seventeen source regressions cover retained marshalling/pin order, unchanged C#
 interfaces, real export names, imported versus exported kinds and fail-closed
 generator/source drift. Separate actual pinned generator controls cover scalar,
 string, result-less, inline-interface and large-import-parameter contracts. A
