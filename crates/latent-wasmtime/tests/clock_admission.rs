@@ -18,6 +18,41 @@ mod support;
 use fixture::*;
 use std::{future::Future, pin::Pin, sync::Mutex, task::Poll};
 
+#[tokio::test]
+async fn owned_stack_fixture_selects_original_phase3_without_expanding_finite_grant() {
+    for owned in [false, true] {
+        let signed =
+            signed::Fixture::with_component_profile(true, &component::bytes(), owned).await;
+        let (request, control) = signed.guest.request("clock-accounting-profile");
+        let expected = if owned {
+            latent_core::BudgetProfile::Phase3
+        } else {
+            latent_core::BudgetProfile::Phase1
+        };
+        assert_eq!(control.budget.profile(), expected);
+        assert_eq!(control.budget.granted(), &request.budget);
+        assert_eq!(request.budget, support::budget());
+        assert_eq!(request.activation.budget, request.budget);
+        assert_eq!(control.budget.host_memory_bytes(), 0);
+        let reservation = control.budget.reserve_host_memory(4096);
+        if owned {
+            let mut reservation = reservation.expect("explicit original Phase3 native accounting");
+            reservation.confirm();
+            assert_eq!(control.budget.host_memory_bytes(), 4096);
+            drop(reservation);
+            assert_eq!(control.budget.host_memory_bytes(), 0);
+        } else {
+            assert!(matches!(
+                reservation,
+                Err(latent_core::BudgetError::InvalidAccountingOperation {
+                    dimension: latent_core::BudgetDimension::MemoryBytes,
+                })
+            ));
+        }
+        signed.guest.idle();
+    }
+}
+
 async fn pending_at_fence(
     mut invocation: Pin<&mut impl Future<Output = latent_executor::ExecutionReport>>,
     held: &Arc<Mutex<Option<signed::Fence>>>,
