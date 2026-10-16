@@ -8129,7 +8129,8 @@
         "service::typed_service_outcomes_use_node_admission_and_reused_cells",
         "streaming::streaming_ownership_and_independent_chunks_survive_body_drop",
         "random::standard_java_entropy_preserves_provider_length_and_activation_budget_failures",
-        "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells"
+        "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells",
+        "logging::standard_java_console_preserves_encoding_original_budget_errors_and_fresh_state"
       ],
       "expectedIgnored": [
         "all_rust_examples_are_exact_signed_phase2_packages",
@@ -8143,7 +8144,8 @@
         "service::typed_service_outcomes_use_node_admission_and_reused_cells",
         "streaming::streaming_ownership_and_independent_chunks_survive_body_drop",
         "random::standard_java_entropy_preserves_provider_length_and_activation_budget_failures",
-        "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells"
+        "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells",
+        "logging::standard_java_console_preserves_encoding_original_budget_errors_and_fresh_state"
       ],
       "id": "latent-wasmtime.test.guest-sdk",
       "ignoredLeaves": [
@@ -8158,11 +8160,12 @@
         "typed_event_receipt_denial_and_uncertainty_do_not_retry",
         "typed_service_outcomes_use_node_admission_and_reused_cells",
         "standard_java_entropy_preserves_provider_length_and_activation_budget_failures",
-        "standard_java_entropy_uses_original_system_provider_and_fresh_cells"
+        "standard_java_entropy_uses_original_system_provider_and_fresh_cells",
+        "standard_java_console_preserves_encoding_original_budget_errors_and_fresh_state"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 12,
+      "minimumCases": 13,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
