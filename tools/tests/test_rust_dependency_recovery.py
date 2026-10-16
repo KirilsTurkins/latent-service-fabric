@@ -84,3 +84,50 @@ class RustDependencyRecovery(unittest.TestCase):
             finished.assert_not_called()
             self.assertEqual(sum(call.args[:2] == ('activation', 'cancel') for call in client.call.call_args_list),
                 int(mode == 'unknown'))
+
+    def test_already_fuel_terminal_never_dispatches_cancellation_or_reports_recovery(self):
+        client, process, patches = self.run_control()
+        activation = 'rust-library-observed-cancellation'
+        client.call.side_effect = lambda *args, **kwargs: {
+            'outcomeKnown': True, 'category': 'success', 'data': {
+                'activationId': activation, 'phase': 'running', 'terminalState': 'resource_exhausted'}}
+        with patches[0], patches[1], patches[2], patches[3] as finished:
+            with self.assertRaisesRegex(RuntimeError, 'rust-library-terminal-before-cancel'):
+                suite.recover(client, {'budget': {'memoryBytes': 4, 'cpuFuel': 100_000_000}},
+                              None, {'samples': []}, 17)
+        client.call.assert_called_once_with('activation', 'get', activation, codes=(0, 6))
+        process.close.assert_called_once_with()
+        finished.assert_not_called()
+
+    def test_actual_fixture_emits_zero_page_wasm_spin_and_preserves_resource_authority(self):
+        import json
+        from pathlib import Path
+        import tempfile
+        from tools import rust_dependency_fixture as fixture
+
+        class NativeBoundaryReached(RuntimeError):
+            pass
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); project = root / 'application'
+            (project / 'src').mkdir(parents=True)
+            limits = {'cpuFuel': 100_000_000, 'memoryBytes': 4_194_304, 'wallTimeLimitMillis': 1000,
+                      'logBytes': 0, 'outboundRequests': 0, 'childCalls': 0}
+            descriptor = {'limits': dict(limits), 'explicitAuthority': 'unchanged'}
+            (project / 'capsule-project.json').write_text(json.dumps(descriptor))
+            (project / 'src/lib.rs').write_bytes(
+                b'pub fn greet(name: String) { Ok(format!("Hello, {name}!")) }')
+            with patch.object(fixture.cargo_native_authoring, 'author', side_effect=NativeBoundaryReached) as native:
+                with self.assertRaises(NativeBoundaryReached):
+                    fixture.install(project, root / 'outside', root / 'unavailable-cargo')
+            native.assert_called_once()
+            self.assertEqual(native.call_args.kwargs['identity'], 'unicode-normalization')
+            selected = json.loads((project / 'capsule-project.json').read_bytes())
+            self.assertEqual(selected, {**descriptor, 'limits': {**limits, 'wallTimeLimitMillis': 5000}})
+            source = (root / 'outside/developer-owned-library/src/lib.rs').read_text()
+            spin = source.split('"spin" => loop {', 1)[1].split('        },', 1)[0]
+            self.assertIn('#[cfg(target_arch = "wasm32")]', spin)
+            self.assertIn('black_box(core::arch::wasm32::memory_grow::<0>(std::hint::black_box(0)))', spin)
+            self.assertIn('#[cfg(not(target_arch = "wasm32"))]', spin)
+            self.assertNotIn('vec!', spin)
+            self.assertNotIn('copy_from_slice', spin)
