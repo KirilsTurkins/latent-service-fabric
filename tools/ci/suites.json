@@ -7805,20 +7805,23 @@
         "dropping_real_session_currentness_wait_retires_prepared_owner_without_guest",
         "legacy_clock_without_explicit_timer_still_fails_closed_on_real_fence",
         "legacy_session_without_timer_fails_closed_before_store_or_guest",
+        "monotonic::ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
         "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores",
         "real_session_currentness_wait_precedes_store_registration_and_calls_guest_once",
         "real_session_wait_keeps_original_cancellation_and_lease_expiry"
       ],
       "expectedIgnored": [
+        "monotonic::ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
         "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores"
       ],
       "id": "latent-wasmtime.test.clock-admission",
       "ignoredLeaves": [
+        "monotonic::ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
         "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 10,
+      "minimumCases": 11,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

@@ -200,7 +200,7 @@ impl Fixture {
         let provider = broker
             .register_provider(ProviderConfiguration {
                 capability: component::CAP,
-                profile: "builtin-wall-v1",
+                profile: component::PROFILE,
                 configuration_digest: &digest,
                 configuration_epoch: 1,
                 restriction_json: br#"{"operations":[]}"#,
@@ -227,7 +227,7 @@ impl Fixture {
                 &[CapabilityBindingSpec {
                     definition_digest: None,
                     provider: &provider.reference(),
-                    imported_operations: &["now-unix-millis".into()],
+                    imported_operations: &[component::OPERATION.into()],
                     policy_ids: &["p".into()],
                     provider_binding_id: "binding",
                     deployment_restriction_json: br#"{"operations":[]}"#,
@@ -353,7 +353,7 @@ fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &st
             json!({"formatVersion":1,"tenant":"tests","rules":[{
                 "id":"allow", "effect":"allow","principals":[{"kind":"service","subject":"generic-test"}],
                 "services":["generic"], "publications":[publication.publication().as_str()], "capability":component::CAP,
-                "operations":["now-unix-millis"], "resources":{"kind":"clock"},
+                "operations":[component::OPERATION], "resources":{"kind":"clock"},
                 "ceiling":{"operations":1,"inputBytes":1024,"outputBytes":1024,"wallTimeMillis":5000}
             }]}),
         ),
@@ -361,7 +361,7 @@ fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &st
             "binding",
             RecordKind::ProviderBinding,
             json!({"formatVersion":1,"tenant":"tests","capability":component::CAP,
-            "providerProfile":"builtin-wall-v1","configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
+            "providerProfile":component::PROFILE,"configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
         ),
     ] {
         store
