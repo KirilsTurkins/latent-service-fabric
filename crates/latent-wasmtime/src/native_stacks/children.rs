@@ -6,6 +6,7 @@ use latent_core::activation_runtime::RuntimeToken;
 
 pub(super) struct Children {
     retained: Vec<Permit>,
+    started: Vec<RuntimeToken>,
     pub(super) pending: Option<Permit>,
     accepted: usize,
     maximum: usize,
@@ -17,8 +18,13 @@ impl Children {
         retained
             .try_reserve_exact(maximum)
             .map_err(|_| failure("native-child-table-allocation"))?;
+        let mut started = Vec::new();
+        started
+            .try_reserve_exact(maximum)
+            .map_err(|_| failure("native-child-task-table-allocation"))?;
         Ok(Self {
             retained,
+            started,
             pending: None,
             accepted: 0,
             maximum,
@@ -30,6 +36,7 @@ impl Children {
     pub(super) fn release_after_store_dropped(&mut self) {
         drop(self.pending.take());
         self.retained.clear();
+        self.started.clear();
     }
 }
 
@@ -39,6 +46,16 @@ impl StackContext {
             .children
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
+        // A guest can copy its token or reset a context's started byte. Each
+        // distinct native child still needs a distinct admitted original Task;
+        // logical settlement cannot make an earlier start reusable.
+        if children.started.contains(&continuation) {
+            return Err(crate::containment::platform_error(
+                PlatformErrorCode::InvalidArgument,
+                "native-child-task-already-started",
+                false,
+            ));
+        }
         // Finite total starts, not a misleading reusable logical-thread count.
         // A previous start may have reused a cached worker without consuming its
         // pending stack permit. Retain it until actual Store destruction.
@@ -63,6 +80,7 @@ impl StackContext {
             _owner: owner,
             memory,
         });
+        children.started.push(continuation);
         children.accepted += 1;
         Ok(())
     }

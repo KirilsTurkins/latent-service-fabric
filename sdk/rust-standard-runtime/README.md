@@ -147,6 +147,12 @@ charged until the actual Store destructor has completed. Actual mapped stacks
 still retain their original lease through successful host unmapping. Unproven
 physical release quarantines the cell.
 
+Each accepted native child also requires a distinct original Task token. A
+bounded host table records consumed tokens through Store destruction, including
+after a mapping has actually retired. Copying a token or resetting a guest
+context flag cannot bypass Task admission. Table capacity is charged before its
+allocation under the same original host-memory budget.
+
 The explicitly selected `owned_native_threads` profile recognizes the separately
 authorized V6 support start operation and requires the guarded-stack profile and
 original activation limits. It grants no authority; CURRENT stays V5 and frozen
@@ -171,6 +177,14 @@ context before settling its owners. Bootstrap/reaper stack helpers accept the
 original stack only while the lifecycle permits it and canonical context is
 empty; active children retain their own checked stack. This logical cleanup
 does not refund physical Wasmtime stack capacity.
+
+The staged TLS/root lifecycle supports a compiler-owned lazy drain registry.
+Pending accepted work prevents root TLS cleanup and owner settlement. Root
+destructors and final std cleanup re-enter that drainer before entries retire;
+the final detached System reaper releases registry bytes before its context and
+Task leases settle. The ordinary thread PAL must install and implement this
+registry; the hook and its 23 native source-reference controls alone do not
+establish ordinary thread execution or accepted-work drain qualification.
 
 The encoded-Wasm transform controls and separately executed native TLS source
 reference cases exercise these source mechanisms. They do not establish a

@@ -82,8 +82,10 @@ impl StackContext {
             .reserve_host_memory(
                 (std::mem::size_of::<Self>()
                     + 64
-                    + maximum_children * (std::mem::size_of::<Permit>() + CHILD_METADATA_ESCROW))
-                    as u64,
+                    + maximum_children
+                        * (std::mem::size_of::<Permit>()
+                            + std::mem::size_of::<latent_core::activation_runtime::RuntimeToken>()
+                            + CHILD_METADATA_ESCROW)) as u64,
             )
             .map_err(|e| e.to_platform_error())?;
         let children = children::Children::new(maximum_children)?;

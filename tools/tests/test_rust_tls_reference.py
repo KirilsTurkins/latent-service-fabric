@@ -13,7 +13,7 @@ class TlsReferenceExecution(unittest.TestCase):
     def test_complete_source_reference_case_set_includes_both_root_ownership_controls(self):
         names = reference.discovered(self.listing(reference.CASES))
         self.assertEqual(names, list(reference.CASES))
-        self.assertEqual(len(names), 20)
+        self.assertEqual(len(names), 23)
         self.assertIn('denied_root_task_prevents_context_allocation_and_native_admission', names)
         self.assertIn('root_bootstrap_admits_original_task_before_context_and_retains_it_through_final_epilogue', names)
 

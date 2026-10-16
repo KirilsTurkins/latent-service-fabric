@@ -115,6 +115,15 @@ struct StackAllocation {
     layout: Layout,
 }
 
+#[derive(Clone, Copy)]
+struct RootDrain {
+    state: *mut u8,
+    run: unsafe fn(*mut u8) -> bool,
+    // This final release may use only System and must invoke no application
+    // callback or TLS after the final translated root frame has returned.
+    release: unsafe fn(*mut u8),
+}
+
 impl Drop for StackAllocation {
     fn drop(&mut self) {
         unsafe { System.dealloc(self.pointer, self.layout); }
@@ -134,6 +143,8 @@ struct Context {
     // Only a root bootstrap owns this Task. Child Tasks belong to the thread
     // PAL/join lifecycle; a context never fabricates or settles their tokens.
     root_task: Option<ManuallyDrop<Lease>>,
+    root_drain: Cell<Option<RootDrain>>,
+    draining: Cell<bool>,
 }
 
 // Bind the fixed encoded wrapper's offsets on the actual compiling target,
@@ -173,7 +184,7 @@ fn allocate_context(continuation: Option<Token>) -> *mut Context {
         head: Cell::new(ptr::null_mut()), closing: Cell::new(false),
         cleanup_requested: Cell::new(false), owner: ManuallyDrop::new(owner),
         stack_allocation: None,
-        root_task: None,
+        root_task: None, root_drain: Cell::new(None), draining: Cell::new(false),
     })
 }
 
@@ -199,7 +210,7 @@ pub(crate) fn prepare_borrowed_root_context(continuation: Token, low: u32, high:
         head: Cell::new(ptr::null_mut()), closing: Cell::new(false),
         cleanup_requested: Cell::new(false), owner: ManuallyDrop::new(owner),
         stack_allocation: None,
-        root_task: None,
+        root_task: None, root_drain: Cell::new(None), draining: Cell::new(false),
     }).cast()
 }
 
@@ -229,7 +240,7 @@ pub(crate) fn prepare_stacked_thread_context(continuation: Token, bytes: usize) 
         head: Cell::new(ptr::null_mut()), closing: Cell::new(false),
         cleanup_requested: Cell::new(false), owner: ManuallyDrop::new(owner),
         stack_allocation: Some(allocation),
-        root_task: None,
+        root_task: None, root_drain: Cell::new(None), draining: Cell::new(false),
     }).cast()
 }
 
@@ -267,8 +278,37 @@ pub(crate) fn prepare_owned_root_context(low: u32, high: u32) -> *mut u8 {
     pointer
 }
 
-/// The root's accepted-work drain must already be complete. Cleanup retains
-/// context and owners through the final translated Rust epilogue.
+/// Compiler-owned std threading installs its activation-local registry only
+/// on first accepted concurrency. There is no allocation or callback in the
+/// lazy no-concurrency path. Applications retain ordinary std call sites.
+///
+/// # Safety
+/// `state` belongs exclusively to this root through its final System reaper.
+/// `run` must drain real accepted continuations without retaining an exclusive
+/// Rust borrow across suspension; false means unfinished work, never success.
+/// `release` must require an empty registry and free only System-owned bytes.
+pub(crate) unsafe fn install_root_drain(
+    state: *mut u8,
+    run: unsafe fn(*mut u8) -> bool,
+    release: unsafe fn(*mut u8),
+) {
+    let root = context();
+    assert!(!state.is_null() && root.root_task.is_some()
+            && root.stack.phase.get() == STACK_RUNNING && !root.closing.get()
+            && root.root_drain.get().is_none(), "root drain installation must be fresh");
+    root.root_drain.set(Some(RootDrain { state, run, release }));
+}
+
+fn drain_root(context: &Context) -> Result<(), RetireError> {
+    let Some(drain) = context.root_drain.get() else { return Ok(()); };
+    if context.draining.replace(true) { return Err(RetireError::AlreadyClosing); }
+    let complete = unsafe { (drain.run)(drain.state) };
+    context.draining.set(false);
+    if complete { Ok(()) } else { Err(RetireError::AcceptedWorkPending) }
+}
+
+/// The compiler-owned std drainer must complete accepted work before cleanup.
+/// Context and owners remain live through the final translated Rust epilogue.
 #[cfg_attr(target_arch = "wasm32", unsafe(no_mangle))]
 pub unsafe extern "C" fn __lsf_rust_root_finish(pointer: *mut u8) {
     assert!(!pointer.is_null() && unsafe { context_get() } == pointer,
@@ -296,7 +336,9 @@ pub unsafe extern "C" fn __lsf_rust_root_reap(pointer: *mut u8) {
     let context = unsafe { deallocate(pointer.cast::<Context>()) };
     let owner = unsafe { ptr::read(&*context.owner) };
     let task = unsafe { ptr::read(&**context.root_task.as_ref().unwrap()) };
+    let drain = context.root_drain.get();
     drop(context);
+    if let Some(drain) = drain { unsafe { (drain.release)(drain.state); } }
     drop(owner);
     drop(task);
 }
@@ -373,6 +415,7 @@ pub(crate) enum RetireError {
     DestructorLimit,
     LiveShadowStack,
     WrongStackPhase,
+    AcceptedWorkPending,
 }
 
 // Match the finite four-round destructor convention used by the pinned std
@@ -426,6 +469,7 @@ pub(crate) unsafe fn finish_stacked_thread_tls() -> Result<(), RetireError> {
     if context.stack.phase.get() != STACK_RUNNING {
         return Err(RetireError::WrongStackPhase);
     }
+    drain_root(context)?;
     context.stack.phase.set(STACK_FINISHING_TLS);
     unsafe { finish_tls(context)?; }
     context.stack.phase.set(STACK_TLS_FINISHED);
@@ -448,6 +492,10 @@ unsafe fn finish_tls(context: &Context) -> Result<(), RetireError> {
                     item.value.set(ptr::null_mut());
                     called = true;
                     unsafe { destructor(value); }
+                    // A root TLS destructor may accept a child through std.
+                    // Drain it while this actual root stack/context is live,
+                    // before freeing any entry or settling its logical owner.
+                    drain_root(context)?;
                 }
             }
             current = item.next;
@@ -461,6 +509,7 @@ unsafe fn finish_tls(context: &Context) -> Result<(), RetireError> {
     // Pinned std drops its Thread/Parker state after all user TLS destructors.
     // That state uses our LocalPointer entries, so the context stays installed.
     crate::rt::thread_cleanup();
+    drain_root(context)?;
     if pending_destructors(context) { return Err(RetireError::DestructorLimit); }
     // No callbacks remain; detach/free each TLS entry before settling its
     // owner. The context and shadow stack remain installed through return.

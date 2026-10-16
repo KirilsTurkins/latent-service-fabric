@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCES = ('sdk/rust-standard-runtime/tls.rs', 'sdk/rust-standard-runtime/tests/tls_native.rs',
            'sdk/rust-standard-runtime/thread-abi.json', 'tools/run_rust_tls_reference.py')
 CASES = (
+    'a_child_or_replacement_cannot_install_another_roots_drain_registry',
     'borrowed_root_stack_prefix_has_exact_canonical_offsets',
     'denied_root_task_prevents_context_allocation_and_native_admission',
     'destroying_sentinel_cannot_be_erased_or_refunded_as_finished_work',
@@ -34,6 +35,8 @@ CASES = (
     'prepared_accepted_context_can_initialize_tls_during_close',
     'prepared_but_unstarted_context_retires_without_fake_execution',
     'root_bootstrap_admits_original_task_before_context_and_retains_it_through_final_epilogue',
+    'root_destructor_work_is_drained_before_entries_and_original_task_retire',
+    'root_pending_accepted_work_cannot_begin_tls_cleanup_or_refund_its_live_stack',
     'same_static_key_follows_independent_saved_canonical_context_values',
     'unstarted_stack_cannot_finish_or_be_reaped_as_completed_work',
     'unused_tls_has_no_context_or_ledger_allocation',

@@ -1,8 +1,8 @@
 {
   "schemaVersion": "latent.ci.contracts.v2",
   "kind": "python",
+  "reviewReason": "Exact source-reference discovery nowrequires23originalplusrootdrain cases while retaining all prior no-skips/substitution guards and test names.",
   "module": "tools/tests/test_rust_tls_reference.py",
-  "reviewReason": "New bounded TLS source runner controls require complete original case discovery and reject substituted, duplicate, zero, skipped or failed native executions; no guest execution inferred.",
   "cases": [
     "TlsReferenceExecution.test_complete_source_reference_case_set_includes_both_root_ownership_controls",
     "TlsReferenceExecution.test_missing_duplicate_or_substituted_native_case_rejects_before_execution",
