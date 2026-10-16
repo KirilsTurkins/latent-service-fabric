@@ -21,6 +21,8 @@ on:
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
       - tools/go_dependency_fixture.py
+      - tools/go_dependency_recovery.py
+      - tools/tests/test_go_dependency_recovery.py
       - tools/application_dependenc*.py
       - tools/captured_compiler_isolation.py
       - tools/probe_go_authoring.py
@@ -70,6 +72,8 @@ on:
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
       - tools/go_dependency_fixture.py
+      - tools/go_dependency_recovery.py
+      - tools/tests/test_go_dependency_recovery.py
       - tools/application_dependenc*.py
       - tools/captured_compiler_isolation.py
       - tools/probe_go_authoring.py
@@ -231,6 +235,8 @@ jobs:
           python3 -m unittest tools.tests.test_go_dependency_authoring tools.tests.test_guest_authoring_frontend
       - name: Test controlled native Go declaration and lock authoring
         run: python3 -m unittest tools.tests.test_go_native_authoring
+      - name: Test captured library failure and cancellation observation fences
+        run: python3 -m unittest tools.tests.test_go_dependency_recovery
       - name: Qualify captured Go libraries in signed components
         run: |
           python3 tools/qualify_go_capsules.py --application-dependencies --output "$RUNNER_TEMP/go-capsule-dependencies"

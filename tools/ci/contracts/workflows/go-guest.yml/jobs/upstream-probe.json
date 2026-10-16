@@ -123,6 +123,10 @@
         "run": "python3 -m unittest tools.tests.test_go_native_authoring"
       },
       {
+        "name": "Test captured library failure and cancellation observation fences",
+        "run": "python3 -m unittest tools.tests.test_go_dependency_recovery"
+      },
+      {
         "name": "Qualify captured Go libraries in signed components",
         "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
       },
@@ -142,7 +146,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Union actual merged Go checkpoint runtime steps with ordinary dependency authoring controls; preserve both programmes and original45-minute budget.",
+  "reviewReason": "Preserve actual merged checkpoint runtime and all ordinary Go authoring/recovery steps in the unchanged45-minute job; artifact paths are additive.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

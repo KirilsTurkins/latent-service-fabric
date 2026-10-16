@@ -52,17 +52,60 @@ def install(project: Path, outside: Path, go: Path) -> dict:
     (library / 'go.mod').write_text('module ' + identity + '\n\ngo 1.27.2\n\nrequire github.com/mattn/go-runewidth v0.0.16\n', encoding='ascii')
     resource = b'Hello, '
     (library / 'greeting.txt').write_bytes(resource)
+    (library / 'message.txt').write_text('Gr\u00fc\u00dfe', encoding='utf-8')
+    (library / 'data.bin').write_bytes(bytes((0, 255, 65, 128)))
     (library / 'prefix.go').write_text('''//go:build sdk_dependency_qualification
 
 package developer
 
 import (
     _ "embed"
+    "runtime"
     "github.com/mattn/go-runewidth"
 )
 
 //go:embed greeting.txt
 var greeting string
+
+//go:embed message.txt
+var message string
+
+//go:embed data.bin
+var data []byte
+
+var calls uint32
+var retained [][]byte
+
+func deferred() bool {
+    value := 0
+    func() { defer func() { value++ }() }()
+    return value == 1
+}
+
+func recovered() (ok bool) {
+    defer func() { ok = recover() == "ordinary library panic" }()
+    panic("ordinary library panic")
+}
+
+func Exercise(mode string) {
+    if calls != 0 || message != "Gr\\u00fc\\u00dfe" || len(data) != 4 ||
+        data[0] != 0 || data[1] != 255 || data[2] != 65 || data[3] != 128 ||
+        !deferred() || !recovered() {
+        panic("captured Go resources, defer/recover or fresh activation state changed")
+    }
+    calls++
+    switch mode {
+    case "panic":
+        panic("captured library requested trap")
+    case "memory":
+        for {
+            retained = append(retained, make([]byte, 1024*1024))
+            runtime.KeepAlive(retained)
+        }
+    case "spin":
+        for { calls++ }
+    }
+}
 
 //go:generate false
 
@@ -76,11 +119,12 @@ func Prefix() string {
     source = project / 'src/main.go'
     before = source.read_bytes()
     after = before.replace(b'import (', b'import (\n    "github.com/mattn/go-runewidth"\n    developer "' + identity.encode() + b'"')
-    after = after.replace(b'"Hello, " + name + "!"', b'applicationPrefix() + name + "!"')
+    after = after.replace(b'"Hello, " + name + "!"', b'applicationPrefix(name) + name + "!"')
     if after == before or b'"Hello, " + name + "!"' in after:
         raise ValueError('Go dependency qualification source hook changed')
     after += b'''
-func applicationPrefix() string {
+func applicationPrefix(name string) string {
+    developer.Exercise(name)
     prefix := developer.Prefix()
     if runewidth.StringWidth("Hello, ") != 7 || runewidth.StringWidth("\xe4\xb8\x96\xe7\x95\x8c") != 4 {
         panic("direct application Unicode module produced a wrong result")
@@ -137,6 +181,9 @@ func applicationPrefix() string {
     return {'formatVersion': 1, 'thirdParty': 'github.com/mattn/go-runewidth/v0.0.16',
             'transitives': ['github.com/rivo/uniseg'], 'developerOwned': identity,
             'sourceDigest': digest(after), 'resourceDigest': digest(resource),
+            'recoveryCases': ['panic', 'memory', 'spin', 'normal-defer-recover', 'fresh-state'],
+            'resourceDigests': {'message.txt': digest('Gr\u00fc\u00dfe'.encode()),
+                                'data.bin': digest(bytes((0, 255, 65, 128)))},
             'applicationLibraries': application_libraries, 'nativeDeclarationDigest': digest(canonical(declaration)),
             'authoringWorkflow': {'add': added, 'nativeLock': locked, 'staleCaptureRejected': stale_controls,
                                  'exactReviewedDeclarationRestored': True},
