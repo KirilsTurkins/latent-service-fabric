@@ -33,6 +33,14 @@ async fn owned_stack_fixture_selects_original_phase3_without_expanding_finite_gr
         assert_eq!(control.budget.granted(), &request.budget);
         assert_eq!(request.budget, support::budget());
         assert_eq!(request.activation.budget, request.budget);
+        let deadline = control.budget.deadline();
+        assert_eq!(
+            deadline.remaining_at(deadline.admitted_at_monotonic()),
+            request
+                .budget
+                .wall_time_limit_millis
+                .map(Duration::from_millis)
+        );
         assert_eq!(control.budget.host_memory_bytes(), 0);
         let reservation = control.budget.reserve_host_memory(4096);
         if owned {
