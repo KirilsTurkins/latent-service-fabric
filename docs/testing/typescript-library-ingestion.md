@@ -44,3 +44,20 @@ It does not qualify the native Promise/import engine, a publisher-authenticated
 installation, private registry credentials, installed update/remove/watch,
 generator-emitted components or memory/fuel/cancellation recovery. Those remain
 separate acceptance work in #685 and its runtime dependencies.
+
+The maintained TypeScript workflow now also runs this integrity programme after
+its original complete dependency qualification. `--prepared-qualification` may
+select only that successful, exact-source observation with its five frozen native
+products; stale source, incomplete results and changed products fail explicitly.
+The original explicit `--native-directory` plus `--native-tuple` route remains
+available. The two selection routes cannot be combined.
+
+This added hosted gate performs missing/tampered original-transitive denials,
+then two normal builds from the same captured closure in separate fresh compiler
+workspaces. Compiler namespaces deny network access. It signs and executes the
+first build, verifies fresh module state and normal owner retirement, and retains
+the second build receipt without claiming reproducibility. Both pinned compiler
+inputs and captured source remain unchanged. All original workflow commands and
+its 75-minute deadline remain. The historical evidence above records the earlier
+single-build qualifier; a newly added hosted gate is not an assertion that its
+current run passed.

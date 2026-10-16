@@ -22,7 +22,7 @@ from tools.build_snapshot import digest
 from tools.phase2_operator_process import read_json, require, stopped_record, write_json
 from tools.phase2_operator_scenario import NODE_ID, configure_node, connect, stop
 from tools.phase3_resource_identity import file_identity
-from tools.qualify_java_server_lifecycle import ordinary_tuple
+from tools.qualify_rust_capsules import inputs
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_node import RecordingClient, assert_value, call, deploy
 from tools.rust_capsule_project import ROOT, fresh, inventory, snapshot
@@ -32,6 +32,28 @@ from tools.typescript_guest.build import build
 from tools.typescript_guest.project import create
 
 PRODUCTS = ('latent', 'latentd', 'capsule_contracts', 'package', 'capsule_authoring')
+
+
+def prepared_native(prepared: Path) -> tuple[dict, dict]:
+    """Consume exact frozen products of the preceding maintained qualification."""
+    qualified = read_json(prepared / 'qualification.json')
+    source = (prepared / 'source-inputs.json').read_bytes()
+    require(qualified.get('status') == 'passed' and 'applicationDependencies' in qualified
+            and json.loads(source) == inputs('typescript')
+            and source == (prepared / 'source-inputs-after.json').read_bytes()
+            and digest(source) == qualified.get('sourceIdentityDigest'),
+            'typescript-library-exact-prepared-source-required')
+    names = {name: name if name in ('latent', 'latentd') else 'examples/' + name for name in PRODUCTS}
+    require(isinstance(qualified.get('binaries'), dict) and set(qualified['binaries']) == set(names.values()),
+            'typescript-library-prepared-products-not-exact')
+    products = {name: prepared / 'native-binaries' / original.replace('/', '-') for name, original in names.items()}
+    for name, binary in products.items():
+        require(file_identity(binary, 512 * 1024 * 1024) == qualified['binaries'][names[name]],
+                'typescript-library-prepared-native-changed')
+    return products, {'scope': 'exact-source-preceding-maintained-qualification',
+        'sourceIdentityDigest': qualified['sourceIdentityDigest'],
+        'qualification': file_identity(prepared / 'qualification.json'),
+        'nativeProducts': {name: file_identity(binary, 512 * 1024 * 1024) for name, binary in products.items()}}
 
 
 def capture(root: Path) -> dict:
@@ -157,6 +179,7 @@ def main(argv=None) -> int:
     parser.add_argument('--tools', type=Path)
     parser.add_argument('--native-directory', type=Path)
     parser.add_argument('--native-tuple', type=Path)
+    parser.add_argument('--prepared-qualification', type=Path)
     args = parser.parse_args(argv)
     root = args.output.absolute()
     require(root != ROOT and ROOT not in root.parents, 'typescript-library-output-must-stay-outside-checkout')
@@ -177,34 +200,58 @@ def main(argv=None) -> int:
         if args.resolve_only:
             print(json.dumps({'status': 'captured', 'runtimeQualification': False}))
             return 0
-        require(all(value is not None for value in (args.tools, args.native_directory, args.native_tuple)),
-                'typescript-library-native-and-compiler-inputs-required')
+        require(args.tools is not None, 'typescript-library-explicit-compiler-inputs-required')
         stage = 'native-inputs'
-        products = {name: args.native_directory / name for name in PRODUCTS}
-        native_identity = ordinary_tuple(args.native_tuple, products)
+        if args.prepared_qualification is not None:
+            require(args.native_directory is None and args.native_tuple is None,
+                    'typescript-library-native-selection-ambiguous')
+            products, native_identity = prepared_native(args.prepared_qualification)
+        else:
+            from tools.qualify_java_server_lifecycle import ordinary_tuple
+            require(args.native_directory is not None and args.native_tuple is not None,
+                    'typescript-library-native-and-compiler-inputs-required')
+            products = {name: args.native_directory / name for name in PRODUCTS}
+            native_identity = ordinary_tuple(args.native_tuple, products)
         selected = fresh(root / 'selected-native')
         for name, original in products.items():
             shutil.copyfile(original, selected / name)
             (selected / name).chmod(0o700)
-        require(ordinary_tuple(args.native_tuple, {name: selected / name for name in PRODUCTS}) == native_identity,
+        require(all(file_identity(selected / name, 512 * 1024 * 1024)
+                    == file_identity(original, 512 * 1024 * 1024) for name, original in products.items()),
                 'typescript-library-native-capture-changed')
         stage = 'negative-inputs'
         negative = negative_inputs(app)
         stage = 'offline-component'
         built = build(app, root / 'build', selected / 'capsule_contracts', selected / 'package',
             'https://github.com/KirilsTurkins/latent-service-fabric', tools=args.tools)
+        stage = 'clean-offline-rebuild'
+        rebuilt = build(app, root / 'offline-rebuild', selected / 'capsule_contracts', selected / 'package',
+            'https://github.com/KirilsTurkins/latent-service-fabric', tools=args.tools)
+        compiler_inputs = (built / 'compiler-inputs.json').read_bytes()
+        require((rebuilt / 'compiler-inputs.json').read_bytes() == compiler_inputs,
+                'typescript-library-rebuild-compiler-inputs-changed')
+        if args.prepared_qualification is not None:
+            require((args.prepared_qualification / 'builds/greeting/compiler-inputs.json').read_bytes() == compiler_inputs,
+                    'typescript-library-prepared-compiler-inputs-changed')
         stage = 'explicit-fixture-signing'
         commands.run('sign-typescript-library-fixture', selected / 'capsule_authoring', 'demo-sign', root / 'signed', built)
         stage = 'signed-node'
         execution = execute(root, selected)
         stage = 'final-integrity'
-        require(ordinary_tuple(args.native_tuple, products) == native_identity, 'typescript-library-native-products-mutated')
+        after = (prepared_native(args.prepared_qualification)[1] if args.prepared_qualification is not None
+                 else ordinary_tuple(args.native_tuple, products))
+        require(after == native_identity, 'typescript-library-native-products-mutated')
+        require(all(file_identity(selected / name, 512 * 1024 * 1024)
+                    == file_identity(original, 512 * 1024 * 1024) for name, original in products.items()),
+                'typescript-library-selected-native-products-mutated')
         require(file_identity(Path(__file__)) == owner, 'typescript-library-qualifier-mutated')
         require(digest(inventory(snapshot(app))) == captured['applicationIdentity'], 'typescript-library-final-source-drift')
         result = {'status': 'passed', 'scope': execution['scope'], 'capture': file_identity(root / 'capture.json'),
             'sourceRecipe': json.loads((built / 'recipe-inputs.json').read_bytes()),
             'nativeTuple': native_identity, 'qualifier': owner, 'negativeInputs': negative,
             'component': file_identity(built / 'component.wasm'), 'commands': commands.records,
+            'offlineRebuild': file_identity(rebuilt / 'BUILD-COMPLETE.json'),
+            'reproducibility': 'not-claimed',
             'execution': file_identity(root / 'node/libraries-qualified.json'),
             'remainingAcceptance': ['authenticated-private-registry', 'installed-update-remove-watch',
                 'memory-fuel-cancellation-and-native-runtime-paths', 'explicit-generator-containment']}
