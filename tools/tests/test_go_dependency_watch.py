@@ -57,3 +57,27 @@ class GoDependencyWatchFixture(unittest.TestCase):
             self.assertIn('go.bytecodealliance.org/pkg/wit/types', source)
             self.assertIn('calls != 0', source)
             self.assertNotIn('unsafe', source)
+
+    def test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved(self):
+        from tools.qualify_go_dependency_watch import ShutdownOnce
+        fence = ShutdownOnce()
+        calls = []
+        original = RuntimeError('unknown external shutdown result')
+        def uncertain():
+            calls.append('down')
+            self.assertTrue(fence.attempted)
+            raise original
+        with self.assertRaises(RuntimeError) as observed:
+            fence.call(uncertain)
+        self.assertIs(observed.exception, original)
+        with self.assertRaisesRegex(ValueError, 'already-attempted-no-retry'):
+            fence.call(lambda: calls.append('replayed'))
+        self.assertEqual(calls, ['down'])
+
+    def test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed(self):
+        from tools.qualify_go_dependency_watch import ShutdownOnce
+        fence = ShutdownOnce()
+        receipt = {'state': 'stopped', 'reaped': True, 'cleanShutdown': True}
+        self.assertIs(fence.call(lambda: receipt), receipt)
+        with self.assertRaisesRegex(ValueError, 'already-attempted-no-retry'):
+            fence.call(lambda: self.fail('replayed confirmed mutation'))
