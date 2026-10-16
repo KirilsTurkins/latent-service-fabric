@@ -319,6 +319,58 @@ class SdkGraphTests(unittest.TestCase):
             with self.subTest(extra=extra), patch("tools.security_inventory.tracked_paths", return_value=[*legacy, extra]), self.assertRaises(SecurityError):
                 inventory(root)
 
+    def test_task_wait_context_fixture_has_exact_no_package_manifest_and_cannot_hide_mutations_or_orphans(self) -> None:
+        import xml.etree.ElementTree as xml
+        from tools.security_common import POLICY, read_file
+        from tools.security_common import tracked_paths
+        root = Path(__file__).resolve().parents[2]
+        directory = "sdk/dotnet-guest/tests/fixtures/task-wait-context-control"
+        path = directory + "/ContextControl.csproj"
+        checksum = "cdd6f0b4e4b9c72196431282fc7f42508e52e0f6a10b88a948a157bbdabd220b"
+        configuration = json.loads(read_file(POLICY, "inventory.json"))
+        entries = [item for item in configuration["manifests"] if item["path"] == path]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["kind"], "no-external-packages")
+        self.assertEqual(entries[0]["sha256"], checksum)
+        self.assertEqual(entries[0]["absent_when_directory_missing"], directory)
+        original = read_file(root, path)
+        self.assertEqual(digest(original.replace(b"\r\n", b"\n")), checksum)
+        project = xml.fromstring(original)
+        self.assertEqual(project.attrib, {"Sdk": "Microsoft.NET.Sdk"})
+        self.assertEqual([item.tag for item in project], ["PropertyGroup"])
+        self.assertEqual({item.tag: item.text for item in project[0]}, {
+            "OutputType": "Exe", "TargetFramework": "net10.0",
+            "ImplicitUsings": "enable", "Nullable": "enable"})
+        for tag in ("PackageReference", "ProjectReference", "Reference", "Import"):
+            self.assertEqual(list(project.iter(tag)), [])
+        _, records = inventory(root)
+        selected = [item for item in records if item["path"] == path]
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(selected[0]["coverage"], "reviewed-no-external-packages")
+        self.assertEqual(selected[0]["packages"], 0)
+        for change in (b'<PackageReference Include="Unreviewed" Version="1.0.0" />',
+                       b'<ProjectReference Include="outside.csproj" />',
+                       b'<Reference Include="Outside" HintPath="outside.dll" />',
+                       b'<Import Project="unreviewed.props" />'):
+            mutated = original.replace(b"</Project>", change + b"</Project>")
+            def changed(repo, name, *limits):
+                return mutated if repo == root and name == path else read_file(repo, name, *limits)
+            with self.subTest(change=change), \
+                 patch("tools.security_inventory.read_file", side_effect=changed), \
+                 self.assertRaisesRegex(SecurityError, "unreviewed-sdk-manifest-change"):
+                inventory(root)
+        legacy = [name for name in tracked_paths(root) if not name.startswith(directory + "/")]
+        with patch("tools.security_inventory.tracked_paths", return_value=legacy):
+            _, records = inventory(root)
+        selected = [item for item in records if item["path"] == path]
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(selected[0]["coverage"], "not-shipped-at-source-revision")
+        for extra in (directory + "/Program.cs", directory + "/Nested.csproj"):
+            with self.subTest(extra=extra), \
+                 patch("tools.security_inventory.tracked_paths", return_value=[*legacy, extra]), \
+                 self.assertRaises(SecurityError):
+                inventory(root)
+
     def test_http_error_helpers_keep_exact_manifest_pins_and_the_scanned_compiler_dependency(self) -> None:
         import xml.etree.ElementTree as xml
         from tools.security_common import POLICY, read_file
@@ -328,7 +380,7 @@ class SdkGraphTests(unittest.TestCase):
             "sdk/dotnet-guest/probes/http-errors/HttpErrorsProbe.csproj":
                 "766809881ad0b7ff2ce3a59edf7a24de0a86d4869b455e27d3f3e9368fde1546",
             "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj":
-                "ac7f14d0c3a2b03f2fd8486d974f065100b94d4c66d1bd6b249215f47362feed",
+                "8585bfb7fd3cbe6e0ed833676fdce86fd0fb3f6c20db3229c9acfffd2ce11d3a",
         }
         for path, checksum in expected.items():
             with self.subTest(path=path):
@@ -344,6 +396,8 @@ class SdkGraphTests(unittest.TestCase):
                 self.assertEqual(list(project.iter("ProjectReference")), [])
         packages, records = inventory(root)
         helper = xml.fromstring(read_file(root, "sdk/dotnet-guest/tools/http-errors/HttpErrors.csproj"))
+        self.assertEqual([item.attrib for item in helper.iter("Compile")],
+                         [{"Include": "Program.cs"}, {"Include": "TaskWait.cs"}])
         references = [item.attrib for item in helper.iter("Reference")]
         self.assertEqual(references, [{"Include": "Mono.Cecil", "HintPath": "$(LsfCecilPath)"}])
         self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
