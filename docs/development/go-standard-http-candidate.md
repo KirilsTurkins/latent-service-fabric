@@ -47,8 +47,10 @@ The guest Transport owns no connection pool. Guest idle-pool bounds therefore
 cover zero retained connections; CloseIdleConnections has no guest connection
 to close. Host provider reuse, if any, belongs to its separately approved typed
 HTTP profile and budget. A nonzero MaxConnsPerHost is rejected because a logical
-request limiter is not proof of a concrete connection limit. HTTP-only requests
-do not execute TLS-specific fields. Other protocol/custom connection state
+request limiter is not proof of a concrete connection limit. DisableKeepAlives true is rejected
+before dispatch because host reuse is not controlled by that guest field.
+Negative MaxResponseHeaderBytes is also rejected instead of silently ignored.
+HTTP-only requests do not execute TLS-specific fields. Other protocol/custom connection state
 remains outside this finite profile.
 
 ## Higher-level behavior and ownership
@@ -96,11 +98,12 @@ and size failures cannot be hidden by an early JSON syntax error. A static
 counter rejects reuse of a previous activation's state. The early-close case
 uses ordinary ReadFull for four bytes instead of assuming one Read fills them.
 
-Twenty cases cover domain JSON, HTTP error status, truncation, oversize,
+Twenty-two cases cover domain JSON, HTTP error status, truncation, oversize,
 malformed JSON, forbidden headers, early Close, pending header/body cancellation,
 POST bytes, uncertain mutation, target denial, pre-cancelled contexts, sibling
 cancellation, concrete Transport, DefaultTransport.Clone, a separate custom
-RoundTripper, custom-dialer denial without invocation, and fresh state. Every activation checks actual provider counters,
+RoundTripper, custom-dialer denial without invocation, physical nonreuse and
+negative-header-limit denial, and fresh state. Every activation checks actual provider counters,
 cleanup slots and topology. The controlled peer must report exactly 15 primary
 contacts, one committed mutation and no secondary contact. These observations
 are distinct from allocator/native/kernel upper-bound qualification.

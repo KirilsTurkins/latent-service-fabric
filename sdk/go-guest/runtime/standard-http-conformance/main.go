@@ -49,6 +49,8 @@ func Run(which uint32, address string) string {
 	dialed := false
 	if which == 11 { client.Transport = &http.Transport{DisableCompression:true,
 		DialContext:func(context.Context,string,string)(net.Conn,error){ dialed = true; return nil,errors.New("custom dialer invoked") }} }
+	if which == 12 { client.Transport = &http.Transport{DisableCompression:true,DisableKeepAlives:true} }
+	if which == 13 { client.Transport = &http.Transport{DisableCompression:true,MaxResponseHeaderBytes:-1} }
 	response, err := client.Do(request)
 	if which == 11 { if dialed { return "custom-dialer-invoked" }; if err == nil { response.Body.Close(); return "custom-dialer-accepted" }; return "custom-dialer-denied" }
 	if err != nil { if ctx.Err() != nil { return "cancelled" }; return "transport-error" }
