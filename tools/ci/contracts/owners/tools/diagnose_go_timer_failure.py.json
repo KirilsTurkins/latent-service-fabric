@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_timer_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Hosted-Linux-only failure diagnostic: require GITHUB_ACTIONS and RUNNER_OS before any sudo command. Preserve original user namespace and policy guards; setpriv drops original UID/GID/groups/all capabilities before host preflight and Cargo. Read-only exact source binds, component identity, unsaved diagnostic cache and 600s/1MiB bound remain required.",
+  "reviewReason": "Replace the inline diagnostic preflight with its exact digest-pinned stdlib-only script and direct-testable function. Preserve the hosted Linux gate, unchanged setpriv sequence and three readonly Rust overlays, all preflight refusal checks, original runtime/terminal behavior and diagnostic bounds. Authenticate the selected helper before command construction and retain its digest in the unchanged supporting-input receipt and post-run mutation guard. No scanner waiver or native proof is claimed.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7640d37d99192f8c43fc35966a2aa21a38a2bd2070cbf02dfb2389014002296d"
+  "sha256": "ad854f03e6eeae3d17fa010eef0b366dd979ddc5355924fc90378b006312c126"
 }
