@@ -97,6 +97,17 @@ def prepare(project: Path) -> dict:
             'lockDigest': digest((project / dependencies.LOCK).read_bytes()), 'extraCases': list(CASES)}
 
 
+def require_denied_before_guest(denied):
+    from tools.phase2_operator_process import require
+    response = denied.get('response', {})
+    data = response.get('data', {})
+    consumption = data.get('consumption', {})
+    require(denied.get('exitCode') == 4 and response.get('error', {}).get('code') == 'permission-denied'
+            and response.get('outcomeKnown') is True and data.get('terminalState') == 'rejected'
+            and consumption.get('cpuFuel') == '0' and consumption.get('peakMemoryBytes') == '0',
+            'c-standard-missing-grant-must-reject-before-guest')
+
+
 def grant_and_probe(client, node, fixture, targets, publications, result):
     """Each grant is an explicit ordinary operator mutation on an isolated node."""
     from tools.guest_runtime_profiles import profiles
@@ -106,12 +117,8 @@ def grant_and_probe(client, node, fixture, targets, publications, result):
     selected = profiles('c')
     for ordinal, (name, (capability, profile, operation, kind)) in enumerate(selected.items()):
         denied = call(client, target, 'greeting', 'greet', ['Ada'], 'c-standard-denied-' + str(ordinal))
-        if kind == 'random':
-            assert_value(client, denied, [{'err': 'standard-facilities-probe-failed'}], 3)
-        else:
-            require(denied['exitCode'] == 4 and denied['response']['error']['code'] == 'permission-denied',
-                    'c-standard-missing-clock-grant-must-deny')
         result['invocations'].append(denied)
+        require_denied_before_guest(denied)
         installed = [row for row in node.startup_record['providers'] if row['id'] == name]
         require(len(installed) == 1 and installed[0]['capability'] == capability and installed[0]['profile'] == profile,
                 'c-standard-provider-identity')

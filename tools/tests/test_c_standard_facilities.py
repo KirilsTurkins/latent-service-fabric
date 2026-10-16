@@ -15,6 +15,24 @@ class StandardFacilities(unittest.TestCase):
         owned = tempfile.TemporaryDirectory(); self.addCleanup(owned.cleanup)
         self.root = Path(owned.name)
 
+    def test_missing_runtime_grant_requires_rejected_zero_execution_receipt(self):
+        from tools.c_standard_facilities_probe import require_denied_before_guest
+        from tools.phase2_operator_process import WorkflowError
+        denied = {'exitCode': 4, 'response': {'outcomeKnown': True, 'error': {'code': 'permission-denied'},
+            'data': {'terminalState': 'rejected', 'consumption': {'cpuFuel': '0', 'peakMemoryBytes': '0'}}}}
+        require_denied_before_guest(denied)
+        for field, value in (('exit', 3), ('outcome', False), ('error', 'unavailable'),
+                             ('state', 'failed'), ('fuel', '1'), ('memory', '1')):
+            changed = json.loads(json.dumps(denied))
+            if field == 'exit': changed['exitCode'] = value
+            elif field == 'outcome': changed['response']['outcomeKnown'] = value
+            elif field == 'error': changed['response']['error']['code'] = value
+            elif field == 'state': changed['response']['data']['terminalState'] = value
+            elif field == 'fuel': changed['response']['data']['consumption']['cpuFuel'] = value
+            else: changed['response']['data']['consumption']['peakMemoryBytes'] = value
+            with self.subTest(field=field), self.assertRaisesRegex(WorkflowError, 'reject-before-guest'):
+                require_denied_before_guest(changed)
+
     def test_profile_is_explicit_closed_and_part_of_original_source(self):
         root = project.create(self.root / 'project', 'greeting')
         files = project.snapshot(root)

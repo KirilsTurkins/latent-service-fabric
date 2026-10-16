@@ -32,6 +32,19 @@
       "disposition": "The raw ABI fixture declaration must match pinned libc's wasi_snapshot_preview1 module and random_get import name. Preserve the SDK implementation, raw null/zero checks and original limits.",
       "signedNodeExecution": "not-run-because-linking-failed",
       "correctedExecution": "pending"
+    },
+    {
+      "candidateHead": "c7c630da685ae6defd455de3e3de1ab16498f4f3",
+      "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38830784950/job/116749047628",
+      "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38830784950/artifacts/12018429001",
+      "artifactBytes": 2402386,
+      "artifactSha256": "757f224dd0d4db1b8d6bc7c9bed9fced0c01fa5300938eb9cd968efee94d2b61",
+      "stage": "signed-node-grant-denials",
+      "classification": "qualification-expectation-mismatch",
+      "observed": "All five C applications compiled; the first two ungranted clock activations were rejected with permission-denied and zero fuel/memory. The subsequent random-grant probe asserted a guest declared error and failed. Its response was not appended before the old assertion and is not reconstructed as evidence.",
+      "disposition": "Use the same original pre-execution missing-grant contract for all imported capabilities, including random. Require rejected state, known outcome and zero guest execution. Append every denial before checking it so failed expectations retain their response.",
+      "originalLimitsChanged": false,
+      "correctedExecution": "pending"
     }
   ]
 }

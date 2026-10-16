@@ -67,6 +67,14 @@ probe calls the pinned raw WASI clock API with CPU-clock ID 2, requires
 `ENOTSUP`, and verifies that its output remains unchanged. This does not add a
 POSIX CPU clock or turn the original compiler rejection into a pass.
 
+The later native attempt compiled all five C applications and reached signed
+node execution. Its ungranted clock activations were rejected before guest
+execution. The random-grant probe incorrectly expected a guest declared error;
+the corrected probe requires the original rejected admission receipt for every
+ungranted capability, with known outcome and zero guest fuel and memory. Failed
+denial observations are retained before assertions. The corrected complete
+runtime programme is still pending.
+
 The initial profile supports one selected lower-kebab-case world declaration
 in a root WIT file. Explicit profile imports in that file, duplicate world
 declarations and ambiguous selection are rejected. The real WIT parser and
