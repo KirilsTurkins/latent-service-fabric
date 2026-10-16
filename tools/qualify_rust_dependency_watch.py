@@ -144,6 +144,7 @@ def main() -> int:
 
     def review(label):
         candidate = root / (label + '-candidate.json')
+        author(label + '-native-lock', 'lock', application)
         author(label + '-resolve', 'resolve', application, '--candidate', candidate)
         author(label + '-review', 'review-lock', application, '--candidate', candidate,
                '--expect', digest(candidate))
@@ -217,7 +218,6 @@ raise SystemExit(main())
         sdk_lock = application / 'app/sdk-lock.json'
         sdk_identity = digest(sdk_lock)
         author('add-closed-graph', 'add', application, fixture.PRIMARY, '--version', '0.1.0', '--path', inputs['primary'])
-        author('lock-initial', 'lock', application)
         capsule = application / 'app/src/lib.rs'
         capsule.write_text(fixture.application_source(), encoding='utf-8')
         tests('42/SDK/captured watch data')

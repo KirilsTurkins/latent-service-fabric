@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Observe delivered Rust CLI and commoncontroller with three separately consented signed workspace builds and exact lock trust and signing fences",
+  "reviewReason": "Run explicit native Cargo lock before each initial/update/remove capture review",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8b54a3000fd4c79c499d492ec097cfd73177b9635227e55a6a397aeaaed5db5d"
+  "sha256": "0dc45e073df4c5c642a07fdbc61eb33d3d49e16092b991192449dd30bbd3cd60"
 }
