@@ -34,7 +34,9 @@
           "tools/typescript_capsule.py",
           "tools/typescript*dependencies.py",
           "tools/typescript_dependency_authoring.py",
+          "tools/npm_lock_authoring.py",
           "tools/tests/test_typescript_dependency_authoring.py",
+          "tools/tests/test_npm_lock_authoring.py",
           "tools/guest_authoring_frontend.py",
           "tools/typescript_dependency_fixture.py",
           "tools/application_dependenc*.py",
@@ -50,6 +52,7 @@
           "apps/latentd/**",
           ".cargo/managed-guest.toml",
           "docs/component-development/typescript-authoring.md",
+          "docs/component-development/typescript-dependencies.md",
           "examples/typescript-capsules/**",
           "wit/platform/**",
           "tools/toolchain.toml",
@@ -77,7 +80,9 @@
           "tools/typescript_capsule.py",
           "tools/typescript*dependencies.py",
           "tools/typescript_dependency_authoring.py",
+          "tools/npm_lock_authoring.py",
           "tools/tests/test_typescript_dependency_authoring.py",
+          "tools/tests/test_npm_lock_authoring.py",
           "tools/guest_authoring_frontend.py",
           "tools/typescript_dependency_fixture.py",
           "tools/application_dependenc*.py",
@@ -93,6 +98,7 @@
           "apps/latentd/**",
           ".cargo/managed-guest.toml",
           "docs/component-development/typescript-authoring.md",
+          "docs/component-development/typescript-dependencies.md",
           "examples/typescript-capsules/**",
           "wit/platform/**",
           "tools/toolchain.toml",
@@ -109,7 +115,7 @@
   "requiredJobs": [
     "boundary"
   ],
-  "reviewReason": "Extend both push and pull-request paths for the maintained npm library integrity qualifier and its new negative native-selection controls; preserve existing triggers, permissions, concurrency and required boundary job.",
+  "reviewReason": "Union the existing integrity and normal authoring trigger paths without removing jobs, events or prior paths.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

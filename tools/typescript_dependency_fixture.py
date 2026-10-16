@@ -5,11 +5,8 @@ import json
 import os
 from pathlib import Path
 import shutil
-import tempfile
 
-from tools.build_observation import build_environment
-from tools.build_process import run_bounded
-from tools.build_snapshot import canonical, digest
+from tools.build_snapshot import digest
 from tools.typescript_application_dependencies import resolve
 from tools.typescript_dependency_authoring import review
 
@@ -48,25 +45,38 @@ export function prefix() {
     return result;
 }
 ''', encoding='ascii')
-    (project / 'package.json').write_text(json.dumps({'name': 'qualification-application', 'version': '1.0.0',
-        'private': True, 'type': 'module', 'dependencies': {'outside-qualification-module':
-            'file:' + os.path.relpath(library, project).replace('\\', '/')}}, indent=2) + '\n', encoding='utf-8')
+    from tools import typescript_dependency_authoring as authoring
+    from tools.npm_lock_authoring import create_lock
+    authoring.edit(project, 'add', identity='outside-qualification-module', local=library)
     node = Path(shutil.which('node') or 'missing-node')
     npm = (node.parent / 'node_modules/npm/bin/npm-cli.js' if os.name == 'nt' else Path(shutil.which('npm') or 'missing-npm').resolve())
-    with tempfile.TemporaryDirectory(prefix='lsf-npm-fixture-lock-') as temporary:
-        temporary = Path(temporary)
-        environment = build_environment(temporary)
-        environment.update(HOME=str(temporary / 'home'), USERPROFILE=str(temporary / 'home'),
-            NPM_CONFIG_CACHE=str(temporary / 'cache'), NPM_CONFIG_USERCONFIG=str(temporary / 'empty.npmrc'),
-            NPM_CONFIG_GLOBALCONFIG=str(temporary / 'global-empty.npmrc'), NPM_CONFIG_IGNORE_SCRIPTS='true')
-        (temporary / 'empty.npmrc').write_bytes(b'')
-        (temporary / 'global-empty.npmrc').write_bytes(b'')
-        run_bounded([str(node), str(npm), 'install', '--package-lock-only', '--ignore-scripts', '--install-links=true',
-            '--bin-links=false', '--no-audit', '--no-fund'], project, environment, 120, 1024 * 1024)
+    native_lock = create_lock(project, node=node, npm=npm)
     candidate = project / 'target/qualification.candidate.json'
-    candidate.parent.mkdir()
+    candidate.parent.mkdir(exist_ok=True)
     lock = resolve(project, candidate, node=node, npm=npm)
     review(project, candidate, digest(candidate.read_bytes()))
+    reviewed_source = (project / 'package.json').read_bytes()
+    accepted = (project / 'latent.dependencies.lock.json').read_bytes()
+    changes = []
+    from tools.application_dependency_store import DependencyError
+    for operation in ('update', 'remove'):
+        try:
+            authoring.edit(project, operation, identity='outside-qualification-module',
+                           version='2.0.0' if operation == 'update' else None)
+            try:
+                authoring.status(project)
+            except DependencyError as error:
+                if str(error) != 'dependency-native-lock-drift':
+                    raise
+            else:
+                raise ValueError('changed npm declaration reused the accepted graph')
+            if (project / 'latent.dependencies.lock.json').read_bytes() != accepted:
+                raise ValueError('npm editing replaced the accepted dependency lock')
+            changes.append({'operation': operation, 'staleGraphRejected': True, 'acceptedLockPreserved': True})
+        finally:
+            (project / 'package.json').write_bytes(reviewed_source)
+        if authoring.status(project)['status'] != 'verified':
+            raise ValueError('exact reviewed npm declaration restoration did not revive the graph')
     graph = json.loads((project / 'npm-resolved.lock.json').read_bytes())
     selected = {row['location'] for row in graph['nodes'] if row['selected']}
     if not {'node_modules/@jridgewell/trace-mapping', 'node_modules/@jridgewell/resolve-uri',
@@ -86,4 +96,6 @@ export function prefix() {
             'transitives': ['@jridgewell/resolve-uri', '@jridgewell/sourcemap-codec'],
             'developerOwned': 'outside-qualification-module/1.0.0', 'resourceDigest': digest(resource),
             'sourceDigest': digest(after), 'offlineOriginals': 'unavailable-after-capture',
-            'nativeGraphDigest': digest((project / 'npm-resolved.lock.json').read_bytes()), 'ignoredScripts': ['prepare']}
+            'nativeGraphDigest': digest((project / 'npm-resolved.lock.json').read_bytes()), 'ignoredScripts': ['prepare'],
+            'authoringWorkflow': {'commands': ['add', 'lock', 'resolve', 'review-lock', 'dependencies'],
+                'nativeLock': native_lock, 'declarationChanges': changes, 'exactReviewedSourceRestored': True}}
