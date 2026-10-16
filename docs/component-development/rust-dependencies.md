@@ -85,3 +85,12 @@ trust and cache identity; the compiler independently recalculates the request an
 rejects a stale or mismatched identity. Approval is not inherited from capture,
 package names, a previous source snapshot or ordinary recipe trust. Unsupported
 frontend adapters reject this flag before any build execution.
+
+The maintained captured-library qualification exercises its external crate's
+ordinary panic-abort, allocation and computation paths in a signed component.
+Normal calls check `Drop`, exact UTF-8 and binary included resources, and fresh
+static state. Each observed panic, memory/fuel limit or running cancellation
+must retire its owners before a fresh successful call. This finite programme
+keeps the original runtime budgets and does not claim panic unwinding or
+unqualified standard thread/I/O support. Its hosted result, rather than source
+controls alone, establishes execution for the recorded inputs.

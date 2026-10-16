@@ -41,7 +41,8 @@ def inputs(language="rust"):
     if language == "rust":
         helpers += ("application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "rust_application_dependencies.py", "captured_compiler_isolation.py",
-                    "rust_dependency_fixture.py")
+                    "rust_dependency_fixture.py", "rust_dependency_authoring.py", "cargo_native_authoring.py",
+                    "rust_dependency_recovery.py")
     elif language == "c":
         helpers += ("c_capsule.py", "c_capsule_project.py", "c_capsule_build.py",
                     "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py",
@@ -383,7 +384,8 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
-            language=language, noncrypto_entropy=language == "dotnet")
+            language=language, noncrypto_entropy=language == "dotnet",
+            captured_dependency_recovery=language == "rust" and application_dependencies)
         if language == "dotnet":
             result["embeddedResources"]["runtimeExecution"] = "signed-admitted-component"
         if approved_generator:

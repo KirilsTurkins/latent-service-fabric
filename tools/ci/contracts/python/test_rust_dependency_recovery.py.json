@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "RustDependencyRecovery.test_all_four_faults_require_idle_and_fresh_component_calls",
+    "RustDependencyRecovery.test_failure_requires_terminal_identity_reaping_and_original_memory_bound",
+    "RustDependencyRecovery.test_wrong_identity_and_unknown_cancel_never_retry_or_report_recovery"
+  ],
+  "guards": {
+    "RustDependencyRecovery.test_all_four_faults_require_idle_and_fresh_component_calls": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5dca45822a198817a6f709617b029d1f555146f7506fd53c4ddca863dd709c33",
+        "class:setup-sha256:8d92df43a80b357f33fa76313103e5f25094c4fef8dd83204677a017de7e67f5"
+      ],
+      "skipSites": []
+    },
+    "RustDependencyRecovery.test_failure_requires_terminal_identity_reaping_and_original_memory_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5dca45822a198817a6f709617b029d1f555146f7506fd53c4ddca863dd709c33",
+        "class:setup-sha256:8d92df43a80b357f33fa76313103e5f25094c4fef8dd83204677a017de7e67f5"
+      ],
+      "skipSites": []
+    },
+    "RustDependencyRecovery.test_wrong_identity_and_unknown_cancel_never_retry_or_report_recovery": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5dca45822a198817a6f709617b029d1f555146f7506fd53c4ddca863dd709c33",
+        "class:setup-sha256:8d92df43a80b357f33fa76313103e5f25094c4fef8dd83204677a017de7e67f5"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_dependency_recovery.py",
+  "reviewReason": "Require exact faults terminal identity memory bound owners and one observed cancellation without retry",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

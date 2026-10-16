@@ -75,12 +75,35 @@ outside-qualification-macro = {path = "../developer-owned-macro"}
 ''', encoding='utf-8')
     resource = b'Hello, '
     (library / 'src/greeting.txt').write_bytes(resource)
+    (library / 'src/binary.dat').write_bytes(bytes((0, 255, 65, 128)))
+    (library / 'src/utf8.txt').write_bytes(bytes((71, 114, 195, 188, 195, 159, 101)))
     (library / 'src/lib.rs').write_text('''use unicode_normalization::UnicodeNormalization;
+use std::sync::atomic::{AtomicU32, Ordering};
+static CALLS: AtomicU32 = AtomicU32::new(0);
 pub fn prefix() -> String {
+    assert_eq!(CALLS.fetch_add(1, Ordering::Relaxed), 0, "library static state leaked across activations");
+    assert_eq!(include_bytes!("binary.dat"), &[0_u8, 255, 65, 128]);
+    assert_eq!(include_str!("utf8.txt").as_bytes(), &[71_u8, 114, 195, 188, 195, 159, 101]);
+    let dropped = std::cell::Cell::new(0);
+    struct Guard<'a>(&'a std::cell::Cell<u32>);
+    impl Drop for Guard<'_> { fn drop(&mut self) { self.0.set(self.0.get() + 1); } }
+    drop(Guard(&dropped));
+    assert_eq!(dropped.get(), 1);
     assert_eq!("\\u{212b}".nfc().collect::<String>(), "\\u{00c5}");
     let value = include_str!("greeting.txt").nfc().collect::<String>();
     assert_eq!(value, outside_qualification_macro::captured_prefix!());
     value
+}
+pub fn exercise(which: &str) {
+    match which {
+        "panic" => panic!("captured library panic-abort control"),
+        "memory" => {
+            let mut bytes = vec![1_u8; 64 * 1024 * 1024];
+            std::hint::black_box(&mut bytes);
+        }
+        "spin" => loop { std::hint::spin_loop(); },
+        _ => {}
+    }
 }
 ''', encoding='utf-8')
     (macro / 'Cargo.toml').write_text('''[package]
@@ -113,6 +136,7 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
                           b'    let prefix = "Hello, ".nfc().collect::<String>();\n'
                           b'    assert_eq!("\\u{212b}".nfc().collect::<String>(), "\\u{00c5}");\n'
                           b'    assert_eq!(prefix, outside_qualification_library::prefix());\n'
+                          b'    outside_qualification_library::exercise(&name);\n'
                           b'    Ok(format!("{prefix}{name}!"))')
     if after == before or b'Ok(format!("Hello, {name}!"))' in after:
         raise ValueError('Rust dependency qualification source hook changed')
@@ -166,6 +190,9 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
     return {'formatVersion': 1, 'thirdParty': 'unicode-normalization/0.1.24',
             'transitives': ['tinyvec', 'tinyvec_macros'], 'developerOwned': 'outside-qualification-library/0.1.0',
             'applicationLibraries': application_libraries,
+            'declaredSemantics': {'panic': 'abort', 'drop': 'explicit-normal-scope',
+                'resources': ['UTF-8 include_str', 'binary include_bytes'], 'staticState': 'fresh-per-activation',
+                'faultPaths': ['panic', 'memory', 'spin'], 'unwind': 'unsupported-not-claimed'},
             'authoringWorkflow': {'add': added, 'nativeLock': locked, 'staleCaptureRejected': stale_controls,
                                  'exactReviewedMetadataRestored': True},
             'resourceDigest': digest(resource), 'sourceDigest': digest(after),
