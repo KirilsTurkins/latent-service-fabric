@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/c_dependency_watch_fixture.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind every explicit C watch fixture to reviewed source fingerprints while retaining all previous CI commands and guards",
+  "reviewReason": "Bound watch fixture formatting without importing stdio while preserving original dependency evaluation and expected signed payloads",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "38004888cf0614192522f70fb586a3a1e8fdda5904005d4aaba68cbcb945aff8"
+  "sha256": "7ecab28031b76983f72e4c5b36c9099175dc3b0d03a75a311feb45d24b5c31d5"
 }

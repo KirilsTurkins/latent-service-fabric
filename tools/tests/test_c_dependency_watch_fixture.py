@@ -67,7 +67,9 @@ class WatchInputs(unittest.TestCase):
         self.assertEqual(author.status(self.project)['status'], 'verified')
         source = fixture.application_source(removed=True)
         self.assertNotIn('owned_api.h', source)
-        self.assertIn('removed/%.*s', source)
+        self.assertIn('"removed/"', source)
+        self.assertNotIn('stdio.h', source)
+        self.assertNotIn('snprintf', source)
 
     def test_unexpected_original_input_is_preserved_instead_of_removed(self):
         path = self.inputs['root'] / 'primary/owned.c'
