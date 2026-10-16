@@ -148,6 +148,17 @@ async fn signed_java_completable_futures_use_default_activation_executor() {
     .await;
 }
 
+#[tokio::test]
+#[ignore = "requires the pinned standard Timer component and explicit java profile"]
+async fn signed_java_standard_timers_recur_cancel_and_drain_owned_workers() {
+    signed_java_fiber_fixture(
+        "LSF_JAVA_TIMER_FIXTURE",
+        include_bytes!("../../../../sdk/java-guest/fibers/conformance/timers/Capsule.java"),
+        "java-timers",
+    )
+    .await;
+}
+
 async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name: &str) {
     assert_eq!(
         std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(),
@@ -164,6 +175,23 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     assert_eq!(record["profile"], "teavm-activation-fibers-v1");
     if name == "java-completable" {
         assert_eq!(record["fixture"], "completable");
+    }
+    if name == "java-timers" {
+        assert_eq!(record["fixture"], "timers");
+        assert_eq!(record["status"], "component-built-unqualified");
+        assert_eq!(
+            record["standardTimerSource"]["status"],
+            "SDK-source-controls-passed"
+        );
+        assert_eq!(record["standardTimerSource"]["iterations"], 3);
+        assert_eq!(
+            record["standardTimerSource"]["componentExecutionPerformed"],
+            false
+        );
+        assert_eq!(
+            record["standardTimerSource"]["actualGuestBindingsUsed"],
+            false
+        );
     }
     let bytes = std::fs::read(prepared.join("build/component.wasm")).unwrap();
     assert_eq!(

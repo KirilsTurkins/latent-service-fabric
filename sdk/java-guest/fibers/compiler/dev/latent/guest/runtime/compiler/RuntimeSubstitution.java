@@ -14,6 +14,9 @@ public final class RuntimeSubstitution implements SubstitutionPolicy {
         "CompletableFuture", "CompletionStage", "CompletionException");
 
     @Override public void contribute(SubstitutionSink sink) {
+        sink.selectClasses(name -> name.equals("java.util.Timer") || name.equals("java.util.TimerTask"))
+            .replacePackage("java.util", "dev.latent.guest.runtime.util")
+            .dontFallbackWhenNoSubstitution();
         sink.selectClasses(name -> name.equals("java.lang.IllegalThreadStateException"))
             .replacePackage("java.lang", "dev.latent.guest.runtime.lang")
             .dontFallbackWhenNoSubstitution();

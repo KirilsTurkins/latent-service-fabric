@@ -263,6 +263,47 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
 
 
+def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
+    """Execute unchanged SDK timer sources with an explicitly private host ledger.
+
+    The ordinary application has separate reference-JDK executions. Only this
+    host control maps its imports to the SDK implementation; neither that copy
+    nor its private ledger is an input to the component compiler.
+    """
+    fixture = compiler.sdk / "fibers/conformance"
+    application = fixture / "timers/Capsule.java"
+    main = fixture / "timers/Main.java"
+    private = fixture / "compiler/standard-timer-control"
+    sources = [private / name for name in (
+        "TimerModelMain.java", "dev/latent/generated/Bindings.java",
+        "dev/latent/guest/runtime/Activation.java")]
+    ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
+             for name in ("Timer", "TimerTask")]
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
+              for path in (application, main, *sources, *ports)}
+    output.mkdir()
+    mapped = output / "Capsule.java"
+    text = read_file(application).decode("utf-8")
+    for name in ("Timer", "TimerTask"):
+        original = "import java.util." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java timer source control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.util." + name + ";")
+    mapped.write_text(text, encoding="utf-8")
+    compiler.run("standard-timer-source-compile", "javac", "-proc:none", "--release", "25",
+                 "-d", output, mapped, main, *sources, *ports)
+    expected = ["42 42 42 42",
+        "TIMER_SOURCE_CONTROL PASS reference-observables;queue-rollback;cancel-drain;idle-finally;no-live-owners"]
+    for iteration in range(3):
+        result = compiler.run(f"standard-timer-source-{iteration}", "java", "-Xmx256m", "-cp",
+                              output, "TimerModelMain")
+        if result.strip().splitlines() != expected:
+            raise ValueError("Java standard timer source control did not complete")
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError("Java timer control inputs changed during execution")
+    return {"status": "SDK-source-controls-passed", "iterations": 3, "modes": [0, 1, 2, 3],
+            "sourceInputs": inputs, "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
+
+
 def recipe_inputs() -> dict[str, str]:
     paths = [Path(__file__), *sorted((ROOT / "tools/java_guest").glob("*.py")),
              ROOT / "tools/stage_runtime_wit.py", ROOT / "tools/rust_capsule_project.py",
@@ -273,12 +314,12 @@ def recipe_inputs() -> dict[str, str]:
 
 def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None,
             read_only_cache: Path | None = None, fixture="threads"):
-    if fixture not in {"threads", "completable"}: raise ValueError("unknown Java fiber fixture")
+    if fixture not in {"threads", "completable", "timers"}: raise ValueError("unknown Java fiber fixture")
     if offline_cache is not None and read_only_cache is not None:
         raise ValueError("Java dependency cache selections are mutually exclusive")
     output = fresh(output)
     common = ROOT / "sdk/java-guest/fibers/conformance"
-    selected = common if fixture == "threads" else common / "completable"
+    selected = common if fixture == "threads" else common / fixture
     # Exercise real source attribution independently of package-directory layout.
     source = output / "src/Capsule.java"
     source.parent.mkdir(parents=True)
@@ -307,6 +348,8 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             if result.strip() != "42 42 42 42": raise ValueError("reference-JDK fiber observable mismatch")
             report["reference"].append({"iteration": iteration, "modes": [0, 1, 2, 3], "results": [42, 42, 42, 42]})
         report["completableSource"] = completable_source_control(compiler, output / "completable-source")
+        if fixture == "timers":
+            report["standardTimerSource"] = standard_timer_source_control(compiler, output / "standard-timer-source")
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True)
         report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
@@ -338,7 +381,7 @@ def main():
     caches = parser.add_mutually_exclusive_group()
     caches.add_argument("--offline-cache", type=Path)
     caches.add_argument("--read-only-cache", type=Path)
-    parser.add_argument("--fixture", choices=("threads", "completable"), default="threads")
+    parser.add_argument("--fixture", choices=("threads", "completable", "timers"), default="threads")
     args = parser.parse_args()
     prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache,
             read_only_cache=args.read_only_cache, fixture=args.fixture)

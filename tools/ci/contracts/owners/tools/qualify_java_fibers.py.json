@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain original fiber controls and add managed-start admission rollback witness",
+  "reviewReason": "Preserve original reference and compiler controls and add private standard Timer ownership source checks plus explicit timers fixture",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d7b1b8864ebef78a9261c6885b7b404ef0b72d137e6d7964f1d8e3edc5a7b951"
+  "sha256": "738fb7c266ba2ebcdbcf4532d4da153eb6a5c85c7fe9b1fba07cd37ddadf6f78"
 }

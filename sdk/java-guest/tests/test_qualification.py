@@ -256,6 +256,73 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             self.assertEqual(compiler.run.call_count, 2)
 
 
+class StandardTimerSourceIntegrity(unittest.TestCase):
+    @staticmethod
+    def fixture(root):
+        compiler = SimpleNamespace(sdk=root / "sdk", run=Mock())
+        for name in ("fibers/conformance/timers", "fibers/conformance/compiler/standard-timer-control",
+                     "fibers/dev/latent/guest/runtime/util"):
+            shutil.copytree(fibers.ROOT / "sdk/java-guest" / name, compiler.sdk / name)
+        return compiler
+
+    @staticmethod
+    def receipt():
+        return ("42 42 42 42\nTIMER_SOURCE_CONTROL PASS reference-observables;queue-rollback;"
+                "cancel-drain;idle-finally;no-live-owners\n")
+
+    def test_incomplete_retirement_or_observables_cannot_qualify_source(self):
+        for incomplete in ("42 42 42 42", self.receipt().replace(";no-live-owners", ""),
+                           self.receipt().replace("42 42 42 42", "42 42 42 41")):
+            with self.subTest(receipt=incomplete), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                compiler.run.side_effect = ["", incomplete]
+                with self.assertRaisesRegex(ValueError, "timer source control did not complete"):
+                    fibers.standard_timer_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, 2)
+
+    def test_private_mapping_preserves_component_source_and_excludes_guest_claims(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            application = compiler.sdk / "fibers/conformance/timers/Capsule.java"
+            original = application.read_bytes()
+            compiler.run.side_effect = ["", *([self.receipt()] * 3)]
+            report = fibers.standard_timer_source_control(compiler, root / "control")
+            self.assertEqual(application.read_bytes(), original)
+            mapped = (root / "control/Capsule.java").read_text()
+            self.assertIn("import dev.latent.guest.runtime.util.Timer;", mapped)
+            self.assertNotIn("import java.util.Timer;", mapped)
+            self.assertEqual(len(report["sourceInputs"]), 7)
+            self.assertEqual(report["iterations"], 3)
+            self.assertFalse(report["componentExecutionPerformed"])
+            self.assertFalse(report["actualGuestBindingsUsed"])
+
+    def test_changed_sdk_bytes_after_completed_runs_invalidate_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            def observe(stage, *args):
+                if stage == "standard-timer-source-2":
+                    port = compiler.sdk / "fibers/dev/latent/guest/runtime/util/Timer.java"
+                    port.write_bytes(port.read_bytes() + b"\n// changed during control\n")
+                return "" if stage.endswith("compile") else self.receipt()
+            compiler.run.side_effect = observe
+            with self.assertRaisesRegex(ValueError, "control inputs changed"):
+                fibers.standard_timer_source_control(compiler, root / "control")
+            self.assertEqual(compiler.run.call_count, 4)
+
+    def test_ambiguous_source_mapping_fails_before_host_compilation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            application = compiler.sdk / "fibers/conformance/timers/Capsule.java"
+            application.write_bytes(application.read_bytes() + b"\nimport java.util.Timer;\n")
+            with self.assertRaisesRegex(ValueError, "source control import is ambiguous"):
+                fibers.standard_timer_source_control(compiler, root / "control")
+            compiler.run.assert_not_called()
+
+
 class CompletableSourceIntegrity(unittest.TestCase):
     @staticmethod
     def fixture(root):
