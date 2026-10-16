@@ -53,11 +53,13 @@ async fn actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_c
     assert_eq!(f.rows(Family::Outbox).await, 0);
     f.drop_duplicate_during_native_lookup().await;
     let duplicate_adapter = f.adapter();
-    let conflict_adapter = f.adapter();
-    let (duplicate, conflict) = tokio::join!(
-        duplicate_adapter.invoke_command(context("alice").request(command("same", 1, false))),
-        conflict_adapter.invoke_command(context("alice").request(command("same", 2, false))),
-    );
+    // Policy snapshots deliberately reject lock contention without queueing.
+    // Each semantic probe overlaps the same paused original guest, while the
+    // probes run in order so they do not race one another's policy snapshots.
+    assert_paused_original(&f, &owner).await;
+    let duplicate = duplicate_adapter
+        .invoke_command(context("alice").request(command("same", 1, false)))
+        .await;
     let duplicate = duplicate.unwrap().into_inner();
     assert_eq!(
         duplicate.command.as_ref().unwrap().outcome,
@@ -75,7 +77,13 @@ async fn actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_c
             .cpu_fuel,
         0
     );
+    assert_paused_original(&f, &owner).await;
+    let conflict = f
+        .adapter()
+        .invoke_command(context("alice").request(command("same", 2, false)))
+        .await;
     assert_eq!(conflict.unwrap_err().code(), tonic::Code::Aborted);
+    assert_paused_original(&f, &owner).await;
     drop(duplicate); // one lost duplicate reply cannot cancel the shared owner
     assert_eq!(f.quotas.usage().unwrap().active_activations, 1);
     assert_eq!(f.executions(), 1);
@@ -118,6 +126,19 @@ async fn actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_c
     assert_eq!(f.executions(), 1);
     assert_eq!(f.rows(Family::Outbox).await, 1);
     f.shutdown().await;
+}
+
+async fn assert_paused_original<T>(f: &Fixture, owner: &tokio::task::JoinHandle<T>) {
+    assert!(!owner.is_finished());
+    assert_eq!(f.executions(), 1);
+    let runtime = f.backend.real.resource_snapshot();
+    assert_eq!(runtime.stores_created, 1);
+    assert_eq!(runtime.live_stores, 1);
+    assert_eq!(f.terminal_result_rows().await, 0);
+    assert_eq!(f.pending_result_rows().await, 1);
+    assert_eq!(f.rows(Family::State).await, 0);
+    assert_eq!(f.rows(Family::Outbox).await, 0);
+    assert!(!owner.is_finished());
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
