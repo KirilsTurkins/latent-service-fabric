@@ -81,7 +81,6 @@ class RustDependencyWatchFixture(unittest.TestCase):
 
 class FrontendRuntime(unittest.TestCase):
     def test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode(self):
-        import ast
         import json
         import hashlib
         import os
@@ -108,15 +107,7 @@ class FrontendRuntime(unittest.TestCase):
             python = Path(sys.executable)
             args = SimpleNamespace(helper=helper,
                 helper_sha256='sha256:' + hashlib.sha256(helper.read_bytes()).hexdigest())
-            tree = ast.parse(Path(qualifier.__file__).read_text())
-            expressions = [node for node in ast.walk(tree)
-                if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
-                and isinstance(node.value.func, ast.Attribute)
-                and isinstance(node.value.func.value, ast.Name)
-                and node.value.func.value.id == 'frontend' and node.value.func.attr == 'write_text']
-            self.assertEqual(len(expressions), 1)
-            exec(compile(ast.Module(body=expressions, type_ignores=[]), '<actual-frontend>', 'exec'),
-                {'frontend': frontend, 'python': python, 'args': args, 'events': events})
+            qualifier.write_frontend(frontend, python, args, events)
             header = frontend.read_text().splitlines()[0]
             self.assertTrue(header.startswith('#!' + str(python)))
             argument = header[len('#!' + str(python)):].strip()
