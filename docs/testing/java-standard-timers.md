@@ -83,6 +83,21 @@ analyzer; it executes no Wasm or application initializer. See the
 [failure and compiler regression evidence](evidence/java-standard-timer-worker-2026-10-16.json).
 Fresh signed execution remains required for the correction.
 
+The next hosted attempt stopped before compilation of the timer fixture: the
+model helper demanded every reviewed JAR, while the C compiler had resolved 26
+of the 70 reviewed artifacts. The reviewed inventory also includes unused
+browser and server configurations. The helper now verifies the actual resolved
+cache against the unchanged lock and strict Gradle metadata, still requires all
+ten original model JARs, and retains the 96-JAR and 32-MiB bounds before hashing
+or loading the closure. Duplicate, altered, unreviewed and missing required JARs
+remain errors. Using only the exact 26-coordinate observed closure reproduced
+the old missing-JAR failure, then passed the unchanged model and actual C
+dependency-analysis controls with the correction. No dependency was acquired
+for that host check. The [resolved-closure evidence](evidence/java-standard-timer-resolved-closure-2026-10-16.json)
+records the retained inputs and the distinction between reconstruction and the
+hosted cache, whose full member inventory was not uploaded. Fresh signed Timer
+execution remains pending.
+
 This slice does not complete issue #741. Fiber-aware pending host I/O, two
 unchanged published libraries that create default workers, the broader
 race/cancellation/limit/late-wakeup and tenant matrix, and a paired runtime cost

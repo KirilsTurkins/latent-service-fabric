@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain actual locked compiler dependency analysis for the timer worker regression; preserve all original model guards, signed modes, limits and 55-minute job.",
+  "reviewReason": "Verify the exact bounded resolved C-tooling cache against the unchanged reviewed lock and strict metadata; retain required model JARs, actual dependency graph assertions, signed cases and all limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6e5615f2c31d9c2f14293472a4f1925818fbd170447098016778942d327fb6de"
+  "sha256": "ff7fbcb484e37194f5969b24dd6c8e28ceccac7b115caa3fc5eae17703475961"
 }

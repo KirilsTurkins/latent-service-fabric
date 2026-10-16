@@ -15,7 +15,7 @@ import time
 
 sys.dont_write_bytecode = True
 if __package__ in (None, ""): sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.java_guest.compiler import Compiler
+from tools.java_guest.compiler import Compiler, source_module
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file, write_json
 
 
@@ -31,16 +31,33 @@ def locked_model_classpath(compiler: Compiler, *, include_platform: bool = False
                  if Path(item["path"]).parts[-3] in names and item["path"].startswith("org/teavm/")]
     if (len(artifacts) != len(names) or {Path(item["path"]).parts[-3] for item in artifacts} != names):
         raise ValueError("Java runtime model requires the exact locked tooling closure")
+    cache = getattr(compiler, "dependency_cache", compiler.directory / "gradle-home/caches/modules-2/files-2.1")
     if include_dependency_analysis:
-        artifacts = [item for item in lock["artifacts"] if item["path"].endswith(".jar")]
+        # The reviewed inventory also covers unused Gradle configurations. The
+        # C compiler resolves only its own closure; an offline model must use
+        # that verified closure rather than demand unrelated browser tooling.
+        jar_count, jar_bytes = 0, 0
+        for path in cache.glob("*/*/*/*/*.jar"):
+            jar_count += 1
+            jar_bytes += path.stat().st_size
+            if jar_count > 96 or jar_bytes > 32 * 1024 * 1024:
+                raise ValueError("Java compiler graph requires a bounded locked tooling closure")
+        dependencies = source_module(compiler.sdk / "tools/dependencies.py")
+        observed = dependencies.cache_inventory(cache)
+        dependencies.verify_inventory(observed, lock, compiler.sdk / "feasibility/gradle/verification-metadata.xml")
+        required = {item["path"] for item in artifacts}
+        artifacts = observed["artifacts"]
+        missing = required - {item["path"] for item in artifacts}
+        if missing:
+            raise ValueError("Java runtime model tooling jar is missing: " + sorted(missing)[0])
         if not artifacts or len(artifacts) > 96 or sum(item["size"] for item in artifacts) > 32 * 1024 * 1024:
             raise ValueError("Java compiler graph requires a bounded locked tooling closure")
-    cache = getattr(compiler, "dependency_cache", compiler.directory / "gradle-home/caches/modules-2/files-2.1")
     jars, identities = [], {}
     for item in sorted(artifacts, key=lambda row: row["path"]):
         parts = Path(item["path"]).parts
         candidates = list((cache / ".".join(parts[:-3]) / parts[-3] / parts[-2]).glob("*/" + parts[-1]))
-        if len(candidates) != 1: raise ValueError("Java runtime model tooling jar is missing or ambiguous")
+        if len(candidates) != 1:
+            raise ValueError("Java runtime model tooling jar is missing or ambiguous: " + item["path"])
         raw = read_file(candidates[0], 25 * 1024 * 1024)
         if len(raw) != item["size"] or hashlib.sha256(raw).hexdigest() != item["sha256"]:
             raise ValueError("Java runtime model tooling jar integrity mismatch")
