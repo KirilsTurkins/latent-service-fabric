@@ -253,6 +253,9 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('custom-dialer-denied', 11, '/conformance/json', 'custom-dialer-denied'),
                      ('physical-nonreuse-denied', 12, '/conformance/json', 'transport-error'),
                      ('negative-header-limit-denied', 13, '/conformance/json', 'transport-error'),
+                     ('request-close-denied', 14, '/conformance/json', 'transport-error'),
+                     ('negative-body-length-denied', 15, '/conformance/json', 'transport-error'),
+                     ('absent-declared-body-denied', 16, '/conformance/json', 'transport-error'),
                      ('fresh', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb')]
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)

@@ -75,8 +75,11 @@ func lsfTransportRoundTrip(t *Transport, req *Request) (*Response, error) {
 		return nil, lsfHTTPUnsupported("custom dialer, connection concurrency or wire protocol selection")
 	}
 	if !t.DisableCompression { return nil, lsfHTTPUnsupported("automatic compression; DisableCompression must be true") }
-	if t.DisableKeepAlives { return nil, lsfHTTPUnsupported("physical connection nonreuse") }
+	if t.DisableKeepAlives || req.Close { return nil, lsfHTTPUnsupported("physical connection nonreuse") }
 	if t.MaxResponseHeaderBytes < 0 { return nil, lsfHTTPUnsupported("negative response header limit") }
+	if req.ContentLength < -1 || req.ContentLength > 0 && (req.Body == nil || req.Body == NoBody) {
+		return nil, errors.New("http: invalid request content length")
+	}
 	if t.ResponseHeaderTimeout < 0 { return nil, lsfHTTPUnsupported("negative response header timeout") }
 	if t.WriteBufferSize < 0 || t.ReadBufferSize < 0 || t.WriteBufferSize > lsfHTTPChunk || t.ReadBufferSize > lsfHTTPChunk {
 		return nil, lsfHTTPUnsupported("buffer size outside the finite chunk profile")
