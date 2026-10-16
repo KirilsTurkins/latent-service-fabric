@@ -36,6 +36,19 @@ class JavaDependencySuite(unittest.TestCase):
                     suite.source_inputs(commands)
                 identity.assert_not_called()
 
+    def test_source_inventory_has_its_own_bounded_writer_above_operator_fixture_size(self):
+        value = {'trackedTools': {'tools/source-%04d.py' % i: {
+            'sha256': 'sha256:' + '1' * 64, 'bytes': 4096} for i in range(3000)}}
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / 'source-inputs.json'
+            suite.write_source_inventory(output, value)
+            self.assertGreater(output.stat().st_size, 262144)
+            self.assertEqual(suite.json.loads(output.read_bytes()), value)
+            oversized = Path(temporary) / 'oversized.json'
+            with self.assertRaisesRegex(WorkflowError, 'source-inventory-byte-bound'):
+                suite.write_source_inventory(oversized, {'unbounded': 'x' * (8 * 1024 * 1024)})
+            self.assertFalse(oversized.exists())
+
     def test_checkout_outputs_fail_before_creating_attempt_or_starting_native(self):
         for output in (suite.ROOT, suite.ROOT / 'new-attempt'):
             with self.subTest(output=output), patch.object(suite, 'fresh') as fresh, patch.object(suite, 'native') as native:

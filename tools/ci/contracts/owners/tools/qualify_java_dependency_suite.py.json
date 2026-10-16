@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_dependency_suite.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add an independent bounded Java dependency matrix programme using the maintained default native builder, normal pinned compiler acquisition, verified read-only cache and existing private/recovery controls; preserve every original Java command and its55-minute job deadline.",
+  "reviewReason": "Retain bounded all-tracked source inventory with its dedicated writer rather than operator fixture limit; preserve every native/compiler/deadline and read-only cache guard",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b40ab229208b168fa6646c66d21be0de4ee9c6f5cbd9faa88fa91ea30fa57308"
+  "sha256": "fa89a565eec7ff5697bcf3f57b3f5a0f010bbb6a657ae754d3857c8203b15714"
 }

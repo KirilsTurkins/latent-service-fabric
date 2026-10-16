@@ -15,7 +15,7 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.build_observation import build_environment
-from tools.build_snapshot import digest
+from tools.build_snapshot import canonical, digest
 from tools.java_capsule_project import create
 from tools.java_guest.compiler import Compiler, read_only_dependency_cache, tool_inventory
 from tools.phase2_operator_process import read_json, require, write_json
@@ -31,13 +31,21 @@ def source_inputs(commands):
     names = commands.run('tracked-tool-inputs', 'git', 'ls-files', '-z', '--', 'tools').decode('utf-8').split('\0')
     names = [name for name in names if name]
     require(0 < len(names) <= 8192 and len(set(names)) == len(names)
-            and all(name.startswith('tools/') and '..' not in Path(name).parts for name in names),
+            and all(name.startswith('tools/') and len(name) <= 512 and '..' not in Path(name).parts for name in names),
             'java-dependency-suite-tracked-input-bound')
     tools = {name: file_identity(ROOT / name, 16 * 1024 * 1024) for name in names}
     require(sum(row['bytes'] for row in tools.values()) <= 128 * 1024 * 1024,
             'java-dependency-suite-tool-source-byte-bound')
     return {'maintainedJavaInputs': inputs(), 'trackedTools': tools,
             'scope': 'declared native/Java SDK/WIT/helpers plus every tracked tool file; implicit host inputs not attested'}
+
+
+def write_source_inventory(path: Path, value: dict) -> None:
+    # The bounded tracked-source inventory is larger than an operator fixture.
+    # Keep its own byte bound; do not change any compiler/execution budget.
+    raw = canonical(value) + b'\n'
+    require(len(raw) <= 8 * 1024 * 1024, 'java-dependency-suite-source-inventory-byte-bound')
+    path.write_bytes(raw)
 
 
 def main(argv=None):
@@ -62,7 +70,7 @@ def main(argv=None):
     stage = 'source'
     try:
         before = source_inputs(commands)
-        write_json(output / 'source-inputs.json', before)
+        write_source_inventory(output / 'source-inputs.json', before)
         stage = 'ordinary-default-native-products'
         directory, receipt = native(commands, output, tomllib.loads((ROOT / 'tools/toolchain.toml').read_text()))
         products = {name: directory / name for name in PRODUCTS}
@@ -98,7 +106,7 @@ def main(argv=None):
                 'java-dependency-suite-pinned-compiler-cache-mutated')
         require(ordinary_tuple(receipt, products) == selected, 'java-dependency-suite-native-products-mutated')
         after = source_inputs(commands)
-        write_json(output / 'source-inputs-after.json', after)
+        write_source_inventory(output / 'source-inputs-after.json', after)
         require(after == before and time.monotonic() < commands.deadline,
                 'java-dependency-suite-source-changed-or-deadline')
         write_json(output / 'qualification.json', {'status': 'passed', 'mode': args.mode,
