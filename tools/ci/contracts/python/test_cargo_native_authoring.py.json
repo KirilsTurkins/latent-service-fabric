@@ -1,0 +1,153 @@
+{
+  "cases": [
+    "CargoNativeAuthoring.test_cli_failure_redacts_native_output_and_does_not_retry",
+    "CargoNativeAuthoring.test_local_identity_sdk_overlap_and_external_workspace_pointer_fail_closed",
+    "CargoNativeAuthoring.test_native_add_update_remove_preserve_sdk_and_accepted_capture",
+    "CargoNativeAuthoring.test_native_failure_keeps_both_original_metadata_files",
+    "CargoNativeAuthoring.test_nonexact_and_sdk_edits_are_rejected_before_native_commands",
+    "CargoNativeAuthoring.test_partial_publication_preserves_concurrent_user_edit",
+    "CargoNativeAuthoring.test_project_config_and_unselected_registry_have_no_implicit_authority",
+    "CargoNativeAuthoring.test_quoted_paths_are_mirrored_and_original_transitive_resources_observed",
+    "CargoNativeAuthoring.test_relative_private_policy_cannot_hide_inside_project",
+    "CargoNativeAuthoring.test_source_local_resource_and_tool_drift_reject_publication",
+    "CargoNativeAuthoring.test_wrong_native_selection_and_mirror_source_mutation_are_denied"
+  ],
+  "guards": {
+    "CargoNativeAuthoring.test_cli_failure_redacts_native_output_and_does_not_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    },
+    "CargoNativeAuthoring.test_local_identity_sdk_overlap_and_external_workspace_pointer_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    },
+    "CargoNativeAuthoring.test_native_add_update_remove_preserve_sdk_and_accepted_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    },
+    "CargoNativeAuthoring.test_native_failure_keeps_both_original_metadata_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    },
+    "CargoNativeAuthoring.test_nonexact_and_sdk_edits_are_rejected_before_native_commands": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    },
+    "CargoNativeAuthoring.test_partial_publication_preserves_concurrent_user_edit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    },
+    "CargoNativeAuthoring.test_project_config_and_unselected_registry_have_no_implicit_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    },
+    "CargoNativeAuthoring.test_quoted_paths_are_mirrored_and_original_transitive_resources_observed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    },
+    "CargoNativeAuthoring.test_relative_private_policy_cannot_hide_inside_project": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    },
+    "CargoNativeAuthoring.test_source_local_resource_and_tool_drift_reject_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    },
+    "CargoNativeAuthoring.test_wrong_native_selection_and_mirror_source_mutation_are_denied": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:bbdd832b357d64cb10951a9918989dce79c248f22ea24c08c470c5fa7287c1b7",
+        "class:setup-sha256:ad275b9cfdbbd08a737151ccd61804e009fd6f8d6c0812daf1f6002a21e8fc03"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_cargo_native_authoring.py",
+  "reviewReason": "Guard Cargo native selection, isolated paths, SDK seals, source/tool/policy drift, rollback and credential boundaries",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

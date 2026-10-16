@@ -106,6 +106,10 @@
         "run": "python3 tools/qualify_rust_capsules.py --application-dependencies --output \"$RUNNER_TEMP/rust-capsule-dependencies\"\n"
       },
       {
+        "name": "Test native Cargo declaration and lock authoring boundaries",
+        "run": "python3 -m unittest tools.tests.test_cargo_native_authoring"
+      },
+      {
         "name": "Qualify authenticated private Cargo capture and offline signed execution",
         "run": "python3 tools/qualify_rust_private_dependencies.py \\\n  --prepared-qualification \"$RUNNER_TEMP/rust-capsule-dependencies\" \\\n  --output \"$RUNNER_TEMP/rust-private-dependencies\"\n"
       },
@@ -138,7 +142,7 @@
   },
   "jobId": "authoring",
   "kind": "job",
-  "reviewReason": "Add closed host-result uncertainty and existing real trap fuel memory abort controls; preserve every original command and 35 minute budget",
+  "reviewReason": "Union native Cargo authoring controls with all private archive pipefail typed result recovery and original technical abort gates; no prior command guard assertion or budget removed",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

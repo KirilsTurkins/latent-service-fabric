@@ -16,6 +16,7 @@ on:
       - 'wit/**'
       - 'Cargo.*'
       - 'docs/component-development/rust-authoring.md'
+      - 'docs/component-development/rust-dependencies.md'
   push:
     branches: [development]
     paths:
@@ -31,6 +32,7 @@ on:
       - 'wit/**'
       - 'Cargo.*'
       - 'docs/component-development/rust-authoring.md'
+      - 'docs/component-development/rust-dependencies.md'
 
 permissions:
   contents: read
@@ -190,6 +192,8 @@ jobs:
       - name: Qualify captured Rust libraries and approved generators
         run: |
           python3 tools/qualify_rust_capsules.py --application-dependencies --output "$RUNNER_TEMP/rust-capsule-dependencies"
+      - name: Test native Cargo declaration and lock authoring boundaries
+        run: python3 -m unittest tools.tests.test_cargo_native_authoring
       - name: Qualify authenticated private Cargo capture and offline signed execution
         run: |
           python3 tools/qualify_rust_private_dependencies.py \

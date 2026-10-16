@@ -4,14 +4,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import shutil
-import tempfile
-import tomllib
 
 from tools.application_dependencies import LOCK
-from tools.build_observation import build_environment
-from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
 from tools.rust_application_dependencies import resolve
+from tools import cargo_native_authoring
 
 
 DENIAL_CONTROL = r'''
@@ -108,9 +105,6 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
     println!("cargo:rerun-if-changed=build.rs");
 }
 ''', encoding='utf-8')
-    with (project / 'Cargo.toml').open('a', encoding='utf-8') as output:
-        output.write('\n[dependencies]\nunicode-normalization = "=0.1.24"\n'
-                     'outside-qualification-library = {path = ' + json.dumps(str(library).replace('\\', '/')) + '}\n')
     source = project / 'src/lib.rs'
     before = source.read_bytes()
     after = before.replace(b'pub fn greet(name: String)', b'include!(concat!(env!("OUT_DIR"), "/captured.rs"));\npub fn greet(name: String)')
@@ -124,21 +118,37 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
         raise ValueError('Rust dependency qualification source hook changed')
     after = b'use unicode_normalization::UnicodeNormalization;\n' + after
     source.write_bytes(after)
-    pins = tomllib.loads((project / 'vendor/lsf/rust-toolchain.toml').read_text())
-    # The explicit fetch stage is the sole place the native lock can advance.
-    # Metadata does not execute build.rs or procedural macros.
-    with tempfile.TemporaryDirectory(prefix='lsf-rust-fixture-lock-') as temporary:
-        temporary = Path(temporary)
-        environment = build_environment(temporary)
-        environment.update(CARGO_HOME=str(temporary / 'cargo-home'), HOME=str(temporary / 'home'),
-                           USERPROFILE=str(temporary / 'home'), RUSTUP_TOOLCHAIN=pins['toolchain']['channel'],
-                           RUSTUP_AUTO_INSTALL='0', RUSTC=str(cargo.parent / 'rustc'))
-        run_bounded([str(cargo), 'metadata', '--manifest-path', str(project / 'Cargo.toml'), '--format-version', '1'],
-                    temporary, environment, 600, 16 * 1024 * 1024)
+    added = cargo_native_authoring.author(project, 'add', identity='unicode-normalization', version='0.1.24', cargo=cargo)
+    cargo_native_authoring.author(project, 'add', identity='outside-qualification-library', version='0.1.0', local=library, cargo=cargo)
+    locked = cargo_native_authoring.author(project, 'lock', cargo=cargo)
     candidate = project / 'target/qualification.candidate.json'
-    candidate.parent.mkdir()
+    candidate.parent.mkdir(exist_ok=True)
     lock = resolve(project, candidate, cargo=cargo)
-    (project / LOCK).write_bytes(canonical(lock) + b'\n')
+    from tools.rust_dependency_authoring import review, status
+    from tools.application_dependency_store import DependencyError
+    review(project, candidate, digest(candidate.read_bytes()))
+    reviewed = {name: (project / name).read_bytes() for name in ('Cargo.toml', 'Cargo.lock')}
+    accepted = (project / LOCK).read_bytes()
+    external_manifest = (library / 'Cargo.toml').read_bytes()
+    stale_controls = []
+    for operation in ('update', 'remove'):
+        if operation == 'update':
+            (library / 'Cargo.toml').write_bytes(external_manifest.replace(b'version = "0.1.0"', b'version = "0.1.1"', 1))
+        cargo_native_authoring.author(project, operation, identity='outside-qualification-library',
+            version='0.1.1' if operation == 'update' else None, local=library if operation == 'update' else None, cargo=cargo)
+        try:
+            status(project)
+        except DependencyError:
+            stale_controls.append(operation)
+        else:
+            raise ValueError('Rust native authoring retained stale accepted capture')
+        if (project / LOCK).read_bytes() != accepted:
+            raise ValueError('Rust native authoring changed accepted capture')
+        for name, raw in reviewed.items():
+            (project / name).write_bytes(raw)
+        (library / 'Cargo.toml').write_bytes(external_manifest)
+        if status(project)['status'] != 'verified':
+            raise ValueError('Rust exact reviewed metadata restoration failed')
     selected = {row['metadata'].get('package') for row in lock['artifacts']}
     if not {'unicode-normalization', 'tinyvec', 'tinyvec_macros', 'outside-qualification-macro'} <= selected:
         raise ValueError('native Rust qualification graph did not capture the required transitives')
@@ -156,6 +166,8 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
     return {'formatVersion': 1, 'thirdParty': 'unicode-normalization/0.1.24',
             'transitives': ['tinyvec', 'tinyvec_macros'], 'developerOwned': 'outside-qualification-library/0.1.0',
             'applicationLibraries': application_libraries,
+            'authoringWorkflow': {'add': added, 'nativeLock': locked, 'staleCaptureRejected': stale_controls,
+                                 'exactReviewedMetadataRestored': True},
             'resourceDigest': digest(resource), 'sourceDigest': digest(after),
             'coldPreparationBudget': {'originalWallTimeLimitMillis': original_wall_limit,
                                       'wallTimeLimitMillis': recipe['limits']['wallTimeLimitMillis'],
