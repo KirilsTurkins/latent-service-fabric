@@ -8,6 +8,7 @@ members = [
     "crates/latent-manifest",
     "crates/latent-contracts",
     "crates/latent-component-bindings",
+    "crates/latent-component-threading",
     "crates/latent-rpc",
     "crates/latent-artifacts",
     "crates/latent-packaging",
