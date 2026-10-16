@@ -48,8 +48,21 @@ also builds an outside-checkout signed logging component and selects 16 actual
 invocations: UTF-8 stdout, stderr/newline, primitive/append formatting, exact
 256-byte boundary, malformed bytes, exhausted budget, host message rejection,
 sink rejection/refund, trusted correlation and fresh stream state. All original
-nine SDK components, commands and job limits remain. The new component build
-and signed invocations are pending; this candidate does not complete #681.
+nine SDK components, commands and job limits remain.
+
+The later [full Java job passed](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38965794539/job/117191817850)
+at source `774560a985638cc285c1947db9d7fc8b32d269dd`, testing merge
+`af31844bbe2678d414ec97c374c875f2a135fcaa`. Its signed standard-console test
+completed the sixteen invocations above, and all thirteen SDK runtime tests
+passed with no ignores. Retained receipts verify unchanged before/after inputs
+and all 354 selected source paths against the branch and tested merge. In the
+reviewed current development composition, the only selected-path difference is
+the separately reviewed optional scalar-alias provider schema; it changes no
+required/default selection or logging SDK, compiler or fixture bytes. The dated
+source evidence remains source/reference proof, distinct from this signed
+execution. These observations bind to those exact inputs; future changes to
+selected inputs require their own qualification. This finite logging slice
+does not complete #681 or #679 or establish release installation/publication.
 
 The contract is compared with the
 [JDK PrintStream documentation](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/PrintStream.html)
