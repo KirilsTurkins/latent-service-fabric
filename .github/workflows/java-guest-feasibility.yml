@@ -358,6 +358,7 @@ jobs:
             ${{ runner.temp }}/java-standard-timers/wit/**
             ${{ runner.temp }}/java-standard-timers/build/runtime-profile.json
             ${{ runner.temp }}/java-standard-timers/build/component.wasm
+            ${{ runner.temp }}/java-standard-timers/build/core.wasm
             ${{ runner.temp }}/java-standard-timers/signed-runtime.log
             ${{ runner.temp }}/java-capsule-authoring.log
             ${{ runner.temp }}/java-http-composition.log

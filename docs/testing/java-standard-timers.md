@@ -60,7 +60,11 @@ signed runtime log are retained even on failure.
 Reference JDK 25.0.3 and SDK host source controls passed three times locally on
 2026-10-16. The actual locked model control also passed with the ten tooling JARs
 verified against the existing compiler lock. Component compilation and signed execution of this candidate are
-pending the maintained Linux gate. This page makes no passing guest claim.
+pending the maintained Linux gate. The [retained encoder failure](evidence/java-standard-timer-encoder-failed-2026-10-16.json)
+passed TeaVM and C compilation, then found that the closed adapter lacked
+`fd_close`. The corrected adapter returns `BADF` for every descriptor and
+acquires no ambient resource. Its module validates with the pinned wasm-tools;
+the complete timer component and signed execution remain pending.
 
 This slice does not complete issue #741. Fiber-aware pending host I/O, two
 unchanged published libraries that create default workers, the broader
