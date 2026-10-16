@@ -27,6 +27,55 @@ def sources():
 
 
 class GoRuntimeOverlayTests(unittest.TestCase):
+    def test_private_wasm_frame_observer_preserves_original_sources_and_bounds_the_overlay(self):
+        from tools.diagnose_go_timer_failure import PATHS, overlay_sources
+        original = {name: (runtime.ROOT / name).read_bytes() for name in PATHS}
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            identities, overlays = overlay_sources(runtime.ROOT, output)
+            self.assertEqual(len(overlays), 3)
+            for private, source in overlays:
+                self.assertTrue(private.is_relative_to(output))
+                self.assertEqual(source.read_bytes(), original[source.relative_to(runtime.ROOT).as_posix()])
+                self.assertNotEqual(private.read_bytes(), source.read_bytes())
+            observer = (output / 'private-source' / PATHS[0]).read_text()
+            self.assertIn('downcast_ref::<wasmtime::WasmBacktrace>()', observer)
+            self.assertIn('frames().iter().take(32)', observer)
+            self.assertNotIn('format!("{error:?}")', observer)
+            self.assertTrue(all(value['originalDigest'] != value['privateDigest'] for value in identities.values()))
+
+    def test_private_frame_output_excludes_native_messages_and_rejects_unbounded_or_unexpected_data(self):
+        from tools.diagnose_go_timer_failure import frames_from_output
+        def encode(value):
+            return b'LSF_GO_WASM_FRAME ' + json.dumps(value).encode() + b'\n'
+        frame = {'function': 'runtime.(*mheap).allocSpan', 'functionIndex': 42,
+                 'functionOffset': 12, 'moduleOffset': 1000}
+        self.assertEqual(frames_from_output(b'native configuration secret\n' + encode(frame)), [frame])
+        invalid = [{**frame, 'nativeError': 'secret'}, {**frame, 'function': 'path with spaces'},
+                   {**frame, 'function': 'x' * 161}, {**frame, 'functionIndex': -1},
+                   {**frame, 'moduleOffset': 2**64}, {**frame, 'functionOffset': True}]
+        for value in invalid:
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'output-shape'):
+                frames_from_output(encode(value))
+        with self.assertRaisesRegex(ValueError, 'output-shape'):
+            frames_from_output(encode(frame) * 33)
+
+    def test_private_frame_observer_refuses_drift_before_writing_a_partial_overlay(self):
+        from tools.diagnose_go_timer_failure import PATHS, overlay_sources
+        with tempfile.TemporaryDirectory() as temporary:
+            root, output = Path(temporary) / 'source', Path(temporary) / 'diagnostic'
+            for name in PATHS:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes((runtime.ROOT / name).read_bytes())
+            engine = root / PATHS[1]
+            engine.write_text(engine.read_text().replace('wasm_backtrace_max_frames(None)', 'changed_config()'))
+            before = {name: (root / name).read_bytes() for name in PATHS}
+            with self.assertRaisesRegex(ValueError, 'source-drift'):
+                overlay_sources(root, output)
+            self.assertFalse(output.exists())
+            self.assertEqual({name: (root / name).read_bytes() for name in PATHS}, before)
+
     def test_activation_dispatcher_rejects_changed_dependency_before_transformation(self):
         from tools.go_guest import activation
         with tempfile.TemporaryDirectory() as temporary:

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/diagnose_go_timer_failure.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind bounded failure-only observer; three private read-only source overlays, numeric Wasm offsets/sanitized symbols only, no production mutation or acceptance replacement",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "d0262f992026e8aba59a0f62ee8c37a85b560619a49a8af57c37f3fdbfb68eea"
+}

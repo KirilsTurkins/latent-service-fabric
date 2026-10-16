@@ -98,6 +98,16 @@ particular, the latest timer source still needs a successful complete signed
 replay before it is a qualified profile. Initializer background work, standard
 networking and the complete #742 acceptance matrix remain unfinished.
 
+The first hosted replay of the fresh-quiescence source passed modes 0 through
+6, including callback drain, then trapped with memory out of bounds in the
+forced-GC case. This remains a failed acceptance result. A failure-only diagnostic
+replays that exact component with three private read-only source overlays in a
+separate process namespace, preserving the production files and assertions.
+It retains at most 32 parsed Wasm function/index/offset records and input hashes,
+with a ten-minute command bound. Raw native errors/configuration are not exported.
+This diagnostic cannot qualify the profile, and the job does not save its
+diagnostic compiler target or run acceptance afterward.
+
 ```bash
 python3 tools/qualify_go_activation.py --output /tmp/go-standard-timers \
   --runtime-profile go-component-activation-v3 --fixture timers
