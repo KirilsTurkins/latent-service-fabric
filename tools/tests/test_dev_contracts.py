@@ -246,9 +246,9 @@ class Transports(unittest.TestCase):
             self.assertIn(required, command)
         import shlex
         remote = shlex.split(command[-1])
-        self.assertEqual(remote[:3], ["/usr/local/bin/python3.13", "-I", "-c"])
+        self.assertEqual(remote[:4], ["/usr/local/bin/python3.13", "-I", "-B", "-c"])
         self.assertEqual(remote[-3:], ["/opt/latent-dev/helper.pyz", config["helperSha256"], "rpc"])
-        self.assertIn("hashlib.file_digest", remote[3])
+        self.assertIn("hashlib.file_digest", remote[4])
         with self.assertRaises(common.DevError):
             backend.command({**config, "host": "node;do-bad-things"})
 
@@ -421,14 +421,14 @@ class EditorDiagnostics(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="lsf spaces-") as temporary:
             root = Path(temporary)
             working = root / "src"
-            inputs = {"src/Grüße.rs", "src/business.cs"}
+            inputs = {"src/GrÃƒÆ’Ã‚Â¼ÃƒÆ’Ã…Â¸e.rs", "src/business.cs"}
             rust = {"reason": "compiler-message", "message": {"level": "error", "message": "wrong type\nsecond line",
-                "code": {"code": "E0308"}, "spans": [{"file_name": "Grüße.rs", "line_start": 12, "column_start": 3, "is_primary": True}]}}
+                "code": {"code": "E0308"}, "spans": [{"file_name": "GrÃƒÆ’Ã‚Â¼ÃƒÆ’Ã…Â¸e.rs", "line_start": 12, "column_start": 3, "is_primary": True}]}}
             output = ("\x1b[31mbusiness.cs(7,2): error CS1002: expected semicolon\x1b[0m\r\n"
                       "../../secret.rs:1:1: error: unrelated\r\n" + json.dumps(rust, ensure_ascii=False) + "\r\n").encode()
             records = diagnostics.collect(b"", output, root, working, inputs)
             self.assertEqual([(record["path"], record["line"], record["column"]) for record in records],
-                             [("src/business.cs", 7, 2), ("src/Grüße.rs", 12, 3)])
+                             [("src/business.cs", 7, 2), ("src/GrÃƒÆ’Ã‚Â¼ÃƒÆ’Ã…Â¸e.rs", 12, 3)])
             for record, line in zip(records, diagnostics.editor_lines(diagnostics.for_host(records, root))):
                 match = re.fullmatch(editor.PATTERN, line)
                 self.assertIsNotNone(match)
@@ -600,6 +600,50 @@ class ScenarioReports(unittest.TestCase):
         for replacement in ({"purpose": "release"}, {"sourceCommit": "development"}, {"workflow": "unreviewed.yml"}):
             with self.assertRaises(common.DevError):
                 bundle.policy({**policy, **replacement}, "0.1.0-alpha.4", allow_candidate=True)
+
+
+class BackendCompilerInventory(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "linux", "Linux delivered CPython compiler inventory")
+    def test_actual_helper_preserves_delivered_python_inventory_and_old_command_is_rejected(self):
+        from tools import dev_tool_distribution as distribution
+        from tools.build_dev_frontend import helper as build_helper
+        from tools.dev_workflow import protocol, tool_inventory
+        import subprocess
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            payload = root / "payload"
+            payload.mkdir()
+            for name in distribution.python(payload, Path(sys.prefix)):
+                (payload / name).chmod(0o700)
+            revision = "1" * 40
+            distribution.compiler_inventory(payload, revision, "java")
+            descriptor = {"language": "java", "hostAbi": common.HOST_ABI,
+                "template": {"ownerIssue": project.LANGUAGES["java"], "revision": revision},
+                "build": {"inventory": {"path": "guest-tools.json",
+                    "sha256": common.digest((payload / "guest-tools.json").read_bytes())}, "tools": []}}
+            before = tool_inventory.check(payload, descriptor, "linux-x86_64")
+            helper = root / "helper.pyz"
+            identity = build_helper(helper)
+            argv = backend.guest_command(str(payload / "sdk/bin/python"), str(helper), identity, "rpc")
+            sent = protocol.request("hello", "test-python-inventory", {})
+            environment = {"PATH": "/nonexistent", "HOME": str(root), "LANG": "C.UTF-8",
+                "PYTHONPYCACHEPREFIX": str(root / "ambient-bytecode")}
+            observed = subprocess.run(argv, input=common.encode(sent), capture_output=True,
+                cwd=root, env=environment, timeout=30)
+            self.assertEqual(observed.returncode, 0, observed.stderr)
+            protocol.negotiate(protocol.result(common.decode(observed.stdout), sent))
+            self.assertEqual(tool_inventory.check(payload, descriptor, "linux-x86_64"), before)
+            self.assertFalse(list(payload.rglob("__pycache__")))
+            self.assertFalse((root / "ambient-bytecode").exists())
+            original = argv.copy()
+            original.remove("-B")
+            control = subprocess.run(original, input=common.encode(sent), capture_output=True,
+                cwd=root, env=environment, timeout=30)
+            self.assertEqual(control.returncode, 0, control.stderr)
+            protocol.negotiate(protocol.result(common.decode(control.stdout), sent))
+            self.assertTrue(list(payload.rglob("__pycache__")))
+            with self.assertRaisesRegex(common.DevError, "guest-tool-unrecorded-directory"):
+                tool_inventory.check(payload, descriptor, "linux-x86_64")
 
 
 if __name__ == "__main__":
