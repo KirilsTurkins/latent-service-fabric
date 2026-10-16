@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_timer_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Failure-only visibility fix after current hosted observer exited before native invocation with no retained launcher cause. Preserve hosted-Linux gate, all original UID/GID/capability/namespace/root/temp guards, exact read-only binds, command/environment, unsaved diagnostic cache and 600s/1MiB bound. Export only finite preflight phase/code/exception-class and launcher family/category; never raw output or messages.",
+  "reviewReason": "Replace the inline diagnostic preflight with its exact digest-pinned stdlib-only script and direct-testable function. Preserve the hosted Linux gate, unchanged setpriv sequence and three readonly Rust overlays, all preflight refusal checks, original runtime/terminal behavior and diagnostic bounds. Authenticate the selected helper before command construction and retain its digest in the unchanged supporting-input receipt and post-run mutation guard. No scanner waiver or native proof is claimed.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d8b6438d80882c34e227336322f67904a91ca30f1f5da9bf7b0d2fac45e8b89d"
+  "sha256": "ad854f03e6eeae3d17fa010eef0b366dd979ddc5355924fc90378b006312c126"
 }

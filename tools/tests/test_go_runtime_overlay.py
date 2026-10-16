@@ -43,6 +43,9 @@ class GoRuntimeOverlayTests(unittest.TestCase):
         from tools import diagnose_go_timer_failure as diagnostic
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            preflight = root / diagnostic.FRAME_PREFLIGHT_SOURCE
+            preflight.parent.mkdir(parents=True)
+            preflight.write_bytes(diagnostic.frame_preflight_source(diagnostic.ROOT).read_bytes())
             overlays = [(root / 'private' / name, root / name) for name in diagnostic.PATHS]
             context = {'uid': 1001, 'gid': 118, 'groups': [118], 'uidMapDigest': 'a' * 64,
                        'root': [0, 0, 0o755]}
@@ -64,11 +67,34 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             self.assertEqual(command[drop:drop + 10], ['/setpriv', '--reuid', '1001', '--regid', '118',
                 '--clear-groups', '--bounding-set=-all', '--inh-caps=-all', '--ambient-caps=-all', '--no-new-privs'])
             self.assertLess(drop, command.index('/cargo'))
+            self.assertEqual(command[drop + 11:drop + 14], ['-I', '-B', str(preflight.resolve())])
+            self.assertNotIn('-c', command)
             self.assertEqual(command.count('--ro-bind'), 3)
             self.assertIn('--offline', command)
             self.assertIn('--locked', command)
             with self.assertRaisesRegex(ValueError, 'source-set'):
                 diagnostic.frame_command(root, overlays[:-1], {}, '/cargo', '/bwrap', '/sudo', '/setpriv', context)
+
+    def test_private_frame_preflight_source_requires_exact_selected_file_without_fallback(self):
+        from tools import diagnose_go_timer_failure as diagnostic
+        from tools.go_guest import frame_preflight
+        selected = diagnostic.frame_preflight_source(diagnostic.ROOT)
+        self.assertEqual(Path(frame_preflight.__file__).resolve(), selected)
+        original = selected.read_bytes()
+        self.assertEqual('sha256:' + hashlib.sha256(original).hexdigest(), diagnostic.FRAME_PREFLIGHT_DIGEST)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / diagnostic.FRAME_PREFLIGHT_SOURCE
+            with self.assertRaisesRegex(ValueError, 'preflight-source'):
+                diagnostic.frame_preflight_source(root)
+            path.parent.mkdir(parents=True)
+            path.write_bytes(original)
+            self.assertEqual(diagnostic.frame_preflight_source(root), path.resolve())
+            for changed in (original + b'\n# changed', b'x' * 8193):
+                with self.subTest(size=len(changed)):
+                    path.write_bytes(changed)
+                    with self.assertRaisesRegex(ValueError, 'preflight-preimage'):
+                        diagnostic.frame_preflight_source(root)
 
     def test_private_frame_host_preflight_refuses_wrong_credentials_caps_maps_or_temporary_ancestors(self):
         import contextlib
@@ -79,6 +105,7 @@ class GoRuntimeOverlayTests(unittest.TestCase):
         import sys
         from types import SimpleNamespace
         from tools import diagnose_go_timer_failure as diagnostic
+        from tools.go_guest import frame_preflight
         mapping = b'0 0 4294967295\n'
         expected = {'uid': 1001, 'gid': 118, 'groups': [118],
                     'uidMapDigest': hashlib.sha256(mapping).hexdigest(), 'root': [0, 0, 0o755]}
@@ -114,9 +141,9 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                     contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
                 if fault:
                     with self.assertRaisesRegex(SystemExit, 'preflight-refused'):
-                        exec(diagnostic.FRAME_PREFLIGHT, {})
+                        frame_preflight.main()
                 else:
-                    exec(diagnostic.FRAME_PREFLIGHT, {})
+                    frame_preflight.main()
             self.assertEqual(len(executed), 0 if fault else 1)
             return (output.getvalue() + errors.getvalue()).encode()
         value = diagnostic.frame_host_observation(run())

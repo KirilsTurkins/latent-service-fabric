@@ -26,52 +26,26 @@ THROW_BODY_DIGEST = 'sha256:c049e89b86db59031835024047342eaaa3008b47897e6c42c402
 PATHS = ('crates/latent-wasmtime/src/containment.rs', 'crates/latent-wasmtime/src/config/engine.rs',
          'crates/latent-wasmtime/tests/local_service/runtime/go.rs')
 
-# Executed after Bubblewrap drops to the original unprivileged runner. The
-# mount namespace only supplies private source files; production policy still
-# sees the original user namespace, root ownership and system temporary path.
-FRAME_PREFLIGHT = '''import hashlib,json,os,pathlib,stat,sys,tempfile
-phase="arguments"; code="exception"
-def require(value,reason):
-    global code
-    if not value:
-        code=reason
-        raise SystemExit("Go-private-frame-host-preflight-refused")
-try:
-    expected=json.loads(sys.argv[1]); cargo=sys.argv[2:]
-    phase="credentials"
-    require(os.getuid()==os.geteuid()==expected["uid"]!=0,"uid")
-    require(os.getgid()==os.getegid()==expected["gid"],"gid")
-    require(set(os.getgroups())<=set(expected["groups"]),"groups")
-    phase="capsets"
-    status=pathlib.Path("/proc/self/status").read_text()
-    for key in ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"):
-        fields=[line.split(":",1)[1].strip() for line in status.splitlines() if line.startswith(key+":")]
-        require(len(fields)==1 and int(fields[0],16)==0,key)
-    require("NoNewPrivs:\\t1" in status,"no-new-privs")
-    phase="uid-map"
-    require(hashlib.sha256(pathlib.Path("/proc/self/uid_map").read_bytes()).hexdigest()==expected["uidMapDigest"],"uid-map")
-    phase="root-stat"
-    root=pathlib.Path("/").stat()
-    require([root.st_uid,root.st_gid,stat.S_IMODE(root.st_mode)]==expected["root"],"root-stat")
-    phase="temp-ancestors"
-    temporary=pathlib.Path(tempfile.gettempdir()).resolve(strict=True)
-    for path in (*reversed(temporary.parents),temporary):
-        value=path.stat(); require(stat.S_ISDIR(value.st_mode),"temporary-directory")
-        require(value.st_uid in (0,expected["uid"]),"temporary-owner")
-        require(not value.st_mode & 0o022 or value.st_uid==0 and bool(value.st_mode & stat.S_ISVTX),"temporary-mode")
-    require(all(key not in os.environ for key in ("TEMP","TMP","TMPDIR")),"temporary-environment")
-    print("LSF_GO_DIAG_HOST "+json.dumps({"uid":os.getuid(),"gid":os.getgid(),"sameUserNamespace":True,
-        "capabilitiesDropped":True,"rootOwnershipPreserved":True,"temporaryAncestorsAccepted":True}),flush=True)
-    phase="native-start"
-    os.execve(cargo[0],cargo,dict(os.environ))
-except BaseException as error:
-    kind=type(error).__name__
-    if kind not in ("SystemExit","ValueError","JSONDecodeError","KeyError","IndexError","TypeError","PermissionError",
-                    "FileNotFoundError","NotADirectoryError","OSError","RuntimeError"):
-        kind="Other"
-    print("LSF_GO_DIAG_HOST_FAILURE "+json.dumps({"phase":phase,"code":code,"exception":kind}),file=sys.stderr,flush=True)
-    raise SystemExit("Go-private-frame-host-preflight-refused") from None
-'''
+# The stdlib-only entry executes after the unchanged setpriv drop. Its exact
+# selected bytes are authenticated before constructing the private command and
+# retained with the other supporting inputs; there is no import fallback.
+FRAME_PREFLIGHT_SOURCE = 'tools/go_guest/frame_preflight.py'
+FRAME_PREFLIGHT_DIGEST = 'sha256:fb0418dcd1b31238860ca5523a57179a30ce0d00ee231bdeded8b14847014d62'
+
+
+def frame_preflight_source(root: Path) -> Path:
+    root = root.resolve(strict=True)
+    path = root / FRAME_PREFLIGHT_SOURCE
+    try:
+        if path.is_symlink() or path.resolve(strict=True) != path or not path.is_file():
+            raise ValueError('Go-private-frame-observer-preflight-source')
+        with path.open('rb') as stream:
+            raw = stream.read(8193)
+    except OSError:
+        raise ValueError('Go-private-frame-observer-preflight-source') from None
+    if len(raw) > 8192 or digest(raw) != FRAME_PREFLIGHT_DIGEST:
+        raise ValueError('Go-private-frame-observer-preflight-preimage')
+    return path
 
 
 def frame_host_context() -> dict:
@@ -101,6 +75,7 @@ def frame_command(root: Path, overlays: list[tuple[Path, Path]], environment: di
             or not isinstance(value, str) or len(value) > 32768 or '\0' in value
             for key, value in environment.items()):
         raise ValueError('Go-private-frame-observer-environment-bound')
+    preflight = frame_preflight_source(root)
     command = [sudo, '-n', '--', sandbox, '--unshare-pid', '--unshare-ipc', '--unshare-uts',
                '--die-with-parent', '--new-session', '--bind', '/', '/', '--proc', '/proc',
                '--dev', '/dev', '--cap-drop', 'ALL', '--cap-add', 'CAP_SETUID',
@@ -112,8 +87,7 @@ def frame_command(root: Path, overlays: list[tuple[Path, Path]], environment: di
     return command + ['--chdir', str(root), setpriv, '--reuid', str(context['uid']),
         '--regid', str(context['gid']), '--clear-groups', '--bounding-set=-all',
         '--inh-caps=-all', '--ambient-caps=-all', '--no-new-privs',
-        str(Path(sys.executable).resolve()), '-I', '-B', '-c',
-        FRAME_PREFLIGHT, json.dumps(context, separators=(',', ':')), cargo, '--config',
+        str(Path(sys.executable).resolve()), '-I', '-B', str(preflight), json.dumps(context, separators=(',', ':')), cargo, '--config',
         '.cargo/managed-guest.toml', 'test', '--offline', '--locked', '-p', 'latent-wasmtime',
         '--test', 'local_service', 'runtime::go::' + CASE, '--', '--ignored', '--exact', '--nocapture']
 
@@ -701,8 +675,9 @@ def diagnose(fixture: Path, output: Path) -> dict:
             raise ValueError('Go-private-terminal-diagnostic-budget-exhausted')
         return remaining
     recipe = Path(__file__).read_bytes()
+    frame_preflight_source(ROOT)
     support = {name: digest((ROOT / name).read_bytes()) for name in (
-        'tools/go_guest/panic_probe.py', 'tools/go_guest/terminal_panic_reasons.json')}
+        'tools/go_guest/panic_probe.py', 'tools/go_guest/terminal_panic_reasons.json', FRAME_PREFLIGHT_SOURCE)}
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     fixture = fixture.resolve(strict=True)
