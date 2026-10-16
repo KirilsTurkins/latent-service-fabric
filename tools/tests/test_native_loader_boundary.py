@@ -104,7 +104,7 @@ all = "warn"
         self.assertEqual(boundary.validate(self.root), [])
         for before, after in (
             ('self.active.load(Ordering::Acquire) != 0', 'false'),
-            ('OwnerKind::Native, Some(continuation)', 'OwnerKind::Task, Some(continuation)'),
+            ('register_from_task(OwnerKind::Native, continuation)', 'register_from_task(OwnerKind::Task, continuation)'),
             ('children.accepted >= children.maximum', 'false'),
         ):
             with self.subTest(change=before):

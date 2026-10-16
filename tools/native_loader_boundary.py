@@ -38,16 +38,17 @@ LOADER = f"{CRATE}/src/aot/loader.rs"
 # reviewed; another unsafe site, result shape, allowance or implementation
 # requires a new review. The engine version is checked above both exceptions.
 FIXED_RESULT = f"{CRATE}/src/host/runtime/fixed_result.rs"
-FIXED_RESULT_SHA256 = "7122f099bd89829ec74f652620cf61f9710674b1e6deab4a38b4bb4c1fc77e23"
+FIXED_RESULT_SHA256 = "c8ff0fd34ad8fe30cd5098e1c23265712285067625b48ed1a7e1a2543e74b7ee"
 # This third exception only allocates and unmaps guarded root stacks through
 # Wasmtime's pinned public StackCreator interface. Original activation Native
 # and memory admission precede mapping; actual successful munmap precedes refund.
-# Canonical thread creation remains closed. Bind the entire source, so adding
+# The ordinary profile keeps canonical thread creation closed; explicit child
+# admission retains distinct prepaid original Task tokens. Bind all source, so adding
 # another unsafe operation or changing the physical retirement fence needs review.
 NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
 NATIVE_STACK_CHILD = f"{CRATE}/src/native_stacks/children.rs"
-NATIVE_STACK_CHILD_SHA256 = "b8718a74d9ecd9dacc1f2eb3848abf5f06baca57c2aaa8fa8bb3b24988c9d406"
-NATIVE_STACK_SHA256 = "c46d0240b995accf7816582850895422a94b7702650bd24c180ad03e303c2247"
+NATIVE_STACK_CHILD_SHA256 = "18680df6415e0bc399ac9cf072c8033db60805da3ff5ccbecac3bea79b4cc0db"
+NATIVE_STACK_SHA256 = "7343c3a6feb90ef74627f54fa7bbc805e8c4e60255064efc6d1a94301af4c94b"
 ALLOW = '''#[allow(
     unsafe_code,
     reason = "the sole native loader accepts only a private proof over authenticated immutable bytes"
