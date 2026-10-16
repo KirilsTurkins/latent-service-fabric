@@ -234,8 +234,11 @@ Its maintained signed node case exercises a real canonical child, per-context
 stack accesses, the original protected Task/Native imports, fresh Stores and
 prepared-cache reuse. It also requires child trap/fuel cleanup, copied-token and
 total-start quota denial, wrong-kind denial, unstarted accepted work rejection,
-a missing grant, and two correctly encoded but unauthenticated component
-rejections before Store creation. All cases retain the existing finite 4 MiB
+a missing grant denied at binding publication before factory or Store creation,
+and two correctly encoded but unauthenticated component rejections before
+signing. Descriptive package inspection
+opens threading syntax only after the same final-byte proof; it installs no
+provider and changes no execution profile. All cases retain the existing finite 4 MiB
 grant; the explicitly selected mechanism uses 256 KiB native stacks and three
 Task/two Native slots. Actual native execution is required before claiming this
 gate passed. This fixture executes no Rust/std source and establishes no ordinary

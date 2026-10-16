@@ -92,6 +92,7 @@ impl WasmtimeConfig {
                 "component-thread-authentication".into(),
                 crate::component_threading::PROFILE.into(),
             );
+            fields.insert("native-thread-root-abi".into(), "async-stackful-v1".into());
             fields.insert(
                 "native-thread-profile".into(),
                 crate::host::native::PROFILE.into(),

@@ -33,10 +33,11 @@ class OwnedNativeChildGate(unittest.TestCase):
         source = (gate.ROOT / 'crates/latent-wasmtime/tests/local_service/runtime/native_threads.rs').read_text()
         self.assertIn('tasks: 3', source)
         self.assertIn('native_owners: 2', source)
-        self.assertIn('resource_snapshot().stores_created, 0', source)
+        self.assertIn('resource_snapshot().stores_created, before', source)
         self.assertIn('host_call_count', source)
-        self.assertIn('denied.idle().await', source)
-        self.assertIn('invalid.idle().await', source)
+        self.assertIn('missing Native grant must be denied before factory or Store construction', source)
+        self.assertIn('assert_eq!(error.code, PlatformErrorCode::PermissionDenied)', source)
+        self.assertIn('an unverified canonical graph must never reach signing', source)
         self.assertIn('copied_task_token_cannot_start_another_child',
             (gate.ROOT / 'crates/latent-wasmtime/src/native_stacks/tests.rs').read_text())
 

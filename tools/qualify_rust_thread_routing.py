@@ -45,6 +45,13 @@ def replace(text, before, after):
     return text.replace(before, after, 1)
 
 
+def pinned_wasm_tools_version(raw):
+    # Cargo installations omit build metadata; the pinned official Linux
+    # release records this exact source commit/date. No other suffix or version.
+    return raw.strip() in (b'wasm-tools 1.254.0',
+                           b'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)')
+
+
 def append(text, body):
     require(text.endswith(')\n'), 'rust-routing-component-text-shape')
     return text[:-2] + body + '\n)\n'
@@ -159,7 +166,7 @@ def run(output: Path, transformer: Path, wasm_tools: Path):
         return result.stdout
 
     try:
-        require(command([wasm_tools, '--version']).strip() == b'wasm-tools 1.254.0', 'rust-routing-tool-version')
+        require(pinned_wasm_tools_version(command([wasm_tools, '--version'])), 'rust-routing-tool-version')
         wit = output / 'wit'; wit.mkdir()
         (wit / 'world.wit').write_bytes((ROOT / RECIPE[1]).read_bytes())
         for key, name in [('native', RECIPE[-2]), ('runtime', RECIPE[-1])]:

@@ -8,6 +8,13 @@ from tools.dev_workflow.common import DevError
 
 
 class ThreadRoutingCampaign(unittest.TestCase):
+    def test_only_exact_pinned_cargo_and_official_release_version_strings_are_accepted(self):
+        for value in (b'wasm-tools 1.254.0\n', b'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)\n'):
+            self.assertTrue(gate.pinned_wasm_tools_version(value))
+        for value in (b'wasm-tools 1.254.1', b'wasm-tools 1.254.0 (unverified)',
+                      b'wasm-tools 1.254.0 extra', b'wasm-tools 1.254.0\nother tool'):
+            self.assertFalse(gate.pinned_wasm_tools_version(value))
+
     def test_unknown_or_ambiguous_encoder_preimages_fail_closed(self):
         for text in ('absent', 'route route'):
             with self.subTest(text=text), self.assertRaisesRegex(DevError, 'preimage-drift'):

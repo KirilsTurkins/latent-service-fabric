@@ -360,7 +360,7 @@ impl Runtime {
                 "principals":[{"kind":scope.principal.0,"subject":scope.principal.1}],
                 "services":scope.services,"publications":scope.publications.iter().map(PublicationId::as_str).collect::<Vec<_>>(),
                 "capability":capability,"operations":entry.operation,
-                "resources":{"kind":if capability == RANDOM {"random"} else {"clock"}},
+                "resources":{"kind":if capability == RANDOM {"random"} else if capability == NATIVE {"context"} else {"clock"}},
                 "ceiling":{"operations":4096,"inputBytes":if capability == RANDOM {8} else {0},"outputBytes":32768,"wallTimeMillis":call_wall_millis}
             })).collect();
             for (id, kind, document) in [

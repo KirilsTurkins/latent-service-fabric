@@ -29,6 +29,11 @@ RECIPE = tuple(dict.fromkeys(routing.RECIPE + (CORE, WORLD,
     'crates/latent-wasmtime/src/aot/profile.rs', 'crates/latent-wasmtime/src/aot/supervisor/input.rs',
     'crates/latent-wasmtime/src/native_stacks.rs', 'crates/latent-wasmtime/src/native_stacks/children.rs',
     'crates/latent-wasmtime/src/host/runtime.rs', 'crates/latent-wasmtime/src/host/native.rs',
+    'crates/latent-wasmtime/src/host/runtime/fixed_result.rs',
+    'crates/latent-wasmtime/src/config.rs', 'crates/latent-core/src/activation_runtime.rs',
+    'crates/latent-packaging/src/semantics/wasm.rs',
+    'crates/latent-packaging/src/semantics/host.rs', 'crates/latent-packaging/Cargo.toml',
+    'crates/latent-policy/src/capability.rs', 'crates/latent-policy/src/capability/resources.rs',
     'crates/latent-wasmtime/tests/local_service/runtime/native_threads.rs',
     'crates/latent-wasmtime/tests/local_service/fixture.rs',
     'crates/latent-wasmtime/tests/local_service/packages.rs',
@@ -82,7 +87,7 @@ def prepare(output: Path, transformer: Path, wasm_tools: Path):
             (logs / f'{ordinal:02d}.{stream}.txt').write_bytes(getattr(result, stream))
         require(result.returncode == 0, 'owned-child-source-command-failed')
         return result.stdout
-    require(command([wasm_tools, '--version']).strip() == b'wasm-tools 1.254.0', 'owned-child-tool-version')
+    require(routing.pinned_wasm_tools_version(command([wasm_tools, '--version'])), 'owned-child-tool-version')
     wit = output / 'wit'; wit.mkdir()
     (output / 'core.wat').write_bytes((ROOT / CORE).read_bytes())
     (output / 'world.wit').write_bytes((ROOT / WORLD).read_bytes())

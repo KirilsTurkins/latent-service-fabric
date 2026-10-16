@@ -1926,6 +1926,7 @@ dependencies = [
  "cap-fs-ext",
  "cap-std",
  "latent-artifacts",
+ "latent-component-threading",
  "latent-contracts",
  "latent-core",
  "latent-manifest",

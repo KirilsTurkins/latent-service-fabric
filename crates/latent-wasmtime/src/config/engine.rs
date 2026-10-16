@@ -76,6 +76,7 @@ impl CompilerEngineSettings {
         // The explicit profile authenticates each final component before any
         // compile/load, including disposable compiler workers and cache reuse.
         engine_config.wasm_component_model_threading(self.owned_native_threads());
+        engine_config.wasm_component_model_async_stackful(self.owned_native_threads());
         // Security upgrades must not admit new, unqualified value shapes.
         engine_config.wasm_component_model_fixed_length_lists(false);
         // Preserve the ordinary profile's pre-Java typed function references.

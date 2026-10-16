@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_owned_native_threads.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add bounded signed canonical-child WAT mechanism qualification with exact successful native inventory, unchanged-source checks, no Rust standard runtime claim and all original gates preserved.",
+  "reviewReason": "Preserve every existing gate and finite deadline; add exact authenticated child proofs, typed pre-signing and grant negatives, native contract controls and pinned release version evidence.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8eb550b968cf1e4bdcc1882a20039bd3c378e7793628d2f209eeba83c439a955"
+  "sha256": "8c10fe71603140d9831803b9374a010af71655e2607a230e08ee830cf865c3ff"
 }

@@ -13,9 +13,12 @@ fn component(root: &std::path::Path, name: &str) -> Vec<u8> {
     std::fs::read(root.join(name)).unwrap()
 }
 
-async fn configured(bytes: Vec<u8>, grant: bool) -> (tempfile::TempDir, Fixture) {
+async fn configured(
+    bytes: Vec<u8>,
+    grant: bool,
+) -> Result<(tempfile::TempDir, Fixture), latent_core::PlatformError> {
     let root = tempfile::tempdir().unwrap();
-    let caller = packages::owned_native_threads(bytes);
+    let caller = packages::owned_native_threads(bytes).unwrap();
     let callee = packages::callee(42);
     let signers = package::Signers::new(latent_signing::PROVENANCE_BUILD_TYPE);
     let mut uploads = Vec::new();
@@ -65,8 +68,8 @@ async fn configured(bytes: Vec<u8>, grant: bool) -> (tempfile::TempDir, Fixture)
         },
         grant,
     )
-    .await;
-    (root, fixture)
+    .await?;
+    Ok((root, fixture))
 }
 
 #[tokio::test]
@@ -77,7 +80,7 @@ async fn signed_canonical_children_use_distinct_original_tasks_and_physical_stac
             .expect("prepare the explicit canonical-child mechanism fixture"),
     );
     let bytes = component(&root, "owned.wasm");
-    let (_root, f) = configured(bytes.clone(), true).await;
+    let (_root, f) = configured(bytes.clone(), true).await.unwrap();
     // The second successful call consumes the prepared cache in a fresh Store.
     for (mode, calls) in [
         (0, 5),
@@ -102,7 +105,7 @@ async fn signed_canonical_children_use_distinct_original_tasks_and_physical_stac
                 [42]
             );
             assert!(result.consumption.cpu_fuel > 0);
-            assert!(result.consumption.memory_bytes >= 256 * 1024 + 2 * (256 * 1024 + 4096));
+            assert!(result.consumption.peak_memory_bytes >= 256 * 1024 + 2 * (256 * 1024 + 4096));
         } else {
             let error = failure(receipt);
             if mode == 2 {
@@ -123,23 +126,17 @@ async fn signed_canonical_children_use_distinct_original_tasks_and_physical_stac
             "owned-canonical-child mode={mode} calls={calls} all-original-owners-retired=true"
         );
     }
-    let (_denied_root, denied) = configured(bytes, false).await;
-    let receipt = denied
-        .manager
-        .start(denied.request("canonical-child-missing-native-grant", 0))
-        .unwrap()
-        .await;
-    assert_eq!(failure(receipt).code, PlatformErrorCode::PermissionDenied);
-    denied.idle().await;
+    let Err(error) = configured(bytes, false).await else {
+        panic!("missing Native grant must be denied before factory or Store construction");
+    };
+    assert_eq!(error.code, PlatformErrorCode::PermissionDenied);
     for name in ["unwrapped.wasm", "modified-shim.wasm"] {
-        let (_invalid_root, invalid) = configured(component(&root, name), true).await;
-        let receipt = invalid
-            .manager
-            .start(invalid.request("canonical-child-unverified", 0))
-            .unwrap()
-            .await;
-        assert_eq!(failure(receipt).code, PlatformErrorCode::CorruptArtifact);
-        assert_eq!(invalid.backend.resource_snapshot().stores_created, 0);
-        invalid.idle().await;
+        let before = f.backend.resource_snapshot().stores_created;
+        let Err(error) = packages::owned_native_threads(component(&root, name)) else {
+            panic!("an unverified canonical graph must never reach signing");
+        };
+        assert_eq!(error.message, "unverified-native-thread-component");
+        assert_eq!(f.backend.resource_snapshot().stores_created, before);
+        f.idle().await;
     }
 }

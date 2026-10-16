@@ -111,6 +111,9 @@ jobs:
       - name: Qualify authenticated canonical child admission and physical retirement
         run: |
           python3 -m unittest tools.tests.test_owned_native_threads
+          cargo test --locked -p latent-policy --lib capability::tests::native_start_policy_recognizes_only_exact_contract_operation_and_context_scope -- --exact
+          cargo test --locked -p latent-packaging --lib semantics::wasm::tests::canonical_creator_without_proof_never_opens_descriptive_threading_parser -- --exact
+          cargo test --locked -p latent-packaging --lib semantics::host::tests::native_runtime_recognition_matches_exact_v6_wit_without_changing_current_installation -- --exact
           cargo test --locked -p latent-wasmtime --lib component_threading::tests:: -- --test-threads=1
           cargo test --locked -p latent-wasmtime --lib config::engine::tests:: -- --test-threads=1
           cargo test --locked -p latent-core --lib activation_runtime::tests::task_support_admission_checks_original_kind_and_liveness_under_the_same_lock -- --exact

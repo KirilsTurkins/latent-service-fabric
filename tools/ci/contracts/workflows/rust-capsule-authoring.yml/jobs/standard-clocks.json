@@ -71,7 +71,7 @@
       },
       {
         "name": "Qualify authenticated canonical child admission and physical retirement",
-        "run": "python3 -m unittest tools.tests.test_owned_native_threads\ncargo test --locked -p latent-wasmtime --lib component_threading::tests:: -- --test-threads=1\ncargo test --locked -p latent-wasmtime --lib config::engine::tests:: -- --test-threads=1\ncargo test --locked -p latent-core --lib activation_runtime::tests::task_support_admission_checks_original_kind_and_liveness_under_the_same_lock -- --exact\ncargo test --locked -p latent-wasmtime --test local_service --no-run --message-format=json > \"$RUNNER_TEMP/owned-native-child-native.json\"\npython3 tools/qualify_owned_native_threads.py --transformer \"$RUNNER_TEMP/rust-stack-transform/debug/latent-rust-std-stack-source-transform\" --wasm-tools \"$(command -v wasm-tools)\" --cargo-inventory \"$RUNNER_TEMP/owned-native-child-native.json\" --native-target \"$GITHUB_WORKSPACE/target\" --output \"$RUNNER_TEMP/owned-native-children\"\n"
+        "run": "python3 -m unittest tools.tests.test_owned_native_threads\ncargo test --locked -p latent-policy --lib capability::tests::native_start_policy_recognizes_only_exact_contract_operation_and_context_scope -- --exact\ncargo test --locked -p latent-packaging --lib semantics::wasm::tests::canonical_creator_without_proof_never_opens_descriptive_threading_parser -- --exact\ncargo test --locked -p latent-packaging --lib semantics::host::tests::native_runtime_recognition_matches_exact_v6_wit_without_changing_current_installation -- --exact\ncargo test --locked -p latent-wasmtime --lib component_threading::tests:: -- --test-threads=1\ncargo test --locked -p latent-wasmtime --lib config::engine::tests:: -- --test-threads=1\ncargo test --locked -p latent-core --lib activation_runtime::tests::task_support_admission_checks_original_kind_and_liveness_under_the_same_lock -- --exact\ncargo test --locked -p latent-wasmtime --test local_service --no-run --message-format=json > \"$RUNNER_TEMP/owned-native-child-native.json\"\npython3 tools/qualify_owned_native_threads.py --transformer \"$RUNNER_TEMP/rust-stack-transform/debug/latent-rust-std-stack-source-transform\" --wasm-tools \"$(command -v wasm-tools)\" --cargo-inventory \"$RUNNER_TEMP/owned-native-child-native.json\" --native-target \"$GITHUB_WORKSPACE/target\" --output \"$RUNNER_TEMP/owned-native-children\"\n"
       },
       {
         "if": "always()",
@@ -89,7 +89,7 @@
   },
   "jobId": "standard-clocks",
   "kind": "job",
-  "reviewReason": "Preserve every existing clock/sysroot/TLS/routing/native-stack command and deadline; add exact host-verifier unit controls plus current signed canonical-child mechanism campaign and bounded evidence.",
+  "reviewReason": "Preserve every existing gate and finite deadline; add exact authenticated child proofs, typed pre-signing and grant negatives, native contract controls and pinned release version evidence.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

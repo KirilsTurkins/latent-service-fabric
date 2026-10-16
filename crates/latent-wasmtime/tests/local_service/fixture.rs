@@ -272,8 +272,8 @@ impl Fixture {
         ),
         limits: latent_core::activation_runtime::RuntimeLimits,
         grant_native: bool,
-    ) -> Self {
-        Self::with_packages_and_load(
+    ) -> Result<Self, PlatformError> {
+        Self::try_with_packages_and_load(
             1,
             false,
             true,
@@ -310,7 +310,6 @@ impl Fixture {
         .await
     }
     #[expect(
-        clippy::too_many_lines,
         clippy::too_many_arguments,
         reason = "one explicit real catalog, broker and node ownership composition for integration tests"
     )]
@@ -335,6 +334,47 @@ impl Fixture {
             Box<latent_streams::StreamProviderConfig>,
         >,
     ) -> Self {
+        Self::try_with_packages_and_load(
+            cells,
+            foreign,
+            permit_target,
+            audit,
+            provided,
+            load,
+            identities,
+            activation_runtime,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            outbound_streams,
+        )
+        .await
+        .unwrap()
+    }
+    #[expect(
+        clippy::too_many_lines,
+        clippy::too_many_arguments,
+        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
+    )]
+    async fn try_with_packages_and_load(
+        cells: u32,
+        foreign: bool,
+        permit_target: bool,
+        audit: Option<latent_audit::AuditHandle>,
+        provided: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        )>,
+        load: Arc<dyn NodeLoadSource>,
+        identities: Option<RuntimeIdentities>,
+        activation_runtime: Option<(
+            latent_core::activation_runtime::RuntimeLimits,
+            u64,
+            Option<bool>,
+        )>,
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
+            Box<latent_streams::StreamProviderConfig>,
+        >,
+    ) -> Result<Self, PlatformError> {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let stream_enabled = outbound_streams.is_some();
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
@@ -678,8 +718,7 @@ impl Fixture {
                 providers,
                 latent_control_store::bindings::BindingLimits::default(),
             )
-            .await
-            .unwrap();
+            .await?;
         store.commit_binding_update(update).unwrap();
         let capabilities = Arc::new(ActivationCapabilityRuntime::new(
             broker.clone(),
@@ -768,7 +807,7 @@ impl Fixture {
                 recorder: observations.child_failures.clone(),
             }))
             .unwrap();
-        Self {
+        Ok(Self {
             identities,
             _guest_runtime: guest_runtime,
             manager,
@@ -788,7 +827,7 @@ impl Fixture {
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             streams,
             _root: root,
-        }
+        })
     }
     pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
         let mut request = admission_fixture::request(id);
