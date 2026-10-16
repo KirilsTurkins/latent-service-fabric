@@ -1,0 +1,101 @@
+{
+  "cases": [
+    "PromiseLibraryInputs.test_acquisition_expired_deadline_precedes_network_or_output",
+    "PromiseLibraryInputs.test_all_members_are_validated_before_any_regular_source_is_extracted",
+    "PromiseLibraryInputs.test_extracted_byte_member_count_and_original_deadline_bounds_fail_closed",
+    "PromiseLibraryInputs.test_installed_header_requires_exact_owned_regular_target_bytes",
+    "PromiseLibraryInputs.test_normal_regular_carrier_preserves_original_bytes",
+    "PromiseLibraryInputs.test_post_build_archive_recheck_accepts_original_and_rejects_same_size_mutation",
+    "PromiseLibraryInputs.test_streamed_source_requires_exact_length_and_digest_before_use"
+  ],
+  "guards": {
+    "PromiseLibraryInputs.test_acquisition_expired_deadline_precedes_network_or_output": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:320d20b0b2154456eec2cfa1ab58d5a000649d7061c9a546573667b94935c5da",
+        "class:setup-sha256:f67b852b53213a6cc972354570945392f6767dcc0f1c3bac86437a7c69004dc2"
+      ],
+      "skipSites": []
+    },
+    "PromiseLibraryInputs.test_all_members_are_validated_before_any_regular_source_is_extracted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:320d20b0b2154456eec2cfa1ab58d5a000649d7061c9a546573667b94935c5da",
+        "class:setup-sha256:f67b852b53213a6cc972354570945392f6767dcc0f1c3bac86437a7c69004dc2"
+      ],
+      "skipSites": []
+    },
+    "PromiseLibraryInputs.test_extracted_byte_member_count_and_original_deadline_bounds_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:320d20b0b2154456eec2cfa1ab58d5a000649d7061c9a546573667b94935c5da",
+        "class:setup-sha256:f67b852b53213a6cc972354570945392f6767dcc0f1c3bac86437a7c69004dc2"
+      ],
+      "skipSites": []
+    },
+    "PromiseLibraryInputs.test_installed_header_requires_exact_owned_regular_target_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:320d20b0b2154456eec2cfa1ab58d5a000649d7061c9a546573667b94935c5da",
+        "class:setup-sha256:f67b852b53213a6cc972354570945392f6767dcc0f1c3bac86437a7c69004dc2"
+      ],
+      "skipSites": []
+    },
+    "PromiseLibraryInputs.test_normal_regular_carrier_preserves_original_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:320d20b0b2154456eec2cfa1ab58d5a000649d7061c9a546573667b94935c5da",
+        "class:setup-sha256:f67b852b53213a6cc972354570945392f6767dcc0f1c3bac86437a7c69004dc2"
+      ],
+      "skipSites": []
+    },
+    "PromiseLibraryInputs.test_post_build_archive_recheck_accepts_original_and_rejects_same_size_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:320d20b0b2154456eec2cfa1ab58d5a000649d7061c9a546573667b94935c5da",
+        "class:setup-sha256:f67b852b53213a6cc972354570945392f6767dcc0f1c3bac86437a7c69004dc2"
+      ],
+      "skipSites": []
+    },
+    "PromiseLibraryInputs.test_streamed_source_requires_exact_length_and_digest_before_use": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:320d20b0b2154456eec2cfa1ab58d5a000649d7061c9a546573667b94935c5da",
+        "class:setup-sha256:f67b852b53213a6cc972354570945392f6767dcc0f1c3bac86437a7c69004dc2"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_promise_library.py",
+  "reviewReason": "Keep all six acquisition/archive cases and authenticate exact normal installed-header target bytes inside the owned build without weakening regular-file capture",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
