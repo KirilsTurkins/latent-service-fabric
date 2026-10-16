@@ -106,6 +106,7 @@ pub struct Fixture {
     pub plan_hook: PlanHook,
     pub plan_lookup_hook: PlanLookupHook,
     pub revision: ResolvedRevision,
+    owned_native_stacks: bool,
     _provider: ProviderRegistration,
     _directory: tempfile::TempDir,
 }
@@ -297,6 +298,7 @@ impl Fixture {
             plan_hook,
             plan_lookup_hook,
             revision,
+            owned_native_stacks,
             _provider: provider,
             _directory: directory,
         }
@@ -312,8 +314,16 @@ impl Fixture {
     pub fn request(&self, id: &str) -> (ExecutionRequest, Control) {
         let id = ActivationId(id.into());
         let grant = support::budget();
-        let budget = ActivationBudget::new(
-            EffectiveActivationBudget::admit_at(
+        // Native support reserves host memory in the original Phase3 ledger.
+        // Keep the default Phase1 clock path and every finite grant unchanged.
+        let profile = if self.owned_native_stacks {
+            latent_core::BudgetProfile::Phase3
+        } else {
+            latent_core::BudgetProfile::Phase1
+        };
+        let budget = ActivationBudget::with_profile(
+            EffectiveActivationBudget::admit_profile_at(
+                profile,
                 &grant,
                 &grant,
                 &grant,
@@ -321,7 +331,9 @@ impl Fixture {
                 ClockSample::system_now(),
             )
             .unwrap(),
-        );
+            profile,
+        )
+        .unwrap();
         let mut request = support::request(
             self.prepared.clone(),
             &id,
