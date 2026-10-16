@@ -1,9 +1,10 @@
 # Shared-node Java tenant isolation
 
-This candidate qualifies one ordinary Java `HttpServer` application under two
-independently admitted tenant publications on the same node. Native execution
-is pending the maintained Linux job. Source controls and JDK API compilation
-alone do not establish isolation.
+This programme tests one ordinary Java `HttpServer` application under two
+independently admitted tenant publications on the same node. Qualification
+requires the maintained Linux job's exact component, profile, native and source
+receipts, all nine actual controls and clean node retirement. Source controls
+and JDK API compilation alone do not establish isolation.
 
 The first hosted candidate compiled and validated the actual Java component,
 then failed at package assembly before signing or invocation. The fixture had
@@ -47,9 +48,9 @@ token does not authorize an HTTP handler.
 The [retained first execution](evidence/java-server-tenants-runtime-grant-boundary-2026-10-16.json)
 returned the expected foreign HTTP 403 but failed the earlier blanket no-cell
 assertion. That source-bound record distinguishes the observed lease increase
-from the before-Store refusal established by source inspection. A fresh hosted
-foreign activation receipt is still required; the examples-tenant zero-work
-receipt does not substitute for it.
+from the before-Store refusal established by source inspection. Qualification
+must include the original foreign activation, resolved pin and refusal receipt;
+the examples-tenant zero-work receipt does not substitute for it.
 
 The programme retains the original one-cell, queue, audit and provider ceilings,
 the 64 MiB application limit, one billion fuel and 120-second guest deadline.
