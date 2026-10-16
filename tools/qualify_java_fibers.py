@@ -94,6 +94,7 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     output.mkdir()
     sources = ("fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/StandardTimerMethods.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java",
@@ -304,6 +305,30 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
             "sourceInputs": inputs, "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
 
 
+def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
+    """Resolve substituted standard APIs against actual verified TeaVM models."""
+    classpath, identities = locked_model_classpath(compiler, include_platform=True)
+    output.mkdir()
+    sources = [*sorted((compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler").glob("*.java")),
+        compiler.sdk / "fibers/conformance/compiler/StandardTimerModelControl.java"]
+    sources += [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
+                for name in ("Timer", "TimerTask")]
+    sources += [compiler.sdk / ("fibers/conformance/compiler/standard-timer-control/" + name)
+                for name in ("dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/Activation.java")]
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in sources}
+    compiler.run("standard-timer-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
+                 "-d", output, *sources)
+    result = compiler.run("standard-timer-model-control", "java", "-Xmx256m", "-cp",
+        str(output) + os.pathsep + classpath, "dev.latent.guest.runtime.compiler.StandardTimerModelControl").strip()
+    if result != ("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;"
+                  "resolved-method-and-field-types;unsupported-no-fallback;models=3"):
+        raise ValueError("Java standard timer model control did not complete")
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError("Java timer model control inputs changed during execution")
+    return {"status": "actual-locked-classlib-model-passed", "models": 3, "jarDigests": identities,
+            "sourceInputs": inputs, "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
+
+
 def recipe_inputs() -> dict[str, str]:
     paths = [Path(__file__), *sorted((ROOT / "tools/java_guest").glob("*.py")),
              ROOT / "tools/stage_runtime_wit.py", ROOT / "tools/rust_capsule_project.py",
@@ -350,6 +375,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         report["completableSource"] = completable_source_control(compiler, output / "completable-source")
         if fixture == "timers":
             report["standardTimerSource"] = standard_timer_source_control(compiler, output / "standard-timer-source")
+            report["standardTimerModel"] = standard_timer_model_control(compiler, output / "standard-timer-model")
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True)
         report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")

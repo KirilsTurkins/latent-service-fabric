@@ -323,6 +323,30 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
             compiler.run.assert_not_called()
 
 
+class StandardTimerModelIntegrity(unittest.TestCase):
+    def test_changed_locked_tooling_cannot_enter_timer_model_loading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            jars[0].write_bytes(b"changed compiler class model")
+            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+                fibers.standard_timer_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_partial_identity_proof_cannot_qualify_timer_model(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            for name in ("fibers/compiler", "fibers/dev/latent/guest/runtime/util",
+                         "fibers/conformance/compiler"):
+                shutil.copytree(fibers.ROOT / "sdk/java-guest" / name, compiler.sdk / name)
+            compiler.run.side_effect = ["", "STANDARD_TIMER_MODEL_CONTROL PASS models=3"]
+            with self.assertRaisesRegex(ValueError, "timer model control did not complete"):
+                fibers.standard_timer_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
+
 class CompletableSourceIntegrity(unittest.TestCase):
     @staticmethod
     def fixture(root):

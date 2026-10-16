@@ -2,8 +2,10 @@
 
 This candidate extends `teavm-activation-fibers-v1` with ordinary
 `java.util.Timer` and `java.util.TimerTask`. Application imports and callback
-source remain unchanged. The maintained compiler substitutes the exact standard
-classes for every caller; it does not recognize approved application packages.
+source remain unchanged. The maintained compiler installs the owned timer bodies
+on TeaVM's existing canonical standard classes for every caller; it does not
+recognize approved application packages. It validates the pinned class-library
+layout before changing either model and preserves the SDK source models.
 
 Each timer starts one managed logical Java worker. Its accepted queue entries
 hold `queued-work` owners, and the timer holds an executor owner. Timed waits use
@@ -34,7 +36,10 @@ A separate host source control maps only a private copy's imports to the actual
 SDK timer sources. It uses a strict private owner ledger to check queue-admission
 rollback, cancelled-task removal and real worker retirement. Those declarations
 never enter the component. Three passing source runs establish source behavior;
-they do not establish Wasm execution or host cleanup.
+they do not establish Wasm execution or host cleanup. A further control reads the
+actual verified TeaVM models without initializing application or port classes.
+It checks standard API and private helper identities, method and field reference
+closure, unsupported members, and original-layout and repeated-port negatives.
 
 The selected signed test
 `signed_java_standard_timers_recur_cancel_and_drain_owned_workers` checks exact
@@ -53,7 +58,8 @@ signed runtime log are retained even on failure.
 ## Current evidence and remaining scope
 
 Reference JDK 25.0.3 and SDK host source controls passed three times locally on
-2026-10-16. Component compilation and signed execution of this candidate are
+2026-10-16. The actual locked model control also passed with the ten tooling JARs
+verified against the existing compiler lock. Component compilation and signed execution of this candidate are
 pending the maintained Linux gate. This page makes no passing guest claim.
 
 This slice does not complete issue #741. Fiber-aware pending host I/O, two

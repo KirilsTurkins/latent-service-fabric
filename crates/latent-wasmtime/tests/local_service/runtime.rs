@@ -185,6 +185,11 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         );
         assert_eq!(record["standardTimerSource"]["iterations"], 3);
         assert_eq!(
+            record["standardTimerModel"]["status"],
+            "actual-locked-classlib-model-passed"
+        );
+        assert_eq!(record["standardTimerModel"]["models"], 3);
+        assert_eq!(
             record["standardTimerSource"]["componentExecutionPerformed"],
             false
         );

@@ -58,7 +58,9 @@ public final class RuntimePlugin implements TeaVMPlugin {
     }
 
     private void transform(ClassHolder cls, ClassHolderTransformerContext context) {
+        StandardTimerMethods.transform(cls, context);
         normalizeOwnedConcurrentReferences(cls);
+        normalizeOwnedTimerReferences(cls);
         TimeUnitMethods.transform(cls, context);
         ThrowableInitialization.transform(cls);
         MonitorContinuations.transform(cls);
@@ -170,6 +172,21 @@ public final class RuntimePlugin implements TeaVMPlugin {
         // captured application/library bytecode retains its standard symbols.
         ClassHolder normalized = new ClassRefsRenamer(new ReferenceCache(), RuntimePlugin::concurrentReference).rename(cls);
         if (normalized != cls) throw new IllegalStateException("unexpected-owned-runtime-class-alias");
+    }
+
+    private static String timerReference(String name) {
+        if (name.equals("java.util.Timer$Entry")) return "dev.latent.guest.runtime.util.Timer$Entry";
+        for (String api : new String[] {"Timer", "TimerTask"})
+            if (name.equals("dev.latent.guest.runtime.util." + api)) return "java.util." + api;
+        return name;
+    }
+
+    private static void normalizeOwnedTimerReferences(ClassHolder cls) {
+        String name = cls.getName();
+        if (!name.equals("java.util.Timer") && !name.equals("java.util.TimerTask")
+                && !name.equals("dev.latent.guest.runtime.util.Timer$Entry")) return;
+        ClassHolder normalized = new ClassRefsRenamer(new ReferenceCache(), RuntimePlugin::timerReference).rename(cls);
+        if (normalized != cls) throw new IllegalStateException("unexpected-owned-timer-class-alias");
     }
 
     static void threadMethod(MethodHolder method, Program program) {
