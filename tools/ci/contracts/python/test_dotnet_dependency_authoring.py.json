@@ -1,0 +1,257 @@
+{
+  "cases": [
+    "DotnetDependencyAuthoring.test_candidate_cannot_overwrite_any_source_or_existing_attempt",
+    "DotnetDependencyAuthoring.test_candidate_write_failure_restores_previous_accepted_state",
+    "DotnetDependencyAuthoring.test_candidate_write_failure_rolls_back_new_native_state",
+    "DotnetDependencyAuthoring.test_cli_failure_receipt_redacts_untrusted_native_error_and_does_not_retry",
+    "DotnetDependencyAuthoring.test_declaration_change_invalidates_accepted_graph_until_new_resolution_review",
+    "DotnetDependencyAuthoring.test_delivered_recipe_includes_dependency_owner_and_frontend_input_closure",
+    "DotnetDependencyAuthoring.test_exact_edits_preserve_sdk_and_accepted_lock_without_native_execution",
+    "DotnetDependencyAuthoring.test_failed_restore_does_not_mutate_accepted_manifest_or_native_graph",
+    "DotnetDependencyAuthoring.test_helper_drift_during_restore_prevents_all_publication",
+    "DotnetDependencyAuthoring.test_missing_or_tampered_transitive_original_blocks_review",
+    "DotnetDependencyAuthoring.test_native_review_checks_actual_original_format_mount_size_and_edges",
+    "DotnetDependencyAuthoring.test_nested_owner_captures_rebased_native_locks_without_inner_shadow",
+    "DotnetDependencyAuthoring.test_normal_frontend_test_watch_arguments_preserve_selections_and_uncertain_exit",
+    "DotnetDependencyAuthoring.test_resolve_capture_requires_exact_review_then_verifies_offline_originals",
+    "DotnetDependencyAuthoring.test_rollback_preserves_concurrent_user_native_edit",
+    "DotnetDependencyAuthoring.test_sdk_drift_between_publications_rolls_back_owned_graph_bytes",
+    "DotnetDependencyAuthoring.test_sdk_or_descriptor_drift_blocks_transaction",
+    "DotnetDependencyAuthoring.test_sdk_package_and_nonexact_version_edits_fail_before_writes",
+    "DotnetDependencyAuthoring.test_source_drift_during_restore_prevents_all_publication"
+  ],
+  "guards": {
+    "DotnetDependencyAuthoring.test_candidate_cannot_overwrite_any_source_or_existing_attempt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_candidate_write_failure_restores_previous_accepted_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_candidate_write_failure_rolls_back_new_native_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_cli_failure_receipt_redacts_untrusted_native_error_and_does_not_retry": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_declaration_change_invalidates_accepted_graph_until_new_resolution_review": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_delivered_recipe_includes_dependency_owner_and_frontend_input_closure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_exact_edits_preserve_sdk_and_accepted_lock_without_native_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_failed_restore_does_not_mutate_accepted_manifest_or_native_graph": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_helper_drift_during_restore_prevents_all_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_missing_or_tampered_transitive_original_blocks_review": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_native_review_checks_actual_original_format_mount_size_and_edges": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_nested_owner_captures_rebased_native_locks_without_inner_shadow": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_normal_frontend_test_watch_arguments_preserve_selections_and_uncertain_exit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_resolve_capture_requires_exact_review_then_verifies_offline_originals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_rollback_preserves_concurrent_user_native_edit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_sdk_drift_between_publications_rolls_back_owned_graph_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_sdk_or_descriptor_drift_blocks_transaction": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_sdk_package_and_nonexact_version_edits_fail_before_writes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    },
+    "DotnetDependencyAuthoring.test_source_drift_during_restore_prevents_all_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a3e41bf2c38dcf17561e5db2fae537cade3461b5743160971178a33b106954ac",
+        "class:setup-sha256:aa477021f9bf218cab1ddd61882585fc4f5a140211d6baee39b23f4002580173"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dotnet_dependency_authoring.py",
+  "reviewReason": "Preserve 18 NuGet authoring/transaction controls and add forged original format/mount/size/transitive-edge rejection before exact review",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

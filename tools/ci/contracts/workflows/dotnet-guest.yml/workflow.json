@@ -32,6 +32,7 @@
           "tools/dotnet_guest/**",
           "tools/dotnet_capsule.py",
           "tools/dotnet_application_dependencies.py",
+          "tools/dotnet_dependency_authoring.py",
           "tools/dotnet_dependency_fixture.py",
           "tools/dotnet_compiler_isolation.py",
           "tools/application_dependenc*.py",
@@ -45,6 +46,7 @@
           "tools/tests/test_dotnet_http_errors.py",
           "tools/probe_dotnet_http_errors.py",
           "tools/tests/test_dotnet_application_dependencies.py",
+          "tools/tests/test_dotnet_dependency_authoring.py",
           "docs/component-development/dotnet-authoring.md",
           "docs/component-development/dotnet-dependencies.md",
           "crates/latent-signing/**",
@@ -67,7 +69,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Retain existing qualification jobs and exact resource evidence artifacts",
+  "reviewReason": "Select the new NuGet owner and source controls with the existing NativeAOT workflow; preserve policy and required job",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

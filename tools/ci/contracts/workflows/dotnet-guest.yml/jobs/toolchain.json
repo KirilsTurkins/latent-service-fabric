@@ -103,6 +103,10 @@
         "run": "python3 -m unittest tools.tests.test_dotnet_http_errors\npython3 tools/probe_dotnet_http_errors.py \\\n  --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" \\\n  --output \"$RUNNER_TEMP/dotnet-http-error-port\"\n"
       },
       {
+        "name": "Test exact NuGet authoring and transactional review",
+        "run": "python3 -m unittest tools.tests.test_dotnet_dependency_authoring"
+      },
+      {
         "name": "Test captured NuGet selection and compiler isolation",
         "run": "LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_dotnet_application_dependencies tools.tests.test_captured_compiler_isolation\n"
       },
@@ -157,7 +161,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Add standard resource qualification while retaining existing NativeAOT and signed guest commands",
+  "reviewReason": "Preserve all existing NativeAOT commands and 75-minute deadline; add normal NuGet authoring controls before unchanged native qualification",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

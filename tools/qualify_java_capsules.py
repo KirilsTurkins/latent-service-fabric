@@ -23,6 +23,7 @@ from tools.java_server_project import create_server
 from tools.java_server_node import run as server_workflow
 from tools.java_standard_http_project import project as standard_http_project
 from tools.java_standard_http_node import run as standard_http_workflow
+from tools.java_standard_http_library import qualify as standard_library_workflow
 from tools.phase3_resource_identity import file_identity, inventory, source_identity
 from tools.qualify_rust_capsules import HELPERS, guide
 from tools.run_rust_capsule_workflow import run as node_workflow
@@ -38,7 +39,8 @@ JAVA_HELPERS = (*HELPERS, "java_capsule.py", "java_capsule_project.py", "java_ca
     "java_standard_http_project.py", "java_standard_http_node.py", "java_standard_http_peer.py",
     "standard_http/peer.py", "standard_http/protocol.py", "standard_http/vectors.py", "standard_http/observations.py",
     "static_api/node.py",
-    "../examples/java-standard-http/Capsule.java", "../examples/java-standard-http/world.wit")
+    "../examples/java-standard-http/Capsule.java", "../examples/java-standard-http/world.wit",
+    "java_standard_http_library.py", "../examples/java-http-request/Capsule.java")
 
 
 def inputs():
@@ -131,6 +133,9 @@ def qualify(output: Path, wasi_sdk: Path):
         result['standardHttp'] = standard_http_workflow(standard_artifact, {
             'latent': binaries['latent'], 'latentd': binaries['latentd'],
             'capsule_authoring': binaries['examples/capsule_authoring']}, output/'standard-http-node', deadline=commands.deadline)
+        stage = 'unchanged-default-http-client'
+        result['standardHttpLibrary'] = standard_library_workflow(commands, binaries, wasi_sdk,
+            output/'standard-http-library')
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node", language="java")
         stage = "printed-guide"

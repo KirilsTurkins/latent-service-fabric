@@ -21,7 +21,7 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
 
 BUILD_TYPE = "https://latent.dev/build/go-capsule/v1"
 RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsule_build.py",
-          "tools/go_guest/compiler.py", "tools/go_guest/runtime.py", "tools/go_guest/activation.py", "tools/go_guest/sdk.py", "tools/rust_capsule_project.py",
+          "tools/go_guest/compiler.py", "tools/go_guest/runtime.py", "tools/go_guest/activation.py", "tools/go_guest/checkpoints.py", "tools/go_guest/sdk.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
@@ -69,20 +69,21 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands = Commands(work, output, build_environment(temporary))
             stage = "application-dependencies"
             closure = prepare(observed.dependency_root, work, output, "go")
-            compiler = Compiler(temporary / "compiler", work / "vendor/lsf/sdk/go-guest", commands,
-                                offline_cache=offline_cache, source_root=project_path / "src", application_closure=closure)
-            materials = list(compiler.materials.values())
-            paths = {"contracts-tool": checked_path(contracts_tool)}
-            if packager is not None:
-                paths["packager"] = checked_path(packager)
-            materials.extend(file_identity(path, name) for name, path in paths.items())
-            stage = "compile"
             runtime_profile = project.get('runtimeProfile', 'go-component-async-v1')
             if closure is not None:
                 selected = closure.lock['selection']['runtimeProfile']
                 if 'runtimeProfile' in project and selected != runtime_profile:
                     raise ValueError('Go-project-and-captured-runtime-profile-disagree')
                 runtime_profile = selected
+            compiler = Compiler(temporary / "compiler", work / "vendor/lsf/sdk/go-guest", commands,
+                                offline_cache=offline_cache, source_root=project_path / "src", application_closure=closure,
+                                runtime_profile=runtime_profile)
+            materials = list(compiler.materials.values())
+            paths = {"contracts-tool": checked_path(contracts_tool)}
+            if packager is not None:
+                paths["packager"] = checked_path(packager)
+            materials.extend(file_identity(path, name) for name, path in paths.items())
+            stage = "compile"
             component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
                                                        runtime_profile=runtime_profile)
             binding_digest = digest(json.dumps(generated, sort_keys=True, separators=(",", ":")).encode())

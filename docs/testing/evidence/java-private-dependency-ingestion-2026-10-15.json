@@ -1,0 +1,257 @@
+{
+    "schemaVersion":  "latent.java-private-library-ingestion.native-controls.v1",
+    "status":  "passed",
+    "scope":  "authenticated private-Maven closure, offline actual component and ordinary signed-node execution",
+    "source":  {
+                   "parentCommit":  "97ff09ed31e234f0c5ed53f4cbbb3b8da4124345",
+                   "executionArchiveCommit":  "0b5ff6a2eea21104be774cf21900d8f4b95610d0",
+                   "privateQualifier":  {
+                                            "sha256":  "sha256:c0005cfe6cc60cdbe285ecf63be9346687f5415d817b043c0a83451f640a24d6",
+                                            "bytes":  15837
+                                        },
+                   "ordinaryQualifier":  {
+                                             "sha256":  "sha256:21a7ec54575e9a5382a192f3137f350a704445c374d610cd16500b24ebbf4e6f",
+                                             "bytes":  17672
+                                         },
+                   "nativeTuple":  {
+                                       "receipt":  {
+                                                       "sha256":  "sha256:4b4cc872d422c34bbf083f498f7a1b1fc8b81f0d3a1ef71b29be9d5d791465fc",
+                                                       "bytes":  1494
+                                                   },
+                                       "sourceHead":  "a49bbf172e08c13ed7bd5588e2323064652f9366",
+                                       "sourceTree":  "5696ad304208a902ed115f27120609fc8d4f9f04",
+                                       "tupleRole":  "ordinary-defaults",
+                                       "hostAbiProfile":  "lsf-host-abi-phase3-v5",
+                                       "wasmtimeVersion":  "48.0.6",
+                                       "binaries":  {
+                                                        "latent":  {
+                                                                       "sha256":  "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+                                                                       "bytes":  69976672,
+                                                                       "actualFeatures":  [
+
+                                                                                          ]
+                                                                   },
+                                                        "latentd":  {
+                                                                        "sha256":  "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+                                                                        "bytes":  182386208,
+                                                                        "actualFeatures":  [
+
+                                                                                           ]
+                                                                    },
+                                                        "package":  {
+                                                                        "sha256":  "sha256:c361aad3ed1aa9371e6acd657368ab216a72a66aa5fecba8b0f5d3169291940f",
+                                                                        "bytes":  19100192,
+                                                                        "actualFeatures":  [
+
+                                                                                           ]
+                                                                    },
+                                                        "capsule_contracts":  {
+                                                                                  "sha256":  "sha256:60e42c99f6286ed4e6254a05156963c2e50e543414e9fa5f108eede7bb4e397e",
+                                                                                  "bytes":  7967376,
+                                                                                  "actualFeatures":  [
+
+                                                                                                     ]
+                                                                              },
+                                                        "capsule_authoring":  {
+                                                                                  "sha256":  "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+                                                                                  "bytes":  24994784,
+                                                                                  "actualFeatures":  [
+
+                                                                                                     ]
+                                                                              }
+                                                    }
+                                   }
+               },
+    "host":  {
+                 "python":  "3.13.5",
+                 "java":  "25.0.4.1+1",
+                 "gradle":  "9.1.0",
+                 "compilationNetwork":  "Docker --network none; independently inspected",
+                 "resolver":  "fresh private Gradle home per acquisition",
+                 "compilerCache":  "exact pinned read-only modules-2; private mutable Gradle home"
+             },
+    "privateCapture":  {
+                           "nativeTuple":  {
+                                               "receipt":  {
+                                                               "sha256":  "sha256:4b4cc872d422c34bbf083f498f7a1b1fc8b81f0d3a1ef71b29be9d5d791465fc",
+                                                               "bytes":  1494
+                                                           },
+                                               "sourceHead":  "a49bbf172e08c13ed7bd5588e2323064652f9366",
+                                               "sourceTree":  "5696ad304208a902ed115f27120609fc8d4f9f04",
+                                               "tupleRole":  "ordinary-defaults",
+                                               "hostAbiProfile":  "lsf-host-abi-phase3-v5",
+                                               "wasmtimeVersion":  "48.0.6",
+                                               "binaries":  {
+                                                                "latent":  {
+                                                                               "sha256":  "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+                                                                               "bytes":  69976672,
+                                                                               "actualFeatures":  [
+
+                                                                                                  ]
+                                                                           },
+                                                                "latentd":  {
+                                                                                "sha256":  "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+                                                                                "bytes":  182386208,
+                                                                                "actualFeatures":  [
+
+                                                                                                   ]
+                                                                            },
+                                                                "package":  {
+                                                                                "sha256":  "sha256:c361aad3ed1aa9371e6acd657368ab216a72a66aa5fecba8b0f5d3169291940f",
+                                                                                "bytes":  19100192,
+                                                                                "actualFeatures":  [
+
+                                                                                                   ]
+                                                                            },
+                                                                "capsule_contracts":  {
+                                                                                          "sha256":  "sha256:60e42c99f6286ed4e6254a05156963c2e50e543414e9fa5f108eede7bb4e397e",
+                                                                                          "bytes":  7967376,
+                                                                                          "actualFeatures":  [
+
+                                                                                                             ]
+                                                                                      },
+                                                                "capsule_authoring":  {
+                                                                                          "sha256":  "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+                                                                                          "bytes":  24994784,
+                                                                                          "actualFeatures":  [
+
+                                                                                                             ]
+                                                                                      }
+                                                            }
+                                           },
+                           "coordinate":  "outside.private.owner:primary-proof:2026.10.15",
+                           "transitive":  "outside.private.owner:child-proof:2026.10.15",
+                           "controls":  [
+                                            {
+                                                "case":  "missing-credentials",
+                                                "status":  "known-failure",
+                                                "reason":  "java-maven-resolution-failed-private-diagnostics-discarded"
+                                            },
+                                            {
+                                                "case":  "wrong-credentials",
+                                                "status":  "known-failure",
+                                                "reason":  "java-maven-resolution-failed-private-diagnostics-discarded"
+                                            },
+                                            {
+                                                "case":  "incomplete-pair",
+                                                "status":  "known-failure",
+                                                "reason":  "java-registry-credential-pair-invalid"
+                                            },
+                                            {
+                                                "case":  "untrusted-CA",
+                                                "status":  "known-failure",
+                                                "reason":  "java-maven-resolution-failed-private-diagnostics-discarded"
+                                            },
+                                            {
+                                                "case":  "certificate-drift",
+                                                "status":  "known-failure",
+                                                "reason":  "dependency-native-lock-drift"
+                                            },
+                                            {
+                                                "case":  "private-JAR-drift",
+                                                "status":  "known-failure",
+                                                "reason":  "dependency-artifact-integrity"
+                                            }
+                                        ],
+                           "requests":  8,
+                           "authorizedRequests":  4,
+                           "peerReapedBeforeOfflineBuild":  true,
+                           "credentialAndPrivateKeyCapture":  false,
+                           "qualifier":  {
+                                             "sha256":  "sha256:c0005cfe6cc60cdbe285ecf63be9346687f5415d817b043c0a83451f640a24d6",
+                                             "bytes":  15837
+                                         }
+                       },
+    "negativeTransitives":  [
+                                  {
+                                      "case":  "missing-transitive",
+                                      "status":  "known-failure",
+                                      "reason":  "dependency-artifact-missing-resolve-explicitly"
+                                  },
+                                  {
+                                      "case":  "tampered-transitive",
+                                      "status":  "known-failure",
+                                      "reason":  "dependency-artifact-integrity"
+                                  }
+                              ],
+    "component":  {
+                      "sha256":  "sha256:22d6844ad1ea9c9b00d31eab89a3a2ae2c1c78986bf17e07968ded6f852ae259",
+                      "bytes":  2279668
+                  },
+    "unsignedPublicationDenied":  "permission-denied",
+    "runtimeGrantDenied":  "permission-denied",
+    "calls":  [
+                  {
+                      "activation":  "library-call-0",
+                      "exitCode":  0,
+                      "output":  [
+                                     {
+                                         "ok":  "42/53444b/KDS"
+                                     }
+                                 ],
+                      "outcomeKnown":  true,
+                      "processReaped":  true
+                  },
+                  {
+                      "activation":  "library-call-1",
+                      "exitCode":  0,
+                      "output":  [
+                                     {
+                                         "ok":  "private captured resource\n"
+                                     }
+                                 ],
+                      "outcomeKnown":  true,
+                      "processReaped":  true
+                  },
+                  {
+                      "activation":  "library-call-2",
+                      "exitCode":  3,
+                      "output":  [
+                                     {
+                                         "err":  "Please enter a name."
+                                     }
+                                 ],
+                      "outcomeKnown":  true,
+                      "processReaped":  true
+                  },
+                  {
+                      "activation":  "library-call-3",
+                      "exitCode":  0,
+                      "output":  [
+                                     {
+                                         "ok":  "42/416461/adA"
+                                     }
+                                 ],
+                      "outcomeKnown":  true,
+                      "processReaped":  true
+                  }
+              ],
+    "shutdown":  {
+                     "clean":  true,
+                     "reaped":  true
+                 },
+    "ordinaryExecutionReceipt":  {
+                                     "sha256":  "sha256:48cf194dc1ee1ec4f5d582bb1e2c1a61ed68d2dc71ca96a299337bd21add12b7",
+                                     "bytes":  2051
+                                 },
+    "precedingLocalAttempts":  [
+                                   {
+                                       "status":  "failed",
+                                       "cause":  "fixture selected cert.pem rather than native fixture server.pem",
+                                       "source":  "earlier local helper revision",
+                                       "componentExecution":  false
+                                   },
+                                   {
+                                       "status":  "failed",
+                                       "cause":  "fixture URL used IP while the native certificate selects localhost",
+                                       "source":  "earlier local helper revision",
+                                       "certificateVerificationBypassed":  false,
+                                       "componentExecution":  false
+                                   }
+                               ],
+    "remainingAcceptance":  [
+                                "installed-update-remove-watch",
+                                "trap-memory-fuel-cancellation-recovery"
+                            ],
+    "issue682Complete":  false
+}
