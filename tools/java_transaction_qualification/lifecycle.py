@@ -130,6 +130,7 @@ class Node:
             return process
         except BaseException:
             self.client.node = None
+            self.process = None
             process.close()
             self.client.evidence.write(f"node-{self.ordinal}-startup.stdout", bytes(process.buffers[0]))
             self.client.evidence.write(f"node-{self.ordinal}-startup.stderr", bytes(process.buffers[1]))

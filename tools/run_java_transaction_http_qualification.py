@@ -397,6 +397,45 @@ def failure(record, stage, error):
         record["fixedFailureReason"] = reason
 
 
+def close_owners(record, cancellation, node, peer, *, primary=None):
+    first, failures = None, []
+    with cancellation.defer():
+        for owner, process in (("node", node), ("recipient", peer)):
+            if process is None:
+                continue
+            try:
+                process.close()
+            except BaseException as error:
+                observed = {}
+                failure(observed, "cleanup", error)
+                failures.append({"owner": owner, "failureType": observed["failureType"],
+                    **({"fixedFailureReason": observed["fixedFailureReason"]}
+                       if "fixedFailureReason" in observed else {})})
+                if first is None:
+                    first = error
+        if failures:
+            record["cleanupFailures"] = failures
+    cancellation.check()
+    if first is not None and primary is None:
+        raise first
+
+
+def finalize_inventory(record, evidence, name):
+    record.pop("evidenceInventory", None)
+    try:
+        record["evidenceInventory"] = evidence.record(name, evidence.summary())
+    except BaseException as error:
+        observed = {}
+        failure(observed, "evidence-inventory", error)
+        record["evidenceFinalizationFailure"] = {
+            key: observed[key] for key in ("failedStage", "failureType", "fixedFailureReason") if key in observed}
+        if "failedStage" not in record:
+            record.update(observed)
+        record.update(passed=False, signedGuestExecutionQualified=False)
+        return False
+    return True
+
+
 def loaded_inputs(args, work):
     if getattr(args, "current_selections", None) is not None:
         from tools.java_transaction_qualification import current_campaign
@@ -476,6 +515,7 @@ def run(args):
                 record["currentHttpInstallationInputs"] = current_installation_identity(args)
             selection = {} if current_endpoint(args) is None else {"phase4": True}
             client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence, **selection)
+            primary = None
             try:
                 stage = "package"
                 package_timeout = max(1, int(min(600, deadline - time.monotonic())))
@@ -512,15 +552,13 @@ def run(args):
                 recheck_inputs(args, work, record)
                 if prepared is None:
                     record.update(passed=True, signedGuestExecutionQualified=True)
+            except BaseException as error:
+                primary = error
+                raise
             finally:
                 # Cleanup is finite and owned even when a mutation, observation
                 # or signal fails. A missing native report is never synthesized.
-                with cancellation.defer():
-                    if node is not None:
-                        node.close()
-                    if peer is not None:
-                        peer.close()
-                cancellation.check()
+                close_owners(record, cancellation, node, peer, primary=primary)
     except BaseException as error:
         failure(record, stage, error)
         # The exact original bounded subprocess/socket observations remain in
@@ -528,7 +566,7 @@ def run(args):
     finally:
         record.update(seconds=round(time.monotonic() - started, 6),
                       cliProcesses=client.calls if client else 0, measuredCases=list(evidence.cases))
-        record["evidenceInventory"] = evidence.record("inventory-staged" if prepared is not None else "inventory", evidence.summary())
+        finalize_inventory(record, evidence, "inventory-staged" if prepared is not None else "inventory")
         if prepared is not None and "failedStage" not in record:
             try:
                 record["candidate"] = staging.capture(work, original_clock, args, record, prepared, client, node, peer)
@@ -576,6 +614,7 @@ def resume(args):
                 record["diagnosticInput"] = diagnostic.observation()
             if args.recovery_helper is not None:
                 record["recoverySourceCommit"] = args.recovery_source_commit
+            primary = None
             try:
                 prior = retained["recipient"]
                 peer = lifecycle.Peer(client, staging.path(work, prior["directory"]), staging.path(work, prior["tls"]),
@@ -592,20 +631,18 @@ def resume(args):
                     "qualification-input-changed")
                 recheck_inputs(args, work, retained)
                 record.update(passed=True, signedGuestExecutionQualified=True)
+            except BaseException as error:
+                primary = error
+                raise
             finally:
-                with cancellation.defer():
-                    if node is not None:
-                        node.close()
-                    if peer is not None:
-                        peer.close()
-                cancellation.check()
+                close_owners(record, cancellation, node, peer, primary=primary)
     except BaseException as error:
         failure(record, stage, error)
     finally:
         record.update(seconds=round(time.monotonic() - started, 6), cliProcesses=client.calls if client else 0,
                       measuredCases=list(evidence.cases) if evidence else [])
         if evidence is not None and claimed:
-            record["evidenceInventory"] = evidence.record("inventory", evidence.summary())
+            finalize_inventory(record, evidence, "inventory")
             write_json(work / "campaign-resume-receipt.json", record)
     print(bounded_receipt(record))
     return 0 if record["passed"] else 1
