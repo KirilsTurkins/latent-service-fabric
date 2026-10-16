@@ -95,6 +95,17 @@ def mozconfig(output: Path, wasi: Path) -> str:
         'mk_add_options MOZ_MAKE_FLAGS=-j1\nmk_add_options AUTOCLOBBER=1\n')
 
 
+def recheck_archives(output: Path, sources: dict, identities: dict) -> None:
+    # Acquisition verifies upstream bare hex pins. The shared identity owner
+    # serializes the same digest with an explicit algorithm prefix.
+    expected = {name: {'bytes': value['bytes'], 'sha256': 'sha256:'+value['sha256']}
+                for name, value in identities.items()}
+    actual = {name: file_identity(output/(name+'.archive'), source['bytes'])
+              for name, source in sources.items()}
+    if actual != expected:
+        raise ValueError('promise-library-original-archive-changed')
+
+
 def build(output: Path) -> dict:
     if sys.platform != 'linux' or platform.machine() not in {'x86_64', 'AMD64'}:
         raise ValueError('promise-library-linux-x86-64-builder-required')
@@ -171,9 +182,7 @@ def build(output: Path) -> dict:
             raise ValueError('promise-library-derived-source-changed')
         if record['recipe'] != {name: file_identity(ROOT/name) for name in recipe_paths}:
             raise ValueError('promise-library-recipe-changed')
-        if identities != {name: file_identity(output/(name+'.archive'), source['bytes'])
-                          for name, source in SOURCES.items()}:
-            raise ValueError('promise-library-original-archive-changed')
+        recheck_archives(output, SOURCES, identities)
         record.update(status='passed', library={'path': products[0].relative_to(output).as_posix(),
             **file_identity(products[0], 512*1024**2)}, derivation=derivation,
             exportedHeader=file_identity(exported), selectedSources=before,
