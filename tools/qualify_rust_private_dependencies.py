@@ -205,8 +205,8 @@ def capture(root: Path, commands: Commands, cargo: Path) -> tuple[Path, dict]:
             code, out, err = author('resolve', app, '--candidate', candidate, '--cargo', cargo, '--registry-config', policy)
         require(code == 0 and not err, 'private-Cargo-normal-resolution-failed')
         require(all(secret not in out.encode() for secret in confidential), 'private-Cargo-public-receipt-secret')
-        captured = read_json(candidate)
-        graph = read_json(app / 'cargo-resolved.lock.json')
+        captured = read_json(candidate, dependencies.MAX_LOCK)
+        graph = read_json(app / 'cargo-resolved.lock.json', dependencies.MAX_LOCK)
         libraries = direct_libraries(graph, captured['artifacts'], {(MAIN, VERSION): 'prefix'})
         selected = {row['metadata'].get('package'): row for row in captured['artifacts']}
         require(CHILD in selected and selected[CHILD]['id'] in selected[MAIN]['dependencies'],
