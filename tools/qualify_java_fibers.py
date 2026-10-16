@@ -265,16 +265,19 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
 
 
 def recipe_inputs() -> dict[str, str]:
+    from tools.java_capsule_build import RECIPE
     paths = [Path(__file__), *sorted((ROOT / "tools/java_guest").glob("*.py")),
+             ROOT / "tools/java_fiber_library_inputs.py",
              ROOT / "tools/stage_runtime_wit.py", ROOT / "tools/rust_capsule_project.py",
              ROOT / "tools/build_observation.py", ROOT / "tools/build_process.py",
              ROOT / "tools/build_process_linux.py", ROOT / "tools/build_process_windows.py"]
+    paths += [ROOT / name for name in RECIPE]
     return {path.relative_to(ROOT).as_posix(): digest(read_file(path)) for path in paths}
 
 
 def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None,
             read_only_cache: Path | None = None, fixture="threads"):
-    if fixture not in {"threads", "completable", "fiber-io"}: raise ValueError("unknown Java fiber fixture")
+    if fixture not in {"threads", "completable", "fiber-io", "worker-libraries"}: raise ValueError("unknown Java fiber fixture")
     if offline_cache is not None and read_only_cache is not None:
         raise ValueError("Java dependency cache selections are mutually exclusive")
     output = fresh(output)
@@ -289,38 +292,49 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
     wit.write_bytes(read_file(common / "service.wit"))
     started = time.monotonic()
     before = recipe_inputs()
-    report = {"formatVersion": 1, "profile": "teavm-activation-fibers-io-v1" if fixture == "fiber-io" else "teavm-activation-fibers-v1", "qualification": "pending",
+    io_profile = fixture in {'fiber-io', 'worker-libraries'}
+    report = {"formatVersion": 1, "profile": "teavm-activation-fibers-io-v1" if io_profile else "teavm-activation-fibers-v1", "qualification": "pending",
               "status": "running", "nodeExecution": "not-run", "sourceDigest": digest(source.read_bytes()),
               "fixture": fixture}
     report["recipeInputs"] = before
     try:
         compiler = Compiler(output / "compiler", wasi_sdk, gradle=gradle, offline_cache=offline_cache,
                             read_only_cache=read_only_cache, timeout=1200)
+        library_jars, reference_jars = (), ()
+        if fixture == 'worker-libraries':
+            from tools import java_fiber_library_inputs
+            library_jars, reference_jars, report['libraries'] = java_fiber_library_inputs.capture(
+                output / 'library-inputs', gradle=gradle)
         control = output / "reference-jdk"
         control.mkdir()
         main = control / "Main.java"
         main.write_bytes(read_file(selected / "Main.java"))
         compiler.paths["javac"] = compiler.paths["java"].parent / "javac"
         reference_sources = []
-        if fixture == 'fiber-io':
+        if io_profile:
             reference_sources = [compiler.sdk / 'fibers/conformance/compiler/io-reference/dev/latent/generated/Bindings.java']
             reference_sources += [compiler.sdk / ('runtime/dev/latent/guest/' + name + '.java')
                                   for name in ('Option', 'Result', 'Unsigned64', 'Unit')]
             report['referenceKind'] = 'private-runtime-wait-reference-using-JDK-threads'
-        compiler.run("reference-jdk-compile", "javac", "-proc:none", "-d", control, source, main, *reference_sources)
+        reference_options = ['-cp', os.pathsep.join(map(str, reference_jars))] if reference_jars else []
+        compiler.run("reference-jdk-compile", "javac", "-proc:none", *reference_options, "-d", control, source, main, *reference_sources)
         report["reference"] = []
         for iteration in range(3):
-            result = compiler.run(f"reference-jdk-{iteration}", "java", "-cp", control, "Main")
+            reference_classpath = os.pathsep.join(map(str, (control, *reference_jars)))
+            result = compiler.run(f"reference-jdk-{iteration}", "java", "-cp", reference_classpath, "Main")
             if result.strip() != "42 42 42 42": raise ValueError("reference-JDK fiber observable mismatch")
             report["reference"].append({"iteration": iteration, "modes": [0, 1, 2, 3], "results": [42, 42, 42, 42]})
         report["completableSource"] = completable_source_control(compiler, output / "completable-source")
-        selection = {'fiber_io_profile': True} if fixture == 'fiber-io' else {}
+        selection = {'fiber_io_profile': True} if io_profile else {}
+        if library_jars: selection['application_classpath'] = library_jars
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True, **selection)
         report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
         report["timeunitModel"] = timeunit_model_control(compiler, output / "timeunit-model")
         report["waitFrameModel"] = wait_frame_model_control(compiler, output / "wait-frame-model")
         report["completableModel"] = completable_model_control(compiler, output / "completable-model")
+        if fixture == 'worker-libraries':
+            java_fiber_library_inputs.check(output / 'library-inputs', report['libraries'])
         compiler.check_unchanged()
         report["sdkInputs"] = {name: digest(data) for name, data in compiler.original_sdk.items()}
         report["componentDigest"] = digest(read_file(component, 64 * 1024 * 1024))
@@ -346,7 +360,7 @@ def main():
     caches = parser.add_mutually_exclusive_group()
     caches.add_argument("--offline-cache", type=Path)
     caches.add_argument("--read-only-cache", type=Path)
-    parser.add_argument("--fixture", choices=("threads", "completable", "fiber-io"), default="threads")
+    parser.add_argument("--fixture", choices=("threads", "completable", "fiber-io", "worker-libraries"), default="threads")
     args = parser.parse_args()
     prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache,
             read_only_cache=args.read_only_cache, fixture=args.fixture)

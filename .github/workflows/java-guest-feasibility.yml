@@ -197,6 +197,23 @@ jobs:
         run: |
           set -o pipefail
           python3 tools/qualify_java_capsules.py --output "$RUNNER_TEMP/java-capsule-authoring" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-capsule-authoring.log"
+      - name: Capture and compile unchanged published Java worker libraries
+        id: prepare-java-worker-libraries
+        run: |
+          python3 tools/qualify_java_fibers.py --fixture worker-libraries \
+            --output "$RUNNER_TEMP/java-worker-libraries" \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Execute signed published libraries with their default workers
+        id: signed-java-worker-libraries
+        env:
+          LSF_GUEST_SDK_LANGUAGE: java
+          LSF_JAVA_WORKER_LIBRARIES_FIXTURE: ${{ runner.temp }}/java-worker-libraries
+        run: |
+          set -o pipefail
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service \
+            runtime::signed_java_published_libraries_use_unchanged_default_workers -- \
+            --ignored --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/java-worker-libraries/signed-runtime.log"
       - name: Qualify separately signed typed Java domain through ordinary Java HTTP adapter
         run: |
           set -o pipefail
@@ -361,6 +378,21 @@ jobs:
             ${{ runner.temp }}/java-fiber-io/build/bindings/**
             ${{ runner.temp }}/java-fiber-io/build/component.wasm
             ${{ runner.temp }}/java-fiber-io/signed-runtime.log
+            ${{ runner.temp }}/java-worker-libraries/FIBERS-COMPILE.json
+            ${{ runner.temp }}/java-worker-libraries/compiler-inputs.json
+            ${{ runner.temp }}/java-worker-libraries/compiler/*.log
+            ${{ runner.temp }}/java-worker-libraries/compiler/*.command.json
+            ${{ runner.temp }}/java-worker-libraries/src/**
+            ${{ runner.temp }}/java-worker-libraries/wit/**
+            ${{ runner.temp }}/java-worker-libraries/build/runtime-profile.json
+            ${{ runner.temp }}/java-worker-libraries/build/bindings/**
+            ${{ runner.temp }}/java-worker-libraries/build/component.wasm
+            ${{ runner.temp }}/java-worker-libraries/library-inputs/candidate.json
+            ${{ runner.temp }}/java-worker-libraries/library-inputs/receipts/*.json
+            ${{ runner.temp }}/java-worker-libraries/library-inputs/application/java-dependencies.json
+            ${{ runner.temp }}/java-worker-libraries/library-inputs/application/java-resolved.lock.json
+            ${{ runner.temp }}/java-worker-libraries/library-inputs/application/latent.dependencies*.json
+            ${{ runner.temp }}/java-worker-libraries/signed-runtime.log
             ${{ runner.temp }}/java-capsule-authoring.log
             ${{ runner.temp }}/java-http-composition.log
             ${{ runner.temp }}/java-http-composition/**/*.json

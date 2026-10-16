@@ -11,8 +11,16 @@ public final class Bindings {
         public static Result<Unit, String> waitFor(Unsigned64 nanos, Option<?> continuation) {
             if (continuation.isSome() || nanos.bits() < 0 || nanos.bits() > 1_000_000_000L)
                 throw new AssertionError("bounded-reference-wait-only");
-            try { Thread.sleep(nanos.bits() / 1_000_000, (int)(nanos.bits() % 1_000_000)); }
-            catch (InterruptedException error) { throw new IllegalStateException(error); }
+            long deadline = System.nanoTime() + nanos.bits();
+            boolean interrupted = Thread.interrupted();
+            try {
+                while (true) {
+                    long remaining = deadline - System.nanoTime();
+                    if (remaining <= 0) break;
+                    try { Thread.sleep(remaining / 1_000_000, (int)(remaining % 1_000_000)); }
+                    catch (InterruptedException expected) { interrupted = true; }
+                }
+            } finally { if (interrupted) Thread.currentThread().interrupt(); }
             return Result.ok(Unit.VALUE);
         }
     }
