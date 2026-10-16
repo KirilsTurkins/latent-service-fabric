@@ -243,3 +243,9 @@ grant; the explicitly selected mechanism uses 256 KiB native stacks and three
 Task/two Native slots. Actual native execution is required before claiming this
 gate passed. This fixture executes no Rust/std source and establishes no ordinary
 thread, TLS, mutex, condition variable or executor compatibility.
+
+The [2026-10-16 mechanism evidence](../../docs/testing/evidence/rust-owned-canonical-children-2026-10-16.json)
+binds the 48 recipe inputs to revision `21e24c85`, the actual native test binary,
+three encoded components and nine signed executions. All sampled original owners
+retired in each execution; 119 focused native controls also passed. Hosted CI and
+the ordinary Rust standard-library port remain separate requirements.
