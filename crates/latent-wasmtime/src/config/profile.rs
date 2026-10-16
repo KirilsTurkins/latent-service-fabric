@@ -92,6 +92,10 @@ impl WasmtimeConfig {
                 "native-thread-profile".into(),
                 crate::host::native::PROFILE.into(),
             );
+            fields.insert(
+                "native-thread-metadata-escrow".into(),
+                crate::native_stacks::CHILD_METADATA_ESCROW.to_string(),
+            );
         }
         if let Some(limits) = self.activation_runtime {
             fields.insert(

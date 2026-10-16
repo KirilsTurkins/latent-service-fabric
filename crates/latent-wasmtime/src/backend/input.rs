@@ -80,11 +80,16 @@ impl WasmtimeBackend {
         };
         timing.backend_total_micros = elapsed_micros(started);
         self.lock_timings().insert(activation_id.0, timing);
+        // The actual invoking future and its Store have been destroyed before
+        // returning here. Release conservative cached-stack capacity before
+        // either observer publishes the final reusable proof.
+        let native_retirement_failed =
+            native_stack_observer.is_some_and(|owner| owner.after_store_dropped().is_err());
         let report = match capability_observer {
             Some(observer) => observer.after_store_dropped(outcome),
             None => ExecutionReport::reusable(outcome),
         };
-        if native_stack_observer.is_some_and(|owner| !owner.physically_retired()) {
+        if native_retirement_failed {
             ExecutionReport::quarantine(report.outcome, "native-stack-retirement-unproven")
         } else {
             report

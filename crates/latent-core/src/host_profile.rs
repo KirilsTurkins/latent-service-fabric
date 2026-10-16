@@ -34,7 +34,7 @@ impl HostInterfaceSpec {
             "latent:runtime/activation@0.1.0" => {
                 matches!(operation, "wait-for" | "wait-until" | "timer-next")
             }
-            "latent:runtime-native/threads@0.1.0" => operation == "join",
+            "latent:runtime-native/threads@0.1.0" => false,
             "latent:network/streams@0.1.0" => operation != "inspect",
             _ => self.asynchronous,
         }
@@ -321,7 +321,7 @@ const PHASE3_V6_INTERFACES: [HostInterfaceSpec; 16] = [
         package: "latent:runtime-native",
         binding: HostInterfaceBinding::Provider,
         wit: include_str!("../../../wit/platform/native-runtime/package.wit"),
-        asynchronous: true,
+        asynchronous: false,
     },
 ];
 /// Explicit native-thread support profile. The ordinary CURRENT profile stays
@@ -423,7 +423,7 @@ mod tests {
             .unwrap();
         assert_eq!(native.binding, HostInterfaceBinding::Provider);
         assert!(native.resource_types().is_empty());
-        for (operation, asynchronous) in [("start", false), ("join", true), ("reap", false)] {
+        for (operation, asynchronous) in [("start", false)] {
             assert_eq!(native.operation_is_asynchronous(operation), asynchronous);
         }
         assert!(PHASE3_HOST_ABI_V5.interface(native.interface).is_none());

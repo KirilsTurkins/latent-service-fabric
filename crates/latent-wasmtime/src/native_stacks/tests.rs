@@ -275,52 +275,37 @@ fn controlled_profile_rejects_pooling_and_absent_runtime_and_binds_compatibility
     assert!(config.validate().is_err());
 }
 
-#[tokio::test]
-async fn child_preadmission_and_exact_native_retirement_keep_original_wait_and_stack_owners() {
-    let (budget, runtime) = owners(2, 4 * 1024 * 1024);
+#[test]
+fn child_total_start_capacity_survives_logical_completion_and_releases_only_after_store_drop() {
+    let (budget, runtime) = owners(3, 4 * 1024 * 1024);
     let task = runtime.register(OwnerKind::Task, None).unwrap();
     let context =
-        StackContext::with_children(budget.clone(), runtime.clone(), 64 * 1024, 1).unwrap();
+        StackContext::with_children(budget.clone(), runtime.clone(), 64 * 1024, 2).unwrap();
     let guard = PollGuard::enter(&context);
     let root_stack = Creator.new_stack(64 * 1024, true).unwrap();
-    let child = context.reserve_child(task.token()).unwrap();
-    let before = budget.host_memory_bytes();
-    assert!(context.reserve_child(task.token()).is_err());
-    assert_eq!(budget.host_memory_bytes(), before);
-    assert_eq!(runtime.snapshot().owners[6], 2);
-    assert!(!child.physically_retired());
-    assert!(context.reap_child(child.token()).is_err());
-    child.prepare_wait(task.token()).unwrap();
-    assert!(child.prepare_wait(task.token()).is_err());
+    context.reserve_child(task.token()).unwrap();
     let child_stack = Creator.new_stack(64 * 1024, true).unwrap();
     assert!(Creator.new_stack(64 * 1024, true).is_err());
-    let mapped_charge = budget.host_memory_bytes();
-    let mut retired = Box::pin(child.changed());
-    std::future::poll_fn(|cx| {
-        assert!(retired.as_mut().poll(cx).is_pending());
-        Poll::Ready(())
-    })
-    .await;
+    context.reserve_child(task.token()).unwrap(); // A subsequent cached worker need not allocate.
+    let charged = budget.host_memory_bytes();
+    assert!(context.reserve_child(task.token()).is_err());
+    assert_eq!(budget.host_memory_bytes(), charged);
+    assert_eq!(runtime.snapshot().owners[6], 3);
+    assert!(context.after_store_dropped().is_err()); // Live mappings never refund.
     drop(child_stack);
-    retired.await;
-    assert_eq!(
-        budget.host_memory_bytes(),
-        mapped_charge - context.mapped as u64
-    );
-    assert!(child.physically_retired());
-    assert!(!child.retirement_failed());
-    assert_eq!(runtime.snapshot().owners[6], 1);
-    assert_eq!(runtime.snapshot().owners[3], 1);
-    context.reap_child(child.token()).unwrap();
-    assert!(context.child(child.token()).is_err());
-    drop(child);
-    assert_eq!(runtime.snapshot().owners[3], 0);
+    assert_eq!(runtime.snapshot().owners[6], 2);
     drop(task);
     runtime.begin_drain();
-    context.finish_logical().unwrap();
+    context.finish_logical().unwrap(); // Native infrastructure remains charged.
+    assert_eq!(runtime.snapshot().owners[6], 2);
+    context.cancel_unstarted(); // Host-state drop cannot refund accepted cached capacity.
     drop(root_stack);
-    drop(guard);
+    assert_eq!(runtime.snapshot().owners[6], 1);
+    assert!(!context.physically_retired());
+    context.after_store_dropped().unwrap(); // Only the embedder's completed StoreDrop fence.
+    assert_eq!(runtime.snapshot().owners[6], 0);
     assert!(context.physically_retired());
+    drop(guard);
     drop(context);
     drop(runtime);
     assert_eq!(budget.host_memory_bytes(), 0);

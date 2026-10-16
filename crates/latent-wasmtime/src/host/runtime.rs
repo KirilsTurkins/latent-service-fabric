@@ -31,7 +31,7 @@ const STOP_OBSERVATION: Duration = Duration::from_millis(10);
 pub(crate) struct Table {
     owners: Vec<RuntimeOwner>,
     timers: Vec<RuntimeTimer>,
-    pub(super) runtime: ActivationRuntime,
+    runtime: ActivationRuntime,
     pub(crate) native_stacks: Option<Arc<crate::native_stacks::StackContext>>,
     _allocation: HostMemoryReservation,
 }
@@ -106,7 +106,7 @@ fn table(state: &mut HostState) -> Result<&mut Table, PlatformError> {
 }
 pub(super) fn native_context(
     state: &mut HostState,
-) -> Result<(Arc<crate::native_stacks::StackContext>, ActivationRuntime), PlatformError> {
+) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
     let table = table(state)?;
     let context = table.native_stacks.clone().ok_or_else(|| {
         failure(
@@ -114,7 +114,7 @@ pub(super) fn native_context(
             "native-thread-profile-unavailable",
         )
     })?;
-    Ok((context, table.runtime.clone()))
+    Ok(context)
 }
 pub(crate) fn prepare_native_stack(
     state: &mut HostState,
