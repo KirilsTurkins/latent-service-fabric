@@ -174,7 +174,7 @@ does not refund physical Wasmtime stack capacity.
 
 The encoded-Wasm transform controls and separately executed native TLS source
 reference cases exercise these source mechanisms. They do not establish a
-rebuilt thread sysroot, whole-component canonical routing, accepted-work drain,
+rebuilt thread sysroot, accepted-work drain,
 the std thread/futex API or actual signed child execution. Those requirements
 remain open, and canonical thread creation remains disabled. The internal V2
 context prefix is recorded in [thread-abi.json](thread-abi.json); CURRENT V5 and
@@ -183,8 +183,24 @@ the frozen activation interface remain unchanged.
 The core transform uses `wasm-encoder` and `wasmparser` version 0.259.0.
 Component assembly uses the separately pinned `wasm-tools` version 1.254.0,
 whose encoded producer is `wit-component` version 0.254.0. A small explicit
-WAT module-graph probe confirms that
-normal assembly inserts a thunk table and a separate fixup module before raw
-canonical creation reaches the core import. This observation is an encoder
-check, not Rust execution or authentication of the complete component graph.
-Those routes must be checked before the canonical threading feature is enabled.
+WAT module-graph campaign uses that normal assembly and authenticates the actual
+final main/private-thunk/fixup graph. It recomputes the fixed admission body,
+requires the real imported Native start provider and a bounded original callback
+table, and rejects raw-function lifts, mutable-table escape, duplicate creation,
+parallel spawn, extra executable modules, dynamic code, repeated main/fixup
+instances, guest admission substitutes and early component start. Normal nested
+WIT interface export wrappers remain supported.
+
+`tools/qualify_rust_thread_routing.py` runs two normally encoded positive
+components and fifteen rejection controls within 180 seconds and 2 MiB of total
+command output. Every changed component must pass the actual encoder's Wasm
+validator before its verifier rejection can count as a control. Source and tool
+identities are rechecked after the campaign, and failures retain a bounded
+receipt. The maintained Rust clock job runs this additional campaign without
+removing its previous sysroot, signed clock or physical stack controls.
+
+This is a source-routing proof over transparent WAT controls, rather than a
+rebuilt ordinary Rust thread program. The verifier emits no permission or
+supported-profile claim. Production host consumption, a rebuilt thread sysroot,
+ordinary synchronization and actual signed child execution remain unfinished;
+canonical thread creation stays disabled until those requirements are met.

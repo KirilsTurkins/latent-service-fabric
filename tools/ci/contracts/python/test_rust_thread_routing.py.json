@@ -1,0 +1,32 @@
+{
+  "cases": [
+    "ThreadRoutingCampaign.test_existing_output_rejects_before_tool_or_source_consumption",
+    "ThreadRoutingCampaign.test_invalid_negative_never_reaches_verifier_or_counts_as_rejection",
+    "ThreadRoutingCampaign.test_passing_negative_requires_validation_then_exact_rejection_and_bound_binary",
+    "ThreadRoutingCampaign.test_unknown_or_ambiguous_encoder_preimages_fail_closed"
+  ],
+  "guards": {
+    "ThreadRoutingCampaign.test_existing_output_rejects_before_tool_or_source_consumption": "b5d132857b9b8dae00462623d79881ddb48ab60848a5b6c11218910e97a6895c",
+    "ThreadRoutingCampaign.test_invalid_negative_never_reaches_verifier_or_counts_as_rejection": "b5d132857b9b8dae00462623d79881ddb48ab60848a5b6c11218910e97a6895c",
+    "ThreadRoutingCampaign.test_passing_negative_requires_validation_then_exact_rejection_and_bound_binary": "b5d132857b9b8dae00462623d79881ddb48ab60848a5b6c11218910e97a6895c",
+    "ThreadRoutingCampaign.test_unknown_or_ambiguous_encoder_preimages_fail_closed": "b5d132857b9b8dae00462623d79881ddb48ab60848a5b6c11218910e97a6895c"
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_thread_routing.py",
+  "reviewReason": "Campaign integrity requires exact unique encoder preimages, fresh output, actual Wasm validation before any counted rejection, and exact verifier error with bound component identity. Source gate only, no guest execution inferred.",
+  "schemaVersion": "latent.ci.contracts.v2",
+  "guardDefinitions": {
+    "b5d132857b9b8dae00462623d79881ddb48ab60848a5b6c11218910e97a6895c": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:9883a31b4154a9cdb1b4859fff74517d9255d528365aa866f8387d9ebed19e5a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  }
+}
