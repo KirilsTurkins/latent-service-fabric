@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_c_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Fence normal down before dispatch on the original workspace; preserve uncertain failure and never retry external shutdown during observer cleanup",
+  "reviewReason": "Prevent the explicit source frontend from mutating the delivered Python SDK with bytecode; retain all watch, signing, inventory and once-only shutdown guards.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8fc4e725527c7aa8585ee3f41591aa7efd9a60df57715959cdb78c667bc14b53"
+  "sha256": "17dee043aba43be27eb06430e905adefa43e3904d7d537aa15dfd11bfed21438"
 }
