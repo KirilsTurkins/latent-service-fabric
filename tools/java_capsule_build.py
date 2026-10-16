@@ -53,6 +53,7 @@ RECIPE += java_server_source.RECIPE
 RECIPE += ("tools/java_generator_authoring.py",)
 RECIPE += java_http_client.RECIPE
 RECIPE += ("tools/application_dependency_approval.py", "tools/captured_compiler_isolation.py", "tools/java_annotation_processors.py")
+RECIPE += ("tools/java_guest/facilities.py",)
 
 
 def retain_logs(source: Path, output: Path) -> None:

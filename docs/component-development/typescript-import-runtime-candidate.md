@@ -24,6 +24,16 @@ source derivations, compiler-tool bytes and build/transpile receipts. Their
 qualification remains `unknown` and API support remains `not-evaluated`.
 An operator-provided compiler input cannot certify runtime support.
 
+The pinned SpiderMonkey derivation exports `ActivationPromiseHooks.h` through
+its normal `js/src/moz.build` header list. The exact upstream build descriptor
+is authenticated alongside the Promise implementation and object declaration;
+an unreviewed descriptor fails before patching. A source rebuild needs this
+export so the generated public include tree contains the native hook ABI.
+Regenerate source-bound engine inputs after changing the derivation. The
+[header export control](../testing/evidence/typescript-promise-header-export-2026-10-16.json)
+confirms normal header generation and the changed-source rejection; it does
+not establish a complete engine build or runtime qualification.
+
 Contributor toolkit assembly can explicitly capture a `runtime-bundle.json`
 with the named profile, exact engine and source-built splicer inputs, and
 original notices. `build_dev_guest_tools.py --typescript-runtime-inputs`
