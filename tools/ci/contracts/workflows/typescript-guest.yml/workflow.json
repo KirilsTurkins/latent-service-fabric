@@ -1,20 +1,6 @@
 {
   "kind": "workflow",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "typescript-guest-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": "TypeScript guest qualification",
     "on": {
       "pull_request": {
@@ -42,6 +28,10 @@
           "tools/application_dependenc*.py",
           "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
+          "tools/build_typescript_promise_library.py",
+          "tools/build_typescript_native_engine.py",
+          "tools/tests/test_typescript_native_build.py",
+          "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
           "tools/qualify_typescript_dependencies.py",
           "tools/tests/test_typescript_application_dependencies.py",
@@ -88,6 +78,10 @@
           "tools/application_dependenc*.py",
           "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
+          "tools/build_typescript_promise_library.py",
+          "tools/build_typescript_native_engine.py",
+          "tools/tests/test_typescript_native_build.py",
+          "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
           "tools/qualify_typescript_dependencies.py",
           "tools/tests/test_typescript_application_dependencies.py",
@@ -110,12 +104,27 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "typescript-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
-    "boundary"
+    "boundary",
+    "promise-library"
   ],
-  "reviewReason": "Union the existing integrity and normal authoring trigger paths without removing jobs, events or prior paths.",
+  "reviewReason": "Union the merged Promise source-build and npm native-authoring trigger paths and jobs, preserving both exact job definitions, all commands, original bounds and security controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
