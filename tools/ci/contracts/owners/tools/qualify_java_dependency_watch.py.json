@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Call unchanged frontend/environment/node-root production helpers directly without source evaluation; preserve real isolated/no-bytecode controls and publish only bounded scalar watch-event diagnostics, keeping all native budgets and assertions.",
+  "reviewReason": "Restrict public watch labels to exact real producer vocabularies and contain optional observer exceptions; preserve all native assertions, immutable inputs, grants, deadlines and qualification boundaries.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a81b61388366d2380e94639943ae4048e4e940b63fa6fef462add7be4484d11e"
+  "sha256": "1cf756a8adb33ec878f8fa828eae2b0bc9cb0f319018c7101ec96c430e4aad62"
 }

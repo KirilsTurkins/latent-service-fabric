@@ -36,21 +36,53 @@ def write(path: Path, value) -> None:
 
 
 def public_watch_events(values):
+    allowed = {
+        'event': {'edit-failed', 'deployed', 'post-deploy-tests',
+                  'post-deploy-tests-not-selected', 'build-superseded'},
+        'phase': {'source', 'build', 'deploy', 'test'},
+        'code': {'success', 'composition-checks-failed', 'required-tests-failed',
+                 'interrupted-inspect-workspace-status', 'invalid-or-unavailable-input-inspect-doctor',
+                 'source-unavailable-during-edit', 'guest-build-superseded',
+                 'workspace-stopped-before-deployment', 'workspace-recipe-trust-required',
+                 'signed-test-build-changed-use-new-workspace',
+                 'guest-build-failed-last-deployment-retained', 'guest-build-cleanup-unconfirmed',
+                 'build-deadline-exceeded', 'language-adapter-result-invalid',
+                 'guest-tool-digest-mismatch', 'guest-tool-inventory-changed-during-build',
+                 'guest-tool-unrecorded-directory', 'private-state-directory-required',
+                 'source-file-unavailable-or-unsafe', 'compiler-process-failed',
+                 'compiler-cleanup-unconfirmed', 'compiler-cancelled', 'compiler-input-or-build-failed'},
+    }
     result = []
     for value in values[-32:]:
         if not isinstance(value, dict):
             continue
-        row = {}
-        for key in ('event', 'phase', 'code'):
-            selected = value.get(key)
-            if (isinstance(selected, str) and 0 < len(selected) <= 160
-                    and all(char in 'abcdefghijklmnopqrstuvwxyz0123456789-' for char in selected)):
-                row[key] = selected
+        row = {key: value[key] for key, vocabulary in allowed.items()
+               if isinstance(value.get(key), str) and value[key] in vocabulary}
         if type(value.get('uncertain')) is bool:
             row['uncertain'] = value['uncertain']
         if row:
             result.append(row)
     return result
+
+
+def read_watch_events(events):
+    raw = events.read_bytes() if events.exists() else b''
+    require(len(raw) <= 4 * 1024 * 1024, 'watch-event-byte-limit')
+    result = []
+    for line in raw.splitlines():
+        try:
+            result.append(json.loads(line))
+        except ValueError:
+            pass  # A bounded observer can overlap a partial output write.
+    return result
+
+
+def add_public_watch_events(report, observe):
+    """Collect optional diagnostics without replacing qualification/cleanup errors."""
+    try:
+        report['watchEvents'] = public_watch_events(observe())
+    except Exception:
+        report['watchEvents'] = []
 
 
 def public_projection(report, *, qualifier, helper, source_probe):
@@ -175,15 +207,7 @@ def main() -> int:
                                '--workspace', workspace_name, *arguments])
 
     def observed():
-        raw = events.read_bytes() if events.exists() else b''
-        require(len(raw) <= 4 * 1024 * 1024, 'watch-event-byte-limit')
-        result = []
-        for line in raw.splitlines():
-            try:
-                result.append(json.loads(line))
-            except ValueError:
-                pass  # A bounded observer can overlap a partial output write.
-        return result
+        return read_watch_events(events)
 
     def await_event(offset, predicate, label, timeout=1000):
         deadline = min(began + 2400, time.monotonic() + timeout)
@@ -420,10 +444,7 @@ public final class Capsule implements Bindings.Exports {
                     # Preserve the original command failure; failed observer
                     # retirement cannot establish a clean node shutdown.
                     report['observerCleanup'] = 'unconfirmed'
-        try:
-            report['watchEvents'] = public_watch_events(observed())
-        except (OSError, ValueError):
-            report['watchEvents'] = []
+        add_public_watch_events(report, observed)
         report['durationSeconds'] = round(time.monotonic() - began, 6)
         write(root / 'qualification.json', report)
         write(root / 'public-qualification.json', public_projection(report,

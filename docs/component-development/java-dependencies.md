@@ -224,14 +224,16 @@ asset layers and `resource-index.json`, which binds the source inventory,
 dependency lock and resulting component. Resource names, count, per-file bytes
 and aggregate bytes have fixed limits; ambiguous names and duplicate lookup
 resources fail. The index preserves opaque bytes and grants no filesystem or
-scratch access. This packaging observation does not establish Java runtime
-lookup. TeaVM's C class-library resource implementation and ordinary
-`Class.getResourceAsStream`/`ClassLoader.getResourceAsStream` calls still require
-emitted-component qualification.
+scratch access. The [maintained ingestion control](../testing/java-library-ingestion.md)
+also compiles and signs a JAR resource fixture, then invokes its actual
+`Class.getResourceAsStream` lookup on the ordinary node. This establishes that
+selected resource path; other lookup APIs, including
+`ClassLoader.getResourceAsStream`, require their own emitted-component controls.
 
 This delivers captured JAR ingestion; it does not independently qualify every
-Java library API. Actual classpath lookup, reflection/native/runtime compatibility,
-signed-node library execution and resource/cleanup acceptance still require
+Java library API. The maintained controls cover their selected signed-node
+library/resource paths and cleanup, with separate concrete reflection/native
+failure controls. Additional library APIs and runtime behavior need their own
 emitted-component tests. Runtime concurrency and default HTTP profiles have their
 own implementation and qualification tickets. No host JVM service is deployed.
 

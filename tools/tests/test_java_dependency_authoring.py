@@ -439,5 +439,88 @@ class JavaWatchPublicBoundary(unittest.TestCase):
                          owned / '.lsf-dev/owned-workspace')
 
 
+    def test_public_watch_events_omit_credential_shaped_values_and_keep_closed_producer_labels(self):
+        import ast
+        import inspect
+        from tools.qualify_java_dependency_watch import public_watch_events
+        observed = public_watch_events([
+            None, [], 'private-source',
+            {'event': 'edit-failed', 'phase': 'build', 'code': 'workspace-recipe-trust-required',
+             'uncertain': False, 'private': 'token-secret'},
+            {'event': 'token-secret', 'phase': 'a' * 64, 'code': 'token-secret'},
+            {'event': 'a' * 64, 'phase': 'token-secret', 'code': 'a' * 64, 'uncertain': 1},
+            {'event': [], 'phase': {}, 'code': None, 'uncertain': True},
+        ])
+        self.assertEqual(observed, [
+            {'event': 'edit-failed', 'phase': 'build', 'code': 'workspace-recipe-trust-required',
+             'uncertain': False}, {'uncertain': True}])
+        self.assertNotIn('token-secret', json.dumps(observed))
+        self.assertNotIn('a' * 64, json.dumps(observed))
+        tree = ast.parse(inspect.getsource(public_watch_events))
+        definitions = [node for node in ast.walk(tree) if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == 'allowed' for target in node.targets)]
+        self.assertEqual(len(definitions), 1)
+        allowed = ast.literal_eval(definitions[0].value)
+        self.assertEqual(set(allowed), {'event', 'phase', 'code'})
+        self.assertEqual(tuple(len(allowed[key]) for key in ('event', 'phase', 'code')), (5, 4, 23))
+        root = Path(__file__).resolve().parents[2]
+        actual = set()
+        for name in ('tools/dev_workflow/cli.py', 'tools/dev_workflow/watch.py',
+                     'tools/dev_workflow/build.py', 'tools/dev_workflow/build_client.py',
+                     'tools/dev_workflow/node_test_signing.py', 'tools/dev_workflow/tool_inventory.py',
+                     'tools/dev_workflow/paths.py', 'tools/dev_guest_recipe.py'):
+            actual.update(node.value for node in ast.walk(ast.parse((root / name).read_text()))
+                if isinstance(node, ast.Constant) and isinstance(node.value, str))
+        self.assertLessEqual(set().union(*allowed.values()), actual)
+
+    def test_optional_observer_errors_preserve_original_exception_identity(self):
+        from tools.qualify_java_dependency_watch import add_public_watch_events
+        for kind in (ValueError, OSError, RecursionError, RuntimeError):
+            with self.subTest(observer=kind.__name__):
+                original = ValueError('initial-build-failed')
+                report = {'passed': False, 'failure': str(original)}
+                def broken_observer():
+                    raise kind('private-observer-details')
+                with self.assertRaises(ValueError) as observed:
+                    try:
+                        raise original
+                    finally:
+                        add_public_watch_events(report, broken_observer)
+                self.assertIs(observed.exception, original)
+                self.assertEqual(report, {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': []})
+
+    def test_bounded_deeply_nested_actual_event_file_preserves_original_failure(self):
+        from tools.qualify_java_dependency_watch import add_public_watch_events, read_watch_events
+        with tempfile.TemporaryDirectory() as temporary:
+            events = Path(temporary) / 'events.jsonl'
+            raw = b'[' * 3000 + b'0' + b']' * 3000 + b'\n'
+            self.assertLess(len(raw), 4 * 1024 * 1024)
+            events.write_bytes(raw)
+            with self.assertRaises(RecursionError):
+                read_watch_events(events)
+            original = RuntimeError('original-qualification-failure')
+            report = {'passed': False, 'failure': 'initial-build-failed'}
+            with self.assertRaises(RuntimeError) as observed:
+                try:
+                    raise original
+                finally:
+                    add_public_watch_events(report, lambda: read_watch_events(events))
+            self.assertIs(observed.exception, original)
+            self.assertEqual(report, {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': []})
+
+    def test_event_reader_keeps_existing_byte_limit_partial_line_and_missing_file_contract(self):
+        from tools.qualify_java_dependency_watch import add_public_watch_events, read_watch_events
+        with tempfile.TemporaryDirectory() as temporary:
+            events = Path(temporary) / 'events.jsonl'
+            self.assertEqual(read_watch_events(events), [])
+            events.write_bytes(b'{"code":"success"}\n{"partial":')
+            self.assertEqual(read_watch_events(events), [{'code': 'success'}])
+            report = {'passed': True}
+            add_public_watch_events(report, lambda: read_watch_events(events))
+            self.assertEqual(report, {'passed': True, 'watchEvents': [{'code': 'success'}]})
+            events.write_bytes(b'x' * (4 * 1024 * 1024 + 1))
+            with self.assertRaisesRegex(ValueError, 'watch-event-byte-limit'):
+                read_watch_events(events)
+
 if __name__ == '__main__':
     unittest.main()

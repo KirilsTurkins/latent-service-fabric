@@ -1,82 +1,67 @@
 {
-  "schemaVersion": "latent.ci.contracts.v2",
-  "kind": "python",
-  "reviewReason": "Execute the generated source frontend under adversarial Python settings; preserve every original case, fixture, decorator and skip guard.",
-  "module": "tools/tests/test_java_dependency_authoring.py",
-  "cases": [
-    "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode",
-    "JavaDependencyAuthoring.test_actual_cli_captures_reviews_and_rebuilds_local_transitives_without_a_host_jvm",
-    "JavaDependencyAuthoring.test_actual_source_frontend_preserves_uncertain_return_and_one_dispatch",
-    "JavaDependencyAuthoring.test_candidates_cannot_overwrite_any_source_sdk_or_reviewed_lock",
-    "JavaDependencyAuthoring.test_cas_tamper_is_rejected_before_review_or_materialization",
-    "JavaDependencyAuthoring.test_duplicate_coordinate_repository_credential_slot_and_dynamic_versions_fail_without_edits",
-    "JavaDependencyAuthoring.test_exact_candidate_review_rejects_tamper_and_preserves_prior_lock",
-    "JavaDependencyAuthoring.test_inner_descriptor_shadow_denies_every_edit_test_and_watch_before_dispatch",
-    "JavaDependencyAuthoring.test_inside_project_jar_is_accepted_only_with_exact_declaration_and_reviewed_bytes",
-    "JavaDependencyAuthoring.test_maven_add_exclusion_update_and_remove_keep_sdk_and_reviewed_lock_immutable",
-    "JavaDependencyAuthoring.test_missing_transitive_never_publishes_resolution_or_candidate",
-    "JavaDependencyAuthoring.test_native_graph_identity_and_local_declaration_edits_require_fresh_resolution",
-    "JavaDependencyAuthoring.test_nested_capture_binds_outer_lock_native_inputs_and_both_entrypoints",
-    "JavaDependencyAuthoring.test_original_jar_mutation_during_capture_keeps_all_previous_reviewed_inputs",
-    "JavaDependencyAuthoring.test_private_urls_and_failure_receipts_never_echo_credentials",
-    "JavaDependencyAuthoring.test_sdk_drift_is_rejected_before_any_dependency_edit_or_resolver_execution",
-    "JavaDependencyAuthoring.test_staged_recipe_runs_local_capture_and_review_without_checkout_imports",
-    "JavaDependencyAuthoring.test_teavm_application_host_provider_is_denied_before_declaration_write",
-    "JavaDependencyAuthoring.test_undeclared_inside_project_jar_and_build_plugins_remain_denied",
-    "JavaWatchPublicBoundary.test_public_projection_preserves_failure_and_cleanup_without_raw_workspace_material",
-    "JavaWatchPublicBoundary.test_qualifier_uses_current_private_account_home_and_node_root",
-    "JavaWatchShutdown.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed",
-    "JavaWatchShutdown.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved"
-  ],
-  "guards": {
-    "JavaDependencyAuthoring.test_actual_cli_captures_reviews_and_rebuilds_local_transitives_without_a_host_jvm": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_maven_add_exclusion_update_and_remove_keep_sdk_and_reviewed_lock_immutable": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_exact_candidate_review_rejects_tamper_and_preserves_prior_lock": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_cas_tamper_is_rejected_before_review_or_materialization": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_missing_transitive_never_publishes_resolution_or_candidate": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_original_jar_mutation_during_capture_keeps_all_previous_reviewed_inputs": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_inside_project_jar_is_accepted_only_with_exact_declaration_and_reviewed_bytes": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_undeclared_inside_project_jar_and_build_plugins_remain_denied": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_teavm_application_host_provider_is_denied_before_declaration_write": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_candidates_cannot_overwrite_any_source_sdk_or_reviewed_lock": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_sdk_drift_is_rejected_before_any_dependency_edit_or_resolver_execution": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_duplicate_coordinate_repository_credential_slot_and_dynamic_versions_fail_without_edits": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_private_urls_and_failure_receipts_never_echo_credentials": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_native_graph_identity_and_local_declaration_edits_require_fresh_resolution": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_nested_capture_binds_outer_lock_native_inputs_and_both_entrypoints": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_inner_descriptor_shadow_denies_every_edit_test_and_watch_before_dispatch": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_actual_source_frontend_preserves_uncertain_return_and_one_dispatch": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaDependencyAuthoring.test_staged_recipe_runs_local_capture_and_review_without_checkout_imports": "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
-    "JavaWatchShutdown.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved": "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
-    "JavaWatchShutdown.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed": "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
-    "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode": "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
-    "JavaWatchPublicBoundary.test_qualifier_uses_current_private_account_home_and_node_root": "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
-    "JavaWatchPublicBoundary.test_public_projection_preserves_failure_and_cleanup_without_raw_workspace_material": "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d"
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Add four adversarial public diagnostic controls for credential-shaped labels, observer error identity, real bounded nested JSON, and unchanged reader limits; preserve every original case and guard.",
+  "module":"tools/tests/test_java_dependency_authoring.py",
+  "cases":["FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode","JavaDependencyAuthoring.test_actual_cli_captures_reviews_and_rebuilds_local_transitives_without_a_host_jvm","JavaDependencyAuthoring.test_actual_source_frontend_preserves_uncertain_return_and_one_dispatch","JavaDependencyAuthoring.test_candidates_cannot_overwrite_any_source_sdk_or_reviewed_lock","JavaDependencyAuthoring.test_cas_tamper_is_rejected_before_review_or_materialization","JavaDependencyAuthoring.test_duplicate_coordinate_repository_credential_slot_and_dynamic_versions_fail_without_edits","JavaDependencyAuthoring.test_exact_candidate_review_rejects_tamper_and_preserves_prior_lock","JavaDependencyAuthoring.test_inner_descriptor_shadow_denies_every_edit_test_and_watch_before_dispatch","JavaDependencyAuthoring.test_inside_project_jar_is_accepted_only_with_exact_declaration_and_reviewed_bytes","JavaDependencyAuthoring.test_maven_add_exclusion_update_and_remove_keep_sdk_and_reviewed_lock_immutable","JavaDependencyAuthoring.test_missing_transitive_never_publishes_resolution_or_candidate","JavaDependencyAuthoring.test_native_graph_identity_and_local_declaration_edits_require_fresh_resolution","JavaDependencyAuthoring.test_nested_capture_binds_outer_lock_native_inputs_and_both_entrypoints","JavaDependencyAuthoring.test_original_jar_mutation_during_capture_keeps_all_previous_reviewed_inputs","JavaDependencyAuthoring.test_private_urls_and_failure_receipts_never_echo_credentials","JavaDependencyAuthoring.test_sdk_drift_is_rejected_before_any_dependency_edit_or_resolver_execution","JavaDependencyAuthoring.test_staged_recipe_runs_local_capture_and_review_without_checkout_imports","JavaDependencyAuthoring.test_teavm_application_host_provider_is_denied_before_declaration_write","JavaDependencyAuthoring.test_undeclared_inside_project_jar_and_build_plugins_remain_denied","JavaWatchPublicBoundary.test_bounded_deeply_nested_actual_event_file_preserves_original_failure","JavaWatchPublicBoundary.test_event_reader_keeps_existing_byte_limit_partial_line_and_missing_file_contract","JavaWatchPublicBoundary.test_optional_observer_errors_preserve_original_exception_identity","JavaWatchPublicBoundary.test_public_projection_preserves_failure_and_cleanup_without_raw_workspace_material","JavaWatchPublicBoundary.test_public_watch_events_omit_credential_shaped_values_and_keep_closed_producer_labels","JavaWatchPublicBoundary.test_qualifier_uses_current_private_account_home_and_node_root","JavaWatchShutdown.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed","JavaWatchShutdown.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved"],
+  "guards":{
+    "JavaDependencyAuthoring.test_actual_cli_captures_reviews_and_rebuilds_local_transitives_without_a_host_jvm":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_maven_add_exclusion_update_and_remove_keep_sdk_and_reviewed_lock_immutable":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_exact_candidate_review_rejects_tamper_and_preserves_prior_lock":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_cas_tamper_is_rejected_before_review_or_materialization":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_missing_transitive_never_publishes_resolution_or_candidate":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_original_jar_mutation_during_capture_keeps_all_previous_reviewed_inputs":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_inside_project_jar_is_accepted_only_with_exact_declaration_and_reviewed_bytes":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_undeclared_inside_project_jar_and_build_plugins_remain_denied":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_teavm_application_host_provider_is_denied_before_declaration_write":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_candidates_cannot_overwrite_any_source_sdk_or_reviewed_lock":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_sdk_drift_is_rejected_before_any_dependency_edit_or_resolver_execution":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_duplicate_coordinate_repository_credential_slot_and_dynamic_versions_fail_without_edits":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_private_urls_and_failure_receipts_never_echo_credentials":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_native_graph_identity_and_local_declaration_edits_require_fresh_resolution":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_nested_capture_binds_outer_lock_native_inputs_and_both_entrypoints":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_inner_descriptor_shadow_denies_every_edit_test_and_watch_before_dispatch":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_actual_source_frontend_preserves_uncertain_return_and_one_dispatch":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaDependencyAuthoring.test_staged_recipe_runs_local_capture_and_review_without_checkout_imports":
+      "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168",
+    "JavaWatchShutdown.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved":
+      "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
+    "JavaWatchShutdown.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed":
+      "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
+    "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode":
+      "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
+    "JavaWatchPublicBoundary.test_public_projection_preserves_failure_and_cleanup_without_raw_workspace_material":
+      "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
+    "JavaWatchPublicBoundary.test_qualifier_uses_current_private_account_home_and_node_root":
+      "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
+    "JavaWatchPublicBoundary.test_public_watch_events_omit_credential_shaped_values_and_keep_closed_producer_labels":
+      "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
+    "JavaWatchPublicBoundary.test_optional_observer_errors_preserve_original_exception_identity":
+      "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
+    "JavaWatchPublicBoundary.test_bounded_deeply_nested_actual_event_file_preserves_original_failure":
+      "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d",
+    "JavaWatchPublicBoundary.test_event_reader_keeps_existing_byte_limit_partial_line_and_missing_file_contract":
+      "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d"
   },
-  "guardDefinitions": {
-    "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:65d81cde08feebb78ed4cd303f1e4df720d89bf75fef41849c00ef5f78792919",
-        "class:setup-sha256:6631432e0e20d912efef11b8fabd0b0402b9d713870f36eff34b571f56fb3a2b"
-      ]
-    },
-    "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "skipSites": [],
-      "fixtureGuards": [
-        "module:setup-sha256:65d81cde08feebb78ed4cd303f1e4df720d89bf75fef41849c00ef5f78792919",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ]
-    }
+  "guardDefinitions":{
+    "68ddbab474a29b80bbe4c8989dca2459e0cced41446953131b694c4b51423168":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:65d81cde08feebb78ed4cd303f1e4df720d89bf75fef41849c00ef5f78792919","class:setup-sha256:6631432e0e20d912efef11b8fabd0b0402b9d713870f36eff34b571f56fb3a2b"]},
+    "2e815ffd82f492d6fe07f473a13e09063387385fcf9118252fe4dea3a57cf74d":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:65d81cde08feebb78ed4cd303f1e4df720d89bf75fef41849c00ef5f78792919","class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"]}
   }
 }
