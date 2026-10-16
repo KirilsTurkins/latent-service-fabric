@@ -110,7 +110,8 @@ def diagnose(fixture: Path, output: Path) -> dict:
     # original cache paths. Production files are never rewritten or copied in
     # full, and registry/dependency compilation is reused. This job never saves
     # the subsequently diagnostic target cache, nor runs acceptance after it.
-    command = [sandbox, '--unshare-net', '--die-with-parent', '--new-session', '--bind', '/', '/']
+    command = [sandbox, '--unshare-all', '--die-with-parent', '--new-session', '--bind', '/', '/',
+               '--proc', '/proc', '--dev', '/dev']
     for private, original in overlays:
         command += ['--ro-bind', str(private), str(original)]
     command += ['--chdir', str(ROOT), cargo, '--config', '.cargo/managed-guest.toml', 'test',

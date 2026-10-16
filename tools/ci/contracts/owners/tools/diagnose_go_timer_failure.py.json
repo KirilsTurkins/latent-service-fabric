@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_timer_failure.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind bounded failure-only observer; three private read-only source overlays, numeric Wasm offsets/sanitized symbols only, no production mutation or acceptance replacement",
+  "reviewReason": "Use the already qualified all-namespace bubblewrap setup with private proc/dev mounts; preserve finite parsed Wasm-only observer, read-only source copies and all acceptance boundaries.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d0262f992026e8aba59a0f62ee8c37a85b560619a49a8af57c37f3fdbfb68eea"
+  "sha256": "eb7ea1b1addece05f2dea83c486504820c866338f81ac900efc7b1fde4b47cfc"
 }
