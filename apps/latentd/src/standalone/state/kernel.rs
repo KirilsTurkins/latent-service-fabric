@@ -98,6 +98,29 @@ impl StateKernel {
             && effects.command_admission_source().check_liveness().is_ok()
     }
 
+    fn accept_adapters(
+        &self,
+        adapter_clock: &AdapterClock,
+        effects: &EffectRuntime,
+    ) -> Result<(), PlatformError> {
+        // Adapters retain only a once-bound projection of this exact admitted
+        // clock. No provider is accepted before this binding and cutover.
+        adapter_clock
+            .bind(Arc::clone(&self.clock))
+            .inspect_err(|error| record_platform(Stage::AdapterClockBinding, error))
+            .and_then(|()| platform(Stage::StateKernelReadiness, self.check_ready(effects)))
+            .and_then(|()| {
+                self.namespaces
+                    .uses_native_capacity(&self.native)
+                    .then_some(())
+                    .ok_or_else(|| {
+                        let failure = super::unavailable();
+                        record_platform(Stage::NamespaceNativeCapacity, &failure);
+                        failure
+                    })
+            })
+    }
+
     /// The early empty authority in `bootstrap` is the same owner already
     /// attached to the original artifact and policy rejection observers. This
     /// method installs no rule from configuration or a retained policy stamp.
@@ -131,10 +154,7 @@ impl StateKernel {
             Ok(preparation) => preparation,
             Err(failure) => {
                 drop(namespaces);
-                super::super::startup_observation::record_platform(
-                    super::super::startup_observation::Stage::StateOperations,
-                    &failure,
-                );
+                record_platform(Stage::StateOperations, &failure);
                 retire_failed_bootstrap(bootstrap).await;
                 return Err(failure);
             }
@@ -191,10 +211,7 @@ impl StateKernel {
         let (mut effects, clock) = match protected {
             Ok(protected) => protected,
             Err(failure) => {
-                super::super::startup_observation::record_platform(
-                    super::super::startup_observation::Stage::EffectDispatcher,
-                    &failure,
-                );
+                record_platform(Stage::EffectDispatcher, &failure);
                 drop(namespaces);
                 retire_failed_bootstrap(bootstrap).await;
                 return Err(failure);
@@ -209,23 +226,7 @@ impl StateKernel {
             maintenance: Arc::new(latent_commit::atomic::ResultMaintenanceOwner::default()),
             bootstrap: Some(bootstrap),
         };
-        // Adapters retain only a once-bound projection of this exact admitted
-        // clock. No provider is accepted before this binding and cutover.
-        let acceptance = adapter_clock
-            .bind(Arc::clone(&kernel.clock))
-            .inspect_err(|error| record_platform(Stage::AdapterClockBinding, error))
-            .and_then(|()| platform(Stage::StateKernelReadiness, kernel.check_ready(&effects)))
-            .and_then(|()| {
-                kernel
-                    .namespaces
-                    .uses_native_capacity(&kernel.native)
-                    .then_some(())
-                    .ok_or_else(|| {
-                        let failure = super::unavailable();
-                        record_platform(Stage::NamespaceNativeCapacity, &failure);
-                        failure
-                    })
-            });
+        let acceptance = kernel.accept_adapters(adapter_clock, &effects);
         if let Err(failure) = acceptance {
             let _retirement = effects.shutdown(deadline).await;
             drop(effects);
