@@ -19,7 +19,8 @@
     "bindingIdentity": "actual startup configuration digest and epoch, restricted to write",
     "capabilityPolicy": "separate explicit standard-stdio policy, after both original admission-denial controls",
     "productionAdmissionChanged": false,
-    "adapterChanged": false
+    "adapterChanged": false,
+    "budgetProbe": "Use legal 256-byte messages to reach aggregate exhaustion; separately reject 257-byte host messages and the 4097-byte adapter overflow."
   },
   "sourceControls": {
     "capturedProfileAndLibraryTests": 13,

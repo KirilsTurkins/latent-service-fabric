@@ -44,12 +44,14 @@ int standard_log_probe(unsigned mode) {
     if (mode == 3) return __wasi_fd_write(1, &vector, 17, &written) == __WASI_ERRNO_INVAL && written == 99;
     if (mode == 4) {
         vector.buf_len = sizeof(bytes);
+        if (__wasi_fd_write(1, &vector, 1, &written) != __WASI_ERRNO_INVAL || written != 99) return 0;
+        vector.buf_len = 257;
         return __wasi_fd_write(1, &vector, 1, &written) == __WASI_ERRNO_INVAL && written == 99;
     }
     if (mode == 5) return __imported_wasi_snapshot_preview1_fd_write(1, 0, 1, (int32_t)(uintptr_t)&written) == __WASI_ERRNO_FAULT && written == 99;
     if (mode == 6) return __imported_wasi_snapshot_preview1_fd_write(1, 0, 0, (int32_t)(uintptr_t)&written) == 0 && written == 0;
     if (mode == 7) {
-        vector.buf_len = 4096;
+        vector.buf_len = 256;
         for (unsigned i = 0; i < 64; ++i) {
             __wasi_errno_t result = __wasi_fd_write(1, &vector, 1, &written);
             if (result) return result == __WASI_ERRNO_AGAIN;
