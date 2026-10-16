@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Restore the normal frontend trust command and exact maintained trust error boundary",
+  "reviewReason": "Prevent source frontend bytecode writes to the delivered tool inventory using isolated no-bytecode interpreter flags; preserve every watch, signing and shutdown guard.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9a157c3141abef1d12e8ff5c7bb57daa08ef9946d9bac85ce79597faf9436350"
+  "sha256": "1e08372a0be1a66171dec86f969120e42eea8aff1312224dfea6df7edb2e8788"
 }
