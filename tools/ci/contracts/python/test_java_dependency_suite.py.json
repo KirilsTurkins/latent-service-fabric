@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "JavaDependencySuite.test_checkout_outputs_fail_before_creating_attempt_or_starting_native",
+    "JavaDependencySuite.test_every_tracked_tool_including_non_python_inputs_is_bound",
+    "JavaDependencySuite.test_missing_or_unknown_selected_programme_has_no_fallback_or_execution",
+    "JavaDependencySuite.test_source_inventory_has_its_own_bounded_writer_above_operator_fixture_size",
+    "JavaDependencySuite.test_unsafe_ambiguous_and_unbounded_lists_fail_before_any_file_read"
+  ],
+  "guards": {
+    "JavaDependencySuite.test_checkout_outputs_fail_before_creating_attempt_or_starting_native": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:95ddb70ccdd006f90a558e54f5825849bc113f3cf232474f2f38150007b570a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencySuite.test_every_tracked_tool_including_non_python_inputs_is_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:95ddb70ccdd006f90a558e54f5825849bc113f3cf232474f2f38150007b570a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencySuite.test_missing_or_unknown_selected_programme_has_no_fallback_or_execution": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:95ddb70ccdd006f90a558e54f5825849bc113f3cf232474f2f38150007b570a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencySuite.test_source_inventory_has_its_own_bounded_writer_above_operator_fixture_size": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:95ddb70ccdd006f90a558e54f5825849bc113f3cf232474f2f38150007b570a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaDependencySuite.test_unsafe_ambiguous_and_unbounded_lists_fail_before_any_file_read": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:95ddb70ccdd006f90a558e54f5825849bc113f3cf232474f2f38150007b570a4",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_dependency_suite.py",
+  "reviewReason": "Preserve all four original cases and guards; add only dedicated bounded source inventory writer regression",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
