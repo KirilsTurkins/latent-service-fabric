@@ -70,7 +70,10 @@ impl Pump {
     pub fn retire(action: impl FnOnce() + 'static) {
         let pump = Self::current();
         let mut retired = pump.retired.borrow_mut();
-        assert!(retired.len() < MAX_OPERATIONS, "canonical retirement owner limit");
+        assert!(
+            retired.len() < MAX_OPERATIONS,
+            "canonical retirement owner limit"
+        );
         retired.push(Box::new(action));
     }
 
@@ -83,7 +86,10 @@ impl Pump {
             let Some(action) = action else { break };
             self.enter(action);
         }
-        assert!(self.callbacks.borrow().is_empty(), "root still has accepted canonical work");
+        assert!(
+            self.callbacks.borrow().is_empty(),
+            "root still has accepted canonical work"
+        );
     }
 
     /// The v2 clone/drop contract keeps this pump alive through actual pending
@@ -184,7 +190,10 @@ impl Drop for Pump {
             self.callbacks.get_mut().is_empty(),
             "pending canonical owner destruction"
         );
-        assert!(self.retired.get_mut().is_empty(), "undrained canonical retirement owners");
+        assert!(
+            self.retired.get_mut().is_empty(),
+            "undrained canonical retirement owners"
+        );
         unsafe { waitable_set_drop(self.set) };
     }
 }
