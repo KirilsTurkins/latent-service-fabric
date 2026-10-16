@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve the original owner review boundary; review the actual merged captured source inputs, profile and compiler recipe.; bind the unchanged qualifier to its committed LF Git blob rather than a Windows CRLF representation",
+  "reviewReason": "Retain every Java stage and add one signed ordinary URLConnection provider fixture under the original qualification deadline",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "23ad325b6303360d76bc682662568e4c8ab4e583edc3b517804d01158e30ea33"
+  "sha256": "8e65ac28339b6d53c66e3808730098c7f9b3d0a769213983b9b0a2e8e2e5e649"
 }
