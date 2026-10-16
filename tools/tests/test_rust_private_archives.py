@@ -28,19 +28,24 @@ class RustPrivateArchives(unittest.TestCase):
         self.assertIsNotNone(cargo, 'Pinned Cargo is required for this native metadata control')
         with tempfile.TemporaryDirectory(prefix='private-Cargo-native-metadata-') as temporary:
             root = Path(temporary)
+            rustc = str(Path(cargo).with_name('rustc.exe' if os.name == 'nt' else 'rustc'))
             if rustup := shutil.which('rustup'):
                 selection_environment = build_environment(root)
                 selection_environment['RUSTUP_AUTO_INSTALL'] = '0'
-                located = subprocess.run([rustup, 'which', '--toolchain', '1.97.1', 'cargo'], cwd=root,
-                    env=selection_environment, capture_output=True, timeout=10)
-                self.assertEqual(located.returncode, 0, located.stderr.decode(errors='replace'))
-                cargo = located.stdout.decode().strip()
+                selected = {}
+                for tool in ('cargo', 'rustc'):
+                    located = subprocess.run([rustup, 'which', '--toolchain', '1.97.1', tool], cwd=root,
+                        env=selection_environment, capture_output=True, timeout=10)
+                    self.assertEqual(located.returncode, 0, located.stderr.decode(errors='replace'))
+                    selected[tool] = located.stdout.decode().strip()
+                cargo, rustc = selected['cargo'], selected['rustc']
             environment = build_environment(root)
             environment.update(CARGO_HOME=str(root / 'home'), HOME=str(root / 'home'), USERPROFILE=str(root / 'home'),
-                RUSTUP_TOOLCHAIN='1.97.1', RUSTUP_AUTO_INSTALL='0', CARGO_NET_OFFLINE='true')
-            version = subprocess.run([cargo, '--version'], cwd=root, env=environment, capture_output=True, timeout=10)
-            self.assertEqual(version.returncode, 0, version.stderr.decode(errors='replace'))
-            self.assertIn('1.97.1', version.stdout.decode().split())
+                RUSTC=rustc, RUSTUP_TOOLCHAIN='1.97.1', RUSTUP_AUTO_INSTALL='0', CARGO_NET_OFFLINE='true')
+            for tool in (cargo, rustc):
+                version = subprocess.run([tool, '--version'], cwd=root, env=environment, capture_output=True, timeout=10)
+                self.assertEqual(version.returncode, 0, version.stderr.decode(errors='replace'))
+                self.assertIn('1.97.1', version.stdout.decode().split())
             app = root / 'app'; (app / 'src').mkdir(parents=True)
             (app / 'src/lib.rs').write_bytes(b'pub fn value()->u32 {42}\n')
             (app / 'Cargo.toml').write_text('[package]\nname="private-lock-control"\nversion="0.1.0"\nedition="2021"\n'
