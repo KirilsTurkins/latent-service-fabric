@@ -94,6 +94,7 @@ pub fn prefix() -> String {
     assert_eq!(value, outside_qualification_macro::captured_prefix!());
     value
 }
+#[cfg_attr(target_arch = "wasm32", link(wasm_import_module = "env"))]
 extern "C" { fn outside_native_cpu() -> u32; }
 pub fn native_value() -> u32 { unsafe { outside_native_cpu() } }
 pub fn exercise(which: &str) {

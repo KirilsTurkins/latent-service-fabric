@@ -92,3 +92,33 @@ class RustDependencyFailures(unittest.TestCase):
             self.assertEqual((project / 'src/lib.rs').read_bytes(), before)
             self.assertEqual(build.call_count, 1)
             inspect.assert_not_called()
+
+    def test_actual_outside_fixture_declares_native_symbol_as_unimplemented_wasm_import(self):
+        import json
+        from tools import rust_dependency_fixture as fixture
+
+        class NativeBoundaryReached(RuntimeError):
+            pass
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = root / 'project'; (project / 'src').mkdir(parents=True)
+            descriptor = {'limits': {'wallTimeLimitMillis': 1000},
+                          'capabilities': [], 'unchanged': {'authority': 'none'}}
+            (project / 'capsule-project.json').write_text(json.dumps(descriptor), encoding='utf-8')
+            (project / 'src/lib.rs').write_bytes(
+                b'pub fn greet(name: String) { Ok(format!("Hello, {name}!")) }')
+            with patch.object(fixture.cargo_native_authoring, 'author', side_effect=NativeBoundaryReached) as native:
+                with self.assertRaises(NativeBoundaryReached):
+                    fixture.install(project, root / 'outside', root / 'unavailable-cargo')
+            native.assert_called_once()
+            self.assertEqual(native.call_args.kwargs['identity'], 'unicode-normalization')
+            source = (root / 'outside/developer-owned-library/src/lib.rs').read_text()
+            declaration = ('#[cfg_attr(target_arch = "wasm32", link(wasm_import_module = "env"))]\n'
+                           'extern "C" { fn outside_native_cpu() -> u32; }')
+            self.assertEqual(source.count(declaration), 1)
+            self.assertEqual(source.count('outside_native_cpu() -> u32;'), 1)
+            self.assertIn('pub fn native_value() -> u32 { unsafe { outside_native_cpu() } }', source)
+            self.assertNotIn('fn outside_native_cpu() -> u32 {', source)
+            self.assertEqual(json.loads((project / 'capsule-project.json').read_bytes()),
+                             {**descriptor, 'limits': {'wallTimeLimitMillis': 5000}})
