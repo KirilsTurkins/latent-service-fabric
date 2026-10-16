@@ -9,7 +9,43 @@ namespace ServiceWorld.wit.Exports.examples.dotnetStandardHttp;
 public class ApiExportsImpl : IApiExports {
     private static int calls;
 
+    private enum Phase {
+        Entry, RequestReady, SendBegun, HeadersReady, StreamReady, BodyCopied, JsonParsed, ResultReady
+    }
+
     public static string Run(uint which, string endpoint) {
+        Phase phase = Phase.Entry;
+        try {
+            return RunCore(which, endpoint, ref phase);
+        } catch (Exception error) {
+            string location = phase switch {
+                Phase.RequestReady => "request-ready",
+                Phase.SendBegun => "send-begun",
+                Phase.HeadersReady => "headers-ready",
+                Phase.StreamReady => "stream-ready",
+                Phase.BodyCopied => "body-copied",
+                Phase.JsonParsed => "json-parsed",
+                Phase.ResultReady => "result-ready",
+                _ => "entry"
+            };
+            string family = error switch {
+                PlatformNotSupportedException => "platform-not-supported",
+                ObjectDisposedException => "disposed",
+                InvalidOperationException => "invalid-operation",
+                NotSupportedException => "not-supported",
+                ArgumentException => "argument",
+                OutOfMemoryException => "out-of-memory",
+                OperationCanceledException => "cancelled",
+                HttpRequestException => "http",
+                JsonException => "json",
+                IOException => "io",
+                _ => "other"
+            };
+            return "managed-failure-v1:" + location + ":" + family;
+        }
+    }
+
+    private static string RunCore(uint which, string endpoint, ref Phase phase) {
         string prefix = (++calls) + ":";
         using var client = new HttpClient();
         using var request = new HttpRequestMessage(which == 1 ? HttpMethod.Post : HttpMethod.Get, endpoint);
@@ -20,10 +56,14 @@ public class ApiExportsImpl : IApiExports {
         }
         if (which == 3) request.Headers.TryAddWithoutValidation("Authorization", "must-not-leave-guest");
         if (which == 4) cancellation.CancelAfter(100);
+        phase = Phase.RequestReady;
         try {
+            phase = Phase.SendBegun;
             using var response = client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,
                 cancellation.Token).GetAwaiter().GetResult();
+            phase = Phase.HeadersReady;
             using var stream = response.Content.ReadAsStreamAsync(cancellation.Token).GetAwaiter().GetResult();
+            phase = Phase.StreamReady;
             if (which == 2 || which == 5) {
                 byte[] first = new byte[4];
                 int count = stream.Read(first);
@@ -34,7 +74,9 @@ public class ApiExportsImpl : IApiExports {
             }
             using var body = new MemoryStream();
             stream.CopyTo(body);
+            phase = Phase.BodyCopied;
             using var document = JsonDocument.Parse(body.ToArray());
+            phase = Phase.JsonParsed;
             var value = document.RootElement;
             string parsed;
             if (which == 1) {
@@ -55,7 +97,9 @@ public class ApiExportsImpl : IApiExports {
                     + value.GetProperty("name").GetString() + ":" + items[0].GetString() + "|"
                     + items[1].GetString() + ":" + value.GetProperty("empty").GetString();
             }
-            return prefix + (int)response.StatusCode + ":" + parsed;
+            string result = prefix + (int)response.StatusCode + ":" + parsed;
+            phase = Phase.ResultReady;
+            return result;
         } catch (OperationCanceledException) {
             return prefix + "cancelled";
         } catch (HttpRequestException) {
