@@ -116,7 +116,10 @@ If actual core-module compilation succeeds but component assembly rejects it,
 the Rust builder retains at most 64 MiB of the original core with its source
 and byte digests. Supplementary retention cannot replace the original failure.
 The captured-library qualification selects a reachable external native symbol
-and requires its exact import in the pinned tool's original-core inspection
+declared as an explicit wasm32 `env` import, without supplying an implementation
+or changing production linker flags. The observed reachable bare declaration
+failed at `rust-lld`; that earlier compiler failure cannot satisfy this component-stage
+control. The programme requires its exact import in the pinned tool's original-core inspection
 before attributing that selected path as target-incompatible. It keeps the
 original generic compatibility report and does not infer a package-wide ban,
 a native implementation, or elimination of untested paths.
