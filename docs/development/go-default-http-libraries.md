@@ -44,7 +44,7 @@ original decoder can reject malformed bytes before its deferred discard reaches
 a provider size error; that case expects its actual syntax error rather than
 inventing a later exception. Its partial-response context cancellation does not
 independently prove that headers were returned first. Requests starts that
-cancellation in its response callback. The existing independent 19-case standard
+cancellation in its response callback. The existing independent 33-case standard
 HTTP gate remains responsible for concrete transports, early close and separately
 labelled custom transports, including its after-header body cancellation case.
 
