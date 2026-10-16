@@ -1,0 +1,18 @@
+{
+  "patch": "latent.dotnet.stackful-task-wait.v1",
+  "sourceDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+  "outputDigest": "sha256:414bfd2c1b635f4602c1e6763c40c1d9d90b9ba8d75a6e405bcde58141d194bd",
+  "cecilDigest": "sha256:2590bbe9492beef92f4dc1a34513d7ddafaeb6ab91eb618b84f6ee6c2b9c46d7",
+  "method": "System.Boolean System.Threading.Tasks.Task::InternalWaitCore(System.Int32,System.Threading.CancellationToken)",
+  "originalWaitBodyDigest": "sha256:9b5bc35a1a68b80111c7eddc9cbc0903e6062d4e5e3b8f84e8f359445dd6e875",
+  "originalLoopBodyDigest": "sha256:1631857d71d2e5ecca2e22c95a6421aaecf016d9cba018412388b2d1c6646e19",
+  "originalDispatchBodyDigest": "sha256:05e0128b899121d13842a4c76993d2becaaebe2e57ecff53f1ea750ba39ba629",
+  "maximumNestedWaits": 32,
+  "finiteAndCancellableWaits": "original-unsupported",
+  "completion": "actual-task-only",
+  "exceptionPropagation": "original-TaskAwaiter",
+  "nestedTaskIdentity": "save-restore-finally",
+  "defaultClientComponentQualified": false,
+  "unchangedOriginalMethods": 44745,
+  "completeOriginalWaitRemainderPreserved": true
+}

@@ -11,7 +11,7 @@ import tempfile
 from tools.build_observation import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 from tools.dotnet_guest.sdk import install as install_sdk
-from tools.dotnet_guest import runtime, http_errors
+from tools.dotnet_guest import runtime, http_errors, task_wait
 from tools.dotnet_guest.resources import install as install_resources
 from tools.guest_compatibility_build import interface_names
 
@@ -115,6 +115,7 @@ class Compiler:
         self.roots["http-errors"] = tools / "http-errors"
         self.roots["http-errors-source"] = tools / "http-errors-source"
         self.http_error_port = None
+        self.task_wait_port = None
         self.roots.update(packages(json.loads(read_file(self.sdk / "probes/smoke/packages.lock.json")), tools / "packages",
             lambda archive: commands.run("nuget-content-hash", self.dotnet, tools / "package-hash/PackageHash.dll", archive).decode().strip()))
         self.wasi_sdk = Path(json.loads(read_file(tools / "wasi-sdk.json"))["path"]).resolve(strict=True)
@@ -235,6 +236,11 @@ class Compiler:
             self.http_error_port = http_errors.prepare(self.sdk, self.http_error_tools, self.dotnet, declared, project,
                 output, command.output, self.run,
                 protect_inputs=self.isolation.protect_inputs if self.isolation else None)
+        self.task_wait_port = None
+        if task_wait.selected(declared, receipt.get('asyncExportBridge')):
+            self.task_wait_port = task_wait.prepare(self.sdk, self.http_error_tools, self.package_cache, self.dotnet,
+                declared, receipt.get('asyncExportBridge'), project, output, command.output, self.run,
+                protect_inputs=self.isolation.protect_inputs if self.isolation else None)
         resources = install_resources(snapshot(work, exclude=("dependencies", "application-vendor")), project)
         if self.isolation is not None and resources is not None:
             self.isolation.protect_inputs(project / "Capsule.csproj")
@@ -323,6 +329,16 @@ class Compiler:
             }]
             self.generated_materials.extend((self.http_error_port.identity,
                 file_identity(command.output / "http-error-port.json", "dotnet-http-error-port", http_errors.MAX_RECEIPT)))
+        if self.task_wait_port is not None:
+            port = self.task_wait_port.finish(project, command.output)
+            self.compiler_patches.append({'name': task_wait.PROFILE, 'profile': task_wait.PROFILE,
+                'original': port['frameworkInput'], 'selected': port['derived'],
+                'selection': {key: port[key] for key in ('sourceCaptureDigest', 'targetsDigest', 'method',
+                    'maximumNestedWaits', 'completion', 'exceptionPropagation', 'nestedTaskIdentity',
+                    'originalWaitBodyDigest', 'originalLoopBodyDigest', 'originalDispatchBodyDigest',
+                    'unchangedOriginalMethods', 'completeOriginalWaitRemainderPreserved', 'nativeAotReferenceBinding')}})
+            self.generated_materials.extend((self.task_wait_port.identity,
+                file_identity(command.output / 'task-wait-port.json', 'dotnet-task-wait-port', http_errors.MAX_RECEIPT)))
         profile = runtime.select(declared, actual)
         adapter = self.runtimes[profile]
         from tools.dotnet_guest.internal_io import PROFILE as IO_PROFILE, prepare as prepare_internal_io

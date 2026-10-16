@@ -30,6 +30,8 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        if (args.Length == 4 && args[0] == "--task-wait")
+            return TaskWait.Run(args[1..]);
         try
         {
             if (args.Length != 3 || args.Any(path => path.Length is 0 or > 4096))

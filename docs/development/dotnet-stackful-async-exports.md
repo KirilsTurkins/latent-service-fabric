@@ -128,3 +128,40 @@ In particular, the current `Exchange.abort` still drops an accepted future from
 a synchronous resource destructor. A pending destructor needs a separate true
 terminal retirement/drain implementation; changing its type metadata alone does
 not qualify cancellation, disposal, physical retirement or root drain.
+
+## Joined Task wait candidate
+
+The pinned WASI CoreLib has a concrete additional boundary: direct
+`TaskAwaiter.GetResult()` enters `Task.InternalWaitCore` for a pending Task,
+and that original method throws `PlatformNotSupportedException` on WASI.
+The original first signed HTTP JSON calls still trapped without a decoded
+result. The exact CoreLib path explains a source-level failure candidate;
+the retained public trap alone does not prove its original managed exception.
+
+The selected `dotnet-stackful-task-wait-v1` derivation requires declared clock,
+typed HTTP and activation imports plus an authenticated stackful async export.
+It changes a private copy of the exact locked CoreLib. An infinite wait with a
+noncancellable wait token runs the original WASI work queue until that actual
+Task completes. The original event loop still performs its real WASI readiness
+polls. The helper saves and restores the previous main Task in `finally`,
+limits nested waits to 32, and leaves fault/cancellation propagation to the
+original TaskAwaiter. Finite waits and waits with a cancellable wait token
+retain the original unsupported path. This is a bounded joined-wait candidate,
+not complete Task, ThreadPool or detached-work compatibility.
+
+The transformer authenticates the complete CoreLib and exact original wait,
+event-loop and dispatch IL. After writing it reopens the assembly, verifies
+all 44,745 other original methods, their bodies where present, and fields, and verifies the complete
+original wait remainder behind the selected prologue. Normal compilation
+must bind exactly one derived CoreLib in both the ILC reference list and its
+actual response file. Original packages, captured sources, derived bytes and
+targets are rechecked; unselected profiles keep their original CoreLib.
+
+The [managed tool control](../testing/evidence/dotnet-task-wait-source-2026-10-16.json)
+rewrote the actual pinned assembly twice deterministically and rejected a
+whole-assembly mutation before output. It used host SDK 10.0.303 and is not
+locked Linux NativeAOT 10.0.100 or guest execution. Ten additional controls
+cover profile selection, source/target/product drift and exact reference and
+receipt binding. The unchanged 14-case signed HTTP gate, pending cancellation,
+physical retirement, budget/readiness behavior and the wider #746 runtime
+contract remain required before claiming runtime compatibility.
