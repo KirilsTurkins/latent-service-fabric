@@ -1,17 +1,17 @@
 # Java fiber host import qualification
 
-Status: candidate source and compiler-model controls pass. Actual C compilation
-and component assembly completed, but the first I/O component failed the default
-validator's feature selection. Canonical suspension and signed node execution
-remain pending the maintained Linux gate. This is one slice of [#741](https://github.com/KirilsTurkins/latent-service-fabric/issues/741),
+Status: the maintained Linux programme passed canonical suspension and signed
+node execution at source `89c7625531d16f1a3dd33408e69a4e705df1d347`.
+The finite proof below supplements the dated failures and compiler-model controls;
+it does not complete the Java runtime profile. This is one slice of [#741](https://github.com/KirilsTurkins/latent-service-fabric/issues/741),
 [#736](https://github.com/KirilsTurkins/latent-service-fabric/issues/736) and
 [#744](https://github.com/KirilsTurkins/latent-service-fabric/issues/744).
 
 The [first hosted attempt](evidence/java-fiber-host-io-failed-2026-10-16.json)
 stopped in the existing UTF-8 source control before component compilation. Its
 minimal TeaVM `Address` declaration now includes `toInt()`, matching the real
-dependency. All 9,466 original UTF-8 cases pass on JDK 25.0.3. The maintained
-Linux gate must still establish canonical suspension and signed execution.
+dependency. All 9,466 original UTF-8 cases pass on JDK 25.0.3. This dated failure
+retains its original scope; the later signed execution is recorded below.
 
 The [subsequent I/O component](evidence/java-fiber-io-validation-failed-2026-10-16.json)
 was retained from the worker-library PR's shared I/O prerequisite. Its actual
@@ -83,9 +83,21 @@ The private JDK reference interprets only the fixture's bounded runtime wait
 using JDK threads. Its three passing iterations establish the fixture's
 observables, not canonical execution. Pinned WIT/C ABI generation, compilation
 of all SDK Java sources against both selected profiles, and all four existing
-locked TeaVM class-model controls pass locally. The retained hosted C build and
-corrected static validation do not establish signed component execution; the
-fresh hosted execution remains required.
+locked TeaVM class-model controls pass locally. Those controls and the retained
+hosted C build remain distinct from actual signed component execution.
+
+The later [full Java job passed](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38967018900/job/117195890632),
+testing merge `6890f9d1b51fe08dcd2dd3398c50868cfeca452b` at the source stated
+above. The I/O component
+`sha256:c1ca2591a4858cd95d65b0c805bac3a0422e39626d1d4553b671e6bf82f63068`
+passed all four modes in three fresh activations each, with the unchanged limits
+and idle checks above. The companion activation-fiber programme passed its
+twelve mode/iteration pairs, and all twelve SDK runtime tests passed with no
+ignores. Retained receipts verify unchanged before/after inputs, 350
+authoring source paths, all 356 selected Git paths and twenty recipe inputs per
+programme. These observations bind to those exact sources and components;
+future changes to selected compiler, runtime or fixture inputs require their own
+qualification. They do not establish release installation or publication.
 
 This candidate does not complete the ordinary default HTTP client overlap,
 two unchanged published default-worker libraries, native cancellation/race and
