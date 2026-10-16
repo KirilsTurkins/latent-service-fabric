@@ -173,3 +173,247 @@ class PublicWatchEvents(unittest.TestCase):
         from tools.qualify_go_dependency_watch import public_events
         values = [{'code': 'event-' + str(index)} for index in range(40)]
         self.assertEqual(public_events(values), values[-32:])
+
+
+class PublicBuildFailures(unittest.TestCase):
+    def test_projection_retains_only_bounded_taxonomy_and_hashes_private_reason(self):
+        import hashlib
+        from tools.qualify_go_dependency_watch import public_build_failure
+        secret = '/private/source/token-secret/signing-key'
+        observed = public_build_failure({'stage': 'compile', 'reason': secret,
+            'commands': [{'stage': 'component-build', 'exitCode': 1, 'argv': [secret], 'stderr': secret}],
+            'path': secret, 'details': {'secret': secret}})
+        self.assertEqual(observed, {'stage': 'compile',
+            'reasonSha256': 'sha256:' + hashlib.sha256(secret.encode()).hexdigest(),
+            'commands': [{'stage': 'component-build', 'exitCode': 1}]})
+        self.assertNotIn(secret, str(observed))
+        self.assertEqual(public_build_failure({'stage': [], 'reason': 'x' * 4097, 'commands': secret}), {})
+        self.assertEqual(public_build_failure([]), {})
+        self.assertEqual(public_build_failure({'reason': 'FileNotFoundError'})['exceptionKind'], 'FileNotFoundError')
+        self.assertEqual(public_build_failure({'reason': 'unreviewed-go-toolchain'})['reasonCode'], 'unreviewed-go-toolchain')
+        self.assertEqual(public_build_failure({'reason': 'captured-Go-build-cannot-use-an-additional-cache'})['reasonCode'],
+                         'captured-Go-build-cannot-use-an-additional-cache')
+        self.assertNotIn('reasonCode', public_build_failure({'reason': 'token-secret'}))
+
+    def test_command_projection_retains_last_eight_and_rejects_invalid_types_or_private_paths(self):
+        from tools.qualify_go_dependency_watch import public_build_failure
+        commands = [{'stage': 'go-version', 'exitCode': index} for index in range(12)]
+        self.assertEqual(public_build_failure({'commands': commands})['commands'], commands[-8:])
+        values = [None, {'stage': [], 'exitCode': 1}, {'stage': 'x', 'exitCode': True},
+                  {'stage': 'x' * 4097, 'exitCode': 0}, {'stage': 'valid', 'exitCode': 256}]
+        self.assertEqual(public_build_failure({'commands': values}), {'commands': []})
+        unknown = public_build_failure({'commands': [{'stage': 'token-secret', 'exitCode': 1}]})
+        self.assertNotIn('token-secret', str(unknown))
+        self.assertIn('stageSha256', unknown['commands'][0])
+
+    def test_collector_reads_fixed_metadata_from_failed_owned_attempt_only(self):
+        import hashlib
+        import json
+        from tools.qualify_go_dependency_watch import collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source = root / 'builds' / ('a' * 32) / 'source'
+            output = source / 'output'; output.mkdir(parents=True, mode=0o700)
+            cache = source / 'build-cache'; cache.mkdir(mode=0o700)
+            owner = {'id': 'a' * 32, 'key': 'sha256:' + '0' * 64, 'source': 'sha256:' + '1' * 64,
+                     'recipe': 'sha256:' + '2' * 64, 'state': 'failed'}
+            (source.parent / 'attempt.json').write_text(json.dumps(owner))
+            (output / 'BUILD-FAILED.json').write_text(json.dumps({'stage': 'compile', 'reason': 'captured-input-missing'}))
+            stdout = b'{"code":"compiler-input-or-build-failed"}'
+            (cache / 'compiler-stdout.log').write_bytes(stdout)
+            secret = b'/private/source/token-secret/signing-key'
+            (cache / 'compiler-stderr.log').write_bytes(secret)
+            observed = collect_build_failures(root, 'output')
+            self.assertEqual(len(observed), 1)
+            self.assertEqual(observed[0]['stage'], 'compile')
+            self.assertEqual(observed[0]['adapterCode'], 'compiler-input-or-build-failed')
+            self.assertEqual(observed[0]['compilerStderrSha256'], 'sha256:' + hashlib.sha256(secret).hexdigest())
+            self.assertNotIn(secret.decode(), str(observed))
+            owner['state'] = 'complete'; (source.parent / 'attempt.json').write_text(json.dumps(owner))
+            self.assertEqual(collect_build_failures(root, 'output'), [])
+            with self.assertRaisesRegex(ValueError, 'path-traversal'):
+                collect_build_failures(root, '../private')
+
+    def test_collector_refuses_unowned_or_excess_attempts_before_reading_metadata(self):
+        from tools.qualify_go_dependency_watch import collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(); builds = root / 'builds'; builds.mkdir(mode=0o700)
+            bad = builds / 'unknown'; bad.mkdir(mode=0o700)
+            with self.assertRaisesRegex(ValueError, 'owned-attempt-required'):
+                collect_build_failures(root, 'output')
+            bad.rmdir()
+            for index in range(5):
+                (builds / (str(index) * 32)).mkdir(mode=0o700)
+            with self.assertRaisesRegex(ValueError, 'attempt-limit'):
+                collect_build_failures(root, 'output')
+
+    def test_missing_receipt_and_each_stream_preserve_other_actual_read_metadata(self):
+        import json
+        from tools.dev_workflow import paths
+        from tools.qualify_go_dependency_watch import collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            for missing in ('receipt', 'stdout', 'stderr'):
+                with self.subTest(missing=missing):
+                    root = Path(temporary).resolve() / missing
+                    source = root / 'builds' / ('a' * 32) / 'source'
+                    cache = source / 'build-cache'; cache.mkdir(parents=True, mode=0o700)
+                    owner = {'id': 'a' * 32, 'key': 'sha256:' + '0' * 64, 'source': 'sha256:' + '1' * 64,
+                             'recipe': 'sha256:' + '2' * 64, 'state': 'failed'}
+                    (source.parent / 'attempt.json').write_text(json.dumps(owner))
+                    if missing != 'receipt':
+                        output = source / 'output'; output.mkdir(mode=0o700)
+                        (output / 'BUILD-FAILED.json').write_text('{"stage":"compile"}')
+                    for stream in ('stdout', 'stderr'):
+                        if stream != missing:
+                            (cache / ('compiler-' + stream + '.log')).write_bytes(
+                                b'{"code":"compiler-input-or-build-failed"}' if stream == 'stdout' else b'private-stderr')
+                    absent = 'output/BUILD-FAILED.json' if missing == 'receipt' else 'build-cache/compiler-' + missing + '.log'
+                    with self.assertRaises(ValueError):
+                        paths.read(source, absent, 1024 * 1024)
+                    observed = collect_build_failures(root, 'output')[0]
+                    self.assertEqual(observed['state'], 'failed')
+                    self.assertEqual('stage' in observed, missing != 'receipt')
+                    self.assertEqual('adapterCode' in observed, missing != 'stdout')
+                    self.assertEqual('compilerStdoutSha256' in observed, missing != 'stdout')
+                    self.assertEqual('compilerStderrSha256' in observed, missing != 'stderr')
+                    self.assertNotIn('private-stderr', str(observed))
+
+    def test_optional_file_does_not_swallow_unsafe_existing_entries_or_oversized_reads(self):
+        import os
+        from tools.qualify_go_dependency_watch import optional_failure_file
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            (root / 'not-file').mkdir(mode=0o700)
+            with self.assertRaisesRegex(ValueError, 'single-link-regular-file'):
+                optional_failure_file(root, 'not-file', 16)
+            target = root / 'metadata'; target.write_bytes(b'x' * 17)
+            with self.assertRaisesRegex(ValueError, 'file-byte-limit'):
+                optional_failure_file(root, 'metadata', 16)
+            target.write_bytes(b'{}'); os.link(target, root / 'alias')
+            with self.assertRaisesRegex(ValueError, 'single-link-regular-file'):
+                optional_failure_file(root, 'metadata', 16)
+
+    def test_public_codes_and_command_labels_are_closed_real_builder_literals(self):
+        import ast
+        import inspect
+        from tools import qualify_go_dependency_watch as qualifier
+        tree = ast.parse(inspect.getsource(qualifier.public_build_failure))
+        public = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Compare) and isinstance(node.left, ast.Name) and node.left.id == 'reason':
+                for comparison in node.comparators:
+                    if isinstance(comparison, ast.Set):
+                        values = {item.value for item in comparison.elts}
+                        if 'unreviewed-go-toolchain' in values:
+                            public.update(values)
+            if (isinstance(node, ast.Compare) and isinstance(node.left, ast.Subscript)
+                    and isinstance(node.left.value, ast.Name) and node.left.value.id == 'command'):
+                for comparison in node.comparators:
+                    if isinstance(comparison, ast.Set):
+                        public.update(item.value for item in comparison.elts)
+        root = Path(__file__).resolve().parents[2]
+        actual = set()
+        for name in ('tools/go_guest/compiler.py', 'tools/go_guest/checkpoints.py',
+                     'tools/go_capsule_build.py', 'tools/guest_compatibility_build.py'):
+            actual.update(node.value for node in ast.walk(ast.parse((root / name).read_text()))
+                          if isinstance(node, ast.Constant) and isinstance(node.value, str))
+        self.assertEqual(len(public), 29)
+        self.assertLessEqual(public, actual)
+
+
+class DeliveredGoCacheSelection(unittest.TestCase):
+    def setUp(self):
+        from contextlib import ExitStack
+        from unittest.mock import patch
+        from tools import dev_guest_recipe as adapter, dev_managed_tools
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        self.owner = self.root / 'attempt'
+        self.application = self.owner / 'app'; self.application.mkdir(parents=True)
+        (self.owner / 'build-cache').mkdir()
+        self.output = self.owner / 'output'
+        self.payload = self.root / 'payload'; (self.payload / 'sdk').mkdir(parents=True)
+        self.staged = self.root / 'staged'; (self.staged / 'go-cache').mkdir(parents=True)
+        self.stack = ExitStack(); self.addCleanup(self.stack.close)
+        self.stack.enter_context(patch.dict(adapter.os.environ, {}, clear=True))
+        self.stack.enter_context(patch.object(adapter.sys, 'platform', 'linux'))
+        self.stack.enter_context(patch.object(adapter.platform, 'machine', return_value='x86_64'))
+        self.stack.enter_context(patch.object(dev_managed_tools, 'unpack', return_value=self.staged))
+
+    def frontend(self):
+        import json
+        from tools.tests.test_dev_contracts import descriptor
+        value = descriptor(); value.update(language='go', inputRoots=['app'])
+        value['template']['ownerIssue'] = 547
+        value['build']['workingDirectory'] = 'app'
+        (self.owner / 'latent.project.json').write_text(json.dumps(value))
+
+    def invoke(self):
+        from tools.dev_guest_recipe import compile_managed
+        return compile_managed(self.payload, self.application, self.output, lambda: None, 'go')
+
+    def test_base_project_preserves_exact_original_sdk_module_cache(self):
+        from unittest.mock import patch
+        from tools import go_capsule_build
+        with patch.object(go_capsule_build, 'build') as build:
+            self.invoke()
+        self.assertEqual(build.call_args.kwargs, {'offline_cache': self.staged / 'go-cache'})
+        self.assertEqual(build.call_args.args[0], self.application)
+
+    def test_either_outer_manifest_or_lock_selects_captured_closure_without_sdk_cache(self):
+        from unittest.mock import patch
+        from tools import application_dependencies, go_capsule_build
+        self.frontend()
+        for marker in (application_dependencies.MANIFEST, application_dependencies.LOCK):
+            with self.subTest(marker=marker):
+                selected = self.owner / marker; selected.write_bytes(b'{}')
+                with patch.object(go_capsule_build, 'build') as build:
+                    self.invoke()
+                self.assertIsNone(build.call_args.kwargs['offline_cache'])
+                selected.unlink()
+
+    def test_partial_invalid_capture_still_fails_actual_builder_before_compiler(self):
+        from unittest.mock import patch
+        from tools import application_dependencies
+        from tools.go_guest.compiler import Compiler
+        self.frontend()
+        (self.owner / application_dependencies.MANIFEST).write_bytes(b'{}')
+        with patch.object(Compiler, '__init__', side_effect=AssertionError('invalid capture reached compiler')) as compiler:
+            with self.assertRaises(ValueError):
+                self.invoke()
+        compiler.assert_not_called()
+
+    def test_actual_adapter_builder_and_compiler_reach_only_mocked_version_boundary(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import application_dependencies, go_capsule_build as build, rust_capsule_build
+        from tools.go_guest import compiler
+        self.frontend()
+        (self.owner / application_dependencies.MANIFEST).write_bytes(b'{}')
+        repository = Path(__file__).resolve().parents[2]
+        pins = (repository / 'sdk/go-guest/toolchain.lock.json').read_bytes()
+        observed = SimpleNamespace(files={'vendor/lsf/sdk/go-guest/toolchain.lock.json': pins},
+                                   dependency_root=self.owner)
+        downloads = self.root / 'closure/module-downloads'; downloads.mkdir(parents=True)
+        closure = SimpleNamespace(work=downloads.parent, lock={
+            'selection': {'runtimeProfile': 'go-component-async-v1'},
+            'artifacts': [{'metadata': {'assetType': 'selected-module-downloads'}, 'mount': downloads.name}]})
+        executable = self.root / 'mock-compiler-input'; executable.write_bytes(b'never execute this fixture')
+        class VersionBoundary(Exception):
+            pass
+        with patch.object(build.guest_dependency_inputs, 'capture_source', return_value=observed), \
+                patch.object(build, 'validate', return_value=({'name': 'fixture', 'world': 'greeting'}, {}, {})), \
+                patch.object(build, 'prepare', return_value=closure), \
+                patch.object(compiler.shutil, 'which', return_value=str(executable)), \
+                patch.object(compiler.Compiler, 'run', side_effect=VersionBoundary) as version, \
+                patch.object(rust_capsule_build.Commands, 'run', side_effect=AssertionError('native tool execution')) as process:
+            with self.assertRaisesRegex(ValueError, 'captured-Go-build-cannot-use-an-additional-cache'):
+                compiler.Compiler(self.root / 'rejected-compiler', repository / 'sdk/go-guest',
+                    SimpleNamespace(environment={'PATH': ''}), offline_cache=self.staged / 'go-cache',
+                    application_closure=closure)
+            version.assert_not_called()
+            with self.assertRaises(VersionBoundary):
+                self.invoke()
+            version.assert_called_once_with('go-version', 'go', 'version')
+            process.assert_not_called()

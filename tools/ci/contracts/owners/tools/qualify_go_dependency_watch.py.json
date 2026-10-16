@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Project only the final 32 bounded event/phase/code strings and exact boolean uncertainty; preserve qualification, failure, deadlines, execution and cleanup guards.",
+  "reviewReason": "Read bounded fixed metadata only from up to four owned failed attempts; project closed taxonomy and digests without paths, arguments or compiler text, preserving every qualification/deadline/cleanup guard.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fd2d5cf4388b705b1565d784451f31ab9246d986d55bb3f9f1bedef79649782f"
+  "sha256": "eeaa35e1a45098abef427ca0ca5d98c2fbb9020bbbeb2c19d068a23b123fb678"
 }

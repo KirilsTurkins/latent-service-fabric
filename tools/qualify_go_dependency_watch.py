@@ -8,14 +8,17 @@ this programme does not manufacture publisher authentication or installation.
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
 import hashlib
 import importlib.util
+import itertools
 import json
 import os
 from pathlib import Path
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
@@ -48,6 +51,111 @@ def public_events(values):
         if row:
             result.append(row)
     return result
+
+
+def public_build_failure(value):
+    """Keep bounded failure taxonomy; never retain compiler reasons or arguments."""
+    if not isinstance(value, dict):
+        return {}
+    result = {}
+    if isinstance(value.get('stage'), str) and value['stage'] in {'capture', 'application-dependencies', 'compile', 'contracts',
+                              'compatibility', 'package', 'recheck'}:
+        result['stage'] = value['stage']
+    reason = value.get('reason')
+    if isinstance(reason, str) and len(reason.encode('utf-8')) <= 4096:
+        result['reasonSha256'] = 'sha256:' + hashlib.sha256(reason.encode('utf-8')).hexdigest()
+        if reason in {'unreviewed-go-toolchain', 'unreviewed-componentize-go',
+                      'unreviewed-go-component-validator', 'generated-go-module-drift',
+                      'unreviewed-go-module-input', 'unreviewed-go-dependency-checksum',
+                      'go-runtime-profile-not-installed', 'captured-Go-build-cannot-use-an-additional-cache'}:
+            result['reasonCode'] = reason
+        if reason in {'FileNotFoundError', 'PermissionError', 'ImportError', 'ModuleNotFoundError',
+                      'OSError', 'RuntimeError', 'TypeError', 'KeyError'}:
+            result['exceptionKind'] = reason
+    commands = value.get('commands')
+    if isinstance(commands, list):
+        result['commands'] = []
+        for command in commands[-8:]:
+            if (not isinstance(command, dict) or not isinstance(command.get('stage'), str)
+                    or len(command['stage'].encode('utf-8')) > 4096
+                    or type(command.get('exitCode')) is not int or not -255 <= command['exitCode'] <= 255):
+                continue
+            row = {'exitCode': command['exitCode']}
+            if command['stage'] in {'go-version', 'generator-version', 'validator-version', 'go-root',
+                    'typed-bindings', 'locked-module-download', 'vendor-locked-module',
+                    'checkpoint-selected-packages', 'selected-go-packages', 'closed-runtime',
+                    'component-build', 'component-validate', 'component-wit', 'contracts', 'package',
+                    'inspect', 'compatibility-final-wit', 'checkpoint-parser-host',
+                    'checkpoint-parser-controls', 'checkpoint-parser-build', 'checkpoint-parser'}:
+                row['stage'] = command['stage']
+            else:
+                row['stageSha256'] = 'sha256:' + hashlib.sha256(command['stage'].encode('utf-8')).hexdigest()
+            result['commands'].append(row)
+    return result
+
+
+def optional_failure_file(root, relative, maximum):
+    """Missing fixed paths are optional; unsafe existing entries still fail closed."""
+    from tools.dev_workflow import paths
+    parts = paths.relative(relative).split('/')
+    parent = root
+    with ExitStack() as held:
+        for index, part in enumerate(parts):
+            held.enter_context(paths.directory(parent))
+            path = parent / part
+            try:
+                metadata = path.lstat()
+            except FileNotFoundError:
+                return None
+            if index < len(parts) - 1:
+                require(stat.S_ISDIR(metadata.st_mode)
+                        and not getattr(metadata, 'st_file_attributes', 0) & 0x400,
+                        'failure-projection-unsafe-parent')
+            else:
+                paths.regular(metadata)
+            parent = path
+        return paths.read(root, relative, maximum)
+
+
+def collect_build_failures(workspace, output_root):
+    """Read fixed metadata only from this workspace's at most four owned attempts."""
+    from tools.dev_workflow import build_cache, paths
+    paths.relative(output_root)
+    builds = workspace / 'builds'
+    try:
+        builds.lstat()
+    except FileNotFoundError:
+        return []
+    with paths.directory(builds):
+        entries = list(itertools.islice(builds.iterdir(), 5))
+        require(len(entries) <= build_cache.MAX_ATTEMPTS, 'failure-projection-attempt-limit')
+        result = []
+        for entry in sorted(entries):
+            require(re.fullmatch('[0-9a-f]{32}', entry.name), 'failure-projection-owned-attempt-required')
+            owner = build_cache.owner(entry)
+            if owner['state'] not in {'failed', 'uncertain'}:
+                continue
+            row = {'state': owner['state']}
+            relative = entry.name + '/source/'
+            raw = optional_failure_file(builds, relative + output_root + '/BUILD-FAILED.json', 65536)
+            if raw is not None:
+                row.update(public_build_failure(json.loads(raw)))
+            for stream in ('stdout', 'stderr'):
+                raw = optional_failure_file(builds, relative + 'build-cache/compiler-' + stream + '.log', 1024 * 1024)
+                if raw is None:
+                    continue
+                row['compiler' + stream.title() + 'Sha256'] = 'sha256:' + hashlib.sha256(raw).hexdigest()
+                if stream == 'stdout':
+                    try:
+                        response = json.loads(raw)
+                    except ValueError:
+                        continue
+                    if isinstance(response, dict) and isinstance(response.get('code'), str) and response['code'] in {
+                            'success', 'compiler-process-failed', 'compiler-cleanup-unconfirmed',
+                            'compiler-cancelled', 'compiler-input-or-build-failed'}:
+                        row['adapterCode'] = response['code']
+            result.append(row)
+        return result
 
 
 class ShutdownOnce:
@@ -123,6 +231,7 @@ def main() -> int:
         'commands': [], 'stages': [], 'phase': 'prepare'}
     began = time.monotonic()
     watcher = None
+    node_root = None
     shutdown = ShutdownOnce()
     frontend = root / 'latent-dev-source'
     events = root / 'frontend-events.jsonl'
@@ -206,7 +315,7 @@ def main() -> int:
         return offset
 
     def start_watch(label):
-        nonlocal workspace_name, watcher, shutdown
+        nonlocal workspace_name, watcher, shutdown, node_root
         require(watcher is None or watcher.poll() is not None, 'previous-watch-owner-not-retired')
         shutdown = ShutdownOnce()
         workspace_name = workspace_prefix + '-' + label
@@ -370,6 +479,12 @@ def main() -> int:
             public['watchEvents'] = public_events(observed())
         except (OSError, ValueError, TypeError):
             pass  # A failed observer must not replace the original qualification failure.
+        if not report['passed'] and node_root is not None:
+            try:
+                descriptor = project.load(application)[0]
+                public['buildFailures'] = collect_build_failures(node_root, descriptor['build']['outputRoot'])
+            except (OSError, ValueError, TypeError, KeyError):
+                pass  # Metadata collection cannot replace the original failure or cleanup result.
         write(root / 'public-qualification.json', public)
 
 
