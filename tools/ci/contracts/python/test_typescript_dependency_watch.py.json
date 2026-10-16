@@ -5,6 +5,8 @@
     "DeliveredResolverOwner.test_missing_recipe_is_rejected_before_creating_resolver_state",
     "DeliveredResolverOwner.test_source_inventory_loader_preserves_exact_inputs_and_rejects_changed_recipe_before_mutation",
     "DeliveredResolverOwner.test_unrecorded_recipe_is_rejected_even_when_inventory_omits_recipe_root",
+    "DeliveredTemplateCaller.test_actual_template_wrapper_selects_its_project_at_main_resolver_call",
+    "DeliveredTemplateCaller.test_flat_project_cannot_substitute_for_the_actual_template_wrapper",
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode",
     "TypescriptDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation",
     "TypescriptDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed",
@@ -94,6 +96,30 @@
         "unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"
       ]
     },
+    "DeliveredTemplateCaller.test_actual_template_wrapper_selects_its_project_at_main_resolver_call": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:ac7e87fee9f25af11526dd2f31c8b3fc0e9692f179c07442f2b31a66d7120630"
+      ],
+      "skipSites": []
+    },
+    "DeliveredTemplateCaller.test_flat_project_cannot_substitute_for_the_actual_template_wrapper": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:ac7e87fee9f25af11526dd2f31c8b3fc0e9692f179c07442f2b31a66d7120630"
+      ],
+      "skipSites": []
+    },
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode": {
       "bases": [
         "unittest.TestCase"
@@ -181,6 +207,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_dependency_watch.py",
-  "reviewReason": "Retain all seven existing TypeScript watch controls and add five installed-recipe inventory/loading controls. Four execute the unchanged Linux-only helper under isolated/no-bytecode Python on Linux; the portable source-inventory control exercises exact-byte preservation and altered/missing/unrecorded refusal on both maintained hosts.",
+  "reviewReason": "Add actual template producer/scaffolder and actual qualifier main caller controls stopping before resolver/native execution, including flat-wrapper rejection; preserve every prior delivered-helper case and guard.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -330,3 +330,90 @@ print(json.dumps(result))
                 self.assertFalse((root / 'recipe-canary').exists())
                 self.assertFalse(list(installed.rglob('__pycache__')))
                 self.assertIs(sys.dont_write_bytecode, original_no_bytecode)
+
+class DeliveredTemplateCaller(unittest.TestCase):
+    def run_actual_main_to_resolver_boundary(self, root, *, flat=False):
+        import sys
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import dev_tool_distribution as distribution
+        from tools import qualify_typescript_dependency_watch as qualifier
+        from tools.dev_workflow import project
+        from tools.dev_workflow.common import decode, digest, encode
+
+        installed, _, _, helper_identity, _ = DeliveredResolverOwner().layout(root)
+        for name in ('sdk/bin/python', 'sdk/bin/capsule-contracts', 'sdk/bin/capsule-test-signer',
+                     'sdk/bin/wasm-tools', 'sdk/bin/wit-bindgen', 'recipe/tools/dev_guest_recipe.py',
+                     'recipe/tools/typescript_capsule.py'):
+            selected = installed / name
+            selected.parent.mkdir(parents=True, exist_ok=True)
+            selected.write_bytes(b'explicit source-fixture bytes; never executed')
+        distribution.compiler_inventory(installed, 'a' * 40, 'typescript')
+        def minimal_source_application(destination, name):
+            destination.mkdir()
+            (destination / 'capsule-project.json').write_bytes(encode({
+                'name': name, 'tenant': 'examples', 'service': 'examples/my-' + name}))
+            return destination
+        with patch.object(distribution.typescript_project, 'create', side_effect=minimal_source_application):
+            catalogue = distribution.templates(installed, 'a' * 40, 'typescript')
+        entry = catalogue['greeting']
+        template = installed / entry['path']
+        manifest = decode((template / 'template.json').read_bytes())
+        self.assertEqual(set(manifest), {'schemaVersion', 'project', 'snapshot'})
+        self.assertNotIn('build', manifest)
+        self.assertIn('inventory', manifest['project']['build'])
+        # Exercise the real producer and consumer schema/identity boundary with
+        # tiny source bytes, before any resolver, compiler or guest execution.
+        project.scaffold(template, root / 'verified-scaffold', manifest, entry['identity'])
+        if flat:
+            (template / 'template.json').write_bytes(encode(manifest['project']))
+        probe, fixture = root / 'probe.py', root / 'fixture.py'
+        probe.write_text('# explicit source-fixture module; no process work\n')
+        fixture.write_text('# explicit source-fixture module; no process work\n')
+        node = root / 'source-node'; node.mkdir()
+        (node / 'source-node.json').write_bytes(b'{}')
+        args = SimpleNamespace(installed=installed, helper=root / 'actual-helper.pyz',
+            helper_sha256=helper_identity, source_probe=probe, source_probe_sha256=digest(probe.read_bytes()),
+            source_node=node, fixture_source=fixture, fixture_sha256=digest(fixture.read_bytes()),
+            output=root / 'observation')
+        before = {path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                  for path in installed.rglob('*') if path.is_file()}
+        observed = []
+        def before_resolver(selected, destination, descriptor):
+            observed.append(descriptor)
+            self.assertEqual(descriptor, manifest['project'])
+            self.assertEqual((selected, destination), (installed, args.output / 'resolver-managed'))
+            raise RuntimeError('intentional-before-resolver-native-boundary')
+        original_path = sys.path[:]
+        try:
+            with patch.object(qualifier.argparse.ArgumentParser, 'parse_args', return_value=args), \
+                    patch.object(qualifier.sys, 'platform', 'linux'), \
+                    patch.object(qualifier.os, 'geteuid', return_value=1000, create=True), \
+                    patch.object(qualifier, 'unpack_resolver', side_effect=before_resolver) as unpack, \
+                    patch.object(qualifier.subprocess, 'run', side_effect=AssertionError('native process forbidden')), \
+                    patch.object(qualifier.subprocess, 'Popen', side_effect=AssertionError('native process forbidden')):
+                if flat:
+                    with self.assertRaises(KeyError):
+                        qualifier.main()
+                    unpack.assert_not_called()
+                else:
+                    with self.assertRaisesRegex(RuntimeError, 'intentional-before-resolver-native-boundary'):
+                        qualifier.main()
+                    unpack.assert_called_once()
+                    self.assertEqual(observed, [manifest['project']])
+        finally:
+            sys.path[:] = original_path
+        self.assertFalse((args.output / 'resolver-managed').exists())
+        self.assertEqual({path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                          for path in installed.rglob('*') if path.is_file()}, before)
+        report = json.loads((args.output / 'public-qualification.json').read_bytes())
+        self.assertFalse(report['passed'])
+        self.assertEqual((report['phase'], report['deploymentCount'], report['stages']), ('prepare', 0, []))
+
+    def test_actual_template_wrapper_selects_its_project_at_main_resolver_call(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            self.run_actual_main_to_resolver_boundary(Path(temporary))
+
+    def test_flat_project_cannot_substitute_for_the_actual_template_wrapper(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            self.run_actual_main_to_resolver_boundary(Path(temporary), flat=True)

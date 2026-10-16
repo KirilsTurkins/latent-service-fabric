@@ -258,7 +258,7 @@ def main() -> int:
         template_entry = decode((installed / 'templates.json').read_bytes())['templates']['greeting']
         template_root = installed / template_entry['path']
         descriptor = decode((template_root / 'template.json').read_bytes())
-        managed, report['resolverOwner'] = unpack_resolver(installed, root / 'resolver-managed', descriptor)
+        managed, report['resolverOwner'] = unpack_resolver(installed, root / 'resolver-managed', descriptor['project'])
         fixed_inputs[str(installed / report['resolverOwner']['path'])] = report['resolverOwner']['sha256']
         resolver_node = managed / 'node/bin/node'
         resolver_npm = managed / 'node/lib/node_modules/npm/bin/npm-cli.js'

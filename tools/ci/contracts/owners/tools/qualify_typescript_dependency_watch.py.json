@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_typescript_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Load the exact installed managed-tool recipe owner only after normal delivered inventory validation and explicit manifest membership, retain its path/digest/inventory identity, and recheck the unchanged inventory after bounded unpacking. Preserve all watch, shutdown, timeout, isolation and authority guards.",
+  "reviewReason": "Pass the actual template manifest project descriptor to the unchanged strict installed resolver owner; retain complete inventory checks, original template authentication/scaffolding, immutable closure and native bounds.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1ff52a36e64dea4b84d8273440de4b61945769998ce544b36fc6cf7cb90243f4"
+  "sha256": "0a6978e8209ad2b6b3ccf74ca3681d35126859b6475afa7a97e247d1146d4a25"
 }
