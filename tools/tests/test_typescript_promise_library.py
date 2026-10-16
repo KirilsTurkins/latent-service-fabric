@@ -41,6 +41,18 @@ class PromiseLibraryInputs(unittest.TestCase):
             network.assert_not_called()
             self.assertFalse(target.exists())
 
+    def test_post_build_archive_recheck_accepts_original_and_rejects_same_size_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            pin = {'url': 'https://fixture.invalid/source', 'bytes': 8,
+                   'sha256': hashlib.sha256(b'original').hexdigest()}
+            with patch.object(owner.urllib.request, 'urlopen', return_value=Response(b'original')):
+                captured = owner.acquire(root/'source.archive', pin, time.monotonic()+10)
+            owner.recheck_archives(root, {'source':pin}, {'source':captured})
+            (root/'source.archive').write_bytes(b'change!!')
+            with self.assertRaisesRegex(ValueError, 'original-archive-changed'):
+                owner.recheck_archives(root, {'source':pin}, {'source':captured})
+
     @staticmethod
     def carrier(path, names):
         with tarfile.open(path, 'w') as archive:
