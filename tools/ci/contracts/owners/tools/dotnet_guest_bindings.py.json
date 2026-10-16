@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dotnet_guest_bindings.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve declared async exports with source-bound stackful canonical task bridges; retain all existing nominal type, selected-world, ownership and drift checks without changing the C# application interface.",
+  "reviewReason": "Preserve original generated marshalling and invoke the exact compiler-private retirement drain before real task return",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5fa463945473ce3364f1c1d5623d3b81a67eb2543a7a68987bc95e697101d3b9"
+  "sha256": "187139280e06ad37e556405cb7db786dcafcaedce0c596e4226219fb5b714087"
 }

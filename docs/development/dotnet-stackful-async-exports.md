@@ -124,10 +124,34 @@ shared HTTP matrix remain required execution gates. The original failed managed
 execution and interrupted build attempts remain retained separately. No ticket
 closure, production enablement or complete CLR/ThreadPool support follows from
 these source and encoder controls.
-In particular, the current `Exchange.abort` still drops an accepted future from
-a synchronous resource destructor. A pending destructor needs a separate true
-terminal retirement/drain implementation; changing its type metadata alone does
-not qualify cancellation, disposal, physical retirement or root drain.
+The separate `dotnet-owned-retirement-v1` candidate addresses the synchronous
+destructor boundary. `Exchange.abort` and pending timer destruction transfer the
+exact pinned future, resources, original owner and quota slot into a bounded
+activation-local retirement queue. The destructor does not drop that future.
+The compiler adds one parameterless async private drain import, invokes it
+before the original root task-return while result pins remain live, and consumes
+it through the selected runtime adapter. Public source WIT remains unchanged;
+actual encoder comparisons require its complete graph to survive adding and
+removing only that private edge. The final composed component must retain no
+additional host authority or public retirement export.
+
+The private async drain drops each retained future under its original canonical
+task owner before releasing its resources and quota slot. The pinned generator's
+future destructor performs the real canonical terminal cancellation protocol;
+the queue does not manufacture completion. Remaining accepted canonical work
+causes a closed failure. Queue capacity remains 32, and ownership is retained
+until draining. This is not a CLR sibling-task scheduler or a proof that every
+managed task has retired.
+
+Four source controls cover the exact private interface, unchanged public graph
+boundary, real task-return/pin ordering and rejection of ambiguous interface
+identities. Actual pinned encoder and C# generator controls pass, including
+generator drift verification. Rust binding generation passes for all three
+adapter worlds. A separate host SDK 10.0.303 compilation of the actual generated
+bindings with the unchanged standard HttpClient fixture reports zero warnings
+and errors. These are codec, generator and host type checks; the normal Linux
+NativeAOT build, signed pending cancellation/disposal matrix and physical
+retirement observations remain required before this candidate is qualified.
 
 ## Joined Task wait candidate
 

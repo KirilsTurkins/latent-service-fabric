@@ -182,11 +182,18 @@ class Compiler:
         declared = interface_names(json.loads(self.run("declared-runtime-wit", self.wasm,
             "component", "wit", source, "--json")), world)["imports"]
         runtime.select(declared, [])
+        from tools.dotnet_guest import retirement
+        binding_source, retirement_port = retirement.prepare(self, source, world, output/'retirement-port', declared)
+        if retirement_port is not None:
+            self.compiler_patches.append({'name':retirement.PROFILE, 'profile':retirement.PROFILE,
+                'original':file_identity(output/'retirement-port/original.wit', 'original-retirement-wit', retirement.MAX_TEXT),
+                'selected':file_identity(binding_source, 'private-retirement-wit', retirement.MAX_TEXT),
+                'selection':retirement_port})
         generated = output / "generated"
         binding = work / "vendor/lsf/tools/dotnet_guest_bindings.py"
-        self.run("bindings", self.python, "-I", "-B", binding, "c-sharp", source, "--world", world,
+        self.run("bindings", self.python, "-I", "-B", binding, "c-sharp", binding_source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated)
-        self.run("bindings-drift", self.python, "-I", "-B", binding, "c-sharp", source, "--world", world,
+        self.run("bindings-drift", self.python, "-I", "-B", binding, "c-sharp", binding_source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated, "--check")
         receipt = json.loads(read_file(generated / "bindings.json", 16 * 1024 * 1024))
         project = output / "project"
@@ -213,7 +220,7 @@ class Compiler:
             "global.json": read_file(self.sdk / "global.json"),
             "nuget.config": read_file(self.sdk / "nuget.config"),
             "packages.lock.json": read_file(work / 'packages.lock.json') if self.application_closure else read_file(self.sdk / "probes/smoke/packages.lock.json"),
-            "component.wit": self.run("canonical-wit", self.wasm, "component", "wit", source, "--no-docs"),
+            "component.wit": self.run("canonical-wit", self.wasm, "component", "wit", binding_source, "--no-docs"),
         }.items():
             (project / name).write_bytes(data)
         facades = install_sdk(self.sdk, generated, project / "lsf")
@@ -317,6 +324,11 @@ class Compiler:
         (command.output / 'native-aot-raw.wit.json').write_bytes(raw_wit)
         (command.output / 'native-aot-original.wit.json').write_bytes(raw_wit)
         actual = interface_names(json.loads(raw_wit))["imports"]
+        if retirement_port is not None:
+            if retirement.IDENTITY not in actual or not retirement.private_import(json.loads(raw_wit)):
+                raise ValueError('dotnet-retirement-compiled-import-missing-or-changed')
+            actual = [name for name in actual if name != retirement.IDENTITY]
+            self.generated_materials.append(file_identity(command.output/'retirement-port.json', 'dotnet-retirement-port'))
         http_error_port = None
         if self.http_error_port is not None:
             http_error_port = self.http_error_port.finish(project, command.output)
@@ -359,6 +371,8 @@ class Compiler:
                                                for name, path in additional]
         if io_port is not None:
             selection['internalIoPort'] = io_port
+        if retirement_port is not None:
+            selection['retirementPort'] = retirement_port
         write_json(command.output / "runtime-profile.json", selection)
         component = output / "component.wasm"
         self.runtime = adapter
@@ -369,8 +383,11 @@ class Compiler:
         else:
             self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter, "-o", component)
         self.run("validate", self.wasm, "validate", component)
-        final = interface_names(json.loads(self.run("runtime-final-wit", self.wasm,
-            "component", "wit", component, "--json")))["imports"]
+        final_interfaces = interface_names(json.loads(self.run("runtime-final-wit", self.wasm,
+            "component", "wit", component, "--json")))
+        final = final_interfaces['imports']
+        if retirement.IDENTITY in final_interfaces['exports']:
+            raise ValueError('compiler-private-retirement-export-escaped-composition')
         if not set(final) <= set(declared):
             raise ValueError("runtime adapter introduced undeclared authority:" +
                              ",".join(sorted(set(final) - set(declared))))
