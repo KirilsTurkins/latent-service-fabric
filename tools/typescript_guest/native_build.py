@@ -84,6 +84,18 @@ def supporting_objects(cmake: bytes) -> list[str]:
     return names
 
 
+def combined_archive_limits(library: dict, supporting: dict) -> dict:
+    """Bound the new composition separately from its unchanged library input."""
+    sizes = [row.get('bytes') for row in supporting.values()]
+    if (type(library.get('bytes')) is not int or not 0 < library['bytes'] <= 512*1024**2
+            or not 1 <= len(sizes) <= 64 or any(type(size) is not int or size <= 0 for size in sizes)
+            or sum(sizes) > 16*1024**2):
+        raise ValueError('typescript-native-library-composition-input-bound')
+    return {'originalLibraryMaximumBytes':512*1024**2,
+        'supportingObjectsMaximumBytes':16*1024**2,'archiveIndexGrowthMaximumBytes':4*1024**2,
+        'maximumCombinedBytes':library['bytes']+sum(sizes)+4*1024**2}
+
+
 def materialize_headers(library_root: Path, target: Path, deadline: float) -> dict:
     source = library_root/'obj/dist/include'
     target.mkdir()
@@ -211,11 +223,12 @@ def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', was
         objects = supporting_objects(original['StarlingMonkey/cmake/spidermonkey.cmake'])
         object_paths = [library_root/'obj'/name for name in objects]
         record['supportingObjects'] = {name:file_identity(path) for name,path in zip(objects,object_paths)}
+        record['archiveCompositionLimits'] = combined_archive_limits(before,record['supportingObjects'])
         archive = combined/'libspidermonkey.a'
         shutil.copyfile(library_root/library['library']['path'],archive)
         wasi = library_root/'wasi-source/wasi-sdk-30.0-x86_64-linux'
         run('combine-normal-library',wasi/'bin/llvm-ar','-q',archive,*object_paths)
-        record['combinedLibrary'] = file_identity(archive,512*1024**2)
+        record['combinedLibrary'] = file_identity(archive,record['archiveCompositionLimits']['maximumCombinedBytes'])
         environment.update(SPIDERMONKEY_BINARIES=str(combined),CPM_SOURCE_CACHE=str(output/'cpm-cache'),
             CARGO_BUILD_JOBS='2',RUSTUP_TOOLCHAIN='1.97.1')
         environment['PATH'] = str(library_root)+':'+environment['PATH']
@@ -233,6 +246,8 @@ def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', was
             raise ValueError('typescript-native-original-library-changed')
         if record['supportingObjects'] != {name:file_identity(path) for name,path in zip(objects,object_paths)}:
             raise ValueError('typescript-native-original-supporting-object-changed')
+        if record['combinedLibrary'] != file_identity(archive,record['archiveCompositionLimits']['maximumCombinedBytes']):
+            raise ValueError('typescript-native-combined-library-changed')
         if record['installedHeaders'] != {name:file_identity(combined/'include'/name)
                                         for name in record['installedHeaders']}:
             raise ValueError('typescript-native-staged-header-changed')
