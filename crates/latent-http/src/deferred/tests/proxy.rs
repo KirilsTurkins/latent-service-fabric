@@ -14,7 +14,7 @@ use tokio::{
     sync::{oneshot, Notify},
 };
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Fault {
     Normal,
     LosePostReply,
