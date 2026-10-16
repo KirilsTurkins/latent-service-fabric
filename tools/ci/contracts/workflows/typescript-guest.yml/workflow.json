@@ -1,20 +1,6 @@
 {
   "kind": "workflow",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "typescript-guest-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": "TypeScript guest qualification",
     "on": {
       "pull_request": {
@@ -34,7 +20,9 @@
           "tools/typescript_capsule.py",
           "tools/typescript*dependencies.py",
           "tools/typescript_dependency_authoring.py",
+          "tools/npm_lock_authoring.py",
           "tools/tests/test_typescript_dependency_authoring.py",
+          "tools/tests/test_npm_lock_authoring.py",
           "tools/guest_authoring_frontend.py",
           "tools/typescript_dependency_fixture.py",
           "tools/application_dependenc*.py",
@@ -54,6 +42,7 @@
           "apps/latentd/**",
           ".cargo/managed-guest.toml",
           "docs/component-development/typescript-authoring.md",
+          "docs/component-development/typescript-dependencies.md",
           "examples/typescript-capsules/**",
           "wit/platform/**",
           "tools/toolchain.toml",
@@ -81,7 +70,9 @@
           "tools/typescript_capsule.py",
           "tools/typescript*dependencies.py",
           "tools/typescript_dependency_authoring.py",
+          "tools/npm_lock_authoring.py",
           "tools/tests/test_typescript_dependency_authoring.py",
+          "tools/tests/test_npm_lock_authoring.py",
           "tools/guest_authoring_frontend.py",
           "tools/typescript_dependency_fixture.py",
           "tools/application_dependenc*.py",
@@ -101,6 +92,7 @@
           "apps/latentd/**",
           ".cargo/managed-guest.toml",
           "docs/component-development/typescript-authoring.md",
+          "docs/component-development/typescript-dependencies.md",
           "examples/typescript-capsules/**",
           "wit/platform/**",
           "tools/toolchain.toml",
@@ -112,13 +104,27 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "typescript-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "boundary",
     "promise-library"
   ],
-  "reviewReason": "Compose both npm integrity and source-engine trigger sets; preserve the exact merged boundary definition and original 75-minute limit, permissions, concurrency and separate 60-minute Promise source-build job.",
+  "reviewReason": "Union the merged Promise source-build and npm native-authoring trigger paths and jobs, preserving both exact job definitions, all commands, original bounds and security controls.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }
