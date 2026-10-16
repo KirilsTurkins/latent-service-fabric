@@ -78,6 +78,11 @@
       },
       {
         "if": "matrix.language == 'c'",
+        "name": "Prepare C dependency compiler containment",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'c'",
         "name": "Qualify delivered C dependency updates through the actual signed watcher",
         "run": "sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_c_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_c_dependency_watch.py --fixture tools/c_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output \"$RUNNER_TEMP/c-dependency-watch\""
       },
@@ -311,7 +316,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Bind every explicit C watch fixture to reviewed source fingerprints while retaining all previous CI commands and guards",
+  "reviewReason": "Prepare required Bubblewrap containment on the ephemeral C watch runner while retaining all existing commands, namespace isolation and limits",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
