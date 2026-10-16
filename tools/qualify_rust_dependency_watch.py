@@ -8,13 +8,17 @@ this programme does not manufacture publisher authentication or installation.
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
 import hashlib
 import importlib.util
+import itertools
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
@@ -32,6 +36,158 @@ def require(value, reason):
 
 def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
+
+
+def public_events(values):
+    allowed = {
+        'event': {'edit-failed', 'deployed', 'post-deploy-tests',
+                  'post-deploy-tests-not-selected', 'build-superseded'},
+        'phase': {'source', 'build', 'deploy', 'test'},
+        'code': {'success', 'composition-checks-failed', 'required-tests-failed',
+                 'interrupted-inspect-workspace-status', 'invalid-or-unavailable-input-inspect-doctor',
+                 'source-unavailable-during-edit', 'guest-build-superseded',
+                 'workspace-stopped-before-deployment', 'workspace-recipe-trust-required',
+                 'signed-test-build-changed-use-new-workspace',
+                 'guest-build-failed-last-deployment-retained', 'guest-build-cleanup-unconfirmed',
+                 'build-deadline-exceeded', 'language-adapter-result-invalid',
+                 'guest-tool-digest-mismatch', 'guest-tool-inventory-changed-during-build',
+                 'guest-tool-unrecorded-directory', 'private-state-directory-required',
+                 'source-file-unavailable-or-unsafe', 'compiler-process-failed',
+                 'compiler-cleanup-unconfirmed', 'compiler-cancelled', 'compiler-input-or-build-failed'},
+    }
+    result = []
+    for value in values[-32:]:
+        if not isinstance(value, dict):
+            continue
+        row = {key: value[key] for key, vocabulary in allowed.items()
+               if isinstance(value.get(key), str) and value[key] in vocabulary}
+        if type(value.get('uncertain')) is bool:
+            row['uncertain'] = value['uncertain']
+        if row:
+            result.append(row)
+    return result
+
+
+def public_build_failure(value):
+    """Keep bounded failure taxonomy; never retain compiler reasons or arguments."""
+    if not isinstance(value, dict):
+        return {}
+    result = {}
+    if isinstance(value.get('stage'), str) and value['stage'] in {
+            'prepare', 'application-dependencies', 'executable-input-approval', 'bindings',
+            'compile', 'component', 'contracts', 'compatibility', 'package', 'recheck'}:
+        result['stage'] = value['stage']
+    reason = value.get('reason')
+    if isinstance(reason, str) and len(reason.encode('utf-8')) <= 4096:
+        result['reasonSha256'] = 'sha256:' + hashlib.sha256(reason.encode('utf-8')).hexdigest()
+        reasons = {
+            'standalone build deadline exceeded': 'build-deadline',
+            'standalone diagnostic retention limit exceeded': 'diagnostic-limit',
+            'captured Rust compilation requires pinned Zig and Linux shell host linker tools': 'host-linker-tools-required',
+            'Rust host linker Zig version differs from the pinned compiler profile': 'host-linker-profile-mismatch',
+            'captured Cargo build scripts/macros require the exact retained executable-input approval identity': 'executable-input-approval-required',
+            'wit-bindgen CLI does not match the project pin': 'bindgen-profile-mismatch',
+            'generated SDK binding drift; review the WIT and generator pins': 'sdk-binding-drift',
+        }
+        if reason in reasons:
+            result['reasonCode'] = reasons[reason]
+        if reason in {'FileNotFoundError', 'PermissionError', 'ImportError', 'ModuleNotFoundError',
+                      'OSError', 'RuntimeError', 'TypeError', 'KeyError'}:
+            result['exceptionKind'] = reason
+    commands = value.get('commands')
+    if isinstance(commands, list):
+        result['commands'] = []
+        for command in commands[-8:]:
+            if (not isinstance(command, dict) or not isinstance(command.get('stage'), str)
+                    or len(command['stage'].encode('utf-8')) > 4096
+                    or type(command.get('exitCode')) is not int or not -255 <= command['exitCode'] <= 255):
+                continue
+            row = {'exitCode': command['exitCode']}
+            if command['stage'] in {'rust-sysroot', 'zig-version', 'bindgen-version',
+                    'sdk-bindings', 'compile', 'component', 'validate', 'contracts', 'package',
+                    'inspect', 'compatibility-final-wit'}:
+                row['stage'] = command['stage']
+            else:
+                row['stageSha256'] = 'sha256:' + hashlib.sha256(command['stage'].encode('utf-8')).hexdigest()
+            result['commands'].append(row)
+    return result
+
+
+def optional_failure_file(root, relative, maximum):
+    """Missing fixed paths are optional; unsafe existing entries still fail closed."""
+    from tools.dev_workflow import paths
+    parts = paths.relative(relative).split('/')
+    parent = root
+    with ExitStack() as held:
+        for index, part in enumerate(parts):
+            held.enter_context(paths.directory(parent))
+            path = parent / part
+            try:
+                metadata = path.lstat()
+            except FileNotFoundError:
+                return None
+            if index < len(parts) - 1:
+                require(stat.S_ISDIR(metadata.st_mode)
+                        and not getattr(metadata, 'st_file_attributes', 0) & 0x400,
+                        'failure-projection-unsafe-parent')
+            else:
+                paths.regular(metadata)
+            parent = path
+        return paths.read(root, relative, maximum)
+
+
+def collect_build_failures(workspace, output_root):
+    """Read fixed metadata only from this workspace's at most four owned attempts."""
+    from tools.dev_workflow import build_cache, paths
+    paths.relative(output_root)
+    builds = workspace / 'builds'
+    try:
+        builds.lstat()
+    except FileNotFoundError:
+        return []
+    with paths.directory(builds):
+        entries = list(itertools.islice(builds.iterdir(), 5))
+        require(len(entries) <= build_cache.MAX_ATTEMPTS, 'failure-projection-attempt-limit')
+        result = []
+        for entry in sorted(entries):
+            require(re.fullmatch('[0-9a-f]{32}', entry.name), 'failure-projection-owned-attempt-required')
+            owner = build_cache.owner(entry)
+            if owner['state'] not in {'failed', 'uncertain'}:
+                continue
+            row = {'state': owner['state']}
+            relative = entry.name + '/source/'
+            raw = optional_failure_file(builds, relative + output_root + '/BUILD-FAILED.json', 65536)
+            if raw is not None:
+                row.update(public_build_failure(json.loads(raw)))
+            for stream in ('stdout', 'stderr'):
+                raw = optional_failure_file(builds, relative + 'build-cache/compiler-' + stream + '.log', 1024 * 1024)
+                if raw is None:
+                    continue
+                row['compiler' + stream.title() + 'Sha256'] = 'sha256:' + hashlib.sha256(raw).hexdigest()
+                if stream == 'stdout':
+                    try:
+                        response = json.loads(raw)
+                    except ValueError:
+                        continue
+                    if isinstance(response, dict) and isinstance(response.get('code'), str) and response['code'] in {
+                            'success', 'compiler-process-failed', 'compiler-cleanup-unconfirmed',
+                            'compiler-cancelled', 'compiler-input-or-build-failed'}:
+                        row['adapterCode'] = response['code']
+            result.append(row)
+        return result
+
+
+def add_public_diagnostics(public, observe, workspace, output_root):
+    """Observe fixed bounded metadata without replacing qualification/cleanup errors."""
+    try:
+        public['watchEvents'] = public_events(observe())
+    except Exception:
+        pass
+    if not public['passed'] and workspace is not None:
+        try:
+            public['buildFailures'] = collect_build_failures(workspace, output_root())
+        except Exception:
+            pass
 
 
 class ShutdownOnce:
@@ -108,6 +264,7 @@ def main() -> int:
         'commands': [], 'stages': [], 'phase': 'prepare'}
     began = time.monotonic()
     watcher = None
+    node_root = None
     shutdown = ShutdownOnce()
     frontend = root / 'latent-dev-source'
     events = root / 'frontend-events.jsonl'
@@ -191,7 +348,7 @@ def main() -> int:
         return offset
 
     def start_watch(label):
-        nonlocal workspace_name, watcher, shutdown
+        nonlocal workspace_name, watcher, shutdown, node_root
         require(watcher is None or watcher.poll() is not None, 'previous-watch-owner-not-retired')
         shutdown = ShutdownOnce()
         workspace_name = workspace_prefix + '-' + label
@@ -340,6 +497,8 @@ def main() -> int:
             stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
         if 'failure' in report:
             public['failure'] = report['failure']
+        add_public_diagnostics(public, observed, node_root,
+            lambda: project.load(application)[0]['build']['outputRoot'])
         write(root / 'public-qualification.json', public)
 
 

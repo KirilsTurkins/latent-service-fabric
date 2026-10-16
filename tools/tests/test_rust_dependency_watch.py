@@ -123,3 +123,270 @@ class FrontendRuntime(unittest.TestCase):
                 'noBytecode': True, 'cachePrefix': None})
             self.assertEqual(events.read_bytes(), result.stdout)
             self.assertFalse((root / 'ambient-bytecode').exists())
+
+
+class PublicWatchEvents(unittest.TestCase):
+    def test_projection_rejects_private_fields_invalid_codes_and_non_bool_uncertainty(self):
+        from tools.qualify_rust_dependency_watch import public_events
+        secret = '/private/source/token-secret/signing-key'
+        observed = public_events([
+            None, [], secret, 1,
+            {'event': 'edit-failed', 'phase': 'build', 'code': 'guest-build-failed-last-deployment-retained',
+             'uncertain': False, 'path': secret, 'details': {'privateKey': secret},
+             'stdout': secret, 'result': {'secret': secret}},
+            {'event': 'UPPERCASE', 'phase': secret, 'code': 'code\nsecret', 'uncertain': 1},
+            {'event': 'x' * 129, 'phase': [], 'code': '', 'uncertain': 'false'},
+            {'event': 'token-secret', 'phase': 'a' * 64, 'code': 'token-secret'},
+            {'event': 'a' * 64, 'phase': 'token-secret', 'code': 'a' * 64},
+            {'code': 'x' * 128, 'uncertain': True},
+        ])
+        self.assertEqual(observed, [
+            {'event': 'edit-failed', 'phase': 'build', 'code': 'guest-build-failed-last-deployment-retained',
+             'uncertain': False},
+            {'uncertain': True},
+        ])
+        self.assertNotIn(secret, str(observed))
+        self.assertNotIn('token-secret', str(observed))
+        self.assertNotIn('a' * 64, str(observed))
+
+    def test_projection_retains_only_the_last_32_observations(self):
+        from tools.qualify_rust_dependency_watch import public_events
+        values = [{'code': 'success'} for _ in range(8)] + [
+            {'code': 'workspace-recipe-trust-required'} for _ in range(32)]
+        self.assertEqual(public_events(values), values[-32:])
+
+    def test_public_event_phase_and_code_vocabulary_has_only_real_producer_literals(self):
+        import ast
+        import inspect
+        from tools.qualify_rust_dependency_watch import public_events
+        tree = ast.parse(inspect.getsource(public_events))
+        assignments = [node for node in ast.walk(tree) if isinstance(node, ast.Assign)
+                       and any(isinstance(target, ast.Name) and target.id == 'allowed' for target in node.targets)]
+        self.assertEqual(len(assignments), 1)
+        allowed = ast.literal_eval(assignments[0].value)
+        self.assertEqual(set(allowed), {'event', 'phase', 'code'})
+        self.assertEqual(tuple(len(allowed[key]) for key in ('event', 'phase', 'code')), (5, 4, 23))
+        root = Path(__file__).resolve().parents[2]
+        actual = set()
+        for name in ('tools/dev_workflow/cli.py', 'tools/dev_workflow/watch.py',
+                     'tools/dev_workflow/build.py', 'tools/dev_workflow/build_client.py',
+                     'tools/dev_workflow/node_test_signing.py', 'tools/dev_workflow/tool_inventory.py',
+                     'tools/dev_workflow/paths.py', 'tools/dev_guest_recipe.py'):
+            actual.update(node.value for node in ast.walk(ast.parse((root / name).read_text()))
+                          if isinstance(node, ast.Constant) and isinstance(node.value, str))
+        self.assertLessEqual(set().union(*allowed.values()), actual)
+
+
+class PublicBuildFailures(unittest.TestCase):
+    def test_projection_retains_only_bounded_taxonomy_and_hashes_private_reason(self):
+        import hashlib
+        from tools.qualify_rust_dependency_watch import public_build_failure
+        secret = '/private/source/token-secret/signing-key'
+        observed = public_build_failure({'stage': 'compile', 'reason': secret,
+            'commands': [{'stage': 'component', 'exitCode': 1, 'argv': [secret], 'stderr': secret}],
+            'path': secret, 'details': {'secret': secret}})
+        self.assertEqual(observed, {'stage': 'compile',
+            'reasonSha256': 'sha256:' + hashlib.sha256(secret.encode()).hexdigest(),
+            'commands': [{'stage': 'component', 'exitCode': 1}]})
+        self.assertNotIn(secret, str(observed))
+        self.assertEqual(public_build_failure({'stage': [], 'reason': 'x' * 4097, 'commands': secret}), {})
+        self.assertEqual(public_build_failure([]), {})
+        self.assertEqual(public_build_failure({'reason': 'FileNotFoundError'})['exceptionKind'], 'FileNotFoundError')
+        self.assertEqual(public_build_failure({'reason': 'standalone build deadline exceeded'})['reasonCode'], 'build-deadline')
+        self.assertEqual(public_build_failure({'reason': 'wit-bindgen CLI does not match the project pin'})['reasonCode'],
+                         'bindgen-profile-mismatch')
+        self.assertNotIn('reasonCode', public_build_failure({'reason': 'token-secret'}))
+
+    def test_command_projection_retains_last_eight_and_rejects_invalid_types_or_private_paths(self):
+        from tools.qualify_rust_dependency_watch import public_build_failure
+        commands = [{'stage': 'rust-sysroot', 'exitCode': index} for index in range(12)]
+        self.assertEqual(public_build_failure({'commands': commands})['commands'], commands[-8:])
+        values = [None, {'stage': [], 'exitCode': 1}, {'stage': 'x', 'exitCode': True},
+                  {'stage': 'x' * 4097, 'exitCode': 0}, {'stage': 'valid', 'exitCode': 256}]
+        self.assertEqual(public_build_failure({'commands': values}), {'commands': []})
+        unknown = public_build_failure({'commands': [{'stage': 'token-secret', 'exitCode': 1}]})
+        self.assertNotIn('token-secret', str(unknown))
+        self.assertIn('stageSha256', unknown['commands'][0])
+
+    def test_collector_reads_fixed_metadata_from_failed_owned_attempt_only(self):
+        import hashlib
+        import json
+        from tools.qualify_rust_dependency_watch import collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source = root / 'builds' / ('a' * 32) / 'source'
+            source.parent.mkdir(parents=True, mode=0o700)
+            source.mkdir(mode=0o700)
+            output = source / 'output'; output.mkdir(mode=0o700)
+            cache = source / 'build-cache'; cache.mkdir(mode=0o700)
+            owner = {'id': 'a' * 32, 'key': 'sha256:' + '0' * 64, 'source': 'sha256:' + '1' * 64,
+                     'recipe': 'sha256:' + '2' * 64, 'state': 'failed'}
+            (source.parent / 'attempt.json').write_text(json.dumps(owner))
+            (output / 'BUILD-FAILED.json').write_text(json.dumps({'stage': 'compile', 'reason': 'captured-input-missing'}))
+            stdout = b'{"code":"compiler-input-or-build-failed"}'
+            (cache / 'compiler-stdout.log').write_bytes(stdout)
+            secret = b'/private/source/token-secret/signing-key'
+            (cache / 'compiler-stderr.log').write_bytes(secret)
+            observed = collect_build_failures(root, 'output')
+            self.assertEqual(len(observed), 1)
+            self.assertEqual(observed[0]['stage'], 'compile')
+            self.assertEqual(observed[0]['adapterCode'], 'compiler-input-or-build-failed')
+            self.assertEqual(observed[0]['compilerStderrSha256'], 'sha256:' + hashlib.sha256(secret).hexdigest())
+            self.assertNotIn(secret.decode(), str(observed))
+            owner['state'] = 'complete'; (source.parent / 'attempt.json').write_text(json.dumps(owner))
+            self.assertEqual(collect_build_failures(root, 'output'), [])
+            with self.assertRaisesRegex(ValueError, 'path-traversal'):
+                collect_build_failures(root, '../private')
+
+    def test_collector_refuses_unowned_or_excess_attempts_before_reading_metadata(self):
+        from tools.qualify_rust_dependency_watch import collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(); builds = root / 'builds'; builds.mkdir(mode=0o700)
+            bad = builds / 'unknown'; bad.mkdir(mode=0o700)
+            with self.assertRaisesRegex(ValueError, 'owned-attempt-required'):
+                collect_build_failures(root, 'output')
+            bad.rmdir()
+            for index in range(5):
+                (builds / (str(index) * 32)).mkdir(mode=0o700)
+            with self.assertRaisesRegex(ValueError, 'attempt-limit'):
+                collect_build_failures(root, 'output')
+
+    def test_missing_receipt_and_each_stream_preserve_other_actual_read_metadata(self):
+        import json
+        from tools.dev_workflow import paths
+        from tools.qualify_rust_dependency_watch import collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            for missing in ('receipt', 'stdout', 'stderr'):
+                with self.subTest(missing=missing):
+                    root = Path(temporary).resolve() / missing
+                    source = root / 'builds' / ('a' * 32) / 'source'
+                    source.parent.mkdir(parents=True, mode=0o700)
+                    source.mkdir(mode=0o700)
+                    cache = source / 'build-cache'; cache.mkdir(mode=0o700)
+                    owner = {'id': 'a' * 32, 'key': 'sha256:' + '0' * 64, 'source': 'sha256:' + '1' * 64,
+                             'recipe': 'sha256:' + '2' * 64, 'state': 'failed'}
+                    (source.parent / 'attempt.json').write_text(json.dumps(owner))
+                    if missing != 'receipt':
+                        output = source / 'output'; output.mkdir(mode=0o700)
+                        (output / 'BUILD-FAILED.json').write_text('{"stage":"compile"}')
+                    for stream in ('stdout', 'stderr'):
+                        if stream != missing:
+                            (cache / ('compiler-' + stream + '.log')).write_bytes(
+                                b'{"code":"compiler-input-or-build-failed"}' if stream == 'stdout' else b'private-stderr')
+                    absent = 'output/BUILD-FAILED.json' if missing == 'receipt' else 'build-cache/compiler-' + missing + '.log'
+                    with self.assertRaises(ValueError):
+                        paths.read(source, absent, 1024 * 1024)
+                    observed = collect_build_failures(root, 'output')[0]
+                    self.assertEqual(observed['state'], 'failed')
+                    self.assertEqual('stage' in observed, missing != 'receipt')
+                    self.assertEqual('adapterCode' in observed, missing != 'stdout')
+                    self.assertEqual('compilerStdoutSha256' in observed, missing != 'stdout')
+                    self.assertEqual('compilerStderrSha256' in observed, missing != 'stderr')
+                    self.assertNotIn('private-stderr', str(observed))
+
+    def test_optional_file_does_not_swallow_unsafe_existing_entries_or_oversized_reads(self):
+        import os
+        from tools.qualify_rust_dependency_watch import optional_failure_file
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            (root / 'not-file').mkdir(mode=0o700)
+            with self.assertRaisesRegex(ValueError, 'single-link-regular-file'):
+                optional_failure_file(root, 'not-file', 16)
+            target = root / 'metadata'; target.write_bytes(b'x' * 17)
+            with self.assertRaisesRegex(ValueError, 'file-byte-limit'):
+                optional_failure_file(root, 'metadata', 16)
+            target.write_bytes(b'{}'); os.link(target, root / 'alias')
+            with self.assertRaisesRegex(ValueError, 'single-link-regular-file'):
+                optional_failure_file(root, 'metadata', 16)
+
+    def test_public_codes_and_command_labels_are_closed_real_builder_literals(self):
+        import ast
+        import inspect
+        from tools import qualify_rust_dependency_watch as qualifier
+        tree = ast.parse(inspect.getsource(qualifier.public_build_failure))
+        reasons, commands, stages = set(), set(), set()
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == 'reasons'
+                    for target in node.targets)):
+                reasons.update(key.value for key in node.value.keys)
+            if isinstance(node, ast.Compare) and isinstance(node.left, ast.Subscript):
+                for comparison in node.comparators:
+                    if isinstance(comparison, ast.Set):
+                        selected = {item.value for item in comparison.elts}
+                        (commands if isinstance(node.left.value, ast.Name) and node.left.value.id == 'command'
+                         else stages).update(selected)
+        root = Path(__file__).resolve().parents[2]
+        actual = set()
+        for name in ('tools/rust_capsule_build.py', 'tools/guest_compatibility_build.py'):
+            actual.update(node.value for node in ast.walk(ast.parse((root / name).read_text()))
+                          if isinstance(node, ast.Constant) and isinstance(node.value, str))
+        self.assertEqual((len(reasons), len(commands), len(stages)), (7, 11, 10))
+        self.assertLessEqual(reasons | commands | stages, actual)
+
+    def test_observer_and_metadata_errors_preserve_original_qualification_failure(self):
+        from tools.qualify_rust_dependency_watch import add_public_diagnostics
+        original = RuntimeError('original-qualification-failure')
+        public = {'passed': False, 'failure': 'initial-build-failed'}
+        def broken_events():
+            raise ValueError('unsafe-observer')
+        def broken_descriptor():
+            raise KeyError('missing-output-root')
+        with self.assertRaises(RuntimeError) as observed:
+            try:
+                raise original
+            finally:
+                add_public_diagnostics(public, broken_events, Path('owned-workspace'), broken_descriptor)
+        self.assertIs(observed.exception, original)
+        self.assertEqual(public, {'passed': False, 'failure': 'initial-build-failed'})
+
+    def test_successful_receipt_does_not_collect_failure_metadata(self):
+        from tools.qualify_rust_dependency_watch import add_public_diagnostics
+        public = {'passed': True}
+        add_public_diagnostics(public, lambda: [{'code': 'success', 'private': '/private'}],
+            Path('owned-workspace'), lambda: self.fail('successful receipt collected failure metadata'))
+        self.assertEqual(public, {'passed': True, 'watchEvents': [{'code': 'success'}]})
+
+    def test_parser_and_runtime_observer_errors_preserve_original_exception_identity(self):
+        from tools.qualify_rust_dependency_watch import add_public_diagnostics
+        for observer_error, descriptor_error in ((RecursionError, RuntimeError), (RuntimeError, RecursionError)):
+            with self.subTest(observer=observer_error.__name__, descriptor=descriptor_error.__name__):
+                original = ValueError('initial-build-failed')
+                public = {'passed': False, 'failure': str(original)}
+                def broken_events():
+                    raise observer_error('private-observer-details')
+                def broken_descriptor():
+                    raise descriptor_error('private-metadata-details')
+                with self.assertRaises(ValueError) as observed:
+                    try:
+                        raise original
+                    finally:
+                        add_public_diagnostics(public, broken_events, Path('owned-workspace'), broken_descriptor)
+                self.assertIs(observed.exception, original)
+                self.assertEqual(public, {'passed': False, 'failure': 'initial-build-failed'})
+
+    def test_bounded_deeply_nested_actual_metadata_cannot_replace_original_failure(self):
+        import json
+        from tools.qualify_rust_dependency_watch import add_public_diagnostics
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source = root / 'builds' / ('a' * 32) / 'source'
+            source.parent.mkdir(parents=True, mode=0o700)
+            source.mkdir(mode=0o700)
+            output = source / 'output'; output.mkdir(mode=0o700)
+            owner = {'id': 'a' * 32, 'key': 'sha256:' + '0' * 64, 'source': 'sha256:' + '1' * 64,
+                     'recipe': 'sha256:' + '2' * 64, 'state': 'failed'}
+            (source.parent / 'attempt.json').write_text(json.dumps(owner))
+            raw = b'[' * 3000 + b'0' + b']' * 3000
+            self.assertLess(len(raw), 65536)
+            with self.assertRaises(RecursionError):
+                json.loads(raw)
+            (output / 'BUILD-FAILED.json').write_bytes(raw)
+            original = RuntimeError('original-build-failure')
+            public = {'passed': False, 'failure': 'initial-build-failed'}
+            with self.assertRaises(RuntimeError) as observed:
+                try:
+                    raise original
+                finally:
+                    add_public_diagnostics(public, lambda: [], root, lambda: 'output')
+            self.assertIs(observed.exception, original)
+            self.assertEqual(public, {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': []})
