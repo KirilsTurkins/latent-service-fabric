@@ -400,7 +400,12 @@ async fn malformed_oversized_redirect_and_http_error_replies_preserve_mutation_u
         let uncertain = fixture.settled(&effect, Disposition::RetryScheduled).await;
         assert_eq!(
             uncertain.latest().unwrap().disposition,
-            Disposition::Uncertain
+            Disposition::Uncertain,
+            "fault={fault:?}, attempts={}, reason={}, posts={}, lookups={}",
+            uncertain.attempts(),
+            uncertain.latest().unwrap().reason,
+            fixture.proxy.posts.load(Ordering::Acquire),
+            fixture.proxy.lookups.load(Ordering::Acquire),
         );
         assert_eq!(uncertain.latest().unwrap().reason, "http-reply-unknown");
         assert!(uncertain.latest().unwrap().provider_receipt.is_none());
