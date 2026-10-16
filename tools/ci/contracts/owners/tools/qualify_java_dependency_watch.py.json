@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve normal per-build review/trust/signature and fence first external down before dispatch",
+  "reviewReason": "Prevent source frontend bytecode writes to the delivered tool inventory using isolated no-bytecode interpreter flags; preserve every watch, signing and shutdown guard.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "8c4998cedce1d5bfcf3fa8eb66425cc914d210109a183cef123d7d14e14ee905"
+  "sha256": "1831e47e6a815334909bae4c18b7da40d9df67800942a79b90115b888b91b123"
 }

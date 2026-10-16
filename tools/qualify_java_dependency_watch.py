@@ -35,6 +35,23 @@ def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
 
 
+def public_projection(report, *, qualifier, helper, source_probe):
+    public = {key: report[key] for key in (
+        'schemaVersion', 'passed', 'publisherAuthenticated', 'cleanHost', 'sourceCandidate',
+        'admission', 'phase', 'durationSeconds')}
+    public.update(qualifier=qualifier, helper=helper, sourceProbe=source_probe,
+        outsideJars=report.get('outsideJars', {}),
+        originalInputsRemovedBeforeCompile=report.get('originalInputsRemovedBeforeCompile', False),
+        deploymentCount=len(report['stages']), cleanup=report.get('cleanup', 'not-performed'),
+        shutdowns=[{'id': row['id'], 'watchExitCode': row['watchExitCode'],
+                    'state': row['result']['state'], 'reaped': row['result']['reaped'],
+                    'cleanShutdown': row['result']['cleanShutdown']} for row in report.get('shutdowns', [])],
+        stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
+    if 'failure' in report:
+        public['failure'] = report['failure']
+    return public
+
+
 class ShutdownOnce:
     """Fence an external shutdown before dispatch, including uncertain failure."""
     def __init__(self):
@@ -89,7 +106,7 @@ def main() -> int:
     workspace_prefix = 'test-java-lib-' + root.name
     workspace_name = workspace_prefix + '-initial'
     application = root / 'application'
-    env = {'PATH': '/nonexistent', 'HOME': '/home/ubuntu', 'LANG': 'C.UTF-8',
+    env = {'PATH': '/nonexistent', 'HOME': str(Path.home()), 'LANG': 'C.UTF-8',
            'TMPDIR': str(root), 'TEMP': str(root), 'TMP': str(root)}
 
     def command(label, argv, *, timeout=1000, expected=0):
@@ -169,7 +186,7 @@ def main() -> int:
         require(watcher is None or watcher.poll() is not None, 'previous-watch-owner-not-retired')
         shutdown = ShutdownOnce()
         workspace_name = workspace_prefix + '-' + label
-        node_root = Path('/home/ubuntu/.lsf-dev') / workspace_name
+        node_root = source_probe.helper.root_directory() / workspace_name
         front(label + '-connect', 'connect', '--backend-config', root / 'backend.json')
         require(state.workspace(source_probe.helper.root_directory(), workspace_name, create=True) == node_root,
                 'explicit-source-node-workspace-mismatch')
@@ -198,7 +215,7 @@ def main() -> int:
     try:
         # No controller or recipe is imported from a checkout. The explicit
         # wrapper verifies the helper and delegates to its unchanged CLI.
-        frontend.write_text('#!' + str(python) + '''
+        frontend.write_text('#!' + str(python) + ' -IB' + '''
 import hashlib,io,pathlib,sys
 p=pathlib.Path(''' + repr(str(args.helper)) + ''')
 assert 'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()==''' + repr(args.helper_sha256) + '''
@@ -374,6 +391,9 @@ public final class Capsule implements Bindings.Exports {
                     report['observerCleanup'] = 'unconfirmed'
         report['durationSeconds'] = round(time.monotonic() - began, 6)
         write(root / 'qualification.json', report)
+        write(root / 'public-qualification.json', public_projection(report,
+            qualifier=digest(Path(__file__)), helper=args.helper_sha256,
+            source_probe=args.source_probe_sha256))
 
 
 if __name__ == '__main__':
