@@ -1,0 +1,454 @@
+{
+  "formatVersion": 1,
+  "schemaVersion": "latent.java.current-http-capture-custody.v1",
+  "scope": "Complete fresh current Java compiler material custody for the recreated environment; no runtime qualification",
+  "captureKind": "refreshed-current-http",
+  "constructor": {
+    "profile": "qualified-http-v1:bb85705ae221db0b883cf8253e00ef1091b7ea70e768299bb14a2175286c4391",
+    "recordSha256": "sha256:f13fb2d65c7133e016297a56217356e1c62915d45e0918803bc1a939b7cd64de",
+    "nativePreviewSha256": "sha256:027ba842aca8d99f5537ff0c5ac8d82b4c1653c9bd90b1b24d63aa5ae24bd650",
+    "sourceCommit": "36e95627397b409dbcbd0e27b01f54009af15f23",
+    "conductorSource": "36e95627397b409dbcbd0e27b01f54009af15f23",
+    "installationSha256": "sha256:6a106ebb335524106a1c60d5d919d52226d54b10ff8b6e46159634348f89b5ae",
+    "caSha256": "sha256:d9a6e82ea68343e65ed1cb4d82b02292d128591581957361e72ec3e11470d3ff",
+    "serverCertificateSha256": "sha256:4fb45a2297ef06f17a896a9bca5895221de5daa11c60b1c2c693218ecffe755f",
+    "endpoint": {
+      "formatVersion": 1,
+      "origin": {
+        "scheme": "https",
+        "host": "localhost",
+        "port": 36429
+      },
+      "operationPath": "/effect",
+      "lookupPrefix": "/receipts/",
+      "endpointIncarnation": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "retentionMillis": 600000,
+      "mediaType": "application/octet-stream",
+      "maximumPayloadBytes": 27
+    }
+  },
+  "predecessorCapturePacketSha256": "sha256:014a607edd532e7a5c53d35d3a19158a2e0cc0645d214b2a8a44ba56a974a693",
+  "captures": {
+    "formatVersion": 1,
+    "sourceCommit": "eba0d96e9439028aacd6c1f9a85d4ce0118a19bc",
+    "sourceTree": "6f7a6b9900858370e4ce61517a12947731f6e405",
+    "nativeIdempotencyProfile": "qualified-http-v1:bb85705ae221db0b883cf8253e00ef1091b7ea70e768299bb14a2175286c4391",
+    "variants": {
+      "aggregate": {
+        "materials": {
+          "component": {
+            "sha256": "sha256:c0fdb390a366f94b860e3d2d5139055691a67ada2fae19e7184462b49ab3549d",
+            "bytes": 1047270
+          },
+          "report": {
+            "sha256": "sha256:57bfdd02d2c68837149b912695d42c623ae9f1e1418526e0f01a9ac68c3f180f",
+            "bytes": 20266
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:a9d0d5d562e58bdcab3983c52787aa0d20a9c0c583f24ecc782f014641bab249",
+            "bytes": 25699
+          },
+          "sourceArchive": {
+            "sha256": "sha256:a18db0f4a36d730459ebfa716d2e954aa2e17799f1b481cc84019d8b7ef2b624",
+            "bytes": 137579
+          },
+          "recipeInputs": {
+            "sha256": "sha256:7a2a8e0a2639f07831a92539d89bee7093d12140c5812d3fc4bb515df1b72793",
+            "bytes": 8877
+          },
+          "companion": {
+            "sha256": "sha256:6554b968e80b2e3132742d3c95e21ba2056fa4fa9f846b419c36daf2da3a57e4",
+            "bytes": 959
+          }
+        },
+        "nativeEffectProfile": null,
+        "nativeEffectOperation": null
+      },
+      "put-once-legacy-v1": {
+        "materials": {
+          "component": {
+            "sha256": "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd",
+            "bytes": 1051617
+          },
+          "report": {
+            "sha256": "sha256:a820889c9dee457cb39819f468dcba572019a723babbf5864bd2b73ed73a0ebb",
+            "bytes": 21036
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:eb5af110d13ee53e0891dd59e4e1bded9efd06f22e32138aa084aaaae1022204",
+            "bytes": 26497
+          },
+          "sourceArchive": {
+            "sha256": "sha256:57f41611dc7a3e8492b501480d4330b0ce888b22458e8e57e21ca4419edd4e67",
+            "bytes": 138452
+          },
+          "recipeInputs": {
+            "sha256": "sha256:32bbd6a630b8ce8c777dfbf11c2bd31ef6017d8f0bc5858518336e20f0ee4899",
+            "bytes": 9463
+          },
+          "companion": {
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+            "bytes": 959
+          },
+          "capsuleSource": {
+            "sha256": "sha256:31ae58fe2dac40229b9719930cf6dacaad3ea97790db6039b9d76044368ccf12",
+            "bytes": 3925
+          },
+          "currentHttpMarker": {
+            "sha256": "sha256:3f06bac2b40ee883e2583fab347a0d666924b3d47e91b32d0920c62c0023d407",
+            "bytes": 176
+          },
+          "requirements": {
+            "sha256": "sha256:7d33a4376a49e137e1864e1f20946ad1b7979bde9cacfa8745da0e4aa603c171",
+            "bytes": 787
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:85053de6baff57cdabd85753fd8829894ad4cebbd0dbd81e481a828f6e3d439f",
+            "bytes": 512
+          }
+        },
+        "nativeEffectProfile": "current-v2-http",
+        "nativeEffectOperation": "http"
+      },
+      "put-once-compatible-v2": {
+        "materials": {
+          "component": {
+            "sha256": "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813",
+            "bytes": 1050523
+          },
+          "report": {
+            "sha256": "sha256:d8cb174b150e64f382b9e0cd05c0d86a38afc1d3b3ef9f03dd75f27fb39b9159",
+            "bytes": 21177
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:cbc409cfe5e9a135c82540cd4e75109599dab70cac88560a9bf254437b5f9051",
+            "bytes": 26635
+          },
+          "sourceArchive": {
+            "sha256": "sha256:b96bf112427e5882d122fd384eae29a4d272e97aaced7d5aafe53121672866a1",
+            "bytes": 138865
+          },
+          "recipeInputs": {
+            "sha256": "sha256:32bbd6a630b8ce8c777dfbf11c2bd31ef6017d8f0bc5858518336e20f0ee4899",
+            "bytes": 9463
+          },
+          "companion": {
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+            "bytes": 959
+          },
+          "capsuleSource": {
+            "sha256": "sha256:71a1ad4e95e4601a148a3642b6593c112771f443623699ed26da4e76665766ba",
+            "bytes": 3819
+          },
+          "currentHttpMarker": {
+            "sha256": "sha256:3f06bac2b40ee883e2583fab347a0d666924b3d47e91b32d0920c62c0023d407",
+            "bytes": 176
+          },
+          "requirements": {
+            "sha256": "sha256:7d33a4376a49e137e1864e1f20946ad1b7979bde9cacfa8745da0e4aa603c171",
+            "bytes": 787
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:12360858819356371de20bb326b1096cdc4a490635d6c2e9dec5c415efff2f9d",
+            "bytes": 595
+          }
+        },
+        "nativeEffectProfile": "current-v2-http",
+        "nativeEffectOperation": "http"
+      },
+      "put-once-writer-v2": {
+        "materials": {
+          "component": {
+            "sha256": "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+            "bytes": 1050523
+          },
+          "report": {
+            "sha256": "sha256:5f0f0e61b528137b4707158e70813f53e87f3ccb24e1cc2542b6cdbda7c8fa77",
+            "bytes": 21039
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:0dc4ef6a74caa50dde47137ccd66c728d4783edcd5a30c084bf36458601d83bf",
+            "bytes": 26635
+          },
+          "sourceArchive": {
+            "sha256": "sha256:b0f06c2f224c3215f97da40b05c033b07800892a143d87017763f870f102d6c2",
+            "bytes": 138890
+          },
+          "recipeInputs": {
+            "sha256": "sha256:32bbd6a630b8ce8c777dfbf11c2bd31ef6017d8f0bc5858518336e20f0ee4899",
+            "bytes": 9463
+          },
+          "companion": {
+            "sha256": "sha256:e5719a610fb20811a402aed0531d13d71547978104048d9e275ae7b7ae061c49",
+            "bytes": 959
+          },
+          "capsuleSource": {
+            "sha256": "sha256:2ea02a9201cad1a5214724315e36fbb128aee101878568826918363bf3f0f743",
+            "bytes": 3818
+          },
+          "currentHttpMarker": {
+            "sha256": "sha256:3f06bac2b40ee883e2583fab347a0d666924b3d47e91b32d0920c62c0023d407",
+            "bytes": 176
+          },
+          "requirements": {
+            "sha256": "sha256:9c3c5c20dd790a4c06982299ea649b6cd76d3350169086b43b1f5a6d7f2ab6de",
+            "bytes": 787
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:3c9b9439afc4d81be04685b11f8165be508b85a199ca4706b1eaf32c1ef17b70",
+            "bytes": 591
+          }
+        },
+        "nativeEffectProfile": "current-v2-http",
+        "nativeEffectOperation": "http"
+      },
+      "put-once-diagnostics": {
+        "materials": {
+          "component": {
+            "sha256": "sha256:b46606299b77eeb9efb12abb2bdb793d5bba78bb1f8dc42d1be4bc92f5463115",
+            "bytes": 1063355
+          },
+          "report": {
+            "sha256": "sha256:4739b167d4bb9f647e6f9b85086979680b2344383aa2cb9ce17ebcee8796226f",
+            "bytes": 21304
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:9387b55e985fec2735de5a1f55c43a5b0ec5ddb7e62b3cc8b73d4bc264a92483",
+            "bytes": 26777
+          },
+          "sourceArchive": {
+            "sha256": "sha256:243206316ab186ec23449349d9b49f557853f8f546bac2808c6aa4b164edca23",
+            "bytes": 139416
+          },
+          "recipeInputs": {
+            "sha256": "sha256:bfbbd600230eb187f573b3bee78718c616b33a8be4e0077a941aedd02a86e43d",
+            "bytes": 9760
+          },
+          "companion": {
+            "sha256": "sha256:24a689c7166ffbdbaacefa8d7d7efe18a98d532adc94fc4392968aaab837349d",
+            "bytes": 959
+          },
+          "capsuleSource": {
+            "sha256": "sha256:ac4a89a75bc9868350f21924eefcf2c20ceefd6dc200b0b9c3c4e6064c51b1d8",
+            "bytes": 4147
+          },
+          "currentHttpMarker": {
+            "sha256": "sha256:3f06bac2b40ee883e2583fab347a0d666924b3d47e91b32d0920c62c0023d407",
+            "bytes": 176
+          },
+          "requirements": {
+            "sha256": "sha256:7d33a4376a49e137e1864e1f20946ad1b7979bde9cacfa8745da0e4aa603c171",
+            "bytes": 787
+          },
+          "applicationSchemaInputs": {
+            "sha256": "sha256:c12d550e271d5638cce287f89a3b4d62e55e1768b3654e90bbbd3c2d14347d00",
+            "bytes": 512
+          }
+        },
+        "nativeEffectProfile": "current-v2-http",
+        "nativeEffectOperation": "http"
+      },
+      "forbidden-http": {
+        "materials": {
+          "component": {
+            "sha256": "sha256:717712f8976aa0be1fcc01cb425116f8372832937bedcf63d52b21e509d22767",
+            "bytes": 1145250
+          },
+          "report": {
+            "sha256": "sha256:71b4329dcadc3c0d55f4ac6eeca1cc4faf153526d407b7d28460fac1ba8191d5",
+            "bytes": 20790
+          },
+          "compilerInputs": {
+            "sha256": "sha256:d50ed9cd28577ce9c1b31c49ce5e6b48657d6de21e5c7eff37cc922f85e0b76b",
+            "bytes": 2952146
+          },
+          "sourceInputs": {
+            "sha256": "sha256:0ba953917970f7fc24f22acf378b47366fb207dda6d3c99b8ced98f5bbca1691",
+            "bytes": 25827
+          },
+          "sourceArchive": {
+            "sha256": "sha256:e8c6e9f2c961fccf9ee3faa275d87d8e1f5624964d8c7b1c7570a65e0b00534a",
+            "bytes": 137957
+          },
+          "recipeInputs": {
+            "sha256": "sha256:7a2a8e0a2639f07831a92539d89bee7093d12140c5812d3fc4bb515df1b72793",
+            "bytes": 8877
+          },
+          "companion": {
+            "sha256": "sha256:2b71f2d1e6151f97478c258a477ef06470fe43c1f13f37387de39efdd63541a3",
+            "bytes": 974
+          },
+          "capsuleSource": {
+            "sha256": "sha256:239e151da4f0bb402f75d378663be4e8d441ed250ddc99c25df4ee32389bd5fa",
+            "bytes": 4360
+          }
+        },
+        "nativeEffectProfile": null,
+        "nativeEffectOperation": null
+      }
+    }
+  },
+  "diagnosticProbe": {
+    "helper": {
+      "sha256": "sha256:7da3fb40e27adda8af63df6cfd793b076f991bdf61c3f7b20cae5e7a55112091",
+      "bytes": 1818
+    },
+    "declaration": {
+      "sha256": "sha256:cf32367c969c703ccefdcc6ec4499909850f68fc095a6964b37132eb41b24e14",
+      "bytes": 1159
+    },
+    "requestedNativeBytesBound": 67174400,
+    "slabBytes": 65536,
+    "maximumSlabs": 1025,
+    "ordinaryJavaHeapBytes": 4194304,
+    "nativeMemoryGrantBytes": 67108864,
+    "memoryExhaustionQualified": false
+  },
+  "compilerInputs": {
+    "vendoredBytesMatchCompilerSource": true,
+    "recipeBytesMatchCompilerSource": true,
+    "ordinaryJavaHeapBytes": 4194304,
+    "nativeMemoryGrantBytes": 67108864,
+    "changedMaterialKinds": {
+      "aggregate": [],
+      "put-once-legacy-v1": [
+        "sourceInputs",
+        "sourceArchive"
+      ],
+      "put-once-compatible-v2": [
+        "sourceInputs",
+        "sourceArchive"
+      ],
+      "put-once-writer-v2": [
+        "sourceInputs",
+        "sourceArchive"
+      ],
+      "put-once-diagnostics": [
+        "sourceInputs",
+        "sourceArchive"
+      ],
+      "forbidden-http": []
+    }
+  },
+  "reconstruction": {
+    "historicalSelectionsUnchanged": true,
+    "componentIdentityComparison": {
+      "aggregate": {
+        "historical": {
+          "sha256": "sha256:c0fdb390a366f94b860e3d2d5139055691a67ada2fae19e7184462b49ab3549d",
+          "bytes": 1047270
+        },
+        "actual": {
+          "sha256": "sha256:c0fdb390a366f94b860e3d2d5139055691a67ada2fae19e7184462b49ab3549d",
+          "bytes": 1047270
+        },
+        "byteExactHistorical": true
+      },
+      "put-once-legacy-v1": {
+        "historical": {
+          "sha256": "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd",
+          "bytes": 1051617
+        },
+        "actual": {
+          "sha256": "sha256:eae8efb880744d60ba7163590fb0fd825d45cb2018760b7c1cd00272e4cefecd",
+          "bytes": 1051617
+        },
+        "byteExactHistorical": true
+      },
+      "put-once-compatible-v2": {
+        "historical": {
+          "sha256": "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813",
+          "bytes": 1050523
+        },
+        "actual": {
+          "sha256": "sha256:ecd7d566a6403468a1166ad0c9042a51cce47e12f92e63907bce680daa08f813",
+          "bytes": 1050523
+        },
+        "byteExactHistorical": true
+      },
+      "put-once-writer-v2": {
+        "historical": {
+          "sha256": "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+          "bytes": 1050523
+        },
+        "actual": {
+          "sha256": "sha256:05e8bbaa90168aa250d779431a317fcde8f785d93e511054e0d5facaaad5787d",
+          "bytes": 1050523
+        },
+        "byteExactHistorical": true
+      },
+      "put-once-diagnostics": {
+        "historical": {
+          "sha256": "sha256:b46606299b77eeb9efb12abb2bdb793d5bba78bb1f8dc42d1be4bc92f5463115",
+          "bytes": 1063355
+        },
+        "actual": {
+          "sha256": "sha256:b46606299b77eeb9efb12abb2bdb793d5bba78bb1f8dc42d1be4bc92f5463115",
+          "bytes": 1063355
+        },
+        "byteExactHistorical": true
+      },
+      "forbidden-http": {
+        "historical": {
+          "sha256": "sha256:717712f8976aa0be1fcc01cb425116f8372832937bedcf63d52b21e509d22767",
+          "bytes": 1145250
+        },
+        "actual": {
+          "sha256": "sha256:717712f8976aa0be1fcc01cb425116f8372832937bedcf63d52b21e509d22767",
+          "bytes": 1145250
+        },
+        "byteExactHistorical": true
+      }
+    },
+    "exactNativeProfileOnlyMaterialDelta": {
+      "put-once-legacy-v1": [
+        "currentHttpMarker",
+        "requirements"
+      ],
+      "put-once-compatible-v2": [
+        "currentHttpMarker",
+        "requirements"
+      ],
+      "put-once-writer-v2": [
+        "currentHttpMarker",
+        "requirements"
+      ],
+      "put-once-diagnostics": [
+        "currentHttpMarker",
+        "requirements"
+      ]
+    },
+    "reportIdentityIsNew": {
+      "aggregate": true,
+      "put-once-legacy-v1": true,
+      "put-once-compatible-v2": true,
+      "put-once-writer-v2": true,
+      "put-once-diagnostics": true,
+      "forbidden-http": true
+    }
+  },
+  "signingQualified": false,
+  "executionQualified": false,
+  "memoryExhaustionQualified": false,
+  "packagedDistributionQualified": false
+}

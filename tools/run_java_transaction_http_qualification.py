@@ -59,6 +59,7 @@ COLLECTORS += ('tools/java_transaction_qualification/effect_reconciliation.py',
                'api/proto/latent/control/v1/state.proto', 'api/proto/latent/control/v1/release.proto',
                'api/proto/latent/transaction/v1/transaction.proto')
 COLLECTORS += ('tools/java_transaction_qualification/restored_view.py',)
+COLLECTORS += ('docs/testing/evidence/java-current-http-refreshed-capture-2026-10-16.json',)
 COLLECTORS += ('docs/testing/evidence/java-current-http-reconstructed-capture-2026-10-15.json',)
 REMAINING = ["reviewed-schema-and-restore-original-results", "trap-and-fuel-after-staging",
              "cancellation-before-commit", "memory-exhaustion-before-commit", "crash-before-commit",

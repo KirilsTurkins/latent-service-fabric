@@ -4408,14 +4408,20 @@
         "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_unpinned_report_before_component_or_output",
         "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_relative_input_before_read_or_output",
         "authoring::current_java::reconstructed::tests::reconstructed_current_mode_keeps_forbidden_capture_unsigned_before_output",
-        "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_existing_or_relative_output_before_inputs"
+        "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_existing_or_relative_output_before_inputs",
+        "authoring::current_java::refreshed::tests::refreshed_current_packet_preserves_six_components_and_closed_compiler_contracts",
+        "authoring::current_java::refreshed::tests::refreshed_current_mode_requires_original_source_and_five_inputs_before_output",
+        "authoring::current_java::refreshed::tests::refreshed_current_mode_refuses_unpinned_report_before_component_or_output",
+        "authoring::current_java::refreshed::tests::refreshed_current_mode_refuses_relative_input_before_read_or_output",
+        "authoring::current_java::refreshed::tests::refreshed_current_mode_keeps_forbidden_capture_unsigned_before_output",
+        "authoring::current_java::refreshed::tests::refreshed_current_mode_refuses_existing_or_relative_output_before_inputs"
       ],
       "expectedIgnored": [],
       "id": "latent-policy.example.capsule-authoring",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 31,
+      "minimumCases": 37,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -10173,7 +10179,11 @@
         "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_review_uses_new_marker_proof_and_preserves_original_codec",
         "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_tuple_refuses_mixed_historical_or_foreign_associations",
         "standalone::state::recovery::profile::reconstructed_http::tests::reconstructed_review_retains_all_original_declaration_and_codec_gates",
-        "standalone::state::installations::tests::http::refusal::actual_native_ingress_refusal_keeps_resource_exhausted_in_the_signed_http_root"
+        "standalone::state::installations::tests::http::refusal::actual_native_ingress_refusal_keeps_resource_exhausted_in_the_signed_http_root",
+        "standalone::state::recovery::profile::refreshed_http::tests::authentic_refreshed_tuple_keeps_all_four_compiler_source_and_codec_associations",
+        "standalone::state::recovery::profile::refreshed_http::tests::refreshed_review_uses_new_marker_proof_and_preserves_original_codec",
+        "standalone::state::recovery::profile::refreshed_http::tests::refreshed_tuple_refuses_mixed_historical_or_foreign_associations",
+        "standalone::state::recovery::profile::refreshed_http::tests::refreshed_review_retains_all_original_declaration_and_codec_gates"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10242,7 +10252,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 433,
+      "minimumCases": 437,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [

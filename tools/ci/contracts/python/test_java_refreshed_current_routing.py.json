@@ -1,0 +1,179 @@
+{
+  "cases": [
+    "RefreshedCurrentRouting.test_all_five_old_modes_never_read_the_new_packet",
+    "RefreshedCurrentRouting.test_all_six_selection_rows_remain_explicit_and_refuse_added_authority",
+    "RefreshedCurrentRouting.test_changed_packet_source_profile_report_or_component_has_no_old_fallback",
+    "RefreshedCurrentRouting.test_each_selected_source_and_component_remains_exact",
+    "RefreshedCurrentRouting.test_exact_new_set_selects_fixed_mode_without_reading_old_packets",
+    "RefreshedCurrentRouting.test_missing_malformed_or_incomplete_new_packet_is_fatal",
+    "RefreshedCurrentRouting.test_new_named_report_map_is_distinct_from_each_old_closed_mode",
+    "RefreshedCurrentRouting.test_package_issues_one_fixed_five_input_signer_call_and_keeps_forbidden_unsigned",
+    "RefreshedCurrentRouting.test_partial_duplicate_or_diagnostic_substitution_refuses",
+    "RefreshedCurrentRouting.test_public_packet_preserves_six_components_and_separate_new_capture_identity",
+    "RefreshedCurrentRouting.test_refused_capture_identity_cannot_issue_any_signer_command",
+    "RefreshedCurrentRouting.test_single_old_or_unknown_report_cannot_mix_with_the_new_set",
+    "RefreshedCurrentRouting.test_terminal_pending_and_early_identity_bind_the_new_packet_bytes"
+  ],
+  "guards": {
+    "RefreshedCurrentRouting.test_all_five_old_modes_never_read_the_new_packet": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_all_six_selection_rows_remain_explicit_and_refuse_added_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_changed_packet_source_profile_report_or_component_has_no_old_fallback": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_each_selected_source_and_component_remains_exact": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_exact_new_set_selects_fixed_mode_without_reading_old_packets": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_missing_malformed_or_incomplete_new_packet_is_fatal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_new_named_report_map_is_distinct_from_each_old_closed_mode": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_package_issues_one_fixed_five_input_signer_call_and_keeps_forbidden_unsigned": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_partial_duplicate_or_diagnostic_substitution_refuses": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_public_packet_preserves_six_components_and_separate_new_capture_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_refused_capture_identity_cannot_issue_any_signer_command": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_single_old_or_unknown_report_cannot_mix_with_the_new_set": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    },
+    "RefreshedCurrentRouting.test_terminal_pending_and_early_identity_bind_the_new_packet_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:227e919baf4dca9adcdbdc30e9e858fcc83182abce42d912db95813da237cd9b",
+        "class:setup-sha256:569dfb325830e8984925ec590d332d90f0174f8df753e9c326bf062e029b25dd"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_refreshed_current_routing.py",
+  "reviewReason": "Additive authentic fresh-profile Java capture routing; preserve every historical cohort and guard. Mock routing is separate from actual material and native qualification.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -15,6 +15,7 @@ const WRITER_REQUIREMENTS: &str =
 pub(super) enum SelectedHttpCustody {
     Historical(HttpCustody),
     Reconstructed,
+    Refreshed,
 }
 
 impl SelectedHttpCustody {
@@ -25,7 +26,11 @@ impl SelectedHttpCustody {
         if input.marker.len() > 8192 || input.requirements.len() > 8192 {
             return Err(super::super::denied());
         }
-        if digest(input.marker) != MARKER {
+        let marker = digest(input.marker);
+        if marker == super::refreshed_http::MARKER {
+            return super::refreshed_http::select(profile, input);
+        }
+        if marker != MARKER {
             return HttpCustody::select(profile, input).map(Self::Historical);
         }
         let (component, writer) = match profile {
