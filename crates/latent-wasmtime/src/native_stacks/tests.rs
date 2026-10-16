@@ -245,4 +245,84 @@ fn controlled_profile_rejects_pooling_and_absent_runtime_and_binds_compatibility
     config.owned_native_stacks = true;
     config.instance_allocator = InstanceAllocator::Pooling;
     assert!(config.validate().is_err());
+    config.instance_allocator = InstanceAllocator::OnDemand;
+    config.owned_native_threads = true;
+    assert!(config.validate().is_ok());
+    let native = config.profile(DispatchMode::Generic);
+    assert_eq!(
+        native.configuration["host-abi-profile"],
+        latent_core::PHASE3_HOST_ABI_V6.id
+    );
+    assert_eq!(
+        native.configuration["native-thread-profile"],
+        crate::host::native::PROFILE
+    );
+    config.owned_native_threads = false;
+    let ordinary = config.profile(DispatchMode::Generic);
+    assert_eq!(
+        ordinary.configuration["host-abi-profile"],
+        latent_core::PHASE3_HOST_ABI_V5.id
+    );
+    assert_ne!(
+        native.configuration["configuration-digest"],
+        ordinary.configuration["configuration-digest"]
+    );
+    config.owned_native_threads = true;
+    config.owned_native_stacks = false;
+    assert!(config.validate().is_err());
+    config.owned_native_stacks = true;
+    config.transactional_state = true;
+    assert!(config.validate().is_err());
+}
+
+#[tokio::test]
+async fn child_preadmission_and_exact_native_retirement_keep_original_wait_and_stack_owners() {
+    let (budget, runtime) = owners(2, 4 * 1024 * 1024);
+    let task = runtime.register(OwnerKind::Task, None).unwrap();
+    let context =
+        StackContext::with_children(budget.clone(), runtime.clone(), 64 * 1024, 1).unwrap();
+    let guard = PollGuard::enter(&context);
+    let root_stack = Creator.new_stack(64 * 1024, true).unwrap();
+    let child = context.reserve_child(task.token()).unwrap();
+    let before = budget.host_memory_bytes();
+    assert!(context.reserve_child(task.token()).is_err());
+    assert_eq!(budget.host_memory_bytes(), before);
+    assert_eq!(runtime.snapshot().owners[6], 2);
+    assert!(!child.physically_retired());
+    assert!(context.reap_child(child.token()).is_err());
+    child.prepare_wait(task.token()).unwrap();
+    assert!(child.prepare_wait(task.token()).is_err());
+    let child_stack = Creator.new_stack(64 * 1024, true).unwrap();
+    assert!(Creator.new_stack(64 * 1024, true).is_err());
+    let mapped_charge = budget.host_memory_bytes();
+    let mut retired = Box::pin(child.changed());
+    std::future::poll_fn(|cx| {
+        assert!(retired.as_mut().poll(cx).is_pending());
+        Poll::Ready(())
+    })
+    .await;
+    drop(child_stack);
+    retired.await;
+    assert_eq!(
+        budget.host_memory_bytes(),
+        mapped_charge - context.mapped as u64
+    );
+    assert!(child.physically_retired());
+    assert!(!child.retirement_failed());
+    assert_eq!(runtime.snapshot().owners[6], 1);
+    assert_eq!(runtime.snapshot().owners[3], 1);
+    context.reap_child(child.token()).unwrap();
+    assert!(context.child(child.token()).is_err());
+    drop(child);
+    assert_eq!(runtime.snapshot().owners[3], 0);
+    drop(task);
+    runtime.begin_drain();
+    context.finish_logical().unwrap();
+    drop(root_stack);
+    drop(guard);
+    assert!(context.physically_retired());
+    drop(context);
+    drop(runtime);
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
 }

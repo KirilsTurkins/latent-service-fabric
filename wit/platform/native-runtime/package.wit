@@ -1,0 +1,16 @@
+package latent:runtime-native@0.1.0;
+
+/// Compiler/runtime support for physically owned canonical threads. Tokens
+/// remain Store-local original activation owners and grant no external effects.
+interface threads {
+    use latent:runtime/activation@0.1.0.{token, error};
+    /// The authenticated fixed shim calls this immediately before thread.new
+    /// and immediately resumes that child. Direct intrinsic consumers are denied.
+    start: func(continuation: token) -> result<token, error>;
+    /// Completion requires actual StackMemory destruction after successful
+    /// unmapping, never a guest completion/TLS flag. The original Wait remains
+    /// owned through result consumption and reap, or actual Store destruction.
+    join: async func(native: token, continuation: token) -> result<_, error>;
+    /// Release only physically retired child metadata after consuming join.
+    reap: func(native: token) -> result<_, error>;
+}
