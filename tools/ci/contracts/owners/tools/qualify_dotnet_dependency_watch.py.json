@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Expose the unchanged exact frontend writer as a directly callable qualification helper; retain real isolated/no-bytecode executable controls without evaluating extracted source.",
+  "reviewReason": "Require an explicit finite bytes-only random test fixture and exact per-scenario random/clock grants through existing consent/profile/policy owners, retaining default profiles, original watch assertions and deadlines.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5763a2ac710a07e4806406b092fd1d5ede15a9584bf09db8603768f1261615dc"
+  "sha256": "e5919660f9fa8808313b4b5c59747fff88662793bd0280af966cb845c2cb15f6"
 }

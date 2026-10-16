@@ -151,6 +151,8 @@ jobs:
         run: python -m unittest tools.tests.test_guest_authoring_frontend tools.tests.test_java_dependency_authoring tools.tests.test_java_resource_runtime tools.tests.test_java_private_resolution
       - name: Exercise owned .NET dependency watch fixture boundaries
         run: python -m unittest tools.tests.test_dotnet_dependency_watch
+      - name: Exercise explicit bounded random fixture and denied consent
+        run: python -m unittest tools.tests.test_dev_random_fixture
       - name: Exercise explicit captured Java processor boundaries
         run: python -m unittest tools.tests.test_java_annotation_processors
 

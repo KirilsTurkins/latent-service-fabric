@@ -32,6 +32,10 @@
         "run": "python -m unittest tools.tests.test_dotnet_dependency_watch"
       },
       {
+        "name": "Exercise explicit bounded random fixture and denied consent",
+        "run": "python -m unittest tools.tests.test_dev_random_fixture"
+      },
+      {
         "name": "Exercise explicit captured Java processor boundaries",
         "run": "python -m unittest tools.tests.test_java_annotation_processors"
       }
@@ -49,7 +53,7 @@
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Add .NET watch fixture controls preserving all old controller tests",
+  "reviewReason": "Add seven explicit bounded random fixture controls without removing cases, guards, limits or prior commands; selection requires normal consent and separate service/publication policy grants.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

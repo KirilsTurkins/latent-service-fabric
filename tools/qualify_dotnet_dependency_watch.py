@@ -164,12 +164,18 @@ def main() -> int:
         location = application / 'tests'
         (location / 'library-input.json').write_bytes(b'["SDK"]')
         (location / 'library-expected.json').write_bytes(json.dumps([{'ok': expected}], separators=(',', ':')).encode())
+        selected_random = location / 'random-fixture.json'
+        write(selected_random, {'random': {'maximumOperations': 16, 'maximumOutputBytes': 4096}})
         write(location / 'scenarios.json', {'schemaVersion': 'latent.dev.scenarios.v1', 'scenarios': [{
             'id': 'dependency-output', 'service': 'examples/my-greeting',
             'contract': 'examples:greeting/api@1.0.0', 'function': 'greet',
             'input': 'tests/library-input.json', 'mediaType': 'application/vnd.latent.wit-values.v1+json',
             'expect': {'category': 'success', 'payload': 'tests/library-expected.json'},
-            'requires': [], 'timeoutMillis': 5000, 'required': True, 'fixtures': []}]})
+            'requires': ['clock', 'random'],
+            'execution': {'grants': ['latent:clock/monotonic@0.1.0', 'latent:random/random@0.1.0']},
+            'timeoutMillis': 5000, 'required': True, 'fixtures': [{
+                'id': 'resource-hash-entropy', 'kind': 'real-provider',
+                'identity': digest(selected_random), 'configuration': 'tests/random-fixture.json'}]}]})
 
     def review(label):
         candidate = root / (label + '-candidate.json')
@@ -201,7 +207,8 @@ def main() -> int:
         front(label + '-trust', 'trust', '--project', application)
         front(label + '-build', 'build', '--project', application, '--tool-root', installed)
         front(label + '-prepare-explicit-signed-profile', 'prepare-test', '--consent-test-fixtures',
-              '--admission', 'signed-fixture', '--tool-root', installed)
+              '--admission', 'signed-fixture', '--tool-root', installed,
+              '--fixtures', application / 'tests/random-fixture.json')
         offset = len(observed())
         watch_command = [python, '-I', '-B', dotnet_cli, 'watch', application, '--workspace', workspace_name,
             '--state-root', controller, '--tool-root', installed, '--select', 'dependency-output',
