@@ -63,8 +63,8 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
         b'    "../public/ActivationPromiseHooks.h",\n',
         "native-hook-header-export")
     source = result["js/src/builtin/Promise.cpp"]
-    source = replace_once(source, b'#include "builtin/Promise.h"\n',
-        b'#include "builtin/Promise.h"\n#include "js/ActivationPromiseHooks.h"\n', "promise-hook-include")
+    source = replace_once(source, b'#include "js/CallAndConstruct.h"',
+        b'#include "js/ActivationPromiseHooks.h"\n#include "js/CallAndConstruct.h"', "promise-hook-include")
     source = replace_once(source, b"using namespace js;\n", b"using namespace js;\n" + HOOK_SUPPORT,
                           "native-hook-install")
     source = replace_once(source,
