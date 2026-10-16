@@ -55,12 +55,50 @@ production limit is changed.
 
 ## Reproduction and CI ownership
 
+The [unchanged published-client receipt](evidence/java-default-http-request-2026-10-15.json)
+adds `com.github.kevinsawicki:http-request:6.0` through its ordinary
+`HttpRequest.get/post`, body, stream and disconnect APIs. The original Central
+JAR is `sha256:673dd02ade4196ab511e812a6857dacaeb5716dea83aa217dba654824b5d5476`.
+Its unmodified default connection factory reaches the same compiler-owned
+URLConnection backend. No ConnectionFactory, transport or executor is injected.
+
+The 1,422,921-byte emitted component passes all 12 provider scenarios above and
+an additional ordinary factory invocation, for 13 cases and 11 peer requests,
+both preflight grant denials and the same physical cleanup/contact/mutation
+checks. The separate receipt binds the exact fixture source, native Gradle
+captured closure, original and selected JAR/class identities, compiler recipe,
+runtime profile, component, signed provider control receipt and native products.
+One library and these finite synchronous HTTP cases do not satisfy the ticket's
+two-client, private dependency, TLS, runtime or full cancellation requirements.
+
+The [direct-marker receipt](evidence/java-standard-http-direct-marker-2026-10-15.json)
+separately records the updated standard fixture: its additional invocation uses
+the actual `URL.openConnection(Proxy.NO_PROXY)` overload. That 1,161,063-byte
+component passes all 13 cases and the same physical cleanup and contact checks.
+The earlier 12-case standard receipt above retains its original scope and inputs.
+
+The original default-client build failed on the maintained class library's
+missing Proxy type and proxy overload, despite no proxy being configured.
+The shared direct-marker/type integration fixes that standard boundary;
+explicit proxy/address resolution remains unsupported. General archive capture
+accepts the original JAR's exact empty Unix directory sentinel without rewriting
+its bytes, and per-JAR index metadata stays artifact-local. No coordinate is
+registered in a compiler/backend allowlist. An independent Hutool HTTP/core
+probe captures successfully but still fails TeaVM compilation on unsupported
+cookie, reflection, date and related JDK APIs; it is not a qualified second client.
+
 The existing `tools/qualify_java_capsules.py` owner creates one additional
 independent project, builds it with the already selected compiler/native tools
 and executes this gate. It retains every previous standalone, SDK, signed node,
 guide and inbound server stage. There is no additional workspace/native build
 for this fixture. Source/helper identities enter the qualifier's original
 before/after input checks.
+
+That same owner also performs fresh native resolve/review of the pinned client,
+builds its independent source and runs the existing provider gate with the
+already built native products. Its candidate digest is a reviewed fixture pin,
+not an application eligibility rule. Native acquisition commands, compilation
+and provider execution remain under the owner's original overall deadline.
 
 For focused execution after preparing the existing pinned Java toolchain and
 ordinary native products, use a fresh outside-checkout output directory:
@@ -88,3 +126,16 @@ runtime-support world; subsequent harness attempts distinguished preflight grant
 denial from a guest result, selected the outbound topology owner instead of
 ingress-only rows, and selected a finite response ceiling that admits the existing
 partial-body vector. None is relabelled as an executed successful case.
+
+The first hosted unchanged-client run failed before compilation because its
+caller supplied no verified offline compiler cache. The captured-build guard
+correctly rejected that invocation. The standalone qualifier now prepares its
+own greeting compiler through the unchanged maintained compiler, including
+strict dependency verification and final distribution/source checks, when no
+cache is explicitly supplied. It selects the completed module cache read-only
+for the captured client build; application registry resolution remains disabled.
+An explicit missing/incomplete cache cannot trigger acquisition fallback. Cache
+selection, acquisition commands and failed attempts are retained under the same
+3600 second enclosing qualification deadline. Five boundary controls cover
+explicit/default selection, acquisition failure, expired deadlines and an
+incomplete explicit cache. The corrected hosted native run remains pending.

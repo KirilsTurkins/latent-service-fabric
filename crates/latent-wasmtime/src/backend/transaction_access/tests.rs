@@ -24,6 +24,7 @@ struct Host {
 }
 
 impl TransactionHost for Host {
+    fn observe_host_result(&self, _: latent_executor::HostResultDisposition) {}
     fn activation_id(&self) -> &ActivationId {
         &self.id
     }

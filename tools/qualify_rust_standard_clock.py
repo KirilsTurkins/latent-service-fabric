@@ -36,6 +36,20 @@ impl exports::tests::broker::api::Guest for Guest {
 }
 export!(Guest);
 '''
+MONOTONIC_CASE = 'monotonic::ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores'
+MONOTONIC_SOURCE = b'''wit_bindgen::generate!({path: "wit", world: "service", generate_all});
+struct Guest;
+impl exports::tests::broker::api::Guest for Guest {
+    fn read() -> u64 {
+        let first = std::time::Instant::now();
+        let second = std::time::Instant::now();
+        assert_eq!(first.checked_add(std::time::Duration::from_nanos(7)).unwrap()
+            .duration_since(first).as_nanos(), 7);
+        second.duration_since(first).as_nanos().try_into().unwrap()
+    }
+}
+export!(Guest);
+'''
 WIT = b'''package tests:broker@0.1.0;
 interface api { read: func() -> u64; }
 world service { import latent:clock/wall@0.1.0; export api; }
@@ -57,11 +71,19 @@ codegen-units = 1
 '''
 RECIPE = ('tools/qualify_rust_standard_clock.py', *std.RECIPE,
           'crates/latent-wasmtime/tests/clock_admission.rs',
-          'crates/latent-wasmtime/tests/clock_admission/signed.rs')
+          'crates/latent-wasmtime/tests/clock_admission/signed.rs',
+          'crates/latent-wasmtime/tests/broker/fixture.rs',
+          'crates/latent-wasmtime/tests/broker/component.rs',
+          'crates/latent-wasmtime/tests/clock_admission/monotonic.rs')
 
 
 def run(archive: Path, output: Path, rust_bin: Path, wasm_tools: Path, *,
-        native_test: Path | None = None, native_test_digest: str | None = None):
+        native_test: Path | None = None, native_test_digest: str | None = None, clock_kind="wall"):
+    require(clock_kind in {"wall", "monotonic"}, "rust-std-clock-kind")
+    capability = "latent:clock/" + clock_kind + "@0.1.0"
+    case = CASE if clock_kind == "wall" else MONOTONIC_CASE
+    source = SOURCE if clock_kind == "wall" else MONOTONIC_SOURCE
+    wit = WIT if clock_kind == "wall" else WIT.replace(b"latent:clock/wall", b"latent:clock/monotonic")
     require((native_test is None) == (native_test_digest is None), 'rust-std-clock-explicit-test-identity-required')
     rust_bin, wasm_tools = checked_path(rust_bin), checked_path(wasm_tools)
     tools = {name: file_identity(checked_path(rust_bin / name), name) for name in ('cargo', 'rustc')}
@@ -74,13 +96,14 @@ def run(archive: Path, output: Path, rust_bin: Path, wasm_tools: Path, *,
     output = fresh(output)
     started = time.monotonic()
     result = {'schemaVersion': 'latent.rust.std-clock-qualification.v1', 'status': 'in-progress',
-              'scope': 'ordinary-SystemTime-owned-sysroot-and-current-cryptographic-test-fixture',
+              'scope': 'ordinary-std-clock-owned-sysroot-and-current-cryptographic-test-fixture',
+              'clockKind': clock_kind,
               'productionBuilderTrustQualified': False, 'standardThreadsQualified': False,
               'defaultExecutorsQualified': False, 'httpClientsQualified': False, 'releasePublication': False}
     try:
         built = std.build(archive, output / 'std', rust_bin)
         project = output / 'project'
-        files = {'Cargo.toml': MANIFEST, 'src/lib.rs': SOURCE, 'wit/world.wit': WIT,
+        files = {'Cargo.toml': MANIFEST, 'src/lib.rs': source, 'wit/world.wit': wit,
                  'wit/deps/clock/package.wit': inputs['wit/platform/clock/package.wit']}
         for name, raw in files.items():
             path = project / name; path.parent.mkdir(parents=True, exist_ok=True)
@@ -105,7 +128,8 @@ def run(archive: Path, output: Path, rust_bin: Path, wasm_tools: Path, *,
         commands.run('component', wasm_tools, 'component', 'new', core, '-o', component)
         commands.run('validate', wasm_tools, 'validate', component)
         surface = commands.run('surface', wasm_tools, 'component', 'wit', component).decode()
-        require('import latent:clock/wall@0.1.0;' in surface and 'export tests:broker/api@0.1.0;' in surface,
+        require('import ' + capability + ';' in surface and 'export tests:broker/api@0.1.0;' in surface
+                and ('latent:clock/monotonic' if clock_kind == 'wall' else 'latent:clock/wall') not in surface,
                 'rust-std-clock-actual-component-surface')
         require({n: read_file(project / n) for n in files} == files, 'rust-std-clock-project-mutated')
         require({n: read_file(ROOT / n) for n in inputs} == inputs, 'rust-std-clock-recipe-mutated')
@@ -117,7 +141,7 @@ def run(archive: Path, output: Path, rust_bin: Path, wasm_tools: Path, *,
             'sourceInputsDigest': digest(inventory(files)), 'recipeDigest': digest(inventory(inputs)),
             'sysrootIdentity': built['identity'], 'sysrootLibraries': built['libraries'],
             'tools': tools, 'componentDigest': digest(raw), 'componentBytes': len(raw),
-            'applicationClockSdkCalled': False, 'defaultBuilderSelection': False,
+            'applicationClockSdkCalled': False, 'defaultBuilderSelection': False, 'clockKind': clock_kind,
             'actualSurface': surface, 'commands': commands.records}
         write_json(output / 'clock-guest.json', marker)
         result['component'] = marker
@@ -133,11 +157,11 @@ def run(archive: Path, output: Path, rust_bin: Path, wasm_tools: Path, *,
                 test = Commands(output, output / 'native-test', test_environment,
                                 deadline_seconds=120, command_seconds=60)
                 listing = test.run('case-list', native_test, '--list').decode()
-                require(CASE + ': test' in listing, 'rust-std-clock-native-case-missing')
-                test.run('signed-clock-case', native_test, '--exact', CASE, '--ignored', '--test-threads=1')
+                require(case + ': test' in listing, 'rust-std-clock-native-case-missing')
+                test.run('signed-clock-case', native_test, '--exact', case, '--ignored', '--test-threads=1', '--nocapture')
             require(file_identity(native_test, 'clock-admission-test')['digest'] == native_test_digest,
                     'rust-std-clock-native-test-mutated')
-            result['nativeFixture'] = {'status': 'passed', 'case': CASE,
+            result['nativeFixture'] = {'status': 'passed', 'case': case,
                                        'testDigest': native_test_digest, 'commands': test.records}
         require(time.monotonic() - started < 900, 'rust-std-clock-overall-deadline')
         result['status'] = 'passed' if native_test is not None else 'component-prepared'
@@ -155,12 +179,14 @@ def main(argv=None):
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--rust-bin', type=Path, required=True)
     parser.add_argument('--wasm-tools', type=Path, required=True)
+    parser.add_argument('--clock-kind', choices=('wall', 'monotonic'), default='wall')
     parser.add_argument('--clock-admission-test', type=Path)
     parser.add_argument('--clock-admission-test-sha256')
     args = parser.parse_args(argv)
     try:
         result = run(args.source_archive, args.output, args.rust_bin, args.wasm_tools,
-                     native_test=args.clock_admission_test, native_test_digest=args.clock_admission_test_sha256)
+                     native_test=args.clock_admission_test, native_test_digest=args.clock_admission_test_sha256,
+                     clock_kind=args.clock_kind)
         print(json.dumps({'status': result['status'], 'scope': result['scope'],
                           'nativeFixture': result['nativeFixture']}))
         return 0
