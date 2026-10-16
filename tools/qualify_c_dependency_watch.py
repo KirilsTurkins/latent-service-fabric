@@ -13,6 +13,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -38,6 +39,39 @@ def shutdown_once(attempts: set[str], workspace: str, dispatch):
     require(workspace not in attempts, 'normal-down-already-attempted')
     attempts.add(workspace)
     return dispatch()
+
+
+def write_frontend(frontend: Path, python: Path, helper: Path, helper_sha256: str, events: Path):
+    frontend.write_text('#!' + str(python) + ' -IB' + '''
+import hashlib,io,pathlib,sys
+p=pathlib.Path(''' + repr(str(helper)) + ''')
+assert 'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()==''' + repr(helper_sha256) + '''
+class Tee(io.RawIOBase):
+    def writable(self): return True
+    def write(self,raw):
+        with open(''' + repr(str(events)) + ''','ab',buffering=0) as out: out.write(raw)
+        sys.__stdout__.buffer.write(raw); sys.__stdout__.buffer.flush()
+        return len(raw)
+sys.stdout=io.TextIOWrapper(Tee(),encoding='utf-8',write_through=True)
+sys.path.insert(0,str(p))
+from tools.dev_workflow.cli import main
+raise SystemExit(main())
+''', encoding='utf-8')
+    frontend.chmod(0o700)
+
+
+def public_watch_events(values):
+    result = []
+    for value in values[-32:]:
+        if not isinstance(value, dict):
+            continue
+        row = {key: value[key] for key in ('event', 'phase', 'code')
+               if isinstance(value.get(key), str) and re.fullmatch('[a-z0-9-]{1,128}', value[key])}
+        if type(value.get('uncertain')) is bool:
+            row['uncertain'] = value['uncertain']
+        if row:
+            result.append(row)
+    return result
 
 
 def main() -> int:
@@ -200,22 +234,7 @@ def main() -> int:
     try:
         # No controller or recipe is imported from a checkout. The explicit
         # wrapper verifies the helper and delegates to its unchanged CLI.
-        frontend.write_text('#!' + str(python) + ' -IB' + '''
-import hashlib,io,pathlib,sys
-p=pathlib.Path(''' + repr(str(args.helper)) + ''')
-assert 'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()==''' + repr(args.helper_sha256) + '''
-class Tee(io.RawIOBase):
-    def writable(self): return True
-    def write(self,raw):
-        with open(''' + repr(str(events)) + ''','ab',buffering=0) as out: out.write(raw)
-        sys.__stdout__.buffer.write(raw); sys.__stdout__.buffer.flush()
-        return len(raw)
-sys.stdout=io.TextIOWrapper(Tee(),encoding='utf-8',write_through=True)
-sys.path.insert(0,str(p))
-from tools.dev_workflow.cli import main
-raise SystemExit(main())
-''', encoding='utf-8')
-        frontend.chmod(0o700)
+        write_frontend(frontend, python, args.helper, args.helper_sha256, events)
         report['frontend'] = digest(frontend)
         template_entry = decode((installed / 'templates.json').read_bytes())['templates']['greeting']
         template_root = installed / template_entry['path']
@@ -316,6 +335,7 @@ raise SystemExit(main())
             outsideInputs=report.get('outsideInputs', {}),
             originalInputsRemovedBeforeCompile=report.get('originalInputsRemovedBeforeCompile', False),
             normalDownAttempts=len(shutdown_attempts), cleanup=report.get('cleanup', 'not-performed'),
+            watchEvents=public_watch_events(observed()),
             deploymentCount=len(report['stages']),
             shutdowns=[{'id': row['id'], 'watchExitCode': row['watchExitCode'],
                         'state': row['result']['state'], 'reaped': row['result']['reaped'],

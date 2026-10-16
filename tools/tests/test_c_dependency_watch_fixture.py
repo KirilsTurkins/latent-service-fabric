@@ -112,12 +112,10 @@ class ShutdownFence(unittest.TestCase):
 
 class FrontendRuntime(unittest.TestCase):
     def test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode(self):
-        import ast
         import hashlib
         import os
         import subprocess
         import sys
-        from types import SimpleNamespace
         import zipfile
         from tools import qualify_c_dependency_watch as qualifier
 
@@ -136,17 +134,8 @@ class FrontendRuntime(unittest.TestCase):
                     ' return 0\n')
             frontend, events = root / 'frontend.py', root / 'events.jsonl'
             python = Path(sys.executable)
-            args = SimpleNamespace(helper=helper,
-                helper_sha256='sha256:' + hashlib.sha256(helper.read_bytes()).hexdigest())
-            tree = ast.parse(Path(qualifier.__file__).read_text())
-            expressions = [node for node in ast.walk(tree)
-                if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
-                and isinstance(node.value.func, ast.Attribute)
-                and isinstance(node.value.func.value, ast.Name)
-                and node.value.func.value.id == 'frontend' and node.value.func.attr == 'write_text']
-            self.assertEqual(len(expressions), 1)
-            exec(compile(ast.Module(body=expressions, type_ignores=[]), '<actual-frontend>', 'exec'),
-                {'frontend': frontend, 'python': python, 'args': args, 'events': events})
+            qualifier.write_frontend(frontend, python, helper,
+                'sha256:' + hashlib.sha256(helper.read_bytes()).hexdigest(), events)
             header = frontend.read_text().splitlines()[0]
             self.assertTrue(header.startswith('#!' + str(python)))
             argument = header[len('#!' + str(python)):].strip()

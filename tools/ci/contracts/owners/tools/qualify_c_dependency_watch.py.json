@@ -4,5 +4,5 @@
   "reviewBoundary": "committed-fingerprint",
   "reviewReason": "Prevent the explicit source frontend from mutating the delivered Python SDK with bytecode; retain all watch, signing, inventory and once-only shutdown guards. Bind the normalized committed source bytes, including unchanged Linux line endings.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "05d13b2abe7b8d14214fafa6145165cd055b4b012878e9ac50aeda0282a4d5d7"
+  "sha256": "4fc92dd1878afeb8acd2bf3ae071ccf4199c848d6f1784b267cb1c295977b694"
 }
