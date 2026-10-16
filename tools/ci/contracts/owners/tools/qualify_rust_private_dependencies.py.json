@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_private_dependencies.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Publish native private archive manifest registry-index metadata consistent with the locked sparse graph; do not weaken locked/offline compilation",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "1baf0ef461af1149ba9862344faf77b119169d872bb82a541d0e68f630e84a07"
+}

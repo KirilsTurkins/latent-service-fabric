@@ -212,6 +212,10 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         for ordinal, row in enumerate(registries['registries']):
             if not isinstance(row, dict) or set(row) - {'scope', 'url', 'authorizationEnv'} or 'url' not in row:
                 raise DependencyError('npm-registry-configuration-invalid')
+            url = row['url']
+            if (not isinstance(url, str) or not 1 <= len(url) <= 4096
+                    or any(char.isspace() or ord(char) < 32 or 127 <= ord(char) <= 159 for char in url)):
+                raise DependencyError('npm-registry-endpoint-invalid')
             parsed = urlsplit(row['url'])
             if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
                 raise DependencyError('npm-registry-endpoint-invalid')

@@ -119,6 +119,7 @@ pub struct StateTransactionHost {
     released: AtomicBool,
     guest_closed: AtomicBool,
     technical_fault: AtomicBool,
+    result_unavailable_after_return: AtomicBool,
     context: Option<IntentCaptureContext>,
     command: Option<CommandInfo>,
     staging_identity: Option<latent_executor::transaction::TransactionStagingIdentity>,

@@ -283,3 +283,74 @@ async fn denied_abort(cancel: bool) {
     assert!(fixture.native.snapshot().unwrap().physically_retired());
     fixture.shutdown().await;
 }
+
+#[tokio::test]
+async fn successful_return_with_unavailable_host_result_preserves_original_pending_command() {
+    use latent_executor::HostResultDisposition;
+
+    let fixture = Fixture::with_staging().await;
+    let key = "successful-return-unavailable-result";
+    let (admission, envelope, budget) = fixture.invocation(false, key);
+    let original = stage_original(&fixture, &admission, &envelope, &budget, key).await;
+    let reserved_results = fixture.rows(Family::Result).await;
+    original.host.finish_guest_access();
+    // The normal manager observes the backend report after Store destruction.
+    // A later/default observation cannot erase the original unavailable result.
+    original
+        .host
+        .observe_host_result(HostResultDisposition::UnavailableAfterReturn);
+    original
+        .host
+        .observe_host_result(HostResultDisposition::Observed);
+    let failure = original_failure(
+        &budget,
+        ActivationTerminalState::GuestTrap,
+        PlatformErrorCode::GuestTrap,
+        "result-limit-exceeded",
+    );
+    admission
+        .complete(failure, fixture.commit_control(&envelope, &budget))
+        .await;
+    let response = admission.take_owned_completion().unwrap().unwrap();
+    let TransactionCompletionResult::Command(CommandCompletionDisposition::Retired {
+        command,
+        reason: latent_commit::atomic::AtomicError::Unavailable,
+        ..
+    }) = &response.result
+    else {
+        panic!("unavailable successful return manufactured a terminal abort");
+    };
+    assert_eq!(command, &original.record);
+    assert_eq!(command.outcome(), Outcome::Pending);
+    assert!(command.abort_proof().is_none());
+    assert_eq!(fixture.rows(Family::State).await, 0);
+    assert_eq!(fixture.rows(Family::Outbox).await, 0);
+    assert_eq!(fixture.rows(Family::Result).await, reserved_results);
+    let (stored, result) = fixture.inspect(command.key().clone()).await;
+    assert_eq!(stored, original.record);
+    assert!(result.is_none());
+    drop((response, original, admission));
+    assert!(fixture.native.snapshot().unwrap().physically_retired());
+
+    let (duplicate, duplicate_envelope, duplicate_budget) = fixture.invocation(false, key);
+    assert_eq!(
+        duplicate
+            .admit(&duplicate_envelope, &duplicate_budget)
+            .await
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::AlreadyExists
+    );
+    let TransactionAdmissionResult::Existing { command, .. } =
+        duplicate.take_result().unwrap().unwrap()
+    else {
+        panic!("pending duplicate admitted a second execution");
+    };
+    assert_eq!(command, stored);
+    assert_eq!(command.outcome(), Outcome::Pending);
+    assert!(command.abort_proof().is_none());
+    drop(duplicate);
+    assert!(fixture.native.snapshot().unwrap().physically_retired());
+    fixture.shutdown().await;
+}

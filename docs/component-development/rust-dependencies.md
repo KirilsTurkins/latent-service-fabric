@@ -12,6 +12,38 @@ python tools/rust_capsule.py build ./my-rust --offline --output ./my-rust/target
 
 The separate fetch stage runs native `cargo metadata` and `cargo vendor --locked` from an owned working directory and empty Cargo home. It records the complete resolver graph, selected target graph, enabled/default features, native lock, package/source/target/license metadata and tool bytes in `cargo-resolved.lock.json`. Private registry tokens are read only by this explicit resolver and are absent from compilation environments and public evidence. Private registry endpoint configuration must be explicitly supplied to the resolver; ambient home/project Cargo configurations are not consumed.
 
+Supply private endpoint configuration outside the project with `--registry-config`.
+Select credentials separately through a declared alias's environment slot, such as
+`CARGO_REGISTRIES_TEAM_TOKEN`. For a private certificate authority, the same
+configuration can explicitly select an application-relative public PEM bundle:
+
+```json
+{
+  "registries": {
+    "team": {"index": "sparse+https://packages.example.test/cargo/"}
+  },
+  "tlsTrust": {"caFile": "registry-trust/public-roots.pem"}
+}
+```
+
+The optional bundle contains only public certificates, at most 256 certificates
+and 2 MiB. Include all roots needed by the selected registries, including public
+registry roots if the selected graph uses them. It becomes an independently
+verified native lock input. The resolver uses an owned copy with TLS verification
+enabled, rechecks both copies, and records their original digest and policy. It
+does not change machine trust or inherit ambient Cargo TLS overrides. Changed
+certificate bytes require another explicit resolution and lock review. This
+trust input approves no runtime effect and provides no registry token to a guest.
+The native graph retains public registry-alias/index mappings so ordinary
+`registry = "team"` declarations still resolve against their captured vendor
+sources offline. Build configuration contains those mappings and enforced
+offline selection, without registry credentials or TLS acquisition policy.
+
+The [private Cargo programme](../testing/rust-private-dependency-ingestion.md)
+uses an actual authenticated HTTPS sparse registry, original archives and an
+offline signed-node build. Its source and hosted receipts retain their own
+qualification boundary; adding the programme does not assert a successful run.
+
 Outside-project path manifests receive an automatic path-relocation transformation. Original source and original manifest bytes remain in the content store; the selected adapted bytes, preimages, recipe and selection are captured separately. A native path/source change requires resolve and lock review. Ordinary builds need only the captured bytes, so deleted original local paths and absent network caches do not resolve a new graph.
 
 Captured compilation requires the managed Linux host with Bubblewrap and the pinned Rust and Zig distributions. The namespace contains the owned workspace, complete selected compiler/sysroot/runtime headers, selected tools and observed host libraries. It has no network, empty home and no inherited production credentials. SDK-owned binding macro inputs remain separately attributable compiler materials. Additional application `build.rs` or proc-macro packages are recorded as executable inputs and require the separate explicit isolated tool-approval stage; capture alone does not authorize their execution. A host without the maintained containment profile fails concretely.

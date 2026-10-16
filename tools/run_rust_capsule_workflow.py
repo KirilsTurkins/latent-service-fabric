@@ -42,10 +42,12 @@ def write_workflow_receipt(path, value):
 
 
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
-        captured_dependency_recovery=False):
+        c_standard_facilities=False, captured_dependency_recovery=False):
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
+    require(type(c_standard_facilities) is bool and (not c_standard_facilities or language == "c"),
+            "authoring-c-standard-facilities-language")
     require(type(captured_dependency_recovery) is bool
             and (not captured_dependency_recovery or language == "dotnet"),
             "authoring-captured-dependency-recovery-language")
@@ -88,7 +90,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                                          control_timeout_millis=control_millis)
                 peer, port = start_provider(client, work / "peer", maximum_seconds=seconds)
                 config, settings = configure(work / "node", fixture, port,
-                    runtime_grants=language in {"go", "dotnet", "java"}, language=language,
+                    runtime_grants=language in {"go", "dotnet", "java"} or c_standard_facilities, language=language,
                     noncrypto_entropy=noncrypto_entropy)
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
@@ -121,6 +123,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                     if language in {"go", "dotnet", "java"}:
                         from tools.guest_runtime_grants import grant
                         grant(client, node, fixture, targets, publications, result, language=language)
+                    if c_standard_facilities:
+                        from tools.c_standard_facilities_probe import grant_and_probe
+                        grant_and_probe(client, node, fixture, targets, publications, result)
                     if noncrypto_entropy:
                         from tools.dotnet_guest.entropy_grants import grant as grant_entropy
                         targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",

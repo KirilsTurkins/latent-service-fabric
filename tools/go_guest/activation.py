@@ -6,6 +6,8 @@ import re
 from tools.go_guest.runtime import checked_sources, replace_once
 
 PROFILE = 'go-component-activation-v1'
+CHECKPOINT_PROFILE = 'go-component-activation-v2'
+PROFILES = {PROFILE, CHECKPOINT_PROFILE}
 PREIMAGES = {
     'runtime/runtime2.go': '7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da',
     'runtime/time.go': 'cf2ae4e953a3315c226499f553a8e8e1529d27ceac166b4fb75e8d7b3a4fa682',
@@ -20,7 +22,7 @@ PREIMAGES = {
 ASYNC_SHA256 = '0ab89732e936c9f766ca571e7f56d6406b1fd0a2d28931f5c8d2c86bdedf786b'
 
 
-def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path):
+def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path, *, checkpoints=False):
     sources.update(checked_sources(goroot, PREIMAGES))
     sources['runtime/runtime2.go'] = replace_once(sources['runtime/runtime2.go'],
         '\tvalgrindStackID uintptr\n}', '\tvalgrindStackID uintptr\n\tlsfOwner [2]uint64\n\tlsfParked bool\n}')
@@ -61,9 +63,11 @@ def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path):
         'func AddCleanup[T, S any](ptr *T, cleanup func(S), arg S) Cleanup {',
         'func AddCleanup[T, S any](ptr *T, cleanup func(S), arg S) Cleanup {\n\tlsfFail("LSF Go cleanup callbacks are not qualified")')
     sources['runtime/os_wasip1.go'] += '\n' + (sdk / 'runtime/activation_bridge.go.in').read_text()
+    if checkpoints:
+        sources['runtime/os_wasip1.go'] += '\n' + (sdk / 'runtime/checkpoint_bridge.go.in').read_text()
 
 
-def async_source(dependency: Path, sdk: Path) -> tuple[Path, str]:
+def async_source(dependency: Path, sdk: Path, *, checkpoints=False) -> tuple[Path, str]:
     path = dependency / 'wit/async/async.go'
     raw = path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != ASYNC_SHA256:
@@ -72,6 +76,13 @@ def async_source(dependency: Path, sdk: Path) -> tuple[Path, str]:
         'func Run(closure func()) uint32 {\n\tlsfActivationEnter()')
     text = replace_once(text, '\t\t\treturn CALLBACK_CODE_EXIT',
         '\t\t\tlsfActivationLeave()\n\t\t\treturn CALLBACK_CODE_EXIT')
+    if checkpoints:
+        text = replace_once(text, 'yielding    chan unit', 'yielding    []chan unit')
+        text = replace_once(text, '\t\tyielding <- unit{}',
+            '\t\tfor _, channel := range yielding { channel <- unit{} }')
+        text = replace_once(text, '\tstate.yielding = channel',
+            '\tstate.yielding = append(state.yielding, channel)')
+        text += '\n' + (sdk / 'runtime/checkpoint_async.go.in').read_text()
     return path, text + '\n' + (sdk / 'runtime/activation_async.go.in').read_text()
 
 
