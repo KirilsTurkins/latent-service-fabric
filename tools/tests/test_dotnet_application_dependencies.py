@@ -723,7 +723,7 @@ class CapturedCompilerSelection(unittest.TestCase):
                 write_json(objects / 'project.assets.json', assets)
             if stage in {'native-runtime-wit', 'native-aot-raw-wit'}:
                 return json.dumps(raw_graph).encode()
-            if stage == 'closed-runtime-adapter-wit':
+            if stage in {'closed-runtime-adapter-wit', 'internal-io-adapter-wit'}:
                 return json.dumps(self.graph([])).encode()
             if stage == 'closed-runtime-composition':
                 (compiled / 'component.wasm').write_bytes(b'\0asm\x0d\0\x01\0')

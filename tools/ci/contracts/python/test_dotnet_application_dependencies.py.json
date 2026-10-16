@@ -40,11 +40,11 @@
     "RuntimeAdapterCapture.test_missing_or_additional_runtime_profiles_fail_before_staging"
   ],
   "guards": {
-    "CapturedCompilerSelection.test_captured_nuget_selection_preserves_authoritative_wit_imports": "afc1ee6790754e4624884f836fbdc18b2838fc68eccd45203b63cc470e058055",
-    "CapturedCompilerSelection.test_final_component_cannot_introduce_undeclared_authority": "afc1ee6790754e4624884f836fbdc18b2838fc68eccd45203b63cc470e058055",
-    "CapturedCompilerSelection.test_offline_asset_drift_still_fails_before_native_aot": "afc1ee6790754e4624884f836fbdc18b2838fc68eccd45203b63cc470e058055",
-    "CapturedCompilerSelection.test_oversized_raw_wit_is_rejected_before_diagnostic_publication": "afc1ee6790754e4624884f836fbdc18b2838fc68eccd45203b63cc470e058055",
-    "CapturedCompilerSelection.test_profile_rejection_retains_raw_component_and_wit_after_workspace_cleanup": "afc1ee6790754e4624884f836fbdc18b2838fc68eccd45203b63cc470e058055",
+    "CapturedCompilerSelection.test_captured_nuget_selection_preserves_authoritative_wit_imports": "38aca3cbe877e6e37211a40103a8a6a88e53d65f595774851940b3c5e5dfa805",
+    "CapturedCompilerSelection.test_final_component_cannot_introduce_undeclared_authority": "38aca3cbe877e6e37211a40103a8a6a88e53d65f595774851940b3c5e5dfa805",
+    "CapturedCompilerSelection.test_offline_asset_drift_still_fails_before_native_aot": "38aca3cbe877e6e37211a40103a8a6a88e53d65f595774851940b3c5e5dfa805",
+    "CapturedCompilerSelection.test_oversized_raw_wit_is_rejected_before_diagnostic_publication": "38aca3cbe877e6e37211a40103a8a6a88e53d65f595774851940b3c5e5dfa805",
+    "CapturedCompilerSelection.test_profile_rejection_retains_raw_component_and_wit_after_workspace_cleanup": "38aca3cbe877e6e37211a40103a8a6a88e53d65f595774851940b3c5e5dfa805",
     "NativeAotRuntimeCoverage.test_actual_raw_failure_retention_preserves_shared_failure_report": "e8d0bb7870fad2c6379712ae7c7aa3f3e6d2299ff7c06842b84a62f928618407",
     "NativeAotRuntimeCoverage.test_failure_report_rechecks_raw_bytes_and_does_not_invent_source_identity": "e8d0bb7870fad2c6379712ae7c7aa3f3e6d2299ff7c06842b84a62f928618407",
     "NativeAotRuntimeCoverage.test_malformed_world_tables_type_indices_and_function_names_fail": "e8d0bb7870fad2c6379712ae7c7aa3f3e6d2299ff7c06842b84a62f928618407",
@@ -81,10 +81,10 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_application_dependencies.py",
-  "reviewReason": "Reject invalid or unbounded selected NuGet credentials while preserving XML values and redacted public source policy",
+  "reviewReason": "Compose the merged invalid-credential controls and reviewed five CapturedCompilerSelection adapter-query fixtures; retain every case and exact skip/discovery guard from both inputs",
   "schemaVersion": "latent.ci.contracts.v2",
   "guardDefinitions": {
-    "afc1ee6790754e4624884f836fbdc18b2838fc68eccd45203b63cc470e058055": {
+    "38aca3cbe877e6e37211a40103a8a6a88e53d65f595774851940b3c5e5dfa805": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -93,7 +93,7 @@
       "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:63eb6742337ed84c188f12626ac4bd4fc56242cd5e28d0d521124f038c7c7913",
-        "class:setup-sha256:95accb095f9c02990140b9539943632719465accdc8f4e30f32fb0bbc348c242"
+        "class:setup-sha256:6bdf0e1d05f9929ab9996e39cc6745568f30bfeaacfacec25863dae90b782eeb"
       ]
     },
     "e8d0bb7870fad2c6379712ae7c7aa3f3e6d2299ff7c06842b84a62f928618407": {
