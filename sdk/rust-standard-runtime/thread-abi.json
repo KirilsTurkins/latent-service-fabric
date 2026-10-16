@@ -63,6 +63,8 @@
     "parameters": ["i64", "i64", "pointer32"],
     "resultBytes": 2,
     "soleRawCreationConsumer": "fixed stackless body; verified after remapping every call/ref.func/export/element/global reference",
+    "componentVerifier": "actual final bytes; finite main/private thunk/fixup graph; recomputed fixed admission body; exact imported Native start provider",
+    "componentVerifierEnablesEngine": false,
     "wholeComponentRoutingAuthenticated": false,
     "canonicalThreadCreationEnabled": false
   },

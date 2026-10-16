@@ -24,11 +24,18 @@ pub struct AdmissionReceipt {
 }
 
 #[derive(Clone, Copy)]
-struct Admission {
-    raw: u32,
-    admit: u32,
-    function: u32,
+pub(super) struct Admission {
+    pub(super) raw: u32,
+    pub(super) admit: u32,
+    pub(super) function: u32,
     ty: u32,
+}
+
+pub(super) fn verify_linked_core(input: &[u8]) -> Result<Admission, &'static str> {
+    let mut admission = inspect(input)?;
+    admission.function = admission.function.checked_sub(1).ok_or("rust-child-admission-fixed-body-missing")?;
+    verify(input, admission)?;
+    Ok(admission)
 }
 
 fn inspect(input: &[u8]) -> Result<Admission, &'static str> {
