@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Read bounded fixed metadata only from up to four owned failed attempts; project closed taxonomy and digests without paths, arguments or compiler text, preserving every qualification/deadline/cleanup guard.",
+  "reviewReason": "Omit unknown event values and preserve original failures across all ordinary diagnostic observer/parser exceptions",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "eeaa35e1a45098abef427ca0ca5d98c2fbb9020bbbeb2c19d068a23b123fb678"
+  "sha256": "5c30e35a5c9a528175c9dfd158572343dda88ceb707bcf1c34b6991142e82482"
 }

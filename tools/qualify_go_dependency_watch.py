@@ -39,13 +39,28 @@ def write(path: Path, value) -> None:
 
 
 def public_events(values):
+    allowed = {
+        'event': {'edit-failed', 'deployed', 'post-deploy-tests',
+                  'post-deploy-tests-not-selected', 'build-superseded'},
+        'phase': {'source', 'build', 'deploy', 'test'},
+        'code': {'success', 'composition-checks-failed', 'required-tests-failed',
+                 'interrupted-inspect-workspace-status', 'invalid-or-unavailable-input-inspect-doctor',
+                 'source-unavailable-during-edit', 'guest-build-superseded',
+                 'workspace-stopped-before-deployment', 'workspace-recipe-trust-required',
+                 'signed-test-build-changed-use-new-workspace',
+                 'guest-build-failed-last-deployment-retained', 'guest-build-cleanup-unconfirmed',
+                 'build-deadline-exceeded', 'language-adapter-result-invalid',
+                 'guest-tool-digest-mismatch', 'guest-tool-inventory-changed-during-build',
+                 'guest-tool-unrecorded-directory', 'private-state-directory-required',
+                 'source-file-unavailable-or-unsafe', 'compiler-process-failed',
+                 'compiler-cleanup-unconfirmed', 'compiler-cancelled', 'compiler-input-or-build-failed'},
+    }
     result = []
     for value in values[-32:]:
         if not isinstance(value, dict):
             continue
-        row = {key: value[key] for key in ('event', 'phase', 'code')
-               if isinstance(value.get(key), str)
-               and re.fullmatch('[a-z0-9-]{1,128}', value[key])}
+        row = {key: value[key] for key, vocabulary in allowed.items()
+               if isinstance(value.get(key), str) and value[key] in vocabulary}
         if type(value.get('uncertain')) is bool:
             row['uncertain'] = value['uncertain']
         if row:
@@ -156,6 +171,19 @@ def collect_build_failures(workspace, output_root):
                         row['adapterCode'] = response['code']
             result.append(row)
         return result
+
+
+def add_public_diagnostics(public, observe, workspace, output_root):
+    """Observe fixed bounded metadata without replacing qualification/cleanup errors."""
+    try:
+        public['watchEvents'] = public_events(observe())
+    except Exception:
+        pass
+    if not public['passed'] and workspace is not None:
+        try:
+            public['buildFailures'] = collect_build_failures(workspace, output_root())
+        except Exception:
+            pass
 
 
 class ShutdownOnce:
@@ -475,16 +503,8 @@ def main() -> int:
             stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
         if 'failure' in report:
             public['failure'] = report['failure']
-        try:
-            public['watchEvents'] = public_events(observed())
-        except (OSError, ValueError, TypeError):
-            pass  # A failed observer must not replace the original qualification failure.
-        if not report['passed'] and node_root is not None:
-            try:
-                descriptor = project.load(application)[0]
-                public['buildFailures'] = collect_build_failures(node_root, descriptor['build']['outputRoot'])
-            except (OSError, ValueError, TypeError, KeyError):
-                pass  # Metadata collection cannot replace the original failure or cleanup result.
+        add_public_diagnostics(public, observed, node_root,
+            lambda: project.load(application)[0]['build']['outputRoot'])
         write(root / 'public-qualification.json', public)
 
 
