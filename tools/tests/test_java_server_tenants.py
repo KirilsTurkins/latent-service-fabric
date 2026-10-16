@@ -237,5 +237,180 @@ class SharedTenantServer(unittest.TestCase):
         self.assertEqual(result["status"], "denied-before-guest")
 
 
+class OperatorTokenIsolation(unittest.TestCase):
+    def setUp(self):
+        self.pin = {"tenant": "foreign", "service": "server", "route": "server-foreign",
+            "publication": "publication:sha256:" + "a" * 64, "revision": "revision-v1:sha256:" + "b" * 64,
+            "deploymentGeneration": "2", "componentDigest": "sha256:" + "c" * 64}
+        self.deployment = {"name": self.pin["route"], "service": self.pin["service"],
+            "generation": self.pin["deploymentGeneration"], "publication": self.pin["publication"]}
+        self.original_config, self.spoof_config = Path("authorized.json"), Path("spoof.json")
+
+    def response(self, category, data, error=None):
+        return {"schemaVersion": "latent.cli.result.v1", "command": "deployment get",
+            "category": category, "outcomeKnown": True, "requestDispatched": True, "data": data, "error": error}
+
+    def authorized(self):
+        return self.response("success", {"deployment": {"generation": "2",
+            "publication": {"tenant": "foreign", "id": self.pin["publication"]}, "manifest": {
+                "metadata": {"name": self.pin["route"], "tenant": "foreign"}, "spec": {
+                    "service": "server", "release": self.pin["componentDigest"],
+                    "publication": self.pin["publication"]}}},
+            "durability": None, "routeGeneration": None, "stateVersion": None})
+
+    def route(self):
+        return {"category": "success", "outcomeKnown": True, "data": {"snapshot": {
+            "tenant": "foreign", "generation": "7", "snapshotDigest": "sha256:" + "d" * 64,
+            "services": [{"tenant": "foreign", "routeId": self.pin["route"], "service": "server",
+                "revisions": [{"revisionId": self.pin["revision"],
+                    "releaseDigest": self.pin["componentDigest"], "weight": 10000}]}]}}}
+
+    def not_found(self):
+        return self.response("not-found", {"deployment": None, "durability": None,
+            "routeGeneration": None, "stateVersion": None})
+
+    def permission_denied(self):
+        return self.response("platform-failure", {}, {"code": "permission-denied",
+            "message": "The platform reported a failure.", "retryable": False, "details": []})
+
+    def client(self, *, denied=None, exit_status=6, before=None, after=None, after_route=None,
+               failure_stage=None, failure=None):
+        from unittest.mock import Mock
+        client = SimpleNamespace(config=self.original_config, last_exit_status=None, recorded=[])
+        steps = [self.authorized() if before is None else before, self.route(),
+            self.not_found() if denied is None else denied,
+            self.authorized() if after is None else after, self.route() if after_route is None else after_route]
+        def call(*arguments, **kwargs):
+            ordinal = len(client.recorded)
+            client.recorded.append((client.config, arguments, kwargs))
+            self.assertLess(ordinal, 5)
+            self.assertEqual(client.config, self.spoof_config if ordinal == 2 else self.original_config)
+            self.assertEqual(arguments, ("route", "get") if ordinal in (1, 4)
+                else ("deployment", "get", self.pin["route"]))
+            self.assertEqual(kwargs, {"codes": (4, 6)} if ordinal == 2 else {})
+            if ordinal == failure_stage:
+                raise failure
+            client.last_exit_status = exit_status if ordinal == 2 else 0
+            return steps[ordinal]
+        client.call = Mock(side_effect=call)
+        return client
+
+    def invoke(self, client):
+        from tools.java_server_tenants import operator_token_denial
+        return operator_token_denial(client, self.deployment, self.pin, self.spoof_config)
+
+    def test_both_closed_denials_require_the_same_authorized_record_and_actual_route_pin(self):
+        for code, denied in ((6, self.not_found()), (4, self.permission_denied())):
+            with self.subTest(code=code):
+                client = self.client(denied=denied, exit_status=code)
+                observed = self.invoke(client)
+                self.assertEqual(len(client.recorded), 5)
+                self.assertEqual(client.config, self.original_config)
+                self.assertEqual(observed["case"], "operator-token-cannot-select-other-tenant")
+                self.assertEqual(observed["status"], "denied")
+                self.assertEqual(observed["expectedPin"], self.pin)
+                self.assertEqual(observed["authorizedBefore"], observed["authorizedAfter"])
+                self.assertEqual(observed["authorizedBefore"]["lookup"], self.authorized())
+                self.assertEqual(observed["authorizedBefore"]["executionPin"]["selected"], self.pin)
+                self.assertEqual(observed["denial"], {"exitCode": code, "response": denied})
+
+    def test_unknown_success_uncertain_malformed_and_metadata_revealing_denials_reject(self):
+        import copy
+        from tools.java_server_tenants import require_operator_token_denial
+        cases = [(self.not_found(), value) for value in (0, 4, 5, True, None)]
+        changes = [("schemaVersion", "future"), ("command", "deployment list"), ("category", "success"),
+            ("category", "future"), ("outcomeKnown", False), ("outcomeKnown", 1),
+            ("requestDispatched", False), ("requestDispatched", 1), ("extra", "private"), ("data", None),
+            ("error", {"code": "not-found"})]
+        for key, value in changes:
+            changed = self.not_found(); changed[key] = value; cases.append((changed, 6))
+        for key in ("deployment", "durability", "routeGeneration", "stateVersion", "metadata"):
+            changed = self.not_found(); changed["data"][key] = "foreign-private"; cases.append((changed, 6))
+        for key in self.not_found():
+            changed = self.not_found(); del changed[key]; cases.append((changed, 6))
+        for key, value in (("code", "unauthenticated"), ("code", "permission-denied-private"),
+                ("message", "foreign-private"), ("retryable", True), ("retryable", 0),
+                ("details", [{"metadata": "foreign-private"}]), ("extra", "foreign-private")):
+            changed = self.permission_denied(); changed["error"][key] = value; cases.append((changed, 4))
+        changed = self.permission_denied(); changed["data"]["deployment"] = self.authorized()["data"]["deployment"]
+        cases.extend(((changed, 4), (self.permission_denied(), 6), (self.authorized(), 0), (None, 6), ([], 6)))
+        for ordinal, (value, code) in enumerate(cases):
+            with self.subTest(ordinal=ordinal), self.assertRaises(ValueError):
+                require_operator_token_denial(copy.deepcopy(value), code)
+
+    def test_authorized_lookup_must_prove_the_expected_foreign_object_before_spoofing(self):
+        import copy
+        cases = [self.not_found()]
+        for target, key, value in (("record", "generation", "3"), ("publication", "tenant", "examples"),
+                ("publication", "id", "publication:sha256:" + "e" * 64), ("metadata", "tenant", "examples"),
+                ("metadata", "name", "another"), ("spec", "service", "another"),
+                ("spec", "release", "sha256:" + "e" * 64), ("spec", "publication", "publication:sha256:" + "e" * 64)):
+            changed = self.authorized(); record = changed["data"]["deployment"]
+            selected = {"record": record, "publication": record["publication"],
+                "metadata": record["manifest"]["metadata"], "spec": record["manifest"]["spec"]}[target]
+            selected[key] = value; cases.append(changed)
+        for ordinal, before in enumerate(cases):
+            client = self.client(before=copy.deepcopy(before))
+            with self.subTest(ordinal=ordinal), self.assertRaises(ValueError):
+                self.invoke(client)
+            self.assertEqual(len(client.recorded), 1)
+            self.assertEqual(client.config, self.original_config)
+
+    def test_authorized_envelopes_and_records_are_not_assumed_from_a_success_label(self):
+        changes = [("outcomeKnown", 1), ("requestDispatched", False), ("category", "future"),
+            ("error", {}), ("data", None), ("extra", "unknown")]
+        for key, value in changes:
+            before = self.authorized(); before[key] = value
+            client = self.client(before=before)
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.invoke(client)
+            self.assertEqual(len(client.recorded), 1)
+        for value in (None, [], {}, {"manifest": []}):
+            before = self.authorized(); before["data"]["deployment"] = value
+            with self.subTest(record=value), self.assertRaises(ValueError):
+                self.invoke(self.client(before=before))
+
+    def test_after_lookup_preserves_the_full_record_and_catalog_identity(self):
+        after = self.authorized()
+        after["data"]["deployment"]["manifest"]["metadata"]["annotations"] = {"changed": "true"}
+        route = self.route(); route["data"]["snapshot"]["generation"] = "8"
+        digest = self.route(); digest["data"]["snapshot"]["snapshotDigest"] = "sha256:" + "e" * 64
+        revision = self.route(); revision["data"]["snapshot"]["services"][0]["revisions"][0]["revisionId"] = "revision-v1:sha256:" + "e" * 64
+        for arguments in ({"after": after}, {"after": self.not_found()}, {"after_route": route},
+                          {"after_route": digest}, {"after_route": revision}):
+            client = self.client(**arguments)
+            with self.subTest(arguments=arguments), self.assertRaises(ValueError):
+                self.invoke(client)
+            self.assertEqual(client.config, self.original_config)
+
+    def test_denial_validation_and_call_failures_always_restore_original_config(self):
+        bad = self.not_found(); bad["data"]["deployment"] = {"metadata": "foreign-private"}
+        client = self.client(denied=bad)
+        with self.assertRaises(ValueError):
+            self.invoke(client)
+        self.assertEqual(client.config, self.original_config)
+        self.assertEqual(len(client.recorded), 3)
+        for ordinal in (2, 3):
+            original = RuntimeError("original bounded control failure")
+            client = self.client(failure_stage=ordinal, failure=original)
+            with self.subTest(stage=ordinal), self.assertRaises(RuntimeError) as observed:
+                self.invoke(client)
+            self.assertIs(observed.exception, original)
+            self.assertEqual(client.config, self.original_config)
+            self.assertEqual(len(client.recorded), ordinal + 1)
+
+    def test_changed_selected_object_is_rejected_before_any_cli_call(self):
+        from unittest.mock import Mock
+        for key in ("name", "service", "generation", "publication"):
+            original = self.deployment[key]; self.deployment[key] = "changed"
+            client = SimpleNamespace(call=Mock())
+            try:
+                with self.subTest(key=key), self.assertRaises(ValueError):
+                    self.invoke(client)
+                client.call.assert_not_called()
+            finally:
+                self.deployment[key] = original
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -4,7 +4,7 @@ import json
 
 from tools import server_routes, server_source
 from tools.dev_workflow import state
-from tools.dev_workflow.common import digest, require
+from tools.dev_workflow.common import digest, encode, require
 from tools.java_server_lifecycle import execution_pin, one_new_root, roots, status
 from tools.java_server_node import CONTEXT, RecordedRouteClient, grant_runtime, observe_idle
 from tools.guest_runtime_profiles import profiles
@@ -68,6 +68,88 @@ def runtime_grant_denial(foreign, client, service, pin, evidence, check):
     return {"case": "foreign-needs-independent-grants", "status": "denied-before-guest",
             "activationId": activation, "expectedPin": expected, "retained": observed,
             "cellLeaseDelta": deltas, "retirement": after}
+
+
+def require_operator_token_denial(observed, exit_status):
+    fields = {"schemaVersion", "command", "category", "data", "error", "outcomeKnown", "requestDispatched"}
+    require(isinstance(observed, dict) and set(observed) == fields
+            and observed.get("schemaVersion") == "latent.cli.result.v1"
+            and observed.get("command") == "deployment get"
+            and observed.get("outcomeKnown") is True and observed.get("requestDispatched") is True
+            and type(exit_status) is int and exit_status in (4, 6),
+            "tenant-isolation-operator-token-crossed-tenant")
+    if exit_status == 6:
+        require(observed["category"] == "not-found" and observed["error"] is None
+                and observed["data"] == {"deployment": None, "durability": None,
+                    "routeGeneration": None, "stateVersion": None},
+                "tenant-isolation-operator-token-crossed-tenant")
+    else:
+        failure = observed["error"]
+        require(observed["category"] == "platform-failure" and observed["data"] == {}
+                and isinstance(failure, dict)
+                and failure == {"code": "permission-denied", "message": "The platform reported a failure.",
+                    "retryable": False, "details": []} and failure.get("retryable") is False,
+                "tenant-isolation-operator-token-crossed-tenant")
+
+
+def require_foreign_deployment(observed, exit_status, pin):
+    fields = {"schemaVersion", "command", "category", "data", "error", "outcomeKnown", "requestDispatched"}
+    require(isinstance(observed, dict) and set(observed) == fields
+            and observed.get("schemaVersion") == "latent.cli.result.v1"
+            and observed.get("command") == "deployment get" and observed.get("category") == "success"
+            and observed.get("outcomeKnown") is True and observed.get("requestDispatched") is True
+            and observed.get("error") is None and type(exit_status) is int and exit_status == 0,
+            "tenant-isolation-authorized-deployment-required")
+    data = observed["data"]
+    require(isinstance(data, dict) and set(data) == {"deployment", "durability", "routeGeneration", "stateVersion"}
+            and data["durability"] in (None, "confirmed"), "tenant-isolation-authorized-deployment-required")
+    for name in ("routeGeneration", "stateVersion"):
+        if data[name] is not None:
+            server_routes.counter(data[name])
+    record = data["deployment"]
+    require(isinstance(record, dict) and set(record) == {"generation", "manifest", "publication"}
+            and isinstance(record["manifest"], dict), "tenant-isolation-authorized-deployment-required")
+    manifest = record["manifest"]
+    require(isinstance(manifest.get("metadata"), dict) and isinstance(manifest.get("spec"), dict),
+            "tenant-isolation-authorized-deployment-required")
+    require(record["generation"] == pin["deploymentGeneration"]
+            and record["publication"] == {"id": pin["publication"], "tenant": pin["tenant"]}
+            and manifest["metadata"].get("tenant") == pin["tenant"]
+            and manifest["metadata"].get("name") == pin["route"]
+            and manifest["spec"].get("service") == pin["service"]
+            and manifest["spec"].get("release") == pin["componentDigest"]
+            and manifest["spec"].get("publication") == pin["publication"],
+            "tenant-isolation-authorized-deployment-pin-changed")
+    return encode(record)
+
+
+def operator_token_denial(foreign, deployment, selected, spoof_path):
+    pin = server_routes.pin(selected)
+    require(pin["tenant"] == "foreign" and deployment["name"] == pin["route"]
+            and deployment["generation"] == pin["deploymentGeneration"]
+            and deployment["publication"] == pin["publication"] and deployment["service"] == pin["service"],
+            "tenant-isolation-authorized-deployment-pin-changed")
+    before = foreign.call("deployment", "get", deployment["name"])
+    original_record = require_foreign_deployment(before, foreign.last_exit_status, pin)
+    before_pin = execution_pin(foreign, pin)
+    original_pin = encode(before_pin)
+    original_config = foreign.config
+    try:
+        foreign.config = spoof_path
+        denied = foreign.call("deployment", "get", deployment["name"], codes=(4, 6))
+        denied_exit = foreign.last_exit_status
+        require_operator_token_denial(denied, denied_exit)
+    finally:
+        foreign.config = original_config
+    after = foreign.call("deployment", "get", deployment["name"])
+    retained_record = require_foreign_deployment(after, foreign.last_exit_status, pin)
+    after_pin = execution_pin(foreign, pin)
+    require(retained_record == original_record and encode(after_pin) == original_pin,
+            "tenant-isolation-authorized-deployment-changed")
+    return {"case": "operator-token-cannot-select-other-tenant", "status": "denied", "expectedPin": pin,
+            "authorizedBefore": {"lookup": before, "executionPin": before_pin},
+            "denial": {"exitCode": denied_exit, "response": denied},
+            "authorizedAfter": {"lookup": after, "executionPin": after_pin}}
 
 
 class TenantControls:
@@ -188,15 +270,7 @@ class TenantControls:
             spoof["profiles"][0]["token"] = "LSF-PUBLIC-OPERATOR-WORKFLOW-TEST-ONLY"
             spoof_path = foreign_directory / "wrong-tenant-credential.json"
             write_json(spoof_path, spoof)
-            original_config = foreign.config
-            try:
-                foreign.config = spoof_path
-                denied = foreign.call("deployment", "get", foreign_deployment["name"], codes=(4,))
-                require(denied["outcomeKnown"] is True and denied["error"]["code"] == "permission-denied",
-                        "tenant-isolation-operator-token-crossed-tenant")
-            finally:
-                foreign.config = original_config
-            observations["cases"].append({"case": "operator-token-cannot-select-other-tenant", "status": "denied"})
+            observations["cases"].append(operator_token_denial(foreign, foreign_deployment, foreign_pin, spoof_path))
             denied_without_cell("GET", "/hey", 401, authority="foreign.server.test",
                 headers={"Authorization": "Bearer LSF-PUBLIC-OPERATOR-WORKFLOW-TEST-ONLY"})
             observations["cases"].append({"case": "operator-credential-not-handler-authority", "status": "denied-before-cell"})
