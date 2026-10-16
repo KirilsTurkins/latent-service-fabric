@@ -161,6 +161,13 @@ def verify_build(value, language, files, source_inputs, component, materials):
         from tools.typescript_guest.runtime_profile import selected_profile
         project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}
         profile = selected_profile(project, graph)
+    if language == 'go':
+        project = decode(files['capsule-project.json'], MAX_BYTES) if 'capsule-project.json' in files else {}
+        if 'runtimeProfile' in project:
+            selected = project['runtimeProfile']
+            require(selected in {PROFILES['go'], 'go-component-activation-v1'}, 'go-runtime-profile-not-installed')
+            require(graph is None or selected == profile, 'go-project-and-captured-runtime-profile-disagree')
+            profile = selected
     return validate(value, language=language, source=digest(source_inputs), component=digest(component),
                     original=digest(inventory(original)), binding_preimage=digest(inventory(bindings)),
                     profile=profile, graph=graph, materials=materials)

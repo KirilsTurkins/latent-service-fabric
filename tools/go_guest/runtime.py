@@ -120,7 +120,7 @@ def prepare_compiler(goroot: Path, destination: Path) -> Path:
 
 
 def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
-            *, sdk: Path | None = None) -> Path:
+            *, sdk: Path | None = None, activation: bool = False) -> Path:
     goroot, destination = checked_roots(goroot, destination)
     sources = checked_sources(goroot, PREIMAGES)
     text = sources["runtime/os_wasip1.go"]
@@ -150,8 +150,20 @@ def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
             dependency_bytes.decode("utf-8"),
             "//go:wasmimport wasi_snapshot_preview1 adapter_monotonic_clock_set_paused",
             "//go:linkname adapterMonotonicClockSetPaused runtime.lsfSetClocksPaused")
+    activation_source = None
+    if activation:
+        if go_package is None:
+            raise ValueError("go-activation-requires-reviewed-dispatcher")
+        from tools.go_guest.activation import runtime_sources, async_source
+        runtime_sources(goroot, sources, sdk)
+        activation_source = async_source(go_package.resolve(), sdk)
     destination.mkdir(parents=True)
     replacements = {}
+    if activation_source is not None:
+        upstream, adapted = activation_source
+        target = destination / "go_pkg_async.go"
+        target.write_text(adapted, encoding="utf-8")
+        replacements[str(upstream)] = str(target)
     if dependency_source is not None:
         target = destination / "go_pkg_runtime.go"
         target.write_text(dependency_text, encoding="utf-8")

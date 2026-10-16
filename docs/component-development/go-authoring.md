@@ -1,5 +1,10 @@
 # Go compiler and runtime profile
 
+The optional [Go activation profile](../runtime/go-activation.md) adds bounded
+ordinary goroutines, channel/sync ownership, result drain and `time.Sleep` beneath
+unchanged source. This tutorial keeps the existing explicit clock/random profile;
+activation selection requires its own captured WIT import and operator grants.
+
 For reviewed module updates and frontend test/watch, use
 [Go application module inputs](go-library-authoring.md).
 

@@ -380,6 +380,13 @@ impl Fixture {
                 .imports()
                 .iter()
                 .any(|import| import.as_ref() == "latent:clock/monotonic@0.1.0");
+        let runtime_random = activation_runtime.is_some()
+            && caller
+                .surface()
+                .unwrap()
+                .imports()
+                .iter()
+                .any(|import| import.as_ref() == "latent:random/random@0.1.0");
         let store = Arc::new(
             DirectoryDeploymentRepository::open_with_catalog(
                 root.path().join("routes"),
@@ -428,6 +435,12 @@ impl Fixture {
                         PolicyId(format!("sdk-runtime-policy-{}", index + 1)),
                     ));
                 }
+            }
+            if runtime_random {
+                grants.push(CapabilityGrantSpec::new(
+                    latent_core::CapabilityId("latent:random/random@0.1.0".into()),
+                    PolicyId("sdk-runtime-policy-3".into()),
+                ));
             }
             if caller
                 .surface()
@@ -578,13 +591,13 @@ impl Fixture {
             ))
         });
         let guest_runtime = if let Some((_, call_wall_millis)) = activation_runtime {
-            guest_runtime::Runtime::activation_scoped_with_clocks(
+            guest_runtime::Runtime::activation_scoped_with_effects(
                 &broker,
                 &policies,
                 tenant,
                 &scopes,
                 call_wall_millis,
-                runtime_clocks,
+                (runtime_clocks, runtime_random),
             )
         } else {
             guest_runtime::Runtime::scoped(&broker, &policies, tenant, &scopes, false)
