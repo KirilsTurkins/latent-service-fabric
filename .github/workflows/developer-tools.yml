@@ -228,6 +228,8 @@ jobs:
           path: |
             ${{ runner.temp }}/java-dependency-watch/public-qualification.json
             ${{ runner.temp }}/java-dependency-watch/ci-account.json
+            ${{ runner.temp }}/java-dependency-watch/initial-build.stdout
+            ${{ runner.temp }}/java-dependency-watch/initial-build.stderr
           if-no-files-found: warn
           retention-days: 3
       - name: Qualify the static site and TypeScript API in Chromium

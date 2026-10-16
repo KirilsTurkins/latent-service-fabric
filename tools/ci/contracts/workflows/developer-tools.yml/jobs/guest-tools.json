@@ -100,7 +100,7 @@
         "with": {
           "if-no-files-found": "warn",
           "name": "java-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}",
-          "path": "${{ runner.temp }}/java-dependency-watch/public-qualification.json\n${{ runner.temp }}/java-dependency-watch/ci-account.json\n",
+          "path": "${{ runner.temp }}/java-dependency-watch/public-qualification.json\n${{ runner.temp }}/java-dependency-watch/ci-account.json\n${{ runner.temp }}/java-dependency-watch/initial-build.stdout\n${{ runner.temp }}/java-dependency-watch/initial-build.stderr\n",
           "retention-days": 3
         }
       },
@@ -316,7 +316,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Continuously execute existing delivered Java signed watch with original60 minute matrix and all prior commands",
+  "reviewReason": "Add bounded initial Java build stdout/stderr already privately retained by the reviewed watch wrapper; preserve every original command, timeout and artifact",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
