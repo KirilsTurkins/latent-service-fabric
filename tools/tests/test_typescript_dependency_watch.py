@@ -146,3 +146,187 @@ class FrontendRuntime(unittest.TestCase):
                 'noBytecode': True, 'cachePrefix': None})
             self.assertEqual(events.read_bytes(), result.stdout)
             self.assertFalse((root / 'ambient-bytecode').exists())
+
+
+class DeliveredResolverOwner(unittest.TestCase):
+    def layout(self, root, *, recorded=True):
+        import shutil
+        import stat
+        import zipfile
+        from tools import build_dev_frontend
+        from tools.dev_workflow.common import HOST_ABI, digest, encode
+
+        helper = root / 'actual-helper.pyz'
+        helper_identity = build_dev_frontend.helper(helper)
+        installed = root / 'relocated installed'
+        sdk = installed / 'sdk'; sdk.mkdir(parents=True)
+        owner = installed / 'recipe/tools/dev_managed_tools.py'
+        owner.parent.mkdir(parents=True)
+        source = Path(__file__).resolve().parents[1] / 'dev_managed_tools.py'
+        shutil.copyfile(source, owner)
+        files = []
+        expected = {'node/bin/node': b'explicit fixture node bytes',
+                    'node/lib/node_modules/npm/bin/npm-cli.js': b'explicit fixture npm bytes'}
+        with zipfile.ZipFile(sdk / 'managed.zip', 'x') as archive:
+            for name, raw in expected.items():
+                entry = zipfile.ZipInfo(name)
+                entry.create_system = 3
+                entry.external_attr = (stat.S_IFREG | 0o700) << 16
+                archive.writestr(entry, raw)
+                files.append({'path': name, 'size': len(raw), 'sha256': digest(raw), 'executable': True})
+        manifest = {'schemaVersion': 'latent.dev.managed-tools.v1', 'files': files}
+        manifest['identity'] = digest(encode(manifest))
+        (sdk / 'managed-inputs.json').write_bytes(encode(manifest))
+        inventory = {'schemaVersion': 'latent.dev.guest-tools.v1', 'language': 'typescript',
+            'ownerIssue': 546, 'sourceCommit': 'a' * 40, 'hostAbi': HOST_ABI, 'host': 'linux-x86_64',
+            'files': [{'path': path.relative_to(installed).as_posix(), 'size': path.stat().st_size,
+                       'sha256': digest(path.read_bytes())}
+                      for path in sorted(installed.rglob('*')) if path.is_file()
+                      and (recorded or path != owner)]}
+        inventory['identity'] = digest(encode(inventory))
+        raw = encode(inventory)
+        (installed / 'guest-tools.json').write_bytes(raw)
+        descriptor = {'language': 'typescript', 'hostAbi': HOST_ABI,
+            'template': {'ownerIssue': 546, 'revision': 'a' * 40},
+            'build': {'inventory': {'path': 'guest-tools.json', 'sha256': digest(raw)}, 'tools': []}}
+        (root / 'descriptor.json').write_bytes(encode(descriptor))
+        shutil.copyfile(Path(__file__).resolve().parents[1] / 'qualify_typescript_dependency_watch.py',
+                        root / 'qualifier.py')
+        return installed, owner, expected, helper_identity, inventory['identity']
+
+    def run_delivered(self, root):
+        import os
+        import subprocess
+        import sys
+
+        runner = root / 'outside-checkout.py'
+        runner.write_text('''import importlib.util,json,pathlib,sys
+root=pathlib.Path(__file__).resolve().parent
+sys.path.insert(0,str(root/'actual-helper.pyz'))
+try:
+ from tools.dev_managed_tools import unpack
+except ModuleNotFoundError as error:
+ assert error.name=='tools.dev_managed_tools',error.name
+else:
+ raise AssertionError('actual helper unexpectedly contains recipe-only owner')
+import tools
+assert str(root/'actual-helper.pyz') in tools.__file__,tools.__file__
+spec=importlib.util.spec_from_file_location('watch_qualifier',root/'qualifier.py')
+qualifier=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(qualifier)
+try:
+ managed,owner=qualifier.unpack_resolver(root/'relocated installed',root/'resolver-managed',
+     json.loads((root/'descriptor.json').read_bytes()))
+ result={'passed':True,'owner':owner,'files':{
+     path.relative_to(managed).as_posix():path.read_text()
+     for path in managed.rglob('*') if path.is_file()}}
+except (ValueError,FileNotFoundError) as error:
+ result={'passed':False,'error':str(error),'errorType':type(error).__name__}
+result.update(isolated=sys.flags.isolated,noBytecode=sys.dont_write_bytecode,
+              cachePrefix=sys.pycache_prefix,missingFromActualHelper=True)
+print(json.dumps(result))
+''', encoding='utf-8')
+        environment = {'PATH': os.defpath, 'HOME': str(root), 'TEMP': str(root), 'TMP': str(root),
+            'PYTHONPATH': str(root / 'ambient-imports'), 'PYTHONPYCACHEPREFIX': str(root / 'ambient-bytecode')}
+        if sys.platform == 'win32':
+            environment['SystemRoot'] = os.environ['SystemRoot']
+        result = subprocess.run([sys.executable, '-I', '-B', str(runner)], cwd=root,
+            env=environment, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr.decode('utf-8', 'replace'))
+        value = json.loads(result.stdout)
+        self.assertEqual((value['isolated'], value['noBytecode'], value['cachePrefix']), (1, True, None))
+        self.assertTrue(value['missingFromActualHelper'])
+        self.assertFalse(list(root.rglob('__pycache__')))
+        self.assertFalse((root / 'ambient-bytecode').exists())
+        self.assertFalse((root / 'recipe-canary').exists())
+        return value
+
+    @unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')
+    def test_actual_helper_loads_only_recorded_installed_recipe_and_unpacks_exact_bytes(self):
+        from tools.dev_workflow.common import digest
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            installed, owner, expected, helper_identity, inventory_identity = self.layout(root)
+            before = {path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                      for path in installed.rglob('*') if path.is_file()}
+            value = self.run_delivered(root)
+            self.assertTrue(value['passed'], value)
+            self.assertEqual(value['files'], {name: raw.decode() for name, raw in expected.items()})
+            self.assertEqual(value['owner'], {'path': 'recipe/tools/dev_managed_tools.py',
+                'sha256': digest(owner.read_bytes()), 'inventoryIdentity': inventory_identity})
+            self.assertEqual(digest((root / 'actual-helper.pyz').read_bytes()), helper_identity)
+            self.assertEqual({path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                              for path in installed.rglob('*') if path.is_file()}, before)
+
+    @unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')
+    def test_altered_recipe_is_rejected_before_loading_or_creating_resolver_state(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _, owner, _, _, _ = self.layout(root)
+            owner.write_text('from pathlib import Path\nPath(' + repr(str(root / 'recipe-canary'))
+                             + ').write_text("executed")\n', encoding='utf-8')
+            value = self.run_delivered(root)
+            self.assertFalse(value['passed'])
+            self.assertEqual(value['error'], 'guest-tool-companion-modified')
+            self.assertFalse((root / 'resolver-managed').exists())
+
+    @unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')
+    def test_missing_recipe_is_rejected_before_creating_resolver_state(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _, owner, _, _, _ = self.layout(root)
+            owner.unlink()
+            value = self.run_delivered(root)
+            self.assertFalse(value['passed'])
+            self.assertEqual(value['errorType'], 'FileNotFoundError')
+            self.assertFalse((root / 'resolver-managed').exists())
+
+    @unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')
+    def test_unrecorded_recipe_is_rejected_even_when_inventory_omits_recipe_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.layout(root, recorded=False)
+            value = self.run_delivered(root)
+            self.assertFalse(value['passed'])
+            self.assertEqual(value['error'], 'delivered-managed-owner-outside-inventory')
+            self.assertFalse((root / 'resolver-managed').exists())
+
+    def test_source_inventory_loader_preserves_exact_inputs_and_rejects_changed_recipe_before_mutation(self):
+        import sys
+        from unittest.mock import patch
+        from tools import qualify_typescript_dependency_watch as qualifier
+        from tools.dev_workflow.common import digest
+        original_no_bytecode = sys.dont_write_bytecode
+        for mode in ('valid', 'altered', 'missing', 'unrecorded'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                installed, owner, expected, _, inventory_identity = self.layout(root, recorded=mode != 'unrecorded')
+                descriptor = json.loads((root / 'descriptor.json').read_bytes())
+                destination = root / 'resolver-managed'
+                if mode == 'altered':
+                    owner.write_text('from pathlib import Path\nPath(' + repr(str(root / 'recipe-canary'))
+                                     + ').write_text("executed")\n', encoding='utf-8')
+                elif mode == 'missing':
+                    owner.unlink()
+                if mode == 'valid':
+                    before = {path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                              for path in installed.rglob('*') if path.is_file()}
+                    # The maintained runuser command starts the delivered qualifier
+                    # with -I -B; ordinary unittest discovery itself does not.
+                    with patch.object(sys, 'dont_write_bytecode', True):
+                        managed, observed = qualifier.unpack_resolver(installed, destination, descriptor)
+                    self.assertEqual(managed, destination)
+                    self.assertEqual(observed, {'path': 'recipe/tools/dev_managed_tools.py',
+                        'sha256': digest(owner.read_bytes()), 'inventoryIdentity': inventory_identity})
+                    self.assertEqual({path.relative_to(managed).as_posix(): path.read_bytes()
+                                      for path in managed.rglob('*') if path.is_file()}, expected)
+                    self.assertEqual({path.relative_to(installed).as_posix(): digest(path.read_bytes())
+                                      for path in installed.rglob('*') if path.is_file()}, before)
+                else:
+                    with patch.object(sys, 'dont_write_bytecode', True):
+                        with self.assertRaises((ValueError, FileNotFoundError)):
+                            qualifier.unpack_resolver(installed, destination, descriptor)
+                    self.assertFalse(destination.exists())
+                self.assertFalse((root / 'recipe-canary').exists())
+                self.assertFalse(list(installed.rglob('__pycache__')))
+                self.assertIs(sys.dont_write_bytecode, original_no_bytecode)

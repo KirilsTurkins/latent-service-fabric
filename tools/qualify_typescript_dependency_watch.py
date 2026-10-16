@@ -63,6 +63,34 @@ raise SystemExit(main())
 ''', encoding='utf-8')
 
 
+def unpack_resolver(installed: Path, destination: Path, descriptor: dict):
+    """Use the installed recipe owner after its normal delivered inventory check."""
+    from tools.dev_workflow import paths, tool_inventory
+    from tools.dev_workflow.common import decode
+
+    identity = tool_inventory.check(installed, descriptor, 'linux-x86_64')
+    require(identity is not None, 'delivered-tool-inventory-required')
+    selected = descriptor['build']['inventory']
+    raw = paths.read(installed, selected['path'], tool_inventory.MAX_DOCUMENT)
+    require('sha256:' + hashlib.sha256(raw).hexdigest() == selected['sha256'],
+            'guest-tool-inventory-digest')
+    inventory = decode(raw, tool_inventory.MAX_DOCUMENT)
+    name = 'recipe/tools/dev_managed_tools.py'
+    entry = next((item for item in inventory['files'] if item['path'] == name), None)
+    require(entry is not None, 'delivered-managed-owner-outside-inventory')
+    owner = installed / name
+    require(paths.digest_file(installed, name, 1024**3) == (entry['sha256'], entry['size']),
+            'guest-tool-companion-modified')
+    spec = importlib.util.spec_from_file_location('delivered_typescript_managed_tools', owner)
+    require(spec is not None and spec.loader is not None, 'delivered-managed-owner-unloadable')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    managed = module.unpack(installed / 'sdk', destination, lambda: None)
+    require(tool_inventory.check(installed, descriptor, 'linux-x86_64') == identity,
+            'delivered-tool-inventory-changed')
+    return managed, {'path': name, 'sha256': entry['sha256'], 'inventoryIdentity': identity}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--installed', required=True, type=Path)
@@ -227,17 +255,17 @@ def main() -> int:
         write_frontend(frontend, python, args, events)
         frontend.chmod(0o700)
         report['frontend'] = digest(frontend)
-        from tools.dev_managed_tools import unpack
-        managed = unpack(installed / 'sdk', root / 'resolver-managed', lambda: None)
+        template_entry = decode((installed / 'templates.json').read_bytes())['templates']['greeting']
+        template_root = installed / template_entry['path']
+        descriptor = decode((template_root / 'template.json').read_bytes())
+        managed, report['resolverOwner'] = unpack_resolver(installed, root / 'resolver-managed', descriptor)
+        fixed_inputs[str(installed / report['resolverOwner']['path'])] = report['resolverOwner']['sha256']
         resolver_node = managed / 'node/bin/node'
         resolver_npm = managed / 'node/lib/node_modules/npm/bin/npm-cli.js'
         require(resolver_node.is_file() and resolver_npm.is_file(), 'delivered-pinned-npm-tools-required')
         for selected in (resolver_node, resolver_npm):
             fixed_inputs[str(selected)] = digest(selected)
-        template_entry = decode((installed / 'templates.json').read_bytes())['templates']['greeting']
-        template_root = installed / template_entry['path']
-        project.scaffold(template_root, application, decode((template_root / 'template.json').read_bytes()),
-                         template_entry['identity'])
+        project.scaffold(template_root, application, descriptor, template_entry['identity'])
         inputs = fixture.create(application)
         report['outsideInputs'] = inputs['inputDigests']
         sdk_lock = application / 'app/sdk-lock.json'

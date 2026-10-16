@@ -1,5 +1,10 @@
 {
   "cases": [
+    "DeliveredResolverOwner.test_actual_helper_loads_only_recorded_installed_recipe_and_unpacks_exact_bytes",
+    "DeliveredResolverOwner.test_altered_recipe_is_rejected_before_loading_or_creating_resolver_state",
+    "DeliveredResolverOwner.test_missing_recipe_is_rejected_before_creating_resolver_state",
+    "DeliveredResolverOwner.test_source_inventory_loader_preserves_exact_inputs_and_rejects_changed_recipe_before_mutation",
+    "DeliveredResolverOwner.test_unrecorded_recipe_is_rejected_even_when_inventory_omits_recipe_root",
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode",
     "TypescriptDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation",
     "TypescriptDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed",
@@ -9,6 +14,98 @@
     "TypescriptDependencyWatchFixture.test_watch_delegation_operations_exist_in_maintained_frontend"
   ],
   "guards": {
+    "DeliveredResolverOwner.test_actual_helper_loads_only_recorded_installed_recipe_and_unpacks_exact_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"
+      ],
+      "skipSites": [
+        "skip-control-sha256:9b24deb0d42388133338b0a92b853b31b1583b20a2e5e1153f5898f17a5e1daa",
+        "unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"
+      ]
+    },
+    "DeliveredResolverOwner.test_altered_recipe_is_rejected_before_loading_or_creating_resolver_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"
+      ],
+      "skipSites": [
+        "skip-control-sha256:884a4a4096765a75941d766e77351edd5352d05466e0239aececf679bd39957d",
+        "unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"
+      ]
+    },
+    "DeliveredResolverOwner.test_missing_recipe_is_rejected_before_creating_resolver_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"
+      ],
+      "skipSites": [
+        "skip-control-sha256:f8d5b16eea3c16bba7b45bce70f99e8915f1ee5650a73075762b7e2857295292",
+        "unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"
+      ]
+    },
+    "DeliveredResolverOwner.test_source_inventory_loader_preserves_exact_inputs_and_rejects_changed_recipe_before_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"
+      ],
+      "skipSites": []
+    },
+    "DeliveredResolverOwner.test_unrecorded_recipe_is_rejected_even_when_inventory_omits_recipe_root": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:6a486bfc7016eb0ea0910881ca49a71cae57773fc110747217cea88ff05b9cce"
+      ],
+      "skipSites": [
+        "skip-control-sha256:115679353732198570b17143f321b58e83b059bfa22a4a52844d74c5aee82666",
+        "unittest.skipUnless(__import__('sys').platform == 'linux', 'Linux helper omits Windows platform owners')"
+      ]
+    },
+    "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
     "TypescriptDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation": {
       "bases": [
         "unittest.TestCase"
@@ -80,22 +177,10 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
-    },
-    "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_dependency_watch.py",
-  "reviewReason": "Execute the generated source frontend under adversarial Python settings; preserve every original case, fixture, decorator and skip guard.",
+  "reviewReason": "Retain all seven existing TypeScript watch controls and add five installed-recipe inventory/loading controls. Four execute the unchanged Linux-only helper under isolated/no-bytecode Python on Linux; the portable source-inventory control exercises exact-byte preservation and altered/missing/unrecorded refusal on both maintained hosts.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
