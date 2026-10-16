@@ -8,6 +8,19 @@ from tools.typescript_guest import native_build as owner
 
 
 class NativeBuildInputs(unittest.TestCase):
+    def test_archive_composition_keeps_original_input_cap_and_bounds_added_objects(self):
+        # Exact sizes retained from the normal hosted mach product and its
+        # required upstream objects; no large allocation is needed here.
+        limits = owner.combined_archive_limits({'bytes':535993684},{'objects':{'bytes':2863676}})
+        self.assertEqual(limits['originalLibraryMaximumBytes'],512*1024**2)
+        self.assertEqual(limits['maximumCombinedBytes'],535993684+2863676+4*1024**2)
+        for library,objects in (({'bytes':512*1024**2+1},{'x':{'bytes':1}}),
+                ({'bytes':1},{'x':{'bytes':16*1024**2+1}}),({'bytes':1},{}),
+                ({'bytes':True},{'x':{'bytes':1}}),({'bytes':1},{'x':{'bytes':False}}),
+                ({'bytes':1},{str(index):{'bytes':1} for index in range(65)})):
+            with self.subTest(library=library,objects=objects), self.assertRaisesRegex(ValueError,'composition-input-bound'):
+                owner.combined_archive_limits(library,objects)
+
     def test_upstream_object_list_rejects_changed_shape_duplicates_and_path_escape(self):
         original = b'    set(SM_OBJ_FILES\n        memory/build/original.o\n        mfbt/one.o\n    )\n'
         self.assertEqual(owner.supporting_objects(original),['memory/build/original.o','mfbt/one.o'])

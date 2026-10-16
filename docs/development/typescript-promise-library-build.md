@@ -39,7 +39,9 @@ compiled `libjs_static.a`, then failed the original SpiderMonkey include-order
 check. Its failed receipt and exact source/log identities remain retained. The
 hook header now orders RootingAPI before TypeDecls, and the derived Promise
 source includes the hook with the other js headers after the Mozilla headers.
-The original checker remains enabled; a full successful build is still required.
+The original checker remains enabled. A subsequent normal build passed it and
+retained the completed library receipt in
+[run 38840584379](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38840584379/job/116779501071).
 Post-build source rechecks compare the acquisition's upstream bare digest with
 the shared identity owner's algorithm-prefixed digest. Normal installed header
 links must resolve to exact bytes inside the owned build. The static product is
@@ -58,6 +60,10 @@ and clocks C ABI with the pinned generator, and applies the existing reviewed
 activation and clock source derivations. It combines the original library with
 the exact supporting object list from the pinned upstream CMake source. Headers
 are materialized into private staging; the original library output is unchanged.
+The original library retains its 512MiB input cap. The separate combined archive
+is bounded by its actual library size, at most16MiB of supporting objects and
+at most4MiB of archive-index growth. Its exact bytes are rechecked after CMake.
+No guest/runtime, command deadline or workflow limit changes with this bound.
 
 The normal upstream CMake configure/build produces `starlingmonkey_embedding`
 in Release mode, with the upstream debugger and Weval options disabled. The
@@ -70,8 +76,13 @@ input envelope remain separate from runtime acceptance.
 
 An actual source-only control verified both original carriers, all source
 preimages, the exact fresh clock-binding pins and the 22 original supporting
-object paths. Four additional controls cover object-list injection, retained
+object paths. Five additional controls cover object-list injection, retained
 original header/configuration bytes, deadlines and source-carrier preservation.
+The latest actual normal-mach library is535,993,684bytes; its22 required support
+objects total2,863,676bytes. Combining those valid inputs exceeded the reused
+512MiB library-input bound before CMake. The original failed receipt is retained;
+the combined product now has its separately derived bound above. Engine linkage
+on that correction remains pending.
 Normal Linux engine linkage has not yet passed. Even an emitted validated core
 is an explicitly unqualified Promise/clock compiler input. Source-built async
 import splicing, ordinary signed lifecycle/drain cases, and the default Fetch
