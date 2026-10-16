@@ -215,6 +215,12 @@ jobs:
         if: matrix.language == 'typescript'
         with:
           node-version: 24.19.0
+      - name: Prepare captured Rust watch compiler namespace
+        if: matrix.language == 'rust'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Qualify normal Rust dependency watch through three reviewed signed builds
         if: matrix.language == 'rust'
         run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_rust_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_rust_dependency_watch.py --fixture tools/rust_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/rust-dependency-watch"
