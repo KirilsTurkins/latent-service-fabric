@@ -84,6 +84,27 @@
         }
       },
       {
+        "if": "matrix.language == 'java'",
+        "name": "Prepare captured Java watch compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'java'",
+        "name": "Qualify normal Java dependency watch through three reviewed signed builds",
+        "run": "sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_java_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_java_dependency_watch.py --node-probe tools/dev_node_application_probe.py --output \"$RUNNER_TEMP/java-dependency-watch\""
+      },
+      {
+        "if": "always() && matrix.language == 'java'",
+        "name": "Retain bounded Java dependency watch and normal shutdown observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/java-dependency-watch/public-qualification.json\n${{ runner.temp }}/java-dependency-watch/ci-account.json\n",
+          "retention-days": 3
+        }
+      },
+      {
         "if": "matrix.language == 'typescript'",
         "name": "Qualify the static site and TypeScript API in Chromium",
         "run": "npm ci --ignore-scripts --no-audit --no-fund --prefix tools/static_api\nnode tools/static_api/node_modules/playwright-core/cli.js install --with-deps chromium\npython tools/static_api/ci.py --bin target/dev-tools/source-node/bin --signer target/dev-tools/payload/sdk/bin/capsule-test-signer --build \"$RUNNER_TEMP/dev-projects/static-api/build\" --browser-tools tools/static_api --output \"$RUNNER_TEMP/dev-projects/static-api\"\n"
@@ -295,7 +316,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Preserve all required compiler, fixture and artifact commands and original conditions; qualify the explicit Java diagnostic variant and retain the reviewed cache action update.",
+  "reviewReason": "Continuously execute existing delivered Java signed watch with original60 minute matrix and all prior commands",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

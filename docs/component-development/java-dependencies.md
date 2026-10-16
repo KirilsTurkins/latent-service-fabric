@@ -229,3 +229,5 @@ Java library API. Actual classpath lookup, reflection/native/runtime compatibili
 signed-node library execution and resource/cleanup acceptance still require
 emitted-component tests. Runtime concurrency and default HTTP profiles have their
 own implementation and qualification tickets. No host JVM service is deployed.
+
+The existing delivered dependency-watch programme now has a maintained hosted gate in the Java developer-tools lane. It uses the built toolkit, a dedicated unprivileged account and a loopback-only network namespace for the original add/update/remove, review/trust/signature and three signed-node workflows. All previous commands and the 60-minute matrix budget remain. A per-workspace shutdown fence marks the first `down` before dispatch, including unknown failure, and prevents outer cleanup from replaying it. Failed observer retirement cannot replace the original failure or establish a clean node shutdown. The retained earlier local qualification remains source-scoped; fresh current-head hosted watch results are required for the changed programme.

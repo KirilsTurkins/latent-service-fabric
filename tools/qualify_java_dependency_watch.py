@@ -35,6 +35,17 @@ def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
 
 
+class ShutdownOnce:
+    """Fence an external shutdown before dispatch, including uncertain failure."""
+    def __init__(self):
+        self.attempted = False
+
+    def call(self, operation):
+        require(not self.attempted, 'watch-down-already-attempted-no-retry')
+        self.attempted = True
+        return operation()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--installed', required=True, type=Path)
@@ -71,6 +82,7 @@ def main() -> int:
         'commands': [], 'stages': [], 'phase': 'prepare'}
     began = time.monotonic()
     watcher = None
+    shutdown = ShutdownOnce()
     frontend = root / 'latent-dev-source'
     events = root / 'frontend-events.jsonl'
     controller = root / 'controller'
@@ -153,7 +165,9 @@ def main() -> int:
         return offset
 
     def start_watch(label):
-        nonlocal workspace_name, watcher
+        nonlocal workspace_name, watcher, shutdown
+        require(watcher is None or watcher.poll() is not None, 'previous-watch-owner-not-retired')
+        shutdown = ShutdownOnce()
         workspace_name = workspace_prefix + '-' + label
         node_root = Path('/home/ubuntu/.lsf-dev') / workspace_name
         front(label + '-connect', 'connect', '--backend-config', root / 'backend.json')
@@ -174,7 +188,7 @@ def main() -> int:
         return after_deploy(offset, label)
 
     def stop_watch(label):
-        stopped = json.loads(front(label + '-normal-down', 'down').stdout)['result']
+        stopped = json.loads(shutdown.call(lambda: front(label + '-normal-down', 'down')).stdout)['result']
         require(stopped['state'] == 'stopped' and stopped.get('reaped') is True
                 and stopped.get('cleanShutdown') is True, 'normal-node-shutdown-unconfirmed')
         watcher.wait(timeout=30)
@@ -337,16 +351,27 @@ public final class Capsule implements Bindings.Exports {
     finally:
         if watcher is not None and watcher.poll() is None:
             try:
-                report['cleanupAfterFailure'] = json.loads(front('failure-normal-down', 'down').stdout)
+                report['cleanupAfterFailure'] = json.loads(shutdown.call(lambda: front('failure-normal-down', 'down')).stdout)
                 watcher.wait(timeout=30)
             except BaseException:
                 report['cleanup'] = 'unconfirmed'
-                os.killpg(watcher.pid, signal.SIGTERM)
                 try:
-                    watcher.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    os.killpg(watcher.pid, signal.SIGKILL)
-                    watcher.wait(timeout=10)
+                    try:
+                        os.killpg(watcher.pid, signal.SIGTERM)
+                    except ProcessLookupError:
+                        pass
+                    try:
+                        watcher.wait(timeout=10)
+                    except subprocess.TimeoutExpired:
+                        try:
+                            os.killpg(watcher.pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+                        watcher.wait(timeout=10)
+                except BaseException:
+                    # Preserve the original command failure; failed observer
+                    # retirement cannot establish a clean node shutdown.
+                    report['observerCleanup'] = 'unconfirmed'
         report['durationSeconds'] = round(time.monotonic() - began, 6)
         write(root / 'qualification.json', report)
 
