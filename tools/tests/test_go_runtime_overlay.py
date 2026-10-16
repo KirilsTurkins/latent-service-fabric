@@ -43,6 +43,9 @@ class GoRuntimeOverlayTests(unittest.TestCase):
         from tools import diagnose_go_timer_failure as diagnostic
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            preflight = root / diagnostic.FRAME_PREFLIGHT_SOURCE
+            preflight.parent.mkdir(parents=True)
+            preflight.write_bytes(diagnostic.frame_preflight_source(diagnostic.ROOT).read_bytes())
             overlays = [(root / 'private' / name, root / name) for name in diagnostic.PATHS]
             context = {'uid': 1001, 'gid': 118, 'groups': [118], 'uidMapDigest': 'a' * 64,
                        'root': [0, 0, 0o755]}
@@ -64,11 +67,34 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             self.assertEqual(command[drop:drop + 10], ['/setpriv', '--reuid', '1001', '--regid', '118',
                 '--clear-groups', '--bounding-set=-all', '--inh-caps=-all', '--ambient-caps=-all', '--no-new-privs'])
             self.assertLess(drop, command.index('/cargo'))
+            self.assertEqual(command[drop + 11:drop + 14], ['-I', '-B', str(preflight.resolve())])
+            self.assertNotIn('-c', command)
             self.assertEqual(command.count('--ro-bind'), 3)
             self.assertIn('--offline', command)
             self.assertIn('--locked', command)
             with self.assertRaisesRegex(ValueError, 'source-set'):
                 diagnostic.frame_command(root, overlays[:-1], {}, '/cargo', '/bwrap', '/sudo', '/setpriv', context)
+
+    def test_private_frame_preflight_source_requires_exact_selected_file_without_fallback(self):
+        from tools import diagnose_go_timer_failure as diagnostic
+        from tools.go_guest import frame_preflight
+        selected = diagnostic.frame_preflight_source(diagnostic.ROOT)
+        self.assertEqual(Path(frame_preflight.__file__).resolve(), selected)
+        original = selected.read_bytes()
+        self.assertEqual('sha256:' + hashlib.sha256(original).hexdigest(), diagnostic.FRAME_PREFLIGHT_DIGEST)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / diagnostic.FRAME_PREFLIGHT_SOURCE
+            with self.assertRaisesRegex(ValueError, 'preflight-source'):
+                diagnostic.frame_preflight_source(root)
+            path.parent.mkdir(parents=True)
+            path.write_bytes(original)
+            self.assertEqual(diagnostic.frame_preflight_source(root), path.resolve())
+            for changed in (original + b'\n# changed', b'x' * 8193):
+                with self.subTest(size=len(changed)):
+                    path.write_bytes(changed)
+                    with self.assertRaisesRegex(ValueError, 'preflight-preimage'):
+                        diagnostic.frame_preflight_source(root)
 
     def test_private_frame_host_preflight_refuses_wrong_credentials_caps_maps_or_temporary_ancestors(self):
         import contextlib
@@ -79,6 +105,7 @@ class GoRuntimeOverlayTests(unittest.TestCase):
         import sys
         from types import SimpleNamespace
         from tools import diagnose_go_timer_failure as diagnostic
+        from tools.go_guest import frame_preflight
         mapping = b'0 0 4294967295\n'
         expected = {'uid': 1001, 'gid': 118, 'groups': [118],
                     'uidMapDigest': hashlib.sha256(mapping).hexdigest(), 'root': [0, 0, 0o755]}
@@ -87,6 +114,7 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             class Entry:
                 def __init__(self, value): self.value = value
                 def read_text(self):
+                    if fault == 'exception': raise PermissionError('private path and credential must not escape')
                     return '\n'.join(f'{key}:\t{1 if fault == key else 0}' for key in
                         ('CapInh', 'CapPrm', 'CapEff', 'CapBnd', 'CapAmb')) + '\nNoNewPrivs:\t' + ('0' if fault == 'privs' else '1')
                 def read_bytes(self): return b'changed mapping' if fault == 'mapping' else mapping
@@ -97,7 +125,7 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                     mode = 0o755 if self.value == '/' else (0o777 if fault == 'temporary' else 0o1777)
                     return SimpleNamespace(st_uid=65534 if fault == 'owner' else 0, st_gid=0,
                                            st_mode=stat.S_IFDIR | mode)
-            output = io.StringIO()
+            output, errors = io.StringIO(), io.StringIO()
             with patch.object(pathlib, 'Path', Entry), \
                     patch.object(os, 'getuid', return_value=1001, create=True), \
                     patch.object(os, 'geteuid', return_value=0 if fault == 'root' else 1001, create=True), \
@@ -107,25 +135,68 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                     patch.object(os, 'execve', side_effect=lambda *args: executed.append(args)), \
                     patch.object(tempfile, 'gettempdir', return_value='/tmp'), \
                     patch.dict(os.environ, {'TMPDIR': 'unsafe'} if fault == 'environment' else {}, clear=True), \
-                    patch.object(sys, 'argv', ['preflight', json.dumps(expected), '/cargo', '--locked']), \
-                    contextlib.redirect_stdout(output):
+                    patch.object(sys, 'argv', ['preflight'] if fault == 'missing-arguments' else
+                        ['preflight', 'private malformed payload' if fault == 'invalid-arguments' else
+                         json.dumps(expected), '/cargo', '--locked']), \
+                    contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
                 if fault:
                     with self.assertRaisesRegex(SystemExit, 'preflight-refused'):
-                        exec(diagnostic.FRAME_PREFLIGHT, {})
+                        frame_preflight.main()
                 else:
-                    exec(diagnostic.FRAME_PREFLIGHT, {})
+                    frame_preflight.main()
             self.assertEqual(len(executed), 0 if fault else 1)
-            return output.getvalue().encode()
+            return (output.getvalue() + errors.getvalue()).encode()
         value = diagnostic.frame_host_observation(run())
         self.assertEqual(value['uid'], 1001)
         self.assertTrue(value['sameUserNamespace'])
         for fault in ('root', 'groups', 'CapInh', 'CapPrm', 'CapEff', 'CapBnd', 'CapAmb',
-                      'privs', 'mapping', 'owner', 'temporary', 'environment'):
-            with self.subTest(fault=fault): self.assertIsNone(diagnostic.frame_host_observation(run(fault)))
+                      'privs', 'mapping', 'owner', 'temporary', 'environment', 'exception',
+                      'missing-arguments', 'invalid-arguments'):
+            with self.subTest(fault=fault):
+                raw = run(fault)
+                self.assertIsNone(diagnostic.frame_host_observation(raw))
+                observation = diagnostic.frame_launch_observation(raw)
+                self.assertIsNotNone(observation['preflightFailure'])
+                self.assertNotIn(b'private path and credential', raw)
+                self.assertNotIn(b'private malformed payload', raw)
+                if fault == 'exception':
+                    self.assertEqual(observation['preflightFailure'],
+                        {'phase': 'capsets', 'code': 'exception', 'exception': 'PermissionError'})
+                elif fault in ('missing-arguments', 'invalid-arguments'):
+                    self.assertEqual(observation['preflightFailure'],
+                        {'phase': 'arguments', 'code': 'exception',
+                         'exception': 'IndexError' if fault == 'missing-arguments' else 'JSONDecodeError'})
+                else:
+                    self.assertEqual(observation['preflightFailure']['exception'], 'SystemExit')
         for raw in (b'LSF_GO_DIAG_HOST {}\n', run() * 2,
                     b'LSF_GO_DIAG_HOST ' + b'x' * 1025):
             with self.assertRaises((ValueError, json.JSONDecodeError)):
                 diagnostic.frame_host_observation(raw)
+
+    def test_private_frame_launch_observation_exports_only_closed_failure_categories(self):
+        from tools import diagnose_go_timer_failure as diagnostic
+        private = b'private-host-path credential-value arbitrary-untrusted-output'
+        raw = b'\n'.join((b'bwrap: Creating new namespace failed: Operation not permitted ' + private,
+            b'/usr/bin/setpriv: setresuid failed: Permission denied ' + private,
+            b'sudo: a password is required ' + private,
+            b'python3.13: unexpected diagnostic ' + private, private))
+        value = diagnostic.frame_launch_observation(raw)
+        self.assertEqual(value, {'preflightFailure': None,
+            'launcherFamilies': ['bwrap', 'python', 'setpriv', 'sudo'],
+            'launcherCategories': ['authentication', 'credential-transition', 'namespace-setup', 'other', 'permission-denied'],
+            'rawLauncherOutputRetained': False})
+        self.assertNotIn('private-', json.dumps(value))
+        self.assertEqual(diagnostic.frame_launch_observation(private)['launcherFamilies'], [])
+        for field in ('phase', 'code', 'exception'):
+            bad = {'phase': 'capsets', 'code': 'CapBnd', 'exception': 'SystemExit'}
+            bad[field] = private.decode()
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'failure-shape'):
+                diagnostic.frame_launch_observation(b'LSF_GO_DIAG_HOST_FAILURE ' + json.dumps(bad).encode())
+        with self.assertRaisesRegex(ValueError, 'failure-shape'):
+            diagnostic.frame_launch_observation(b'LSF_GO_DIAG_HOST_FAILURE {}\n' * 2)
+        for scalar in (b'42', b'null', b'[]', b'"private"'):
+            with self.subTest(scalar=scalar), self.assertRaisesRegex(ValueError, 'failure-shape'):
+                diagnostic.frame_launch_observation(b'LSF_GO_DIAG_HOST_FAILURE ' + scalar)
 
     def test_terminal_panic_probe_executes_checked_pointer_type_and_decimal_guards(self):
         import shutil
