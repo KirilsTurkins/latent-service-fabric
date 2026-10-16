@@ -16,6 +16,7 @@ on:
       - 'tools/dotnet_guest/**'
       - 'examples/dotnet-standard-http/**'
       - 'tools/dotnet_standard_http*.py'
+      - 'tools/dotnet_internal_io_port.py'
       - 'tools/qualify_dotnet_standard_http.py'
       - 'tools/standard_http/**'
       - 'tools/dotnet_capsule.py'
@@ -186,6 +187,11 @@ jobs:
           export LSF_WIT_BINDGEN="$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen" LSF_WASM_TOOLS=wasm-tools
           /usr/bin/time -f '{"wallSeconds":%e,"maxRssKiB":%M,"exitCode":%x}' -o "$RUNNER_TEMP/dotnet-guest/compilation-cost.json" dotnet build Smoke.csproj -c Release --no-restore -p:WasiSdkRoot="$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" -p:WitBindgenExe="python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py" 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/build.log"
           cp packages.lock.json "$RUNNER_TEMP/dotnet-guest/packages.lock.json"
+      - name: Pair private blocking I/O function types without changing original core bytes
+        run: |
+          cp "$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm" "$RUNNER_TEMP/dotnet-guest/original-raw.wasm"
+          python3 tools/dotnet_internal_io_port.py --raw "$RUNNER_TEMP/dotnet-guest/original-raw.wasm" --adapter "$RUNNER_TEMP/dotnet-authoring-tools/runtime.wasm" --output "$RUNNER_TEMP/dotnet-guest/internal-io-port"
+          cp "$RUNNER_TEMP/dotnet-guest/internal-io-port/component.wasm" "$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm"
       - name: Compose capability-constrained compiler support
         shell: bash
         run: |

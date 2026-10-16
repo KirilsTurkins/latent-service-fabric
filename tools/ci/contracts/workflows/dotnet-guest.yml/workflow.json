@@ -32,6 +32,7 @@
           "tools/dotnet_guest/**",
           "examples/dotnet-standard-http/**",
           "tools/dotnet_standard_http*.py",
+          "tools/dotnet_internal_io_port.py",
           "tools/qualify_dotnet_standard_http.py",
           "tools/standard_http/**",
           "tools/dotnet_capsule.py",
@@ -73,7 +74,7 @@
   "requiredJobs": [
     "toolchain"
   ],
-  "reviewReason": "Preserve both merged NuGet authoring and signed default HttpClient trigger sets with all non-path workflow policy and required jobs unchanged.",
+  "reviewReason": "Preserve merged NuGet authoring plus paired private I/O and signed default HttpClient obligations; both exact command records and artifact sets, original75-minute ceiling and full workflow trigger sets remain required.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

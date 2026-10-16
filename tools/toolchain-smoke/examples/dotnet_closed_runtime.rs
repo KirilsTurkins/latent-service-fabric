@@ -6,6 +6,9 @@
 wit_bindgen::generate!({
     path: "../../sdk/dotnet-guest/runtime/wit",
     world: "closed",
+    // Closed operations complete immediately; retain their synchronous ABI.
+    // The private I/O function types are paired with compiler-projected imports.
+    async: ["-all"],
     with: {
         "latent:clock/monotonic@0.1.0": generate,
     },

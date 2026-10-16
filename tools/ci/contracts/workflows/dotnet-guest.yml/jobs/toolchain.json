@@ -121,6 +121,10 @@
         "working-directory": "sdk/dotnet-guest"
       },
       {
+        "name": "Pair private blocking I/O function types without changing original core bytes",
+        "run": "cp \"$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm\" \"$RUNNER_TEMP/dotnet-guest/original-raw.wasm\"\npython3 tools/dotnet_internal_io_port.py --raw \"$RUNNER_TEMP/dotnet-guest/original-raw.wasm\" --adapter \"$RUNNER_TEMP/dotnet-authoring-tools/runtime.wasm\" --output \"$RUNNER_TEMP/dotnet-guest/internal-io-port\"\ncp \"$RUNNER_TEMP/dotnet-guest/internal-io-port/component.wasm\" \"$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm\"\n"
+      },
+      {
         "name": "Compose capability-constrained compiler support",
         "run": "set -o pipefail\ncargo build --quiet --locked -p latent-toolchain-smoke --example dotnet-closed-runtime --target wasm32-unknown-unknown --release\nwasm-tools component new target/wasm32-unknown-unknown/release/examples/dotnet_closed_runtime.wasm -o \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\"\ntools=\"$HOME/.nuget/packages/bytecodealliance.componentize.dotnet.wasm.sdk/0.8.0-preview00011/tools/linux-x64\"\ncp \"$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm\" \"$RUNNER_TEMP/dotnet-guest/raw.wasm\"\n\"$tools/wac\" plug \"$RUNNER_TEMP/dotnet-guest/raw.wasm\" --plug \"$RUNNER_TEMP/dotnet-guest/runtime.wasm\" -o \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools validate \"$RUNNER_TEMP/dotnet-guest/component.wasm\"\nwasm-tools component wit \"$RUNNER_TEMP/dotnet-guest/component.wasm\" | tee \"$RUNNER_TEMP/dotnet-guest/admitted.wit\"\n",
         "shell": "bash"
@@ -165,7 +169,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Compose exact merged NuGet authoring commands with ordinary signed HttpClient qualification; retain every prior command record, guard, artifact path, runner, environment and original75-minute ceiling.",
+  "reviewReason": "Preserve merged NuGet authoring plus paired private I/O and signed default HttpClient obligations; both exact command records and artifact sets, original75-minute ceiling and full workflow trigger sets remain required.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

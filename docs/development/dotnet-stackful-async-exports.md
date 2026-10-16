@@ -11,9 +11,11 @@ execution remain independently unqualified under
 Previously, the binding generator projected every async implementation kind to
 synchronous C# and restored the original WIT metadata. An actual encoder control
 shows that an ordinary core export still receives a synchronous canonical lift
-with that metadata. A potentially blocking canonical wait or synchronous
-subtask cancellation can then trap before the task returns. Metadata comparison
-alone does not prove a suspendable implementation.
+with that metadata. This distinction alone does not prove the cause or cure of
+the retained blocking trap: Wasmtime 48.0.6 bases blocking permission on the
+function type's async flag, independently of the canonical lift option. Nested
+WASI I/O functions and resource destructors also have their own task boundaries.
+Metadata comparison alone does not prove a complete managed runtime port.
 
 The compiler now generates the original stackful bindings and a second export
 projection with wit-bindgen 0.62.0. Imported implementation kinds remain
@@ -28,10 +30,34 @@ An unexpected stackless callback traps instead of inventing completion.
 
 The admitted runtime/HTTP adapters select async canonical lifts for their
 potentially blocking WASI poll, pollable block and HTTP stream read/flush
-implementations. Closed streams retain their synchronous implementation. The
+implementations. These four private function types are projected on both the
+raw NativeAOT import and matching adapter export. Closed stream implementations
+still return immediately using their synchronous calling convention. The
 helper and adapter sources are captured SDK/recipe inputs, and the actual
 isolated NativeAOT binding invocation uses the captured neighboring helper
 without resolving application modules through Python's import path.
+
+The first hosted attempt failed during adapter encoding before any application
+execution: an async canonical export had a synchronous WASI function type.
+That rejected attempt is retained in
+[run 38825558809](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38825558809).
+The compiler now matches the complete actual function shapes, unbundles core
+modules, projects only those four internal types, and uses normal wasm-tools
+encoding and validation. It clones shared function types so `read` remains
+synchronous when `blocking-read` changes. Every original core-module payload
+must remain byte-for-byte identical; the complete resulting WIT graph must equal
+the explicitly expected projection. Public application WIT, other imports,
+resource identities, source and compiler cache inputs remain unchanged.
+The original compiler component and its graph remain separately retained.
+
+The pinned printer's `--name-unnamed` output places identifiers before a type
+export's name, which its own text parser rejects. The finite reconstruction
+moves only those identifiers into their item signatures. The final graph and
+core-byte comparisons independently guard this syntax normalization. No code is
+disassembled, no validator check is skipped, and no engine blocking rule changes.
+Six source controls and an actual finite synthetic component projection check
+these boundaries. The normal independent Smoke probe uses the same owner before
+its existing composition steps; their commands and limits remain intact.
 
 Twelve source regressions cover retained marshalling/pin order, unchanged C#
 interfaces, real export names, imported versus exported kinds and fail-closed
@@ -65,3 +91,7 @@ shared HTTP matrix remain required execution gates. The original failed managed
 execution and interrupted build attempts remain retained separately. No ticket
 closure, production enablement or complete CLR/ThreadPool support follows from
 these source and encoder controls.
+In particular, the current `Exchange.abort` still drops an accepted future from
+a synchronous resource destructor. A pending destructor needs a separate true
+terminal retirement/drain implementation; changing its type metadata alone does
+not qualify cancellation, disposal, physical retirement or root drain.

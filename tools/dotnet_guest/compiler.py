@@ -303,11 +303,13 @@ class Compiler:
         # The build workspace is retired on failure. Retain bounded compiler
         # output before runtime selection or composition can reject its graph.
         (command.output / 'native-aot-raw.wasm').write_bytes(read_file(raw, 64 * 1024 * 1024))
+        (command.output / 'native-aot-original.wasm').write_bytes(read_file(raw, 64 * 1024 * 1024))
         from tools.dotnet_guest.compatibility import MAX_GRAPH, inspect as inspect_runtime
         raw_wit = self.run("native-runtime-wit", self.wasm, "component", "wit", raw, "--json")
         if len(raw_wit) > MAX_GRAPH:
             raise ValueError('native-aot-raw-wit-byte-limit')
         (command.output / 'native-aot-raw.wit.json').write_bytes(raw_wit)
+        (command.output / 'native-aot-original.wit.json').write_bytes(raw_wit)
         actual = interface_names(json.loads(raw_wit))["imports"]
         http_error_port = None
         if self.http_error_port is not None:
@@ -323,6 +325,14 @@ class Compiler:
                 file_identity(command.output / "http-error-port.json", "dotnet-http-error-port", http_errors.MAX_RECEIPT)))
         profile = runtime.select(declared, actual)
         adapter = self.runtimes[profile]
+        from tools.dotnet_guest.internal_io import PROFILE as IO_PROFILE, prepare as prepare_internal_io
+        io_original = file_identity(raw, 'original-native-aot-component', 64 * 1024 * 1024)
+        raw, io_port = prepare_internal_io(self, raw, adapter, output / 'internal-io-port', json.loads(raw_wit))
+        if io_port is not None:
+            self.compiler_patches.append({'name': IO_PROFILE, 'profile': IO_PROFILE,
+                'original': io_original, 'selected': file_identity(raw, 'internal-io-component', 64 * 1024 * 1024),
+                'selection': io_port})
+            self.generated_materials.append(file_identity(command.output / 'internal-io-port.json', 'dotnet-internal-io-port'))
         additional = [(name, self.runtimes[name]) for name in runtime.additional(declared, actual)]
         selection = {"schemaVersion": "latent.dotnet.runtime.v1", "profile": profile,
             "declaredImports": declared, "emittedImports": actual,
@@ -331,6 +341,8 @@ class Compiler:
         if additional:
             selection["additionalAdapters"] = [file_identity(path, runtime.ADAPTERS[name][0].removeprefix("dotnet-"))
                                                for name, path in additional]
+        if io_port is not None:
+            selection['internalIoPort'] = io_port
         write_json(command.output / "runtime-profile.json", selection)
         component = output / "component.wasm"
         self.runtime = adapter

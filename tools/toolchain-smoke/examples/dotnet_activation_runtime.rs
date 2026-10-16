@@ -8,6 +8,8 @@ wit_bindgen::generate!({
     async: [
         "export:wasi:io/poll@0.2.6#poll",
         "export:wasi:io/poll@0.2.6#[method]pollable.block",
+        "-export:wasi:io/streams@0.2.6#[method]input-stream.blocking-read",
+        "-export:wasi:io/streams@0.2.6#[method]output-stream.blocking-flush",
     ],
 });
 
