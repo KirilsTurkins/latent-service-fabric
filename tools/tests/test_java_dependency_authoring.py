@@ -344,7 +344,6 @@ class JavaWatchShutdown(unittest.TestCase):
 
 class FrontendRuntime(unittest.TestCase):
     def test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode(self):
-        import ast
         import json
         import hashlib
         import os
@@ -371,15 +370,7 @@ class FrontendRuntime(unittest.TestCase):
             python = Path(sys.executable)
             args = SimpleNamespace(helper=helper,
                 helper_sha256='sha256:' + hashlib.sha256(helper.read_bytes()).hexdigest())
-            tree = ast.parse(Path(qualifier.__file__).read_text())
-            expressions = [node for node in ast.walk(tree)
-                if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
-                and isinstance(node.value.func, ast.Attribute)
-                and isinstance(node.value.func.value, ast.Name)
-                and node.value.func.value.id == 'frontend' and node.value.func.attr == 'write_text']
-            self.assertEqual(len(expressions), 1)
-            exec(compile(ast.Module(body=expressions, type_ignores=[]), '<actual-frontend>', 'exec'),
-                {'frontend': frontend, 'python': python, 'args': args, 'events': events})
+            qualifier.write_frontend(frontend, python, args, events)
             header = frontend.read_text().splitlines()[0]
             self.assertTrue(header.startswith('#!' + str(python)))
             argument = header[len('#!' + str(python)):].strip()
@@ -417,6 +408,18 @@ class JavaWatchPublicBoundary(unittest.TestCase):
         self.assertEqual(public['cleanup'], 'not-performed')
         self.assertEqual(public['deploymentCount'], 1)
         self.assertEqual(public['stages'], [{'id': 'initial', 'passed': True}])
+        report['watchEvents'] = [{'event': 'edit-failed', 'phase': 'build',
+            'code': 'workspace-recipe-trust-required', 'uncertain': False,
+            'source': '/private/workspace', 'diagnostics': ['must-not-publish']}]
+        observed = public_projection(report, qualifier='q', helper='h', source_probe='p')
+        self.assertEqual(observed['watchEvents'], [{'event': 'edit-failed', 'phase': 'build',
+            'code': 'workspace-recipe-trust-required', 'uncertain': False}])
+        self.assertNotIn('must-not-publish', json.dumps(observed))
+        self.assertNotIn('/private/workspace', json.dumps(observed))
+        from tools.qualify_java_dependency_watch import public_watch_events
+        self.assertEqual(len(public_watch_events(report['watchEvents'] * 40)), 32)
+        self.assertEqual(public_watch_events([{'event': 'private/path', 'code': 'x' * 161,
+            'phase': 'bad\nphase', 'uncertain': 'must-not-publish'}]), [])
         self.assertEqual(public['shutdowns'], [{'id': 'initial', 'watchExitCode': 0,
             'state': 'stopped', 'reaped': True, 'cleanShutdown': True}])
         self.assertNotIn('must-not-publish', json.dumps(public))
@@ -424,24 +427,16 @@ class JavaWatchPublicBoundary(unittest.TestCase):
         self.assertTrue(public_projection(report, qualifier='q', helper='h', source_probe='p')['passed'])
 
     def test_qualifier_uses_current_private_account_home_and_node_root(self):
-        import ast
         from types import SimpleNamespace
         from unittest.mock import patch
         from tools import qualify_java_dependency_watch as qualifier
-        tree = ast.parse(Path(qualifier.__file__).read_text())
         owned = Path('/owned-private-watch-home')
-        environment = next(node for node in ast.walk(tree) if isinstance(node, ast.Assign)
-            and any(isinstance(target, ast.Name) and target.id == 'env' for target in node.targets))
-        namespace = {'Path': Path, 'root': owned / 'output'}
         with patch.object(Path, 'home', return_value=owned):
-            exec(compile(ast.Module(body=[environment], type_ignores=[]), '<actual-environment>', 'exec'), namespace)
-        self.assertEqual(namespace['env']['HOME'], str(owned))
-        node_root = next(node for node in ast.walk(tree) if isinstance(node, ast.Assign)
-            and any(isinstance(target, ast.Name) and target.id == 'node_root' for target in node.targets))
-        namespace.update(source_probe=SimpleNamespace(helper=SimpleNamespace(root_directory=lambda: owned / '.lsf-dev')),
-            workspace_name='owned-workspace')
-        exec(compile(ast.Module(body=[node_root], type_ignores=[]), '<actual-node-root>', 'exec'), namespace)
-        self.assertEqual(namespace['node_root'], owned / '.lsf-dev/owned-workspace')
+            environment = qualifier.qualification_environment(owned / 'output')
+        self.assertEqual(environment['HOME'], str(owned))
+        source_probe = SimpleNamespace(helper=SimpleNamespace(root_directory=lambda: owned / '.lsf-dev'))
+        self.assertEqual(qualifier.node_workspace_root(source_probe, 'owned-workspace'),
+                         owned / '.lsf-dev/owned-workspace')
 
 
 if __name__ == '__main__':

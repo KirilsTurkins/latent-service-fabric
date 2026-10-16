@@ -35,6 +35,24 @@ def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
 
 
+def public_watch_events(values):
+    result = []
+    for value in values[-32:]:
+        if not isinstance(value, dict):
+            continue
+        row = {}
+        for key in ('event', 'phase', 'code'):
+            selected = value.get(key)
+            if (isinstance(selected, str) and 0 < len(selected) <= 160
+                    and all(char in 'abcdefghijklmnopqrstuvwxyz0123456789-' for char in selected)):
+                row[key] = selected
+        if type(value.get('uncertain')) is bool:
+            row['uncertain'] = value['uncertain']
+        if row:
+            result.append(row)
+    return result
+
+
 def public_projection(report, *, qualifier, helper, source_probe):
     public = {key: report[key] for key in (
         'schemaVersion', 'passed', 'publisherAuthenticated', 'cleanHost', 'sourceCandidate',
@@ -46,7 +64,8 @@ def public_projection(report, *, qualifier, helper, source_probe):
         shutdowns=[{'id': row['id'], 'watchExitCode': row['watchExitCode'],
                     'state': row['result']['state'], 'reaped': row['result']['reaped'],
                     'cleanShutdown': row['result']['cleanShutdown']} for row in report.get('shutdowns', [])],
-        stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
+        stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']],
+        watchEvents=public_watch_events(report.get('watchEvents', [])))
     if 'failure' in report:
         public['failure'] = report['failure']
     return public
@@ -61,6 +80,33 @@ class ShutdownOnce:
         require(not self.attempted, 'watch-down-already-attempted-no-retry')
         self.attempted = True
         return operation()
+
+
+def write_frontend(frontend, python, args, events):
+    frontend.write_text('#!' + str(python) + ' -IB' + '''
+import hashlib,io,pathlib,sys
+p=pathlib.Path(''' + repr(str(args.helper)) + ''')
+assert 'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()==''' + repr(args.helper_sha256) + '''
+class Tee(io.RawIOBase):
+    def writable(self): return True
+    def write(self,raw):
+        with open(''' + repr(str(events)) + ''','ab',buffering=0) as out: out.write(raw)
+        sys.__stdout__.buffer.write(raw); sys.__stdout__.buffer.flush()
+        return len(raw)
+sys.stdout=io.TextIOWrapper(Tee(),encoding='utf-8',write_through=True)
+sys.path.insert(0,str(p))
+from tools.dev_workflow.cli import main
+raise SystemExit(main())
+''', encoding='utf-8')
+
+
+def qualification_environment(root):
+    return {'PATH': '/nonexistent', 'HOME': str(Path.home()), 'LANG': 'C.UTF-8',
+            'TMPDIR': str(root), 'TEMP': str(root), 'TMP': str(root)}
+
+
+def node_workspace_root(source_probe, workspace_name):
+    return source_probe.helper.root_directory() / workspace_name
 
 
 def main() -> int:
@@ -106,8 +152,7 @@ def main() -> int:
     workspace_prefix = 'test-java-lib-' + root.name
     workspace_name = workspace_prefix + '-initial'
     application = root / 'application'
-    env = {'PATH': '/nonexistent', 'HOME': str(Path.home()), 'LANG': 'C.UTF-8',
-           'TMPDIR': str(root), 'TEMP': str(root), 'TMP': str(root)}
+    env = qualification_environment(root)
 
     def command(label, argv, *, timeout=1000, expected=0):
         require(time.monotonic() - began < 2400, 'qualification-total-deadline')
@@ -186,7 +231,7 @@ def main() -> int:
         require(watcher is None or watcher.poll() is not None, 'previous-watch-owner-not-retired')
         shutdown = ShutdownOnce()
         workspace_name = workspace_prefix + '-' + label
-        node_root = source_probe.helper.root_directory() / workspace_name
+        node_root = node_workspace_root(source_probe, workspace_name)
         front(label + '-connect', 'connect', '--backend-config', root / 'backend.json')
         require(state.workspace(source_probe.helper.root_directory(), workspace_name, create=True) == node_root,
                 'explicit-source-node-workspace-mismatch')
@@ -215,21 +260,7 @@ def main() -> int:
     try:
         # No controller or recipe is imported from a checkout. The explicit
         # wrapper verifies the helper and delegates to its unchanged CLI.
-        frontend.write_text('#!' + str(python) + ' -IB' + '''
-import hashlib,io,pathlib,sys
-p=pathlib.Path(''' + repr(str(args.helper)) + ''')
-assert 'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()==''' + repr(args.helper_sha256) + '''
-class Tee(io.RawIOBase):
-    def writable(self): return True
-    def write(self,raw):
-        with open(''' + repr(str(events)) + ''','ab',buffering=0) as out: out.write(raw)
-        sys.__stdout__.buffer.write(raw); sys.__stdout__.buffer.flush()
-        return len(raw)
-sys.stdout=io.TextIOWrapper(Tee(),encoding='utf-8',write_through=True)
-sys.path.insert(0,str(p))
-from tools.dev_workflow.cli import main
-raise SystemExit(main())
-''', encoding='utf-8')
+        write_frontend(frontend, python, args, events)
         frontend.chmod(0o700)
         report['frontend'] = digest(frontend)
         template_entry = decode((installed / 'templates.json').read_bytes())['templates']['greeting']
@@ -389,6 +420,10 @@ public final class Capsule implements Bindings.Exports {
                     # Preserve the original command failure; failed observer
                     # retirement cannot establish a clean node shutdown.
                     report['observerCleanup'] = 'unconfirmed'
+        try:
+            report['watchEvents'] = public_watch_events(observed())
+        except (OSError, ValueError):
+            report['watchEvents'] = []
         report['durationSeconds'] = round(time.monotonic() - began, 6)
         write(root / 'qualification.json', report)
         write(root / 'public-qualification.json', public_projection(report,

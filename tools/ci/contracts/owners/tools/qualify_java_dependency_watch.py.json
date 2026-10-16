@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Prevent source frontend bytecode writes to the delivered tool inventory using isolated no-bytecode interpreter flags; preserve every watch, signing and shutdown guard. Bind the reviewed owner fingerprint to the committed LF-normalized Git blob; source behavior and all guards are unchanged.",
+  "reviewReason": "Call unchanged frontend/environment/node-root production helpers directly without source evaluation; preserve real isolated/no-bytecode controls and publish only bounded scalar watch-event diagnostics, keeping all native budgets and assertions.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a55acc937aa9fd0f2858207181e283c79dd83841f0ec04726cf5256d7ba234b0"
+  "sha256": "a81b61388366d2380e94639943ae4048e4e940b63fa6fef462add7be4484d11e"
 }
