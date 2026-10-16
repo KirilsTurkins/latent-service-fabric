@@ -295,6 +295,9 @@ jobs:
             ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-FRAMES.json
             ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-FRAMES-initial.json
             ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL.json
+            ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-bit-*.json
+            ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-confirm-*.json
+            ${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-THROW-REASON.json
             ${{ runner.temp }}/go-capsule-dependencies/**
             ${{ runner.temp }}/go-capsule-authoring/
           if-no-files-found: warn

@@ -166,3 +166,17 @@ unknown parked work, cancellation, root deadline and fresh reuse. It uses the
 normal package admission, grant, execution-cell and physical cleanup owners.
 The Go workflow retains both successful and failed artifacts. A prepared command
 or compiler receipt alone is not execution or complete-ticket qualification.
+
+The retained 2026-10-16 v3 failure remains a required acceptance failure: mode 9
+traps while repeatedly collecting unreachable timers. A separate terminal-only
+component mutation identified `runtime.throw` behind the original closed-stdio
+memory trap. The bounded follow-up compares only 208 reviewed literal reasons
+from hash-checked Go 1.27.2 runtime sources. It authenticates the exact emitted
+throw body before reading its incoming string ABI, selects fixed terminal traps,
+and checks any candidate in one separate fresh full-literal comparison. Only a
+reviewed candidate digest and source locations may be exported; identical trap
+classifiers elsewhere still require independent caller evidence. These records
+prove neither the baseline cause nor a common cause across bit runs. Unknown or divergent
+observations remain inconclusive; no normal function body, import, authority or
+acceptance assertion changes. All diagnostic executions share the existing
+600-second and 1 MiB output bounds. These observations do not qualify v3.

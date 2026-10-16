@@ -19,6 +19,9 @@ from tools.build_process import run_bounded_result
 from tools.rust_capsule_project import ROOT, digest, write_json
 
 CASE = 'signed_standard_timers_contexts_and_rearm_keep_original_heap_owners'
+REASONS = 'tools/go_guest/terminal_reasons.json'
+REASONS_DIGEST = 'sha256:ec8b59ada82aab3b1f55bb6b89a510f558d184b2e98a4081531976bff34589fb'
+THROW_BODY_DIGEST = 'sha256:c049e89b86db59031835024047342eaaa3008b47897e6c42c40255f641fe6a3d'
 PATHS = ('crates/latent-wasmtime/src/containment.rs', 'crates/latent-wasmtime/src/config/engine.rs',
          'crates/latent-wasmtime/tests/local_service/runtime/go.rs')
 
@@ -178,11 +181,88 @@ def name(raw: bytes, offset: int) -> tuple[str, int]:
     return raw[offset:offset + size].decode('utf-8'), offset + size
 
 
-def terminal_component(original: bytes) -> tuple[bytes, dict]:
+def closed_throw_reasons() -> list[dict]:
+    with (ROOT / REASONS).open('rb') as stream:
+        raw = stream.read(128 * 1024 + 1)
+    if len(raw) > 128 * 1024 or digest(raw) != REASONS_DIGEST:
+        raise ValueError('Go-private-throw-catalog-preimage')
+    record = json.loads(raw)
+    rows = record['reasons']
+    if (record['schemaVersion'] != 'latent.go.closed-throw-literals.v1'
+            or record['goVersion'] != '1.27.2' or not 1 <= len(rows) <= 256):
+        raise ValueError('Go-private-throw-catalog-shape')
+    for index, row in enumerate(rows, 1):
+        value = bytes.fromhex(row['literalHex'])
+        if (row['id'] != index or not 1 <= len(value) <= 256
+                or digest(value) != row['literalDigest'] or not row['sources']):
+            raise ValueError('Go-private-throw-literal-shape')
+    if len({row['literalHex'] for row in rows}) != len(rows):
+        raise ValueError('Go-private-throw-duplicate-literal')
+    return rows
+
+
+def signed_leb(value: int) -> bytes:
+    result = bytearray()
+    while True:
+        byte = value & 127
+        value >>= 7
+        if (value == 0 and not byte & 64) or (value == -1 and byte & 64):
+            result.append(byte)
+            return bytes(result)
+        result.append(byte | 128)
+
+
+def throw_reason_body(rows: list[dict], bit: int, *, candidate: int | None = None) -> bytes:
+    if type(bit) is not int or not 0 <= bit < len(rows).bit_length():
+        raise ValueError('Go-private-throw-bit-bound')
+    if candidate is not None and (type(candidate) is not int or not 1 <= candidate <= len(rows)):
+        raise ValueError('Go-private-throw-candidate-bound')
+    # The exact authenticated throw body below establishes Go's wasm ABI:
+    # global0=SP, incoming string pointer at SP+8 and length at SP+16.
+    # Only terminal behavior changes. Every path still traps without returning.
+    code = bytearray(b'\x01\x02\x7f')  # two i32 locals, after the PC parameter
+    code += b'\x23\0\x29\x03\x08\xa7\x21\x01'  # pointer -> local1
+    code += b'\x23\0\x29\x03\x10\xa7\x21\x02'  # length -> local2
+    code += b'\x23\0\x29\x03\x08\x20\x01\xad\x51'  # no pointer truncation
+    code += b'\x23\0\x29\x03\x10\x42' + signed_leb(256) + b'\x58\x71'
+    code += b'\x20\x01\xad\x20\x02\xad\x7c\x3f\0\xad\x42\x10\x86\x58\x71'
+    code += b'\x45\x04\x40\0\x0b'  # invalid range -> unknown terminal trap
+    for row in rows:
+        if (candidate is not None and row['id'] != candidate) or (candidate is None and not row['id'] >> bit & 1):
+            continue
+        value = bytes.fromhex(row['literalHex'])
+        code += b'\x20\x02\x41' + signed_leb(len(value)) + b'\x46\x04\x40'
+        comparisons = []
+        offset = 0
+        while offset + 8 <= len(value):
+            chunk = int.from_bytes(value[offset:offset + 8], 'little', signed=True)
+            comparisons.append(b'\x20\x01\x29\0' + leb(offset) + b'\x42' + signed_leb(chunk) + b'\x51')
+            offset += 8
+        while offset < len(value):
+            comparisons.append(b'\x20\x01\x2d\0' + leb(offset) + b'\x41' + signed_leb(value[offset]) + b'\x46')
+            offset += 1
+        code += comparisons[0]
+        for comparison in comparisons[1:]:
+            code += comparison + b'\x71'
+        code += b'\x04\x40\x41\0\x41\0\x6e\x1a\0\x0b\x0b'
+    code += b'\0\x0b'  # unmatched / zero bit -> unreachable, never resume
+    return bytes(code)
+
+
+def terminal_component(original: bytes, *, reason_bit: int | None = None,
+                       reason_id: int | None = None) -> tuple[bytes, dict]:
     """Replace only two named noreturn Go terminal paths, never normal effects."""
     component = sections(original, b'\0asm\x0d\0\x01\0')
     replacements = {'runtime.throw': b'\0\0\x0b',  # no locals; unreachable; end
                     'runtime.fatal': b'\0\x41\0\x41\0\x6e\x1a\0\x0b'}  # u32 div zero
+    if reason_bit is not None and reason_id is not None:
+        raise ValueError('Go-private-throw-ambiguous-probe')
+    if reason_bit is not None or reason_id is not None:
+        replacements['runtime.throw'] = throw_reason_body(closed_throw_reasons(),
+            reason_bit if reason_bit is not None else 0, candidate=reason_id)
+        # A fatal path during the reason probe has a distinct closed classifier.
+        replacements['runtime.fatal'] = (b'\0\x41' + signed_leb(-2147483648)
+                                         + b'\x41\x7f\x6d\x1a\0\x0b')
     result, changed = bytearray(original[:8]), []
     for kind, payload in component:
         if kind == 1:
@@ -240,6 +320,9 @@ def terminal_component(original: bytes) -> tuple[bytes, dict]:
                             before = body[offset:end]; after = before
                             for label, target in names.items():
                                 if target == imported + index:
+                                    if ((reason_bit is not None or reason_id is not None) and label == 'runtime.throw'
+                                            and digest(before) != THROW_BODY_DIGEST):
+                                        raise ValueError('Go-private-throw-ABI-preimage')
                                     after = replacements[label]
                                     changed.append({'function': label, 'functionIndex': target,
                                         'originalBodyDigest': digest(before), 'privateBodyDigest': digest(after)})
@@ -263,7 +346,7 @@ def terminal_component(original: bytes) -> tuple[bytes, dict]:
 def terminal_metadata(output: bytes) -> dict:
     # Only the public, closed trap classifier and reviewed mode markers are
     # retained. Native panic messages, errors and backtraces are never exported.
-    kinds = sorted(set(re.findall(rb'guest trapped: (memory-out-of-bounds|unreachable-code|integer-division-by-zero)', output)))
+    kinds = sorted(set(re.findall(rb'guest trapped: (memory-out-of-bounds|unreachable-code|integer-division-by-zero|integer-overflow)', output)))
     modes = [int(value) for value in re.findall(rb'go-component-activation-v3 iteration=0 mode=([0-9]{1,2}) consumption=', output)]
     if len(kinds) > 1 or len(modes) > 32:
         raise ValueError('Go-private-terminal-public-classifier-bound')
@@ -271,10 +354,13 @@ def terminal_metadata(output: bytes) -> dict:
             'nativeCaseStarted': bool(re.search(rb'(?m)^running 1 test\r?$', output))}
 
 
-def ordinary_terminal_diagnostic(fixture, output, record, environment, cargo, remaining_seconds):
+def ordinary_terminal_diagnostic(fixture, output, record, environment, cargo, remaining_seconds,
+                                 *, reason_bit=None, reason_id=None, output_limit=1024 * 1024):
     original = (fixture / 'build/component.wasm').read_bytes()
-    derived, mutations = terminal_component(original)
-    private = output / 'terminal-fixture'
+    derived, mutations = terminal_component(original, reason_bit=reason_bit, reason_id=reason_id)
+    suffix = (f'-confirm-{reason_id}' if reason_id is not None
+              else '' if reason_bit is None else f'-bit-{reason_bit}')
+    private = output / ('terminal-fixture' + suffix)
     for name in ('src/main.go', 'wit/world.wit'):
         target = private / name
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -295,14 +381,14 @@ def ordinary_terminal_diagnostic(fixture, output, record, environment, cargo, re
         native_environment.pop(name, None)
     native_environment['LSF_GO_TIMER_FIXTURE'] = str(private)
     validated = run_bounded_result([validator, 'validate', '--features', 'all', str(binary)],
-        ROOT, native_environment, remaining_seconds(), 1024 * 1024)
+        ROOT, native_environment, remaining_seconds(), output_limit)
     used = len(validated.stdout) + len(validated.stderr)
-    if validated.returncode != 0 or used >= 1024 * 1024:
+    if validated.returncode != 0 or used >= output_limit:
         raise ValueError('Go-private-terminal-derived-component-invalid')
     command = [cargo, '--config', '.cargo/managed-guest.toml', 'test', '--offline', '--locked',
                '-p', 'latent-wasmtime', '--test', 'local_service', 'runtime::go::' + CASE,
                '--', '--ignored', '--exact', '--nocapture']
-    result = run_bounded_result(command, ROOT, native_environment, remaining_seconds(), 1024 * 1024 - used)
+    result = run_bounded_result(command, ROOT, native_environment, remaining_seconds(), output_limit - used)
     used += len(result.stdout) + len(result.stderr)
     receipt = {**mutations, 'scope': 'failure-only-terminal-component-on-ordinary-native-harness',
         'privateHostSourceOverlay': False, 'exitCode': result.returncode,
@@ -311,8 +397,62 @@ def ordinary_terminal_diagnostic(fixture, output, record, environment, cargo, re
         'acceptanceFailure': 'unchanged', 'rawNativeBacktraceRetained': False}
     if (fixture / 'build/component.wasm').read_bytes() != original:
         raise ValueError('Go-private-terminal-original-component-mutated')
-    write_json(output / 'GO-PRIVATE-TERMINAL.json', receipt)
+    write_json(output / ('GO-PRIVATE-TERMINAL' + suffix + '.json'), receipt)
     return receipt, used
+
+
+def known_throw_diagnostic(fixture, output, record, environment, cargo, remaining_seconds, terminal, used):
+    rows = closed_throw_reasons()
+    observation = terminal['publicObservation']
+    result = {'scope': 'failure-only-closed-runtime-literal-comparison', 'qualification': False,
+              'catalogDigest': REASONS_DIGEST, 'throwAbiBodyDigest': THROW_BODY_DIGEST,
+              'rawGuestMessageRetained': False, 'acceptanceFailure': 'unchanged', 'bits': [],
+              'baselineCauseProven': False, 'bitRunsSameCauseProven': False,
+              'independentCallerEvidenceRequired': True}
+    if not observation['nativeCaseStarted'] or observation['trapKinds'] != ['unreachable-code']:
+        result['status'] = 'not-the-known-throw-terminal'
+        return result, used
+    selected = 0
+    for bit in range(len(rows).bit_length()):
+        if used >= 1024 * 1024:
+            raise ValueError('Go-private-throw-diagnostic-output-budget')
+        probe, count = ordinary_terminal_diagnostic(fixture, output, record, environment, cargo,
+            remaining_seconds, reason_bit=bit, output_limit=1024 * 1024 - used)
+        used += count
+        public = probe['publicObservation']
+        kinds = public['trapKinds']
+        result['bits'].append({'bit': bit, 'componentDigest': probe['privateComponentDigest'],
+                               'trapKinds': kinds, 'nativeCaseStarted': public['nativeCaseStarted']})
+        if (not public['nativeCaseStarted'] or probe['compilerErrorCodes']
+                or public['completedOrdinaryModes'] != observation['completedOrdinaryModes']
+                or kinds not in (['unreachable-code'], ['integer-division-by-zero'])):
+            result['status'] = 'inconclusive-control-divergence'
+            break
+        if kinds == ['integer-division-by-zero']:
+            selected |= 1 << bit
+    else:
+        result['status'] = 'candidate-selected' if 1 <= selected <= len(rows) else 'unknown-literal'
+        if result['status'] == 'candidate-selected':
+            # Separate exact full-literal confirmation prevents mixed bit
+            # observations from assigning a reason during a nondeterministic race.
+            if used >= 1024 * 1024:
+                raise ValueError('Go-private-throw-diagnostic-output-budget')
+            probe, count = ordinary_terminal_diagnostic(fixture, output, record, environment, cargo,
+                remaining_seconds, reason_id=selected, output_limit=1024 * 1024 - used)
+            used += count
+            public = probe['publicObservation']
+            result['confirmation'] = {'componentDigest': probe['privateComponentDigest'],
+                'trapKinds': public['trapKinds'], 'nativeCaseStarted': public['nativeCaseStarted']}
+            if (not public['nativeCaseStarted'] or probe['compilerErrorCodes']
+                    or public['completedOrdinaryModes'] != observation['completedOrdinaryModes']
+                    or public['trapKinds'] != ['integer-division-by-zero']):
+                result['status'] = 'candidate-not-confirmed'
+            else:
+                row = rows[selected - 1]
+                result['status'] = 'candidate-supported-by-fresh-confirmation'
+                result['confirmedCandidate'] = {key: row[key] for key in ('id', 'literalDigest', 'sources')}
+    write_json(output / 'GO-PRIVATE-THROW-REASON.json', result)
+    return result, used
 
 
 def diagnose(fixture: Path, output: Path) -> dict:
@@ -355,6 +495,8 @@ def diagnose(fixture: Path, output: Path) -> dict:
         if key in os.environ:
             environment[key] = os.environ[key]
     terminal, used = ordinary_terminal_diagnostic(fixture, output, record, environment, cargo, remaining_seconds)
+    reason, used = known_throw_diagnostic(fixture, output, record, environment, cargo,
+                                         remaining_seconds, terminal, used)
     if used >= 1024 * 1024:
         raise ValueError('Go-private-terminal-diagnostic-output-budget-exhausted')
     result = run_bounded_result(command, ROOT, environment, remaining_seconds(), 1024 * 1024 - used)
@@ -375,7 +517,7 @@ def diagnose(fixture: Path, output: Path) -> dict:
         'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', result.stderr)))[:16],
         'executionMetadata': execution_metadata(result.stderr + b'\n' + result.stdout),
         'frames': frames, 'rawNativeBacktraceRetained': False, 'acceptanceFailure': 'unchanged',
-        'terminalDiagnostic': terminal}
+        'terminalDiagnostic': terminal, 'throwReasonDiagnostic': reason}
     write_json(output / 'GO-PRIVATE-FRAMES-initial.json', observation)
     if 'invoked' not in observation['executionMetadata']['stages']:
         observation['privateFramesStatus'] = 'not-run-before-guest-invocation'

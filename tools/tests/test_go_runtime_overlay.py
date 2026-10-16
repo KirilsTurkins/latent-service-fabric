@@ -50,7 +50,8 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             record = {'profile': 'go-component-activation-v3', 'fixture': 'timers',
                       'componentDigest': diagnostic.digest(component), 'sourceDigest': 'exact-source'}
             (fixture / 'GO-ACTIVATION-COMPILE.json').write_text(json.dumps(record))
-            terminal = {'qualification': False, 'publicObservation': {'trapKinds': ['unreachable-code']}}
+            terminal = {'qualification': False, 'publicObservation': {
+                'trapKinds': ['unreachable-code'], 'nativeCaseStarted': False}}
             events = []
             def ordinary(*args):
                 events.append('ordinary-native')
@@ -149,6 +150,73 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                         component + section(1, module)):
             with self.subTest(invalid=invalid[:32]), self.assertRaises(ValueError):
                 terminal_component(invalid)
+        with self.assertRaisesRegex(ValueError, 'ABI-preimage'):
+            terminal_component(component, reason_bit=0)
+
+    def test_terminal_reason_probe_has_pinned_catalog_finite_bits_and_no_message_export(self):
+        from tools.diagnose_go_timer_failure import closed_throw_reasons, throw_reason_body
+        rows = closed_throw_reasons()
+        self.assertEqual(len(rows), 208)
+        self.assertEqual([row['id'] for row in rows], list(range(1, 209)))
+        self.assertTrue(all(len(bytes.fromhex(row['literalHex'])) <= 256 for row in rows))
+        for bit in range(8):
+            body = throw_reason_body(rows, bit)
+            self.assertLess(len(body), 128 * 1024)
+            self.assertTrue(body.endswith(b'\0\x0b'))
+        for bit in (-1, 8, True, '0'):
+            with self.subTest(bit=bit), self.assertRaisesRegex(ValueError, 'bit-bound'):
+                throw_reason_body(rows, bit)
+        for candidate in (0, 209, True):
+            with self.subTest(candidate=candidate), self.assertRaisesRegex(ValueError, 'candidate-bound'):
+                throw_reason_body(rows, 0, candidate=candidate)
+
+    def test_terminal_reason_classification_rejects_unknown_and_divergent_controls(self):
+        from tools import diagnose_go_timer_failure as diagnostic
+        terminal = {'publicObservation': {'nativeCaseStarted': True,
+            'trapKinds': ['unreachable-code'], 'completedOrdinaryModes': [0, 1, 18, 19, 20]}}
+        with tempfile.TemporaryDirectory() as temporary:
+            for selected in (0, 117):
+                def probe(*args, reason_bit=None, reason_id=None, output_limit):
+                    self.assertGreater(output_limit, 0)
+                    return {'publicObservation': {**terminal['publicObservation'], 'trapKinds': [
+                        'integer-division-by-zero' if reason_id == selected or
+                            (reason_bit is not None and selected >> reason_bit & 1) else 'unreachable-code']},
+                        'privateComponentDigest': f'sha256:controlled-bit-{reason_bit}', 'compilerErrorCodes': []}, 16
+                with patch.object(diagnostic, 'ordinary_terminal_diagnostic', side_effect=probe):
+                    out = Path(temporary) / str(selected); out.mkdir()
+                    record, used = diagnostic.known_throw_diagnostic(None, out, None, None, None,
+                        lambda: 1, terminal, 32)
+                self.assertEqual(used, 176 if selected else 160)
+                self.assertFalse(record['rawGuestMessageRetained'])
+                if selected:
+                    self.assertEqual(record['status'], 'candidate-supported-by-fresh-confirmation')
+                    self.assertEqual(record['confirmedCandidate']['id'], selected)
+                    self.assertNotIn('literalHex', record['confirmedCandidate'])
+                    self.assertFalse(record['baselineCauseProven'])
+                    self.assertFalse(record['bitRunsSameCauseProven'])
+                else:
+                    self.assertEqual(record['status'], 'unknown-literal')
+                    self.assertNotIn('confirmedCandidate', record)
+            divergent = {'publicObservation': {**terminal['publicObservation'],
+                'completedOrdinaryModes': [0], 'trapKinds': ['unreachable-code']},
+                'privateComponentDigest': 'controlled', 'compilerErrorCodes': []}
+            with patch.object(diagnostic, 'ordinary_terminal_diagnostic', return_value=(divergent, 16)):
+                record, _ = diagnostic.known_throw_diagnostic(None, Path(temporary), None, None,
+                    None, lambda: 1, terminal, 0)
+            self.assertEqual(record['status'], 'inconclusive-control-divergence')
+            self.assertNotIn('confirmedCandidate', record)
+            def unconfirmed(*args, reason_bit=None, reason_id=None, output_limit):
+                value, count = probe(*args, reason_bit=reason_bit, reason_id=reason_id,
+                    output_limit=output_limit)
+                if reason_id is not None:
+                    value['publicObservation']['trapKinds'] = ['unreachable-code']
+                return value, count
+            with patch.object(diagnostic, 'ordinary_terminal_diagnostic', side_effect=unconfirmed):
+                out = Path(temporary) / 'unconfirmed'; out.mkdir()
+                record, _ = diagnostic.known_throw_diagnostic(None, out, None, None,
+                    None, lambda: 1, terminal, 0)
+            self.assertEqual(record['status'], 'candidate-not-confirmed')
+            self.assertNotIn('confirmedCandidate', record)
 
     def test_private_frame_observer_refuses_drift_before_writing_a_partial_overlay(self):
         from tools.diagnose_go_timer_failure import PATHS, overlay_sources
