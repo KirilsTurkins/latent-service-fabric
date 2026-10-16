@@ -38,7 +38,7 @@ def recover(client, target: dict, probe, evidence: dict, population: int) -> lis
 
     limited = {**target, 'budget': {**target['budget'], 'cpuFuel': 10_000_000}}
     require(limited['budget']['cpuFuel'] <= target['budget']['cpuFuel'], 'go-library-fuel-elevation')
-    fuel = call(client, limited, 'greeting', 'greet', ['spin'], 'go-library-fuel-limit')
+    fuel = call(client, limited, 'greeting', 'greet', ['fuel'], 'go-library-fuel-limit')
     failed(fuel, 'resource-exhausted', limited['budget']['memoryBytes'])
     require(int(fuel['response']['data']['consumption']['cpuFuel']) == limited['budget']['cpuFuel'],
             'go-library-fuel-limit-not-consumed')

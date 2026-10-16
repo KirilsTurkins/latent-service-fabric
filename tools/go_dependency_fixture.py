@@ -102,8 +102,15 @@ func Exercise(mode string) {
             retained = append(retained, make([]byte, 1024*1024))
             runtime.KeepAlive(retained)
         }
-    case "spin":
+    case "fuel":
         for { calls++ }
+    case "spin":
+        source := make([]byte, 128*1024)
+        destination := make([]byte, len(source))
+        for {
+            copy(destination, source)
+            runtime.KeepAlive(destination)
+        }
     }
 }
 
@@ -181,7 +188,7 @@ func applicationPrefix(name string) string {
     return {'formatVersion': 1, 'thirdParty': 'github.com/mattn/go-runewidth/v0.0.16',
             'transitives': ['github.com/rivo/uniseg'], 'developerOwned': identity,
             'sourceDigest': digest(after), 'resourceDigest': digest(resource),
-            'recoveryCases': ['panic', 'memory', 'spin', 'normal-defer-recover', 'fresh-state'],
+            'recoveryCases': ['panic', 'memory', 'fuel', 'spin', 'normal-defer-recover', 'fresh-state'],
             'resourceDigests': {'message.txt': digest('Gr\u00fc\u00dfe'.encode()),
                                 'data.bin': digest(bytes((0, 255, 65, 128)))},
             'applicationLibraries': application_libraries, 'nativeDeclarationDigest': digest(canonical(declaration)),

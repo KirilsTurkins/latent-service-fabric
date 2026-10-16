@@ -45,7 +45,7 @@ class GoDependencyRecovery(unittest.TestCase):
         def invoked(_client, _target, _template, _function, args, _activation):
             if args == ['panic']: return failure('guest-trap')
             if args == ['memory']: return failure('resource-exhausted')
-            if args == ['spin']: return failure('resource-exhausted',
+            if args == ['fuel']: return failure('resource-exhausted',
                 9_999_999 if mode == 'low-fuel' else 10_000_000)
             return {'exitCode': 0, 'processReaped': True, 'decoded': [{'ok': 'Hello, SDK!'}],
                 'response': {'outcomeKnown': True}}
@@ -71,6 +71,9 @@ class GoDependencyRecovery(unittest.TestCase):
             [('activation', 'get'), ('activation', 'cancel')])
         process.close.assert_called_once_with()
         self.assertEqual(rows[-1]['failure']['cancelCalls'], 1)
+        self.assertEqual(started.call_args.args[4], ['spin'])
+        fuel_call = next(row for row in invoked.call_args_list if row.args[4] == ['fuel'])
+        self.assertEqual(fuel_call.args[1]['budget']['cpuFuel'], 10_000_000)
 
     def test_wrong_identity_and_unknown_cancel_never_retry_or_report_recovery(self):
         for mode, expected in (('foreign', 'go-library-cancellation-identity'),
