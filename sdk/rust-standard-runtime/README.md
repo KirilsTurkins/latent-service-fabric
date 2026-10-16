@@ -179,3 +179,12 @@ the std thread/futex API or actual signed child execution. Those requirements
 remain open, and canonical thread creation remains disabled. The internal V2
 context prefix is recorded in [thread-abi.json](thread-abi.json); CURRENT V5 and
 the frozen activation interface remain unchanged.
+
+The core transform uses `wasm-encoder` and `wasmparser` version 0.259.0.
+Component assembly uses the separately pinned `wasm-tools` version 1.254.0,
+whose encoded producer is `wit-component` version 0.254.0. A small explicit
+WAT module-graph probe confirms that
+normal assembly inserts a thunk table and a separate fixup module before raw
+canonical creation reaches the core import. This observation is an encoder
+check, not Rust execution or authentication of the complete component graph.
+Those routes must be checked before the canonical threading feature is enabled.
