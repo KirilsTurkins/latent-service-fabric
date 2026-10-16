@@ -69,7 +69,15 @@ public static class LibraryPrefix {
             System.GC.KeepAlive(retained);
             throw new System.Exception("captured library allocation unexpectedly fit original budget");
         }
-        if (mode == "spin") while (true) { calls++; }
+        if (mode == "fuel") while (true) { calls++; }
+        if (mode == "spin") {
+            var source = new byte[128 * 1024];
+            var destination = new byte[source.Length];
+            while (true) {
+                System.Buffer.BlockCopy(source, 0, destination, 0, source.Length);
+                System.GC.KeepAlive(destination);
+            }
+        }
     }
     public static string Read() {
         using var input = typeof(LibraryPrefix).Assembly.GetManifestResourceStream("developer.prefix")
@@ -203,7 +211,7 @@ public partial class CapturedPayload {
         'generatedSerialization': {'generator': 'MemoryPack.Generator/1.21.4', 'type': 'CapturedPayload',
             'ordinaryCalls': ['MemoryPackSerializer.Serialize', 'MemoryPackSerializer.Deserialize']} if serialization == 'memorypack' else None,
         'resourceDigest': digest(resource), 'managedAssemblyDigest': digest(assembly),
-        'recoveryCases': ['exception', 'memory', 'spin', 'normal-catch-finally', 'resource-initialization', 'fresh-state'],
+        'recoveryCases': ['exception', 'memory', 'fuel', 'spin', 'normal-catch-finally', 'resource-initialization', 'fresh-state'],
         'resourceDigests': {'message.txt': digest('Gr\u00fc\u00dfe'.encode()),
                             'data.bin': digest(bytes((0, 255, 65, 128)))},
         'declaredNoncryptoEntropy': 'latent:random/random@0.1.0',

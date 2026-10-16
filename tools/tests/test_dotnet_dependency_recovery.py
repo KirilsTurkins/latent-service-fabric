@@ -45,10 +45,11 @@ class DotnetDependencyRecovery(unittest.TestCase):
         def invoked(_client, _target, _template, _function, args, _activation):
             if args == ['exception']: return failure('guest-trap')
             if args == ['memory']: return failure('resource-exhausted')
-            if args == ['spin']: return failure('resource-exhausted',
-                9_999_999 if mode == 'low-fuel' else 10_000_000)
+            if args == ['fuel']: return failure('resource-exhausted',
+                _target['budget']['cpuFuel'] - int(mode == 'low-fuel'))
             return {'exitCode': 0, 'processReaped': True, 'decoded': [{'ok': 'Hello, SDK!'}],
-                'response': {'outcomeKnown': True}}
+                'response': {'outcomeKnown': True, 'data': {'consumption': {
+                    'cpuFuel': 600_000_000 if mode == 'insufficient-margin' else 55_000_000}}}}
         patches = [patch.object(suite, 'call', side_effect=invoked),
             patch.object(suite, 'sample', return_value={'idle': True}),
             patch.object(suite, 'start_call', return_value=process),
@@ -59,7 +60,7 @@ class DotnetDependencyRecovery(unittest.TestCase):
         client, process, patches = self.run_control()
         with patches[0] as invoked, patches[1] as observed, patches[2] as started, patches[3] as finished:
             evidence = {'samples': []}
-            rows = suite.recover(client, {'budget': {'memoryBytes': 4, 'cpuFuel': 100_000_000}}, None, evidence, 17)
+            rows = suite.recover(client, {'budget': {'memoryBytes': 4, 'cpuFuel': 1_000_000_000}}, None, evidence, 17)
         self.assertEqual([row['case'] for row in rows], ['dotnet-library-exception', 'dotnet-library-memory',
             'dotnet-library-fuel', 'dotnet-library-cancel'])
         self.assertEqual(len(evidence['samples']), 8)
@@ -71,6 +72,11 @@ class DotnetDependencyRecovery(unittest.TestCase):
             [('activation', 'get'), ('activation', 'cancel')])
         process.close.assert_called_once_with()
         self.assertEqual(rows[-1]['failure']['cancelCalls'], 1)
+        self.assertEqual(rows[2]['startupBaselineFuel'], 55_000_000)
+        self.assertEqual(rows[2]['faultFuelBudget'], 110_000_000)
+        self.assertEqual(rows[2]['originalFuelBudget'], 1_000_000_000)
+        fuel_call = next(row for row in invoked.call_args_list if row.args[4] == ['fuel'])
+        self.assertEqual(fuel_call.args[1]['budget']['cpuFuel'], 110_000_000)
 
     def test_wrong_identity_and_unknown_cancel_never_retry_or_report_recovery(self):
         for mode, expected in (('foreign', 'dotnet-library-cancellation-identity'),
@@ -78,7 +84,7 @@ class DotnetDependencyRecovery(unittest.TestCase):
             client, process, patches = self.run_control(mode)
             with patches[0], patches[1], patches[2], patches[3] as finished:
                 with self.subTest(mode=mode), self.assertRaisesRegex(RuntimeError, expected):
-                    suite.recover(client, {'budget': {'memoryBytes': 4, 'cpuFuel': 100_000_000}}, None, {'samples': []}, 17)
+                    suite.recover(client, {'budget': {'memoryBytes': 4, 'cpuFuel': 1_000_000_000}}, None, {'samples': []}, 17)
             process.close.assert_called_once_with()
             finished.assert_not_called()
             self.assertEqual(sum(call.args[:2] == ('activation', 'cancel') for call in client.call.call_args_list),
@@ -88,7 +94,18 @@ class DotnetDependencyRecovery(unittest.TestCase):
         client, process, patches = self.run_control('low-fuel')
         with patches[0], patches[1], patches[2] as started, patches[3]:
             with self.assertRaisesRegex(RuntimeError, 'dotnet-library-fuel-limit-not-consumed'):
-                suite.recover(client, {'budget': {'memoryBytes': 4, 'cpuFuel': 100_000_000}},
+                suite.recover(client, {'budget': {'memoryBytes': 4, 'cpuFuel': 1_000_000_000}},
                     None, {'samples': []}, 17)
+        started.assert_not_called()
+        client.call.assert_not_called()
+
+    def test_insufficient_startup_margin_stops_before_fault_or_cancellation(self):
+        client, process, patches = self.run_control('insufficient-margin')
+        with patches[0] as invoked, patches[1], patches[2] as started, patches[3]:
+            with self.assertRaisesRegex(RuntimeError, 'dotnet-library-fuel-insufficient-startup-margin'):
+                suite.recover(client, {'budget': {'memoryBytes': 4, 'cpuFuel': 1_000_000_000}},
+                    None, {'samples': []}, 17)
+        self.assertEqual(invoked.call_count, 4)
+        self.assertFalse(any(row.args[4] == ['fuel'] for row in invoked.call_args_list))
         started.assert_not_called()
         client.call.assert_not_called()

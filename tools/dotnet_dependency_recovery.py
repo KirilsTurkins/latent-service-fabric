@@ -36,13 +36,21 @@ def recover(client, target: dict, probe, evidence: dict, population: int) -> lis
         failed(observed, code, target['budget']['memoryBytes'])
         fresh('dotnet-library-' + mode, observed)
 
-    limited = {**target, 'budget': {**target['budget'], 'cpuFuel': 10_000_000}}
-    require(limited['budget']['cpuFuel'] <= target['budget']['cpuFuel'], 'dotnet-library-fuel-elevation')
-    fuel = call(client, limited, 'greeting', 'greet', ['spin'], 'dotnet-library-fuel-limit')
+    # NativeAOT startup itself consumes fuel: use the immediately preceding actual
+    # successful calls, keeping the fault allowance strictly below the original limit.
+    startup_fuel = max(int(row['freshInvocation']['response']['data']['consumption']['cpuFuel'])
+        for row in records)
+    fault_fuel = max(10_000_000, startup_fuel * 2)
+    require(0 < startup_fuel < fault_fuel < target['budget']['cpuFuel'],
+            'dotnet-library-fuel-insufficient-startup-margin')
+    limited = {**target, 'budget': {**target['budget'], 'cpuFuel': fault_fuel}}
+    fuel = call(client, limited, 'greeting', 'greet', ['fuel'], 'dotnet-library-fuel-limit')
     failed(fuel, 'resource-exhausted', limited['budget']['memoryBytes'])
     require(int(fuel['response']['data']['consumption']['cpuFuel']) == limited['budget']['cpuFuel'],
             'dotnet-library-fuel-limit-not-consumed')
     fresh('dotnet-library-fuel', fuel)
+    records[-1].update(startupBaselineFuel=startup_fuel, faultFuelBudget=fault_fuel,
+        originalFuelBudget=target['budget']['cpuFuel'])
 
     activation = 'dotnet-library-observed-cancellation'
     process = start_call(client, target, 'greeting', 'greet', ['spin'], activation)
