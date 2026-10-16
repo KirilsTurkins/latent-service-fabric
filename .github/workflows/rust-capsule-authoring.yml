@@ -92,6 +92,11 @@ jobs:
       - name: Execute rebuilt ordinary SystemTime and Instant components
         run: |
           python3 tools/qualify_rust_standard_clocks.py --cargo-inventory "$RUNNER_TEMP/rust-standard-clock-native.json" --native-target "$GITHUB_WORKSPACE/target" --rust-bin "$(dirname "$(rustup which rustc)")" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/rust-standard-clocks"
+      - name: Prove original native stack ownership through physical retirement
+        run: |
+          python3 -m unittest tools.tests.test_owned_native_stacks
+          cargo test --locked -p latent-wasmtime --lib native_stacks::tests:: -- --test-threads=1 --nocapture
+          python3 tools/qualify_owned_native_stacks.py --cargo-inventory "$RUNNER_TEMP/rust-standard-clock-native.json" --native-target "$GITHUB_WORKSPACE/target" --clocks "$RUNNER_TEMP/rust-standard-clocks" --output "$RUNNER_TEMP/owned-native-stacks"
       - name: Retain bounded standard clock evidence including failures
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -107,6 +112,7 @@ jobs:
             ${{ runner.temp }}/rust-standard-clocks/**/component.wasm
             ${{ runner.temp }}/rust-standard-clocks/**/project/**
             ${{ runner.temp }}/rust-standard-clocks/**/logs/**
+            ${{ runner.temp }}/owned-native-stacks/**
           if-no-files-found: warn
           retention-days: 3
   authoring:

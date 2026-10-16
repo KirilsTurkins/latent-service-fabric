@@ -45,6 +45,7 @@ impl WasmtimeBackend {
             return ExecutionReport::reusable(Err(error));
         }
         let mut capability_observer = None;
+        let mut native_stack_observer = None;
         let activation_id = request.activation.activation_id.clone();
         let started = Instant::now();
         let mut timing = Phase0InvocationTiming::default();
@@ -60,6 +61,7 @@ impl WasmtimeBackend {
                     prepared,
                     Some(&trace),
                     &mut capability_observer,
+                    &mut native_stack_observer,
                 ),
                 observation,
             )
@@ -72,14 +74,20 @@ impl WasmtimeBackend {
                 prepared,
                 None,
                 &mut capability_observer,
+                &mut native_stack_observer,
             )
             .await
         };
         timing.backend_total_micros = elapsed_micros(started);
         self.lock_timings().insert(activation_id.0, timing);
-        match capability_observer {
+        let report = match capability_observer {
             Some(observer) => observer.after_store_dropped(outcome),
             None => ExecutionReport::reusable(outcome),
+        };
+        if native_stack_observer.is_some_and(|owner| !owner.physically_retired()) {
+            ExecutionReport::quarantine(report.outcome, "native-stack-retirement-unproven")
+        } else {
+            report
         }
     }
 }

@@ -174,6 +174,24 @@ impl Fixture {
         fuel_async_yield_interval: Option<u64>,
         currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,
     ) -> Self {
+        Self::from_publication_profile(
+            directory,
+            catalog,
+            publication,
+            fuel_async_yield_interval,
+            currentness_read_wait,
+            false,
+        )
+        .await
+    }
+    pub async fn from_publication_profile(
+        directory: tempfile::TempDir,
+        catalog: Arc<DirectoryArtifactRepository>,
+        publication: ReleaseUseEligibility,
+        fuel_async_yield_interval: Option<u64>,
+        currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,
+        owned_native_stacks: bool,
+    ) -> Self {
         let policies = Arc::new(
             PolicyStore::open(
                 &directory.path().join("policies"),
@@ -245,7 +263,7 @@ impl Fixture {
                 hook: plan_hook.clone(),
             }),
         ));
-        let mut config = support::config();
+        let mut config = native_stack_config(owned_native_stacks);
         config.fuel_async_yield_interval = fuel_async_yield_interval;
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             config,
@@ -344,6 +362,23 @@ impl Fixture {
             (0, 0, 0, 0, 0)
         );
     }
+}
+
+pub fn native_stack_config(owned: bool) -> latent_wasmtime::WasmtimeConfig {
+    let mut config = support::config();
+    if owned {
+        config.owned_native_stacks = true;
+        config.activation_runtime = Some(latent_core::activation_runtime::RuntimeLimits {
+            tasks: 2,
+            executors: 1,
+            queued_work: 1,
+            waits: 2,
+            timers: 2,
+            results: 1,
+            native_owners: 1,
+        });
+    }
+    config
 }
 fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &str) {
     for (id, kind, value) in [

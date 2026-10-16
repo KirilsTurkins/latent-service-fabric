@@ -58,13 +58,17 @@
         "run": "python3 tools/qualify_rust_standard_clocks.py --cargo-inventory \"$RUNNER_TEMP/rust-standard-clock-native.json\" --native-target \"$GITHUB_WORKSPACE/target\" --rust-bin \"$(dirname \"$(rustup which rustc)\")\" --wasm-tools \"$(command -v wasm-tools)\" --output \"$RUNNER_TEMP/rust-standard-clocks\"\n"
       },
       {
+        "name": "Prove original native stack ownership through physical retirement",
+        "run": "python3 -m unittest tools.tests.test_owned_native_stacks\ncargo test --locked -p latent-wasmtime --lib native_stacks::tests:: -- --test-threads=1 --nocapture\npython3 tools/qualify_owned_native_stacks.py --cargo-inventory \"$RUNNER_TEMP/rust-standard-clock-native.json\" --native-target \"$GITHUB_WORKSPACE/target\" --clocks \"$RUNNER_TEMP/rust-standard-clocks\" --output \"$RUNNER_TEMP/owned-native-stacks\"\n"
+      },
+      {
         "if": "always()",
         "name": "Retain bounded standard clock evidence including failures",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "rust-standard-clocks-${{ github.run_id }}",
-          "path": "${{ runner.temp }}/rust-standard-clock-native.json\n${{ runner.temp }}/rust-standard-clocks/report.json\n${{ runner.temp }}/rust-standard-clocks/**/qualification.json\n${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json\n${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json\n${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json\n${{ runner.temp }}/rust-standard-clocks/**/component.wasm\n${{ runner.temp }}/rust-standard-clocks/**/project/**\n${{ runner.temp }}/rust-standard-clocks/**/logs/**\n",
+          "path": "${{ runner.temp }}/rust-standard-clock-native.json\n${{ runner.temp }}/rust-standard-clocks/report.json\n${{ runner.temp }}/rust-standard-clocks/**/qualification.json\n${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json\n${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json\n${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json\n${{ runner.temp }}/rust-standard-clocks/**/component.wasm\n${{ runner.temp }}/rust-standard-clocks/**/project/**\n${{ runner.temp }}/rust-standard-clocks/**/logs/**\n${{ runner.temp }}/owned-native-stacks/**\n",
           "retention-days": 3
         }
       }
@@ -73,7 +77,7 @@
   },
   "jobId": "standard-clocks",
   "kind": "job",
-  "reviewReason": "Add authenticated rebuilt ordinary SystemTime/Instant signed grant, two fresh Store, revocation and owner-retirement gate; preserve existing authoring commands, source controls, jobs, limits, cache policy and historical CI obligations.",
+  "reviewReason": "Add controlled original-activation root native-stack admission, actual pending/cancelled Wasmtime ownership controls and signed rebuilt-clock execution through physical StackMemory destruction; preserve all prior CI commands, tests, limits and gates. This profile does not enable canonical threads or qualify standard executors.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

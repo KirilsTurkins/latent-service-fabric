@@ -38,6 +38,14 @@ impl Fixture {
     /// The signer belongs to this protocol fixture; it does not qualify the
     /// external compiler driver or turn this fixture into release evidence.
     pub async fn with_component(wait: bool, bytes: &[u8]) -> Self {
+        Self::with_component_profile(wait, bytes, false).await
+    }
+
+    pub async fn with_component_profile(
+        wait: bool,
+        bytes: &[u8],
+        owned_native_stacks: bool,
+    ) -> Self {
         let root = tempfile::tempdir().unwrap();
         let bundle = bundle(bytes);
         let release = bundle.layout().component_release().unwrap();
@@ -61,7 +69,11 @@ impl Fixture {
                 signers.policy,
                 clock.clone(),
                 5,
-                Arc::new(support::config().detected_runtime_profile().unwrap()),
+                Arc::new(
+                    super::fixture::native_stack_config(owned_native_stacks)
+                        .detected_runtime_profile()
+                        .unwrap(),
+                ),
             )
             .unwrap(),
         );
@@ -86,12 +98,13 @@ impl Fixture {
             Arc::new(latent_node::CurrentnessReadTimer)
                 as Arc<dyn latent_executor::PreparationReadWait>
         });
-        let guest = super::fixture::Fixture::from_publication(
+        let guest = super::fixture::Fixture::from_publication_profile(
             root,
             catalog,
             eligibility.clone(),
             None,
             timer,
+            owned_native_stacks,
         )
         .await;
         Self {
