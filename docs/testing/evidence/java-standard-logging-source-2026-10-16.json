@@ -80,6 +80,16 @@
     "sdk/java-guest/facilities/conformance/logging.wit": "3e32a90bdf8aed4ea04632487433de60071ab863e5ad0da8ce1bb02834c4fe16",
     "tools/qualify_java_logging.py": "46f79d6760d007fc59e01eaac46969e72de65ae487e6cfad660f407efddeafc7",
     "tools/java_guest/facilities.py": "8d101f290af12114d1eb251937e38fd47a9499ad44c40acfe6258de4af34f033",
-    "crates/latent-wasmtime/tests/guest_sdk/logging.rs": "a945a4965647b89d64b3e18726ee94b7f56eefba22c8570612ab31784275e0bc"
+    "crates/latent-wasmtime/tests/guest_sdk/logging.rs": "c3d99b14b7edef3bf2e4846ecacf5cbc6829c79f083cf40fb7a142b12fcb0b75"
+  },
+  "nativeQualificationAttempt": {
+    "head": "26753bfd2f6763ffcce93d42462097370d2a6f73",
+    "status": "failed-before-signed-logging-execution",
+    "javaJob": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38857795150/job/116833058840",
+    "javaFailure": "PackagingTools retained a nine-fixture expectation after logging was added as the tenth fixture",
+    "cJob": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38857795154/job/116833453110",
+    "cFailure": "The logging module omitted the ExecutionBackend trait needed for preparation",
+    "correction": "Import the existing trait and require the exact ordered original nine fixtures plus logging, output directories and report entries; original binary identity controls and runtime bounds remain",
+    "correctedNativeExecution": "pending"
   }
 }

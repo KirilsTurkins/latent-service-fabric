@@ -1,6 +1,6 @@
 use latent_artifacts::ArtifactRepository;
 use latent_core::{ActivationBudget, ActivationId, ClockSample, EffectiveActivationBudget};
-use latent_executor::{BoundImport, ExecutionCancellation};
+use latent_executor::{BoundImport, ExecutionBackend, ExecutionCancellation};
 use latent_wasmtime::{
     CapturedLog, LogSinkError, StructuredLogSink, WasmtimeComponentEngineFactory,
     WasmtimeHostServices,

@@ -505,10 +505,15 @@ class PackagingTools(unittest.TestCase):
                     patch.object(sdk, "build") as build:
                 sdk.compile_all(root / "output", root / "wasi", contracts_tool=contracts, packager=packager)
             command.assert_not_called()
-            self.assertEqual(build.call_count, 9)
+            expected = ("http", "streaming", "blob", "secrets", "events", "random",
+                        "metrics", "service", "callee", "logging")
+            self.assertEqual(tuple(call.args[0].name for call in build.call_args_list), expected)
+            self.assertEqual(tuple(call.args[1].name for call in build.call_args_list),
+                             tuple("java-" + name for name in expected))
             for call in build.call_args_list:
                 self.assertEqual(call.args[2:4], (contracts.resolve(), packager.resolve()))
             report = json.loads((root / "output/SDK-BUILD.json").read_bytes())
+            self.assertEqual(report["builds"], list(expected))
             self.assertEqual(report["tools"], report["toolsAfter"])
             self.assertEqual(report["status"], "built-execution-required")
             self.assertFalse(report["runtimeQualified"])
