@@ -28,6 +28,7 @@ from tools.standard_http.observations import validate as validate_peer
 from tools.static_api.node import policy
 
 CAPABILITY = 'latent:http/streaming@0.3.0'
+PEER_SOURCE = 'tools/java_standard_http_peer.py'
 SERVICE = 'examples/go-standard-http'
 ACTIVATION = 'latent:runtime/activation@0.1.0'
 OPS = ['register', 'park', 'wake', 'settle', 'close', 'observe', 'wait-for',
@@ -170,7 +171,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
         'recipe-inputs.json', 'go-runtime-transformations.json', 'bindings.json')}
     source_paths = ('tools/go_standard_http_project.py', 'tools/go_standard_http_node.py',
         'tools/qualify_go_standard_http.py', 'sdk/go-guest/runtime/standard-http-conformance/main.go',
-        'sdk/go-guest/runtime/standard-http-conformance/world.wit', 'tools/standard_http/process_peer.py',
+        'sdk/go-guest/runtime/standard-http-conformance/world.wit', PEER_SOURCE,
         'tools/standard_http/peer.py', 'tools/standard_http/protocol.py', 'tools/standard_http/vectors.py',
         'tools/standard_http/observations.py', 'tools/go_guest/http.py', 'tools/go_guest/http_context.py',
         'sdk/go-guest/runtime/http_async.go.in', 'sdk/go-guest/runtime/http_transport.go.in',
@@ -196,7 +197,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             client = RecordingClient(binaries['latent'], work/'client', cancellation, expires,
                 evidence=output/'controls', invocation_timeout_millis=120000)
             stage = 'peer'
-            peer = Process([sys.executable, str(ROOT/'tools/standard_http/process_peer.py'), '--credential', str(credential)],
+            peer = Process([sys.executable, str(ROOT/PEER_SOURCE), '--credential', str(credential)],
                            work/'peer', environment, cancellation, maximum=65536)
             cleanup.callback(peer.close)
             startup = peer.line(min(client.deadline, time.monotonic()+10))
@@ -249,6 +250,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('concrete', 8, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
                      ('clone', 9, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
                      ('custom-separate', 10, '/conformance/json', '200:domain:7:caf\u00e9:\u03bb|'),
+                     ('custom-dialer-denied', 11, '/conformance/json', 'custom-dialer-denied'),
                      ('fresh', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb')]
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)

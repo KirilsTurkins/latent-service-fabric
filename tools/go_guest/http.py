@@ -43,6 +43,13 @@ def prepare(goroot: Path, sdk: Path, output: Path, module: str) -> dict[str, str
     selected['net/http/transport.go'] = replace_once(source['net/http/transport.go'],
         'var DefaultTransport RoundTripper = &Transport{\n',
         'var DefaultTransport RoundTripper = &Transport{\n\tDisableCompression: true,\n')
+    # The upstream default installs its own socket dialer. This private default
+    # selects the typed backend; application-supplied dialers remain rejected.
+    selected['net/http/transport.go'] = replace_once(selected['net/http/transport.go'],
+        '\tDialContext: defaultTransportDialContext(&net.Dialer{\n'
+        '\t\tTimeout:   30 * time.Second,\n'
+        '\t\tKeepAlive: 30 * time.Second,\n'
+        '\t}),\n', '\tDialContext: nil,\n')
     output.mkdir()
     replacements = {}
     for name, text in selected.items():

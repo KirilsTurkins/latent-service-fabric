@@ -14,6 +14,17 @@ from tools.rust_capsule_project import ROOT, read_file, snapshot
 
 
 class StandardHttpGate(unittest.TestCase):
+    def test_signed_peer_carrier_is_an_existing_runnable_shared_owner(self):
+        import sys
+        from tools.go_standard_http_node import PEER_SOURCE
+        from tools.build_process import run_bounded_result
+        from tools.build_observation import build_environment
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_bounded_result([sys.executable,str(ROOT/PEER_SOURCE),'--help'],
+                ROOT,build_environment(Path(directory)),10,65536)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertIn(b'--credential',result.stdout)
+
     def test_project_captures_exact_ordinary_fixture_and_immutable_sdk_for_real_build(self):
         with tempfile.TemporaryDirectory() as directory:
             app = project(Path(directory)/'application')

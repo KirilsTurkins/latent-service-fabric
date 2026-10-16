@@ -34,8 +34,10 @@ guest-owned read/upload chunk is at most16KiB. Positive buffer sizes may lower
 that chunk bound. Unsupported values fail before dispatch.
 
 The typed contract reserves wire compression/credential/framing headers. The
-compiler sets DisableCompression true on the default Transport, a documented
-difference from native Go's default. A concrete Transport requesting automatic
+compiler sets DisableCompression true on the default Transport and replaces its
+exact pinned built-in socket DialContext initializer with nil to select the
+typed backend. These are documented differences from native Go's default;
+application-supplied dialers still fail before invocation. A concrete Transport requesting automatic
 compression fails explicitly. Authorization, cookies and other reserved request
 headers fail before contact. Content-Type and Idempotency-Key are structured
 typed request fields. No source-level credential or raw-header exception is
@@ -70,7 +72,7 @@ by the signed runtime/provider gate under the unchanged original deadline.
 
 ## Maintained proof boundary
 
-The four source controls authenticate all original Transport/RoundTrip/Client
+The five source controls authenticate all original Transport/RoundTrip/Client
 bytes, reject drift and module-name injection before output, and retain original
 sources. The ordinary fixture uses new http.Client, DefaultTransport.Clone,
 concrete Transport, JSON domain parsing, POST, early Close, cancelled contexts
@@ -94,11 +96,11 @@ and size failures cannot be hidden by an early JSON syntax error. A static
 counter rejects reuse of a previous activation's state. The early-close case
 uses ordinary ReadFull for four bytes instead of assuming one Read fills them.
 
-Nineteen cases cover domain JSON, HTTP error status, truncation, oversize,
+Twenty cases cover domain JSON, HTTP error status, truncation, oversize,
 malformed JSON, forbidden headers, early Close, pending header/body cancellation,
 POST bytes, uncertain mutation, target denial, pre-cancelled contexts, sibling
 cancellation, concrete Transport, DefaultTransport.Clone, a separate custom
-RoundTripper and fresh state. Every activation checks actual provider counters,
+RoundTripper, custom-dialer denial without invocation, and fresh state. Every activation checks actual provider counters,
 cleanup slots and topology. The controlled peer must report exactly 15 primary
 contacts, one committed mutation and no secondary contact. These observations
 are distinct from allocator/native/kernel upper-bound qualification.
@@ -106,8 +108,9 @@ are distinct from allocator/native/kernel upper-bound qualification.
 Compilation retains its normal 900-second enclosing build and 600-second
 command limits. The new gate bounds the node/peer to 300 seconds under a
 1200-second total deadline. It runs after the existing ordinary authoring gate
-and retains every previous command and the original 75-minute workflow limit.
-Two source controls reject changed vendored SDK/native products before execution.
+and retains every previous command and the original 45-minute workflow limit.
+Source controls reject changed vendored SDK/native products before execution,
+and authenticate the default backend initializer without admitting custom dialers.
 This signed gate has been added and has not yet executed. HTTPS, published
 default-client consumers, the wider matrix and complete #692 acceptance remain
 required; no full-ticket result follows from this candidate.

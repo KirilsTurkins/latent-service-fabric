@@ -37,6 +37,22 @@ class StandardHttpSourceTests(unittest.TestCase):
                     http.prepare(goroot, ROOT/'sdk/go-guest', root/'out', 'outside.test/module')
                 self.assertFalse((root/'out').exists())
 
+    def test_default_selects_typed_backend_without_allowing_custom_dialers(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            goroot = self.fixture(root)
+            original = (goroot/'src/net/http/transport.go').read_text(encoding='utf-8')
+            self.assertIn('DialContext: defaultTransportDialContext(&net.Dialer{', original)
+            selected = http.prepare(goroot, ROOT/'sdk/go-guest', root/'out', 'outside.test/client')
+            transport = Path(selected[str(goroot/'src/net/http/transport.go')]).read_text(encoding='utf-8')
+            default = transport.split('var DefaultTransport RoundTripper = &Transport{', 1)[1].split('\n}', 1)[0]
+            self.assertIn('DialContext: nil,', default)
+            self.assertIn('DisableCompression: true,', default)
+            self.assertIn('Proxy: ProxyFromEnvironment,', default)
+            backend = Path(selected[str(goroot/'src/net/http/roundtrip.go')]).read_text(encoding='utf-8')
+            self.assertIn('if t.DialContext != nil || t.Dial != nil', backend)
+            self.assertEqual((goroot/'src/net/http/transport.go').read_text(encoding='utf-8'), original)
+
     def test_module_names_are_literal_and_cannot_inject_imports_or_paths(self):
         for module in ('../escape', 'example.com//bad', 'quote"injection', 'bad\npath', 'C:\\source', '', 'x'*257):
             with self.subTest(module=module), tempfile.TemporaryDirectory() as temporary:

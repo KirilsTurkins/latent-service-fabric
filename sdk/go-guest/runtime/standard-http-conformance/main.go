@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -44,7 +46,11 @@ func Run(which uint32, address string) string {
 	if which == 8 { client.Transport = &http.Transport{DisableCompression:true} }
 	if which == 9 { client.Transport = http.DefaultTransport.(*http.Transport).Clone() }
 	if which == 10 { client.Transport = localTransport{} }
+	dialed := false
+	if which == 11 { client.Transport = &http.Transport{DisableCompression:true,
+		DialContext:func(context.Context,string,string)(net.Conn,error){ dialed = true; return nil,errors.New("custom dialer invoked") }} }
 	response, err := client.Do(request)
+	if which == 11 { if dialed { return "custom-dialer-invoked" }; if err == nil { response.Body.Close(); return "custom-dialer-accepted" }; return "custom-dialer-denied" }
 	if err != nil { if ctx.Err() != nil { return "cancelled" }; return "transport-error" }
 	defer response.Body.Close()
 	if which == 2 { first := make([]byte,4); count, _ := io.ReadFull(response.Body, first); return "early:"+strconv.Itoa(count) }

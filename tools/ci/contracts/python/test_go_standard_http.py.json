@@ -1,12 +1,25 @@
 {
   "cases": [
     "StandardHttpSourceTests.test_changed_template_fails_before_publishing_overlay",
+    "StandardHttpSourceTests.test_default_selects_typed_backend_without_allowing_custom_dialers",
     "StandardHttpSourceTests.test_every_full_upstream_preimage_is_required_before_creating_outputs",
     "StandardHttpSourceTests.test_module_names_are_literal_and_cannot_inject_imports_or_paths",
     "StandardHttpSourceTests.test_private_projection_retains_all_original_sources_and_public_client"
   ],
   "guards": {
     "StandardHttpSourceTests.test_changed_template_fails_before_publishing_overlay": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5984bf28797ae96fc9c44a8a391dafa6be394526f1187f86fa14ff24e60d071f",
+        "class:setup-sha256:d44f9ae55a79c03d46cef2854f7f825cabdf657f8ad00a5c1eeaef120bff8b70"
+      ],
+      "skipSites": []
+    },
+    "StandardHttpSourceTests.test_default_selects_typed_backend_without_allowing_custom_dialers": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -57,6 +70,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_standard_http.py",
-  "reviewReason": "Authenticate exact upstream source and literal namespace input before publishing private overlay",
+  "reviewReason": "Preserve all original source guards and add exact native-default initializer regression without allowing custom dialers",
   "schemaVersion": "latent.ci.contracts.v1"
 }
