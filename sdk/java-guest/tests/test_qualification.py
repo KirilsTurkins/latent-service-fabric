@@ -324,12 +324,40 @@ class StandardTimerSourceIntegrity(unittest.TestCase):
 
 
 class StandardTimerModelIntegrity(unittest.TestCase):
+    @staticmethod
+    def fixture(root):
+        import xml.etree.ElementTree as ET
+
+        compiler, jars, lock = ThrowableModelIntegrity.fixture(root, include_platform=True)
+        artifacts = [{**item, "platform": "any"} for item in json.loads(lock.read_bytes())["artifacts"]]
+        lock.write_text(json.dumps({"schemaVersion": 1, "maven": "https://repo.maven.apache.org/maven2/",
+                                    "artifacts": artifacts}), encoding="utf-8")
+        loader = compiler.sdk / "tools/dependencies.py"
+        loader.parent.mkdir()
+        shutil.copyfile(fibers.ROOT / "sdk/java-guest/tools/dependencies.py", loader)
+        namespace = "{https://schema.gradle.org/dependency-verification}"
+        document = ET.Element(namespace + "verification-metadata")
+        configuration = ET.SubElement(document, namespace + "configuration")
+        ET.SubElement(configuration, namespace + "verify-metadata").text = "true"
+        ET.SubElement(configuration, namespace + "verify-signatures").text = "false"
+        components = ET.SubElement(document, namespace + "components")
+        for item in artifacts:
+            parts = Path(item["path"]).parts
+            component = ET.SubElement(components, namespace + "component",
+                group=".".join(parts[:-3]), name=parts[-3], version=parts[-2])
+            artifact = ET.SubElement(component, namespace + "artifact", name=parts[-1])
+            ET.SubElement(artifact, namespace + "sha256", value=item["sha256"])
+        metadata = compiler.sdk / "feasibility/gradle/verification-metadata.xml"
+        metadata.parent.mkdir()
+        metadata.write_bytes(ET.tostring(document, encoding="utf-8"))
+        return compiler, jars, lock
+
     def test_changed_locked_tooling_cannot_enter_timer_model_loading(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            compiler, jars, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler, jars, _ = self.fixture(root)
             jars[0].write_bytes(b"changed compiler class model")
-            with self.assertRaisesRegex(ValueError, "integrity mismatch"):
+            with self.assertRaisesRegex(ValueError, "dependency-cache-lock-drift"):
                 fibers.standard_timer_model_control(compiler, root / "model")
             compiler.run.assert_not_called()
             self.assertFalse((root / "model").exists())
@@ -337,7 +365,7 @@ class StandardTimerModelIntegrity(unittest.TestCase):
     def test_partial_identity_proof_cannot_qualify_timer_model(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            compiler, _, _ = ThrowableModelIntegrity.fixture(root, include_platform=True)
+            compiler, _, _ = self.fixture(root)
             for name in ("fibers/compiler", "fibers/dev/latent/guest/runtime/util",
                          "fibers/conformance/compiler"):
                 shutil.copytree(fibers.ROOT / "sdk/java-guest" / name, compiler.sdk / name)
