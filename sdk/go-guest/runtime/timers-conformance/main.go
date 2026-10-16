@@ -134,6 +134,20 @@ func Run(which uint32) uint32 {
         <-deadline.Done()
         if deadline.Err() != context.Canceled { panic("canceled context became elapsed timer") }
         <-time.After(time.Millisecond)
+    case 18:
+        runtime.GC()
+        runtime.GC()
+    case 19:
+        timer := time.NewTimer(time.Hour)
+        if !timer.Stop() { panic("stop timer before GC") }
+        runtime.GC()
+    case 20:
+        timer := time.NewTimer(time.Hour)
+        runtime.GC()
+        if !timer.Reset(time.Millisecond) { panic("retained timer expired during GC") }
+        <-timer.C
+        timer.Stop()
+        runtime.KeepAlive(timer)
     }
     return 42
 }

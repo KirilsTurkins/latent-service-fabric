@@ -23,7 +23,7 @@ def fixture_reference(output, commands, compiler, source, fixture):
         # Mode 4 intentionally returns with accepted callbacks: native Go main
         # exits immediately, whereas the component profile requires drain.
         # Failure/cancellation modes have their own signed-node assertions.
-        modes = [0, 1, 2, 3, 5, 6, 9, 11, 12, 13, 14, 15, 16, 17]
+        modes = [0, 1, 2, 3, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17]
     else:
         raise ValueError('Go-native-reference-unreviewed-fixture')
     reference = output / 'native-reference'

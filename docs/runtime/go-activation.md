@@ -91,7 +91,8 @@ quiescence round before WAIT or EXIT. Unknown parked work still fails.
 
 The candidate's native reference and signed test cover timer/channel Stop and
 Reset, recurrence, callbacks, resetting a running callback with permitted
-overlap, context cancellation, GC collection, timer limits, callback panic,
+overlap, context cancellation, plain GC, stopped/retained timer GC, collection,
+timer limits, callback panic,
 root drain, cancellation and deadline. These commands are qualification gates;
 source preparation alone does not establish successful execution. In
 particular, the latest timer source still needs a successful complete signed
@@ -103,8 +104,15 @@ The first hosted replay of the fresh-quiescence source passed modes 0 through
 forced-GC case. This remains a failed acceptance result. A failure-only diagnostic
 replays that exact component with three private read-only source overlays in a
 separate process namespace, preserving the production files and assertions.
-It retains at most 32 parsed Wasm function/index/offset records and input hashes,
-with a ten-minute command bound. Raw native errors/configuration are not exported.
+It retains at most 32 parsed Wasm function/index/offset records, closed execution
+stages/outcome classes, relative Rust assertion sites and input/recipe hashes.
+If guest invocation was reached, a second private component replaces only the
+known terminal `runtime.throw` and `runtime.fatal` bodies with distinct traps.
+This can distinguish an underlying Go terminal failure from recursive denied
+stderr obscuring it. Every normal body/import/authority remains unchanged, the
+original component and acceptance failure remain intact, and the private
+component/body identities are explicit. Both runs share a ten-minute deadline
+and one MiB output bound. Raw native errors/configuration are not exported.
 This diagnostic cannot qualify the profile, and the job does not save its
 diagnostic compiler target or run acceptance afterward.
 

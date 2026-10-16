@@ -64,12 +64,45 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             b'panicked at crates/latent-wasmtime/tests/local_service/runtime.rs:253:9: secret\n')
         self.assertEqual(metadata, {'stages': ['entered', 'prepared'],
             'classifiers': [{'traceAvailable': False, 'trapAvailable': True}],
-            'panicSourceSites': ['crates/latent-wasmtime/tests/local_service/runtime.rs:253:9']})
+            'panicSourceSites': ['crates/latent-wasmtime/tests/local_service/runtime.rs:253:9'], 'outcomes': []})
         for raw in (b'LSF_GO_DIAG_STAGE prepared\n', b'LSF_GO_DIAG_STAGE entered\n' * 2,
                     b'LSF_GO_DIAG_CLASSIFY {"traceAvailable":false,"trapAvailable":"secret"}\n',
-                    b'LSF_GO_DIAG_CLASSIFY {"nativeError":"secret"}\n'):
+                    b'LSF_GO_DIAG_CLASSIFY {"nativeError":"secret"}\n',
+                    b'LSF_GO_DIAG_OUTCOME private error text\n'):
             with self.subTest(metadata=raw), self.assertRaisesRegex(ValueError, 'shape'):
                 execution_metadata(raw)
+
+    def test_private_terminal_observer_changes_only_two_known_noreturn_bodies(self):
+        from tools.diagnose_go_timer_failure import leb, sections, terminal_component
+        def section(kind, value):
+            return bytes([kind]) + leb(len(value)) + value
+        def name(value):
+            raw = value.encode()
+            return leb(len(raw)) + raw
+        original_bodies = [b'\0\x41\x2a\x0b', b'\0\x41\x2b\x0b', b'\0\x41\x2c\x0b']
+        types = section(1, b'\x01\x60\x01\x7f\x01\x7f')
+        imports = section(2, b'\0')
+        functions = section(3, b'\x03\0\0\0')
+        code = section(10, b'\x03' + b''.join(leb(len(raw)) + raw for raw in original_bodies))
+        names = b'\x03' + b''.join(leb(index) + name(value) for index, value in
+            enumerate(('runtime.throw', 'runtime.fatal', 'normal.effect')))
+        custom = section(0, name('name') + b'\x01' + leb(len(names)) + names)
+        module = b'\0asm\x01\0\0\0' + types + imports + functions + code + custom
+        component = b'\0asm\x0d\0\x01\0' + section(1, module)
+        private, record = terminal_component(component)
+        self.assertNotEqual(private, component)
+        self.assertEqual({row['function'] for row in record['mutations']}, {'runtime.throw', 'runtime.fatal'})
+        self.assertFalse(record['importsAndAuthorityChanged'])
+        self.assertFalse(record['qualification'])
+        private_module = sections(private, private[:8])[0][1]
+        rows = sections(private_module, module[:8])
+        self.assertEqual([(k, v) for k, v in rows if k != 10],
+                         [(k, v) for k, v in sections(module, module[:8]) if k != 10])
+        self.assertTrue(dict(rows)[10].endswith(leb(len(original_bodies[-1])) + original_bodies[-1]))
+        for invalid in (component[:-1], component.replace(b'runtime.throw', b'unknown.throw'),
+                        component + section(1, module)):
+            with self.subTest(invalid=invalid[:32]), self.assertRaises(ValueError):
+                terminal_component(invalid)
 
     def test_private_frame_observer_refuses_drift_before_writing_a_partial_overlay(self):
         from tools.diagnose_go_timer_failure import PATHS, overlay_sources

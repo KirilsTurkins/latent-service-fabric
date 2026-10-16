@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import shutil
 import sys
+import time
 
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -68,6 +69,14 @@ def overlay_sources(root: Path, output: Path) -> tuple[dict, list[tuple[Path, Pa
     eprintln!("LSF_GO_DIAG_STAGE prepared");
     let receipt = f.manager.start(f.request("private-go-gc-frame-diagnostic", 9)).unwrap().await;
     eprintln!("LSF_GO_DIAG_STAGE invoked");
+    let kind = if let ActivationOutcome::Failed { error, .. } = &receipt.outcome {
+        ["memory-out-of-bounds", "unreachable-code", "integer-division-by-zero"].into_iter()
+            .find(|candidate| error.details.iter().any(|detail|
+                detail.kind == "activation.guest-trap-kind"
+                && detail.fields.get("kind").is_some_and(|kind| kind.as_str() == *candidate)))
+            .unwrap_or("other-failure")
+    } else { "other-outcome" };
+    eprintln!("LSF_GO_DIAG_OUTCOME {kind}");
     f.idle().await;
     eprintln!("LSF_GO_DIAG_STAGE idle");
     assert!(matches!(receipt.outcome, ActivationOutcome::Succeeded(_)), "private GC diagnostic trapped");
@@ -121,10 +130,144 @@ def execution_metadata(data: bytes) -> dict:
     # execution. No panic message, native backtrace or private config is retained.
     sites = sorted(set(re.findall(r'crates/[A-Za-z0-9_/.-]{1,180}\.rs:[0-9]{1,6}:[0-9]{1,6}',
                                  data.decode('utf-8', errors='replace'))))[:8]
-    return {'stages': stages, 'classifiers': classifiers, 'panicSourceSites': sites}
+    outcomes = [line.removeprefix('LSF_GO_DIAG_OUTCOME ') for line in lines
+                if line.startswith('LSF_GO_DIAG_OUTCOME ')]
+    if len(outcomes) > 1 or any(value not in {'memory-out-of-bounds', 'unreachable-code',
+            'integer-division-by-zero', 'other-failure', 'other-outcome'} for value in outcomes):
+        raise ValueError('Go-private-frame-observer-outcome-shape')
+    return {'stages': stages, 'classifiers': classifiers, 'panicSourceSites': sites, 'outcomes': outcomes}
+
+
+def u32(raw: bytes, offset: int) -> tuple[int, int]:
+    value = 0
+    for index in range(5):
+        if offset >= len(raw):
+            break
+        byte = raw[offset]; offset += 1
+        value |= (byte & 127) << (7 * index)
+        if byte < 128 and value < 2**32:
+            return value, offset
+    raise ValueError('Go-private-terminal-wasm-integer')
+
+
+def leb(value: int) -> bytes:
+    result = bytearray()
+    while value >= 128:
+        result.append((value & 127) | 128); value >>= 7
+    result.append(value)
+    return bytes(result)
+
+
+def sections(raw: bytes, header: bytes):
+    if not raw.startswith(header) or len(raw) > 16 * 1024 * 1024:
+        raise ValueError('Go-private-terminal-wasm-header-or-bound')
+    offset, rows = 8, []
+    while offset < len(raw):
+        kind = raw[offset]; size, begin = u32(raw, offset + 1)
+        end = begin + size
+        if end > len(raw) or len(rows) >= 128:
+            raise ValueError('Go-private-terminal-wasm-section-bound')
+        rows.append((kind, raw[begin:end])); offset = end
+    return rows
+
+
+def name(raw: bytes, offset: int) -> tuple[str, int]:
+    size, offset = u32(raw, offset)
+    if size > 512 or offset + size > len(raw):
+        raise ValueError('Go-private-terminal-wasm-name-bound')
+    return raw[offset:offset + size].decode('utf-8'), offset + size
+
+
+def terminal_component(original: bytes) -> tuple[bytes, dict]:
+    """Replace only two named noreturn Go terminal paths, never normal effects."""
+    component = sections(original, b'\0asm\x0d\0\x01\0')
+    replacements = {'runtime.throw': b'\0\0\x0b',  # no locals; unreachable; end
+                    'runtime.fatal': b'\0\x41\0\x41\0\x6e\x1a\0\x0b'}  # u32 div zero
+    result, changed = bytearray(original[:8]), []
+    for kind, payload in component:
+        if kind == 1:
+            module = sections(payload, b'\0asm\x01\0\0\0')
+            names, imported, imports = {}, None, None
+            for section, body in module:
+                if section == 2:
+                    imports = body
+                if section != 0:
+                    continue
+                label, offset = name(body, 0)
+                if label != 'name':
+                    continue
+                while offset < len(body):
+                    sub = body[offset]; size, start = u32(body, offset + 1); end = start + size
+                    if end > len(body):
+                        raise ValueError('Go-private-terminal-name-section')
+                    if sub == 1:
+                        count, cursor = u32(body, start)
+                        if count > 8192:
+                            raise ValueError('Go-private-terminal-function-name-count')
+                        for _ in range(count):
+                            index, cursor = u32(body, cursor); label, cursor = name(body, cursor)
+                            if label in replacements:
+                                if label in names:
+                                    raise ValueError('Go-private-terminal-duplicate-name')
+                                names[label] = index
+                        if cursor != end:
+                            raise ValueError('Go-private-terminal-function-name-tail')
+                    offset = end
+            if names:
+                if imports is not None:
+                    imported, offset = u32(imports, 0)
+                    for _ in range(imported):
+                        _, offset = name(imports, offset); _, offset = name(imports, offset)
+                        if offset >= len(imports) or imports[offset] != 0:
+                            raise ValueError('Go-private-terminal-only-function-imports')
+                        _, offset = u32(imports, offset + 1)
+                    if offset != len(imports):
+                        raise ValueError('Go-private-terminal-import-tail')
+                if set(names) != set(replacements) or imported is None or changed:
+                    raise ValueError('Go-private-terminal-functions-not-unique')
+                output = bytearray(payload[:8]); saw_code = False
+                for section, body in module:
+                    if section == 10:
+                        saw_code = True
+                        count, offset = u32(body, 0)
+                        if count > 8192:
+                            raise ValueError('Go-private-terminal-code-count')
+                        code = bytearray(leb(count))
+                        for index in range(count):
+                            size, offset = u32(body, offset); end = offset + size
+                            if end > len(body):
+                                raise ValueError('Go-private-terminal-code-body')
+                            before = body[offset:end]; after = before
+                            for label, target in names.items():
+                                if target == imported + index:
+                                    after = replacements[label]
+                                    changed.append({'function': label, 'functionIndex': target,
+                                        'originalBodyDigest': digest(before), 'privateBodyDigest': digest(after)})
+                            code.extend(leb(len(after))); code.extend(after); offset = end
+                        if offset != len(body):
+                            raise ValueError('Go-private-terminal-code-tail')
+                        body = bytes(code)
+                    output.append(section); output.extend(leb(len(body))); output.extend(body)
+                if not saw_code or len(changed) != 2:
+                    raise ValueError('Go-private-terminal-code-missing')
+                payload = bytes(output)
+        result.append(kind); result.extend(leb(len(payload))); result.extend(payload)
+    if len(changed) != 2:
+        raise ValueError('Go-private-terminal-no-runtime-functions')
+    derived = bytes(result)
+    return derived, {'originalComponentDigest': digest(original), 'privateComponentDigest': digest(derived),
+                     'mutations': changed, 'normalFunctionBodiesPreserved': True,
+                     'importsAndAuthorityChanged': False, 'qualification': False}
 
 
 def diagnose(fixture: Path, output: Path) -> dict:
+    deadline = time.monotonic() + 600
+    def remaining_seconds():
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError('Go-private-terminal-diagnostic-budget-exhausted')
+        return remaining
+    recipe = Path(__file__).read_bytes()
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     fixture = fixture.resolve(strict=True)
@@ -156,7 +299,7 @@ def diagnose(fixture: Path, output: Path) -> dict:
     for key in ('CARGO_TARGET_DIR',):
         if key in os.environ:
             environment[key] = os.environ[key]
-    result = run_bounded_result(command, ROOT, environment, 600, 1024 * 1024)
+    result = run_bounded_result(command, ROOT, environment, remaining_seconds(), 1024 * 1024)
     frames = frames_from_output(result.stderr + b'\n' + result.stdout)
     for name, identity in identities.items():
         if digest((ROOT / name).read_bytes()) != identity['originalDigest']:
@@ -164,6 +307,7 @@ def diagnose(fixture: Path, output: Path) -> dict:
     if digest(component.read_bytes()) != record['componentDigest']:
         raise ValueError('Go-private-frame-observer-component-mutated')
     observation = {'formatVersion': 1, 'qualification': False, 'scope': 'failure-only-private-source-overlay',
+        'observerRecipeDigest': digest(recipe),
         'mode': 9, 'componentDigest': record['componentDigest'], 'sourceDigest': record['sourceDigest'],
         'preparedRecordDigest': digest((fixture / 'GO-ACTIVATION-COMPILE.json').read_bytes()),
         'sourceOverlays': identities, 'originalSourceUnchanged': True, 'diagnosticExitCode': result.returncode,
@@ -171,6 +315,52 @@ def diagnose(fixture: Path, output: Path) -> dict:
         'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', result.stderr)))[:16],
         'executionMetadata': execution_metadata(result.stderr + b'\n' + result.stdout),
         'frames': frames, 'rawNativeBacktraceRetained': False, 'acceptanceFailure': 'unchanged'}
+    write_json(output / 'GO-PRIVATE-FRAMES.json', observation)
+    if 'invoked' not in observation['executionMetadata']['stages']:
+        observation['terminalDiagnostic'] = {'status': 'not-run-before-guest-invocation', 'qualification': False}
+        write_json(output / 'GO-PRIVATE-FRAMES.json', observation)
+        return observation
+    # A second failure-only run changes only the terminal runtime.throw/fatal
+    # bodies, avoiding recursive denied fd_write obscuring the first failure.
+    # It shares this observer's original total deadline/output limit and creates
+    # no compiler/tool acquisition, import, grant, success or resumed work path.
+    original_component = component.read_bytes()
+    derived, mutations = terminal_component(original_component)
+    private_fixture = output / 'terminal-fixture'
+    for name in ('src/main.go', 'wit/world.wit'):
+        target = private_fixture / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((fixture / name).read_bytes())
+    (private_fixture / 'build').mkdir()
+    private_component = private_fixture / 'build/component.wasm'
+    private_component.write_bytes(derived)
+    private_record = {**record, 'componentDigest': digest(derived), 'failureOnlyTerminalMutation': mutations}
+    write_json(private_fixture / 'GO-ACTIVATION-COMPILE.json', private_record)
+    remaining = 1024 * 1024 - len(result.stdout) - len(result.stderr)
+    if remaining <= 0 or time.monotonic() >= deadline:
+        raise ValueError('Go-private-terminal-diagnostic-budget-exhausted')
+    validator = shutil.which('wasm-tools')
+    if not validator:
+        raise ValueError('Go-private-terminal-validator-missing')
+    validated = run_bounded_result([validator, 'validate', '--features', 'all', str(private_component)],
+        ROOT, environment, remaining_seconds(), remaining)
+    remaining -= len(validated.stdout) + len(validated.stderr)
+    if validated.returncode != 0 or remaining <= 0:
+        raise ValueError('Go-private-terminal-derived-component-invalid')
+    environment['LSF_GO_TIMER_FIXTURE'] = str(private_fixture)
+    terminal = run_bounded_result(command, ROOT, environment, remaining_seconds(), remaining)
+    observation['terminalDiagnostic'] = {**mutations, 'exitCode': terminal.returncode,
+        'nativeCaseStarted': bool(re.search(rb'(?m)^running 1 test\r?$', terminal.stdout)),
+        'compilerErrorCodes': sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', terminal.stderr)))[:16],
+        'executionMetadata': execution_metadata(terminal.stderr + b'\n' + terminal.stdout),
+        'frames': frames_from_output(terminal.stderr + b'\n' + terminal.stdout)}
+    if component.read_bytes() != original_component:
+        raise ValueError('Go-private-terminal-original-component-mutated')
+    for name, identity in identities.items():
+        if digest((ROOT / name).read_bytes()) != identity['originalDigest']:
+            raise ValueError('Go-private-terminal-original-source-mutated')
+    if Path(__file__).read_bytes() != recipe:
+        raise ValueError('Go-private-terminal-recipe-mutated')
     write_json(output / 'GO-PRIVATE-FRAMES.json', observation)
     return observation
 

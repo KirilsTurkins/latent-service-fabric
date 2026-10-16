@@ -9,6 +9,7 @@
     "GoRuntimeOverlayTests.test_each_upstream_source_drift_refuses_before_any_overlay_is_written",
     "GoRuntimeOverlayTests.test_private_frame_observer_refuses_drift_before_writing_a_partial_overlay",
     "GoRuntimeOverlayTests.test_private_frame_output_excludes_native_messages_and_rejects_unbounded_or_unexpected_data",
+    "GoRuntimeOverlayTests.test_private_terminal_observer_changes_only_two_known_noreturn_bodies",
     "GoRuntimeOverlayTests.test_private_wasm_frame_observer_preserves_original_sources_and_bounds_the_overlay",
     "GoRuntimeOverlayTests.test_protected_roots_and_existing_output_refuse_without_modifying_sources",
     "GoRuntimeOverlayTests.test_scheduler_and_lsf_overlays_preserve_sources_and_separate_wasi_authority",
@@ -123,6 +124,18 @@
       ],
       "skipSites": []
     },
+    "GoRuntimeOverlayTests.test_private_terminal_observer_changes_only_two_known_noreturn_bodies": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ],
+      "skipSites": []
+    },
     "GoRuntimeOverlayTests.test_private_wasm_frame_observer_preserves_original_sources_and_bounds_the_overlay": {
       "bases": [
         "unittest.TestCase"
@@ -174,6 +187,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_runtime_overlay.py",
-  "reviewReason": "Preserve all existing Go overlay controls and add immutable private-copy, strict bounded frame-schema and source-drift controls for failure-only diagnostics",
+  "reviewReason": "Add exact two-function private terminal mutation preservation/drift controls and bounded closed-outcome parsing; preserve every original runtime overlay/checkpoint/diagnostic case and skip condition.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

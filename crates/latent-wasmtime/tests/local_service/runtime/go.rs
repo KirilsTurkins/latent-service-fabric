@@ -34,7 +34,7 @@ fn checkpoint_component(
         assert_eq!(
             record["nativeReference"]["modes"],
             if timers {
-                serde_json::json!([0, 1, 2, 3, 5, 6, 9, 11, 12, 13, 14, 15, 16, 17])
+                serde_json::json!([0, 1, 2, 3, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17])
             } else {
                 serde_json::json!([0, 1, 4])
             }
@@ -66,8 +66,11 @@ async fn signed_standard_timers_contexts_and_rearm_keep_original_heap_owners() {
         "go-component-activation-v3",
     )
     .await;
+    let modes = [
+        0, 1, 2, 3, 4, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17,
+    ];
     for iteration in 0..2 {
-        for mode in [0, 1, 2, 3, 4, 5, 6, 9, 11, 12, 13, 14, 15, 16, 17] {
+        for mode in modes {
             let began = std::time::Instant::now();
             let receipt = success(
                 f.manager
@@ -94,6 +97,30 @@ async fn signed_standard_timers_contexts_and_rearm_keep_original_heap_owners() {
             f.idle().await;
             assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
         }
+        // Consume and reconcile every observation before the next finite batch.
+        // The fixture keeps its original 32-entry telemetry bound.
+        let expected = modes
+            .into_iter()
+            .map(|mode| format!("go-timers-{iteration}-{mode}"))
+            .collect::<std::collections::BTreeSet<_>>();
+        let starts = std::mem::take(&mut *f.observations.starts.lock().unwrap());
+        let terminals = std::mem::take(&mut *f.observations.terminals.lock().unwrap());
+        assert_eq!(starts.len(), modes.len());
+        assert_eq!(terminals.len(), modes.len());
+        assert_eq!(
+            starts
+                .into_iter()
+                .map(|context| context.activation_id.0)
+                .collect::<std::collections::BTreeSet<_>>(),
+            expected
+        );
+        assert_eq!(
+            terminals
+                .into_iter()
+                .map(|(context, _)| context.activation_id.0)
+                .collect::<std::collections::BTreeSet<_>>(),
+            expected
+        );
     }
     for mode in [8, 10] {
         assert_eq!(
