@@ -138,6 +138,184 @@ class DotnetAuthoringTests(unittest.TestCase):
         self.assertFalse((output / "BUILD-COMPLETE.json").exists())
 
 
+class HttpPrefixDiagnosticTests(unittest.TestCase):
+    def row(self, decoded=None, *, trapped=False):
+        return {'exitCode': 4 if trapped else 0, 'decoded': decoded, 'processReaped': True,
+            'response': {'outcomeKnown': True, 'requestDispatched': True,
+                'category': 'platform-failure' if trapped else 'success',
+                'error': {'code': 'guest-trap'} if trapped else None,
+                'data': {'terminalState': 'guest_trap' if trapped else 'completed',
+                    'resolvedRevision': {'publicationId': 'publication:sha256:'+'1'*64,
+                        'releaseDigest': 'sha256:'+'2'*64,
+                        'revisionId': 'revision-v1:sha256:'+'3'*64, 'routeGeneration': '4'}}}}
+
+    def observe(self, original, invoke, retire, *, deadline=100, clock=1):
+        from types import SimpleNamespace
+        from tools import dotnet_standard_http_node as node
+        result = {'artifact': {'component.wasm': {'sha256': 'sha256:'+'2'*64}}, 'cases': []}
+        client, target, probe = SimpleNamespace(deadline=deadline), {'name': 'unchanged-target'}, object()
+        with patch.object(node, 'invoke', side_effect=invoke), patch.object(node, 'retire', side_effect=retire), \
+                patch.object(node.time, 'monotonic', return_value=clock):
+            node.prefix_diagnostics(result, client, target, 'http://127.0.0.1:12345', probe, Path('owned'), original)
+        self.assertEqual(client.deadline, deadline)
+        self.assertEqual(result['cases'], [])
+        self.assertIs(result['prefixDiagnostics']['qualification'], False)
+        self.assertIs(result['prefixDiagnostics']['originalFailurePreserved'], True)
+        return result['prefixDiagnostics']
+
+    def test_all_original_csharp_operations_cleanup_and_fourteen_cases_are_preserved(self):
+        import hashlib
+        from tools import dotnet_standard_http_node as node
+        root = Path(__file__).resolve().parents[2]
+        source = (root/'examples/dotnet-standard-http/Main.cs').read_text()
+        body = source[source.index('    private static string RunCore'):]
+        body = body.replace(', ref Phase phase, Phase stopAfter)', ', ref Phase phase)')
+        for phase, boundary in (('RequestReady', 'request-ready-plus-cleanup'),
+                                ('HeadersReady', 'headers-ready-plus-cleanup'),
+                                ('StreamReady', 'stream-ready-plus-cleanup'),
+                                ('BodyCopied', 'body-copied-plus-cleanup')):
+            checkpoint = f'if (stopAfter == Phase.{phase}) return "fixture-prefix-v1:{boundary}";'
+            self.assertEqual(body.count(checkpoint), 1)
+            body = ''.join(line for line in body.splitlines(keepends=True) if checkpoint not in line)
+        self.assertEqual(hashlib.sha256(body.encode()).hexdigest(),
+                         'd34893b3805fb2d806646611eabf8955df74aa3e5a278197fec9400d9da5e2b0')
+        self.assertIn('if (which == 100) return "fixture-prefix-v1:entry-export";', source)
+        self.assertIn('if (stopAfter != Phase.Entry) which = 0;', source)
+        for selector, phase in ((101, 'RequestReady'), (102, 'HeadersReady'),
+                                (103, 'StreamReady'), (104, 'BodyCopied')):
+            self.assertIn(f'{selector} => Phase.{phase}', source)
+        self.assertIn('_ => Phase.Entry', source)
+        owner = (root/'tools/dotnet_standard_http_node.py').read_text()
+        cases = owner[owner.index('            cases = '):owner.index('            for name, which, path, expected in cases:')]
+        self.assertEqual(hashlib.sha256(cases.encode()).hexdigest(),
+                         '73411b0891a2f90e53fa1d283e7c1ec89d3aed1a65285830537beacb53085305')
+        self.assertIn("observation['startedRequests'] == 12", owner)
+        self.assertIn('expires = min(time.monotonic()+300, deadline)', owner)
+        self.assertEqual(tuple(selector for selector, _ in node.PREFIXES), (100, 101, 102, 103, 104))
+
+    def test_only_failed_first_case_observes_and_original_exception_identity_survives(self):
+        from tools import dotnet_standard_http_node as node
+        observer = unittest.mock.Mock(side_effect=AssertionError('must remain failure-only'))
+        node.require_case_result('json', {'exitCode': 0, 'decoded': ['expected']}, 'expected', observer)
+        with self.assertRaisesRegex(RuntimeError, 'standard-dotnet-fresh-result'):
+            node.require_case_result('fresh', {'exitCode': 4, 'decoded': None}, 'expected', observer)
+        observer.assert_not_called()
+        for failure in (RuntimeError('private-observer'), RecursionError('private-parser'), KeyboardInterrupt()):
+            original = ValueError('standard-dotnet-json-result')
+            with patch.object(node, 'require', side_effect=original), \
+                    self.assertRaises(ValueError) as observed:
+                node.require_case_result('json', {'exitCode': 4, 'decoded': None}, 'expected',
+                    unittest.mock.Mock(side_effect=failure))
+            self.assertIs(observed.exception, original)
+
+    def test_five_fresh_same_revision_probes_have_idle_boundaries_and_no_acceptance_credit(self):
+        from tools import dotnet_standard_http_node as node
+        history = []
+        def invoke(client, target, selector, url, activation):
+            history.append(('invoke', selector))
+            self.assertEqual(target, {'name': 'unchanged-target'})
+            self.assertEqual(url, 'http://127.0.0.1:12345/conformance/json')
+            self.assertEqual(activation, 'standard-prefix-'+str(selector))
+            self.assertEqual(client.deadline, 100)
+            return self.row(['fixture-prefix-v1:'+dict(node.PREFIXES)[selector]])
+        def retire(client, target, probe, output, name):
+            history.append(('idle', name))
+        diagnostic = self.observe(self.row(trapped=True), invoke, retire)
+        expected = [('idle', 'failed-json')]
+        for selector, _ in node.PREFIXES:
+            expected.extend([('invoke', selector), ('idle', 'prefix-'+str(selector))])
+        self.assertEqual(history, expected)
+        self.assertEqual(diagnostic['status'], 'observed')
+        self.assertEqual([row['outcome'] for row in diagnostic['probes']], ['checkpoint-returned']*5)
+        self.assertTrue(all(row['ownersIdle'] for row in diagnostic['probes']))
+
+    def test_known_trap_and_closed_managed_family_remain_diagnostic_only(self):
+        from tools import dotnet_standard_http_node as node
+        rows = [self.row(trapped=True), self.row(['managed-failure-v1:request-ready:other'])]
+        rows += [self.row(['fixture-prefix-v1:'+boundary]) for _, boundary in node.PREFIXES[2:]]
+        diagnostic = self.observe(self.row(trapped=True), lambda *args: rows.pop(0), lambda *args: None)
+        self.assertEqual([row['outcome'] for row in diagnostic['probes'][:2]], ['guest-trap', 'managed-failure'])
+        self.assertEqual(diagnostic['probes'][1]['managedFailure'], {
+            'formatVersion': 1, 'phase': 'request-ready', 'exceptionFamily': 'other', 'qualification': False})
+        self.assertEqual(diagnostic['status'], 'observed')
+
+    def test_unconfirmed_original_never_launches_or_observes_idle(self):
+        import copy
+        rows = [None, {}, self.row(['ordinary-success']), self.row(['managed-failure-v1:entry:other'])]
+        for path, value in ((('exitCode',), True), (('processReaped',), False),
+                (('response', 'outcomeKnown'), False), (('response', 'requestDispatched'), False),
+                (('response', 'data', 'resolvedRevision', 'releaseDigest'), 'sha256:'+'4'*64),
+                (('response', 'data', 'resolvedRevision', 'publicationId'), 'token-secret'),
+                (('response', 'data', 'resolvedRevision', 'revisionId'), 'token-secret'),
+                (('response', 'data', 'resolvedRevision', 'routeGeneration'), True),
+                (('response', 'data', 'terminalState'), 'unknown'),
+                (('response', 'error', 'code'), 'permission-denied')):
+            row = copy.deepcopy(self.row(trapped=True)); current = row
+            for key in path[:-1]: current = current[key]
+            current[path[-1]] = value; rows.append(row)
+        for row in rows:
+            with self.subTest(row=row):
+                invoke, retire = unittest.mock.Mock(), unittest.mock.Mock()
+                self.assertEqual(self.observe(row, invoke, retire)['status'], 'not-eligible')
+                invoke.assert_not_called(); retire.assert_not_called()
+
+    def test_unknown_probe_identity_payload_or_reaping_stops_without_retry_or_private_output(self):
+        import copy
+        variants = [self.row(['token-secret']), self.row(['managed-failure-v1:entry:token-secret'])]
+        for path, value in ((('processReaped',), False),
+                (('response', 'outcomeKnown'), False),
+                (('response', 'data', 'resolvedRevision', 'revisionId'), 'revision-v1:sha256:'+'4'*64),
+                (('response', 'data', 'resolvedRevision', 'routeGeneration'), '5')):
+            row = copy.deepcopy(self.row(['fixture-prefix-v1:entry-export'])); current = row
+            for key in path[:-1]: current = current[key]
+            current[path[-1]] = value; variants.append(row)
+        for row in variants:
+            with self.subTest(row=row):
+                invoke, retire = unittest.mock.Mock(return_value=row), unittest.mock.Mock()
+                diagnostic = self.observe(self.row(trapped=True), invoke, retire)
+                self.assertEqual(invoke.call_count, 1)
+                self.assertEqual(retire.call_count, 2 if row['processReaped'] else 1)
+                self.assertNotEqual(diagnostic['status'], 'observed')
+                self.assertNotIn('token-secret', json.dumps(diagnostic))
+
+    def test_original_deadline_and_any_idle_failure_prevent_following_probes(self):
+        invoke, retire = unittest.mock.Mock(), unittest.mock.Mock()
+        diagnostic = self.observe(self.row(trapped=True), invoke, retire, deadline=1, clock=1)
+        self.assertEqual(diagnostic['failurePhase'], 'original-deadline')
+        invoke.assert_not_called(); self.assertEqual(retire.call_count, 1)
+        for failure_call in (1, 2):
+            calls = []
+            def idle(*args):
+                calls.append(args[-1])
+                if len(calls) == failure_call: raise RuntimeError('private-owner-details')
+            invoke = unittest.mock.Mock(return_value=self.row(['fixture-prefix-v1:entry-export']))
+            diagnostic = self.observe(self.row(trapped=True), invoke, idle)
+            self.assertEqual(invoke.call_count, failure_call-1)
+            self.assertEqual(diagnostic['failurePhase'], 'original-retirement' if failure_call == 1 else 'prefix-retirement')
+            self.assertNotIn('private-owner-details', json.dumps(diagnostic))
+
+    def test_actual_retirement_keeps_complete_sampler_cleanup_slots_and_provider_guards(self):
+        from tools import dotnet_standard_http_node as node
+        inventory = {'inventory': {'topology': {'entries': [{'name': 'invocation-cleanup-slots', 'activeCount': '0'}]}}}
+        usage = {'unavailable': False, 'counters': {name: '0' for name in node.ACTIVE_COUNTERS}}
+        client = unittest.mock.Mock(); client.call.return_value = {'data': {'nodeUsage': usage}}
+        target, probe, output = {'name': 'unchanged-target'}, object(), Path('owned')
+        with patch.object(node, 'sample', return_value=inventory) as sample, patch.object(node, 'write_json') as write:
+            node.retire(client, target, probe, output, 'prefix-100')
+            sample.assert_called_once_with(client, probe, 'after-prefix-100', 1)
+            write.assert_called_once_with(output/'after-prefix-100.json', inventory)
+            client.call.assert_called_once_with('capability', 'list', '--deployment', 'unchanged-target', '--include-node-usage')
+            for change in ('slots', 'unavailable', 'missing', 'active'):
+                with self.subTest(change=change):
+                    inventory['inventory']['topology']['entries'][0]['activeCount'] = '1' if change == 'slots' else '0'
+                    usage['unavailable'] = change == 'unavailable'
+                    usage['counters'] = {name: '0' for name in node.ACTIVE_COUNTERS}
+                    first = next(iter(usage['counters']))
+                    if change == 'missing': del usage['counters'][first]
+                    if change == 'active': usage['counters'][first] = '1'
+                    with self.assertRaises(RuntimeError): node.retire(client, target, probe, output, 'prefix-100')
+
+
 class RuntimeProfileTests(unittest.TestCase):
     def setUp(self):
         from tools.dotnet_guest import runtime

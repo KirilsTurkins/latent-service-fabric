@@ -14,9 +14,18 @@ public class ApiExportsImpl : IApiExports {
     }
 
     public static string Run(uint which, string endpoint) {
+        if (which == 100) return "fixture-prefix-v1:entry-export";
+        Phase stopAfter = which switch {
+            101 => Phase.RequestReady,
+            102 => Phase.HeadersReady,
+            103 => Phase.StreamReady,
+            104 => Phase.BodyCopied,
+            _ => Phase.Entry
+        };
+        if (stopAfter != Phase.Entry) which = 0;
         Phase phase = Phase.Entry;
         try {
-            return RunCore(which, endpoint, ref phase);
+            return RunCore(which, endpoint, ref phase, stopAfter);
         } catch (Exception error) {
             string location = phase switch {
                 Phase.RequestReady => "request-ready",
@@ -45,7 +54,7 @@ public class ApiExportsImpl : IApiExports {
         }
     }
 
-    private static string RunCore(uint which, string endpoint, ref Phase phase) {
+    private static string RunCore(uint which, string endpoint, ref Phase phase, Phase stopAfter) {
         string prefix = (++calls) + ":";
         using var client = new HttpClient();
         using var request = new HttpRequestMessage(which == 1 ? HttpMethod.Post : HttpMethod.Get, endpoint);
@@ -57,13 +66,16 @@ public class ApiExportsImpl : IApiExports {
         if (which == 3) request.Headers.TryAddWithoutValidation("Authorization", "must-not-leave-guest");
         if (which == 4) cancellation.CancelAfter(100);
         phase = Phase.RequestReady;
+        if (stopAfter == Phase.RequestReady) return "fixture-prefix-v1:request-ready-plus-cleanup";
         try {
             phase = Phase.SendBegun;
             using var response = client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,
                 cancellation.Token).GetAwaiter().GetResult();
             phase = Phase.HeadersReady;
+            if (stopAfter == Phase.HeadersReady) return "fixture-prefix-v1:headers-ready-plus-cleanup";
             using var stream = response.Content.ReadAsStreamAsync(cancellation.Token).GetAwaiter().GetResult();
             phase = Phase.StreamReady;
+            if (stopAfter == Phase.StreamReady) return "fixture-prefix-v1:stream-ready-plus-cleanup";
             if (which == 2 || which == 5) {
                 byte[] first = new byte[4];
                 int count = stream.Read(first);
@@ -75,6 +87,7 @@ public class ApiExportsImpl : IApiExports {
             using var body = new MemoryStream();
             stream.CopyTo(body);
             phase = Phase.BodyCopied;
+            if (stopAfter == Phase.BodyCopied) return "fixture-prefix-v1:body-copied-plus-cleanup";
             using var document = JsonDocument.Parse(body.ToArray());
             phase = Phase.JsonParsed;
             var value = document.RootElement;

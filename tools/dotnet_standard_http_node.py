@@ -6,6 +6,7 @@ import base64
 from contextlib import ExitStack
 import json
 from pathlib import Path
+import re
 import secrets
 import sys
 import tempfile
@@ -34,6 +35,9 @@ ACTIVATION = 'latent:runtime/activation@0.1.0'
 OPS = ['register', 'park', 'wake', 'settle', 'close', 'observe', 'wait-for',
        'wait-until', 'timer-start', 'timer-next', 'timer-stop']
 CLOCKS = {name: row for name, row in RUNTIME.items() if name != 'random'}
+PREFIXES = ((100, 'entry-export'), (101, 'request-ready-plus-cleanup'),
+            (102, 'headers-ready-plus-cleanup'), (103, 'stream-ready-plus-cleanup'),
+            (104, 'body-copied-plus-cleanup'))
 
 
 def configuration(directory, releases, startup, credential):
@@ -165,6 +169,105 @@ def invoke(client, target, which, url, activation):
     return row
 
 
+def retire(client, target, probe, output, name):
+    # The same complete owner-idle observation applies to acceptance and probes.
+    retired = sample(client, probe, 'after-'+name, 1)
+    slots = next(row for row in retired['inventory']['topology']['entries']
+                 if row['name'] == 'invocation-cleanup-slots')
+    require(slots['activeCount'] == '0', 'standard-dotnet-cleanup-slots-retired')
+    write_json(output/('after-'+name+'.json'), retired)
+    usage = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage')['data']['nodeUsage']
+    require(not usage['unavailable'] and all(key in usage['counters'] and int(usage['counters'][key]) == 0
+        for key in ACTIVE_COUNTERS), 'standard-dotnet-provider-physical-owners')
+
+
+def prefix_revision(row, component):
+    if (type(row) is not dict or row.get('processReaped') is not True
+            or type(row.get('response')) is not dict):
+        return None
+    response = row['response']
+    if (response.get('outcomeKnown') is not True or response.get('requestDispatched') is not True
+            or type(response.get('data')) is not dict):
+        return None
+    pin = response['data'].get('resolvedRevision')
+    if (type(pin) is not dict or set(pin) != {'publicationId', 'releaseDigest', 'revisionId', 'routeGeneration'}
+            or not all(type(value) is str for value in pin.values())
+            or re.fullmatch(r'publication:sha256:[0-9a-f]{64}', pin['publicationId']) is None
+            or pin['releaseDigest'] != component
+            or re.fullmatch(r'revision-v1:sha256:[0-9a-f]{64}', pin['revisionId']) is None
+            or re.fullmatch(r'[1-9][0-9]{0,19}', pin['routeGeneration']) is None):
+        return None
+    return dict(pin)
+
+
+def guest_trap(row):
+    response = row.get('response', {})
+    return (type(row.get('exitCode')) is int and row['exitCode'] == 4 and row.get('decoded') is None
+            and response.get('category') == 'platform-failure' and type(response.get('error')) is dict
+            and response['error'].get('code') == 'guest-trap'
+            and response.get('data', {}).get('terminalState') == 'guest_trap')
+
+
+def prefix_diagnostics(result, client, target, url, probe, output, original):
+    """Failure-only fresh prefixes; these never satisfy an acceptance case."""
+    diagnostic = {'formatVersion': 1, 'qualification': False, 'originalFailurePreserved': True,
+                  'status': 'not-eligible', 'probes': []}
+    result['prefixDiagnostics'] = diagnostic
+    component = result['artifact']['component.wasm']['sha256']
+    pin = prefix_revision(original, component)
+    if pin is None or not guest_trap(original):
+        return
+    stage = 'original-retirement'
+    try:
+        retire(client, target, probe, output, 'failed-json')
+        diagnostic['status'] = 'in-progress'
+        for selector, boundary in PREFIXES:
+            stage = 'original-deadline'
+            require(time.monotonic() < client.deadline, 'standard-dotnet-prefix-original-deadline')
+            stage = 'prefix-invocation'
+            name = 'prefix-' + str(selector)
+            row = invoke(client, target, selector, url+'/conformance/json', 'standard-'+name)
+            observation = {'boundary': boundary, 'outcome': 'unconfirmed', 'ownersIdle': False}
+            diagnostic['probes'].append(observation)
+            stage = 'prefix-retirement'
+            require(row.get('processReaped') is True, 'standard-dotnet-prefix-process-unreaped')
+            retire(client, target, probe, output, name)
+            observation['ownersIdle'] = True
+            if prefix_revision(row, component) != pin:
+                diagnostic['status'] = 'unconfirmed-revision'
+                return
+            if type(row.get('exitCode')) is int and row['exitCode'] == 0:
+                if row.get('decoded') == ['fixture-prefix-v1:'+boundary]:
+                    observation['outcome'] = 'checkpoint-returned'
+                elif managed_failure(row.get('decoded')) is not None:
+                    observation['outcome'] = 'managed-failure'
+                    observation['managedFailure'] = managed_failure(row['decoded'])
+                else:
+                    diagnostic['status'] = 'unconfirmed-result'
+                    return
+            elif guest_trap(row):
+                observation['outcome'] = 'guest-trap'
+            else:
+                diagnostic['status'] = 'unconfirmed-result'
+                return
+        diagnostic['status'] = 'observed'
+    except Exception:
+        diagnostic.update(status='incomplete', failurePhase=stage)
+
+
+def require_case_result(name, row, expected, observe_failure):
+    try:
+        require(row['exitCode'] == 0 and row['decoded'] == [expected], 'standard-dotnet-'+name+'-result')
+    except Exception:
+        if name == 'json':
+            try:
+                observe_failure()
+            except BaseException:
+                # Diagnostic failure or interruption cannot replace the original failure.
+                pass
+        raise
+
+
 def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None):
     expires = min(time.monotonic()+300, deadline) if deadline is not None else time.monotonic()+300
     require(expires > time.monotonic(), 'standard-dotnet-original-deadline-expired')
@@ -265,19 +368,13 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('fresh', 0, '/conformance/json', '1:200:domain:7:caf\u00e9:first|\u03bb:')]
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
-                require(row['exitCode'] == 0 and row['decoded'] == [expected], 'standard-dotnet-'+name+'-result')
+                require_case_result(name, row, expected,
+                    lambda: prefix_diagnostics(result, client, target, url, probe, output, row))
                 result['cases'].append(name)
                 # The shared outbound owner checks every activation-scoped and
                 # service-resident row. Ingress-only exchange rows are absent on
                 # this node, which has no HTTP listener installation.
-                retired = sample(client, probe, 'after-'+name, 1)
-                slots = next(row for row in retired['inventory']['topology']['entries']
-                             if row['name'] == 'invocation-cleanup-slots')
-                require(slots['activeCount'] == '0', 'standard-dotnet-cleanup-slots-retired')
-                write_json(output/('after-'+name+'.json'), retired)
-                usage = client.call('capability', 'list', '--deployment', target['name'], '--include-node-usage')['data']['nodeUsage']
-                require(not usage['unavailable'] and all(key in usage['counters'] and int(usage['counters'][key]) == 0
-                    for key in ACTIVE_COUNTERS), 'standard-dotnet-provider-physical-owners')
+                retire(client, target, probe, output, name)
             result['finalOs'] = probe.sample()
             delete_all(client, [target['name']])
             stop(client, node)
