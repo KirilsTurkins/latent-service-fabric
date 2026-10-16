@@ -1,4 +1,4 @@
-# Go activation goroutines and sleep
+# Go activation goroutines, sleep and compiler checkpoints
 
 `go-component-activation-v1` is an explicit finite compiler profile beneath
 ordinary Go `go`, channels, `select`, `sync.Mutex`, `sync.WaitGroup` and
@@ -43,11 +43,53 @@ WASI polling, host sleeping worker, detached timer or new deadline.
 This slice does not implement `time.NewTimer`, `After`, `AfterFunc` or `Ticker`:
 their timer heap, rearm and callback ownership require further runtime work.
 Those APIs fail explicitly during an active invocation. Cooperative Go
-scheduling also does not supply compiler safe-point preemption for CPU-only
+scheduling in v1 does not supply compiler safe-point preemption for CPU-only
 loops; the original fuel and epoch/root deadline still contain execution.
 Initializer background work, unrestricted native threads, CGo and arbitrary
 native/WASI operations are outside this profile. These are remaining #742
 requirements, so this profile does not establish the complete Go runtime port.
+
+Select `go-component-activation-v2` to add compiler checkpoints to the same
+finite goroutine profile. The maintained Go parser inserts a private runtime
+call at function/closure entries and loop backedges in selected application
+source and its reachable nonstandard vendored modules. Package discovery uses
+the captured build tags and module graph; no package name approval catalogue
+selects application code. The authenticated Component Model dispatcher remains
+separate compiler infrastructure. Every 1,024 checkpoint calls suspend the
+current real goroutine through the canonical async callback, allowing runnable
+siblings and the host executor to progress. This path creates no timer, wall
+deadline, sleeping worker or application-visible scheduling facade.
+
+Original source bytes remain unchanged. Derived copies retain original
+diagnostic line/column positions, source and output digests, and suspension
+sites in the build transformation materials. The host parser is built and
+tested from captured SDK sources before entering compiler containment; it
+parses selected modules as data and executes no application initialization on
+the build host. Reachable `//go:nosplit` and `//go:nowritebarrier` functions fail
+explicitly rather than invoke an unsafe suspension. Native assembly, CGo and
+unsupported runtime operations retain their existing boundaries. This profile
+does not add standard timer APIs or initializer goroutine support.
+
+The checkpoint qualification compiles the same ordinary CPU source both with
+v2 and without checkpoints. Real signed execution requires sibling progress
+through a tight loop and recursive calls, verifies cancellation and the
+original root deadline with no host timer, and bounds the negative control by
+finite fuel. The pinned native Go reference runs the same reviewed fixture
+in a fresh process per supported mode. It establishes observable parity for
+those cases; fuel exhaustion alone is not sibling-progress evidence.
+
+```bash
+python3 tools/qualify_go_activation.py --output /tmp/go-checkpoints \
+  --runtime-profile go-component-activation-v2 --fixture checkpoints
+python3 tools/qualify_go_activation.py --output /tmp/go-no-checkpoints \
+  --runtime-profile go-component-activation-v1 --fixture checkpoints
+LSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE=/tmp/go-checkpoints \
+  LSF_GO_NO_CHECKPOINT_FIXTURE=/tmp/go-no-checkpoints \
+  cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime \
+  --test local_service \
+  runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation \
+  -- --ignored --exact --nocapture
+```
 
 Run the maintained emitted-component preparation with the pinned tools on PATH:
 

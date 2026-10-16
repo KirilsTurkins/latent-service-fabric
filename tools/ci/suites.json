@@ -8373,6 +8373,7 @@
         "runtime::cancellation_at_actual_timer_barrier_reclaims_original_store_and_cell",
         "runtime::canonical_timer_allows_sibling_work_and_bounds_recurrence_cancellation_and_storms",
         "runtime::completed_fixed_results_release_original_calls_before_the_next_import",
+        "runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "runtime::go::signed_standard_goroutines_sleep_and_drain_use_original_activation_owners",
         "runtime::malformed_fixed_result_destinations_reclaim_original_calls",
         "runtime::narrower_timer_policy_deadline_preserves_root_and_allows_owner_settlement",
@@ -8390,6 +8391,7 @@
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting"
       ],
       "expectedIgnored": [
+        "runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "runtime::go::signed_standard_goroutines_sleep_and_drain_use_original_activation_owners",
         "runtime::signed_java_completable_futures_use_default_activation_executor",
         "runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
@@ -8400,6 +8402,7 @@
       ],
       "id": "latent-wasmtime.test.local-service",
       "ignoredLeaves": [
+        "signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation",
         "signed_async_service_import_preserves_sibling_progress_and_actual_child_owners",
         "signed_java_completable_futures_use_default_activation_executor",
         "signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers",
@@ -8410,7 +8413,7 @@
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 38,
+      "minimumCases": 39,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
