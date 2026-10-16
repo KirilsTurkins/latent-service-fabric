@@ -11,8 +11,8 @@
   "sources": {
     "java-authoring": {
       "path": "tools/java_guest/model.py",
-      "digest": "sha256:9659786c8ae6c021047ede0075980399d3a2cdb773778dbe34b9edaf023bf231",
-      "commit": "94cd489b692ba31c822baca12776f2deb2d24f9b"
+      "digest": "sha256:dea02683328ce443f2414e59102667ca35ecc5e4543048e91069665d8178f110",
+      "commit": "9de59f31ae70543d8c84526ffe279d32623dd14e"
     },
     "host-recognition": {
       "path": "crates/latent-core/src/host_profile.rs",
