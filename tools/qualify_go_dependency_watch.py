@@ -13,6 +13,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -32,6 +33,21 @@ def require(value, reason):
 
 def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
+
+
+def public_events(values):
+    result = []
+    for value in values[-32:]:
+        if not isinstance(value, dict):
+            continue
+        row = {key: value[key] for key in ('event', 'phase', 'code')
+               if isinstance(value.get(key), str)
+               and re.fullmatch('[a-z0-9-]{1,128}', value[key])}
+        if type(value.get('uncertain')) is bool:
+            row['uncertain'] = value['uncertain']
+        if row:
+            result.append(row)
+    return result
 
 
 class ShutdownOnce:
@@ -350,6 +366,10 @@ def main() -> int:
             stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
         if 'failure' in report:
             public['failure'] = report['failure']
+        try:
+            public['watchEvents'] = public_events(observed())
+        except (OSError, ValueError, TypeError):
+            pass  # A failed observer must not replace the original qualification failure.
         write(root / 'public-qualification.json', public)
 
 

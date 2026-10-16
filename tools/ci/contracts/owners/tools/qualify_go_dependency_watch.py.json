@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Expose the unchanged exact frontend writer as a directly callable qualification helper; retain real isolated/no-bytecode executable controls without evaluating extracted source.",
+  "reviewReason": "Project only the final 32 bounded event/phase/code strings and exact boolean uncertainty; preserve qualification, failure, deadlines, execution and cleanup guards.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e441acfd4eed0114091b6aa25cdd9b6c185ef7eaec1664b85ee923cd17b32191"
+  "sha256": "fd2d5cf4388b705b1565d784451f31ab9246d986d55bb3f9f1bedef79649782f"
 }

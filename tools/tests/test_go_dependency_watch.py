@@ -148,3 +148,28 @@ class FrontendRuntime(unittest.TestCase):
                 'noBytecode': True, 'cachePrefix': None})
             self.assertEqual(events.read_bytes(), result.stdout)
             self.assertFalse((root / 'ambient-bytecode').exists())
+
+
+class PublicWatchEvents(unittest.TestCase):
+    def test_projection_rejects_private_fields_invalid_codes_and_non_bool_uncertainty(self):
+        from tools.qualify_go_dependency_watch import public_events
+        secret = '/private/source/token-secret/signing-key'
+        observed = public_events([
+            None, [], secret, 1,
+            {'event': 'build-failed', 'phase': 'compile', 'code': 'compiler-denied',
+             'uncertain': False, 'path': secret, 'details': {'privateKey': secret},
+             'stdout': secret, 'result': {'secret': secret}},
+            {'event': 'UPPERCASE', 'phase': secret, 'code': 'code\nsecret', 'uncertain': 1},
+            {'event': 'x' * 129, 'phase': [], 'code': '', 'uncertain': 'false'},
+            {'code': 'x' * 128, 'uncertain': True},
+        ])
+        self.assertEqual(observed, [
+            {'event': 'build-failed', 'phase': 'compile', 'code': 'compiler-denied', 'uncertain': False},
+            {'code': 'x' * 128, 'uncertain': True},
+        ])
+        self.assertNotIn(secret, str(observed))
+
+    def test_projection_retains_only_the_last_32_observations(self):
+        from tools.qualify_go_dependency_watch import public_events
+        values = [{'code': 'event-' + str(index)} for index in range(40)]
+        self.assertEqual(public_events(values), values[-32:])

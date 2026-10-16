@@ -6,32 +6,34 @@
     "GoDependencyWatchFixture.test_removal_entry_has_no_library_reference_and_keeps_generated_export_api",
     "GoDependencyWatchFixture.test_two_real_modules_preserve_primary_api_and_resource_across_update",
     "GoDependencyWatchFixture.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved",
-    "GoDependencyWatchFixture.test_watch_delegation_operations_exist_in_maintained_frontend"
+    "GoDependencyWatchFixture.test_watch_delegation_operations_exist_in_maintained_frontend",
+    "PublicWatchEvents.test_projection_rejects_private_fields_invalid_codes_and_non_bool_uncertainty",
+    "PublicWatchEvents.test_projection_retains_only_the_last_32_observations"
   ],
   "guards": {
+    "GoDependencyWatchFixture.test_two_real_modules_preserve_primary_api_and_resource_across_update": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
     "GoDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
+      ]
     },
     "GoDependencyWatchFixture.test_removal_entry_has_no_library_reference_and_keeps_generated_export_api": {
       "bases": [
@@ -39,23 +41,11 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
-    },
-    "GoDependencyWatchFixture.test_two_real_modules_preserve_primary_api_and_resource_across_update": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
-        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
+      ]
     },
     "GoDependencyWatchFixture.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved": {
       "bases": [
@@ -63,11 +53,23 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "GoDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
     },
     "GoDependencyWatchFixture.test_watch_delegation_operations_exist_in_maintained_frontend": {
       "bases": [
@@ -75,11 +77,11 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
-      ],
-      "skipSites": []
+      ]
     },
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode": {
       "bases": [
@@ -87,15 +89,39 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "PublicWatchEvents.test_projection_rejects_private_fields_invalid_codes_and_non_bool_uncertainty": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
+    },
+    "PublicWatchEvents.test_projection_retains_only_the_last_32_observations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_go_dependency_watch.py",
-  "reviewReason": "Execute the generated source frontend under adversarial Python settings; preserve every original case, fixture, decorator and skip guard.",
+  "reviewReason": "Retain all seven original execution, fixture, decorator and skip guards; add bounded public event filtering and private-field/invalid-scalar controls for an observed initial-build failure.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
