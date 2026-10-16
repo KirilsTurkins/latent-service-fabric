@@ -33,13 +33,18 @@ executes this source build and retains its receipt, exact input/derivation
 identities, configuration, notices, normal installed headers and static product.
 Failure receipts keep their stage and never become runtime qualification.
 
-The five acquisition/archive controls pass on Windows without requiring symlink
+The seven acquisition/archive/product controls pass on Windows without requiring symlink
 creation. The [first hosted attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38827200516/job/116737305655)
 compiled `libjs_static.a`, then failed the original SpiderMonkey include-order
 check. Its failed receipt and exact source/log identities remain retained. The
 hook header now orders RootingAPI before TypeDecls, and the derived Promise
 source includes the hook with the other js headers after the Mozilla headers.
 The original checker remains enabled; a full successful build is still required.
+Post-build source rechecks compare the acquisition's upstream bare digest with
+the shared identity owner's algorithm-prefixed digest. Normal installed header
+links must resolve to exact bytes inside the owned build. The static product is
+the pinned upstream target `obj/js/src/build/libjs_static.a`; unrelated installed
+aliases cannot select another library.
 The previous storage-interrupted local attempts remain retained separately.
 Engine linkage, compiler splicer identity and signed ordinary-node runtime/HTTP
 cases remain required by [#745](https://github.com/KirilsTurkins/latent-service-fabric/issues/745)

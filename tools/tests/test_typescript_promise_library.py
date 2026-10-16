@@ -53,6 +53,19 @@ class PromiseLibraryInputs(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'original-archive-changed'):
                 owner.recheck_archives(root, {'source':pin}, {'source':captured})
 
+    def test_installed_header_requires_exact_owned_regular_target_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); output = root/'owned'; output.mkdir()
+            header = output/'installed.h'; header.write_bytes(b'original')
+            identity = owner.installed_header_identity(output, header, b'original')
+            self.assertEqual(identity['sha256'], 'sha256:'+hashlib.sha256(b'original').hexdigest())
+            header.write_bytes(b'change!!')
+            with self.assertRaisesRegex(ValueError, 'normal-header-export-differs'):
+                owner.installed_header_identity(output, header, b'original')
+            outside = root/'outside.h'; outside.write_bytes(b'original')
+            with self.assertRaisesRegex(ValueError, 'target-escaped-build'):
+                owner.installed_header_identity(output, outside, b'original')
+
     @staticmethod
     def carrier(path, names):
         with tarfile.open(path, 'w') as archive:

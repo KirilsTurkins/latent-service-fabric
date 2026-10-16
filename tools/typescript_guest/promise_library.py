@@ -106,6 +106,19 @@ def recheck_archives(output: Path, sources: dict, identities: dict) -> None:
         raise ValueError('promise-library-original-archive-changed')
 
 
+def installed_header_identity(output: Path, exported: Path, expected: bytes) -> dict:
+    # Normal mozbuild installs public headers as links into its owned source
+    # tree. Authenticate their exact resolved bytes without accepting a link
+    # outside this build or weakening the common regular-file reader.
+    resolved = exported.resolve(strict=True)
+    if not resolved.is_relative_to(output.resolve(strict=True)):
+        raise ValueError('promise-library-header-target-escaped-build')
+    if read_file(resolved) != expected:
+        raise ValueError('promise-library-normal-header-export-differs')
+    return {'path': exported.relative_to(output).as_posix(),
+            'resolvedPath': resolved.relative_to(output).as_posix(), **file_identity(resolved)}
+
+
 def build(output: Path) -> dict:
     if sys.platform != 'linux' or platform.machine() not in {'x86_64', 'AMD64'}:
         raise ValueError('promise-library-linux-x86-64-builder-required')
@@ -172,20 +185,17 @@ def build(output: Path) -> dict:
         if result.returncode:
             raise ValueError('promise-library-normal-mach-build-failed')
         stage = 'emitted-product-integrity'
-        products = list((output/'obj').rglob('libjs_static.a'))
-        if len(products) != 1:
-            raise ValueError('promise-library-unique-normal-static-product-required')
+        product = output/'obj/js/src/build/libjs_static.a'
         exported = output/'obj/dist/include/js/ActivationPromiseHooks.h'
-        if read_file(exported) != header:
-            raise ValueError('promise-library-normal-header-export-differs')
+        exported_identity = installed_header_identity(output, exported, header)
         if before != {name: file_identity(firefox/name) for name in derived} or read_file(header_path) != header:
             raise ValueError('promise-library-derived-source-changed')
         if record['recipe'] != {name: file_identity(ROOT/name) for name in recipe_paths}:
             raise ValueError('promise-library-recipe-changed')
         recheck_archives(output, SOURCES, identities)
-        record.update(status='passed', library={'path': products[0].relative_to(output).as_posix(),
-            **file_identity(products[0], 512*1024**2)}, derivation=derivation,
-            exportedHeader=file_identity(exported), selectedSources=before,
+        record.update(status='passed', library={'path': product.relative_to(output).as_posix(),
+            **file_identity(product, 512*1024**2)}, derivation=derivation,
+            exportedHeader=exported_identity, selectedSources=before,
             limitations=['Library compile only; ComponentizeJS engine, splicer and signed runtime cases remain required.',
                         'No API/default-client qualification or physical allocation bound follows from this build.'])
         write_json(output/'library-build.json', record)
