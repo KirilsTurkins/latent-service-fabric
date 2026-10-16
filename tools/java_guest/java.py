@@ -142,9 +142,14 @@ def generate(graph: Graph, *, activation_profile: bool = False, fiber_io_profile
         for function in [f for f in graph.imports if f["interface"] == interface]:
             arguments = ", ".join(graph.jtype(p["type"]) + " arg" + str(i) for i, p in enumerate(function["params"]))
             output.append("public static " + graph.jtype(function.get("result")) + " " + jident(function["name"]) + "(" + arguments + ") {")
-            output.append("try (Wire.Writer arguments = new Wire.Writer()) {")
+            if function.get('asyncLowered'):
+                # Admission may fail normally. It must precede marshalling an
+                # own<T>, which closes the Java resource before native entry.
+                output.append("try (dev.latent.guest.runtime.HostCalls.Call hostCall = dev.latent.guest.runtime.HostCalls.admit(); Wire.Writer arguments = new Wire.Writer()) {")
+            else:
+                output.append("try (Wire.Writer arguments = new Wire.Writer()) {")
             output.extend(writer(graph, p["type"], "arg" + str(i), "arguments") for i, p in enumerate(function["params"]))
-            call = (f"arguments.call(dev.latent.guest.runtime.HostCalls::call, {function['operation']}, false)"
+            call = (f"arguments.call(hostCall::call, {function['operation']}, false)"
                     if function.get('asyncLowered') else f"arguments.call({function['operation']})")
             output.append(f"try (Wire.Reader input = {call}) {{")
             output.extend([graph.jtype(function.get("result")) + " result = " + reader(graph, function.get("result")) + ";",

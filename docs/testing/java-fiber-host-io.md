@@ -32,6 +32,20 @@ host authority or native thread is substituted by this selection.
 ## Ownership and readiness
 
 Every actually asynchronous WIT import is lowered using the pinned C generator.
+Generated callers admit their original Wait owner before marshalling arguments,
+so a declared quota refusal cannot consume an owned resource or acquire a borrow.
+The reservation is released if marshalling fails before native entry. Once native
+entry is attempted, only actual terminal completion permits release; uncertain
+acceptance keeps the reservation through Store destruction. The generated-Java
+admission control executes the real SDK bridge, resource wrapper and writer on
+the JDK with a controlled registry boundary. It checks owned and borrowed quota
+refusal, pre-entry Wait refund and uncertain-entry retention; it is a source control,
+separate from component execution.
+This fixes admission ordering. The existing writer still consumes each owned
+handle while serializing it; a later argument-encoding failure does not restore
+an earlier consumed handle. The malformed-string control proves the Wait refund,
+not a transaction across owned arguments.
+
 Its argument storage, result area and canonical subtask survive the suspended
 Java caller. The original Java Wait owner and resource borrows remain charged
 until the terminal result is decoded and the actual subtask is detached and

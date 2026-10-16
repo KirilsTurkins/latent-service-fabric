@@ -10,12 +10,28 @@ import org.teavm.runtime.Fiber;
 
 /** Selected SDK profile; ordinary callers keep their original WIT API. */
 public final class HostCalls {
-    private static final ArrayList<Pending> pending = new ArrayList<>();
+    private static final ArrayList<Call> pending = new ArrayList<>();
     private HostCalls() { }
-    private static final class Pending {
+    public static final class Call implements AutoCloseable {
         Address nativeCall;
         AsyncCallback<Integer> callback;
+        Activation.Lease wait;
+        boolean invoked;
+        boolean closed;
         boolean complete;
+        private Call() { }
+        public Address call(int operation, Address bytes, int length) {
+            if (closed || invoked) throw new IllegalStateException("host-import-call-already-used");
+            // Native acceptance becomes uncertain once suspension is entered.
+            // A later exception must not refund this reservation prematurely.
+            invoked = true;
+            return Address.fromInt(suspend(operation, bytes, length, this));
+        }
+        @Override public void close() {
+            if (closed) return;
+            closed = true;
+            if (!invoked || complete) wait.close();
+        }
     }
     @Import(name = "lsf_java_async_begin") private static native Address begin(int operation, Address bytes, int length);
     @Import(name = "lsf_java_async_state") private static native int state(Address call);
@@ -25,25 +41,20 @@ public final class HostCalls {
     @Import(name = "lsf_java_async_cancel_root_wait") private static native int cancelRootWait(Address call);
     public static boolean enabled() { return true; }
 
-    public static Address call(int operation, Address bytes, int length) {
+    public static Call admit() {
         if (Fiber.current() == null) throw new IllegalStateException("host-import-needs-owned-java-fiber");
-        Pending owner = new Pending();
-        var wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait);
-        try { return Address.fromInt(suspend(operation, bytes, length, owner)); }
-        finally {
-            // An exception after uncertain native acceptance retains the owner
-            // until Store destruction. Only an actual terminal take refunds it.
-            if (owner.complete) wait.close();
-        }
+        Call owner = new Call();
+        owner.wait = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Wait);
+        return owner;
     }
-    @Async private static native int suspend(int operation, Address bytes, int length, Pending owner);
-    private static void suspend(int operation, Address bytes, int length, Pending owner, AsyncCallback<Integer> callback) {
+    @Async private static native int suspend(int operation, Address bytes, int length, Call owner);
+    private static void suspend(int operation, Address bytes, int length, Call owner, AsyncCallback<Integer> callback) {
         owner.callback = callback;
         owner.nativeCall = begin(operation, bytes, length);
         if (state(owner.nativeCall) == 2) finish(owner);
         else pending.add(owner);
     }
-    private static void finish(Pending owner) {
+    private static void finish(Call owner) {
         Address result = take(owner.nativeCall, 0);
         owner.nativeCall = Address.fromInt(0);
         owner.complete = true;
@@ -53,7 +64,7 @@ public final class HostCalls {
         pollNative();
         boolean resumed = false;
         for (int index = 0; index < pending.size();) {
-            Pending owner = pending.get(index);
+            Call owner = pending.get(index);
             int observed = state(owner.nativeCall);
             if (observed < 2) { index++; continue; }
             if (observed != 2) throw new IllegalStateException("unexpected-host-import-cancellation");
@@ -64,7 +75,7 @@ public final class HostCalls {
         return resumed;
     }
     private static boolean readyCaller() {
-        for (Pending owner : pending) if (state(owner.nativeCall) >= 2) return true;
+        for (Call owner : pending) if (state(owner.nativeCall) >= 2) return true;
         return false;
     }
     public static boolean waitAny() {

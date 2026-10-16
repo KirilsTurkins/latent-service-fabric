@@ -8,7 +8,14 @@ public final class HostCalls {
     public static boolean enabled() { return false; }
     public static boolean poll() { return false; }
     public static boolean waitAny() { return false; }
-    public static Address call(int operation, Address bytes, int length) {
+    public static final class Call implements AutoCloseable {
+        private Call() { }
+        public Address call(int operation, Address bytes, int length) {
+            throw new IllegalStateException("fiber-aware-host-import-profile-not-selected");
+        }
+        @Override public void close() { }
+    }
+    public static Call admit() {
         throw new IllegalStateException("fiber-aware-host-import-profile-not-selected");
     }
     public static Address waitRoot(int operation, Address bytes, int length) {
