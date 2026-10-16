@@ -10,7 +10,7 @@ use latent_http::deferred::DeferredHttpAuthorization;
 #[tokio::test]
 async fn actual_retired_dispatch_policy_preserves_unavailable_without_provider_work() {
     let http = HttpFixture::new().await;
-    let setup = http.setup().await;
+    let mut setup = http.setup().await;
     let installed = installed(&setup).await;
     let operation = &setup.fixture.settings.operations[0];
     let scope = EffectScope {
@@ -65,6 +65,7 @@ async fn actual_retired_dispatch_policy_preserves_unavailable_without_provider_w
     let native = setup.kernel.native.clone();
     drop(payload);
     drop(installed);
+    setup.services.http = super::super::super::InstalledHttpEffects::empty();
     setup.finish().await;
     http.finish().await;
     assert!(native.snapshot().unwrap().physically_retired());
