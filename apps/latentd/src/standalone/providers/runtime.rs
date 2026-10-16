@@ -141,7 +141,7 @@ impl ProviderRuntime {
                     owner.record_scalar(
                         config,
                         &installation.identity,
-                        registration.reference(),
+                        &registration.reference(),
                         &mut providers,
                     );
                     owner.registrations.push(registration);
@@ -156,7 +156,7 @@ impl ProviderRuntime {
                     owner.record_scalar(
                         config,
                         &installation.identity,
-                        registration.reference(),
+                        &registration.reference(),
                         &mut providers,
                     );
                     owner.registrations.push(registration);
@@ -171,7 +171,7 @@ impl ProviderRuntime {
                 owner.record_scalar(
                     config,
                     &installation.identity,
-                    provider.reference(),
+                    &provider.reference(),
                     &mut providers,
                 );
                 owner.runtime.install_random(provider)?;
@@ -316,7 +316,7 @@ impl ProviderRuntime {
         &mut self,
         config: &crate::config::ConfiguredProviders,
         identity: &ProviderIdentity,
-        reference: ProviderReference,
+        reference: &ProviderReference,
         providers: &mut Vec<ConfiguredBindingProvider>,
     ) {
         providers.push(self.record(identity, reference.clone()));
