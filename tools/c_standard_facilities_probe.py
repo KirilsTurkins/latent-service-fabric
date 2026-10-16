@@ -15,7 +15,8 @@ LIBRARY = r'''#include "clock_probe.h"
 #include <time.h>
 #include <unistd.h>
 #include <wasi/api.h>
-extern int32_t __imported_wasi_snapshot_preview1_random_get(int32_t, int32_t);
+extern int32_t __imported_wasi_snapshot_preview1_random_get(int32_t, int32_t)
+    __attribute__((import_module("wasi_snapshot_preview1"), import_name("random_get")));
 int standard_probe(unsigned mode) {
     struct timespec first = {7, 8}, second = {0, 0};
     unsigned char bytes[4097];

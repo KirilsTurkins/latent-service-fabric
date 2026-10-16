@@ -18,5 +18,20 @@
   "diagnostic": "use of undeclared identifier 'CLOCK_PROCESS_CPUTIME_ID'",
   "disposition": "Retain the unsupported POSIX declaration as a compiler limitation. A separate raw WASI clock-ID denial probe requires ENOTSUP and an unchanged output value; it does not claim POSIX CPU-time support.",
   "originalLimitsChanged": false,
-  "signedNodeExecution": "not-run-because-compilation-failed"
+  "signedNodeExecution": "not-run-because-compilation-failed",
+  "subsequentAttempts": [
+    {
+      "candidateHead": "6408e376ebaae651feb505e2dd4982d91dedce0a",
+      "testedMerge": "6e5188031b4d95a3d89810a6d2c74957388f0068",
+      "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38826779587/job/116736256765",
+      "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38826779587/artifacts/12016447982",
+      "artifactBytes": 43325,
+      "artifactSha256": "840ea35f3e399f5fa39b13c8f9332804fe95165d293f5ea6b434849d0c999211",
+      "stage": "link",
+      "diagnostic": "import module mismatch for symbol: __imported_wasi_snapshot_preview1_random_get",
+      "disposition": "The raw ABI fixture declaration must match pinned libc's wasi_snapshot_preview1 module and random_get import name. Preserve the SDK implementation, raw null/zero checks and original limits.",
+      "signedNodeExecution": "not-run-because-linking-failed",
+      "correctedExecution": "pending"
+    }
+  ]
 }
