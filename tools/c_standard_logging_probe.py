@@ -116,6 +116,16 @@ def prepare(project: Path) -> dict:
             'lockDigest': digest((project / dependencies.LOCK).read_bytes()), 'extraCases': list(CASES)}
 
 
+def configure(settings):
+    from tools.phase2_operator_process import require
+    providers = settings['providers']
+    require('log' not in providers, 'c-standard-stdio-log-installation-already-selected')
+    providers['log'] = {'identity': {'id': 'log', 'tenant': 'examples', 'service': 'runtime-host', 'epoch': 1}}
+    providers['bindings'].append({'name': 'log-greeting', 'tenant': 'examples',
+        'consumerService': 'examples/my-greeting', 'providerService': 'runtime-host',
+        'contract': 'latent:log/log@0.1.0', 'providerBinding': 'log-installed'})
+
+
 def grant_and_probe(client, node, fixture, targets, publications, result):
     from tools.c_standard_facilities_probe import require_denied_before_guest
     from tools.phase2_operator_process import require
@@ -129,6 +139,18 @@ def grant_and_probe(client, node, fixture, targets, publications, result):
     require_denied_before_guest(denied)
     policy = client.directory / 'standard-stdio-policy.json'
     capability = 'latent:log/log@0.1.0'
+    installed = [row for row in node.startup_record['providers'] if row['id'] == 'log']
+    require(len(installed) == 1 and installed[0]['capability'] == capability
+            and installed[0]['profile'] == 'activation-log-v1'
+            and installed[0]['tenant'] == 'examples' and installed[0]['service'] == 'runtime-host',
+            'c-standard-stdio-provider-identity')
+    descriptor = installed[0]
+    binding = client.directory / 'standard-stdio-binding.json'
+    write_json(binding, {'formatVersion': 1, 'tenant': 'examples', 'capability': capability,
+        'providerProfile': descriptor['profile'], 'configurationDigest': descriptor['configurationDigest'],
+        'configurationEpoch': 1, 'restriction': {'operations': ['write']}})
+    client.call('policy', '--kind', 'provider-binding', 'apply', '--id', 'log-installed', '--file', binding,
+                '--operation-id', 'install-standard-stdio', '--expected-generation', '0')
     write_json(policy, {'formatVersion': 1, 'tenant': 'examples', 'rules': [{
         'id': 'stdio', 'effect': 'allow', 'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
         'services': [target['service']], 'publications': [publications['greeting']], 'capability': capability,

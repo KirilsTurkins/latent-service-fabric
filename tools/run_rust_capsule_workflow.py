@@ -91,6 +91,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                 config, settings = configure(work / "node", fixture, port,
                     runtime_grants=language in {"go", "dotnet", "java"} or c_standard_facilities, language=language,
                     noncrypto_entropy=noncrypto_entropy)
+                if c_standard_logging:
+                    from tools.c_standard_logging_probe import configure as configure_logging
+                    configure_logging(settings)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
                 # stay private and no token is copied into the exported receipt.
