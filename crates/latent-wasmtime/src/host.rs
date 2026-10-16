@@ -15,6 +15,7 @@ pub(crate) mod events;
 pub(crate) mod http;
 mod logging;
 pub(crate) mod metrics;
+pub(crate) mod native;
 pub(crate) mod networking;
 mod owned_context;
 pub(crate) mod policy;

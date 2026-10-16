@@ -134,6 +134,15 @@ impl PreparationContext {
                 )
             })?;
         }
+        if self.config.owned_native_threads {
+            crate::host::native::install(&mut linker).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    "failed to bind owned native thread support",
+                    false,
+                )
+            })?;
+        }
         self.install_transaction_imports(&mut linker)?;
         if let Some(invoker) = self.local_services() {
             crate::host::service::install(&mut linker, invoker).map_err(|error| {

@@ -61,6 +61,9 @@ impl CompilerEngineSettings {
         engine_config.wasm_component_model(true);
         engine_config.wasm_component_model_async(true);
         engine_config.wasm_component_model_more_async_builtins(self.activation_import_cancellation);
+        // Physical stack admission alone does not bound suspended canonical
+        // thread metadata. Keep creation closed until the fixed shim is checked.
+        engine_config.wasm_component_model_threading(false);
         // Security upgrades must not admit new, unqualified value shapes.
         engine_config.wasm_component_model_fixed_length_lists(false);
         // Preserve the ordinary profile's pre-Java typed function references.

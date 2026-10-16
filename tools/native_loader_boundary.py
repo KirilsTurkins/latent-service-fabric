@@ -45,7 +45,9 @@ FIXED_RESULT_SHA256 = "7122f099bd89829ec74f652620cf61f9710674b1e6deab4a38b4bb4c1
 # Canonical thread creation remains closed. Bind the entire source, so adding
 # another unsafe operation or changing the physical retirement fence needs review.
 NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
-NATIVE_STACK_SHA256 = "2f528f523b7788131f02796f9231ad93f228a60c1a45fad27aa3b24b2ca71462"
+NATIVE_STACK_CHILD = f"{CRATE}/src/native_stacks/children.rs"
+NATIVE_STACK_CHILD_SHA256 = "130fdad6c74f7be053e02ac7e7003d5b623c5139a28b0517a8982024c9256ca0"
+NATIVE_STACK_SHA256 = "be39533048a5b48d20524ce3193d9c4ac3acabe5c0edf29bd6ef95b0bcce5f23"
 ALLOW = '''#[allow(
     unsafe_code,
     reason = "the sole native loader accepts only a private proof over authenticated immutable bytes"
@@ -121,6 +123,10 @@ def validate(root: Path) -> list[str]:
                 errors.append("audited native-stack allocator changed; review original admission and physical unmapping")
             else:
                 source = ""
+        elif relative == NATIVE_STACK_CHILD:
+            if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_CHILD_SHA256:
+                errors.append("audited native child admission/retirement changed; review original permits, waits and physical completion")
+            # No unsafe allowance is granted to the child state machine.
         if unsafe.search(source) or lowered.search(source):
             errors.append(f"unreviewed unsafe code or allowance in {relative}")
     return errors

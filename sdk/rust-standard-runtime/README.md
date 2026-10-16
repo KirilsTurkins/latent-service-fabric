@@ -137,3 +137,17 @@ before the original lease is reusable. The maintained clock job runs both
 gates. Native execution is required before this source can be called qualified;
 this foundation does not implement ordinary Rust threads, synchronization,
 timers, reactors or default executors.
+
+The next staged native-thread interface keeps each child pre-start permit,
+actual mapping and exact physical retirement notification under that same
+activation. Its bounded child metadata inventory reserves memory before
+allocation. A join reserves an original Wait and retains it through actual
+completion consumption and reaping; a guest flag cannot publish that event.
+Only successful host unmapping signals it. The interface source and generated
+host types are separate from the frozen activation WIT. The explicitly selected
+`owned_native_threads` profile recognizes the V6 support interface and requires
+the guarded-stack profile and original activation limits. It grants no authority;
+the ordinary default stays V5. Canonical thread creation remains disabled until
+the authenticated sole-consumer shim is checked. The standard thread/futex
+overlay and actual compiler/signed execution are still required before this
+source can qualify ordinary Rust threads.

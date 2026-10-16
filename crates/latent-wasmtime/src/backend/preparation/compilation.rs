@@ -204,6 +204,7 @@ impl super::super::PreparationContext {
             artifact,
             &self.config,
             surface::Providers {
+                native_threads: self.config.owned_native_threads,
                 activation_runtime: self.config.activation_runtime.is_some(),
                 local_services: self.local_services().is_some(),
                 http: self.http().is_some(),

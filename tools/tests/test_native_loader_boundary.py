@@ -98,6 +98,20 @@ all = "warn"
                     "Component::deserialize(engine, proof.bytes())", replacement))
                 self.assertTrue(boundary.validate(self.root))
 
+    def test_child_admission_and_retirement_notification_cannot_be_bypassed(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK_CHILD).read_text(encoding="utf-8")
+        self.write(boundary.NATIVE_STACK_CHILD, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for before, after in (
+            ('self.phase.load(Ordering::Acquire) == 2', 'true'),
+            ('runtime.register(OwnerKind::Wait, Some(continuation))?', 'unrelated_runtime.register(OwnerKind::Wait, Some(continuation))?'),
+            ('children.pending.is_some()', 'false'),
+        ):
+            with self.subTest(change=before):
+                self.assertIn(before, source)
+                self.write(boundary.NATIVE_STACK_CHILD, source.replace(before, after))
+                self.assertTrue(boundary.validate(self.root))
+
     def test_allowance_cannot_expand_to_module_or_another_function(self) -> None:
         self.write(boundary.LOADER, self.loader.replace(
             "fn deserialize_authenticated(", "fn unrelated() {}\nfn deserialize_authenticated("))

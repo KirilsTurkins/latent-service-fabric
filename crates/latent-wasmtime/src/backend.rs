@@ -790,6 +790,15 @@ impl WasmtimeBackend {
             crate::host::runtime::prepare_native_stack(
                 &mut host_state,
                 self.config.async_stack_bytes,
+                if self.config.owned_native_threads {
+                    self.config
+                        .activation_runtime
+                        .expect("validated original runtime")
+                        .native_owners
+                        .saturating_sub(1) as usize
+                } else {
+                    0
+                },
             )?;
             // Native admission was charged before the first engine counter is
             // installed. Its original fuel is never copied into a fresh allowance.
