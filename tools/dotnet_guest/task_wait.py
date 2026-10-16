@@ -19,6 +19,8 @@ BODY_IDENTITIES = {
     'originalWaitBodyDigest': 'sha256:9b5bc35a1a68b80111c7eddc9cbc0903e6062d4e5e3b8f84e8f359445dd6e875',
     'originalLoopBodyDigest': 'sha256:1631857d71d2e5ecca2e22c95a6421aaecf016d9cba018412388b2d1c6646e19',
     'originalDispatchBodyDigest': 'sha256:05e0128b899121d13842a4c76993d2becaaebe2e57ecff53f1ea750ba39ba629',
+    'originalContextBodyDigest': 'sha256:865b97bff2c7df2a4ce36e8b802dc2a98f5865dbaf6119def4e85d21288afa29',
+    'originalContextRestoreBodyDigest': 'sha256:d55f695b66f4e330e22b6e1d3aae2ce29c4d1ce059cf9c7a7b4afc0da9dc837a',
 }
 
 
@@ -47,7 +49,9 @@ def validate_receipt(value: dict) -> None:
         'method': METHOD, **BODY_IDENTITIES, 'maximumNestedWaits': 32,
         'finiteAndCancellableWaits': 'original-unsupported', 'completion': 'actual-task-only',
         'exceptionPropagation': 'original-TaskAwaiter', 'nestedTaskIdentity': 'save-restore-finally',
-        'defaultClientComponentQualified': False, 'completeOriginalWaitRemainderPreserved': True}
+        'defaultClientComponentQualified': False, 'completeOriginalWaitRemainderPreserved': True,
+        'callerContexts': 'original-RunInternal-Default', 'contextNotifications': 'original-runtime',
+        'generatedHelperCount': 2, 'contextCallback': 'same-CoreLib-ContextCallback(object)'}
     if (set(value) != set(fixed) | {'outputDigest', 'unchangedOriginalMethods'}
             or any(type(value.get(key)) is not type(expected) or value[key] != expected for key, expected in fixed.items())
             or type(value['unchangedOriginalMethods']) is not int

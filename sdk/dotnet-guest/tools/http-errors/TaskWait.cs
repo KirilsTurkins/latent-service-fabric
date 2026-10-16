@@ -14,7 +14,10 @@ internal static class TaskWait
     private const string WaitDigest = "9b5bc35a1a68b80111c7eddc9cbc0903e6062d4e5e3b8f84e8f359445dd6e875";
     private const string LoopDigest = "1631857d71d2e5ecca2e22c95a6421aaecf016d9cba018412388b2d1c6646e19";
     private const string DispatchDigest = "05e0128b899121d13842a4c76993d2becaaebe2e57ecff53f1ea750ba39ba629";
+    private const string ContextDigest = "865b97bff2c7df2a4ce36e8b802dc2a98f5865dbaf6119def4e85d21288afa29";
+    private const string RestoreDigest = "d55f695b66f4e330e22b6e1d3aae2ce29c4d1ce059cf9c7a7b4afc0da9dc837a";
     private const string Helper = "LsfWaitForActualTaskCompletion";
+    private const string Pump = "LsfDispatchUntilActualTaskCompletion";
     private const string Depth = "s_lsfTaskWaitDepth";
 
     private static string Hash(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
@@ -94,20 +97,36 @@ internal static class TaskWait
             var task = module.Types.Single(type => type.FullName == "System.Threading.Tasks.Task");
             var loop = module.Types.Single(type => type.FullName == "System.Threading.WasiEventLoop");
             var queue = module.Types.Single(type => type.FullName == "System.Threading.ThreadPoolWorkQueue");
+            var context = module.Types.Single(type => type.FullName == "System.Threading.ExecutionContext");
+            var callback = module.Types.Single(type => type.FullName == "System.Threading.ContextCallback");
             var wait = task.Methods.Single(method => method.Name == "InternalWaitCore");
             var previousLoop = loop.Methods.Single(method => method.Name == "PollWasiEventLoopUntilResolvedVoid");
             var dispatch = queue.Methods.Single(method => method.Name == "Dispatch");
             var completed = task.Methods.Single(method => method.Name == "get_IsCompleted");
             var current = loop.Fields.Single(field => field.Name == "s_mainTask");
+            var runContext = context.Methods.Single(method => method.Name == "RunInternal");
+            var restoreContext = context.Methods.Single(method => method.Name == "RestoreChangedContextToThread");
+            var defaultContext = context.Fields.Single(field => field.Name == "Default");
+            var callbackConstructor = callback.Methods.Single(method => method.IsConstructor && method.Parameters.Count == 2);
             Require(!wait.IsStatic && wait.ReturnType.MetadataType == MetadataType.Boolean && wait.Parameters.Count == 2 &&
                 wait.Parameters[0].ParameterType.MetadataType == MetadataType.Int32 &&
                 wait.Parameters[1].ParameterType.FullName == "System.Threading.CancellationToken" &&
                 current.IsStatic && current.FieldType.FullName == task.FullName &&
                 dispatch.IsStatic && dispatch.Parameters.Count == 0 && dispatch.ReturnType.MetadataType == MetadataType.Boolean &&
-                !loop.Methods.Any(method => method.Name == Helper) && !loop.Fields.Any(field => field.Name == Depth));
+                runContext.IsStatic && runContext.ReturnType.MetadataType == MetadataType.Void && runContext.Parameters.Count == 3 &&
+                runContext.Parameters[0].ParameterType.FullName == context.FullName &&
+                runContext.Parameters[1].ParameterType.FullName == callback.FullName &&
+                runContext.Parameters[2].ParameterType.MetadataType == MetadataType.Object &&
+                defaultContext.IsStatic && defaultContext.IsInitOnly && defaultContext.FieldType.FullName == context.FullName &&
+                callback.BaseType.FullName == "System.MulticastDelegate" &&
+                callbackConstructor.Parameters[0].ParameterType.MetadataType == MetadataType.Object &&
+                callbackConstructor.Parameters[1].ParameterType.MetadataType == MetadataType.IntPtr &&
+                !loop.Methods.Any(method => method.Name == Helper || method.Name == Pump) && !loop.Fields.Any(field => field.Name == Depth));
             Body(pe, wait, 224, WaitDigest);
             Body(pe, previousLoop, 44, LoopDigest);
             Body(pe, dispatch, 556, DispatchDigest);
+            Body(pe, runContext, 132, ContextDigest);
+            Body(pe, restoreContext, 37, RestoreDigest);
             var originalMap = Methods(module);
             var waitKey = originalMap.Single(item => item.Value == wait).Key;
             var originalMethods = originalMap.ToDictionary(item => item.Key, item => BodyIdentity(item.Value));
@@ -125,17 +144,37 @@ internal static class TaskWait
                     method.Parameters[0].ParameterType.MetadataType == MetadataType.String);
             var depth = new FieldDefinition(Depth, FieldAttributes.Private | FieldAttributes.Static, module.TypeSystem.Int32);
             loop.Fields.Add(depth);
+            var pump = new MethodDefinition(Pump, MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
+                module.TypeSystem.Void);
+            pump.Parameters.Add(new ParameterDefinition(module.TypeSystem.Object));
+            pump.Body.InitLocals = true;
+            pump.Body.MaxStackSize = 1;
+            var active = new VariableDefinition(task);
+            pump.Body.Variables.Add(active);
+            var dispatchIl = pump.Body.GetILProcessor();
+            var again = dispatchIl.Create(OpCodes.Call, dispatch);
+            var check = dispatchIl.Create(OpCodes.Ldloc, active);
+            dispatchIl.Emit(OpCodes.Ldarg_0);
+            dispatchIl.Emit(OpCodes.Castclass, task);
+            dispatchIl.Emit(OpCodes.Stloc, active);
+            dispatchIl.Emit(OpCodes.Br, check);
+            dispatchIl.Append(again);
+            dispatchIl.Emit(OpCodes.Pop);
+            dispatchIl.Append(check);
+            dispatchIl.Emit(OpCodes.Callvirt, completed);
+            dispatchIl.Emit(OpCodes.Brfalse, again);
+            dispatchIl.Emit(OpCodes.Ret);
+            loop.Methods.Add(pump);
             var helper = new MethodDefinition(Helper, MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig,
                 module.TypeSystem.Boolean);
             helper.Parameters.Add(new ParameterDefinition(task));
             helper.Body.InitLocals = true;
-            helper.Body.MaxStackSize = 2;
+            helper.Body.MaxStackSize = 3;
             var previous = new VariableDefinition(task);
             helper.Body.Variables.Add(previous);
             var il = helper.Body.GetILProcessor();
             var admitted = il.Create(OpCodes.Ldsfld, current);
             var body = il.Create(OpCodes.Ldarg_0);
-            var again = il.Create(OpCodes.Call, dispatch);
             var cleanup = il.Create(OpCodes.Ldloc, previous);
             var done = il.Create(OpCodes.Ldc_I4_1);
             il.Emit(OpCodes.Ldsfld, depth);
@@ -152,13 +191,15 @@ internal static class TaskWait
             il.Emit(OpCodes.Stsfld, depth);
             il.Append(body);
             il.Emit(OpCodes.Stsfld, current);
-            var check = il.Create(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Br, check);
-            il.Append(again);
-            il.Emit(OpCodes.Pop);
-            il.Append(check);
-            il.Emit(OpCodes.Callvirt, completed);
-            il.Emit(OpCodes.Brfalse, again);
+            // Dispatch deliberately enters with default contexts. RunInternal
+            // restores the raw caller context (including suppressed flow),
+            // SynchronizationContext and AsyncLocal notifications on every exit.
+            il.Emit(OpCodes.Ldsfld, defaultContext);
+            il.Emit(OpCodes.Ldnull);
+            il.Emit(OpCodes.Ldftn, pump);
+            il.Emit(OpCodes.Newobj, callbackConstructor);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Call, runContext);
             il.Emit(OpCodes.Leave, done);
             il.Append(cleanup);
             il.Emit(OpCodes.Stsfld, current);
@@ -186,13 +227,18 @@ internal static class TaskWait
                 entry.Create(OpCodes.Ldarg_0), entry.Create(OpCodes.Call, helper), entry.Create(OpCodes.Ret),
             ];
             foreach (var instruction in prologue) entry.InsertBefore(originalEntry, instruction);
+            var generatedHelpers = new[] { helper, pump }.ToDictionary(method => method.FullName, method => BodyIdentity(method));
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
             {
                 var methods = Methods(written);
-                Require(methods.Count == originalMethods.Count + 1 && methods.Values.Count(method => method.FullName == helper.FullName) == 1);
+                Require(methods.Count == originalMethods.Count + 2 &&
+                    methods.Values.Count(method => method.FullName == helper.FullName) == 1 &&
+                    methods.Values.Count(method => method.FullName == pump.FullName) == 1);
                 foreach (var (name, identity) in originalMethods)
                     Require(methods.ContainsKey(name) && BodyIdentity(methods[name], name == waitKey ? prologue.Length : 0) == identity);
+                foreach (var (name, identity) in generatedHelpers)
+                    Require(BodyIdentity(methods.Values.Single(method => method.FullName == name)) == identity);
                 var fields = written.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName).ToHashSet();
                 Require(fields.Count == originalFields.Count + 1 && fields.Remove(depth.FullName) && fields.SetEquals(originalFields));
             }
@@ -202,9 +248,12 @@ internal static class TaskWait
                 outputDigest = "sha256:" + FileDigest(output, 8 * 1024 * 1024), cecilDigest = "sha256:" + CecilDigest,
                 method = wait.FullName, originalWaitBodyDigest = "sha256:" + WaitDigest,
                 originalLoopBodyDigest = "sha256:" + LoopDigest, originalDispatchBodyDigest = "sha256:" + DispatchDigest,
+                originalContextBodyDigest = "sha256:" + ContextDigest, originalContextRestoreBodyDigest = "sha256:" + RestoreDigest,
                 maximumNestedWaits = 32, finiteAndCancellableWaits = "original-unsupported",
                 completion = "actual-task-only", exceptionPropagation = "original-TaskAwaiter",
                 nestedTaskIdentity = "save-restore-finally", defaultClientComponentQualified = false,
+                callerContexts = "original-RunInternal-Default", contextNotifications = "original-runtime",
+                generatedHelperCount = 2, contextCallback = "same-CoreLib-ContextCallback(object)",
                 unchangedOriginalMethods = originalMethods.Count - 1, completeOriginalWaitRemainderPreserved = true,
             };
             using var destination = new FileStream(receipt, FileMode.CreateNew, FileAccess.Write, FileShare.None);

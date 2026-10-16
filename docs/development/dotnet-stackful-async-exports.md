@@ -145,14 +145,19 @@ noncancellable wait token runs the original WASI work queue until that actual
 Task completes. The original event loop still performs its real WASI readiness
 polls. The helper saves and restores the previous main Task in `finally`,
 limits nested waits to 32, and leaves fault/cancellation propagation to the
-original TaskAwaiter. Finite waits and waits with a cancellable wait token
+original TaskAwaiter. Its private callback enters the unchanged dispatcher
+through CoreLib's `ExecutionContext.RunInternal(Default, callback, actualTask)`.
+That original primitive restores the raw caller ExecutionContext, including
+suppressed flow, SynchronizationContext, culture and AsyncLocal notifications
+before the join returns or throws. This matters because Dispatch deliberately
+clears both current-thread context fields. Finite waits and waits with a cancellable wait token
 retain the original unsupported path. This is a bounded joined-wait candidate,
 not complete Task, ThreadPool or detached-work compatibility.
 
 The transformer authenticates the complete CoreLib and exact original wait,
-event-loop and dispatch IL. After writing it reopens the assembly, verifies
+event-loop, dispatch, RunInternal and context-restoration IL. After writing it reopens the assembly, verifies
 all 44,745 other original methods, their bodies where present, and fields, and verifies the complete
-original wait remainder behind the selected prologue. Normal compilation
+original wait remainder behind the selected prologue and both new helper bodies. Normal compilation
 must bind exactly one derived CoreLib in both the ILC reference list and its
 actual response file. Original packages, captured sources, derived bytes and
 targets are rechecked; unselected profiles keep their original CoreLib.
@@ -160,7 +165,13 @@ targets are rechecked; unselected profiles keep their original CoreLib.
 The [managed tool control](../testing/evidence/dotnet-task-wait-source-2026-10-16.json)
 rewrote the actual pinned assembly twice deterministically and rejected a
 whole-assembly mutation before output. It used host SDK 10.0.303 and is not
-locked Linux NativeAOT 10.0.100 or guest execution. Ten additional controls
+locked Linux NativeAOT 10.0.100 or guest execution. A separate host CoreLib
+reference control exercises normal, faulted, cancelled, nested and throwing
+callbacks with suppressed and ordinary flow, culture, custom synchronization
+contexts and AsyncLocal change notifications. Both unwrapped negative cases
+lose caller state as expected. All 12 cases run on owned host threads; this
+does not execute the pinned WASI CoreLib or qualify its runtime behavior.
+Eleven additional compiler controls
 cover profile selection, source/target/product drift and exact reference and
 receipt binding. The unchanged 14-case signed HTTP gate, pending cancellation,
 physical retirement, budget/readiness behavior and the wider #746 runtime

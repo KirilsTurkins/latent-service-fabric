@@ -139,6 +139,14 @@ class TaskWaitPortTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'rewrite-receipt'):
                 task_wait.validate_receipt(changed)
 
+    def test_receipt_cannot_drop_real_context_notifications_or_use_capture_only(self):
+        for key, value in (('callerContexts', 'Capture-only'), ('contextNotifications', 'none'),
+                           ('generatedHelperCount', 1), ('contextCallback', 'outside-assembly'),
+                           ('originalContextBodyDigest', digest(b'changed')),
+                           ('originalContextRestoreBodyDigest', digest(b'changed'))):
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'rewrite-receipt'):
+                task_wait.validate_receipt({**self.receipt, key: value})
+
 
 if __name__ == '__main__':
     unittest.main()

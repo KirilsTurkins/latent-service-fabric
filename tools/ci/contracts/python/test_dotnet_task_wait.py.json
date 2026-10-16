@@ -6,107 +6,24 @@
     "TaskWaitPortTests.test_equal_size_derived_or_retained_assembly_mutation_is_rejected",
     "TaskWaitPortTests.test_missing_declaration_or_async_root_never_reads_tools_or_starts_rewrite",
     "TaskWaitPortTests.test_original_source_drift_is_rejected_after_rewrite",
+    "TaskWaitPortTests.test_receipt_cannot_drop_real_context_notifications_or_use_capture_only",
     "TaskWaitPortTests.test_receipt_cannot_promote_completion_or_weaken_original_method_checks",
     "TaskWaitPortTests.test_target_drift_is_rejected_after_rewrite",
     "TaskWaitPortTests.test_wrong_bridge_and_noninteger_or_excess_export_counts_fail_before_tool",
     "TaskWaitPortTests.test_wrong_original_reference_cannot_survive_native_binding"
   ],
   "guards": {
-    "TaskWaitPortTests.test_captured_tool_source_drift_is_rejected_after_rewrite": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
-      ],
-      "skipSites": []
-    },
-    "TaskWaitPortTests.test_derived_assembly_and_targets_are_protected_before_project_import": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
-      ],
-      "skipSites": []
-    },
-    "TaskWaitPortTests.test_duplicate_native_response_files_cannot_claim_a_single_binding": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
-      ],
-      "skipSites": []
-    },
-    "TaskWaitPortTests.test_equal_size_derived_or_retained_assembly_mutation_is_rejected": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
-      ],
-      "skipSites": []
-    },
     "TaskWaitPortTests.test_missing_declaration_or_async_root_never_reads_tools_or_starts_rewrite": {
       "bases": [
         "unittest.TestCase"
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
         "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
-      ],
-      "skipSites": []
-    },
-    "TaskWaitPortTests.test_original_source_drift_is_rejected_after_rewrite": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
-      ],
-      "skipSites": []
-    },
-    "TaskWaitPortTests.test_receipt_cannot_promote_completion_or_weaken_original_method_checks": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
-      ],
-      "skipSites": []
-    },
-    "TaskWaitPortTests.test_target_drift_is_rejected_after_rewrite": {
-      "bases": [
-        "unittest.TestCase"
-      ],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": [
-        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
-      ],
-      "skipSites": []
+      ]
     },
     "TaskWaitPortTests.test_wrong_bridge_and_noninteger_or_excess_export_counts_fail_before_tool": {
       "bases": [
@@ -114,11 +31,23 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
         "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
+      ]
+    },
+    "TaskWaitPortTests.test_derived_assembly_and_targets_are_protected_before_project_import": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
+        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
+      ]
     },
     "TaskWaitPortTests.test_wrong_original_reference_cannot_survive_native_binding": {
       "bases": [
@@ -126,15 +55,99 @@
       ],
       "classDecorators": [],
       "decorators": [],
+      "skipSites": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
         "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
+      ]
+    },
+    "TaskWaitPortTests.test_duplicate_native_response_files_cannot_claim_a_single_binding": {
+      "bases": [
+        "unittest.TestCase"
       ],
-      "skipSites": []
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
+        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
+      ]
+    },
+    "TaskWaitPortTests.test_original_source_drift_is_rejected_after_rewrite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
+        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
+      ]
+    },
+    "TaskWaitPortTests.test_captured_tool_source_drift_is_rejected_after_rewrite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
+        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
+      ]
+    },
+    "TaskWaitPortTests.test_target_drift_is_rejected_after_rewrite": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
+        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
+      ]
+    },
+    "TaskWaitPortTests.test_equal_size_derived_or_retained_assembly_mutation_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
+        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
+      ]
+    },
+    "TaskWaitPortTests.test_receipt_cannot_promote_completion_or_weaken_original_method_checks": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
+        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
+      ]
+    },
+    "TaskWaitPortTests.test_receipt_cannot_drop_real_context_notifications_or_use_capture_only": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
+        "class:setup-sha256:a29b151b9cf4046883d0a82bfd9d0a953b9a7ac3df6021d5221df44e9376627f"
+      ]
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_task_wait.py",
-  "reviewReason": "Bind the ten private CoreLib profile, immutable input, original method receipt and single ILC reference fences; no skips or runtime qualification substitution",
+  "reviewReason": "Preserve all ten original CoreLib/profile/input/method/ILC guards; add exact RunInternal context/delegate/notification receipt denial controls. No skips or runtime qualification substitution.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
