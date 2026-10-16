@@ -59,6 +59,8 @@ def prepare(compiler, source: Path, world: str, output: Path, declared: list[str
     from tools.dotnet_guest import async_exports, runtime
     from tools.dotnet_guest_bindings import contract_graph, selected_world_metadata, stackful_projection
     from tools.rust_capsule_project import digest, read_file, write_json
+    if runtime.ACTIVATION not in declared:
+        return source, None
     original = compiler.run('retirement-public-wit', compiler.wasm, 'component', 'wit', source, '--no-docs').decode()
     if len(original.encode()) > MAX_TEXT or 'latent:dotnet-retirement' in original:
         raise ValueError('dotnet-retirement-reserved-source-or-size')
@@ -67,7 +69,7 @@ def prepare(compiler, source: Path, world: str, output: Path, declared: list[str
         raise ValueError('dotnet-retirement-original-graph-byte-limit')
     graph = contract_graph(json.loads(original_graph))
     _projected, _graph, count = async_exports.projection(original, graph, world, stackful_projection)
-    if runtime.ACTIVATION not in declared or not count:
+    if not count:
         return source, None
     selected = selected_world_metadata(original, graph, world)
     openings = list(re.finditer(r'(?m)^world (%?[A-Za-z][A-Za-z0-9-]*) \{', selected))

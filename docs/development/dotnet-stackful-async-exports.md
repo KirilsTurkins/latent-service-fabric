@@ -134,6 +134,9 @@ it through the selected runtime adapter. Public source WIT remains unchanged;
 actual encoder comparisons require its complete graph to survive adding and
 removing only that private edge. The final composed component must retain no
 additional host authority or public retirement export.
+Applications without the activation interface return their original source
+before any retirement compiler query. A synchronous root does not select the
+private edge merely because it imports the activation interface.
 
 The private async drain drops each retained future under its original canonical
 task owner before releasing its resources and quota slot. The pinned generator's
@@ -143,9 +146,9 @@ causes a closed failure. Queue capacity remains 32, and ownership is retained
 until draining. This is not a CLR sibling-task scheduler or a proof that every
 managed task has retired.
 
-Four source controls cover the exact private interface, unchanged public graph
+Five source controls cover the exact private interface, unchanged public graph
 boundary, real task-return/pin ordering and rejection of ambiguous interface
-identities. Actual pinned encoder and C# generator controls pass, including
+identities, plus unchanged unselected-profile behavior. Actual pinned encoder and C# generator controls pass, including
 generator drift verification. Rust binding generation passes for all three
 adapter worlds. A separate host SDK 10.0.303 compilation of the actual generated
 bindings with the unchanged standard HttpClient fixture reports zero warnings

@@ -9,6 +9,14 @@ from tools.dotnet_guest import async_exports, retirement
 
 
 class RetirementTests(unittest.TestCase):
+    def test_unselected_profile_preserves_public_source_without_compiler_commands(self):
+        from types import SimpleNamespace
+        from tools.dotnet_guest import runtime
+        compiler = SimpleNamespace(run=lambda *args:self.fail('unselected retirement invoked the compiler'))
+        source, output = Path('unselected-source'), Path('unselected-retirement-output')
+        self.assertEqual(retirement.prepare(compiler,source,'test:app/service@1.0.0',output,[runtime.CLOCK]),
+            (source,None))
+
     def graph(self):
         imported = {'owner':{'interface':{'id':0}}}
         return {'worlds':[{'imports':imported},{'imports':copy.deepcopy(imported)}],
