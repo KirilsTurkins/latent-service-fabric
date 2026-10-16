@@ -8127,7 +8127,9 @@
         "random::generated_random_binding_and_reused_cell",
         "secrets::secret_owner_typed_denial_cancellation_and_cell_recovery",
         "service::typed_service_outcomes_use_node_admission_and_reused_cells",
-        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop"
+        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop",
+        "random::standard_java_entropy_preserves_provider_length_and_activation_budget_failures",
+        "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells"
       ],
       "expectedIgnored": [
         "all_rust_examples_are_exact_signed_phase2_packages",
@@ -8139,7 +8141,9 @@
         "random::generated_random_binding_and_reused_cell",
         "secrets::secret_owner_typed_denial_cancellation_and_cell_recovery",
         "service::typed_service_outcomes_use_node_admission_and_reused_cells",
-        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop"
+        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop",
+        "random::standard_java_entropy_preserves_provider_length_and_activation_budget_failures",
+        "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells"
       ],
       "id": "latent-wasmtime.test.guest-sdk",
       "ignoredLeaves": [
@@ -8152,11 +8156,13 @@
         "secret_owner_typed_denial_cancellation_and_cell_recovery",
         "streaming_ownership_and_independent_chunks_survive_body_drop",
         "typed_event_receipt_denial_and_uncertainty_do_not_retry",
-        "typed_service_outcomes_use_node_admission_and_reused_cells"
+        "typed_service_outcomes_use_node_admission_and_reused_cells",
+        "standard_java_entropy_preserves_provider_length_and_activation_budget_failures",
+        "standard_java_entropy_uses_original_system_provider_and_fresh_cells"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 10,
+      "minimumCases": 12,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
