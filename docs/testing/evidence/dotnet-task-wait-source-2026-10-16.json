@@ -148,7 +148,8 @@
   "status": "passed",
   "peakTemporaryBytes": 12380510,
   "scopedCleanupComplete": true,
-  "sourceInputBoundary": "exact staged Git blobs; managed CLI five input files and reference control two input files each match compiled raw LF bytes; binding sources separately authenticated",
+  "sourceInputBoundary": "exact parent Git source blobs; inherited managed CLI and host context reference proof; this child retirement compiler wiring requires separate native qualification",
   "runtimeFailureCauseProven": false,
-  "fullTicketQualified": false
+  "fullTicketQualified": false,
+  "sourceRevision": "b4a096e3b0dd1fc368ec6b54469ccebbaae6fbc3"
 }

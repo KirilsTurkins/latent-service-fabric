@@ -166,8 +166,11 @@ import exactly once to the primary runtime. Additional facets cannot provide
 or duplicate it. The final private-import/export and undeclared-authority
 checks remain in place. Six new composition controls retain all eleven earlier
 cases and guards, including byte-identical unselected composition and the
-existing denial controls. Corrected actual composition and signed execution
-remain pending; the original failed graph and receipts remain retained.
+existing denial controls. The following actual build on 3cd580ed passed the selected private composition,
+validation and signing, then the first HTTP JSON invocation trapped without a
+decoded result. Both original failures remain retained; the new joined Task
+wait candidate still requires fresh signed pending/disposal and retirement
+qualification.
 
 ## Joined Task wait candidate
 
