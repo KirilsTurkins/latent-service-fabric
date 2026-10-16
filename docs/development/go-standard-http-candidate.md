@@ -6,7 +6,7 @@ the explicit v4 activation profile and a real streaming import. No application
 RoundTripper, dialer, source rewrite, package registration or extra grant is
 required. Original Go source files and captured dependencies remain unchanged;
 the private overlay and SDK backend are captured compiler inputs. The original
-complete Client implementation is authenticated and kept intact.
+complete Client and Request implementations are authenticated and kept intact.
 
 This is a draft compile candidate for [#692](https://github.com/KirilsTurkins/latent-service-fabric/issues/692).
 The runtime parent, actual component build, signed provider cases, two unchanged
@@ -61,6 +61,13 @@ remains outside this finite profile.
 
 ## Higher-level behavior and ownership
 
+The authenticated original Request implementation supplies its standard User-Agent
+when the field is absent. A canonical explicit field uses only the first value,
+trims surrounding SP/HTAB, and an empty value suppresses the field. Noncanonical
+direct-map User-Agent spellings fail explicitly before contact. The peer records
+only header presence, byte length and SHA256 to check these semantics without
+retaining header bytes. Those signed checks remain unqualified until executed.
+
 Original Client code owns redirects, cookies, authentication and request
 repetition. Every attempt reaches the typed backend and must independently pass
 current target/grant/framing policy. The glue adds no retry or reconnect, and
@@ -80,7 +87,7 @@ by the signed runtime/provider gate under the unchanged original deadline.
 
 ## Maintained proof boundary
 
-The five source controls authenticate all original Transport/RoundTrip/Client
+The five source controls authenticate all original Transport/RoundTrip/Client/Request
 bytes, reject drift and module-name injection before output, and retain original
 sources. The ordinary fixture uses new http.Client, DefaultTransport.Clone,
 concrete Transport, JSON domain parsing, POST, early Close, cancelled contexts
@@ -104,15 +111,17 @@ and size failures cannot be hidden by an early JSON syntax error. A static
 counter rejects reuse of a previous activation's state. The early-close case
 uses ordinary ReadFull for four bytes instead of assuming one Read fills them.
 
-Twenty-nine cases cover domain JSON, HTTP error status, truncation, oversize,
+Thirty-three cases cover domain JSON, HTTP error status, truncation, oversize,
 malformed JSON, forbidden headers, early Close, pending header/body cancellation,
 POST bytes, uncertain mutation, target denial, pre-cancelled contexts, sibling
 cancellation, concrete Transport, DefaultTransport.Clone, a separate custom
 RoundTripper, custom-dialer denial without invocation, physical nonreuse and
 negative-header-limit and inconsistent-body-length denial, and fresh state.
 Wire-header deadline/limit and socket-buffer options also fail before contact.
+Default, empty and first-value User-Agent behavior has explicit peer assertions;
+noncanonical direct-map spelling is denied without contact.
 Every activation checks actual provider counters,
-cleanup slots and topology. The controlled peer must report exactly 15 primary
+cleanup slots and topology. The controlled peer must report exactly 18 primary
 contacts, one committed mutation and no secondary contact. These observations
 are distinct from allocator/native/kernel upper-bound qualification.
 

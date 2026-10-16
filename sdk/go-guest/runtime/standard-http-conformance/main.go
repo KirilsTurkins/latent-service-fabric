@@ -58,6 +58,9 @@ func Run(which uint32, address string) string {
 	if which == 18 { client.Transport = &http.Transport{DisableCompression:true,MaxResponseHeaderBytes:1024} }
 	if which == 19 { client.Transport = &http.Transport{DisableCompression:true,ReadBufferSize:4} }
 	if which == 20 { client.Transport = &http.Transport{DisableCompression:true,WriteBufferSize:4} }
+	if which == 22 { request.Header.Set("User-Agent", "") }
+	if which == 23 { request.Header["User-Agent"] = []string{" fixture-agent/1 ", "must-not-be-sent"} }
+	if which == 24 { request.Header["user-agent"] = []string{"noncanonical-field"} }
 	response, err := client.Do(request)
 	if which == 11 { if dialed { return "custom-dialer-invoked" }; if err == nil { response.Body.Close(); return "custom-dialer-accepted" }; return "custom-dialer-denied" }
 	if err != nil { if ctx.Err() != nil { return "cancelled" }; return "transport-error" }

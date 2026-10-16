@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 from contextlib import ExitStack
 import json
 from pathlib import Path
@@ -260,6 +261,10 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('wire-header-limit-denied', 18, '/conformance/json', 'transport-error'),
                      ('wire-read-buffer-denied', 19, '/conformance/json', 'transport-error'),
                      ('wire-write-buffer-denied', 20, '/conformance/json', 'transport-error'),
+                     ('user-agent-default', 21, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
+                     ('user-agent-empty', 22, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
+                     ('user-agent-first', 23, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb'),
+                     ('noncanonical-user-agent-denied', 24, '/conformance/json', 'transport-error'),
                      ('fresh', 0, '/conformance/json', '200:domain:7:caf\u00e9:first|\u03bb')]
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
@@ -285,10 +290,16 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             peer.stop()
             observation = json.loads(bytes(peer.buffers[0]).splitlines()[0])
             validate_peer(observation)
-            require(observation['startedRequests'] == 15 and observation['rejectedRequests'] == 0
+            require(observation['acceptedConnections'] == observation['startedRequests'] == 18 and observation['rejectedRequests'] == 0
                 and observation['committedMutations'] == 1
                 and all(row['role'] == 'primary' for row in observation['requests']),
                 'standard-go-peer-contact-count')
+            expected_agents = (b'Go-http-client/1.1', None, b'fixture-agent/1', b'Go-http-client/1.1')
+            for row, agent in zip(observation['requests'][-4:], expected_agents, strict=True):
+                require(row['userAgent'] == {'present':agent is not None,
+                    'bytes':len(agent) if agent is not None else 0,
+                    'sha256':'sha256:'+hashlib.sha256(agent).hexdigest() if agent is not None else None},
+                    'standard-go-user-agent-semantics')
             result['peer'] = observation
             result['peerReaped'] = peer.owner.finished
             peer = None

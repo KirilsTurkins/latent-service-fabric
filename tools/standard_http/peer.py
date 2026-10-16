@@ -305,6 +305,11 @@ class Peer:
                            "cookiePresent": b"cookie" in request.headers,
                            "proxyAuthorizationPresent": b"proxy-authorization" in request.headers}
         record.observation.update(credential_bits)
+        # Bounded metadata only: never retain an arbitrary header value.
+        user_agent = request.headers.get(b"user-agent")
+        record.observation["userAgent"] = {"present": user_agent is not None,
+            "bytes": len(user_agent) if user_agent is not None else 0,
+            "sha256": "sha256:" + hashlib.sha256(user_agent).hexdigest() if user_agent is not None else None}
         if record.role == "primary":
             require(hmac.compare_digest(request.headers.get(b"authorization", b""), self._authorization),
                     "request-unauthenticated")

@@ -106,6 +106,9 @@ func lsfTransportRoundTrip(t *Transport, req *Request) (*Response, error) {
 		if lsfHTTPReserved(key) { return nil, lsfHTTPUnsupported("reserved request header") }
 		values := req.Header[key]
 		switch strings.ToLower(key) {
+		case "user-agent":
+			if key != "User-Agent" { return nil, lsfHTTPUnsupported("noncanonical User-Agent field") }
+			// Request.write emits only its first canonical value below.
 		case "content-type", "idempotency-key":
 			if len(values) != 1 { return nil, errors.New("http: ambiguous structured header") }
 			if strings.EqualFold(key, "content-type") { request.BodyMediaType = lsfWit.Some(values[0])
@@ -114,6 +117,12 @@ func lsfTransportRoundTrip(t *Transport, req *Request) (*Response, error) {
 			for _, value := range values { request.Headers = append(request.Headers, lsfHTTP.Header{Name:key, Value:value}) }
 		}
 	}
+	// Preserve pinned Request.write default/first-value/empty suppression.
+	// Header validation above rejects line breaks; TrimString trims SP and HTAB.
+	userAgent := defaultUserAgent
+	if req.Header.has("User-Agent") { userAgent = req.Header.Get("User-Agent") }
+	userAgent = strings.Trim(userAgent, " \t")
+	if userAgent != "" { request.Headers = append(request.Headers, lsfHTTP.Header{Name:"User-Agent", Value:userAgent}) }
 	if len(request.Headers) > 32 { return nil, errors.New("lsf-http-request-too-large") }
 	if req.Body == nil || req.Body == NoBody { request.BodyLength = lsfWit.Some(uint64(0))
 	} else if req.ContentLength > 0 {

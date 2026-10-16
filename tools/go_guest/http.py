@@ -15,6 +15,7 @@ PREIMAGES = {
     'net/http/transport.go': 'c9146e77adc22d4b74ba77384ec7be7fc27c3af21ff20485f642b4d611b381a4',
     'net/http/roundtrip.go': 'a02501dcc615b6af4144655cd28f6a6901973267d2a188794e4552104dcf589a',
     'net/http/client.go': 'ced3428a85206de8de79c10de38d34951e0b9823c0ccb68ff51329d048a1f7b9',
+    'net/http/request.go': 'c3257079994b4e4f74f01cef72508919983ba31f91fcf599d348e9d52cec1540',
 }
 
 
