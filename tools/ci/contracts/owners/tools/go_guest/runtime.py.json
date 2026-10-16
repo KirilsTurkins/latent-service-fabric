@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add explicit authenticated activation overlay option; preserve default runtime and all original source hashes",
+  "reviewReason": "Retain pinned scheduler source validation and add explicitly selected v2 checkpoint bridge overlay without changing v1 runtime or default authority",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "79977ed138aab680a8ebebdec811e1c1dc7a20057ecd3d98cecbc87f02dc16ce"
+  "sha256": "fd5f9dda2e4643cc664691d69304efb7bdb782c4f823fe89e3d41452bfcaf15f"
 }

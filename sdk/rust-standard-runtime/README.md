@@ -84,6 +84,20 @@ captures the source, lock, tools, sysroot and actual component surface, and
 retains failed attempts separately. Native policy/trust work stays on the
 ordinary Linux temporary filesystem even when receipts are mounted elsewhere.
 
+The maintained `Rebuilt Rust standard clocks and signed grants` job executes
+both ordinary `SystemTime` and `Instant` controls through
+`tools/qualify_rust_standard_clocks.py`. It authenticates the fixed official
+Rust source archive, selects the exact signed clock harness from a successful
+current Cargo artifact inventory, and runs separate locked offline sysroot and
+component builds. Each component imports its own exact clock interface; each
+case requires two fresh Stores, original-budget accounting, policy revocation
+and complete sampled owner retirement. Bounded receipts retain component and
+sysroot identities, command outcomes, fuel, peak Wasm memory and elapsed time.
+This job's execution result is required evidence; adding the job does not itself
+qualify a source revision. Its signed test publisher/builder does not establish
+production builder authorization. Installed target selection, logical threads,
+default executors and native-fiber retirement remain separate requirements.
+
 For example, with the authenticated archive and tool executables already
 provided by the maintainer:
 

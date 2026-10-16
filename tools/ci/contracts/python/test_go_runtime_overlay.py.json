@@ -3,6 +3,8 @@
     "GoRuntimeOverlayTests.test_activation_dispatcher_rejects_changed_dependency_before_transformation",
     "GoRuntimeOverlayTests.test_activation_export_refuses_missing_and_synchronous_entry_before_writing",
     "GoRuntimeOverlayTests.test_activation_selection_is_explicit_and_retains_default_profile",
+    "GoRuntimeOverlayTests.test_checkpoint_parser_cannot_return_an_unselected_source",
+    "GoRuntimeOverlayTests.test_checkpoints_cover_selected_open_modules_but_preserve_dispatcher_and_standard_runtime",
     "GoRuntimeOverlayTests.test_compiler_assembly_preserves_upstream_and_verifies_all_derived_sources",
     "GoRuntimeOverlayTests.test_each_upstream_source_drift_refuses_before_any_overlay_is_written",
     "GoRuntimeOverlayTests.test_protected_roots_and_existing_output_refuse_without_modifying_sources",
@@ -35,6 +37,30 @@
       "skipSites": []
     },
     "GoRuntimeOverlayTests.test_activation_selection_is_explicit_and_retains_default_profile": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeOverlayTests.test_checkpoint_parser_cannot_return_an_unselected_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ],
+      "skipSites": []
+    },
+    "GoRuntimeOverlayTests.test_checkpoints_cover_selected_open_modules_but_preserve_dispatcher_and_standard_runtime": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -109,6 +135,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_runtime_overlay.py",
-  "reviewReason": "Add activation source/export/profile refusal controls; retain every existing source drift and scheduler guard",
+  "reviewReason": "Preserve all eight prior runtime source controls and add selected open-module checkpoint boundary controls without weakening skips or assertions",
   "schemaVersion": "latent.ci.contracts.v1"
 }

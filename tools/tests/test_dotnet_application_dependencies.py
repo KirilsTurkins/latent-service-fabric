@@ -128,6 +128,35 @@ class NugetDependencies(unittest.TestCase):
             with self.subTest(endpoint=endpoint), self.assertRaisesRegex(DependencyError, 'endpoint-invalid'):
                 feed_config({'sources': [{'name': 'private', 'url': endpoint}]}, self.root, baseline)
 
+    def test_private_feed_credentials_reject_controls_types_and_limits_before_restore(self):
+        from unittest.mock import patch
+        baseline = self.files['vendor/lsf/sdk/dotnet-guest/nuget.config']
+        for field, values in (('username', ('', 7, 'bad\x01name', 'bad\x7fname', 'bad\ud800name', 'bad\ufffename', 'x' * 16385)),
+                              ('password', ('bad\x00token', 'bad\x01token', 'bad\x7ftoken', 'bad\ud800token', 'bad\ufffftoken', 'x' * 16385))):
+            for ordinal, value in enumerate(values):
+                row = {'name': 'private', 'url': 'https://feed.example.test/index.json',
+                       'authorizationEnv': 'LSF_SELECTED_FEED', 'username': 'selected-user'}
+                secret = value if field == 'password' else 'selected-token'
+                if field == 'username':
+                    row['username'] = value
+                with self.subTest(field=field, ordinal=ordinal), \
+                        patch('tools.dotnet_application_dependencies.os.environ', {'LSF_SELECTED_FEED': secret}), \
+                        self.assertRaisesRegex(DependencyError, 'credential-invalid'):
+                    feed_config({'sources': [row]}, self.root, baseline)
+
+    def test_bounded_private_feed_credentials_preserve_xml_values_and_public_redaction(self):
+        from unittest.mock import patch
+        username, secret = 'selected&<é', 'opaque<&" token é' + 'x' * 16000
+        with patch('tools.dotnet_application_dependencies.os.environ', {'LSF_SELECTED_FEED': secret}):
+            config, receipt = feed_config({'sources': [{'name': 'private',
+                'url': 'https://feed.example.test/index.json', 'authorizationEnv': 'LSF_SELECTED_FEED',
+                'username': username}]}, self.root, self.files['vendor/lsf/sdk/dotnet-guest/nuget.config'])
+        credentials = ET.fromstring(config).find('packageSourceCredentials/private')
+        self.assertEqual({row.attrib['key']: row.attrib['value'] for row in credentials},
+                         {'Username': username, 'ClearTextPassword': secret})
+        self.assertNotIn(username, json.dumps(receipt))
+        self.assertNotIn(secret, json.dumps(receipt))
+
     def test_embedded_resources_cannot_read_absolute_or_uncaptured_files(self):
         for name in (b'/etc/passwd', b'../outside.txt', b'resources/absent.txt'):
             with self.assertRaises(DependencyError):

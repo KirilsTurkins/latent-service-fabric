@@ -429,6 +429,10 @@ impl WasmtimeBackend {
         )
     }
 
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Keep the original invocation owners and bounded host result observation at one execution boundary"
+    )]
     async fn invoke_inner_timed(
         &self,
         mut request: ExecutionRequest,
@@ -437,6 +441,7 @@ impl WasmtimeBackend {
         prepared: Option<WasmtimePreparedUse>,
         input_trace: Option<&InputTrace>,
         capability_observer: &mut Option<latent_capabilities::broker::CapabilitySessionObserver>,
+        host_result: &mut latent_executor::HostResultDisposition,
     ) -> Result<GuestOutcome, PlatformError> {
         let cancellation = ownership.cancellation;
         let setup_started = Instant::now();
@@ -642,6 +647,14 @@ impl WasmtimeBackend {
                     consumption,
                 })
             } else {
+                // Only the actual successful call and host codec failure select
+                // this closed disposition. Trap text/metadata are diagnostics.
+                if accounting_error.is_none()
+                    && call_result.is_ok()
+                    && matches!(encoded.as_ref(), Some(Err(_)))
+                {
+                    *host_result = latent_executor::HostResultDisposition::UnavailableAfterReturn;
+                }
                 classify_call_result(
                     call_result,
                     encoded,

@@ -120,7 +120,7 @@ def prepare_compiler(goroot: Path, destination: Path) -> Path:
 
 
 def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
-            *, sdk: Path | None = None, activation: bool = False) -> Path:
+            *, sdk: Path | None = None, activation: bool = False, checkpoints: bool = False) -> Path:
     goroot, destination = checked_roots(goroot, destination)
     sources = checked_sources(goroot, PREIMAGES)
     text = sources["runtime/os_wasip1.go"]
@@ -155,8 +155,8 @@ def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
         if go_package is None:
             raise ValueError("go-activation-requires-reviewed-dispatcher")
         from tools.go_guest.activation import runtime_sources, async_source
-        runtime_sources(goroot, sources, sdk)
-        activation_source = async_source(go_package.resolve(), sdk)
+        runtime_sources(goroot, sources, sdk, checkpoints=checkpoints)
+        activation_source = async_source(go_package.resolve(), sdk, checkpoints=checkpoints)
     destination.mkdir(parents=True)
     replacements = {}
     if activation_source is not None:
