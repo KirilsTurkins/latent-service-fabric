@@ -395,7 +395,8 @@ class Compiler:
         self.run("closed-runtime", "wasm-tools", "component", "embed", staged, self.sdk / "feasibility/closed-runtime.wat",
                  "--world", "runtime-support", "-o", adapter)
         self.run("component-new", "wasm-tools", "component", "new", core, "--adapt", "wasi_snapshot_preview1=" + str(adapter), "-o", component)
-        self.run("component-validate", "wasm-tools", "validate", component)
+        validation_features = ["--features", "cm-more-async-builtins"] if fiber_io_profile else []
+        self.run("component-validate", "wasm-tools", "validate", *validation_features, component)
         surface = self.run("component-surface", "wasm-tools", "component", "wit", component)
         if "import wasi:" in surface: raise ValueError("ambient WASI survived the closed Java runtime")
         expected = wit_surface(json.loads(self.run("expected-wit", "wasm-tools", "component", "wit", staged, "--json")), world)

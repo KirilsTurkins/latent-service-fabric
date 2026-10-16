@@ -1,8 +1,9 @@
 # Java fiber host import qualification
 
-Status: candidate source and compiler-model controls pass. C compilation,
-canonical suspension and signed node execution are pending the maintained Linux
-gate. This is one slice of [#741](https://github.com/KirilsTurkins/latent-service-fabric/issues/741),
+Status: candidate source and compiler-model controls pass. Actual C compilation
+and component assembly completed, but the first I/O component failed the default
+validator's feature selection. Canonical suspension and signed node execution
+remain pending the maintained Linux gate. This is one slice of [#741](https://github.com/KirilsTurkins/latent-service-fabric/issues/741),
 [#736](https://github.com/KirilsTurkins/latent-service-fabric/issues/736) and
 [#744](https://github.com/KirilsTurkins/latent-service-fabric/issues/744).
 
@@ -11,6 +12,14 @@ stopped in the existing UTF-8 source control before component compilation. Its
 minimal TeaVM `Address` declaration now includes `toInt()`, matching the real
 dependency. All 9,466 original UTF-8 cases pass on JDK 25.0.3. The maintained
 Linux gate must still establish canonical suspension and signed execution.
+
+The [subsequent I/O component](evidence/java-fiber-io-validation-failed-2026-10-16.json)
+was retained from the worker-library PR's shared I/O prerequisite. Its actual
+bytes reproduce the default validator's rejection of async `subtask.cancel` and
+pass with only `cm-more-async-builtins` added. The explicit I/O compiler profile
+now selects that feature; other profiles retain their original validation call.
+The activation engine already selects the corresponding builtin setting. No
+runtime capability or engine setting is changed by this compiler correction.
 
 The explicit `teavm-activation-fibers-io-v1` selection uses the existing Java
 compiler, the original declared WIT and the owned activation fibers. Normal
@@ -60,8 +69,9 @@ The private JDK reference interprets only the fixture's bounded runtime wait
 using JDK threads. Its three passing iterations establish the fixture's
 observables, not canonical execution. Pinned WIT/C ABI generation, compilation
 of all SDK Java sources against both selected profiles, and all four existing
-locked TeaVM class-model controls pass locally. The actual C compiler and signed
-component execution remain separate required hosted observations.
+locked TeaVM class-model controls pass locally. The retained hosted C build and
+corrected static validation do not establish signed component execution; the
+fresh hosted execution remains required.
 
 This candidate does not complete the ordinary default HTTP client overlap,
 two unchanged published default-worker libraries, native cancellation/race and
