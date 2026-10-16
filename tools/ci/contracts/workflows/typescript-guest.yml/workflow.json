@@ -42,6 +42,8 @@
           "tools/build_typescript_guest_capsules.py",
           "tools/build_typescript_promise_library.py",
           "tools/build_typescript_native_engine.py",
+          "tools/build_typescript_source_splicer.py",
+          "tools/tests/test_typescript_splicer_build.py",
           "tools/tests/test_typescript_native_build.py",
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
@@ -89,6 +91,8 @@
           "tools/build_typescript_guest_capsules.py",
           "tools/build_typescript_promise_library.py",
           "tools/build_typescript_native_engine.py",
+          "tools/build_typescript_source_splicer.py",
+          "tools/tests/test_typescript_splicer_build.py",
           "tools/tests/test_typescript_native_build.py",
           "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
@@ -116,9 +120,10 @@
   },
   "requiredJobs": [
     "boundary",
-    "promise-library"
+    "promise-library",
+    "source-splicer"
   ],
-  "reviewReason": "Compose both npm integrity and source-engine trigger sets; preserve the exact merged boundary definition and original 75-minute limit, permissions, concurrency and separate 60-minute Promise source-build job.",
+  "reviewReason": "Compose merged npm integrity and source-owned engine/splicer trigger sets with all permissions and concurrency unchanged; preserve the exact merged boundary job75-minute limit, Promise source job60-minute limit and new source compiler job20-minute limit.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

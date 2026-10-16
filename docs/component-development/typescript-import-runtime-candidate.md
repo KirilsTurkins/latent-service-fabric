@@ -24,6 +24,17 @@ source derivations, compiler-tool bytes and build/transpile receipts. Their
 qualification remains `unknown` and API support remains `not-evaluated`.
 An operator-provided compiler input cannot certify runtime support.
 
+The maintained `tools/build_typescript_source_splicer.py` builder captures the
+original ComponentizeJS archive, verifies the selected derivation preimages,
+and uses its original locked Cargo workspace and upstream JCO componentization
+and transpilation commands. Supply the unchanged compiler namespace produced
+by `typescript_capsule.py install-tools` with `--tools`, and a fresh independent
+directory with `--output`. It rechecks the original public WIT, Cargo lock,
+derived sources and every captured compiler file after the build. The resulting
+`splicer-input.json` binds the generated JS/Wasm bytes and successful command
+receipts. The independent 20-minute source-splicer CI job executes this build;
+its products remain compiler inputs until the signed runtime matrix passes.
+
 The pinned SpiderMonkey derivation exports `ActivationPromiseHooks.h` through
 its normal `js/src/moz.build` header list. The exact upstream build descriptor
 is authenticated alongside the Promise implementation and object declaration;
