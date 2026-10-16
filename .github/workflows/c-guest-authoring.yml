@@ -237,6 +237,7 @@ jobs:
             ${{ runner.temp }}/c-standard-logging/builds/*/compatibility*.json
             ${{ runner.temp }}/c-standard-logging/builds/*/standard-runtime-selection.json
             ${{ runner.temp }}/c-standard-logging/builds/*/component.wasm
+            ${{ runner.temp }}/c-standard-logging/builds/*/core-componentization-failed.wasm
             ${{ runner.temp }}/c-standard-logging/builds/*/logs/**
             ${{ runner.temp }}/c-standard-logging/node/public-workflow.json
           if-no-files-found: warn

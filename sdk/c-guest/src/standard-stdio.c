@@ -39,7 +39,7 @@ static int valid_utf8(const uint8_t *bytes, uint32_t length) {
     return 1;
 }
 
-int32_t __imported_wasi_snapshot_preview1_fd_write(int32_t fd, int32_t address, int32_t count, int32_t written_address) {
+int32_t __wrap___imported_wasi_snapshot_preview1_fd_write(int32_t fd, int32_t address, int32_t count, int32_t written_address) {
     const __wasi_ciovec_t *vectors = (const __wasi_ciovec_t *)(uintptr_t)(uint32_t)address;
     __wasi_size_t *written = (__wasi_size_t *)(uintptr_t)(uint32_t)written_address;
     uint32_t length = (uint32_t)count;
@@ -78,7 +78,7 @@ int32_t __imported_wasi_snapshot_preview1_fd_write(int32_t fd, int32_t address, 
     return 0;
 }
 
-int32_t __imported_wasi_snapshot_preview1_fd_fdstat_get(int32_t fd, int32_t address) {
+int32_t __wrap___imported_wasi_snapshot_preview1_fd_fdstat_get(int32_t fd, int32_t address) {
     __wasi_fdstat_t *output = (__wasi_fdstat_t *)(uintptr_t)(uint32_t)address;
     if (fd != 1 && fd != 2) return __WASI_ERRNO_BADF;
     if (!valid_range(output, sizeof(*output))) return __WASI_ERRNO_FAULT;
@@ -89,11 +89,32 @@ int32_t __imported_wasi_snapshot_preview1_fd_fdstat_get(int32_t fd, int32_t addr
     return 0;
 }
 
-int32_t __imported_wasi_snapshot_preview1_fd_seek(int32_t fd, int64_t offset, int32_t whence, int32_t output) {
+int32_t __wrap___imported_wasi_snapshot_preview1_fd_seek(int32_t fd, int64_t offset, int32_t whence, int32_t output) {
     (void)offset; (void)whence; (void)output;
     return fd == 1 || fd == 2 ? __WASI_ERRNO_NOTSUP : __WASI_ERRNO_BADF;
 }
 
-int32_t __imported_wasi_snapshot_preview1_fd_close(int32_t fd) {
+int32_t __wrap___imported_wasi_snapshot_preview1_fd_close(int32_t fd) {
     return fd == 1 || fd == 2 ? __WASI_ERRNO_NOTSUP : __WASI_ERRNO_BADF;
+}
+
+__wasi_errno_t __wrap___wasi_fd_write(__wasi_fd_t fd, const __wasi_ciovec_t *vectors,
+                                     size_t count, __wasi_size_t *written) {
+    return (__wasi_errno_t)__wrap___imported_wasi_snapshot_preview1_fd_write(
+        (int32_t)fd, (int32_t)(uintptr_t)vectors, (int32_t)count, (int32_t)(uintptr_t)written);
+}
+
+__wasi_errno_t __wrap___wasi_fd_fdstat_get(__wasi_fd_t fd, __wasi_fdstat_t *output) {
+    return (__wasi_errno_t)__wrap___imported_wasi_snapshot_preview1_fd_fdstat_get(
+        (int32_t)fd, (int32_t)(uintptr_t)output);
+}
+
+__wasi_errno_t __wrap___wasi_fd_seek(__wasi_fd_t fd, __wasi_filedelta_t offset,
+                                    __wasi_whence_t whence, __wasi_filesize_t *output) {
+    return (__wasi_errno_t)__wrap___imported_wasi_snapshot_preview1_fd_seek(
+        (int32_t)fd, offset, (int32_t)whence, (int32_t)(uintptr_t)output);
+}
+
+__wasi_errno_t __wrap___wasi_fd_close(__wasi_fd_t fd) {
+    return (__wasi_errno_t)__wrap___imported_wasi_snapshot_preview1_fd_close((int32_t)fd);
 }

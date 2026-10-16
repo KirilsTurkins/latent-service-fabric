@@ -12,6 +12,13 @@ runtime compatibility requires a passing exact-source receipt. This slice does
 not complete [facilities #681](https://github.com/KirilsTurkins/latent-service-fabric/issues/681)
 or [C runtime #744](https://github.com/KirilsTurkins/latent-service-fabric/issues/744).
 
+The [first actual attempt](../testing/evidence/c-standard-logging-failed-2026-10-16.json)
+passed the clock/entropy programme and stdio C compilation, then found an
+unresolved `fd_close` during component assembly. The selected profile now uses
+explicit linker wrappers for its four reviewed public libc and raw descriptor
+operations. Failed assembly retains the bounded original core for import
+inspection. Fresh native compilation and signed stdio execution remain pending.
+
 Set `runtimeProfile` to `c-standard-stdio-v1` in `capsule-project.json` and in any
 captured dependency selection. Resolve and review the new lock, then use the
 normal build, signing and admission workflow. The operator must separately

@@ -11,6 +11,7 @@ import tomllib
 from tools.build_process import run_bounded
 from tools.build_observation import build_environment, file_identity
 from tools.c_guest.bindings import digest, generate
+from tools.c_guest import standard_facilities
 
 ROOT = Path(__file__).resolve().parents[2]
 SDK = ROOT / "sdk/c-guest"
@@ -150,7 +151,9 @@ class Compiler:
     def compile(self, sources: list[Path], wit_source: Path, world: str,
                 destination: Path, *, memory_bytes: int = 16 * 1024 * 1024,
                 trap: bool = True, include_directories: tuple[Path, ...] = (),
-                static_libraries: tuple[Path, ...] = (), defines: tuple[str, ...] = ()) -> tuple[Path, dict]:
+                static_libraries: tuple[Path, ...] = (), defines: tuple[str, ...] = (),
+                runtime_profile: str = standard_facilities.DEFAULT) -> tuple[Path, dict]:
+        standard_facilities.selected_profile({'runtimeProfile': runtime_profile})
         if not sources or len(sources) > 64:
             raise ValueError("C source count must be between 1 and 64")
         if any(path.is_symlink() or not path.is_file() or path.stat().st_size > 262144 for path in sources):
@@ -168,6 +171,10 @@ class Compiler:
         for directory in include_directories:
             command.extend(["-I", str(directory)])
         command.extend("-D" + define for define in defines)
+        if runtime_profile == standard_facilities.LOGGING_PROFILE:
+            for function in ('fd_write', 'fd_fdstat_get', 'fd_seek', 'fd_close'):
+                for prefix in ('__wasi_', '__imported_wasi_snapshot_preview1_'):
+                    command.append('-Wl,--wrap=' + prefix + function)
         command.extend(map(str, static_libraries))
         if trap:
             command.append(str(self.sdk / "src/trap.c"))
@@ -190,7 +197,18 @@ class Compiler:
             self.isolation.receipt["preprocessorInputs"] = sorted(
                 {row["path"]: row for row in observed}.values(), key=lambda row: row["path"])
         self.run("zig", *command)
-        self.run("wasm-tools", "component", "new", str(core), "-o", str(component))
+        try:
+            self.run("wasm-tools", "component", "new", str(core), "-o", str(component))
+        except BaseException:
+            if self.commands is not None:
+                try:
+                    from tools.rust_capsule_project import read_file
+                    payload = read_file(core, 64 * 1024 * 1024)
+                    if payload.startswith(b'\0asm'):
+                        (self.commands.output / 'core-componentization-failed.wasm').write_bytes(payload)
+                except (OSError, ValueError):
+                    pass
+            raise
         self.run("wasm-tools", "validate", str(component))
         actual = self.run("wasm-tools", "component", "wit", str(component))
         if "wasi:" in actual or "wasi_snapshot_preview1" in actual:

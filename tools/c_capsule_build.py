@@ -127,7 +127,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             component_path, generated = compiler.compile(sources, compile_wit, project["world"], temporary / "compiled",
                                                           memory_bytes=64 * 1024 * 1024,
                                                           include_directories=application.includes,
-                                                          static_libraries=application.archives, defines=defines)
+                                                          static_libraries=application.archives, defines=defines,
+                                                          runtime_profile=runtime_profile)
             if closure is not None:
                 write_json(output / "compiler-inputs.json", isolated_inputs)
             component = read_file(component_path, 64 * 1024 * 1024)
