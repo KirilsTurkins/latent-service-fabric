@@ -34,6 +34,10 @@ on:
       - tools/dev_typescript_distribution.py
       - tools/guest_runtime_profiles.py
       - tools/run_dev_guest_tools_tests.py
+      - tools/run_rust_dependency_watch_ci.py
+      - tools/qualify_rust_dependency_watch.py
+      - tools/rust_dependency_watch_fixture.py
+      - tools/tests/test_rust_dependency_watch.py
       - tools/static_api_build.py
       - tools/static_api/**
       - examples/static-api/**
@@ -145,6 +149,8 @@ jobs:
         run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process
       - name: Exercise library authoring frontend and Java dependency boundaries
         run: python -m unittest tools.tests.test_guest_authoring_frontend tools.tests.test_java_dependency_authoring tools.tests.test_java_resource_runtime tools.tests.test_java_private_resolution
+      - name: Exercise owned Rust dependency watch fixture boundaries
+        run: python -m unittest tools.tests.test_rust_dependency_watch
       - name: Exercise explicit captured Java processor boundaries
         run: python -m unittest tools.tests.test_java_annotation_processors
 
@@ -209,6 +215,19 @@ jobs:
         if: matrix.language == 'typescript'
         with:
           node-version: 24.19.0
+      - name: Qualify normal Rust dependency watch through three reviewed signed builds
+        if: matrix.language == 'rust'
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_rust_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_rust_dependency_watch.py --fixture tools/rust_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/rust-dependency-watch"
+      - name: Retain bounded Rust dependency watch and normal shutdown observations
+        if: always() && matrix.language == 'rust'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rust-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/rust-dependency-watch/public-qualification.json
+            ${{ runner.temp }}/rust-dependency-watch/ci-account.json
+          if-no-files-found: warn
+          retention-days: 3
       - name: Qualify the static site and TypeScript API in Chromium
         if: matrix.language == 'typescript'
         run: |

@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "RustDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation",
+    "RustDependencyWatchFixture.test_removal_entry_has_no_library_reference_and_keeps_normal_wit",
+    "RustDependencyWatchFixture.test_two_real_crates_preserve_primary_api_and_resource_across_update"
+  ],
+  "guards": {
+    "RustDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustDependencyWatchFixture.test_removal_entry_has_no_library_reference_and_keeps_normal_wit": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustDependencyWatchFixture.test_two_real_crates_preserve_primary_api_and_resource_across_update": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_dependency_watch.py",
+  "reviewReason": "Bind owned primary transitive resource revisions and prevent cleanup escape or mutation of existing roots",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

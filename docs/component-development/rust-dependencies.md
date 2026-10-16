@@ -109,3 +109,15 @@ and requires its exact import in the pinned tool's original-core inspection
 before attributing that selected path as target-incompatible. It keeps the
 original generic compatibility report and does not infer a package-wide ban,
 a native implementation, or elimination of untested paths.
+
+The delivered-tool watch programme selects an outside local crate with a
+transitive crate and immutable resource through native Cargo add/lock/resolve
+and exact review. It requires three independently consented signed test
+workspaces: the initial value, an updated transitive value, then dependency
+removal. Before each replacement, unreviewed lock inputs, changed recipe trust
+and a previous build's signing consent must stop deployment. Every watcher
+must finish through normal `down` with a reaped, clean node. Explicit Cargo
+fetch may contact its registries; the ordinary captured compiler retains its
+network-denied namespace. The programme exports only bounded public results.
+Its source is not an executed qualification receipt, and later final-source CI
+must preserve the other language gates in the shared developer-tools job.

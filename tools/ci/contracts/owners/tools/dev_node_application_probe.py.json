@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/dev_node_application_probe.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Record unchanged explicit source-node fixture now named by Rust watch qualification; preserve its original signing package authority native identity and cleanup checks",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "8d53677740a6713ff88128788ca6f7d7672759b97d6fe6f230ed33ca0b2df1f0"
+}
