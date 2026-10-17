@@ -13,6 +13,12 @@ public final class Bindings {
     public record LatentRuntimeActivationToken(long generation, long id) { }
     public record Reply<T>(T value, Error error) { public boolean isError() { return error != null; } }
     public static Address dispatchBody(int operation, Address data, int length) { throw new AssertionError("source-control-no-dispatch"); }
+    public static Option<Reply<Unsigned64>> lsfRootTimerNext(LatentRuntimeActivationToken token) {
+        return Option.some(LatentRuntimeActivation.timerNext(token));
+    }
+    public static Option<Reply<Void>> lsfRootWaitFor(Unsigned64 nanos, Option<LatentRuntimeActivationToken> continuation) {
+        return Option.some(LatentRuntimeActivation.waitFor(nanos, continuation));
+    }
     public static final class LatentRuntimeActivation {
         private static long next;
         private static final HashMap<LatentRuntimeActivationToken, LatentRuntimeActivationOwnerKind> owners = new HashMap<>();
