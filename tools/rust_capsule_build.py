@@ -27,7 +27,7 @@ RECIPE = ("tools/rust_capsule.py", "tools/rust_capsule_project.py", "tools/rust_
           "tools/dev_workflow/common.py", "tools/dev_workflow/transaction_binding.py")
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")
-RECIPE += ("tools/rust_dependency_authoring.py", "tools/rust_capsule.lock") + guest_authoring_frontend.RECIPE
+RECIPE += ("tools/rust_dependency_authoring.py", "tools/cargo_native_authoring.py", "tools/rust_capsule.lock") + guest_authoring_frontend.RECIPE
 RECIPE += ("tools/guest_dependency_inputs.py", "tools/dev_workflow/__init__.py",
            "tools/dev_workflow/project.py", "tools/dev_workflow/dependencies.py",
            "tools/dev_workflow/resource_inputs.py",
@@ -240,6 +240,27 @@ def package_inputs(output: Path, project: dict, surface: dict, files: dict[str, 
     write_json(output / "deployment.json", deployment)
 
 
+def componentize(commands, wasm_tools: Path, module: Path, output: Path, source_digest: str) -> None:
+    """Retain bounded actual compiler bytes without replacing assembly failures."""
+    try:
+        commands.run("component", wasm_tools, "component", "new", module, "-o", output / "component.wasm")
+    except BaseException:
+        try:
+            raw = read_file(module, 64 * 1024 * 1024)
+            if not raw.startswith(b"\x00asm\x01\x00\x00\x00"):
+                raise ValueError("original raw core unavailable")
+            (output / "raw-core.wasm").write_bytes(raw)
+            write_json(output / "raw-core-observation.json", {"formatVersion": 1,
+                "stage": "component", "sourceDigest": source_digest,
+                "coreDigest": digest(raw), "coreBytes": len(raw),
+                "state": "retained-original-compiler-output", "authority": "none"})
+        except Exception:
+            # Retention is supplementary diagnostics, never a replacement for
+            # the original component assembly/cancellation outcome.
+            pass
+        raise
+
+
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
           repository: str, *, offline: bool = False, host_linker: Path | None = None,
           rust_bin: Path | None = None, executable_approval: str | None = None) -> Path:
@@ -379,7 +400,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 commands.run("compile", paths["cargo"], *compile_arguments)
             module = temporary / "target/wasm32-unknown-unknown/release" / (project["name"].replace("-", "_") + ".wasm")
             stage = "component"
-            commands.run("component", paths["wasm-tools"], "component", "new", module, "-o", output / "component.wasm")
+            componentize(commands, paths["wasm-tools"], module, output, digest(source_inputs))
             commands.run("validate", paths["wasm-tools"], "validate", output / "component.wasm", "--features", "cm-async,cm-async-stackful,cm-more-async-builtins")
             component = read_file(output / "component.wasm", 64 * 1024 * 1024)
             stage = "contracts"

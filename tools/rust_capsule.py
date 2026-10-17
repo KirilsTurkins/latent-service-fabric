@@ -19,6 +19,22 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=project.AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
+    for operation in ('add', 'update', 'remove', 'lock'):
+        native = commands.add_parser(operation, help='Explicit native Cargo declaration/lock authoring in a controlled fetch stage')
+        native.add_argument('project', type=Path)
+        native.add_argument('--cargo', type=Path)
+        native.add_argument('--registry-config', type=Path)
+        if operation != 'lock':
+            native.add_argument('identity', help='Native Cargo dependency name')
+            native.add_argument('--section', choices=('dependencies', 'dev-dependencies', 'build-dependencies'), default='dependencies')
+            native.add_argument('--target', help='Explicit native target triple or cfg expression')
+        if operation in {'add', 'update'}:
+            native.add_argument('--version', required=True, help='Exact version; a local package must declare the same version')
+            native.add_argument('--path', type=Path)
+            native.add_argument('--registry')
+            native.add_argument('--feature', action='append', default=[])
+            native.add_argument('--no-default-features', action='store_true')
+            native.add_argument('--optional', action='store_true')
     resolve_ = commands.add_parser("resolve", help="Capture the locked native Cargo graph and vendor closure")
     resolve_.add_argument("project", type=Path)
     resolve_.add_argument("--candidate", type=Path, required=True)
@@ -61,7 +77,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    authoring = args.command in {"resolve", "review-lock", "dependencies", "test", "watch"}
+    authoring = args.command in {"add", "update", "remove", "lock", "resolve", "review-lock", "dependencies", "test", "watch"}
     try:
         if args.command == "new":
             result = project.create(args.directory, args.template, args.name)
@@ -85,7 +101,15 @@ def main(argv: list[str] | None = None) -> int:
                 except (ValueError, OSError):
                     print('Rust dependency frontend receipt unavailable; inspect workspace status.', file=sys.stderr)
                 return outcome.exit_code
-            if args.command == 'resolve':
+            if args.command in {'add', 'update', 'remove', 'lock'}:
+                from tools import cargo_native_authoring
+                result = cargo_native_authoring.author(args.project, args.command, cargo=args.cargo,
+                    registry_config=args.registry_config, identity=getattr(args, 'identity', None),
+                    version=getattr(args, 'version', None), local=getattr(args, 'path', None),
+                    section=getattr(args, 'section', 'dependencies'), target=getattr(args, 'target', None),
+                    features=getattr(args, 'feature', []), no_default_features=getattr(args, 'no_default_features', False),
+                    optional=getattr(args, 'optional', False), registry=getattr(args, 'registry', None))
+            elif args.command == 'resolve':
                 import os
                 from tools.application_dependency_store import DependencyError
                 from tools.rust_application_dependencies import resolve

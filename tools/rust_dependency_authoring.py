@@ -64,8 +64,8 @@ def transaction(project: Path):
 def replace(root: Path, private: Path, name: str, raw: bytes, previous: bytes | None, sdk) -> None:
     paths.relative(name)
     _owner, app, _identity = seal(root)
-    graph = ((app.relative_to(root).as_posix() + '/') if app != root else '') + 'cargo-resolved.lock.json'
-    if name not in {inputs.MANIFEST, inputs.LOCK, graph}:
+    prefix = app.relative_to(root).as_posix() + '/' if app != root else ''
+    if name not in {inputs.MANIFEST, inputs.LOCK, *(prefix + path for path in ('cargo-resolved.lock.json', 'Cargo.toml', 'Cargo.lock'))}:
         raise DependencyError('cargo-authoring-edit-target')
     if len(raw) > inputs.MAX_LOCK:
         raise DependencyError('dependency-lock-limit')
@@ -85,6 +85,40 @@ def replace(root: Path, private: Path, name: str, raw: bytes, previous: bytes | 
     finally:
         if temporary.exists():
             temporary.unlink()
+
+
+def publish_native(root: Path, private: Path, sdk, updates: dict[str, tuple[bytes, bytes | None]]) -> None:
+    """Restore only our exact bytes if a multi-file native publication fails."""
+    changed = []
+    try:
+        for name, (raw, previous) in updates.items():
+            replace(root, private, name, raw, previous, sdk)
+            changed.append((name, raw, previous))
+    except BaseException:
+        for name, raw, previous in reversed(changed):
+            target = root / name
+            temporary = private / ('rollback-' + secrets.token_hex(16))
+            if previous is not None:
+                paths.write_new(temporary, previous)
+            try:
+                with paths.directory(target.parent) as destination, paths.directory(private) as source:
+                    if optional(root, name) != raw:
+                        continue
+                    if previous is None:
+                        if os.name == 'nt':
+                            target.unlink()
+                        else:
+                            os.unlink(target.name, dir_fd=destination)
+                    elif os.name == 'nt':
+                        os.replace(temporary, target)
+                    else:
+                        os.replace(temporary.name, target.name, src_dir_fd=source, dst_dir_fd=destination)
+                    if os.name != 'nt':
+                        os.fsync(destination)
+            finally:
+                if temporary.exists():
+                    temporary.unlink()
+        raise
 
 
 def public(root: Path, sdk) -> dict:
