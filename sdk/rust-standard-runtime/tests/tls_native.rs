@@ -28,6 +28,7 @@ pub mod alloc {
 mod platform;
 
 use std::cell::{Cell, RefCell};
+use std::alloc::GlobalAlloc;
 use std::collections::BTreeSet;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -44,6 +45,7 @@ struct Ledger {
     continued: usize,
     settlements: Vec<(u64, bool)>,
     cleanup: usize,
+    kinds: Vec<u32>,
 }
 pub mod rt {
     pub fn thread_cleanup() {
@@ -56,7 +58,7 @@ pub extern "C" fn context_get() -> *mut u8 { SLOT.with(Cell::get) }
 pub extern "C" fn context_set(value: *mut u8) { SLOT.with(|s| s.set(value)); }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn register(kind: u32, continuation: u32, generation: u64, id: u64, result: *mut u8) {
-    assert_eq!(kind, 7);
+    assert!(matches!(kind, 0 | 7));
     LEDGER.with(|l| {
         let mut l = l.borrow_mut();
         if continuation == 1 {
@@ -67,7 +69,7 @@ pub unsafe extern "C" fn register(kind: u32, continuation: u32, generation: u64,
         if l.owners.len() == l.limit || (l.closing && continuation == 0) {
             unsafe { result.write(1); result.add(8).write(2); }
         } else {
-            l.next += 1; let owner = l.next; l.owners.insert(owner);
+            l.next += 1; let owner = l.next; l.owners.insert(owner); l.kinds.push(kind);
             unsafe {
                 result.write(0);
                 std::ptr::copy_nonoverlapping(81u64.to_le_bytes().as_ptr(), result.add(8), 8);
@@ -318,11 +320,50 @@ fn borrowed_root_stack_prefix_has_exact_canonical_offsets() {
     let (root, child) = borrowed_stack_context();
     let words = unsafe { std::slice::from_raw_parts(child.cast::<u32>(), 4) };
     assert_eq!(words, [131_072, 65_536, 131_072, 1]);
+    assert_eq!(child.addr() % 8, 0);
+    assert_eq!(unsafe { child.add(16).cast::<u64>().read() }, 81);
+    assert_eq!(unsafe { child.add(24).cast::<u64>().read() }, 1);
+    assert_eq!(unsafe { child.add(32).cast::<u16>().read() }, 0xffff);
+    assert_eq!(unsafe { child.add(34).read() }, 0);
     assert_eq!(owners(), 3);
     unsafe { platform::discard_unstarted_context(child); }
     assert_eq!(context_get(), root);
     unsafe { platform::retire_current().unwrap(); }
     assert_eq!(owners(), 0);
+}
+
+#[test]
+fn root_bootstrap_admits_original_task_before_context_and_retains_it_through_final_epilogue() {
+    reset(8);
+    let pointer = unsafe { platform::__lsf_rust_root_bootstrap(65_536, 131_072) };
+    assert!(context_get().is_null()); assert_eq!(owners(), 2);
+    assert_eq!(LEDGER.with(|l| l.borrow().kinds.clone()), [0, 7]);
+    unsafe { platform::install_thread_context(pointer); }
+    let value = Box::into_raw(Box::new(42u32)).cast();
+    unsafe { platform::set(FIRST.force(), value); }
+    assert_eq!(owners(), 3);
+    unsafe { platform::__lsf_rust_root_finish(pointer); }
+    assert_eq!(DROPS.load(Ordering::SeqCst), 1);
+    assert_eq!(context_get(), pointer); assert_eq!(owners(), 2);
+    assert_eq!(unsafe { phase(pointer) }, 4);
+    // Explicit fake stackless wrapper transition only; this does not establish
+    // canonical/native completion or refund the host's physical stack permit.
+    unsafe { wrapper_exited_record(pointer); }
+    context_set(std::ptr::null_mut());
+    WATCH_CONTEXT.store(pointer.addr(), Ordering::SeqCst);
+    unsafe { platform::__lsf_rust_root_reap(pointer); }
+    assert_eq!(CONTEXT_FREED.load(Ordering::SeqCst), 1); assert_eq!(owners(), 0);
+    assert_eq!(LEDGER.with(|l| l.borrow().settlements.clone()), [(3, false), (2, true), (1, true)]);
+}
+
+#[test]
+fn denied_root_task_prevents_context_allocation_and_native_admission() {
+    reset(0);
+    let before = SYSTEM_ALLOCS.load(Ordering::SeqCst);
+    assert!(std::panic::catch_unwind(|| platform::prepare_owned_root_context(65_536, 131_072)).is_err());
+    assert_eq!(SYSTEM_ALLOCS.load(Ordering::SeqCst), before);
+    assert!(context_get().is_null()); assert_eq!(owners(), 0);
+    assert!(LEDGER.with(|l| l.borrow().kinds.is_empty()));
 }
 
 #[test]
@@ -423,4 +464,101 @@ fn failed_destructor_drain_retains_installed_stack_context_and_all_owners() {
     assert_eq!(unsafe { phase(child) }, 3);
     assert_eq!(LEDGER.with(|l| l.borrow().cleanup), 0);
     // Retain this failed reference process's owner records; no reset/refund.
+}
+
+struct DrainState {
+    ready: Cell<bool>,
+    calls: Cell<usize>,
+    calls_after_destructor: Cell<usize>,
+}
+static DRAIN_RELEASED: AtomicUsize = AtomicUsize::new(0);
+
+fn install_drain(ready: bool) -> (*mut u8, *mut DrainState) {
+    reset(16);
+    let root = platform::prepare_owned_root_context(65_536, 131_072);
+    unsafe { platform::install_thread_context(root); }
+    let state = unsafe { alloc::System.alloc(std::alloc::Layout::new::<DrainState>()) }.cast::<DrainState>();
+    assert!(!state.is_null());
+    unsafe {
+        state.write(DrainState { ready: Cell::new(ready), calls: Cell::new(0),
+                                calls_after_destructor: Cell::new(0) });
+        platform::install_root_drain(state.cast(), run_drain, release_drain);
+    }
+    DRAIN_RELEASED.store(0, Ordering::SeqCst);
+    (root, state)
+}
+unsafe fn run_drain(state: *mut u8) -> bool {
+    assert!(!context_get().is_null());
+    assert!(owners() >= 2);
+    let state = unsafe { &*state.cast::<DrainState>() };
+    state.calls.set(state.calls.get() + 1);
+    if DROPS.load(Ordering::SeqCst) != 0 {
+        state.calls_after_destructor.set(state.calls_after_destructor.get() + 1);
+    }
+    state.ready.get()
+}
+unsafe fn release_drain(state: *mut u8) {
+    assert!(context_get().is_null());
+    assert_eq!(owners(), 2); // Root Task and context Native still own cleanup.
+    assert_eq!(CONTEXT_FREED.load(Ordering::SeqCst), 1);
+    unsafe { alloc::System.dealloc(state, std::alloc::Layout::new::<DrainState>()); }
+    DRAIN_RELEASED.store(1, Ordering::SeqCst);
+}
+
+#[test]
+fn root_pending_accepted_work_cannot_begin_tls_cleanup_or_refund_its_live_stack() {
+    let (root, state) = install_drain(false);
+    unsafe { platform::set(FIRST.force(), Box::into_raw(Box::new(42u32)).cast()); }
+    let owner_count = owners();
+    let frees = SYSTEM_FREES.load(Ordering::SeqCst);
+    assert_eq!(unsafe { platform::finish_stacked_thread_tls() }, Err(platform::RetireError::AcceptedWorkPending));
+    assert_eq!(owners(), owner_count);
+    assert_eq!(SYSTEM_FREES.load(Ordering::SeqCst), frees);
+    assert_eq!(context_get(), root); assert_eq!(unsafe { phase(root) }, 2);
+    assert_eq!(DROPS.load(Ordering::SeqCst), 0);
+    assert_eq!(DRAIN_RELEASED.load(Ordering::SeqCst), 0);
+    unsafe { (*state).ready.set(true); }
+    WATCH_CONTEXT.store(root.addr(), Ordering::SeqCst);
+    unsafe { platform::__lsf_rust_root_finish(root); wrapper_exited_record(root); }
+    context_set(std::ptr::null_mut());
+    unsafe { platform::__lsf_rust_root_reap(root); }
+    assert_eq!(owners(), 0); assert_eq!(DRAIN_RELEASED.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn root_destructor_work_is_drained_before_entries_and_original_task_retire() {
+    let (root, state) = install_drain(true);
+    unsafe { platform::set(FIRST.force(), Box::into_raw(Box::new(42u32)).cast()); }
+    WATCH_CONTEXT.store(root.addr(), Ordering::SeqCst);
+    unsafe { platform::__lsf_rust_root_finish(root); }
+    assert!(unsafe { (*state).calls.get() } >= 3);
+    assert!(unsafe { (*state).calls_after_destructor.get() } >= 2);
+    assert_eq!(DROPS.load(Ordering::SeqCst), 1);
+    assert_eq!(owners(), 2); assert_eq!(DRAIN_RELEASED.load(Ordering::SeqCst), 0);
+    unsafe { wrapper_exited_record(root); }
+    context_set(std::ptr::null_mut());
+    unsafe { platform::__lsf_rust_root_reap(root); }
+    assert_eq!(owners(), 0); assert_eq!(DRAIN_RELEASED.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn a_child_or_replacement_cannot_install_another_roots_drain_registry() {
+    let (root, state) = install_drain(true);
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
+        platform::install_root_drain(state.cast(), run_drain, release_drain);
+    })).is_err());
+    let child = platform::prepare_borrowed_root_context(platform::Token { generation: 81, id: 1 }, 131_072, 196_608);
+    context_set(std::ptr::null_mut());
+    unsafe { platform::install_thread_context(child); }
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
+        platform::install_root_drain(state.cast(), run_drain, release_drain);
+    })).is_err());
+    unsafe { platform::finish_stacked_thread_tls().unwrap(); wrapper_exited_record(child); }
+    context_set(root);
+    unsafe { platform::retire_exited_thread_context(child).unwrap(); }
+    WATCH_CONTEXT.store(root.addr(), Ordering::SeqCst);
+    unsafe { platform::__lsf_rust_root_finish(root); wrapper_exited_record(root); }
+    context_set(std::ptr::null_mut());
+    unsafe { platform::__lsf_rust_root_reap(root); }
+    assert_eq!(owners(), 0);
 }

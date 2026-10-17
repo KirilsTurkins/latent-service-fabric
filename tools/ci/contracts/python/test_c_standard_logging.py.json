@@ -1,0 +1,62 @@
+{
+  "cases": [
+    "StandardLogging.test_logging_dependency_cannot_borrow_clock_profile_or_ignore_adapter_tamper",
+    "StandardLogging.test_logging_execution_requires_explicit_c_only_selection",
+    "StandardLogging.test_outside_ordinary_stdio_is_captured_offline_with_sdk_and_other_limits_unchanged",
+    "StandardLogging.test_profile_derives_only_logging_without_granting_clock_entropy_or_files"
+  ],
+  "guards": {
+    "StandardLogging.test_logging_dependency_cannot_borrow_clock_profile_or_ignore_adapter_tamper": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:475507b286cd8b893f05dd21ac5f6b5c9be4bf9165e0d11c83e0805f170d71aa",
+        "class:setup-sha256:986d7d6d460134e3ac3d0ab229456ef35b4a728f66c07f7cd176e068b6cbbaf0"
+      ],
+      "skipSites": []
+    },
+    "StandardLogging.test_logging_execution_requires_explicit_c_only_selection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:475507b286cd8b893f05dd21ac5f6b5c9be4bf9165e0d11c83e0805f170d71aa",
+        "class:setup-sha256:986d7d6d460134e3ac3d0ab229456ef35b4a728f66c07f7cd176e068b6cbbaf0"
+      ],
+      "skipSites": []
+    },
+    "StandardLogging.test_outside_ordinary_stdio_is_captured_offline_with_sdk_and_other_limits_unchanged": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:475507b286cd8b893f05dd21ac5f6b5c9be4bf9165e0d11c83e0805f170d71aa",
+        "class:setup-sha256:986d7d6d460134e3ac3d0ab229456ef35b4a728f66c07f7cd176e068b6cbbaf0"
+      ],
+      "skipSites": []
+    },
+    "StandardLogging.test_profile_derives_only_logging_without_granting_clock_entropy_or_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:475507b286cd8b893f05dd21ac5f6b5c9be4bf9165e0d11c83e0805f170d71aa",
+        "class:setup-sha256:986d7d6d460134e3ac3d0ab229456ef35b4a728f66c07f7cd176e068b6cbbaf0"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_standard_logging.py",
+  "reviewReason": "Verify explicit log-only WIT, offline unchanged library capture, immutable SDK, mismatched profiles and C-only consent without altering any existing test guards",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

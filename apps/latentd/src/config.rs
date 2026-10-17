@@ -52,7 +52,7 @@ pub use model::{
 pub use providers::{
     ActivationRuntimeInstallation, ActivationRuntimeLimits, BlobInstallation, ConfiguredProviders,
     HostBinding, HttpInstallation, HttpStreamingInstallation, LocalServiceInstallation,
-    ProviderIdentity, ProviderSecretFile, SecretInstallation, StreamInstallation,
+    ProviderIdentity, ProviderSecretFile, ScalarAlias, SecretInstallation, StreamInstallation,
 };
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;

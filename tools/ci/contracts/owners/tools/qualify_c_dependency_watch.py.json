@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_c_dependency_watch.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review exact public watch vocabularies and optional Exception-only observer; preserve qualification behavior.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "89fd17dba2ef852c0316f146b195b4a991903afc0aece6d2a52ac3cbb8c4d685"
+}

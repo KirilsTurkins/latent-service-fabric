@@ -1,4 +1,4 @@
-"""Review tripwire for the audited native-loader and fixed-result exceptions.
+"""Review tripwire for the audited native-loader, result and stack exceptions.
 
 Rust's deny/forbid lints enforce unsafe-code policy. This source guard also makes
 changes to the reviewed exception and its dependency pin explicit in CI; it is
@@ -38,7 +38,17 @@ LOADER = f"{CRATE}/src/aot/loader.rs"
 # reviewed; another unsafe site, result shape, allowance or implementation
 # requires a new review. The engine version is checked above both exceptions.
 FIXED_RESULT = f"{CRATE}/src/host/runtime/fixed_result.rs"
-FIXED_RESULT_SHA256 = "7122f099bd89829ec74f652620cf61f9710674b1e6deab4a38b4bb4c1fc77e23"
+FIXED_RESULT_SHA256 = "c8ff0fd34ad8fe30cd5098e1c23265712285067625b48ed1a7e1a2543e74b7ee"
+# This third exception only allocates and unmaps guarded root stacks through
+# Wasmtime's pinned public StackCreator interface. Original activation Native
+# and memory admission precede mapping; actual successful munmap precedes refund.
+# The ordinary profile keeps canonical thread creation closed; explicit child
+# admission retains distinct prepaid original Task tokens. Bind all source, so adding
+# another unsafe operation or changing the physical retirement fence needs review.
+NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
+NATIVE_STACK_CHILD = f"{CRATE}/src/native_stacks/children.rs"
+NATIVE_STACK_CHILD_SHA256 = "18680df6415e0bc399ac9cf072c8033db60805da3ff5ccbecac3bea79b4cc0db"
+NATIVE_STACK_SHA256 = "7343c3a6feb90ef74627f54fa7bbc805e8c4e60255064efc6d1a94301af4c94b"
 ALLOW = '''#[allow(
     unsafe_code,
     reason = "the sole native loader accepts only a private proof over authenticated immutable bytes"
@@ -109,6 +119,15 @@ def validate(root: Path) -> list[str]:
                 errors.append("audited fixed-result lowering changed; review its pinned ABI and original physical owner")
             else:
                 source = ""
+        elif relative == NATIVE_STACK:
+            if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_SHA256:
+                errors.append("audited native-stack allocator changed; review original admission and physical unmapping")
+            else:
+                source = ""
+        elif relative == NATIVE_STACK_CHILD:
+            if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_CHILD_SHA256:
+                errors.append("audited native child admission/retirement changed; review original permits and host-only post-StoreDrop release")
+            # No unsafe allowance is granted to the child state machine.
         if unsafe.search(source) or lowered.search(source):
             errors.append(f"unreviewed unsafe code or allowance in {relative}")
     return errors

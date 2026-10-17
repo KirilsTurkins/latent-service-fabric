@@ -21,6 +21,18 @@ class NativeBuildInputs(unittest.TestCase):
             with self.subTest(library=library,objects=objects), self.assertRaisesRegex(ValueError,'composition-input-bound'):
                 owner.combined_archive_limits(library,objects)
 
+    def test_normal_codec_installation_requires_one_original_definition_before_bindings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/'builtins.incl'
+            codec = b'NS_DEF(builtins::web::text_codec)\n'
+            embedding = b'NS_DEF(componentize::embedding)\n'
+            path.write_bytes(codec+embedding)
+            self.assertEqual(owner.native_codec_installation(path),owner.file_identity(path))
+            for changed in (embedding,codec+codec+embedding,embedding+codec):
+                path.write_bytes(changed)
+                with self.subTest(changed=changed), self.assertRaisesRegex(ValueError,'text-codec-not-installed'):
+                    owner.native_codec_installation(path)
+
     def test_upstream_object_list_rejects_changed_shape_duplicates_and_path_escape(self):
         original = b'    set(SM_OBJ_FILES\n        memory/build/original.o\n        mfbt/one.o\n    )\n'
         self.assertEqual(owner.supporting_objects(original),['memory/build/original.o','mfbt/one.o'])
@@ -68,6 +80,63 @@ class NativeBuildInputs(unittest.TestCase):
             self.assertEqual(links,[])
             original['nested/file'] = b'changed'
             self.assertEqual((root/'nested/file').read_bytes(),b'original')
+
+
+class SourceSplicerInputOwnership(unittest.TestCase):
+    """Metadata models validate ownership only and never execute a compiler."""
+    def fixture(self, root):
+        import json
+        from tools.typescript_guest import splicer_build, splicer_input
+        files = {'spidermonkey-embedding-splicer.js':b'export {}',
+                 'spidermonkey-embedding-splicer.core.wasm':b'\0asm\x01\0\0\0'}
+        (root/'splicer').mkdir()
+        for name, raw in files.items(): (root/'splicer'/name).write_bytes(raw)
+        envelope = {'schemaVersion':splicer_input.SCHEMA,'componentizeTree':splicer_input.COMPONENTIZE_TREE,
+            'files':splicer_input.identity(files),
+            'sdkInputs':[{'path':name,'digest':owner.digest((owner.ROOT/name).read_bytes()),'size':(owner.ROOT/name).stat().st_size}
+                         for name in sorted(splicer_input.input_paths())],
+            'qualification':'unknown','apiSupport':'not-evaluated','inputTrust':'operator-asserted'}
+        for field, name, value in (
+            ('sourceDerivationDigest','source-derivation.json',{'scope':'unit-input-model-only'}),
+            ('buildReceiptDigest','splicer-compilation.json',{'scope':'unit-input-model-only'}),
+            ('transpileReceiptDigest','transpile-receipt.json',{'result':{'returncode':0},'files':envelope['files']})):
+            (root/name).write_text(json.dumps(value))
+            envelope[field] = owner.digest((root/name).read_bytes())
+        (root/'splicer-input.json').write_text(json.dumps(envelope))
+        record = {'schemaVersion':'latent.typescript.source-splicer-build.v1','status':'passed',
+            'scope':'source-built-compiler-input-only','qualification':'unknown','apiSupport':'not-evaluated',
+            'input':owner.file_identity(root/'splicer-input.json'),
+            'recipe':{name:owner.file_identity(owner.ROOT/name) for name in splicer_build.recipe_paths()}}
+        (root/'splicer-build.json').write_text(json.dumps(record))
+        return record
+
+    def test_source_compiler_input_rechecks_equal_size_products_and_original_receipts(self):
+        for target in ('splicer/spidermonkey-embedding-splicer.js','transpile-receipt.json'):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory); self.fixture(root)
+                before = owner.source_splicer(root)
+                self.assertTrue(before['inputDigest'].startswith('sha256:'))
+                path = root/target
+                path.write_bytes(b'X'+path.read_bytes()[1:])
+                with self.assertRaises(ValueError): owner.source_splicer(root)
+
+    def test_unknown_or_escaping_recipe_cannot_become_an_engine_build_input(self):
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); record = self.fixture(root)
+            record['recipe']['../../outside'] = next(iter(record['recipe'].values()))
+            (root/'splicer-build.json').write_text(json.dumps(record))
+            with self.assertRaisesRegex(ValueError,'source-splicer-recipe-drift'):
+                owner.source_splicer(root)
+
+    def test_incomplete_or_promoted_source_receipt_is_not_accepted(self):
+        import json
+        for field,value in (('status','failed'),('qualification','qualified'),('apiSupport','supported')):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory); record = self.fixture(root); record[field] = value
+                (root/'splicer-build.json').write_text(json.dumps(record))
+                with self.assertRaisesRegex(ValueError,'completed-source-splicer-required'):
+                    owner.source_splicer(root)
 
 
 if __name__ == '__main__': unittest.main()

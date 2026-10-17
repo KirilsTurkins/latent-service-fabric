@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "latent.c-standard-stdio.failed-evidence.v1",
+  "status": "component-assembly-failed",
+  "runtimeQualified": false,
+  "sourceHead": "3aaf678423bc450e9b33b2d1c775da12b2761d47",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38837675176/job/116770334470",
+  "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38837675176/artifacts/12021429703",
+  "originalClockEntropyProgramme": "passed",
+  "stdioCCompilation": "passed",
+  "stdioComponentAssembly": "failed: unresolved wasi_snapshot_preview1::fd_close",
+  "stdioSignedExecution": "not-reached",
+  "failedCoreRetained": false,
+  "correction": "Bind the exact four reviewed descriptor operations through SDK-owned public libc and raw WASI thunk wrappers in the explicitly selected stdio profile. Retain bounded actual core bytes on component-assembly failure. Default profiles, capability grants and existing execution guards are unchanged.",
+  "correctedNativeExecution": "pending"
+}
