@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/c_dependency_watch_fixture.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bound watch fixture formatting without importing stdio while preserving original dependency evaluation and expected signed payloads",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "7ecab28031b76983f72e4c5b36c9099175dc3b0d03a75a311feb45d24b5c31d5"
+}

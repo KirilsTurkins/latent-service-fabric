@@ -5,9 +5,11 @@ The opt-in `c-standard-clock-entropy-v1` compiler profile ports the pinned Zig
 does not install an ambient WASI host. The compiler selects the maintained port
 automatically beneath ordinary application and dependency calls.
 
-**Qualification: selected, unqualified.** Source and contract tests are present.
-An independently compiled, signed component and ordinary-node execution are
-required before runtime compatibility is advertised. This profile does not
+**Qualification: signed-node qualification for this finite profile.** The
+[recorded corrected programme](../testing/evidence/c-standard-facilities-passed-2026-10-16.json)
+passed all 38 expected invocation outcomes on the captured ordinary native tuple.
+Source, compiler, component and retirement identities remain bound to that
+receipt. This profile does not
 complete [resource and runtime facilities #681](https://github.com/KirilsTurkins/latent-service-fabric/issues/681)
 or [C runtime #744](https://github.com/KirilsTurkins/latent-service-fabric/issues/744).
 
@@ -93,3 +95,7 @@ CPU-time emulation, pthreads, sockets, concurrent callbacks and persistent
 workers are outside this profile. No larger execution budget is implied.
 See the [C authoring guide](c-authoring.md) and
 [library compatibility and runtime selection](library-compatibility.md).
+
+The separate [standard stdio logging profile](c-standard-logging.md) selects
+only the bounded log contract; it does not implicitly select these clocks or
+entropy providers.

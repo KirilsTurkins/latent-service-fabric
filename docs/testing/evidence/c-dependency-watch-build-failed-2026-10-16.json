@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "status": "failed-during-initial-build",
+  "pullRequest": 1022,
+  "sourceHead": "9dbaa550cd4c2881eb441f548817d62a912c609e",
+  "testedMerge": "dbf3dab744e33f07b9c2831614ef0a33258fbc3e",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38829634683/job/116745629528",
+  "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38829634683/artifacts/12019038992",
+  "failure": "initial-build-failed",
+  "deploymentCount": 0,
+  "publisherAuthenticated": false,
+  "originalInputsRemovedBeforeCompile": true,
+  "signedWatchQualified": false,
+  "compilerDiagnosticRetained": false,
+  "correction": "Replace fixture snprintf with bounded byte and decimal formatting so a closed dependency/watch probe does not require stdio. Retain bounded initial build stdout and stderr for precise diagnosis in the next run.",
+  "stdioCauseConfirmed": false,
+  "originalProductGuardsChanged": false,
+  "correctedExecution": "pending"
+}

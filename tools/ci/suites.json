@@ -7198,6 +7198,12 @@
         "invocation_input_observer::tests::records_are_never_overwritten_when_diagnostic_storage_is_exhausted",
         "invocation_input_observer::tests::registration_is_atomic_bounded_and_cannot_reset_a_live_session",
         "invocation_input_observer::tests::reused_unknown_and_duplicate_stage_fail_coverage_without_stealing_owners",
+        "native_stacks::tests::actual_wasmtime_pending_stack_keeps_original_lease_until_native_drop",
+        "native_stacks::tests::allocator_requires_poll_scoped_owner_and_never_reuses_a_consumed_prestart_permit",
+        "native_stacks::tests::cancelling_actual_pending_call_keeps_original_lease_until_native_drop",
+        "native_stacks::tests::controlled_profile_rejects_pooling_and_absent_runtime_and_binds_compatibility",
+        "native_stacks::tests::logical_finalization_cannot_hide_a_guest_owned_native_or_task_record",
+        "native_stacks::tests::original_native_and_memory_limits_reject_before_mapping_and_roll_back_unstarted_permits",
         "phase0::tests::dynamic_results_preserve_legacy_success_domain_errors_and_consumption",
         "phase0::tests::legacy_input_preserves_text_and_bounds_the_escaped_parameter_buffer",
         "phase0::tests::profiles_explicit_bounded_allocator_and_cow_experiments",
@@ -7279,7 +7285,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 361,
+      "minimumCases": 367,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -7808,22 +7814,29 @@
         "legacy_clock_without_explicit_timer_still_fails_closed_on_real_fence",
         "legacy_session_without_timer_fails_closed_before_store_or_guest",
         "monotonic::ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
+        "monotonic::ordinary_std_instant_with_owned_native_stack",
         "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores",
+        "ordinary_std_systemtime_with_owned_native_stack",
+        "owned_stack_fixture_selects_original_phase3_without_expanding_finite_grant",
         "real_session_currentness_wait_precedes_store_registration_and_calls_guest_once",
         "real_session_wait_keeps_original_cancellation_and_lease_expiry"
       ],
       "expectedIgnored": [
         "monotonic::ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
-        "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores"
+        "monotonic::ordinary_std_instant_with_owned_native_stack",
+        "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores",
+        "ordinary_std_systemtime_with_owned_native_stack"
       ],
       "id": "latent-wasmtime.test.clock-admission",
       "ignoredLeaves": [
         "ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores",
-        "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores"
+        "ordinary_std_instant_with_owned_native_stack",
+        "ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores",
+        "ordinary_std_systemtime_with_owned_native_stack"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 11,
+      "minimumCases": 14,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -9092,7 +9105,10 @@
         "phase4::state_management::tests::effects::result_history::actual_result_response_cannot_survive_a_later_namespace_lifecycle_change",
         "phase4::state_management::tests::effects::result_history::actual_original_schema_result_retains_distinct_body_identity_and_clock_floor_limits",
         "phase4::state_management::tests::effects::result_history::actual_corrupt_original_result_link_never_becomes_readable_after_schema_change",
-        "phase4::state_management::tests::effects::result_history::actual_effect_and_cancel_keep_original_schema_refusal_after_result_read_succeeds"
+        "phase4::state_management::tests::effects::result_history::actual_effect_and_cancel_keep_original_schema_refusal_after_result_read_succeeds",
+        "management::errors::control_refusal::tests::disabled_capture_and_writer_failure_preserve_the_original_error",
+        "management::errors::control_refusal::tests::marker_vocabulary_and_process_capture_are_bounded",
+        "management::errors::control_refusal::tests::only_resource_refusals_consume_the_closed_record_allowance"
       ],
       "expectedIgnored": [
         "phase4::local_transaction::tests::actual_guest_duplicate_conflict_and_dropped_waiter_have_one_execution_commit_and_effect",
@@ -9159,7 +9175,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wire/Cargo.toml",
-      "minimumCases": 267,
+      "minimumCases": 270,
       "mode": "libtest",
       "package": "latent-wire",
       "platforms": [

@@ -31,6 +31,7 @@ pub(crate) struct Table {
     owners: Vec<RuntimeOwner>,
     timers: Vec<RuntimeTimer>,
     runtime: ActivationRuntime,
+    pub(crate) native_stacks: Option<Arc<crate::native_stacks::StackContext>>,
     _allocation: HostMemoryReservation,
 }
 impl Table {
@@ -67,16 +68,23 @@ impl Table {
             owners,
             timers,
             runtime,
+            native_stacks: None,
             _allocation: allocation,
         })
     }
     pub(crate) fn finalize(&mut self) -> Result<(), PlatformError> {
         self.runtime.begin_drain();
-        self.runtime.retire()
+        match &self.native_stacks {
+            Some(stacks) => stacks.finish_logical(),
+            None => self.runtime.retire(),
+        }
     }
 }
 impl Drop for Table {
     fn drop(&mut self) {
+        if let Some(stacks) = &self.native_stacks {
+            stacks.cancel_unstarted();
+        }
         self.runtime.cancel();
     }
 }
@@ -95,6 +103,23 @@ fn table(state: &mut HostState) -> Result<&mut Table, PlatformError> {
     table.runtime.check_live()?;
     Ok(table)
 }
+pub(crate) fn prepare_native_stack(
+    state: &mut HostState,
+    size: usize,
+) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
+    let budget = state.accounting.budget().clone();
+    let table = table(state)?;
+    if table.native_stacks.is_some() {
+        return Err(failure(
+            PlatformErrorCode::Internal,
+            "native-stack-context-already-created",
+        ));
+    }
+    let context = crate::native_stacks::StackContext::new(budget, table.runtime.clone(), size)?;
+    table.native_stacks = Some(Arc::clone(&context));
+    Ok(context)
+}
+
 fn authorize(state: &HostState, operation: &str) -> Result<ProviderCall, PlatformError> {
     if let Some(stop) = &state.runtime_stop {
         if let Some(kind) = stop.observe() {

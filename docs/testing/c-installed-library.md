@@ -32,6 +32,22 @@ The [October 16 source-candidate receipt](evidence/c-installed-library-2026-10-1
 records the exact compiler output, qualifier, archive, helper and observed command
 outcomes. The compiler statement retains `packageAssembled=false`; signed-node
 use requires the normal separate controller packaging/provenance join. A local
-candidate has no publisher authentication or released-toolkit claim. Authenticated
-frontend watch and newly reviewed version deployment remain separate acceptance
-work under [#684](https://github.com/KirilsTurkins/latent-service-fabric/issues/684).
+candidate has no publisher authentication or released-toolkit claim.
+
+The separate [delivered signed-watch programme](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38934579272/job/117168617232)
+passed at source `6bf3d5c357fb768357522e85f61282681bddd162`, tested merge
+`b4ad3f25516e9b3a43d230928695a52756f011c6`. Initial, updated and removed library
+selections each produced one successful deployment and post-deploy test. All
+three workspaces completed normal clean shutdown with confirmed reaping and
+zero watcher exit codes. Original outside inputs were removed before
+compilation. Unreviewed dependency locks, missing recipe trust and changed
+signed-workspace reuse were rejected before the corresponding deployment.
+
+Its bounded public receipt binds the qualifier, input fixture, source probe and
+explicit frontend helper. The initial component was
+`sha256:79ee5ee8e14d80b51710a4582e8cf4486db09617dcde9d36ecabe15d9467bd4c`;
+updated and removed component identities remain in the runner's private full
+build/deployment receipts. This is an explicit signed source-candidate
+qualification. The full requirements of
+[#684](https://github.com/KirilsTurkins/latent-service-fabric/issues/684) also
+consume the separate source/static-library and standard-facility evidence.
