@@ -4406,14 +4406,15 @@
         "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_unpinned_report_before_component_or_output",
         "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_relative_input_before_read_or_output",
         "authoring::current_java::reconstructed::tests::reconstructed_current_mode_keeps_forbidden_capture_unsigned_before_output",
-        "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_existing_or_relative_output_before_inputs"
+        "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_existing_or_relative_output_before_inputs",
+        "authoring::inputs::tests::shared_server_metadata_requires_observed_profile_component_source_and_web_lifecycle"
       ],
       "expectedIgnored": [],
       "id": "latent-policy.example.capsule-authoring",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 31,
+      "minimumCases": 32,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [
@@ -8153,7 +8154,8 @@
         "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells",
         "secrets::secret_owner_typed_denial_cancellation_and_cell_recovery",
         "service::typed_service_outcomes_use_node_admission_and_reused_cells",
-        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop"
+        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop",
+        "logging::standard_java_console_preserves_encoding_original_budget_errors_and_fresh_state"
       ],
       "expectedIgnored": [
         "all_rust_examples_are_exact_signed_phase2_packages",
@@ -8167,7 +8169,8 @@
         "random::standard_java_entropy_uses_original_system_provider_and_fresh_cells",
         "secrets::secret_owner_typed_denial_cancellation_and_cell_recovery",
         "service::typed_service_outcomes_use_node_admission_and_reused_cells",
-        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop"
+        "streaming::streaming_ownership_and_independent_chunks_survive_body_drop",
+        "logging::standard_java_console_preserves_encoding_original_budget_errors_and_fresh_state"
       ],
       "id": "latent-wasmtime.test.guest-sdk",
       "ignoredLeaves": [
@@ -8182,11 +8185,12 @@
         "standard_java_entropy_uses_original_system_provider_and_fresh_cells",
         "streaming_ownership_and_independent_chunks_survive_body_drop",
         "typed_event_receipt_denial_and_uncertainty_do_not_retry",
-        "typed_service_outcomes_use_node_admission_and_reused_cells"
+        "typed_service_outcomes_use_node_admission_and_reused_cells",
+        "standard_java_console_preserves_encoding_original_budget_errors_and_fresh_state"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 12,
+      "minimumCases": 13,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -8425,6 +8429,8 @@
         "runtime::typescript::signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
         "runtime::typescript::signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime",
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting",
+        "runtime::signed_java_host_imports_suspend_only_their_owned_callers",
+        "runtime::signed_java_published_libraries_use_unchanged_default_workers",
         "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers"
       ],
       "expectedIgnored": [
@@ -8437,6 +8443,8 @@
         "runtime::typescript::signed_pending_exports_timers_rejections_and_fresh_state_use_real_node_owners",
         "runtime::typescript::signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
         "runtime::typescript::signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime",
+        "runtime::signed_java_host_imports_suspend_only_their_owned_callers",
+        "runtime::signed_java_published_libraries_use_unchanged_default_workers",
         "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers"
       ],
       "id": "latent-wasmtime.test.local-service",
@@ -8450,11 +8458,13 @@
         "signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
         "signed_standard_goroutines_sleep_and_drain_use_original_activation_owners",
         "signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime",
+        "signed_java_host_imports_suspend_only_their_owned_callers",
+        "signed_java_published_libraries_use_unchanged_default_workers",
         "signed_java_standard_timers_recur_cancel_and_drain_owned_workers"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 41,
+      "minimumCases": 43,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

@@ -28,6 +28,14 @@
         "run": "python -m unittest tools.tests.test_guest_authoring_frontend tools.tests.test_java_dependency_authoring tools.tests.test_java_resource_runtime tools.tests.test_java_private_resolution"
       },
       {
+        "name": "Exercise owned .NET dependency watch fixture boundaries",
+        "run": "python -m unittest tools.tests.test_dotnet_dependency_watch"
+      },
+      {
+        "name": "Exercise explicit bounded random fixture and denied consent",
+        "run": "python -m unittest tools.tests.test_dev_random_fixture"
+      },
+      {
         "name": "Exercise owned Rust dependency watch fixture boundaries",
         "run": "python -m unittest tools.tests.test_rust_dependency_watch"
       },
@@ -49,7 +57,7 @@
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Add explicit detached Rust approval/cache/private request controls; preserve all prior controller modules, commands and guards.",
+  "reviewReason": "Preserve the exact detached approval controller module and all Rust/.NET watch and explicit random fixture controls after current development integration.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

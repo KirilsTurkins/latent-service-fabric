@@ -249,5 +249,76 @@ class CanonicalCompilerHostTools(unittest.TestCase):
                 compiler.Isolation(workspace, tools, distributions)
 
 
+class ExplicitCompilerHostPath(unittest.TestCase):
+    def setUp(self):
+        from contextlib import ExitStack
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import captured_compiler_isolation as compiler
+        self.compiler = compiler
+        temporary = tempfile.TemporaryDirectory(prefix='compiler-host-path-')
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.workspace = self.root / 'workspace'; self.workspace.mkdir()
+        self.host_path = str(self.root / 'selected host tools')
+        self.selected = {}
+        for name in ('bwrap', 'ldd', 'tool'):
+            path = self.root / name; path.write_bytes(('selected-' + name).encode())
+            self.selected[name] = path
+        self.stack = ExitStack(); self.addCleanup(self.stack.close)
+        self.stack.enter_context(patch.object(compiler.sys, 'platform', 'linux'))
+        self.stack.enter_context(patch.dict(os.environ, {'PATH': '/nonexistent'}))
+        self.loader = self.stack.enter_context(patch.object(compiler, 'run_bounded_result',
+            return_value=SimpleNamespace(returncode=0, stdout=b'statically linked', stderr=b'')))
+
+    def test_explicit_host_path_captures_exact_selected_files_without_ambient_lookup(self):
+        from unittest.mock import patch, call
+        from tools.build_observation import file_identity
+        def selected(name, *, path=None):
+            self.assertEqual(path, self.host_path)
+            return str(self.selected[name])
+        with patch.object(self.compiler.shutil, 'which', side_effect=selected) as lookup:
+            boundary = Isolation(self.workspace, {'tool': self.selected['tool']}, {}, host_tool_path=self.host_path)
+        self.assertEqual(lookup.call_args_list,
+                         [call('bwrap', path=self.host_path), call('ldd', path=self.host_path)])
+        self.assertEqual(boundary.sandbox, self.selected['bwrap'].resolve())
+        self.assertEqual(boundary.receipt['sandbox'], file_identity(self.selected['bwrap'], 'build-sandbox'))
+        self.assertEqual(boundary.receipt['loaderObserver'],
+                         file_identity(self.selected['ldd'], 'loader-dependency-observer'))
+        self.assertEqual(os.environ['PATH'], '/nonexistent')
+        command = boundary.wrap(self.selected['tool'], [], self.workspace, {'PATH': self.host_path})
+        self.assertIn('--clearenv', command)
+        self.assertIn('--unshare-all', command)
+        self.assertIn(['--setenv', 'PATH', '/nonexistent'],
+                      [command[index:index + 3] for index in range(len(command) - 2)])
+        boundary.check_unchanged()
+
+    def test_missing_explicit_host_tool_never_falls_back_to_ambient_tools(self):
+        from unittest.mock import patch
+        for missing in ('bwrap', 'ldd'):
+            def selected(name, *, path=None):
+                self.assertEqual(path, self.host_path)
+                return None if name == missing else str(self.selected[name])
+            with self.subTest(missing=missing), patch.object(self.compiler.shutil, 'which', side_effect=selected), \
+                    self.assertRaisesRegex(DependencyError, 'requires-linux-bubblewrap'):
+                Isolation(self.workspace, {'tool': self.selected['tool']}, {}, host_tool_path=self.host_path)
+        self.loader.assert_not_called()
+
+    def test_invalid_explicit_host_path_refuses_before_discovery_or_processes(self):
+        from unittest.mock import patch
+        for path in ('', 'bad\0path', 1, []):
+            with self.subTest(path=path), patch.object(self.compiler.shutil, 'which') as lookup, \
+                    self.assertRaisesRegex(DependencyError, 'host-tool-path-invalid'):
+                Isolation(self.workspace, {'tool': self.selected['tool']}, {}, host_tool_path=path)
+            lookup.assert_not_called()
+        self.loader.assert_not_called()
+
+    def test_unselected_callers_keep_the_original_ambient_discovery_contract(self):
+        from unittest.mock import patch, call
+        with patch.object(self.compiler.shutil, 'which', side_effect=lambda name: str(self.selected[name])) as lookup:
+            Isolation(self.workspace, {'tool': self.selected['tool']}, {})
+        self.assertEqual(lookup.call_args_list, [call('bwrap'), call('ldd')])
+
+
 if __name__ == '__main__':
     unittest.main()

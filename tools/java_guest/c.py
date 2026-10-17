@@ -95,6 +95,8 @@ class Codec:
 
 
 def generate(graph: Graph) -> str:
+    if any(function.get("asyncLowered") for function in graph.imports):
+        raise ValueError("asynchronous Java imports require their owned pending-call bridge")
     output = ['/* Generated from authoritative WIT. DO NOT EDIT. */', '#include "bridge.h"']
     codec = Codec(graph)
     for function in graph.exports:

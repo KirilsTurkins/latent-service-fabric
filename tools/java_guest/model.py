@@ -29,7 +29,9 @@ def cident(value: str) -> str:
 
 
 class Graph:
-    def __init__(self, data: dict, world: str, header: str):
+    def __init__(self, data: dict, world: str, header: str, *, async_imports: bool = False):
+        if type(async_imports) is not bool:
+            raise ValueError("Java asynchronous C ABI requires an explicit boolean selection")
         if set(data) != {"worlds", "interfaces", "types", "packages"}:
             raise ValueError("unsupported wasm-tools WIT graph format")
         if len(data["types"]) > 1024 or len(data["interfaces"]) > 128 or len(header) > 1024 * 1024:
@@ -83,11 +85,19 @@ class Graph:
                         if found is None: raise ValueError("unsupported generated C parameter syntax")
                         params.append({"type": found[1], "pointer": bool(found[2]), "name": found[3]})
                     result = function.get("result")
-                    expected = len(function["params"]) + (1 if match[1] == "void" and result is not None else 0)
+                    if match[1] == "probe_callback_code_t":
+                        raise ValueError("asynchronous C exports are outside the selected Java profile")
+                    lowered = match[1] == "probe_subtask_status_t"
+                    if lowered and (not async_imports or direction != "imports" or function["kind"] != "async-freestanding"):
+                        raise ValueError("asynchronous C ABI is outside the selected Java profile")
+                    expected = len(function["params"]) + (1 if (match[1] == "void" or lowered) and result is not None else 0)
                     if len(params) != expected: raise ValueError("unexpected flattened or asynchronous C ABI")
+                    if lowered and result is not None and not params[-1]["pointer"]:
+                        raise ValueError("asynchronous C ABI requires an owned result area")
                     target = self.imports if direction == "imports" else self.exports
                     target.append({**function, "interface": interface_id, "symbol": symbol,
                                    "cReturn": match[1], "cParams": params, "operation": len(target)})
+                    if lowered: target[-1]["asyncLowered"] = True
         if len(self.export_ids) != 1 or not self.exports:
             raise ValueError("Java profile currently requires one nonempty exported interface")
         if len(self.imports) > 256 or len(self.exports) > 64:
