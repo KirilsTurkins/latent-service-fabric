@@ -376,7 +376,7 @@ class PublicBuildFailures(unittest.TestCase):
             owner = {'id': 'a' * 32, 'key': 'sha256:' + '0' * 64, 'source': 'sha256:' + '1' * 64,
                      'recipe': 'sha256:' + '2' * 64, 'state': 'failed'}
             (source.parent / 'attempt.json').write_text(json.dumps(owner))
-            raw = b'[' * 3000 + b'0' + b']' * 3000
+            raw = b'[' * 16384 + b'0' + b']' * 16384
             self.assertLess(len(raw), 65536)
             with self.assertRaises(RecursionError):
                 json.loads(raw)
@@ -390,3 +390,135 @@ class PublicBuildFailures(unittest.TestCase):
                     add_public_diagnostics(public, lambda: [], root, lambda: 'output')
             self.assertIs(observed.exception, original)
             self.assertEqual(public, {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': []})
+
+
+class PublicExecutableApproval(unittest.TestCase):
+    def request(self):
+        from types import SimpleNamespace
+        from tools.application_dependency_approval import request
+        from tools.build_snapshot import canonical, digest
+        private = 'token-secret/' + 'a' * 64
+        artifact = {'id': private, 'role': 'build-tool', 'format': 'directory',
+            'source': {'path': '/private/' + private}, 'metadata': {'package': private,
+            'version': private, 'nativeSourceDigest': digest(b'source'), 'sdkCompilerInput': False,
+            'executableKinds': [['proc-macro', private], ['custom-build']]}}
+        verified = SimpleNamespace(identity=digest(b'inputs'),
+            lock={'selection': {'private': private}, 'artifacts': [artifact]})
+        isolation = SimpleNamespace(receipt={'profile': 'linux-captured-compiler-namespaces-v1'})
+        specification = request(verified, isolation, digest(b'recipe'))
+        return {'formatVersion': 1, 'identity': digest(canonical(specification)),
+            'specification': specification}, private
+
+    def test_actual_request_producer_binds_exact_selection_without_private_text_or_authorization(self):
+        from tools.qualify_rust_dependency_watch import public_executable_approval_request
+        from tools.build_snapshot import canonical, digest
+        request, private = self.request()
+        observed = public_executable_approval_request(request)
+        self.assertIs(observed['qualification'], False)
+        self.assertEqual(observed['requestIdentity'], request['identity'])
+        self.assertEqual(observed['executableInputsSha256'], digest(canonical(request['specification']['executableInputs'])))
+        self.assertEqual(observed['executableInputCount'], 1)
+        row = observed['inputs'][0]
+        self.assertEqual(row['ordinal'], 0)
+        self.assertEqual(row['executableKinds'], ['custom-build', 'proc-macro'])
+        self.assertIs(row['sdkCompilerInput'], False)
+        self.assertEqual(row['packageSha256'], digest(canonical(private)))
+        self.assertNotIn(private, str(observed))
+        self.assertNotIn('/private/', str(observed))
+        self.assertNotIn('approvalIdentity', observed)
+
+    def test_changed_request_identity_foreign_profile_and_invalid_scalars_are_not_projected(self):
+        import copy
+        from tools.qualify_rust_dependency_watch import public_executable_approval_request
+        from tools.build_snapshot import canonical, digest
+        request, _private = self.request()
+        for field, invalid in (('network', 'allowed'), ('hermetic', 0),
+                ('isolationProfile', 'foreign-profile'), ('inputIdentity', 'token-secret')):
+            changed = copy.deepcopy(request)
+            changed['specification'][field] = invalid
+            changed['identity'] = digest(canonical(changed['specification']))
+            self.assertEqual(public_executable_approval_request(changed), {})
+        request['specification']['selection'] = {'changed': True}
+        self.assertEqual(public_executable_approval_request(request), {})
+
+    def test_projection_bounds_rows_uses_strict_booleans_and_omits_unknown_kinds(self):
+        from tools.qualify_rust_dependency_watch import public_executable_approval_request
+        from tools.build_snapshot import canonical, digest
+        request, private = self.request()
+        artifact = request['specification']['executableInputs'][0]
+        artifact['metadata']['sdkCompilerInput'] = 1
+        artifact['metadata']['executableKinds'] = [[private, 'proc-macro']]
+        request['specification']['executableInputs'] = [artifact] * 9
+        request['identity'] = digest(canonical(request['specification']))
+        observed = public_executable_approval_request(request)
+        self.assertEqual(observed['executableInputCount'], 9)
+        self.assertEqual(len(observed['inputs']), 8)
+        self.assertEqual([row['ordinal'] for row in observed['inputs']], list(range(8)))
+        self.assertNotIn('sdkCompilerInput', observed['inputs'][0])
+        self.assertEqual(observed['inputs'][0]['executableKinds'], ['proc-macro'])
+        self.assertNotIn(private, str(observed))
+
+    def test_projection_does_not_authorize_absent_or_wrong_approval_or_change_captured_inputs(self):
+        from tools.tests.test_application_dependency_approval import ExecutionApproval
+        from tools.application_dependencies import prepare
+        from tools.application_dependency_approval import approve, request
+        from tools.application_dependency_store import DependencyError
+        from tools.build_snapshot import canonical, digest
+        from tools.qualify_rust_dependency_watch import public_executable_approval_request
+        fixture = ExecutionApproval()
+        try:
+            project, work, output, verified, isolation = fixture.fixture()
+            before = {path.relative_to(project).as_posix(): path.read_bytes()
+                      for path in project.rglob('*') if path.is_file()}
+            sdk_lock = Path(__file__).resolve().parents[2] / 'tools/rust_capsule.lock'
+            sdk_before = sdk_lock.read_bytes()
+            specification = request(verified, isolation, digest(b'recipe'))
+            observed = public_executable_approval_request({'formatVersion': 1,
+                'identity': digest(canonical(specification)), 'specification': specification})
+            self.assertIs(observed['qualification'], False)
+            with self.assertRaisesRegex(DependencyError, '^dependency-executable-tools-require-isolated-stage$'):
+                prepare(project, work, output, 'rust')
+            with self.assertRaisesRegex(DependencyError, 'approval-mismatch'):
+                approve(verified, isolation, digest(b'recipe'), digest(b'wrong-approval'))
+            self.assertEqual(before, {path.relative_to(project).as_posix(): path.read_bytes()
+                for path in project.rglob('*') if path.is_file()})
+            self.assertEqual(sdk_lock.read_bytes(), sdk_before)
+            self.assertEqual(list(work.iterdir()), [])
+            self.assertEqual(list(output.iterdir()), [])
+        finally:
+            fixture.doCleanups()
+
+    def test_owned_fixed_request_reader_preserves_original_approval_denial_and_missing_is_optional(self):
+        import json
+        from tools.qualify_rust_dependency_watch import add_public_diagnostics, collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source = root / 'builds' / ('a' * 32) / 'source'
+            source.parent.mkdir(parents=True, mode=0o700)
+            source.mkdir(mode=0o700)
+            output = source / 'output'; output.mkdir(mode=0o700)
+            owner = {'id': 'a' * 32, 'key': 'sha256:' + '0' * 64, 'source': 'sha256:' + '1' * 64,
+                     'recipe': 'sha256:' + '2' * 64, 'state': 'failed'}
+            (source.parent / 'attempt.json').write_text(json.dumps(owner))
+            failure = {'stage': 'executable-input-approval',
+                'reason': 'captured Cargo build scripts/macros require the exact retained executable-input approval identity'}
+            (output / 'BUILD-FAILED.json').write_text(json.dumps(failure))
+            self.assertNotIn('executableApprovalRequest', collect_build_failures(root, 'output')[0])
+            request, private = self.request()
+            target = output / 'executable-input-approval-request.json'
+            target.write_text(json.dumps(request))
+            original = RuntimeError('initial-build-failed')
+            public = {'passed': False}
+            with self.assertRaises(RuntimeError) as observed:
+                try:
+                    raise original
+                finally:
+                    add_public_diagnostics(public, lambda: [], root, lambda: 'output')
+            self.assertIs(observed.exception, original)
+            failure = public['buildFailures'][0]
+            self.assertEqual(failure['reasonCode'], 'executable-input-approval-required')
+            self.assertIs(failure['executableApprovalRequest']['qualification'], False)
+            self.assertNotIn(private, str(public))
+            target.unlink(); target.mkdir(mode=0o700)
+            with self.assertRaisesRegex(ValueError, 'single-link-regular-file'):
+                collect_build_failures(root, 'output')

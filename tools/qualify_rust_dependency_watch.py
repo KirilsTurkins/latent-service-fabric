@@ -113,6 +113,61 @@ def public_build_failure(value):
     return result
 
 
+def public_executable_approval_request(value):
+    """Bind a refused request without publishing names, paths or authorizing it."""
+    if not isinstance(value, dict) or type(value.get('formatVersion')) is not int or value['formatVersion'] != 1:
+        return {}
+    specification = value.get('specification')
+    if not isinstance(specification, dict):
+        return {}
+    def identity(value):
+        return 'sha256:' + hashlib.sha256(json.dumps(value, sort_keys=True,
+            separators=(',', ':'), ensure_ascii=True).encode()).hexdigest()
+    if value.get('identity') != identity(specification):
+        return {}
+    if (specification.get('isolationProfile') != 'linux-captured-compiler-namespaces-v1'
+            or specification.get('network') != 'denied' or specification.get('ambientHome') != 'absent'
+            or specification.get('credentials') != 'not-inherited' or specification.get('hermetic') is not False
+            or specification.get('boundary') != 'trusted-single-user-build-host-not-hardened-multitenant-vm'):
+        return {}
+    fields = ('inputIdentity', 'recipeDigest', 'compilerInputsDigest')
+    if any(not isinstance(specification.get(key), str)
+           or not re.fullmatch('sha256:[0-9a-f]{64}', specification[key]) for key in fields):
+        return {}
+    inputs = specification.get('executableInputs')
+    if (not isinstance(specification.get('selection'), dict) or not isinstance(inputs, list)
+            or not 1 <= len(inputs) <= 1024 or any(not isinstance(row, dict) for row in inputs)):
+        return {}
+    result = {'qualification': False, 'requestIdentity': value['identity'],
+        **{key: specification[key] for key in fields},
+        'selectionSha256': identity(specification['selection']),
+        'executableInputsSha256': identity(inputs), 'executableInputCount': len(inputs), 'inputs': []}
+    for ordinal, artifact in enumerate(inputs[:8]):
+        row = {'ordinal': ordinal, 'artifactSha256': identity(artifact)}
+        if artifact.get('role') == 'build-tool':
+            row['role'] = 'build-tool'
+        if artifact.get('format') in {'file', 'directory', 'zip', 'tar'}:
+            row['format'] = artifact['format']
+        metadata = artifact.get('metadata')
+        if isinstance(metadata, dict):
+            for name in ('package', 'version'):
+                value = metadata.get(name)
+                if isinstance(value, str) and len(value.encode('utf-8')) <= 4096:
+                    row[name + 'Sha256'] = identity(value)
+            value = metadata.get('nativeSourceDigest')
+            if isinstance(value, str) and re.fullmatch('sha256:[0-9a-f]{64}', value):
+                row['nativeSourceDigest'] = value
+            if type(metadata.get('sdkCompilerInput')) is bool:
+                row['sdkCompilerInput'] = metadata['sdkCompilerInput']
+            kinds = metadata.get('executableKinds')
+            if isinstance(kinds, list) and len(kinds) <= 8:
+                row['executableKinds'] = sorted({kind for group in kinds
+                    if isinstance(group, list) and len(group) <= 8 for kind in group
+                    if isinstance(kind, str) and kind in {'proc-macro', 'custom-build'}})
+        result['inputs'].append(row)
+    return result
+
+
 def optional_failure_file(root, relative, maximum):
     """Missing fixed paths are optional; unsafe existing entries still fail closed."""
     from tools.dev_workflow import paths
@@ -159,6 +214,12 @@ def collect_build_failures(workspace, output_root):
             raw = optional_failure_file(builds, relative + output_root + '/BUILD-FAILED.json', 65536)
             if raw is not None:
                 row.update(public_build_failure(json.loads(raw)))
+            raw = optional_failure_file(builds,
+                relative + output_root + '/executable-input-approval-request.json', 65536)
+            if raw is not None:
+                requested = public_executable_approval_request(json.loads(raw))
+                if requested:
+                    row['executableApprovalRequest'] = requested
             for stream in ('stdout', 'stderr'):
                 raw = optional_failure_file(builds, relative + 'build-cache/compiler-' + stream + '.log', 1024 * 1024)
                 if raw is None:

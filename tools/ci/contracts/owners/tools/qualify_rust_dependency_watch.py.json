@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Closed real event taxonomy and bounded optional diagnostics preserve original qualification and cleanup failures",
+  "reviewReason": "Bound refused executable-input request to digests and closed labels without authorizing execution or exposing private selections",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "dbee0e3802b3a9e558b32b2138dcadb9aee860f59d2d027a163e9c1f26c7ed59"
+  "sha256": "9e634a749f7d5d7932647456def3480a76fa2084fc1dd09a465f15bce9562257"
 }

@@ -12,6 +12,11 @@
     "PublicBuildFailures.test_projection_retains_only_bounded_taxonomy_and_hashes_private_reason",
     "PublicBuildFailures.test_public_codes_and_command_labels_are_closed_real_builder_literals",
     "PublicBuildFailures.test_successful_receipt_does_not_collect_failure_metadata",
+    "PublicExecutableApproval.test_actual_request_producer_binds_exact_selection_without_private_text_or_authorization",
+    "PublicExecutableApproval.test_changed_request_identity_foreign_profile_and_invalid_scalars_are_not_projected",
+    "PublicExecutableApproval.test_owned_fixed_request_reader_preserves_original_approval_denial_and_missing_is_optional",
+    "PublicExecutableApproval.test_projection_bounds_rows_uses_strict_booleans_and_omits_unknown_kinds",
+    "PublicExecutableApproval.test_projection_does_not_authorize_absent_or_wrong_approval_or_change_captured_inputs",
     "PublicWatchEvents.test_projection_rejects_private_fields_invalid_codes_and_non_bool_uncertainty",
     "PublicWatchEvents.test_projection_retains_only_the_last_32_observations",
     "PublicWatchEvents.test_public_event_phase_and_code_vocabulary_has_only_real_producer_literals",
@@ -166,6 +171,66 @@
       ],
       "skipSites": []
     },
+    "PublicExecutableApproval.test_actual_request_producer_binds_exact_selection_without_private_text_or_authorization": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:f98f67231fbe341b80ac6244994dbb57a823866b6079ad789380fda54a9d5fbd"
+      ],
+      "skipSites": []
+    },
+    "PublicExecutableApproval.test_changed_request_identity_foreign_profile_and_invalid_scalars_are_not_projected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:f98f67231fbe341b80ac6244994dbb57a823866b6079ad789380fda54a9d5fbd"
+      ],
+      "skipSites": []
+    },
+    "PublicExecutableApproval.test_owned_fixed_request_reader_preserves_original_approval_denial_and_missing_is_optional": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:f98f67231fbe341b80ac6244994dbb57a823866b6079ad789380fda54a9d5fbd"
+      ],
+      "skipSites": []
+    },
+    "PublicExecutableApproval.test_projection_bounds_rows_uses_strict_booleans_and_omits_unknown_kinds": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:f98f67231fbe341b80ac6244994dbb57a823866b6079ad789380fda54a9d5fbd"
+      ],
+      "skipSites": []
+    },
+    "PublicExecutableApproval.test_projection_does_not_authorize_absent_or_wrong_approval_or_change_captured_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:f98f67231fbe341b80ac6244994dbb57a823866b6079ad789380fda54a9d5fbd"
+      ],
+      "skipSites": []
+    },
     "PublicWatchEvents.test_projection_rejects_private_fields_invalid_codes_and_non_bool_uncertainty": {
       "bases": [
         "unittest.TestCase"
@@ -265,6 +330,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_rust_dependency_watch.py",
-  "reviewReason": "Preserve original watch cases and add closed real public vocabularies, bounded failure metadata and original-exception identity controls",
+  "reviewReason": "Bound refused executable-input request to digests and closed labels without authorizing execution or exposing private selections",
   "schemaVersion": "latent.ci.contracts.v1"
 }
