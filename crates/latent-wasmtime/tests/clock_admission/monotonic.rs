@@ -28,6 +28,16 @@ use fixture::*;
 #[tokio::test]
 #[ignore = "requires explicitly rebuilt ordinary Instant guest from the pinned std source"]
 async fn ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores() {
+    ordinary_clock(false).await;
+}
+
+#[tokio::test]
+#[ignore = "requires explicitly rebuilt ordinary Instant guest and controlled native-stack profile"]
+async fn ordinary_std_instant_with_owned_native_stack() {
+    ordinary_clock(true).await;
+}
+
+async fn ordinary_clock(owned_native_stacks: bool) {
     use sha2::{Digest, Sha256};
     let directory = std::path::PathBuf::from(
         std::env::var_os("LSF_RUST_STD_CLOCK_GUEST")
@@ -50,7 +60,7 @@ async fn ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores() {
             latent_core::digest::HexDigest(Sha256::digest(&bytes))
         )
     );
-    let signed = signed::Fixture::with_component(true, &bytes).await;
+    let signed = signed::Fixture::with_component_profile(true, &bytes, owned_native_stacks).await;
     let f = &signed.guest;
     for id in ["ordinary-instant-first", "ordinary-instant-fresh"] {
         let (request, control) = f.request(id);
@@ -71,17 +81,22 @@ async fn ordinary_std_instant_runs_on_signed_current_grants_and_fresh_stores() {
             .finalize_at(Some(&consumption), Instant::now());
         assert!(finalization.violation().is_none());
         // Two actual typed monotonic imports each charge the original budget.
-        assert_eq!(
-            finalization.consumption().cpu_fuel,
-            consumption.cpu_fuel + 200
-        );
+        if owned_native_stacks {
+            assert!(finalization.consumption().cpu_fuel > consumption.cpu_fuel + 200);
+        } else {
+            assert_eq!(
+                finalization.consumption().cpu_fuel,
+                consumption.cpu_fuel + 200
+            );
+        }
         f.idle();
         println!(
             "{}",
             serde_json::json!({"schemaVersion":"latent.rust.std-clock-execution.v1",
             "activation":id,"clockKind":marker["clockKind"],"componentDigest":marker["componentDigest"],
             "fuel":consumption.cpu_fuel,"peakWasmBytes":consumption.peak_memory_bytes,
-            "wallMicros":consumption.wall_time_micros,"sampledPhysicalOwnersRetired":true})
+            "wallMicros":consumption.wall_time_micros,"sampledPhysicalOwnersRetired":true,
+            "ownedNativeStacks":owned_native_stacks})
         );
     }
     assert_eq!(f.backend.resource_snapshot().stores_created, 2);

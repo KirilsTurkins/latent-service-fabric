@@ -1,0 +1,116 @@
+{
+  "closedAdapter": {
+    "functions": [
+      "fd_write",
+      "fd_fdstat_get",
+      "fd_seek",
+      "fd_close"
+    ],
+    "hostCapabilities": false,
+    "importsOnlyOwnMainModule": true,
+    "memory": false,
+    "sourceBytes": 625
+  },
+  "correctedCompilerControl": {
+    "bindingLock": {
+      "formatVersion": 1,
+      "generator": "wit-bindgen-cli 0.62.0",
+      "outputs": {
+        "probe.c": "sha256:d836d8c95a4361201dbadb948a83e48d13e98ec6a05617f95c54a9328bf95f06",
+        "probe.h": "sha256:417d75ab1ced47f6f34fe2486ff6bbfb77dbdf25f85ee2871cf4455acc5b075a",
+        "probe_aliases.h": "sha256:bccc32a5e8d09eb6be950a22cc1b85ab33d5a5edb4c6fd46b7d8472f93cae0ae",
+        "probe_component_type.o": "sha256:e992dad15ac1cfbbbe7f8638b437757d83c7fca31735babb193f2422cca6f06b"
+      },
+      "world": "examples:greeting/service@1.0.0"
+    },
+    "capturedDependencyUnchanged": true,
+    "capturedNamespaceQualified": false,
+    "componentBytes": 968285,
+    "componentSha256": "4684ca965fc5f23d1229051b9e9c2c876a9ef62dd1dae4359a093bbed031ad10",
+    "outsideLibrary": {
+      "extraCases": [
+        "bad-fd",
+        "invalid-utf8",
+        "too-many-vectors",
+        "too-large",
+        "invalid-memory",
+        "zero",
+        "budget",
+        "seek",
+        "descriptor",
+        "stderr",
+        "split-utf8"
+      ],
+      "lockDigest": "sha256:48b00b49188f573e0897c35cd849937bc41cca5fd5423faa5d0e1ce7b9f7b4d9",
+      "originalLibrary": {
+        "log_probe.c": "sha256:18e3871c374c94bd9ea7c4a34fb03ea2510f754308a8611ce053025f9bd088e2",
+        "log_probe.h": "sha256:34b10d3a20d6069982e8532287eb54d4dda08b498f068460bfd8f35bfe282536"
+      },
+      "originalLibraryRemoved": true,
+      "profile": "c-standard-stdio-v1"
+    },
+    "productionCompilerImplementation": true,
+    "sdkUnchanged": true,
+    "signedRuntimeQualified": false,
+    "sourceCompilerSha256": "79927ead299d4e7416fb503537a4d6d81461c634b9750890880bfb5f870d95a9",
+    "stdioAdapterSha256": "273be75d35faebb5544708ddbe03ed0a21c6b9c94b295bc2c88e630fee30e513",
+    "stdioSourceSha256": "d412af9b0fecae19d22a9b00e20849909d23dbdde947febac8acbfee7b0a6235",
+    "surfaceWasiFree": true,
+    "tools": {
+      "wasm-tools": {
+        "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+        "name": "wasm-tools",
+        "size": 20231696
+      },
+      "wit-bindgen": {
+        "digest": "sha256:aefa50fcbbced25862d2b7c65c3b44b63e63302d8e2533f1aeeab6e8cff4ff72",
+        "name": "wit-bindgen",
+        "size": 19856344
+      },
+      "zig": {
+        "digest": "sha256:2317bbb91798556d9d0f38aabdac23db83f0979b25f767259ae474546724087c",
+        "name": "zig",
+        "size": 172641672
+      }
+    },
+    "wasmExecuted": false
+  },
+  "issue681Complete": false,
+  "issue744Complete": false,
+  "nativeFailure": {
+    "failure": "unsupported linker arg: --wrap",
+    "head": "0e6742457852eca1b475125be03c0ef9e5789f5b",
+    "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38845078653/job/116793655937",
+    "signedStdioInvocations": 0
+  },
+  "observedDate": "2026-10-16",
+  "pinnedSourceProbeNegatives": [
+    {
+      "cCompilation": "passed",
+      "componentEncoding": "failed",
+      "reason": "unresolved wasi_snapshot_preview1::fd_close",
+      "selection": "single-hyphen-wrappers"
+    },
+    {
+      "cCompilation": "failed",
+      "reason": "duplicate pinned libc public symbols",
+      "selection": "direct-public-and-raw-definitions"
+    },
+    {
+      "cCompilation": "passed",
+      "componentEncoding": "failed",
+      "reason": "unresolved wasi_snapshot_preview1::fd_close",
+      "selection": "direct-raw-definitions"
+    }
+  ],
+  "preserved": {
+    "SDKInventoryValidation": true,
+    "clockEntropyProfile": true,
+    "defaultProfile": true,
+    "originalSignedCasesAndLimits": true,
+    "typedLogAuthorityAndBudget": true
+  },
+  "runtimeQualified": false,
+  "schemaVersion": "latent.c-standard-stdio.closed-adapter-source.v1",
+  "status": "exact-compiler-component-validated-signed-execution-pending"
+}

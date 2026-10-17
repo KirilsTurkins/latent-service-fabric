@@ -151,6 +151,17 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
         ],
         "scheduler.limit" => &[("reason", Known(SCHEDULER_REASONS))],
         "activation.guest-trap-kind" => &[("kind", Value::GuestTrapKind)],
+        "activation.guest-trap" => &[(
+            "code",
+            Known(&[
+                "guest-trap",
+                "guest-runtime-error",
+                "runtime-lifecycle-unproven",
+                "budget-accounting-failed",
+                "result-limit-exceeded",
+                "invalid-component-result",
+            ]),
+        )],
         "admission.currentness" => &[(
             "reason",
             Known(latent_core::error::ADMISSION_CURRENTNESS_REASONS),

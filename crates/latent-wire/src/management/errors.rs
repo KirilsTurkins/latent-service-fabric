@@ -1,4 +1,6 @@
+mod control_refusal;
 mod detail;
+pub(super) use control_refusal::{refusal_status, Stage as RefusalStage};
 #[cfg(test)]
 mod release_tests;
 #[cfg(test)]

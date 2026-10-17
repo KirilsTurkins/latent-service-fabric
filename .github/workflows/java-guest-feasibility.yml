@@ -322,6 +322,9 @@ jobs:
             ${{ runner.temp }}/java-guest-bindings/compiler/*.command.json
             ${{ runner.temp }}/java-guest-bindings/compiler-inputs.json
             ${{ runner.temp }}/java-guest-bindings/runtime-probe.log
+            ${{ runner.temp }}/java-guest-bindings/standard-entropy-controls/controls.json
+            ${{ runner.temp }}/java-guest-bindings/standard-entropy-controls/reference-bindings/
+            ${{ runner.temp }}/java-guest-bindings/compiled/standard-entropy-profile.json
             ${{ runner.temp }}/java-server-native/**
             ${{ runner.temp }}/java-guest-bindings/compiled/bindings/
             ${{ runner.temp }}/java-guest-bindings/compiled/component.wasm
@@ -358,6 +361,9 @@ jobs:
             ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-acquisition/*.log
             ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-acquisition/*.command.json
             ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-build/component.wasm
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-node/FAILED.json
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-node/controls/*.json
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-node/after-*.json
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/*.json
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/logs/**
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/*.json
@@ -384,7 +390,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [private]
+        mode: [private, recovery]
     env:
       PYTHONDONTWRITEBYTECODE: 1
     steps:
