@@ -46,7 +46,7 @@ def package_identity(package: dict) -> str:
 def selected_manifest(data: bytes, original: Path, mapped: Path, mappings: dict[Path, Path]) -> bytes:
     """Preserve Cargo syntax while relocating only observed path dependencies."""
     tomllib.loads(data.decode('utf-8'))
-    pattern = re.compile(r'(?<![A-Za-z_])path\s*=\s*("(?:[^"\\]|\\.)*"|\x27[^\x27]*\x27)')
+    pattern = re.compile(r'(?<![A-Za-z0-9_-])(?:path|"path"|\x27path\x27)\s*=\s*("(?:[^"\\]|\\.)*"|\x27[^\x27]*\x27)')
     def replacement(match):
         value = tomllib.loads('value = ' + match[1])['value']
         destination = (original.parent / value).resolve(strict=False)
@@ -127,6 +127,70 @@ def analyze(metadata: dict, root: Path, vendor: Path, pins: dict) -> tuple[list[
                        'root': metadata['resolve'].get('root'), 'resolver': pins}
 
 
+def registry_policy(owner: Path, project: Path, registry_config: Path | None):
+    """The explicit registry/CA policy shared by native locking and capture."""
+    registries = {}
+    registry_bytes = None
+    trust_name, trust_raw = None, None
+    if registry_config is not None:
+        registry_config = regular_path(registry_config).resolve(strict=True)
+        if registry_config.is_relative_to(owner):
+            raise DependencyError('cargo-private-registry-config-must-stay-outside-project')
+        registry_bytes = read_bytes(registry_config)
+        declaration = json.loads(registry_bytes)
+        if (not isinstance(declaration, dict) or not {'registries'} <= set(declaration) <= {'registries', 'tlsTrust'}
+                or not isinstance(declaration['registries'], dict)):
+            raise DependencyError('cargo-registry-configuration-invalid')
+        registries = declaration['registries']
+        if len(registries) > 16:
+            raise DependencyError('cargo-registry-configuration-limit')
+        for alias, entry in registries.items():
+            if (not re.fullmatch(r'[a-z][a-z0-9_-]{0,63}', alias) or not isinstance(entry, dict)
+                    or set(entry) != {'index'} or not isinstance(entry['index'], str)):
+                raise DependencyError('cargo-registry-configuration-invalid')
+            parsed = urlsplit(entry['index'].removeprefix('sparse+'))
+            if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
+                raise DependencyError('cargo-registry-credentials-or-endpoint-denied')
+        aliases = {*registries, 'crates-io'}
+        if len({alias.upper().replace('-', '_') for alias in aliases}) != len(aliases):
+            raise DependencyError('cargo-registry-credential-slot-ambiguous')
+        if 'tlsTrust' in declaration:
+            trust_name, trust_raw = registry_trust(project, declaration['tlsTrust'])
+    return registries, registry_bytes, trust_name, trust_raw
+
+
+def fetch_environment(temporary: Path, pins: dict, cargo: Path, registries: dict, trust_raw: bytes | None):
+    """Fresh Cargo home and explicit credentials; never discover project config."""
+    from tools.dev_workflow import paths
+    certificate = None
+    environment = build_environment(temporary)
+    environment.update(CARGO_HOME=str(temporary / 'cargo-home'), HOME=str(temporary / 'home'),
+                       USERPROFILE=str(temporary / 'home'), RUSTUP_TOOLCHAIN=pins['toolchain']['channel'], RUSTUP_AUTO_INSTALL='0',
+                       RUSTC=str(cargo.parent / ('rustc.exe' if os.name == 'nt' else 'rustc')),
+                       GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(temporary / 'git-empty.config'),
+                       GIT_TERMINAL_PROMPT='0')
+    paths.write_new(temporary / 'git-empty.config', b'')
+    # Private registry credentials are resolver-only opt-in environment.
+    configuration_lines = []
+    if trust_raw is not None:
+        certificate = temporary / 'private-registry-public-ca.pem'
+        paths.write_new(certificate, trust_raw)
+        configuration_lines += ['[http]', 'ssl-verify = true', 'cainfo = ' + json.dumps(str(certificate))]
+    for alias, entry in registries.items():
+        configuration_lines += ['[registries.' + json.dumps(alias) + ']',
+                                'index = ' + json.dumps(entry['index']), 'credential-provider = "cargo:token"']
+    for alias in {*registries, 'crates-io'}:
+        key = 'CARGO_REGISTRIES_' + alias.upper().replace('-', '_') + '_TOKEN'
+        if key in os.environ:
+            token = os.environ[key]
+            if not 1 <= len(token) <= 16384 or re.search(r'[\x00-\x1f\x7f]', token):
+                raise DependencyError('cargo-registry-token-invalid')
+            environment[key] = token
+    Path(environment['CARGO_HOME']).mkdir()
+    (Path(environment['CARGO_HOME']) / 'config.toml').write_text('\n'.join(configuration_lines) + '\n', encoding='utf-8')
+    return environment, certificate
+
+
 def resolve(project: Path, candidate: Path, *, cargo: Path | None = None, selection: dict | None = None,
             registry_config: Path | None = None) -> dict:
     """Explicit fetch stage. Cargo metadata/vendor do not run application hooks."""
@@ -170,60 +234,10 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     if not located:
         raise DependencyError('cargo-resolver-not-installed')
     cargo = regular_path(Path(located)).resolve(strict=True)
-    registries = {}
-    registry_bytes = None
-    trust_name, trust_raw = None, None
-    if registry_config is not None:
-        registry_config = regular_path(registry_config)
-        if registry_config.is_relative_to(owner):
-            raise DependencyError('cargo-private-registry-config-must-stay-outside-project')
-        registry_bytes = read_bytes(registry_config)
-        declaration = json.loads(registry_bytes)
-        if (not isinstance(declaration, dict) or not {'registries'} <= set(declaration) <= {'registries', 'tlsTrust'}
-                or not isinstance(declaration['registries'], dict)):
-            raise DependencyError('cargo-registry-configuration-invalid')
-        registries = declaration['registries']
-        if len(registries) > 16:
-            raise DependencyError('cargo-registry-configuration-limit')
-        for alias, entry in registries.items():
-            if (not re.fullmatch(r'[a-z][a-z0-9_-]{0,63}', alias) or not isinstance(entry, dict)
-                    or set(entry) != {'index'} or not isinstance(entry['index'], str)):
-                raise DependencyError('cargo-registry-configuration-invalid')
-            parsed = urlsplit(entry['index'].removeprefix('sparse+'))
-            if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
-                raise DependencyError('cargo-registry-credentials-or-endpoint-denied')
-        aliases = {*registries, 'crates-io'}
-        if len({alias.upper().replace('-', '_') for alias in aliases}) != len(aliases):
-            raise DependencyError('cargo-registry-credential-slot-ambiguous')
-        if 'tlsTrust' in declaration:
-            trust_name, trust_raw = registry_trust(project, declaration['tlsTrust'])
+    registries, registry_bytes, trust_name, trust_raw = registry_policy(owner, project, registry_config)
     with tempfile.TemporaryDirectory(prefix='lsf-cargo-resolve-') as temporary:
         temporary = Path(temporary)
-        environment = build_environment(temporary)
-        environment.update(CARGO_HOME=str(temporary / 'cargo-home'), HOME=str(temporary / 'home'),
-                           USERPROFILE=str(temporary / 'home'), RUSTUP_TOOLCHAIN=pins['toolchain']['channel'], RUSTUP_AUTO_INSTALL='0',
-                           RUSTC=str(cargo.parent / ('rustc.exe' if os.name == 'nt' else 'rustc')),
-                           GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(temporary / 'git-empty.config'),
-                           GIT_TERMINAL_PROMPT='0')
-        paths.write_new(temporary / 'git-empty.config', b'')
-        # Private registry credentials are resolver-only opt-in environment.
-        configuration_lines = []
-        if trust_raw is not None:
-            certificate = temporary / 'private-registry-public-ca.pem'
-            paths.write_new(certificate, trust_raw)
-            configuration_lines += ['[http]', 'ssl-verify = true', 'cainfo = ' + json.dumps(str(certificate))]
-        for alias, entry in registries.items():
-            configuration_lines += ['[registries.' + json.dumps(alias) + ']',
-                                    'index = ' + json.dumps(entry['index']), 'credential-provider = "cargo:token"']
-        for alias in {*registries, 'crates-io'}:
-            key = 'CARGO_REGISTRIES_' + alias.upper().replace('-', '_') + '_TOKEN'
-            if key in os.environ:
-                token = os.environ[key]
-                if not 1 <= len(token) <= 16384 or re.search(r'[\x00-\x1f\x7f]', token):
-                    raise DependencyError('cargo-registry-token-invalid')
-                environment[key] = token
-        Path(environment['CARGO_HOME']).mkdir()
-        (Path(environment['CARGO_HOME']) / 'config.toml').write_text('\n'.join(configuration_lines) + '\n', encoding='utf-8')
+        environment, certificate = fetch_environment(temporary, pins, cargo, registries, trust_raw)
         version = run_bounded([str(cargo), '--version'], project, environment, 10, 16384).stdout.decode().strip()
         if pins['toolchain']['channel'] not in version.split():
             raise DependencyError('cargo-resolver-version-not-pinned')

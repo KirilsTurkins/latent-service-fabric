@@ -46,7 +46,7 @@ generator-emitted components or memory/fuel/cancellation recovery. Those remain
 separate acceptance work in #685 and its runtime dependencies.
 
 The maintained TypeScript workflow now also runs this integrity programme after
-its original complete dependency qualification. `--prepared-qualification` may
+its preceding maintained dependency qualification. `--prepared-qualification` may
 select only that successful, exact-source observation with its five frozen native
 products; stale source, incomplete results and changed products fail explicitly.
 The original explicit `--native-directory` plus `--native-tuple` route remains
