@@ -48,7 +48,7 @@ def sdk_snapshot(root: Path) -> dict:
         "feasibility/gradle/verification-metadata.xml", "feasibility/platform.c",
         "feasibility/closed-runtime.wat", "tools/feasibility.py", "tools/dependencies.py",
         "tools/teavm_platform.py", "tools/capture.py")}
-    for folder in ("runtime", "templates", "wit", "fibers", "server", "resources", "processors"):
+    for folder in ("runtime", "templates", "wit", "fibers", "server", "resources", "processors", "facilities"):
         if folder in ("fibers", "server", "resources", "processors") and not (root / folder).is_dir(): continue
         files.update({folder + "/" + name: data for name, data in snapshot(root / folder).items()})
     if (root / "client").exists():
@@ -267,6 +267,18 @@ class Compiler:
             "org.gradle.java.installations.fromEnv=JAVA_HOME\n", encoding="utf-8")
         java_root = project / "src/main/java"
         shutil.copytree(self.sdk / "runtime/dev", java_root / "dev")
+        for folder in ('facilities/dev', 'facilities/compiler/dev'):
+            for name, data in snapshot(self.sdk / folder).items():
+                target = java_root / 'dev' / name
+                if target.exists(): raise ValueError('Java facilities source collision')
+                target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
+        for name, data in snapshot(self.sdk / 'facilities/services').items():
+            stage_sdk_service(project / 'src/main/resources' / name, name, data)
+        from tools.java_guest import facilities
+        write_json(destination / 'standard-entropy-profile.json', facilities.stage(
+            self.sdk, destination / 'bindings', java_root))
+        with (project / 'build.gradle').open('a', encoding='utf-8') as build:
+            build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         resource_profile = None
         if application_resources is not None:
             from tools.java_guest import resources
@@ -286,7 +298,6 @@ class Compiler:
                 stage_sdk_service(target, name, data)
         if activation_profile or server_profile:
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
-                build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
                 if activation_profile:
                     build.write("dependencies { compileOnly 'org.teavm:teavm-platform:0.15.0' }\n")
         if http_client_profile:
@@ -301,9 +312,6 @@ class Compiler:
             # either service list or accepting an application-owned plugin.
             for relative, data in snapshot(self.sdk / "client/services").items():
                 stage_sdk_service(project / "src/main/resources" / relative, relative, data)
-            if not (activation_profile or server_profile):
-                with (project / "build.gradle").open("a", encoding="utf-8") as build:
-                    build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         application_source_names = set()
         for path in sorted(sources.rglob("*.java")):
             if path.is_symlink(): raise ValueError("Java sources cannot be symlinks")

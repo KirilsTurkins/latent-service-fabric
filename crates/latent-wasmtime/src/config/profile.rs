@@ -81,6 +81,12 @@ impl WasmtimeConfig {
         ]);
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
+        if self.owned_native_stacks {
+            fields.insert(
+                "native-stack-accounting".into(),
+                "original-lease-physical-drop-v1".into(),
+            );
+        }
         if let Some(limits) = self.activation_runtime {
             fields.insert(
                 "activation-import-cancellation".into(),
