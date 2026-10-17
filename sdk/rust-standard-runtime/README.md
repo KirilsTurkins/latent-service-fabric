@@ -117,3 +117,23 @@ builder selection or full #743/#689/#683 qualification. Logical threads,
 per-canonical-thread native-stack admission, actual fiber retirement,
 synchronization, timers, default executors/reactors, safe CPU-loop checkpoints
 and unchanged HTTP-client execution remain separate unfinished requirements.
+
+The separate `WasmtimeConfig::owned_native_stacks` profile admits one root
+native stack through the original activation's Native ceiling and host-memory
+ledger before the Store receives its fuel counter. It requires Linux x86_64,
+on-demand allocation and explicit activation runtime limits. A poll-scoped
+allocation context follows the invocation across executor threads. The host
+allocates zero-filled guarded pages and retains the original reservation until
+the actual `StackMemory` destructor successfully unmaps them. Unproven release
+keeps the reservation charged and quarantines the execution cell. Additional
+stack allocations fail before mapping; canonical thread creation remains closed
+because its suspended metadata needs separate pre-start admission.
+
+`tools/qualify_owned_native_stacks.py` reuses the exact current clock harness and
+already qualified clock components. Its signed cases repeat the fresh Store
+and revocation controls under this explicit profile. Native unit controls also
+hold a real Wasmtime call pending, cancel it, and require physical stack release
+before the original lease is reusable. The maintained clock job runs both
+gates. Native execution is required before this source can be called qualified;
+this foundation does not implement ordinary Rust threads, synchronization,
+timers, reactors or default executors.

@@ -184,10 +184,10 @@ class JavaServerSource(unittest.TestCase):
             self.assertIn('--offline', invoked[0][2])
             project = destination / 'project'
             self.assertEqual(invoked[0][3], project)
-            names = set(snapshot(owner.sdk / 'server/services')) | set(snapshot(owner.sdk / 'client/services'))
+            names = set(snapshot(owner.sdk / 'facilities/services')) | set(snapshot(owner.sdk / 'server/services')) | set(snapshot(owner.sdk / 'client/services'))
             for name in names:
                 expected = []
-                for profile in ('server', 'client'):
+                for profile in ('facilities', 'server', 'client'):
                     path = owner.sdk / profile / 'services' / name
                     if path.is_file(): expected.extend(path.read_bytes().splitlines())
                 self.assertEqual((project / 'src/main/resources' / name).read_bytes().splitlines(), expected)
