@@ -42,7 +42,7 @@ def write_workflow_receipt(path, value):
 
 
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
-        c_standard_facilities=False, c_standard_logging=False):
+        c_standard_facilities=False, c_standard_logging=False, captured_dependency_recovery=False):
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
@@ -51,6 +51,8 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(c_standard_logging) is bool and (not c_standard_logging or language == "c")
             and not (c_standard_facilities and c_standard_logging), "authoring-c-standard-logging-language")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
+    require(type(captured_dependency_recovery) is bool and (not captured_dependency_recovery or language == "rust"),
+            "authoring-captured-dependency-recovery-language")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
         "scope": "isolated-local-experimental-node-with-enforced-package-admission",
@@ -137,6 +139,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         targets["greeting"] = grant_entropy(client, node, fixture / "my-greeting/deployment.json",
                             publications["greeting"], targets["greeting"], result)
                     tutorials(client, targets, result)
+                    if captured_dependency_recovery:
+                        from tools.rust_dependency_recovery import recover
+                        result["capturedDependencyRecovery"] = recover(client, targets["greeting"], probe, result, len(names))
                     result["samples"].append(sample(client, probe, "after-tutorials", len(names)))
                     faults(client, targets["recovery"], probe, result, len(names), language=language)
                     http_cases(client, node, fixture, targets["http-status"], publications["http-status"],
