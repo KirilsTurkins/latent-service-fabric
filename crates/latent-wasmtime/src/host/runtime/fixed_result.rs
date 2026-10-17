@@ -11,7 +11,7 @@ use wasmtime::component::{
     ComponentType, Lower,
 };
 
-pub(super) trait FixedValue: Lower {}
+pub(in crate::host) trait FixedValue: Lower {}
 macro_rules! fixed_values {
     ($($value:ty),+ $(,)?) => {
         $(
@@ -27,7 +27,7 @@ macro_rules! fixed_values {
 }
 fixed_values!((), u64, wit::Token, wit::Observation);
 
-pub(super) struct Completion<R: FixedValue> {
+pub(in crate::host) struct Completion<R: FixedValue> {
     value: R,
     // Wasmtime owns this return value by value while it checks the result
     // destination and lowers it. Callback return does not drop this guard.
@@ -36,7 +36,7 @@ pub(super) struct Completion<R: FixedValue> {
     _call: Option<ProviderCall>,
 }
 impl<R: FixedValue> Completion<R> {
-    pub(super) const fn new(value: R, call: Option<ProviderCall>) -> Self {
+    pub(in crate::host) const fn new(value: R, call: Option<ProviderCall>) -> Self {
         Self { value, _call: call }
     }
 }

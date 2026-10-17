@@ -98,6 +98,20 @@ all = "warn"
                     "Component::deserialize(engine, proof.bytes())", replacement))
                 self.assertTrue(boundary.validate(self.root))
 
+    def test_child_admission_and_retirement_notification_cannot_be_bypassed(self) -> None:
+        source = (Path(__file__).resolve().parents[2] / boundary.NATIVE_STACK_CHILD).read_text(encoding="utf-8")
+        self.write(boundary.NATIVE_STACK_CHILD, source)
+        self.assertEqual(boundary.validate(self.root), [])
+        for before, after in (
+            ('self.active.load(Ordering::Acquire) != 0', 'false'),
+            ('register_from_task(OwnerKind::Native, continuation)', 'register_from_task(OwnerKind::Task, continuation)'),
+            ('children.accepted >= children.maximum', 'false'),
+        ):
+            with self.subTest(change=before):
+                self.assertIn(before, source)
+                self.write(boundary.NATIVE_STACK_CHILD, source.replace(before, after))
+                self.assertTrue(boundary.validate(self.root))
+
     def test_allowance_cannot_expand_to_module_or_another_function(self) -> None:
         self.write(boundary.LOADER, self.loader.replace(
             "fn deserialize_authenticated(", "fn unrelated() {}\nfn deserialize_authenticated("))

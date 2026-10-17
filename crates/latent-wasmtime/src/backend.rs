@@ -73,6 +73,7 @@ pub(crate) struct PreparedRuntime {
     imports: Vec<ContractId>,
     authentication: Option<ArtifactPreparationIdentity>,
     eligibility: Option<ReleaseUseEligibility>,
+    threading: crate::component_threading::Authentication,
     metadata_bytes: usize,
     image_bytes: usize,
     // Runtime-owned costs retire only after all native and metadata fields.
@@ -790,6 +791,15 @@ impl WasmtimeBackend {
             crate::host::runtime::prepare_native_stack(
                 &mut host_state,
                 self.config.async_stack_bytes,
+                if self.config.owned_native_threads {
+                    self.config
+                        .activation_runtime
+                        .expect("validated original runtime")
+                        .native_owners
+                        .saturating_sub(1) as usize
+                } else {
+                    0
+                },
             )?;
             // Native admission was charged before the first engine counter is
             // installed. Its original fuel is never copied into a fresh allowance.
@@ -1143,6 +1153,10 @@ async fn call_export(
     setup_started: Instant,
     input_trace: Option<&InputTrace>,
 ) -> wasmtime::Result<()> {
+    runtime
+        .threading
+        .check_before_instantiation(&runtime.descriptor)
+        .map_err(|_| wasmtime::Error::msg("component-thread-authentication-failed"))?;
     match runtime.pre.instantiate_async(&mut *store).await {
         Ok(instance) => {
             timing.backend_setup_micros = elapsed_micros(setup_started);

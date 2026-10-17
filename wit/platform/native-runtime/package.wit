@@ -1,0 +1,12 @@
+package latent:runtime-native@0.1.0;
+
+/// Compiler/runtime support beneath ordinary threads. Every accepted start
+/// reserves original Native and potential stack capacity before canonical
+/// thread creation. Wasmtime may reuse worker stacks, so unused reservations
+/// remain charged until actual Store destruction; logical joins cannot refund.
+interface threads {
+    use latent:runtime/activation@0.1.0.{token, error};
+    /// The authenticated shim reserves before thread.new and immediately
+    /// resumes that real child. No guest operation releases this capacity.
+    start: func(continuation: token) -> result<_, error>;
+}

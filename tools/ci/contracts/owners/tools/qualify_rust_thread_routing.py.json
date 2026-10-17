@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_thread_routing.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve every existing gate and finite deadline; add exact authenticated child proofs, typed pre-signing and grant negatives, native contract controls and pinned release version evidence.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6afc7532bd64db09177979a4010dfa49368b66146c0ffc602bd8c81256537d04"
+}
