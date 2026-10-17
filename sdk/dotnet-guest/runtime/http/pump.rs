@@ -75,7 +75,8 @@ impl Pump {
             },
             vtable: &VTABLE,
         };
-        let previous = unsafe { wasip3_task_set(ptr::from_mut(&mut task.v1)) };
+        // Preserve provenance over the v2 vtable as well as its v1 prefix.
+        let previous = unsafe { wasip3_task_set(ptr::from_mut(&mut task).cast::<Task>()) };
         let restore = Restore(previous);
         let result = action();
         drop(restore);
