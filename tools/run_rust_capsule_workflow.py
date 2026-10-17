@@ -42,12 +42,14 @@ def write_workflow_receipt(path, value):
 
 
 def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entropy=False,
-        c_standard_facilities=False):
+        c_standard_facilities=False, c_standard_logging=False):
     require(language in {"rust", "c", "go", "typescript", "dotnet", "java"}, "authoring-language")
     require(type(noncrypto_entropy) is bool and (not noncrypto_entropy or language == "dotnet"),
             "authoring-noncrypto-entropy-language")
     require(type(c_standard_facilities) is bool and (not c_standard_facilities or language == "c"),
             "authoring-c-standard-facilities-language")
+    require(type(c_standard_logging) is bool and (not c_standard_logging or language == "c")
+            and not (c_standard_facilities and c_standard_logging), "authoring-c-standard-logging-language")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
     result = {"schemaVersion": f"latent.{language}-capsule.workflow.v1", "status": "in-progress", "language": language,
@@ -89,6 +91,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                 config, settings = configure(work / "node", fixture, port,
                     runtime_grants=language in {"go", "dotnet", "java"} or c_standard_facilities, language=language,
                     noncrypto_entropy=noncrypto_entropy)
+                if c_standard_logging:
+                    from tools.c_standard_logging_probe import configure as configure_logging
+                    configure_logging(settings)
+                    config.write_bytes(json.dumps(settings, sort_keys=True, separators=(',', ':')).encode('utf-8') + b'\n')
                 result["configuration"] = settings
                 # The test token is not a secret, but configuration files still
                 # stay private and no token is copied into the exported receipt.
@@ -122,6 +128,9 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                         grant(client, node, fixture, targets, publications, result, language=language)
                     if c_standard_facilities:
                         from tools.c_standard_facilities_probe import grant_and_probe
+                        grant_and_probe(client, node, fixture, targets, publications, result)
+                    if c_standard_logging:
+                        from tools.c_standard_logging_probe import grant_and_probe
                         grant_and_probe(client, node, fixture, targets, publications, result)
                     if noncrypto_entropy:
                         from tools.dotnet_guest.entropy_grants import grant as grant_entropy

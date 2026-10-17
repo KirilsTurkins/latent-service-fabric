@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/build_typescript_source_splicer.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bind fresh output, pinned original source, captured compiler namespace and original WIT to actual locked source compiler outputs",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "681b4c1ea25635b92b9d7009bbb8ddadcd5c6d4d76ac1c5fc07500d260534fbe"
+}

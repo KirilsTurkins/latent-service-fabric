@@ -46,6 +46,7 @@ impl WasmtimeBackend {
         }
         let mut capability_observer = None;
         let mut host_result = latent_executor::HostResultDisposition::Observed;
+        let mut native_stack_observer = None;
         let activation_id = request.activation.activation_id.clone();
         let started = Instant::now();
         let mut timing = Phase0InvocationTiming::default();
@@ -62,6 +63,7 @@ impl WasmtimeBackend {
                     Some(&trace),
                     &mut capability_observer,
                     &mut host_result,
+                    &mut native_stack_observer,
                 ),
                 observation,
             )
@@ -75,14 +77,25 @@ impl WasmtimeBackend {
                 None,
                 &mut capability_observer,
                 &mut host_result,
+                &mut native_stack_observer,
             )
             .await
         };
         timing.backend_total_micros = elapsed_micros(started);
         self.lock_timings().insert(activation_id.0, timing);
-        let mut report = match capability_observer {
+        // The actual invoking future and its Store have been destroyed before
+        // returning here. Release conservative cached-stack capacity before
+        // either observer publishes the final reusable proof.
+        let native_retirement_failed =
+            native_stack_observer.is_some_and(|owner| owner.after_store_dropped().is_err());
+        let report = match capability_observer {
             Some(observer) => observer.after_store_dropped(outcome),
             None => ExecutionReport::reusable(outcome),
+        };
+        let mut report = if native_retirement_failed {
+            ExecutionReport::quarantine(report.outcome, "native-stack-retirement-unproven")
+        } else {
+            report
         };
         report.host_result = host_result;
         report

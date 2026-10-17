@@ -148,6 +148,45 @@ fn close_allows_bounded_live_continuations_and_rejects_independent_work() {
 }
 
 #[test]
+fn task_support_admission_checks_original_kind_and_liveness_under_the_same_lock() {
+    let foreign = runtime();
+    let foreign_task = foreign.register(OwnerKind::Task, None).unwrap();
+    let runtime = runtime();
+    let wrong_kind = runtime.register(OwnerKind::Result, None).unwrap();
+    let task = runtime.register(OwnerKind::Task, None).unwrap();
+    let task_token = task.token();
+    let reject = |token| {
+        let before = runtime.snapshot();
+        let failure = runtime
+            .register_from_task(OwnerKind::Native, token)
+            .unwrap_err();
+        assert_eq!(failure.code, PlatformErrorCode::InvalidArgument);
+        assert_eq!(failure.message, "runtime-task-continuation");
+        let after = runtime.snapshot();
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert_eq!(after.admission_failures, before.admission_failures + 1);
+    };
+    reject(wrong_kind.token());
+    reject(foreign_task.token());
+    reject(RuntimeToken {
+        generation: task_token.generation,
+        id: u64::MAX,
+    });
+    runtime.begin_drain();
+    let native = runtime
+        .register_from_task(OwnerKind::Native, task_token)
+        .unwrap();
+    drop(task);
+    reject(task_token);
+    drop(native);
+    drop(wrong_kind);
+    runtime.retire().unwrap();
+    drop(foreign_task);
+    foreign.retire().unwrap();
+}
+
+#[test]
 fn waking_a_parked_thread_leaves_runnable_sibling_and_fences_reused_slots() {
     let runtime = runtime();
     let first = runtime.register(OwnerKind::Task, None).unwrap();

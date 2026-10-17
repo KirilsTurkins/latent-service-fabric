@@ -7,6 +7,9 @@
       "PYTHONDONTWRITEBYTECODE": "1"
     },
     "name": "Patched SpiderMonkey intrinsic Promise library",
+    "needs": [
+      "source-splicer"
+    ],
     "runs-on": "ubuntu-24.04",
     "steps": [
       {
@@ -64,13 +67,25 @@
         "run": "python3 tools/build_typescript_native_engine.py --library \"$RUNNER_TEMP/typescript-promise-library\" --output \"$RUNNER_TEMP/typescript-native-engine\" --wit-bindgen \"$RUNNER_TEMP/typescript-promise-tools/wit-bindgen\""
       },
       {
+        "name": "Read the completed source compiler products from this exact run",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "typescript-source-splicer-input-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-source-splicer-input"
+        }
+      },
+      {
+        "name": "Link the explicit source-owned asynchronous import engine",
+        "run": "python3 tools/build_typescript_native_engine.py --library \"$RUNNER_TEMP/typescript-promise-library\" --source-splicer-build \"$RUNNER_TEMP/typescript-source-splicer-input\" --output \"$RUNNER_TEMP/typescript-native-import-engine\" --wit-bindgen \"$RUNNER_TEMP/typescript-promise-tools/wit-bindgen\""
+      },
+      {
         "if": "always()",
         "name": "Retain source identities, normal products and failed attempts",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "error",
           "name": "typescript-promise-library-${{ github.sha }}",
-          "path": "tools/ci/contracts/\ntools/typescript_guest/promise_library.py\ntools/typescript_guest/promise_engine.py\nsdk/typescript-guest/activation/promise_hooks.h\n${{ runner.temp }}/typescript-promise-library/*.json\n${{ runner.temp }}/typescript-promise-library/*.log\n${{ runner.temp }}/typescript-promise-library/mozconfig\n${{ runner.temp }}/typescript-promise-library/licenses/**\n${{ runner.temp }}/typescript-promise-library/obj/**/libjs_static.a\n${{ runner.temp }}/typescript-promise-library/obj/dist/include/**\n${{ runner.temp }}/typescript-promise-library/obj/config.log\n${{ runner.temp }}/typescript-promise-library/obj/config.status\n${{ runner.temp }}/typescript-native-engine/*.json\n${{ runner.temp }}/typescript-native-engine/*.log\n${{ runner.temp }}/typescript-native-engine/engine.wasm\n${{ runner.temp }}/typescript-native-engine/licenses/**\n${{ runner.temp }}/typescript-native-engine/build/CMakeCache.txt\n${{ runner.temp }}/typescript-native-engine/build/compile_commands.json\n${{ runner.temp }}/typescript-native-engine/build/starling-raw.wasm/Cargo.lock\n${{ runner.temp }}/typescript-native-engine/build/starling-raw.wasm/Cargo.toml\n${{ runner.temp }}/typescript-native-engine/jobs-generated/**\n${{ runner.temp }}/typescript-native-engine/clocks-generated/**\n",
+          "path": "tools/ci/contracts/\ntools/typescript_guest/promise_library.py\ntools/typescript_guest/promise_engine.py\nsdk/typescript-guest/activation/promise_hooks.h\n${{ runner.temp }}/typescript-promise-library/*.json\n${{ runner.temp }}/typescript-promise-library/*.log\n${{ runner.temp }}/typescript-promise-library/mozconfig\n${{ runner.temp }}/typescript-promise-library/licenses/**\n${{ runner.temp }}/typescript-promise-library/obj/**/libjs_static.a\n${{ runner.temp }}/typescript-promise-library/obj/dist/include/**\n${{ runner.temp }}/typescript-promise-library/obj/config.log\n${{ runner.temp }}/typescript-promise-library/obj/config.status\n${{ runner.temp }}/typescript-native-engine/*.json\n${{ runner.temp }}/typescript-native-engine/*.log\n${{ runner.temp }}/typescript-native-engine/engine.wasm\n${{ runner.temp }}/typescript-native-engine/licenses/**\n${{ runner.temp }}/typescript-native-engine/build/CMakeCache.txt\n${{ runner.temp }}/typescript-native-engine/build/compile_commands.json\n${{ runner.temp }}/typescript-native-engine/build/starling-raw.wasm/Cargo.lock\n${{ runner.temp }}/typescript-native-engine/build/starling-raw.wasm/Cargo.toml\n${{ runner.temp }}/typescript-native-engine/jobs-generated/**\n${{ runner.temp }}/typescript-native-engine/clocks-generated/**\n${{ runner.temp }}/typescript-native-import-engine/*.json\n${{ runner.temp }}/typescript-native-import-engine/*.log\n${{ runner.temp }}/typescript-native-import-engine/engine.wasm\n${{ runner.temp }}/typescript-native-import-engine/licenses/**\n${{ runner.temp }}/typescript-native-import-engine/build/CMakeCache.txt\n${{ runner.temp }}/typescript-native-import-engine/build/starling-raw.wasm/builtins.incl\n${{ runner.temp }}/typescript-native-import-engine/build/compile_commands.json\n${{ runner.temp }}/typescript-native-import-engine/jobs-generated/**\n${{ runner.temp }}/typescript-native-import-engine/clocks-generated/**\n",
           "retention-days": 7
         }
       }
@@ -79,7 +94,7 @@
   },
   "jobId": "promise-library",
   "kind": "job",
-  "reviewReason": "After the unchanged normal mach gate, run pinned bindings/input guards and bounded upstream CMake engine build; preserve existing60minute job, acquisition/archive guards and all old artifact paths",
+  "reviewReason": "Preserve original clock build and60minute budget; add exact-run source compiler consumption and a fresh normal import engine compile with final original codec checks",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

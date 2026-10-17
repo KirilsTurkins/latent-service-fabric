@@ -117,3 +117,135 @@ builder selection or full #743/#689/#683 qualification. Logical threads,
 per-canonical-thread native-stack admission, actual fiber retirement,
 synchronization, timers, default executors/reactors, safe CPU-loop checkpoints
 and unchanged HTTP-client execution remain separate unfinished requirements.
+
+The separate `WasmtimeConfig::owned_native_stacks` profile admits one root
+native stack through the original activation's Native ceiling and host-memory
+ledger before the Store receives its fuel counter. It requires Linux x86_64,
+on-demand allocation and explicit activation runtime limits. A poll-scoped
+allocation context follows the invocation across executor threads. The host
+allocates zero-filled guarded pages and retains the original reservation until
+the actual `StackMemory` destructor successfully unmaps them. Unproven release
+keeps the reservation charged and quarantines the execution cell. Additional
+stack allocations fail before mapping; canonical thread creation remains closed
+because its suspended metadata needs separate pre-start admission.
+
+`tools/qualify_owned_native_stacks.py` reuses the exact current clock harness and
+already qualified clock components. Its signed cases repeat the fresh Store
+and revocation controls under this explicit profile. Native unit controls also
+hold a real Wasmtime call pending, cancel it, and require physical stack release
+before the original lease is reusable. The maintained clock job runs both
+gates. Native execution is required before this source can be called qualified;
+this foundation does not implement ordinary Rust threads, synchronization,
+timers, reactors or default executors.
+
+The separate staged native-thread profile reserves original Native and potential
+stack capacity before every accepted start. Wasmtime 48 reuses worker fibers and
+stacks across logical children, so this finite profile bounds total starts per
+activation. A cached worker does not refund an unused reservation. Logical joins
+and guest completion flags release no native capacity; unused reservations remain
+charged until the actual Store destructor has completed. Actual mapped stacks
+still retain their original lease through successful host unmapping. Unproven
+physical release quarantines the cell.
+
+Each accepted native child also requires a distinct original Task token. A
+bounded host table records consumed tokens through Store destruction, including
+after a mapping has actually retired. Copying a token or resetting a guest
+context flag cannot bypass Task admission. Table capacity is charged before its
+allocation under the same original host-memory budget.
+
+The explicitly selected `owned_native_threads` profile recognizes the separately
+authorized V6 support start operation and requires the guarded-stack profile and
+original activation limits. It grants no authority; CURRENT stays V5 and frozen
+activation WIT is unchanged. Only this explicit profile enables canonical thread
+creation, and every executable component must first pass the shared final-byte
+sole-consumer verifier. The ordinary Rust thread, futex and executor ports
+remain required; this finite host mechanism is separate from those ports.
+
+The staged post-link source transform now routes every linked-core call,
+function reference, export and table/global initializer reference to raw
+canonical creation through one exact stackless admission body. It validates
+the prepared context, original Task token, canonical result and one-shot start
+guard before invoking the actual primitive. The original ledger checks the
+Task's live kind and admits Native support under the same registration lock.
+No guest flag releases the resulting host reservation.
+
+The separate root transform requires the linker's exact immutable
+`__stack_low` and initial `__stack_pointer` range. It installs an admitted
+Task/Native TLS context before the original Rust body, preserves numeric flat
+return values, runs TLS cleanup on that live context, and detaches only after
+the last translated frame. A final System-only postlude frees the logical
+context before settling its owners. Bootstrap/reaper stack helpers accept the
+original stack only while the lifecycle permits it and canonical context is
+empty; active children retain their own checked stack. This logical cleanup
+does not refund physical Wasmtime stack capacity.
+
+The staged TLS/root lifecycle supports a compiler-owned lazy drain registry.
+Pending accepted work prevents root TLS cleanup and owner settlement. Root
+destructors and final std cleanup re-enter that drainer before entries retire;
+the final detached System reaper releases registry bytes before its context and
+Task leases settle. The ordinary thread PAL must install and implement this
+registry; the hook and its 23 native source-reference controls alone do not
+establish ordinary thread execution or accepted-work drain qualification.
+
+The encoded-Wasm transform controls and separately executed native TLS source
+reference cases exercise these source mechanisms. They do not establish a
+rebuilt thread sysroot, accepted-work drain,
+the std thread/futex API or actual signed child execution. Those requirements
+remain open. The internal V2
+context prefix is recorded in [thread-abi.json](thread-abi.json); CURRENT V5 and
+the frozen activation interface remain unchanged.
+
+The core transform uses `wasm-encoder` and `wasmparser` version 0.259.0.
+Component assembly uses the separately pinned `wasm-tools` version 1.254.0,
+whose encoded producer is `wit-component` version 0.254.0. A small explicit
+WAT module-graph campaign uses that normal assembly and authenticates the actual
+final main/private-thunk/fixup graph. It recomputes the fixed admission body,
+requires the real imported Native start provider and a bounded original callback
+table, and rejects raw-function lifts, mutable-table escape, duplicate creation,
+parallel spawn, extra executable modules, dynamic code, repeated main/fixup
+instances, guest admission substitutes and early component start. Normal nested
+WIT interface export wrappers remain supported.
+
+`tools/qualify_rust_thread_routing.py` runs two normally encoded positive
+components and fifteen rejection controls within 180 seconds and 2 MiB of total
+command output. Every changed component must pass the actual encoder's Wasm
+validator before its verifier rejection can count as a control. Source and tool
+identities are rechecked after the campaign, and failures retain a bounded
+receipt. The maintained Rust clock job runs this additional campaign without
+removing its previous sysroot, signed clock or physical stack controls.
+
+This is a source-routing proof over transparent WAT controls, rather than a
+rebuilt ordinary Rust thread program. The verifier emits no permission or
+supported-profile claim. The explicit host profile consumes the same verifier
+before ordinary `Component::new`, isolated-worker precompilation and native AOT
+loading, including the sole authenticated native loader. Its closed compiler
+bootstrap rejects unknown profile versions before allocating an Engine. A shared
+factory Engine can exist before any component is known; no component is compiled,
+loaded or instantiated until its final bytes are authenticated. The immutable
+digest proof stays with `InstancePre`, is charged as retained metadata, and is
+checked against the exact descriptor and selected profile on prepared-cache,
+readiness, activation-start and immediate instantiation boundaries. Profile,
+context ABI, one-Task-start policy and V6 interface identity enter ordinary and
+native compatibility keys; default V5 identities retain their previous fields.
+
+`tools/qualify_owned_native_threads.py` prepares a separate transparent WAT
+mechanism fixture through the normal pinned encoder and the fixed transforms.
+Its maintained signed node case exercises a real canonical child, per-context
+stack accesses, the original protected Task/Native imports, fresh Stores and
+prepared-cache reuse. It also requires child trap/fuel cleanup, copied-token and
+total-start quota denial, wrong-kind denial, unstarted accepted work rejection,
+a missing grant denied at binding publication before factory or Store creation,
+and two correctly encoded but unauthenticated component rejections before
+signing. Descriptive package inspection
+opens threading syntax only after the same final-byte proof; it installs no
+provider and changes no execution profile. All cases retain the existing finite 4 MiB
+grant; the explicitly selected mechanism uses 256 KiB native stacks and three
+Task/two Native slots. Actual native execution is required before claiming this
+gate passed. This fixture executes no Rust/std source and establishes no ordinary
+thread, TLS, mutex, condition variable or executor compatibility.
+
+The [2026-10-16 mechanism evidence](../../docs/testing/evidence/rust-owned-canonical-children-2026-10-16.json)
+binds the 48 recipe inputs to revision `21e24c85`, the actual native test binary,
+three encoded components and nine signed executions. All sampled original owners
+retired in each execution; 119 focused native controls also passed. Hosted CI and
+the ordinary Rust standard-library port remain separate requirements.

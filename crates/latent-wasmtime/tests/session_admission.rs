@@ -172,7 +172,7 @@ async fn session_authority_wait_observes_original_cancellation_and_deadline() {
         pending_at_session(invocation.as_mut(), &held).await;
         untouched(f, &control, metadata);
         if cancelled {
-            control.probe.0.store(true, Ordering::Release);
+            control.probe.cancel();
         }
         let report = tokio::time::timeout(Duration::from_secs(1), invocation)
             .await

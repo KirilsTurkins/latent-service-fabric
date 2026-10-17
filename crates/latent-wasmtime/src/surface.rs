@@ -110,6 +110,7 @@ fn lookup_function<'a, T>(
 
 #[derive(Clone, Copy, Default)]
 pub(crate) struct Providers {
+    pub native_threads: bool,
     pub activation_runtime: bool,
     pub local_services: bool,
     pub http: bool,
@@ -124,6 +125,7 @@ pub(crate) struct Providers {
 impl Providers {
     fn supports(self, name: &str) -> bool {
         (self.activation_runtime && name == crate::host::runtime::CAPABILITY)
+            || (self.native_threads && name == crate::host::native::CAPABILITY)
             || (self.events && name == latent_capabilities::broker::events::EVENTS_CAPABILITY)
             || (self.random && name == latent_capabilities::broker::random::RANDOM_CAPABILITY)
             || (self.metrics && name == latent_capabilities::broker::metrics::METRICS_CAPABILITY)
@@ -305,6 +307,8 @@ fn validate_imports(
     }
     let profile = if transactional {
         latent_core::PHASE4_HOST_ABI_V1
+    } else if config.owned_native_threads {
+        latent_core::PHASE3_HOST_ABI_V6
     } else {
         latent_core::PHASE3_HOST_ABI_CURRENT
     };

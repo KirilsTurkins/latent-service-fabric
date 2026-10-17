@@ -51,18 +51,20 @@ creation; this source does not fabricate a thread handle or select a profile.
 
 ## Package architecture
 
-`latent-rust-std-stack-source-transform` is an isolated Rust library with its own
-[Cargo.toml](Cargo.toml), [Cargo.lock](Cargo.lock) and empty local workspace. It is
-outside the root's 52 members. Its direct dependencies are the pinned Wasm parser,
-encoder and SHA-256 implementation; it has no path dependency on the node,
-capability broker or activation executor.
+`latent-rust-std-stack-source-transform` is an isolated source-profile facade and
+CLI with its own [Cargo.toml](Cargo.toml), [Cargo.lock](Cargo.lock) and empty local
+workspace. Its one implementation dependency is the workspace's
+[latent-component-threading](../../../crates/latent-component-threading/README.md).
+The common crate preserves the pinned Wasm parser, encoder and SHA-256 versions;
+neither package depends on the node, capability broker or activation executor.
+The complete shared source closure must be captured before a maintained compiler
+can select it. A developer-host path is not a captured compiler input.
 
 | Source / interface | Responsibility |
 | --- | --- |
-| [src/lib.rs](src/lib.rs): `transform` | Check the exact original preimage and supported core-module shape, rewrite actual stack-global instructions, append helpers and validate the output |
-| [src/lib.rs](src/lib.rs): `Receipt` | Preserve original/derived hashes, original stack identity, rewrite counts and explicit debug/profile qualification flags |
-| [src/thread_entry.rs](src/thread_entry.rs): `transform_owned_thread_entry` | Rewrite a selected owned-thread callback through an appended translated body and checked context attach/detach wrapper |
-| [src/thread_entry.rs](src/thread_entry.rs): `ThreadEntryReceipt` | Bind original/derived module identity and the selected callback/wrapper transformation |
+| [src/lib.rs](src/lib.rs) | Preserve the Rust facade's public API through explicit common-crate reexports. |
+| [src/main.rs](src/main.rs) | Bound CLI inputs, require canonical preimage hashes and create fresh output/receipt files. |
+| [Common implementation](../../../crates/latent-component-threading/README.md) | Own all original core transforms, receipts, fixed wrappers and complete routing authentication. |
 
 ## Transformation and ownership boundary
 
@@ -85,17 +87,17 @@ The existing source limitations above remain prerequisites for any promotion.
 
 ## Source tests and development
 
-Unit tests live alongside both implementation modules. They cover actual
+The 20 original unit tests live alongside the common implementation. They cover actual
 stack-get/set replacement, untouched data/custom bytes, wrong preimages,
 missing/wrong context, unsupported stack/memory shape, stackless helper behavior
 and owned-thread wrapper structure. These are transformation/validation tests,
 not signed guest execution or safe-preemption evidence.
 
-This project is not selected by the root registered test inventory. Use its
-independent manifest/lock and the Rust standard-runtime investigation's selected
-toolchain; changing the root feature set does not enable this experiment. A
-source change needs both transform checks and the separately qualified consuming
-runtime before it can claim application support.
+Run both the common package's workspace tests and this facade's independent
+manifest/lock tests. The existing Rust workflow retains both commands and the
+17 actual encoded component routing controls. Changing the root feature set
+does not enable this experiment. A source change needs the separately qualified
+consuming runtime before it can claim application support.
 
 ## References
 

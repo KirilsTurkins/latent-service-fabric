@@ -17,7 +17,7 @@ development-test-host = ["latent-artifacts/development-test-host", "latent-polic
 java-guest-diagnostic = []
 
 [lints.rust]
-# Private authenticated native loading and exact canonical result delegation
+# Private authenticated native loading, guarded original-owner stacks and exact canonical result delegation
 # may locally allow unsafe; other runtime code retains this deny boundary.
 unsafe_code = "deny"
 
@@ -45,6 +45,7 @@ latent-activation = { path = "../latent-activation" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-audit = { path = "../latent-audit" }
 latent-component-bindings = { path = "../latent-component-bindings" }
+latent-component-threading = { path = "../latent-component-threading" }
 latent-core = { path = "../latent-core" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }

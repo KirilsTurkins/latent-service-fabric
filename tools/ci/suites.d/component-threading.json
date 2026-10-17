@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "host",
+      "expectedCases": [
+        "admission::tests::a_changed_shim_body_cannot_pass_fixed_body_authentication",
+        "admission::tests::calls_exports_tables_and_constant_references_reach_only_the_fixed_admission_body",
+        "admission::tests::missing_or_wrong_native_support_import_is_rejected_before_rewriting",
+        "admission::tests::old_preimage_and_unwrapped_raw_call_are_not_authenticated",
+        "root::tests::missing_linker_range_or_aliased_support_hooks_never_emit_bootstrap",
+        "root::tests::root_and_child_admission_transform_chain_validates_without_enabling_component_threads",
+        "root::tests::root_attach_finish_detach_and_reap_preserve_original_index_and_numeric_values",
+        "root::tests::shared_stack_fallback_is_confined_to_pre_root_and_final_system_reaper",
+        "root::tests::stale_chain_and_forged_stack_layout_receipts_are_rejected",
+        "tests::absent_or_wrong_canonical_context_import_is_not_a_shared_stack_fallback",
+        "tests::data_and_original_custom_bytes_are_not_scanned_as_instructions",
+        "tests::every_actual_stack_get_set_is_replaced_and_output_validates",
+        "tests::helpers_have_no_shadow_stack_or_allocator_prologue_and_trap_without_context",
+        "tests::immutable_stack_or_shared_memory_are_named_profile_rejections",
+        "tests::malformed_and_over_bound_inputs_fail_before_reencode",
+        "tests::wrong_preimage_rejects_without_touching_input",
+        "thread_entry::tests::absent_or_wrong_canonical_set_and_thread_new_never_fall_back_to_shared_state",
+        "thread_entry::tests::real_table_callback_index_is_preserved_and_context_surrounds_original_rust_body",
+        "thread_entry::tests::stale_preimage_and_missing_owned_entry_cannot_qualify_a_callback",
+        "thread_entry::tests::wrong_entry_or_missing_original_table_target_rejects_without_rebinding_a_function"
+      ],
+      "expectedIgnored": [],
+      "id": "latent-component-threading.lib.latent-component-threading",
+      "ignoredLeaves": [],
+      "kind": "lib",
+      "manifest": "crates/latent-component-threading/Cargo.toml",
+      "minimumCases": 20,
+      "mode": "libtest",
+      "package": "latent-component-threading",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "host-bounded",
+      "source": "src/lib.rs",
+      "target": "latent_component_threading",
+      "timeoutSeconds": 120
+    }
+  ]
+}
