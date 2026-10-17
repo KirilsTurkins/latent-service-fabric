@@ -440,11 +440,19 @@ impl AotPreparedInput {
         Ok(())
     }
 
+    pub(crate) fn authenticate_component_threads(&self) -> Result<(), PlatformError> {
+        self.job
+            .state
+            .profile
+            .authenticate_component(&self.artifact.component_bytes)
+    }
+
     /// One process attempt, including failure. The taken allowance remains on
     /// this stack until compile has killed/reaped its real child on every exit.
     pub(crate) fn compile(&mut self) -> Result<TrustedAotOutput, PlatformError> {
         let permit = self.job.output.take().ok_or_else(invalid)?;
         self.check()?;
+        self.authenticate_component_threads()?;
         let output = process::compile(&self.job, &self.artifact.component_bytes)?;
         self.check()?;
         let completed = CompletedAotJob {

@@ -1,40 +1,54 @@
 {
-  "schemaVersion":"latent.ci.contracts.v2",
-  "kind":"python",
-  "reviewReason":"Add whole-source-fingerprint mutation controls for the narrowly audited original-owner guarded native-stack allocator; preserve every prior loader, result ABI and generated guest unsafe-code case and execution guard.",
-  "module":"tools/tests/test_native_loader_boundary.py",
-  "cases":["NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators","NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function","NativeLoaderBoundaryTests.test_current_engine_minimum_rust_and_host_descriptors_are_aligned","NativeLoaderBoundaryTests.test_engine_update_requires_review","NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof","NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe","NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled","NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact","NativeLoaderBoundaryTests.test_native_stack_exception_binds_guard_original_admission_and_physical_retirement","NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints","NativeLoaderBoundaryTests.test_real_standalone_authoring_lock_remains_in_the_workspace_closure","NativeLoaderBoundaryTests.test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family","NativeLoaderBoundaryTests.test_reviewed_boundary_passes","NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail"],
-  "guards":{
-    "NativeLoaderBoundaryTests.test_reviewed_boundary_passes":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_native_stack_exception_binds_guard_original_admission_and_physical_retirement":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_engine_update_requires_review":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_current_engine_minimum_rust_and_host_descriptors_are_aligned":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
-    "NativeLoaderBoundaryTests.test_real_standalone_authoring_lock_remains_in_the_workspace_closure":
-      "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17"
+  "schemaVersion": "latent.ci.contracts.v2",
+  "kind": "python",
+  "reviewReason": "Preserve all loader/result/stack cases and mutations. Reconcile exact child source fingerprints after reviewed distinct original-Task admission and prepaid retained Task-token capacity; the wrong-ledger mutation targets register_from_task. Fixed-result visibility widens only to crate::host with identical four resource-free lowering shapes.",
+  "module": "tools/tests/test_native_loader_boundary.py",
+  "cases": [
+    "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators",
+    "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function",
+    "NativeLoaderBoundaryTests.test_child_admission_and_retirement_notification_cannot_be_bypassed",
+    "NativeLoaderBoundaryTests.test_current_engine_minimum_rust_and_host_descriptors_are_aligned",
+    "NativeLoaderBoundaryTests.test_engine_update_requires_review",
+    "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof",
+    "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe",
+    "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled",
+    "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact",
+    "NativeLoaderBoundaryTests.test_native_stack_exception_binds_guard_original_admission_and_physical_retirement",
+    "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints",
+    "NativeLoaderBoundaryTests.test_real_standalone_authoring_lock_remains_in_the_workspace_closure",
+    "NativeLoaderBoundaryTests.test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family",
+    "NativeLoaderBoundaryTests.test_reviewed_boundary_passes",
+    "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail"
+  ],
+  "guards": {
+    "NativeLoaderBoundaryTests.test_reviewed_boundary_passes": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_actual_guest_matches_the_two_closed_profile_generators": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_guest_profile_conditions_cannot_be_removed_or_coenabled": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_guest_world_and_wit_sources_remain_exact": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_second_unsafe_site_and_nested_allowance_fail": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_native_stack_exception_binds_guard_original_admission_and_physical_retirement": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_file_loader_or_arbitrary_bytes_cannot_replace_proof": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_child_admission_and_retirement_notification_cannot_be_bypassed": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_allowance_cannot_expand_to_module_or_another_function": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_engine_update_requires_review": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_other_workspace_member_cannot_relax_lints": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_guest_allowance_is_wasm_only_and_cannot_contain_handwritten_unsafe": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_current_engine_minimum_rust_and_host_descriptors_are_aligned": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_resolved_runtime_and_authoring_locks_use_the_patched_engine_family": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17",
+    "NativeLoaderBoundaryTests.test_real_standalone_authoring_lock_remains_in_the_workspace_closure": "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17"
   },
-  "guardDefinitions":{
-    "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0","class:setup-sha256:0d92e25a17a424aea2aa2e3a3b545dd1f6b70ea7eeb212e07b28b505f1f0cc2c"]}
+  "guardDefinitions": {
+    "4e5d0f7bab7f7cfd88f7c331cd7eeaf91a7f9f7a1f8836a9531e5bfd24f11c17": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5ab640e50fcd145171d2278c5813dc49dc02fbf343e636450f6f852e49810cd0",
+        "class:setup-sha256:0d92e25a17a424aea2aa2e3a3b545dd1f6b70ea7eeb212e07b28b505f1f0cc2c"
+      ]
+    }
   }
 }
