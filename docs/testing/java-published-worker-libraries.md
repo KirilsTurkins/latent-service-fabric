@@ -1,7 +1,11 @@
 # Unchanged Java library worker qualification
 
 Status: original-library JDK reference controls and qualifier tamper controls
-pass. Actual TeaVM/C compilation and signed component execution remain pending.
+pass. The [retained maintained Linux worker gate](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38969249572/job/117203274579)
+also compiled the unchanged libraries through TeaVM/C and passed all 12 signed
+worker mode/iteration pairs. That evidence is bound to tested merge
+`91e1af6fd3007c0fd83b0cb05f136150454bb0f0`; later source changes still require
+their own qualification.
 This is a slice of [#741](https://github.com/KirilsTurkins/latent-service-fabric/issues/741)
 and [#682](https://github.com/KirilsTurkins/latent-service-fabric/issues/682).
 
@@ -45,7 +49,8 @@ the original 55-minute enclosing job remain.
 
 Local source controls pass, including the three four-mode original JAR/JDK
 reference iterations, pinned WIT/C ABI generation and compilation of all selected
-SDK and library Java sources. Native component execution, the broader runtime failure,
-cancellation and isolation matrix, and paired cost measurements remain required
+SDK and library Java sources. The selected signed worker programme also passes
+in the retained Linux run above. The broader runtime failure, cancellation and
+isolation matrix, and paired cost measurements remain required
 before the language ticket can close. These libraries do not establish ordinary
 default HTTP overlap or general compatibility of every API they publish.
