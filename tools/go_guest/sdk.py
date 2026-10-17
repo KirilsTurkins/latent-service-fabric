@@ -84,7 +84,7 @@ def explicit_resource_owners(text: str) -> str:
     return result
 
 
-def install(sdk: Path, module: Path) -> None:
+def install(sdk: Path, module: Path, *, http_context: bool = False) -> bool:
     output = module / "lsf"
     output.mkdir()
     (output / "ownership").mkdir()
@@ -99,6 +99,9 @@ def install(sdk: Path, module: Path) -> None:
         if len(matches) != 1:
             raise ValueError("ambiguous-Go-SDK-capability-identity:" + identity)
         source, text = matches[0]
+        if name == 'streaming' and http_context:
+            from tools.go_guest.http_context import generated_source
+            text = generated_source(text)
         text = explicit_resource_owners(text)
         source.write_text(text, encoding="utf-8")
         package = re.search(r"(?m)^package ([a-zA-Z0-9_]+)$", text)
@@ -117,8 +120,12 @@ def install(sdk: Path, module: Path) -> None:
             f'import raw "wit_component/{raw}"\n\n' + "\n".join(aliases) + "\n", encoding="utf-8")
         (directory / "api.go").write_text(
             (sdk / "capabilities" / (name + ".go.in")).read_text().replace("@raw@", raw), encoding="utf-8")
+        if name == 'streaming' and http_context:
+            (directory / 'context.go').write_text(
+                (sdk / 'capabilities/streaming-context.go.in').read_text().replace('@raw@', raw), encoding='utf-8')
     if "intents" in installed:
         if "state" not in installed:
             raise ValueError("intent staging requires the canonical imported state owner")
         (output / "state/intent.go").write_text((sdk / "capabilities/state-intent.go.in").read_text()
             .replace("@intents@", installed["intents"]), encoding="utf-8")
+    return http_context and 'streaming' in installed

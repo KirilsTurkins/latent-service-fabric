@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain pinned scheduler source validation and add explicitly selected v2 checkpoint bridge overlay without changing v1 runtime or default authority",
+  "reviewReason": "Authenticate pinned Go netpoll source and bypass only an empty nonblocking clock-only poll at GC world restart. Preserve actual descriptor, blocking, timed polling and all closed WASI denials; retain scheduler and HTTP profile transformations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fd5f9dda2e4643cc664691d69304efb7bdb782c4f823fe89e3d41452bfcaf15f"
+  "sha256": "0185bd10ad54a6e265b4e273819b8313afa1997c022a6f241e4c8c0e3be0c116"
 }

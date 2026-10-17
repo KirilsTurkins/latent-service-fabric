@@ -5,6 +5,7 @@
   "definition": {
     "name": "Go runtime and complete capsule qualification",
     "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 45,
     "steps": [
       {
         "uses": "actions/checkout",
@@ -14,16 +15,16 @@
       },
       {
         "name": "Capture immutable qualification source inputs",
-        "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/go-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/go-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/go-guest-source.sha\"\n",
-        "shell": "bash"
+        "shell": "bash",
+        "run": "git archive --format=tar.gz --output \"$RUNNER_TEMP/go-guest-source.tar.gz\" HEAD -- \\\n  apps sdk/go-guest sdk/rust examples tools crates wit schemas docs .cargo \\\n  Cargo.toml Cargo.lock rust-toolchain.toml LICENSE NOTICE .github/workflows/go-guest.yml\ntest \"$(stat --format=%s \"$RUNNER_TEMP/go-guest-source.tar.gz\")\" -le 134217728\ngit rev-parse HEAD > \"$RUNNER_TEMP/go-guest-source.sha\"\n"
       },
       {
         "name": "Retain the exact reviewed command contract input",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "go-guest-command-contract-${{ github.sha }}",
           "path": "tools/ci/contracts/\n${{ runner.temp }}/go-guest-source.tar.gz\n${{ runner.temp }}/go-guest-source.sha\n",
+          "if-no-files-found": "error",
           "retention-days": 7
         }
       },
@@ -44,15 +45,15 @@
         "name": "Restore compiled Rust dependencies",
         "uses": "Swatinem/rust-cache",
         "with": {
-          "cache-all-crates": false,
-          "cache-bin": false,
-          "cache-on-failure": false,
-          "cache-targets": true,
-          "cache-workspace-crates": false,
-          "key": "ubuntu-24.04",
           "prefix-key": "lsf-ci-dependencies-v2",
-          "save-if": false,
-          "shared-key": "host-correctness"
+          "shared-key": "host-correctness",
+          "key": "ubuntu-24.04",
+          "cache-targets": true,
+          "cache-bin": false,
+          "cache-workspace-crates": false,
+          "cache-all-crates": false,
+          "cache-on-failure": false,
+          "save-if": false
         }
       },
       {
@@ -72,9 +73,9 @@
       {
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "error",
           "name": "go-guest-tools-${{ github.sha }}",
           "path": "${{ runner.temp }}/go-guest-tools/go.tar.gz\n${{ runner.temp }}/go-guest-tools/componentize-go\n${{ runner.temp }}/go-guest-tools/wasm-tools\n${{ runner.temp }}/go-guest-tools/tools.sha256\n",
+          "if-no-files-found": "error",
           "retention-days": 1
         }
       },
@@ -107,8 +108,25 @@
         "run": "python3 tools/qualify_go_activation.py --output \"$RUNNER_TEMP/go-checkpoints\" --runtime-profile go-component-activation-v2 --fixture checkpoints\npython3 tools/qualify_go_activation.py --output \"$RUNNER_TEMP/go-no-checkpoints\" --runtime-profile go-component-activation-v1 --fixture checkpoints\nLSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE=\"$RUNNER_TEMP/go-checkpoints\" LSF_GO_NO_CHECKPOINT_FIXTURE=\"$RUNNER_TEMP/go-no-checkpoints\" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_compiler_checkpoints_progress_cpu_siblings_and_cancel_original_activation -- --ignored --exact --nocapture\n"
       },
       {
+        "name": "Compile context-aware typed HTTP ownership without claiming default transport qualification",
+        "run": "python3 -m unittest tools.tests.test_go_http_context\npython3 tools/qualify_go_http_context.py --output \"$RUNNER_TEMP/go-http-context\"\n"
+      },
+      {
+        "name": "Qualify standard timer heap callbacks and physical readiness retirement",
+        "id": "standard_timers",
+        "run": "python3 tools/qualify_go_activation.py --output \"$RUNNER_TEMP/go-standard-timers\" --runtime-profile go-component-activation-v3 --fixture timers\nLSF_GUEST_SDK_LANGUAGE=go LSF_GO_TIMER_FIXTURE=\"$RUNNER_TEMP/go-standard-timers\" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners -- --ignored --exact --nocapture\n"
+      },
+      {
+        "name": "Qualify ordinary module initialization under original activation ownership",
+        "run": "python3 tools/qualify_go_activation.py --output \"$RUNNER_TEMP/go-owned-initializers\" --runtime-profile go-component-activation-v4 --fixture initializers\nLSF_GUEST_SDK_LANGUAGE=go LSF_GO_INITIALIZER_FIXTURE=\"$RUNNER_TEMP/go-owned-initializers\" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_initializer_goroutines_waits_and_timers_start_inside_original_activation -- --ignored --exact --nocapture\n"
+      },
+      {
         "name": "Test captured Go native graphs and namespace",
         "run": "LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_go_application_dependencies tools.tests.test_captured_compiler_isolation\n"
+      },
+      {
+        "name": "Qualify published retry workers and default timers in the captured namespace",
+        "run": "python3 tools/qualify_go_runtime_dependencies.py --output \"$RUNNER_TEMP/go-published-runtime\"\nLSF_GUEST_SDK_LANGUAGE=go LSF_GO_PUBLISHED_FIXTURE=\"$RUNNER_TEMP/go-published-runtime\" cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service runtime::go::signed_published_retry_workers_and_default_timers_keep_original_activation_owners -- --ignored --exact --nocapture\n"
       },
       {
         "name": "Qualify editable projects, all SDK owners, enforced node and printed guide",
@@ -123,22 +141,26 @@
         "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
       },
       {
-        "if": "always()",
+        "name": "Locate failed timer Wasm frames using private read-only source overlays",
+        "if": "${{ failure() && steps.standard_timers.outcome == 'failure' }}",
+        "run": "if test -f \"$RUNNER_TEMP/go-standard-timers/GO-ACTIVATION-COMPILE.json\"; then\n  python3 tools/diagnose_go_timer_failure.py --fixture \"$RUNNER_TEMP/go-standard-timers\" --output \"$RUNNER_TEMP/go-timer-diagnostic\"\nfi\n"
+      },
+      {
         "name": "Retain successful and failed upstream observations",
+        "if": "always()",
         "uses": "actions/upload-artifact",
         "with": {
-          "if-no-files-found": "warn",
           "name": "go-guest-upstream-${{ github.sha }}",
-          "path": "${{ runner.temp }}/transaction-guests-go/**/report.json\n${{ runner.temp }}/transaction-guests-go/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-go/**/component.wasm\n${{ runner.temp }}/transaction-guests-go/**/component.wit\n${{ runner.temp }}/transaction-guests-go/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/logs/**\n${{ runner.temp }}/transaction-guests-go/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-go/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-go/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-go/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-go/**/bindings/**\n${{ runner.temp }}/transaction-guests-go/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/report.json\n${{ runner.temp }}/transaction-contract-go/source.tar.gz\n${{ runner.temp }}/transaction-contract-go/component.wit\n${{ runner.temp }}/transaction-contract-go/preparation.json\n${{ runner.temp }}/transaction-contract-go/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-go/logs/**\n${{ runner.temp }}/transaction-contract-go/compiler/*.log\n${{ runner.temp }}/transaction-contract-go/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-go/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-go/compiled/component.wit\n${{ runner.temp }}/transaction-contract-go/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-go/compiled/generated/**\n${{ runner.temp }}/transaction-contract-go/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/bindings/**\n${{ runner.temp }}/transaction-contract-go/component.wasm\n${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-activation/GO-ACTIVATION-*.json\n${{ runner.temp }}/go-activation/src/\n${{ runner.temp }}/go-activation/wit/\n${{ runner.temp }}/go-activation/logs/\n${{ runner.temp }}/go-activation/build/component.wasm\n${{ runner.temp }}/go-activation/build/component.wit\n${{ runner.temp }}/go-activation/build/runtime-overlay/\n${{ runner.temp }}/go-checkpoints/\n${{ runner.temp }}/go-no-checkpoints/\n${{ runner.temp }}/go-capsule-dependencies/**\n${{ runner.temp }}/go-capsule-authoring/\n",
+          "path": "${{ runner.temp }}/go-http-context/qualification.json\n${{ runner.temp }}/go-http-context/FAILED.json\n${{ runner.temp }}/go-http-context/recipe-inputs.json\n${{ runner.temp }}/go-http-context/src/**\n${{ runner.temp }}/go-http-context/wit/**\n${{ runner.temp }}/go-http-context/logs/**\n${{ runner.temp }}/go-http-context/build/component.wasm\n${{ runner.temp }}/go-http-context/build/component.wit\n${{ runner.temp }}/go-http-context/build/module/**/wit_bindings.go\n${{ runner.temp }}/go-http-context/build/module/lsf/streaming/**\n${{ runner.temp }}/go-http-context/build/runtime-overlay/**\n${{ runner.temp }}/go-http-context/go-runtime-transformations.json\n${{ runner.temp }}/transaction-guests-go/**/report.json\n${{ runner.temp }}/transaction-guests-go/**/source-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/recipe-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/source.tar.gz\n${{ runner.temp }}/transaction-guests-go/**/component.wasm\n${{ runner.temp }}/transaction-guests-go/**/component.wit\n${{ runner.temp }}/transaction-guests-go/**/compiler-inputs.json\n${{ runner.temp }}/transaction-guests-go/**/logs/**\n${{ runner.temp }}/transaction-guests-go/**/compiler/*.log\n${{ runner.temp }}/transaction-guests-go/**/compiler/*.command.json\n${{ runner.temp }}/transaction-guests-go/**/compiled/generated/**\n${{ runner.temp }}/transaction-guests-go/**/compiled/bindings/**\n${{ runner.temp }}/transaction-guests-go/**/bindings/**\n${{ runner.temp }}/transaction-guests-go/**/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/report.json\n${{ runner.temp }}/transaction-contract-go/source.tar.gz\n${{ runner.temp }}/transaction-contract-go/component.wit\n${{ runner.temp }}/transaction-contract-go/preparation.json\n${{ runner.temp }}/transaction-contract-go/compiler-inputs.json\n${{ runner.temp }}/transaction-contract-go/logs/**\n${{ runner.temp }}/transaction-contract-go/compiler/*.log\n${{ runner.temp }}/transaction-contract-go/compiler/*.command.json\n${{ runner.temp }}/transaction-contract-go/compiled/component.wasm\n${{ runner.temp }}/transaction-contract-go/compiled/component.wit\n${{ runner.temp }}/transaction-contract-go/compiled/bindings/**\n${{ runner.temp }}/transaction-contract-go/compiled/generated/**\n${{ runner.temp }}/transaction-contract-go/compiled/raw-generated-bindings.json\n${{ runner.temp }}/transaction-contract-go/bindings/**\n${{ runner.temp }}/transaction-contract-go/component.wasm\n${{ runner.temp }}/go-guest-probe/\n${{ runner.temp }}/go-activation/GO-ACTIVATION-*.json\n${{ runner.temp }}/go-activation/src/\n${{ runner.temp }}/go-activation/wit/\n${{ runner.temp }}/go-activation/logs/\n${{ runner.temp }}/go-activation/build/component.wasm\n${{ runner.temp }}/go-activation/build/component.wit\n${{ runner.temp }}/go-activation/build/runtime-overlay/\n${{ runner.temp }}/go-checkpoints/\n${{ runner.temp }}/go-no-checkpoints/\n${{ runner.temp }}/go-standard-timers/GO-ACTIVATION-*.json\n${{ runner.temp }}/go-standard-timers/src/\n${{ runner.temp }}/go-standard-timers/wit/\n${{ runner.temp }}/go-standard-timers/logs/\n${{ runner.temp }}/go-standard-timers/native-reference/\n${{ runner.temp }}/go-standard-timers/build/component.wasm\n${{ runner.temp }}/go-standard-timers/build/component.wit\n${{ runner.temp }}/go-standard-timers/build/runtime-overlay/\n${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-FRAMES.json\n${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-FRAMES-initial.json\n${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL.json\n${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-bit-*.json\n${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-confirm-*.json\n${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-THROW-REASON.json\n${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-panic-bit-*.json\n${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-TERMINAL-panic-confirm-*.json\n${{ runner.temp }}/go-timer-diagnostic/GO-PRIVATE-PANIC-REASON.json\n${{ runner.temp }}/go-owned-initializers/GO-ACTIVATION-*.json\n${{ runner.temp }}/go-owned-initializers/src/\n${{ runner.temp }}/go-owned-initializers/wit/\n${{ runner.temp }}/go-owned-initializers/logs/\n${{ runner.temp }}/go-owned-initializers/native-reference/\n${{ runner.temp }}/go-owned-initializers/build/component.wasm\n${{ runner.temp }}/go-owned-initializers/build/component.wit\n${{ runner.temp }}/go-owned-initializers/build/runtime-overlay/\n${{ runner.temp }}/go-published-runtime/GO-ACTIVATION-*.json\n${{ runner.temp }}/go-published-runtime/application-dependencies.json\n${{ runner.temp }}/go-published-runtime/compiler-containment.json\n${{ runner.temp }}/go-published-runtime/go-module-build-inputs.json\n${{ runner.temp }}/go-published-runtime/go-runtime-transformations.json\n${{ runner.temp }}/go-published-runtime/project/go.mod\n${{ runner.temp }}/go-published-runtime/project/go.sum\n${{ runner.temp }}/go-published-runtime/project/go-resolved.lock.json\n${{ runner.temp }}/go-published-runtime/project/latent.dependencies*.json\n${{ runner.temp }}/go-published-runtime/project/dependency-inputs/\n${{ runner.temp }}/go-published-runtime/src/\n${{ runner.temp }}/go-published-runtime/wit/\n${{ runner.temp }}/go-published-runtime/logs/\n${{ runner.temp }}/go-published-runtime/native-reference/\n${{ runner.temp }}/go-published-runtime/build/component.wasm\n${{ runner.temp }}/go-published-runtime/build/component.wit\n${{ runner.temp }}/go-published-runtime/build/runtime-overlay/\n${{ runner.temp }}/go-capsule-dependencies/**\n${{ runner.temp }}/go-capsule-authoring/\n",
+          "if-no-files-found": "warn",
           "retention-days": 7
         }
       }
-    ],
-    "timeout-minutes": 45
+    ]
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Preserve every existing Go command and add signed compiler checkpoint progress, unchanged-source negative and native Go reference controls with retained artifacts",
+  "reviewReason": "Compose exact current runtime and owned networking gates; preserve every original command, artifact, trigger, runner, environment, case and original45-minute deadline.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

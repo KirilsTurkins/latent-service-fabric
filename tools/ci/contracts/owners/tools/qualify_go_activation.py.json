@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_activation.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind selected profile and reviewed native reference plus compiler checkpoint fixture while retaining ordinary v1 qualification",
+  "reviewReason": "Review unchanged initializer/published fixture selection and preserved GC controls against committed LF bytes after Windows conflict resolution.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4fd91c87f5556f3c35c65285abbb135e52e872c7b98a633f8fce1d8b222e4681"
+  "sha256": "8748319ec27b68bfc190677299dddb7475b96449aa1a07bc4c8bc29cfe8144a4"
 }
