@@ -69,6 +69,8 @@
           "tools/run_c_dependency_watch_ci.py",
           "tools/tests/test_c_dependency_watch_fixture.py",
           "tools/c_guest/**",
+          "tools/run_java_dependency_watch_ci.py",
+          "tools/qualify_java_dependency_watch.py",
           "tools/java_capsule*.py",
           "tools/java_dependency*.py",
           "tools/java_application_dependencies.py",

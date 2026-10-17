@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_dependency_watch.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Restrict public watch labels to exact real producer vocabularies and contain optional observer exceptions; preserve all native assertions, immutable inputs, grants, deadlines and qualification boundaries.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "1cf756a8adb33ec878f8fa828eae2b0bc9cb0f319018c7101ec96c430e4aad62"
+}

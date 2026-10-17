@@ -36,16 +36,16 @@ The control rejects missing or changed transitive JARs, builds the actual
 component, signs an isolated fixture, checks unsigned publication and missing
 runtime-grant denial, invokes library and resource paths, and observes owner
 retirement after each call and node shutdown. Repeated calls check fresh static
-application state and recovery after a declared error. The earlier baseline
-receipt retains the separate private-feed, installed update/remove/watch,
-processor and trap/exhaustion/cancellation gates; a successful run does not close
-#682.
+application state and recovery after a declared error. Private-feed,
+trap/exhaustion/cancellation and delivered update/remove/watch controls have
+separate maintained programmes and source-bound receipts, described below.
+One programme's success does not substitute for the complete #682 checklist.
 
 The [15 October native control](evidence/java-dependency-ingestion-2026-10-15.json)
 retains the actual qualifier, component and ordinary native-product identities.
 Its separate approved annotation-processor control retains source-owner denials,
 host containment and signed generated-source execution. These finite observations
-do not establish release qualification or the remaining issue requirements.
+remain bound to their recorded source and do not establish release qualification.
 
 For authenticated private Maven input, use the separate private-feed control.
 It first preserves the local-JAR control, then serves those exact original JARs
@@ -76,8 +76,9 @@ python3 tools/qualify_java_private_dependencies.py --offline \
 Certificate or captured private-JAR drift must fail, and restoring the exact
 preimage must restore the captured identity. The ordinary node executes the
 private direct/transitive code and its resource after originals and the peer
-are unavailable. These controls retain installed update/remove/watch and the
-full trap/exhaustion/cancellation lifecycle as separate acceptance gates.
+are unavailable. The recovery and delivered update/remove/watch programmes
+exercise the remaining lifecycle boundaries separately; the private receipt
+does not substitute for those observations.
 
 The [15 October private control](evidence/java-private-dependency-ingestion-2026-10-15.json)
 retains six actual authentication/trust/integrity denials, the reaped peer and
@@ -94,7 +95,7 @@ are checked before and after; private keys and signing directories are excluded
 from the new artifact allowlist. The existing Java job retains its 55-minute
 limit and commands. Each separate attempt has a 35-minute job bound and an
 1800-second suite deadline. Historical successful receipts retain their source
-scope; the newly added current-source hosted attempt must pass independently.
+scope; each changed selected source needs its own hosted qualification.
 The current control additionally invokes intentional uncaught Java heap
 allocation exhaustion, an uncaught exception, a 64 KiB Wasm memory limit and a
 10,000,000-fuel spin. It observes the original cancellation activation running
@@ -117,5 +118,18 @@ cache to the recovery programme. Exact source/native/compiler/cache identities
 are checked before and after; signing directories are excluded from the new
 artifact allowlist. The existing Java job retains its 55-minute limit and
 commands. Each separate attempt has a 35-minute job bound and an 1800-second
-suite deadline. The earlier successful native receipt remains historical until
-the newly added current-source hosted attempt independently passes.
+suite deadline. The earlier successful native receipt remains historical; each
+changed selected source needs its own hosted qualification.
+
+The [delivered dependency-watch control](java-dependency-watch.md) uses captured
+local/transitive JARs after removing their originals, then reviews, trusts and
+signs each initial, updated and removed selection in a fresh test workspace. Its
+`703f4148b39273e91c097af05674500860afa5f8` source receipt passed three actual
+deployments and three normal clean, reaped shutdowns in
+[hosted job 117193495390](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38966294350/job/117193495390).
+That receipt verifies all 99 delivered helper source/resource paths and the
+qualifier/probe identities. The same source's separate private and recovery
+jobs also passed. These observations remain source-scoped when the public
+diagnostic projection changes; the corrected current head still needs its own
+native, watch, general CI and security gates before the final #682 checklist and
+merge. The dated evidence files keep their original partial-scope claims.
