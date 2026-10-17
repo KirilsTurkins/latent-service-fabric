@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_owned_native_stacks.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Review exact child physical retirement, explicit V6 interface/policy and generated bindings inputs in existing signed clock/native recipe; preserve existing acceptance and default V5.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "6c8e083ed736bb52166269f989b9d4f8b5550774222e93b15867081cf2452825"
+}

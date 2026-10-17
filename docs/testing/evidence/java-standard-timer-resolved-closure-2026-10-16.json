@@ -1,0 +1,174 @@
+{
+  "formatVersion": 1,
+  "recordedAt": "2026-10-16",
+  "qualification": "pending",
+  "componentExecutionPerformed": false,
+  "previousHead": "0c6c7d64ab0fd3482899f6695b865a67f2a0afb4",
+  "hostedFailure": {
+    "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38858370376/job/116834822059",
+    "stage": "standard-timer-model-prepare",
+    "error": "Java runtime model tooling jar is missing or ambiguous",
+    "baselineDownloadedJars": 26,
+    "reviewedLockJars": 70,
+    "baselineCacheMemberInventoryRetained": false
+  },
+  "retainedResolvedInventory": {
+    "artifact": 12031874708,
+    "member": "java-guest-feasibility/dependencies.observed.json",
+    "matchingTransactionMember": "transaction-guest-acceptance-java/forbidden-child/compiled/dependencies.observed.json",
+    "artifacts": 26,
+    "totalBytes": 25561565,
+    "lockSha256": "4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4",
+    "metadataSha256": "2e333bdd477b54277c43a60f8629da89420e246f19ec6430ccb957ab7df11a30"
+  },
+  "reproduction": {
+    "selection": "exact observed 26-coordinate C-tooling closure reconstructed from retained hash-verified originals",
+    "firstUnresolvedReviewedCoordinate": "com/fasterxml/jackson/core/jackson-annotations/2.18.11/jackson-annotations-2.18.11.jar",
+    "candidateCount": 0,
+    "oldHelperError": "Java runtime model tooling jar is missing or ambiguous",
+    "copiedJarPayloadBytes": 0,
+    "temporaryLinksRemoved": true
+  },
+  "correctedHostControl": {
+    "javaVersion": "openjdk version \"25.0.3\" 2026-04-21 LTS",
+    "qualifierSha256": "ff7fbcb484e37194f5969b24dd6c8e28ceccac7b115caa3fc5eae17703475961",
+    "requiredModelJars": 10,
+    "resolvedJarLimit": 96,
+    "resolvedByteLimit": 33554432,
+    "model": {
+      "status": "actual-locked-classlib-model-passed",
+      "models": 3,
+      "sourceInputs": {
+        "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java": "sha256:fc7253b0e968b1d9d961a14f72ae3a7a1d32ffdd61eb3d9be4e9c3e16c79b278",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java": "sha256:4820f3b9a4a76c22b6c6110488c98f7094fae05f4d4c628513206491b057a587",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java": "sha256:634134c3ba21d347bf6cc04fc4172294d34c096cdb3a972db687de1feb1d90bf",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java": "sha256:7f5c0b54e8ec17ac62f79224914105da4085cb8f73792c025cb27786240006f4",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java": "sha256:ff3318393a22fac68998cf7ba6e219e71f454e6e5bf53162ae583f07a5609161",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/StandardTimerMethods.java": "sha256:5673a2bd563b1727ccbebe0fcefbb7b02eb05a481f0b1288580b22b70db9a125",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java": "sha256:c8942a70c5f6b0dd789474f7238eb0db2e2dce9ff02561d52c6e9d4b858f202e",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java": "sha256:e8e69c388a711c5630c0adc8b4f10e2ab913f27dacb5bc524ab1ac67e23bbc98",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java": "sha256:33f89cb353b7a2a01049d883094872a5d8ff60e6ee48bef39da42f45221a9e81",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java": "sha256:e0f0c8a78d0b51b46c9d671c93e085717750934af415aa9a46d18e710c3b64f8",
+        "fibers/conformance/compiler/StandardTimerModelControl.java": "sha256:63099a3ef341491220f17f9faa7b12e3eceaf2b8a84b2d73f9dd2ba9c21a4b46",
+        "fibers/conformance/compiler/StandardTimerCompilerGraphControl.java": "sha256:419417949a53ca1eb59bfa9ea728ef48f5007a5b2fa1482d03aea83bff273f80",
+        "fibers/dev/latent/guest/runtime/util/Timer.java": "sha256:dab2d9361e49b6e06b926135e9e5a66cb836fe040f66d11ae3fdd43e16cfafdf",
+        "fibers/dev/latent/guest/runtime/util/TimerTask.java": "sha256:ba01a31957ae3232a7fd8b75e1deac51806c533bcc1d2b246f70cf52ad767a0b",
+        "fibers/conformance/compiler/standard-timer-control/dev/latent/generated/Bindings.java": "sha256:0f03c45a1c32e3fc6fb9085d869e1cb8cf92c7f6fce67487db2e0014a7cf92cb",
+        "fibers/conformance/compiler/standard-timer-control/dev/latent/guest/runtime/Activation.java": "sha256:4e41052c560c5b6008a28e85e1906e473034e2c97e6f6452b316660aeadfa0b9"
+      },
+      "portOrApplicationClassesInitialized": false,
+      "actualGuestBindingsUsed": false,
+      "jarIdentities": [
+        {
+          "coordinate": "com/jcraft/jzlib/1.1.3/jzlib-1.1.3.jar",
+          "sha256": "89b1360f407381bf61fde411019d8cbd009ebb10cff715f3669017a031027560"
+        },
+        {
+          "coordinate": "joda-time/joda-time/2.12.2/joda-time-2.12.2.jar",
+          "sha256": "8d4d807adc8e92a83913d9ccd61e634b4907c78d88f3016d06b3b3d2b4795a02"
+        },
+        {
+          "coordinate": "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar",
+          "sha256": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410"
+        },
+        {
+          "coordinate": "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar",
+          "sha256": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df"
+        },
+        {
+          "coordinate": "org/teavm/teavm-devserver-client/0.15.0/teavm-devserver-client-0.15.0.jar",
+          "sha256": "4113d73ac4241935de10dfdff20f8b67957a3253a0127bb6bada04ee5cd009d7"
+        },
+        {
+          "coordinate": "org/teavm/teavm-extension-annotation-processor/0.15.0/teavm-extension-annotation-processor-0.15.0.jar",
+          "sha256": "a801dfbbeef2f11e75b7fc3a6bfe63add003890f8b53679d63adbf92ffac1520"
+        },
+        {
+          "coordinate": "org/teavm/teavm-extension-apis/0.15.0/teavm-extension-apis-0.15.0.jar",
+          "sha256": "9e867f3760b1c8d86cdb18ec70e429c23fd933021c8c3bb0cc0b727eac3202c0"
+        },
+        {
+          "coordinate": "org/teavm/teavm-extension-spi-util/0.15.0/teavm-extension-spi-util-0.15.0.jar",
+          "sha256": "d94e8d4478c4186d18b657cb67654851d38b9f51d372dc7e7e54e0f3a24347c9"
+        },
+        {
+          "coordinate": "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar",
+          "sha256": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49"
+        },
+        {
+          "coordinate": "org/teavm/teavm-gradle-plugin/0.15.0/teavm-gradle-plugin-0.15.0.jar",
+          "sha256": "d68695de71995c16741208223d7ef755cfe7dcbfb436128f6ec6e7c76abd7ceb"
+        },
+        {
+          "coordinate": "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar",
+          "sha256": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f"
+        },
+        {
+          "coordinate": "org/teavm/teavm-jso-apis/0.15.0/teavm-jso-apis-0.15.0.jar",
+          "sha256": "171abaff01d9c029218df911470184ed8e30e6b511be6bb03381a924ec4a8c3c"
+        },
+        {
+          "coordinate": "org/teavm/teavm-jso-impl/0.15.0/teavm-jso-impl-0.15.0.jar",
+          "sha256": "9a8d15205807b70d7efdfbd4c1356304954e20146e464aec3830dbc6616ef57c"
+        },
+        {
+          "coordinate": "org/teavm/teavm-jso/0.15.0/teavm-jso-0.15.0.jar",
+          "sha256": "58b337b93924106bf819c45890c7c231a0c740145afe77795f1e0f099f621d71"
+        },
+        {
+          "coordinate": "org/teavm/teavm-metaprogramming-api/0.15.0/teavm-metaprogramming-api-0.15.0.jar",
+          "sha256": "00f053ad35ff78312e48eebbf4e1c6cf5f7a1e759b2432ba0b60d6f111bb3bdd"
+        },
+        {
+          "coordinate": "org/teavm/teavm-metaprogramming-impl/0.15.0/teavm-metaprogramming-impl-0.15.0.jar",
+          "sha256": "616d30aa28f7b0180a61c2289b11c77bf84c715bd79f255e1e42400edb5b6d70"
+        },
+        {
+          "coordinate": "org/teavm/teavm-platform/0.15.0/teavm-platform-0.15.0.jar",
+          "sha256": "999d369ab15aa83c17987d048ba59560759169891de7e13a5a1c2bd93dd060a8"
+        },
+        {
+          "coordinate": "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar",
+          "sha256": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c"
+        },
+        {
+          "coordinate": "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar",
+          "sha256": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140"
+        },
+        {
+          "coordinate": "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar",
+          "sha256": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b"
+        },
+        {
+          "coordinate": "org/teavm/teavm-relocated-libs-asm-util/0.15.0/teavm-relocated-libs-asm-util-0.15.0.jar",
+          "sha256": "a41247ca7f023959712be0e713d3f2f5687b4dfeda6b112b2d976494d52cdc57"
+        },
+        {
+          "coordinate": "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar",
+          "sha256": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018"
+        },
+        {
+          "coordinate": "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar",
+          "sha256": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6"
+        },
+        {
+          "coordinate": "org/teavm/teavm-relocated-libs-rhino/0.15.0/teavm-relocated-libs-rhino-0.15.0.jar",
+          "sha256": "49cedc9bfcdd44d30b8bc8d1d46d78fb7f8f2044b8c85c9c3f1ece33e94ee7e9"
+        },
+        {
+          "coordinate": "org/teavm/teavm-tooling/0.15.0/teavm-tooling-0.15.0.jar",
+          "sha256": "51123d78dc48404aa2e7cb0c04a0a6d75309decf604ffafda1c64564e7c9c6f3"
+        },
+        {
+          "coordinate": "org/teavm/teavm-wasm-gc-deobfuscator/0.15.0/teavm-wasm-gc-deobfuscator-0.15.0.jar",
+          "sha256": "875532a32d0c328f33f830ff5a75df752773229c71ae1d5a85bdeac497050376"
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "This host model pass is not Linux component execution or signed Timer qualification.",
+    "The exact failing hosted baseline cache path was not retained; the named missing coordinate is established by the exact observed-closure reconstruction.",
+    "Every original model and actual C dependency-analysis assertion remains unchanged; fresh signed execution is required."
+  ]
+}

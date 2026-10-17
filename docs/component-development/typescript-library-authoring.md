@@ -78,8 +78,10 @@ module inventory, cached original bytes, conditions and immutable SDK before
 atomically accepting the lock. Changed or missing inputs fail before acceptance.
 Original feeds and library directories are unnecessary for review or a captured
 offline build. The accepted capture grants neither compiler-hook execution nor
-runtime capabilities. Bundler plugins and application generators remain denied
-until their separate exact isolated execution stage is implemented and qualified.
+runtime capabilities. Implicit compiler/bundler hooks and package lifecycle
+scripts remain disabled. Explicit reviewed source generation uses the
+[separate isolated stage](typescript-generators.md); signed qualification of a
+generator-emitted component remains a separate acceptance requirement.
 
 ## Build, test and watch
 

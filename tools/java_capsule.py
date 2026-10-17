@@ -92,7 +92,7 @@ def parser() -> argparse.ArgumentParser:
     compile_.add_argument("--offline-cache", type=Path, help="Captured immutable Gradle compiler dependency cache")
     compile_.add_argument('--executable-approval', help='Exact captured executable-input approval for an isolated annotation processor stage')
     compile_.add_argument("--read-only-cache", type=Path, help="Verified immutable Gradle module cache; updates stay in the owned compiler home")
-    compile_.add_argument("--runtime-profile", choices=("teavm-activation-fibers-v1",),
+    compile_.add_argument("--runtime-profile", choices=("teavm-activation-fibers-v1", "teavm-activation-fibers-io-v1"),
                           help="Explicit SDK activation runtime profile; WIT imports and operator grants remain required")
     compile_.add_argument("--contracts-tool", type=Path, default=ROOT / "target/debug/examples/capsule_contracts")
     compile_.add_argument("--packager", type=Path, default=ROOT / "target/debug/examples/package")

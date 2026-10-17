@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_java_dependency_watch_ci.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Run delivered Java signed watch in a source-bound private loopback-only CI account",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "5e87114bc0ecb31a32a3bae51aaa40e6b182e7de37287cae37256be55ff11da6"
+}

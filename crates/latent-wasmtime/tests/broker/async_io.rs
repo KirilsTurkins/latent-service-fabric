@@ -267,7 +267,7 @@ async fn canonical_async_cancellation_and_shutdown_stop_delivery_and_acknowledge
         if shutdown {
             harness.io.retire();
         } else {
-            harness.control.probe.0.store(true, Ordering::Release);
+            harness.control.probe.cancel();
         }
         assert!(tokio::time::timeout(Duration::from_secs(2), invoke)
             .await
