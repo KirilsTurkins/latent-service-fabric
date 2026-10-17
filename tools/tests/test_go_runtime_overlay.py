@@ -508,8 +508,8 @@ class GoRuntimeOverlayTests(unittest.TestCase):
         from tools.go_guest import activation
         from tools.go_application_dependencies import selection
         self.assertEqual(selection()['runtimeProfile'], 'go-component-async-v1')
-        self.assertEqual(selection({'runtimeProfile': activation.PROFILE})['runtimeProfile'], activation.PROFILE)
-        self.assertEqual(selection({'runtimeProfile': activation.CHECKPOINT_PROFILE})['runtimeProfile'], activation.CHECKPOINT_PROFILE)
+        for profile in activation.PROFILES:
+            self.assertEqual(selection({'runtimeProfile': profile})['runtimeProfile'], profile)
         with self.assertRaisesRegex(ValueError, 'profile-not-installed'):
             selection({'runtimeProfile': 'unbounded-native-threads'})
 

@@ -19,6 +19,9 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument("directory", type=Path)
     new.add_argument("--template", choices=AUTHORING_TEMPLATES, default="greeting")
     new.add_argument("--name")
+    from tools.go_guest.activation import PROFILES
+    new.add_argument('--runtime-profile', choices=('go-component-async-v1', *sorted(PROFILES)),
+                     help='Explicit runtime candidate; activation profiles create async exports and declared runtime imports')
     resolve_ = commands.add_parser("resolve", help="Explicitly fetch and capture a locked native module graph")
     resolve_.add_argument("project", type=Path)
     resolve_.add_argument("--candidate", type=Path, required=True)
@@ -117,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
             print(canonical({**result, 'receipt': str(receipt)}).decode())
             return 0
         else:
-            result = (create(args.directory, args.template, args.name) if args.command == "new" else
+            result = (create(args.directory, args.template, args.name, runtime_profile=args.runtime_profile) if args.command == "new" else
                       build(args.project, args.output, args.contracts_tool, args.packager, args.repository))
         print(result)
         return 0

@@ -1,0 +1,25 @@
+// The original linker init graph belongs to this fresh component Store. Runtime
+// bootstrap runs first; module initialization runs once in the admitted async
+// root, before its ordinary handler. No application initializer runs on a build
+// host, before activation admission, or against an absent dispatcher.
+var lsfApplicationInitLast *moduledata
+var lsfApplicationInitialized bool
+
+func lsfPrepareApplicationInit() {
+    if lsfApplicationInitLast != nil { lsfFail("LSF initialization prepared twice") }
+    lsfApplicationInitLast = lastmoduledatap
+}
+
+//go:linkname lsfActivationInitialize
+func lsfActivationInitialize() {
+    if !lsfActivationActive || getg().lsfOwner[1] == 0 || lsfApplicationInitLast == nil {
+        lsfFail("LSF unowned module initialization")
+    }
+    if lsfApplicationInitialized { return }
+    for m := &firstmoduledata; ; m = m.next {
+        if m == nil { lsfFail("LSF module initialization graph changed") }
+        doInit(m.inittasks)
+        if m == lsfApplicationInitLast { break }
+    }
+    lsfApplicationInitialized = true
+}
