@@ -15,6 +15,8 @@ if __name__ == '__main__':
     parser.add_argument('--library',type=Path,required=True)
     parser.add_argument('--wit-bindgen',default='wit-bindgen')
     parser.add_argument('--wasm-tools',default='wasm-tools')
+    parser.add_argument('--source-splicer-build',type=Path)
     arguments = parser.parse_args()
     print(json.dumps(build(arguments.output,arguments.library,
-        bindgen=arguments.wit_bindgen,wasm_tools=arguments.wasm_tools)))
+        bindgen=arguments.wit_bindgen,wasm_tools=arguments.wasm_tools,
+        source_splicer_build=arguments.source_splicer_build)))

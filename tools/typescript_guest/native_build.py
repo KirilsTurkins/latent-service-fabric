@@ -17,7 +17,8 @@ from tools.build_process import BuildProcessError, run_bounded_result
 from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file, write_json
 from tools.typescript_guest import activation_engine as activation, clock_engine as clock
-from tools.typescript_guest import promise_library, runtime_profile as runtime
+from tools.typescript_guest import import_engine, import_profile, promise_library, runtime_profile as runtime
+from tools.typescript_guest import text_codec_engine
 
 SOURCES = {
     'componentize': {'url': 'https://codeload.github.com/bytecodealliance/ComponentizeJS/tar.gz/'+activation.COMPONENTIZE_TREE,
@@ -47,24 +48,77 @@ def sources(directory: Path) -> tuple[dict[str, bytes], list[dict]]:
     return result, links
 
 
-def selected_sources(original: dict, jobs: dict, clocks: dict) -> tuple[dict, dict]:
+def selected_sources(original: dict, jobs: dict, clocks: dict, *, imports: bool = False) -> tuple[dict, dict]:
     native = lambda names: {name:read_file(ROOT/'sdk/typescript-guest/activation'/name) for name in names}
     selected, queue = activation.derive_queue_experiment(original, native(activation.NATIVE_SOURCES), jobs)
     selected, timing = clock.extend_selected_engine_source(selected, native(clock.CLOCK_NATIVE_SOURCES),
         read_file(ROOT/'wit/platform/clock/package.wit'), clocks)
+    import_record = None
+    if imports:
+        selected, import_record = import_engine.extend_native_import_source(selected,
+            native(import_engine.NATIVE_IMPORT_SOURCES))
+        for name, pin in text_codec_engine.PREIMAGES.items():
+            if digest(original[name]) != 'sha256:'+pin:
+                raise ValueError('typescript-native-original-text-codec-source-drift')
     cmake = selected['CMakeLists.txt']
     extra = ('\ntarget_sources(starling-raw.wasm PRIVATE\n'
         '  "${CMAKE_CURRENT_SOURCE_DIR}/lsf/native_clock_engine.cpp"\n'
         '  "${CMAKE_CURRENT_SOURCE_DIR}/lsf/clocks.c"\n'
         '  "${CMAKE_CURRENT_SOURCE_DIR}/lsf/clocks_component_type.o")\n'
         'target_include_directories(extension_api INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/lsf")\n')
+    if imports:
+        extra += ('target_sources(starling-raw.wasm PRIVATE\n'
+                  '  "${CMAKE_CURRENT_SOURCE_DIR}/lsf/native_import_bridge.cpp"\n'
+                  '  "${CMAKE_CURRENT_SOURCE_DIR}/lsf/native_import_globals.cpp")\n')
     selected['CMakeLists.txt'] = cmake+extra.encode()
     rust_build = 'StarlingMonkey/cmake/build-crates.cmake'
     selected[rust_build] = activation.replace_once(selected[rust_build],b'        NO_LINKER_OVERRIDE\n)',
         b'        NO_LINKER_OVERRIDE\n        LOCKED\n)','normal-cmake-locked-cargo-closure')
-    return selected, {'queue':queue, 'clocks':timing,
+    return selected, {'queue':queue, 'clocks':timing, 'imports':import_record,
         'integrationSources':{name:file_bytes(selected[name]) for name in ('CMakeLists.txt',rust_build)},
         'qualification':'unknown'}
+
+
+def source_splicer(directory: Path) -> dict:
+    """Consume only a completed, byte-bound source compiler build."""
+    directory = directory.resolve(strict=True)
+    record = json.loads(read_file(directory/'splicer-build.json'))
+    if (record.get('schemaVersion') != 'latent.typescript.source-splicer-build.v1'
+            or record.get('status') != 'passed' or record.get('scope') != 'source-built-compiler-input-only'
+            or record.get('qualification') != 'unknown' or record.get('apiSupport') != 'not-evaluated'):
+        raise ValueError('typescript-native-completed-source-splicer-required')
+    files = import_profile.splicer_files(directory/'splicer')
+    envelope = json.loads(read_file(directory/'splicer-input.json'))
+    import_profile.validate_splicer(envelope,files,ROOT)
+    if record['input'] != file_identity(directory/'splicer-input.json'):
+        raise ValueError('typescript-native-source-splicer-input-drift')
+    for field,name in (('sourceDerivationDigest','source-derivation.json'),
+                       ('buildReceiptDigest','splicer-compilation.json'),
+                       ('transpileReceiptDigest','transpile-receipt.json')):
+        if envelope[field] != digest(read_file(directory/name)):
+            raise ValueError('typescript-native-source-splicer-receipt-drift')
+    transpilation = json.loads(read_file(directory/'transpile-receipt.json'))
+    if (transpilation.get('result',{}).get('returncode') != 0
+            or transpilation.get('files') != envelope['files']):
+        raise ValueError('typescript-native-source-splicer-transpilation-required')
+    from tools.typescript_guest.splicer_build import recipe_paths
+    if (not isinstance(record.get('recipe'),dict) or set(record['recipe']) != set(recipe_paths())
+            or any(file_identity(ROOT/name) != row for name,row in record['recipe'].items())):
+        raise ValueError('typescript-native-source-splicer-recipe-drift')
+    return {'inputDigest':digest(read_file(directory/'splicer-input.json')),
+        'files':envelope['files'], 'receipts':{name:file_identity(directory/name) for name in
+            ('splicer-build.json','splicer-input.json','source-derivation.json','splicer-compilation.json',
+             'transpile-receipt.json')}}
+
+
+def native_codec_installation(path: Path) -> dict:
+    selected = read_file(path)
+    codec = b'NS_DEF(builtins::web::text_codec)'
+    embedding = b'NS_DEF(componentize::embedding)'
+    if (selected.count(codec) != 1 or selected.count(embedding) != 1
+            or selected.index(codec) > selected.index(embedding)):
+        raise ValueError('typescript-native-original-text-codec-not-installed-before-bindings')
+    return file_identity(path)
 
 
 def file_bytes(raw: bytes) -> dict:
@@ -126,22 +180,28 @@ def materialize_headers(library_root: Path, target: Path, deadline: float) -> di
     return identities
 
 
-def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', wasm_tools: str = 'wasm-tools') -> dict:
+def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', wasm_tools: str = 'wasm-tools',
+          source_splicer_build: Path | None = None) -> dict:
     if sys.platform != 'linux':
         raise ValueError('typescript-native-linux-builder-required')
     library_root = library_root.resolve(strict=True)
     output = output.resolve()
-    if output == ROOT or ROOT in output.parents or output == library_root or library_root in output.parents:
+    if source_splicer_build is not None:
+        source_splicer_build = source_splicer_build.resolve(strict=True)
+    if (output == ROOT or ROOT in output.parents or output == library_root or library_root in output.parents
+            or source_splicer_build is not None and (output == source_splicer_build
+                or source_splicer_build in output.parents or output in source_splicer_build.parents)):
         raise ValueError('typescript-native-fresh-independent-output-required')
     output = fresh(output)
     deadline = time.monotonic()+1200
     environment = build_environment(output)
+    profile = runtime.IMPORT_PROFILE if source_splicer_build is not None else runtime.CLOCK_PROFILE
     record = {'schemaVersion':'latent.typescript.native-engine-source-build.v1', 'status':'in-progress',
         'scope':'normal-cmake-engine-compile-only', 'qualification':'unknown', 'apiSupport':'not-evaluated',
         'limits':{'overallSeconds':1200, 'configureSeconds':600, 'buildSeconds':900, 'jobs':2},
         'sources':SOURCES}
     recipe_paths = ('tools/build_typescript_native_engine.py','tools/typescript_guest/native_build.py',
-                    *activation.engine_input_paths(runtime.CLOCK_PROFILE))
+                    *activation.engine_input_paths(profile))
     record['recipe'] = {name:file_identity(ROOT/name) for name in recipe_paths}
 
     def run(label, *command, seconds=90, cwd=output):
@@ -159,6 +219,8 @@ def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', was
 
     stage = 'library-input'
     try:
+        if source_splicer_build is not None:
+            record['sourceSplicer'] = source_splicer(source_splicer_build)
         raw_receipt = read_file(library_root/'library-build.json')
         library = json.loads(raw_receipt)
         if (library.get('schemaVersion') != 'latent.typescript.promise-library-source-build.v1'
@@ -212,7 +274,7 @@ def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', was
 
         jobs = generated('jobs','latent:typescript-activation@0.1.0',[runtime.ACTIVATION_INTERFACE],['activation-runtime'])
         clocks = generated('clocks','latent:typescript-clock@0.1.0',list(clock.CLOCK_INTERFACES),['clock'])
-        selected, derivation = selected_sources(original,jobs,clocks)
+        selected, derivation = selected_sources(original,jobs,clocks,imports=source_splicer_build is not None)
         derivation['upstreamContainedLinks'] = links
         write_json(output/'source-derivation.json',derivation)
         for name, raw in selected.items():
@@ -238,6 +300,8 @@ def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', was
             '-DCPM_wasi-sdk_SOURCE='+str(wasi),'-DENABLE_JS_DEBUGGER=OFF','-DWEVAL=OFF',seconds=600)
         run('cmake-build','cmake','--build',cmake,'--target','starlingmonkey_embedding','--parallel','2',seconds=900)
         stage = 'product-integrity'
+        if source_splicer_build is not None:
+            record['originalNativeTextCodecInstallation'] = native_codec_installation(cmake/'starling-raw.wasm/builtins.incl')
         core = read_file(source/'lib/starlingmonkey_embedding.wasm',64*1024**2)
         if core[:8] != b'\0asm\x01\0\0\0':
             raise ValueError('typescript-native-real-core-product-required')
@@ -260,6 +324,8 @@ def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', was
             raise ValueError('typescript-native-recipe-or-sdk-source-changed')
         if read_file(library_root/'library-build.json') != raw_receipt:
             raise ValueError('typescript-native-original-library-receipt-changed')
+        if source_splicer_build is not None and record['sourceSplicer'] != source_splicer(source_splicer_build):
+            raise ValueError('typescript-native-source-splicer-changed-during-build')
         product = output/'engine.wasm'; product.write_bytes(core)
         notices = output/'licenses'; notices.mkdir()
         for label, path in (('ComponentizeJS-LICENSE',source/'LICENSE'),('StarlingMonkey-LICENSE',starling/'LICENSE'),
@@ -267,15 +333,18 @@ def build(output: Path, library_root: Path, *, bindgen: str = 'wit-bindgen', was
             (notices/label).write_bytes(read_file(path))
         record.update(status='core-compiled',engine=file_identity(product,64*1024**2),signedExecution='not-run')
         write_json(output/'engine-compilation.json',record)
-        sdk = {name:read_file(ROOT/name) for name in activation.engine_input_paths(runtime.CLOCK_PROFILE)}
-        envelope = {'schemaVersion':runtime.ENGINE_SCHEMA, 'profile':runtime.CLOCK_PROFILE,
+        sdk = {name:read_file(ROOT/name) for name in activation.engine_input_paths(profile)}
+        envelope = {'schemaVersion':runtime.IMPORT_ENGINE_SCHEMA if profile == runtime.IMPORT_PROFILE else runtime.ENGINE_SCHEMA,
+            'profile':profile,
             'coreDigest':digest(core),'coreBytes':len(core),
             'sdkInputs':[{'path':name,'digest':digest(raw),'size':len(raw)} for name,raw in sorted(sdk.items())],
             'runtimeWitDigest':digest(read_file(ROOT/'wit/platform/activation-runtime/package.wit')),
             'upstream':runtime.SOURCE_PINS,'sourceDerivationDigest':digest(read_file(output/'source-derivation.json')),
             'buildReceiptDigest':digest(read_file(output/'engine-compilation.json')),
             'qualification':'unknown','apiSupport':'not-evaluated','inputTrust':'operator-asserted'}
-        runtime.validate_engine(envelope,core,sdk,read_file(ROOT/'wit/platform/activation-runtime/package.wit'),profile=runtime.CLOCK_PROFILE)
+        if source_splicer_build is not None:
+            envelope['compilerSplicerInputDigest'] = record['sourceSplicer']['inputDigest']
+        runtime.validate_engine(envelope,core,sdk,read_file(ROOT/'wit/platform/activation-runtime/package.wit'),profile=profile)
         write_json(output/'engine-input.json',envelope)
         record.update(status='passed',input=file_identity(output/'engine-input.json'))
         write_json(output/'engine-build.json',record)
