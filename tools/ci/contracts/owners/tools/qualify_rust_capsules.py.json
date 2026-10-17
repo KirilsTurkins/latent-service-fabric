@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Reconciled both reviewed changes: exact TypeScript source splicer and async waiter input closure, and explicit CLR hash entropy/resource qualification with owned immutable native binaries. All compiler, signing, source checks and original missing-grant zero-execution control remain intact.",
+  "reviewReason": "Preserve explicit Rust and .NET captured-recovery selection and Rust FFI qualification after their shared-owner merge.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "bd7f4c1cfba1685be674dcd3767e0b39a724ddf30ed81b4c98bab6a6d6ce5477"
+  "sha256": "ac28b55d5be80732dc4a0c09ba65f612c6d2f75e4fdf7015035a3b8743c1cee2"
 }

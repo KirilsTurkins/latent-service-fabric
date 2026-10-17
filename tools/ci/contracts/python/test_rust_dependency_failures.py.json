@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "RustDependencyFailures.test_actual_outside_fixture_declares_native_symbol_as_unimplemented_wasm_import",
+    "RustDependencyFailures.test_attribution_uses_exact_core_and_preserves_generic_unknown",
+    "RustDependencyFailures.test_changed_core_during_inspection_cannot_publish_finding",
+    "RustDependencyFailures.test_stale_wrong_stage_and_missing_native_import_do_not_classify",
+    "RustDependencyFailures.test_unreviewed_tool_request_stops_before_ffi_compile_and_restores_source"
+  ],
+  "guards": {
+    "RustDependencyFailures.test_actual_outside_fixture_declares_native_symbol_as_unimplemented_wasm_import": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77209c1c3cb264f8706d0b240760b1b91fe52644ce3acae7a918a35906a23949",
+        "class:setup-sha256:4ea49f5765b0281af0d21e599e3d12a4c5e216b267a59a6ffaffde850be5f931"
+      ],
+      "skipSites": []
+    },
+    "RustDependencyFailures.test_attribution_uses_exact_core_and_preserves_generic_unknown": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77209c1c3cb264f8706d0b240760b1b91fe52644ce3acae7a918a35906a23949",
+        "class:setup-sha256:4ea49f5765b0281af0d21e599e3d12a4c5e216b267a59a6ffaffde850be5f931"
+      ],
+      "skipSites": []
+    },
+    "RustDependencyFailures.test_changed_core_during_inspection_cannot_publish_finding": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77209c1c3cb264f8706d0b240760b1b91fe52644ce3acae7a918a35906a23949",
+        "class:setup-sha256:4ea49f5765b0281af0d21e599e3d12a4c5e216b267a59a6ffaffde850be5f931"
+      ],
+      "skipSites": []
+    },
+    "RustDependencyFailures.test_stale_wrong_stage_and_missing_native_import_do_not_classify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77209c1c3cb264f8706d0b240760b1b91fe52644ce3acae7a918a35906a23949",
+        "class:setup-sha256:4ea49f5765b0281af0d21e599e3d12a4c5e216b267a59a6ffaffde850be5f931"
+      ],
+      "skipSites": []
+    },
+    "RustDependencyFailures.test_unreviewed_tool_request_stops_before_ffi_compile_and_restores_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:77209c1c3cb264f8706d0b240760b1b91fe52644ce3acae7a918a35906a23949",
+        "class:setup-sha256:4ea49f5765b0281af0d21e599e3d12a4c5e216b267a59a6ffaffde850be5f931"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_dependency_failures.py",
+  "reviewReason": "Preserve all four original strict native-FFI evidence and approval guards. Add an actual outside-fixture emitter control, stopping at the first mocked native Cargo boundary, requiring one wasm32-only env import declaration with no host implementation and unchanged descriptor authority.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -122,3 +122,22 @@ variation, update/remove/watch and broader memory/cancellation/disposal/GC
 qualification remain required by #687. Task/ThreadPool and ordinary HttpClient
 retain their own runtime tickets. The focused signed resource checks establish
 the named standard lookup path, not universal compatibility for NuGet packages.
+
+The captured outside-library gate also checks a resource-backed type initializer, ordinary caught exceptions/finally, UTF-8/binary embedded bytes and zero prior activation state. Requests to that same library exercise an uncaught exception, the original retained-allocation strategy, fuel exhaustion and an observed cancellation. Each known terminal failure requires bounded guest memory, physical idle ownership and a successful fresh signed invocation. Cancellation observes the exact running activation first and issues one mutation; uncertain completion never retries. The existing NativeAOT recipe, runtime profile, entropy declaration, invocation/control bounds and 75-minute job remain unchanged. Terminal interruption does not claim that managed finally clauses run after the Store has stopped. Current-head hosted compiler/node results remain required before this programme is qualified.
+
+The additive delivered-tool watch programme prepares two versions of an outside NuGet library with the shipped pinned compiler, actual managed DLLs and embedded data. Normal add/resolve with explicit native lock update, exact review, recipe trust and signed-fixture preparation run through the maintained frontend. The original source preparation and selected feed are removed before guest compilation. Updating and removing the package must fail before review; changed reviewed recipes require new trust, and old signatures refuse changed builds. Three separately consented signed workspaces must return the initial resource, updated resource and removed result, with unchanged SDK lock and confirmed normal shutdown. The qualifier uses a private unprivileged account, verified delivered compiler expansion and the maintained network-denied compiler namespace. It grants no publisher authentication to a source candidate. Current-head hosted evidence is still required before this watch programme counts as qualified.
+
+That watch fixture copies its explicitly declared random WIT from the verified
+vendored SDK, then selects the existing system-random provider through
+`prepare-test --consent-test-fixtures --admission signed-fixture --fixtures`.
+The selected JSON is
+`{"random":{"maximumOperations":16,"maximumOutputBytes":4096}}`: the closed
+fixture supports only `bytes`, at most 16 operations, eight input bytes, 4096
+output bytes and five seconds. Lower positive operation/output ceilings are
+accepted; seeds, output values, alternative operations and extra fields are
+rejected. Provider selection grants no authority. The scenario must separately
+request the exact random and monotonic-clock capabilities through the normal
+policy owner, bound to its service and publication. The ordinary .NET profile
+keeps its original monotonic-clock selection; refusing consent leaves providers
+and policy state untouched. This source-controlled test selection does not
+enable other .NET entropy or runtime APIs.
