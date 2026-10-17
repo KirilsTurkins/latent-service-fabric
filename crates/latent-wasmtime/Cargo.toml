@@ -45,6 +45,7 @@ latent-activation = { path = "../latent-activation" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-audit = { path = "../latent-audit" }
 latent-component-bindings = { path = "../latent-component-bindings" }
+latent-component-threading = { path = "../latent-component-threading" }
 latent-core = { path = "../latent-core" }
 latent-capabilities = { path = "../latent-capabilities" }
 latent-policy = { path = "../latent-policy" }

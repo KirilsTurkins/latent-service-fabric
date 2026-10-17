@@ -40,6 +40,7 @@ fn main() -> io::Result<()> {
     write_transaction_guest_bindings(&output, &transaction_wit)?;
     write_web_bindings(&output, &platform_wit)?;
     write_activation_bindings(&output, &platform_wit)?;
+    write_native_bindings(&output, &platform_wit)?;
 
     println!(
         "cargo:rerun-if-changed={}",
@@ -51,6 +52,31 @@ fn main() -> io::Result<()> {
     );
     println!("cargo:rerun-if-changed={}", platform_wit.display());
     Ok(())
+}
+
+fn write_native_bindings(output: &Path, platform: &Path) -> io::Result<()> {
+    let wit = output.join("native-wit");
+    recreate(&wit)?;
+    copy_wit_tree(
+        &platform.join("native-runtime"),
+        &wit.join("deps/native-runtime"),
+    )?;
+    copy_wit_tree(
+        &platform.join("activation-runtime"),
+        &wit.join("deps/activation-runtime"),
+    )?;
+    fs::write(wit.join("world.wit"), "package latent:native-host@0.1.0; world support { import latent:runtime/activation@0.1.0; import latent:runtime-native/threads@0.1.0; }\n")?;
+    let path = format!("{:?}", wit.to_string_lossy());
+    fs::write(
+        output.join("native_host.rs"),
+        format!(
+            r#"wasmtime::component::bindgen!({{
+        path: {path}, world: "latent:native-host/support@0.1.0",
+        imports: {{ default: async }}, exports: {{ default: async }},
+        with: {{ "latent:runtime/activation@0.1.0": crate::host::activation::latent::runtime::activation }},
+    }});"#
+        ),
+    )
 }
 
 fn write_web_bindings(output: &Path, platform: &Path) -> io::Result<()> {
