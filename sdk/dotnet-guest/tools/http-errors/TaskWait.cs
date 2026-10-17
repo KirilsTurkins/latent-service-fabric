@@ -227,20 +227,32 @@ internal static class TaskWait
                 entry.Create(OpCodes.Ldarg_0), entry.Create(OpCodes.Call, helper), entry.Create(OpCodes.Ret),
             ];
             foreach (var instruction in prologue) entry.InsertBefore(originalEntry, instruction);
-            var generatedHelpers = new[] { helper, pump }.ToDictionary(method => method.FullName, method => BodyIdentity(method));
+            var timerMethods = IdleTimerDriver.Install(module);
+            var timerOriginalBodies = timerMethods.ToDictionary(method => method.FullName,
+                method => originalMethods[originalMap.Single(item => item.Value == method).Key]);
+            var timerModifiedBodies = timerMethods.ToDictionary(method => originalMap.Single(item => item.Value == method).Key,
+                method => BodyIdentity(method));
+            var generatedHelpers = Methods(module).Where(item => !originalMap.ContainsKey(item.Key))
+                .ToDictionary(item => item.Value.FullName, item => BodyIdentity(item.Value));
+            Require(generatedHelpers.Count == 8 && timerModifiedBodies.Count == 3);
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
             {
                 var methods = Methods(written);
-                Require(methods.Count == originalMethods.Count + 2 &&
+                Require(methods.Count == originalMethods.Count + 8 &&
                     methods.Values.Count(method => method.FullName == helper.FullName) == 1 &&
                     methods.Values.Count(method => method.FullName == pump.FullName) == 1);
                 foreach (var (name, identity) in originalMethods)
-                    Require(methods.ContainsKey(name) && BodyIdentity(methods[name], name == waitKey ? prologue.Length : 0) == identity);
+                    Require(methods.ContainsKey(name) && (timerModifiedBodies.TryGetValue(name, out var modified)
+                        ? BodyIdentity(methods[name]) == modified
+                        : BodyIdentity(methods[name], name == waitKey ? prologue.Length : 0) == identity));
                 foreach (var (name, identity) in generatedHelpers)
                     Require(BodyIdentity(methods.Values.Single(method => method.FullName == name)) == identity);
                 var fields = written.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName).ToHashSet();
-                Require(fields.Count == originalFields.Count + 1 && fields.Remove(depth.FullName) && fields.SetEquals(originalFields));
+                var addedFields = module.GetTypes().SelectMany(type => type.Fields).Select(field => field.FullName)
+                    .Where(name => !originalFields.Contains(name)).ToHashSet();
+                Require(addedFields.Count == 5 && fields.Count == originalFields.Count + 5 &&
+                    fields.Except(addedFields).ToHashSet().SetEquals(originalFields) && addedFields.IsSubsetOf(fields));
             }
             Require(FileDigest(original, 8 * 1024 * 1024) == SourceDigest);
             var result = new {
@@ -253,8 +265,14 @@ internal static class TaskWait
                 completion = "actual-task-only", exceptionPropagation = "original-TaskAwaiter",
                 nestedTaskIdentity = "save-restore-finally", defaultClientComponentQualified = false,
                 callerContexts = "original-RunInternal-Default", contextNotifications = "original-runtime",
-                generatedHelperCount = 2, contextCallback = "same-CoreLib-ContextCallback(object)",
-                unchangedOriginalMethods = originalMethods.Count - 1, completeOriginalWaitRemainderPreserved = true,
+                generatedHelperCount = 8, contextCallback = "same-CoreLib-ContextCallback(object)",
+                unchangedOriginalMethods = originalMethods.Count - 4, completeOriginalWaitRemainderPreserved = true,
+                timerDriver = "TimerQueue.SetNextTimer-only", timerDriverIdle = "Timer.ActiveCount==0",
+                timerDriverCancellation = "original-CancellationTokenSource-CancelAndDispose",
+                timerDriverIdentity = "original-task-reference-and-epoch", timerDriverCallbacks = "original-queued-user-callbacks-preserved",
+                timerDriverScheduledToFire = "untouched", timerDriverCacheCleanup = false,
+                timerDriverRegistrationContext = "no-new-capture-original-flow-restored",
+                timerDriverModifiedOriginalMethods = 3, timerDriverOriginalBodies = timerOriginalBodies,
             };
             using var destination = new FileStream(receipt, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             JsonSerializer.Serialize(destination, result);

@@ -5,7 +5,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from tools.java_guest.model import Graph
-from tools.java_guest import java, c
+from tools.java_guest import java, c, async_imports
 from tools.java_guest.surface import surface
 
 
@@ -21,6 +21,61 @@ HEADER = "void exports_examples_sample_api_run(uint64_t value, sample_result_t *
 
 
 class Bindings(unittest.TestCase):
+    @staticmethod
+    def asynchronous_document():
+        data = document()
+        data['interfaces'].append({'name': 'pending', 'package': 0, 'types': {}, 'functions': {
+            'wait': {'name': 'wait', 'kind': 'async-freestanding', 'params': [{'name': 'value', 'type': 'u32'}],
+                     'result': 'u32'}}})
+        data['worlds'][0]['imports'] = {'interface-1': {'interface': {'id': 1}}}
+        header = HEADER + 'extern probe_subtask_status_t examples_sample_pending_wait(uint32_t value, uint32_t *result);\n'
+        return data, header
+
+    def test_async_import_abi_requires_explicit_profile_and_real_async_wit(self):
+        data, header = self.asynchronous_document()
+        with self.assertRaisesRegex(ValueError, 'outside the selected Java profile'):
+            Graph(data, 'service', header)
+        with self.assertRaisesRegex(ValueError, 'explicit boolean'):
+            Graph(data, 'service', header, async_imports=1)
+        data['interfaces'][1]['functions']['wait']['kind'] = 'freestanding'
+        with self.assertRaisesRegex(ValueError, 'outside the selected Java profile'):
+            Graph(data, 'service', header, async_imports=True)
+
+    def test_async_result_area_cannot_be_missing_flattened_or_used_by_sync_bridge(self):
+        data, header = self.asynchronous_document()
+        for invalid in (header.replace(', uint32_t *result', ''), header.replace('*result', 'result')):
+            with self.subTest(header=invalid), self.assertRaises(ValueError):
+                Graph(data, 'service', invalid, async_imports=True)
+        graph = Graph(data, 'service', header, async_imports=True)
+        self.assertTrue(graph.imports[0]['asyncLowered'])
+        with self.assertRaisesRegex(ValueError, 'owned pending-call bridge'):
+            c.generate(graph)
+
+    def test_true_async_c_export_is_rejected_even_with_import_profile_selected(self):
+        with self.assertRaisesRegex(ValueError, 'asynchronous C exports'):
+            Graph(document(), 'service', HEADER.replace('void ', 'probe_callback_code_t ', 1), async_imports=True)
+
+    def test_internal_wait_cancellation_rejects_resource_results_through_aliases(self):
+        data, header = self.asynchronous_document()
+        data['packages'].append({'name': 'latent:runtime@0.1.0', 'interfaces': {'activation': 1}, 'worlds': {}})
+        data['interfaces'][1].update(name='activation', package=1)
+        function = data['interfaces'][1]['functions'].pop('wait')
+        function['name'] = 'timer-next'
+        data['interfaces'][1]['functions']['timer-next'] = function
+        header = header.replace('examples_sample_pending_wait', 'latent_runtime_activation_timer_next')
+        graph = Graph(data, 'service', header, async_imports=True)
+        async_imports.generate(graph)
+        resource = len(data['types'])
+        data['types'].extend([
+            {'name': 'handle', 'kind': 'resource', 'owner': {'interface': 1}},
+            {'name': None, 'kind': {'handle': {'own': resource}}, 'owner': None},
+            {'name': None, 'kind': {'option': resource + 1}, 'owner': None},
+        ])
+        function['result'] = resource + 2
+        graph = Graph(data, 'service', header, async_imports=True)
+        with self.assertRaisesRegex(ValueError, 'cannot transfer resources'):
+            async_imports.generate(graph)
+
     def test_reused_shallow_types_cannot_hide_an_excessive_graph_depth(self):
         data = document()
         data["types"] = [{"name": None, "owner": None, "kind": {"list": index + 1 if index < 34 else "string"}}

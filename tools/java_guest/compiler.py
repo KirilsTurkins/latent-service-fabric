@@ -217,11 +217,13 @@ class Compiler:
 
     def compile(self, sources: Path, wit: Path, world: str, destination: Path, *,
                 application_classpath: tuple[Path, ...] = (), application_resources: Path | None = None,
-                activation_profile: bool = False, server_profile: bool = False,
+                activation_profile: bool = False, server_profile: bool = False, fiber_io_profile: bool = False,
                 server_bridge: bytes | None = None, http_client_profile: bool = False,
                 processor_stage=None) -> tuple[Path, dict]:
         if type(activation_profile) is not bool:
             raise ValueError("Java activation profile requires an explicit boolean selection")
+        if type(fiber_io_profile) is not bool or fiber_io_profile and not activation_profile:
+            raise ValueError("Java fiber I/O requires an explicit activation profile")
         if type(server_profile) is not bool or server_bridge is not None and not server_profile:
             raise ValueError("automatic server bridge requires an explicitly selected profile")
         if type(http_client_profile) is not bool:
@@ -237,6 +239,7 @@ class Compiler:
             if not required_imports <= set(declared["imports"]):
                 raise ValueError("Java activation profile requires explicit runtime and monotonic clock WIT imports")
         binding_selection = {"activation_profile": True} if activation_profile else {}
+        if fiber_io_profile: binding_selection['fiber_io_profile'] = True
         bindings = generate(self.run, staged, world, destination / "bindings", **binding_selection)
         second = generate(self.run, staged, world, destination / "bindings-check", **binding_selection)
         if second != bindings: raise ValueError("nondeterministic Java WIT bindings")
@@ -277,6 +280,8 @@ class Compiler:
         from tools.java_guest import facilities
         write_json(destination / 'standard-entropy-profile.json', facilities.stage(
             self.sdk, destination / 'bindings', java_root))
+        write_json(destination / 'standard-logging-profile.json', facilities.stage_logging(
+            self.sdk, destination / 'bindings', java_root))
         with (project / 'build.gradle').open('a', encoding='utf-8') as build:
             build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         resource_profile = None
@@ -296,6 +301,16 @@ class Compiler:
             for name, data in snapshot(self.sdk / (profile + "/services")).items():
                 target = project / "src/main/resources" / name
                 stage_sdk_service(target, name, data)
+        overrides = []
+        if fiber_io_profile:
+            original = self.sdk / 'fibers/dev/latent/guest/runtime/HostCalls.java'
+            replacement = self.sdk / 'fibers/io/dev/latent/guest/runtime/HostCalls.java'
+            target = java_root / 'dev/latent/guest/runtime/HostCalls.java'
+            if read_file(target) != read_file(original):
+                raise ValueError('Java fiber I/O override must replace only the captured default SDK source')
+            overrides.append({'original': original.relative_to(self.sdk).as_posix(), 'originalDigest': digest(read_file(original)),
+                              'replacement': replacement.relative_to(self.sdk).as_posix(), 'replacementDigest': digest(read_file(replacement))})
+            target.write_bytes(read_file(replacement))
         if activation_profile or server_profile:
             with (project / "build.gradle").open("a", encoding="utf-8") as build:
                 if activation_profile:
@@ -365,7 +380,8 @@ class Compiler:
             target = project / "src/main/resources/META-INF/latent/runtime-checkpoints.classes"
             target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(index)
             write_json(destination / "runtime-profile.json", {
-                "profile": "teavm-activation-fibers-v1", "qualification": "pending",
+                "profile": "teavm-activation-fibers-io-v1" if fiber_io_profile else "teavm-activation-fibers-v1", "qualification": "pending",
+                "sourceOverrides": overrides,
                 "sourceOriginDigest": digest(canonical(origins)),
                 "checkpointClassIndexDigest": digest(index), "checkpointClasses": index.decode("utf-8").splitlines(),
             })
@@ -389,7 +405,8 @@ class Compiler:
         self.run("closed-runtime", "wasm-tools", "component", "embed", staged, self.sdk / "feasibility/closed-runtime.wat",
                  "--world", "runtime-support", "-o", adapter)
         self.run("component-new", "wasm-tools", "component", "new", core, "--adapt", "wasi_snapshot_preview1=" + str(adapter), "-o", component)
-        self.run("component-validate", "wasm-tools", "validate", component)
+        validation_features = ["--features", "cm-more-async-builtins"] if fiber_io_profile else []
+        self.run("component-validate", "wasm-tools", "validate", *validation_features, component)
         surface = self.run("component-surface", "wasm-tools", "component", "wit", component)
         if "import wasi:" in surface: raise ValueError("ambient WASI survived the closed Java runtime")
         expected = wit_surface(json.loads(self.run("expected-wit", "wasm-tools", "component", "wit", staged, "--json")), world)

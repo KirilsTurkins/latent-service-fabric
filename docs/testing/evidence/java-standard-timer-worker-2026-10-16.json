@@ -1,0 +1,99 @@
+{
+  "accountingQualified": false,
+  "compilerRegression": {
+    "actualGuestBindingsUsed": false,
+    "applicationInitializersExecuted": false,
+    "compilerLock": {
+      "bytes": 16525,
+      "sha256": "4fa10515cc8e0471acdc44a4f9f3edd85bd2ad7536ca6217e4da8fb7e03351f4"
+    },
+    "compilerVersion": "javac 25.0.3",
+    "corrected": {
+      "applicationCallbackReachable": true,
+      "boundedCSourceEmission": true,
+      "compilerProblems": 0,
+      "privateWorkerReachable": true,
+      "sourceInputs": {
+        "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java": "sha256:fc7253b0e968b1d9d961a14f72ae3a7a1d32ffdd61eb3d9be4e9c3e16c79b278",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/MonitorContinuations.java": "sha256:4820f3b9a4a76c22b6c6110488c98f7094fae05f4d4c628513206491b057a587",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java": "sha256:634134c3ba21d347bf6cc04fc4172294d34c096cdb3a972db687de1feb1d90bf",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java": "sha256:7f5c0b54e8ec17ac62f79224914105da4085cb8f73792c025cb27786240006f4",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/SleepContinuations.java": "sha256:ff3318393a22fac68998cf7ba6e219e71f454e6e5bf53162ae583f07a5609161",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/StandardTimerMethods.java": "sha256:5673a2bd563b1727ccbebe0fcefbb7b02eb05a481f0b1288580b22b70db9a125",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/SynchronizedMethods.java": "sha256:c8942a70c5f6b0dd789474f7238eb0db2e2dce9ff02561d52c6e9d4b858f202e",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java": "sha256:e8e69c388a711c5630c0adc8b4f10e2ab913f27dacb5bc524ab1ac67e23bbc98",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java": "sha256:33f89cb353b7a2a01049d883094872a5d8ff60e6ee48bef39da42f45221a9e81",
+        "fibers/compiler/dev/latent/guest/runtime/compiler/WaitContinuations.java": "sha256:e0f0c8a78d0b51b46c9d671c93e085717750934af415aa9a46d18e710c3b64f8",
+        "fibers/conformance/compiler/StandardTimerCompilerGraphControl.java": "sha256:419417949a53ca1eb59bfa9ea728ef48f5007a5b2fa1482d03aea83bff273f80",
+        "fibers/conformance/compiler/StandardTimerModelControl.java": "sha256:63099a3ef341491220f17f9faa7b12e3eceaf2b8a84b2d73f9dd2ba9c21a4b46",
+        "fibers/conformance/compiler/standard-timer-control/dev/latent/generated/Bindings.java": "sha256:0f03c45a1c32e3fc6fb9085d869e1cb8cf92c7f6fce67487db2e0014a7cf92cb",
+        "fibers/conformance/compiler/standard-timer-control/dev/latent/guest/runtime/Activation.java": "sha256:4e41052c560c5b6008a28e85e1906e473034e2c97e6f6452b316660aeadfa0b9",
+        "fibers/dev/latent/guest/runtime/util/Timer.java": "sha256:dab2d9361e49b6e06b926135e9e5a66cb836fe040f66d11ae3fdd43e16cfafdf",
+        "fibers/dev/latent/guest/runtime/util/TimerTask.java": "sha256:ba01a31957ae3232a7fd8b75e1deac51806c533bcc1d2b246f70cf52ad767a0b"
+      },
+      "timerWorkerReachable": true
+    },
+    "lockedJarBytes": 33296002,
+    "lockedJars": 70,
+    "original": {
+      "compilerProblems": 0,
+      "sameNewControl": "failed-at-missing-worker-assertion-after-all-original-model-guards",
+      "sourceInputs": [
+        {
+          "path": "sdk/java-guest/fibers/dev/latent/guest/runtime/util/Timer.java",
+          "sourceSha256": "5e344200d174ae662ee61533dc17ffbf8968edd0a9583f386b5ba3fa82c57a9a"
+        },
+        {
+          "path": "sdk/java-guest/fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
+          "sourceSha256": "38b2c3307bce24d63e9bee7aa8f65064b282ce7b03c41fddf4a24d089ab7f5bb"
+        }
+      ],
+      "timerWorkerReachable": false
+    },
+    "wasmExecuted": false
+  },
+  "issue741Complete": false,
+  "nativeFailure": {
+    "artifact": 12025477481,
+    "compileAndComponentValidation": "passed",
+    "component": {
+      "bytes": 1344442,
+      "sha256": "d6717b9f2e7d6e711bdf8f2d4d33f3be0911808d49d327ce47ae1a6eda65c875"
+    },
+    "cpuFuel": 10000000000,
+    "firstMode": 0,
+    "head": "4fb35f984c8d10cf1ef7bf2a6c097ece053d3113",
+    "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38844502022/job/116791834935",
+    "peakMemoryBytes": 9308160,
+    "reason": "activation.fuel-exhausted",
+    "retainedLog": {
+      "bytes": 277231,
+      "sha256": "f8a537d326cc5abbb13222b09ada1fa618144c0302726ae01c7a8c581aee010f"
+    },
+    "signedModesPassed": 0,
+    "terminal": "ResourceExhausted",
+    "testedMerge": "703e2cc1badb612531a01e0628168764aa82a826",
+    "wallTimeMicros": 10523771
+  },
+  "observedDate": "2026-10-16",
+  "preserved": {
+    "ambientWasiDenied": true,
+    "jobMinutes": 55,
+    "oldModelGuards": true,
+    "originalSignedModes": 12,
+    "runtimeAndPolicyLimits": true
+  },
+  "qualification": "source-controls-passed-signed-execution-pending",
+  "referenceAndSdkSource": {
+    "componentExecutionPerformed": false,
+    "modes": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "referenceRounds": 3,
+    "sdkRounds": 3
+  },
+  "schemaVersion": "latent.java.standard-timer-worker-source.v1"
+}

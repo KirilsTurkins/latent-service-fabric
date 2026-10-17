@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "latent.java.server-tenants.runtime-grant-boundary.v1",
+  "sourceHead": "0f41b4ee283556dc40b7e0db16de0cefdfb8647c",
+  "nativeSourceHead": "a9880fe515e0973c30ffcb4c3846c7c72ffb5eac",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38931070574/job/117074901098",
+  "artifactId": 12065730277,
+  "originalResult": "failed",
+  "reason": "denied-server-route-created-cell",
+  "observedForeignRequest": {
+    "method": "GET",
+    "authority": "foreign.server.test",
+    "path": "/hey",
+    "httpStatus": 403,
+    "cellClass": "standard",
+    "grantedBefore": "2",
+    "grantedAfter": "3",
+    "physicalOwnersIdleAfter": true,
+    "foreignActivationReceiptRetained": false
+  },
+  "separateExamplesRequest": {
+    "terminalState": "rejected",
+    "platformCode": "permission-denied",
+    "cpuFuel": "0",
+    "peakMemoryBytes": "0",
+    "grantedBefore": "0",
+    "grantedAfter": "1",
+    "qualifiesForeignRequest": false
+  },
+  "sourceInspection": {
+    "boundary": "cell lease, capability-session plan validation, then host-state and Store creation",
+    "missingGrantDisposition": "GrantDenied before Store, instance or export execution",
+    "originalLeaseReleasedOnRefusal": true,
+    "criticalNativeAndCandidateSourceBlobsMatch": 7,
+    "foreignRuntimeExecutionObserved": false
+  },
+  "reviewedControl": {
+    "requiresOriginalForeignRootAndResolvedPin": true,
+    "requiresRejectedPermissionDenied": true,
+    "requiresZeroGuestAndWorkConsumption": true,
+    "maximumOriginalCellLeases": 1,
+    "requiresPhysicalIdle": true,
+    "routeAndCredentialNoCellAssertionsPreserved": true,
+    "productionAuthorityOrLimitsChanged": false,
+    "freshHostedForeignQualification": "pending"
+  },
+  "tenantIsolationQualified": false
+}

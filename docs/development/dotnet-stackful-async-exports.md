@@ -197,15 +197,31 @@ clears both current-thread context fields. Finite waits and waits with a cancell
 retain the original unsupported path. This is a bounded joined-wait candidate,
 not complete Task, ThreadPool or detached-work compatibility.
 
-The transformer authenticates the complete CoreLib and exact original wait,
-event-loop, dispatch, RunInternal and context-restoration IL. After writing it reopens the assembly, verifies
-all 44,745 other original methods, their bodies where present, and fields, and verifies the complete
-original wait remainder behind the selected prologue and both new helper bodies. Normal compilation
-must bind exactly one derived CoreLib in both the ILC reference list and its
-actual response file. Original packages, captured sources, derived bytes and
-targets are rechecked; unselected profiles keep their original CoreLib.
+The idle-driver extension gives a private cancellation source only to
+`TimerQueue.SetNextTimer` registrations. When the original `Timer.ActiveCount`
+is zero, it invalidates the driver epoch, resets scheduled-driver state, and
+cancels/disposes that source through the original owned-pollable path. Original
+Task identity and epoch guard stale continuations and rearming after callbacks.
+Queued user callbacks, `s_scheduledTimersToFire`, live logical timers, exchanges
+and foreign registrations remain untouched. Flow suppression covers only the
+new registration and is restored before the original continuation registration.
+The existing async retirement queue still destroys the original future and
+resources; remaining-owner assertions remain. No resolved-pollable cache cleanup
+is added. Earlier managed/native receipts retain their original source
+identities; the new repair's locked NativeAOT and signed 14-case ownership and
+retirement qualification is pending.
 
-The [managed tool control](../testing/evidence/dotnet-task-wait-source-2026-10-16.json)
+The transformer authenticates the complete CoreLib and the original wait,
+event-loop, dispatch, RunInternal and context-restoration IL. After writing, it
+verifies all 44,742 unaffected original methods, the three explicitly transformed
+TimerQueue bodies, the complete original wait remainder behind the selected
+prologue, all eight added method bodies and the five added field identities.
+Normal compilation must bind exactly one derived CoreLib in both the ILC
+reference list and its actual response file. Original packages, captured sources,
+derived bytes and targets are rechecked; unselected profiles keep their original
+CoreLib.
+
+The earlier [managed tool control](../testing/evidence/dotnet-task-wait-source-2026-10-16.json)
 rewrote the actual pinned assembly twice deterministically and rejected a
 whole-assembly mutation before output. It used host SDK 10.0.303 and is not
 locked Linux NativeAOT 10.0.100 or guest execution. A separate host CoreLib

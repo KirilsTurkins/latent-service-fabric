@@ -151,7 +151,7 @@
       },
       {
         "name": "Qualify captured NuGet libraries and embedded resources",
-        "run": "python3 -m unittest tools.tests.test_dotnet_resources\npython3 tools/qualify_dotnet_resources.py --dotnet \"$(command -v dotnet)\" --output \"$RUNNER_TEMP/dotnet-standard-resources\"\npython3 tools/qualify_dotnet_capsules.py --output \"$RUNNER_TEMP/dotnet-capsule-dependencies\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --application-dependencies\n"
+        "run": "python3 -m unittest tools.tests.test_dotnet_dependency_recovery\npython3 -m unittest tools.tests.test_dotnet_resources\npython3 tools/qualify_dotnet_resources.py --dotnet \"$(command -v dotnet)\" --output \"$RUNNER_TEMP/dotnet-standard-resources\"\npython3 tools/qualify_dotnet_capsules.py --output \"$RUNNER_TEMP/dotnet-capsule-dependencies\" --tools \"$RUNNER_TEMP/dotnet-authoring-tools\" --application-dependencies\n"
       },
       {
         "if": "always()",
@@ -169,7 +169,7 @@
   },
   "jobId": "toolchain",
   "kind": "job",
-  "reviewReason": "Compose actual merged NuGet authoring and existing async/I-O/HttpClient source obligations; preserve every old command record, artifact path, trigger, runner, environment, guard and original75-minute deadline.",
+  "reviewReason": "Retain current dependency recovery and relocated compiler controls plus the exact reviewed internal IO adapter fixture stage; preserve every original command, skip and resource bound.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/dotnet-guest.yml"
 }

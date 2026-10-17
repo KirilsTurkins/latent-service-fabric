@@ -27,6 +27,9 @@ def configuration(original: dict, descriptor: dict, fixtures: dict | None = None
         if "clock" in fixtures:
             value["developmentTest"] = node_fixtures.configuration(fixtures)
             selected.update({name: RUNTIME[name] for name in ("clockMonotonic", "clockWall")})
+        if "random" in fixtures:
+            from . import random_fixture
+            selected["random"] = random_fixture.PROVIDER
         if "http" in fixtures:
             from . import http_fixture
             require(root is not None, "http-fixture-workspace-required")

@@ -155,9 +155,9 @@ created by `java_capsule.py new` uses the direct build/sign/node guide and needs
 an authenticated development descriptor before it can delegate these actions:
 
 ```powershell
-latent-dev dev trust --workspace java-test --project ./my-java
-python tools/java_capsule.py test ./my-java --workspace java-test --select greeting
-python tools/java_capsule.py watch ./my-java --workspace java-test --select greeting
+latent-dev dev trust --workspace test-java --project ./my-java
+python tools/java_capsule.py test ./my-java --workspace test-java --select greeting
+python tools/java_capsule.py watch ./my-java --workspace test-java --select greeting
 ```
 
 Source delegation uses only the observed frontend in that same checkout. A
@@ -168,6 +168,19 @@ outer manifest, lock and objects. A dependency/profile change needs fresh
 project trust. Unresolved or interrupted frontend operations retain their exit
 and uncertainty receipts; inspect `latent-dev dev status`/`dev recover` before
 doing more work. The authoring wrapper does not replay the operation.
+
+Java node tests use an explicitly consented `test-` workspace prepared with
+`--admission signed-fixture`. A fixture signature binds one exact build. After
+updating or removing a dependency, resolve and review the new graph and grant
+fresh project trust. The watcher retries that current source without another
+edit, but refuses to deploy changed bytes with the previous build's signature.
+Stop normally with `dev down`, provision a fresh `test-` workspace through the
+[normal workspace flow](../how-to/developer-commands.md), build the reviewed
+project, and explicitly run `dev prepare-test --consent-test-fixtures --admission
+signed-fixture` before watching and testing that new build. This preserves the
+original signing authority and does not automatically rotate policies or retry
+an uncertain deployment. The [actual signed watch qualification](../testing/java-dependency-watch.md)
+demonstrates local/transitive JAR updates and removal through this workflow.
 
 Classpath order follows the reviewed captured inventory. Duplicate classes and
 lookup resources fail even when their bytes match. Legal/signature/manifest/module
@@ -211,13 +224,17 @@ asset layers and `resource-index.json`, which binds the source inventory,
 dependency lock and resulting component. Resource names, count, per-file bytes
 and aggregate bytes have fixed limits; ambiguous names and duplicate lookup
 resources fail. The index preserves opaque bytes and grants no filesystem or
-scratch access. This packaging observation does not establish Java runtime
-lookup. TeaVM's C class-library resource implementation and ordinary
-`Class.getResourceAsStream`/`ClassLoader.getResourceAsStream` calls still require
-emitted-component qualification.
+scratch access. The [maintained ingestion control](../testing/java-library-ingestion.md)
+also compiles and signs a JAR resource fixture, then invokes its actual
+`Class.getResourceAsStream` lookup on the ordinary node. This establishes that
+selected resource path; other lookup APIs, including
+`ClassLoader.getResourceAsStream`, require their own emitted-component controls.
 
 This delivers captured JAR ingestion; it does not independently qualify every
-Java library API. Actual classpath lookup, reflection/native/runtime compatibility,
-signed-node library execution and resource/cleanup acceptance still require
+Java library API. The maintained controls cover their selected signed-node
+library/resource paths and cleanup, with separate concrete reflection/native
+failure controls. Additional library APIs and runtime behavior need their own
 emitted-component tests. Runtime concurrency and default HTTP profiles have their
 own implementation and qualification tickets. No host JVM service is deployed.
+
+The existing delivered dependency-watch programme now has a maintained hosted gate in the Java developer-tools lane. It uses the built toolkit, a dedicated unprivileged account and a loopback-only network namespace for the original add/update/remove, review/trust/signature and three signed-node workflows. All previous commands and the 60-minute matrix budget remain. A per-workspace shutdown fence marks the first `down` before dispatch, including unknown failure, and prevents outer cleanup from replaying it. Failed observer retirement cannot replace the original failure or establish a clean node shutdown. The retained earlier local qualification remains source-scoped; fresh current-head hosted watch results are required for the changed programme.
