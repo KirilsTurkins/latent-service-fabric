@@ -185,7 +185,7 @@ async fn cancellation_in_a_provider_prevents_the_next_guest_call_and_reclaims_ow
     let f = Fixture::new().await;
     let (request, control) = f.request("cancel-provider");
     let probe = control.probe.clone();
-    *f.clock.hook.lock().unwrap() = Some(Box::new(move || probe.0.store(true, Ordering::Release)));
+    *f.clock.hook.lock().unwrap() = Some(Box::new(move || probe.cancel()));
     let report = f.backend.invoke_contained(request, &control).await;
     assert!(!matches!(report.outcome, Ok(GuestOutcome::Returned { .. })));
     assert_eq!(report.cleanup, ExecutionCleanup::Reusable);

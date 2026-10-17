@@ -168,6 +168,12 @@ pub struct WasmtimeConfig {
     /// Opt-in logical-runtime limits; recognition and clock-read permission
     /// alone do not install or grant language scheduling/timer operations.
     pub activation_runtime: Option<latent_core::activation_runtime::RuntimeLimits>,
+    /// Controlled Linux/on-demand root-stack ownership. Additional native stack
+    /// allocation and canonical thread creation remain explicitly unsupported.
+    pub owned_native_stacks: bool,
+    /// Captured native-thread support. Preparation additionally requires the
+    /// exact authenticated canonical-thread shim; recognition grants no work.
+    pub owned_native_threads: bool,
 }
 
 /// Host-owned bounds for the buffered web ABI, separate from service values.
@@ -190,6 +196,8 @@ impl Default for WasmtimeConfig {
             java_guest: false,
             transactional_state: false,
             activation_runtime: None,
+            owned_native_stacks: false,
+            owned_native_threads: false,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),
             maximum_component_bytes: 16 * 1024 * 1024,
@@ -244,6 +252,18 @@ impl WasmtimeConfig {
         #[cfg(feature = "development-clock-fixture")]
         if self.development_clock_readings.is_some()
             && self.execution_isolation_profile != ExecutionIsolationProfile::LocalExperimental
+        {
+            return Err(invalid_config());
+        }
+        if self.owned_native_stacks
+            && (self.activation_runtime.is_none()
+                || self.instance_allocator != InstanceAllocator::OnDemand
+                || !cfg!(all(target_os = "linux", target_arch = "x86_64")))
+        {
+            return Err(invalid_config());
+        }
+        if self.owned_native_threads
+            && (!self.owned_native_stacks || self.java_guest || self.transactional_state)
         {
             return Err(invalid_config());
         }
