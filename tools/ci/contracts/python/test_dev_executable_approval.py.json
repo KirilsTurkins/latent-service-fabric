@@ -3,11 +3,13 @@
     "DetachedConsumer.test_absent_wrong_and_stale_approval_cannot_materialize_executable_inputs",
     "DetachedConsumer.test_identical_captured_request_survives_distinct_owned_roots_and_consumer_rechecks",
     "DetachedConsumer.test_watch_keeps_explicit_identity_and_stale_edit_refuses_without_deployment_or_promotion",
+    "DetachedSelection.test_captured_client_rechecks_source_after_transfer_with_distinct_approval_selection",
     "DetachedSelection.test_cli_and_rust_watch_reject_duplicate_or_malformed_before_dispatch",
     "DetachedSelection.test_client_forwards_only_explicit_selection_and_rejects_custom_before_snapshot",
     "DetachedSelection.test_compiler_gets_only_typed_explicit_option_without_descriptor_mutation",
     "DetachedSelection.test_default_cache_identity_is_byte_identical_and_selected_keys_are_isolated",
     "DetachedSelection.test_helper_rejects_unsupported_or_null_before_installation_or_session",
+    "DetachedSelection.test_observed_client_rechecks_original_source_selection_after_build",
     "DetachedSelection.test_real_cache_entries_never_cross_none_a_b_or_drop_receipt_selection",
     "DetachedSelection.test_unsupported_custom_duplicate_and_malformed_selections_fail_before_process",
     "PrivateRequestViewer.test_canonical_hash_alone_cannot_replace_input_recipe_compiler_or_profile",
@@ -43,6 +45,18 @@
       "skipSites": []
     },
     "DetachedConsumer.test_watch_keeps_explicit_identity_and_stale_edit_refuses_without_deployment_or_promotion": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:69b3d7e03cc44465fcc64bc25a53d89d1a9298c360a6fb1a62172b8bd519d900",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DetachedSelection.test_captured_client_rechecks_source_after_transfer_with_distinct_approval_selection": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -103,6 +117,18 @@
       "skipSites": []
     },
     "DetachedSelection.test_helper_rejects_unsupported_or_null_before_installation_or_session": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:69b3d7e03cc44465fcc64bc25a53d89d1a9298c360a6fb1a62172b8bd519d900",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "DetachedSelection.test_observed_client_rechecks_original_source_selection_after_build": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -213,6 +239,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_dev_executable_approval.py",
-  "reviewReason": "Add explicit detached Rust approval/cache/private request controls; preserve all prior controller modules, commands and guards.",
+  "reviewReason": "Preserve distinct source and explicit Rust approval selection; add captured-transfer and observed-postbuild recheck controls without changing prior cases or skips.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

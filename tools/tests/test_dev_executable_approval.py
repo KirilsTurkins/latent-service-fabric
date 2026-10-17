@@ -118,6 +118,77 @@ class DetachedSelection(unittest.TestCase):
                 build_client.run(root, connection, root, '/selected-tools', executable_approval=A)
             connection.call.assert_not_called()
 
+    def test_captured_client_rechecks_source_after_transfer_with_distinct_approval_selection(self):
+        from tools.dev_workflow import assets, captured_inputs
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            value = maintained()
+            trusted = project.trust_identity(value)
+            state.atomic(root, 'trust.json', {'project': str(root), 'recipe': trusted})
+            record = {'identity': B, 'capturedInputs': {'fixture': 'controlled-transfer-boundary'}}
+            sources = [{'identity': A}]
+            for approval in (None, A):
+                connection = Mock()
+                connection.call.side_effect = lambda operation, *args, **kwargs: (
+                    {'diagnostics': []} if operation == 'build' else {})
+                with self.subTest(approval=approval), \
+                     patch.object(project, 'load', return_value=(value, A)), \
+                     patch.object(snapshot, 'observe', return_value=(record, {})), \
+                     patch.object(captured_inputs, 'pack', return_value=sources) as pack, \
+                     patch.object(assets, 'transfer', return_value={'identity': A}) as transfer, \
+                     patch.object(build_client, 'selection', wraps=build_client.selection) as source_selection, \
+                     patch.object(selected, 'selection', wraps=selected.selection) as approval_selection, \
+                     patch.object(subprocess, 'run', side_effect=AssertionError('process dispatch')), \
+                     patch.object(subprocess, 'Popen', side_effect=AssertionError('process dispatch')):
+                    result = build_client.run(root, connection, root, '/selected-tools', executable_approval=approval)
+                    self.assertEqual(result, {'diagnostics': []})
+                    approval_selection.assert_called_once_with(value, approval)
+                    source_selection.assert_called_once_with(root)
+                    self.assertEqual(pack.call_args.args[:2], (root, record['capturedInputs']))
+                    transfer.assert_called_once_with(connection, sources, domain=captured_inputs.DOMAIN)
+                    self.assertEqual([call.args[0] for call in connection.call.call_args_list], ['snapshot', 'build'])
+                    self.assertEqual(connection.call.call_args_list[0].args[1]['captureAsset'], A)
+                    payload = connection.call.call_args_list[1].args[1]
+                    self.assertEqual(payload.get('executableApproval'), approval)
+                    self.assertEqual('executableApproval' in payload, approval is not None)
+
+    def test_observed_client_rechecks_original_source_selection_after_build(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            value = maintained()
+            trusted = project.trust_identity(value)
+            state.atomic(root, 'trust.json', {'project': str(root), 'recipe': trusted})
+            record = {'identity': B}
+            for approval in (None, A):
+                observed = []
+                def call(operation, *args, **kwargs):
+                    if operation == 'build':
+                        self.assertTrue(callable(kwargs['check']))
+                        kwargs['check']()
+                        observed.append(operation)
+                        return {'diagnostics': []}
+                    return {}
+                connection = Mock()
+                connection.call.side_effect = call
+                with self.subTest(approval=approval), \
+                     patch.object(project, 'load', return_value=(value, A)), \
+                     patch.object(snapshot, 'observe', return_value=(record, {})), \
+                     patch.object(build_client, 'selection', wraps=build_client.selection) as source_selection, \
+                     patch.object(selected, 'selection', wraps=selected.selection) as approval_selection, \
+                     patch.object(subprocess, 'run', side_effect=AssertionError('process dispatch')), \
+                     patch.object(subprocess, 'Popen', side_effect=AssertionError('process dispatch')):
+                    result = build_client.run(root, connection, root, '/selected-tools',
+                                              selected=(trusted, B), executable_approval=approval)
+                    self.assertEqual(result, {'diagnostics': []})
+                    approval_selection.assert_called_once_with(value, approval)
+                    self.assertEqual(source_selection.call_count, 2)
+                    self.assertTrue(all(call.args == (root,) for call in source_selection.call_args_list))
+                    self.assertEqual(observed, ['build'])
+                    self.assertEqual([call.args[0] for call in connection.call.call_args_list], ['snapshot', 'build'])
+                    payload = connection.call.call_args_list[1].args[1]
+                    self.assertEqual(payload.get('executableApproval'), approval)
+                    self.assertEqual('executableApproval' in payload, approval is not None)
+
     def test_helper_rejects_unsupported_or_null_before_installation_or_session(self):
         # Only import the Linux RPC dispatcher on Windows; its real OS/user
         # entry point is replaced below and no Linux behavior is simulated.

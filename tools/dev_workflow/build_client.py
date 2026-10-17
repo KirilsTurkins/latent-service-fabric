@@ -74,8 +74,8 @@ def _run(workspace: Path, connection, source: Path, tool_root: str | None, *, ed
     require(source is not None, "explicit-project-required")
     source = source.absolute()
     descriptor, _raw_identity = project.load(source)
-    from .executable_approval import selection
-    selection(descriptor, executable_approval)
+    from .executable_approval import selection as approval_selection
+    approval_selection(descriptor, executable_approval)
     identity = project.trust_identity(descriptor)
     require((workspace / "trust.json").exists()
             and state.load(workspace, "trust.json") == {"project": str(source), "recipe": identity},
