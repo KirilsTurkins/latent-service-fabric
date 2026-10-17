@@ -245,10 +245,24 @@ def add_public_diagnostics(public, observe, workspace, output_root):
     except Exception:
         pass
     if not public['passed'] and workspace is not None:
+        phase = 'output-root'
         try:
-            public['buildFailures'] = collect_build_failures(workspace, output_root())
-        except Exception:
-            pass
+            selected_output = output_root()
+            phase = 'owned-attempt-metadata'
+            public['buildFailures'] = collect_build_failures(workspace, selected_output)
+        except Exception as error:
+            try:
+                code = error.args[0] if len(error.args) == 1 else None
+                if type(code) is str and len(code) <= 128 and code in {
+                        'source-file-unavailable-or-unsafe', 'source-changed-during-read',
+                        'single-link-regular-file-required', 'reparse-point-rejected', 'file-byte-limit',
+                        'private-state-directory-required', 'unowned-build-attempt', 'build-attempt-state',
+                        'failure-projection-attempt-limit', 'failure-projection-owned-attempt-required',
+                        'failure-projection-unsafe-parent'}:
+                    public['buildFailureObservation'] = {'qualification': False,
+                        'status': 'unavailable', 'phase': phase, 'code': code}
+            except Exception:
+                pass
 
 
 class ShutdownOnce:

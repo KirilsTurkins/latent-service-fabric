@@ -522,3 +522,118 @@ class PublicExecutableApproval(unittest.TestCase):
             target.unlink(); target.mkdir(mode=0o700)
             with self.assertRaisesRegex(ValueError, 'single-link-regular-file'):
                 collect_build_failures(root, 'output')
+
+
+class PublicFailureObservation(unittest.TestCase):
+    def failed_attempt(self, root):
+        from tools.dev_workflow import state
+        builds = root / 'builds'; builds.mkdir(mode=0o700)
+        attempt = builds / ('a' * 32); attempt.mkdir(mode=0o700)
+        source = attempt / 'source'; source.mkdir(mode=0o700)
+        output = source / 'output'; output.mkdir(mode=0o700)
+        cache = source / 'build-cache'; cache.mkdir(mode=0o700)
+        owner = {'id': attempt.name, 'key': 'sha256:' + '0' * 64,
+                 'source': 'sha256:' + '1' * 64, 'recipe': 'sha256:' + '2' * 64, 'state': 'failed'}
+        state.atomic(attempt, 'attempt.json', owner)
+        return attempt, output, cache, owner
+
+    def preserve_original(self, workspace, output_root):
+        from tools.qualify_rust_dependency_watch import add_public_diagnostics
+        original = RuntimeError('original-qualification-failure')
+        public = {'passed': False, 'failure': 'initial-build-failed'}
+        with self.assertRaises(RuntimeError) as observed:
+            try:
+                raise original
+            finally:
+                add_public_diagnostics(public, lambda: [], workspace, output_root)
+        self.assertIs(observed.exception, original)
+        return public
+
+    def assert_closed_observation(self, public, phase, code):
+        self.assertEqual(public, {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': [],
+            'buildFailureObservation': {'qualification': False, 'status': 'unavailable',
+                                        'phase': phase, 'code': code}})
+
+    def test_actual_descriptor_byte_refusal_retains_closed_observation_without_replacing_failure(self):
+        from tools.dev_workflow import project
+        from tools.dev_workflow.common import MAX_DOCUMENT
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            self.assertLessEqual(MAX_DOCUMENT, 4 * 1024 * 1024)
+            (root / 'latent.project.json').write_bytes(b'x' * (MAX_DOCUMENT + 1))
+            public = self.preserve_original(root, lambda: project.load(root)[0]['build']['outputRoot'])
+            self.assert_closed_observation(public, 'output-root', 'file-byte-limit')
+
+    def test_actual_oversized_metadata_still_refuses_and_retains_closed_observation(self):
+        from tools.qualify_rust_dependency_watch import collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            _attempt, output, _cache, _owner = self.failed_attempt(root)
+            (output / 'BUILD-FAILED.json').write_bytes(b'x' * 65537)
+            with self.assertRaisesRegex(ValueError, 'file-byte-limit'):
+                collect_build_failures(root, 'output')
+            public = self.preserve_original(root, lambda: 'output')
+            self.assert_closed_observation(public, 'owned-attempt-metadata', 'file-byte-limit')
+
+    def test_actual_link_and_owner_refusals_remain_closed_metadata_observations(self):
+        import os
+        from tools.dev_workflow import state
+        from tools.qualify_rust_dependency_watch import collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            for selected in ('link', 'owner'):
+                with self.subTest(selected=selected):
+                    root = Path(temporary).resolve() / selected; root.mkdir(mode=0o700)
+                    attempt, output, _cache, owner = self.failed_attempt(root)
+                    if selected == 'link':
+                        target = output / 'BUILD-FAILED.json'; target.write_bytes(b'{}')
+                        os.link(target, output / 'alias')
+                        code = 'single-link-regular-file-required'
+                    else:
+                        state.atomic(attempt, 'attempt.json', {**owner, 'id': 'b' * 32})
+                        code = 'unowned-build-attempt'
+                    with self.assertRaisesRegex(ValueError, code):
+                        collect_build_failures(root, 'output')
+                    public = self.preserve_original(root, lambda: 'output')
+                    self.assert_closed_observation(public, 'owned-attempt-metadata', code)
+
+    def test_unknown_credentials_long_or_multiple_arguments_are_not_published(self):
+        values = [ValueError('token-secret'), ValueError('a' * 64),
+                  RuntimeError('/private/token-secret'), ValueError('x' * 129),
+                  ValueError('source-file-unavailable-or-unsafe', 'token-secret')]
+        for error in values:
+            with self.subTest(arguments=len(error.args)):
+                def unavailable():
+                    raise error
+                public = self.preserve_original(Path('owned-workspace'), unavailable)
+                self.assertEqual(public, {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': []})
+                self.assertNotIn('token-secret', str(public))
+                self.assertNotIn('a' * 64, str(public))
+                self.assertNotIn('/private/', str(public))
+
+    def test_unreadable_exception_arguments_cannot_replace_original_failure(self):
+        class UnreadableArguments(Exception):
+            def __getattribute__(self, name):
+                if name == 'args':
+                    raise RuntimeError('private-observer-details')
+                return super().__getattribute__(name)
+        def unavailable():
+            raise UnreadableArguments()
+        public = self.preserve_original(Path('owned-workspace'), unavailable)
+        self.assertEqual(public, {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': []})
+
+    def test_existing_valid_metadata_and_success_output_remain_unchanged(self):
+        import json
+        from tools.qualify_rust_dependency_watch import add_public_diagnostics, collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            _attempt, output, cache, _owner = self.failed_attempt(root)
+            (output / 'BUILD-FAILED.json').write_text(json.dumps({'stage': 'compile', 'reason': 'captured-input-missing'}))
+            (cache / 'compiler-stdout.log').write_bytes(b'{"code":"compiler-input-or-build-failed"}')
+            expected = collect_build_failures(root, 'output')
+            public = self.preserve_original(root, lambda: 'output')
+            self.assertEqual(public, {'passed': False, 'failure': 'initial-build-failed',
+                                     'watchEvents': [], 'buildFailures': expected})
+            passed = {'passed': True}
+            add_public_diagnostics(passed, lambda: [], root,
+                                   lambda: self.fail('passing report observed failure metadata'))
+            self.assertEqual(passed, {'passed': True, 'watchEvents': []})
