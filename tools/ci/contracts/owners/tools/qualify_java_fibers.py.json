@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add normally captured unchanged Commons Lang and Hutool default-worker fixture and four signed modes; preserve all existing Java commands, 55-minute job, runtime limits and Python guards.",
+  "reviewReason": "Compose reviewed timer and fiber controls with unchanged worker library identity, source/reference, classpath and ownership fences.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "21ecb4dcad3087fcda87455075376bcdc972d23cdc3036375244e7a31e1bba81"
+  "sha256": "1288e71f8de3fadf6c0249bd1870af55b761b769e827a7c14ca115f3dff22f34"
 }

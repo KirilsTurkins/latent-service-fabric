@@ -11,6 +11,11 @@
     "AuthoringSelection.test_unknown_or_untyped_profile_fails_before_source_or_output",
     "DeclaredRuntimeImports.test_declared_runtime_and_clock_reach_bindings_without_added_authority",
     "DeclaredRuntimeImports.test_missing_runtime_clock_or_wrong_version_never_reaches_bindings",
+    "LockedModelClasspaths.test_duplicate_cache_identity_is_rejected_even_when_bytes_match",
+    "LockedModelClasspaths.test_graph_retains_resolved_artifact_count_bound",
+    "LockedModelClasspaths.test_graph_uses_verified_resolved_closure_without_unrelated_configurations",
+    "LockedModelClasspaths.test_missing_required_model_reports_exact_coordinate",
+    "LockedModelClasspaths.test_tampered_unreviewed_or_metadata_mismatched_tooling_is_rejected",
     "PublicSelection.test_public_default_preserves_existing_builder_selection",
     "PublicSelection.test_public_explicit_profile_and_read_only_cache_reach_builder",
     "PublicSelection.test_unknown_public_profile_never_runs_builder"
@@ -148,6 +153,66 @@
       ],
       "skipSites": []
     },
+    "LockedModelClasspaths.test_duplicate_cache_identity_is_rejected_even_when_bytes_match": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:24dd9f4253e1f9e5a6ddd27c606684152990d8898610f0369ef9fa6789dc0f47",
+        "class:setup-sha256:6d203810012f9dc389d5ccd84484536e34d4c4988221515624a830921a9c5eef"
+      ],
+      "skipSites": []
+    },
+    "LockedModelClasspaths.test_graph_retains_resolved_artifact_count_bound": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:24dd9f4253e1f9e5a6ddd27c606684152990d8898610f0369ef9fa6789dc0f47",
+        "class:setup-sha256:6d203810012f9dc389d5ccd84484536e34d4c4988221515624a830921a9c5eef"
+      ],
+      "skipSites": []
+    },
+    "LockedModelClasspaths.test_graph_uses_verified_resolved_closure_without_unrelated_configurations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:24dd9f4253e1f9e5a6ddd27c606684152990d8898610f0369ef9fa6789dc0f47",
+        "class:setup-sha256:6d203810012f9dc389d5ccd84484536e34d4c4988221515624a830921a9c5eef"
+      ],
+      "skipSites": []
+    },
+    "LockedModelClasspaths.test_missing_required_model_reports_exact_coordinate": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:24dd9f4253e1f9e5a6ddd27c606684152990d8898610f0369ef9fa6789dc0f47",
+        "class:setup-sha256:6d203810012f9dc389d5ccd84484536e34d4c4988221515624a830921a9c5eef"
+      ],
+      "skipSites": []
+    },
+    "LockedModelClasspaths.test_tampered_unreviewed_or_metadata_mismatched_tooling_is_rejected": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:24dd9f4253e1f9e5a6ddd27c606684152990d8898610f0369ef9fa6789dc0f47",
+        "class:setup-sha256:6d203810012f9dc389d5ccd84484536e34d4c4988221515624a830921a9c5eef"
+      ],
+      "skipSites": []
+    },
     "PublicSelection.test_public_default_preserves_existing_builder_selection": {
       "bases": [
         "unittest.TestCase"
@@ -187,6 +252,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_java_activation_authoring.py",
-  "reviewReason": "Add explicit Java fiber host imports and four signed pending/overlap/root-drain/interrupt modes; preserve all existing Java commands, 55-minute job, runtime limits and Python guards.",
+  "reviewReason": "Preserve the exact additive union of all parent Java authoring cases and unchanged execution guards for the composed timer and fiber I/O compiler closure.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
