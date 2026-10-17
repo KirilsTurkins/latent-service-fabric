@@ -6,27 +6,184 @@ on:
 permissions:
   contents: read
 jobs:
-  source-workspace:
+  prepare:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Export only tracked integration inputs
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Prepare the locally reviewed merge without write credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          mkdir "$RUNNER_TEMP/pr1035-integration"
-          base=$(git merge-base HEAD origin/development)
-          git rev-parse HEAD origin/development "$base" > "$RUNNER_TEMP/pr1035-integration/refs.txt"
-          git rev-parse 'HEAD^{tree}' 'origin/development^{tree}' "$base^{tree}" > "$RUNNER_TEMP/pr1035-integration/trees.txt"
-          git pack-objects --revs --stdout < "$RUNNER_TEMP/pr1035-integration/trees.txt" > "$RUNNER_TEMP/pr1035-integration/sources.pack"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+          python - <<'PY'
+          import base64, hashlib, json, os, shutil, subprocess, sys, urllib.request
+          from pathlib import Path
+          head = 'abce74a96c79c923f72ddd8c122351dbe4db1c13'
+          base = '8421308546a9080e39426ff9cc6a3eae74c6b6a1'
+          expected = 'f05898f07eb9f7fc3eeb5fe25f2ed43be6ade3eb'
+          patch_sha = '27f64529cd9636520e96abade7ab2eff162a4e08'
+          request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs/' + patch_sha,
+              headers={'Authorization': 'Bearer ' + os.environ.pop('GH_TOKEN'), 'Accept': 'application/vnd.github+json'})
+          with urllib.request.urlopen(request, timeout=30) as response:
+              patch = base64.b64decode(json.load(response)['content'])
+          assert hashlib.sha1(b'blob ' + str(len(patch)).encode() + b'\0' + patch).hexdigest() == patch_sha
+          def git(*args):
+              return subprocess.check_output(['git', *args]).decode()
+          def source(ref, path):
+              return git('show', ref + ':' + path)
+          git('config', 'user.name', 'PR integration validation')
+          git('config', 'user.email', 'integration@local.invalid')
+          git('checkout', '--detach', head)
+          merged = subprocess.run(['git', 'merge', '--no-commit', '--no-ff', base])
+          assert merged.returncode == 1
+          conflicts = git('diff', '--name-only', '--diff-filter=U').splitlines()
+          assert len(conflicts) == 8
+          path = '.github/workflows/developer-tools.yml'
+          ours, theirs = source(head, path), source(base, path)
+          marker = '      - name: Exercise explicit captured Java processor boundaries\n'
+          addition = ours[ours.index('      - name: Exercise owned Go dependency watch'):ours.index(marker)]
+          assert addition.count('      - name:') == 1 and theirs.count(marker) == 1
+          theirs = theirs.replace(marker, addition + marker)
+          start = ours.index('      - name: Prepare captured Go watch compiler namespace\n')
+          end = ours.index('      - name:', ours.index('          retention-days: 3', start))
+          marker = '      - name: Prepare captured Rust watch compiler namespace\n'
+          assert theirs.count(marker) == 1
+          theirs = theirs.replace(marker, ours[start:end] + marker)
+          marker = '      - tools/go_capsule*.py\n'
+          assert theirs.count(marker) == 1
+          theirs = theirs.replace(marker, '      - tools/run_go_dependency_watch_ci.py\n      - tools/qualify_go_dependency_watch.py\n      - tools/go_dependency_watch_fixture.py\n      - tools/tests/test_go_dependency_watch.py\n' + marker)
+          Path(path).write_text(theirs)
+          path = 'tools/qualify_rust_capsules.py'
+          text = source(base, path)
+          text = text.replace('captured_dependency_recovery=language in {"rust", "dotnet"}', 'captured_dependency_recovery=language in {"rust", "dotnet", "go"}')
+          text = text.replace('"go_dependency_fixture.py", "go_dependency_authoring.py", "guest_authoring_frontend.py")',
+              '"go_dependency_fixture.py", "go_dependency_recovery.py", "go_dependency_authoring.py", "go_native_authoring.py", "guest_authoring_frontend.py")')
+          Path(path).write_text(text)
+          path = 'tools/run_rust_capsule_workflow.py'
+          text = source(base, path).replace('(not captured_dependency_recovery or language in {"rust", "dotnet"})', '(not captured_dependency_recovery or language in {"rust", "dotnet", "go"})')
+          marker = '                        else:\n                            from tools.rust_dependency_recovery import recover'
+          assert text.count(marker) == 1
+          text = text.replace(marker, '                        elif language == "go":\n                            from tools.go_dependency_recovery import recover\n' + marker)
+          Path(path).write_text(text)
+          for path in conflicts:
+              if path.endswith('.json'):
+                  Path(path).write_text(source(base, path))
+          subprocess.run(['git', 'apply', '--unidiff-zero'], input=patch, check=True)
+          path = Path('docs/component-development/go-dependencies.md')
+          text = path.read_text()
+          marker = 'Exactly three actual deployments must return 42/resource, 43/resource and removed results, with original SDK lock identity and confirmed normal shutdown.'
+          assert text.count(marker) == 1
+          text = text.replace(marker, 'Exactly three watch deployments must return 42/resource, 43/resource and removed results, with original SDK lock identity and confirmed normal shutdown. Each reviewed component is invoked twice on its running node; both required cases must observe distinct activation IDs, the same revision and expected payload, and zero prior activation-local state. The cases explicitly request the maintained Go monotonic-clock, wall-clock and random capabilities after signed-fixture consent; provider installation and dependency capture grant no implicit invocation authority. Node calls retain the maintained 120-second ceiling within the programme deadline. Missing, skipped, denied, duplicate or uncertain invocation results cannot qualify a stage.')
+          path.write_text(text)
+          Path('.github/workflows/pr1035-maintenance.yml').unlink()
+          sys.path.insert(0, str(Path.cwd()))
+          from tools.ci_contracts import propose
+          root = Path.cwd()
+          reason = 'Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.'
+          proposals = [('workflow', '.github/workflows/developer-tools.yml', None),
+              ('job', '.github/workflows/developer-tools.yml', 'contracts'),
+              ('job', '.github/workflows/developer-tools.yml', 'guest-tools'),
+              ('owner', 'tools/dev_node_application_probe.py', None),
+              ('owner', 'tools/qualify_rust_capsules.py', None),
+              ('owner', 'tools/go_dependency_watch_fixture.py', None),
+              ('owner', 'tools/qualify_go_dependency_watch.py', None),
+              ('python', 'tools/tests/test_go_dependency_watch.py', None)]
+          for index, (kind, owner, job) in enumerate(proposals):
+              output = root / ('target/ci/proposals/pr1035-' + str(index))
+              proposed = propose(root, kind, owner, job, output, reason)
+              target = root / 'tools/ci/contracts' / proposed.relative_to(output)
+              before, after = json.loads(target.read_text()), json.loads(proposed.read_text())
+              if kind == 'job':
+                  assert before['before'] == after['before'] and before['coverage'] == after['coverage']
+              if kind == 'python':
+                  assert set(before['cases']) <= set(after['cases'])
+              shutil.copyfile(proposed, target)
+          git('add', '-u')
+          git('diff', '--cached', '--check')
+          tree = git('write-tree').strip()
+          assert tree == expected, (tree, expected)
+          paths = git('diff', '--cached', '--name-only', base).splitlines()
+          assert len(paths) == 32
+          entries = []
+          for path in paths:
+              mode, sha, stage = git('ls-files', '--stage', '--', path).split('\t')[0].split()
+              assert mode == '100644' and stage == '0'
+              entries.append({'path': path, 'mode': mode, 'type': 'blob', 'sha': sha,
+                              'content': base64.b64encode(Path(path).read_bytes()).decode()})
+          destination = Path(os.environ['RUNNER_TEMP']) / 'pr1035-reviewed-tree.json'
+          destination.write_text(json.dumps({'base': base, 'head': head, 'tree': tree, 'entries': entries}))
+          print('Reviewed tree:', tree)
+          PY
+      - name: Validate reviewed command coverage and action policy
+        run: |
+          python tools/ci_coverage.py
+          python tools/validate_workflow_actions.py
+      - name: Test Go authoring and controller contracts with pinned Python
+        run: |
+          python -m pip install -r tools/requirements.lock
+          python -m unittest tools.tests.test_go_application_dependencies tools.tests.test_go_capsule_authoring tools.tests.test_go_dependency_authoring tools.tests.test_go_dependency_recovery tools.tests.test_go_dependency_watch tools.tests.test_go_frontend_dependencies tools.tests.test_go_generator_authoring tools.tests.test_go_native_authoring tools.tests.test_go_runtime_overlay tools.tests.test_dev_contracts
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: pr1035-integration-objects
-          path: ${{ runner.temp }}/pr1035-integration/
-          compression-level: 0
+          name: pr1035-reviewed-tree
+          path: ${{ runner.temp }}/pr1035-reviewed-tree.json
+          retention-days: 1
+          if-no-files-found: error
+  store-objects:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: pr1035-reviewed-tree
+          path: ${{ runner.temp }}/pr1035-reviewed-tree
+      - name: Store verified Git objects without changing commits branches or checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, os, urllib.request
+          from pathlib import Path
+          expected = 'f05898f07eb9f7fc3eeb5fe25f2ed43be6ade3eb'
+          data = json.loads((Path(os.environ['RUNNER_TEMP']) / 'pr1035-reviewed-tree/pr1035-reviewed-tree.json').read_text())
+          assert data['tree'] == expected and data['base'] == '8421308546a9080e39426ff9cc6a3eae74c6b6a1'
+          assert data['head'] == 'abce74a96c79c923f72ddd8c122351dbe4db1c13' and len(data['entries']) == 32
+          endpoint = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/'
+          def create(kind, body):
+              assert kind in {'blobs', 'trees'}
+              request = urllib.request.Request(endpoint + kind, data=json.dumps(body).encode(), method='POST',
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+          entries = []
+          for item in data['entries']:
+              raw = base64.b64decode(item['content'], validate=True)
+              assert len(raw) < 1048576 and item['mode'] == '100644' and item['type'] == 'blob'
+              assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == item['sha']
+              result = create('blobs', {'content': item['content'], 'encoding': 'base64'})
+              assert result['sha'] == item['sha']
+              entries.append({key: item[key] for key in ('path', 'mode', 'type', 'sha')})
+          result = create('trees', {'base_tree': '3f1f94bff5cb28b23b082cd6a3f9f3e73bc43224', 'tree': entries})
+          assert result['sha'] == expected
+          receipt = {'tree': expected, 'base': data['base'], 'parent': os.environ['GITHUB_SHA'], 'branchesChanged': False}
+          (Path(os.environ['RUNNER_TEMP']) / 'pr1035-integration-tree.json').write_text(json.dumps(receipt))
+          print('Stored reviewed tree:', expected)
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr1035-integration-tree
+          path: ${{ runner.temp }}/pr1035-integration-tree.json
           retention-days: 1
           if-no-files-found: error
