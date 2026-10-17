@@ -506,5 +506,53 @@ class HttpSyncReadPortTests(unittest.TestCase):
         self.assertEqual(snapshot(self.http.project), original)
         self.assertFalse((self.http.evidence / "derived-System.Net.Http.dll").exists())
 
+
+    def test_response_read_error_mapping_is_retained_with_the_joint_ilc_receipt(self):
+        port = self.prepare()
+        self.references(port)
+        result = port.finish(self.http.project, self.http.evidence)
+        self.assertEqual(result["synchronousRead"]["responseReadErrors"], http_errors.RESPONSE_READ_ERRORS)
+        self.assertFalse(result["synchronousRead"]["responseReadErrors"]["pendingGuestIoQualified"])
+        self.assertEqual(result["synchronousRead"]["responseReadErrors"]["nativeErrorOwnership"], "dispose-before-throw")
+
+    def test_response_error_receipt_cannot_expand_scope_or_claim_native_drop_qualification(self):
+        original = http_errors.RESPONSE_READ_ERRORS
+        http_errors.validate_response_read_errors(dict(original))
+        for key in original:
+            with self.subTest(missing=key), self.assertRaisesRegex(ValueError, "response-read-errors-rewrite-receipt"):
+                http_errors.validate_response_read_errors({name: value for name, value in original.items() if name != key})
+        changes = {"method": "arbitrary-library::Read", "originalIlDigest": "sha256:" + "0" * 64,
+            "originalIlBytes": 445, "exceptionType": "WasiHttpWorld.WitException", "message": "raw-payload",
+            "nativeErrorOwnership": "discard", "closed": "throw-io-error", "cancellation": "swallow",
+            "unknownError": "return-eof", "modifiedOriginalMethods": 2, "generatedHelpers": 0,
+            "newHostImports": 1, "pendingGuestIoQualified": True, "unknown": "authority"}
+        for key, value in changes.items():
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "response-read-errors-rewrite-receipt"):
+                http_errors.validate_response_read_errors({**original, key: value})
+        for key in ("originalIlBytes", "modifiedOriginalMethods", "generatedHelpers", "newHostImports"):
+            with self.subTest(boolean=key), self.assertRaisesRegex(ValueError, "response-read-errors-rewrite-receipt"):
+                http_errors.validate_response_read_errors({**original, key: bool(original[key])})
+
+    def test_nested_response_error_receipt_rejects_boolean_counts_despite_dictionary_equality(self):
+        for key in ("modifiedOriginalMethods", "generatedHelpers", "newHostImports"):
+            forged = {**self.receipt(), "responseReadErrors": {
+                **http_errors.RESPONSE_READ_ERRORS, key: bool(http_errors.RESPONSE_READ_ERRORS[key])}}
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "response-read-errors-rewrite-receipt"):
+                http_errors.validate_sync_read(forged)
+
+    def test_missing_response_error_mapping_denies_before_project_or_evidence_publication(self):
+        original_run = self.http.run_tool
+        def incomplete(stage, *arguments):
+            original_run(stage, *arguments)
+            result = json.loads(read_file(arguments[-1]))
+            del result["synchronousRead"]["responseReadErrors"]
+            arguments[-1].write_text(json.dumps(result), encoding="utf-8")
+        self.http.run_tool = incomplete
+        original = snapshot(self.http.project)
+        with self.assertRaisesRegex(ValueError, "rewrite-receipt"):
+            self.prepare()
+        self.assertEqual(snapshot(self.http.project), original)
+        self.assertFalse((self.http.evidence / "derived-System.Net.Http.dll").exists())
+
 if __name__ == "__main__":
     unittest.main()

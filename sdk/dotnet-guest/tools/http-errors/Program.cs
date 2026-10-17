@@ -2,6 +2,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Reflection.PortableExecutable;
 
 // This tool is a captured compiler input. It accepts one exact maintained WASI
 // framework assembly, writes a private derived copy and never changes NuGet
@@ -74,7 +75,9 @@ internal static class Program
 
             // Selection also requires the authenticated, joined CoreLib port.
             // The caller binds both private assemblies to the same ILC response.
-            var syncRead = synchronousRead ? HttpSyncRead.Apply(module) : null;
+            var syncRead = synchronousRead ? JsonSerializer.SerializeToNode(HttpSyncRead.Apply(module))!.AsObject() : null;
+            if (syncRead is not null)
+                syncRead["responseReadErrors"] = JsonSerializer.SerializeToNode(HttpReadErrors.Apply(module, original));
 
             // Keep the payload access in its declaring type. Only these finite
             // adapter-owned category strings are exposed; arbitrary WASI error
@@ -113,7 +116,19 @@ internal static class Program
             originalReturn.OpCode = OpCodes.Call;
             originalReturn.Operand = helper;
             converter.Body.GetILProcessor().InsertAfter(originalReturn, Instruction.Create(OpCodes.Ret));
+            var selectedMethods = module.GetTypes().SelectMany(type => type.Methods)
+                .ToDictionary(method => method.FullName, method => TaskWait.BodyIdentity(method));
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
+            // Reopen the serialized product before issuing a receipt. Relocated
+            // method tokens may change; branch, catch and helper semantics may not.
+            using (var product = ModuleDefinition.ReadModule(output))
+            {
+                var writtenMethods = product.GetTypes().SelectMany(type => type.Methods)
+                    .ToDictionary(method => method.FullName, method => TaskWait.BodyIdentity(method));
+                if (writtenMethods.Count != selectedMethods.Count ||
+                    selectedMethods.Any(item => !writtenMethods.TryGetValue(item.Key, out var body) || body != item.Value))
+                    throw new InvalidDataException("http-error-patch-serialized-method-drift");
+            }
             if (Digest(original, 512 * 1024) != SourceDigest)
                 throw new InvalidDataException("http-error-patch-original-changed");
             var result = JsonSerializer.SerializeToNode(new {
@@ -260,6 +275,143 @@ internal static class HttpSyncRead
             generatedHelpers = 0,
             newHostImports = 0,
             defaultClientComponentQualified = false,
+        };
+    }
+}
+
+
+// Keep the generated stream's native error payload access inside its declaring
+// type. Only this authenticated response-reader catch is adapted; EOF, pending
+// polling, cancellation, result production and all other BCL methods stay intact.
+internal static class HttpReadErrors
+{
+    private const string StreamErrorType = "WasiHttpWorld.wit.imports.wasi.io.v0_2_0.IStreams/StreamError";
+    private const string ResourceType = "WasiHttpWorld.wit.imports.wasi.io.v0_2_0.IError/Error";
+    private const string Method = "System.Void System.Net.Http.WasiInputStream/<ReadAsync>d__17::MoveNext()";
+    private const string OriginalIlDigest = "785ff886dedc4ce9d1340bbd4262043c2a142821524448383e135fb61f1292a5";
+    private const string Helper = "LsfThrowResponseReadError";
+    private const string Message = "HTTP response body read failed.";
+    private const string CoreLib = "System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e";
+
+    private static void Require(bool condition)
+    {
+        if (!condition) throw new InvalidDataException("http-response-read-error-preimage-or-shape");
+    }
+
+    internal static object Apply(ModuleDefinition module, string originalPath)
+    {
+        var types = module.GetTypes().ToDictionary(type => type.FullName);
+        var error = types[StreamErrorType];
+        var resource = types[ResourceType];
+        var reader = types["System.Net.Http.WasiInputStream/<ReadAsync>d__17"];
+        var method = reader.Methods.Single(candidate => candidate.FullName == Method);
+        Require(method.HasBody && !method.IsStatic && method.Parameters.Count == 0 &&
+            !error.IsValueType && !error.Methods.Any(candidate => candidate.Name == Helper));
+        using (var input = File.OpenRead(originalPath))
+        using (var pe = new PEReader(input))
+        {
+            var code = System.Reflection.Metadata.PEReaderExtensions.GetMethodBody(pe, checked((int)method.RVA)).GetILBytes();
+            Require(code is not null && code.Length == 446 &&
+                Convert.ToHexString(SHA256.HashData(code)).ToLowerInvariant() == OriginalIlDigest);
+        }
+        var tag = error.Fields.Single(field => field.Name == "Tag");
+        var payload = error.Fields.Single(field => field.Name == "value");
+        var dispose = resource.Methods.Single(candidate => candidate.Name == "Dispose" && candidate.Parameters.Count == 0);
+        Require(!tag.IsStatic && tag.IsInitOnly && tag.FieldType.MetadataType == MetadataType.Byte &&
+            !payload.IsStatic && payload.IsInitOnly && payload.IsPrivate && payload.FieldType.MetadataType == MetadataType.Object &&
+            dispose.IsPublic && !dispose.IsStatic && dispose.HasBody && dispose.ReturnType.MetadataType == MetadataType.Void);
+        var exception = module.GetMemberReferences().OfType<MethodReference>().Single(candidate => candidate.FullName ==
+            "System.Void System.IO.IOException::.ctor(System.String)");
+        Require(exception.HasThis && exception.DeclaringType.Scope is AssemblyNameReference scope && scope.FullName == CoreLib);
+        var original = module.GetTypes().SelectMany(type => type.Methods)
+            .ToDictionary(candidate => candidate, candidate => TaskWait.BodyIdentity(candidate));
+        Require(original.Count == 2093);
+        var catchBlock = method.Body.ExceptionHandlers.Single(handler => handler.HandlerType == ExceptionHandlerType.Catch &&
+            handler.CatchType?.FullName == "WasiHttpWorld.WitException");
+        var instructions = method.Body.Instructions;
+        var catchInstructions = instructions.SkipWhile(instruction => instruction != catchBlock.HandlerStart)
+            .TakeWhile(instruction => instruction != catchBlock.HandlerEnd).ToArray();
+        var cast = catchInstructions.Single(instruction => instruction.OpCode == OpCodes.Castclass &&
+            instruction.Operand is TypeReference reference && reference.FullName == StreamErrorType);
+        var rethrow = catchInstructions.Single(instruction => instruction.OpCode == OpCodes.Rethrow);
+        Require(cast.Previous == catchBlock.HandlerStart && cast.Previous.OpCode == OpCodes.Callvirt &&
+            cast.Previous.Operand is MethodReference value && value.FullName == "System.Object WasiHttpWorld.WitException::get_Value()" &&
+            cast.Next.OpCode == OpCodes.Ldfld && cast.Next.Operand == tag &&
+            cast.Next.Next.OpCode == OpCodes.Ldc_I4_1 && cast.Next.Next.Next.OpCode == OpCodes.Bne_Un_S &&
+            cast.Next.Next.Next.Operand == rethrow && rethrow.Next == catchBlock.HandlerEnd);
+
+        var helper = new MethodDefinition(Helper, MethodAttributes.Assembly | MethodAttributes.HideBySig, module.TypeSystem.Void);
+        helper.Body.InitLocals = true;
+        helper.Body.MaxStackSize = 2;
+        var owner = new VariableDefinition(resource);
+        helper.Body.Variables.Add(owner);
+        var emit = helper.Body.GetILProcessor();
+        var unchanged = emit.Create(OpCodes.Ret);
+        emit.Emit(OpCodes.Ldarg_0);
+        emit.Emit(OpCodes.Ldfld, tag);
+        emit.Emit(OpCodes.Brtrue, unchanged);
+        emit.Emit(OpCodes.Ldarg_0);
+        emit.Emit(OpCodes.Ldfld, payload);
+        emit.Emit(OpCodes.Isinst, resource);
+        emit.Emit(OpCodes.Stloc, owner);
+        emit.Emit(OpCodes.Ldloc, owner);
+        emit.Emit(OpCodes.Brfalse, unchanged);
+        // This releases only the native error resource, not the response body or
+        // outstanding physical HTTP operation. A failed drop is not a clean exit.
+        emit.Emit(OpCodes.Ldloc, owner);
+        emit.Emit(OpCodes.Callvirt, dispose);
+        emit.Emit(OpCodes.Ldstr, Message);
+        emit.Emit(OpCodes.Newobj, exception);
+        emit.Emit(OpCodes.Throw);
+        // Unknown tags and malformed payloads retain the caller's original
+        // WitException rethrow; neither becomes EOF or a fabricated I/O result.
+        emit.Append(unchanged);
+        error.Methods.Add(helper);
+
+        var captured = new VariableDefinition(error);
+        method.Body.Variables.Add(captured);
+        var il = method.Body.GetILProcessor();
+        var duplicate = il.Create(OpCodes.Dup);
+        il.InsertAfter(cast, duplicate);
+        il.InsertAfter(duplicate, il.Create(OpCodes.Stloc, captured));
+        var first = il.Create(OpCodes.Ldloc, captured);
+        il.InsertBefore(rethrow, first);
+        il.InsertBefore(rethrow, il.Create(OpCodes.Call, helper));
+        // The existing non-CLOSED branch targets rethrow directly. It must enter
+        // the translation first, while the real rethrow remains as the fallback.
+        foreach (var instruction in instructions)
+        {
+            if (instruction.Operand == rethrow) instruction.Operand = first;
+            else if (instruction.Operand is Instruction[] targets)
+                for (var index = 0; index < targets.Length; index++)
+                    if (targets[index] == rethrow) targets[index] = first;
+            // Added catch instructions must not overflow an existing short jump.
+            instruction.OpCode = instruction.OpCode.Code switch {
+                Code.Br_S => OpCodes.Br, Code.Brfalse_S => OpCodes.Brfalse, Code.Brtrue_S => OpCodes.Brtrue,
+                Code.Beq_S => OpCodes.Beq, Code.Bge_S => OpCodes.Bge, Code.Bge_Un_S => OpCodes.Bge_Un,
+                Code.Bgt_S => OpCodes.Bgt, Code.Bgt_Un_S => OpCodes.Bgt_Un, Code.Ble_S => OpCodes.Ble,
+                Code.Ble_Un_S => OpCodes.Ble_Un, Code.Blt_S => OpCodes.Blt, Code.Blt_Un_S => OpCodes.Blt_Un,
+                Code.Bne_Un_S => OpCodes.Bne_Un, Code.Leave_S => OpCodes.Leave,
+                _ => instruction.OpCode,
+            };
+        }
+        Require(original.Where(item => item.Key != method).All(item => TaskWait.BodyIdentity(item.Key) == item.Value) &&
+            module.GetTypes().SelectMany(type => type.Methods).Count() == original.Count + 1);
+        return new {
+            profile = "dotnet-wasi-response-read-errors-v1",
+            method = method.FullName,
+            originalIlBytes = 446,
+            originalIlDigest = "sha256:" + OriginalIlDigest,
+            exceptionType = "System.IO.IOException",
+            message = Message,
+            nativeErrorOwnership = "dispose-before-throw",
+            closed = "original-eof",
+            cancellation = "original-propagation",
+            unknownError = "original-rethrow",
+            modifiedOriginalMethods = 1,
+            generatedHelpers = 1,
+            newHostImports = 0,
+            pendingGuestIoQualified = false,
         };
     }
 }

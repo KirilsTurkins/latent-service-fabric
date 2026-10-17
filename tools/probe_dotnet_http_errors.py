@@ -75,6 +75,12 @@ def probe(tools: Path, output: Path) -> dict:
             or sync_result["assertions"] != 24 or sync_result["defaultClientComponentQualified"] is not False
             or sync_result["pendingGuestIoQualified"] is not False):
         raise ValueError("http-sync-read-probe-assertions")
+    response_errors = json.loads(commands.run("actual-bcl-response-read-errors", dotnet, output / "probe/HttpErrorsProbe.dll",
+        "--response-read-errors", original, sync_derived, output / "actual-bcl-response-read-errors.json"))
+    if (response_errors["assertions"] != 16 or response_errors["nativeErrorDropQualified"] is not False
+            or response_errors["pendingGuestIoQualified"] is not False
+            or response_errors["defaultClientComponentQualified"] is not False):
+        raise ValueError("http-response-read-errors-probe-assertions")
 
     def rejected(stage, input_path, output_path, receipt_path, *mode):
         count = len(commands.records)
@@ -116,6 +122,7 @@ def probe(tools: Path, output: Path) -> dict:
         raise ValueError("http-error-probe-inputs-changed")
     result = {**result, "rewriteDeterministic": True, "fivePreimageAndOwnershipDenials": True,
               "originalAndExistingOutputsUnchanged": True, "commands": commands.records,
+              "responseReadErrors": response_errors,
               "synchronousRead": {**sync_result, "rewriteDeterministic": True,
                   "fivePreimageAndOwnershipDenials": True, "boundedErrorAssertions": combined["assertions"]}}
     write_json(output / "result.json", result)

@@ -269,3 +269,36 @@ controls. It preserves the independent 79 finite error controls and repeats
 them against the combined transformation. These controls explicitly do not
 qualify pending guest I/O. The signed fourteen-case HTTP gate, subsequent
 library/resource gates and broader #693/#746 requirements remain mandatory.
+
+
+## Response body errors retain their native error owner
+
+The signed HTTP run for source `d1191e62df83e0fc2ca87465ab4b2235213c35db`
+passed JSON, HTTP 404 and HTTP 500 before the unchanged truncated-body case
+returned `managed-failure-v1:stream-ready:other`. This is not an HTTP pass.
+The captured WASI reader rethrows its internal `WitException` for
+`last-operation-failed`; ordinary code catching `IOException` cannot handle it.
+
+The additional `dotnet-wasi-response-read-errors-v1` selection authenticates the
+446-byte original async-reader state-machine method before adding one catch-local
+error reference and one helper in the private `StreamError` declaring type.
+Only a well-formed `last-operation-failed` releases its owned WASI error resource
+and becomes an `IOException` with a fixed, payload-free message. The original
+closed-stream EOF path, cancellation, polling, partial reads and async task
+completion remain in the original method. Unknown tags or malformed payloads
+fall through to its original rethrow. Releasing an error handle neither disposes
+the response body nor refunds or cancels an outstanding physical HTTP operation.
+A drop failure is not reported as successful cleanup.
+
+The non-CLOSED catch branch enters the new helper; the original rethrow remains
+its fallback. Short branches are widened to prevent displacement overflow. All
+unselected original methods are checked before writing, and all serialized
+method/branch/handler semantics are checked after reopening the derived product.
+The closed compiler receipt records the exact method preimage and transformation
+scope alongside the existing joined HTTP/CoreLib ILC reference evidence.
+
+The independent 79 error controls and 24 buffered synchronous controls remain.
+Sixteen additional host controls execute the actual derived error helper with
+zero native handles; they do not qualify live error-resource drops or pending
+guest I/O. The unchanged signed fourteen-case HTTP gate and broader #693/#746
+runtime and library requirements still provide the required native evidence.

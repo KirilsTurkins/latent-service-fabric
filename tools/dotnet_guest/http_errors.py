@@ -28,6 +28,23 @@ MARKERS = tuple("latent-http-" + value for value in (
 PACKAGE = "runtime.wasi-wasm.microsoft.dotnet.ilcompiler.llvm/10.0.0-rc.1.26306.1/runtimes/wasi-wasm"
 METHOD = "System.String System.Net.Http.WasiHttpInterop::ErrorCodeToString(WasiHttpWorld.wit.imports.wasi.http.v0_2_0.ITypes/ErrorCode)"
 
+RESPONSE_READ_ERRORS = {
+    "profile": "dotnet-wasi-response-read-errors-v1",
+    "method": "System.Void System.Net.Http.WasiInputStream/<ReadAsync>d__17::MoveNext()",
+    "originalIlBytes": 446,
+    "originalIlDigest": "sha256:785ff886dedc4ce9d1340bbd4262043c2a142821524448383e135fb61f1292a5",
+    "exceptionType": "System.IO.IOException",
+    "message": "HTTP response body read failed.",
+    "nativeErrorOwnership": "dispose-before-throw",
+    "closed": "original-eof",
+    "cancellation": "original-propagation",
+    "unknownError": "original-rethrow",
+    "modifiedOriginalMethods": 1,
+    "generatedHelpers": 1,
+    "newHostImports": 0,
+    "pendingGuestIoQualified": False,
+}
+
 SYNC_READ = {
     "profile": "dotnet-wasi-sync-response-read-v1",
     "method": "System.Int32 System.Net.Http.WasiInputStream::Read(System.Byte[],System.Int32,System.Int32)",
@@ -40,7 +57,17 @@ SYNC_READ = {
     "generatedHelpers": 0,
     "newHostImports": 0,
     "defaultClientComponentQualified": False,
+    "responseReadErrors": RESPONSE_READ_ERRORS,
 }
+
+
+def validate_response_read_errors(value: dict) -> None:
+    # Bool is an int subclass: dict equality alone would accept True for a
+    # claimed method/helper count. Require the exact closed field types too.
+    if (type(value) is not dict or set(value) != set(RESPONSE_READ_ERRORS)
+            or any(type(value.get(key)) is not type(expected) or value[key] != expected
+                   for key, expected in RESPONSE_READ_ERRORS.items())):
+        raise ValueError("http-response-read-errors-rewrite-receipt")
 
 
 def validate_sync_read(value: dict) -> None:
@@ -53,6 +80,7 @@ def validate_sync_read(value: dict) -> None:
             or type(value.get("unchangedOriginalMethods")) is not int
             or not 500 <= value["unchangedOriginalMethods"] <= 10000):
         raise ValueError("http-sync-read-rewrite-receipt")
+    validate_response_read_errors(value["responseReadErrors"])
 
 
 def source_paths(tools: Path) -> tuple[Path, Path]:
