@@ -45,6 +45,7 @@ for this path and the supported automatic watch loop.
 | `init` | Create a project from an authenticated language template | Destination, `--bundle`, `--template`, `--template-sha256` |
 | `trust` | Approve the project's current build recipe | `--workspace`, `--project` |
 | `build` | Compile the reviewed project using installed tools | `--workspace`, `--project` |
+| `executable-approval-request` | Explicitly inspect the last owned failed/reaped Rust build's private executable-input request | `--workspace`; no path selector |
 | `prepare-test` | Prepare a stopped disposable node to accept the selected build | `--workspace`, `--consent-test-fixtures`, `--admission trusted-local` or `signed-fixture`; optional `--fixtures FILE` |
 | `editor` | Write optional VS Code process tasks without running them | `--workspace`, `--project`, `--frontend` |
 
@@ -52,6 +53,14 @@ for this path and the supported automatic watch loop.
 admission profile from the tutorial; do not change it to bypass a rejected build.
 When the recipe or selected tools change, review the change and run `trust` again.
 Changing ordinary application source does not itself approve a new recipe.
+
+The maintained Rust adapter accepts an explicit `--executable-approval
+sha256:...` on `build` or `up --watch`, after review of that exact private request.
+It changes neither the project descriptor nor SDK locks. Changed source, recipe
+or compiler inputs invalidate the selection; watch never reapproves it. See
+[captured Cargo dependencies](../component-development/rust-dependencies.md)
+for request review, cache binding and supported compiler containment. These
+commands need the matching current frontend/helper protocol.
 
 Generate editor tasks after creating and trusting the project:
 

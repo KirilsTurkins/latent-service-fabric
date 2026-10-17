@@ -21,7 +21,7 @@
       },
       {
         "name": "Exercise controller boundaries and actual owned subprocesses",
-        "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process"
+        "run": "python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process tools.tests.test_dev_executable_approval"
       },
       {
         "name": "Exercise library authoring frontend and Java dependency boundaries",
@@ -49,7 +49,7 @@
   },
   "jobId": "contracts",
   "kind": "job",
-  "reviewReason": "Add owned Rust fixture tests without altering any original developer controller or language test command",
+  "reviewReason": "Add explicit detached Rust approval/cache/private request controls; preserve all prior controller modules, commands and guards.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

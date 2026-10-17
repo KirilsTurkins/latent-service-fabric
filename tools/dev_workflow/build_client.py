@@ -56,23 +56,26 @@ def cancel_and_confirm(connection, selected: str) -> None:
 
 
 def run(workspace: Path, connection, source: Path, tool_root: str | None, *, editor_diagnostics: bool = False,
-        selected: tuple[str, str] | None = None) -> dict:
+        selected: tuple[str, str] | None = None, executable_approval=None) -> dict:
     # A long-running editor task needs a completed diagnostic batch even when
     # compilation fails. These markers do not authorize or retry any operation.
     if editor_diagnostics:
         print(diagnostics.BUILD_START, file=sys.stderr, flush=True)
     try:
-        return _run(workspace, connection, source, tool_root, editor_diagnostics=editor_diagnostics, selected=selected)
+        return _run(workspace, connection, source, tool_root, editor_diagnostics=editor_diagnostics,
+                    selected=selected, executable_approval=executable_approval)
     finally:
         if editor_diagnostics:
             print(diagnostics.BUILD_END, file=sys.stderr, flush=True)
 
 
 def _run(workspace: Path, connection, source: Path, tool_root: str | None, *, editor_diagnostics: bool,
-         selected: tuple[str, str] | None) -> dict:
+         selected: tuple[str, str] | None, executable_approval=None) -> dict:
     require(source is not None, "explicit-project-required")
     source = source.absolute()
     descriptor, _raw_identity = project.load(source)
+    from .executable_approval import selection
+    selection(descriptor, executable_approval)
     identity = project.trust_identity(descriptor)
     require((workspace / "trust.json").exists()
             and state.load(workspace, "trust.json") == {"project": str(source), "recipe": identity},
@@ -97,7 +100,10 @@ def _run(workspace: Path, connection, source: Path, tool_root: str | None, *, ed
     observer = Observer(source, expected, connection, build_id) if selected is not None else None
     try:
         try:
-            result = connection.call("build", {"toolRoot": tool_root, "buildId": build_id},
+            payload = {"toolRoot": tool_root, "buildId": build_id}
+            if executable_approval is not None:
+                payload['executableApproval'] = executable_approval
+            result = connection.call("build", payload,
                 timeout=descriptor["build"]["timeoutSeconds"] + 15, check=observer.check if observer else None)
         except BaseException as error:
             if not isinstance(error, DevError) or error.uncertain:

@@ -8,7 +8,7 @@ import platform
 import time
 
 from . import build_artifacts, build_cache, dependencies, diagnostics, paths, process, project, resource_inputs, snapshot, state, tool_inventory
-from .common import DevError, decode, encode, members, require
+from .common import DevError, decode, digest, encode, members, require
 
 
 def unchanged(source: Path, descriptor: dict, record: dict) -> None:
@@ -18,7 +18,10 @@ def unchanged(source: Path, descriptor: dict, record: dict) -> None:
     require(observed == record, "source-or-generated-bindings-changed-during-build")
 
 
-def compile_recipe(root: Path, source: Path, descriptor: dict, record: dict, tools: dict, deadline: float, check) -> list:
+def compile_recipe(root: Path, source: Path, descriptor: dict, record: dict, tools: dict, deadline: float, check,
+                   *, executable_approval=None) -> list:
+    from .executable_approval import selection
+    selection(descriptor, executable_approval)
     recipe = descriptor["build"]
     output = source / recipe["outputRoot"]
     require(not output.exists(), "stale-build-output-rejected")
@@ -36,6 +39,8 @@ def compile_recipe(root: Path, source: Path, descriptor: dict, record: dict, too
     require(remaining > 0, "build-deadline-exceeded")
     with paths.directory(working):
         arguments = [str(tools[item[6:]]) if item.startswith("@tool:") else item for item in recipe["argv"][1:]]
+        if executable_approval is not None:
+            arguments += ['--executable-approval', executable_approval]
         result = process.run([str(tools[recipe["argv"][0]]), *arguments], working, env=environment,
                              timeout=remaining, maximum=recipe["maximumOutputBytes"], check=check, graceful=6)
     paths.write_new(source / "build-cache/compiler-stdout.log", result.stdout)
@@ -60,8 +65,11 @@ def compile_recipe(root: Path, source: Path, descriptor: dict, record: dict, too
     return observed
 
 
-def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trusted: str, cli: Path, control=None) -> dict:
+def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trusted: str, cli: Path, control=None,
+            executable_approval=None) -> dict:
+    from .executable_approval import selection, maintained
     project.validate(descriptor)
+    selection(descriptor, executable_approval)
     require(trusted == project.trust_identity(descriptor), "workspace-recipe-trust-required")
     record = decode(paths.read(source, "snapshot.json"))
     snapshot.validate(record)
@@ -84,7 +92,8 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
             tools[tool["name"]] = tool_root / tool["path"]
         stack.enter_context(paths.opened(cli.parent, cli.name))
         packager = paths.digest_file(cli.parent, cli.name, 256 * 1024 * 1024, check=active)[0]
-        attempt, working, receipt = build_cache.allocate(root, source, record, descriptor, trusted, host, packager)
+        selected = {'executable_approval': executable_approval} if executable_approval is not None else {}
+        attempt, working, receipt = build_cache.allocate(root, source, record, descriptor, trusted, host, packager, **selected)
         if control is not None:
             control.attach(attempt)
         observe_usage = build_cache.monitor(attempt)
@@ -94,8 +103,14 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
         try:
             check()
             if receipt is None:
+                if maintained(descriptor):
+                    # Bind the explicit failed-request viewer to the authenticated
+                    # compiler closure without retaining an ambient tool path.
+                    raw = paths.read(tool_root, recipe['inventory']['path'], tool_inventory.MAX_DOCUMENT)
+                    require(digest(raw) == recipe['inventory']['sha256'], 'guest-tool-inventory-digest')
+                    paths.write_new(attempt / 'tool-inventory.json', raw)
                 build_cache.transition(attempt, "running")
-                observed = compile_recipe(root, working, descriptor, record, tools, deadline, check)
+                observed = compile_recipe(root, working, descriptor, record, tools, deadline, check, **selected)
                 unchanged(working, descriptor, record)
                 packaged = build_artifacts.package(cli, working, descriptor["artifacts"], deadline, check, cached=False)
                 from .build_provenance import complete
@@ -106,7 +121,9 @@ def execute(root: Path, source: Path, descriptor: dict, tool_root: Path, *, trus
                     "tools": recipe["tools"], "template": descriptor["template"], "authority": "observed-local-build",
                     "toolInventory": inventory,
                     "diagnostics": observed, "attempt": attempt.name, "packager": packager,
-                    "buildKey": build_cache.identity(record, descriptor, trusted, host, packager)}
+                    "buildKey": build_cache.identity(record, descriptor, trusted, host, packager, **selected)}
+                if executable_approval is not None:
+                    receipt['executableApproval'] = executable_approval
                 paths.write_new(working / "build-receipt.json", encode(receipt))
             else:
                 build_artifacts.verify_receipt(working, descriptor, receipt)
