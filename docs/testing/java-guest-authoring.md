@@ -6,6 +6,8 @@ subsequent documentation or contract-boundary change.
 This report tracks [#548](https://github.com/KirilsTurkins/latent-service-fabric/issues/548).
 The [authoring guide](../component-development/java-authoring.md) and
 [SDK reference](../../sdk/java-guest/README.md) describe the implemented path.
+The separate [fiber host import candidate](java-fiber-host-io.md) records pending
+runtime qualification and does not change this report's frozen attribution.
 
 ## Passing source and execution evidence
 

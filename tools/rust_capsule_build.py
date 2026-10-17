@@ -37,6 +37,7 @@ RECIPE += ("tools/transaction_guest_project.py", "tools/dev_workflow/transaction
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += ('tools/guest_runtime_receipts.py',)
+RECIPE += ('tools/dev_workflow/executable_approval.py',)
 RECIPE += guest_resources.RECIPE
 RECIPE += ("tools/application_dependencies.py", "tools/application_dependency_store.py", "tools/application_dependency_tools.py",
            "tools/application_dependency_approval.py", "tools/rust_application_dependencies.py", "tools/captured_compiler_isolation.py")

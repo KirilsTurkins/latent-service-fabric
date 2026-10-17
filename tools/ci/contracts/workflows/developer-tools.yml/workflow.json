@@ -26,6 +26,10 @@
           "tools/dev_typescript_distribution.py",
           "tools/guest_runtime_profiles.py",
           "tools/run_dev_guest_tools_tests.py",
+          "tools/run_rust_dependency_watch_ci.py",
+          "tools/qualify_rust_dependency_watch.py",
+          "tools/rust_dependency_watch_fixture.py",
+          "tools/tests/test_rust_dependency_watch.py",
           "tools/static_api_build.py",
           "tools/static_api/**",
           "examples/static-api/**",
@@ -148,7 +152,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Preserve reviewed C and .NET dependency watch commands and both opt-in captured workflow modes after the merged C slice.",
+  "reviewReason": "Retain the union of C, Rust, TypeScript and .NET watch triggers and every prior job while preserving controller executable approval coverage.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
