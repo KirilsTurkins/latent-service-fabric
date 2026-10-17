@@ -214,6 +214,25 @@ class ControlledPeer(unittest.TestCase):
         self.assertEqual(result, {"bodyBytes": len(body), "bodySha256": "sha256:" + hashlib.sha256(body).hexdigest()})
         observations.validate(self.peer.observation())
 
+    def test_user_agent_observation_is_bounded_hashed_and_immutable(self):
+        agent = b"fixture-private-header-value"
+        self.body(self.send("domain-json", fields=((b"User-Agent", agent),)))
+        before = self.peer.observation()
+        self.assertEqual(before["requests"][0]["userAgent"], {"present": True,
+            "bytes": len(agent), "sha256": "sha256:" + hashlib.sha256(agent).hexdigest()})
+        self.assertNotIn(agent.decode(), json.dumps(before))
+        damaged = copy.deepcopy(before)
+        damaged["requests"][0]["userAgent"]["bytes"] = True
+        with self.assertRaisesRegex(FixtureError, "user-agent"):
+            observations.validate(damaged)
+        damaged = copy.deepcopy(before)
+        damaged["requests"][0]["userAgent"]["sha256"] = "sha256:" + "0" * 64
+        with self.assertRaisesRegex(FixtureError, "request-changed"):
+            observations.delta(before, damaged)
+        legacy = copy.deepcopy(before)
+        del legacy["requests"][0]["userAgent"]
+        observations.validate(legacy)
+
     def test_foreign_stale_and_repeated_gate_cannot_release_another_owner(self):
         pending = self.send("pending-headers")
         self.pump(lambda: bool(self.peer.gates()))

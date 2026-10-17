@@ -18,6 +18,8 @@
     "GoDependencyAuthoring.test_proxy_control_tokens_and_malformed_explicit_auth_stop_before_native_resolution",
     "GoDependencyAuthoring.test_public_failed_receipts_never_echo_resolver_credentials",
     "GoDependencyAuthoring.test_resolve_preserves_each_accepted_lock_until_exact_update_and_remove_review",
+    "GoDependencyAuthoring.test_resolver_inherits_project_runtime_profile_in_captured_native_graph",
+    "GoDependencyAuthoring.test_resolver_rejects_explicit_profile_disagreement_before_native_command",
     "GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command",
     "GoDependencyAuthoring.test_symbolic_local_replace_is_denied_before_module_fetch",
     "GoDependencyAuthoring.test_tags_remain_exact_without_installing_new_runtime_authority",
@@ -228,6 +230,30 @@
       ],
       "skipSites": []
     },
+    "GoDependencyAuthoring.test_resolver_inherits_project_runtime_profile_in_captured_native_graph": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
+      ],
+      "skipSites": []
+    },
+    "GoDependencyAuthoring.test_resolver_rejects_explicit_profile_disagreement_before_native_command": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:03cbeb3ae744550d1eaf655a72a14165814bc3380d7d7cae193fbc3eadc6f4ff",
+        "class:setup-sha256:3198ab62110ee3fae40ebddfb9f5e5a1e93feb0498d44c757725f7fddc22581d"
+      ],
+      "skipSites": []
+    },
     "GoDependencyAuthoring.test_sdk_drift_stops_before_any_go_command": {
       "bases": [
         "unittest.TestCase"
@@ -294,6 +320,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_dependency_authoring.py",
-  "reviewReason": "Reject malformed explicit Go proxy authorization and control tokens before native resolver dispatch",
+  "reviewReason": "Retain all native resolver, credential and frontend controls; reject malformed explicit proxy authorization before dispatch, inherit the declared runtime profile and reject disagreement before any native command",
   "schemaVersion": "latent.ci.contracts.v1"
 }

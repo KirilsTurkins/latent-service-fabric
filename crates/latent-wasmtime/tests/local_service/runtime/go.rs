@@ -9,31 +9,87 @@ fn checkpoint_component(
         std::env::var_os(variable).expect("compile the Go checkpoint fixture"),
     );
     let source = std::fs::read(prepared.join("src/main.go")).unwrap();
-    assert_eq!(
-        source.as_slice(),
+    let timers = profile == "go-component-activation-v3";
+    let published = variable == "LSF_GO_PUBLISHED_FIXTURE";
+    let initializers = profile == "go-component-activation-v4" && !published;
+    let expected: &[u8] = if published {
+        include_bytes!("../../../../../sdk/go-guest/runtime/published-conformance/main.go")
+    } else if initializers {
+        include_bytes!("../../../../../sdk/go-guest/runtime/initializers-conformance/main.go")
+    } else if timers {
+        include_bytes!("../../../../../sdk/go-guest/runtime/timers-conformance/main.go")
+    } else {
         include_bytes!("../../../../../sdk/go-guest/runtime/checkpoints-conformance/main.go")
-    );
+    };
+    assert_eq!(source.as_slice(), expected);
     let record: serde_json::Value = serde_json::from_slice(
         &std::fs::read(prepared.join("GO-ACTIVATION-COMPILE.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(record["profile"], profile);
-    assert_eq!(record["fixture"], "checkpoints");
+    assert_eq!(
+        record["fixture"],
+        if published {
+            "published"
+        } else if initializers {
+            "initializers"
+        } else if timers {
+            "timers"
+        } else {
+            "checkpoints"
+        }
+    );
     assert_eq!(record["sourceUnchanged"], true);
     assert_eq!(
         record["sourceDigest"],
         latent_artifacts::package::artifact_blob_digest(&source).as_str()
     );
-    if profile == "go-component-activation-v2" {
+    if profile == "go-component-activation-v2" || timers || initializers || published {
         assert_eq!(
             record["nativeReference"]["modes"],
-            serde_json::json!([0, 1, 4])
+            if published {
+                serde_json::json!([0, 2, 3])
+            } else if initializers {
+                serde_json::json!([0])
+            } else if timers {
+                serde_json::json!([0, 1, 2, 3, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17])
+            } else {
+                serde_json::json!([0, 1, 4])
+            }
         );
         assert_eq!(record["nativeReference"]["output"], 42);
         assert_eq!(record["nativeReference"]["freshProcessPerMode"], true);
         assert_eq!(
             record["nativeReference"]["sourceDigest"],
             record["sourceDigest"]
+        );
+    }
+    if published {
+        let native = std::fs::read(prepared.join("project/go-resolved.lock.json")).unwrap();
+        let lock = std::fs::read(prepared.join("project/latent.dependencies.lock.json")).unwrap();
+        assert_eq!(
+            record["dependencyClosure"]["nativeGraphDigest"],
+            latent_artifacts::package::artifact_blob_digest(&native).as_str()
+        );
+        assert_eq!(
+            record["dependencyClosure"]["lockDigest"],
+            latent_artifacts::package::artifact_blob_digest(&lock).as_str()
+        );
+        assert_eq!(record["containment"]["network"], "denied");
+        assert_eq!(record["nativeReference"]["runtimeOverlay"], false);
+        assert_eq!(
+            record["dependencyClosure"]["runtimeSources"]
+                .as_array()
+                .unwrap()
+                .len(),
+            4
+        );
+        assert_eq!(
+            record["dependencyClosure"]["applicationLibraries"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
         );
     }
     let bytes = std::fs::read(prepared.join("build/component.wasm")).unwrap();
@@ -45,10 +101,216 @@ fn checkpoint_component(
     (packages::go_activation_runtime(bytes, &wit), source)
 }
 
+#[tokio::test]
+#[ignore = "requires captured published RxGo/backoff component and explicit go profile"]
+async fn signed_published_retry_workers_and_default_timers_keep_original_activation_owners() {
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    let root = tempfile::tempdir().unwrap();
+    let f = prepare_checkpoint_fixture(
+        root.path(),
+        "LSF_GO_PUBLISHED_FIXTURE",
+        "go-component-activation-v4",
+    )
+    .await;
+    for iteration in 0..3 {
+        for mode in [0, 2, 3] {
+            let receipt = success(
+                f.manager
+                    .start(f.request(&format!("go-published-{iteration}-{mode}"), mode))
+                    .unwrap()
+                    .await,
+            );
+            assert_eq!(
+                serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+                [42]
+            );
+            assert!(receipt.consumption.cpu_fuel > 0);
+            assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+            eprintln!(
+                "go-published-rxgo-backoff iteration={iteration} mode={mode} consumption={:?}",
+                receipt.consumption
+            );
+            f.idle().await;
+            assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+        }
+    }
+    let id = ActivationId("go-published-cancel-library-default-timer".into());
+    let mut invocation = Box::pin(f.manager.start(f.request(&id.0, 1)).unwrap());
+    pending_timer(invocation.as_mut(), &f).await;
+    f.manager
+        .cancel_for(&TenantId("tenant-a".into()), &id, "go-published-cancel")
+        .unwrap();
+    assert_eq!(failure(invocation.await).code, PlatformErrorCode::Cancelled);
+    f.idle().await;
+    let mut deadline = f.request("go-published-original-root-deadline", 1);
+    deadline.budget.wall_time_limit_millis = Some(100);
+    assert_eq!(
+        failure(f.manager.start(deadline).unwrap().await).code,
+        PlatformErrorCode::DeadlineExceeded
+    );
+    f.idle().await;
+    let limited_root = tempfile::tempdir().unwrap();
+    let limited = prepare_owned_fixture(
+        limited_root.path(),
+        "LSF_GO_PUBLISHED_FIXTURE",
+        "go-component-activation-v4",
+        2,
+    )
+    .await;
+    assert_eq!(
+        failure(
+            limited
+                .manager
+                .start(limited.request("go-published-reject-before-producer-stack", 0))
+                .unwrap()
+                .await
+        )
+        .code,
+        PlatformErrorCode::GuestTrap
+    );
+    limited.idle().await;
+    assert_eq!(
+        value(
+            f.manager
+                .start(f.request("go-published-fresh-after-retirement", 0))
+                .unwrap()
+                .await
+        ),
+        42
+    );
+    f.idle().await;
+}
+
+#[tokio::test]
+#[ignore = "requires the pinned Go standard timer fixture and explicit go profile"]
+async fn signed_standard_timers_contexts_and_rearm_keep_original_heap_owners() {
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    let root = tempfile::tempdir().unwrap();
+    let f = prepare_checkpoint_fixture(
+        root.path(),
+        "LSF_GO_TIMER_FIXTURE",
+        "go-component-activation-v3",
+    )
+    .await;
+    let modes = [
+        0, 1, 2, 3, 4, 5, 6, 18, 19, 20, 9, 11, 12, 13, 14, 15, 16, 17,
+    ];
+    for iteration in 0..2 {
+        for mode in modes {
+            let began = std::time::Instant::now();
+            let receipt = success(
+                f.manager
+                    .start(f.request(&format!("go-timers-{iteration}-{mode}"), mode))
+                    .unwrap()
+                    .await,
+            );
+            assert_eq!(
+                serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+                [42]
+            );
+            assert!(receipt.consumption.cpu_fuel > 0);
+            assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+            if mode == 4 {
+                assert!(
+                    began.elapsed() >= Duration::from_millis(20),
+                    "accepted AfterFunc escaped result drain"
+                );
+            }
+            eprintln!(
+                "go-component-activation-v3 iteration={iteration} mode={mode} consumption={:?}",
+                receipt.consumption
+            );
+            f.idle().await;
+            assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+        }
+        // Consume and reconcile every observation before the next finite batch.
+        // The fixture keeps its original 32-entry telemetry bound.
+        let expected = modes
+            .into_iter()
+            .map(|mode| format!("go-timers-{iteration}-{mode}"))
+            .collect::<std::collections::BTreeSet<_>>();
+        let starts = std::mem::take(&mut *f.observations.starts.lock().unwrap());
+        let terminals = std::mem::take(&mut *f.observations.terminals.lock().unwrap());
+        assert_eq!(starts.len(), modes.len());
+        assert_eq!(terminals.len(), modes.len());
+        assert_eq!(
+            starts
+                .into_iter()
+                .map(|context| context.activation_id.0)
+                .collect::<std::collections::BTreeSet<_>>(),
+            expected
+        );
+        assert_eq!(
+            terminals
+                .into_iter()
+                .map(|(context, _)| context.activation_id.0)
+                .collect::<std::collections::BTreeSet<_>>(),
+            expected
+        );
+    }
+    for mode in [8, 10] {
+        assert_eq!(
+            failure(
+                f.manager
+                    .start(f.request(&format!("go-timer-reject-{mode}"), mode))
+                    .unwrap()
+                    .await
+            )
+            .code,
+            PlatformErrorCode::GuestTrap
+        );
+        f.idle().await;
+        assert_eq!(
+            value(
+                f.manager
+                    .start(f.request(&format!("go-timer-fresh-{mode}"), 0))
+                    .unwrap()
+                    .await
+            ),
+            42
+        );
+        f.idle().await;
+    }
+    let id = ActivationId("go-cancel-standard-timer".into());
+    let mut invocation = Box::pin(f.manager.start(f.request(&id.0, 7)).unwrap());
+    pending_timer(invocation.as_mut(), &f).await;
+    f.manager
+        .cancel_for(&TenantId("tenant-a".into()), &id, "go-timer-cancel")
+        .unwrap();
+    assert_eq!(failure(invocation.await).code, PlatformErrorCode::Cancelled);
+    f.idle().await;
+    let mut deadline = f.request("go-timer-original-root-deadline", 7);
+    deadline.budget.wall_time_limit_millis = Some(100);
+    assert_eq!(
+        failure(f.manager.start(deadline).unwrap().await).code,
+        PlatformErrorCode::DeadlineExceeded
+    );
+    f.idle().await;
+    assert_eq!(
+        value(
+            f.manager
+                .start(f.request("go-timer-fresh-after-cancel-deadline", 0))
+                .unwrap()
+                .await
+        ),
+        42
+    );
+    f.idle().await;
+}
+
 async fn prepare_checkpoint_fixture(
     root: &std::path::Path,
     variable: &str,
     profile: &str,
+) -> Fixture {
+    prepare_owned_fixture(root, variable, profile, 4).await
+}
+
+async fn prepare_owned_fixture(
+    root: &std::path::Path,
+    variable: &str,
+    profile: &str,
+    tasks: u32,
 ) -> Fixture {
     let (caller, source) = checkpoint_component(variable, profile);
     let release = packages::release(&caller);
@@ -59,7 +321,7 @@ async fn prepare_checkpoint_fixture(
         caller,
         &source,
         RuntimeLimits {
-            tasks: 4,
+            tasks,
             waits: 4,
             ..limits()
         },
@@ -86,6 +348,95 @@ async fn prepare_checkpoint_fixture(
     f.idle().await;
     assert_eq!(f.backend.resource_snapshot().stores_created, 0);
     f
+}
+
+#[tokio::test]
+#[ignore = "requires pinned ordinary initializer component and explicit go profile"]
+async fn signed_initializer_goroutines_waits_and_timers_start_inside_original_activation() {
+    assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
+    let root = tempfile::tempdir().unwrap();
+    let f = prepare_checkpoint_fixture(
+        root.path(),
+        "LSF_GO_INITIALIZER_FIXTURE",
+        "go-component-activation-v4",
+    )
+    .await;
+    for iteration in 0..3 {
+        let receipt = success(
+            f.manager
+                .start(f.request(&format!("go-owned-init-{iteration}"), 0))
+                .unwrap()
+                .await,
+        );
+        assert_eq!(
+            serde_json::from_slice::<Vec<u32>>(&receipt.output).unwrap(),
+            [42]
+        );
+        assert!(receipt.consumption.cpu_fuel > 0);
+        assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
+        eprintln!(
+            "go-component-activation-v4 iteration={iteration} consumption={:?}",
+            receipt.consumption
+        );
+        f.idle().await;
+        assert_eq!(f.read_wait.active.load(Ordering::Acquire), 0);
+    }
+    let id = ActivationId("go-owned-init-pending-cancel".into());
+    let mut invocation = Box::pin(f.manager.start(f.request(&id.0, 2)).unwrap());
+    pending_timer(invocation.as_mut(), &f).await;
+    f.manager
+        .cancel_for(&TenantId("tenant-a".into()), &id, "go-init-cancel")
+        .unwrap();
+    assert_eq!(failure(invocation.await).code, PlatformErrorCode::Cancelled);
+    f.idle().await;
+    let mut deadline = f.request("go-initializer-worker-remains-accepted", 1);
+    deadline.budget.wall_time_limit_millis = Some(100);
+    assert_eq!(
+        failure(f.manager.start(deadline).unwrap().await).code,
+        PlatformErrorCode::DeadlineExceeded
+    );
+    f.idle().await;
+    let limited_root = tempfile::tempdir().unwrap();
+    let limited = prepare_owned_fixture(
+        limited_root.path(),
+        "LSF_GO_INITIALIZER_FIXTURE",
+        "go-component-activation-v4",
+        1,
+    )
+    .await;
+    assert_eq!(
+        failure(
+            limited
+                .manager
+                .start(limited.request("go-init-before-worker-admission", 0))
+                .unwrap()
+                .await
+        )
+        .code,
+        PlatformErrorCode::GuestTrap
+    );
+    limited.idle().await;
+    assert_eq!(
+        failure(
+            f.manager
+                .start(f.request("go-init-native-affinity-unsupported", 3))
+                .unwrap()
+                .await
+        )
+        .code,
+        PlatformErrorCode::GuestTrap,
+    );
+    f.idle().await;
+    assert_eq!(
+        value(
+            f.manager
+                .start(f.request("go-fresh-initializer-after-failure", 0))
+                .unwrap()
+                .await
+        ),
+        42
+    );
+    f.idle().await;
 }
 
 #[tokio::test]

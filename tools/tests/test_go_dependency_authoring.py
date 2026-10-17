@@ -296,6 +296,29 @@ class GoDependencyAuthoring(unittest.TestCase):
         self.assertEqual(lock['selection']['runtimeProfile'], 'go-component-async-v1')
         self.assertFalse(result['compilerExecution'])
 
+    def test_resolver_inherits_project_runtime_profile_in_captured_native_graph(self):
+        document = json.loads((self.app / 'capsule-project.json').read_bytes())
+        document['runtimeProfile'] = 'go-component-activation-v4'
+        (self.app / 'capsule-project.json').write_bytes(canonical(document))
+        candidate, lock = self.capture(selected={'tags': ['private']})
+        self.assertEqual(lock['selection']['runtimeProfile'], document['runtimeProfile'])
+        self.assertEqual(lock['selection']['tags'], ['private'])
+        graph = json.loads((self.app / 'go-resolved.lock.json').read_bytes())
+        self.assertEqual(graph['selection'], lock['selection'])
+        result = authoring.review(self.owner, candidate, digest(candidate.read_bytes()))
+        self.assertEqual(result['selection']['runtimeProfile'], document['runtimeProfile'])
+        self.assertFalse(result['compilerExecution'])
+
+    def test_resolver_rejects_explicit_profile_disagreement_before_native_command(self):
+        document = json.loads((self.app / 'capsule-project.json').read_bytes())
+        document['runtimeProfile'] = 'go-component-activation-v4'
+        (self.app / 'capsule-project.json').write_bytes(canonical(document))
+        with self.assertRaisesRegex(DependencyError, 'project-and-captured-runtime-profile-disagree'):
+            self.capture(selected={'runtimeProfile': 'go-component-activation-v1'})
+        self.assertEqual(self.calls, [])
+        self.assertFalse((self.app / 'go-resolved.lock.json').exists())
+        self.assertEqual((self.app / 'sdk-lock.json').read_bytes(), self.sdk)
+
     def test_outer_and_app_entries_bind_exact_original_and_transformed_module_paths(self):
         self.nested()
         _candidate, lock, _result = self.reviewed()

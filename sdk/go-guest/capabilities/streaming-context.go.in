@@ -1,0 +1,43 @@
+package streaming
+
+import (
+	"context"
+	raw "wit_component/@raw@"
+	wit "go.bytecodealliance.org/pkg/wit/types"
+	"wit_component/lsf/ownership"
+)
+
+func OpenContext(ctx context.Context, request Request) wit.Result[*Upload, HttpError] {
+	r := raw.OpenContext(ctx, request)
+	if r.IsErr() { return wit.Err[*Upload, HttpError](r.Err()) }
+	return wit.Ok[*Upload, HttpError](&Upload{ownership.New(r.Ok())})
+}
+func (u *Upload) WriteContext(ctx context.Context, bytes []byte) wit.Result[wit.Unit, HttpError] {
+	v, release := u.owner.Borrow(); defer release()
+	return raw.WriteContext(ctx, v, bytes)
+}
+func (u *Upload) FinishContext(ctx context.Context) wit.Result[Response, HttpError] {
+	v := u.owner.Take(); defer v.Drop()
+	r := raw.FinishContext(ctx, v)
+	if r.IsErr() { return wit.Err[Response, HttpError](r.Err()) }
+	value := r.Ok()
+	return wit.Ok[Response, HttpError](Response{value.Status, value.Headers, value.BodyMediaType,
+		&Body{ownership.New(value.Body)}})
+}
+func (b *Body) ReadContext(ctx context.Context, maximum uint32) wit.Result[wit.Option[*Chunk], HttpError] {
+	v, release := b.owner.Borrow(); defer release()
+	r := raw.ReadContext(ctx, v, maximum)
+	if r.IsErr() { return wit.Err[wit.Option[*Chunk], HttpError](r.Err()) }
+	if r.Ok().IsNone() { return wit.Ok[wit.Option[*Chunk], HttpError](wit.None[*Chunk]()) }
+	return wit.Ok[wit.Option[*Chunk], HttpError](wit.Some(&Chunk{ownership.New(r.Ok().Some())}))
+}
+func (b *Body) TrailersContext(ctx context.Context) wit.Result[[]Header, HttpError] {
+	v, release := b.owner.Borrow(); defer release()
+	return raw.TrailersContext(ctx, v)
+}
+func (c *Chunk) BytesContext(ctx context.Context) wit.Result[[]byte, HttpError] {
+	v := c.owner.Take(); defer v.Drop()
+	r := raw.ChunkBytesContext(ctx, v)
+	if r.IsErr() { return r }
+	return wit.Ok[[]byte, HttpError](append([]byte{}, r.Ok()...))
+}

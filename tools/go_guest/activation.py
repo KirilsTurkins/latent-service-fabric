@@ -7,7 +7,11 @@ from tools.go_guest.runtime import checked_sources, replace_once
 
 PROFILE = 'go-component-activation-v1'
 CHECKPOINT_PROFILE = 'go-component-activation-v2'
-PROFILES = {PROFILE, CHECKPOINT_PROFILE}
+TIMER_PROFILE = 'go-component-activation-v3'
+INITIALIZER_PROFILE = 'go-component-activation-v4'
+TIMER_PROFILES = {TIMER_PROFILE, INITIALIZER_PROFILE}
+CHECKPOINT_PROFILES = {CHECKPOINT_PROFILE, *TIMER_PROFILES}
+PROFILES = {PROFILE, *CHECKPOINT_PROFILES}
 PREIMAGES = {
     'runtime/runtime2.go': '7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da',
     'runtime/time.go': 'cf2ae4e953a3315c226499f553a8e8e1529d27ceac166b4fb75e8d7b3a4fa682',
@@ -22,7 +26,7 @@ PREIMAGES = {
 ASYNC_SHA256 = '0ab89732e936c9f766ca571e7f56d6406b1fd0a2d28931f5c8d2c86bdedf786b'
 
 
-def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path, *, checkpoints=False):
+def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path, *, checkpoints=False, timers=False, initializers=False):
     sources.update(checked_sources(goroot, PREIMAGES))
     sources['runtime/runtime2.go'] = replace_once(sources['runtime/runtime2.go'],
         '\tvalgrindStackID uintptr\n}', '\tvalgrindStackID uintptr\n\tlsfOwner [2]uint64\n\tlsfParked bool\n}')
@@ -35,6 +39,10 @@ def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path, *, checkpo
         'func gdestroy(gp *g) {\n\tlsfTaskDestroyed(gp)')
     text = replace_once(text, 'func ready(gp *g, traceskip int, next bool) {',
         'func ready(gp *g, traceskip int, next bool) {\n\tlsfTaskWake(gp)')
+    # GC and netpoll can inject runnable goroutines without ready(). Observe
+    # the common actual resume transition as well, exactly once per park.
+    text = replace_once(text, 'func execute(gp *g, inheritTime bool) {',
+        'func execute(gp *g, inheritTime bool) {\n\tif gp.lsfParked { lsfTaskWake(gp) }')
     text = replace_once(text, '\tcasgstatus(gp, _Grunning, _Gwaiting)\n\tif trace.ok() {',
         '\tcasgstatus(gp, _Grunning, _Gwaiting)\n\tlsfTaskPark(gp)\n\tif trace.ok() {')
     text = replace_once(text, '\t\tif !ok {\n\t\t\ttrace := traceAcquire()',
@@ -65,9 +73,15 @@ def runtime_sources(goroot: Path, sources: dict[str, str], sdk: Path, *, checkpo
     sources['runtime/os_wasip1.go'] += '\n' + (sdk / 'runtime/activation_bridge.go.in').read_text()
     if checkpoints:
         sources['runtime/os_wasip1.go'] += '\n' + (sdk / 'runtime/checkpoint_bridge.go.in').read_text()
+    if timers:
+        from tools.go_guest.timers import runtime_sources as timer_sources
+        timer_sources(goroot, sources, sdk)
+    if initializers:
+        from tools.go_guest.initializers import runtime_sources as initializer_sources
+        initializer_sources(sources, sdk)
 
 
-def async_source(dependency: Path, sdk: Path, *, checkpoints=False) -> tuple[Path, str]:
+def async_source(dependency: Path, sdk: Path, *, checkpoints=False, timers=False, initializers=False) -> tuple[Path, str]:
     path = dependency / 'wit/async/async.go'
     raw = path.read_bytes()
     if hashlib.sha256(raw).hexdigest() != ASYNC_SHA256:
@@ -83,6 +97,12 @@ def async_source(dependency: Path, sdk: Path, *, checkpoints=False) -> tuple[Pat
         text = replace_once(text, '\tstate.yielding = channel',
             '\tstate.yielding = append(state.yielding, channel)')
         text += '\n' + (sdk / 'runtime/checkpoint_async.go.in').read_text()
+    if timers:
+        from tools.go_guest.timers import async_source as timer_source
+        text = timer_source(text, sdk)
+    if initializers:
+        from tools.go_guest.initializers import async_source as initializer_source
+        text = initializer_source(text)
     return path, text + '\n' + (sdk / 'runtime/activation_async.go.in').read_text()
 
 

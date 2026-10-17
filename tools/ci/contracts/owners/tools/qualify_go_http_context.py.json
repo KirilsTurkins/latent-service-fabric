@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_go_http_context.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain original context fixture and add explicitly compile-only ordinary net/http fixture selection",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "15d5a0299a025cccc893b91b73a05a1a45475ec5817248f320a6f58df4f4be64"
+}
