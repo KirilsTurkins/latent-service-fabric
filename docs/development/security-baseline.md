@@ -283,17 +283,18 @@ reference; pinned zizmor 1.30.1 reports no workflow findings, so the obsolete
 `self-repository` exception has been removed.
 
 The sixteen content and location bound Gitleaks false positives were each
-re-reviewed on 2026-10-03, using the pinned 8.30.1 scanner and private field
+re-reviewed on 2026-10-17, using the pinned 8.30.1 scanner and private field
 comparisons. They cover one explicitly labelled historical API-journal SHA256,
 fourteen digest suffixes of the recorded noncredential preparation lookup
 handles, and the synthetic denied environment-variable name. Every complete
 file matches the earlier reviewed historical bytes. The recorded producer hashes
 artifact metadata, engine/target identity and a process-local epoch; the lookup
 handle does not authorize execution. No raw match or credential was retained or
-probed. The [individual review](security-exception-review-2026-10-03.json) records
-the exact fingerprints, locations and file identities.
+probed. The [current individual review](security-exception-review-2026-10-17.json)
+records the exact fingerprints, locations, file identities and fresh canaries.
+The [2026-10-03 receipt](security-exception-review-2026-10-03.json) remains historical.
 
-These sixteen exact exceptions expire at UTC midnight on **2026-10-17**. Changed
+These sixteen exact exceptions expire at UTC midnight on **2026-10-31**. Changed
 content, locations, rules and other occurrences continue to fail; the original
 30-day maximum, exclusive expiry and future-created guards remain unchanged.
 No dependency exception, general digest exemption or path allowlist exists.
