@@ -58,10 +58,14 @@ impl proto::audit_service_server::AuditService for ManagementServiceAdapter {
             .as_ref()
             .expect("query checked audit owner")
             .query(query, deadline)
-            .map_err(|error| refusal_status(error, &self.limits, RefusalStage::AuditQueryReservation))?
+            .map_err(|error| {
+                refusal_status(error, &self.limits, RefusalStage::AuditQueryReservation)
+            })?
             .wait()
             .await
-            .map_err(|error| refusal_status(error, &self.limits, RefusalStage::AuditQueryCompletion))?;
+            .map_err(|error| {
+                refusal_status(error, &self.limits, RefusalStage::AuditQueryCompletion)
+            })?;
         validation::completed(deadline)?;
         let (records, coverage, cursor, lease) = page.into_parts();
         conversion::scope(&records, &scope)?;

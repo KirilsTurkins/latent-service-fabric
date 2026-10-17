@@ -7,8 +7,7 @@ mod validation;
 use super::{
     control_audit,
     errors::{platform_status, refusal_status, RefusalStage},
-    proto, DeploymentResponseService, ManagementOperation,
-    ManagementServiceAdapter,
+    proto, DeploymentResponseService, ManagementOperation, ManagementServiceAdapter,
 };
 use latent_control_store::{
     http_routes::{TriggerOperationCommit, TriggerOperationRequest, TriggerRead},
@@ -240,12 +239,10 @@ async fn execute(
             ack,
         ));
     }
-    result
-        .map(|r| (r, ack))
-        .map_err(|e| {
-            control_audit::status(
-                refusal_status(e, &adapter.limits, RefusalStage::TriggerCommit),
-                ack,
-            )
-        })
+    result.map(|r| (r, ack)).map_err(|e| {
+        control_audit::status(
+            refusal_status(e, &adapter.limits, RefusalStage::TriggerCommit),
+            ack,
+        )
+    })
 }
