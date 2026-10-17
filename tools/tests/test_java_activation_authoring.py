@@ -70,6 +70,13 @@ class AuthoringSelection(unittest.TestCase):
         recipe = json.loads((self.output / 'recipe-inputs.json').read_bytes())
         self.assertIn('tools/java_guest/class_origin.py', recipe)
 
+    def test_io_selection_reaches_real_compiler_and_binds_new_bridge_recipe(self):
+        result = self.inspect_compile_boundary(runtime_profile=build.FIBER_IO_PROFILE)
+        self.assertEqual(result['compile'], {'application_classpath': (), 'activation_profile': True,
+                                            'fiber_io_profile': True})
+        recipe = json.loads((self.output / 'recipe-inputs.json').read_bytes())
+        self.assertIn('tools/java_guest/async_imports.py', recipe)
+
     def test_read_only_cache_is_selected_without_an_offline_copy(self):
         cache = self.root / 'modules-2'
         result = self.inspect_compile_boundary(runtime_profile=PROFILE, read_only_cache=cache)

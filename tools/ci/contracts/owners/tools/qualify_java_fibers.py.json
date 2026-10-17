@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Verify the exact bounded resolved C-tooling cache against the unchanged reviewed lock and strict metadata; retain required model JARs, actual dependency graph assertions, signed cases and all limits.",
+  "reviewReason": "Compose reviewed timer and fiber controls with unchanged worker library identity, source/reference, classpath and ownership fences.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ff7fbcb484e37194f5969b24dd6c8e28ceccac7b115caa3fc5eae17703475961"
+  "sha256": "1288e71f8de3fadf6c0249bd1870af55b761b769e827a7c14ca115f3dff22f34"
 }

@@ -34,6 +34,10 @@ on:
       - tools/dev_typescript_distribution.py
       - tools/guest_runtime_profiles.py
       - tools/run_dev_guest_tools_tests.py
+      - tools/run_rust_dependency_watch_ci.py
+      - tools/qualify_rust_dependency_watch.py
+      - tools/rust_dependency_watch_fixture.py
+      - tools/tests/test_rust_dependency_watch.py
       - tools/static_api_build.py
       - tools/static_api/**
       - examples/static-api/**
@@ -82,6 +86,10 @@ on:
       - tools/tests/test_java_resource_runtime.py
       - tools/tests/test_java_private_resolution.py
       - tools/java_guest/**
+      - tools/run_dotnet_dependency_watch_ci.py
+      - tools/qualify_dotnet_dependency_watch.py
+      - tools/dotnet_dependency_watch_fixture.py
+      - tools/tests/test_dotnet_dependency_watch.py
       - tools/dotnet_capsule.py
       - tools/dotnet_guest/**
       - tools/dotnet_guest_bindings.py
@@ -150,9 +158,15 @@ jobs:
         with:
           python-version: 3.13.5
       - name: Exercise controller boundaries and actual owned subprocesses
-        run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process
+        run: python -m unittest tools.tests.test_dev_workflow tools.tests.test_dev_contracts tools.tests.test_dev_build_cache tools.tests.test_dev_watch tools.tests.test_dev_tools tools.tests.test_dev_tool_install tools.tests.test_dev_node_policies tools.tests.test_dev_http_fixture tools.tests.test_dev_blob_fixture tools.tests.test_dev_secret_fixture tools.tests.test_dev_metric_fixture tools.tests.test_dev_local_service_fixture tools.tests.test_dev_event_fixture tools.tests.test_dev_fixture_cleanup tools.tests.test_build_process tools.tests.test_dev_executable_approval
       - name: Exercise library authoring frontend and Java dependency boundaries
         run: python -m unittest tools.tests.test_guest_authoring_frontend tools.tests.test_java_dependency_authoring tools.tests.test_java_resource_runtime tools.tests.test_java_private_resolution
+      - name: Exercise owned .NET dependency watch fixture boundaries
+        run: python -m unittest tools.tests.test_dotnet_dependency_watch
+      - name: Exercise explicit bounded random fixture and denied consent
+        run: python -m unittest tools.tests.test_dev_random_fixture
+      - name: Exercise owned Rust dependency watch fixture boundaries
+        run: python -m unittest tools.tests.test_rust_dependency_watch
       - name: Exercise explicit captured Java processor boundaries
         run: python -m unittest tools.tests.test_java_annotation_processors
 
@@ -257,6 +271,46 @@ jobs:
         if: matrix.language == 'typescript'
         with:
           node-version: 24.19.0
+      - name: Prepare captured Rust watch compiler namespace
+        if: matrix.language == 'rust'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Qualify normal Rust dependency watch through three reviewed signed builds
+        if: matrix.language == 'rust'
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_rust_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_rust_dependency_watch.py --fixture tools/rust_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/rust-dependency-watch"
+      - name: Retain bounded Rust dependency watch and normal shutdown observations
+        if: always() && matrix.language == 'rust'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rust-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/rust-dependency-watch/public-qualification.json
+            ${{ runner.temp }}/rust-dependency-watch/ci-account.json
+          if-no-files-found: warn
+          retention-days: 3
+      - name: Prepare captured .NET watch compiler namespace
+        if: matrix.language == 'dotnet'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Qualify normal .NET dependency watch through three reviewed signed builds
+        if: matrix.language == 'dotnet'
+        run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_dotnet_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_dotnet_dependency_watch.py --fixture tools/dotnet_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/dotnet-dependency-watch"
+      - name: Retain bounded .NET dependency watch and normal shutdown observations
+        if: always() && matrix.language == 'dotnet'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dotnet-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/dotnet-dependency-watch/public-qualification.json
+            ${{ runner.temp }}/dotnet-dependency-watch/ci-account.json
+            ${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stdout
+            ${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stderr
+          if-no-files-found: warn
+          retention-days: 3
       - name: Qualify the static site and TypeScript API in Chromium
         if: matrix.language == 'typescript'
         run: |

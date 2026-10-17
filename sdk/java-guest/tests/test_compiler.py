@@ -65,6 +65,16 @@ class Diagnostics(unittest.TestCase):
                     compiler.compile(Path(temporary), Path(temporary), "tests:app/service", output, activation_profile=selection)
                 self.assertFalse(output.exists())
 
+    def test_fiber_io_requires_explicit_boolean_and_original_activation_profile_before_output(self):
+        compiler = Compiler.__new__(Compiler)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "output"
+            for selected, activation in ((1, True), (None, True), ("true", True), (True, False)):
+                with self.subTest(selected=selected, activation=activation), self.assertRaisesRegex(ValueError, "fiber I/O"):
+                    compiler.compile(Path(temporary), Path(temporary), "tests:app/service", output,
+                                     activation_profile=activation, fiber_io_profile=selected)
+                self.assertFalse(output.exists())
+
     def test_failed_initialization_commands_keep_exit_and_cleanup_receipts(self):
         for outcome in (subprocess.CompletedProcess(["java"], 7, b"", b"compiler failure"),
                         BuildProcessError("command-deadline")):

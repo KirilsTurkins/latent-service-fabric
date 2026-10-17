@@ -18,6 +18,8 @@ on:
       - 'tools/dotnet_application_dependencies.py'
       - 'tools/dotnet_dependency_authoring.py'
       - 'tools/dotnet_dependency_fixture.py'
+      - 'tools/dotnet_dependency_recovery.py'
+      - 'tools/tests/test_dotnet_dependency_recovery.py'
       - 'tools/dotnet_compiler_isolation.py'
       - 'tools/application_dependenc*.py'
       - 'tools/captured_compiler_isolation.py'
@@ -209,6 +211,7 @@ jobs:
           python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-authoring" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
       - name: Qualify captured NuGet libraries and embedded resources
         run: |
+          python3 -m unittest tools.tests.test_dotnet_dependency_recovery
           python3 -m unittest tools.tests.test_dotnet_resources
           python3 tools/qualify_dotnet_resources.py --dotnet "$(command -v dotnet)" --output "$RUNNER_TEMP/dotnet-standard-resources"
           python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-dependencies" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --application-dependencies

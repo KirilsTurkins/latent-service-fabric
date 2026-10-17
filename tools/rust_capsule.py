@@ -62,6 +62,8 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--environment", choices=("node", "portable"), default="node")
         else:
             command.add_argument("--tool-root")
+            from tools.dev_workflow.executable_approval import option
+            option(command)
     compile_ = commands.add_parser("build", help="Compile, validate and package actual project sources")
     compile_.add_argument("project", type=Path)
     compile_.add_argument("--output", type=Path, required=True, help="Fresh directory; failed attempts are retained")
@@ -91,7 +93,9 @@ def main(argv: list[str] | None = None) -> int:
                 owner, _app, _descriptor = layout(args.project, 'rust')
                 delegated = dependencies.frontend(owner, args.command, workspace=args.workspace,
                     state_root=args.state_root, tool_root=getattr(args, 'tool_root', None),
-                    selections=tuple(args.select), environment=getattr(args, 'environment', 'node'))
+                    selections=tuple(args.select), environment=getattr(args, 'environment', 'node'),
+                    **({'executable_approval': args.executable_approval}
+                       if getattr(args, 'executable_approval', None) is not None else {}))
                 outcome = guest_authoring_frontend.execute(owner, args.command, delegated,
                     frontend=args.frontend, expected=args.frontend_sha256, timeout_seconds=args.frontend_timeout)
                 guest_authoring_frontend.emit(outcome)
