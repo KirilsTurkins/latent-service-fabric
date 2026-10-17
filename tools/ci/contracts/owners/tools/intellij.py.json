@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/intellij.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Fix native Windows launch without Bash/WSL, preserve failure status and qualify actual locked website preparation.",
+  "reviewReason": "Review direct Python module-SDK run configuration generation and remove duplicate Windows XML; preserve dispatcher, SDK pins and build ownership.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "85b2c793300967193083329e8ebdfe679cd887e2b11734316d962c57b960d45a"
+  "sha256": "a7c2c6fbe9279abb62310f4e3bc1b73b140be83d4c047b21079c42b6095edb44"
 }

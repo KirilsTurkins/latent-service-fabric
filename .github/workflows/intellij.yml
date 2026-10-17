@@ -44,13 +44,16 @@ jobs:
         id: tests
         if: always()
         run: python -m unittest tools.tests.test_intellij tools.tests.test_intellij_windows -v
+      - name: Exercise the unified Python help entry on every host
+        id: unified_help
+        run: python tools/intellij.py run help
       - name: Select the website Node runtime for native Windows execution
         if: runner.os == 'Windows'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: website/package.json
           package-manager-cache: false
-      - name: Exercise native Windows help and actual locked website preparation
+      - name: Exercise Windows terminal helper and unified locked website preparation
         id: windows_launch
         if: runner.os == 'Windows'
         shell: pwsh
@@ -58,7 +61,7 @@ jobs:
           $env:LSF_IDE_PYTHON = (Get-Command python).Source
           cmd.exe /d /c tools\intellij.cmd help
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cmd.exe /d /c tools\intellij.cmd website-prepare
+          python tools/intellij.py run website-prepare
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           git diff --exit-code
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

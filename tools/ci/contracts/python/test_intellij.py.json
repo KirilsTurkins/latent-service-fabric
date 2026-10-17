@@ -1,11 +1,13 @@
 {
   "cases": [
+    "IntelliJTests.test_actual_python_configuration_preserves_sdk_cwd_and_failure",
     "IntelliJTests.test_all_sdk_directories_are_modules_without_readme_modules",
     "IntelliJTests.test_build_outputs_are_excluded_without_hiding_source_bins",
     "IntelliJTests.test_cargo_debug_defaults_are_locked_and_unprivileged",
     "IntelliJTests.test_check_detects_missing_modified_and_stale_owned_files",
     "IntelliJTests.test_committed_files_match_generator",
     "IntelliJTests.test_committed_modules_do_not_exclude_content_or_source_roots",
+    "IntelliJTests.test_consolidation_removes_only_owned_platform_duplicates",
     "IntelliJTests.test_full_validation_gets_a_fresh_owned_inventory_root",
     "IntelliJTests.test_generator_is_deterministic_and_order_independent",
     "IntelliJTests.test_java_sources_and_locked_jar_directory_are_indexed",
@@ -13,30 +15,26 @@
     "IntelliJTests.test_local_node_rejects_unsupported_hosts_before_writing",
     "IntelliJTests.test_make_tasks_exist_in_authoritative_makefile",
     "IntelliJTests.test_nested_content_roots_are_not_excluded_by_parent",
+    "IntelliJTests.test_one_task_configuration_per_platform_independent_identity",
     "IntelliJTests.test_paths_cannot_escape_checkout",
-    "IntelliJTests.test_required_plugins_match_shell_and_cargo_run_types",
+    "IntelliJTests.test_python_run_uses_module_sdk_without_a_shell_or_machine_path",
+    "IntelliJTests.test_required_plugins_match_python_and_cargo_run_types",
     "IntelliJTests.test_root_and_independent_workspaces_are_attached",
     "IntelliJTests.test_runner_preserves_exit_status_and_checkout_working_directory",
     "IntelliJTests.test_shared_runs_are_permanent_root_relative_and_not_startup_tasks",
-    "IntelliJTests.test_shell_run_uses_terminal_path_not_a_machine_specific_interpreter",
     "IntelliJTests.test_symlink_destinations_are_rejected_before_writes",
     "IntelliJTests.test_task_dispatch_is_argv_based_and_reuses_make",
     "IntelliJTests.test_templates_are_not_attached_as_cargo_projects",
+    "IntelliJTests.test_tools_sdk_does_not_replace_java_project_sdk",
+    "IntelliJTests.test_unix_dispatch_preserves_make_and_current_interpreter",
     "IntelliJTests.test_workspace_excludes_and_absolute_glob_boundaries_are_respected",
     "IntelliJTests.test_write_preserves_personal_files_and_removes_only_owned_stale_files",
     "IntelliJTests.test_write_refuses_unowned_destination_before_mutating",
     "IntelliJTests.test_xml_escapes_paths_and_names"
   ],
-  "guardDefinitions": {
-    "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c": {
-      "bases": ["unittest.TestCase"],
-      "classDecorators": [],
-      "decorators": [],
-      "fixtureGuards": ["module:setup-sha256:0a1518ad1ae1ec7e30f8f0e27f1535cd285a60627a5b9885e8062dbc7cabe5f2", "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"],
-      "skipSites": []
-    }
-  },
   "guards": {
+    "IntelliJTests.test_actual_python_configuration_preserves_sdk_cwd_and_failure":
+      "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_all_sdk_directories_are_modules_without_readme_modules":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_build_outputs_are_excluded_without_hiding_source_bins":
@@ -48,6 +46,8 @@
     "IntelliJTests.test_committed_files_match_generator":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_committed_modules_do_not_exclude_content_or_source_roots":
+      "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
+    "IntelliJTests.test_consolidation_removes_only_owned_platform_duplicates":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_full_validation_gets_a_fresh_owned_inventory_root":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
@@ -63,9 +63,13 @@
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_nested_content_roots_are_not_excluded_by_parent":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
+    "IntelliJTests.test_one_task_configuration_per_platform_independent_identity":
+      "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_paths_cannot_escape_checkout":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
-    "IntelliJTests.test_required_plugins_match_shell_and_cargo_run_types":
+    "IntelliJTests.test_python_run_uses_module_sdk_without_a_shell_or_machine_path":
+      "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
+    "IntelliJTests.test_required_plugins_match_python_and_cargo_run_types":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_root_and_independent_workspaces_are_attached":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
@@ -73,13 +77,15 @@
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_shared_runs_are_permanent_root_relative_and_not_startup_tasks":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
-    "IntelliJTests.test_shell_run_uses_terminal_path_not_a_machine_specific_interpreter":
-      "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_symlink_destinations_are_rejected_before_writes":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_task_dispatch_is_argv_based_and_reuses_make":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_templates_are_not_attached_as_cargo_projects":
+      "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
+    "IntelliJTests.test_tools_sdk_does_not_replace_java_project_sdk":
+      "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
+    "IntelliJTests.test_unix_dispatch_preserves_make_and_current_interpreter":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_workspace_excludes_and_absolute_glob_boundaries_are_respected":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
@@ -92,6 +98,20 @@
   },
   "kind": "python",
   "module": "tools/tests/test_intellij.py",
-  "reviewReason": "Correct the Shell Script plugin ID and remove source-module exclusions; replace the regression that required the faulty exclusion with nested and full-project non-exclusion checks. Add run-type plugin identity coverage; preserve every other case and all execution guards.",
-  "schemaVersion": "latent.ci.contracts.v2"
+  "reviewReason": "Consolidate shell/platform duplicates into Python module-SDK tasks; explicitly rename four superseded configuration tests, retain terminal-wrapper coverage and every existing execution guard, and add direct interpreter/platform/migration regressions.",
+  "schemaVersion": "latent.ci.contracts.v2",
+  "guardDefinitions": {
+    "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:0a1518ad1ae1ec7e30f8f0e27f1535cd285a60627a5b9885e8062dbc7cabe5f2",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  }
 }

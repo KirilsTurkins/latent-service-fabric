@@ -61,7 +61,7 @@ class IntelliJTests(unittest.TestCase):
                         self.assertNotEqual(excluded, content)
                         self.assertFalse(content.startswith(excluded + "/"))
 
-    def test_required_plugins_match_shell_and_cargo_run_types(self):
+    def test_required_plugins_match_python_and_cargo_run_types(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "Cargo.toml").write_text('[workspace]\n')
@@ -69,8 +69,8 @@ class IntelliJTests(unittest.TestCase):
             requirements = ET.fromstring(files[".idea/externalDependencies.xml"])
             plugins = [item.attrib["id"] for item in requirements.findall(".//plugin")]
             # IDs are the plugin.xml identities, not Java package namespaces.
-            self.assertCountEqual(["com.jetbrains.rust", "com.jetbrains.sh"], plugins)
-            providers = {"ShConfigurationType": "com.jetbrains.sh",
+            self.assertCountEqual(["com.jetbrains.rust", "Pythonid"], plugins)
+            providers = {"PythonConfigurationType": "Pythonid",
                          "CargoCommandRunConfiguration": "com.jetbrains.rust"}
             for path, text in files.items():
                 if path.startswith(".run/"):
@@ -231,12 +231,22 @@ class IntelliJTests(unittest.TestCase):
                 intellij.write_files(root, {".idea/modules.xml": "replacement"})
             self.assertEqual([], list(root.iterdir()))
 
-    def test_shell_run_uses_terminal_path_not_a_machine_specific_interpreter(self):
+    def test_python_run_uses_module_sdk_without_a_shell_or_machine_path(self):
         config = ET.fromstring(intellij.run_configuration("docs", "Checks"))
         options = {item.attrib["name"]: item.attrib["value"] for item in config.findall(".//configuration/option")}
-        self.assertEqual("false", options["EXECUTE_SCRIPT_FILE"])
-        self.assertEqual("", options["INTERPRETER_PATH"])
-        self.assertEqual("bash tools/intellij.sh docs", options["SCRIPT_TEXT"])
+        self.assertEqual("PythonConfigurationType", config.find("configuration").attrib["type"])
+        self.assertEqual("lsf.tools", config.find("configuration/module").attrib["name"])
+        self.assertEqual("true", options["IS_MODULE_SDK"])
+        self.assertEqual("$PROJECT_DIR$/tools/intellij.py", options["SCRIPT_NAME"])
+        self.assertEqual("run docs", options["PARAMETERS"])
+        self.assertEqual("$PROJECT_DIR$", options["WORKING_DIRECTORY"])
+        self.assertEqual("false", options["ADD_CONTENT_ROOTS"])
+        self.assertEqual("false", options["ADD_SOURCE_ROOTS"])
+        self.assertEqual("false", options["MODULE_MODE"])
+        self.assertEqual("false", options["RUN_TOOL"])
+        self.assertEqual("true", options["RUN_AS_SCRIPT"])
+        for field in ("SCRIPT_TEXT", "INTERPRETER_PATH", "SDK_HOME", "SDK_NAME"):
+            self.assertNotIn(field, options)
 
     def test_workspace_excludes_and_absolute_glob_boundaries_are_respected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -280,6 +290,102 @@ class IntelliJTests(unittest.TestCase):
             self.assertEqual(intellij.ROOT, run.call_args.kwargs["cwd"])
             self.assertFalse(run.call_args.kwargs["check"])
             self.assertNotIn("shell", run.call_args.kwargs)
+
+
+    def test_one_task_configuration_per_platform_independent_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "Cargo.toml").write_text('[workspace]\n', encoding="utf-8")
+            paths = ["Cargo.toml", "tools/intellij.py"]
+            outputs = []
+            for platform in ("linux", "darwin", "win32"):
+                with mock.patch.object(intellij.sys, "platform", platform):
+                    outputs.append(intellij.project_files(root, paths))
+            self.assertEqual(outputs[0], outputs[1])
+            self.assertEqual(outputs[0], outputs[2])
+            configurations = {path: ET.fromstring(text).find("configuration")
+                              for path, text in outputs[0].items() if path.startswith(".run/")}
+            tasks = intellij.MAKE_TASKS.keys() | intellij.EXTRA_TASKS.keys()
+            self.assertEqual(len(tasks) + 5, len(configurations))
+            self.assertEqual(len(configurations), len({item.attrib["name"] for item in configurations.values()}))
+            for task in tasks:
+                item = configurations[f".run/LSF-{task}.run.xml"]
+                self.assertEqual("LSF - " + task, item.attrib["name"])
+                self.assertEqual("PythonConfigurationType", item.attrib["type"])
+                self.assertEqual("lsf.tools", item.find("module").attrib["name"])
+            self.assertFalse(any(path.endswith("-windows.run.xml") for path in configurations))
+            self.assertNotIn("ShConfigurationType", {item.attrib["type"] for item in configurations.values()})
+
+    def test_tools_sdk_does_not_replace_java_project_sdk(self):
+        tools = ET.fromstring(intellij.module_file("tools"))
+        self.assertEqual("PYTHON_MODULE", tools.attrib["type"])
+        sdk = tools.find(".//orderEntry[@type='jdk']")
+        self.assertEqual({"type": "jdk", "jdkName": "LSF Python", "jdkType": "Python SDK"}, sdk.attrib)
+        java = ET.fromstring(intellij.module_file("sdk/java-client"))
+        self.assertEqual("JAVA_MODULE", java.attrib["type"])
+        self.assertIsNotNone(java.find(".//orderEntry[@type='inheritedJdk']"))
+        self.assertIsNone(java.find(".//orderEntry[@type='jdk']"))
+
+    def test_consolidation_removes_only_owned_platform_duplicates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "Cargo.toml").write_text('[workspace]\n', encoding="utf-8")
+            old = {".run/LSF-help-windows.run.xml": intellij.run_configuration("help", "Start"),
+                   ".run/LSF-help.run.xml": intellij.run_configuration("help", "Start")}
+            intellij.write_files(root, old)
+            (root / ".run/personal.run.xml").write_text("personal", encoding="utf-8")
+            (root / ".idea").mkdir()
+            (root / ".idea/workspace.xml").write_text("private workspace", encoding="utf-8")
+            files = intellij.project_files(root, ["Cargo.toml", "tools/intellij.py"])
+            self.assertIn(".run/LSF-help-windows.run.xml", intellij.check_files(root, files))
+            intellij.write_files(root, files)
+            self.assertEqual([], intellij.check_files(root, files))
+            self.assertFalse((root / ".run/LSF-help-windows.run.xml").exists())
+            self.assertEqual("personal", (root / ".run/personal.run.xml").read_text())
+            self.assertEqual("private workspace", (root / ".idea/workspace.xml").read_text())
+
+    def test_unix_dispatch_preserves_make_and_current_interpreter(self):
+        for platform in ("linux", "darwin"):
+            with mock.patch.object(intellij.sys, "platform", platform), \
+                    mock.patch.object(intellij.subprocess, "run") as run, \
+                    mock.patch.object(intellij.intellij_windows, "run") as windows:
+                run.return_value.returncode = 7
+                self.assertEqual(7, intellij.main(["run", "website-prepare"]))
+                run.assert_called_once_with(intellij.task_command(intellij.ROOT, "website-prepare"),
+                                            cwd=intellij.ROOT, check=False)
+                windows.assert_not_called()
+
+    def test_actual_python_configuration_preserves_sdk_cwd_and_failure(self):
+        import json
+        import os
+        import shlex
+        import shutil
+        import subprocess
+        import sys
+
+        with tempfile.TemporaryDirectory(prefix="LSF direct Python ") as directory:
+            root = Path(directory) / "checkout with spaces"
+            (root / "tools").mkdir(parents=True)
+            for name in ("intellij.py", "intellij_windows.py"):
+                shutil.copyfile(intellij.ROOT / "tools" / name, root / "tools" / name)
+            fixture = root / "sdk/java-client/tools/build.py"
+            fixture.parent.mkdir(parents=True)
+            fixture.write_text('import json, os, sys\nprint(json.dumps([sys.executable, os.getcwd(), sys.argv[1:]]))\nraise SystemExit(7)\n', encoding="utf-8")
+            config = ET.fromstring(intellij.run_configuration("java-client-build", "SDKs"))
+            options = {item.attrib["name"]: item.attrib["value"] for item in config.findall(".//configuration/option")}
+            environment = os.environ.copy()
+            environment["PATH"] = ""
+            # The IDE SDK wins. A terminal-launcher override must not redirect it.
+            environment["LSF_IDE_PYTHON"] = str(root / "missing/python")
+            result = subprocess.run([sys.executable, options["SCRIPT_NAME"].replace("$PROJECT_DIR$", str(root)),
+                                     *shlex.split(options["PARAMETERS"])],
+                                    cwd=options["WORKING_DIRECTORY"].replace("$PROJECT_DIR$", str(root)),
+                                    env=environment, capture_output=True, text=True, timeout=30)
+            self.assertEqual(7, result.returncode, result.stdout + result.stderr)
+            executable, cwd, arguments = json.loads(result.stdout.splitlines()[-1])
+            self.assertEqual(Path(sys.executable).resolve(), Path(executable).resolve())
+            self.assertEqual(root.resolve(), Path(cwd).resolve())
+            self.assertEqual(["build"], arguments)
 
 
 if __name__ == "__main__":

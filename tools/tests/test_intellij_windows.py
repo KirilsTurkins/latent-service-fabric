@@ -134,21 +134,24 @@ class WindowsTaskTests(unittest.TestCase):
             run.assert_called_once_with(intellij.ROOT, "website-prepare")
             make.assert_not_called()
 
-    def test_generated_windows_configs_use_cmd_and_have_distinct_names(self):
+    def test_windows_tasks_use_the_same_python_configurations(self):
         (self.root / "Cargo.toml").write_text("[workspace]\n", encoding="utf-8")
-        files = intellij.project_files(self.root, ["Cargo.toml"])
+        files = intellij.project_files(self.root, ["Cargo.toml", "tools/intellij.py"])
         configs = {path: ET.fromstring(text).find("configuration") for path, text in files.items() if path.startswith(".run/")}
         self.assertEqual(len(configs), len({node.attrib["name"] for node in configs.values()}))
         for task in windows.TASKS:
-            config = configs[f".run/LSF-{task}-windows.run.xml"]
+            config = configs[f".run/LSF-{task}.run.xml"]
             options = {item.attrib["name"]: item.attrib["value"] for item in config.findall("option")}
-            self.assertEqual(f"cmd.exe /d /c tools\\intellij.cmd {task}", options["SCRIPT_TEXT"])
-            self.assertEqual("$PROJECT_DIR$", options["SCRIPT_WORKING_DIRECTORY"])
-            self.assertTrue(config.attrib["name"].endswith("(Windows)"))
-            self.assertTrue(config.attrib["folderName"].startswith("LSF / Windows /"))
-        self.assertNotIn(".run/LSF-validate-windows.run.xml", configs)
-        self.assertNotIn(".run/LSF-ide-node-prepare-windows.run.xml", configs)
-        self.assertTrue(configs[".run/LSF-help.run.xml"].attrib["name"].endswith("(Bash)"))
+            self.assertEqual("PythonConfigurationType", config.attrib["type"])
+            self.assertEqual("run " + task, options["PARAMETERS"])
+            self.assertEqual("$PROJECT_DIR$/tools/intellij.py", options["SCRIPT_NAME"])
+            self.assertEqual("$PROJECT_DIR$", options["WORKING_DIRECTORY"])
+            self.assertEqual("LSF - " + task, config.attrib["name"])
+            self.assertNotIn("SCRIPT_TEXT", options)
+            self.assertNotIn(f".run/LSF-{task}-windows.run.xml", configs)
+        # Linux-only entries remain visible; the dispatcher fails explicitly.
+        self.assertIn(".run/LSF-validate.run.xml", configs)
+        self.assertIn(".run/LSF-ide-node-prepare.run.xml", configs)
 
 
 @unittest.skipUnless(sys.platform == "win32", "real cmd.exe/PowerShell execution is qualified by the Windows CI matrix entry")
@@ -187,9 +190,8 @@ class NativeWindowsLauncherTests(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertNotIn("LSF native Windows", result.stdout)
 
-    def test_real_powershell_executes_exact_generated_command(self):
-        config = ET.fromstring(intellij.run_configuration("help", "Start", windows=True)).find("configuration")
-        text = next(item.attrib["value"] for item in config.findall("option") if item.attrib["name"] == "SCRIPT_TEXT")
+    def test_real_powershell_terminal_launcher_remains_usable(self):
+        text = "cmd.exe /d /c tools\\intellij.cmd help"
         powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
         result = subprocess.run([str(powershell), "-NoProfile", "-NonInteractive", "-Command", text + "; exit $LASTEXITCODE"],
                                 cwd=self.root, env=self.environment, capture_output=True, text=True, timeout=30)
@@ -202,6 +204,24 @@ class NativeWindowsLauncherTests(unittest.TestCase):
         result = self.command("help")
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("LSF native Windows", result.stdout)
+
+
+    def test_real_unified_python_config_runs_without_shell_bootstrap(self):
+        import shlex
+
+        for task, expected in (("help", 0), ("docs", 7), ("validate", 2), ("ide-node-prepare", 2)):
+            with self.subTest(task=task):
+                config = ET.fromstring(intellij.run_configuration(task, "Start"))
+                options = {item.attrib["name"]: item.attrib["value"] for item in config.findall(".//configuration/option")}
+                result = subprocess.run([sys.executable, options["SCRIPT_NAME"].replace("$PROJECT_DIR$", str(self.root)),
+                                         *shlex.split(options["PARAMETERS"])],
+                                        cwd=options["WORKING_DIRECTORY"].replace("$PROJECT_DIR$", str(self.root)),
+                                        env=self.environment, capture_output=True, text=True, timeout=30)
+                self.assertEqual(expected, result.returncode, result.stdout + result.stderr)
+                self.assertNotIn("WSL (", result.stderr)
+                if task == "help":
+                    self.assertIn("LSF native Windows", result.stdout)
+        self.assertFalse((self.root / "target").exists())
 
 
 if __name__ == "__main__":
