@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode",
+    "PublicWatchDiagnostics.test_observer_and_bounded_json_errors_preserve_the_original_failure",
+    "PublicWatchDiagnostics.test_private_fields_and_credential_shaped_labels_never_enter_the_projection",
+    "PublicWatchDiagnostics.test_projection_keeps_only_the_last_thirty_two_observations",
+    "PublicWatchDiagnostics.test_public_vocabulary_contains_only_actual_frontend_producer_literals",
+    "ShutdownFence.test_confirmed_shutdown_is_once_per_distinct_workspace_and_keeps_original_receipt",
+    "ShutdownFence.test_uncertain_shutdown_preserves_original_error_and_never_replays_dispatch",
+    "WatchInputs.test_both_revisions_capture_offline_without_changing_sdk_or_adding_catalogue_entries",
+    "WatchInputs.test_closed_remove_requires_new_review_and_retains_sdk_bytes",
+    "WatchInputs.test_unexpected_original_input_is_preserved_instead_of_removed"
+  ],
+  "guards": {
+    "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublicWatchDiagnostics.test_observer_and_bounded_json_errors_preserve_the_original_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublicWatchDiagnostics.test_private_fields_and_credential_shaped_labels_never_enter_the_projection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublicWatchDiagnostics.test_projection_keeps_only_the_last_thirty_two_observations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "PublicWatchDiagnostics.test_public_vocabulary_contains_only_actual_frontend_producer_literals": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ShutdownFence.test_confirmed_shutdown_is_once_per_distinct_workspace_and_keeps_original_receipt": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "ShutdownFence.test_uncertain_shutdown_preserves_original_error_and_never_replays_dispatch": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "WatchInputs.test_both_revisions_capture_offline_without_changing_sdk_or_adding_catalogue_entries": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:309c259d007a6193336966fd71164963ac30d33a7532a3e5e34db1f10b614560"
+      ],
+      "skipSites": []
+    },
+    "WatchInputs.test_closed_remove_requires_new_review_and_retains_sdk_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:309c259d007a6193336966fd71164963ac30d33a7532a3e5e34db1f10b614560"
+      ],
+      "skipSites": []
+    },
+    "WatchInputs.test_unexpected_original_input_is_preserved_instead_of_removed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:4b1031815feb73a74e42fe28061c443732e267c04938a3060bb062579489a047",
+        "class:setup-sha256:309c259d007a6193336966fd71164963ac30d33a7532a3e5e34db1f10b614560"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_c_dependency_watch_fixture.py",
+  "reviewReason": "Preserve all six existing cases and guards; add four bounded public diagnostic privacy and observer controls.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

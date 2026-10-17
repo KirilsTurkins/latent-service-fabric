@@ -110,7 +110,7 @@ def start(root: Path, helper: Path) -> dict:
     wait_for_restart_lease(root, node_config)
     state.atomic(root, "lifecycle.json", {"state": "starting", "profile": node_config["securityProfile"],
                                          "guestInstance": guest_instance()})
-    child = subprocess.Popen([sys.executable, "-I", str(helper), "supervise", str(root)],
+    child = subprocess.Popen([sys.executable, "-I", "-B", str(helper), "supervise", str(root)],
                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              close_fds=True, start_new_session=True, env=process.environment())
     while time.monotonic() < deadline:

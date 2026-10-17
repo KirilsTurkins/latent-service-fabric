@@ -227,9 +227,12 @@ fn guest_trap_currentness_keeps_known_invocation_failure_and_closed_details() {
         let outcome = crate::output::Outcome::platform_failure(data.clone(), &error);
         assert_eq!(outcome.exit_code(), 4);
         let details = if reason == "unknown-private-reason" {
-            json!([])
+            json!([{"kind":"activation.guest-trap", "fields":{"code":"guest-runtime-error"}}])
         } else {
-            json!([{"kind":"admission.currentness", "fields":{"reason":reason}}])
+            json!([
+                {"kind":"activation.guest-trap", "fields":{"code":"guest-runtime-error"}},
+                {"kind":"admission.currentness", "fields":{"reason":reason}}
+            ])
         };
         assert_eq!(
             outcome.document("invoke"),

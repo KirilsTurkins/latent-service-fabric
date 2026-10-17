@@ -30,6 +30,7 @@ from tools.java_capsule_build import build
 from tools.java_capsule_project import create, validate_sdk_inputs
 from tools.java_dependency_authoring import edit, review, status
 from tools.java_dependency_resolution import resolve
+from tools.java_dependency_recovery import recover
 from tools.phase2_operator_process import read_json, require, stopped_record, write_json
 from tools.phase2_operator_scenario import configure_node, connect, stop
 from tools.phase3_resource_identity import file_identity
@@ -95,6 +96,7 @@ import org.apache.commons.lang3.StringUtils;
 import outside.owner.Arithmetic;
 public final class Capsule implements Bindings.Exports {
     private static int calls;
+    private static byte[][] retained;
     public Result<String, String> greet(String name) {
         if (++calls != 1) return Result.err("activation-state-reused");
         if (name.isEmpty()) return Result.err("Please enter a name.");
@@ -104,6 +106,11 @@ public final class Capsule implements Bindings.Exports {
         }
         if (name.equals("throw")) throw new IllegalStateException("selected-library-error");
         if (name.equals("spin")) { while (true) calls++; }
+        if (name.equals("heap")) {
+            retained = new byte[8192][];
+            for (int i = 0; i < retained.length; i++) retained[i] = new byte[4096];
+            return Result.err("java-heap-limit-not-enforced");
+        }
         int distance = LevenshteinDistance.getDefaultInstance().apply("kitten", "sitting");
         return Result.ok(Arithmetic.increment(distance) + "/" +
             Hex.encodeHexString(name.getBytes(java.nio.charset.StandardCharsets.UTF_8)) + "/" +
@@ -212,11 +219,12 @@ def execute(root: Path, native: Path, native_identity: dict) -> dict:
                 require(observed['processReaped'], 'java-library-invocation-owner-not-reaped')
                 calls.append(observed)
                 observe_idle(client, evidence, 'after-' + str(ordinal))
+            recovery = recover(client, targets['greeting'], evidence)
             stop(client, node)
             shutdown = stopped_record(node)
             require(shutdown['record']['clean'] and shutdown['reaped'], 'java-library-node-shutdown-unconfirmed')
-            result.update(status='passed', scope='signed pure/transitive/local-library/resource execution and declared-error recovery',
-                          calls=calls, shutdown=shutdown)
+            result.update(status='passed', scope='signed captured Java code and exception/memory/fuel/cancellation recovery',
+                          calls=calls, recovery=recovery, shutdown=shutdown)
             write_json(evidence / 'libraries-qualified.json', result)
             return result
         finally:
@@ -247,6 +255,7 @@ def main(argv=None) -> int:
     command_output = fresh(root / ('execution' if args.offline else 'acquisition'))
     commands = Commands(ROOT, command_output, environment, deadline_seconds=1800, command_seconds=60)
     qualifier_identity = file_identity(Path(__file__))
+    recovery_identity = file_identity(Path(__file__).with_name('java_dependency_recovery.py'))
     stage = 'capture'
     try:
         captured = read_json(root / 'capture.json') if args.offline else fixture(root, commands, args.gradle)
@@ -282,13 +291,16 @@ def main(argv=None) -> int:
         require(ordinary_tuple(args.native_tuple, {name: selected / name for name in PRODUCTS}) == native_identity,
                 'java-library-selected-native-products-mutated')
         require(file_identity(Path(__file__)) == qualifier_identity, 'java-library-qualifier-mutated')
+        require(file_identity(Path(__file__).with_name('java_dependency_recovery.py')) == recovery_identity,
+                'java-library-recovery-qualifier-mutated')
         require(digest(inventory(snapshot(app))) == captured['applicationIdentity'], 'java-library-source-mutated-after-compilation')
         result = {'status': 'passed', 'scope': execution['scope'], 'capture': file_identity(root / 'capture.json'),
-            'nativeTuple': native_identity, 'qualifier': qualifier_identity, 'negativeInputs': negatives,
+            'nativeTuple': native_identity, 'qualifier': qualifier_identity, 'recoveryQualifier': recovery_identity,
+            'negativeInputs': negatives,
             'component': file_identity(built / 'component.wasm'),
             'execution': file_identity(root / 'node/libraries-qualified.json'), 'commands': commands.records,
             'remainingAcceptance': ['authenticated-private-feed', 'installed-update-remove-watch',
-                'approved-processor-containment', 'trap-memory-fuel-cancellation-recovery']}
+                'approved-processor-containment']}
         write_json(root / 'qualification.json', result)
         print(json.dumps({'status': 'passed', 'receipt': str(root / 'qualification.json')}))
         return 0

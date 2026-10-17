@@ -11,6 +11,7 @@ import tempfile
 import time
 
 from tools.build_process_signals import owned_cancellation
+from tools import java_control_refusal_diagnostic as control_refusals
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.java_http_composition.build import compile_pair
@@ -196,7 +197,8 @@ def run_node(binaries, releases, output, *, http, former_profile=False, frontend
             write_json(evidence / "node-config.json", read_json(config))
             node = None
             try:
-                node = connect(client, binaries["latentd"], work / "node", config, "examples", 1)
+                node = connect(client, binaries["latentd"], work / "node", config, "examples", 1,
+                               control_refusal_diagnostic=True)
                 result["startup"] = node.startup_record
                 publications = publish(client, releases)
                 result["publications"] = publications
@@ -331,6 +333,7 @@ def run_node(binaries, releases, output, *, http, former_profile=False, frontend
                 if node is not None:
                     client.node = None
                     node.close()
+                    result["managementRefusals"] = control_refusals.retain(node, evidence)
                     (evidence / "node.stderr.log").write_bytes(bytes(node.buffers[1]))
                 write_workflow_receipt(evidence / "workflow.json", result)
     return result
@@ -347,6 +350,8 @@ def qualify(output, wasi_sdk, target, *, frontend=None):
             "fixture": inventory(ROOT / "examples/java-http-composition"),
             "javaSdk": inventory(ROOT / "sdk/java-guest"), "wit": inventory(ROOT / "wit/platform"),
             "helpers": inventory(ROOT / "tools/java_http_composition"),
+            "managementRefusalHelper": file_identity(ROOT / "tools/java_control_refusal_diagnostic.py"),
+            "nodeLauncher": file_identity(ROOT / "tools/phase2_operator_scenario.py"),
             "generator": inventory(ROOT / "tools/java_http_generation"),
             "compositionProbe": inventory(ROOT / "tools/composition_probe")}
     before = inputs()
