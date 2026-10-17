@@ -14,7 +14,7 @@ jobs:
       contents: write
     env:
       PYTHONDONTWRITEBYTECODE: '1'
-      ORIGINAL_HEAD: b8d858d84e948bd9955d09e95b56ee39a29d61dc
+      ORIGINAL_HEAD: b158c918714dcef9ab553294a6cb329152e62f9c
       BASE_HEAD: 8421308546a9080e39426ff9cc6a3eae74c6b6a1
       WORKFLOW_HEAD: ${{ github.sha }}
     steps:
@@ -22,11 +22,15 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
       - name: Compose exact parents and preserve every registered case
         shell: bash
         run: |
           python3 - <<'PY'
-          import copy, json, os, pathlib, subprocess
+          import copy, json, os, pathlib, subprocess, sys
+          assert sys.version_info[:3] == (3, 13, 5), 'python-version-drift'
           def git(*args, **kwargs):
               return subprocess.run(['git', *args], check=True, capture_output=True, **kwargs).stdout
           ours, theirs, head = (os.environ[key] for key in ('ORIGINAL_HEAD', 'BASE_HEAD', 'WORKFLOW_HEAD'))
@@ -99,12 +103,23 @@ jobs:
       - name: Validate exact merged Go controls and independent contracts
         shell: bash
         run: |
+          python3 -m pip install -r tools/requirements.lock
           python3 -m unittest tools.tests.test_go_runtime_overlay tools.tests.test_go_http_context tools.tests.test_go_application_dependencies tools.tests.test_go_capsule_authoring tools.tests.test_go_dependency_authoring
           python3 - <<'PY'
           import json
-          from tools import ci_coverage
+          from tools import ci_coverage, ci_contracts, ci_suite_inventory
+          root = ci_suite_inventory.ROOT
+          expected = ci_contracts.load(root)['pythonGuards']
+          observed = ci_contracts.python_expectations(root)
+          mismatches = {name: sorted(case for case, guard in value['guards'].items()
+                         if expected.get(name, {}).get(case) != guard)
+                        for name, value in observed.items()}
+          print(json.dumps({'guardMismatches': {name: cases for name, cases in mismatches.items() if cases}}))
           result = ci_coverage.validate()
-          print(json.dumps(result, sort_keys=True))
+          print(json.dumps({'baselineCommands': len(result['before']),
+                            'currentCommands': len(result['after']),
+                            'delegatedOwners': len(result['delegatedOwners']),
+                            'pythonModules': len(result['pythonCases'])}, sort_keys=True))
           PY
       - name: Publish immutable candidate objects without updating any branch
         env:
@@ -172,7 +187,13 @@ jobs:
           print(json.dumps({'candidateCommit': commit['sha'], 'tree': tree['sha'],
                             'branchUpdated': False, 'sourceControlsPassed': True}))
           PY
-          git archive "$(git write-tree)" | gzip -1 > "$RUNNER_TEMP/pr1026-candidate-source.tar.gz"
+      - name: Retain exact composed source even on validation failure
+        if: always()
+        shell: bash
+        run: |
+          if test -f "$RUNNER_TEMP/pr1026-merge-report.json"; then
+            git archive "$(git write-tree)" | gzip -1 > "$RUNNER_TEMP/pr1026-candidate-source.tar.gz"
+          fi
       - name: Retain candidate identity and source for independent review
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
