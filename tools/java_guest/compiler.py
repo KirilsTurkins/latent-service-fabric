@@ -280,6 +280,8 @@ class Compiler:
         from tools.java_guest import facilities
         write_json(destination / 'standard-entropy-profile.json', facilities.stage(
             self.sdk, destination / 'bindings', java_root))
+        write_json(destination / 'standard-logging-profile.json', facilities.stage_logging(
+            self.sdk, destination / 'bindings', java_root))
         with (project / 'build.gradle').open('a', encoding='utf-8') as build:
             build.write("\ndependencies { compileOnly 'org.teavm:teavm-core:0.15.0' }\n")
         resource_profile = None
