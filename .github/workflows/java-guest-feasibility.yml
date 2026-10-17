@@ -193,6 +193,22 @@ jobs:
           cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service \
             runtime::signed_java_host_imports_suspend_only_their_owned_callers -- \
             --ignored --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/java-fiber-io/signed-runtime.log"
+      - name: Prepare unchanged standard Java timers with reference and ownership controls
+        id: prepare-java-standard-timers
+        run: |
+          python3 tools/qualify_java_fibers.py --fixture timers \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --output "$RUNNER_TEMP/java-standard-timers" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Execute signed recurring Java timers and physical worker retirement
+        id: signed-java-standard-timers
+        env:
+          LSF_GUEST_SDK_LANGUAGE: java
+          LSF_JAVA_TIMER_FIXTURE: ${{ runner.temp }}/java-standard-timers
+        run: |
+          set -o pipefail
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service \
+            runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers -- \
+            --ignored --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/java-standard-timers/signed-runtime.log"
       - name: Qualify standalone Java projects, nine SDK components, signed node and printed guide
         run: |
           set -o pipefail
@@ -364,6 +380,16 @@ jobs:
             ${{ runner.temp }}/java-fiber-io/build/bindings/**
             ${{ runner.temp }}/java-fiber-io/build/component.wasm
             ${{ runner.temp }}/java-fiber-io/signed-runtime.log
+            ${{ runner.temp }}/java-standard-timers/FIBERS-COMPILE.json
+            ${{ runner.temp }}/java-standard-timers/compiler-inputs.json
+            ${{ runner.temp }}/java-standard-timers/compiler/*.log
+            ${{ runner.temp }}/java-standard-timers/compiler/*.command.json
+            ${{ runner.temp }}/java-standard-timers/src/**
+            ${{ runner.temp }}/java-standard-timers/wit/**
+            ${{ runner.temp }}/java-standard-timers/build/runtime-profile.json
+            ${{ runner.temp }}/java-standard-timers/build/component.wasm
+            ${{ runner.temp }}/java-standard-timers/build/core.wasm
+            ${{ runner.temp }}/java-standard-timers/signed-runtime.log
             ${{ runner.temp }}/java-capsule-authoring.log
             ${{ runner.temp }}/java-http-composition.log
             ${{ runner.temp }}/java-http-composition/**/*.json

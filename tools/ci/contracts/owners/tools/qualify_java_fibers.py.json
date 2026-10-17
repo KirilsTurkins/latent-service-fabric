@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add explicit Java fiber host imports and four signed pending/overlap/root-drain/interrupt modes; preserve all existing Java commands, 55-minute job, runtime limits and Python guards.",
+  "reviewReason": "Compose both reviewed timer ownership/model/cache and fiber I/O admission/reference paths without changing original bounds or authority.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a12a8b23a8bf3795fcea5968419750e60aaf0484ae72f1f0a29df23e1376c2c0"
+  "sha256": "56b3d66626c9b453abb50a80e71035c9e45074c0dfadbce354507fbec9f87dca"
 }

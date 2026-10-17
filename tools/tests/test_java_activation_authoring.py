@@ -215,5 +215,103 @@ class DeclaredRuntimeImports(unittest.TestCase):
                 self.invoke(imports, selected=False)
 
 
+class LockedModelClasspaths(unittest.TestCase):
+    def setUp(self):
+        import shutil
+        from types import SimpleNamespace
+        from tools import qualify_java_fibers
+        from tools.rust_capsule_project import ROOT
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        self.sdk, self.cache = root / 'sdk', root / 'cache'
+        (self.sdk / 'tools').mkdir(parents=True)
+        (self.sdk / 'feasibility/gradle').mkdir(parents=True)
+        shutil.copyfile(ROOT / 'sdk/java-guest/tools/dependencies.py', self.sdk / 'tools/dependencies.py')
+        self.compiler = SimpleNamespace(sdk=self.sdk, directory=root, dependency_cache=self.cache)
+        self.select = qualify_java_fibers.locked_model_classpath
+        self.artifacts, self.paths = [], {}
+        for name in ('teavm-classlib', 'teavm-core', 'teavm-extension-spi', 'teavm-interop',
+                     'teavm-relocated-libs-asm', 'teavm-relocated-libs-asm-analysis',
+                     'teavm-relocated-libs-asm-commons', 'teavm-relocated-libs-asm-tree',
+                     'teavm-relocated-libs-hppc', 'teavm-platform', 'teavm-relocated-libs-rhino'):
+            self.add_artifact('org/teavm/' + name + '/0.15.0/' + name + '-0.15.0.jar')
+        self.add_artifact('com/fasterxml/jackson/core/jackson-core/2.18.11/jackson-core-2.18.11.jar', present=False)
+        self.write_lock()
+
+    def add_artifact(self, coordinate, *, present=True):
+        import hashlib
+        raw = ('controlled inert cache fixture ' + coordinate).encode()
+        item = dict(path=coordinate, size=len(raw), sha256=hashlib.sha256(raw).hexdigest(), platform='any')
+        self.artifacts.append(item)
+        if present:
+            parts = Path(coordinate).parts
+            path = self.cache / '.'.join(parts[:-3]) / parts[-3] / parts[-2] / item['sha256'] / parts[-1]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(raw)
+            self.paths[coordinate] = path
+
+    def write_lock(self):
+        from xml.sax.saxutils import escape
+        lock = dict(schemaVersion=1, maven='https://repo.maven.apache.org/maven2/', artifacts=self.artifacts)
+        (self.sdk / 'feasibility/dependencies.lock.json').write_text(json.dumps(lock), encoding='utf-8')
+        components = []
+        for item in self.artifacts:
+            parts = Path(item['path']).parts
+            group, name, version, filename = '.'.join(parts[:-3]), *parts[-3:]
+            components.append(f'<component group="{escape(group)}" name="{escape(name)}" version="{escape(version)}">'
+                              f'<artifact name="{escape(filename)}"><sha256 value="{item["sha256"]}"/>'
+                              '</artifact></component>')
+        metadata = ('<verification-metadata xmlns="https://schema.gradle.org/dependency-verification">'
+                    '<configuration><verify-metadata>true</verify-metadata><verify-signatures>false</verify-signatures>'
+                    '</configuration><components>' + ''.join(components) + '</components></verification-metadata>')
+        (self.sdk / 'feasibility/gradle/verification-metadata.xml').write_text(metadata, encoding='utf-8')
+
+    def graph(self):
+        return self.select(self.compiler, include_platform=True, include_dependency_analysis=True)
+
+    def test_graph_uses_verified_resolved_closure_without_unrelated_configurations(self):
+        classpath, identities = self.graph()
+        self.assertEqual(set(identities), set(self.paths))
+        self.assertEqual(len(identities), 11)
+        self.assertIn('teavm-relocated-libs-rhino', classpath)
+        self.assertNotIn('jackson', classpath)
+        _, original = self.select(self.compiler)
+        self.assertEqual(len(original), 9)
+        self.assertFalse(any('rhino' in name or 'platform' in name for name in original))
+
+    def test_missing_required_model_reports_exact_coordinate(self):
+        coordinate = 'org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar'
+        self.paths[coordinate].unlink()
+        with self.assertRaisesRegex(ValueError, 'missing: ' + coordinate): self.graph()
+
+    def test_duplicate_cache_identity_is_rejected_even_when_bytes_match(self):
+        import shutil
+        original = next(iter(self.paths.values()))
+        duplicate = original.parent.parent / ('a' * 64) / original.name
+        duplicate.parent.mkdir()
+        shutil.copyfile(original, duplicate)
+        with self.assertRaisesRegex(ValueError, 'missing or ambiguous: org/teavm/teavm-classlib/'): self.graph()
+
+    def test_tampered_unreviewed_or_metadata_mismatched_tooling_is_rejected(self):
+        original = next(iter(self.paths.values()))
+        before = original.read_bytes()
+        original.write_bytes(before + b'changed')
+        with self.assertRaisesRegex(ValueError, 'dependency-cache-lock-drift'): self.graph()
+        original.write_bytes(before)
+        self.add_artifact('other/unreviewed/1/unreviewed-1.jar')
+        with self.assertRaisesRegex(ValueError, 'dependency-cache-lock-drift'): self.graph()
+        self.paths['other/unreviewed/1/unreviewed-1.jar'].unlink()
+        self.artifacts[0]['sha256'] = '0' * 64
+        (self.sdk / 'feasibility/dependencies.lock.json').write_text(json.dumps(dict(
+            schemaVersion=1, maven='https://repo.maven.apache.org/maven2/', artifacts=self.artifacts[:-1])), encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'dependency-lock-metadata-drift'): self.graph()
+
+    def test_graph_retains_resolved_artifact_count_bound(self):
+        for index in range(86): self.add_artifact(f'fixture/tool{index}/1/tool{index}-1.jar')
+        self.write_lock()
+        with self.assertRaisesRegex(ValueError, 'bounded locked tooling closure'): self.graph()
+
+
 if __name__ == '__main__':
     unittest.main()

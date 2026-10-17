@@ -15,11 +15,12 @@ import time
 
 sys.dont_write_bytecode = True
 if __package__ in (None, ""): sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.java_guest.compiler import Compiler
+from tools.java_guest.compiler import Compiler, source_module
 from tools.rust_capsule_project import ROOT, digest, fresh, read_file, write_json
 
 
-def locked_model_classpath(compiler: Compiler, *, include_platform: bool = False) -> tuple[str, dict[str, str]]:
+def locked_model_classpath(compiler: Compiler, *, include_platform: bool = False,
+                           include_dependency_analysis: bool = False) -> tuple[str, dict[str, str]]:
     """Verify the compiler's own locked model tooling before any host loading."""
     names = {"teavm-classlib", "teavm-core", "teavm-extension-spi", "teavm-interop",
              "teavm-relocated-libs-asm", "teavm-relocated-libs-asm-analysis",
@@ -31,11 +32,32 @@ def locked_model_classpath(compiler: Compiler, *, include_platform: bool = False
     if (len(artifacts) != len(names) or {Path(item["path"]).parts[-3] for item in artifacts} != names):
         raise ValueError("Java runtime model requires the exact locked tooling closure")
     cache = getattr(compiler, "dependency_cache", compiler.directory / "gradle-home/caches/modules-2/files-2.1")
+    if include_dependency_analysis:
+        # The reviewed inventory also covers unused Gradle configurations. The
+        # C compiler resolves only its own closure; an offline model must use
+        # that verified closure rather than demand unrelated browser tooling.
+        jar_count, jar_bytes = 0, 0
+        for path in cache.glob("*/*/*/*/*.jar"):
+            jar_count += 1
+            jar_bytes += path.stat().st_size
+            if jar_count > 96 or jar_bytes > 32 * 1024 * 1024:
+                raise ValueError("Java compiler graph requires a bounded locked tooling closure")
+        dependencies = source_module(compiler.sdk / "tools/dependencies.py")
+        observed = dependencies.cache_inventory(cache)
+        dependencies.verify_inventory(observed, lock, compiler.sdk / "feasibility/gradle/verification-metadata.xml")
+        required = {item["path"] for item in artifacts}
+        artifacts = observed["artifacts"]
+        missing = required - {item["path"] for item in artifacts}
+        if missing:
+            raise ValueError("Java runtime model tooling jar is missing: " + sorted(missing)[0])
+        if not artifacts or len(artifacts) > 96 or sum(item["size"] for item in artifacts) > 32 * 1024 * 1024:
+            raise ValueError("Java compiler graph requires a bounded locked tooling closure")
     jars, identities = [], {}
     for item in sorted(artifacts, key=lambda row: row["path"]):
         parts = Path(item["path"]).parts
         candidates = list((cache / ".".join(parts[:-3]) / parts[-3] / parts[-2]).glob("*/" + parts[-1]))
-        if len(candidates) != 1: raise ValueError("Java runtime model tooling jar is missing or ambiguous")
+        if len(candidates) != 1:
+            raise ValueError("Java runtime model tooling jar is missing or ambiguous: " + item["path"])
         raw = read_file(candidates[0], 25 * 1024 * 1024)
         if len(raw) != item["size"] or hashlib.sha256(raw).hexdigest() != item["sha256"]:
             raise ValueError("Java runtime model tooling jar integrity mismatch")
@@ -94,6 +116,7 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     output.mkdir()
     sources = ("fibers/compiler/dev/latent/guest/runtime/compiler/RuntimePlugin.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/RuntimeSubstitution.java",
+               "fibers/compiler/dev/latent/guest/runtime/compiler/StandardTimerMethods.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/TimeUnitMethods.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/ThrowableInitialization.java",
                "fibers/compiler/dev/latent/guest/runtime/compiler/ContinuationProgram.java",
@@ -264,6 +287,72 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
 
 
+def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
+    """Execute unchanged SDK timer sources with an explicitly private host ledger.
+
+    The ordinary application has separate reference-JDK executions. Only this
+    host control maps its imports to the SDK implementation; neither that copy
+    nor its private ledger is an input to the component compiler.
+    """
+    fixture = compiler.sdk / "fibers/conformance"
+    application = fixture / "timers/Capsule.java"
+    main = fixture / "timers/Main.java"
+    private = fixture / "compiler/standard-timer-control"
+    sources = [private / name for name in (
+        "TimerModelMain.java", "dev/latent/generated/Bindings.java",
+        "dev/latent/guest/runtime/Activation.java")]
+    ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
+             for name in ("Timer", "TimerTask")]
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
+              for path in (application, main, *sources, *ports)}
+    output.mkdir()
+    mapped = output / "Capsule.java"
+    text = read_file(application).decode("utf-8")
+    for name in ("Timer", "TimerTask"):
+        original = "import java.util." + name + ";"
+        if text.count(original) != 1: raise ValueError("Java timer source control import is ambiguous")
+        text = text.replace(original, "import dev.latent.guest.runtime.util." + name + ";")
+    mapped.write_text(text, encoding="utf-8")
+    compiler.run("standard-timer-source-compile", "javac", "-proc:none", "--release", "25",
+                 "-d", output, mapped, main, *sources, *ports)
+    expected = ["42 42 42 42",
+        "TIMER_SOURCE_CONTROL PASS reference-observables;queue-rollback;cancel-drain;idle-finally;no-live-owners"]
+    for iteration in range(3):
+        result = compiler.run(f"standard-timer-source-{iteration}", "java", "-Xmx256m", "-cp",
+                              output, "TimerModelMain")
+        if result.strip().splitlines() != expected:
+            raise ValueError("Java standard timer source control did not complete")
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError("Java timer control inputs changed during execution")
+    return {"status": "SDK-source-controls-passed", "iterations": 3, "modes": [0, 1, 2, 3],
+            "sourceInputs": inputs, "componentExecutionPerformed": False, "actualGuestBindingsUsed": False}
+
+
+def standard_timer_model_control(compiler: Compiler, output: Path) -> dict:
+    """Resolve substituted standard APIs against actual verified TeaVM models."""
+    classpath, identities = locked_model_classpath(compiler, include_platform=True, include_dependency_analysis=True)
+    output.mkdir()
+    sources = [*sorted((compiler.sdk / "fibers/compiler/dev/latent/guest/runtime/compiler").glob("*.java")),
+        compiler.sdk / "fibers/conformance/compiler/StandardTimerModelControl.java",
+        compiler.sdk / "fibers/conformance/compiler/StandardTimerCompilerGraphControl.java"]
+    sources += [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
+                for name in ("Timer", "TimerTask")]
+    sources += [compiler.sdk / ("fibers/conformance/compiler/standard-timer-control/" + name)
+                for name in ("dev/latent/generated/Bindings.java", "dev/latent/guest/runtime/Activation.java")]
+    inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path)) for path in sources}
+    compiler.run("standard-timer-model-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
+                 "-d", output, *sources)
+    result = compiler.run("standard-timer-model-control", "java", "-Xmx256m", "-cp",
+        str(output) + os.pathsep + classpath, "dev.latent.guest.runtime.compiler.StandardTimerModelControl").strip()
+    if result != ("STANDARD_TIMER_MODEL_CONTROL PASS original-classlib-negative;layout-and-repeat-negatives;canonical-api-and-private-helper;"
+                  "resolved-method-and-field-types;unsupported-no-fallback;models=3;actual-c-dependency-worker-and-callback"):
+        raise ValueError("Java standard timer model control did not complete")
+    if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
+        raise ValueError("Java timer model control inputs changed during execution")
+    return {"status": "actual-locked-classlib-model-passed", "models": 3, "jarDigests": identities,
+            "sourceInputs": inputs, "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}
+
+
 def recipe_inputs() -> dict[str, str]:
     paths = [Path(__file__), *sorted((ROOT / "tools/java_guest").glob("*.py")),
              ROOT / "tools/stage_runtime_wit.py", ROOT / "tools/rust_capsule_project.py",
@@ -274,7 +363,7 @@ def recipe_inputs() -> dict[str, str]:
 
 def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None,
             read_only_cache: Path | None = None, fixture="threads"):
-    if fixture not in {"threads", "completable", "fiber-io"}: raise ValueError("unknown Java fiber fixture")
+    if fixture not in {"threads", "completable", "timers", "fiber-io"}: raise ValueError("unknown Java fiber fixture")
     if offline_cache is not None and read_only_cache is not None:
         raise ValueError("Java dependency cache selections are mutually exclusive")
     output = fresh(output)
@@ -314,6 +403,9 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
             if result.strip() != "42 42 42 42": raise ValueError("reference-JDK fiber observable mismatch")
             report["reference"].append({"iteration": iteration, "modes": [0, 1, 2, 3], "results": [42, 42, 42, 42]})
         report["completableSource"] = completable_source_control(compiler, output / "completable-source")
+        if fixture == "timers":
+            report["standardTimerSource"] = standard_timer_source_control(compiler, output / "standard-timer-source")
+            report["standardTimerModel"] = standard_timer_model_control(compiler, output / "standard-timer-model")
         selection = {'fiber_io_profile': True} if fixture == 'fiber-io' else {}
         component, report["record"] = compiler.compile(output / "src", wit.parent,
             "tests:caller/service@1.0.0", output / "build", activation_profile=True, **selection)
@@ -346,7 +438,7 @@ def main():
     caches = parser.add_mutually_exclusive_group()
     caches.add_argument("--offline-cache", type=Path)
     caches.add_argument("--read-only-cache", type=Path)
-    parser.add_argument("--fixture", choices=("threads", "completable", "fiber-io"), default="threads")
+    parser.add_argument("--fixture", choices=("threads", "completable", "timers", "fiber-io"), default="threads")
     args = parser.parse_args()
     prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache,
             read_only_cache=args.read_only_cache, fixture=args.fixture)
