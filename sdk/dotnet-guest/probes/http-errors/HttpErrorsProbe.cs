@@ -6,6 +6,11 @@ using System.Text.Json;
 // Execute the actual captured WASI BCL in two isolated host load contexts.
 // This verifies its conversion/exception boundary, not a guest scheduler or
 // default-client component. No native WASI import is called by this probe.
+if (args.Length == 4 && args[0] == "--request-content-headers")
+{
+    HttpRequestContentHeadersProbe.Run(args[1..]);
+    return;
+}
 if (args.Length == 4 && args[0] == "--response-read-errors")
 {
     HttpResponseReadErrorsProbe.Run(args[1..]);
@@ -282,5 +287,155 @@ internal static class HttpResponseReadErrorsProbe
             originalContext.Unload();
             derivedContext.Unload();
         }
+    }
+}
+
+
+internal static class HttpRequestContentHeadersProbe
+{
+    // Execute the derived helper and the original captured BCL getter. Creating
+    // native Fields is deliberately outside this host control; the unchanged
+    // signed POST cases must prove actual header transmission and body framing.
+    internal static void Run(string[] args)
+    {
+        if (args.Length != 3 || File.Exists(args[2]))
+            throw new InvalidDataException("http-request-content-headers-probe-arguments");
+        string Digest(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+        if (Digest(args[0]) != "3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587")
+            throw new InvalidDataException("http-request-content-headers-probe-preimage");
+        var originalContext = new AssemblyLoadContext("original-content-headers-control", isCollectible: true);
+        var derivedContext = new AssemblyLoadContext("derived-content-headers-control", isCollectible: true);
+        try
+        {
+            var original = originalContext.LoadFromAssemblyPath(Path.GetFullPath(args[0]));
+            var derived = derivedContext.LoadFromAssemblyPath(Path.GetFullPath(args[1]));
+            var helper = derived.GetType("System.Net.Http.WasiHttpInterop", throwOnError: true)!
+                .GetMethod("LsfPrepareRequestContentHeaders", BindingFlags.NonPublic | BindingFlags.Static)!;
+            object Make(Assembly assembly, string name, params object[] values) =>
+                Activator.CreateInstance(assembly.GetType("System.Net.Http." + name, throwOnError: true)!, values)!;
+            object Headers(object content) => content.GetType().GetProperty("Headers")!.GetValue(content)!;
+            object Prepare(object content) => helper.Invoke(null, [content])!;
+            Dictionary<string, string> Values(object headers) =>
+                ((IEnumerable<KeyValuePair<string, IEnumerable<string>>>)headers)
+                    .ToDictionary(pair => pair.Key, pair => string.Join(",", pair.Value), StringComparer.OrdinalIgnoreCase);
+            object? Length(object headers) => headers.GetType().GetProperty("ContentLength")!.GetValue(headers);
+            void SetLength(object headers, long? value) => headers.GetType().GetProperty("ContentLength")!.SetValue(headers, value);
+            string Snapshot(object headers) => string.Join("|", Values(headers).OrderBy(pair => pair.Key)
+                .Select(pair => pair.Key + ":" + pair.Value));
+            var assertions = 0;
+            void Equal(object? expected, object? actual)
+            {
+                assertions++;
+                if (!Equals(expected, actual)) throw new InvalidDataException("http-request-content-headers-probe-mismatch");
+            }
+            var baseline = Make(original, "ByteArrayContent", new byte[] { 0, 1, 2, 3 });
+            var content = Make(derived, "ByteArrayContent", new byte[] { 0, 1, 2, 3 });
+            var baselineHeaders = Headers(baseline);
+            var headers = Headers(content);
+            Equal(false, Values(baselineHeaders).ContainsKey("Content-Length"));
+            Equal(false, Values(headers).ContainsKey("Content-Length"));
+            Equal(true, ReferenceEquals(headers, Prepare(content)));
+            Equal("4", Values(headers)["Content-Length"]);
+            Equal(4L, Length(baselineHeaders));
+            Equal(Snapshot(baselineHeaders), Snapshot(headers));
+            ((IDisposable)baseline).Dispose();
+            ((IDisposable)content).Dispose();
+
+            foreach (var size in new[] { 0, 1, 4, 1000 })
+            {
+                var sized = Make(derived, "ByteArrayContent", new byte[size]);
+                var prepared = Prepare(sized);
+                Equal(size.ToString(System.Globalization.CultureInfo.InvariantCulture), Values(prepared)["Content-Length"]);
+                Equal(Snapshot(prepared), Snapshot(Prepare(sized)));
+                ((IDisposable)sized).Dispose();
+            }
+            var segment = Make(derived, "ByteArrayContent", new byte[7], 2, 3);
+            Equal("3", Values(Prepare(segment))["Content-Length"]);
+            ((IDisposable)segment).Dispose();
+            using (var source = new MemoryStream(new byte[8]))
+            {
+                source.Position = 3;
+                var streamContent = Make(derived, "StreamContent", source);
+                Equal("5", Values(Prepare(streamContent))["Content-Length"]);
+                Equal(3L, source.Position);
+                ((IDisposable)streamContent).Dispose();
+            }
+            var explicitContent = Make(derived, "ByteArrayContent", new byte[4]);
+            var explicitHeaders = Headers(explicitContent);
+            SetLength(explicitHeaders, 9);
+            var before = Snapshot(explicitHeaders);
+            Equal("9", Values(Prepare(explicitContent))["Content-Length"]);
+            Equal(before, Snapshot(explicitHeaders));
+            SetLength(explicitHeaders, null);
+            Equal(false, Values(Prepare(explicitContent)).ContainsKey("Content-Length"));
+            Equal(null, Length(explicitHeaders));
+            ((IDisposable)explicitContent).Dispose();
+
+            using (var source = new UnreadableStream(seekable: false))
+            {
+                var streamContent = Make(derived, "StreamContent", source);
+                Equal(false, Values(Prepare(streamContent)).ContainsKey("Content-Length"));
+                Equal(0, source.ReadCalls);
+                Equal(0, source.LengthCalls);
+                ((IDisposable)streamContent).Dispose();
+            }
+            var typed = Make(derived, "ByteArrayContent", new byte[4]);
+            var typedHeaders = Headers(typed);
+            var add = typedHeaders.GetType().GetMethod("TryAddWithoutValidation", [typeof(string), typeof(string)])!;
+            add.Invoke(typedHeaders, ["Content-Type", "application/octet-stream"]);
+            add.Invoke(typedHeaders, ["X-Lsf-Probe", "preserved"]);
+            var values = Values(Prepare(typed));
+            Equal("application/octet-stream", values["Content-Type"]);
+            Equal("preserved", values["X-Lsf-Probe"]);
+            Equal("4", values["Content-Length"]);
+            ((IDisposable)typed).Dispose();
+
+            using (var source = new UnreadableStream(seekable: true))
+            {
+                var streamContent = Make(derived, "StreamContent", source);
+                Exception? observed = null;
+                try { Prepare(streamContent); }
+                catch (TargetInvocationException error) { observed = error.InnerException; }
+                Equal(true, ReferenceEquals(source.Failure, observed));
+                Equal(1, source.LengthCalls);
+                Equal(0, source.ReadCalls);
+                ((IDisposable)streamContent).Dispose();
+            }
+            var result = new {
+                scope = "captured-wasi-bcl-request-content-headers-host-controls",
+                assertions,
+                originalDigest = "sha256:" + Digest(args[0]),
+                derivedDigest = "sha256:" + Digest(args[1]),
+                originalLazyLengthMissing = true,
+                nativeHeaderTransmissionQualified = false,
+                pendingGuestIoQualified = false,
+                defaultClientComponentQualified = false,
+            };
+            using var output = new FileStream(args[2], FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            JsonSerializer.Serialize(output, result);
+            Console.WriteLine(JsonSerializer.Serialize(result));
+        }
+        finally
+        {
+            originalContext.Unload();
+            derivedContext.Unload();
+        }
+    }
+
+    private sealed class UnreadableStream(bool seekable) : Stream
+    {
+        internal readonly Exception Failure = new InvalidDataException("content-length-control");
+        internal int ReadCalls { get; private set; }
+        internal int LengthCalls { get; private set; }
+        public override bool CanRead => true;
+        public override bool CanWrite => false;
+        public override bool CanSeek => seekable;
+        public override long Length { get { LengthCalls++; throw Failure; } }
+        public override long Position { get => 0; set => throw new NotSupportedException(); }
+        public override int Read(byte[] buffer, int offset, int count) { ReadCalls++; throw Failure; }
+        public override void Flush() => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }

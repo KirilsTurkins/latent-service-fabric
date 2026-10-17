@@ -554,5 +554,56 @@ class HttpSyncReadPortTests(unittest.TestCase):
         self.assertEqual(snapshot(self.http.project), original)
         self.assertFalse((self.http.evidence / "derived-System.Net.Http.dll").exists())
 
+    def test_request_content_headers_are_retained_with_the_joint_ilc_receipt(self):
+        port = self.prepare()
+        response = self.references(port)
+        result = port.finish(self.http.project, self.http.evidence)
+        headers = result["synchronousRead"]["requestContentHeaders"]
+        self.assertEqual(headers, http_errors.REQUEST_CONTENT_HEADERS)
+        self.assertFalse(headers["serializesContent"])
+        self.assertFalse(headers["buffersContent"])
+        self.assertFalse(headers["defaultClientComponentQualified"])
+        self.assertEqual(result["nativeAotReferenceBinding"]["responseFiles"],
+                         [{"digest": digest(response.read_bytes()), "size": response.stat().st_size}])
+
+    def test_request_content_headers_receipt_rejects_unknown_preimages_and_semantics(self):
+        original = http_errors.REQUEST_CONTENT_HEADERS
+        http_errors.validate_request_content_headers(dict(original))
+        for key in original:
+            with self.subTest(missing=key), self.assertRaisesRegex(ValueError, "request-content-headers-rewrite-receipt"):
+                http_errors.validate_request_content_headers({name: value for name, value in original.items() if name != key})
+        changes = {"method": "arbitrary-library::Send", "originalIlDigest": "sha256:" + "0" * 64,
+            "originalIlBytes": 296, "getter": "host-CLR-getter", "getterIlDigest": "sha256:" + "1" * 64,
+            "getterIlBytes": 103, "noContent": "invent-empty-body", "explicitLength": "overwrite",
+            "unknownLength": "buffer-content", "modifiedOriginalMethods": 2, "generatedHelpers": 0,
+            "newHostImports": 1, "serializesContent": True, "buffersContent": True,
+            "defaultClientComponentQualified": True, "unknown": "authority"}
+        for key, value in changes.items():
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "request-content-headers-rewrite-receipt"):
+                http_errors.validate_request_content_headers({**original, key: value})
+
+    def test_nested_request_content_headers_receipt_requires_exact_field_types(self):
+        original = http_errors.REQUEST_CONTENT_HEADERS
+        for key in ("modifiedOriginalMethods", "generatedHelpers", "newHostImports",
+                    "serializesContent", "buffersContent", "defaultClientComponentQualified"):
+            value = bool(original[key]) if type(original[key]) is int else int(original[key])
+            forged = {**self.receipt(), "requestContentHeaders": {**original, key: value}}
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "request-content-headers-rewrite-receipt"):
+                http_errors.validate_sync_read(forged)
+
+    def test_missing_request_content_headers_mapping_denies_before_project_or_evidence_publication(self):
+        original_run = self.http.run_tool
+        def incomplete(stage, *arguments):
+            original_run(stage, *arguments)
+            result = json.loads(read_file(arguments[-1]))
+            del result["synchronousRead"]["requestContentHeaders"]
+            arguments[-1].write_text(json.dumps(result), encoding="utf-8")
+        self.http.run_tool = incomplete
+        original = snapshot(self.http.project)
+        with self.assertRaisesRegex(ValueError, "rewrite-receipt"):
+            self.prepare()
+        self.assertEqual(snapshot(self.http.project), original)
+        self.assertFalse((self.http.evidence / "derived-System.Net.Http.dll").exists())
+
 if __name__ == "__main__":
     unittest.main()

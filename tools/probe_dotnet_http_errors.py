@@ -82,6 +82,14 @@ def probe(tools: Path, output: Path) -> dict:
             or response_errors["defaultClientComponentQualified"] is not False):
         raise ValueError("http-response-read-errors-probe-assertions")
 
+    content_headers = json.loads(commands.run("actual-bcl-request-content-headers", dotnet, output / "probe/HttpErrorsProbe.dll",
+        "--request-content-headers", original, sync_derived, output / "actual-bcl-request-content-headers.json"))
+    if (content_headers["assertions"] != 30 or content_headers["originalLazyLengthMissing"] is not True
+            or content_headers["nativeHeaderTransmissionQualified"] is not False
+            or content_headers["pendingGuestIoQualified"] is not False
+            or content_headers["defaultClientComponentQualified"] is not False):
+        raise ValueError("http-request-content-headers-probe-assertions")
+
     def rejected(stage, input_path, output_path, receipt_path, *mode):
         count = len(commands.records)
         try:
@@ -122,7 +130,7 @@ def probe(tools: Path, output: Path) -> dict:
         raise ValueError("http-error-probe-inputs-changed")
     result = {**result, "rewriteDeterministic": True, "fivePreimageAndOwnershipDenials": True,
               "originalAndExistingOutputsUnchanged": True, "commands": commands.records,
-              "responseReadErrors": response_errors,
+              "responseReadErrors": response_errors, "requestContentHeaders": content_headers,
               "synchronousRead": {**sync_result, "rewriteDeterministic": True,
                   "fivePreimageAndOwnershipDenials": True, "boundedErrorAssertions": combined["assertions"]}}
     write_json(output / "result.json", result)

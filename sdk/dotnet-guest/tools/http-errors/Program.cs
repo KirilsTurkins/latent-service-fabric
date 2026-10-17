@@ -77,7 +77,10 @@ internal static class Program
             // The caller binds both private assemblies to the same ILC response.
             var syncRead = synchronousRead ? JsonSerializer.SerializeToNode(HttpSyncRead.Apply(module))!.AsObject() : null;
             if (syncRead is not null)
+            {
                 syncRead["responseReadErrors"] = JsonSerializer.SerializeToNode(HttpReadErrors.Apply(module, original));
+                syncRead["requestContentHeaders"] = JsonSerializer.SerializeToNode(HttpRequestContentHeaders.Apply(module, original));
+            }
 
             // Keep the payload access in its declaring type. Only these finite
             // adapter-owned category strings are exposed; arbitrary WASI error
@@ -412,6 +415,94 @@ internal static class HttpReadErrors
             generatedHelpers = 1,
             newHostImports = 0,
             pendingGuestIoQualified = false,
+        };
+    }
+}
+// Materialize the original lazy ContentLength getter at the existing content
+// header enumeration boundary. Never serialize or buffer content to infer its
+// length, and never replace explicit length/null or unknown-stream semantics.
+internal static class HttpRequestContentHeaders
+{
+    private const string Method = "WasiHttpWorld.wit.imports.wasi.http.v0_2_0.ITypes/Fields System.Net.Http.WasiHttpInterop::ConvertRequestHeaders(System.Net.Http.HttpRequestMessage)";
+    private const string OriginalIlDigest = "b38ac3de4ab20fbeb71b1fb783b501721061ec8139403125cd40b8590f0ac2b9";
+    private const string Getter = "System.Nullable`1<System.Int64> System.Net.Http.Headers.HttpContentHeaders::get_ContentLength()";
+    private const string GetterIlDigest = "b1414b862ff467801df85e05df0fba005cf796f3e63d963cb46e7c166df881be";
+    private const string Helper = "LsfPrepareRequestContentHeaders";
+
+    private static void Require(bool condition)
+    {
+        if (!condition) throw new InvalidDataException("http-request-content-headers-preimage-or-shape");
+    }
+
+    private static void VerifyIl(PEReader pe, MethodDefinition method, int length, string digest)
+    {
+        var code = System.Reflection.Metadata.PEReaderExtensions.GetMethodBody(pe, checked((int)method.RVA)).GetILBytes();
+        Require(code is not null && code.Length == length &&
+            Convert.ToHexString(SHA256.HashData(code)).ToLowerInvariant() == digest);
+    }
+
+    internal static object Apply(ModuleDefinition module, string originalPath)
+    {
+        var interop = module.Types.Single(type => type.FullName == "System.Net.Http.WasiHttpInterop");
+        var content = module.Types.Single(type => type.FullName == "System.Net.Http.HttpContent");
+        var headers = module.Types.Single(type => type.FullName == "System.Net.Http.Headers.HttpContentHeaders");
+        var method = interop.Methods.Single(candidate => candidate.FullName == Method);
+        var getter = headers.Methods.Single(candidate => candidate.FullName == Getter);
+        var getHeaders = content.Methods.Single(candidate => candidate.FullName ==
+            "System.Net.Http.Headers.HttpContentHeaders System.Net.Http.HttpContent::get_Headers()");
+        Require(method.IsStatic && method.HasBody && getter.IsPublic && !getter.IsStatic && getter.HasBody &&
+            getHeaders.IsPublic && !getHeaders.IsStatic && getHeaders.HasBody &&
+            !interop.Methods.Any(candidate => candidate.Name == Helper));
+        using (var input = File.OpenRead(originalPath))
+        using (var pe = new PEReader(input))
+        {
+            VerifyIl(pe, method, 297, OriginalIlDigest);
+            VerifyIl(pe, getter, 104, GetterIlDigest);
+        }
+        var enumeration = method.Body.Instructions.Single(instruction => instruction.OpCode == OpCodes.Callvirt &&
+            instruction.Operand is MethodReference target && target.FullName == getHeaders.FullName);
+        Require(enumeration.Previous.OpCode == OpCodes.Callvirt &&
+            enumeration.Previous.Operand is MethodReference requestContent && requestContent.FullName ==
+                "System.Net.Http.HttpContent System.Net.Http.HttpRequestMessage::get_Content()" &&
+            enumeration.Next.OpCode == OpCodes.Callvirt && enumeration.Next.Operand is MethodReference iterator &&
+            iterator.Name == "GetEnumerator" && iterator.DeclaringType.FullName == "System.Net.Http.Headers.HttpHeaders");
+        var original = module.GetTypes().SelectMany(type => type.Methods)
+            .ToDictionary(candidate => candidate, candidate => TaskWait.BodyIdentity(candidate));
+        var helper = new MethodDefinition(Helper,
+            MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig, headers);
+        helper.Parameters.Add(new ParameterDefinition(content));
+        helper.Body.MaxStackSize = 2;
+        var il = helper.Body.GetILProcessor();
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Callvirt, getHeaders);
+        il.Emit(OpCodes.Dup);
+        il.Emit(OpCodes.Callvirt, getter);
+        il.Emit(OpCodes.Pop);
+        il.Emit(OpCodes.Ret);
+        interop.Methods.Add(helper);
+        // Both call instructions occupy five bytes and consume/produce the same
+        // stack types. All original branch targets and exception regions stay.
+        enumeration.OpCode = OpCodes.Call;
+        enumeration.Operand = helper;
+        Require(original.Where(item => item.Key != method).All(item => TaskWait.BodyIdentity(item.Key) == item.Value) &&
+            module.GetTypes().SelectMany(type => type.Methods).Count() == original.Count + 1);
+        return new {
+            profile = "dotnet-wasi-request-content-length-v1",
+            method = method.FullName,
+            originalIlBytes = 297,
+            originalIlDigest = "sha256:" + OriginalIlDigest,
+            getter = getter.FullName,
+            getterIlBytes = 104,
+            getterIlDigest = "sha256:" + GetterIlDigest,
+            noContent = "original-no-content-branch",
+            explicitLength = "original-value-including-null",
+            unknownLength = "original-null-no-buffering",
+            modifiedOriginalMethods = 1,
+            generatedHelpers = 1,
+            newHostImports = 0,
+            serializesContent = false,
+            buffersContent = false,
+            defaultClientComponentQualified = false,
         };
     }
 }

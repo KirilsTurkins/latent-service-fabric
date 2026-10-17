@@ -45,6 +45,26 @@ RESPONSE_READ_ERRORS = {
     "pendingGuestIoQualified": False,
 }
 
+REQUEST_CONTENT_HEADERS = {
+    "profile": "dotnet-wasi-request-content-length-v1",
+    "method": "WasiHttpWorld.wit.imports.wasi.http.v0_2_0.ITypes/Fields System.Net.Http.WasiHttpInterop::ConvertRequestHeaders(System.Net.Http.HttpRequestMessage)",
+    "originalIlBytes": 297,
+    "originalIlDigest": "sha256:b38ac3de4ab20fbeb71b1fb783b501721061ec8139403125cd40b8590f0ac2b9",
+    "getter": "System.Nullable`1<System.Int64> System.Net.Http.Headers.HttpContentHeaders::get_ContentLength()",
+    "getterIlBytes": 104,
+    "getterIlDigest": "sha256:b1414b862ff467801df85e05df0fba005cf796f3e63d963cb46e7c166df881be",
+    "noContent": "original-no-content-branch",
+    "explicitLength": "original-value-including-null",
+    "unknownLength": "original-null-no-buffering",
+    "modifiedOriginalMethods": 1,
+    "generatedHelpers": 1,
+    "newHostImports": 0,
+    "serializesContent": False,
+    "buffersContent": False,
+    "defaultClientComponentQualified": False,
+}
+
+
 SYNC_READ = {
     "profile": "dotnet-wasi-sync-response-read-v1",
     "method": "System.Int32 System.Net.Http.WasiInputStream::Read(System.Byte[],System.Int32,System.Int32)",
@@ -58,6 +78,7 @@ SYNC_READ = {
     "newHostImports": 0,
     "defaultClientComponentQualified": False,
     "responseReadErrors": RESPONSE_READ_ERRORS,
+    "requestContentHeaders": REQUEST_CONTENT_HEADERS,
 }
 
 
@@ -68,6 +89,13 @@ def validate_response_read_errors(value: dict) -> None:
             or any(type(value.get(key)) is not type(expected) or value[key] != expected
                    for key, expected in RESPONSE_READ_ERRORS.items())):
         raise ValueError("http-response-read-errors-rewrite-receipt")
+
+
+def validate_request_content_headers(value: dict) -> None:
+    if (type(value) is not dict or set(value) != set(REQUEST_CONTENT_HEADERS)
+            or any(type(value.get(key)) is not type(expected) or value[key] != expected
+                   for key, expected in REQUEST_CONTENT_HEADERS.items())):
+        raise ValueError("http-request-content-headers-rewrite-receipt")
 
 
 def validate_sync_read(value: dict) -> None:
@@ -81,6 +109,7 @@ def validate_sync_read(value: dict) -> None:
             or not 500 <= value["unchangedOriginalMethods"] <= 10000):
         raise ValueError("http-sync-read-rewrite-receipt")
     validate_response_read_errors(value["responseReadErrors"])
+    validate_request_content_headers(value["requestContentHeaders"])
 
 
 def source_paths(tools: Path) -> tuple[Path, Path]:
