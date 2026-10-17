@@ -27,6 +27,7 @@ PINS = {
 }
 RECIPE = ('tools/rust_standard_tls_profile.py', 'sdk/rust-standard-runtime/tls.rs',
           'sdk/rust-standard-runtime/activation-abi.json',
+          'sdk/rust-standard-runtime/thread-abi.json',
           'wit/platform/activation-runtime/package.wit', 'rust-toolchain.toml', 'Cargo.toml', 'Cargo.lock')
 BRANCHES = (
     (b'cfg_select! {\n    any(', b'cfg_select! {\n    ' + SELECTOR + b''' => {

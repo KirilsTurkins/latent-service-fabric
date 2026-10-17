@@ -46,9 +46,13 @@ pub(crate) fn install_context_log_clock(linker: &mut Linker<HostState>) -> wasmt
 
 /// Canonical recognition/shape identity, independently of grants or availability.
 pub(crate) fn host_abi_digest() -> [u8; 32] {
+    host_abi_digest_for(latent_core::PHASE3_HOST_ABI_CURRENT)
+}
+
+pub(crate) fn host_abi_digest_for(profile: latent_core::HostAbiProfile) -> [u8; 32] {
     use sha2::{Digest, Sha256};
     let mut hash = Sha256::new();
-    latent_core::PHASE3_HOST_ABI_CURRENT.visit_identity_bytes(|part| hash.update(part));
+    profile.visit_identity_bytes(|part| hash.update(part));
     hash.finalize().into()
 }
 

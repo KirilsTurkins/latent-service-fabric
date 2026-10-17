@@ -20,7 +20,8 @@ use std::{
 use wasmtime::{component::Linker, AsContextMut};
 
 mod fixed_result;
-use fixed_result::{Completion, FixedValue};
+pub(super) use fixed_result::Completion;
+use fixed_result::FixedValue;
 
 pub(crate) const CAPABILITY: &str = "latent:runtime/activation@0.1.0";
 const STOP_OBSERVATION: Duration = Duration::from_millis(10);
@@ -103,9 +104,22 @@ fn table(state: &mut HostState) -> Result<&mut Table, PlatformError> {
     table.runtime.check_live()?;
     Ok(table)
 }
+pub(super) fn native_context(
+    state: &mut HostState,
+) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
+    let table = table(state)?;
+    let context = table.native_stacks.clone().ok_or_else(|| {
+        failure(
+            PlatformErrorCode::Unavailable,
+            "native-thread-profile-unavailable",
+        )
+    })?;
+    Ok(context)
+}
 pub(crate) fn prepare_native_stack(
     state: &mut HostState,
     size: usize,
+    maximum_children: usize,
 ) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
     let budget = state.accounting.budget().clone();
     let table = table(state)?;
@@ -115,12 +129,30 @@ pub(crate) fn prepare_native_stack(
             "native-stack-context-already-created",
         ));
     }
-    let context = crate::native_stacks::StackContext::new(budget, table.runtime.clone(), size)?;
+    let context = if maximum_children == 0 {
+        crate::native_stacks::StackContext::new(budget, table.runtime.clone(), size)?
+    } else {
+        crate::native_stacks::StackContext::with_children(
+            budget,
+            table.runtime.clone(),
+            size,
+            maximum_children,
+        )?
+    };
     table.native_stacks = Some(Arc::clone(&context));
     Ok(context)
 }
 
 fn authorize(state: &HostState, operation: &str) -> Result<ProviderCall, PlatformError> {
+    authorize_for(state, CAPABILITY, operation, ResourceTarget::Clock)
+}
+
+pub(super) fn authorize_for(
+    state: &HostState,
+    capability: &str,
+    operation: &str,
+    target: ResourceTarget<'_>,
+) -> Result<ProviderCall, PlatformError> {
     if let Some(stop) = &state.runtime_stop {
         if let Some(kind) = stop.observe() {
             return Err(failure(
@@ -142,7 +174,7 @@ fn authorize(state: &HostState, operation: &str) -> Result<ProviderCall, Platfor
         CapabilityCallCost::new(128).with_charge(latent_core::BudgetDimension::CpuFuel, 100)?;
     state
         .capabilities
-        .begin_typed(CAPABILITY, operation, ResourceTarget::Clock, &[], cost)?
+        .begin_typed(capability, operation, target, &[], cost)?
         .ok_or_else(|| {
             failure(
                 PlatformErrorCode::PermissionDenied,
@@ -583,7 +615,7 @@ impl WaitingTimer {
     }
 }
 
-fn token(value: wit::Token) -> RuntimeToken {
+pub(super) fn token(value: wit::Token) -> RuntimeToken {
     RuntimeToken {
         generation: value.generation,
         id: value.id,
@@ -611,7 +643,7 @@ fn phase(value: RuntimePhase) -> wit::Phase {
         RuntimePhase::Retired => wit::Phase::Retired,
     }
 }
-fn convert(value: PlatformError) -> wit::Error {
+pub(super) fn convert(value: PlatformError) -> wit::Error {
     let code = value.code;
     // Own and discard private diagnostics before exposing the frozen WIT enum.
     drop(value);
