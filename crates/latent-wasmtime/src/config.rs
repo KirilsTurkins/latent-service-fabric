@@ -171,6 +171,9 @@ pub struct WasmtimeConfig {
     /// Controlled Linux/on-demand root-stack ownership. Additional native stack
     /// allocation and canonical thread creation remain explicitly unsupported.
     pub owned_native_stacks: bool,
+    /// Captured native-thread support. Preparation additionally requires the
+    /// exact authenticated canonical-thread shim; recognition grants no work.
+    pub owned_native_threads: bool,
 }
 
 /// Host-owned bounds for the buffered web ABI, separate from service values.
@@ -194,6 +197,7 @@ impl Default for WasmtimeConfig {
             transactional_state: false,
             activation_runtime: None,
             owned_native_stacks: false,
+            owned_native_threads: false,
             target_triple: env!("LATENT_WASMTIME_HOST_TARGET").to_owned(),
             cpu_feature_set: "host-baseline".to_owned(),
             maximum_component_bytes: 16 * 1024 * 1024,
@@ -255,6 +259,11 @@ impl WasmtimeConfig {
             && (self.activation_runtime.is_none()
                 || self.instance_allocator != InstanceAllocator::OnDemand
                 || !cfg!(all(target_os = "linux", target_arch = "x86_64")))
+        {
+            return Err(invalid_config());
+        }
+        if self.owned_native_threads
+            && (!self.owned_native_stacks || self.java_guest || self.transactional_state)
         {
             return Err(invalid_config());
         }

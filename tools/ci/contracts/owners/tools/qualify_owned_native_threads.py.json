@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_owned_native_threads.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve every existing gate and finite deadline; add exact authenticated child proofs, typed pre-signing and grant negatives, native contract controls and pinned release version evidence.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "8c10fe71603140d9831803b9374a010af71655e2607a230e08ee830cf865c3ff"
+}

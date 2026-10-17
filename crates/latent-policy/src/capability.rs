@@ -106,6 +106,7 @@ fn supported_contract(value: &str) -> bool {
         .interface(value)
         .is_some()
         || value == latent_core::activation_runtime::CAPABILITY
+        || value == "latent:runtime-native/threads@0.1.0"
         || matches!(
             value,
             "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"
@@ -140,6 +141,7 @@ fn operation(contract: &str, name: &str) -> bool {
             "timer-next",
             "timer-stop",
         ],
+        "latent:runtime-native/threads@0.1.0" => &["start"],
         "latent:random/random@0.1.0" => &["bytes", "u64-value"],
         "latent:blob/blob@0.2.0" => &[
             "create",

@@ -15,6 +15,10 @@ compile_error!("select one capsule@0.5.0 guest profile: guest-activation or gues
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod host {
+    /// Separately installed physical native-thread ownership support.
+    pub mod native {
+        include!(concat!(env!("OUT_DIR"), "/native_host.rs"));
+    }
     /// Invocation-local language-runtime support; recognition installs nothing.
     pub mod activation {
         include!(concat!(env!("OUT_DIR"), "/activation_host.rs"));
