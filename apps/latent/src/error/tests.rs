@@ -699,8 +699,11 @@ fn unknown_or_unbounded_backend_dispositions_stay_private() {
             retryable: false,
             details: vec![ErrorDetail {
                 kind: "activation.guest-trap".into(),
-                fields: [("code".into(), value), ("cell_id".into(), "private-cell".into())]
-                    .into(),
+                fields: [
+                    ("code".into(), value),
+                    ("cell_id".into(), "private-cell".into()),
+                ]
+                .into(),
             }],
         });
         assert_eq!(public["details"], json!([]));

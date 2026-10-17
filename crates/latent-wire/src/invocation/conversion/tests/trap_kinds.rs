@@ -210,7 +210,9 @@ fn fixed_backend_dispositions_survive_invocation_and_status_without_private_fiel
         let encoded = public_activation_status_to_proto(retained, &limits).encode_to_vec();
         let decoded = proto::ActivationStatus::decode(encoded.as_slice()).unwrap();
         assert_eq!(
-            activation_status_from_proto(decoded).unwrap().terminal_outcome,
+            activation_status_from_proto(decoded)
+                .unwrap()
+                .terminal_outcome,
             Some(expected.retained_terminal_outcome())
         );
     }
@@ -241,7 +243,8 @@ fn backend_disposition_rejects_arbitrary_tokens_and_preserves_projection_bounds(
             unreachable!()
         };
         assert!(error.detail_items.is_empty());
-        let wire = public_activation_status_to_proto(status(&outcome), &InvocationLimits::default());
+        let wire =
+            public_activation_status_to_proto(status(&outcome), &InvocationLimits::default());
         let Some(proto::activation_status::TerminalOutcome::PlatformFailure(error)) =
             wire.terminal_outcome
         else {
