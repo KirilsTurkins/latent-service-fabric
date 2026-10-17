@@ -176,6 +176,23 @@ jobs:
           cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service \
             runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers -- \
             --ignored --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/java-activation-fibers/signed-runtime.log"
+      - name: Prepare Java fiber host imports against the original compiler closure
+        id: prepare-java-fiber-io
+        run: |
+          python3 tools/qualify_java_fibers.py --fixture fiber-io \
+            --output "$RUNNER_TEMP/java-fiber-io" \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Execute signed Java pending host imports and overlapping waits
+        id: signed-java-fiber-io
+        env:
+          LSF_GUEST_SDK_LANGUAGE: java
+          LSF_JAVA_FIBER_IO_FIXTURE: ${{ runner.temp }}/java-fiber-io
+        run: |
+          set -o pipefail
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service \
+            runtime::signed_java_host_imports_suspend_only_their_owned_callers -- \
+            --ignored --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/java-fiber-io/signed-runtime.log"
       - name: Prepare unchanged standard Java timers with reference and ownership controls
         id: prepare-java-standard-timers
         run: |
@@ -353,6 +370,16 @@ jobs:
             ${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json
             ${{ runner.temp }}/java-activation-fibers/build/component.wasm
             ${{ runner.temp }}/java-activation-fibers/signed-runtime.log
+            ${{ runner.temp }}/java-fiber-io/FIBERS-COMPILE.json
+            ${{ runner.temp }}/java-fiber-io/compiler-inputs.json
+            ${{ runner.temp }}/java-fiber-io/compiler/*.log
+            ${{ runner.temp }}/java-fiber-io/compiler/*.command.json
+            ${{ runner.temp }}/java-fiber-io/src/**
+            ${{ runner.temp }}/java-fiber-io/wit/**
+            ${{ runner.temp }}/java-fiber-io/build/runtime-profile.json
+            ${{ runner.temp }}/java-fiber-io/build/bindings/**
+            ${{ runner.temp }}/java-fiber-io/build/component.wasm
+            ${{ runner.temp }}/java-fiber-io/signed-runtime.log
             ${{ runner.temp }}/java-standard-timers/FIBERS-COMPILE.json
             ${{ runner.temp }}/java-standard-timers/compiler-inputs.json
             ${{ runner.temp }}/java-standard-timers/compiler/*.log

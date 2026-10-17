@@ -153,6 +153,17 @@ async fn signed_java_completable_futures_use_default_activation_executor() {
 }
 
 #[tokio::test]
+#[ignore = "requires the pinned Java fiber I/O component and explicit I/O profile"]
+async fn signed_java_host_imports_suspend_only_their_owned_callers() {
+    signed_java_fiber_fixture(
+        "LSF_JAVA_FIBER_IO_FIXTURE",
+        include_bytes!("../../../../sdk/java-guest/fibers/conformance/fiber-io/Capsule.java"),
+        "java-fiber-io",
+    )
+    .await;
+}
+
+#[tokio::test]
 #[ignore = "requires the pinned standard Timer component and explicit java profile"]
 async fn signed_java_standard_timers_recur_cancel_and_drain_owned_workers() {
     signed_java_fiber_fixture(
@@ -176,7 +187,17 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     let record: serde_json::Value =
         serde_json::from_slice(&std::fs::read(prepared.join("FIBERS-COMPILE.json")).unwrap())
             .unwrap();
-    assert_eq!(record["profile"], "teavm-activation-fibers-v1");
+    let profile = if name == "java-fiber-io" {
+        assert_eq!(record["fixture"], "fiber-io");
+        assert_eq!(
+            record["referenceKind"],
+            "private-runtime-wait-reference-using-JDK-threads"
+        );
+        "teavm-activation-fibers-io-v1"
+    } else {
+        "teavm-activation-fibers-v1"
+    };
+    assert_eq!(record["profile"], profile);
     if name == "java-completable" {
         assert_eq!(record["fixture"], "completable");
     }
@@ -260,7 +281,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     f.idle().await;
     assert_eq!(f.backend.resource_snapshot().stores_created, 0);
     eprintln!(
-        "teavm-activation-fibers-v1 signed-preparation-setup-micros={} stores-created=0 guest-activations=0",
+        "{profile} signed-preparation-setup-micros={} stores-created=0 guest-activations=0",
         preparation_started.elapsed().as_micros()
     );
     for iteration in 0..3 {
@@ -278,7 +299,7 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
             assert!(receipt.consumption.cpu_fuel > 0);
             assert!(receipt.consumption.peak_memory_bytes <= packages::budget().memory_bytes);
             eprintln!(
-                "teavm-activation-fibers-v1 iteration={iteration} mode={mode} consumption={:?}",
+                "{profile} iteration={iteration} mode={mode} consumption={:?}",
                 receipt.consumption
             );
             f.idle().await;

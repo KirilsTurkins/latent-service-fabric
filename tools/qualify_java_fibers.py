@@ -147,7 +147,8 @@ def wait_frame_model_control(compiler: Compiler, output: Path) -> dict:
     timer_output.mkdir()
     timer_fixture = "fibers/conformance/compiler/timer-source-control/"
     timer_sources = ("runtime/dev/latent/guest/Option.java", "runtime/dev/latent/guest/Unsigned64.java",
-                     "fibers/dev/latent/guest/runtime/Activation.java", "fibers/dev/latent/guest/runtime/Monitors.java",
+                     "fibers/dev/latent/guest/runtime/Activation.java", "fibers/dev/latent/guest/runtime/HostCalls.java",
+                     "fibers/dev/latent/guest/runtime/Monitors.java",
                      timer_fixture + "dev/latent/generated/Bindings.java", timer_fixture + "TimerReadinessSourceControl.java")
     compiler.run("timer-readiness-source-compile", "javac", "-proc:none", "--release", "25", "-cp", classpath,
                  "-d", timer_output, *(compiler.sdk / name for name in timer_sources))
@@ -362,7 +363,7 @@ def recipe_inputs() -> dict[str, str]:
 
 def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Path | None = None,
             read_only_cache: Path | None = None, fixture="threads"):
-    if fixture not in {"threads", "completable", "timers"}: raise ValueError("unknown Java fiber fixture")
+    if fixture not in {"threads", "completable", "timers", "fiber-io"}: raise ValueError("unknown Java fiber fixture")
     if offline_cache is not None and read_only_cache is not None:
         raise ValueError("Java dependency cache selections are mutually exclusive")
     output = fresh(output)
@@ -377,7 +378,7 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
     wit.write_bytes(read_file(common / "service.wit"))
     started = time.monotonic()
     before = recipe_inputs()
-    report = {"formatVersion": 1, "profile": "teavm-activation-fibers-v1", "qualification": "pending",
+    report = {"formatVersion": 1, "profile": "teavm-activation-fibers-io-v1" if fixture == "fiber-io" else "teavm-activation-fibers-v1", "qualification": "pending",
               "status": "running", "nodeExecution": "not-run", "sourceDigest": digest(source.read_bytes()),
               "fixture": fixture}
     report["recipeInputs"] = before
@@ -389,7 +390,13 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         main = control / "Main.java"
         main.write_bytes(read_file(selected / "Main.java"))
         compiler.paths["javac"] = compiler.paths["java"].parent / "javac"
-        compiler.run("reference-jdk-compile", "javac", "-proc:none", "-d", control, source, main)
+        reference_sources = []
+        if fixture == 'fiber-io':
+            reference_sources = [compiler.sdk / 'fibers/conformance/compiler/io-reference/dev/latent/generated/Bindings.java']
+            reference_sources += [compiler.sdk / ('runtime/dev/latent/guest/' + name + '.java')
+                                  for name in ('Option', 'Result', 'Unsigned64', 'Unit')]
+            report['referenceKind'] = 'private-runtime-wait-reference-using-JDK-threads'
+        compiler.run("reference-jdk-compile", "javac", "-proc:none", "-d", control, source, main, *reference_sources)
         report["reference"] = []
         for iteration in range(3):
             result = compiler.run(f"reference-jdk-{iteration}", "java", "-cp", control, "Main")
@@ -399,8 +406,9 @@ def prepare(output: Path, wasi_sdk: Path, *, gradle="gradle", offline_cache: Pat
         if fixture == "timers":
             report["standardTimerSource"] = standard_timer_source_control(compiler, output / "standard-timer-source")
             report["standardTimerModel"] = standard_timer_model_control(compiler, output / "standard-timer-model")
+        selection = {'fiber_io_profile': True} if fixture == 'fiber-io' else {}
         component, report["record"] = compiler.compile(output / "src", wit.parent,
-            "tests:caller/service@1.0.0", output / "build", activation_profile=True)
+            "tests:caller/service@1.0.0", output / "build", activation_profile=True, **selection)
         report["throwableModel"] = throwable_model_control(compiler, output / "throwable-model")
         report["timeunitModel"] = timeunit_model_control(compiler, output / "timeunit-model")
         report["waitFrameModel"] = wait_frame_model_control(compiler, output / "wait-frame-model")
@@ -430,7 +438,7 @@ def main():
     caches = parser.add_mutually_exclusive_group()
     caches.add_argument("--offline-cache", type=Path)
     caches.add_argument("--read-only-cache", type=Path)
-    parser.add_argument("--fixture", choices=("threads", "completable", "timers"), default="threads")
+    parser.add_argument("--fixture", choices=("threads", "completable", "timers", "fiber-io"), default="threads")
     args = parser.parse_args()
     prepare(args.output, args.wasi_sdk, gradle=args.gradle, offline_cache=args.offline_cache,
             read_only_cache=args.read_only_cache, fixture=args.fixture)
