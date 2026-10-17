@@ -493,7 +493,7 @@ class JavaWatchPublicBoundary(unittest.TestCase):
         from tools.qualify_java_dependency_watch import add_public_watch_events, read_watch_events
         with tempfile.TemporaryDirectory() as temporary:
             events = Path(temporary) / 'events.jsonl'
-            raw = b'[' * 3000 + b'0' + b']' * 3000 + b'\n'
+            raw = b'[' * 16384 + b'0' + b']' * 16384 + b'\n'
             self.assertLess(len(raw), 4 * 1024 * 1024)
             events.write_bytes(raw)
             with self.assertRaises(RecursionError):
