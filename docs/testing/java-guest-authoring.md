@@ -197,6 +197,9 @@ newcomer review independently of automated guide execution. Exact final-head
 CI and artifact verification are mandatory before squash-admin merge into
 `development`. This ticket does not authorize a development-to-release promotion.
 
+The [standard timer qualification](java-standard-timers.md) records the separate
+recurring-timer candidate, reference controls and pending signed execution gate.
+
 ## Retained failed attempts
 
 The [first full signed-SDK attempt](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/35913215300)

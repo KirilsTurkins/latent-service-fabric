@@ -51,7 +51,7 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
     require(type(c_standard_logging) is bool and (not c_standard_logging or language == "c")
             and not (c_standard_facilities and c_standard_logging), "authoring-c-standard-logging-language")
     require(type(captured_dependency_recovery) is bool
-            and (not captured_dependency_recovery or language == "dotnet"),
+            and (not captured_dependency_recovery or language in {"rust", "dotnet"}),
             "authoring-captured-dependency-recovery-language")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "authoring-linux-python313")
     evidence = fresh(evidence)
@@ -141,7 +141,10 @@ def run(cli, node_binary, fixture, evidence, *, language="rust", noncrypto_entro
                             publications["greeting"], targets["greeting"], result)
                     tutorials(client, targets, result)
                     if captured_dependency_recovery:
-                        from tools.dotnet_dependency_recovery import recover
+                        if language == "dotnet":
+                            from tools.dotnet_dependency_recovery import recover
+                        else:
+                            from tools.rust_dependency_recovery import recover
                         result["capturedDependencyRecovery"] = recover(
                             client, targets["greeting"], probe, result, len(names))
                     result["samples"].append(sample(client, probe, "after-tutorials", len(names)))

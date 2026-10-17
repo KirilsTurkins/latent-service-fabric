@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Source-bind captured .NET dependency recovery helper and select only explicit captured qualification",
+  "reviewReason": "Preserve explicit Rust and .NET captured-recovery selection and Rust FFI qualification after their shared-owner merge.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "7a7426f14b1ff8e251862e9ee498b3d9613f07490c2ed9410d2f51395dec0107"
+  "sha256": "ac28b55d5be80732dc4a0c09ba65f612c6d2f75e4fdf7015035a3b8743c1cee2"
 }

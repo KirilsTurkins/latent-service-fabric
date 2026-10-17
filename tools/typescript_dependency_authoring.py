@@ -66,8 +66,8 @@ def transaction(project: Path):
 def replace(owner: Path, private: Path, name: str, raw: bytes, previous: bytes | None, sdk) -> None:
     paths.relative(name)
     _owner, app, _observed = seal(owner)
-    graph = (app.relative_to(owner).as_posix() + '/' if app != owner else '') + 'npm-resolved.lock.json'
-    if name not in {inputs.MANIFEST, inputs.LOCK, graph}:
+    prefix = app.relative_to(owner).as_posix() + '/' if app != owner else ''
+    if name not in {inputs.MANIFEST, inputs.LOCK, *(prefix + name for name in ('npm-resolved.lock.json', 'package.json', 'package-lock.json'))}:
         raise DependencyError('npm-authoring-edit-target')
     if len(raw) > inputs.MAX_LOCK:
         raise DependencyError('dependency-lock-limit')
@@ -97,6 +97,72 @@ def public(owner: Path, sdk) -> dict:
             'lockDigest': digest(lock) if lock is not None else None, 'sdkLockDigest': digest(sdk[0]),
             'selection': {key: selected[key] for key in ('target', 'runtimeProfile', 'conditions') if key in selected},
             'artifacts': [row['id'] for row in value['artifacts']] if value else []}
+
+
+def configuration(app: Path) -> dict:
+    raw = optional(app, 'package.json')
+    value = decode_json(raw) if raw is not None else {
+        'name': decode_json(read_bytes(app / 'capsule-project.json'))['name'],
+        'version': '1.0.0', 'private': True, 'type': 'module'}
+    if (not isinstance(value, dict) or not isinstance(value.get('name'), str)
+            or not re.fullmatch(r'(?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*', value['name'])
+            or len(value['name']) > 214):
+        raise DependencyError('npm-application-package-declaration-invalid')
+    from tools.typescript_application_dependencies import FIELDS
+    for field in FIELDS:
+        if not isinstance(value.get(field, {}), dict) or len(value.get(field, {})) > 256:
+            raise DependencyError('npm-application-package-declaration-limit')
+        for name, source in value.get(field, {}).items():
+            if (not isinstance(name, str) or not re.fullmatch(r'(?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*', name)
+                    or len(name) > 214 or not isinstance(source, str) or not 0 < len(source) <= 4096
+                    or any(ord(char) < 32 or ord(char) == 127 for char in source)):
+                raise DependencyError('npm-application-package-declaration-invalid')
+    return value
+
+
+def edit(project: Path, operation: str, *, identity: str, version: str | None = None,
+         local: Path | None = None, section: str = 'dependencies') -> dict:
+    from tools.typescript_application_dependencies import FIELDS
+    import copy
+    if (not isinstance(identity, str) or len(identity) > 214
+            or not re.fullmatch(r'(?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*', identity)
+            or section not in FIELDS):
+        raise DependencyError('npm-authoring-package-or-section-invalid')
+    if operation in {'add', 'update'}:
+        if (version is None) == (local is None):
+            raise DependencyError('npm-authoring-one-exact-source-required')
+        if version is not None and (not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?', version)
+                                    or len(version) > 128):
+            raise DependencyError('npm-authoring-exact-version-required')
+    with transaction(project) as (owner, app, private, sdk):
+        before = source_files(app)
+        value = copy.deepcopy(configuration(app))
+        packages = value.setdefault(section, {})
+        if operation == 'add' and identity in packages:
+            raise DependencyError('npm-dependency-already-declared')
+        if operation in {'update', 'remove'} and identity not in packages:
+            raise DependencyError('npm-dependency-not-declared')
+        if operation == 'remove':
+            del packages[identity]
+        elif operation in {'add', 'update'}:
+            selected = version
+            if local is not None:
+                source = regular_path(local).resolve(strict=True)
+                if source in {owner, app} or source in owner.parents or source.is_relative_to(app / 'vendor'):
+                    raise DependencyError('npm-authoring-local-source-overlaps-sdk-or-project')
+                selected = 'file:' + os.path.relpath(source, app).replace('\\', '/')
+            packages[identity] = selected
+        else:
+            raise DependencyError('npm-authoring-edit-operation')
+        raw = canonical(value) + b'\n'
+        if source_files(app) != before:
+            raise DependencyError('npm-authoring-concurrent-input-edit')
+        prefix = app.relative_to(owner).as_posix() + '/' if app != owner else ''
+        replace(owner, private, prefix + 'package.json', raw, before.get('package.json'), sdk)
+        return {'formatVersion': 1, 'stage': 'npm-' + operation, 'status': 'edited',
+                'configurationDigest': digest(raw), 'sdkLockDigest': digest(sdk[0]),
+                'nativeLockRequired': True, 'reviewRequired': True, 'previousLockPreserved': True,
+                'compilerExecution': False}
 
 
 def current_application(app: Path, lock: dict) -> None:
