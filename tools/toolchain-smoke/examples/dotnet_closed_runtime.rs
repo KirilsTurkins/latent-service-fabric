@@ -6,6 +6,9 @@
 wit_bindgen::generate!({
     path: "../../sdk/dotnet-guest/runtime/wit",
     world: "closed",
+    // Closed operations complete immediately; retain their synchronous ABI.
+    // The private I/O function types are paired with compiler-projected imports.
+    async: ["-all"],
     with: {
         "latent:clock/monotonic@0.1.0": generate,
     },
@@ -42,4 +45,10 @@ impl io::poll::GuestPollable for ClosedPoll {
 }
 include!("../../../sdk/dotnet-guest/runtime/closed_io.rs");
 include!("../../../sdk/dotnet-guest/runtime/closed_support.rs");
+impl io::poll::Guest for ClosedRuntime {
+    type Pollable = ClosedPoll;
+    fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {
+        ClosedPoll::poll(inputs)
+    }
+}
 export!(ClosedRuntime);

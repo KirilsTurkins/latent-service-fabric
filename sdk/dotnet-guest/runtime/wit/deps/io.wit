@@ -2,9 +2,9 @@ package wasi:io@0.2.6;
 
   interface poll {
     resource pollable {
-      block: func();
+      block: async func();
     }
-    poll: func(in: list<borrow<pollable>>) -> list<u32>;
+    poll: async func(in: list<borrow<pollable>>) -> list<u32>;
   }
   interface error {
     resource error;
@@ -15,7 +15,7 @@ package wasi:io@0.2.6;
 
     resource input-stream {
       read: func(len: u64) -> result<list<u8>, stream-error>;
-      blocking-read: func(len: u64) -> result<list<u8>, stream-error>;
+      blocking-read: async func(len: u64) -> result<list<u8>, stream-error>;
       subscribe: func() -> pollable;
     }
 
@@ -23,7 +23,7 @@ package wasi:io@0.2.6;
       check-write: func() -> result<u64, stream-error>;
       write: func(contents: list<u8>) -> result<_, stream-error>;
       flush: func() -> result<_, stream-error>;
-      blocking-flush: func() -> result<_, stream-error>;
+      blocking-flush: async func() -> result<_, stream-error>;
       subscribe: func() -> pollable;
     }
 

@@ -1,0 +1,7 @@
+package latent:dotnet-retirement@0.1.0;
+
+// Compiler-private composition edge. It is consumed by the selected adapter
+// and must never appear as an application capability or final host import.
+interface owner {
+    drain: async func();
+}

@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -26,6 +27,19 @@ MAX_FILES = 1024
 
 class BindingError(ValueError):
     """An unsupported contract or unowned output is never a fallback."""
+
+
+def async_export_support():
+    # NativeAOT invokes this captured script with Python -I. Load only the
+    # neighboring SDK input, independently of application/sys.path contents.
+    path = Path(__file__).resolve().parent / 'dotnet_guest/async_exports.py'
+    read_bytes(path)
+    spec = importlib.util.spec_from_file_location('_latent_dotnet_async_exports', path)
+    if spec is None or spec.loader is None:
+        raise BindingError('missing-captured-async-export-support')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def run(command: list[str]) -> str:
@@ -283,6 +297,32 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
         for path in generated.glob("*.cs"):
             value = read_bytes(path).decode("utf-8")
             path.write_text(pinned_byte_array_access(canonical_resource_order(value)), encoding="utf-8", newline="\n")
+        support = async_export_support()
+        async_source, async_graph, expected_exports = support.projection(original, graph, world, stackful_projection)
+        if expected_exports:
+            async_projection = directory / 'canonical-async-exports.wit'
+            async_projection.write_text(async_source, encoding='utf-8')
+            actual_async = contract_graph(json.loads(run([wasm_tools, 'component', 'wit',
+                                                          str(async_projection), '--json'])))
+            if actual_async != async_graph:
+                raise BindingError('stackful-async-export-projection-changed-contract')
+            async_generated = directory / 'async-generated'
+            run([bindgen, 'c-sharp', str(async_projection), '--world', world,
+                 '--runtime', 'native-aot', '--with-wit-results', '--out-dir', str(async_generated)])
+            observed_exports = 0
+            drain_call = support.retirement_call(generated)
+            if 'package latent:dotnet-retirement@' in original and drain_call is None:
+                raise BindingError('missing-private-retirement-binding')
+            for path in generated.glob('*.cs'):
+                variant = async_generated / path.name
+                if not variant.is_file() or variant.is_symlink():
+                    raise BindingError('stackful-async-export-generated-inventory-drift')
+                selected, count = support.bridge(read_bytes(path).decode('utf-8'),
+                                                 canonical_resource_order(read_bytes(variant).decode('utf-8')), drain_call)
+                observed_exports += count
+                path.write_text(selected, encoding='utf-8', newline='\n')
+            if observed_exports != expected_exports:
+                raise BindingError('stackful-async-export-generated-count-drift')
         metadata = list(generated.glob("*_component_type.wit"))
         if len(metadata) != 1:
             raise BindingError("missing-unique-component-type")
@@ -307,6 +347,9 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
                    "generator": GENERATOR,
                    "authoritativeWitSha256": hashlib.sha256(original.encode("utf-8")).hexdigest(),
                    "outputs": output_hashes(generated)}
+        if expected_exports:
+            receipt['asyncExportBridge'] = {'profile': support.PROFILE, 'exports': observed_exports,
+                                           'managedTaskSchedulingQualified': False}
         install(generated, output, receipt, check=check)
         return receipt
 
@@ -326,7 +369,7 @@ def main() -> int:
                  os.environ.get("LSF_WIT_BINDGEN", "wit-bindgen"),
                  os.environ.get("LSF_WASM_TOOLS", "wasm-tools"), check=args.check)
         return 0
-    except (BindingError, OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
+    except (ValueError, OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
         parser.exit(1, f".NET guest bindings failed: {error}\n")
 
 

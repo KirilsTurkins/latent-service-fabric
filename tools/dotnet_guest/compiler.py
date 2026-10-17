@@ -11,7 +11,7 @@ import tempfile
 from tools.build_observation import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 from tools.dotnet_guest.sdk import install as install_sdk
-from tools.dotnet_guest import runtime, http_errors
+from tools.dotnet_guest import runtime, http_errors, task_wait
 from tools.dotnet_guest.resources import install as install_resources
 from tools.guest_compatibility_build import interface_names
 
@@ -115,6 +115,7 @@ class Compiler:
         self.roots["http-errors"] = tools / "http-errors"
         self.roots["http-errors-source"] = tools / "http-errors-source"
         self.http_error_port = None
+        self.task_wait_port = None
         self.roots.update(packages(json.loads(read_file(self.sdk / "probes/smoke/packages.lock.json")), tools / "packages",
             lambda archive: commands.run("nuget-content-hash", self.dotnet, tools / "package-hash/PackageHash.dll", archive).decode().strip()))
         self.wasi_sdk = Path(json.loads(read_file(tools / "wasi-sdk.json"))["path"]).resolve(strict=True)
@@ -181,11 +182,18 @@ class Compiler:
         declared = interface_names(json.loads(self.run("declared-runtime-wit", self.wasm,
             "component", "wit", source, "--json")), world)["imports"]
         runtime.select(declared, [])
+        from tools.dotnet_guest import retirement
+        binding_source, retirement_port = retirement.prepare(self, source, world, output/'retirement-port', declared)
+        if retirement_port is not None:
+            self.compiler_patches.append({'name':retirement.PROFILE, 'profile':retirement.PROFILE,
+                'original':file_identity(output/'retirement-port/original.wit', 'original-retirement-wit', retirement.MAX_TEXT),
+                'selected':file_identity(binding_source, 'private-retirement-wit', retirement.MAX_TEXT),
+                'selection':retirement_port})
         generated = output / "generated"
         binding = work / "vendor/lsf/tools/dotnet_guest_bindings.py"
-        self.run("bindings", self.python, "-I", "-B", binding, "c-sharp", source, "--world", world,
+        self.run("bindings", self.python, "-I", "-B", binding, "c-sharp", binding_source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated)
-        self.run("bindings-drift", self.python, "-I", "-B", binding, "c-sharp", source, "--world", world,
+        self.run("bindings-drift", self.python, "-I", "-B", binding, "c-sharp", binding_source, "--world", world,
             "--runtime", "native-aot", "--with-wit-results", "--out-dir", generated, "--check")
         receipt = json.loads(read_file(generated / "bindings.json", 16 * 1024 * 1024))
         project = output / "project"
@@ -212,7 +220,7 @@ class Compiler:
             "global.json": read_file(self.sdk / "global.json"),
             "nuget.config": read_file(self.sdk / "nuget.config"),
             "packages.lock.json": read_file(work / 'packages.lock.json') if self.application_closure else read_file(self.sdk / "probes/smoke/packages.lock.json"),
-            "component.wit": self.run("canonical-wit", self.wasm, "component", "wit", source, "--no-docs"),
+            "component.wit": self.run("canonical-wit", self.wasm, "component", "wit", binding_source, "--no-docs"),
         }.items():
             (project / name).write_bytes(data)
         facades = install_sdk(self.sdk, generated, project / "lsf")
@@ -234,6 +242,11 @@ class Compiler:
         if {runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION} <= set(declared):
             self.http_error_port = http_errors.prepare(self.sdk, self.http_error_tools, self.dotnet, declared, project,
                 output, command.output, self.run,
+                protect_inputs=self.isolation.protect_inputs if self.isolation else None)
+        self.task_wait_port = None
+        if task_wait.selected(declared, receipt.get('asyncExportBridge')):
+            self.task_wait_port = task_wait.prepare(self.sdk, self.http_error_tools, self.package_cache, self.dotnet,
+                declared, receipt.get('asyncExportBridge'), project, output, command.output, self.run,
                 protect_inputs=self.isolation.protect_inputs if self.isolation else None)
         resources = install_resources(snapshot(work, exclude=("dependencies", "application-vendor")), project)
         if self.isolation is not None and resources is not None:
@@ -303,12 +316,19 @@ class Compiler:
         # The build workspace is retired on failure. Retain bounded compiler
         # output before runtime selection or composition can reject its graph.
         (command.output / 'native-aot-raw.wasm').write_bytes(read_file(raw, 64 * 1024 * 1024))
+        (command.output / 'native-aot-original.wasm').write_bytes(read_file(raw, 64 * 1024 * 1024))
         from tools.dotnet_guest.compatibility import MAX_GRAPH, inspect as inspect_runtime
         raw_wit = self.run("native-runtime-wit", self.wasm, "component", "wit", raw, "--json")
         if len(raw_wit) > MAX_GRAPH:
             raise ValueError('native-aot-raw-wit-byte-limit')
         (command.output / 'native-aot-raw.wit.json').write_bytes(raw_wit)
+        (command.output / 'native-aot-original.wit.json').write_bytes(raw_wit)
         actual = interface_names(json.loads(raw_wit))["imports"]
+        if retirement_port is not None:
+            if retirement.IDENTITY not in actual or not retirement.private_import(json.loads(raw_wit)):
+                raise ValueError('dotnet-retirement-compiled-import-missing-or-changed')
+            actual = [name for name in actual if name != retirement.IDENTITY]
+            self.generated_materials.append(file_identity(command.output/'retirement-port.json', 'dotnet-retirement-port'))
         http_error_port = None
         if self.http_error_port is not None:
             http_error_port = self.http_error_port.finish(project, command.output)
@@ -321,8 +341,26 @@ class Compiler:
             }]
             self.generated_materials.extend((self.http_error_port.identity,
                 file_identity(command.output / "http-error-port.json", "dotnet-http-error-port", http_errors.MAX_RECEIPT)))
+        if self.task_wait_port is not None:
+            port = self.task_wait_port.finish(project, command.output)
+            self.compiler_patches.append({'name': task_wait.PROFILE, 'profile': task_wait.PROFILE,
+                'original': port['frameworkInput'], 'selected': port['derived'],
+                'selection': {key: port[key] for key in ('sourceCaptureDigest', 'targetsDigest', 'method',
+                    'maximumNestedWaits', 'completion', 'exceptionPropagation', 'nestedTaskIdentity',
+                    'originalWaitBodyDigest', 'originalLoopBodyDigest', 'originalDispatchBodyDigest',
+                    'unchangedOriginalMethods', 'completeOriginalWaitRemainderPreserved', 'nativeAotReferenceBinding')}})
+            self.generated_materials.extend((self.task_wait_port.identity,
+                file_identity(command.output / 'task-wait-port.json', 'dotnet-task-wait-port', http_errors.MAX_RECEIPT)))
         profile = runtime.select(declared, actual)
         adapter = self.runtimes[profile]
+        from tools.dotnet_guest.internal_io import PROFILE as IO_PROFILE, prepare as prepare_internal_io
+        io_original = file_identity(raw, 'original-native-aot-component', 64 * 1024 * 1024)
+        raw, io_port = prepare_internal_io(self, raw, adapter, output / 'internal-io-port', json.loads(raw_wit))
+        if io_port is not None:
+            self.compiler_patches.append({'name': IO_PROFILE, 'profile': IO_PROFILE,
+                'original': io_original, 'selected': file_identity(raw, 'internal-io-component', 64 * 1024 * 1024),
+                'selection': io_port})
+            self.generated_materials.append(file_identity(command.output / 'internal-io-port.json', 'dotnet-internal-io-port'))
         additional = [(name, self.runtimes[name]) for name in runtime.additional(declared, actual)]
         selection = {"schemaVersion": "latent.dotnet.runtime.v1", "profile": profile,
             "declaredImports": declared, "emittedImports": actual,
@@ -331,18 +369,29 @@ class Compiler:
         if additional:
             selection["additionalAdapters"] = [file_identity(path, runtime.ADAPTERS[name][0].removeprefix("dotnet-"))
                                                for name, path in additional]
+        if io_port is not None:
+            selection['internalIoPort'] = io_port
+        if retirement_port is not None:
+            selection['retirementPort'] = retirement_port
         write_json(command.output / "runtime-profile.json", selection)
         component = output / "component.wasm"
         self.runtime = adapter
-        coverage = inspect_runtime(self, raw, additional_adapters=additional)
+        coverage = inspect_runtime(self, raw, additional_adapters=additional,
+                                   owned_retirement=retirement_port is not None)
         if additional:
             from tools.dotnet_guest.composer import compose_exact
-            compose_exact(self, raw, component, coverage, additional_adapters=additional)
+            compose_exact(self, raw, component, coverage, additional_adapters=additional,
+                          owned_retirement=retirement_port is not None)
         else:
             self.run("closed-runtime-composition", self.wac, "plug", raw, "--plug", adapter, "-o", component)
         self.run("validate", self.wasm, "validate", component)
-        final = interface_names(json.loads(self.run("runtime-final-wit", self.wasm,
-            "component", "wit", component, "--json")))["imports"]
+        final_interfaces = interface_names(json.loads(self.run("runtime-final-wit", self.wasm,
+            "component", "wit", component, "--json")))
+        final = final_interfaces['imports']
+        if retirement.IDENTITY in final_interfaces['exports']:
+            raise ValueError('compiler-private-retirement-export-escaped-composition')
+        if retirement_port is not None and retirement.IDENTITY in final:
+            raise ValueError('compiler-private-retirement-import-escaped-composition')
         if not set(final) <= set(declared):
             raise ValueError("runtime adapter introduced undeclared authority:" +
                              ",".join(sorted(set(final) - set(declared))))

@@ -93,6 +93,12 @@ class HttpErrorPortTests(unittest.TestCase):
         compiler.wac.write_bytes(b"owned unit-boundary component composer")
         original_run, original_native = compiler.run, compiler.native_aot
         def run(stage, executable, *arguments):
+            # This compiler-seam fixture has a synchronous root. The real
+            # retirement selector must leave its public contract unchanged.
+            if stage == 'retirement-public-wit':
+                return b'package examples:greeting@1.0.0;\nworld service {\n}\n'
+            if stage == 'retirement-public-graph':
+                return json.dumps(fixture.graph([])).encode()
             if stage == "declared-runtime-wit":
                 return json.dumps(fixture.graph(declared)).encode()
             if stage == "http-errors-rewrite":

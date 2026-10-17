@@ -103,7 +103,7 @@ impl io::streams::GuestInputStream for Input {
         // becomes Closed, which the ordinary BCL maps to its stream EOF.
         Ok(Vec::new())
     }
-    fn blocking_read(&self, length: u64) -> Result<Vec<u8>, io::streams::StreamError> {
+    async fn blocking_read(&self, length: u64) -> Result<Vec<u8>, io::streams::StreamError> {
         let bytes = self.read(length)?;
         if length == 0 || !bytes.is_empty() {
             return Ok(bytes);
@@ -198,7 +198,7 @@ impl io::streams::GuestOutputStream for Output {
         // check-write/subscribe; pending writes remain their original owners.
         Ok(())
     }
-    fn blocking_flush(&self) -> Result<(), io::streams::StreamError> {
+    async fn blocking_flush(&self) -> Result<(), io::streams::StreamError> {
         self.flush()?;
         let exchange = self.exchange.as_ref().expect("HTTP output owner");
         if !exchange.writable() {
