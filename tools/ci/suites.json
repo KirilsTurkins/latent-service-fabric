@@ -4406,14 +4406,15 @@
         "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_unpinned_report_before_component_or_output",
         "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_relative_input_before_read_or_output",
         "authoring::current_java::reconstructed::tests::reconstructed_current_mode_keeps_forbidden_capture_unsigned_before_output",
-        "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_existing_or_relative_output_before_inputs"
+        "authoring::current_java::reconstructed::tests::reconstructed_current_mode_refuses_existing_or_relative_output_before_inputs",
+        "authoring::inputs::tests::shared_server_metadata_requires_observed_profile_component_source_and_web_lifecycle"
       ],
       "expectedIgnored": [],
       "id": "latent-policy.example.capsule-authoring",
       "ignoredLeaves": [],
       "kind": "example",
       "manifest": "crates/latent-policy/Cargo.toml",
-      "minimumCases": 31,
+      "minimumCases": 32,
       "mode": "libtest",
       "package": "latent-policy",
       "platforms": [

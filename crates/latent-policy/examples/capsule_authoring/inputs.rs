@@ -28,6 +28,85 @@ fn read(root: &Path, name: &str, maximum: u64) -> Result<Vec<u8>> {
 }
 
 pub(super) fn load(root: &Path) -> Result<Build> {
+    load_tenant(root, Some(TENANT))
+}
+
+pub(super) fn load_shared_server(root: &Path) -> Result<Build> {
+    let build = load_tenant(root, None)?;
+    if build.observation.build_type != JAVA_CAPSULE_BUILD_TYPE {
+        return Err("shared fixture requires an observed neutral Java server build".into());
+    }
+    for (path, media) in [
+        (
+            "server-profile.json",
+            "application/vnd.latent.server.source.profile.v1+json",
+        ),
+        (
+            "server-source.json",
+            "application/vnd.latent.server.source.v1+json",
+        ),
+    ] {
+        if build
+            .bundle
+            .layout()
+            .config()
+            .layers
+            .iter()
+            .filter(|layer| {
+                layer.path == path && layer.role == LayerRole::Asset && layer.media_type == media
+            })
+            .count()
+            != 1
+        {
+            return Err("shared server metadata must be observed package assets".into());
+        }
+    }
+    shared_server_metadata(
+        build
+            .bundle
+            .blob("server-profile.json")
+            .ok_or("missing observed server profile")?,
+        build
+            .bundle
+            .blob("server-source.json")
+            .ok_or("missing observed server declaration")?,
+        &build.observation.component_digest,
+        &build.observation.source.snapshot_digest,
+    )?;
+    Ok(build)
+}
+
+fn shared_server_metadata(
+    profile: &[u8],
+    declaration: &[u8],
+    component: &str,
+    source: &str,
+) -> Result<()> {
+    if profile.len() > 65536 || declaration.len() > 262144 {
+        return Err("shared server metadata bound".into());
+    }
+    let selected: Value = serde_json::from_slice(profile)?;
+    let declared: Value = serde_json::from_slice(declaration)?;
+    if selected["schemaVersion"] != "lsf.server.source.profile.v1"
+        || selected["id"] != "lsf.java.httpserver.buffered.v1"
+        || selected["language"] != "java"
+        || declared["schemaVersion"] != "lsf.server.source.v1"
+        || declared["language"] != "java"
+        || declared["authority"] != "none"
+        || declared["lifecycle"] != "fresh-activation"
+        || declared["export"]["contract"] != "latent:web/application@0.1.0"
+        || declared["export"]["function"] != "handle"
+        || declared["profileId"] != selected["id"]
+        || declared["profileDigest"] != artifact_blob_digest(profile).as_str()
+        || declared["componentDigest"] != component
+        || declared["sourceDigest"] != source
+    {
+        return Err("shared server metadata differs from observed build".into());
+    }
+    Ok(())
+}
+
+fn load_tenant(root: &Path, tenant: Option<&str>) -> Result<Build> {
     let marker: Value = serde_json::from_slice(&read(root, "BUILD-COMPLETE.json", 65536)?)?;
     let raw = read(root, "build-observation.json", 32768)?;
     let observation = decode_build_observation(&raw, ProvenanceLimits::default())?;
@@ -49,6 +128,7 @@ pub(super) fn load(root: &Path) -> Result<Build> {
         observation,
         PackagingLimits::default(),
         Some(&marker["sourceDigest"]),
+        tenant,
     )
 }
 
@@ -64,7 +144,7 @@ pub(super) fn load_current_java(root: &Path, raw: &[u8]) -> Result<Build> {
         &latent_manifest::phase4_host_abi_digest(),
     )
     .map_err(|_| "unsupported current Java transaction packaging profile")?;
-    load_observed(root, observation, limits, None)
+    load_observed(root, observation, limits, None, Some(TENANT))
 }
 
 fn load_observed(
@@ -72,6 +152,7 @@ fn load_observed(
     observation: BuildObservation,
     limits: PackagingLimits,
     marker_source: Option<&Value>,
+    tenant: Option<&str>,
 ) -> Result<Build> {
     let snapshot = read(root, "source-inputs.json", 4 * 1024 * 1024)?;
     if observation.source.snapshot_digest != artifact_blob_digest(&snapshot).as_str()
@@ -104,7 +185,7 @@ fn load_observed(
         .find(|layer| layer.role == LayerRole::CapsuleManifest)
         .ok_or("capsule manifest missing")?;
     let manifest: Value = serde_json::from_slice(&manifest.bytes)?;
-    if manifest["metadata"]["tenant"] != TENANT {
+    if manifest["metadata"]["tenant"] != json!(tenant) {
         return Err("demo signer is confined to the examples tenant".into());
     }
     let service = manifest["metadata"]["name"]
@@ -129,7 +210,7 @@ fn load_observed(
         build_package_with_sbom(input, inventory, limits).map_err(|error| error.message)?;
     let deployment = read(root, "deployment.json", 65536)?;
     let deployment_value: Value = serde_json::from_slice(&deployment)?;
-    if deployment_value["metadata"]["tenant"] != TENANT
+    if deployment_value["metadata"]["tenant"] != json!(tenant)
         || deployment_value["spec"]["service"] != service
         || deployment_value["spec"]["release"] != observation.component_digest
         || deployment_value["spec"]["grants"] != json!([])
@@ -221,6 +302,56 @@ mod packaging_fixture;
 mod tests {
     use super::*;
     use latent_packaging::LayerInput;
+
+    #[test]
+    fn shared_server_metadata_requires_observed_profile_component_source_and_web_lifecycle() {
+        let profile = br#"{"schemaVersion":"lsf.server.source.profile.v1","id":"lsf.java.httpserver.buffered.v1","language":"java"}"#;
+        let declaration = json!({"schemaVersion":"lsf.server.source.v1","language":"java",
+            "profileId":"lsf.java.httpserver.buffered.v1","profileDigest":artifact_blob_digest(profile).as_str(),
+            "componentDigest":"component-identity","sourceDigest":"source-identity", "authority":"none",
+            "lifecycle":"fresh-activation", "export":{"contract":"latent:web/application@0.1.0","function":"handle"}});
+        assert!(shared_server_metadata(
+            profile,
+            &serde_json::to_vec(&declaration).unwrap(),
+            "component-identity",
+            "source-identity"
+        )
+        .is_ok());
+        for (key, wrong) in [
+            ("schemaVersion", "future"),
+            ("language", "rust"),
+            ("profileId", "other"),
+            ("profileDigest", "unobserved"),
+            ("componentDigest", "other"),
+            ("sourceDigest", "other"),
+            ("authority", "grant"),
+            ("lifecycle", "resident"),
+        ] {
+            let mut invalid = declaration.clone();
+            invalid[key] = json!(wrong);
+            assert!(
+                shared_server_metadata(
+                    profile,
+                    &serde_json::to_vec(&invalid).unwrap(),
+                    "component-identity",
+                    "source-identity"
+                )
+                .is_err(),
+                "{key}"
+            );
+        }
+        let mut invalid = declaration;
+        invalid["export"]["contract"] = json!("not:web/application@0.1.0");
+        assert!(shared_server_metadata(
+            profile,
+            &serde_json::to_vec(&invalid).unwrap(),
+            "component-identity",
+            "source-identity"
+        )
+        .is_err());
+        assert!(shared_server_metadata(b"{}", b"{}", "component", "source").is_err());
+        assert!(shared_server_metadata(&vec![b' '; 65537], b"{}", "component", "source").is_err());
+    }
 
     fn with_diagnostic_asset() -> PackageInput {
         let mut input =

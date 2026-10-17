@@ -1,0 +1,210 @@
+{
+  "cases": [
+    "OperatorTokenIsolation.test_after_lookup_preserves_the_full_record_and_catalog_identity",
+    "OperatorTokenIsolation.test_authorized_envelopes_and_records_are_not_assumed_from_a_success_label",
+    "OperatorTokenIsolation.test_authorized_lookup_must_prove_the_expected_foreign_object_before_spoofing",
+    "OperatorTokenIsolation.test_both_closed_denials_require_the_same_authorized_record_and_actual_route_pin",
+    "OperatorTokenIsolation.test_changed_selected_object_is_rejected_before_any_cli_call",
+    "OperatorTokenIsolation.test_denial_validation_and_call_failures_always_restore_original_config",
+    "OperatorTokenIsolation.test_unknown_success_uncertain_malformed_and_metadata_revealing_denials_reject",
+    "SharedTenantServer.test_actual_tenant_workflow_creates_a_distinct_foreign_object_before_routes",
+    "SharedTenantServer.test_grants_require_exact_descriptor_tenant_and_separate_trigger_and_publication",
+    "SharedTenantServer.test_neutral_project_retains_original_sdk_helper_and_zero_egress_limits",
+    "SharedTenantServer.test_original_standard_api_handler_compiles_with_published_jdk_surface",
+    "SharedTenantServer.test_real_package_metadata_keeps_neutral_service_and_omits_tenant_without_rewriting_source",
+    "SharedTenantServer.test_runtime_grant_denial_requires_zero_guest_work_and_at_most_one_original_lease",
+    "SharedTenantServer.test_runtime_grant_workflow_observes_the_original_foreign_root_and_pin",
+    "SharedTenantServer.test_second_scope_aliases_never_change_original_node_capacity_or_grant_authority"
+  ],
+  "guards": {
+    "OperatorTokenIsolation.test_after_lookup_preserves_the_full_record_and_catalog_identity": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:56175c55286970282e00526019cc1400eaaee6411c9ec0fb28a8cdb763c81d0c"
+      ],
+      "skipSites": []
+    },
+    "OperatorTokenIsolation.test_authorized_envelopes_and_records_are_not_assumed_from_a_success_label": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:56175c55286970282e00526019cc1400eaaee6411c9ec0fb28a8cdb763c81d0c"
+      ],
+      "skipSites": []
+    },
+    "OperatorTokenIsolation.test_authorized_lookup_must_prove_the_expected_foreign_object_before_spoofing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:56175c55286970282e00526019cc1400eaaee6411c9ec0fb28a8cdb763c81d0c"
+      ],
+      "skipSites": []
+    },
+    "OperatorTokenIsolation.test_both_closed_denials_require_the_same_authorized_record_and_actual_route_pin": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:56175c55286970282e00526019cc1400eaaee6411c9ec0fb28a8cdb763c81d0c"
+      ],
+      "skipSites": []
+    },
+    "OperatorTokenIsolation.test_changed_selected_object_is_rejected_before_any_cli_call": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:56175c55286970282e00526019cc1400eaaee6411c9ec0fb28a8cdb763c81d0c"
+      ],
+      "skipSites": []
+    },
+    "OperatorTokenIsolation.test_denial_validation_and_call_failures_always_restore_original_config": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:56175c55286970282e00526019cc1400eaaee6411c9ec0fb28a8cdb763c81d0c"
+      ],
+      "skipSites": []
+    },
+    "OperatorTokenIsolation.test_unknown_success_uncertain_malformed_and_metadata_revealing_denials_reject": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:56175c55286970282e00526019cc1400eaaee6411c9ec0fb28a8cdb763c81d0c"
+      ],
+      "skipSites": []
+    },
+    "SharedTenantServer.test_actual_tenant_workflow_creates_a_distinct_foreign_object_before_routes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedTenantServer.test_grants_require_exact_descriptor_tenant_and_separate_trigger_and_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedTenantServer.test_neutral_project_retains_original_sdk_helper_and_zero_egress_limits": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedTenantServer.test_original_standard_api_handler_compiles_with_published_jdk_surface": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [
+        "unittest.skipUnless(shutil.which('javac'), 'native JDK source control')"
+      ],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": [
+        "skip-control-sha256:2196a3bc906b22a469552e341008566e3c586a06706ce300251d7b6a69b2b817",
+        "unittest.skipUnless(shutil.which('javac'), 'native JDK source control')"
+      ]
+    },
+    "SharedTenantServer.test_real_package_metadata_keeps_neutral_service_and_omits_tenant_without_rewriting_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedTenantServer.test_runtime_grant_denial_requires_zero_guest_work_and_at_most_one_original_lease": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedTenantServer.test_runtime_grant_workflow_observes_the_original_foreign_root_and_pin": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SharedTenantServer.test_second_scope_aliases_never_change_original_node_capacity_or_grant_authority": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e986c4a521073720c86b58f60993da3a2e4c67e9cd00dab950b01044e03febfb",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_server_tenants.py",
+  "reviewReason": "Add known foreign deployment and catalog identity controls around only closed nonrevealing token denials; preserve all original tenant tests and native-JDK skip guards",
+  "schemaVersion": "latent.ci.contracts.v1"
+}
