@@ -14,7 +14,9 @@ SDK or a new application execution model.
    with that environment's `PATH` and `JAVA_HOME`; a desktop launcher may not
    inherit your interactive shell environment.
 2. Open the root folder and review IDEA's trust prompt. Accept the project's
-   **Rust** and **Shell Script** plugin requirements and restart when requested.
+   **Rust** plugin requirement (`com.jetbrains.rust`) and restart when requested.
+   **Shell Script** (`com.jetbrains.sh`) is bundled and enabled in IDEA by default;
+   enable it under **Settings | Plugins | Installed** if it was disabled.
    Use the current JetBrains Rust plugin, not the deprecated IntelliJ Rust
    plugin. Java/Kotlin support is part of IDEA; Python, Go, JavaScript/TypeScript,
    Protobuf and TOML support depend on the installed plugins and license.
@@ -41,6 +43,7 @@ SDK or a new application execution model.
    plugin enablement, indexing state or SDK selection.
 
 IDEA's [Rust guide](https://www.jetbrains.com/help/idea/rust-plugin.html),
+[Shell Script guide](https://www.jetbrains.com/help/idea/shell-scripts.html),
 [required-plugin guide](https://www.jetbrains.com/help/idea/managing-plugins.html)
 and [shared run-configuration guide](https://www.jetbrains.com/help/idea/run-debug-configuration.html)
 explain the IDE-side steps. In the 2026 documentation, native Rust debugging on
@@ -52,12 +55,16 @@ and cannot be completed by checking in project XML.
 
 The Project view contains a root module, Cargo workspace members, independent
 non-fixture Cargo workspaces, each SDK directory, tools, website, examples,
-research and documentation. Module groups separate these areas. Parent content
-roots exclude child module roots, avoiding duplicate ownership. The Cargo tool
-window, rather than the Java module model, owns Rust target/dependency discovery.
-New workspace members and SDK directories are picked up by the generator.
-Templates, test fixtures and vendored inputs remain browsable through their
-owning modules; they are not attached as independent Cargo projects.
+research and documentation. Module groups separate these areas. Nested content
+roots define their own module ownership; parent modules must **not** exclude
+child module roots. An exclusion is not an ownership marker: it gives real source
+directories the excluded-folder presentation and can affect IDE features.
+The Cargo tool window, rather than the Java module model, owns Rust
+target/dependency discovery. New workspace members and SDK directories are
+picked up by the generator. Templates, test fixtures and vendored inputs remain
+browsable through their owning modules; they are not attached as independent
+Cargo projects. See JetBrains' [content-root guide](https://www.jetbrains.com/help/idea/content-roots.html)
+for source and excluded-folder categories.
 
 The Java client module marks `src/transport/java`, `src/example/java` and
 `build/generated/java` as production sources, and `src/transportTest/java` as
@@ -168,6 +175,37 @@ settings. Git ignores workspace state, shelves, local caches and non-LSF run
 configurations. Keep machine-specific JDK/toolchain changes local when reviewing
 the tracked `misc.xml` diff.
 
+### Repair the initial plugin warning and brown module folders
+
+The initial PR #1049 configuration mistakenly required `com.intellij.sh` (an
+implementation package, not the plugin ID) and explicitly excluded child module
+roots from their parents. These are repository configuration defects, not a
+reason to downgrade IDEA or install an obsolete plugin archive.
+
+Close the project before pulling the corrected branch so the open IDE cannot
+save its old model over the updated files. Preserve any local edits and review
+`git diff -- .idea` before updating. The fix updates the generator,
+`.idea/externalDependencies.xml` and the root, SDK, Rust-standard-runtime and
+tools module files together. Reopen the repository root after updating and let
+Cargo synchronization finish. Normal adoption needs no regeneration; use
+`python3 tools/intellij.py --check` in the terminal to check for stale XML.
+
+Under **Settings | Plugins | Installed**, enable the bundled **Shell Script**
+plugin if needed. The project's required ID is `com.jetbrains.sh`; there should
+be no requirement for `com.intellij.sh` under **Appearance & Behavior | Required
+Plugins**. JetBrains' [Shell Script plugin descriptor](https://github.com/JetBrains/intellij-community/blob/master/plugins/sh/plugin/resources/META-INF/plugin.xml)
+is the source of that identity, distinct from its `com.intellij.sh` Java classes.
+
+Under **File | Project Structure | Modules | Sources**, verify that actual
+source module roots are not excluded. Cache/output folders should remain
+excluded. Do not mark the entire repository as Java Sources or disable all
+exclusions just to change folder colors. Documentation and non-JVM modules can
+have ordinary folder icons; their icon is not proof of a missing module. The
+module list and Cargo tool window are the relevant structure checks. If old
+exclusions persist, inspect local `.iml` changes, preserve personal settings,
+and regenerate only the generator-owned files with IDEA closed. Do not delete
+workspace settings, shelves, credentials or the entire `.idea` directory.
+
 CI checks deterministic metadata and regression tests on Linux, Windows and
 macOS. Its review artifact contains only generator output, never the local
 `.idea` directory, credentials, environment variables or compiled artifacts.
@@ -182,8 +220,11 @@ command selection and safety behavior; they do **not** launch IntelliJ IDEA.
 Before claiming GUI qualification for an IDEA 2026 build, open a fresh clone
 with its supported plugins and verify the following in that actual IDE:
 
+- Shell Script is recognized as the bundled plugin without an unavailable-plugin
+  install prompt; shared Shell Script configurations have a recognized type.
 - Cargo synchronization resolves the root and independent maintained workspaces;
   the Project and Cargo views show the expected packages without duplicate roots.
+  Real source module roots are not marked as excluded in Project Structure.
 - After Java preparation and JDK selection, generated Java classes and locked
   dependencies resolve, and the owning Java test configuration executes.
 - Run configurations appear before manually creating any; Make help, IDE tests,

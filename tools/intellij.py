@@ -126,17 +126,14 @@ def module_name(path: str) -> str:
     return "lsf" if path == "." else "lsf." + path.replace("/", ".")
 
 
-def module_file(path: str, roots: list[str]) -> str:
+def module_file(path: str) -> str:
     module = ET.Element("module", type="JAVA_MODULE" if path == "sdk/java-client" else "EMPTY_MODULE", version="4")
     manager = ET.SubElement(module, "component", name="NewModuleRootManager", **{"inherit-compiler-output": "true"})
     url = "file://$MODULE_DIR$/../.." + ("/" + path if path != "." else "")
     content = ET.SubElement(manager, "content", url=url)
-    base = PurePosixPath(path)
-    children = [other for other in roots if other != path and PurePosixPath(other).is_relative_to(base)]
-    # Exclude only immediate child module roots; their own modules own descendants.
-    for other in children:
-        if not any(other != parent and PurePosixPath(other).is_relative_to(PurePosixPath(parent)) for parent in children):
-            ET.SubElement(content, "excludeFolder", url=url + "/" + str(PurePosixPath(other).relative_to(base)))
+    # Nested content roots already define module ownership. Excluding another
+    # module's content root marks real sources as excluded (brown/orange folders)
+    # in IDEA's Project view. Only caches and actual output belong in exclusions.
     for pattern in CACHE_NAMES:
         ET.SubElement(content, "excludePattern", pattern=pattern)
     if path == ".":
@@ -204,7 +201,7 @@ def project_files(root: Path, paths: list[str] | None = None) -> dict[str, str]:
     names = [module_name(path) for path in roots]
     if len(names) != len(set(names)):
         raise ValueError("colliding IntelliJ module names")
-    files = {f".idea/modules/{module_name(path)}.iml": module_file(path, roots) for path in roots}
+    files = {f".idea/modules/{module_name(path)}.iml": module_file(path) for path in roots}
     project, manager = component("ProjectModuleManager")
     modules = ET.SubElement(manager, "modules")
     for path in roots:
@@ -225,7 +222,9 @@ def project_files(root: Path, paths: list[str] | None = None) -> dict[str, str]:
     ET.SubElement(manager, "mapping", directory="$PROJECT_DIR$", vcs="Git")
     files[".idea/vcs.xml"] = xml(project)
     project, manager = component("ExternalDependencies")
-    for plugin in ("com.jetbrains.rust", "com.intellij.sh"):
+    # Plugin descriptor IDs, not implementation packages (com.intellij.sh).
+    # Shell Script is bundled with IDEA; a disabled plugin should be enabled.
+    for plugin in ("com.jetbrains.rust", "com.jetbrains.sh"):
         ET.SubElement(manager, "plugin", id=plugin)
     files[".idea/externalDependencies.xml"] = xml(project)
     for task, folder in MAKE_TASKS.items():

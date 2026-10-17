@@ -5,14 +5,16 @@
     "IntelliJTests.test_cargo_debug_defaults_are_locked_and_unprivileged",
     "IntelliJTests.test_check_detects_missing_modified_and_stale_owned_files",
     "IntelliJTests.test_committed_files_match_generator",
+    "IntelliJTests.test_committed_modules_do_not_exclude_content_or_source_roots",
     "IntelliJTests.test_full_validation_gets_a_fresh_owned_inventory_root",
     "IntelliJTests.test_generator_is_deterministic_and_order_independent",
     "IntelliJTests.test_java_sources_and_locked_jar_directory_are_indexed",
     "IntelliJTests.test_local_node_preparation_is_private_loopback_and_never_replaces_state",
     "IntelliJTests.test_local_node_rejects_unsupported_hosts_before_writing",
     "IntelliJTests.test_make_tasks_exist_in_authoritative_makefile",
-    "IntelliJTests.test_nested_content_roots_are_excluded_from_parent_only",
+    "IntelliJTests.test_nested_content_roots_are_not_excluded_by_parent",
     "IntelliJTests.test_paths_cannot_escape_checkout",
+    "IntelliJTests.test_required_plugins_match_shell_and_cargo_run_types",
     "IntelliJTests.test_root_and_independent_workspaces_are_attached",
     "IntelliJTests.test_runner_preserves_exit_status_and_checkout_working_directory",
     "IntelliJTests.test_shared_runs_are_permanent_root_relative_and_not_startup_tasks",
@@ -45,6 +47,8 @@
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_committed_files_match_generator":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
+    "IntelliJTests.test_committed_modules_do_not_exclude_content_or_source_roots":
+      "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_full_validation_gets_a_fresh_owned_inventory_root":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_generator_is_deterministic_and_order_independent":
@@ -57,9 +61,11 @@
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_make_tasks_exist_in_authoritative_makefile":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
-    "IntelliJTests.test_nested_content_roots_are_excluded_from_parent_only":
+    "IntelliJTests.test_nested_content_roots_are_not_excluded_by_parent":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_paths_cannot_escape_checkout":
+      "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
+    "IntelliJTests.test_required_plugins_match_shell_and_cargo_run_types":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
     "IntelliJTests.test_root_and_independent_workspaces_are_attached":
       "1004adb45d724c6a547b69b539e0c859078895c75d962c67d5a912d6a6e9b21c",
@@ -86,6 +92,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_intellij.py",
-  "reviewReason": "Add portable IntelliJ metadata and launcher regression coverage without changing existing execution obligations.",
+  "reviewReason": "Correct the Shell Script plugin ID and remove source-module exclusions; replace the regression that required the faulty exclusion with nested and full-project non-exclusion checks. Add run-type plugin identity coverage; preserve every other case and all execution guards.",
   "schemaVersion": "latent.ci.contracts.v2"
 }

@@ -46,17 +46,75 @@ class IntelliJTests(unittest.TestCase):
             self.assertIn("tools", roots)
             self.assertNotIn("sdk/README.md", roots)
 
-    def test_nested_content_roots_are_excluded_from_parent_only(self):
-        roots = [".", "sdk", "sdk/rust", "sdk/rust/examples/demo"]
-        tree = ET.fromstring(intellij.module_file(".", roots))
-        excluded = [element.attrib["url"] for element in tree.findall(".//excludeFolder")]
-        self.assertIn("file://$MODULE_DIR$/../../sdk", excluded)
-        self.assertNotIn("file://$MODULE_DIR$/../../sdk/rust", excluded)
-        child = ET.fromstring(intellij.module_file("sdk/rust", roots))
-        self.assertIn("file://$MODULE_DIR$/../../sdk/rust/examples/demo", [item.attrib["url"] for item in child.findall(".//excludeFolder")])
+    def test_nested_content_roots_are_not_excluded_by_parent(self):
+        roots = [".", "apps/latentd", "crates/latent-core", "sdk", "sdk/rust",
+                 "sdk/rust/examples/demo", "sdk/java-client", "tools", "tools/probe",
+                 "docs", "research", "website", "examples"]
+        modules = [ET.fromstring(intellij.module_file(path)) for path in roots]
+        content_urls = [tree.find(".//content").attrib["url"] for tree in modules]
+        self.assertEqual(len(roots), len(set(content_urls)))
+        for tree in modules:
+            for exclusion in tree.findall(".//excludeFolder"):
+                excluded = exclusion.attrib["url"]
+                for content in content_urls:
+                    with self.subTest(excluded=excluded, content=content):
+                        self.assertNotEqual(excluded, content)
+                        self.assertFalse(content.startswith(excluded + "/"))
+
+    def test_required_plugins_match_shell_and_cargo_run_types(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "Cargo.toml").write_text('[workspace]\n')
+            files = intellij.project_files(root, ["Cargo.toml"])
+            requirements = ET.fromstring(files[".idea/externalDependencies.xml"])
+            plugins = [item.attrib["id"] for item in requirements.findall(".//plugin")]
+            # IDs are the plugin.xml identities, not Java package namespaces.
+            self.assertCountEqual(["com.jetbrains.rust", "com.jetbrains.sh"], plugins)
+            providers = {"ShConfigurationType": "com.jetbrains.sh",
+                         "CargoCommandRunConfiguration": "com.jetbrains.rust"}
+            for path, text in files.items():
+                if path.startswith(".run/"):
+                    config = ET.fromstring(text).find("configuration")
+                    with self.subTest(configuration=path):
+                        self.assertIn(providers[config.attrib["type"]], plugins)
+            for plugin in requirements.findall(".//plugin"):
+                self.assertEqual({"id"}, set(plugin.attrib))
+
+    def test_committed_modules_do_not_exclude_content_or_source_roots(self):
+        from fnmatch import fnmatchcase
+
+        root = Path(__file__).resolve().parents[2]
+        registrations = ET.parse(root / ".idea/modules.xml").findall(".//module")
+        self.assertTrue(registrations)
+        included, exclusions, patterns = [], [], []
+        for registration in registrations:
+            path = Path(registration.attrib["filepath"].replace("$PROJECT_DIR$", str(root)))
+            self.assertTrue(path.is_file(), str(path))
+            tree = ET.parse(path)
+
+            def resolve(url):
+                self.assertTrue(url.startswith("file://"), url)
+                return Path(url.removeprefix("file://").replace(
+                    "$MODULE_DIR$", str(path.parent)).replace("$PROJECT_DIR$", str(root))).resolve()
+
+            for content in tree.findall(".//content"):
+                content_root = resolve(content.attrib["url"])
+                included.append(content_root)
+                included.extend(resolve(item.attrib["url"]) for item in content.findall("sourceFolder"))
+                exclusions.extend(resolve(item.attrib["url"]) for item in content.findall("excludeFolder"))
+                patterns.extend((content_root, item.attrib["pattern"]) for item in content.findall("excludePattern"))
+        for source in included:
+            for excluded in exclusions:
+                with self.subTest(source=str(source), excluded=str(excluded)):
+                    self.assertFalse(source.is_relative_to(excluded))
+            for content_root, pattern in patterns:
+                if source.is_relative_to(content_root):
+                    relative_parts = source.relative_to(content_root).parts
+                    with self.subTest(source=str(source), pattern=pattern):
+                        self.assertFalse(any(fnmatchcase(part, pattern) for part in relative_parts))
 
     def test_java_sources_and_locked_jar_directory_are_indexed(self):
-        tree = ET.fromstring(intellij.module_file("sdk/java-client", [".", "sdk/java-client"]))
+        tree = ET.fromstring(intellij.module_file("sdk/java-client"))
         sources = {node.attrib["url"]: node.attrib for node in tree.findall(".//sourceFolder")}
         prefix = "file://$MODULE_DIR$/../../sdk/java-client/"
         self.assertEqual("true", sources[prefix + "build/generated/java"]["generated"])
@@ -67,7 +125,7 @@ class IntelliJTests(unittest.TestCase):
         self.assertNotIn(prefix + "build", [item.attrib["url"] for item in tree.findall(".//excludeFolder")])
 
     def test_build_outputs_are_excluded_without_hiding_source_bins(self):
-        tree = ET.fromstring(intellij.module_file("tools", [".", "tools"]))
+        tree = ET.fromstring(intellij.module_file("tools"))
         patterns = [item.attrib["pattern"] for item in tree.findall(".//excludePattern")]
         self.assertIn("target", patterns)
         self.assertIn("node_modules", patterns)
@@ -75,7 +133,7 @@ class IntelliJTests(unittest.TestCase):
         self.assertNotIn("build", patterns)
 
     def test_xml_escapes_paths_and_names(self):
-        text = intellij.module_file("sdk/a&b", [".", "sdk/a&b"])
+        text = intellij.module_file("sdk/a&b")
         self.assertIn("a&amp;b", text)
         self.assertIn("sdk/a&b", ET.fromstring(text).find(".//content").attrib["url"])
 

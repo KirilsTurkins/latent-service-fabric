@@ -3,13 +3,6 @@
 <module type="EMPTY_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <content url="file://$MODULE_DIR$/../../tools">
-      <excludeFolder url="file://$MODULE_DIR$/../../tools/angular-renderer-adapter" />
-      <excludeFolder url="file://$MODULE_DIR$/../../tools/native-fixture" />
-      <excludeFolder url="file://$MODULE_DIR$/../../tools/optimization-bench" />
-      <excludeFolder url="file://$MODULE_DIR$/../../tools/optimization-workloads" />
-      <excludeFolder url="file://$MODULE_DIR$/../../tools/portable-test-host" />
-      <excludeFolder url="file://$MODULE_DIR$/../../tools/renderer-profile" />
-      <excludeFolder url="file://$MODULE_DIR$/../../tools/toolchain-smoke" />
       <excludePattern pattern="target" />
       <excludePattern pattern="node_modules" />
       <excludePattern pattern=".venv" />
