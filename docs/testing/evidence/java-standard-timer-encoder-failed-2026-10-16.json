@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "latent.java-standard-timer.encoder-failure.v1",
+  "status": "failed",
+  "runtimeQualified": false,
+  "candidateHead": "90eb0ec5ac482f5fe340b6b96317fd32a69a7690",
+  "testedMerge": "15568b8bbd1d9b77256b39dd4665ffbd7f1d9466",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38830739588/job/116748692983",
+  "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38830739588/artifacts/12018178658",
+  "artifactBytes": 71521493,
+  "artifactSha256": "119800cd15a6e0b8ea558a5f25fcd0041ddec49bad0d77b17f893994bcdb78b2",
+  "compilerStage": "component-new",
+  "diagnostic": "adapter module did not export fd_close",
+  "retainedEncoderLogBytes": 236,
+  "observed": "The original signed Java thread fixture passed. The standard timer fixture passed TeaVM and C compilation, then failed component encoding before signed timer execution.",
+  "disposition": "The closed clock-only adapter exports fd_close returning BADF for every descriptor. It acquires or closes no ambient resource and adds no provider authority. Retain the actual core module in subsequent artifacts for bounded import inspection.",
+  "originalExecutionGuardsChanged": false,
+  "correctedExecution": "pending"
+}

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain original fiber controls and add managed-start admission rollback witness",
+  "reviewReason": "Verify the exact bounded resolved C-tooling cache against the unchanged reviewed lock and strict metadata; retain required model JARs, actual dependency graph assertions, signed cases and all limits.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "d7b1b8864ebef78a9261c6885b7b404ef0b72d137e6d7964f1d8e3edc5a7b951"
+  "sha256": "ff7fbcb484e37194f5969b24dd6c8e28ceccac7b115caa3fc5eae17703475961"
 }
