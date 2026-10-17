@@ -279,5 +279,60 @@ class PublishedRuntimeEvidence(unittest.TestCase):
             self.verify(self.declaration, self.native, self.artifacts)
 
 
+class PublishedRuntimePreparation(unittest.TestCase):
+    def test_fresh_project_is_configured_before_published_module_capture(self):
+        from unittest.mock import patch
+        from tools import qualify_go_runtime_dependencies as qualification
+        from tools.rust_capsule_project import ROOT
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / 'qualification'
+            compiler = Path(temporary) / 'go'
+            compiler.write_bytes(b'not-executed')
+            original = ROOT / 'sdk/go-guest/runtime/published-conformance'
+            captured = []
+
+            def inspect(project, go):
+                self.assertEqual(go, compiler.resolve())
+                files = snapshot(project)
+                document, _lock, _pins = validate(files)
+                self.assertEqual(document['world'], 'tests:caller/service@1.0.0')
+                self.assertEqual(document['runtimeProfile'], qualification.INITIALIZER_PROFILE)
+                self.assertEqual(files['src/main.go'], (original / 'main.go').read_bytes())
+                self.assertEqual(files['wit/world.wit'], (original / 'world.wit').read_bytes())
+                self.assertNotIn('latent.dependencies.json', files)
+                captured.append(project)
+                raise ValueError('test-stops-before-acquisition')
+
+            with patch.object(qualification.shutil, 'which', return_value=str(compiler)), \
+                    patch.object(qualification, 'capture', side_effect=inspect), \
+                    patch.object(qualification, 'run_bounded') as command:
+                with self.assertRaisesRegex(ValueError, '^test-stops-before-acquisition$'):
+                    qualification.qualify(output)
+                command.assert_not_called()
+            self.assertEqual(captured, [output / 'project'])
+            failed = json.loads((output / 'GO-ACTIVATION-FAILED.json').read_bytes())
+            self.assertEqual(failed, {'status': 'failed', 'reason': 'test-stops-before-acquisition'})
+            self.assertFalse((output / 'GO-ACTIVATION-COMPILE.json').exists())
+
+    def test_existing_output_and_receipts_remain_exclusive_create(self):
+        from unittest.mock import patch
+        from tools import qualify_go_runtime_dependencies as qualification
+        from tools.rust_capsule_project import write_json
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            marker = output / 'GO-ACTIVATION-COMPILE.json'
+            write_json(marker, {'retained': True})
+            before = snapshot(output)
+            with patch.object(qualification, 'create') as create_project, \
+                    patch.object(qualification, 'capture') as acquire:
+                with self.assertRaises(FileExistsError):
+                    qualification.qualify(output)
+                create_project.assert_not_called()
+                acquire.assert_not_called()
+            with self.assertRaises(FileExistsError):
+                write_json(marker, {'retained': False})
+            self.assertEqual(snapshot(output), before)
+
+
 if __name__ == '__main__':
     unittest.main()

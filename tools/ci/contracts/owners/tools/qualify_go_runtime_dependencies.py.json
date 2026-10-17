@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_runtime_dependencies.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind the reviewed bounded published Go module capture, contained component compilation and fixed native reference driver",
+  "reviewReason": "Bind the reviewed bounded published Go module capture, contained component compilation and fixed native reference driver; configure the already-created private fixture document before capture without changing exclusive receipt creation, acquisition or execution boundaries",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "995bd202c3d375f5300d35b328eba49f7f83b4ecd6fe31271a83db8ce79a0db6"
+  "sha256": "43efa5167ad01b657a62b45465d4311d0ef2e73af8f4ac9107f36e4dde178393"
 }
