@@ -85,6 +85,38 @@ class GoDependencies(unittest.TestCase):
             with self.assertRaises(DependencyError):
                 verify_download(row, expected)
 
+    def test_literal_exclamation_module_files_keep_original_hash_and_expanded_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            row, expected = self.module_download(Path(temporary))
+            prefix = row['Path'] + '@' + row['Version'] + '/'
+            name = 'testdata/expect/yo!.go'
+            data = b'package expect\n'
+            with zipfile.ZipFile(row['Zip'], 'a') as archive:
+                archive.writestr(prefix + name, data)
+            with zipfile.ZipFile(row['Zip']) as archive:
+                original = {item: archive.read(item) for item in archive.namelist()}
+            path = Path(row['Dir']) / name
+            path.parent.mkdir(parents=True)
+            path.write_bytes(data)
+            row['Sum'] = h1(original)
+            expected[(row['Path'], row['Version'])] = row['Sum']
+            captured, selected = verify_download(row, expected)
+            self.assertEqual(captured, original)
+            self.assertEqual(selected[name], data)
+            self.assertNotEqual(h1(original), h1({key.replace('!', ''): value
+                                                 for key, value in original.items()}))
+            with zipfile.ZipFile(row['Zip'], 'w') as archive:
+                for item, content in original.items():
+                    archive.writestr(item, content + b'changed' if item == prefix + name else content)
+            with self.assertRaisesRegex(DependencyError, 'original-module-zip-identity'):
+                verify_download(row, expected)
+            with zipfile.ZipFile(row['Zip'], 'w') as archive:
+                for item, content in original.items():
+                    archive.writestr(item, content)
+            path.write_bytes(b'package tampered\n')
+            with self.assertRaisesRegex(DependencyError, 'expanded-module-differs'):
+                verify_download(row, expected)
+
     def test_native_graph_records_mvs_minimums_replacements_excludes_and_closed_selection(self):
         root = {'Module': {'Path': 'application.example.test/new-identity'}, 'Go': '1.27.2',
                 'Exclude': [{'Path': 'module.example.test/transitive', 'Version': 'v0.9.0'}]}
