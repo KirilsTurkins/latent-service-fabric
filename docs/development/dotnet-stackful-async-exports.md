@@ -124,10 +124,53 @@ shared HTTP matrix remain required execution gates. The original failed managed
 execution and interrupted build attempts remain retained separately. No ticket
 closure, production enablement or complete CLR/ThreadPool support follows from
 these source and encoder controls.
-In particular, the current `Exchange.abort` still drops an accepted future from
-a synchronous resource destructor. A pending destructor needs a separate true
-terminal retirement/drain implementation; changing its type metadata alone does
-not qualify cancellation, disposal, physical retirement or root drain.
+The separate `dotnet-owned-retirement-v1` candidate addresses the synchronous
+destructor boundary. `Exchange.abort` and pending timer destruction transfer the
+exact pinned future, resources, original owner and quota slot into a bounded
+activation-local retirement queue. The destructor does not drop that future.
+The compiler adds one parameterless async private drain import, invokes it
+before the original root task-return while result pins remain live, and consumes
+it through the selected runtime adapter. Public source WIT remains unchanged;
+actual encoder comparisons require its complete graph to survive adding and
+removing only that private edge. The final composed component must retain no
+additional host authority or public retirement export.
+Applications without the activation interface return their original source
+before any retirement compiler query. A synchronous root does not select the
+private edge merely because it imports the activation interface.
+
+The private async drain drops each retained future under its original canonical
+task owner before releasing its resources and quota slot. The pinned generator's
+future destructor performs the real canonical terminal cancellation protocol;
+the queue does not manufacture completion. Remaining accepted canonical work
+causes a closed failure. Queue capacity remains 32, and ownership is retained
+until draining. This is not a CLR sibling-task scheduler or a proof that every
+managed task has retired.
+
+Five source controls cover the exact private interface, unchanged public graph
+boundary, real task-return/pin ordering and rejection of ambiguous interface
+identities, plus unchanged unselected-profile behavior. Actual pinned encoder and C# generator controls pass, including
+generator drift verification. Rust binding generation passes for all three
+adapter worlds. A separate host SDK 10.0.303 compilation of the actual generated
+bindings with the unchanged standard HttpClient fixture reports zero warnings
+and errors. These are codec, generator and host type checks; the normal Linux
+NativeAOT build, signed pending cancellation/disposal matrix and physical
+retirement observations remain required before this candidate is qualified.
+
+The [first actual retirement build](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38857166351/job/116831132298)
+compiled NativeAOT, composed the runtime and passed final component validation,
+then rejected the private owner import as undeclared authority. The exact
+multi-facet composer had connected only WASI imports. It now receives the
+compiler's authenticated retirement selection, checks both exact parameterless
+async `drain` signatures with no result or types, and connects that private
+import exactly once to the primary runtime. Additional facets cannot provide
+or duplicate it. The final private-import/export and undeclared-authority
+checks remain in place. Six new composition controls retain all eleven earlier
+cases and guards, including byte-identical unselected composition and the
+existing denial controls. The following actual build on 3cd580ed passed the selected private composition,
+validation and signing, then the first HTTP JSON invocation trapped without a
+decoded result. Both original failures remain retained; the new joined Task
+wait candidate still requires fresh signed pending/disposal and retirement
+qualification.
 
 ## Joined Task wait candidate
 
@@ -154,15 +197,35 @@ clears both current-thread context fields. Finite waits and waits with a cancell
 retain the original unsupported path. This is a bounded joined-wait candidate,
 not complete Task, ThreadPool or detached-work compatibility.
 
-The transformer authenticates the complete CoreLib and exact original wait,
-event-loop, dispatch, RunInternal and context-restoration IL. After writing it reopens the assembly, verifies
-all 44,745 other original methods, their bodies where present, and fields, and verifies the complete
-original wait remainder behind the selected prologue and both new helper bodies. Normal compilation
-must bind exactly one derived CoreLib in both the ILC reference list and its
-actual response file. Original packages, captured sources, derived bytes and
-targets are rechecked; unselected profiles keep their original CoreLib.
+The idle-driver extension gives a private cancellation source only to
+`TimerQueue.SetNextTimer` registrations. When the original `Timer.ActiveCount`
+is zero, it invalidates the driver epoch, resets scheduled-driver state, and
+cancels/disposes that source through the original owned-pollable path. Original
+Task identity and epoch guard stale continuations and rearming after callbacks.
+Queued user callbacks, `s_scheduledTimersToFire`, live logical timers, exchanges
+and foreign registrations remain untouched. Flow suppression covers only the
+new registration and is restored before the original continuation registration.
+The existing async retirement queue still destroys the original future and
+resources; remaining-owner assertions remain. Separately, the private zero-duration
+pollable created by `CheckPollables` is detached immediately before its original
+`Poll` call and disposed in a finally block after that call returns or throws.
+Only that producer's captured pollable is owned by this wrapper; holders, hooks,
+queued callbacks, results and all resource budgets remain unchanged. Repeated
+polls may allocate fresh zero-duration subscriptions under the original bounds. Earlier managed/native receipts retain their original source
+identities; the new repair's locked NativeAOT and signed 14-case ownership and
+retirement qualification is pending.
 
-The [managed tool control](../testing/evidence/dotnet-task-wait-source-2026-10-16.json)
+The transformer authenticates the complete CoreLib and the original wait,
+event-loop, dispatch, RunInternal and context-restoration IL. After writing, it
+verifies all 44,741 unaffected original methods, the three explicitly transformed
+TimerQueue bodies and the single CheckPollables call-site change, the complete original wait remainder behind the selected
+prologue, all nine added method bodies and the five added field identities.
+Normal compilation must bind exactly one derived CoreLib in both the ILC
+reference list and its actual response file. Original packages, captured sources,
+derived bytes and targets are rechecked; unselected profiles keep their original
+CoreLib.
+
+The earlier [managed tool control](../testing/evidence/dotnet-task-wait-source-2026-10-16.json)
 rewrote the actual pinned assembly twice deterministically and rejected a
 whole-assembly mutation before output. It used host SDK 10.0.303 and is not
 locked Linux NativeAOT 10.0.100 or guest execution. A separate host CoreLib

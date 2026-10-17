@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_dependency_watch.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve only eleven existing closed observer failure codes and fixed observation phase without changing source ownership, read bounds, qualification or approval",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "d24f24702e861b072ccfde62d4eb21ce01f6dbeeb1dce74a3198b353fae823ea"
+}

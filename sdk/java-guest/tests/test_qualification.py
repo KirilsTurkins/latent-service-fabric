@@ -256,6 +256,125 @@ class WaitFrameModelIntegrity(unittest.TestCase):
             self.assertEqual(compiler.run.call_count, 2)
 
 
+class StandardTimerSourceIntegrity(unittest.TestCase):
+    @staticmethod
+    def fixture(root):
+        compiler = SimpleNamespace(sdk=root / "sdk", run=Mock())
+        for name in ("fibers/conformance/timers", "fibers/conformance/compiler/standard-timer-control",
+                     "fibers/dev/latent/guest/runtime/util"):
+            shutil.copytree(fibers.ROOT / "sdk/java-guest" / name, compiler.sdk / name)
+        return compiler
+
+    @staticmethod
+    def receipt():
+        return ("42 42 42 42\nTIMER_SOURCE_CONTROL PASS reference-observables;queue-rollback;"
+                "cancel-drain;idle-finally;no-live-owners\n")
+
+    def test_incomplete_retirement_or_observables_cannot_qualify_source(self):
+        for incomplete in ("42 42 42 42", self.receipt().replace(";no-live-owners", ""),
+                           self.receipt().replace("42 42 42 42", "42 42 42 41")):
+            with self.subTest(receipt=incomplete), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                compiler = self.fixture(root)
+                compiler.run.side_effect = ["", incomplete]
+                with self.assertRaisesRegex(ValueError, "timer source control did not complete"):
+                    fibers.standard_timer_source_control(compiler, root / "control")
+                self.assertEqual(compiler.run.call_count, 2)
+
+    def test_private_mapping_preserves_component_source_and_excludes_guest_claims(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            application = compiler.sdk / "fibers/conformance/timers/Capsule.java"
+            original = application.read_bytes()
+            compiler.run.side_effect = ["", *([self.receipt()] * 3)]
+            report = fibers.standard_timer_source_control(compiler, root / "control")
+            self.assertEqual(application.read_bytes(), original)
+            mapped = (root / "control/Capsule.java").read_text()
+            self.assertIn("import dev.latent.guest.runtime.util.Timer;", mapped)
+            self.assertNotIn("import java.util.Timer;", mapped)
+            self.assertEqual(len(report["sourceInputs"]), 7)
+            self.assertEqual(report["iterations"], 3)
+            self.assertFalse(report["componentExecutionPerformed"])
+            self.assertFalse(report["actualGuestBindingsUsed"])
+
+    def test_changed_sdk_bytes_after_completed_runs_invalidate_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            def observe(stage, *args):
+                if stage == "standard-timer-source-2":
+                    port = compiler.sdk / "fibers/dev/latent/guest/runtime/util/Timer.java"
+                    port.write_bytes(port.read_bytes() + b"\n// changed during control\n")
+                return "" if stage.endswith("compile") else self.receipt()
+            compiler.run.side_effect = observe
+            with self.assertRaisesRegex(ValueError, "control inputs changed"):
+                fibers.standard_timer_source_control(compiler, root / "control")
+            self.assertEqual(compiler.run.call_count, 4)
+
+    def test_ambiguous_source_mapping_fails_before_host_compilation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = self.fixture(root)
+            application = compiler.sdk / "fibers/conformance/timers/Capsule.java"
+            application.write_bytes(application.read_bytes() + b"\nimport java.util.Timer;\n")
+            with self.assertRaisesRegex(ValueError, "source control import is ambiguous"):
+                fibers.standard_timer_source_control(compiler, root / "control")
+            compiler.run.assert_not_called()
+
+
+class StandardTimerModelIntegrity(unittest.TestCase):
+    @staticmethod
+    def fixture(root):
+        import xml.etree.ElementTree as ET
+
+        compiler, jars, lock = ThrowableModelIntegrity.fixture(root, include_platform=True)
+        artifacts = [{**item, "platform": "any"} for item in json.loads(lock.read_bytes())["artifacts"]]
+        lock.write_text(json.dumps({"schemaVersion": 1, "maven": "https://repo.maven.apache.org/maven2/",
+                                    "artifacts": artifacts}), encoding="utf-8")
+        loader = compiler.sdk / "tools/dependencies.py"
+        loader.parent.mkdir()
+        shutil.copyfile(fibers.ROOT / "sdk/java-guest/tools/dependencies.py", loader)
+        namespace = "{https://schema.gradle.org/dependency-verification}"
+        document = ET.Element(namespace + "verification-metadata")
+        configuration = ET.SubElement(document, namespace + "configuration")
+        ET.SubElement(configuration, namespace + "verify-metadata").text = "true"
+        ET.SubElement(configuration, namespace + "verify-signatures").text = "false"
+        components = ET.SubElement(document, namespace + "components")
+        for item in artifacts:
+            parts = Path(item["path"]).parts
+            component = ET.SubElement(components, namespace + "component",
+                group=".".join(parts[:-3]), name=parts[-3], version=parts[-2])
+            artifact = ET.SubElement(component, namespace + "artifact", name=parts[-1])
+            ET.SubElement(artifact, namespace + "sha256", value=item["sha256"])
+        metadata = compiler.sdk / "feasibility/gradle/verification-metadata.xml"
+        metadata.parent.mkdir()
+        metadata.write_bytes(ET.tostring(document, encoding="utf-8"))
+        return compiler, jars, lock
+
+    def test_changed_locked_tooling_cannot_enter_timer_model_loading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, jars, _ = self.fixture(root)
+            jars[0].write_bytes(b"changed compiler class model")
+            with self.assertRaisesRegex(ValueError, "dependency-cache-lock-drift"):
+                fibers.standard_timer_model_control(compiler, root / "model")
+            compiler.run.assert_not_called()
+            self.assertFalse((root / "model").exists())
+
+    def test_partial_identity_proof_cannot_qualify_timer_model(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler, _, _ = self.fixture(root)
+            for name in ("fibers/compiler", "fibers/dev/latent/guest/runtime/util",
+                         "fibers/conformance/compiler"):
+                shutil.copytree(fibers.ROOT / "sdk/java-guest" / name, compiler.sdk / name)
+            compiler.run.side_effect = ["", "STANDARD_TIMER_MODEL_CONTROL PASS models=3"]
+            with self.assertRaisesRegex(ValueError, "timer model control did not complete"):
+                fibers.standard_timer_model_control(compiler, root / "model")
+            self.assertEqual(compiler.run.call_count, 2)
+
+
 class CompletableSourceIntegrity(unittest.TestCase):
     @staticmethod
     def fixture(root):
@@ -505,10 +624,15 @@ class PackagingTools(unittest.TestCase):
                     patch.object(sdk, "build") as build:
                 sdk.compile_all(root / "output", root / "wasi", contracts_tool=contracts, packager=packager)
             command.assert_not_called()
-            self.assertEqual(build.call_count, 9)
+            expected = ("http", "streaming", "blob", "secrets", "events", "random",
+                        "metrics", "service", "callee", "logging")
+            self.assertEqual(tuple(call.args[0].name for call in build.call_args_list), expected)
+            self.assertEqual(tuple(call.args[1].name for call in build.call_args_list),
+                             tuple("java-" + name for name in expected))
             for call in build.call_args_list:
                 self.assertEqual(call.args[2:4], (contracts.resolve(), packager.resolve()))
             report = json.loads((root / "output/SDK-BUILD.json").read_bytes())
+            self.assertEqual(report["builds"], list(expected))
             self.assertEqual(report["tools"], report["toolsAfter"])
             self.assertEqual(report["status"], "built-execution-required")
             self.assertFalse(report["runtimeQualified"])

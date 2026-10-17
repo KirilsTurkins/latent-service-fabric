@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="TaskWait.cs" />
+    <Compile Include="IdleTimerDriver.cs" />
     <Reference Include="Mono.Cecil" HintPath="$(LsfCecilPath)" />
   </ItemGroup>
 </Project>

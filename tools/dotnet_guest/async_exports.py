@@ -148,7 +148,7 @@ def task_call(body: str) -> tuple[int, int, str]:
     raise ValueError('dotnet-async-export-pinned-entry-drift')
 
 
-def bridge_class(text: str) -> tuple[str, int]:
+def bridge_class(text: str, drain_call: str | None = None) -> tuple[str, int]:
     """Keep upstream argument/result marshalling, changing only task lifetime."""
     calls = {}
     count = 0
@@ -201,6 +201,12 @@ def bridge_class(text: str) -> tuple[str, int]:
                           r'\1\2;', body)
             if re.search(r'\bawait\b', body):
                 raise ValueError('dotnet-async-export-pinned-helper-drift')
+            if drain_call is not None:
+                returns = list(re.finditer(r'(?m)^(\s*)([A-Za-z_][A-Za-z0-9_]*TaskReturn\([^\n]*\));$', body))
+                if len(returns) != 1:
+                    raise ValueError('dotnet-retirement-task-return-shape')
+                start = returns[0].start()
+                body = body[:start]+returns[0][1]+drain_call+';\n'+body[start:]
             # The pinned generator uses lifted record expressions as formal
             # parameter names. Keep its original raw core parameter list and
             # original argument lifting together instead of inventing a C#
@@ -226,7 +232,7 @@ def bridge_class(text: str) -> tuple[str, int]:
     return result, count
 
 
-def bridge(synchronous: str, asynchronous: str) -> tuple[str, int]:
+def bridge(synchronous: str, asynchronous: str, drain_call: str | None = None) -> tuple[str, int]:
     """Replace only complete export interop classes in baseline bindings."""
     baseline = {}
     for match in CLASS.finditer(synchronous):
@@ -239,7 +245,7 @@ def bridge(synchronous: str, asynchronous: str) -> tuple[str, int]:
             continue
         if match['name'] not in baseline:
             raise ValueError('dotnet-async-export-missing-baseline-class')
-        adapted, amount = bridge_class(match[0])
+        adapted, amount = bridge_class(match[0], drain_call)
         original = baseline[match['name']]
         replacements.append((original.start(), original.end(), adapted))
         count += amount
@@ -250,6 +256,26 @@ def bridge(synchronous: str, asynchronous: str) -> tuple[str, int]:
     if result.count('EntryPoint = "[async-lift]') != count:
         raise ValueError('dotnet-async-export-final-entry-count-drift')
     return result, count
+
+
+def retirement_call(directory) -> str | None:
+    matches = []
+    for path in directory.glob('*.IOwnerImports.cs'):
+        text = path.read_text(encoding='utf-8')
+        namespace = re.search(r'(?m)^namespace ([A-Za-z_][A-Za-z0-9_.]*\.wit\.Imports\.latent\.dotnetRetirement);$', text)
+        if namespace is None:
+            continue
+        if (text.count('public static unsafe void Drain()') != 1 or
+                'OwnerImportsInterop.DrainWasmInterop.wasmImportDrain();' not in text):
+            raise ValueError('dotnet-retirement-generated-csharp-shape')
+        interop = path.with_name(path.name.replace('IOwnerImports.cs', 'OwnerImportsInterop.cs')).read_text(encoding='utf-8')
+        if ('DllImportAttribute("latent:dotnet-retirement/owner@0.1.0", EntryPoint = "drain")' not in interop
+                or interop.count('public static extern void wasmImportDrain();') != 1):
+            raise ValueError('dotnet-retirement-generated-import-shape')
+        matches.append('global::'+namespace[1]+'.IOwnerImports.Drain()')
+    if len(matches) > 1:
+        raise ValueError('dotnet-retirement-ambiguous-generated-import')
+    return matches[0] if matches else None
 
 
 def memory_support(synchronous: str, asynchronous: str) -> str:

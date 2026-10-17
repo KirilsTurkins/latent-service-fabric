@@ -310,12 +310,15 @@ def generate(source: Path, output: Path, world: str, bindgen: str, wasm_tools: s
             run([bindgen, 'c-sharp', str(async_projection), '--world', world,
                  '--runtime', 'native-aot', '--with-wit-results', '--out-dir', str(async_generated)])
             observed_exports = 0
+            drain_call = support.retirement_call(generated)
+            if 'package latent:dotnet-retirement@' in original and drain_call is None:
+                raise BindingError('missing-private-retirement-binding')
             for path in generated.glob('*.cs'):
                 variant = async_generated / path.name
                 if not variant.is_file() or variant.is_symlink():
                     raise BindingError('stackful-async-export-generated-inventory-drift')
                 selected, count = support.bridge(read_bytes(path).decode('utf-8'),
-                                                 canonical_resource_order(read_bytes(variant).decode('utf-8')))
+                                                 canonical_resource_order(read_bytes(variant).decode('utf-8')), drain_call)
                 observed_exports += count
                 path.write_text(selected, encoding='utf-8', newline='\n')
             if observed_exports != expected_exports:

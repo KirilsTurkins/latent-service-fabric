@@ -8,6 +8,7 @@ wit_bindgen::generate!({
     async: [
         "export:wasi:io/poll@0.2.6#poll",
         "export:wasi:io/poll@0.2.6#[method]pollable.block",
+        "export:latent:dotnet-retirement/owner@0.1.0#drain",
         "-export:wasi:io/streams@0.2.6#[method]input-stream.blocking-read",
         "-export:wasi:io/streams@0.2.6#[method]output-stream.blocking-flush",
     ],
@@ -33,6 +34,11 @@ impl io::poll::Guest for ClosedRuntime {
     type Pollable = ClosedPoll;
     async fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {
         ClosedPoll::poll(inputs)
+    }
+}
+impl exports::latent::dotnet_retirement::owner::Guest for ClosedRuntime {
+    async fn drain() {
+        pump::Pump::current().drain_retired();
     }
 }
 export!(ClosedRuntime);

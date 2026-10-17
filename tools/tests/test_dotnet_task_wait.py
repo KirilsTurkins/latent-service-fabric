@@ -26,6 +26,23 @@ class TaskWaitPortTests(unittest.TestCase):
         self.original.parent.mkdir(parents=True)
         self.original.write_bytes(b'original-control')
         self.receipt = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/task-wait-rewrite.json').read_text())
+        # Mocked tool output only: the historical c41 receipt above stays intact.
+        self.receipt.update({'generatedHelperCount': 9, 'unchangedOriginalMethods': 44741,
+            'timerDriver': 'TimerQueue.SetNextTimer-only', 'timerDriverIdle': 'Timer.ActiveCount==0',
+            'timerDriverCancellation': 'original-CancellationTokenSource-CancelAndDispose',
+            'timerDriverIdentity': 'original-task-reference-and-epoch',
+            'timerDriverCallbacks': 'original-queued-user-callbacks-preserved',
+            'timerDriverScheduledToFire': 'untouched', 'timerDriverCacheCleanup': False,
+            'timerDriverModifiedOriginalMethods': 3,
+            'timerDriverRegistrationContext': 'no-new-capture-original-flow-restored',
+            'zeroCacheLifetime': 'CheckPollables-original-Poll-call-only', 'zeroCacheDetach': 'before-original-Poll',
+            'zeroCacheDispose': 'original-owned-Pollable-finally', 'zeroCacheForeignHolders': 'untouched',
+            'zeroCacheModifiedOriginalMethods': 1, 'zeroCacheOriginalBodies': {
+                'System.Void System.Threading.WasiEventLoop::CheckPollables(System.Object)': 'd' * 64},
+            'timerDriverOriginalBodies': {name: 'e' * 64 for name in (
+                'System.Void System.Threading.TimerQueue::SetNextTimer(System.Int64,System.Int64)',
+                'System.Void System.Threading.TimerQueue::TimerHandler(System.Object)',
+                'System.Void System.Threading.TimerQueue::DeleteTimer(System.Threading.TimerQueueTimer)')}})
         self.bridge = {'profile': async_exports.PROFILE, 'exports': 1}
         self.declared = [runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION]
         self.stages = []
@@ -146,6 +163,40 @@ class TaskWaitPortTests(unittest.TestCase):
                            ('originalContextRestoreBodyDigest', digest(b'changed'))):
             with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'rewrite-receipt'):
                 task_wait.validate_receipt({**self.receipt, key: value})
+
+
+    def test_historical_rewrite_receipt_cannot_claim_idle_driver_repair(self):
+        old = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/task-wait-rewrite.json').read_text())
+        with self.assertRaisesRegex(ValueError, 'rewrite-receipt'):
+            task_wait.validate_receipt(old)
+        task_wait.validate_receipt(self.receipt)
+
+    def test_idle_driver_receipt_cannot_claim_live_timer_or_foreign_holder_cancellation(self):
+        for key, value in (('timerDriver', 'all-pollables'), ('timerDriverIdle', 'root-return'),
+                           ('timerDriverIdentity', 'epoch-only'), ('timerDriverCallbacks', 'cleared'),
+                           ('timerDriverScheduledToFire', 'cleared'), ('timerDriverCacheCleanup', True),
+                           ('timerDriverRegistrationContext', 'captured-user-context'),
+                           ('timerDriverModifiedOriginalMethods', 4), ('zeroCacheLifetime', 'root-return'),
+                           ('zeroCacheDetach', 'after-Poll'), ('zeroCacheDispose', 'clear-host-counts'),
+                           ('zeroCacheForeignHolders', 'cancelled'), ('zeroCacheModifiedOriginalMethods', 2),
+                           ('generatedHelperCount', 8)):
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'rewrite-receipt'):
+                task_wait.validate_receipt({**self.receipt, key: value})
+
+    def test_idle_driver_original_method_identity_set_is_closed_and_digest_shaped(self):
+        for key in ('timerDriverOriginalBodies', 'zeroCacheOriginalBodies'):
+            bodies = self.receipt[key]
+            for changed in (None, [], {}, {**bodies, 'foreign': 'e' * 64},
+                            {**bodies, next(iter(bodies)): 'not-a-digest'}):
+                with self.subTest(key=key, bodies=changed), self.assertRaisesRegex(ValueError, 'rewrite-receipt'):
+                    task_wait.validate_receipt({**self.receipt, key: changed})
+
+    def test_new_idle_driver_source_is_in_the_actual_captured_tool_fence(self):
+        port = self.prepare()
+        with (self.sdk / 'tools/http-errors/IdleTimerDriver.cs').open('ab') as stream:
+            stream.write(b'\n// changed idle-driver control\n')
+        with self.assertRaisesRegex(ValueError, 'source-or-target-changed'):
+            port.recheck()
 
 
 if __name__ == '__main__':
