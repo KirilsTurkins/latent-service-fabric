@@ -102,6 +102,8 @@ qualification. They do not establish release installation or publication.
 This candidate does not complete the ordinary default HTTP client overlap,
 two unchanged published default-worker libraries, native cancellation/race and
 late-wake matrix, cross-tenant isolation or paired runtime-cost measurements.
-Those requirements remain open. The existing
+Those requirements remain open. The separate
+[published worker-library candidate](java-published-worker-libraries.md)
+records the separate two-library gate. The existing
 [Java authoring qualification](java-guest-authoring.md) retains its own frozen
 source and binary attribution.

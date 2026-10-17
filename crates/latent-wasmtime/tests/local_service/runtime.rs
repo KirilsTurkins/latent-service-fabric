@@ -164,6 +164,19 @@ async fn signed_java_host_imports_suspend_only_their_owned_callers() {
 }
 
 #[tokio::test]
+#[ignore = "requires two normally captured Java libraries and the explicit fiber I/O profile"]
+async fn signed_java_published_libraries_use_unchanged_default_workers() {
+    signed_java_fiber_fixture(
+        "LSF_JAVA_WORKER_LIBRARIES_FIXTURE",
+        include_bytes!(
+            "../../../../sdk/java-guest/fibers/conformance/worker-libraries/Capsule.java"
+        ),
+        "java-worker-libraries",
+    )
+    .await;
+}
+
+#[tokio::test]
 #[ignore = "requires the pinned standard Timer component and explicit java profile"]
 async fn signed_java_standard_timers_recur_cancel_and_drain_owned_workers() {
     signed_java_fiber_fixture(
@@ -187,8 +200,15 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
     let record: serde_json::Value =
         serde_json::from_slice(&std::fs::read(prepared.join("FIBERS-COMPILE.json")).unwrap())
             .unwrap();
-    let profile = if name == "java-fiber-io" {
-        assert_eq!(record["fixture"], "fiber-io");
+    let profile = if name == "java-fiber-io" || name == "java-worker-libraries" {
+        assert_eq!(
+            record["fixture"],
+            if name == "java-fiber-io" {
+                "fiber-io"
+            } else {
+                "worker-libraries"
+            }
+        );
         assert_eq!(
             record["referenceKind"],
             "private-runtime-wait-reference-using-JDK-threads"
@@ -237,6 +257,31 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         assert_eq!(control["modes"], serde_json::json!([0, 1, 2, 3]));
         assert_eq!(control["results"], serde_json::json!([42, 42, 42, 42]));
     }
+    let mut provenance_source = source.clone();
+    if name == "java-worker-libraries" {
+        assert_eq!(record["libraries"]["sourceModified"], false);
+        assert_eq!(record["libraries"]["externalExecutorInjected"], false);
+        assert_eq!(
+            record["libraries"]["originalLibraries"],
+            serde_json::json!({
+                "org.apache.commons:commons-lang3:3.14.0":
+                    "sha256:7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c",
+                "cn.hutool:hutool-core:5.8.40":
+                    "sha256:d6bedc908cba480cd12dbe6f8422fa60c0da31030b58a68c3c077f555fc0cbbc"
+            })
+        );
+        assert_eq!(
+            record["libraries"]["selectedJars"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
+        // Include the tested normal capture, archive selection and compiler
+        // identities in this signed fixture's source observation as well.
+        provenance_source
+            .extend_from_slice(&std::fs::read(prepared.join("FIBERS-COMPILE.json")).unwrap());
+    }
     let wit = std::fs::read_to_string(prepared.join("wit/service.wit")).unwrap();
     let caller = packages::java_activation_runtime(bytes, &wit);
     let release = packages::release(&caller);
@@ -252,7 +297,15 @@ async fn signed_java_fiber_fixture(variable: &str, expected_source: &[u8], name:
         results: 8,
         native_owners: 2,
     };
-    let f = signed_runtime_with_limits(root.path(), 1, 120_000, caller, &source, java_limits).await;
+    let f = signed_runtime_with_limits(
+        root.path(),
+        1,
+        120_000,
+        caller,
+        &provenance_source,
+        java_limits,
+    )
+    .await;
     // Qualify guest execution separately from cold native compilation. Prepare
     // this exact signed publication through the ordinary repository boundary;
     // no activation, guest Store or capability session is started here. Each

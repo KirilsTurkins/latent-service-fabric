@@ -8426,6 +8426,7 @@
         "runtime::typescript::signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime",
         "two_real_components_use_compiled_binding_normal_admission_and_child_accounting",
         "runtime::signed_java_host_imports_suspend_only_their_owned_callers",
+        "runtime::signed_java_published_libraries_use_unchanged_default_workers",
         "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers"
       ],
       "expectedIgnored": [
@@ -8439,6 +8440,7 @@
         "runtime::typescript::signed_standard_clocks_timeout_and_date_use_exact_bound_clock_owners",
         "runtime::typescript::signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime",
         "runtime::signed_java_host_imports_suspend_only_their_owned_callers",
+        "runtime::signed_java_published_libraries_use_unchanged_default_workers",
         "runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers"
       ],
       "id": "latent-wasmtime.test.local-service",
@@ -8453,11 +8455,12 @@
         "signed_standard_goroutines_sleep_and_drain_use_original_activation_owners",
         "signed_unchanged_npm_queue_delay_timeout_and_cancellation_use_native_runtime",
         "signed_java_host_imports_suspend_only_their_owned_callers",
+        "signed_java_published_libraries_use_unchanged_default_workers",
         "signed_java_standard_timers_recur_cancel_and_drain_owned_workers"
       ],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 42,
+      "minimumCases": 43,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [

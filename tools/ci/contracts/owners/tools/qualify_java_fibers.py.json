@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_java_fibers.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Compose both reviewed timer ownership/model/cache and fiber I/O admission/reference paths without changing original bounds or authority.",
+  "reviewReason": "Compose reviewed timer and fiber controls with unchanged worker library identity, source/reference, classpath and ownership fences.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "56b3d66626c9b453abb50a80e71035c9e45074c0dfadbce354507fbec9f87dca"
+  "sha256": "1288e71f8de3fadf6c0249bd1870af55b761b769e827a7c14ca115f3dff22f34"
 }
