@@ -294,6 +294,7 @@ def main() -> int:
         report['removeBeforeReview'] = denied
         capsule.write_text(fixture.application_source(removed=True), encoding='utf-8')
         tests('removed/SDK')
+        write(feed_policy, {'sources': []})
         review('removed')
         offset, denied = await_event(offset, lambda value: value.get('code') == 'workspace-recipe-trust-required',
                                      'removed-recipe-trust', 30)

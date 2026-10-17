@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_dotnet_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Require an explicit finite bytes-only random test fixture and exact per-scenario random/clock grants through existing consent/profile/policy owners, retaining default profiles, original watch assertions and deadlines.",
+  "reviewReason": "Remove only the owned outside feed from the qualification policy after its application package is removed, retaining exact SDK feeds and missing-source denial",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "e5919660f9fa8808313b4b5c59747fff88662793bd0280af966cb845c2cb15f6"
+  "sha256": "7a8f494054bbdfba65ebbcde4371047c5a8d3e7a1d2dbdac604f3d506f5fa916"
 }
