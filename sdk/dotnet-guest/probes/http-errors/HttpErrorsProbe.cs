@@ -6,6 +6,11 @@ using System.Text.Json;
 // Execute the actual captured WASI BCL in two isolated host load contexts.
 // This verifies its conversion/exception boundary, not a guest scheduler or
 // default-client component. No native WASI import is called by this probe.
+if (args.Length == 4 && args[0] == "--sync-read")
+{
+    HttpSyncReadProbe.Run(args[1..]);
+    return;
+}
 if (args.Length != 3 || File.Exists(args[2]))
     throw new InvalidDataException("http-error-probe-arguments");
 string Digest(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
@@ -69,3 +74,122 @@ using (var output = new FileStream(args[2], FileMode.CreateNew, FileAccess.Write
 Console.WriteLine(JsonSerializer.Serialize(result));
 originalContext.Unload();
 derivedContext.Unload();
+
+
+internal static class HttpSyncReadProbe
+{
+    // Host controls intentionally use only a preloaded BCL buffer, EOF, empty
+    // reads and pre-cancelled Tasks. No host result qualifies pending WASI I/O;
+    // the unchanged signed fourteen-case fixture remains the native gate.
+    internal static void Run(string[] args)
+    {
+        if (args.Length != 3 || File.Exists(args[2]))
+            throw new InvalidDataException("http-sync-read-probe-arguments");
+        string Digest(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+        if (Digest(args[0]) != "3ab88385e44dbed09c99b0a9a00fd80d6a14033a390d5471289b848267e05587")
+            throw new InvalidDataException("http-sync-read-probe-preimage");
+        var originalContext = new AssemblyLoadContext("original-sync-read-control", isCollectible: true);
+        var derivedContext = new AssemblyLoadContext("derived-sync-read-control", isCollectible: true);
+        try
+        {
+            var original = originalContext.LoadFromAssemblyPath(Path.GetFullPath(args[0]));
+            var derived = derivedContext.LoadFromAssemblyPath(Path.GetFullPath(args[1]));
+            const BindingFlags Fields = BindingFlags.Instance | BindingFlags.NonPublic;
+            void Set(Stream stream, string name, object? value) => stream.GetType().GetField(name, Fields)!.SetValue(stream, value);
+            Stream Create(Assembly assembly, byte[]? bytes = null)
+            {
+                var type = assembly.GetType("System.Net.Http.WasiInputStream", throwOnError: true)!;
+                var stream = (Stream)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(type);
+                // There are deliberately no native handles to finalize/dispose.
+                GC.SuppressFinalize(stream);
+                Set(stream, "buffer", bytes);
+                return stream;
+            }
+            var assertions = 0;
+            void Equal(object? expected, object? actual)
+            {
+                assertions++;
+                if (!Equals(expected, actual)) throw new InvalidDataException("http-sync-read-probe-mismatch");
+            }
+            Type? Error(Action action)
+            {
+                try { action(); return null; }
+                catch (Exception error) { return error.GetType(); }
+            }
+            Equal(typeof(PlatformNotSupportedException), Error(() => Create(original).Read(new byte[1], 0, 1)));
+            var empty = Create(derived);
+            Equal(0, empty.Read([], 0, 0));
+            // Compare malformed ranges to the original framework validator,
+            // including its API-specific exception type and check ordering.
+            var validate = typeof(Stream).GetMethod("ValidateBufferArguments", BindingFlags.Static | BindingFlags.NonPublic)!
+                .CreateDelegate<Action<byte[], int, int>>();
+            foreach (var item in new (byte[]? Buffer, int Offset, int Count)[] {
+                (null, 0, 0), (new byte[2], -1, 0), (new byte[2], 0, -1), (new byte[2], 2, 1),
+            })
+                Equal(Error(() => validate(item.Buffer!, item.Offset, item.Count)),
+                    Error(() => empty.Read(item.Buffer!, item.Offset, item.Count)));
+            var buffered = Create(derived, [10, 20, 30, 40, 50]);
+            byte[] destination = [99, 99, 99, 99, 99, 99];
+            Equal(2, buffered.Read(destination, 1, 2));
+            Equal("99,10,20,99,99,99", string.Join(",", destination));
+            Equal(1, buffered.Read(destination.AsSpan(3, 1)));
+            Equal((byte)30, destination[3]);
+            Equal(40, buffered.ReadByte());
+            Equal(1, buffered.Read(destination, 0, destination.Length));
+            Equal((byte)50, destination[0]);
+            Set(buffered, "otherSideClosed", true);
+            Equal(0, buffered.Read(destination, 0, destination.Length));
+            Equal(-1, buffered.ReadByte());
+            var copied = Create(derived, [1, 2, 3, 4]);
+            using (var target = new EndAfterWrite(() => Set(copied, "otherSideClosed", true)))
+            {
+                copied.CopyTo(target, 4);
+                Equal("1,2,3,4", string.Join(",", target.ToArray()));
+                Equal(1, target.Writes);
+            }
+            Set(empty, "isClosed", true);
+            Equal(typeof(ObjectDisposedException), Error(() => empty.Read([], 0, 0)));
+            Equal(typeof(ObjectDisposedException), Error(() => empty.Read(new byte[1], 0, 1)));
+            var cancelled = new CancellationToken(canceled: true);
+            var task = Create(derived).ReadAsync(new byte[1], 0, 1, cancelled);
+            Equal(true, task.IsCanceled);
+            OperationCanceledException? observed = null;
+            try { task.GetAwaiter().GetResult(); }
+            catch (OperationCanceledException error) { observed = error; }
+            Equal(true, observed is not null);
+            Equal(cancelled, observed?.CancellationToken);
+            var asynchronous = Create(derived, [7, 8]);
+            var bytes = new byte[2];
+            Equal(2, asynchronous.ReadAsync(bytes, 0, 2, CancellationToken.None).GetAwaiter().GetResult());
+            Equal("7,8", string.Join(",", bytes));
+            var result = new {
+                scope = "captured-wasi-bcl-sync-read-buffered-host-controls",
+                assertions,
+                originalDigest = "sha256:" + Digest(args[0]),
+                derivedDigest = "sha256:" + Digest(args[1]),
+                originalReadUnsupported = true,
+                defaultClientComponentQualified = false,
+                pendingGuestIoQualified = false,
+            };
+            using var output = new FileStream(args[2], FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            JsonSerializer.Serialize(output, result);
+            Console.WriteLine(JsonSerializer.Serialize(result));
+        }
+        finally
+        {
+            originalContext.Unload();
+            derivedContext.Unload();
+        }
+    }
+
+    private sealed class EndAfterWrite(Action end) : MemoryStream
+    {
+        internal int Writes { get; private set; }
+        public override void Write(byte[] bytes, int offset, int count)
+        {
+            base.Write(bytes, offset, count);
+            Writes++;
+            end();
+        }
+    }
+}

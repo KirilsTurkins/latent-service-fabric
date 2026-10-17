@@ -239,3 +239,33 @@ cover profile selection, source/target/product drift and exact reference and
 receipt binding. The unchanged 14-case signed HTTP gate, pending cancellation,
 physical retirement, budget/readiness behavior and the wider #746 runtime
 contract remain required before claiming runtime compatibility.
+
+## Synchronous WASI response reads
+
+The `dotnet-wasi-sync-response-read-v1` compiler selection addresses the
+`stream-ready:platform-not-supported` result retained at PR #1021 head
+`1a96a0d9ecda090324f9f1a33f626cbb6bcc9fb8`. The unchanged standard HTTP
+fixture still calls `stream.CopyTo(body)`; its fourteen required cases are not
+replaced with asynchronous application code or successful skips.
+
+On the exact SHA-256-bound WASI `System.Net.Http` input, the captured tool
+replaces only `WasiInputStream.Read(byte[], int, int)` in addition to the
+existing finite error conversion. It validates buffers through the original
+`Stream.ValidateBufferArguments`, checks disposal, and returns zero for an
+empty read without acquiring a pollable. Nonempty reads invoke the original
+`ReadAsync` and join its actual task through the separately derived CoreLib
+`TaskAwaiter` path. The asynchronous implementation and other stream methods
+remain unchanged; no host imports, library routing, handler injection, arbitrary
+error disclosure or additional capability grants are introduced.
+
+Selection requires an already prepared, immutable task-wait port from the same
+source capture. Final qualification binds both derived assemblies to the same
+NativeAOT response file; missing, original, duplicate or foreign CoreLib
+references fail closed. The HTTP receipt retains the joined CoreLib digest.
+
+The host BCL probe adds buffered partial reads, inherited span/read-byte and
+copy operations, EOF, empty reads, invalid ranges, disposal and cancellation
+controls. It preserves the independent 79 finite error controls and repeats
+them against the combined transformation. These controls explicitly do not
+qualify pending guest I/O. The signed fourteen-case HTTP gate, subsequent
+library/resource gates and broader #693/#746 requirements remain mandatory.

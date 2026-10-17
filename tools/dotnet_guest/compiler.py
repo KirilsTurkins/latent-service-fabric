@@ -238,16 +238,17 @@ class Compiler:
             # prohibits restore from silently reaching the network on a miss.
             (project / "nuget.config").write_text(
                 '<configuration><packageSources><clear /></packageSources></configuration>\n', encoding="utf-8")
-        self.http_error_port = None
-        if {runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION} <= set(declared):
-            self.http_error_port = http_errors.prepare(self.sdk, self.http_error_tools, self.dotnet, declared, project,
-                output, command.output, self.run,
-                protect_inputs=self.isolation.protect_inputs if self.isolation else None)
         self.task_wait_port = None
         if task_wait.selected(declared, receipt.get('asyncExportBridge')):
             self.task_wait_port = task_wait.prepare(self.sdk, self.http_error_tools, self.package_cache, self.dotnet,
                 declared, receipt.get('asyncExportBridge'), project, output, command.output, self.run,
                 protect_inputs=self.isolation.protect_inputs if self.isolation else None)
+        self.http_error_port = None
+        if {runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION} <= set(declared):
+            self.http_error_port = http_errors.prepare(self.sdk, self.http_error_tools, self.dotnet, declared, project,
+                output, command.output, self.run,
+                protect_inputs=self.isolation.protect_inputs if self.isolation else None,
+                task_wait_port=self.task_wait_port)
         resources = install_resources(snapshot(work, exclude=("dependencies", "application-vendor")), project)
         if self.isolation is not None and resources is not None:
             self.isolation.protect_inputs(project / "Capsule.csproj")
@@ -339,6 +340,8 @@ class Compiler:
                     "sourceCaptureDigest", "targetsDigest", "method", "categories", "cecilDigest",
                     "arbitraryPayloadDisclosure", "nativeAotReferenceBinding")},
             }]
+            if "synchronousRead" in http_error_port:
+                self.compiler_patches[-1]["selection"]["synchronousRead"] = http_error_port["synchronousRead"]
             self.generated_materials.extend((self.http_error_port.identity,
                 file_identity(command.output / "http-error-port.json", "dotnet-http-error-port", http_errors.MAX_RECEIPT)))
         if self.task_wait_port is not None:
