@@ -19,15 +19,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir "$RUNNER_TEMP/pr1035-integration"
-          git rev-parse HEAD origin/development > "$RUNNER_TEMP/pr1035-integration/refs.txt"
           base=$(git merge-base HEAD origin/development)
-          printf '%s\n' "$base" >> "$RUNNER_TEMP/pr1035-integration/refs.txt"
-          git archive --format=tar HEAD | gzip -1 > "$RUNNER_TEMP/pr1035-integration/head.tar.gz"
-          git archive --format=tar origin/development | gzip -1 > "$RUNNER_TEMP/pr1035-integration/development.tar.gz"
-          git archive --format=tar "$base" | gzip -1 > "$RUNNER_TEMP/pr1035-integration/base.tar.gz"
+          git rev-parse HEAD origin/development "$base" > "$RUNNER_TEMP/pr1035-integration/refs.txt"
+          git rev-parse 'HEAD^{tree}' 'origin/development^{tree}' "$base^{tree}" > "$RUNNER_TEMP/pr1035-integration/trees.txt"
+          git pack-objects --revs --stdout < "$RUNNER_TEMP/pr1035-integration/trees.txt" > "$RUNNER_TEMP/pr1035-integration/sources.pack"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: pr1035-integration-inputs
+          name: pr1035-integration-objects
           path: ${{ runner.temp }}/pr1035-integration/
+          compression-level: 0
           retention-days: 1
           if-no-files-found: error
