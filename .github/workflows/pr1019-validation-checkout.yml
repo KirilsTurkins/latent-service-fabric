@@ -1,0 +1,29 @@
+name: PR 1019 isolated source checkout
+
+on:
+  push:
+    branches: [ci/pr1019-validation-checkout-20261017]
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 22515a7ec4613ea2388b29eb98ecb2eb43632817
+          persist-credentials: false
+      - name: Archive the exact tracked source without credentials or build output
+        run: |
+          test "$(git rev-parse HEAD)" = 22515a7ec4613ea2388b29eb98ecb2eb43632817
+          git archive --format=tar.gz --output="$RUNNER_TEMP/pr1019-source.tar.gz" HEAD
+          sha256sum "$RUNNER_TEMP/pr1019-source.tar.gz"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr1019-source-22515a7
+          path: ${{ runner.temp }}/pr1019-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
