@@ -587,3 +587,125 @@ fn unknown_or_unbounded_trap_kinds_are_dropped_by_public_projection() {
         assert!(!public.to_string().contains("secret-token"));
     }
 }
+
+#[test]
+fn fixed_backend_dispositions_keep_only_code_and_original_invocation_failure() {
+    for code in [
+        "guest-trap",
+        "guest-runtime-error",
+        "runtime-lifecycle-unproven",
+        "budget-accounting-failed",
+        "result-limit-exceeded",
+        "invalid-component-result",
+    ] {
+        let error = PlatformError {
+            code: PlatformErrorCode::GuestTrap,
+            message: "private-engine-context".into(),
+            retryable: false,
+            details: vec![ErrorDetail {
+                kind: "activation.guest-trap".into(),
+                fields: [
+                    ("code".into(), code.into()),
+                    ("cell_id".into(), "private-cell".into()),
+                    ("message".into(), "private-engine-context".into()),
+                    ("credential".into(), "private-fixture-text".into()),
+                ]
+                .into(),
+            }],
+        };
+        let data = json!({"terminalState":"guest_trap", "consumption":{
+            "cpuFuel":"17", "peakMemoryBytes":"23", "outboundRequests":1}});
+        let outcome = crate::output::Outcome::platform_failure(data.clone(), &error);
+        assert_eq!(outcome.exit_code(), 4);
+        let document = outcome.document("invoke");
+        assert_eq!(document["data"], data);
+        assert_eq!(document["error"]["code"], "guest-trap");
+        assert_eq!(document["error"]["retryable"], false);
+        assert_eq!(
+            document["error"]["details"],
+            json!([{"kind":"activation.guest-trap", "fields":{"code":code}}])
+        );
+        assert!(!document.to_string().contains("private"));
+    }
+}
+
+#[test]
+fn foreign_backend_disposition_does_not_expand_transport_certainty_or_envelope_bounds() {
+    let mut error = proto::PlatformError {
+        code: "guest-trap".into(),
+        message: "private-engine-context".into(),
+        retryable: false,
+        detail_items: vec![proto::ErrorDetail {
+            kind: "activation.guest-trap".into(),
+            fields: [
+                ("code".into(), "runtime-lifecycle-unproven".into()),
+                ("cell_id".into(), "private-cell".into()),
+            ]
+            .into(),
+        }],
+    };
+    let status = Status::with_details(Code::Internal, "private", error.encode_to_vec().into());
+    let failure = Failure::from_status(&status);
+    assert_eq!(failure.category, Category::PlatformError);
+    assert!(!failure.outcome_known);
+    assert!(failure.request_dispatched);
+    assert_eq!(failure.error["code"], "guest-trap");
+    assert_eq!(failure.error["retryable"], false);
+    assert_eq!(
+        failure.error["details"],
+        json!([{"kind":"activation.guest-trap", "fields":{"code":"runtime-lifecycle-unproven"}}])
+    );
+    assert!(!failure.error.to_string().contains("private"));
+    error.message = "private".repeat(1171);
+    assert!(error.encoded_len() > 8192);
+    let status = Status::with_details(Code::Internal, "private", error.encode_to_vec().into());
+    let failure = Failure::from_status(&status);
+    assert_eq!(failure.error["code"], "invalid-error-response");
+    assert!(!failure.error.to_string().contains("private"));
+    let detail = ErrorDetail {
+        kind: "activation.guest-trap".into(),
+        fields: [("code".into(), "guest-trap".into())].into(),
+    };
+    let public = platform_value(&PlatformError {
+        code: PlatformErrorCode::GuestTrap,
+        message: "private".into(),
+        retryable: false,
+        details: vec![detail; 17],
+    });
+    assert_eq!(public["details"].as_array().unwrap().len(), 16);
+    for detail in public["details"].as_array().unwrap() {
+        assert_eq!(
+            detail,
+            &json!({"kind":"activation.guest-trap", "fields":{"code":"guest-trap"}})
+        );
+    }
+}
+
+#[test]
+fn unknown_or_unbounded_backend_dispositions_stay_private() {
+    for value in [
+        "future-failure".to_owned(),
+        "GuestTrap".to_owned(),
+        " guest-trap".to_owned(),
+        "guest-trap ".to_owned(),
+        "guest-trap\n".to_owned(),
+        "guest-trap private-fixture-text".to_owned(),
+        "guest-tr\u{0430}p".to_owned(),
+        "private".repeat(1024),
+    ] {
+        let public = platform_value(&PlatformError {
+            code: PlatformErrorCode::GuestTrap,
+            message: "private-engine-context".into(),
+            retryable: false,
+            details: vec![ErrorDetail {
+                kind: "activation.guest-trap".into(),
+                fields: [("code".into(), value), ("cell_id".into(), "private-cell".into())]
+                    .into(),
+            }],
+        });
+        assert_eq!(public["details"], json!([]));
+        assert_eq!(public["code"], "guest-trap");
+        assert_eq!(public["retryable"], false);
+        assert!(!public.to_string().contains("private"));
+    }
+}

@@ -166,3 +166,119 @@ fn trap_kind_projection_keeps_original_error_and_detail_bounds() {
     };
     assert!(error.detail_items.is_empty());
 }
+
+#[test]
+fn fixed_backend_dispositions_survive_invocation_and_status_without_private_fields() {
+    let limits = InvocationLimits::default();
+    for code in [
+        "guest-trap",
+        "guest-runtime-error",
+        "runtime-lifecycle-unproven",
+        "budget-accounting-failed",
+        "result-limit-exceeded",
+        "invalid-component-result",
+    ] {
+        let detail = ErrorDetail {
+            kind: "activation.guest-trap".into(),
+            fields: Metadata::from([
+                ("code".into(), code.into()),
+                ("cell_id".into(), "private-cell".into()),
+                ("message".into(), "private-engine-context".into()),
+                ("credential".into(), "private-fixture-text".into()),
+            ]),
+        };
+        let outcome = trap_failure(vec![detail]);
+        let mut expected = outcome.clone();
+        let ActivationOutcome::Failed { error, .. } = &mut expected else {
+            unreachable!()
+        };
+        error.message = public_platform_message(error.code).into();
+        error.details = vec![ErrorDetail {
+            kind: "activation.guest-trap".into(),
+            fields: Metadata::from([("code".into(), code.into())]),
+        }];
+        let value = response(outcome.clone());
+        validate_runtime_response(&value, &limits).unwrap();
+        let encoded = public_invocation_response_to_proto(value, &limits).encode_to_vec();
+        let decoded = proto::InvokeResponse::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            invocation_response_from_proto(decoded).unwrap().outcome,
+            expected
+        );
+        let retained = status(&outcome);
+        validate_runtime_status(&retained, &retained.activation_id, &limits).unwrap();
+        let encoded = public_activation_status_to_proto(retained, &limits).encode_to_vec();
+        let decoded = proto::ActivationStatus::decode(encoded.as_slice()).unwrap();
+        assert_eq!(
+            activation_status_from_proto(decoded).unwrap().terminal_outcome,
+            Some(expected.retained_terminal_outcome())
+        );
+    }
+}
+
+#[test]
+fn backend_disposition_rejects_arbitrary_tokens_and_preserves_projection_bounds() {
+    let detail = |code: &str| ErrorDetail {
+        kind: "activation.guest-trap".into(),
+        fields: Metadata::from([("code".into(), code.into())]),
+    };
+    for code in [
+        "",
+        "future-failure",
+        "GuestTrap",
+        " guest-trap",
+        "guest-trap ",
+        "guest-trap\n",
+        "guest-trap private-fixture-text",
+        "guest-tr\u{0430}p",
+    ] {
+        let outcome = trap_failure(vec![detail(code)]);
+        let wire = public_invocation_response_to_proto(
+            response(outcome.clone()),
+            &InvocationLimits::default(),
+        );
+        let Some(proto::invoke_response::Result::PlatformFailure(error)) = wire.result else {
+            unreachable!()
+        };
+        assert!(error.detail_items.is_empty());
+        let wire = public_activation_status_to_proto(status(&outcome), &InvocationLimits::default());
+        let Some(proto::activation_status::TerminalOutcome::PlatformFailure(error)) =
+            wire.terminal_outcome
+        else {
+            unreachable!()
+        };
+        assert!(error.detail_items.is_empty());
+    }
+    let ActivationOutcome::Failed { error, .. } =
+        trap_failure(vec![detail("runtime-lifecycle-unproven")])
+    else {
+        unreachable!()
+    };
+    for limits in [
+        InvocationLimits {
+            max_platform_error_fields: 0,
+            ..InvocationLimits::default()
+        },
+        InvocationLimits {
+            max_platform_error_details: 0,
+            ..InvocationLimits::default()
+        },
+        InvocationLimits {
+            max_string_bytes: "runtime-lifecycle-unproven".len() - 1,
+            ..InvocationLimits::default()
+        },
+    ] {
+        let public = public_platform_error(error.clone(), &limits);
+        assert_eq!(public.code, error.code);
+        assert_eq!(public.retryable, error.retryable);
+        assert!(public.details.is_empty());
+    }
+    let ActivationOutcome::Failed { error, .. } =
+        trap_failure(vec![detail(&"private".repeat(1024))])
+    else {
+        unreachable!()
+    };
+    assert!(public_platform_error(error, &InvocationLimits::default())
+        .details
+        .is_empty());
+}
