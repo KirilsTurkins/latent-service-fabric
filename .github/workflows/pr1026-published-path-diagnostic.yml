@@ -1,0 +1,108 @@
+name: PR 1026 public module path diagnostic
+on:
+  push:
+    branches: [ci/pr1026-published-path-diagnostic]
+    paths: [.github/workflows/pr1026-published-path-diagnostic.yml]
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 79f7d65f191861396f0f499298c2dcb8e0aa88e8
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: 3.13.5
+      - name: Acquire the exact pinned native metadata tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/pr1026-path-tools"
+          curl --fail --location --max-time 120 --output "$RUNNER_TEMP/pr1026-path-tools/go.tar.gz" https://dl.google.com/go/go1.27.2.linux-amd64.tar.gz
+          echo "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5  $RUNNER_TEMP/pr1026-path-tools/go.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/pr1026-path-tools/go.tar.gz" -C "$RUNNER_TEMP/pr1026-path-tools"
+      - name: Observe the unchanged validator on the fixed public fixture
+        shell: bash
+        run: |
+          timeout --signal=TERM --kill-after=10s 300s python3 - <<'PY'
+          import hashlib, io, json, os, pathlib, subprocess, zipfile
+          from tools import application_dependency_store as store
+          from tools import go_application_dependencies as dependencies
+          from tools import qualify_go_runtime_dependencies as qualification
+          source = '79f7d65f191861396f0f499298c2dcb8e0aa88e8'
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip() == source
+          output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1026-path-observation'
+          output.mkdir()
+          original = qualification.ROOT / 'sdk/go-guest/runtime/published-conformance'
+          project = qualification.create(output / 'project', 'greeting', runtime_profile=qualification.INITIALIZER_PROFILE)
+          (project / 'src/main.go').write_bytes((original / 'main.go').read_bytes())
+          (project / 'wit/world.wit').write_bytes((original / 'world.wit').read_bytes())
+          document = json.loads((project / 'capsule-project.json').read_bytes())
+          document['world'] = 'tests:caller/service@1.0.0'
+          (project / 'capsule-project.json').write_bytes(json.dumps(document, indent=2).encode() + b'\n')
+          report = {'sourceCommit': source, 'qualification': False, 'scope': 'fixed-public-module-acquisition-only',
+                    'applicationExecuted': False, 'validatorChanged': False, 'modules': [],
+                    'sourceDigests': {name: 'sha256:' + hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest()
+                      for name in ('tools/go_application_dependencies.py', 'tools/application_dependency_store.py',
+                                   'tools/qualify_go_runtime_dependencies.py')}}
+          verifier = dependencies.verify_download
+          def inspect(row, expected):
+              item = {key: row[key] for key in ('Path', 'Version', 'Sum', 'GoModSum')}
+              report['modules'].append(item)
+              try:
+                  result = verifier(row, expected)
+                  item['status'] = 'verified'
+                  return result
+              except store.DependencyError as error:
+                  item['status'] = str(error)
+                  data = store.read_bytes(pathlib.Path(row['Zip']))
+                  item['zipDigest'] = 'sha256:' + hashlib.sha256(data).hexdigest()
+                  item['zipBytes'] = len(data)
+                  bad = []
+                  with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                      assert len(archive.infolist()) <= store.MAX_FILES
+                      for entry in archive.infolist():
+                          name = entry.orig_filename.rstrip('/') if entry.is_dir() else entry.orig_filename
+                          try:
+                              store.path_name(name)
+                          except store.DependencyError:
+                              if len(bad) < 32:
+                                  bad.append({'name': name[:1024], 'length': len(name), 'directory': entry.is_dir()})
+                  item['rejectedPublicMembers'] = bad
+                  (output / 'rejected-public-module.zip').write_bytes(data)
+                  raise
+          dependencies.verify_download = inspect
+          try:
+              go = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr1026-path-tools/go/bin/go'
+              qualification.capture(project, go)
+              report['outcome'] = 'capture-succeeded'
+          except BaseException as error:
+              report['outcome'] = 'capture-failed'
+              report['errorType'] = type(error).__name__
+              if isinstance(error, store.DependencyError):
+                  report['staticReason'] = str(error)
+          finally:
+              report['sourceUnchanged'] = all('sha256:' + hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() == value
+                                            for name, value in report['sourceDigests'].items())
+              (output / 'observation.json').write_text(json.dumps(report, indent=2, ensure_ascii=True) + '\n')
+              print(json.dumps(report, ensure_ascii=True))
+              assert report['sourceUnchanged']
+          PY
+      - name: Retain only public fixture identities and the rejected archive
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr1026-public-path-diagnostic-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/pr1026-path-observation/observation.json
+            ${{ runner.temp }}/pr1026-path-observation/rejected-public-module.zip
+            ${{ runner.temp }}/pr1026-path-observation/project/go.mod
+            ${{ runner.temp }}/pr1026-path-observation/project/go.sum
+          if-no-files-found: error
+          retention-days: 1
