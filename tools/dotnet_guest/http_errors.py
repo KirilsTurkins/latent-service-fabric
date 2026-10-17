@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import re
 from pathlib import Path
 import xml.etree.ElementTree as XML
 
@@ -26,6 +27,60 @@ MARKERS = tuple("latent-http-" + value for value in (
     "budget-exhausted", "tls-failed", "connection-failed", "unavailable", "uncertain", "invalid-state"))
 PACKAGE = "runtime.wasi-wasm.microsoft.dotnet.ilcompiler.llvm/10.0.0-rc.1.26306.1/runtimes/wasi-wasm"
 METHOD = "System.String System.Net.Http.WasiHttpInterop::ErrorCodeToString(WasiHttpWorld.wit.imports.wasi.http.v0_2_0.ITypes/ErrorCode)"
+
+RESPONSE_READ_ERRORS = {
+    "profile": "dotnet-wasi-response-read-errors-v1",
+    "method": "System.Void System.Net.Http.WasiInputStream/<ReadAsync>d__17::MoveNext()",
+    "originalIlBytes": 446,
+    "originalIlDigest": "sha256:785ff886dedc4ce9d1340bbd4262043c2a142821524448383e135fb61f1292a5",
+    "exceptionType": "System.IO.IOException",
+    "message": "HTTP response body read failed.",
+    "nativeErrorOwnership": "dispose-before-throw",
+    "closed": "original-eof",
+    "cancellation": "original-propagation",
+    "unknownError": "original-rethrow",
+    "modifiedOriginalMethods": 1,
+    "generatedHelpers": 1,
+    "newHostImports": 0,
+    "pendingGuestIoQualified": False,
+}
+
+SYNC_READ = {
+    "profile": "dotnet-wasi-sync-response-read-v1",
+    "method": "System.Int32 System.Net.Http.WasiInputStream::Read(System.Byte[],System.Int32,System.Int32)",
+    "asyncMethod": "System.Threading.Tasks.Task`1<System.Int32> System.Net.Http.WasiInputStream::ReadAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken)",
+    "modifiedOriginalMethods": 1,
+    "completion": "original-ReadAsync-TaskAwaiter",
+    "bufferValidation": "original-Stream.ValidateBufferArguments",
+    "emptyRead": "zero-without-provider-contact",
+    "disposal": "original-ObjectDisposedException.ThrowIf",
+    "generatedHelpers": 0,
+    "newHostImports": 0,
+    "defaultClientComponentQualified": False,
+    "responseReadErrors": RESPONSE_READ_ERRORS,
+}
+
+
+def validate_response_read_errors(value: dict) -> None:
+    # Bool is an int subclass: dict equality alone would accept True for a
+    # claimed method/helper count. Require the exact closed field types too.
+    if (type(value) is not dict or set(value) != set(RESPONSE_READ_ERRORS)
+            or any(type(value.get(key)) is not type(expected) or value[key] != expected
+                   for key, expected in RESPONSE_READ_ERRORS.items())):
+        raise ValueError("http-response-read-errors-rewrite-receipt")
+
+
+def validate_sync_read(value: dict) -> None:
+    digests = {"originalReadBodyDigest", "originalAsyncBodyDigest"}
+    if (type(value) is not dict or set(value) != set(SYNC_READ) | digests | {"unchangedOriginalMethods"}
+            or any(type(value.get(key)) is not type(expected) or value[key] != expected
+                   for key, expected in SYNC_READ.items())
+            or any(type(value.get(key)) is not str or re.fullmatch(r"sha256:[0-9a-f]{64}", value[key]) is None
+                   for key in digests)
+            or type(value.get("unchangedOriginalMethods")) is not int
+            or not 500 <= value["unchangedOriginalMethods"] <= 10000):
+        raise ValueError("http-sync-read-rewrite-receipt")
+    validate_response_read_errors(value["responseReadErrors"])
 
 
 def source_paths(tools: Path) -> tuple[Path, Path]:
@@ -98,8 +153,13 @@ class HttpErrorPort:
     source_identity: bytes
     target_identity: bytes
     evidence: dict
+    task_wait_port: object | None = None
 
     def recheck(self) -> None:
+        if self.task_wait_port is not None:
+            self.task_wait_port.recheck()
+            if self.evidence["synchronousRead"]["taskWaitDerivedDigest"] != self.task_wait_port.identity["digest"]:
+                raise ValueError("http-sync-read-CoreLib-identity-drift")
         if inventory(snapshot(self.source)) != self.source_identity:
             raise ValueError("http-error-port-source-input-changed")
         for path in self.originals:
@@ -133,6 +193,11 @@ class HttpErrorPort:
             if http_references:
                 if http_references != [str(self.assembly)]:
                     raise ValueError("http-error-port-native-aot-reference-drift")
+                if self.task_wait_port is not None:
+                    core_references = [line[3:] for line in lines if line.startswith("-r:") and
+                        Path(line[3:].strip('"')).name == "System.Private.CoreLib.dll"]
+                    if core_references != [str(self.task_wait_port.assembly)]:
+                        raise ValueError("http-sync-read-joined-CoreLib-reference-drift")
                 matched.append({"digest": digest(body), "size": len(body)})
         if len(matched) != 1:
             raise ValueError("http-error-port-native-aot-reference-not-observed")
@@ -144,9 +209,18 @@ class HttpErrorPort:
 
 
 def prepare(sdk: Path, tools: Path, dotnet: Path, declared: list[str], project: Path,
-            output: Path, evidence: Path, run, *, protect_inputs=None) -> HttpErrorPort | None:
+            output: Path, evidence: Path, run, *, protect_inputs=None, task_wait_port=None) -> HttpErrorPort | None:
     if not {runtime.CLOCK, runtime.HTTP, runtime.ACTIVATION} <= set(declared):
         return None
+    if task_wait_port is not None:
+        # No source-only opt-in: the separately authenticated CoreLib must have
+        # been prepared successfully and remain immutable through the build.
+        from tools.dotnet_guest.task_wait import Port
+        if type(task_wait_port) is not Port:
+            raise ValueError("http-sync-read-authenticated-task-wait-required")
+        task_wait_port.recheck()
+        if inventory(snapshot(sdk / "tools/http-errors")) != task_wait_port.source_identity:
+            raise ValueError("http-sync-read-task-wait-source-drift")
     tool = verify_installed(sdk, tools)
     originals = source_paths(tools)
     sources = [require_digest(path, SOURCE_DIGEST, "http-error-framework") for path in originals]
@@ -157,15 +231,20 @@ def prepare(sdk: Path, tools: Path, dotnet: Path, declared: list[str], project: 
     target_identity = read_file(sdk / "tools/http-errors/HttpErrors.targets", MAX_RECEIPT)
     targets.write_bytes(target_identity)
     source_identity = inventory(snapshot(sdk / "tools/http-errors"))
-    run("http-errors-rewrite", dotnet, tools / "http-errors/HttpErrors.dll", originals[0], assembly, receipt)
+    mode = ("--sync-read",) if task_wait_port is not None else ()
+    run("http-errors-rewrite", dotnet, tools / "http-errors/HttpErrors.dll", *mode, originals[0], assembly, receipt)
     result = json.loads(read_file(receipt, MAX_RECEIPT))
     if (set(result) != {"patch", "sourceDigest", "outputDigest", "cecilDigest", "method", "categories",
-                       "arbitraryPayloadDisclosure", "defaultClientComponentQualified"}
+                       "arbitraryPayloadDisclosure", "defaultClientComponentQualified"} |
+                       ({"synchronousRead"} if task_wait_port is not None else set())
             or result["patch"] != "latent.dotnet.http-errors.v1" or result["sourceDigest"] != SOURCE_DIGEST
             or result["cecilDigest"] != CECIL_DIGEST or result["categories"] != list(MARKERS)
             or result["method"] != METHOD
             or result["arbitraryPayloadDisclosure"] is not False or result["defaultClientComponentQualified"] is not False):
         raise ValueError("http-error-port-rewrite-receipt")
+    if task_wait_port is not None:
+        validate_sync_read(result["synchronousRead"])
+        task_wait_port.recheck()
     identity = file_identity(assembly, "dotnet-http-errors-derived", MAX_ASSEMBLY)
     if identity["digest"] != result["outputDigest"]:
         raise ValueError("http-error-port-rewrite-output-drift")
@@ -186,6 +265,9 @@ def prepare(sdk: Path, tools: Path, dotnet: Path, declared: list[str], project: 
     (project / "Capsule.csproj").write_bytes(XML.tostring(document, encoding="utf-8", xml_declaration=True))
     captured = {**result, "frameworkInputs": sources, "tool": tool, "sourceCaptureDigest": digest(source_identity),
                 "targetsDigest": digest(target_identity), "derived": identity, "nativeAotReferenceBinding": None}
+    if task_wait_port is not None:
+        captured["synchronousRead"] = {**result["synchronousRead"],
+            "taskWaitDerivedDigest": task_wait_port.identity["digest"]}
     write_json(evidence / "http-error-port-preparation.json", captured)
     return HttpErrorPort(sdk / "tools/http-errors", originals, assembly, retained, targets, reference_receipt, identity,
-                         source_identity, target_identity, captured)
+                         source_identity, target_identity, captured, task_wait_port)

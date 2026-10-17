@@ -52,7 +52,7 @@ pub struct Exchange {
     // Owner and slot follow physical futures/resources/buffers in field Drop
     // order. The host also keeps each physical socket's original reservation.
     owner: RefCell<Option<Owner>>,
-    _slot: Slot,
+    slot: RefCell<Option<Slot>>,
 }
 
 impl Exchange {
@@ -81,7 +81,7 @@ impl Exchange {
             dispatch_possible: Cell::new(false),
             admitted: Cell::new(false),
             owner: RefCell::new(None),
-            _slot: slot,
+            slot: RefCell::new(Some(slot)),
         })
     }
 
@@ -152,14 +152,21 @@ impl Exchange {
         if self.cancelled.replace(true) {
             return;
         }
-        // Dropping the accepted future cancels that exact canonical subtask.
-        // Its original host owner may remain pending; this is never labelled
-        // physical host retirement or permission to reconnect/replay.
+        // Keep the exact pinned future and every original owner alive. A sync
+        // resource destructor cannot perform its potentially blocking cancel.
+        // Only the private async drain may drop it, before root task-return.
         if self.admitted.get() {
-            pump::Pump::current().enter(|| {
-                self.work.borrow_mut().take();
-                self.upload.borrow_mut().take();
-                self.body.borrow_mut().take();
+            let work = self.work.borrow_mut().take();
+            let upload = self.upload.borrow_mut().take();
+            let body = self.body.borrow_mut().take();
+            let owner = self.owner.borrow_mut().take();
+            let slot = self.slot.borrow_mut().take();
+            pump::Pump::retire(move || {
+                drop(work);
+                drop(upload);
+                drop(body);
+                drop(owner);
+                drop(slot);
             });
         }
     }
@@ -305,12 +312,6 @@ impl pump::Progress for Exchange {
 }
 impl Drop for Exchange {
     fn drop(&mut self) {
-        if self.admitted.get() {
-            pump::Pump::current().enter(|| {
-                self.work.get_mut().take();
-                self.upload.get_mut().take();
-                self.body.get_mut().take();
-            });
-        }
+        self.abort();
     }
 }

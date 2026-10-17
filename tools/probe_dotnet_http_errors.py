@@ -55,10 +55,37 @@ def probe(tools: Path, output: Path) -> dict:
     if result["assertions"] != 79 or result["defaultClientComponentQualified"] is not False:
         raise ValueError("http-error-probe-assertions")
 
-    def rejected(stage, input_path, output_path, receipt_path):
+    # The error-only derivation and all 79 controls above remain independent.
+    # Exercise both transformations together without claiming guest progress.
+    sync_derived = output / "System.Net.Http.sync-read.dll"
+    sync_receipt = output / "sync-read-rewrite.json"
+    commands.run("sync-read-rewrite", dotnet, executable, "--sync-read", original, sync_derived, sync_receipt)
+    rewrite = json.loads(read_file(sync_receipt, http_errors.MAX_RECEIPT))
+    http_errors.validate_sync_read(rewrite["synchronousRead"])
+    sync_repeated = output / "System.Net.Http.sync-read.repeated.dll"
+    commands.run("sync-read-repeat", dotnet, executable, "--sync-read", original, sync_repeated,
+                 output / "sync-read-repeat.json")
+    if read_file(sync_derived, http_errors.MAX_ASSEMBLY) != read_file(sync_repeated, http_errors.MAX_ASSEMBLY):
+        raise ValueError("http-sync-read-probe-nondeterministic-output")
+    combined = json.loads(commands.run("sync-read-bounded-errors", dotnet, output / "probe/HttpErrorsProbe.dll",
+        original, sync_derived, output / "sync-read-bounded-errors.json"))
+    sync_result = json.loads(commands.run("actual-bcl-sync-read", dotnet, output / "probe/HttpErrorsProbe.dll",
+        "--sync-read", original, sync_derived, output / "actual-bcl-sync-read.json"))
+    if (combined["assertions"] != 79 or combined["defaultClientComponentQualified"] is not False
+            or sync_result["assertions"] != 24 or sync_result["defaultClientComponentQualified"] is not False
+            or sync_result["pendingGuestIoQualified"] is not False):
+        raise ValueError("http-sync-read-probe-assertions")
+    response_errors = json.loads(commands.run("actual-bcl-response-read-errors", dotnet, output / "probe/HttpErrorsProbe.dll",
+        "--response-read-errors", original, sync_derived, output / "actual-bcl-response-read-errors.json"))
+    if (response_errors["assertions"] != 16 or response_errors["nativeErrorDropQualified"] is not False
+            or response_errors["pendingGuestIoQualified"] is not False
+            or response_errors["defaultClientComponentQualified"] is not False):
+        raise ValueError("http-response-read-errors-probe-assertions")
+
+    def rejected(stage, input_path, output_path, receipt_path, *mode):
         count = len(commands.records)
         try:
-            commands.run(stage, dotnet, executable, input_path, output_path, receipt_path)
+            commands.run(stage, dotnet, executable, *mode, input_path, output_path, receipt_path)
         except ValueError:
             if len(commands.records) != count + 1 or commands.records[-1]["exitCode"] != 1:
                 raise
@@ -78,16 +105,26 @@ def probe(tools: Path, output: Path) -> dict:
     occupied = output / "occupied.json"
     occupied.write_bytes(b"preserve-existing-receipt")
     rejected("existing-receipt", original, output / "occupied.dll", occupied)
+    rejected("sync-read-changed-preimage", corrupt, output / "sync-changed.dll", output / "sync-changed.json", "--sync-read")
+    rejected("sync-read-derived-preimage", sync_derived, output / "sync-repatched.dll", output / "sync-repatched.json", "--sync-read")
+    rejected("sync-read-existing-output", original, sentinel, output / "sync-existing.json", "--sync-read")
+    rejected("sync-read-in-place-output", original, original, output / "sync-in-place.json", "--sync-read")
+    rejected("sync-read-existing-receipt", original, output / "sync-occupied.dll", occupied, "--sync-read")
     if sentinel.read_bytes() != b"preserve-existing-output" or occupied.read_bytes() != b"preserve-existing-receipt":
         raise ValueError("http-error-probe-existing-material-changed")
     if any((output / name).exists() for name in ("changed.dll", "changed.json", "repatched.dll", "repatched.json",
-                                               "existing.json", "in-place.json", "occupied.dll")):
+                                               "existing.json", "in-place.json", "occupied.dll", "sync-changed.dll", "sync-changed.json",
+                                               "sync-repatched.dll", "sync-repatched.json", "sync-existing.json",
+                                               "sync-in-place.json", "sync-occupied.dll")):
         raise ValueError("http-error-probe-denied-output-created")
     http_errors.require_digest(original, http_errors.SOURCE_DIGEST, "http-error-framework")
     if http_errors.verify_installed(sdk, tools) != tool_identity or snapshot(source) != before:
         raise ValueError("http-error-probe-inputs-changed")
     result = {**result, "rewriteDeterministic": True, "fivePreimageAndOwnershipDenials": True,
-              "originalAndExistingOutputsUnchanged": True, "commands": commands.records}
+              "originalAndExistingOutputsUnchanged": True, "commands": commands.records,
+              "responseReadErrors": response_errors,
+              "synchronousRead": {**sync_result, "rewriteDeterministic": True,
+                  "fivePreimageAndOwnershipDenials": True, "boundedErrorAssertions": combined["assertions"]}}
     write_json(output / "result.json", result)
     return result
 

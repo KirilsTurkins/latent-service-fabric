@@ -64,7 +64,7 @@ impl Pollable {
     }
 }
 impl io::poll::GuestPollable for Pollable {
-    fn block(&self) {
+    async fn block(&self) {
         Self::wait(&[self.source.clone()]);
     }
 }
