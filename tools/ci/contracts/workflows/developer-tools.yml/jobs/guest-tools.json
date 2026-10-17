@@ -105,6 +105,48 @@
         }
       },
       {
+        "if": "matrix.language == 'rust'",
+        "name": "Prepare captured Rust watch compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'rust'",
+        "name": "Qualify normal Rust dependency watch through three reviewed signed builds",
+        "run": "sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_rust_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_rust_dependency_watch.py --fixture tools/rust_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output \"$RUNNER_TEMP/rust-dependency-watch\""
+      },
+      {
+        "if": "always() && matrix.language == 'rust'",
+        "name": "Retain bounded Rust dependency watch and normal shutdown observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/rust-dependency-watch/public-qualification.json\n${{ runner.temp }}/rust-dependency-watch/ci-account.json\n",
+          "retention-days": 3
+        }
+      },
+      {
+        "if": "matrix.language == 'dotnet'",
+        "name": "Prepare captured .NET watch compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'dotnet'",
+        "name": "Qualify normal .NET dependency watch through three reviewed signed builds",
+        "run": "sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_dotnet_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_dotnet_dependency_watch.py --fixture tools/dotnet_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output \"$RUNNER_TEMP/dotnet-dependency-watch\""
+      },
+      {
+        "if": "always() && matrix.language == 'dotnet'",
+        "name": "Retain bounded .NET dependency watch and normal shutdown observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/dotnet-dependency-watch/public-qualification.json\n${{ runner.temp }}/dotnet-dependency-watch/ci-account.json\n${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stdout\n${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stderr\n",
+          "retention-days": 3
+        }
+      },
+      {
         "if": "matrix.language == 'typescript'",
         "name": "Qualify the static site and TypeScript API in Chromium",
         "run": "npm ci --ignore-scripts --no-audit --no-fund --prefix tools/static_api\nnode tools/static_api/node_modules/playwright-core/cli.js install --with-deps chromium\npython tools/static_api/ci.py --bin target/dev-tools/source-node/bin --signer target/dev-tools/payload/sdk/bin/capsule-test-signer --build \"$RUNNER_TEMP/dev-projects/static-api/build\" --browser-tools tools/static_api --output \"$RUNNER_TEMP/dev-projects/static-api\"\n"
@@ -316,7 +358,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Prepare required Bubblewrap containment on the ephemeral C watch runner while retaining all existing commands, namespace isolation and limits",
+  "reviewReason": "Preserve every existing C, Rust, TypeScript and .NET watch command, artifact path and qualification bound after current development integration.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
