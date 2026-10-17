@@ -1,0 +1,346 @@
+{
+  "schemaVersion": "latent.owned-canonical-child-evidence.v1",
+  "status": "passed",
+  "date": "2026-10-16",
+  "recipeSourceRevision": "21e24c85c6830269f38f10b4e47f99a498dc84e3",
+  "recipeSourcesMatchGitBlobs": true,
+  "source": {
+    "tools/qualify_rust_thread_routing.py": {
+      "digest": "sha256:6afc7532bd64db09177979a4010dfa49368b66146c0ffc602bd8c81256537d04",
+      "size": 14922
+    },
+    "sdk/rust-standard-runtime/routing-fixture/world.wit": {
+      "digest": "sha256:19598df6110d0b8b874f610e1065d200d99ba00a458bec1f93df94d93d0d2386",
+      "size": 124
+    },
+    "sdk/rust-standard-runtime/routing-fixture/core.wat": {
+      "digest": "sha256:f113c109a69dba8e2c6a9d78b19b747b44f40f0ea69cdebd1bcfbbfc71524431",
+      "size": 1290
+    },
+    "sdk/rust-standard-runtime/routing-fixture/interface.wit": {
+      "digest": "sha256:6f023fcd82204299090f3c88c1cf9fe051be86157bae9f1dbe5104e3ec505345",
+      "size": 147
+    },
+    "crates/latent-component-threading/src/lib.rs": {
+      "digest": "sha256:85deb20f8781ef4a00f0e4c5c0a006d703dd89a0ae6ccdaa20e2661d7a11d858",
+      "size": 23700
+    },
+    "crates/latent-component-threading/src/thread_entry.rs": {
+      "digest": "sha256:ffc471bbfaab5e5fabf5d98444d5a96b2f31442191323f9744c648dbecda7e5b",
+      "size": 25628
+    },
+    "crates/latent-component-threading/src/root.rs": {
+      "digest": "sha256:8bcf0aa62b8b19a3df21009cd51e29829f77898161fa5ae69da45aedb557aef3",
+      "size": 31272
+    },
+    "crates/latent-component-threading/src/admission.rs": {
+      "digest": "sha256:be29bfc801e0db0758daf0037d68961341ae16886b4c636a7aa0344f74065f11",
+      "size": 21933
+    },
+    "crates/latent-component-threading/src/component.rs": {
+      "digest": "sha256:290d2c1957dec766b6142a363d1d83f5af4f8bcac4eabbd830afe35394e4db04",
+      "size": 36105
+    },
+    "sdk/rust-standard-runtime/stack-transform/src/main.rs": {
+      "digest": "sha256:9a9017b8e037d2e831f92f8f672da3b79d9c2fd5603cbb578f793772b9ec2ea1",
+      "size": 4781
+    },
+    "sdk/rust-standard-runtime/stack-transform/Cargo.toml": {
+      "digest": "sha256:e826ae7bf938714a00d35134981eed60b2f814b88a34d30c240911eaac879e0d",
+      "size": 428
+    },
+    "sdk/rust-standard-runtime/stack-transform/src/lib.rs": {
+      "digest": "sha256:aa129ff1366ac7dffb15d74f4483cb132f5e9241aa3c094d4ef5952b287147a4",
+      "size": 670
+    },
+    "crates/latent-component-threading/Cargo.toml": {
+      "digest": "sha256:a4d0f4b1407aa130ab6e33706537a3d0029ce6ade56c7154323a93cf43459d19",
+      "size": 552
+    },
+    "Cargo.toml": {
+      "digest": "sha256:1e1b228ef3dea9694a15229a37104b06731c6dbd2296e88439561a080c500fbe",
+      "size": 3704
+    },
+    "Cargo.lock": {
+      "digest": "sha256:1eda143eef0bef98c471afd5c39156598a9670fffb872d05b39f78637abb8727",
+      "size": 112060
+    },
+    "sdk/rust-standard-runtime/stack-transform/Cargo.lock": {
+      "digest": "sha256:b9f6d2f9ae7e3571380e6db4b8e4dc2469e85cdd19a1aa6316f1ba398dd7967c",
+      "size": 6195
+    },
+    "wit/platform/native-runtime/package.wit": {
+      "digest": "sha256:2433ec06c033be01474fd5bf3275c921622eb6720aac344f1307736d09325eb6",
+      "size": 633
+    },
+    "wit/platform/activation-runtime/package.wit": {
+      "digest": "sha256:0855e3524edbe15a5d174a825df6034ef41cd87f1330e2fba884ea6e2c58e946",
+      "size": 2539
+    },
+    "sdk/rust-standard-runtime/owned-child-fixture/core.wat": {
+      "digest": "sha256:290b718503b375daa8baf550084b4ec22a49a8916b6a602b890906eea0b0fa30",
+      "size": 4802
+    },
+    "sdk/rust-standard-runtime/owned-child-fixture/world.wit": {
+      "digest": "sha256:f6e855b2c56e9b9b8648213666b0346d0f09cf9a8f0294abc9e9b2cecdbccd28",
+      "size": 208
+    },
+    "tools/qualify_owned_native_threads.py": {
+      "digest": "sha256:8c10fe71603140d9831803b9374a010af71655e2607a230e08ee830cf865c3ff",
+      "size": 9835
+    },
+    "crates/latent-wasmtime/src/component_threading.rs": {
+      "digest": "sha256:97c490571eed5f20ca0175230b762755a3e98e06b58bc9e2b4fca7b0b9e88c08",
+      "size": 5070
+    },
+    "crates/latent-wasmtime/src/config/engine.rs": {
+      "digest": "sha256:16ae3c3a2f537479171db2a128d2d597a3e39020348dd7848ac612e4e75e2fe4",
+      "size": 8929
+    },
+    "crates/latent-wasmtime/src/config/profile.rs": {
+      "digest": "sha256:5fccd28d4abaf18bded06c027a0047e61ae0e2d2815c74c9621f800ff33b605c",
+      "size": 14145
+    },
+    "crates/latent-wasmtime/src/backend.rs": {
+      "digest": "sha256:d3b74dc47005f70eb67fa994749376e89d5e5dc03e962752aaed3c37b22c3b2f",
+      "size": 48323
+    },
+    "crates/latent-wasmtime/src/backend/admission.rs": {
+      "digest": "sha256:01bd940a0ed3685733461b97113904ee21a5e798d540516c063b7bdd733a3d9e",
+      "size": 4224
+    },
+    "crates/latent-wasmtime/src/backend/preparation/compilation.rs": {
+      "digest": "sha256:6ea92792a8d4f27cdafa2bb12e6d2fca6e08efcf7077a0e8df903b5f4e3fca80",
+      "size": 11191
+    },
+    "crates/latent-wasmtime/src/backend/preparation_context.rs": {
+      "digest": "sha256:bbee223fa9c166e33a7ee9b178e400dcc6bef14640f826c554aec3195f13c821",
+      "size": 20395
+    },
+    "crates/latent-wasmtime/src/aot/worker.rs": {
+      "digest": "sha256:78c6279c9fcd9aa90b84c3d2eba77f2073ee18585261b092e36d470e19b1d501",
+      "size": 6078
+    },
+    "crates/latent-wasmtime/src/aot/loader.rs": {
+      "digest": "sha256:fc5867d70f665b00546e90918ac3fc6048aec094d98793053394c9ec9f1c79ea",
+      "size": 8679
+    },
+    "crates/latent-wasmtime/src/aot/profile.rs": {
+      "digest": "sha256:31d4544bec358c9d3c64d8c4d6a5e18c4acb2685253f78a934c43ffd0f917fef",
+      "size": 7762
+    },
+    "crates/latent-wasmtime/src/aot/supervisor/input.rs": {
+      "digest": "sha256:a598219087d46cfc489ec9ca468ee39b7d4c845af79278faba590b3b4246ff80",
+      "size": 18836
+    },
+    "crates/latent-wasmtime/src/native_stacks.rs": {
+      "digest": "sha256:7343c3a6feb90ef74627f54fa7bbc805e8c4e60255064efc6d1a94301af4c94b",
+      "size": 12575
+    },
+    "crates/latent-wasmtime/src/native_stacks/children.rs": {
+      "digest": "sha256:18680df6415e0bc399ac9cf072c8033db60805da3ff5ccbecac3bea79b4cc0db",
+      "size": 3915
+    },
+    "crates/latent-wasmtime/src/host/runtime.rs": {
+      "digest": "sha256:af29fd8dc327ae5cf1133c30a958ed8f5fdca13673539b4a39d9fb24d1370a41",
+      "size": 24746
+    },
+    "crates/latent-wasmtime/src/host/native.rs": {
+      "digest": "sha256:e98133d27f0d67d143337e33ad25a338fde08d794bc912512632bbe475dc2466",
+      "size": 2021
+    },
+    "crates/latent-wasmtime/src/host/runtime/fixed_result.rs": {
+      "digest": "sha256:c8ff0fd34ad8fe30cd5098e1c23265712285067625b48ed1a7e1a2543e74b7ee",
+      "size": 3692
+    },
+    "crates/latent-wasmtime/src/config.rs": {
+      "digest": "sha256:82dd9eb8db4109aef26d3c856edb30160a964d6c5dafac26514f9a6ffe0a6b2a",
+      "size": 15038
+    },
+    "crates/latent-core/src/activation_runtime.rs": {
+      "digest": "sha256:06d3fb91f8e73b7fa4f7efbfff5f1cf7c1587dace50047dc3eef4f7bdc1efc62",
+      "size": 19157
+    },
+    "crates/latent-packaging/src/semantics/wasm.rs": {
+      "digest": "sha256:a2330e14f4559c814bd7666f89ee8b1b14f95e832defdc82259e3553af5fa8c9",
+      "size": 11956
+    },
+    "crates/latent-packaging/src/semantics/host.rs": {
+      "digest": "sha256:0fb619ba51e6f1b39f7d681a8c1433e5c8914d7c4114fd9d4e4dda6f9520f858",
+      "size": 4266
+    },
+    "crates/latent-packaging/Cargo.toml": {
+      "digest": "sha256:6e20aa53ec9660cbdbc3b2945dfa640c643b12bdb65f218fb132bd20df5713d6",
+      "size": 949
+    },
+    "crates/latent-policy/src/capability.rs": {
+      "digest": "sha256:f42173ea5abaa9f77fbd3d52ad887f0c44c475a98fa920ac01fcaf64514564cf",
+      "size": 6971
+    },
+    "crates/latent-policy/src/capability/resources.rs": {
+      "digest": "sha256:92c55a6b13735f42ce06314a5b69d1c9da0024186ddc974a1b0f8d1a518f3ca8",
+      "size": 18577
+    },
+    "crates/latent-wasmtime/tests/local_service/runtime/native_threads.rs": {
+      "digest": "sha256:dfedf8c11da2b0d0082312b28b5ef30cc32dbe1bc649817a3c76c824561a284f",
+      "size": 5376
+    },
+    "crates/latent-wasmtime/tests/local_service/fixture.rs": {
+      "digest": "sha256:6b5142e9002e371c3e3f263558b2e96cff254f59f4437a0de3a086c494ebceb2",
+      "size": 37561
+    },
+    "crates/latent-wasmtime/tests/local_service/packages.rs": {
+      "digest": "sha256:ad6f23f42dacd6b3ca720bdc0ee131b8a54af83ce39bdedf528880cd85887323",
+      "size": 11169
+    },
+    "crates/latent-wasmtime/tests/guest_sdk/runtime.rs": {
+      "digest": "sha256:204c145c4268c0c626dca448a95598962d9026412713d626f596a5990a90030e",
+      "size": 18813
+    }
+  },
+  "tools": {
+    "transformer": {
+      "digest": "sha256:8489a86eae420a4de6c1a80cd4ac0af568c60ba4d4bf8c77d2dcf1b74e2cc192",
+      "size": 9631704
+    },
+    "wasmTools": {
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    }
+  },
+  "nativeTest": {
+    "name": "local-service-test",
+    "digest": "sha256:c66d03c40a5190891ae9aac5eae14738dda24b9b5ee1e9608687e3305bb4cbfa",
+    "size": 122923632
+  },
+  "components": {
+    "owned": {
+      "digest": "sha256:0d9eed3634e74565ae988e8938dd59d7d2ffdf1007cc3b3ef67591bedc306d9c",
+      "size": 4894
+    },
+    "unwrapped": {
+      "digest": "sha256:61caf5c431ca1c751f0d6bcc936225f7e9d1028181933f5ecbd1d8cfdef9390b",
+      "size": 4223
+    },
+    "modified-shim": {
+      "digest": "sha256:9e8b9813770636398587a5b47c81b3f35b9b648a06baae4877970c77f608626a",
+      "size": 4887
+    }
+  },
+  "environment": {
+    "os": "Linux x86_64",
+    "imageDigest": "sha256:b1806a96d305c409e4b84ff91ae8cd7e994e88a251b30a8e7709f01c61addcea",
+    "rust": "1.97.1",
+    "wasmTools": "1.254.0",
+    "debugAssertions": true,
+    "overflowChecks": true,
+    "nativeCargoCommand": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "latent-wasmtime",
+      "--lib",
+      "--test",
+      "local_service",
+      "--test",
+      "clock_admission",
+      "--test",
+      "broker",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "privateHostSourceOverlay": false,
+    "namespaceOrSecurityOverride": false
+  },
+  "finiteLimits": {
+    "activationMemoryBytes": 4194304,
+    "nativeStackBytes": 262144,
+    "tasks": 3,
+    "nativeOwners": 2,
+    "qualificationSeconds": 180,
+    "qualificationOutputBytes": 2097152
+  },
+  "executions": [
+    {
+      "mode": 0,
+      "hostCallCount": 5,
+      "allOriginalOwnersRetired": true
+    },
+    {
+      "mode": 0,
+      "hostCallCount": 5,
+      "allOriginalOwnersRetired": true
+    },
+    {
+      "mode": 1,
+      "hostCallCount": 3,
+      "allOriginalOwnersRetired": true
+    },
+    {
+      "mode": 2,
+      "hostCallCount": 3,
+      "allOriginalOwnersRetired": true
+    },
+    {
+      "mode": 3,
+      "hostCallCount": 4,
+      "allOriginalOwnersRetired": true
+    },
+    {
+      "mode": 4,
+      "hostCallCount": 5,
+      "allOriginalOwnersRetired": true
+    },
+    {
+      "mode": 5,
+      "hostCallCount": 3,
+      "allOriginalOwnersRetired": true
+    },
+    {
+      "mode": 6,
+      "hostCallCount": 4,
+      "allOriginalOwnersRetired": true
+    },
+    {
+      "mode": 0,
+      "hostCallCount": 5,
+      "allOriginalOwnersRetired": true
+    }
+  ],
+  "additionalControls": {
+    "missingNativeGrant": "permission-denied at binding publication before factory or Store construction",
+    "unwrappedAndModifiedShim": "rejected by same final-byte verifier before signing",
+    "normalEncoderRouting": {
+      "passed": 17,
+      "negativeComponentsActuallyValidated": true
+    }
+  },
+  "nativeUnitControls": {
+    "stackOwners": 8,
+    "retainedComponentProof": 2,
+    "engineProfile": 1,
+    "atomicOriginalTaskAdmission": 1,
+    "clockBaseline": 10,
+    "existingOrdinaryClockFixtureIgnores": 4,
+    "brokerBaseline": 10,
+    "packagingSemantics": 73,
+    "capabilityPolicy": 14,
+    "failures": 0
+  },
+  "focusedPython": {
+    "passed": 45,
+    "failed": 0
+  },
+  "ciCommandCoverage": {
+    "baseline": 88,
+    "currentRequiredBlocks": 293,
+    "scriptOwners": 157
+  },
+  "sourceLanguage": "transparent WAT mechanism control",
+  "rustOrStdExecuted": false,
+  "standardRuntimeQualified": false,
+  "ordinaryThreadsTlsSynchronizationQualified": false,
+  "hostedCiPassed": false,
+  "issue743Complete": false
+}

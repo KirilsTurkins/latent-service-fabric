@@ -20,6 +20,7 @@ class WireUtf8(unittest.TestCase):
             # Reader/string control. An accidental native call fails linkage.
             (interop / "Address.java").write_text(
                 "package org.teavm.interop; public final class Address {"
+                "public native int toInt();"
                 "public native Address add(int offset); public native byte getByte();"
                 "public native int getInt(); public native void putByte(byte value);"
                 "public static native Address ofData(byte[] value); }\n", encoding="utf-8")

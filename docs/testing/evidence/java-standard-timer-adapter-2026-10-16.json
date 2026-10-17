@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "latent.java-standard-timer.adapter-repair.v1",
+  "status": "actual-core-component-encoding-passed",
+  "runtimeQualified": false,
+  "failedCandidateHead": "5b6202ded5ffe9a4a2f9d0d4113bfa4bf1279626",
+  "testedMerge": "ca5aed469071c74b266e4ee3944ffb4172b19595",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38837094402/job/116768540177",
+  "artifact": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38837094402/artifacts/12020749546",
+  "observedFailure": "Actual TeaVM and C compilation passed; component encoding found missing fd_prestat_get after the earlier fd_close repair.",
+  "actualCore": {
+    "bytes": 1338823,
+    "sha256": "7f0f922efaf3ee30f2175bb939a721f96558a251a7a39a8ee37cd98690b2863d"
+  },
+  "adapter": {
+    "bytes": 489,
+    "sha256": "1673baeed66e2536333bc13690d885a47a6816bdf5568d03d0d2044e9ad84846",
+    "addedExports": ["fd_prestat_get", "fd_prestat_dir_name", "fd_seek", "fd_write"],
+    "behavior": "Every added function returns BADF (8), writes no caller memory and performs no host operation. The adapter owns no descriptors."
+  },
+  "reencodedComponent": {
+    "bytes": 1344442,
+    "sha256": "d6717b9f2e7d6e711bdf8f2d4d33f3be0911808d49d327ce47ae1a6eda65c875"
+  },
+  "tool": "wasm-tools 1.254.0",
+  "checks": ["adapter parse", "adapter validate", "actual core component new with repaired adapter", "component validate"],
+  "originalExecutionGuardsChanged": false,
+  "freshCompilationAndSignedTimerExecution": "pending maintained CI"
+}

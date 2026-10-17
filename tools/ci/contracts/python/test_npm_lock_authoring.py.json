@@ -1,0 +1,166 @@
+{
+  "cases": [
+    "NpmLockAuthoring.test_add_update_remove_are_exact_edits_without_fetch_and_preserve_accepted_lock",
+    "NpmLockAuthoring.test_cli_lock_failure_is_redacted_once_and_preserves_accepted_bytes",
+    "NpmLockAuthoring.test_explicit_profile_is_inherited_by_direct_capture_and_mismatch_precedes_native_commands",
+    "NpmLockAuthoring.test_first_add_creates_only_native_application_declaration",
+    "NpmLockAuthoring.test_lock_mirrors_transitive_local_inputs_and_retains_native_original_semantics",
+    "NpmLockAuthoring.test_native_failure_keeps_previous_lock_manifest_and_accepted_capture",
+    "NpmLockAuthoring.test_nested_application_cannot_be_its_own_local_package",
+    "NpmLockAuthoring.test_nonexact_ambiguous_and_sdk_overlap_edits_fail_before_changes",
+    "NpmLockAuthoring.test_registry_authorization_slot_and_value_bounds_never_fall_back",
+    "NpmLockAuthoring.test_source_or_local_resource_drift_prevents_native_lock_publication",
+    "NpmLockAuthoring.test_unobserved_local_native_source_is_rejected_without_publication",
+    "NpmLockAuthoring.test_unsafe_local_archive_is_rejected_before_native_invocation"
+  ],
+  "guards": {
+    "NpmLockAuthoring.test_add_update_remove_are_exact_edits_without_fetch_and_preserve_accepted_lock": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_cli_lock_failure_is_redacted_once_and_preserves_accepted_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_explicit_profile_is_inherited_by_direct_capture_and_mismatch_precedes_native_commands": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_first_add_creates_only_native_application_declaration": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_lock_mirrors_transitive_local_inputs_and_retains_native_original_semantics": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_native_failure_keeps_previous_lock_manifest_and_accepted_capture": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_nested_application_cannot_be_its_own_local_package": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_nonexact_ambiguous_and_sdk_overlap_edits_fail_before_changes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_registry_authorization_slot_and_value_bounds_never_fall_back": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_source_or_local_resource_drift_prevents_native_lock_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_unobserved_local_native_source_is_rejected_without_publication": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    },
+    "NpmLockAuthoring.test_unsafe_local_archive_is_rejected_before_native_invocation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b6464140ae9269c61934481e49fc0957e41f104910e5beacbb3f24dd040db603",
+        "class:setup-sha256:c18551730d835ce37084b91d7b7a0c7203b87641b15d1529909145bf58cf11d1"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_npm_lock_authoring.py",
+  "reviewReason": "Add 12 controlled native lock/edit/profile/credential/source/archive controls; keep all existing TypeScript test modules and guards unchanged",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

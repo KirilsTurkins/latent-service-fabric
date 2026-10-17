@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Keep bounded post-deploy failure observations explicitly qualification false; preserve original acceptance and authority",
+  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "1a8c68e1f21c931c318ee634b1a6878541584a0b84e63d6dad1122b663cd85f2"
+  "sha256": "529ddcd8a089ae175f36f0d356acd0c62f725998fa40605c67ba49810bc41dca"
 }

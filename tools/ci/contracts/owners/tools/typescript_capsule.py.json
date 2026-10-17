@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/typescript_capsule.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve every CLI operation and ordinary synchronous build path while adding explicit source-bound engine/splicer selection and captured npm runtime identity.",
+  "reviewReason": "Add exact application edits and explicit controlled native lock command while preserving all build/frontend/generator paths",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "6d204a309170d61773ce78f3d4841fcdda2b9ac22306bab884870d76fa3b5410"
+  "sha256": "199e1ddecc72a72481e2d2cd475297d9e44b30a57a11cdea87328e4891325b66"
 }

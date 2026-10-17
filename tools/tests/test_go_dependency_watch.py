@@ -103,6 +103,86 @@ class GoDependencyWatchFixture(unittest.TestCase):
             and isinstance(row.value, str) and row.value.startswith('workspace-recipe-')}
         self.assertEqual(codes, {'workspace-recipe-trust-required'})
 
+class FreshActivationEvidence(unittest.TestCase):
+    @staticmethod
+    def report():
+        return {'passed': True, 'environment': 'node', 'selection': list(fixture.SCENARIO_IDS),
+            'cleanup': 'invocation-results-received-node-retained', 'pendingOperation': None,
+            'results': [{'id': identifier, 'required': True, 'status': 'passed', 'category': 'success',
+                'outcomeKnown': True, 'targetMatches': True, 'execution': {'grants': list(fixture.RUNTIME_GRANTS)},
+                'activationId': 'dev-' + str(index) * 32, 'inputSha256': 'sha256:' + 'a' * 64,
+                'payloadSha256': 'sha256:' + 'b' * 64,
+                'expectedRevision': {'publicationId': 'publication:sha256:' + 'c' * 64},
+                'resolvedRevision': {'publicationId': 'publication:sha256:' + 'c' * 64}}
+                for index, identifier in enumerate(fixture.SCENARIO_IDS)]}
+
+    def test_fixture_uses_two_required_calls_and_only_explicit_maintained_go_grants(self):
+        from tools.dev_workflow.scenarios import validate
+        from tools.guest_runtime_profiles import profiles
+        value = fixture.scenarios()
+        validate(value, 'node')
+        self.assertEqual([row['id'] for row in value['scenarios']], list(fixture.SCENARIO_IDS))
+        self.assertEqual(len(value['scenarios']), 2)
+        self.assertEqual(set(fixture.RUNTIME_GRANTS), {row[0] for row in profiles('go').values()})
+        for row in value['scenarios']:
+            self.assertIs(row['required'], True)
+            self.assertEqual(row['execution'], {'grants': list(fixture.RUNTIME_GRANTS)})
+            self.assertEqual(row['requires'], ['fresh-state', 'clock', 'random'])
+            self.assertEqual(row['nodeTimeoutMillis'], 120000)
+        first, second = value['scenarios']
+        self.assertEqual({k: v for k, v in first.items() if k != 'id'},
+                         {k: v for k, v in second.items() if k != 'id'})
+        first['execution']['grants'].clear()
+        self.assertEqual(second['execution']['grants'], list(fixture.RUNTIME_GRANTS))
+        self.assertEqual(fixture.scenarios()['scenarios'][0]['execution']['grants'], list(fixture.RUNTIME_GRANTS))
+
+    def test_same_target_distinct_successful_activations_are_required(self):
+        from tools.qualify_go_dependency_watch import stage_tests_passed
+        self.assertTrue(stage_tests_passed(self.report(), fixture.SCENARIO_IDS, fixture.RUNTIME_GRANTS))
+        for field in ('activationId', 'inputSha256', 'payloadSha256', 'expectedRevision', 'resolvedRevision'):
+            with self.subTest(field=field):
+                report = self.report()
+                report['results'][1][field] = (report['results'][0][field] if field == 'activationId'
+                                              else 'sha256:' + 'd' * 64)
+                self.assertFalse(stage_tests_passed(report, fixture.SCENARIO_IDS, fixture.RUNTIME_GRANTS))
+
+    def test_missing_duplicate_partial_or_reordered_cases_cannot_qualify(self):
+        from tools.qualify_go_dependency_watch import stage_tests_passed
+        for selection, indices in (([], ()), (list(fixture.SCENARIO_IDS), (0,)),
+                (list(fixture.SCENARIO_IDS), (0, 0)), (list(fixture.SCENARIO_IDS), (1, 0)),
+                (list(fixture.SCENARIO_IDS), (0, 1, 1)), (list(reversed(fixture.SCENARIO_IDS)), (0, 1))):
+            with self.subTest(selection=selection, indices=indices):
+                report = self.report()
+                report['selection'] = selection
+                report['results'] = [report['results'][index] for index in indices]
+                self.assertFalse(stage_tests_passed(report, fixture.SCENARIO_IDS, fixture.RUNTIME_GRANTS))
+
+    def test_platform_failure_skips_unknown_outcome_or_implicit_grants_cannot_qualify(self):
+        from tools.qualify_go_dependency_watch import stage_tests_passed
+        changes = (('status', 'skipped'), ('category', 'platform-failure'), ('required', False),
+            ('outcomeKnown', False), ('targetMatches', False), ('outcomeKnown', 1),
+            ('execution', {'grants': []}), ('execution', {'grants': list(fixture.RUNTIME_GRANTS),
+                                                         'deniedCapabilities': [fixture.RUNTIME_GRANTS[0]]}))
+        for field, value in changes:
+            with self.subTest(field=field, value=value):
+                report = self.report(); report['results'][1][field] = value
+                self.assertFalse(stage_tests_passed(report, fixture.SCENARIO_IDS, fixture.RUNTIME_GRANTS))
+        for field in self.report()['results'][0]:
+            with self.subTest(missing=field):
+                report = self.report(); del report['results'][1][field]
+                self.assertFalse(stage_tests_passed(report, fixture.SCENARIO_IDS, fixture.RUNTIME_GRANTS))
+
+    def test_report_failure_ambiguous_cleanup_or_non_node_execution_cannot_qualify(self):
+        from tools.qualify_go_dependency_watch import stage_tests_passed
+        for field, value in (('passed', False), ('passed', 1), ('environment', 'portable'),
+                ('cleanup', 'client-cleanup-unconfirmed-node-retained'), ('pendingOperation', {'kind': 'deploy'})):
+            with self.subTest(field=field, value=value):
+                report = self.report(); report[field] = value
+                self.assertFalse(stage_tests_passed(report, fixture.SCENARIO_IDS, fixture.RUNTIME_GRANTS))
+        for report in (None, [], {}, {'passed': True}):
+            self.assertFalse(stage_tests_passed(report, fixture.SCENARIO_IDS, fixture.RUNTIME_GRANTS))
+
+
 class FrontendRuntime(unittest.TestCase):
     def test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode(self):
         import ast
@@ -371,7 +451,9 @@ class PublicBuildFailures(unittest.TestCase):
 
     def test_bounded_deeply_nested_actual_metadata_cannot_replace_original_failure(self):
         import json
-        from tools.qualify_go_dependency_watch import add_public_diagnostics
+        from unittest.mock import patch
+        from tools import qualify_go_dependency_watch as qualifier
+        native_loads = json.loads
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             source = root / 'builds' / ('a' * 32) / 'source'
@@ -383,18 +465,38 @@ class PublicBuildFailures(unittest.TestCase):
             (source.parent / 'attempt.json').write_text(json.dumps(owner))
             raw = b'[' * 3000 + b'0' + b']' * 3000
             self.assertLess(len(raw), 65536)
-            with self.assertRaises(RecursionError):
-                json.loads(raw)
             (output / 'BUILD-FAILED.json').write_bytes(raw)
-            original = RuntimeError('original-build-failure')
-            public = {'passed': False, 'failure': 'initial-build-failed'}
-            with self.assertRaises(RuntimeError) as observed:
-                try:
-                    raise original
-                finally:
-                    add_public_diagnostics(public, lambda: [], root, lambda: 'output')
-            self.assertIs(observed.exception, original)
-            self.assertEqual(public, {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': []})
+            # C JSON decoder recursion limits differ between supported Python
+            # versions. Exercise native parsing and inject failure only at the
+            # actual bounded receipt parser, never at the collector boundary.
+            for force_failure in (False, True):
+                with self.subTest(parser='fault' if force_failure else 'native'):
+                    attempted, failed = [], []
+                    def parse(value, *args, **kwargs):
+                        if value == raw:
+                            attempted.append(True)
+                            if force_failure:
+                                failed.append(True)
+                                raise RecursionError('private parser details')
+                        try:
+                            return native_loads(value, *args, **kwargs)
+                        except RecursionError:
+                            failed.append(True)
+                            raise
+                    original = RuntimeError('original-build-failure')
+                    public = {'passed': False, 'failure': 'initial-build-failed'}
+                    with patch.object(qualifier.json, 'loads', side_effect=parse):
+                        with self.assertRaises(RuntimeError) as observed:
+                            try:
+                                raise original
+                            finally:
+                                qualifier.add_public_diagnostics(public, lambda: [], root, lambda: 'output')
+                    self.assertIs(observed.exception, original)
+                    self.assertEqual(attempted, [True])
+                    expected = {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': []}
+                    if not failed:
+                        expected['buildFailures'] = [{'state': 'failed'}]
+                    self.assertEqual(public, expected)
 
 
 class DeliveredGoCacheSelection(unittest.TestCase):

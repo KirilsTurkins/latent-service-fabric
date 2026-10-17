@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/run_rust_dependency_watch_ci.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Run three explicitly reviewed signed Rust dependency revisions with private account source-bound fixtures and original compiler containment",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "79dc8a893da4de5254d54c83f397f76d6c818c2cab74ee5e9ddf4e3814761bbe"
+}

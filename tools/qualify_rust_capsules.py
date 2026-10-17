@@ -41,7 +41,8 @@ def inputs(language="rust"):
     if language == "rust":
         helpers += ("application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "rust_application_dependencies.py", "captured_compiler_isolation.py",
-                    "rust_dependency_fixture.py")
+                    "rust_dependency_fixture.py", "rust_dependency_authoring.py", "cargo_native_authoring.py",
+                    "rust_dependency_recovery.py", "rust_dependency_failures.py")
     elif language == "c":
         helpers += ("c_capsule.py", "c_capsule_project.py", "c_capsule_build.py",
                     "qualify_c_capsules.py", "c_guest/compiler.py", "c_guest/bindings.py",
@@ -72,7 +73,7 @@ def inputs(language="rust"):
                     "dotnet_guest_bindings.py", "check_dotnet_capsule_ownership.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
                     'application_dependencies.py', 'application_dependency_store.py', 'application_dependency_tools.py',
                     'application_dependency_approval.py', 'captured_compiler_isolation.py', 'dotnet_compiler_isolation.py',
-                    'dotnet_application_dependencies.py', 'dotnet_dependency_fixture.py',
+                    'dotnet_application_dependencies.py', 'dotnet_dependency_fixture.py', 'dotnet_dependency_recovery.py',
                     'dotnet_resource_fixture.py', 'dotnet_guest/resources.py', 'guest_resources.py',
                     "../.cargo/managed-guest.toml")
     return {"runtime": source_identity(ROOT), "sdk": directory_identity(ROOT / f"sdk/{language}-guest"),
@@ -384,7 +385,13 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
             language=language, noncrypto_entropy=language == "dotnet",
-            captured_dependency_recovery=language == "go" and application_dependencies)
+            captured_dependency_recovery=language in {"rust", "dotnet", "go"} and application_dependencies)
+        if language == "rust" and application_dependencies:
+            from tools.rust_dependency_failures import qualify as qualify_ffi
+            stage = "captured-native-ffi-failure"
+            result["applicationDependencies"]["nativeFfi"] = qualify_ffi(output / "projects/greeting",
+                output / "native-ffi", binaries["examples/capsule_contracts"], binaries["examples/package"],
+                paths["wasm-tools"], commands)
         if language == "dotnet":
             result["embeddedResources"]["runtimeExecution"] = "signed-admitted-component"
         if approved_generator:

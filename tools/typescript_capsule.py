@@ -54,6 +54,20 @@ def parser() -> argparse.ArgumentParser:
     capture.add_argument("--npm", type=Path, help="Explicit npm-cli.js entrypoint")
     capture.add_argument("--registry-config", type=Path)
     capture.add_argument("--condition", action="append", default=[])
+    for operation in ('add', 'update', 'remove'):
+        command = commands.add_parser(operation, help='Edit exact npm declarations without fetching or running hooks')
+        command.add_argument('project', type=Path)
+        command.add_argument('identity')
+        command.add_argument('--section', choices=('dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'), default='dependencies')
+        if operation != 'remove':
+            source = command.add_mutually_exclusive_group(required=True)
+            source.add_argument('--version')
+            source.add_argument('--path', type=Path)
+    lock = commands.add_parser('lock', help='Generate the native npm lock in a private controlled fetch stage')
+    lock.add_argument('project', type=Path)
+    lock.add_argument('--node', type=Path)
+    lock.add_argument('--npm', type=Path)
+    lock.add_argument('--registry-config', type=Path)
     review = commands.add_parser("review-lock", help="Accept an exact reviewed immutable npm closure")
     review.add_argument("project", type=Path)
     review.add_argument("--candidate", type=Path, required=True)
@@ -103,7 +117,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None):
     args = parser().parse_args(argv)
-    authoring = args.command in {'resolve', 'review-lock', 'dependencies', 'test', 'watch', 'generator-request', 'generate'}
+    authoring = args.command in {'add', 'update', 'remove', 'lock', 'resolve', 'review-lock', 'dependencies', 'test', 'watch', 'generator-request', 'generate'}
     try:
         if args.command == "install-tools":
             result = install(args.directory)
@@ -130,7 +144,13 @@ def main(argv: list[str] | None = None):
                 except (ValueError, OSError):
                     print('TypeScript dependency frontend receipt unavailable; inspect workspace status.', file=sys.stderr)
                 return outcome.exit_code
-            if args.command in {'generator-request', 'generate'}:
+            if args.command in {'add', 'update', 'remove'}:
+                result = dependencies.edit(args.project, args.command, identity=args.identity,
+                    version=getattr(args, 'version', None), local=getattr(args, 'path', None), section=args.section)
+            elif args.command == 'lock':
+                from tools.npm_lock_authoring import create_lock
+                result = create_lock(args.project, node=args.node, npm=args.npm, registry_config=args.registry_config)
+            elif args.command in {'generator-request', 'generate'}:
                 from tools import typescript_generator_authoring as generator
                 result = (generator.request(args.project, args.candidate, tool=args.tool,
                             arguments=args.arg, inputs=args.inputs, destination=args.destination,

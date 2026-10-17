@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Source-bind captured Go recovery and native metadata authoring helpers",
+  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "a29ac22bcf057de0cc840f816dc0454bea3d0d053efffb805d26483d9bac00f5"
+  "sha256": "fca1305106ce7c1490ca0c54ebfd6eac5061f9a911e4fb8837aaa8182880044b"
 }

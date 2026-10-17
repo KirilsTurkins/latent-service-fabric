@@ -38,6 +38,36 @@ def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
 
 
+def stage_tests_passed(report, scenario_ids, grants):
+    """Require two distinct successful activations of the same reviewed target."""
+    if (not isinstance(report, dict) or report.get('passed') is not True
+            or report.get('environment') != 'node' or report.get('selection') != list(scenario_ids)
+            or report.get('cleanup') != 'invocation-results-received-node-retained'
+            or 'pendingOperation' not in report or report['pendingOperation'] is not None):
+        return False
+    rows = report.get('results')
+    if not isinstance(rows, list) or len(rows) != 2 or len(scenario_ids) != 2:
+        return False
+    for row, identifier in zip(rows, scenario_ids):
+        if (not isinstance(row, dict) or row.get('id') != identifier
+                or row.get('status') != 'passed' or row.get('category') != 'success'
+                or row.get('required') is not True or row.get('outcomeKnown') is not True
+                or row.get('targetMatches') is not True or row.get('execution') != {'grants': list(grants)}
+                or not isinstance(row.get('activationId'), str)
+                or re.fullmatch(r'dev-[a-f0-9]{32}', row['activationId']) is None):
+            return False
+        for field in ('inputSha256', 'payloadSha256'):
+            if (not isinstance(row.get(field), str)
+                    or re.fullmatch(r'sha256:[a-f0-9]{64}', row[field]) is None):
+                return False
+        if any(not isinstance(row.get(field), dict) or not row[field]
+               for field in ('expectedRevision', 'resolvedRevision')):
+            return False
+    return (rows[0]['activationId'] != rows[1]['activationId']
+            and all(rows[0][field] == rows[1][field] for field in (
+                'inputSha256', 'payloadSha256', 'expectedRevision', 'resolvedRevision')))
+
+
 def public_events(values):
     allowed = {
         'event': {'edit-failed', 'deployed', 'post-deploy-tests',
@@ -367,12 +397,7 @@ def main() -> int:
         location = application / 'tests'
         (location / 'library-input.json').write_bytes(b'["SDK"]')
         (location / 'library-expected.json').write_bytes(json.dumps([{'ok': expected}], separators=(',', ':')).encode())
-        write(location / 'scenarios.json', {'schemaVersion': 'latent.dev.scenarios.v1', 'scenarios': [{
-            'id': 'dependency-output', 'service': 'examples/my-greeting',
-            'contract': 'examples:greeting/api@1.0.0', 'function': 'greet',
-            'input': 'tests/library-input.json', 'mediaType': 'application/vnd.latent.wit-values.v1+json',
-            'expect': {'category': 'success', 'payload': 'tests/library-expected.json'},
-            'requires': [], 'timeoutMillis': 5000, 'required': True, 'fixtures': []}]})
+        write(location / 'scenarios.json', fixture.scenarios())
 
     def review(label):
         candidate = root / (label + '-candidate.json')
@@ -385,7 +410,8 @@ def main() -> int:
     def after_deploy(offset, label):
         offset, deployed = await_event(offset, lambda value: value.get('event') == 'deployed', label)
         offset, tested = await_event(offset, lambda value: value.get('event') == 'post-deploy-tests', label + '-test')
-        require(tested['passed'] is True and tested['report']['passed'] is True,
+        require(tested['passed'] is True and stage_tests_passed(
+                    tested['report'], fixture.SCENARIO_IDS, fixture.RUNTIME_GRANTS),
                 label + '-actual-node-test-failed')
         report['stages'].append({'id': label, 'deployment': deployed['deployment'], 'tests': tested['report'],
                                  'build': deployed['build']})
@@ -408,7 +434,8 @@ def main() -> int:
               '--admission', 'signed-fixture', '--tool-root', installed)
         offset = len(observed())
         watch_command = [python, '-I', '-B', go_cli, 'watch', application, '--workspace', workspace_name,
-            '--state-root', controller, '--tool-root', installed, '--select', 'dependency-output',
+            '--state-root', controller, '--tool-root', installed,
+            *[argument for identifier in fixture.SCENARIO_IDS for argument in ('--select', identifier)],
             '--frontend', frontend, '--frontend-sha256', digest(frontend), '--frontend-timeout', '1800']
         with (root / (label + '-watch.stdout')).open('xb') as stdout, (root / (label + '-watch.stderr')).open('xb') as stderr:
             watcher = subprocess.Popen([str(item) for item in watch_command], cwd=root, env=env,
@@ -496,7 +523,10 @@ def main() -> int:
         report['removeBeforeNewSignedWorkspace'] = denied
         stop_watch('updated')
         offset = start_watch('removed')
-        front('final-actual-node-test', 'test', '--environment', 'node', '--select', 'dependency-output')
+        final_tests = json.loads(front('final-actual-node-test', 'test', '--environment', 'node',
+            *[argument for identifier in fixture.SCENARIO_IDS for argument in ('--select', identifier)]).stdout)['result']
+        require(stage_tests_passed(final_tests, fixture.SCENARIO_IDS, fixture.RUNTIME_GRANTS),
+                'final-actual-node-test-failed')
         report['finalStatus'] = json.loads(front('final-status', 'status').stdout)['result']
         stop_watch('removed')
         report['watchExitCode'] = watcher.returncode
@@ -550,7 +580,8 @@ def main() -> int:
             shutdowns=[{'id': row['id'], 'watchExitCode': row['watchExitCode'],
                         'state': row['result']['state'], 'reaped': row['result']['reaped'],
                         'cleanShutdown': row['result']['cleanShutdown']} for row in report.get('shutdowns', [])],
-            stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
+            stages=[{'id': row['id'], 'passed': row['tests']['passed'],
+                     'freshActivations': len(row['tests']['results'])} for row in report['stages']])
         if 'failure' in report:
             public['failure'] = report['failure']
         add_public_diagnostics(public, observed, node_root,

@@ -4,6 +4,11 @@
     "DeliveredGoCacheSelection.test_base_project_preserves_exact_original_sdk_module_cache",
     "DeliveredGoCacheSelection.test_either_outer_manifest_or_lock_selects_captured_closure_without_sdk_cache",
     "DeliveredGoCacheSelection.test_partial_invalid_capture_still_fails_actual_builder_before_compiler",
+    "FreshActivationEvidence.test_fixture_uses_two_required_calls_and_only_explicit_maintained_go_grants",
+    "FreshActivationEvidence.test_missing_duplicate_partial_or_reordered_cases_cannot_qualify",
+    "FreshActivationEvidence.test_platform_failure_skips_unknown_outcome_or_implicit_grants_cannot_qualify",
+    "FreshActivationEvidence.test_report_failure_ambiguous_cleanup_or_non_node_execution_cannot_qualify",
+    "FreshActivationEvidence.test_same_target_distinct_successful_activations_are_required",
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode",
     "GoDependencyWatchFixture.test_cleanup_and_restore_refuse_unknown_roots_without_mutation",
     "GoDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed",
@@ -74,6 +79,66 @@
       "fixtureGuards": [
         "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
         "class:setup-sha256:be74060af98af20f788a55861b95bcdaa3630891351940ea54ba7012af148655"
+      ],
+      "skipSites": []
+    },
+    "FreshActivationEvidence.test_fixture_uses_two_required_calls_and_only_explicit_maintained_go_grants": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:8ef0262db795b3b0b885540e9df2627b21f0eb851dd12e2ee2f11e914378f6f4"
+      ],
+      "skipSites": []
+    },
+    "FreshActivationEvidence.test_missing_duplicate_partial_or_reordered_cases_cannot_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:8ef0262db795b3b0b885540e9df2627b21f0eb851dd12e2ee2f11e914378f6f4"
+      ],
+      "skipSites": []
+    },
+    "FreshActivationEvidence.test_platform_failure_skips_unknown_outcome_or_implicit_grants_cannot_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:8ef0262db795b3b0b885540e9df2627b21f0eb851dd12e2ee2f11e914378f6f4"
+      ],
+      "skipSites": []
+    },
+    "FreshActivationEvidence.test_report_failure_ambiguous_cleanup_or_non_node_execution_cannot_qualify": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:8ef0262db795b3b0b885540e9df2627b21f0eb851dd12e2ee2f11e914378f6f4"
+      ],
+      "skipSites": []
+    },
+    "FreshActivationEvidence.test_same_target_distinct_successful_activations_are_required": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e909f5e0ef2e336e6183df4982c25ede5ec1eb258290e9df02bf887e29a0be2c",
+        "class:setup-sha256:8ef0262db795b3b0b885540e9df2627b21f0eb851dd12e2ee2f11e914378f6f4"
       ],
       "skipSites": []
     },
@@ -356,6 +421,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_dependency_watch.py",
-  "reviewReason": "Retain original diagnostic/private-fixture guards and add bounded failing post-deploy report privacy, source-vocabulary and failure-identity controls",
+  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

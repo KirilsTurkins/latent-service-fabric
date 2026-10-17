@@ -78,6 +78,48 @@
       },
       {
         "if": "matrix.language == 'typescript'",
+        "name": "Prepare selected TypeScript captured-compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install -y bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'typescript'",
+        "name": "Exercise delivered TypeScript dependency review and signed watch",
+        "run": "python -m unittest tools.tests.test_typescript_dependency_watch\nsudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_typescript_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/typescript-dependency-watch\" --qualifier tools/qualify_typescript_dependency_watch.py --fixture tools/typescript_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py\n"
+      },
+      {
+        "if": "always() && matrix.language == 'typescript'",
+        "name": "Retain public TypeScript dependency watch receipts",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "typescript-dependency-watch-${{ github.sha }}",
+          "path": "${{ runner.temp }}/typescript-dependency-watch/public-qualification.json\n${{ runner.temp }}/typescript-dependency-watch/ci-account.json\n${{ runner.temp }}/typescript-dependency-watch/initial-build.stdout\n${{ runner.temp }}/typescript-dependency-watch/initial-build.stderr\n",
+          "retention-days": 7
+        }
+      },
+      {
+        "if": "matrix.language == 'c'",
+        "name": "Prepare C dependency compiler containment",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'c'",
+        "name": "Qualify delivered C dependency updates through the actual signed watcher",
+        "run": "sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_c_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_c_dependency_watch.py --fixture tools/c_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output \"$RUNNER_TEMP/c-dependency-watch\""
+      },
+      {
+        "if": "always() && matrix.language == 'c'",
+        "name": "Retain bounded C dependency watch and normal shutdown observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "c-dependency-watch-${{ github.sha }}",
+          "path": "${{ runner.temp }}/c-dependency-watch/",
+          "retention-days": 7
+        }
+      },
+      {
+        "if": "matrix.language == 'typescript'",
         "uses": "actions/setup-node",
         "with": {
           "node-version": "24.19.0"
@@ -101,6 +143,69 @@
           "if-no-files-found": "warn",
           "name": "go-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}",
           "path": "${{ runner.temp }}/go-dependency-watch/public-qualification.json\n${{ runner.temp }}/go-dependency-watch/ci-account.json\n",
+          "retention-days": 3
+        }
+      },
+      {
+        "if": "matrix.language == 'rust'",
+        "name": "Prepare captured Rust watch compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'rust'",
+        "name": "Qualify normal Rust dependency watch through three reviewed signed builds",
+        "run": "sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_rust_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_rust_dependency_watch.py --fixture tools/rust_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output \"$RUNNER_TEMP/rust-dependency-watch\""
+      },
+      {
+        "if": "always() && matrix.language == 'rust'",
+        "name": "Retain bounded Rust dependency watch and normal shutdown observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/rust-dependency-watch/public-qualification.json\n${{ runner.temp }}/rust-dependency-watch/ci-account.json\n",
+          "retention-days": 3
+        }
+      },
+      {
+        "if": "matrix.language == 'dotnet'",
+        "name": "Prepare captured .NET watch compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'dotnet'",
+        "name": "Qualify normal .NET dependency watch through three reviewed signed builds",
+        "run": "sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_dotnet_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_dotnet_dependency_watch.py --fixture tools/dotnet_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output \"$RUNNER_TEMP/dotnet-dependency-watch\""
+      },
+      {
+        "if": "always() && matrix.language == 'dotnet'",
+        "name": "Retain bounded .NET dependency watch and normal shutdown observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "dotnet-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/dotnet-dependency-watch/public-qualification.json\n${{ runner.temp }}/dotnet-dependency-watch/ci-account.json\n${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stdout\n${{ runner.temp }}/dotnet-dependency-watch/prepare-reviewed-external-libraries.stderr\n",
+          "retention-days": 3
+        }
+      },
+      {
+        "if": "matrix.language == 'java'",
+        "name": "Prepare captured Java watch compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'java'",
+        "name": "Qualify normal Java dependency watch through three reviewed signed builds",
+        "run": "sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_java_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_java_dependency_watch.py --node-probe tools/dev_node_application_probe.py --output \"$RUNNER_TEMP/java-dependency-watch\""
+      },
+      {
+        "if": "always() && matrix.language == 'java'",
+        "name": "Retain bounded Java dependency watch and normal shutdown observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "java-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/java-dependency-watch/public-qualification.json\n${{ runner.temp }}/java-dependency-watch/ci-account.json\n${{ runner.temp }}/java-dependency-watch/initial-build.stdout\n${{ runner.temp }}/java-dependency-watch/initial-build.stderr\n",
           "retention-days": 3
         }
       },
@@ -316,7 +421,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Add explicit Go namespace preparation and signed watch inside existing60 minute matrix",
+  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

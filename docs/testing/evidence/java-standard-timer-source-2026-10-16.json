@@ -1,0 +1,23 @@
+{
+  "status": "SDK-source-controls-passed",
+  "iterations": 3,
+  "modes": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "sourceInputs": {
+    "fibers/conformance/timers/Capsule.java": "sha256:cf8318d69366657260531441a4968d06044a53586c917f26837a1de7721281c8",
+    "fibers/conformance/timers/Main.java": "sha256:608f2ded06b5facc2e0c963cc637fa570c6fefccc49753e6e5004239b569ae99",
+    "fibers/conformance/compiler/standard-timer-control/TimerModelMain.java": "sha256:71b7b7f39dd57aee3b7e52c5ecdd20bdce8d3d300c5d0bb297be57b8f28ee5fc",
+    "fibers/conformance/compiler/standard-timer-control/dev/latent/generated/Bindings.java": "sha256:0f03c45a1c32e3fc6fb9085d869e1cb8cf92c7f6fce67487db2e0014a7cf92cb",
+    "fibers/conformance/compiler/standard-timer-control/dev/latent/guest/runtime/Activation.java": "sha256:4e41052c560c5b6008a28e85e1906e473034e2c97e6f6452b316660aeadfa0b9",
+    "fibers/dev/latent/guest/runtime/util/Timer.java": "sha256:5e344200d174ae662ee61533dc17ffbf8968edd0a9583f386b5ba3fa82c57a9a",
+    "fibers/dev/latent/guest/runtime/util/TimerTask.java": "sha256:ba01a31957ae3232a7fd8b75e1deac51806c533bcc1d2b246f70cf52ad767a0b"
+  },
+  "componentExecutionPerformed": false,
+  "actualGuestBindingsUsed": false,
+  "referenceIterations": 3,
+  "compilerVersion": "javac 25.0.3"
+}

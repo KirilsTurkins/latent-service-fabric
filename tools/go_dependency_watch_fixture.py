@@ -11,6 +11,24 @@ PRIMARY_SOURCE = ('package primary\nimport (_ "embed"; child "' + CHILD + '")\n'
     'func Answer() uint32 {return child.Add(3)}\nfunc Resource() string {return resource}\n').encode()
 RESOURCE = b'captured watch data'
 
+# Consent installs providers; these test cases explicitly request only the
+# maintained Go runtime capabilities. Module ingestion grants no authority.
+RUNTIME_GRANTS = ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0',
+                  'latent:random/random@0.1.0')
+SCENARIO_IDS = ('dependency-output', 'dependency-fresh-state')
+
+
+def scenarios() -> dict:
+    """Invoke the same reviewed component twice without restarting its node."""
+    return {'schemaVersion': 'latent.dev.scenarios.v1', 'scenarios': [{
+        'id': identifier, 'service': 'examples/my-greeting',
+        'contract': 'examples:greeting/api@1.0.0', 'function': 'greet',
+        'input': 'tests/library-input.json', 'mediaType': 'application/vnd.latent.wit-values.v1+json',
+        'expect': {'category': 'success', 'payload': 'tests/library-expected.json'},
+        'execution': {'grants': list(RUNTIME_GRANTS)},
+        'requires': ['fresh-state', 'clock', 'random'], 'timeoutMillis': 10000, 'nodeTimeoutMillis': 120000,
+        'required': True, 'fixtures': []} for identifier in SCENARIO_IDS]}
+
 
 def digest(raw: bytes) -> str:
     return 'sha256:' + hashlib.sha256(raw).hexdigest()
