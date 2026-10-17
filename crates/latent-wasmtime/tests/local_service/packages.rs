@@ -80,6 +80,17 @@ pub fn activation_runtime(bytes: Vec<u8>) -> PackageBundle {
         &[ACTIVATION],
     )
 }
+
+pub fn owned_native_threads(bytes: Vec<u8>) -> Result<PackageBundle, latent_core::PlatformError> {
+    try_build(
+        "caller", bytes,
+        "package tests:caller@1.0.0; interface api { run: async func(which: u32) -> u32; } world service { import latent:runtime/activation@0.1.0; import latent:runtime-native/threads@0.1.0; export api; }",
+        component::CALLER,
+        vec![function("run", true,
+            vec![json!({"name":"which","value_type":"U32","documentation":null})], json!("U32"))],
+        &[ACTIVATION, "latent:runtime-native/threads@0.1.0"],
+    )
+}
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub fn outbound_streams(bytes: Vec<u8>) -> PackageBundle {
     build(
@@ -128,11 +139,6 @@ fn function(name: &str, asynchronous: bool, parameters: Vec<Value>, result: Valu
     json!({"id":name,"name":name,"asynchronous":asynchronous,"parameters":parameters,
         "results":[{"name":"result","value_type":result,"documentation":null}],"documentation":null,"attributes":{}})
 }
-#[expect(
-    clippy::too_many_lines,
-    clippy::needless_pass_by_value,
-    reason = "assemble one checked immutable package with exact metadata and WIT sources"
-)]
 fn build(
     name: &str,
     bytes: Vec<u8>,
@@ -141,6 +147,22 @@ fn build(
     functions: Vec<Value>,
     imports: &[&str],
 ) -> PackageBundle {
+    try_build(name, bytes, source, contract, functions, imports).unwrap()
+}
+
+#[expect(
+    clippy::too_many_lines,
+    clippy::needless_pass_by_value,
+    reason = "assemble one checked immutable package with exact metadata and WIT sources"
+)]
+fn try_build(
+    name: &str,
+    bytes: Vec<u8>,
+    source: &str,
+    contract: &str,
+    functions: Vec<Value>,
+    imports: &[&str],
+) -> Result<PackageBundle, latent_core::PlatformError> {
     let package = format!("tests:{name}");
     let world = format!("{package}/service@1.0.0");
     let mut interface = json!({"id":contract,"functions":functions,"documentation":null});
@@ -191,9 +213,12 @@ fn build(
     ];
     let mut dependencies = vec![];
     for import in imports {
-        let spec = latent_core::PHASE3_HOST_ABI_CURRENT
-            .interface(import)
-            .unwrap();
+        let host = if *import == "latent:runtime-native/threads@0.1.0" {
+            latent_core::PHASE3_HOST_ABI_V6
+        } else {
+            latent_core::PHASE3_HOST_ABI_CURRENT
+        };
+        let spec = host.interface(import).unwrap();
         let wit = spec.wit;
         let (package, version) = import.rsplit_once('@').unwrap();
         let package = package.split('/').next().unwrap();
@@ -206,7 +231,11 @@ fn build(
             id: id.clone(),
             source_path: path.clone(),
             digest: artifact_blob_digest(wit.as_bytes()),
-            dependencies: vec![],
+            dependencies: if package == "latent:runtime-native" {
+                vec!["latent:runtime@0.1.0".into()]
+            } else {
+                vec![]
+            },
         });
         layers.push(fixture::layer(
             &path,
@@ -251,7 +280,7 @@ fn build(
         layers,
     };
     let inventory = sbom::inventory(&input);
-    latent_packaging::build_package_with_sbom(input, inventory, Default::default()).unwrap()
+    latent_packaging::build_package_with_sbom(input, inventory, Default::default())
 }
 pub fn artifact(bundle: &PackageBundle) -> latent_artifacts::CapsuleArtifact {
     use latent_manifest::{JsonManifestCodec, ManifestCodec};

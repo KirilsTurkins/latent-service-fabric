@@ -320,14 +320,15 @@ impl ResourceConstraint {
     pub(super) fn compatible(&self, contract: &str) -> bool {
         matches!(
             (self, contract),
-            (Self::Context, "latent:context/context@0.1.0")
-                | (
-                    Self::Clock,
-                    "latent:clock/monotonic@0.1.0"
-                        | "latent:clock/wall@0.1.0"
-                        | "latent:runtime/activation@0.1.0"
-                )
-                | (Self::Random, "latent:random/random@0.1.0")
+            (
+                Self::Context,
+                "latent:context/context@0.1.0" | "latent:runtime-native/threads@0.1.0"
+            ) | (
+                Self::Clock,
+                "latent:clock/monotonic@0.1.0"
+                    | "latent:clock/wall@0.1.0"
+                    | "latent:runtime/activation@0.1.0"
+            ) | (Self::Random, "latent:random/random@0.1.0")
                 | (Self::Log { .. }, "latent:log/log@0.1.0")
                 | (
                     Self::Http { .. },

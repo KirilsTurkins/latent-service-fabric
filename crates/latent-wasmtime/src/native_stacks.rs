@@ -15,6 +15,12 @@ use std::task::{Context, Poll};
 use latent_core::activation_runtime::{ActivationRuntime, OwnerKind, RuntimeOwner};
 use latent_core::{ActivationBudget, HostMemoryReservation, PlatformError, PlatformErrorCode};
 
+// A conservative per-start metadata escrow, not a measured allocator cost.
+// Qualification records the pinned engine's actual cold/parked/native costs.
+pub(crate) const CHILD_METADATA_ESCROW: usize = 8192;
+
+mod children;
+
 thread_local! {
     // Only an internal Future poll installs this allocation context. It carries
     // the original ledger, not a process-global quota or an application grant.
@@ -34,6 +40,7 @@ pub(crate) struct StackContext {
     budget: ActivationBudget,
     runtime: ActivationRuntime,
     root: Mutex<Option<Permit>>,
+    children: Mutex<children::Children>,
     size: usize,
     #[cfg_attr(
         not(all(target_os = "linux", target_arch = "x86_64")),
@@ -52,6 +59,18 @@ impl StackContext {
         runtime: ActivationRuntime,
         size: usize,
     ) -> Result<Arc<Self>, PlatformError> {
+        Self::with_children(budget, runtime, size, 0)
+    }
+
+    pub(crate) fn with_children(
+        budget: ActivationBudget,
+        runtime: ActivationRuntime,
+        size: usize,
+        maximum_children: usize,
+    ) -> Result<Arc<Self>, PlatformError> {
+        if maximum_children > 8191 {
+            return Err(failure("native-child-table-bound"));
+        }
         let mapped = mapping_size(size)?;
         // These are the existing authoritative Native ceiling and memory ledger.
         // Admission occurs before allocating the context or native mapping.
@@ -60,8 +79,16 @@ impl StackContext {
             .reserve_host_memory(mapped as u64)
             .map_err(|e| e.to_platform_error())?;
         let mut metadata = budget
-            .reserve_host_memory((std::mem::size_of::<Self>() + 64) as u64)
+            .reserve_host_memory(
+                (std::mem::size_of::<Self>()
+                    + 64
+                    + maximum_children
+                        * (std::mem::size_of::<Permit>()
+                            + std::mem::size_of::<latent_core::activation_runtime::RuntimeToken>()
+                            + CHILD_METADATA_ESCROW)) as u64,
+            )
             .map_err(|e| e.to_platform_error())?;
+        let children = children::Children::new(maximum_children)?;
         metadata.confirm();
         Ok(Arc::new(Self {
             budget,
@@ -70,6 +97,7 @@ impl StackContext {
                 _owner: owner,
                 memory,
             })),
+            children: Mutex::new(children),
             size,
             mapped,
             active: AtomicU32::new(0),
@@ -88,7 +116,14 @@ impl StackContext {
                 .take(),
         );
         let owners = self.runtime.snapshot().owners;
-        if owners[..6].iter().any(|n| *n != 0) || owners[6] != self.active.load(Ordering::Acquire) {
+        let retained = self
+            .children
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .retained_count() as u32;
+        if owners[..6].iter().any(|n| *n != 0)
+            || owners[6] != self.active.load(Ordering::Acquire) + retained
+        {
             return Err(failure("native-stack-logical-owners-unretired"));
         }
         self.finalization_requested.store(true, Ordering::Release);
@@ -108,6 +143,12 @@ impl StackContext {
     fn try_retire(&self) {
         if self.finalization_requested.load(Ordering::Acquire)
             && self.active.load(Ordering::Acquire) == 0
+            && self
+                .children
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .retained_count()
+                == 0
             && self.runtime.retire().is_err()
         {
             self.retirement_failed.store(true, Ordering::Release);
@@ -122,6 +163,12 @@ impl StackContext {
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .is_none()
             && !self.retirement_failed.load(Ordering::Acquire)
+            && self
+                .children
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .retained_count()
+                == 0
     }
 }
 
@@ -170,6 +217,14 @@ unsafe impl wasmtime::StackCreator for Creator {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .take()
+            .or_else(|| {
+                context
+                    .children
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .pending
+                    .take()
+            })
             .ok_or_else(|| wasmtime::Error::msg("native-stack-prestart-admission-required"))?;
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
@@ -211,6 +266,7 @@ impl Mapping {
             context,
             permit: None,
         };
+        permit.memory.confirm();
         // SAFETY: this page-aligned subrange belongs to the new mapping. Its first
         // page remains inaccessible and its remaining pages are private stack data.
         if let Err(error) = unsafe {
@@ -225,7 +281,6 @@ impl Mapping {
             stack.context.active.fetch_add(1, Ordering::AcqRel);
             return Err(error.into());
         }
-        permit.memory.confirm();
         stack.permit = Some(permit);
         stack.context.active.fetch_add(1, Ordering::AcqRel);
         Ok(stack)

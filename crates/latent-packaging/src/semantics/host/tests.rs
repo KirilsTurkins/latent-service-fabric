@@ -5,6 +5,53 @@ use latent_core::PHASE3_HOST_ABI_V3;
 const STREAMING: &str = "latent:http/streaming@0.3.0";
 
 #[test]
+fn native_runtime_recognition_matches_exact_v6_wit_without_changing_current_installation() {
+    let name = "latent:runtime-native/threads@0.1.0";
+    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(name)
+        .is_none());
+    assert_eq!(
+        latent_core::PHASE3_HOST_ABI_V6
+            .interface(name)
+            .unwrap()
+            .binding,
+        latent_core::HostInterfaceBinding::Provider
+    );
+    let native = latent_core::PHASE3_HOST_ABI_V6.interface(name).unwrap().wit;
+    let activation = latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface("latent:runtime/activation@0.1.0")
+        .unwrap()
+        .wit;
+    for (text, accepted) in [
+        (native.to_owned(), true),
+        (native.replace("start: func", "start: async func"), false),
+        (
+            native.replace("continuation: token", "continuation: u64"),
+            false,
+        ),
+    ] {
+        let mut resolve = Resolve::default();
+        resolve.push_source("activation.wit", activation).unwrap();
+        resolve.push_source("native.wit", &text).unwrap();
+        let id = resolve
+            .interfaces
+            .iter()
+            .find_map(|(id, _)| (resolve.id_of(id).as_deref() == Some(name)).then_some(id))
+            .unwrap();
+        assert_eq!(
+            validate(
+                &resolve,
+                &BTreeMap::from([(name.into(), id)]),
+                SemanticLimits::default()
+            )
+            .is_ok(),
+            accepted
+        );
+    }
+    assert!(specification("latent:runtime-native/threads@0.2.0").is_none());
+}
+
+#[test]
 fn blob_v2_rejects_resource_ownership_and_async_substitutions() {
     let name = "latent:blob/blob@0.2.0";
     let wit = latent_core::PHASE3_HOST_ABI_CURRENT
