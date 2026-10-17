@@ -476,6 +476,9 @@ jobs:
             ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-acquisition/*.log
             ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-acquisition/*.command.json
             ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-build/component.wasm
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-node/FAILED.json
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-node/controls/*.json
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-node/after-*.json
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/*.json
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/logs/**
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/*.json

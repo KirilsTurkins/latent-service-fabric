@@ -42,9 +42,16 @@ fn validate_prechecked(component: &[u8], limits: SemanticLimits) -> Result<()> {
     // Pending imported promises need the nonblocking cancellation acknowledgement.
     // The borrowed canonical preflight below keeps every other newly enabled
     // more-async operation outside this closed binary profile.
-    let mut validator = Validator::new_with_features(
-        WasmFeatures::default() | WasmFeatures::CM_MORE_ASYNC_BUILTINS,
-    );
+    let mut features = WasmFeatures::default() | WasmFeatures::CM_MORE_ASYNC_BUILTINS;
+    if budget.native_creator {
+        // Descriptive inspection never enables an Engine or installs a port.
+        // Recognize this syntax only after the same final-byte graph proof
+        // required again by runtime compilation, native loading and reuse.
+        latent_component_threading::verify_component_routing(component)
+            .map_err(|_| invalid("unverified-native-thread-component"))?;
+        features |= WasmFeatures::CM_THREADING | WasmFeatures::CM_ASYNC_STACKFUL;
+    }
+    let mut validator = Validator::new_with_features(features);
     let mut allocations = FuncValidatorAllocations::default();
     for payload in Parser::new(0).parse_all(component) {
         match read(validator.payload(&read(payload)?))? {
@@ -69,6 +76,7 @@ struct Budget {
     locals: usize,
     operators: usize,
     package_docs_bytes: usize,
+    native_creator: bool,
 }
 
 impl Budget {
@@ -82,6 +90,7 @@ impl Budget {
             locals: 0,
             operators: 0,
             package_docs_bytes: 0,
+            native_creator: false,
         }
     }
 
@@ -187,6 +196,10 @@ fn component_section(id: u8, reader: &mut BinaryReader<'_>, budget: &mut Budget)
             8 => {
                 let function = read(reader.read::<wasmparser::CanonicalFunction>())?;
                 canonical_profile(&function)?;
+                budget.native_creator |= matches!(
+                    function,
+                    wasmparser::CanonicalFunction::ThreadNewIndirect { .. }
+                );
             }
             10 => {
                 let item = read(reader.read::<wasmparser::ComponentImport<'_>>())?;

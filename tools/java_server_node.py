@@ -9,6 +9,7 @@ import tempfile
 import time
 
 from tools.build_process_signals import owned_cancellation
+from tools import java_control_refusal_diagnostic as control_refusals
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.dev_workflow import state
@@ -219,6 +220,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
               "profile": "lsf.java.httpserver.buffered.v1", "helperSource": helper,
               "lane": "original-ingress" if lifecycle is None else "revision-lifecycle"}
     observed_paths = {"cli": binary, "node": node_binary, "workflow": Path(__file__),
+        "managementRefusalHelper": Path(__file__).with_name("java_control_refusal_diagnostic.py"),
+        "nodeLauncher": Path(__file__).with_name("phase2_operator_scenario.py"),
         "declaration": build / "server-source.json", "profile": build / "server-profile.json",
         "sourceInputs": build / "source-inputs.json", "component": build / "component.wasm"}
     if helper or tls:
@@ -274,7 +277,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             if lifecycle is not None:
                 lifecycle.configure_ingress(settings)
             config.write_bytes(json.dumps(settings, separators=(",", ":")).encode())
-            node = connect(client, node_binary, root / "node", config, "examples", 1)
+            node = connect(client, node_binary, root / "node", config, "examples", 1,
+                           control_refusal_diagnostic=True)
             result["startup"] = node.startup_record
             observe_idle(client, evidence, "dormant-before-publication")
             package = fixture / record["name"] / "package"
@@ -442,6 +446,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             raise
         finally:
             client.node = None
-            if node is not None: node.close()
+            if node is not None:
+                node.close()
+                result["managementRefusals"] = control_refusals.retain(node, evidence)
             write_json(evidence / "conformance.json", result)
     return result
