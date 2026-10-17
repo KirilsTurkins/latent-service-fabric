@@ -14,7 +14,8 @@ RUNTIME_IMPORTS = ("latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0", "l
 
 def create(directory: Path, template: str, name: str | None = None, *, runtime_profile: str | None = None) -> Path:
     from tools.go_guest.activation import PROFILES
-    if runtime_profile is not None and runtime_profile not in {'go-component-async-v1', *PROFILES}:
+    if runtime_profile is not None and (not isinstance(runtime_profile, str)
+            or runtime_profile not in {'go-component-async-v1', *PROFILES}):
         raise ValueError('go-runtime-profile-not-installed')
     activation = runtime_profile in PROFILES
     if template not in AUTHORING_TEMPLATES:
@@ -85,7 +86,9 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if (not isinstance(project, dict) or set(project) - {"runtimeProfile"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
-    if project.get('runtimeProfile', 'go-component-async-v1') not in {'go-component-async-v1', 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4'}:
+    profile = project.get('runtimeProfile', 'go-component-async-v1')
+    if (not isinstance(profile, str)
+            or profile not in {'go-component-async-v1', 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4'}):
         raise ValueError('go-runtime-profile-not-installed')
     if not isinstance(project["name"], str) or not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", project["name"]) or len(project["name"]) > 64:
         raise ValueError("invalid Go capsule name")

@@ -32,6 +32,8 @@ def native_assembly(data: bytes) -> bool:
 
 
 def selection(value: dict | None = None) -> dict:
+    if value is not None and not isinstance(value, dict):
+        raise DependencyError('go-selection-fields-invalid')
     value = dict(value or {})
     if set(value) - {'target', 'runtimeProfile', 'tags'}:
         raise DependencyError('go-selection-fields-invalid')
@@ -40,7 +42,8 @@ def selection(value: dict | None = None) -> dict:
             or not re.fullmatch(r'[A-Za-z0-9_]{1,64}', tag) for tag in tags)):
         raise DependencyError('go-build-tags-invalid')
     profile = value.get('runtimeProfile', PROFILE)
-    if value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4'}:
+    if (value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or not isinstance(profile, str)
+            or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4'}):
         raise DependencyError('go-runtime-profile-not-installed')
     return {'target': 'wasip1/wasm', 'runtimeProfile': profile, 'tags': sorted(set(tags))}
 
@@ -176,6 +179,8 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
     previous_graph = optional(project, 'go-resolved.lock.json')
     source_before = source_files(project)
+    if selected is not None and not isinstance(selected, dict):
+        raise DependencyError('go-selection-fields-invalid')
     selected = dict(selected or {})
     project_document = json.loads(source_before['capsule-project.json'])
     if not isinstance(project_document, dict):
