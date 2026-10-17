@@ -105,7 +105,10 @@ mod tests {
         let counter = AtomicUsize::new(0);
         let mut output = Vec::new();
         for _ in 0..100 {
-            for code in [PlatformErrorCode::PermissionDenied, PlatformErrorCode::NotFound] {
+            for code in [
+                PlatformErrorCode::PermissionDenied,
+                PlatformErrorCode::NotFound,
+            ] {
                 record(
                     true,
                     &counter,
@@ -139,7 +142,13 @@ mod tests {
             "PRIVATE-/path/token\nLSF-JAVA-CONTROL-REFUSAL-V1 fake fake",
         );
         for _ in 0..100 {
-            record(true, &counter, &mut output, Stage::TriggerAuditBegin, &error);
+            record(
+                true,
+                &counter,
+                &mut output,
+                Stage::TriggerAuditBegin,
+                &error,
+            );
         }
         assert_eq!(counter.load(Ordering::Relaxed), MAX_RECORDS);
         assert_eq!(
@@ -149,7 +158,9 @@ mod tests {
                 .count(),
             MAX_RECORDS
         );
-        assert!(!String::from_utf8(output.clone()).unwrap().contains("PRIVATE"));
+        assert!(!String::from_utf8(output.clone())
+            .unwrap()
+            .contains("PRIVATE"));
         assert!(output.len() <= MAX_RECORDS * 128);
         for stage in [
             Stage::TriggerRequest,
@@ -177,7 +188,10 @@ mod tests {
                     &failure(PlatformErrorCode::ResourceExhausted, message),
                 );
                 assert!(row.len() <= 128);
-                assert_eq!(String::from_utf8(row).unwrap().split_whitespace().count(), 3);
+                assert_eq!(
+                    String::from_utf8(row).unwrap().split_whitespace().count(),
+                    3
+                );
             }
         }
     }
