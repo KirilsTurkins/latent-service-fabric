@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dev_node_application_probe.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Track unchanged explicit source-node fixture passed to the new qualifier",
+  "reviewReason": "Preserve reviewed C and .NET dependency watch commands and both opt-in captured workflow modes after the merged C slice.",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "8d53677740a6713ff88128788ca6f7d7672759b97d6fe6f230ed33ca0b2df1f0"
 }

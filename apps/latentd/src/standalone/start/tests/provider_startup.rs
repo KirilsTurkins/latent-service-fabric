@@ -166,6 +166,82 @@ fn protected_context_and_log_profiles_start_and_reap_without_guest_owners() {
 }
 
 #[test]
+fn scalar_aliases_keep_one_configuration_and_reap_without_creating_guest_owners() {
+    let source = TempDir::new().unwrap();
+    let path = source.path().join("node.json");
+    let mut document = serde_json::json!({"formatVersion":1,
+        "dataDirectory":source.path().join("data"), "nodeId":"scalar-alias-startup", "bind":"127.0.0.1:0",
+        "credentials":[{"token":"LSF-PUBLIC-SCALAR-ALIAS-TEST-ONLY", "subject":"operator",
+            "tenant":"examples", "role":"operator"}],
+        "budgetProfile":{"mode":"phase3","maximumOutboundRequests":8},
+        "audit":{"mode":"durable"}, "capabilityPolicies":{"formatVersion":1},
+        "providers":{"formatVersion":1,"bindings":[],"scalarAliases":[]}});
+    for (field, contract) in [
+        ("context", "latent:context/context@0.1.0"),
+        ("log", "latent:log/log@0.1.0"),
+        ("clockMonotonic", "latent:clock/monotonic@0.1.0"),
+        ("clockWall", "latent:clock/wall@0.1.0"),
+        ("random", "latent:random/random@0.1.0"),
+    ] {
+        document["providers"][field] = serde_json::json!({"identity":{
+            "id":field,"tenant":"examples","service":"runtime-host","epoch":7}});
+        document["providers"]["scalarAliases"]
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!({
+            "source":field,"identity":{"id":format!("foreign-{field}"),"tenant":"foreign",
+                "service":"foreign-runtime","epoch":7}}));
+        document["providers"]["bindings"].as_array_mut().unwrap().push(serde_json::json!({
+            "name":format!("foreign-{field}"),"tenant":"foreign","consumerService":"server",
+            "providerService":"foreign-runtime","contract":contract,"providerBinding":format!("foreign-{field}-installed")}));
+    }
+    std::fs::write(&path, serde_json::to_vec(&document).unwrap()).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let control = Builder::new_multi_thread()
+        .worker_threads(1)
+        .max_blocking_threads(4)
+        .enable_all()
+        .build()
+        .unwrap();
+    let invocation = Builder::new_multi_thread()
+        .worker_threads(1)
+        .max_blocking_threads(1)
+        .enable_all()
+        .build()
+        .unwrap();
+    for ordinal in 0..4 {
+        let mut settings = NodeConfig::load(&path).unwrap().derive().unwrap();
+        settings.data_directory = source.path().join(format!("alias-node-{ordinal}"));
+        let node = invocation
+            .block_on(StandaloneNode::start(
+                settings,
+                control.handle().clone(),
+                RuntimeThreads::default(),
+            ))
+            .unwrap();
+        let descriptors = serde_json::to_value(node.configured_providers()).unwrap();
+        let rows = descriptors.as_array().unwrap();
+        assert_eq!(rows.len(), 10);
+        for original in rows.iter().filter(|row| row["tenant"] == "examples") {
+            let alias = rows
+                .iter()
+                .find(|row| {
+                    row["tenant"] == "foreign" && row["capability"] == original["capability"]
+                })
+                .unwrap();
+            for key in ["profile", "configurationDigest", "configurationEpoch"] {
+                assert_eq!(alias[key], original[key]);
+            }
+        }
+        let report = invocation.block_on(node.shutdown()).unwrap();
+        assert!(report.clean);
+        assert!(report.providers.unwrap().clean);
+    }
+    control.shutdown_timeout(Duration::from_secs(5));
+    invocation.shutdown_timeout(Duration::from_secs(5));
+}
+
+#[test]
 fn protected_http_credential_bootstrap_starts_and_reaps_thirty_two_times() {
     let source = TempDir::new().unwrap();
     let credentials = source.path().join("credentials");

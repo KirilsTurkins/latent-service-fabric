@@ -1,0 +1,75 @@
+{
+  "cases": [
+    "NativeBuildInputs.test_archive_composition_keeps_original_input_cap_and_bounds_added_objects",
+    "NativeBuildInputs.test_header_deadline_and_conflicting_original_configuration_fail_closed",
+    "NativeBuildInputs.test_header_staging_preserves_original_bytes_and_adds_exact_original_confdefs",
+    "NativeBuildInputs.test_source_inventory_returns_original_bytes_without_mutating_carrier",
+    "NativeBuildInputs.test_upstream_object_list_rejects_changed_shape_duplicates_and_path_escape"
+  ],
+  "guards": {
+    "NativeBuildInputs.test_archive_composition_keeps_original_input_cap_and_bounds_added_objects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeBuildInputs.test_header_deadline_and_conflicting_original_configuration_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeBuildInputs.test_header_staging_preserves_original_bytes_and_adds_exact_original_confdefs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeBuildInputs.test_source_inventory_returns_original_bytes_without_mutating_carrier": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeBuildInputs.test_upstream_object_list_rejects_changed_shape_duplicates_and_path_escape": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_native_build.py",
+  "reviewReason": "Keep all original native source guards and original library cap; distinguish tightly bounded appended objects and archive index from original normal-mach product",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

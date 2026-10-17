@@ -98,6 +98,9 @@ impl WasmtimeConfig {
     pub(crate) fn apply_engine(&self, engine_config: &mut Config) -> Result<(), PlatformError> {
         self.validate()?;
         CompilerEngineSettings::from_config(self).apply(engine_config);
+        if self.owned_native_stacks {
+            engine_config.with_host_stack(std::sync::Arc::new(crate::native_stacks::Creator));
+        }
         if matches!(self.instance_allocator, InstanceAllocator::Pooling) {
             self.apply_pooling(engine_config);
         }

@@ -26,6 +26,8 @@ def main():
         compiler = Compiler(output / "compiler", args.wasi_sdk)
         component, details = compiler.compile(output / "source", ROOT / "sdk/java-guest/conformance",
                                              "tests:java-feasibility/capsule@1.0.0", output / "compiled")
+        from tools.qualify_java_entropy import controls
+        report['standardEntropyControls'] = controls(compiler, output / 'standard-entropy-controls')
         compiler.check_unchanged()
         report.update(status="component-built-unqualified", componentDigest=digest(read_file(component, 64 * 1024 * 1024)),
                       commands=compiler.records, details=details)

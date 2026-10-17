@@ -36,9 +36,10 @@ The control rejects missing or changed transitive JARs, builds the actual
 component, signs an isolated fixture, checks unsigned publication and missing
 runtime-grant denial, invokes library and resource paths, and observes owner
 retirement after each call and node shutdown. Repeated calls check fresh static
-application state and recovery after a declared error. Its receipt explicitly
-retains the separate private-feed, installed update/remove/watch, processor and
-trap/exhaustion/cancellation gates; a successful run does not close #682.
+application state and recovery after a declared error. The earlier baseline
+receipt retains the separate private-feed, installed update/remove/watch,
+processor and trap/exhaustion/cancellation gates; a successful run does not close
+#682.
 
 The [15 October native control](evidence/java-dependency-ingestion-2026-10-15.json)
 retains the actual qualifier, component and ordinary native-product identities.
@@ -94,3 +95,27 @@ from the new artifact allowlist. The existing Java job retains its 55-minute
 limit and commands. Each separate attempt has a 35-minute job bound and an
 1800-second suite deadline. Historical successful receipts retain their source
 scope; the newly added current-source hosted attempt must pass independently.
+The current control additionally invokes intentional uncaught Java heap
+allocation exhaustion, an uncaught exception, a 64 KiB Wasm memory limit and a
+10,000,000-fuel spin. It observes the original cancellation activation running
+before sending one cancellation. Every case must retire activation owners,
+quotas and cell reservations, then execute a fresh actual library invocation.
+The [recovery receipt](evidence/java-dependency-recovery-2026-10-15.json) binds the
+offline component, both qualifier sources and unchanged ordinary native products.
+
+The allocation control checks the bounded heap and cleanup after an uncaught
+failure. An earlier attempt to catch `OutOfMemoryError` instead produced an
+unreachable-code guest trap. That failed attempt remains recorded; this control
+does not establish catchable allocation failure semantics for the selected TeaVM
+C runtime. The independent runtime implementation owner is #741.
+
+The maintained workflow also selects `recovery` in a separate dependency matrix
+job using [the suite owner](../../tools/qualify_java_dependency_suite.py). It
+builds and freezes the ordinary five native products, compiles a normal greeting
+to acquire the pinned compiler closure, then supplies only its verified read-only
+cache to the recovery programme. Exact source/native/compiler/cache identities
+are checked before and after; signing directories are excluded from the new
+artifact allowlist. The existing Java job retains its 55-minute limit and
+commands. Each separate attempt has a 35-minute job bound and an 1800-second
+suite deadline. The earlier successful native receipt remains historical until
+the newly added current-source hosted attempt independently passes.
