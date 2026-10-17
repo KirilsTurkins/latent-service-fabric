@@ -1,0 +1,33 @@
+name: PR 1035 integration workspace
+on:
+  push:
+    branches: [feat/sdk-go-dependency-lifecycle-20261016]
+    paths: [.github/workflows/pr1035-maintenance.yml]
+permissions:
+  contents: read
+jobs:
+  source-workspace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Export only tracked integration inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/pr1035-integration"
+          git rev-parse HEAD origin/development > "$RUNNER_TEMP/pr1035-integration/refs.txt"
+          base=$(git merge-base HEAD origin/development)
+          printf '%s\n' "$base" >> "$RUNNER_TEMP/pr1035-integration/refs.txt"
+          git archive --format=tar HEAD | gzip -1 > "$RUNNER_TEMP/pr1035-integration/head.tar.gz"
+          git archive --format=tar origin/development | gzip -1 > "$RUNNER_TEMP/pr1035-integration/development.tar.gz"
+          git archive --format=tar "$base" | gzip -1 > "$RUNNER_TEMP/pr1035-integration/base.tar.gz"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr1035-integration-inputs
+          path: ${{ runner.temp }}/pr1035-integration/
+          retention-days: 1
+          if-no-files-found: error
