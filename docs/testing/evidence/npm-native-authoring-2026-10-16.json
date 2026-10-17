@@ -1,0 +1,116 @@
+{
+  "emittedComponentEvaluated": false,
+  "evidenceKind": "native-authoring-control",
+  "formatVersion": 1,
+  "nativeLock": {
+    "captureRequired": true,
+    "compilerExecution": false,
+    "configurationDigest": "sha256:65ad5e6d871361ad3b70162b8524165f6ac4cb9d45f763a79d231087ac381ba9",
+    "fetchPolicyDigest": "sha256:eaaefd5d25bfe7252aeab0b49f4c9ca6319e43ec656c481c88058df4402e79f4",
+    "formatVersion": 1,
+    "installScripts": "never-executed",
+    "nativeLockDigest": "sha256:a23356c0e7a6f9f248b1f0fc2a70d72ede10c2f8fb3b151d594b175b0d42ad29",
+    "node": {
+      "digest": "sha256:3602f2bb1a10f2cbab4c36886218a33c1ab3db87290e73b033c46c77147d0237",
+      "name": "npm-node",
+      "size": 92825416
+    },
+    "npm": {
+      "digest": "sha256:3ce7cba6f5128dd5f54c98b6a5036b0f850496878cc2e21044b675fe3c594e3e",
+      "name": "npm-cli",
+      "size": 56
+    },
+    "npmVersion": "11.17.0",
+    "previousLockPreserved": true,
+    "recipe": {
+      "npm-capture-owner": {
+        "digest": "sha256:4e95fba96a39611b210b640cce133b787d6a363c12bae8ef229914064b34d166",
+        "name": "npm-capture-owner",
+        "size": 24660
+      },
+      "npm-native-lock-authoring": {
+        "digest": "sha256:9b1c2eab515dbcaa049f590569ddaa9727656526a07c99b1f360b1323c0d3859",
+        "name": "npm-native-lock-authoring",
+        "size": 10991
+      },
+      "npm-review-owner": {
+        "digest": "sha256:0302bdd18d15b84a0029cfa87f38a9e3d4239ee8bf091dbec20d2b9ccd15a473",
+        "name": "npm-review-owner",
+        "size": 15571
+      }
+    },
+    "reviewRequired": true,
+    "sdkLockDigest": "sha256:4347fad7bafa229139c9469185681489aa419b879363583d637eef37cc19687d",
+    "stage": "npm-native-lock",
+    "status": "locked"
+  },
+  "networkNamespaceDisabled": false,
+  "offlineVerification": {
+    "artifacts": [
+      "npm-local-original/3a629ee72d7adcf99288e4b6",
+      "npm-local-original/7571a4de5cb33c588b8352aa",
+      "npm-selected/a23356c0e7a6f9f248b1f0fc"
+    ],
+    "capturedInputIdentity": "sha256:b900bbd5aa4d77a05faef319d9e3cc878732ffd8fe1b337835ac7e31b178d881",
+    "compilerExecution": false,
+    "executableInputs": [],
+    "formatVersion": 1,
+    "lockDigest": "sha256:f375d99bbcffab9a5cd8e755168d275dc04c4e85b6186a66d614d8332bc938f1",
+    "manifestDigest": "sha256:828b0f7b92802d959a0d5f3db4ca9fb849bc11134186cb0276f837d85565090a",
+    "sdkLockDigest": "sha256:4347fad7bafa229139c9469185681489aa419b879363583d637eef37cc19687d",
+    "selection": {
+      "conditions": [],
+      "runtimeProfile": "spidermonkey-public-sync-v1",
+      "target": "wasm32-component"
+    },
+    "stage": "npm-dependency-status",
+    "status": "verified"
+  },
+  "originalLocationsUnavailable": true,
+  "review": {
+    "artifacts": [
+      "npm-local-original/3a629ee72d7adcf99288e4b6",
+      "npm-local-original/7571a4de5cb33c588b8352aa",
+      "npm-selected/a23356c0e7a6f9f248b1f0fc"
+    ],
+    "candidateDigest": "sha256:f375d99bbcffab9a5cd8e755168d275dc04c4e85b6186a66d614d8332bc938f1",
+    "capturedInputIdentity": "sha256:b900bbd5aa4d77a05faef319d9e3cc878732ffd8fe1b337835ac7e31b178d881",
+    "compilerExecution": false,
+    "executableInputs": [],
+    "formatVersion": 1,
+    "frontendTrustRequired": true,
+    "lockDigest": "sha256:f375d99bbcffab9a5cd8e755168d275dc04c4e85b6186a66d614d8332bc938f1",
+    "manifestDigest": "sha256:828b0f7b92802d959a0d5f3db4ca9fb849bc11134186cb0276f837d85565090a",
+    "previousLockDigest": "sha256:af27a5d8b074319f72417c27dd4d77756de7eb85f1e8764042f3c8f78a558fed",
+    "sdkLockDigest": "sha256:4347fad7bafa229139c9469185681489aa419b879363583d637eef37cc19687d",
+    "selection": {
+      "conditions": [],
+      "runtimeProfile": "spidermonkey-public-sync-v1",
+      "target": "wasm32-component"
+    },
+    "stage": "npm-reviewed-lock",
+    "status": "reviewed"
+  },
+  "scope": "Windows Node/npm direct and transitive local lock/capture/exact review; no emitted-component qualification",
+  "sourceBase": "8f8b93b7552f46ce2965dfb98604253eaad4088d",
+  "sourceFiles": {
+    "tools/npm_lock_authoring.py": {
+      "digest": "sha256:9b1c2eab515dbcaa049f590569ddaa9727656526a07c99b1f360b1323c0d3859",
+      "size": 10991
+    },
+    "tools/typescript_application_dependencies.py": {
+      "digest": "sha256:4e95fba96a39611b210b640cce133b787d6a363c12bae8ef229914064b34d166",
+      "size": 24660
+    },
+    "tools/typescript_capsule.py": {
+      "digest": "sha256:199e1ddecc72a72481e2d2cd475297d9e44b30a57a11cdea87328e4891325b66",
+      "size": 14057
+    },
+    "tools/typescript_dependency_authoring.py": {
+      "digest": "sha256:0302bdd18d15b84a0029cfa87f38a9e3d4239ee8bf091dbec20d2b9ccd15a473",
+      "size": 15571
+    }
+  },
+  "status": "passed",
+  "transitiveResourceDigest": "sha256:2496df5f88b82a3a0dcd34e29ce9bdafe95fd15da04695c3cd99f74fac55e761"
+}
