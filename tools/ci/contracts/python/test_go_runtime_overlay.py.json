@@ -1,63 +1,93 @@
 {
-  "schemaVersion":"latent.ci.contracts.v2",
-  "kind":"python",
-  "reviewReason":"Preserve all 24 prior Go source and failure-observer controls and their execution guards. Replace only dynamic preflight test execution with a direct call to the authenticated stdlib-only CLI helper, retain every UID/capability/namespace/root/temp/phase/redaction control, and add exact selected-source, missing-input, drift and byte-bound refusal controls. No native qualification or runtime change is claimed.",
-  "module":"tools/tests/test_go_runtime_overlay.py",
-  "cases":["GoRuntimeOverlayTests.test_activation_dispatcher_rejects_changed_dependency_before_transformation","GoRuntimeOverlayTests.test_activation_export_refuses_missing_and_synchronous_entry_before_writing","GoRuntimeOverlayTests.test_activation_selection_is_explicit_and_retains_default_profile","GoRuntimeOverlayTests.test_checkpoint_parser_cannot_return_an_unselected_source","GoRuntimeOverlayTests.test_checkpoints_cover_selected_open_modules_but_preserve_dispatcher_and_standard_runtime","GoRuntimeOverlayTests.test_compiler_assembly_preserves_upstream_and_verifies_all_derived_sources","GoRuntimeOverlayTests.test_each_upstream_source_drift_refuses_before_any_overlay_is_written","GoRuntimeOverlayTests.test_private_frame_command_drops_privilege_before_cargo_without_replacing_user_namespace","GoRuntimeOverlayTests.test_private_frame_host_context_refuses_local_execution_before_inspecting_privilege","GoRuntimeOverlayTests.test_private_frame_host_preflight_refuses_wrong_credentials_caps_maps_or_temporary_ancestors","GoRuntimeOverlayTests.test_private_frame_launch_observation_exports_only_closed_failure_categories","GoRuntimeOverlayTests.test_private_frame_observer_refuses_drift_before_writing_a_partial_overlay","GoRuntimeOverlayTests.test_private_frame_output_excludes_native_messages_and_rejects_unbounded_or_unexpected_data","GoRuntimeOverlayTests.test_private_frame_preflight_source_requires_exact_selected_file_without_fallback","GoRuntimeOverlayTests.test_private_frame_preparation_failure_keeps_ordinary_terminal_record_without_overwriting","GoRuntimeOverlayTests.test_private_terminal_observer_changes_only_two_known_noreturn_bodies","GoRuntimeOverlayTests.test_private_wasm_frame_observer_preserves_original_sources_and_bounds_the_overlay","GoRuntimeOverlayTests.test_protected_roots_and_existing_output_refuse_without_modifying_sources","GoRuntimeOverlayTests.test_scheduler_and_lsf_overlays_preserve_sources_and_separate_wasi_authority","GoRuntimeOverlayTests.test_terminal_panic_candidate_requires_separate_confirmation_and_never_exports_payload","GoRuntimeOverlayTests.test_terminal_panic_probe_executes_checked_pointer_type_and_decimal_guards","GoRuntimeOverlayTests.test_terminal_public_metadata_preserves_only_closed_traps_and_exact_completed_modes","GoRuntimeOverlayTests.test_terminal_reason_classification_rejects_unknown_and_divergent_controls","GoRuntimeOverlayTests.test_terminal_reason_probe_has_pinned_catalog_finite_bits_and_no_message_export","GoRuntimeOverlayTests.test_wrong_compiler_version_and_source_drift_refuse_before_assembly"],
-  "guards":{
-    "GoRuntimeOverlayTests.test_private_frame_host_context_refuses_local_execution_before_inspecting_privilege":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_private_frame_command_drops_privilege_before_cargo_without_replacing_user_namespace":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_private_frame_preflight_source_requires_exact_selected_file_without_fallback":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_private_frame_host_preflight_refuses_wrong_credentials_caps_maps_or_temporary_ancestors":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_private_frame_launch_observation_exports_only_closed_failure_categories":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_terminal_panic_probe_executes_checked_pointer_type_and_decimal_guards":
-      "0177d9a48a22c684dd444ce31a6941a0866fc3493ebe3aa5f58a340291445028",
-    "GoRuntimeOverlayTests.test_terminal_panic_candidate_requires_separate_confirmation_and_never_exports_payload":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_terminal_public_metadata_preserves_only_closed_traps_and_exact_completed_modes":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_private_frame_preparation_failure_keeps_ordinary_terminal_record_without_overwriting":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_private_wasm_frame_observer_preserves_original_sources_and_bounds_the_overlay":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_private_frame_output_excludes_native_messages_and_rejects_unbounded_or_unexpected_data":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_private_terminal_observer_changes_only_two_known_noreturn_bodies":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_terminal_reason_probe_has_pinned_catalog_finite_bits_and_no_message_export":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_terminal_reason_classification_rejects_unknown_and_divergent_controls":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_private_frame_observer_refuses_drift_before_writing_a_partial_overlay":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_activation_dispatcher_rejects_changed_dependency_before_transformation":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_activation_export_refuses_missing_and_synchronous_entry_before_writing":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_activation_selection_is_explicit_and_retains_default_profile":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_checkpoints_cover_selected_open_modules_but_preserve_dispatcher_and_standard_runtime":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_checkpoint_parser_cannot_return_an_unselected_source":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_compiler_assembly_preserves_upstream_and_verifies_all_derived_sources":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_wrong_compiler_version_and_source_drift_refuse_before_assembly":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_scheduler_and_lsf_overlays_preserve_sources_and_separate_wasi_authority":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_each_upstream_source_drift_refuses_before_any_overlay_is_written":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1",
-    "GoRuntimeOverlayTests.test_protected_roots_and_existing_output_refuse_without_modifying_sources":
-      "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1"
+  "cases": [
+    "GoRuntimeOverlayTests.test_activation_dispatcher_rejects_changed_dependency_before_transformation",
+    "GoRuntimeOverlayTests.test_activation_export_refuses_missing_and_synchronous_entry_before_writing",
+    "GoRuntimeOverlayTests.test_activation_selection_is_explicit_and_retains_default_profile",
+    "GoRuntimeOverlayTests.test_checkpoint_parser_cannot_return_an_unselected_source",
+    "GoRuntimeOverlayTests.test_checkpoints_cover_selected_open_modules_but_preserve_dispatcher_and_standard_runtime",
+    "GoRuntimeOverlayTests.test_compiler_assembly_preserves_upstream_and_verifies_all_derived_sources",
+    "GoRuntimeOverlayTests.test_each_upstream_source_drift_refuses_before_any_overlay_is_written",
+    "GoRuntimeOverlayTests.test_empty_nonblocking_netpoll_preserves_locking_and_every_real_poll",
+    "GoRuntimeOverlayTests.test_netpoll_guard_shape_drift_refuses_before_writing_output",
+    "GoRuntimeOverlayTests.test_private_frame_command_drops_privilege_before_cargo_without_replacing_user_namespace",
+    "GoRuntimeOverlayTests.test_private_frame_host_context_refuses_local_execution_before_inspecting_privilege",
+    "GoRuntimeOverlayTests.test_private_frame_host_preflight_refuses_wrong_credentials_caps_maps_or_temporary_ancestors",
+    "GoRuntimeOverlayTests.test_private_frame_launch_observation_exports_only_closed_failure_categories",
+    "GoRuntimeOverlayTests.test_private_frame_observer_refuses_drift_before_writing_a_partial_overlay",
+    "GoRuntimeOverlayTests.test_private_frame_output_excludes_native_messages_and_rejects_unbounded_or_unexpected_data",
+    "GoRuntimeOverlayTests.test_private_frame_preflight_source_requires_exact_selected_file_without_fallback",
+    "GoRuntimeOverlayTests.test_private_frame_preparation_failure_keeps_ordinary_terminal_record_without_overwriting",
+    "GoRuntimeOverlayTests.test_private_terminal_observer_changes_only_two_known_noreturn_bodies",
+    "GoRuntimeOverlayTests.test_private_wasm_frame_observer_preserves_original_sources_and_bounds_the_overlay",
+    "GoRuntimeOverlayTests.test_protected_roots_and_existing_output_refuse_without_modifying_sources",
+    "GoRuntimeOverlayTests.test_scheduler_and_lsf_overlays_preserve_sources_and_separate_wasi_authority",
+    "GoRuntimeOverlayTests.test_terminal_panic_candidate_requires_separate_confirmation_and_never_exports_payload",
+    "GoRuntimeOverlayTests.test_terminal_panic_probe_executes_checked_pointer_type_and_decimal_guards",
+    "GoRuntimeOverlayTests.test_terminal_public_metadata_preserves_only_closed_traps_and_exact_completed_modes",
+    "GoRuntimeOverlayTests.test_terminal_reason_classification_rejects_unknown_and_divergent_controls",
+    "GoRuntimeOverlayTests.test_terminal_reason_probe_has_pinned_catalog_finite_bits_and_no_message_export",
+    "GoRuntimeOverlayTests.test_wrong_compiler_version_and_source_drift_refuse_before_assembly"
+  ],
+  "guardDefinitions": {
+    "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:08937bab8a177574d5f4ed93da61df34c6630b01e19bb60b2e3acf15d464a6b7",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ],
+      "skipSites": []
+    },
+    "f0c9f838fdfeb60bc7373c9e1d6b3f26e53351401f65a9131fb79491c74a9b6c": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:08937bab8a177574d5f4ed93da61df34c6630b01e19bb60b2e3acf15d464a6b7",
+        "class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"
+      ],
+      "skipSites": [
+        "self.skipTest('Node unavailable for isolated Wasm instruction controls')",
+        "skip-control-sha256:bfa0e4dd4d1d6cc23088273caf021ad84e12a55842fbe8be40281d7a1cf6abf3"
+      ]
+    }
   },
-  "guardDefinitions":{
-    "045901944b837d7587e76054cb42ced166f6470807bd481073c281e81318e8a1":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226","class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"]},
-    "0177d9a48a22c684dd444ce31a6941a0866fc3493ebe3aa5f58a340291445028":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":["self.skipTest('Node unavailable for isolated Wasm instruction controls')","skip-control-sha256:bfa0e4dd4d1d6cc23088273caf021ad84e12a55842fbe8be40281d7a1cf6abf3"],"fixtureGuards":["module:setup-sha256:1f5431f599519ae722f865e2e49382394af4d7af295b609d804ae6bf40d86226","class:setup-sha256:390e62ef0cdf8d94d6aef3f3b2fe131a7cc13e0729077b08fafadcf86b2c105d"]}
-  }
+  "guards": {
+    "GoRuntimeOverlayTests.test_activation_dispatcher_rejects_changed_dependency_before_transformation": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_activation_export_refuses_missing_and_synchronous_entry_before_writing": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_activation_selection_is_explicit_and_retains_default_profile": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_checkpoint_parser_cannot_return_an_unselected_source": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_checkpoints_cover_selected_open_modules_but_preserve_dispatcher_and_standard_runtime": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_compiler_assembly_preserves_upstream_and_verifies_all_derived_sources": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_each_upstream_source_drift_refuses_before_any_overlay_is_written": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_empty_nonblocking_netpoll_preserves_locking_and_every_real_poll": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_netpoll_guard_shape_drift_refuses_before_writing_output": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_private_frame_command_drops_privilege_before_cargo_without_replacing_user_namespace": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_private_frame_host_context_refuses_local_execution_before_inspecting_privilege": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_private_frame_host_preflight_refuses_wrong_credentials_caps_maps_or_temporary_ancestors": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_private_frame_launch_observation_exports_only_closed_failure_categories": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_private_frame_observer_refuses_drift_before_writing_a_partial_overlay": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_private_frame_output_excludes_native_messages_and_rejects_unbounded_or_unexpected_data": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_private_frame_preflight_source_requires_exact_selected_file_without_fallback": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_private_frame_preparation_failure_keeps_ordinary_terminal_record_without_overwriting": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_private_terminal_observer_changes_only_two_known_noreturn_bodies": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_private_wasm_frame_observer_preserves_original_sources_and_bounds_the_overlay": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_protected_roots_and_existing_output_refuse_without_modifying_sources": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_scheduler_and_lsf_overlays_preserve_sources_and_separate_wasi_authority": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_terminal_panic_candidate_requires_separate_confirmation_and_never_exports_payload": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_terminal_panic_probe_executes_checked_pointer_type_and_decimal_guards": "f0c9f838fdfeb60bc7373c9e1d6b3f26e53351401f65a9131fb79491c74a9b6c",
+    "GoRuntimeOverlayTests.test_terminal_public_metadata_preserves_only_closed_traps_and_exact_completed_modes": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_terminal_reason_classification_rejects_unknown_and_divergent_controls": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_terminal_reason_probe_has_pinned_catalog_finite_bits_and_no_message_export": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885",
+    "GoRuntimeOverlayTests.test_wrong_compiler_version_and_source_drift_refuse_before_assembly": "1d16e3c1ffc93d5bd370c7d28e47a3edcee577dec12414ddbf506cf329202885"
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_runtime_overlay.py",
+  "reviewReason": "Preserve all 25 existing Go runtime and private-observer cases, decorators, skips and class fixtures. Review the sole module-fixture change: one synthetic pinned netpoll source used by the overlay tests (setup SHA256 08937bab8a177574d5f4ed93da61df34c6630b01e19bb60b2e3acf15d464a6b7). Add exact locked empty-nonblocking-poll and missing/duplicate-guard refusal controls; all real descriptor, timed, blocking and denied-WASI paths remain unchanged. Native qualification is separate.",
+  "schemaVersion": "latent.ci.contracts.v2"
 }

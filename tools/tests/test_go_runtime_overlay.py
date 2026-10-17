@@ -16,6 +16,12 @@ def sources():
         "runtime/lock_js.go": "func beforeIdle(now, pollUntil int64) (gp *g, otherReady bool) { return nil, false }\n",
         "runtime/lock_wasip1.go": "func beforeIdle(int64, int64) (*g, bool) {\n\treturn nil, false\n}\n",
         "runtime/proc.go": "gp, otherReady := beforeIdle(now, pollUntil)\n",
+        "runtime/netpoll_wasip1.go": (
+            "func netpoll(delay int64) (gList, int32) {\n\tlock(&mtx)\n"
+            "\tpollsubs := subs\n\tif delay < 0 { pollsubs = subs[1:] }\n"
+            "\tif len(pollsubs) == 0 {\n\t\tunlock(&mtx)\n\t\treturn gList{}, 0\n\t}\n"
+            "\terrno := poll_oneoff(&pollsubs[0], &evts[0], uint32(len(pollsubs)), &nevents)\n"
+            "\tif errno != 0 { throw(\"poll_oneoff failed\") }\n\tunlock(&mtx)\n}\n"),
         "runtime/os_wasip1.go": (
             "//go:wasmimport wasi_snapshot_preview1 clock_time_get\n//go:noescape\n"
             "func clock_time_get(clock_id clockid, precision timestamp, time *timestamp) errno\n"
@@ -620,7 +626,7 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             upstream_rows = json.loads(upstream.read_text())["Replace"]
             strict_rows = json.loads(strict.read_text())["Replace"]
             self.assertEqual(len(upstream_rows), 5)
-            self.assertEqual(len(strict_rows), 8)
+            self.assertEqual(len(strict_rows), 9)
             for name in original:
                 self.assertEqual((goroot / "src" / name).read_bytes(), original[name])
             os_source = str(goroot / "src/runtime/os_wasip1.go")
@@ -633,6 +639,41 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             self.assertIn("func wasiOnIdle(callback func() bool)", hook)
             self.assertIn("!netWaiters && onIdle()", hook)
             self.assertEqual((goroot / "src/runtime/os_wasip1.go").read_bytes(), original["runtime/os_wasip1.go"])
+
+    def test_empty_nonblocking_netpoll_preserves_locking_and_every_real_poll(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            goroot, original, contracts = self.fixture(root)
+            with patch.dict(runtime.PREIMAGES, contracts, clear=True):
+                overlay = runtime.overlay(goroot, root / "strict")
+                comparison = runtime.scheduler_overlay(goroot, root / "wasi-comparison")
+            key = str(goroot / "src/runtime/netpoll_wasip1.go")
+            replacements = json.loads(overlay.read_text())["Replace"]
+            adapted = Path(replacements[key]).read_text()
+            before = "\tif len(pollsubs) == 0 {"
+            after = "\tif len(pollsubs) == 0 || (delay == 0 && len(pollsubs) == 1) {"
+            self.assertEqual(adapted.count(after), 1)
+            self.assertEqual(adapted.replace(after, before), original["runtime/netpoll_wasip1.go"].decode())
+            self.assertNotIn(key, json.loads(comparison.read_text())["Replace"])
+            self.assertEqual((goroot / "src/runtime/netpoll_wasip1.go").read_bytes(),
+                             original["runtime/netpoll_wasip1.go"])
+            self.assertIn(after + "\n\t\tunlock(&mtx)\n\t\treturn gList{}, 0\n\t}", adapted)
+            self.assertLess(adapted.index("lock(&mtx)"), adapted.index(after))
+            self.assertLess(adapted.index(after), adapted.index("poll_oneoff("))
+
+    def test_netpoll_guard_shape_drift_refuses_before_writing_output(self):
+        for replacement in ("\tif false {", "\tif len(pollsubs) == 0 {\n\tif len(pollsubs) == 0 {"):
+            with self.subTest(replacement=replacement), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                goroot, original, contracts = self.fixture(root)
+                path = goroot / "src/runtime/netpoll_wasip1.go"
+                path.write_text(original["runtime/netpoll_wasip1.go"].decode().replace(
+                    "\tif len(pollsubs) == 0 {", replacement))
+                contracts["runtime/netpoll_wasip1.go"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                with patch.dict(runtime.PREIMAGES, contracts, clear=True):
+                    with self.assertRaisesRegex(ValueError, "go-runtime-overlay-contract-drift"):
+                        runtime.overlay(goroot, root / "refused")
+                self.assertFalse((root / "refused").exists())
 
     def test_each_upstream_source_drift_refuses_before_any_overlay_is_written(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Add context cancellation adaptation only for explicitly selected activation plus an actual typed HTTP import; retain all runtime preimages and existing profile transformations.",
+  "reviewReason": "Authenticate pinned Go netpoll source and bypass only an empty nonblocking clock-only poll at GC world restart. Preserve actual descriptor, blocking, timed polling and all closed WASI denials; retain scheduler and HTTP profile transformations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "57bd2769f9be62a1c0fa9f26ad6efef7602d954b2301cca8ef0eacd161c3d878"
+  "sha256": "0185bd10ad54a6e265b4e273819b8313afa1997c022a6f241e4c8c0e3be0c116"
 }
