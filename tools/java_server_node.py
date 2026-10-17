@@ -102,18 +102,20 @@ def runtime_config(settings: dict, service: str) -> None:
             "providerBinding": name + "-installed"})
 
 
-def grant_runtime(client, node, record, publication) -> list[dict]:
+def grant_runtime(client, node, record, publication, *, tenant="examples",
+                  principal="server-caller", suffix="") -> list[dict]:
     grants = []
     for name, (capability, profile, operation, kind) in {**profiles("java"), "context": CONTEXT}.items():
-        descriptor = next(row for row in node.startup_record["providers"] if row["id"] == name)
+        descriptor = next(row for row in node.startup_record["providers"] if row["id"] == name + suffix)
         binding, policy = client.directory / (name + "-binding.json"), client.directory / (name + "-policy.json")
-        write_json(binding, {"formatVersion": 1, "tenant": "examples", "capability": capability,
+        require(descriptor["tenant"] == tenant, "java-server-runtime-provider-tenant")
+        write_json(binding, {"formatVersion": 1, "tenant": tenant, "capability": capability,
             "providerProfile": profile, "configurationDigest": descriptor["configurationDigest"],
             "configurationEpoch": 1, "restriction": {"operations": [operation]}})
         client.call("policy", "--kind", "provider-binding", "apply", "--id", name + "-installed", "--file", binding,
                     "--operation-id", "install-" + name, "--expected-generation", "0")
-        write_json(policy, {"formatVersion": 1, "tenant": "examples", "rules": [{
-            "id": "runtime", "effect": "allow", "principals": [{"kind": "trigger", "subject": "server-caller"}],
+        write_json(policy, {"formatVersion": 1, "tenant": tenant, "rules": [{
+            "id": "runtime", "effect": "allow", "principals": [{"kind": "trigger", "subject": principal}],
             "services": [record["service"]], "publications": [publication], "capability": capability,
             "operations": [operation], "resources": {"kind": kind},
             "ceiling": {"operations": 4 if name == "context" else 4096, "inputBytes": 0,
@@ -330,7 +332,9 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
                 "retirement": after_denial, "storeCreation": "not-observed"}
             grants = grant_runtime(client, node, record, publication)
             if lifecycle is not None:
-                grants.append(lifecycle.grant_initial_http(client, node, record["service"], publication))
+                additional = lifecycle.grant_initial_http(client, node, record["service"], publication)
+                if additional is not None:
+                    grants.append(additional)
             deployed = deploy(client, fixture / record["name"] / "deployment.json", publication,
                 generation=str(deployed["generation"]), grants=grants)
             result["deployment"] = deployed

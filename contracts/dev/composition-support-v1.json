@@ -11,8 +11,8 @@
   "sources": {
     "java-authoring": {
       "path": "tools/java_guest/model.py",
-      "digest": "sha256:9659786c8ae6c021047ede0075980399d3a2cdb773778dbe34b9edaf023bf231",
-      "commit": "94cd489b692ba31c822baca12776f2deb2d24f9b"
+      "digest": "sha256:dea02683328ce443f2414e59102667ca35ecc5e4543048e91069665d8178f110",
+      "commit": "9de59f31ae70543d8c84526ffe279d32623dd14e"
     },
     "host-recognition": {
       "path": "crates/latent-core/src/host_profile.rs",
@@ -26,8 +26,8 @@
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
-      "digest": "sha256:9a2e0fff33f5baedbdbb74a95dc914d76b3677915c5b8a0487fc0300e305bcff",
-      "commit": "680dcbc5204d54c3a2707b8d90168e9e80091716"
+      "digest": "sha256:43651b665f78844a7c1cb6a4347bdb221899354e2e948eb8d22e818594215878",
+      "commit": "f341316a2bed03a3d296e72f4fb058901efea710"
     },
     "node-composition": {
       "path": "apps/latentd/src/config/runtime.rs",

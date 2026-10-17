@@ -2,6 +2,7 @@ use serde_json::{json, Value};
 
 mod activation_runtime;
 mod http_streaming;
+mod scalar_aliases;
 
 fn document() -> Value {
     let mut value: Value = serde_json::from_str(&super::document()).unwrap();
