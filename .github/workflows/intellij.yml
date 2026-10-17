@@ -1,0 +1,55 @@
+name: IntelliJ project
+
+on:
+  pull_request:
+  push:
+    branches: [development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  project:
+    name: IDE metadata (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - name: Export review-only IDE metadata
+        id: export
+        run: |
+          # The launcher is a reviewed delegated owner: tools/intellij.sh
+          python tools/intellij.py --export "$RUNNER_TEMP/intellij-review"
+      - name: Check committed IDE metadata
+        id: check
+        run: python tools/intellij.py --check
+      - name: Test IDE project and launcher contracts
+        id: tests
+        if: always()
+        run: python -m unittest tools.tests.test_intellij -v
+      - name: Retain review proposal, not machine settings
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: intellij-review-${{ matrix.os }}-${{ github.sha }}
+          path: ${{ runner.temp }}/intellij-review/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
