@@ -196,7 +196,7 @@ class PublicWatchDiagnostics(unittest.TestCase):
 
     def test_observer_and_bounded_json_errors_preserve_the_original_failure(self):
         from tools.qualify_c_dependency_watch import add_public_watch_events
-        nested = '[' * 3000 + '0' + ']' * 3000
+        nested = '[' * 16384 + '0' + ']' * 16384
         self.assertLess(len(nested.encode()), 4096 * 1024)
         with self.assertRaises(RecursionError):
             json.loads(nested)
