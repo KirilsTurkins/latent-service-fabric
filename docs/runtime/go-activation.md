@@ -40,7 +40,7 @@ host owns readiness. Cancellation, a narrower policy deadline and the root
 deadline do not report requested elapsed success. There is no guest busy wait,
 WASI polling, host sleeping worker, detached timer or new deadline.
 
-This slice does not implement `time.NewTimer`, `After`, `AfterFunc` or `Ticker`:
+The v1 profile does not implement `time.NewTimer`, `After`, `AfterFunc` or `Ticker`:
 their timer heap, rearm and callback ownership require further runtime work.
 Those APIs fail explicitly during an active invocation. Cooperative Go
 scheduling in v1 does not supply compiler safe-point preemption for CPU-only
@@ -69,6 +69,62 @@ the build host. Reachable `//go:nosplit` and `//go:nowritebarrier` functions fai
 explicitly rather than invoke an unsafe suspension. Native assembly, CGo and
 unsupported runtime operations retain their existing boundaries. This profile
 does not add standard timer APIs or initializer goroutine support.
+
+The source candidate `go-component-activation-v3` adds the pinned Go timer heap
+beneath `time.NewTimer`, `After`, `AfterFunc`, `NewTicker`, timer/ticker Stop and
+Reset, and `context.WithTimeout`. Each timer reserves its original host owner
+before allocation. The existing Go heap retains synchronous timer-channel
+semantics, recurrence, missed-tick coalescing and callback scheduling; the
+dispatcher waits on the corresponding canonical `timer-next` operation. This
+creates no host sleeping worker or replacement application timer API.
+
+AfterFunc creates an admitted ordinary goroutine with the exact timer's
+continuation. Root return drains accepted callback tasks and future callback
+timers; channel timers with no remaining application task are stopped during
+result sealing. A weak inventory does not keep otherwise collectable Go timers
+alive. Explicit Stop/Reset retains pending physical readiness and its buffer
+until the exact canonical subtask returns and is dropped, then resumes its
+fence. Root cancellation and deadline errors cannot become elapsed success.
+The dispatcher checks actual runnable owned goroutines after every scheduler
+idle notification: a callback published after the notification requires a fresh
+quiescence round before WAIT or EXIT. Unknown parked work still fails.
+
+The candidate's native reference and signed test cover timer/channel Stop and
+Reset, recurrence, callbacks, resetting a running callback with permitted
+overlap, context cancellation, plain GC, stopped/retained timer GC, collection,
+timer limits, callback panic,
+root drain, cancellation and deadline. These commands are qualification gates;
+source preparation alone does not establish successful execution. In
+particular, the latest timer source still needs a successful complete signed
+replay before it is a qualified profile. Initializer background work, standard
+networking and the complete #742 acceptance matrix remain unfinished.
+
+The first hosted replay of the fresh-quiescence source passed modes 0 through
+6, including callback drain, then trapped with memory out of bounds in the
+forced-GC case. This remains a failed acceptance result. A failure-only diagnostic
+replays that exact component with three private read-only source overlays in a
+separate process namespace, preserving the production files and assertions.
+It retains at most 32 parsed Wasm function/index/offset records, closed execution
+stages/outcome classes, relative Rust assertion sites and input/recipe hashes.
+If guest invocation was reached, a second private component replaces only the
+known terminal `runtime.throw` and `runtime.fatal` bodies with distinct traps.
+This can distinguish an underlying Go terminal failure from recursive denied
+stderr obscuring it. Every normal body/import/authority remains unchanged, the
+original component and acceptance failure remain intact, and the private
+component/body identities are explicit. Both runs share a ten-minute deadline
+and one MiB output bound. Raw native errors/configuration are not exported.
+This diagnostic cannot qualify the profile, and the job does not save its
+diagnostic compiler target or run acceptance afterward.
+
+```bash
+python3 tools/qualify_go_activation.py --output /tmp/go-standard-timers \
+  --runtime-profile go-component-activation-v3 --fixture timers
+LSF_GUEST_SDK_LANGUAGE=go LSF_GO_TIMER_FIXTURE=/tmp/go-standard-timers \
+  cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime \
+  --test local_service \
+  runtime::go::signed_standard_timers_contexts_and_rearm_keep_original_heap_owners \
+  -- --ignored --exact --nocapture
+```
 
 The checkpoint qualification compiles the same ordinary CPU source both with
 v2 and without checkpoints. Real signed execution requires sibling progress
@@ -110,3 +166,50 @@ unknown parked work, cancellation, root deadline and fresh reuse. It uses the
 normal package admission, grant, execution-cell and physical cleanup owners.
 The Go workflow retains both successful and failed artifacts. A prepared command
 or compiler receipt alone is not execution or complete-ticket qualification.
+
+The retained 2026-10-16 v3 failure remains a required acceptance failure: mode 9
+traps while repeatedly collecting unreachable timers. A separate terminal-only
+component mutation identified `runtime.throw` behind the original closed-stdio
+memory trap. The bounded follow-up compares only 208 reviewed literal reasons
+from hash-checked Go 1.27.2 runtime sources. It authenticates the exact emitted
+throw body before reading its incoming string ABI, selects fixed terminal traps,
+and checks any candidate in one separate fresh full-literal comparison. Only a
+reviewed candidate digest and source locations may be exported; identical trap
+classifiers elsewhere still require independent caller evidence. These records
+prove neither the baseline cause nor a common cause across bit runs. Unknown or divergent
+observations remain inconclusive; no normal function body, import, authority or
+acceptance assertion changes. All diagnostic executions share the existing
+600-second and 1 MiB output bounds. These observations do not qualify v3.
+
+The fresh confirmation on component `3a8776b49b5fa93be27c5797205088a0e43433e4d4d6a889b2d1c1211486f315`
+matched the public `fd_write failed` literal in pinned `runtime/os_wasip1.go`.
+This can be a secondary failure while printing an earlier ordinary panic. The
+additional failure-only probe leaves `gopanic`, recovery, defers and `preprintpanics`
+unchanged and authenticates their emitted bodies plus the entire core data
+section. It replaces only the already unrecoverable `fatalpanic` body, alongside
+the two existing terminal throw/fatal probes. Checked 64-bit pointers, a fixed
+builtin-string type, a single-panic chain and a 256-byte limit precede comparison
+with 68 reviewed public string or decimal-format families. Every path traps.
+Only a family digest and source locations can leave this probe; numeric values
+and guest strings are never exported. A separate fresh full-family match is
+required. Application strings can match the same family, so confirmation proves
+neither runtime origin nor the cause of the original failed invocation. Decimal
+widths bound the diagnostic and establish neither integer-range validity nor
+complete runtime-error coverage. The original mode 9 acceptance case and all existing
+control modes remain required. Hosted job 116880644301 executed this probe and
+reported `unknown-panic-family`; it established no runtime cause or repair.
+
+The numeric-frame observer uses a separate private mount view only on the
+Linux GitHub Actions runner. The former user-namespace view stopped at policy
+store preparation before guest execution. Creating mounts while retaining the
+ordinary host user namespace requires `sudo`; the command then uses `setpriv`
+to restore the original runner UID/GID, clear supplementary groups and all
+capabilities, and prohibit gaining privileges before Python or Cargo runs.
+A bounded preflight checks those credentials, the original UID map and root
+ownership, and the unchanged safe system-temporary ancestor rules. Local or
+unsupported contexts refuse this diagnostic. Production policy guards and the
+original signed fixture remain unchanged. Only three source files are bound
+read-only; their original bytes and the original component are checked after
+execution. The writable Cargo cache becomes diagnostic-only: the job saves no
+cache and runs no subsequent acceptance. The original 600-second/1-MiB bounds
+still apply. A configured observer alone supplies no frame or execution proof.

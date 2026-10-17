@@ -70,8 +70,8 @@ class Compiler:
             raise ValueError("unreviewed-go-component-validator")
         self.goroot = Path(self.run("go-root", "go", "env", "GOROOT").strip())
         checked_sources(self.goroot, PREIMAGES)
-        from tools.go_guest.activation import CHECKPOINT_PROFILE
-        if runtime_profile == CHECKPOINT_PROFILE:
+        from tools.go_guest.activation import CHECKPOINT_PROFILES
+        if runtime_profile in CHECKPOINT_PROFILES:
             from tools.go_guest.checkpoints import prepare
             prepare(self)
         if application_closure is not None:
@@ -96,11 +96,12 @@ class Compiler:
 
     def compile(self, source: Path, wit: Path, world: str, output: Path,
                 *, runtime_profile: str = 'go-component-async-v1') -> tuple[Path, dict]:
-        from tools.go_guest.activation import PROFILES, CHECKPOINT_PROFILE, exports
+        from tools.go_guest.activation import PROFILES, CHECKPOINT_PROFILES, TIMER_PROFILE, exports
         if runtime_profile not in {'go-component-async-v1', *PROFILES}:
             raise ValueError('go-runtime-profile-not-installed')
         activation = runtime_profile in PROFILES
-        checkpoints = runtime_profile == CHECKPOINT_PROFILE
+        checkpoints = runtime_profile in CHECKPOINT_PROFILES
+        timers = runtime_profile == TIMER_PROFILE
         if checkpoints and 'go-checkpoints' not in self.paths:
             raise ValueError('go-checkpoint-parser-not-prepared-before-compiler-containment')
         output.mkdir()
@@ -221,7 +222,7 @@ class Compiler:
             self.run("vendor-locked-module", "go", "mod", "vendor")
             overlay_path = overlay(self.goroot, output / "runtime-overlay",
                                    generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk,
-                                   activation=activation, checkpoints=checkpoints)
+                                   activation=activation, checkpoints=checkpoints, timers=timers)
             self.commands.environment["GOFLAGS"] = "-mod=vendor -overlay=" + str(overlay_path)
             if selected_module is not None and selected_module["tags"]:
                 self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])

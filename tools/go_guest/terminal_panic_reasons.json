@@ -1,0 +1,1260 @@
+{
+  "formatVersion": 1,
+  "scope": "closed public terminal panic literal/decimal-format families",
+  "goVersion": "1.27.2",
+  "maximumBytes": 256,
+  "sourceSha256": {
+    "sdk/go-guest/runtime/timers-conformance/main.go": "f3c8a6cb826ea9f9f9e5b482ddcfd85dd8cdfc82adbd817ce1ad5f64ec8fb6dc",
+    "sdk/go-guest/runtime/timer_async.go.in": "1600e6760172b20b41be2c7440db7ddb982f2cfb3439355200d0ed9ec3e24bc6",
+    "sdk/go-guest/runtime/activation_async.go.in": "9216fa816c86a0965f9c9ce82197e44513c27537bc0e543be4228fc386cef871",
+    "go/src/runtime/error.go": "da287add1d9aa3db925d52fb38d669cf5f5cfc930dc3ed7f376aef158a7f8b85",
+    "go/src/runtime/lock_futex.go": "b0f86c66fc0598546c54e4db32d9e1479b77e66e67539872870fe41a3d413798",
+    "go/src/runtime/lock_js.go": "32537875a1bae14517f33ca4fa5cb37daa4fb375da655a534d9e8dc6da3dbed8",
+    "go/src/runtime/lock_sema.go": "284889789238c412c9f2e2c99e10912641fac591523a462659c9ec49ab905239",
+    "go/src/runtime/lock_wasip1.go": "720415791179802557117471740f92cddf4b8a8aa0ebfdba1322bbc621e1f62c",
+    "go/src/runtime/mcleanup.go": "bda3732f12dc16750994d6ce6b10b6844beb2ea1aa854c3407be757097f04207",
+    "go/src/runtime/mfinal.go": "49d40539afdd927355c9cfbfabc7130c561d0a19e68ca5e621082e58e9d96cd7",
+    "go/src/runtime/mgc.go": "b1cb75ff1b5da577a1af442d5c52da2a08328510e4e70f66cb88d92e02a5b33e",
+    "go/src/runtime/mgcscavenge.go": "8d462284b9cc551410de1d19b910e4d263d29869596314c0a8dc4af8f8afa25b",
+    "go/src/runtime/mgcsweep.go": "81139b39aeacd63e86bdadb6e921882e871bb30c87479b454aa5d82adc0c91aa",
+    "go/src/runtime/mheap.go": "848cedd74ae1d10af65eb3beed88ddd7d22d184a64a5a7477251c4886e8a459d",
+    "go/src/runtime/os_wasip1.go": "c8ddc4ddc00af788539897f9a75c814d9c7fcfe9416dbf977f896631c158a3ca",
+    "go/src/runtime/panic.go": "55bf157a0922d2474c4c04526eed90eec4c5a48ad92d649d0c97887760b53e11",
+    "go/src/runtime/pinner.go": "6f638fb797edb1ed42601f11a086c8f6a34f095d7c85b9f53773e59528ff38bd",
+    "go/src/runtime/proc.go": "64e0822a2f8b8a6ed6e764e5c0f224b392e3a1343a328d30d7b34441ae7c9cef",
+    "go/src/runtime/runtime2.go": "7d66ed912f68b1259947807ca1bdf79ee7e54c6a61a716d88db663d570af66da",
+    "go/src/runtime/time.go": "cf2ae4e953a3315c226499f553a8e8e1529d27ceac166b4fb75e8d7b3a4fa682"
+  },
+  "reasons": [
+    {
+      "id": 1,
+      "patternDigest": "790e98185e5bb905b5f2e6aa0153987e632c1e408a0338fdc14c04a3de098774",
+      "segments": [
+        {
+          "literalHex": "42616420766172696e74"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 774
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "patternDigest": "de702063d436604f6bb67548b66fa0464bc65f63a55c75fa2e6c97b08ddc186d",
+      "segments": [
+        {
+          "literalHex": "4c534620736c6565702063616e63656c6c6564206f722064656e696564"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/activation_async.go.in",
+          "line": 21
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "patternDigest": "c74c59b325e4eb07aad9ef1ca010bda04c3ca4d6e6fbb022941c16eb47e83935",
+      "segments": [
+        {
+          "literalHex": "4c53462074696d65722072656164696e657373206661696c6564206f7220726f6f7420646561646c696e6520776f6e"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timer_async.go.in",
+          "line": 46
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "patternDigest": "4ef5efe556d31f38951c459b280d580fa871f6955aa0eb865c6b5b99f04198f2",
+      "segments": [
+        {
+          "literalHex": "4c53462074696d65722d6e6578742063616e6f6e6963616c20737461747573"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timer_async.go.in",
+          "line": 87
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "patternDigest": "21011014582642fe23c65251cc0e0f40f4da8dd9888a1fc3ebb0e31b28b00c2c",
+      "segments": [
+        {
+          "literalHex": "4c6f636b4f53546872656164206e657374696e67206f766572666c6f77"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/proc.go",
+          "line": 5685
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "patternDigest": "901fb4f5661d577d52bba3541055003da7d4521e8e2eff7ee44133ffb5cf58c1",
+      "segments": [
+        {
+          "literalHex": "61636365707465642063616c6c6261636b2070616e6963"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 76
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "patternDigest": "3c6a0d8748b3474771c73a42ae87a5c1793e6b27c770f985f3484ec1e953ad1c",
+      "segments": [
+        {
+          "literalHex": "63616e63656c656420636f6e7465787420626563616d6520656c61707365642074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 135
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "patternDigest": "a6c6784aaff9eee86c2525c4bdab79df9c7fde72f223994813ac044a8e96b5cc",
+      "segments": [
+        {
+          "literalHex": "636f6e7465787420646561646c696e65"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 58
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "patternDigest": "df88e85154acb627316d5f39b98c609a7d3edf618898ae6352fb9a2e60f5f923",
+      "segments": [
+        {
+          "literalHex": "63726f73732d696e766f636174696f6e207374617465"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 15
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "patternDigest": "984963f27bc361607ea30e4f7f9ca084c0ca914ce20c761b30555153940f1f09",
+      "segments": [
+        {
+          "literalHex": "65787472612063616c6c6261636b"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 123
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "patternDigest": "39d64784bd3cec3751fd0f703a063ac3426736371602062e146c29619137b0fe",
+      "segments": [
+        {
+          "literalHex": "6e6f6e2d656d707479206d61726b20717565756520616674657220636f6e63757272656e74206d61726b"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/mgc.go",
+          "line": 1981
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "patternDigest": "76d81a541040e19896e42b23b17ad06d79be7d21411463b3f78cb621fa3a7754",
+      "segments": [
+        {
+          "literalHex": "6e6f742072656163686564"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/mheap.go",
+          "line": 2848
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "patternDigest": "79631cb1b7b63b6e84aba908f774286c1bb4642be880ee3de73c12abd53f0c1b",
+      "segments": [
+        {
+          "literalHex": "70616e6963"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 1095
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "patternDigest": "8c61458a041e2b87f018822eb44bd2cd90d6cd22f48ffb049a50de497166f1fa",
+      "segments": [
+        {
+          "literalHex": "7265736574206163746976652074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 31
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "patternDigest": "2091ebd5ef6c326247d8f108083db6a00f9843fae79e8f96c448259c499696fb",
+      "segments": [
+        {
+          "literalHex": "726573657420657870697265642074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 22
+        },
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 30
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "patternDigest": "f5414019b724825b563c2b0ec9b629b4653e1d4fc1593164381e80687c33c0c2",
+      "segments": [
+        {
+          "literalHex": "72657365742070656e64696e672074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 63
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "patternDigest": "f56a5d24b44f7251201b21b0fb2075fb4b9e037039c1a2e6fad06d03078cff89",
+      "segments": [
+        {
+          "literalHex": "72657365742072756e6e696e672063616c6c6261636b2074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 127
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "patternDigest": "d5149a7f0830760bdf64edd8c0bc735be581f3b8e5d8208a324ab66e152700f4",
+      "segments": [
+        {
+          "literalHex": "72657365742073746f707065642063616c6c6261636b2074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 109
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "patternDigest": "f31992a835d39ad6dc48e4ade67e62177aa0a6615f92dfa5237780b869cde5cb",
+      "segments": [
+        {
+          "literalHex": "72657365742073746f707065642074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 28
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "patternDigest": "465066e1f174ecf94374489ba48d05dab70c4f110cfe7e218d4f398ad9d14de8",
+      "segments": [
+        {
+          "literalHex": "72657461696e65642074696d6572206578706972656420647572696e67204743"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 147
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "patternDigest": "b80d6ccf80153908ea89202ffc61ce165636ba50228bedf65d1ec11ddb0f32f3",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a2063616e6e6f7420636f6e7665727420736c6963652077697468206c656e67746820"
+        },
+        {
+          "decimal": {
+            "signed": false,
+            "maximumDigits": 19
+          }
+        },
+        {
+          "literalHex": "20746f206172726179206f7220706f696e74657220746f2061727261792077697468206c656e67746820"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 156
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "patternDigest": "3fd81449857bb7f918d40d8ec32147b544ac42503a3bc6503f151df9fc366584",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20666c6f6174696e6720706f696e74206572726f72"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 325
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "patternDigest": "cb22197ce7112485dbe9eee8cf28260302d902eff4375e467e14af652406156a",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20696e646578206f7574206f662072616e6765205b"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "5d"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 161
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "patternDigest": "76f43ad627e01d849ce31005a01d9d9c6af67e574d7d4d8f03b498696351d515",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20696e646578206f7574206f662072616e6765205b"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "5d2077697468206c656e67746820"
+        },
+        {
+          "decimal": {
+            "signed": false,
+            "maximumDigits": 19
+          }
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 148
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "patternDigest": "d5f9a96f1a3fd9b4770f28dc5434de1ed55a8d6f48be41b404e175559b5d4d19",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20696e746567657220646976696465206279207a65726f"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 310
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "patternDigest": "5c72a299e9fcba6a8697566dfac2cede53b5a11e51202ed1495d59758c26eafa",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20696e7465676572206f766572666c6f77"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 318
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "patternDigest": "3868191e8bfad3575413f235d7f4c2db70532c49c141659ceef01bbfa54cc98c",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20696e76616c6964206d656d6f72792061646472657373206f72206e696c20706f696e7465722064657265666572656e6365"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 332
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "patternDigest": "01bb86a3ad6b4164cbb1631e7e04b0c432b01b0fd866066932f82bcc5da9f7c7",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a206e6567617469766520736869667420616d6f756e74"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 302
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "patternDigest": "1e2deae5c9a3e2571bd3a4290785e24cf1be209c0872bec8a3d0a2a34a0d0393",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a206f75742d6f662d72616e676520696d6d65646961746520666f722073696d6420696e7472696e736963"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 344
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "patternDigest": "86681ee933c4ec6a7d191a9f5fb69a3b2a75e5b5442ae492bc879de2002d75cc",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a2072616e67652066756e6374696f6e20636f6e74696e75656420697465726174696f6e2061667465722066756e6374696f6e20666f72206c6f6f7020626f64792072657475726e65642066616c7365"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 371
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "patternDigest": "68c6b7209da41929e01b95608205bd135bc5edbfb8828b328bc986a7a3050bc0",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a2072616e67652066756e6374696f6e20636f6e74696e75656420697465726174696f6e206166746572206c6f6f7020626f64792070616e6963"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 372
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "patternDigest": "80730f3bbfcfc2b54f972a1a7d6995ba48592a8084ac76eea33241575de11cba",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a2072616e67652066756e6374696f6e20636f6e74696e75656420697465726174696f6e2061667465722077686f6c65206c6f6f702065786974"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 373
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "patternDigest": "f94f2153a689883eeff3378d79e6b534c707438f52fb2ff3ec8b4f46ac000ad9",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a2072616e67652066756e6374696f6e207265636f76657265642061206c6f6f7020626f64792070616e696320616e6420646964206e6f7420726573756d652070616e69636b696e67"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/panic.go",
+          "line": 374
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "patternDigest": "ad719004c54d8f95f6945e726970d7486b8b5457764023bde0f3a16ba2b0469d",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a2072756e74696d652e50696e6e65723a20617267756d656e74206973206e696c"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/pinner.go",
+          "line": 129
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "patternDigest": "c3a1e6c7ed92584dbeb0d3cb477e77dbf41d5e86e958363caf7ff6ef990c2607",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a2072756e74696d652e50696e6e65723a20666f756e64206c65616b696e672070696e6e656420706f696e7465723b20666f72676f7420746f2063616c6c20556e70696e28293f"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/pinner.go",
+          "line": 402
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "patternDigest": "1a1f37f984252e38d9a025cf93d4df6c28dd842f664dcbd39b9bd764a990b85d",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a2072756e74696d652e50696e6e65723a206f626a6563742077617320616c6c6f636174656420696e746f20616e206172656e61"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/pinner.go",
+          "line": 136
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "patternDigest": "3283210c3a7fade2e446382c8672212b34342da7a8049908cd7b9066f121462f",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "3a"
+        },
+        {
+          "decimal": {
+            "signed": false,
+            "maximumDigits": 19
+          }
+        },
+        {
+          "literalHex": "3a5d"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 155
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "patternDigest": "8d0e9e58c7d9f13f41e6be16141567c01db2b96d8cb6f5de97c8887aabade0c4",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "3a"
+        },
+        {
+          "decimal": {
+            "signed": false,
+            "maximumDigits": 19
+          }
+        },
+        {
+          "literalHex": "5d"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 151
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "patternDigest": "726df745bfca37df517dfbc286616ff2923bbd35cf47667b53c8bac0d9caf05f",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "3a3a5d"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 168
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "patternDigest": "6fc11a4dfa15bc65f21c605595149a50ddcd2e1f1f081621c2388e5b3eb5d63c",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "3a5d"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 164
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "patternDigest": "52bf6c3a14f02dcc7838fd28881857f05f44c3dff317e1a3aaf70e9e453aa620",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b3a"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "3a"
+        },
+        {
+          "decimal": {
+            "signed": false,
+            "maximumDigits": 19
+          }
+        },
+        {
+          "literalHex": "5d"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 154
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "patternDigest": "7a469567e3c015a979158d4ad3f5444ecb7de32827b16b9f5454cabff54e4240",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b3a"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "3a5d"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 167
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "patternDigest": "16e94443b9d8ff08808d4a11021fa4ea3cc41221be8c90475067b839350736cc",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b3a"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "5d"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 162
+        },
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 163
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "patternDigest": "1c6cd6407554c58073572b79ddf6b7da456fbb34bee921166a9990912fc9dea3",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b3a"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "5d207769746820636170616369747920"
+        },
+        {
+          "decimal": {
+            "signed": false,
+            "maximumDigits": 19
+          }
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 150
+        }
+      ]
+    },
+    {
+      "id": 45,
+      "patternDigest": "aa432bc5e53bb1122bdeb21185637a6c0f2a0e8e8a0bb009204ebdc50dd98c1e",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b3a"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "5d2077697468206c656e67746820"
+        },
+        {
+          "decimal": {
+            "signed": false,
+            "maximumDigits": 19
+          }
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 149
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "patternDigest": "1f166f098ebb49b0bea2c334ddf989b36069d459dc82fa06123c95ab8e86ba60",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b3a3a"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "5d"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 165
+        },
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 166
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "patternDigest": "ef32341fcc969086f1042f2a6cf50793656fd35caa85ad540b9e7f82451b86bb",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b3a3a"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "5d207769746820636170616369747920"
+        },
+        {
+          "decimal": {
+            "signed": false,
+            "maximumDigits": 19
+          }
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 153
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "patternDigest": "5a55ef27f82c29a1e11311d083cc4ed3ae21f9b6ad6fc8dce6d30d6766852ea3",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20736c69636520626f756e6473206f7574206f662072616e6765205b3a3a"
+        },
+        {
+          "decimal": {
+            "signed": true,
+            "maximumDigits": 20
+          }
+        },
+        {
+          "literalHex": "5d2077697468206c656e67746820"
+        },
+        {
+          "decimal": {
+            "signed": false,
+            "maximumDigits": 19
+          }
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/error.go",
+          "line": 152
+        }
+      ]
+    },
+    {
+      "id": 49,
+      "patternDigest": "aad86193086e66efe655ec451d8e9c41d8c539919403e79ea885af7db8f49817",
+      "segments": [
+        {
+          "literalHex": "72756e74696d65206572726f723a20747269656420746f20756e70696e206e6f6e2d476f20706f696e746572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/pinner.go",
+          "line": 173
+        }
+      ]
+    },
+    {
+      "id": 50,
+      "patternDigest": "bfb72a40debb6b9c3d582a8acefc52834a29f39971c48c728fdf6df8d3df0afe",
+      "segments": [
+        {
+          "literalHex": "72756e74696d652e416464436c65616e75703a20636c65616e75702066756e6374696f6e20636c6f736573206f766572207074722c20636c65616e75702077696c6c206e657665722072756e"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/mcleanup.go",
+          "line": 167
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "patternDigest": "ee3ae0cfd9ace5b9a16ec02e77c5561a85497b423d7d2cfe9150a68bfa654de0",
+      "segments": [
+        {
+          "literalHex": "72756e74696d652e416464436c65616e75703a20707472206973206172656e612d616c6c6f6361746564"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/mcleanup.go",
+          "line": 102
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "patternDigest": "933512dfdad4d05ddcf3978565dbd28d87b6a44e6d2bd85a6c1e159a94f473d2",
+      "segments": [
+        {
+          "literalHex": "72756e74696d652e416464436c65616e75703a2070747220697320657175616c20746f206172672c20636c65616e75702077696c6c206e657665722072756e"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/mcleanup.go",
+          "line": 97
+        }
+      ]
+    },
+    {
+      "id": 53,
+      "patternDigest": "49edd1196e9019c7d7f6a749179296462217364d2c392277178faa90a168be7a",
+      "segments": [
+        {
+          "literalHex": "72756e74696d652e416464436c65616e75703a20707472206973206e696c"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/mcleanup.go",
+          "line": 88
+        }
+      ]
+    },
+    {
+      "id": 54,
+      "patternDigest": "4dccaee4f6d61e301ad5c724f594048f316ffa44f82b1ba20930048a1cfe0a04",
+      "segments": [
+        {
+          "literalHex": "72756e74696d652e416464436c65616e75703a207074722069732077697468696e206172672c20636c65616e75702077696c6c206e657665722072756e"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/mcleanup.go",
+          "line": 150
+        }
+      ]
+    },
+    {
+      "id": 55,
+      "patternDigest": "cd2b0478931946ae87cb5c0de51fba139474b84f0576bbead720e66fe814f32b",
+      "segments": [
+        {
+          "literalHex": "72756e74696d652e416464436c65616e75703a20707472206e6f7420696e20616c6c6f636174656420626c6f636b"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/mcleanup.go",
+          "line": 136
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "patternDigest": "71475a3c41b23df5f6269f751a5416f9767a10aa9d6ec63d0ee779e0282fc563",
+      "segments": [
+        {
+          "literalHex": "7374616c652074696d65722076616c7565"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 33
+        }
+      ]
+    },
+    {
+      "id": 57,
+      "patternDigest": "df712382430c78655c331551c71abac64ea815d3fe84a6fa21f63a13144e80f0",
+      "segments": [
+        {
+          "literalHex": "73746f70206163746976652074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 27
+        }
+      ]
+    },
+    {
+      "id": 58,
+      "patternDigest": "b92c22da4d195245c071aa3bb3f8c786a01108341f29a5e20f20b260f2bf98f0",
+      "segments": [
+        {
+          "literalHex": "73746f702063616c6c6261636b2074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 108
+        }
+      ]
+    },
+    {
+      "id": 59,
+      "patternDigest": "6e29087287c0396fdb78909bfa9509290e6cf7feff20440a1c886db04ab9f301",
+      "segments": [
+        {
+          "literalHex": "73746f702064656c6976657265642074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 24
+        }
+      ]
+    },
+    {
+      "id": 60,
+      "patternDigest": "31e19416ab38096b3852282cca27000e22d9841beeac87c06ecb34b9e90b187b",
+      "segments": [
+        {
+          "literalHex": "73746f702074696d6572206265666f7265204743"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 142
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "patternDigest": "fdc77781b44976054c37d3d32dfc3f46a7467e23e2b733394b0996d42d473227",
+      "segments": [
+        {
+          "literalHex": "73746f707065642070656e64696e672074696d6572"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 83
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "patternDigest": "be463c3e45a614e45c6029bfbe17fa5c7064c3c93e4e5b72e2f33225929c0fec",
+      "segments": [
+        {
+          "literalHex": "73746f70706564207469636b6572206669726564"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 44
+        }
+      ]
+    },
+    {
+      "id": 63,
+      "patternDigest": "bc97d079ca452cf77031c1b3619596c64fc53aded37e35436938e33df5146398",
+      "segments": [
+        {
+          "literalHex": "7469636b6572206368616e6e656c206361706163697479"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 36
+        }
+      ]
+    },
+    {
+      "id": 64,
+      "patternDigest": "3bb73112f85537f71ba5c3f73dd13a4a582a45140913441d0631494b5351e457",
+      "segments": [
+        {
+          "literalHex": "7469636b65722074696d6520726576657273616c"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 40
+        }
+      ]
+    },
+    {
+      "id": 65,
+      "patternDigest": "8314acb4f2baa9fc39ed3f01e4482672883a648fd02841f4d81cb6a87e22f16a",
+      "segments": [
+        {
+          "literalHex": "74696d6572206368616e6e656c206361706163697479"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 20
+        }
+      ]
+    },
+    {
+      "id": 66,
+      "patternDigest": "124cca213e86ef18b102ac085799ae301d478e4f1e8c83466957c0d590c3d321",
+      "segments": [
+        {
+          "literalHex": "74696d65722072657365742f73746f70"
+        }
+      ],
+      "sources": [
+        {
+          "source": "sdk/go-guest/runtime/timers-conformance/main.go",
+          "line": 88
+        }
+      ]
+    },
+    {
+      "id": 67,
+      "patternDigest": "83b6fa18bc48015412cff515cf0b782832d7a6aeb01c87c91530e0727e707cf3",
+      "segments": [
+        {
+          "literalHex": "746f6f206d616e7920706f696e7465727320666f722075696e743634206d61736b"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/mgc.go",
+          "line": 2275
+        }
+      ]
+    },
+    {
+      "id": 68,
+      "patternDigest": "5e6017027437e595ec72adee0718d78f092cddaa8d31048c9d5ba2ed647ded5e",
+      "segments": [
+        {
+          "literalHex": "756e726561636861626c65"
+        }
+      ],
+      "sources": [
+        {
+          "source": "go/src/runtime/proc.go",
+          "line": 297
+        }
+      ]
+    }
+  ]
+}

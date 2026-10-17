@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_go_activation.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bind selected profile and reviewed native reference plus compiler checkpoint fixture while retaining ordinary v1 qualification",
+  "reviewReason": "Add plain GC, stopped timer GC and retained timer GC reference controls before the original collected weak-timer case; preserve every prior ordinary checkpoint/timer native-reference mode and all source/compiler/signed gates.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4fd91c87f5556f3c35c65285abbb135e52e872c7b98a633f8fce1d8b222e4681"
+  "sha256": "a6930765c06e6d7964e387d5c88a48bfb1198df98de182088772044cffb4a7e8"
 }
