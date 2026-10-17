@@ -245,4 +245,119 @@ fn controlled_profile_rejects_pooling_and_absent_runtime_and_binds_compatibility
     config.owned_native_stacks = true;
     config.instance_allocator = InstanceAllocator::Pooling;
     assert!(config.validate().is_err());
+    config.instance_allocator = InstanceAllocator::OnDemand;
+    config.owned_native_threads = true;
+    assert!(config.validate().is_ok());
+    let native = config.profile(DispatchMode::Generic);
+    assert_eq!(
+        native.configuration["host-abi-profile"],
+        latent_core::PHASE3_HOST_ABI_V6.id
+    );
+    assert_eq!(
+        native.configuration["native-thread-profile"],
+        crate::host::native::PROFILE
+    );
+    config.owned_native_threads = false;
+    let ordinary = config.profile(DispatchMode::Generic);
+    assert_eq!(
+        ordinary.configuration["host-abi-profile"],
+        latent_core::PHASE3_HOST_ABI_V5.id
+    );
+    assert_ne!(
+        native.configuration["configuration-digest"],
+        ordinary.configuration["configuration-digest"]
+    );
+    config.owned_native_threads = true;
+    config.owned_native_stacks = false;
+    assert!(config.validate().is_err());
+    config.owned_native_stacks = true;
+    config.transactional_state = true;
+    assert!(config.validate().is_err());
+}
+
+#[test]
+fn child_total_start_capacity_survives_logical_completion_and_releases_only_after_store_drop() {
+    let (budget, runtime) = owners(3, 4 * 1024 * 1024);
+    let task = runtime.register(OwnerKind::Task, None).unwrap();
+    let second_task = runtime.register(OwnerKind::Task, None).unwrap();
+    let context =
+        StackContext::with_children(budget.clone(), runtime.clone(), 64 * 1024, 2).unwrap();
+    let guard = PollGuard::enter(&context);
+    let root_stack = Creator.new_stack(64 * 1024, true).unwrap();
+    context.reserve_child(task.token()).unwrap();
+    let child_stack = Creator.new_stack(64 * 1024, true).unwrap();
+    assert!(Creator.new_stack(64 * 1024, true).is_err());
+    context.reserve_child(second_task.token()).unwrap(); // A cached worker need not allocate.
+    drop(task);
+    let third_task = runtime.register(OwnerKind::Task, None).unwrap();
+    let charged = budget.host_memory_bytes();
+    assert_eq!(
+        context.reserve_child(third_task.token()).unwrap_err().code,
+        PlatformErrorCode::ResourceExhausted,
+    );
+    assert_eq!(budget.host_memory_bytes(), charged);
+    assert_eq!(runtime.snapshot().owners[6], 3);
+    assert!(context.after_store_dropped().is_err()); // Live mappings never refund.
+    drop(child_stack);
+    assert_eq!(runtime.snapshot().owners[6], 2);
+    drop(third_task);
+    drop(second_task);
+    runtime.begin_drain();
+    context.finish_logical().unwrap(); // Native infrastructure remains charged.
+    assert_eq!(runtime.snapshot().owners[6], 2);
+    context.cancel_unstarted(); // Host-state drop cannot refund accepted cached capacity.
+    drop(root_stack);
+    assert_eq!(runtime.snapshot().owners[6], 1);
+    assert!(!context.physically_retired());
+    context.after_store_dropped().unwrap(); // Only the embedder's completed StoreDrop fence.
+    assert_eq!(runtime.snapshot().owners[6], 0);
+    assert!(context.physically_retired());
+    drop(guard);
+    drop(context);
+    drop(runtime);
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
+}
+
+#[test]
+fn copied_task_token_cannot_start_another_child_even_after_its_first_mapping_retires() {
+    let (budget, runtime) = owners(3, 4 * 1024 * 1024);
+    let task = runtime.register(OwnerKind::Task, None).unwrap();
+    let token = task.token();
+    let context =
+        StackContext::with_children(budget.clone(), runtime.clone(), 64 * 1024, 2).unwrap();
+    let guard = PollGuard::enter(&context);
+    let root_stack = Creator.new_stack(64 * 1024, true).unwrap();
+    context.reserve_child(token).unwrap();
+    let child_stack = Creator.new_stack(64 * 1024, true).unwrap();
+    let charged = budget.host_memory_bytes();
+    let native = runtime.snapshot().owners[6];
+    assert_eq!(
+        context.reserve_child(token).unwrap_err().code,
+        PlatformErrorCode::InvalidArgument,
+    );
+    assert_eq!(budget.host_memory_bytes(), charged);
+    assert_eq!(runtime.snapshot().owners[6], native);
+    drop(child_stack);
+    let charged = budget.host_memory_bytes();
+    assert_eq!(
+        context.reserve_child(token).unwrap_err().code,
+        PlatformErrorCode::InvalidArgument,
+    );
+    assert_eq!(budget.host_memory_bytes(), charged);
+    assert_eq!(runtime.snapshot().owners[6], 1);
+    drop(task);
+    let next = runtime.register(OwnerKind::Task, None).unwrap();
+    assert_ne!(token, next.token());
+    context.reserve_child(next.token()).unwrap();
+    drop(next);
+    runtime.begin_drain();
+    context.finish_logical().unwrap();
+    drop(root_stack);
+    context.after_store_dropped().unwrap();
+    drop(guard);
+    drop(context);
+    drop(runtime);
+    assert_eq!(budget.host_memory_bytes(), 0);
+    assert_eq!(budget.outstanding_reservations(), 0);
 }

@@ -3,6 +3,37 @@ use latent_core::{InvocationPrincipal, PrincipalKind, TenantId};
 use serde_json::{json, Value};
 mod state;
 
+#[test]
+fn native_start_policy_recognizes_only_exact_contract_operation_and_context_scope() {
+    let native = "latent:runtime-native/threads@0.1.0";
+    assert!(supported_contract(native));
+    assert!(GrantRestriction::parse(
+        br#"{"operations":["start"],"resources":{"kind":"context"}}"#,
+        native
+    )
+    .is_ok());
+    for (capability, document) in [
+        (
+            "latent:runtime-native/threads@0.2.0",
+            br#"{"operations":["start"]}"#.as_slice(),
+        ),
+        (native, br#"{"operations":["register"]}"#.as_slice()),
+        (
+            native,
+            br#"{"operations":["start"],"resources":{"kind":"clock"}}"#.as_slice(),
+        ),
+        (
+            "latent:context/context@0.1.0",
+            br#"{"operations":["start"]}"#.as_slice(),
+        ),
+    ] {
+        assert!(GrantRestriction::parse(document, capability).is_err());
+    }
+    assert!(latent_core::PHASE3_HOST_ABI_CURRENT
+        .interface(native)
+        .is_none());
+}
+
 pub(super) fn publication_id() -> String {
     format!("publication:sha256:{}", "1".repeat(64))
 }

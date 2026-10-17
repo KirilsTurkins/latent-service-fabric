@@ -19,6 +19,13 @@ pub(crate) struct CompilerEngineSettings {
     java_guest: bool,
     #[serde(default, skip_serializing_if = "is_false")]
     activation_import_cancellation: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    native_thread_profile: Option<NativeThreadProfile>,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+enum NativeThreadProfile {
+    #[serde(rename = "rust-context40-sole-consumer-one-task-start-v1")]
+    RustContext40SoleConsumerOneTaskStartV1,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -40,6 +47,9 @@ impl CompilerEngineSettings {
             copy_on_write_images: config.copy_on_write_images,
             java_guest: config.java_guest,
             activation_import_cancellation: config.activation_runtime.is_some(),
+            native_thread_profile: config
+                .owned_native_threads
+                .then_some(NativeThreadProfile::RustContext40SoleConsumerOneTaskStartV1),
         }
     }
     pub(crate) fn validate_compiler(&self) -> Result<(), PlatformError> {
@@ -48,6 +58,8 @@ impl CompilerEngineSettings {
             || self.async_stack_bytes < self.maximum_wasm_stack_bytes
             || self.async_stack_bytes > 128 * 1024 * 1024
             || !self.memory.compiler_bounded()
+            || (self.owned_native_threads()
+                && (!self.activation_import_cancellation || self.java_guest))
         {
             return Err(super::invalid_config());
         }
@@ -61,6 +73,10 @@ impl CompilerEngineSettings {
         engine_config.wasm_component_model(true);
         engine_config.wasm_component_model_async(true);
         engine_config.wasm_component_model_more_async_builtins(self.activation_import_cancellation);
+        // The explicit profile authenticates each final component before any
+        // compile/load, including disposable compiler workers and cache reuse.
+        engine_config.wasm_component_model_threading(self.owned_native_threads());
+        engine_config.wasm_component_model_async_stackful(self.owned_native_threads());
         // Security upgrades must not admit new, unqualified value shapes.
         engine_config.wasm_component_model_fixed_length_lists(false);
         // Preserve the ordinary profile's pre-Java typed function references.
@@ -88,10 +104,41 @@ impl CompilerEngineSettings {
         engine_config.wasm_backtrace_details(WasmBacktraceDetails::Disable);
         engine_config.wasm_backtrace_max_frames(None);
     }
+
+    pub(crate) fn owned_native_threads(&self) -> bool {
+        self.native_thread_profile.is_some()
+    }
 }
 
 fn is_false(value: &bool) -> bool {
     !value
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn closed_native_profile_and_required_settings_validate_before_engine_allocation() {
+        let default = CompilerEngineSettings::from_config(&WasmtimeConfig::default());
+        let mut document = serde_json::to_value(&default).unwrap();
+        assert!(document.get("nativeThreadProfile").is_none());
+        assert!(!default.owned_native_threads());
+        document["nativeThreadProfile"] = "unknown-or-legacy".into();
+        assert!(serde_json::from_value::<CompilerEngineSettings>(document.clone()).is_err());
+        document["nativeThreadProfile"] = crate::component_threading::PROFILE.into();
+        let unsupported: CompilerEngineSettings = serde_json::from_value(document.clone()).unwrap();
+        assert!(unsupported.validate_compiler().is_err());
+        document["activationImportCancellation"] = true.into();
+        let selected: CompilerEngineSettings = serde_json::from_value(document.clone()).unwrap();
+        selected.validate_compiler().unwrap();
+        assert!(selected.owned_native_threads());
+        document["javaGuest"] = true.into();
+        assert!(serde_json::from_value::<CompilerEngineSettings>(document)
+            .unwrap()
+            .validate_compiler()
+            .is_err());
+    }
 }
 
 impl WasmtimeConfig {

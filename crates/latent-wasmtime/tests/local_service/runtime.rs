@@ -26,6 +26,10 @@ mod typescript;
 #[path = "runtime/go.rs"]
 mod go;
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[path = "runtime/native_threads.rs"]
+mod native_threads;
+
 fn limits() -> RuntimeLimits {
     // Deliberately small test ceilings; these are not a language/product default.
     RuntimeLimits {
