@@ -1,0 +1,18 @@
+[package]
+name = "latent-component-threading"
+version.workspace = true
+edition = "2024"
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Bounded source transforms and routing authentication for owned component continuations."
+
+[lints]
+workspace = true
+
+[dependencies]
+# Preserve the source profile's parser/encoder and digest versions. Workspace
+# runtime parser and SHA-2 pins remain independent.
+wasm-encoder = { version = "=0.259.0", features = ["wasmparser"] }
+wasmparser = "=0.259.0"
+sha2 = "=0.10.9"

@@ -50,6 +50,14 @@
         "run": "python3 -m pip install --requirement tools/requirements.lock\npython3 -m unittest tools.tests.test_rust_standard_clock_profile tools.tests.test_rust_standard_tls_profile tools.tests.test_rust_standard_sysroot_source tools.tests.test_rust_standard_sysroot_build tools.tests.test_rust_standard_clock_gate\ncargo fetch --locked\n"
       },
       {
+        "name": "Execute owned Rust stack transforms and TLS source reference",
+        "run": "python3 -m unittest tools.tests.test_rust_tls_reference\ncargo test --locked -p latent-component-threading --target-dir \"$RUNNER_TEMP/rust-stack-transform\"\ncargo test --locked --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --target-dir \"$RUNNER_TEMP/rust-stack-transform\"\npython3 tools/run_rust_tls_reference.py --rustc \"$(rustup which rustc)\" --output \"$RUNNER_TEMP/rust-tls-reference\"\n"
+      },
+      {
+        "name": "Authenticate actual complete thread component routing",
+        "run": "python3 -m unittest tools.tests.test_rust_thread_routing\ncargo build --locked --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --target-dir \"$RUNNER_TEMP/rust-stack-transform\"\npython3 tools/qualify_rust_thread_routing.py --transformer \"$RUNNER_TEMP/rust-stack-transform/debug/latent-rust-std-stack-source-transform\" --wasm-tools \"$(command -v wasm-tools)\" --output \"$RUNNER_TEMP/rust-thread-routing\"\n"
+      },
+      {
         "name": "Build the exact current signed clock test harness",
         "run": "cargo test --locked -p latent-wasmtime --test clock_admission --no-run --message-format=json > \"$RUNNER_TEMP/rust-standard-clock-native.json\"\ncargo test --locked -p latent-wasmtime --test clock_admission -- --test-threads=1\n"
       },
@@ -62,13 +70,17 @@
         "run": "python3 -m unittest tools.tests.test_owned_native_stacks\ncargo test --locked -p latent-wasmtime --lib native_stacks::tests:: -- --test-threads=1 --nocapture\npython3 tools/qualify_owned_native_stacks.py --cargo-inventory \"$RUNNER_TEMP/rust-standard-clock-native.json\" --native-target \"$GITHUB_WORKSPACE/target\" --clocks \"$RUNNER_TEMP/rust-standard-clocks\" --output \"$RUNNER_TEMP/owned-native-stacks\"\n"
       },
       {
+        "name": "Qualify authenticated canonical child admission and physical retirement",
+        "run": "python3 -m unittest tools.tests.test_owned_native_threads\ncargo test --locked -p latent-policy --lib capability::tests::native_start_policy_recognizes_only_exact_contract_operation_and_context_scope -- --exact\ncargo test --locked -p latent-packaging --lib semantics::wasm::tests::canonical_creator_without_proof_never_opens_descriptive_threading_parser -- --exact\ncargo test --locked -p latent-packaging --lib semantics::host::tests::native_runtime_recognition_matches_exact_v6_wit_without_changing_current_installation -- --exact\ncargo test --locked -p latent-wasmtime --lib component_threading::tests:: -- --test-threads=1\ncargo test --locked -p latent-wasmtime --lib config::engine::tests:: -- --test-threads=1\ncargo test --locked -p latent-core --lib activation_runtime::tests::task_support_admission_checks_original_kind_and_liveness_under_the_same_lock -- --exact\ncargo test --locked -p latent-wasmtime --test local_service --no-run --message-format=json > \"$RUNNER_TEMP/owned-native-child-native.json\"\npython3 tools/qualify_owned_native_threads.py --transformer \"$RUNNER_TEMP/rust-stack-transform/debug/latent-rust-std-stack-source-transform\" --wasm-tools \"$(command -v wasm-tools)\" --cargo-inventory \"$RUNNER_TEMP/owned-native-child-native.json\" --native-target \"$GITHUB_WORKSPACE/target\" --output \"$RUNNER_TEMP/owned-native-children\"\n"
+      },
+      {
         "if": "always()",
         "name": "Retain bounded standard clock evidence including failures",
         "uses": "actions/upload-artifact",
         "with": {
           "if-no-files-found": "warn",
           "name": "rust-standard-clocks-${{ github.run_id }}",
-          "path": "${{ runner.temp }}/rust-standard-clock-native.json\n${{ runner.temp }}/rust-standard-clocks/report.json\n${{ runner.temp }}/rust-standard-clocks/**/qualification.json\n${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json\n${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json\n${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json\n${{ runner.temp }}/rust-standard-clocks/**/component.wasm\n${{ runner.temp }}/rust-standard-clocks/**/project/**\n${{ runner.temp }}/rust-standard-clocks/**/logs/**\n${{ runner.temp }}/owned-native-stacks/**\n",
+          "path": "${{ runner.temp }}/rust-standard-clock-native.json\n${{ runner.temp }}/rust-standard-clocks/report.json\n${{ runner.temp }}/rust-standard-clocks/**/qualification.json\n${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json\n${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json\n${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json\n${{ runner.temp }}/rust-standard-clocks/**/component.wasm\n${{ runner.temp }}/rust-standard-clocks/**/project/**\n${{ runner.temp }}/rust-standard-clocks/**/logs/**\n${{ runner.temp }}/owned-native-stacks/**\n${{ runner.temp }}/rust-tls-reference/reference.json\n${{ runner.temp }}/rust-thread-routing/**\n${{ runner.temp }}/owned-native-child-native.json\n${{ runner.temp }}/owned-native-children/**\n",
           "retention-days": 3
         }
       }
@@ -77,7 +89,7 @@
   },
   "jobId": "standard-clocks",
   "kind": "job",
-  "reviewReason": "Add controlled original-activation root native-stack admission, actual pending/cancelled Wasmtime ownership controls and signed rebuilt-clock execution through physical StackMemory destruction; preserve all prior CI commands, tests, limits and gates. This profile does not enable canonical threads or qualify standard executors.",
+  "reviewReason": "Preserve every existing gate and finite deadline; add exact authenticated child proofs, typed pre-signing and grant negatives, native contract controls and pinned release version evidence.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

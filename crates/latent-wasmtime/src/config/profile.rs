@@ -87,6 +87,21 @@ impl WasmtimeConfig {
                 "original-lease-physical-drop-v1".into(),
             );
         }
+        if self.owned_native_threads {
+            fields.insert(
+                "component-thread-authentication".into(),
+                crate::component_threading::PROFILE.into(),
+            );
+            fields.insert("native-thread-root-abi".into(), "async-stackful-v1".into());
+            fields.insert(
+                "native-thread-profile".into(),
+                crate::host::native::PROFILE.into(),
+            );
+            fields.insert(
+                "native-thread-metadata-escrow".into(),
+                crate::native_stacks::CHILD_METADATA_ESCROW.to_string(),
+            );
+        }
         if let Some(limits) = self.activation_runtime {
             fields.insert(
                 "activation-import-cancellation".into(),
@@ -109,14 +124,20 @@ impl WasmtimeConfig {
                 "execution-isolation-profile".into(),
                 self.execution_isolation_profile.name().into(),
             );
-            let abi = latent_core::PHASE3_HOST_ABI_CURRENT;
+            let abi = if self.owned_native_threads {
+                latent_core::PHASE3_HOST_ABI_V6
+            } else {
+                latent_core::PHASE3_HOST_ABI_CURRENT
+            };
+            let abi_digest = if self.owned_native_threads {
+                crate::bindings::host_abi_digest_for(abi)
+            } else {
+                crate::bindings::host_abi_digest()
+            };
             fields.insert("host-abi-profile".into(), abi.id.into());
             fields.insert(
                 "host-abi-digest".into(),
-                format!(
-                    "{:x}",
-                    latent_core::digest::HexDigest(crate::bindings::host_abi_digest())
-                ),
+                format!("{:x}", latent_core::digest::HexDigest(abi_digest)),
             );
             if self.transactional_state {
                 fields.insert(
