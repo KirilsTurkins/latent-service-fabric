@@ -66,7 +66,7 @@ def parser() -> argparse.ArgumentParser:
     for name in ("wsl-recover", "wsl-purge"):
         command = dev.add_parser(name)
         command.add_argument("--confirm-distribution", required=True)
-    for name in ("install", "install-tools", "up", "status", "logs", "down", "purge", "build", "build-status", "deploy", "recover", "invoke", "test", "prepare-test"):
+    for name in ("install", "install-tools", "up", "status", "logs", "down", "purge", "build", "build-status", "executable-approval-request", "deploy", "recover", "invoke", "test", "prepare-test"):
         command = dev.add_parser(name)
         command.add_argument("--workspace", required=True)
         if name == "prepare-test":
@@ -83,6 +83,8 @@ def parser() -> argparse.ArgumentParser:
         if name in {"build", "up"}:
             command.add_argument("--project", type=Path)
             command.add_argument("--tool-root", help="verified guest tool inventory directory")
+            from .executable_approval import option
+            option(command)
         if name == "up":
             command.add_argument("--watch", action="store_true")
             command.add_argument("--test-select", action="append", default=[], help="focused post-deploy cases in a test- workspace")
@@ -124,22 +126,29 @@ def _backend(root: Path, name: str):
 
 
 def _build(workspace: Path, connection, source: Path, tool_root: str, *, editor_diagnostics: bool = False,
-           selected: tuple[str, str] | None = None) -> dict:
+           selected: tuple[str, str] | None = None, executable_approval=None) -> dict:
     from .build_client import run
-    return run(workspace, connection, source, tool_root, editor_diagnostics=editor_diagnostics, selected=selected)
+    approval = {'executable_approval': executable_approval} if executable_approval is not None else {}
+    return run(workspace, connection, source, tool_root, editor_diagnostics=editor_diagnostics, selected=selected, **approval)
 
 
 def watch(workspace: Path, connection, source: Path, tool_root: str, *, editor_diagnostics: bool = False,
-          check_session=lambda: None, test_selection=None) -> dict:
+          check_session=lambda: None, test_selection=None, executable_approval=None) -> dict:
     from .watch import run
+    approval = {'executable_approval': executable_approval} if executable_approval is not None else {}
     return run(workspace, connection, source, tool_root, build=_build, emit=emit,
-               editor_diagnostics=editor_diagnostics, check_session=check_session, test_selection=test_selection)
+               editor_diagnostics=editor_diagnostics, check_session=check_session, test_selection=test_selection, **approval)
 
 
 def foreground_up(args, workspace: Path, connection) -> dict:
     from tools.build_process_signals import owned_cancellation
     from .foreground import lease
     require(not (workspace / "purged.json").exists(), "workspace-purged-create-new-workspace")
+    approval = getattr(args, 'executable_approval', None)
+    if approval is not None:
+        from .executable_approval import selection
+        require(args.watch and args.project is not None, 'executable-approval-requires-watch-project')
+        selection(project.load(args.project.absolute())[0], approval)
     if args.watch:
         require(args.project is not None, "watch-project-required")
         if args.tool_root is None:
@@ -157,7 +166,8 @@ def foreground_up(args, workspace: Path, connection) -> dict:
             emit({"event": "ready", "workspace": args.workspace, "result": ready})
             if args.watch:
                 return watch(workspace, connection, args.project, args.tool_root,
-                             editor_diagnostics=args.editor_diagnostics, check_session=check, test_selection=args.test_select)
+                             editor_diagnostics=args.editor_diagnostics, check_session=check, test_selection=args.test_select,
+                             **({'executable_approval': approval} if approval is not None else {}))
             while True:
                 cancellation.check()
                 check()
@@ -207,7 +217,7 @@ def dispatch(args) -> dict:
         if os.name == "nt":
             return wsl.doctor()
         return {"host": sys.platform, "architecture": platform.machine(), "nodeReadiness": "not-checked"}
-    root = _root(args.state_root)
+    root = _root(args.state_root, create=False) if args.command == 'executable-approval-request' else _root(args.state_root)
     if args.command == "devcontainer":
         from .devcontainer import generate
         require(len(args.bundle) == 64 and all(c in "0123456789abcdef" for c in args.bundle), "bundle-id-required")
@@ -324,7 +334,8 @@ def dispatch(args) -> dict:
             from .tool_install import inputs as tool_inputs
             return tool_inputs(workspace, connection, decode(paths.read(args.tool_inputs.absolute().parent, args.tool_inputs.name)))
         if args.command == "build":
-            return _build(workspace, connection, args.project, args.tool_root, editor_diagnostics=args.editor_diagnostics)
+            return _build(workspace, connection, args.project, args.tool_root, editor_diagnostics=args.editor_diagnostics,
+                          **({'executable_approval': args.executable_approval} if args.executable_approval is not None else {}))
         if args.command == "purge":
             require(args.confirm_workspace == args.workspace, "confirm-exact-workspace-required")
             result = connection.call("purge", {"confirmWorkspace": args.confirm_workspace})

@@ -101,6 +101,14 @@ requirements are described below.
   A hit rechecks the tools, source, artifacts and actual package inspection.
   The compiler emits package inputs; the existing operator assembles the package
   afterward. Recipes cannot silently supply an already assembled package.
+  An explicitly selected maintained Rust executable-input approval is additional
+  cache and receipt material. Omitting it preserves the original cache key.
+  `dev executable-approval-request` privately observes only the last owned,
+  failed/reaped attempt under both controller and build-control locks; it never
+  approves execution or accepts an arbitrary path. `build` and `up --watch` accept
+  the reviewed digest as typed operation data, without descriptor/source edits.
+  Current source, recipe and compiler inputs must still satisfy the actual Rust
+  consumer. The full request is absent from ordinary status and public evidence.
   Failed builds preserve the accepted build and deployment. Recovery retains the
   exact attempt alongside the original publication/deployment operation identity.
 - Watch checks source and recipe changes during compilation and sends cancellation
