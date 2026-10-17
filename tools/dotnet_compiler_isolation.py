@@ -2,6 +2,7 @@
 from __future__ import annotations
 from pathlib import Path
 import os
+import re
 import shutil
 import sys
 import sysconfig
@@ -9,6 +10,70 @@ import sysconfig
 from tools.application_dependency_store import DependencyError, regular_path, read_bytes
 from tools.build_snapshot import digest
 from tools.captured_compiler_isolation import Isolation
+
+
+PYTHON_MAPPINGS = Path('/proc/self/maps')
+
+
+def python_shared_library():
+    """Select the running interpreter's exact mapped object inside its prefix."""
+    prefix = Path(sys.base_prefix).resolve(strict=True)
+    executable = Path(sys.executable).resolve(strict=True)
+    library_root = (prefix / 'lib').resolve(strict=True)
+    if not executable.is_relative_to(prefix) or not library_root.is_relative_to(prefix):
+        raise DependencyError('compiler-python-prefix-mismatch')
+    stem = f'libpython{sys.version_info.major}.{sys.version_info.minor}{sys.abiflags}.so'
+    names = {sysconfig.get_config_var('LDLIBRARY'), sysconfig.get_config_var('INSTSONAME')}
+    names.discard(None)
+    if not names or any(not isinstance(name, str)
+            or not re.fullmatch(re.escape(stem) + r'(?:\.[0-9]+)*', name) for name in names):
+        raise DependencyError('compiler-python-library-abi-mismatch')
+    candidates = set()
+    for name in names:
+        try:
+            candidate = (library_root / name).resolve(strict=True)
+        except FileNotFoundError:
+            continue
+        if not candidate.is_file() or not candidate.is_relative_to(library_root):
+            raise DependencyError('compiler-python-library-outside-prefix')
+        candidates.add(candidate)
+    if len(candidates) != 1:
+        raise DependencyError('compiler-python-library-missing-or-ambiguous')
+    actual = candidates.pop()
+    if not re.fullmatch(re.escape(stem) + r'(?:\.[0-9]+)*', actual.name):
+        raise DependencyError('compiler-python-library-abi-mismatch')
+    identity = actual.stat()
+    with PYTHON_MAPPINGS.open('rb') as stream:
+        raw = stream.read(1024 * 1024 + 1)
+    if len(raw) > 1024 * 1024:
+        raise DependencyError('compiler-python-mapping-limit')
+    mapped = set()
+    for line in raw.splitlines():
+        fields = line.split(None, 5)
+        if len(fields) != 6:
+            continue
+        path = Path(os.fsdecode(re.sub(rb'\\([0-7]{3})',
+            lambda match: bytes([int(match[1], 8)]), fields[5])))
+        if path.name not in names | {actual.name}:
+            continue
+        try:
+            device = tuple(int(value, 16) for value in fields[3].split(b':'))
+            inode = int(fields[4])
+        except ValueError:
+            raise DependencyError('compiler-python-mapping-invalid') from None
+        if (path.resolve(strict=True) != actual or inode != identity.st_ino
+                or device != (os.major(identity.st_dev), os.minor(identity.st_dev))):
+            raise DependencyError('compiler-python-mapped-library-mismatch')
+        mapped.add(actual)
+    if mapped != {actual}:
+        raise DependencyError('compiler-python-mapped-library-required')
+    return actual, names
+
+
+def stage_python_shared_library(destination):
+    actual, aliases = python_shared_library()
+    for name in sorted(aliases | {actual.name}):
+        shutil.copyfile(actual, destination / name)
 
 
 class DotnetIsolation(Isolation):
@@ -136,6 +201,13 @@ def stage_adapters(runtimes: dict[str, Path], destination: Path) -> dict[str, Pa
 
 def stage(compiler, workspace: Path) -> DotnetIsolation:
     """Build a compiler distribution containing only selected SDK inputs."""
+    host_tool_path = compiler.commands.environment.get('PATH')
+    if not isinstance(host_tool_path, str) or not host_tool_path or '\0' in host_tool_path:
+        raise DependencyError('compiler-host-tool-path-invalid')
+    selected_shell = shutil.which('sh', path=host_tool_path)
+    if selected_shell is None:
+        raise DependencyError('dotnet-compiler-shell-unavailable')
+    shell = Path(selected_shell).resolve(strict=True)
     root = workspace / 'captured-dotnet-tools'
     root.mkdir()
     dotnet_root = root / 'dotnet'
@@ -182,15 +254,10 @@ def stage(compiler, workspace: Path) -> DotnetIsolation:
     shutil.copytree(stdlib, python_root / 'lib' / ('python' + str(sys.version_info.major) + '.' + str(sys.version_info.minor)),
                     ignore=shutil.ignore_patterns('site-packages', 'dist-packages', '__pycache__'), symlinks=True)
     if sysconfig.get_config_var('Py_ENABLE_SHARED'):
-        library = Path(sysconfig.get_config_var('LIBDIR')) / sysconfig.get_config_var('LDLIBRARY')
-        actual = library.resolve(strict=True)
-        shutil.copyfile(actual, python_root / 'lib' / actual.name)
-        if actual.name != library.name:
-            shutil.copyfile(actual, python_root / 'lib' / library.name)
+        stage_python_shared_library(python_root / 'lib')
     selected['compiler-python-stdlib'] = python_root
     helpers = root / 'bin'
     helpers.mkdir()
-    shell = Path(shutil.which('sh') or 'missing-sh').resolve(strict=True)
     tools = {'dotnet': dotnet_root / 'dotnet', 'python': python_bin, 'shell': shell,
              'wasm-tools': compiler.wasm, 'wit-bindgen': compiler.bindgen}
     # SDK processes may start these helpers by name. The owned wrappers are
@@ -242,7 +309,7 @@ def stage(compiler, workspace: Path) -> DotnetIsolation:
     # tool cache. Resolve both ldd and namespace execution against the already
     # captured Python library, without exposing the original host directory.
     isolation = DotnetIsolation(workspace, tools, selected,
-                                loader_directories=(python_root / 'lib',))
+                                loader_directories=(python_root / 'lib',), host_tool_path=host_tool_path)
     isolation.namespace_identity_files = {identity / name: '/etc/' + name for name in ('passwd', 'group', 'nsswitch.conf')}
     isolation.enable_children(helpers)
     isolation.receipt['distributionObserver'] = {'profile': 'dotnet-compiler-internal-links-v1', 'maximumEntries': 65536, 'maximumBytes': 4 * 1024**3}
