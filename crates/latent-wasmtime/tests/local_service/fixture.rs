@@ -232,7 +232,7 @@ impl Fixture {
             Some(provided),
             Arc::new(SyntheticFixtureLoad),
             None,
-            Some((limits, call_wall_millis)),
+            Some((limits, call_wall_millis, None)),
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             None,
         )
@@ -257,8 +257,31 @@ impl Fixture {
             Some(provided),
             Arc::new(SyntheticFixtureLoad),
             Some(identities),
-            Some((limits, call_wall_millis)),
+            Some((limits, call_wall_millis, None)),
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            None,
+        )
+        .await
+    }
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub async fn with_owned_native_threads(
+        provided: (
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        ),
+        limits: latent_core::activation_runtime::RuntimeLimits,
+        grant_native: bool,
+    ) -> Result<Self, PlatformError> {
+        Self::try_with_packages_and_load(
+            1,
+            false,
+            true,
+            None,
+            Some(provided),
+            Arc::new(SyntheticFixtureLoad),
+            None,
+            Some((limits, 5000, Some(grant_native))),
             None,
         )
         .await
@@ -287,7 +310,6 @@ impl Fixture {
         .await
     }
     #[expect(
-        clippy::too_many_lines,
         clippy::too_many_arguments,
         reason = "one explicit real catalog, broker and node ownership composition for integration tests"
     )]
@@ -303,11 +325,56 @@ impl Fixture {
         )>,
         load: Arc<dyn NodeLoadSource>,
         identities: Option<RuntimeIdentities>,
-        activation_runtime: Option<(latent_core::activation_runtime::RuntimeLimits, u64)>,
+        activation_runtime: Option<(
+            latent_core::activation_runtime::RuntimeLimits,
+            u64,
+            Option<bool>,
+        )>,
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
             Box<latent_streams::StreamProviderConfig>,
         >,
     ) -> Self {
+        Self::try_with_packages_and_load(
+            cells,
+            foreign,
+            permit_target,
+            audit,
+            provided,
+            load,
+            identities,
+            activation_runtime,
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            outbound_streams,
+        )
+        .await
+        .unwrap()
+    }
+    #[expect(
+        clippy::too_many_lines,
+        clippy::too_many_arguments,
+        reason = "one explicit real catalog, broker and node ownership composition for integration tests"
+    )]
+    async fn try_with_packages_and_load(
+        cells: u32,
+        foreign: bool,
+        permit_target: bool,
+        audit: Option<latent_audit::AuditHandle>,
+        provided: Option<(
+            Arc<DirectoryArtifactRepository>,
+            latent_packaging::PackageBundle,
+            latent_packaging::PackageBundle,
+        )>,
+        load: Arc<dyn NodeLoadSource>,
+        identities: Option<RuntimeIdentities>,
+        activation_runtime: Option<(
+            latent_core::activation_runtime::RuntimeLimits,
+            u64,
+            Option<bool>,
+        )>,
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))] outbound_streams: Option<
+            Box<latent_streams::StreamProviderConfig>,
+        >,
+    ) -> Result<Self, PlatformError> {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         let stream_enabled = outbound_streams.is_some();
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
@@ -363,8 +430,12 @@ impl Fixture {
             }
             (catalog, caller, callee)
         };
-        let config = WasmtimeConfig {
-            activation_runtime: activation_runtime.map(|(limits, _)| limits),
+        let owned_native_threads =
+            activation_runtime.is_some_and(|(_, _, native)| native.is_some());
+        let mut config = WasmtimeConfig {
+            activation_runtime: activation_runtime.map(|(limits, _, _)| limits),
+            owned_native_stacks: owned_native_threads,
+            owned_native_threads,
             java_guest: guest_runtime::java(),
             fuel_async_yield_interval: guest_runtime::java().then_some(10_000),
             maximum_memory_bytes: packages::budget().memory_bytes,
@@ -373,6 +444,12 @@ impl Fixture {
             epoch_tick_interval_millis: 1,
             ..Default::default()
         };
+        if owned_native_threads {
+            // Same finite 4 MiB activation grant; this WAT mechanism needs no
+            // language stack. Keep explicit native stacks below that ceiling.
+            config.maximum_wasm_stack_bytes = 64 * 1024;
+            config.async_stack_bytes = 256 * 1024;
+        }
         let runtime_clocks = activation_runtime.is_some()
             && caller
                 .surface()
@@ -424,6 +501,12 @@ impl Fixture {
                 latent_core::CapabilityId(guest_runtime::ACTIVATION.into()),
                 PolicyId("sdk-runtime-policy-0".into()),
             )];
+            if activation_runtime.is_some_and(|(_, _, native)| native == Some(true)) {
+                grants.push(CapabilityGrantSpec::new(
+                    latent_core::CapabilityId(guest_runtime::NATIVE.into()),
+                    PolicyId("sdk-runtime-policy-1".into()),
+                ));
+            }
             if runtime_clocks {
                 for (index, capability) in
                     ["latent:clock/monotonic@0.1.0", "latent:clock/wall@0.1.0"]
@@ -590,14 +673,15 @@ impl Fixture {
                 &configuration,
             ))
         });
-        let guest_runtime = if let Some((_, call_wall_millis)) = activation_runtime {
-            guest_runtime::Runtime::activation_scoped_with_effects(
+        let guest_runtime = if let Some((_, call_wall_millis, native)) = activation_runtime {
+            guest_runtime::Runtime::activation_scoped_with_native(
                 &broker,
                 &policies,
                 tenant,
                 &scopes,
                 call_wall_millis,
                 (runtime_clocks, runtime_random),
+                native.is_some(),
             )
         } else {
             guest_runtime::Runtime::scoped(&broker, &policies, tenant, &scopes, false)
@@ -634,8 +718,7 @@ impl Fixture {
                 providers,
                 latent_control_store::bindings::BindingLimits::default(),
             )
-            .await
-            .unwrap();
+            .await?;
         store.commit_binding_update(update).unwrap();
         let capabilities = Arc::new(ActivationCapabilityRuntime::new(
             broker.clone(),
@@ -724,7 +807,7 @@ impl Fixture {
                 recorder: observations.child_failures.clone(),
             }))
             .unwrap();
-        Self {
+        Ok(Self {
             identities,
             _guest_runtime: guest_runtime,
             manager,
@@ -744,7 +827,7 @@ impl Fixture {
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
             streams,
             _root: root,
-        }
+        })
     }
     pub fn request(&self, id: &str, which: u32) -> ActivationRequest {
         let mut request = admission_fixture::request(id);

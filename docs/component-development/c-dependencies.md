@@ -275,3 +275,27 @@ Source invocations retain the same-tree controller seam. Staged recipes require
 both explicit frontend options and never search for another controller through
 `PATH` or Python imports. Executable selection does not authorize a changed
 application recipe or dependency graph; use the existing `dev trust` workflow.
+## Signed dependency watch qualification
+
+The Developer tools C job runs `tools/run_c_dependency_watch_ci.py` after the
+existing tool bundle and application checks. A fresh unprivileged account uses
+the delivered Python, C recipe, SDK and tools, with an explicit source controller
+and node. Its separate network namespace exposes only loopback. The normal C
+application invocation budgets and the existing 60 minute CI job limit apply.
+
+`tools/qualify_c_dependency_watch.py` captures an independently named ordinary C
+library and a transitive header library, removes their original files, and runs
+the actual authoring `watch` command. An update changes the computed result from
+42 to 43; removing both dependencies leaves the application SDK usable. Each of
+the three selections must deploy and pass an actual signed node test. The probe
+requires explicit lock review and recipe trust, verifies that an existing signed
+workspace rejects a changed build, and prepares a fresh signed fixture workspace
+for each accepted selection. It also requires normal `down`, reaped node owners
+and watcher exit code zero for all three workspaces, while preserving the
+application's SDK lock bytes.
+
+The CI artifact contains only the bounded public qualification projection and
+account observations. Private signed fixtures, complete workspace state and
+command output stay on the ephemeral runner. A successful execution qualifies
+these exact source and tool inputs; it does not establish publisher
+authentication or a released clean host installation.

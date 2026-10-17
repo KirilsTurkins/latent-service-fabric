@@ -40,6 +40,7 @@ pub(crate) fn load(
         return Err(mismatch());
     }
     input.check_engine(engine)?;
+    input.authenticate_component_threads()?;
     let image = budget.reserve(proof.bytes().len())?;
     input.check()?;
     image.record_attempt();

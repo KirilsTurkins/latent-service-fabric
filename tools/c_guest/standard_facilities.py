@@ -6,14 +6,17 @@ from tools.c_guest.bindings import regular_tree
 from tools.stage_runtime_wit import copy_wit_tree, dependencies
 
 PROFILE = 'c-standard-clock-entropy-v1'
+LOGGING_PROFILE = 'c-standard-stdio-v1'
 DEFAULT = 'closed-synchronous-v1'
 IMPORTS = ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0')
+SUPPORTED = frozenset((DEFAULT, PROFILE, LOGGING_PROFILE))
+PROFILE_IMPORTS = {PROFILE: IMPORTS, LOGGING_PROFILE: ('latent:log/log@0.1.0',)}
 RECIPE = ('tools/c_guest/standard_facilities.py',)
 
 
 def selected_profile(project, graph=None):
     profile = project.get('runtimeProfile', DEFAULT)
-    if type(profile) is not str or profile not in {DEFAULT, PROFILE}:
+    if type(profile) is not str or profile not in SUPPORTED:
         raise ValueError('unsupported-c-standard-runtime-profile')
     declared = graph.get('selection', {}).get('runtimeProfile') if graph is not None else None
     if declared is not None and declared != profile:
@@ -21,7 +24,11 @@ def selected_profile(project, graph=None):
     return profile
 
 
-def stage(source: Path, world: str, destination: Path, platform: Path) -> Path:
+def stage(source: Path, world: str, destination: Path, platform: Path, *, profile=PROFILE) -> Path:
+    selected_profile({'runtimeProfile': profile})
+    if profile not in PROFILE_IMPORTS:
+        raise ValueError('c-runtime-profile-has-no-derived-contracts')
+    imports = PROFILE_IMPORTS[profile]
     source, destination, platform = source.resolve(), destination.resolve(), platform.resolve()
     if any(destination == root or destination in root.parents or root in destination.parents
            for root in (source, platform)):
@@ -37,12 +44,12 @@ def stage(source: Path, world: str, destination: Path, platform: Path) -> Path:
         raise ValueError('c-runtime-profile-requires-one-selected-world-declaration')
     path, match = matches[0]
     text = path.read_text(encoding='utf-8')
-    if any(re.search(r'\bimport\s+' + re.escape(name) + r'\s*;', text) for name in IMPORTS):
+    if any(re.search(r'\bimport\s+' + re.escape(name) + r'\s*;', text) for name in imports):
         raise ValueError('c-runtime-profile-imports-must-be-owned-by-profile')
     if destination.exists():
         raise ValueError('c-runtime-profile-requires-fresh-derived-wit')
     copy_wit_tree(source, destination)
-    additions = ''.join('\n    import ' + name + ';' for name in IMPORTS) + '\n'
+    additions = ''.join('\n    import ' + name + ';' for name in imports) + '\n'
     (destination / path.name).write_text(text[:match.end()] + additions + text[match.end():], encoding='utf-8')
     for package in dependencies(destination, platform):
         regular_tree(package, '.wit')
