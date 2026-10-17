@@ -66,8 +66,8 @@ def transaction(project: Path):
 def replace(owner: Path, private: Path, name: str, raw: bytes, previous: bytes | None, sdk) -> None:
     paths.relative(name)
     _owner, app, _observed = seal(owner)
-    graph = (app.relative_to(owner).as_posix() + '/' if app != owner else '') + 'go-resolved.lock.json'
-    if name not in {inputs.MANIFEST, inputs.LOCK, graph}:
+    prefix = app.relative_to(owner).as_posix() + '/' if app != owner else ''
+    if name not in {inputs.MANIFEST, inputs.LOCK, *(prefix + path for path in ('go-resolved.lock.json', 'go.mod', 'go.sum'))}:
         raise DependencyError('go-authoring-edit-target')
     if len(raw) > inputs.MAX_LOCK:
         raise DependencyError('dependency-lock-limit')
@@ -87,6 +87,40 @@ def replace(owner: Path, private: Path, name: str, raw: bytes, previous: bytes |
     finally:
         if temporary.exists():
             temporary.unlink()
+
+
+def publish_native(owner: Path, private: Path, sdk, updates: dict[str, tuple[bytes, bytes | None]]) -> None:
+    """Rollback a partial native metadata publication without overwriting edits."""
+    changed = []
+    try:
+        for name, (raw, previous) in updates.items():
+            replace(owner, private, name, raw, previous, sdk)
+            changed.append((name, raw, previous))
+    except BaseException:
+        for name, raw, previous in reversed(changed):
+            target = owner / name
+            temporary = private / ('rollback-' + secrets.token_hex(16))
+            if previous is not None:
+                paths.write_new(temporary, previous)
+            try:
+                with paths.directory(target.parent) as destination, paths.directory(private) as source:
+                    if optional(owner, name) != raw:
+                        continue
+                    if previous is None:
+                        if os.name == 'nt':
+                            target.unlink()
+                        else:
+                            os.unlink(target.name, dir_fd=destination)
+                    elif os.name == 'nt':
+                        os.replace(temporary, target)
+                    else:
+                        os.replace(temporary.name, target.name, src_dir_fd=source, dst_dir_fd=destination)
+                    if os.name != 'nt':
+                        os.fsync(destination)
+            finally:
+                if temporary.exists():
+                    temporary.unlink()
+        raise
 
 
 def public(owner: Path, sdk) -> dict:

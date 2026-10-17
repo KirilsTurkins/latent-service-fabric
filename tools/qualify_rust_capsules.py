@@ -56,7 +56,7 @@ def inputs(language="rust"):
                     "go_guest/compiler.py", "go_guest/runtime.py", "go_guest/sdk.py", "../.cargo/managed-guest.toml",
                     "application_dependencies.py", "application_dependency_store.py", "application_dependency_tools.py",
                     "application_dependency_approval.py", "go_application_dependencies.py", "captured_compiler_isolation.py",
-                    "go_dependency_fixture.py", "go_dependency_authoring.py", "guest_authoring_frontend.py")
+                    "go_dependency_fixture.py", "go_dependency_recovery.py", "go_dependency_authoring.py", "go_native_authoring.py", "guest_authoring_frontend.py")
     elif language == "typescript":
         helpers += ("typescript_capsule.py", "build_typescript_guest_capsules.py", "qualify_typescript_capsules.py",
                     "typescript_guest/project.py", "typescript_guest/build.py", "typescript_guest/compiler.py",
@@ -385,7 +385,7 @@ def qualify(output: Path, *, offline=False, language="rust", typescript_tools=No
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node",
             language=language, noncrypto_entropy=language == "dotnet",
-            captured_dependency_recovery=language in {"rust", "dotnet"} and application_dependencies)
+            captured_dependency_recovery=language in {"rust", "dotnet", "go"} and application_dependencies)
         if language == "rust" and application_dependencies:
             from tools.rust_dependency_failures import qualify as qualify_ffi
             stage = "captured-native-ffi-failure"

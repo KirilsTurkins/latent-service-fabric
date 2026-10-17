@@ -11,6 +11,7 @@ from tools.build_observation import build_environment
 from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
 from tools.go_application_dependencies import resolve
+from tools import go_native_authoring as native_authoring
 
 
 def direct_libraries(declaration: dict, native: dict, artifacts: list[dict], required: dict) -> list[dict]:
@@ -51,17 +52,67 @@ def install(project: Path, outside: Path, go: Path) -> dict:
     (library / 'go.mod').write_text('module ' + identity + '\n\ngo 1.27.2\n\nrequire github.com/mattn/go-runewidth v0.0.16\n', encoding='ascii')
     resource = b'Hello, '
     (library / 'greeting.txt').write_bytes(resource)
+    (library / 'message.txt').write_text('Gr\u00fc\u00dfe', encoding='utf-8')
+    (library / 'data.bin').write_bytes(bytes((0, 255, 65, 128)))
     (library / 'prefix.go').write_text('''//go:build sdk_dependency_qualification
 
 package developer
 
 import (
     _ "embed"
+    "runtime"
     "github.com/mattn/go-runewidth"
 )
 
 //go:embed greeting.txt
 var greeting string
+
+//go:embed message.txt
+var message string
+
+//go:embed data.bin
+var data []byte
+
+var calls uint32
+var retained [][]byte
+
+func deferred() bool {
+    value := 0
+    func() { defer func() { value++ }() }()
+    return value == 1
+}
+
+func recovered() (ok bool) {
+    defer func() { ok = recover() == "ordinary library panic" }()
+    panic("ordinary library panic")
+}
+
+func Exercise(mode string) {
+    if calls != 0 || message != "Gr\\u00fc\\u00dfe" || len(data) != 4 ||
+        data[0] != 0 || data[1] != 255 || data[2] != 65 || data[3] != 128 ||
+        !deferred() || !recovered() {
+        panic("captured Go resources, defer/recover or fresh activation state changed")
+    }
+    calls++
+    switch mode {
+    case "panic":
+        panic("captured library requested trap")
+    case "memory":
+        for {
+            retained = append(retained, make([]byte, 1024*1024))
+            runtime.KeepAlive(retained)
+        }
+    case "fuel":
+        for { calls++ }
+    case "spin":
+        source := make([]byte, 128*1024)
+        destination := make([]byte, len(source))
+        for {
+            copy(destination, source)
+            runtime.KeepAlive(destination)
+        }
+    }
+}
 
 //go:generate false
 
@@ -75,11 +126,12 @@ func Prefix() string {
     source = project / 'src/main.go'
     before = source.read_bytes()
     after = before.replace(b'import (', b'import (\n    "github.com/mattn/go-runewidth"\n    developer "' + identity.encode() + b'"')
-    after = after.replace(b'"Hello, " + name + "!"', b'applicationPrefix() + name + "!"')
+    after = after.replace(b'"Hello, " + name + "!"', b'applicationPrefix(name) + name + "!"')
     if after == before or b'"Hello, " + name + "!"' in after:
         raise ValueError('Go dependency qualification source hook changed')
     after += b'''
-func applicationPrefix() string {
+func applicationPrefix(name string) string {
+    developer.Exercise(name)
     prefix := developer.Prefix()
     if runewidth.StringWidth("Hello, ") != 7 || runewidth.StringWidth("\xe4\xb8\x96\xe7\x95\x8c") != 4 {
         panic("direct application Unicode module produced a wrong result")
@@ -88,26 +140,41 @@ func applicationPrefix() string {
 }
 '''
     source.write_bytes(after)
-    with tempfile.TemporaryDirectory(prefix='lsf-go-fixture-lock-') as temporary:
+    added = native_authoring.edit(project, 'add', identity=identity, version='v0.0.0', local=library, go=go)
+    native_authoring.edit(project, 'add', identity='github.com/mattn/go-runewidth', version='v0.0.16', go=go)
+    locked = native_authoring.create_lock(project, go=go, tags=['sdk_dependency_qualification'])
+    with tempfile.TemporaryDirectory(prefix='lsf-go-fixture-declaration-') as temporary:
         owned = Path(temporary)
         environment = build_environment(owned)
         environment.update(GOTOOLCHAIN='local', GOWORK='off', GOENV='off', CGO_ENABLED='0',
             GOOS='wasip1', GOARCH='wasm', GOCACHE=str(owned / 'cache'), GOMODCACHE=str(owned / 'modules'),
-            HOME=str(owned / 'home'), USERPROFILE=str(owned / 'home'), GOPROXY='https://proxy.golang.org',
-            GOSUMDB='sum.golang.org', GONOPROXY='none', GOFLAGS='-tags=sdk_dependency_qualification')
-        run_bounded([str(go), 'mod', 'edit', '-require=' + identity + '@v0.0.0', '-replace=' + identity + '=' + str(library)],
-                    project, environment, 10, 16384)
-        # The explicit native lock stage may add actual MVS requirements/sums.
-        # These metadata/download commands never execute go generate or code.
-        run_bounded([str(go), 'mod', 'tidy'], project, environment, 120, 4 * 1024 * 1024)
+            HOME=str(owned / 'home'), USERPROFILE=str(owned / 'home'), GOPROXY='off',
+            GOSUMDB='off', GONOPROXY='none', GOFLAGS='-mod=readonly')
         declaration = json.loads(run_bounded([str(go), 'mod', 'edit', '-json'], project, environment,
                                              10, 1024 * 1024).stdout)
-        run_bounded([str(go), 'mod', 'download', 'all'], project, environment, 120, 1024 * 1024)
     candidate = project / 'target/qualification.candidate.json'
-    candidate.parent.mkdir()
+    candidate.parent.mkdir(exist_ok=True)
     captured = resolve(project, candidate, go=go, selected={'tags': ['sdk_dependency_qualification']})
-    from tools.go_dependency_authoring import review
+    from tools.go_dependency_authoring import review, status
+    from tools.application_dependency_store import DependencyError
     review(project, candidate, digest(candidate.read_bytes()))
+    reviewed_mod = (project / 'go.mod').read_bytes()
+    accepted_lock = (project / 'latent.dependencies.lock.json').read_bytes()
+    stale_controls = []
+    for operation in ('update', 'remove'):
+        native_authoring.edit(project, operation, identity=identity, version='v0.0.1' if operation == 'update' else None,
+                              local=library if operation == 'update' else None, go=go)
+        try:
+            status(project)
+        except DependencyError:
+            stale_controls.append(operation)
+        else:
+            raise ValueError('Go authoring edit retained stale accepted capture')
+        if (project / 'latent.dependencies.lock.json').read_bytes() != accepted_lock:
+            raise ValueError('Go authoring edit changed accepted capture')
+        (project / 'go.mod').write_bytes(reviewed_mod)
+        if status(project)['status'] != 'verified':
+            raise ValueError('Go exact reviewed declaration restoration failed')
     selected = {row['metadata'].get('module') for row in captured['artifacts']}
     if not {'github.com/mattn/go-runewidth', 'github.com/rivo/uniseg', identity} <= selected:
         raise ValueError('native Go qualification graph did not capture required transitive/local modules')
@@ -121,6 +188,11 @@ func applicationPrefix() string {
     return {'formatVersion': 1, 'thirdParty': 'github.com/mattn/go-runewidth/v0.0.16',
             'transitives': ['github.com/rivo/uniseg'], 'developerOwned': identity,
             'sourceDigest': digest(after), 'resourceDigest': digest(resource),
+            'recoveryCases': ['panic', 'memory', 'fuel', 'spin', 'normal-defer-recover', 'fresh-state'],
+            'resourceDigests': {'message.txt': digest('Gr\u00fc\u00dfe'.encode()),
+                                'data.bin': digest(bytes((0, 255, 65, 128)))},
             'applicationLibraries': application_libraries, 'nativeDeclarationDigest': digest(canonical(declaration)),
+            'authoringWorkflow': {'add': added, 'nativeLock': locked, 'staleCaptureRejected': stale_controls,
+                                 'exactReviewedDeclarationRestored': True},
             'tags': ['sdk_dependency_qualification'], 'offlineOriginals': 'unavailable-after-capture',
             'nativeGraphDigest': digest((project / 'go-resolved.lock.json').read_bytes()), 'generators': 'never-executed'}

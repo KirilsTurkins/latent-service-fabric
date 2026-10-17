@@ -126,6 +126,27 @@
         }
       },
       {
+        "if": "matrix.language == 'go'",
+        "name": "Prepare captured Go watch compiler namespace",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'go'",
+        "name": "Qualify normal Go dependency watch through three reviewed signed builds",
+        "run": "sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_go_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_go_dependency_watch.py --fixture tools/go_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output \"$RUNNER_TEMP/go-dependency-watch\""
+      },
+      {
+        "if": "always() && matrix.language == 'go'",
+        "name": "Retain bounded Go dependency watch and normal shutdown observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "go-dependency-watch-${{ github.run_id }}-${{ github.run_attempt }}",
+          "path": "${{ runner.temp }}/go-dependency-watch/public-qualification.json\n${{ runner.temp }}/go-dependency-watch/ci-account.json\n",
+          "retention-days": 3
+        }
+      },
+      {
         "if": "matrix.language == 'rust'",
         "name": "Prepare captured Rust watch compiler namespace",
         "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
@@ -400,7 +421,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Preserve every existing C, Rust, TypeScript and .NET watch command, artifact path and qualification bound after current development integration.",
+  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
