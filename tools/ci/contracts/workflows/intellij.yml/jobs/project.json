@@ -1,0 +1,25 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "defaults": {"run": {"shell": "bash"}},
+    "name": "IDE metadata (${{ matrix.os }})",
+    "runs-on": "${{ matrix.os }}",
+    "steps": [
+      {"uses": "actions/checkout", "with": {"persist-credentials": false}},
+      {"uses": "actions/setup-python", "with": {"python-version": "3.13.5"}},
+      {"id": "export", "name": "Export review-only IDE metadata", "run": "# The launcher is a reviewed delegated owner: tools/intellij.sh\npython tools/intellij.py --export \"$RUNNER_TEMP/intellij-review\"\n"},
+      {"id": "check", "name": "Check committed IDE metadata", "run": "python tools/intellij.py --check"},
+      {"id": "tests", "if": "always()", "name": "Test IDE project and launcher contracts", "run": "python -m unittest tools.tests.test_intellij -v"},
+      {"if": "always()", "name": "Retain review proposal, not machine settings", "uses": "actions/upload-artifact", "with": {"if-no-files-found": "error", "include-hidden-files": true, "name": "intellij-review-${{ matrix.os }}-${{ github.sha }}", "path": "${{ runner.temp }}/intellij-review/", "retention-days": 7}}
+    ],
+    "strategy": {"fail-fast": false, "matrix": {"os": ["ubuntu-24.04", "windows-2025", "macos-15"]}},
+    "timeout-minutes": 10
+  },
+  "jobId": "project",
+  "kind": "job",
+  "reviewReason": "Add portable IntelliJ metadata and launcher regression coverage without changing existing execution obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/intellij.yml"
+}

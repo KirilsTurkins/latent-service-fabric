@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/intellij.sh",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Add portable IntelliJ metadata and launcher regression coverage without changing existing execution obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "1defc55c23225811b13147aa35b3ba1353b7144bcc4da5c42685dc3a42e3735d"
+}
