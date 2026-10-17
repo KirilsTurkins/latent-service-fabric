@@ -12,7 +12,8 @@ SDK or a new application execution model.
    Linux checkout, WSL2 Linux filesystem, or a Linux remote-development backend
    for the native runtime and complete validation. Configure and launch IDEA
    with that environment's `PATH` and `JAVA_HOME`; a desktop launcher may not
-   inherit your interactive shell environment.
+   inherit your interactive shell environment. Website work can use native
+   Windows; it does not require a WSL distribution or Git Bash.
 2. Open the root folder and review IDEA's trust prompt. Accept the project's
    **Rust** plugin requirement (`com.jetbrains.rust`) and restart when requested.
    **Shell Script** (`com.jetbrains.sh`) is bundled and enabled in IDEA by default;
@@ -28,17 +29,21 @@ SDK or a new application execution model.
    dependencies and execute build scripts after the project is trusted.
 4. For Java client work, add the exact Temurin JDK from the toolchain guide to
    IDEA's SDK table and select it as the project SDK. Match `JAVA_HOME` to the
-   same installation. Run **LSF - java-client-prepare** explicitly to download
+   same installation. Run **LSF - java-client-prepare (Windows)** or the
+   **(Bash)** variant for your environment explicitly to download
    verified locked dependencies and generate Protobuf sources. Preparation is
    not compilation or a passing SDK qualification. Java sources target Java 25.
 5. Prepare `.venv` with the pinned Python and `tools/requirements.lock` as in the
-   toolchain guide. The shared launcher chooses `LSF_IDE_PYTHON`, then the
-   checkout's `.venv`, then `python3` on `PATH`. No Python IDE plugin is required
-   just to use these shell-based configurations. Select `.venv` in the Python
-   plugin separately for Python editing and debugging.
-6. Choose **LSF - ide-doctor** in the run menu. It checks command availability
+   toolchain guide. On Windows, `tools/intellij.cmd` chooses `LSF_IDE_PYTHON`,
+   then `.venv/Scripts/python.exe`, then `py.exe -3`, then `python.exe` on `PATH`.
+   An explicit Python path is one executable, not a command with flags; a broken
+   explicit selection fails rather than falling back. Bash uses `intellij.sh`
+   and its existing Python selection. No Python IDE plugin is required to run
+   the configurations. Select `.venv` separately for Python editing/debugging.
+6. Choose **LSF - ide-doctor (Windows)** in a native Windows project or
+   **LSF - ide-doctor (Bash)** in a Bash environment. It checks command availability
    and project-metadata drift without installing anything. **LSF -
-   toolchain-check** performs the existing full pinned-toolchain check; install
+   toolchain-check (Bash)** performs the existing full pinned-toolchain check; install
    its prerequisites first. These checks cannot inspect your IDE license,
    plugin enablement, indexing state or SDK selection.
 
@@ -92,12 +97,23 @@ No save action rewrites generated sources or byte-sensitive fixtures.
 
 ## Shared run configurations
 
-Configurations are permanent, grouped under `LSF`, and run from the repository
-root even when a different file or module is selected. Shell configurations use
-script-text mode with `bash` resolved through the terminal's `PATH`; they do not
-store `/bin/bash`, a Windows Git installation path, or a user's home directory.
-Set IDEA's terminal shell to Bash/Git Bash for this workflow. A local override
-of a configuration should use a new name without the `LSF-` file prefix.
+Configurations are permanent and run from the repository root even when another
+file or module is selected. Choose the suffix matching the actual terminal:
+**(Windows)** for PowerShell or Command Prompt, **(Bash)** for Bash on Linux,
+macOS or an explicitly configured Linux backend. They have separate `LSF /
+Windows` and `LSF / Bash` groups. A bare `bash` in native Windows can select the
+Windows WSL launcher instead of Git Bash; the Windows configurations never call
+it. There is no need to change your default WSL distribution or terminal shell.
+
+Windows configurations invoke `cmd.exe /d /c tools\intellij.cmd <task>` in
+script-text mode. The batch launcher selects Python without Bash or Make.
+The Bash variants retain the existing Make/SDK commands. Neither stores a local
+interpreter installation path. A personal override should use a new name without
+the `LSF-` file prefix. The table lists the complete Bash workflow; native Windows
+has help, tree, IDE/source checks, metadata-only test listing, Rust formatting,
+Java client commands and website tasks. Broad workspace/runtime/contracts tasks
+remain in the declared Linux/Bash environment and fail with an explanation when
+requested through the native Windows dispatcher; they never start WSL for you.
 
 | Group | Available work |
 | --- | --- |
@@ -112,8 +128,49 @@ of a configuration should use a new name without the `LSF-` file prefix.
 | Full Linux validation | The existing broad Make aggregate with a fresh owned output root for each invocation |
 
 The website development server uses the repository's prepared npm, not an
-ambient package manager. Run **website-prepare** before **website-start**; none
-of the other website configurations implicitly install dependencies or browsers.
+ambient package manager. Run **website-prepare** before **website-start**, choosing
+the appropriate platform suffix. Only the explicit **website-prepare** and
+**website-browser-install** tasks install website inputs.
+
+### Native Windows website setup and WSL launcher errors
+
+If PowerShell reports `WSL ... execvpe(/bin/bash) failed`, the failure occurred
+before `intellij.sh` started. Updating a Linux distribution is not a prerequisite
+for website work. Close IDEA before pulling the corrected branch, reopen the
+root, and choose **LSF - help (Windows)** and
+**LSF - website-prepare (Windows)** instead of the **(Bash)** variants. No IDE
+settings deletion, global PATH rewrite or PowerShell execution-policy change is
+needed. From PowerShell at the repository root the equivalent commands are:
+
+```powershell
+.\tools\intellij.cmd help
+.\tools\intellij.cmd website-prepare
+```
+
+Run the second command only after the first succeeds. Python 3.11 or newer and
+the pinned Node installation must already be available. The Windows launcher
+also works when the checkout or selected Python is in a directory with spaces.
+It preserves the child's exit code and stops preparation on the first failure.
+Native Windows IDE diagnostics do not treat Bash/Make as required tools.
+
+Website preparation checks Node against `website/package.json`, runs the existing
+authenticated archive preparer, installs the separate `website/toolchain` package
+with bootstrap npm, verifies the installed npm bundle, then uses that bundle for
+locked website installation. Lifecycle scripts remain disabled. The native
+adapter runs npm's `npm-cli.js` through Node rather than executing a `.cmd` file
+through Python's shell handling. For an unusual npm installation, set
+`LSF_IDE_BOOTSTRAP_NPM_CLI` to the existing bootstrap `npm-cli.js` path; an invalid
+explicit path is an error. This does not change global npm or the repository pins.
+
+After preparation, use **LSF - website-start (Windows)** for the preview.
+IDEA's generic **Run npm install** action is separate: under **Settings |
+Languages & Frameworks | JavaScript Runtime**, select the custom package manager
+at `website\toolchain\node_modules\npm`, not global `npm.cmd`. Repository
+preparation should still use **website-prepare**, which uses `npm ci` and creates
+the authenticated archives first. Do not disable `engine-strict`, delete the
+lockfile or substitute upstream npm just because its version string matches.
+See [website development](website.md) for the prepared-distribution boundary and
+JetBrains' [package-manager settings](https://www.jetbrains.com/help/idea/installing-and-removing-external-software-using-node-package-manager.html).
 
 For a specific registered suite or case, use [the local test entry point](local-tests.md)
 and [Make commands](make-commands.md) in the IDE terminal. There is intentionally
@@ -125,7 +182,7 @@ defines acceptance; a successful IDE run is only the command it actually ran.
 
 ### Run and debug a local node
 
-On Linux/WSL, explicitly run **LSF - ide-node-prepare**, then **LSF - local-node**
+On Linux/WSL, explicitly run **LSF - ide-node-prepare (Bash)**, then **LSF - local-node**
 with Run or Debug. Preparation creates a new private `target/ide/node/` with
 owner-only files, a random token and matching node/client configurations. It
 never starts a process, opens a listener, overwrites prior state or prints the
@@ -158,7 +215,7 @@ regenerating, then review the resulting diff:
 ```sh
 python3 tools/intellij.py --write
 python3 tools/intellij.py --check
-python3 -m unittest tools.tests.test_intellij -v
+python3 -m unittest tools.tests.test_intellij tools.tests.test_intellij_windows -v
 ```
 
 Edit `tools/intellij.py`, not its marked generated XML. `--write` refuses
@@ -207,7 +264,12 @@ and regenerate only the generator-owned files with IDEA closed. Do not delete
 workspace settings, shelves, credentials or the entire `.idea` directory.
 
 CI checks deterministic metadata and regression tests on Linux, Windows and
-macOS. Its review artifact contains only generator output, never the local
+macOS. The Windows matrix entry additionally executes the real batch launcher
+and its exact generated command through PowerShell, with Bash/Make absent from
+the test PATH, checks paths with spaces and child failure propagation, and runs
+actual locked website preparation using the website's pinned Node runtime.
+These command-line checks still do not launch the IntelliJ GUI. The review
+artifact contains only generator output, never the local
 `.idea` directory, credentials, environment variables or compiled artifacts.
 Generation drift is a failure; CI does not automatically approve or commit
 replacement settings. The owning CI contract fragments are reviewed alongside
@@ -227,6 +289,9 @@ with its supported plugins and verify the following in that actual IDE:
   Real source module roots are not marked as excluded in Project Structure.
 - After Java preparation and JDK selection, generated Java classes and locked
   dependencies resolve, and the owning Java test configuration executes.
+- In a native Windows checkout with PowerShell, **help (Windows)** and
+  **website-prepare (Windows)** work without a WSL/Bash process or global npm
+  engine error. **website-start (Windows)** opens the intended loopback preview.
 - Run configurations appear before manually creating any; Make help, IDE tests,
   a focused Rust debug session and the prepared website server work from the root.
 - On Linux, the explicit local-node preparation/run/debug sequence starts the

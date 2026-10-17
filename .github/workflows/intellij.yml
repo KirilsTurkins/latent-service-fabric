@@ -35,7 +35,7 @@ jobs:
       - name: Export review-only IDE metadata
         id: export
         run: |
-          # The launcher is a reviewed delegated owner: tools/intellij.sh
+          # Reviewed delegated owners: tools/intellij.sh tools/intellij_windows.py
           python tools/intellij.py --export "$RUNNER_TEMP/intellij-review"
       - name: Check committed IDE metadata
         id: check
@@ -43,7 +43,25 @@ jobs:
       - name: Test IDE project and launcher contracts
         id: tests
         if: always()
-        run: python -m unittest tools.tests.test_intellij -v
+        run: python -m unittest tools.tests.test_intellij tools.tests.test_intellij_windows -v
+      - name: Select the website Node runtime for native Windows execution
+        if: runner.os == 'Windows'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: website/package.json
+          package-manager-cache: false
+      - name: Exercise native Windows help and actual locked website preparation
+        id: windows_launch
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:LSF_IDE_PYTHON = (Get-Command python).Source
+          cmd.exe /d /c tools\intellij.cmd help
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmd.exe /d /c tools\intellij.cmd website-prepare
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git diff --exit-code
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Retain review proposal, not machine settings
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

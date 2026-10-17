@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/intellij.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Correct bundled Shell Script identity and stop excluding nested source modules; retain cache exclusions, command dispatch and local-node safety unchanged.",
+  "reviewReason": "Fix native Windows launch without Bash/WSL, preserve failure status and qualify actual locked website preparation.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "b73307d91775f7415a1a701ae2c6ad1f96ec41b55046333e1a7ffb1bbe5fb325"
+  "sha256": "85b2c793300967193083329e8ebdfe679cd887e2b11734316d962c57b960d45a"
 }

@@ -3,23 +3,86 @@
   "before": {},
   "coverage": {},
   "definition": {
-    "defaults": {"run": {"shell": "bash"}},
+    "defaults": {
+      "run": {
+        "shell": "bash"
+      }
+    },
     "name": "IDE metadata (${{ matrix.os }})",
     "runs-on": "${{ matrix.os }}",
     "steps": [
-      {"uses": "actions/checkout", "with": {"persist-credentials": false}},
-      {"uses": "actions/setup-python", "with": {"python-version": "3.13.5"}},
-      {"id": "export", "name": "Export review-only IDE metadata", "run": "# The launcher is a reviewed delegated owner: tools/intellij.sh\npython tools/intellij.py --export \"$RUNNER_TEMP/intellij-review\"\n"},
-      {"id": "check", "name": "Check committed IDE metadata", "run": "python tools/intellij.py --check"},
-      {"id": "tests", "if": "always()", "name": "Test IDE project and launcher contracts", "run": "python -m unittest tools.tests.test_intellij -v"},
-      {"if": "always()", "name": "Retain review proposal, not machine settings", "uses": "actions/upload-artifact", "with": {"if-no-files-found": "error", "include-hidden-files": true, "name": "intellij-review-${{ matrix.os }}-${{ github.sha }}", "path": "${{ runner.temp }}/intellij-review/", "retention-days": 7}}
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "id": "export",
+        "name": "Export review-only IDE metadata",
+        "run": "# Reviewed delegated owners: tools/intellij.sh tools/intellij_windows.py\npython tools/intellij.py --export \"$RUNNER_TEMP/intellij-review\"\n"
+      },
+      {
+        "id": "check",
+        "name": "Check committed IDE metadata",
+        "run": "python tools/intellij.py --check"
+      },
+      {
+        "id": "tests",
+        "if": "always()",
+        "name": "Test IDE project and launcher contracts",
+        "run": "python -m unittest tools.tests.test_intellij tools.tests.test_intellij_windows -v"
+      },
+      {
+        "if": "runner.os == 'Windows'",
+        "name": "Select the website Node runtime for native Windows execution",
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version-file": "website/package.json",
+          "package-manager-cache": false
+        }
+      },
+      {
+        "id": "windows_launch",
+        "if": "runner.os == 'Windows'",
+        "name": "Exercise native Windows help and actual locked website preparation",
+        "run": "$env:LSF_IDE_PYTHON = (Get-Command python).Source\ncmd.exe /d /c tools\\intellij.cmd help\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncmd.exe /d /c tools\\intellij.cmd website-prepare\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ngit diff --exit-code\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n",
+        "shell": "pwsh"
+      },
+      {
+        "if": "always()",
+        "name": "Retain review proposal, not machine settings",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "include-hidden-files": true,
+          "name": "intellij-review-${{ matrix.os }}-${{ github.sha }}",
+          "path": "${{ runner.temp }}/intellij-review/",
+          "retention-days": 7
+        }
+      }
     ],
-    "strategy": {"fail-fast": false, "matrix": {"os": ["ubuntu-24.04", "windows-2025", "macos-15"]}},
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "os": [
+          "ubuntu-24.04",
+          "windows-2025",
+          "macos-15"
+        ]
+      }
+    },
     "timeout-minutes": 10
   },
   "jobId": "project",
   "kind": "job",
-  "reviewReason": "Add portable IntelliJ metadata and launcher regression coverage without changing existing execution obligations.",
+  "reviewReason": "Fix native Windows launch without Bash/WSL, preserve failure status and qualify actual locked website preparation.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/intellij.yml"
 }
