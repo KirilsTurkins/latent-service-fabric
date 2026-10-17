@@ -25,7 +25,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -37,7 +37,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -49,7 +49,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -61,7 +61,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -73,7 +73,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -85,7 +85,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -97,7 +97,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -109,7 +109,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -121,7 +121,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -133,7 +133,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -145,7 +145,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -157,7 +157,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -169,7 +169,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -181,7 +181,7 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     },
@@ -193,13 +193,13 @@
       "decorators": [],
       "fixtureGuards": [
         "module:setup-sha256:a26bec0ba77d29ed4fee3e9f5f73475ee0fb1cad757c960ed5939cf46b9886f0",
-        "class:setup-sha256:4df1cae4ee4123ce2a8338d56fd982e789dd58deadf7916b6395079ff93fc947"
+        "class:setup-sha256:5baffe6208ec87a6ca605662c76111c03c7ad3af8c30e6cc08b21edc5063a2fc"
       ],
       "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_dotnet_task_wait.py",
-  "reviewReason": "Explicitly review only the mocked idle-driver receipt setUp fingerprint; preserve all eleven old test AST bodies, decorators, skip sites, bases and other fixture guards; add four negative controls.",
+  "reviewReason": "Explicitly review the closed zero-cache proof fixture (nine helpers/44741 unchanged methods); retain all 15 case IDs, 13 exact old bodies and two additive negative extensions, with unchanged skip/decorator/base and other fixture guards.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -10,6 +10,79 @@ internal static class IdleTimerDriver
         if (!value) throw new InvalidDataException("task-wait-idle-driver-shape");
     }
 
+    internal static MethodDefinition InstallZeroCache(ModuleDefinition module)
+    {
+        var loop = module.GetTypes().Single(type => type.FullName == "System.Threading.WasiEventLoop");
+        var check = loop.Methods.Single(method => method.Name == "CheckPollables");
+        var cache = loop.Fields.Single(field => field.Name == "s_resolvedPollable");
+        Require(check.IsStatic && check.ReturnType.MetadataType == MetadataType.Void &&
+            check.Parameters.Count == 1 && check.Parameters[0].ParameterType.MetadataType == MetadataType.Object &&
+            cache.IsPrivate && cache.IsStatic && !loop.Methods.Any(method => method.Name == "LsfPollWithOwnedZeroCache"));
+        var uses = module.GetTypes().SelectMany(type => type.Methods).Where(method => method.HasBody)
+            .SelectMany(method => method.Body.Instructions.Where(instruction => instruction.Operand is FieldReference field &&
+                field.FullName == cache.FullName).Select(instruction => (method, instruction))).ToArray();
+        Require(uses.Length >= 3 && uses.Length <= 6 && uses.All(use => use.method == check &&
+            (use.instruction.OpCode == OpCodes.Ldsfld || use.instruction.OpCode == OpCodes.Stsfld)) &&
+            uses.Count(use => use.instruction.OpCode == OpCodes.Stsfld) == 1);
+        var subscribeInstruction = check.Body.Instructions.Single(instruction => instruction.Operand is MethodReference method &&
+            method.Name == "SubscribeDuration");
+        var subscribe = (MethodReference)subscribeInstruction.Operand;
+        var zero = subscribeInstruction.Previous;
+        if (zero.OpCode == OpCodes.Conv_I8 || zero.OpCode == OpCodes.Conv_U8) zero = zero.Previous;
+        Require((zero.OpCode == OpCodes.Ldc_I4_0 || (zero.OpCode == OpCodes.Ldc_I8 && (long)zero.Operand == 0)) &&
+            !subscribe.HasThis && subscribe.Parameters.Count == 1 &&
+            subscribe.Parameters[0].ParameterType.MetadataType == MetadataType.UInt64 &&
+            subscribe.ReturnType.FullName == cache.FieldType.FullName &&
+            subscribeInstruction.Next.OpCode == OpCodes.Stsfld &&
+            subscribeInstruction.Next.Operand is FieldReference produced && produced.FullName == cache.FullName);
+        var pollInstruction = check.Body.Instructions.Single(instruction => instruction.Operand is MethodReference method &&
+            method.Name == "Poll");
+        var poll = (MethodReference)pollInstruction.Operand;
+        var pollIndex = check.Body.Instructions.IndexOf(pollInstruction);
+        Require(uses.All(use => check.Body.Instructions.IndexOf(use.instruction) < pollIndex) &&
+            check.Body.Instructions.IndexOf(subscribeInstruction) < pollIndex);
+        var append = uses.Where(use => use.instruction.OpCode == OpCodes.Ldsfld)
+            .OrderBy(use => check.Body.Instructions.IndexOf(use.instruction)).Last().instruction.Next;
+        Require((append.OpCode == OpCodes.Call || append.OpCode == OpCodes.Callvirt) &&
+            append.Operand is MethodReference add && add.Name == "Add" && add.HasThis &&
+            add.Parameters.Count == 1 && add.ReturnType.MetadataType == MetadataType.Void &&
+            add.DeclaringType is GenericInstanceType collection && collection.GenericArguments.Count == 1 &&
+            collection.GenericArguments[0].FullName == cache.FieldType.FullName &&
+            (add.Parameters[0].ParameterType.FullName == cache.FieldType.FullName ||
+                add.Parameters[0].ParameterType is GenericParameter parameter && parameter.Position == 0));
+        Require(pollInstruction.OpCode == OpCodes.Call && !poll.HasThis && poll.Parameters.Count == 1 &&
+            poll.Parameters[0].ParameterType is GenericInstanceType pending && pending.GenericArguments.Count == 1 &&
+            pending.GenericArguments[0].FullName == cache.FieldType.FullName &&
+            poll.ReturnType is ArrayType indexes && indexes.ElementType.MetadataType == MetadataType.UInt32);
+        var holder = loop.NestedTypes.Single(type => type.Name == "PollableHolder");
+        var holderPollable = holder.Fields.Single(field => field.Name == "pollable" && field.FieldType.FullName == cache.FieldType.FullName);
+        var resolve = holder.Methods.Single(method => method.Name == "ResolveAndDispose");
+        var disposeInstruction = resolve.Body.Instructions.Single(instruction => instruction.Operand is MethodReference method &&
+            method.Name == "Dispose" && instruction.Previous.OpCode == OpCodes.Ldfld &&
+            instruction.Previous.Operand is FieldReference field && field.FullName == holderPollable.FullName);
+        var dispose = (MethodReference)disposeInstruction.Operand;
+        Require(dispose.HasThis && dispose.Parameters.Count == 0 && dispose.ReturnType.MetadataType == MetadataType.Void &&
+            (disposeInstruction.OpCode == OpCodes.Call || disposeInstruction.OpCode == OpCodes.Callvirt));
+        var helper = new MethodDefinition("LsfPollWithOwnedZeroCache", MethodAttributes.Private | MethodAttributes.Static |
+            MethodAttributes.HideBySig, poll.ReturnType);
+        helper.Parameters.Add(new ParameterDefinition(poll.Parameters[0].ParameterType));
+        helper.Body.InitLocals = true; helper.Body.MaxStackSize = 2; loop.Methods.Add(helper);
+        var owned = new VariableDefinition(cache.FieldType); var ready = new VariableDefinition(poll.ReturnType);
+        helper.Body.Variables.Add(owned); helper.Body.Variables.Add(ready);
+        var il = helper.Body.GetILProcessor();
+        il.Emit(OpCodes.Ldsfld, cache); il.Emit(OpCodes.Stloc, owned);
+        il.Emit(OpCodes.Ldnull); il.Emit(OpCodes.Stsfld, cache);
+        var start = il.Create(OpCodes.Ldarg_0); var cleanup = il.Create(OpCodes.Ldloc, owned);
+        var endFinally = il.Create(OpCodes.Endfinally); var done = il.Create(OpCodes.Ldloc, ready);
+        il.Append(start); il.Emit(OpCodes.Call, poll); il.Emit(OpCodes.Stloc, ready); il.Emit(OpCodes.Leave, done);
+        il.Append(cleanup); il.Emit(OpCodes.Brfalse, endFinally); il.Emit(OpCodes.Ldloc, owned);
+        il.Emit(disposeInstruction.OpCode, dispose); il.Append(endFinally); il.Append(done); il.Emit(OpCodes.Ret);
+        helper.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
+            TryStart = start, TryEnd = cleanup, HandlerStart = cleanup, HandlerEnd = done });
+        pollInstruction.Operand = helper;
+        return check;
+    }
+
     internal static MethodDefinition[] Install(ModuleDefinition module)
     {
         TypeDefinition Type(string name) => module.GetTypes().Single(type => type.FullName == name);

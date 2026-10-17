@@ -206,16 +206,20 @@ Queued user callbacks, `s_scheduledTimersToFire`, live logical timers, exchanges
 and foreign registrations remain untouched. Flow suppression covers only the
 new registration and is restored before the original continuation registration.
 The existing async retirement queue still destroys the original future and
-resources; remaining-owner assertions remain. No resolved-pollable cache cleanup
-is added. Earlier managed/native receipts retain their original source
+resources; remaining-owner assertions remain. Separately, the private zero-duration
+pollable created by `CheckPollables` is detached immediately before its original
+`Poll` call and disposed in a finally block after that call returns or throws.
+Only that producer's captured pollable is owned by this wrapper; holders, hooks,
+queued callbacks, results and all resource budgets remain unchanged. Repeated
+polls may allocate fresh zero-duration subscriptions under the original bounds. Earlier managed/native receipts retain their original source
 identities; the new repair's locked NativeAOT and signed 14-case ownership and
 retirement qualification is pending.
 
 The transformer authenticates the complete CoreLib and the original wait,
 event-loop, dispatch, RunInternal and context-restoration IL. After writing, it
-verifies all 44,742 unaffected original methods, the three explicitly transformed
-TimerQueue bodies, the complete original wait remainder behind the selected
-prologue, all eight added method bodies and the five added field identities.
+verifies all 44,741 unaffected original methods, the three explicitly transformed
+TimerQueue bodies and the single CheckPollables call-site change, the complete original wait remainder behind the selected
+prologue, all nine added method bodies and the five added field identities.
 Normal compilation must bind exactly one derived CoreLib in both the ILC
 reference list and its actual response file. Original packages, captured sources,
 derived bytes and targets are rechecked; unselected profiles keep their original

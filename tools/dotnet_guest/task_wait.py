@@ -52,22 +52,29 @@ def validate_receipt(value: dict) -> None:
         'exceptionPropagation': 'original-TaskAwaiter', 'nestedTaskIdentity': 'save-restore-finally',
         'defaultClientComponentQualified': False, 'completeOriginalWaitRemainderPreserved': True,
         'callerContexts': 'original-RunInternal-Default', 'contextNotifications': 'original-runtime',
-        'generatedHelperCount': 8, 'contextCallback': 'same-CoreLib-ContextCallback(object)',
+        'generatedHelperCount': 9, 'contextCallback': 'same-CoreLib-ContextCallback(object)',
         'timerDriver': 'TimerQueue.SetNextTimer-only', 'timerDriverIdle': 'Timer.ActiveCount==0',
         'timerDriverCancellation': 'original-CancellationTokenSource-CancelAndDispose',
         'timerDriverIdentity': 'original-task-reference-and-epoch',
         'timerDriverCallbacks': 'original-queued-user-callbacks-preserved',
         'timerDriverScheduledToFire': 'untouched', 'timerDriverCacheCleanup': False,
         'timerDriverModifiedOriginalMethods': 3,
-        'timerDriverRegistrationContext': 'no-new-capture-original-flow-restored'}
+        'timerDriverRegistrationContext': 'no-new-capture-original-flow-restored',
+        'zeroCacheLifetime': 'CheckPollables-original-Poll-call-only', 'zeroCacheDetach': 'before-original-Poll',
+        'zeroCacheDispose': 'original-owned-Pollable-finally', 'zeroCacheForeignHolders': 'untouched',
+        'zeroCacheModifiedOriginalMethods': 1}
     bodies = value.get('timerDriverOriginalBodies')
+    cache_bodies = value.get('zeroCacheOriginalBodies')
     body_names = {'System.Void System.Threading.TimerQueue::SetNextTimer(System.Int64,System.Int64)',
         'System.Void System.Threading.TimerQueue::TimerHandler(System.Object)',
         'System.Void System.Threading.TimerQueue::DeleteTimer(System.Threading.TimerQueueTimer)'}
-    if (set(value) != set(fixed) | {'outputDigest', 'unchangedOriginalMethods', 'timerDriverOriginalBodies'}
+    if (set(value) != set(fixed) | {'outputDigest', 'unchangedOriginalMethods', 'timerDriverOriginalBodies', 'zeroCacheOriginalBodies'}
             or any(type(value.get(key)) is not type(expected) or value[key] != expected for key, expected in fixed.items())
             or type(bodies) is not dict or set(bodies) != body_names
             or any(type(item) is not str or re.fullmatch('[0-9a-f]{64}', item) is None for item in bodies.values())
+            or type(cache_bodies) is not dict or set(cache_bodies) != {
+                'System.Void System.Threading.WasiEventLoop::CheckPollables(System.Object)'}
+            or any(type(item) is not str or re.fullmatch('[0-9a-f]{64}', item) is None for item in cache_bodies.values())
             or type(value['unchangedOriginalMethods']) is not int
             or not 10000 <= value['unchangedOriginalMethods'] <= 65536):
         raise ValueError('task-wait-rewrite-receipt')

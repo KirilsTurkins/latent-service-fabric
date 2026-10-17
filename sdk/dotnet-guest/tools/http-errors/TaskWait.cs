@@ -230,20 +230,23 @@ internal static class TaskWait
             var timerMethods = IdleTimerDriver.Install(module);
             var timerOriginalBodies = timerMethods.ToDictionary(method => method.FullName,
                 method => originalMethods[originalMap.Single(item => item.Value == method).Key]);
-            var timerModifiedBodies = timerMethods.ToDictionary(method => originalMap.Single(item => item.Value == method).Key,
+            var zeroCacheMethod = IdleTimerDriver.InstallZeroCache(module);
+            var zeroCacheOriginalBodies = new Dictionary<string, string> {
+                [zeroCacheMethod.FullName] = originalMethods[originalMap.Single(item => item.Value == zeroCacheMethod).Key] };
+            var modifiedBodies = timerMethods.Append(zeroCacheMethod).ToDictionary(method => originalMap.Single(item => item.Value == method).Key,
                 method => BodyIdentity(method));
             var generatedHelpers = Methods(module).Where(item => !originalMap.ContainsKey(item.Key))
                 .ToDictionary(item => item.Value.FullName, item => BodyIdentity(item.Value));
-            Require(generatedHelpers.Count == 8 && timerModifiedBodies.Count == 3);
+            Require(generatedHelpers.Count == 9 && timerMethods.Length == 3 && modifiedBodies.Count == 4);
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
             {
                 var methods = Methods(written);
-                Require(methods.Count == originalMethods.Count + 8 &&
+                Require(methods.Count == originalMethods.Count + 9 &&
                     methods.Values.Count(method => method.FullName == helper.FullName) == 1 &&
                     methods.Values.Count(method => method.FullName == pump.FullName) == 1);
                 foreach (var (name, identity) in originalMethods)
-                    Require(methods.ContainsKey(name) && (timerModifiedBodies.TryGetValue(name, out var modified)
+                    Require(methods.ContainsKey(name) && (modifiedBodies.TryGetValue(name, out var modified)
                         ? BodyIdentity(methods[name]) == modified
                         : BodyIdentity(methods[name], name == waitKey ? prologue.Length : 0) == identity));
                 foreach (var (name, identity) in generatedHelpers)
@@ -265,14 +268,17 @@ internal static class TaskWait
                 completion = "actual-task-only", exceptionPropagation = "original-TaskAwaiter",
                 nestedTaskIdentity = "save-restore-finally", defaultClientComponentQualified = false,
                 callerContexts = "original-RunInternal-Default", contextNotifications = "original-runtime",
-                generatedHelperCount = 8, contextCallback = "same-CoreLib-ContextCallback(object)",
-                unchangedOriginalMethods = originalMethods.Count - 4, completeOriginalWaitRemainderPreserved = true,
+                generatedHelperCount = 9, contextCallback = "same-CoreLib-ContextCallback(object)",
+                unchangedOriginalMethods = originalMethods.Count - 5, completeOriginalWaitRemainderPreserved = true,
                 timerDriver = "TimerQueue.SetNextTimer-only", timerDriverIdle = "Timer.ActiveCount==0",
                 timerDriverCancellation = "original-CancellationTokenSource-CancelAndDispose",
                 timerDriverIdentity = "original-task-reference-and-epoch", timerDriverCallbacks = "original-queued-user-callbacks-preserved",
                 timerDriverScheduledToFire = "untouched", timerDriverCacheCleanup = false,
                 timerDriverRegistrationContext = "no-new-capture-original-flow-restored",
                 timerDriverModifiedOriginalMethods = 3, timerDriverOriginalBodies = timerOriginalBodies,
+                zeroCacheLifetime = "CheckPollables-original-Poll-call-only", zeroCacheDetach = "before-original-Poll",
+                zeroCacheDispose = "original-owned-Pollable-finally", zeroCacheForeignHolders = "untouched",
+                zeroCacheModifiedOriginalMethods = 1, zeroCacheOriginalBodies,
             };
             using var destination = new FileStream(receipt, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             JsonSerializer.Serialize(destination, result);
