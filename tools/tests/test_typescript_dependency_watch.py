@@ -417,3 +417,81 @@ class DeliveredTemplateCaller(unittest.TestCase):
     def test_flat_project_cannot_substitute_for_the_actual_template_wrapper(self):
         with tempfile.TemporaryDirectory() as temporary:
             self.run_actual_main_to_resolver_boundary(Path(temporary), flat=True)
+
+
+class PostDeployFailureProjection(unittest.TestCase):
+    def producer_report(self):
+        from tools.dev_workflow import scenarios
+        case = {'id': 'private-case-name', 'required': True, 'timeoutMillis': 5000,
+            'expect': {'category': 'success'}, 'fixtures': []}
+        return scenarios.run_prepared([(case, b'private raw input', None)], {}, 'node',
+            lambda _case, _raw: {'outcomeKnown': True, 'category': 'platform-failure',
+                                'error': {'code': 'permission-denied'}, 'data': {}}, {})
+
+    def test_actual_scenario_producer_yields_only_closed_ordinal_failure_fields(self):
+        from tools import qualify_typescript_dependency_watch as qualifier
+        value = self.producer_report()
+        self.assertFalse(value['passed'])
+        target = {}
+        with self.assertRaisesRegex(ValueError, '^initial-actual-node-test-failed$'):
+            qualifier.check_post_deploy_test({'passed': False, 'report': value}, target, 'initial')
+        projected = target['postDeployTestFailure']
+        self.assertEqual(projected, {'qualification': False, 'passed': False, 'results': [{
+            'ordinal': 0, 'status': 'failed', 'category': 'platform-failure', 'platformCode': 'permission-denied',
+            'required': True, 'outcomeKnown': True, 'targetMatches': True}]})
+        self.assertNotIn('private', json.dumps(projected))
+        self.assertNotIn('Sha256', json.dumps(projected))
+
+    def test_private_regex_shaped_strings_nested_fields_and_non_boolean_flags_never_escape(self):
+        from tools import qualify_typescript_dependency_watch as qualifier
+        secret = 'token-secret'
+        item = {key: secret for key in ('id', 'name', 'status', 'category', 'platformCode', 'reason',
+                                      'activationId', 'path', 'payloadSha256', 'inputSha256', 'error')}
+        item.update(required=1, outcomeKnown='false', targetMatches=0, payload={'nested': secret})
+        value = {'schemaVersion': 'latent.dev.test-report.v1', 'environment': 'node', 'passed': False,
+                 'identity': {'secret': secret}, 'results': [item]}
+        result = qualifier.public_failed_test_report(value)
+        self.assertEqual(result, {'qualification': False, 'passed': False, 'results': [{'ordinal': 0}]})
+        self.assertNotIn(secret, json.dumps(result))
+        for wrong in (None, {}, [], {**value, 'passed': 0}, {**value, 'environment': secret},
+                      {**value, 'schemaVersion': secret}, {**value, 'results': secret}):
+            with self.subTest(wrong=type(wrong)):
+                self.assertIsNone(qualifier.public_failed_test_report(wrong))
+
+    def test_only_first_eight_original_ordinals_and_exact_flags_are_retained(self):
+        from tools import qualify_typescript_dependency_watch as qualifier
+        value = self.producer_report()
+        value['results'] = [None] + [{'status': 'failed', 'required': True, 'outcomeKnown': False,
+            'targetMatches': False, 'platformCode': 'guest-trap', 'reason': 'earlier-adapter-failure'}] * 32
+        result = qualifier.public_failed_test_report(value)
+        self.assertEqual([row['ordinal'] for row in result['results']], list(range(1, 8)))
+        self.assertTrue(all(row['required'] is True and row['outcomeKnown'] is False
+                            and row['targetMatches'] is False for row in result['results']))
+        self.assertLess(len(json.dumps(result).encode()), 4096)
+
+    def test_success_never_invokes_diagnostic_or_retains_a_failure(self):
+        from unittest.mock import patch
+        from tools import qualify_typescript_dependency_watch as qualifier
+        target = {}
+        with patch.object(qualifier, 'public_failed_test_report', side_effect=AssertionError('success observed')):
+            qualifier.check_post_deploy_test({'passed': True, 'report': {'passed': True}}, target, 'initial')
+        self.assertEqual(target, {})
+
+    def test_observer_recursion_and_runtime_errors_preserve_actual_original_exception_identity(self):
+        from unittest.mock import patch
+        from tools import qualify_typescript_dependency_watch as qualifier
+        real_require = qualifier.require
+        for error in (RecursionError('private parser detail'), RuntimeError('private observer detail')):
+            originals = []
+            def keep_original(value, reason):
+                try:
+                    real_require(value, reason)
+                except ValueError as original:
+                    originals.append(original)
+                    raise
+            with patch.object(qualifier, 'require', side_effect=keep_original), \
+                    patch.object(qualifier, 'public_failed_test_report', side_effect=error):
+                with self.assertRaisesRegex(ValueError, '^initial-actual-node-test-failed$') as observed:
+                    qualifier.check_post_deploy_test({'passed': False, 'report': self.producer_report()}, {}, 'initial')
+            self.assertEqual(len(originals), 1)
+            self.assertIs(observed.exception, originals[0])

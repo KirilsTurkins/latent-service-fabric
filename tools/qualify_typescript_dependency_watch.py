@@ -34,6 +34,55 @@ def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
 
 
+def public_failed_test_report(value):
+    """Project already parsed scenario results without identifiers or payloads."""
+    if (not isinstance(value, dict) or value.get('schemaVersion') != 'latent.dev.test-report.v1'
+            or value.get('environment') != 'node' or type(value.get('passed')) is not bool
+            or not isinstance(value.get('results'), list)):
+        return None
+    # Producer: dev_workflow.scenarios.run_prepared. Platform codes are the
+    # actual latent-core error wire codes and latent CLI gRPC code names.
+    labels = {
+        'status': {'passed', 'failed', 'not-run', 'unsupported'},
+        'category': {'success', 'declared-error', 'platform-failure', 'transport-failure'},
+        'platformCode': {'unavailable', 'deadline-exceeded', 'cancelled', 'resource-exhausted',
+            'permission-denied', 'unauthenticated', 'invalid-argument', 'not-found', 'already-exists',
+            'incompatible-contract', 'state-conflict', 'dependency-failed', 'guest-trap', 'corrupt-artifact',
+            'route-unavailable', 'admission-rejected', 'internal', 'unknown', 'unimplemented', 'data-loss',
+            'out-of-range', 'ok', 'failed-precondition', 'aborted'},
+        'reason': {'required-scenario-unsupported', 'test-run-deadline', 'earlier-adapter-failure',
+            'earlier-outcome-unknown-no-new-invocation', 'OSError', 'ValueError', 'KeyboardInterrupt'},
+    }
+    result = {'qualification': False, 'passed': value['passed'], 'results': []}
+    for ordinal, item in enumerate(value['results'][:8]):
+        if not isinstance(item, dict):
+            continue
+        row = {'ordinal': ordinal}
+        for key, allowed in labels.items():
+            selected = item.get(key)
+            if type(selected) is str and selected in allowed:
+                row[key] = selected
+        for key in ('required', 'outcomeKnown', 'targetMatches'):
+            if type(item.get(key)) is bool:
+                row[key] = item[key]
+        result['results'].append(row)
+    return result
+
+
+def check_post_deploy_test(tested, report, label):
+    try:
+        require(tested['passed'] is True and tested['report']['passed'] is True,
+                label + '-actual-node-test-failed')
+    except Exception:
+        try:
+            projected = public_failed_test_report(tested.get('report'))
+            if projected is not None:
+                report['postDeployTestFailure'] = projected
+        except Exception:
+            pass  # A diagnostic observer cannot replace the original test error.
+        raise
+
+
 class ShutdownOnce:
     """Fence an external shutdown before dispatch, including uncertain failure."""
     def __init__(self):
@@ -211,8 +260,7 @@ def main() -> int:
     def after_deploy(offset, label):
         offset, deployed = await_event(offset, lambda value: value.get('event') == 'deployed', label)
         offset, tested = await_event(offset, lambda value: value.get('event') == 'post-deploy-tests', label + '-test')
-        require(tested['passed'] is True and tested['report']['passed'] is True,
-                label + '-actual-node-test-failed')
+        check_post_deploy_test(tested, report, label)
         report['stages'].append({'id': label, 'deployment': deployed['deployment'], 'tests': tested['report'],
                                  'build': deployed['build']})
         write(root / 'qualification.json', report)
@@ -375,6 +423,8 @@ def main() -> int:
             stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
         if 'failure' in report:
             public['failure'] = report['failure']
+        if 'postDeployTestFailure' in report:
+            public['postDeployTestFailure'] = report['postDeployTestFailure']
         write(root / 'public-qualification.json', public)
 
 
