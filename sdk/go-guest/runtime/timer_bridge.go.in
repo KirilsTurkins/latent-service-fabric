@@ -110,7 +110,15 @@ func lsfStopIdleChannelTimers() {
         slot := &lsfTimerSlots[index]
         if slot.token[1] == 0 { continue }
         pointer := internal_weak_runtime_makeStrongFromWeak(slot.weak)
-        if pointer == nil { lsfFail("LSF timer collection changed during drain") }
+        if pointer == nil {
+            // GC can clear a weak reference after the preceding sweep. Retire
+            // that exact host token and wait for physical readiness retirement,
+            // just as the sweep does; collection is not an ownership failure.
+            token := slot.token
+            lsfStopTimerSlot(uint32(index + 1), token)
+            lsfActivationTimerFence(token[0], token[1])
+            continue
+        }
         t := (*timer)(pointer)
         if !t.isChan { lsfFail("LSF callback timer remains during result seal") }
         t.stop()
