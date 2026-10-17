@@ -119,7 +119,7 @@ class WindowsTaskTests(unittest.TestCase):
         npm.parent.mkdir(parents=True)
         npm.write_text("// fixture", encoding="utf-8")
         with mock.patch.dict(os.environ, {"LSF_IDE_BOOTSTRAP_NPM_CLI": ""}), mock.patch.object(windows.shutil, "which", return_value=None):
-            self.assertEqual(npm, windows.bootstrap_cli(str(node)))
+            self.assertEqual(npm.resolve(), windows.bootstrap_cli(str(node)))
         with mock.patch.dict(os.environ, {"LSF_IDE_BOOTSTRAP_NPM_CLI": str(npm)}):
             self.assertEqual(npm.resolve(), windows.bootstrap_cli("other-node.exe"))
         with mock.patch.dict(os.environ, {"LSF_IDE_BOOTSTRAP_NPM_CLI": str(self.root / "missing/npm-cli.js")}):
