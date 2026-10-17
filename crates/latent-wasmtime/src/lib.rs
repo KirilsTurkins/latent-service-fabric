@@ -8,6 +8,7 @@ mod backend;
 mod bindings;
 mod cache;
 mod compiler;
+mod component_threading;
 mod config;
 mod containment;
 mod factory;

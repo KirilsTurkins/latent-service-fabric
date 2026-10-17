@@ -98,12 +98,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "latent-rust-std-stack-source-transform"
-version = "0.0.0"
+name = "latent-component-threading"
+version = "0.1.0-alpha.5"
 dependencies = [
  "sha2",
  "wasm-encoder",
  "wasmparser",
+]
+
+[[package]]
+name = "latent-rust-std-stack-source-transform"
+version = "0.0.0"
+dependencies = [
+ "latent-component-threading",
 ]
 
 [[package]]

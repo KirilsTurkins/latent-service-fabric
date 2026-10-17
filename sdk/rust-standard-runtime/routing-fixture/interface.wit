@@ -1,0 +1,6 @@
+package tests:owned@0.1.0;
+interface api { run: func() -> u32; }
+world service {
+    import latent:runtime-native/threads@0.1.0;
+    export api;
+}
