@@ -7,6 +7,7 @@ use std::sync::{
 };
 use std::time::Instant;
 
+mod owner_refusal;
 mod timer;
 pub use timer::{RuntimeTimer, TimerWait};
 
@@ -461,10 +462,14 @@ impl ActivationRuntime {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if state.owners.iter().any(|n| *n != 0) {
-            return Err(error(
+            let failure = error(
                 PlatformErrorCode::Internal,
                 "runtime-lifecycle-unproven",
-            ));
+            );
+            let owners = state.owners;
+            drop(state);
+            owner_refusal::record(owners);
+            return Err(failure);
         }
         state.phase = RuntimePhase::Retired;
         drop(state.slab.take());

@@ -2065,6 +2065,9 @@
     {
       "boundary": "host",
       "expectedCases": [
+        "activation_runtime::owner_refusal::tests::disabled_zero_and_invalid_counts_do_not_consume_refusal_allowance",
+        "activation_runtime::owner_refusal::tests::exact_closed_bucket_records_are_bounded_and_process_capped",
+        "activation_runtime::owner_refusal::tests::failed_witness_write_does_not_escape_or_change_original_counts",
         "activation_runtime::tests::close_allows_bounded_live_continuations_and_rejects_independent_work",
         "activation_runtime::tests::continuations_require_live_original_generation_before_any_admission",
         "activation_runtime::tests::foreign_store_token_and_opaque_sleeping_work_cannot_establish_quiescence",
@@ -2208,7 +2211,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-core/Cargo.toml",
-      "minimumCases": 137,
+      "minimumCases": 140,
       "mode": "libtest",
       "package": "latent-core",
       "platforms": [

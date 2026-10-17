@@ -139,7 +139,13 @@ fn close_allows_bounded_live_continuations_and_rejects_independent_work() {
     runtime.begin_drain();
     assert!(runtime.register(OwnerKind::Task, None).is_err());
     let result = runtime.register(OwnerKind::Result, Some(token)).unwrap();
-    assert!(runtime.retire().is_err());
+    let owners = runtime.snapshot().owners;
+    let failure = runtime.retire().unwrap_err();
+    assert_eq!(failure.code, PlatformErrorCode::Internal);
+    assert_eq!(failure.message, "runtime-lifecycle-unproven");
+    assert!(!failure.retryable);
+    assert!(failure.details.is_empty());
+    assert_eq!(runtime.snapshot().owners, owners);
     drop(task);
     assert!(runtime.register(OwnerKind::Result, Some(token)).is_err());
     drop(result);
