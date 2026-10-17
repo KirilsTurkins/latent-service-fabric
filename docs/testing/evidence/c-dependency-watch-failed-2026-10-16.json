@@ -1,0 +1,16 @@
+{
+  "formatVersion": 1,
+  "status": "failed-before-offline-programme-start",
+  "pullRequest": 1022,
+  "sourceHead": "830a1b5fcc5d0218ad81240bf93862f9b14b6bd3",
+  "testedMerge": "6d7c95d2c8d514928560ea43d7994a479acb4939",
+  "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38824551659/job/116728819951",
+  "logSha256": "9d8a1bade9c645d9bace0c397b28f508ff6740e6da7d4b4c2b2b5bc149572b19",
+  "failure": "process-grace-period-limit",
+  "requestedGraceSeconds": 30,
+  "existingMaximumGraceSeconds": 15,
+  "offlineProgrammeExecuted": false,
+  "signedWatchQualified": false,
+  "correction": "Use the existing fifteen-second process shutdown bound. Product deadlines and all existing guards remain unchanged.",
+  "correctedExecution": "pending"
+}

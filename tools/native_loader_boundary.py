@@ -1,4 +1,4 @@
-"""Review tripwire for the audited native-loader and fixed-result exceptions.
+"""Review tripwire for the audited native-loader, result and stack exceptions.
 
 Rust's deny/forbid lints enforce unsafe-code policy. This source guard also makes
 changes to the reviewed exception and its dependency pin explicit in CI; it is
@@ -39,6 +39,13 @@ LOADER = f"{CRATE}/src/aot/loader.rs"
 # requires a new review. The engine version is checked above both exceptions.
 FIXED_RESULT = f"{CRATE}/src/host/runtime/fixed_result.rs"
 FIXED_RESULT_SHA256 = "7122f099bd89829ec74f652620cf61f9710674b1e6deab4a38b4bb4c1fc77e23"
+# This third exception only allocates and unmaps guarded root stacks through
+# Wasmtime's pinned public StackCreator interface. Original activation Native
+# and memory admission precede mapping; actual successful munmap precedes refund.
+# Canonical thread creation remains closed. Bind the entire source, so adding
+# another unsafe operation or changing the physical retirement fence needs review.
+NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
+NATIVE_STACK_SHA256 = "2f528f523b7788131f02796f9231ad93f228a60c1a45fad27aa3b24b2ca71462"
 ALLOW = '''#[allow(
     unsafe_code,
     reason = "the sole native loader accepts only a private proof over authenticated immutable bytes"
@@ -107,6 +114,11 @@ def validate(root: Path) -> list[str]:
         elif relative == FIXED_RESULT:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != FIXED_RESULT_SHA256:
                 errors.append("audited fixed-result lowering changed; review its pinned ABI and original physical owner")
+            else:
+                source = ""
+        elif relative == NATIVE_STACK:
+            if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_SHA256:
+                errors.append("audited native-stack allocator changed; review original admission and physical unmapping")
             else:
                 source = ""
         if unsafe.search(source) or lowered.search(source):

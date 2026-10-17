@@ -67,6 +67,59 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         self.assertIn(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator))) return false;', source)
         self.assertIn(b'if (!list->append(listener))', source)
 
+    def test_all_original_abort_subclasses_transfer_ownership_and_keep_callback_bodies(self):
+        before = originals()
+        selected, _ = derive()
+        for name, declaration in (
+                ('StarlingMonkey/builtins/web/event/event-target.cpp', b'struct Terminator : AbortAlgorithm'),
+                ('StarlingMonkey/builtins/web/fetch/fetch-api.cpp', b'struct Terminator : AbortAlgorithm'),
+                ('StarlingMonkey/builtins/web/fetch/request-response.cpp', b'struct ResponseAborter : abort::AbortAlgorithm')):
+            with self.subTest(name=name):
+                original = before[name][before[name].index(declaration):]
+                derived = selected[name][selected[name].index(declaration):]
+                original = original[:original.index(b'\n};')]
+                derived = derived[:derived.index(b'\n};')]
+                self.assertEqual(derived.count(b'AbortAlgorithm(std::move(owner))'), 1)
+                self.assertEqual(original[original.index(b'  bool run('):], derived[derived.index(b'  bool run('):])
+        header = selected['StarlingMonkey/builtins/web/abort/abort-signal.h']
+        self.assertNotIn(b'\n  AbortAlgorithm() = default;', header)
+        self.assertIn(b'AbortAlgorithm(const AbortAlgorithm &) = delete;', header)
+
+    def test_fetch_abort_owner_denial_precedes_request_effect_and_checks_publication(self):
+        selected, _ = derive()
+        source = selected['StarlingMonkey/builtins/web/fetch/fetch-api.cpp']
+        admitted = source.index(b'admit_native_object(cx, abort_owner)')
+        self.assertLess(admitted, source.index(b'host_api::HttpOutgoingRequest::make('))
+        self.assertLess(admitted, source.index(b'request->send()'))
+        self.assertEqual(source.count(b'request->send()'), 1)
+        self.assertIn(b'js::MakeUnique<Terminator>(std::move(abort_owner), weak)', source)
+        allocation = source.index(b'auto algorithm = js::MakeUnique<Terminator>')
+        failure = source.index(b'if (!algorithm) { JS_ReportOutOfMemory(cx); return false; }', allocation)
+        publication = source.index(b'if (!AbortSignal::add_algorithm(signal, std::move(algorithm))) return false;', allocation)
+        self.assertLess(allocation, failure)
+        self.assertLess(failure, publication)
+        # Original accepted response work remains owned by its engine queue.
+        queued = source.index(b'ENGINE->queue_async_task(task.release());')
+        self.assertLess(queued, allocation)
+        # Both original context fields must be published even when a later
+        # allocation or vector insertion fails after accepted work is queued.
+        sent = source.index(b'pending_handle = res.unwrap();')
+        for field in (b'Request::Slots::ResponsePromise', b'Request::Slots::PendingResponseHandle'):
+            self.assertEqual(source.count(field), 1)
+            self.assertLess(sent, source.index(field))
+            self.assertLess(source.index(field), queued)
+
+    def test_response_abort_owner_denial_precedes_result_consumption_and_keeps_raii(self):
+        selected, _ = derive()
+        source = selected['StarlingMonkey/builtins/web/fetch/request-response.cpp']
+        admitted = source.index(b'admit_native_object(cx, abort_owner)')
+        self.assertLess(admitted, source.index(b'future_->maybe_response()'))
+        self.assertIn(b'if (AbortSignal::is_instance(signal) &&\n'
+                      b'      !lsf::typescript::activation::admit_native_object(cx, abort_owner)) return false;', source)
+        self.assertIn(b'std::move(abort_owner), response_promise, response_obj, signal', source)
+        self.assertIn(b'if (!algorithm) { JS_ReportOutOfMemory(cx); return false; }', source)
+        self.assertIn(b'if (!AbortSignal::add_algorithm(signal, std::move(algorithm))) return false;', source)
+
     def test_original_listener_order_callback_once_and_abort_reason_bodies_are_unchanged(self):
         before = originals()
         derived, _ = derive()

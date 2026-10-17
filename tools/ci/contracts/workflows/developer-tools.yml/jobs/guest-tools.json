@@ -77,6 +77,27 @@
         "run": "python tools/run_dev_guest_tools_tests.py --language \"$LSF_DEV_LANGUAGE\" --payload target/dev-tools/payload --packager target/dev-tools/latent-test --source-node target/dev-tools/source-node --output \"$RUNNER_TEMP/dev-projects\""
       },
       {
+        "if": "matrix.language == 'c'",
+        "name": "Prepare C dependency compiler containment",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\n"
+      },
+      {
+        "if": "matrix.language == 'c'",
+        "name": "Qualify delivered C dependency updates through the actual signed watcher",
+        "run": "sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS \"$(command -v python)\" -B tools/run_c_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_c_dependency_watch.py --fixture tools/c_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output \"$RUNNER_TEMP/c-dependency-watch\""
+      },
+      {
+        "if": "always() && matrix.language == 'c'",
+        "name": "Retain bounded C dependency watch and normal shutdown observations",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "c-dependency-watch-${{ github.sha }}",
+          "path": "${{ runner.temp }}/c-dependency-watch/",
+          "retention-days": 7
+        }
+      },
+      {
         "if": "matrix.language == 'typescript'",
         "uses": "actions/setup-node",
         "with": {
@@ -316,7 +337,7 @@
   },
   "jobId": "guest-tools",
   "kind": "job",
-  "reviewReason": "Prepare bubblewrap for captured Rust watch compilation using existing unprivileged compiler boundary",
+  "reviewReason": "Preserve reviewed C logging and explicit Rust captured recovery plus all signed C/Rust watch commands after current development integration.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

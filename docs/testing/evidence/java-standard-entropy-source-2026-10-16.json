@@ -1,0 +1,68 @@
+{
+  "profile": "lsf.java.bounded-entropy.v1",
+  "status": "locked-model-and-host-source-controls-passed",
+  "standardMethodBodies": 13,
+  "sourceChecks": 245,
+  "jarDigests": {
+    "org/teavm/teavm-classlib/0.15.0/teavm-classlib-0.15.0.jar": "7d805be4670a892a34c89d9d750a8afd65e2f8201b7b3a10343634ea19d1c410",
+    "org/teavm/teavm-core/0.15.0/teavm-core-0.15.0.jar": "501ca5eae7a835cd6278c822685f32800fa0818e3f42204afc9b558408c943df",
+    "org/teavm/teavm-extension-spi/0.15.0/teavm-extension-spi-0.15.0.jar": "d30bc018e3d857d585c4887e8863fe40f4d20293b3286293eda5af2b97266b49",
+    "org/teavm/teavm-interop/0.15.0/teavm-interop-0.15.0.jar": "5c8511d71ae6f6d2ca913130393b64a959303e521727b2d9c1a9b1e14519216f",
+    "org/teavm/teavm-relocated-libs-asm-analysis/0.15.0/teavm-relocated-libs-asm-analysis-0.15.0.jar": "6bb5ef62ab00d557061d9b04dc4571f711fbe11d339783e55029b37b75d5159c",
+    "org/teavm/teavm-relocated-libs-asm-commons/0.15.0/teavm-relocated-libs-asm-commons-0.15.0.jar": "d49685681db5039075f2fde01568f2bb6df14a99ef88d39b29df8e701e12e140",
+    "org/teavm/teavm-relocated-libs-asm-tree/0.15.0/teavm-relocated-libs-asm-tree-0.15.0.jar": "6b475fd62b8ddedfa0808c0c412c311f000a80a13123b6ba07f5da531164fd5b",
+    "org/teavm/teavm-relocated-libs-asm/0.15.0/teavm-relocated-libs-asm-0.15.0.jar": "400496e463dddd878fed2b9b25a66deca2126f71bb68e41f82244b4315006018",
+    "org/teavm/teavm-relocated-libs-hppc/0.15.0/teavm-relocated-libs-hppc-0.15.0.jar": "7b82fedf747e0bf5d7a50acece86a8a684901e469165a3c5621c653128df4cd6"
+  },
+  "componentExecutionPerformedByTheseControls": false,
+  "sourceProvider": "explicit-host-only-deterministic-control",
+  "ordinaryJdkReference": [
+    {
+      "iteration": 0,
+      "mode": 3,
+      "result": 32
+    },
+    {
+      "iteration": 0,
+      "mode": 4,
+      "result": 32
+    },
+    {
+      "iteration": 0,
+      "mode": 6,
+      "result": 42
+    },
+    {
+      "iteration": 1,
+      "mode": 3,
+      "result": 32
+    },
+    {
+      "iteration": 1,
+      "mode": 4,
+      "result": 32
+    },
+    {
+      "iteration": 1,
+      "mode": 6,
+      "result": 42
+    },
+    {
+      "iteration": 2,
+      "mode": 3,
+      "result": 32
+    },
+    {
+      "iteration": 2,
+      "mode": 4,
+      "result": 32
+    },
+    {
+      "iteration": 2,
+      "mode": 6,
+      "result": 42
+    }
+  ],
+  "undeclaredCapabilityControl": "passed-without-generated-random-bindings",
+  "compilerVersion": "javac 25.0.3"
+}

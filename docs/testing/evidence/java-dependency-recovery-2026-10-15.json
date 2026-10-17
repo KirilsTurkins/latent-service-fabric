@@ -1,0 +1,532 @@
+{
+  "schemaVersion": "latent.java-library-recovery.native-controls.v1",
+  "status": "passed",
+  "scope": "signed captured Java code and exception/memory/fuel/cancellation recovery",
+  "source": {
+    "nativeTuple": {
+      "receipt": {
+        "sha256": "sha256:4b4cc872d422c34bbf083f498f7a1b1fc8b81f0d3a1ef71b29be9d5d791465fc",
+        "bytes": 1494
+      },
+      "sourceHead": "a49bbf172e08c13ed7bd5588e2323064652f9366",
+      "sourceTree": "5696ad304208a902ed115f27120609fc8d4f9f04",
+      "tupleRole": "ordinary-defaults",
+      "hostAbiProfile": "lsf-host-abi-phase3-v5",
+      "wasmtimeVersion": "48.0.6",
+      "binaries": {
+        "latent": {
+          "sha256": "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+          "bytes": 69976672,
+          "actualFeatures": []
+        },
+        "latentd": {
+          "sha256": "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+          "bytes": 182386208,
+          "actualFeatures": []
+        },
+        "package": {
+          "sha256": "sha256:c361aad3ed1aa9371e6acd657368ab216a72a66aa5fecba8b0f5d3169291940f",
+          "bytes": 19100192,
+          "actualFeatures": []
+        },
+        "capsule_contracts": {
+          "sha256": "sha256:60e42c99f6286ed4e6254a05156963c2e50e543414e9fa5f108eede7bb4e397e",
+          "bytes": 7967376,
+          "actualFeatures": []
+        },
+        "capsule_authoring": {
+          "sha256": "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+          "bytes": 24994784,
+          "actualFeatures": []
+        }
+      }
+    },
+    "qualifier": {
+      "sha256": "sha256:7c77a9f8aa440a7fa5eaedb66955fbbd4aeed9d3a167659b8daa53e6f05d64ce",
+      "bytes": 18346
+    },
+    "recoveryQualifier": {
+      "sha256": "sha256:3f28b33e6510cf49783cf18da65b9295e166c6b9fb5d899a610271a4fd07373b",
+      "bytes": 4484
+    },
+    "allJavaRecipeGitObjectsCompared": true,
+    "javaRecipeObjectCount": 66,
+    "prerequisites": [
+      "#998 actual dependency qualifier",
+      "#1003 exact empty Unix ZIP directory markers"
+    ]
+  },
+  "host": {
+    "compilerNetwork": "Docker --network none",
+    "nativeContainer": "lsf-sdk-java-dependency-recovery-r3-20261015",
+    "java": "25.0.4.1+1",
+    "gradle": "9.1.0",
+    "wasiSdk": "29.0",
+    "teavm": "0.15.0 C to Wasm Component Model"
+  },
+  "capture": {
+    "sha256": "sha256:348d4b1439b641240bf783df2989d68eeafadd08867c16f67a2ed0198085fd44",
+    "bytes": 868
+  },
+  "component": {
+    "sha256": "sha256:037576d8add2b828920efa685c94a4dd4bc45aaa7a4cd62dc0e5bac1c0eea0d0",
+    "bytes": 2281928
+  },
+  "qualification": {
+    "sha256": "sha256:5c9a465aa1ef9611bb8dccd7b3e7b34de3773a6f1330cfb846da4c6b2067b8cd",
+    "bytes": 2117
+  },
+  "nodeReceipt": {
+    "sha256": "sha256:f521fe74f83af817aa7bcbd248f07c1c05b030e7844d3b224705e72b6f88d125",
+    "bytes": 23097
+  },
+  "negativeInputs": [
+    {
+      "case": "missing-transitive",
+      "status": "known-failure",
+      "reason": "dependency-artifact-missing-resolve-explicitly"
+    },
+    {
+      "case": "tampered-transitive",
+      "status": "known-failure",
+      "reason": "dependency-artifact-integrity"
+    }
+  ],
+  "limits": {
+    "javaHeapBytes": 4194304,
+    "normalWasmMemoryBytes": 67108864,
+    "memoryLimitProbeBytes": 65536,
+    "fuelProbe": 10000000
+  },
+  "cases": [
+    {
+      "case": "uncaught-java-heap-exhaustion",
+      "activation": "library-java-heap-limit",
+      "exitCode": 4,
+      "outcomeKnown": true,
+      "category": "platform-failure",
+      "code": "guest-trap",
+      "terminalState": "guest_trap",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "19108211",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "10616832",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "35062"
+      },
+      "processReaped": true,
+      "freshInvocation": {
+        "activation": "uncaught-java-heap-exhaustion-fresh",
+        "decoded": [
+          {
+            "ok": "42/53444b/KDS"
+          }
+        ],
+        "processReaped": true
+      },
+      "retirement": {
+        "sha256": "sha256:128da6dc0e705cbbdd92ff6b00b0afe4e404d4af87b0ad52317d2fdf42611a8c",
+        "bytes": 6942
+      },
+      "freshRetirement": {
+        "sha256": "sha256:e8c2a1615876a50500bd2635d80c1bc5567f9a016a29625fdf87c5396a6c8416",
+        "bytes": 6942
+      }
+    },
+    {
+      "case": "uncaught-exception",
+      "activation": "library-uncaught-exception",
+      "exitCode": 4,
+      "outcomeKnown": true,
+      "category": "platform-failure",
+      "code": "guest-trap",
+      "terminalState": "guest_trap",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "9446189",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "10616832",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "20762"
+      },
+      "processReaped": true,
+      "freshInvocation": {
+        "activation": "uncaught-exception-fresh",
+        "decoded": [
+          {
+            "ok": "42/53444b/KDS"
+          }
+        ],
+        "processReaped": true
+      },
+      "retirement": {
+        "sha256": "sha256:87f7917149f9b7bdc2bd961f04c6112d27975c9c41b3bc5c8d0ab6dcdb1d748d",
+        "bytes": 6943
+      },
+      "freshRetirement": {
+        "sha256": "sha256:8c17a96ca9af6b927af30492eb2a912d818dc9fc0ad663aeb953136c836dbf2d",
+        "bytes": 6943
+      }
+    },
+    {
+      "case": "wasm-memory-limit",
+      "activation": "library-memory-limit",
+      "exitCode": 4,
+      "outcomeKnown": true,
+      "category": "platform-failure",
+      "code": "resource-exhausted",
+      "terminalState": "resource_exhausted",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "0",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "0",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "1432"
+      },
+      "processReaped": true,
+      "freshInvocation": {
+        "activation": "wasm-memory-limit-fresh",
+        "decoded": [
+          {
+            "ok": "42/53444b/KDS"
+          }
+        ],
+        "processReaped": true
+      },
+      "retirement": {
+        "sha256": "sha256:e6be9d9bee0432fa670d74145ae429837f8db9355944673e414c771436d3eed4",
+        "bytes": 6942
+      },
+      "freshRetirement": {
+        "sha256": "sha256:79a0f9b85dd5b20606b4e92a2c5b5ef5690e1b8f63f5fd3361129b2410b111fb",
+        "bytes": 6944
+      }
+    },
+    {
+      "case": "fuel-exhaustion",
+      "activation": "library-fuel-limit",
+      "exitCode": 4,
+      "outcomeKnown": true,
+      "category": "platform-failure",
+      "code": "resource-exhausted",
+      "terminalState": "resource_exhausted",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "10000000",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "10616832",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "23088"
+      },
+      "processReaped": true,
+      "freshInvocation": {
+        "activation": "fuel-exhaustion-fresh",
+        "decoded": [
+          {
+            "ok": "42/53444b/KDS"
+          }
+        ],
+        "processReaped": true
+      },
+      "retirement": {
+        "sha256": "sha256:e829baed70d210f44815cd11f0a72e7e5eca62a1c6996f92a1815dcd61ac12ad",
+        "bytes": 6945
+      },
+      "freshRetirement": {
+        "sha256": "sha256:71e8ce15458107b2e9b2cb98d011896df58126788481fd9cb12161c22c42c943",
+        "bytes": 6945
+      }
+    },
+    {
+      "case": "observed-cancellation",
+      "activation": "library-observed-cancellation",
+      "exitCode": 4,
+      "outcomeKnown": true,
+      "category": "platform-failure",
+      "code": "cancelled",
+      "terminalState": "cancelled",
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "12130594",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 0,
+        "peakMemoryBytes": "10616832",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "28687"
+      },
+      "processReaped": true,
+      "freshInvocation": {
+        "activation": "observed-cancellation-fresh",
+        "decoded": [
+          {
+            "ok": "42/53444b/KDS"
+          }
+        ],
+        "processReaped": true
+      },
+      "retirement": {
+        "sha256": "sha256:9cb2558595d3d2be806ea308958859a5936c6fea771c2c7733e91802d0a4d50f",
+        "bytes": 6945
+      },
+      "freshRetirement": {
+        "sha256": "sha256:f1ba4c017030445f52e94b98ec281afa5ef6b7072f0dda73dc9759285bb2b9f1",
+        "bytes": 6944
+      },
+      "runningObserved": true,
+      "readCount": 1,
+      "cancelCalls": 1,
+      "cancelDisposition": "accepted"
+    }
+  ],
+  "shutdown": {
+    "processId": 367,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "policies": {
+          "workCompleted": true,
+          "activeJobs": 0,
+          "retainedReadOwners": 0
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 544,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 3,
+          "maximum_waiters_per_job": 3,
+          "maximum_ready_preparations": 3,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 1,
+          "jobs_completed": 1,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 4,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 0,
+          "completed": 0,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "earlierFailedCaughtAllocationAttempt": {
+    "status": "failed",
+    "failure": {
+      "status": "failed",
+      "stage": "signed-node",
+      "commands": [
+        {
+          "stage": "sign-library-fixture",
+          "exitCode": 0,
+          "seconds": 0.796201
+        }
+      ],
+      "reason": "authoring-application-result"
+    },
+    "javaSource": {
+      "sha256": "sha256:3b0f4d33a2eeed1f233cd49e06200f94f1f91eaea17f4a51320862a1715406e8",
+      "bytes": 1611
+    },
+    "component": {
+      "sha256": "sha256:aa7da1c907c8defd819f046f0992898543c87eb9e88b2275404361a4a81d610b",
+      "bytes": 2292373
+    },
+    "observed": {
+      "activation": "library-java-heap-limit",
+      "exitCode": 4,
+      "startedAtUnixMillis": "1792100186960",
+      "elapsedNanos": "42039733",
+      "decoded": null,
+      "response": {
+        "category": "platform-failure",
+        "command": "invoke",
+        "data": {
+          "activationId": "library-java-heap-limit",
+          "consumption": {
+            "blobReadBytes": "0",
+            "blobWriteBytes": "0",
+            "childCalls": 0,
+            "cpuFuel": "19260829",
+            "effectCount": 0,
+            "logBytes": "0",
+            "outboundRequests": 0,
+            "peakMemoryBytes": "10616832",
+            "stateReadBytes": "0",
+            "stateWriteBytes": "0",
+            "wallTimeMicros": "24625"
+          },
+          "resolvedRevision": {
+            "publicationId": "publication:sha256:108a25c3499b4bc7a81307472936f08d1abab9439b427a7e46d5aa1e5e495469",
+            "releaseDigest": "sha256:aa7da1c907c8defd819f046f0992898543c87eb9e88b2275404361a4a81d610b",
+            "revisionId": "revision-v1:sha256:5247595afdd57ee7eb23a3cf955b6bda6f2e4bb1c0e66cba348cd442880544c9",
+            "routeGeneration": "3"
+          },
+          "terminalState": "guest_trap"
+        },
+        "error": {
+          "code": "guest-trap",
+          "details": [
+            {
+              "fields": {
+                "kind": "unreachable-code"
+              },
+              "kind": "activation.guest-trap-kind"
+            }
+          ],
+          "message": "The platform reported a failure.",
+          "retryable": false
+        },
+        "outcomeKnown": true,
+        "requestDispatched": true,
+        "schemaVersion": "latent.cli.result.v1"
+      },
+      "processReaped": true
+    },
+    "limitation": "The selected TeaVM C managed-heap refusal trapped instead of reaching catch(OutOfMemoryError); catch compatibility is not established. Runtime owner #741."
+  },
+  "remainingAcceptance": [
+    "installed update/remove/watch",
+    "independent authenticated private-feed and approved-processor receipts",
+    "catchable managed-heap allocation failure semantics remain #741"
+  ],
+  "releaseQualification": false
+}

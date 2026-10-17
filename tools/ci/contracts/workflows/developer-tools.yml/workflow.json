@@ -60,6 +60,10 @@
           "tools/run_portable_guest_tests.py",
           "tools/compare_portable_guest_tests.py",
           "tools/c_capsule*.py",
+          "tools/c_dependency_watch_fixture.py",
+          "tools/qualify_c_dependency_watch.py",
+          "tools/run_c_dependency_watch_ci.py",
+          "tools/tests/test_c_dependency_watch_fixture.py",
           "tools/c_guest/**",
           "tools/java_capsule*.py",
           "tools/java_dependency*.py",
@@ -144,7 +148,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Add Rust watch source triggers while preserving all existing event conditions permissions jobs and guards",
+  "reviewReason": "Preserve reviewed C logging and explicit Rust captured recovery plus all signed C/Rust watch commands after current development integration.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }

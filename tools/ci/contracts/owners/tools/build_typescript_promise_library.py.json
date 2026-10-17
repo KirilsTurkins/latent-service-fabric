@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/build_typescript_promise_library.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Reviewed thin CLI delegates to bounded exact-source Promise library builder only; it cannot claim a qualified runtime, alter supported600-second application compilation or enable production APIs.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e9151a340dc972fb43592230952e9401debf2c0d715c09c2ab21ae2b8ef9bae9"
+}

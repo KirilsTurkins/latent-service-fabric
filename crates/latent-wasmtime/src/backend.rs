@@ -442,6 +442,7 @@ impl WasmtimeBackend {
         input_trace: Option<&InputTrace>,
         capability_observer: &mut Option<latent_capabilities::broker::CapabilitySessionObserver>,
         host_result: &mut latent_executor::HostResultDisposition,
+        native_stack_observer: &mut Option<Arc<crate::native_stacks::StackContext>>,
     ) -> Result<GuestOutcome, PlatformError> {
         let cancellation = ownership.cancellation;
         let setup_started = Instant::now();
@@ -578,6 +579,11 @@ impl WasmtimeBackend {
             ownership.transaction,
             runtime.surface.hostcall_fuel,
         )?);
+        *native_stack_observer = store
+            .data()
+            .runtime
+            .as_ref()
+            .and_then(|runtime| runtime.native_stacks.clone());
         // Decoding and every borrowed validation have completed. The Store now
         // owns only the moved context; destroy the actual raw input before call.
         raw_input.release(InvocationInputDropReason::BeforeGuestCall);
@@ -587,7 +593,8 @@ impl WasmtimeBackend {
         if let Some(trace) = input_trace {
             trace.stage(InvocationInputPhase::BeforeCallExport);
         }
-        let call_result = call_export(
+        let native_stack_scope = native_stack_observer.clone();
+        let call = call_export(
             &runtime,
             function,
             &mut store,
@@ -596,8 +603,11 @@ impl WasmtimeBackend {
             timing,
             setup_started,
             input_trace,
-        )
-        .await;
+        );
+        let call_result = match native_stack_scope {
+            Some(scope) => crate::native_stacks::scoped(scope, call)?.await,
+            None => call.await,
+        };
         // Wasmtime 47's safe dynamic call completes canonical ABI post-return
         // before resolving, including propagation of post-return traps.
         let component_post_return_started = Instant::now();
@@ -755,7 +765,7 @@ impl WasmtimeBackend {
 
         let host_context =
             ActivationHostContext::from_request(request, accounting.deadline().unix_millis());
-        let initial_fuel = accounting.initial_fuel();
+        let mut initial_fuel = accounting.initial_fuel();
         let mut host_state = HostState::with_config(
             host_context,
             maximum_memory_bytes,
@@ -775,6 +785,20 @@ impl WasmtimeBackend {
         host_state.runtime_stop = Some(Arc::clone(stop));
         if self.config.java_guest {
             host_state.limiter.reserve_exception_heap()?;
+        }
+        if self.config.owned_native_stacks {
+            crate::host::runtime::prepare_native_stack(
+                &mut host_state,
+                self.config.async_stack_bytes,
+            )?;
+            // Native admission was charged before the first engine counter is
+            // installed. Its original fuel is never copied into a fresh allowance.
+            initial_fuel = host_state
+                .accounting
+                .budget()
+                .remaining_at(self.shared.clock.monotonic_now())
+                .cpu_fuel;
+            host_state.accounting.reset_fuel_watermark(initial_fuel);
         }
         let mut store = Store::new(&self.engine, host_state);
         store.set_hostcall_fuel(hostcall_fuel);
