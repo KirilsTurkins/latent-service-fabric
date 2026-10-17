@@ -21,7 +21,7 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
 
 BUILD_TYPE = "https://latent.dev/build/go-capsule/v1"
 RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsule_build.py",
-          "tools/go_guest/compiler.py", "tools/go_guest/runtime.py", "tools/go_guest/activation.py", "tools/go_guest/checkpoints.py", "tools/go_guest/sdk.py", "tools/rust_capsule_project.py",
+          "tools/go_guest/compiler.py", "tools/go_guest/runtime.py", "tools/go_guest/activation.py", "tools/go_guest/checkpoints.py", "tools/go_guest/timers.py", "tools/go_guest/initializers.py", "tools/go_guest/http_context.py", "tools/go_guest/http.py", "tools/go_guest/sdk.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",

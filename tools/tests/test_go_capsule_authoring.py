@@ -12,6 +12,43 @@ from tools.go_guest.sdk import install, CAPABILITIES, explicit_resource_owners
 
 
 class GoAuthoringTests(unittest.TestCase):
+    def test_explicit_runtime_templates_capture_async_api_and_owned_runtime_without_source_edits(self):
+        from tools.go_capsule_project import AUTHORING_TEMPLATES, ROOT
+        from tools.go_guest.activation import PROFILES
+        from tools.rust_capsule_project import digest
+        for profile in sorted(PROFILES):
+            templates = AUTHORING_TEMPLATES if profile == 'go-component-activation-v4' else ('greeting',)
+            for template in templates:
+                with self.subTest(profile=profile, template=template), tempfile.TemporaryDirectory() as temporary:
+                    files = snapshot(create(Path(temporary) / 'app', template, runtime_profile=profile))
+                    value, lock, _ = validate(files)
+                    self.assertEqual(value['runtimeProfile'], profile)
+                    self.assertEqual(files['src/main.go'], (ROOT / 'sdk/go-guest/templates' / (template + '.go')).read_bytes())
+                    self.assertIn(b'import latent:runtime/activation@0.1.0;', files['wit/world.wit'])
+                    self.assertIn(b'async func(', files['wit/world.wit'])
+                    self.assertNotRegex(files['wit/world.wit'].decode(), r':\s*func\s*\(')
+                    self.assertEqual(files['wit/deps/activation-runtime/package.wit'],
+                        files['vendor/lsf/wit/platform/activation-runtime/package.wit'])
+                    self.assertNotIn('grants', value)
+                    self.assertEqual(lock['template']['witDigest'], digest(files['wit/world.wit']))
+
+    def test_cli_runtime_selection_preserves_default_and_rejects_unknown_before_creation(self):
+        import contextlib
+        import io
+        from tools import go_capsule
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ordinary = snapshot(create(root / 'ordinary', 'greeting'))
+            self.assertNotIn('runtimeProfile', json.loads(ordinary['capsule-project.json']))
+            self.assertNotIn(b'latent:runtime/activation', ordinary['wit/world.wit'])
+            self.assertIn(b'greet: func(', ordinary['wit/world.wit'])
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(go_capsule.main(['new', str(root / 'selected'), '--runtime-profile', 'go-component-activation-v4']), 0)
+            self.assertEqual(validate(snapshot(root / 'selected'))[0]['runtimeProfile'], 'go-component-activation-v4')
+            with self.assertRaisesRegex(ValueError, 'profile-not-installed'):
+                create(root / 'invalid', 'greeting', runtime_profile='native-go')
+            self.assertFalse((root / 'invalid').exists())
+
     def test_generated_business_record_owners_survive_export_stub_replacement(self):
         from tools.go_guest.sdk import export_declarations
         source = ('package export_examples_aggregate_api\n\nimport (\n'

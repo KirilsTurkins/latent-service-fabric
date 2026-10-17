@@ -6,6 +6,10 @@ requires the complete real-node and printed-guide gate at the final PR head.
 No partial observation below authorizes a release or replaces human newcomer
 review #345.
 
+The [typed HTTP context cancellation prerequisite](go-http-context-cancellation.md)
+has separate source, component compilation and pending signed-execution gates;
+it does not qualify default `net/http` or unchanged HTTP libraries.
+
 ## Fixture acquisition failure and approved replacement
 
 The observation-only candidate `6f33e3ad273aadfa15c48d609566328e17d94c6d`
@@ -632,3 +636,8 @@ hermetic/reproducible build claim. Source repository labels are operator
 assertions. All six authoring tickets, the Phase 3 gate and human newcomer
 review remain separate; runtime release publication stays on hold pending
 explicit maintainer approval.
+
+The separate [standard HTTP candidate](go-standard-http-candidate.md) adds a
+compiler-owned finite Transport backend and ordinary default-client fixture.
+Its source and compile-only controls do not replace signed runtime/provider
+qualification or the two unchanged client-library requirements.

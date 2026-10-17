@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "HttpLibraryCapture.test_nested_private_origins_and_injected_coordinates_fail_before_writes",
+    "HttpLibraryCapture.test_private_coordinates_change_application_inputs_without_changing_captured_sdk",
+    "HttpLibraryCapture.test_tampered_native_tuple_cannot_start_capture_resolution_compilation_or_node"
+  ],
+  "guards": {
+    "HttpLibraryCapture.test_nested_private_origins_and_injected_coordinates_fail_before_writes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_private_coordinates_change_application_inputs_without_changing_captured_sdk": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "HttpLibraryCapture.test_tampered_native_tuple_cannot_start_capture_resolution_compilation_or_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b193876436aa239db9f978250935f647c51377d48ae352880291186458c5eed9",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_go_http_libraries.py",
+  "reviewReason": "Require unchanged SDK across normal private coordinates, invalid origin/identity denial and tampered frozen native tool denial before any compiler or node",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

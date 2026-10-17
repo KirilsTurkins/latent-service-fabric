@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/go_guest/runtime.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Retain pinned scheduler source validation and add explicitly selected v2 checkpoint bridge overlay without changing v1 runtime or default authority",
+  "reviewReason": "Add context cancellation adaptation only for explicitly selected activation plus an actual typed HTTP import; retain all runtime preimages and existing profile transformations.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "fd5f9dda2e4643cc664691d69304efb7bdb782c4f823fe89e3d41452bfcaf15f"
+  "sha256": "57bd2769f9be62a1c0fa9f26ad6efef7602d954b2301cca8ef0eacd161c3d878"
 }

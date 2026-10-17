@@ -1,20 +1,6 @@
 {
   "kind": "workflow",
   "policy": {
-    "concurrency": {
-      "cancel-in-progress": true,
-      "group": "go-guest-${{ github.ref }}"
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
-    },
     "name": "Go guest qualification",
     "on": {
       "pull_request": {
@@ -40,6 +26,20 @@
           "tools/probe_go_authoring.py",
           "tools/qualify_go_capsules.py",
           "tools/qualify_go_activation.py",
+          "tools/qualify_go_http_context.py",
+          "tools/tests/test_go_http_context.py",
+          "tools/tests/test_go_standard_http.py",
+          "tools/go_standard_http_node.py",
+          "tools/go_standard_http_project.py",
+          "tools/qualify_go_standard_http.py",
+          "tools/qualify_go_http_libraries.py",
+          "tools/go_http_library_fixture.py",
+          "tools/tests/test_go_http_libraries.py",
+          "tools/tests/test_go_standard_http_gate.py",
+          "tools/tests/fixtures/go-standard-http/**",
+          "tools/tests/fixtures/go-http-context/**",
+          "tools/qualify_go_runtime_dependencies.py",
+          "tools/diagnose_go_timer_failure.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
@@ -49,6 +49,7 @@
           "schemas/**",
           "docs/component-development/go-authoring.md",
           "docs/development/go-capsule-qualification.md",
+          "docs/development/go-http-context-cancellation.md",
           "crates/latent-wasmtime/**",
           "crates/latent-control-store/**",
           "crates/latent-artifacts/**",
@@ -90,6 +91,20 @@
           "tools/probe_go_authoring.py",
           "tools/qualify_go_capsules.py",
           "tools/qualify_go_activation.py",
+          "tools/qualify_go_http_context.py",
+          "tools/tests/test_go_http_context.py",
+          "tools/tests/test_go_standard_http.py",
+          "tools/go_standard_http_node.py",
+          "tools/go_standard_http_project.py",
+          "tools/qualify_go_standard_http.py",
+          "tools/qualify_go_http_libraries.py",
+          "tools/go_http_library_fixture.py",
+          "tools/tests/test_go_http_libraries.py",
+          "tools/tests/test_go_standard_http_gate.py",
+          "tools/tests/fixtures/go-standard-http/**",
+          "tools/tests/fixtures/go-http-context/**",
+          "tools/qualify_go_runtime_dependencies.py",
+          "tools/diagnose_go_timer_failure.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
@@ -99,6 +114,7 @@
           "schemas/**",
           "docs/component-development/go-authoring.md",
           "docs/development/go-capsule-qualification.md",
+          "docs/development/go-http-context-cancellation.md",
           "crates/latent-wasmtime/**",
           "crates/latent-control-store/**",
           "crates/latent-artifacts/**",
@@ -118,12 +134,26 @@
     },
     "permissions": {
       "contents": "read"
+    },
+    "concurrency": {
+      "group": "go-guest-${{ github.ref }}",
+      "cancel-in-progress": true
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Add activation qualifier trigger while retaining all original jobs, permissions and guards",
+  "reviewReason": "Compose exact current runtime and owned networking gates; preserve every original command, artifact, trigger, runner, environment, case and original45-minute deadline.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }
