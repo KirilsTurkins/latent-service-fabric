@@ -1,0 +1,88 @@
+{
+  "cases": [
+    "RefusalTests.test_all_closed_stage_reason_pairs_are_failure_only_observations",
+    "RefusalTests.test_capture_stays_bounded_and_does_not_invent_complete_coverage",
+    "RefusalTests.test_guest_stdout_and_structured_marker_text_are_not_host_records",
+    "RefusalTests.test_malformed_unknown_and_secret_sentinels_never_enter_the_projection",
+    "RefusalTests.test_only_node_launch_gets_the_explicit_flag_and_client_env_never_changes",
+    "RefusalTests.test_retention_failure_does_not_replace_the_original_refusal"
+  ],
+  "guards": {
+    "RefusalTests.test_all_closed_stage_reason_pairs_are_failure_only_observations": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f117f6f0f952a276fba2ab70c0f517e70f499ffe3fb55bc4a4c15d0450ba3679",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RefusalTests.test_capture_stays_bounded_and_does_not_invent_complete_coverage": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f117f6f0f952a276fba2ab70c0f517e70f499ffe3fb55bc4a4c15d0450ba3679",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RefusalTests.test_guest_stdout_and_structured_marker_text_are_not_host_records": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f117f6f0f952a276fba2ab70c0f517e70f499ffe3fb55bc4a4c15d0450ba3679",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RefusalTests.test_malformed_unknown_and_secret_sentinels_never_enter_the_projection": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f117f6f0f952a276fba2ab70c0f517e70f499ffe3fb55bc4a4c15d0450ba3679",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RefusalTests.test_only_node_launch_gets_the_explicit_flag_and_client_env_never_changes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f117f6f0f952a276fba2ab70c0f517e70f499ffe3fb55bc4a4c15d0450ba3679",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RefusalTests.test_retention_failure_does_not_replace_the_original_refusal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f117f6f0f952a276fba2ab70c0f517e70f499ffe3fb55bc4a4c15d0450ba3679",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_control_refusal_diagnostic.py",
+  "reviewReason": "Add closed host-only Java control refusal diagnostics without changing original error decisions, quotas, authority or retries",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

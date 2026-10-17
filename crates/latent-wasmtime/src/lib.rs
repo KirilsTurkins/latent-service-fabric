@@ -13,6 +13,7 @@ mod containment;
 mod factory;
 mod host;
 mod invocation_input_observer;
+mod native_stacks;
 mod phase0;
 mod preparation_metadata;
 mod preparation_observer;

@@ -26,8 +26,8 @@
     },
     "provider-configuration": {
       "path": "apps/latentd/src/config/providers.rs",
-      "digest": "sha256:9a2e0fff33f5baedbdbb74a95dc914d76b3677915c5b8a0487fc0300e305bcff",
-      "commit": "680dcbc5204d54c3a2707b8d90168e9e80091716"
+      "digest": "sha256:43651b665f78844a7c1cb6a4347bdb221899354e2e948eb8d22e818594215878",
+      "commit": "f341316a2bed03a3d296e72f4fb058901efea710"
     },
     "node-composition": {
       "path": "apps/latentd/src/config/runtime.rs",
@@ -91,8 +91,8 @@
     },
     "structural-engine-profile": {
       "path": "crates/latent-wasmtime/src/config/profile.rs",
-      "digest": "sha256:3add551506b11c614609679d2883104a0cd7706c5a3da83f7adf1cd4e39eeee7",
-      "commit": "362fae4c588a6d694ef6b612a614410858e1297d"
+      "digest": "sha256:e47da73f84b30b4e20ce23d6a2a6f1640705c2912cd6a1c6717eb9f0b2927550",
+      "commit": "c689c3192f6135016a958b2b8a5e728ce9ffc713"
     },
     "ready-inspection": {
       "path": "crates/latent-wasmtime/src/backend/readiness/ownership.rs",

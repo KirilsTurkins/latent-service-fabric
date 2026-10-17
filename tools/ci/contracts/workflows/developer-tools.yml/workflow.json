@@ -60,6 +60,10 @@
           "tools/run_portable_guest_tests.py",
           "tools/compare_portable_guest_tests.py",
           "tools/c_capsule*.py",
+          "tools/c_dependency_watch_fixture.py",
+          "tools/qualify_c_dependency_watch.py",
+          "tools/run_c_dependency_watch_ci.py",
+          "tools/tests/test_c_dependency_watch_fixture.py",
           "tools/c_guest/**",
           "tools/java_capsule*.py",
           "tools/java_dependency*.py",
@@ -144,7 +148,7 @@
     "windows-bundle",
     "wsl-image"
   ],
-  "reviewReason": "Add only TypeScript watch fixture triggers; preserve all required jobs and original budgets",
+  "reviewReason": "Retain both signed TypeScript and C dependency watch programmes with every original command, guard, limit, artifact and trigger after reviewed parent integration.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/developer-tools.yml"
 }
