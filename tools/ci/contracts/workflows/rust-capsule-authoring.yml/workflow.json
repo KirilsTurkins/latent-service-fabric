@@ -33,7 +33,8 @@
           "tools/**",
           "wit/**",
           "Cargo.*",
-          "docs/component-development/rust-authoring.md"
+          "docs/component-development/rust-authoring.md",
+          "docs/component-development/rust-dependencies.md"
         ]
       },
       "push": {
@@ -52,7 +53,8 @@
           "tools/**",
           "wit/**",
           "Cargo.*",
-          "docs/component-development/rust-authoring.md"
+          "docs/component-development/rust-authoring.md",
+          "docs/component-development/rust-dependencies.md"
         ]
       }
     },
@@ -64,7 +66,7 @@
     "authoring",
     "standard-clocks"
   ],
-  "reviewReason": "Add authenticated rebuilt ordinary SystemTime/Instant signed grant, two fresh Store, revocation and owner-retirement gate; preserve existing authoring commands, source controls, jobs, limits, cache policy and historical CI obligations.",
+  "reviewReason": "Preserve merged authenticated private Cargo and standard clock jobs while adding normal dependency authoring selection; all original commands, artifacts, deadlines and gates remain.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }
