@@ -84,13 +84,51 @@ When captured application build scripts or proc macros are present, the first
 build retains `executable-input-approval-request.json` and fails before executing
 them. Review its exact source, recipe, compiler distribution, executable graph and
 namespace specification, then pass its `identity` with `--executable-approval` on
-the standalone build. For the packaged frontend, add the same flag and identity
-to the maintained Rust adapter's `build.argv` in `latent.project.json`, then run
-the existing `dev trust` and `dev build` commands. The changed argv changes recipe
-trust and cache identity; the compiler independently recalculates the request and
-rejects a stale or mismatched identity. Approval is not inherited from capture,
-package names, a previous source snapshot or ordinary recipe trust. Unsupported
-frontend adapters reject this flag before any build execution.
+the standalone build. A matching current frontend/helper also supports a detached
+selection on `dev build`, `dev up --watch` and `rust_capsule.py watch`. Keep the
+descriptor's `build.argv`, source and SDK locks unchanged: the descriptor is itself
+part of the request's source identity, so inserting an approval into it makes that
+approval stale.
+
+After an ordinary maintained Rust build refuses executable inputs and its owner
+has confirmed reaping, explicitly inspect the last owned failed attempt:
+
+```powershell
+$failedRequest = latent-dev --state-root $StateRoot dev executable-approval-request --workspace $Workspace | ConvertFrom-Json
+# Review the full private specification before choosing to authorize it.
+$executableApproval = $failedRequest.result.request.identity
+latent-dev --state-root $StateRoot dev build --workspace $Workspace --project $Project --executable-approval $executableApproval
+```
+
+This read-only operation accepts no path or attempt selector. It verifies the
+current source snapshot, trusted maintained recipe, failed/reaped owner, captured
+executable graph, producer source/recipe inventories and compiler receipt. Missing,
+unsafe, stale or oversized retained inputs refuse observation. The full request
+contains private dependency metadata; it is returned only by this explicit
+command, never by ordinary status or public qualification diagnostics. The command
+does not grant approval or modify the project. A reaped attempt retained across a
+guest reboot remains inspectable only in the same owned workspace with the exact
+current saved source and recipe trust. Running, uncertain or foreign ownership
+refuses this read-only view; inspecting history does not authorize its execution.
+The operation requires matching current frontend, helper and Rust tool bundle:
+the helper must expose the `executable-approval-request` protocol feature, and the
+retained producer inventory must contain the current exact Rust recipe name set
+and pinned bytes. Older helpers fail negotiation; older or different compiler
+inventories refuse observation without fallback.
+
+The detached digest is bound into the build cache and successful receipt only
+when explicitly selected. An absent or different selection cannot reuse that
+approved entry; default cache identities remain unchanged. The actual compiler
+recalculates its input, recipe, compiler and containment request on execution and
+rejects a stale or mismatched digest. Watch carries only the selected identity:
+a source or bound-tool change refuses the build and retains the prior deployment,
+without automatic reapproval, promotion or mutation replay. Stop watch, review the
+new failed request and explicitly choose another identity before restarting it.
+Approval is not inherited from capture, package names, a prior source snapshot,
+test-fixture consent or ordinary recipe trust. Other languages, custom recipes,
+duplicate options and malformed digests reject this selection before dispatch.
+The detached route's source controls do not establish a successful current hosted
+watch or identify the unretained executable package in an earlier refusal.
 
 The maintained captured-library qualification exercises its external crate's
 ordinary panic-abort, allocation and computation paths in a signed component.
@@ -123,3 +161,15 @@ control. The programme requires its exact import in the pinned tool's original-c
 before attributing that selected path as target-incompatible. It keeps the
 original generic compatibility report and does not infer a package-wide ban,
 a native implementation, or elimination of untested paths.
+
+The delivered-tool watch programme selects an outside local crate with a
+transitive crate and immutable resource through native Cargo add/lock/resolve
+and exact review. It requires three independently consented signed test
+workspaces: the initial value, an updated transitive value, then dependency
+removal. Before each replacement, unreviewed lock inputs, changed recipe trust
+and a previous build's signing consent must stop deployment. Every watcher
+must finish through normal `down` with a reaped, clean node. Explicit Cargo
+fetch may contact its registries; the ordinary captured compiler retains its
+network-denied namespace. The programme exports only bounded public results.
+Its source is not an executed qualification receipt, and later final-source CI
+must preserve the other language gates in the shared developer-tools job.

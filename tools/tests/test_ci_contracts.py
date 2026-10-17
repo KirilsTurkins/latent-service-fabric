@@ -837,6 +837,7 @@ class RepositoryMigrationTests(unittest.TestCase):
         self.assertEqual(len(legacy["pythonTestModules"]), 260)
         self.assertEqual(sum(map(len, legacy["pythonCases"].values())), 2675)
         reviewed_extension = ".github/workflows/ci.yml:docs:Validate documentation and profile selection"
+        reviewed_rust_approval_extension = ".github/workflows/developer-tools.yml:contracts:Exercise controller boundaries and actual owned subprocesses"
         reviewed_narrow_fixture = ".github/workflows/ci.yml:fast:Qualify the genuinely narrow reverse-dependent fixture"
         reviewed_framework_archives = ".github/workflows/ci.yml:rust:Qualify actual Angular PrimeNG and bilingual Docusaurus publications"
         reviewed_deferred_owners = ".github/workflows/ci.yml:rust:integration_lanes"
@@ -920,6 +921,9 @@ class RepositoryMigrationTests(unittest.TestCase):
                 self.assertEqual(value["run"].count(original_compiler), 1)
                 self.assertEqual(data["after"][key], dict(value, run=value["run"].replace(
                     original_compiler, "$RUNNER_TEMP/go-guest-tools/go-async/bin/go")), key)
+            elif key == reviewed_rust_approval_extension:
+                self.assertEqual(data["after"][key], dict(value,
+                    run=value["run"] + " tools.tests.test_dev_executable_approval"), key)
             elif key != reviewed_extension and key not in performance_extensions:
                 self.assertEqual(data["after"][key], value, key)
             else:

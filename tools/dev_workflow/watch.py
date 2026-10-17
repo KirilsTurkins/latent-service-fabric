@@ -7,13 +7,19 @@ from .common import DevError, MAX_DEPLOY_SECONDS, require
 
 
 def run(workspace: Path, connection, source: Path, tool_root: str, *, build, emit,
-        editor_diagnostics: bool = False, check_session=lambda: None, test_selection: list[str] | None = None) -> dict:
+        editor_diagnostics: bool = False, check_session=lambda: None, test_selection: list[str] | None = None,
+        executable_approval=None) -> dict:
     from tools.build_process_signals import owned_cancellation
     require(source is not None, "watch-project-required")
     selection = test_selection or []
     require(not selection or workspace.name.startswith("test-"), "focused-watch-tests-require-test-workspace")
     require(len(selection) <= 128 and len(set(selection)) == len(selection), "focused-test-selection-limit")
     source = source.absolute()
+    if executable_approval is not None:
+        from . import project
+        from .executable_approval import selection as approval_selection
+        approval_selection(project.load(source)[0], executable_approval)
+    approval = {'executable_approval': executable_approval} if executable_approval is not None else {}
     last_observed, last_error = None, None
     current = state.load(workspace, "watch-deployment.json") if (workspace / "watch-deployment.json").exists() else None
     def event(name: str, **fields):
@@ -50,7 +56,7 @@ def run(workspace: Path, connection, source: Path, tool_root: str, *, build, emi
             try:
                 with state.lock(workspace):
                     built = build(workspace, connection, source, tool_root, selected=selected,
-                                  editor_diagnostics=editor_diagnostics)
+                                  editor_diagnostics=editor_diagnostics, **approval)
                     require(observation() == observed_source, "guest-build-superseded")
                     require(connection.call("status", {}).get("state") == "ready", "workspace-stopped-before-deployment")
                     phase = "deploy"
