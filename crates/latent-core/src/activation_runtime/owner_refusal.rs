@@ -78,7 +78,12 @@ mod tests {
         assert_eq!(counter.load(Ordering::Relaxed), MAX_RECORDS);
         assert!(output.len() <= MAX_RECORDS * 160);
         let mut maximum = Vec::new();
-        write_record(true, &AtomicUsize::new(0), &mut maximum, [8192, 0, 0, 0, 0, 0, 0]);
+        write_record(
+            true,
+            &AtomicUsize::new(0),
+            &mut maximum,
+            [8192, 0, 0, 0, 0, 0, 0],
+        );
         assert!(maximum.len() <= 160);
     }
 

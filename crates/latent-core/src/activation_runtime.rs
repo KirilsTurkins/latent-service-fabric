@@ -462,10 +462,7 @@ impl ActivationRuntime {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if state.owners.iter().any(|n| *n != 0) {
-            let failure = error(
-                PlatformErrorCode::Internal,
-                "runtime-lifecycle-unproven",
-            );
+            let failure = error(PlatformErrorCode::Internal, "runtime-lifecycle-unproven");
             let owners = state.owners;
             drop(state);
             owner_refusal::record(owners);
