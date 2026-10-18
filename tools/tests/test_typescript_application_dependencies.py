@@ -16,6 +16,114 @@ from tools.typescript_guest.project import create, validate
 
 
 class NpmDependencies(unittest.TestCase):
+    def test_lock_only_optional_rows_cannot_satisfy_required_or_peer_edges(self):
+        for kind in ('dependencies', 'devDependencies', 'peerDependencies'):
+            lock = {'packages': {'': {kind: {'required': '1.0.0'}},
+                'node_modules/required': {'version': '1.0.0', 'optional': True, 'os': ['darwin']}}}
+            with self.subTest(kind=kind), self.assertRaisesRegex(DependencyError, 'graph-not-closed'):
+                graph(lock, {}, {'os': 'linux', 'cpu': 'x64'})
+
+    def test_optional_overrides_and_peer_omissions_have_no_phantom_selected_target(self):
+        lock = {'packages': {'': {'dependencies': {'feature': '1.0.0'},
+            'optionalDependencies': {'feature': '2.0.0'}, 'peerDependencies': {'peer': '^3'},
+            'peerDependenciesMeta': {'peer': {'optional': True}}},
+            'node_modules/feature': {'version': '2.0.0', 'optional': True, 'os': ['darwin'],
+                'dependencies': {'available': '^4'}},
+            'node_modules/peer': {'version': '3.0.0', 'optional': True, 'peer': True},
+            'node_modules/available': {'version': '4.0.0', 'optional': True}}}
+        value = graph(lock, {'node_modules/available': {'version': '4.0.0'}}, {'os': 'linux', 'cpu': 'x64'})
+        root = next(row for row in value['nodes'] if row['location'] == '')
+        self.assertEqual(root['dependencies'], [
+            {'name': 'feature', 'kind': 'optionalDependencies', 'specification': '2.0.0', 'selected': None, 'optional': True},
+            {'name': 'peer', 'kind': 'peerDependencies', 'specification': '^3', 'selected': None, 'optional': True}])
+        feature = next(row for row in value['nodes'] if row['location'] == 'node_modules/feature')
+        self.assertFalse(feature['selected'])
+        self.assertEqual(feature['os'], ['darwin'])
+        self.assertIsNone(feature['dependencies'][0]['selected'])
+        lock['packages']['']['peerDependenciesMeta']['peer']['optional'] = False
+        with self.assertRaisesRegex(DependencyError, 'graph-not-closed'):
+            graph(lock, {}, {})
+
+    def test_omitted_nested_package_does_not_hide_an_installed_ancestor(self):
+        for consumer, name in (('node_modules/outside', 'shared'), ('node_modules/@team/outside', '@other/shared')):
+            nearest, hoisted = consumer + '/node_modules/' + name, 'node_modules/' + name
+            lock = {'packages': {'': {'dependencies': {consumer.removeprefix('node_modules/'): '1.0.0'}},
+                consumer: {'version': '1.0.0', 'dependencies': {name: '^2'}},
+                nearest: {'version': '2.0.0', 'optional': True}, hoisted: {'version': '2.1.0', 'optional': True}}}
+            installed = {consumer: {'version': '1.0.0'}, hoisted: {'version': '2.1.0'}}
+            with self.subTest(consumer=consumer):
+                value = graph(lock, installed, {})
+                row = next(row for row in value['nodes'] if row['location'] == consumer)
+                self.assertEqual(row['dependencies'][0]['selected'], hoisted)
+                installed[nearest] = {'version': '2.0.0'}
+                row = next(row for row in graph(lock, installed, {})['nodes'] if row['location'] == consumer)
+                self.assertEqual(row['dependencies'][0]['selected'], nearest)
+                sibling = 'node_modules/unrelated/node_modules/' + name
+                lock['packages'][sibling] = {'version': '2.0.0', 'optional': True}
+                self.assertIsNone(edge_location(consumer, name, lock['packages'], installed={sibling: {'version': '2.0.0'}}))
+
+    def test_native_lock_optional_flags_and_peer_metadata_are_explicit_booleans(self):
+        for field in ('optional', 'peer', 'link'):
+            for value in (False, True):
+                lock = {'lockfileVersion': 3, 'packages': {'': {},
+                    'node_modules/feature': {'version': '1.0.0', field: value}}}
+                self.assertEqual(native_lock(canonical(lock)), lock)
+            for value in ('false', 1, None, []):
+                with self.subTest(field=field, value=value), self.assertRaisesRegex(DependencyError, 'flags-invalid'):
+                    native_lock(canonical({'lockfileVersion': 3, 'packages': {'': {},
+                        'node_modules/feature': {'version': '1.0.0', field: value}}}))
+        for metadata in ([], {'feature': None}, {'feature': {'optional': 'false'}}):
+            with self.subTest(metadata=metadata), self.assertRaisesRegex(DependencyError, 'peer-metadata-invalid'):
+                native_lock(canonical({'lockfileVersion': 3, 'packages': {'': {'peerDependenciesMeta': metadata}}}))
+        for value in (False, True):
+            lock = {'lockfileVersion': 3, 'packages': {'': {'peerDependenciesMeta': {'feature': {'optional': value}}}}}
+            self.assertEqual(native_lock(canonical(lock)), lock)
+
+    def test_incomplete_native_install_preserves_prior_capture_and_emits_no_candidate(self):
+        import json
+        import subprocess
+        from unittest.mock import patch
+        from tools import typescript_application_dependencies as native, typescript_dependency_authoring as authoring
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            app = create(root / 'project', 'greeting')
+            library = root / 'outside'
+            library.mkdir()
+            (library / 'package.json').write_bytes(canonical({'name': 'required', 'version': '1.0.0'}))
+            (library / 'index.js').write_bytes(b'export const value = 1;')
+            spec = 'file:' + str(library)
+            (app / 'package.json').write_bytes(canonical({'name': 'application', 'dependencies': {'required': spec}}))
+            (app / 'package-lock.json').write_bytes(canonical({'lockfileVersion': 3, 'packages': {
+                '': {'dependencies': {'required': spec}}, 'node_modules/required': {
+                    'version': '1.0.0', 'resolved': spec, 'optional': True}}}))
+            for name in (MANIFEST, LOCK, 'npm-resolved.lock.json'):
+                (app / name).write_bytes(('prior accepted ' + name).encode())
+            before = authoring.source_files(app)
+            node, npm = root / 'node-model-only', root / 'npm-model-only.js'
+            for path in (node, npm): path.write_bytes(b'not executable: native outputs are modelled')
+            calls = []
+            def command(argv, cwd, environment, seconds, maximum):
+                calls.append(list(argv))
+                if argv[1:] == ['--version']: raw = b'v24.19.0\n'
+                elif argv[-1] == '--version': raw = b'11.17.0\n'
+                elif argv[1:] == ['-p', 'process.arch']: raw = b'x64\n'
+                else:
+                    self.assertEqual(argv[2], 'ci')
+                    for flag in ('--ignore-scripts', '--bin-links=false', '--strict-peer-deps'):
+                        self.assertIn(flag, argv)
+                    self.assertEqual((seconds, maximum), (600, 4 * 1024 * 1024))
+                    self.assertIn('required', json.loads((Path(cwd) / 'package-lock.json').read_bytes())['packages']['']['dependencies'])
+                    (Path(cwd) / 'node_modules').mkdir()
+                    raw = b''
+                return subprocess.CompletedProcess(argv, 0, raw, b'')
+            candidate = root / 'candidate.json'
+            with patch.object(native, 'run_bounded', side_effect=command):
+                with self.assertRaisesRegex(DependencyError, 'graph-not-closed'):
+                    native.resolve(app, candidate, node=node, npm=npm)
+            self.assertEqual(authoring.source_files(app), before)
+            self.assertFalse(candidate.exists())
+            self.assertEqual(len(calls), 4)
+
     def test_native_lock_requires_exact_supported_graph_and_no_url_credentials(self):
         for version in (1, True, 4):
             with self.subTest(version=version), self.assertRaisesRegex(DependencyError, 'lock-version'):
