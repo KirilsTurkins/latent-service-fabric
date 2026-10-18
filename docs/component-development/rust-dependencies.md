@@ -33,6 +33,25 @@ python tools/rust_capsule.py build ./my-rust --offline --output ./my-rust/target
 
 The separate fetch stage runs native `cargo metadata` and `cargo vendor --locked` from an owned working directory and empty Cargo home. It records the complete resolver graph, selected target graph, enabled/default features, native lock, package/source/target/license metadata and tool bytes in `cargo-resolved.lock.json`. Private registry tokens are read only by this explicit resolver and are absent from compilation environments and public evidence. Private registry endpoint configuration must be explicitly supplied to the resolver; ambient home/project Cargo configurations are not consumed.
 
+Before vendoring or publishing a candidate, capture checks both native metadata
+documents for unique package/node IDs, closed edges and bounded feature lists.
+The filtered graph must share the actual application root and unchanged package
+records with the full graph. Its enabled features, renamed edges and observed
+dependency kinds/target expressions must occur in that full graph. Target
+expressions are retained as Cargo observations; the capture tool does not evaluate
+them or resolve features itself. Validation preserves the input records, including
+unknown fields, and the existing stored graph projection and metadata digests.
+The field shapes follow the [Cargo metadata format](https://doc.rust-lang.org/cargo/commands/cargo-metadata.html#output-format).
+
+Duplicate JSON fields, malformed/foreign/duplicate graph observations and
+inconsistent filtered selections fail with closed `cargo-native-*` or
+`cargo-selected-graph-*` diagnostics. Each native JSON document has a 16 MiB cap;
+graphs permit at most 1,024 package/node rows, 1,024 items in each feature/edge/kind
+list and 65,536 aggregate observed feature/edge/kind items. These are source-capture
+admission controls. They do not establish which host/target feature instances a
+compiler actually built, executable-tool containment, reproducibility or signed
+component compatibility; those require their own evidence.
+
 Authoring supports an explicit dependency section, target, features, optional/default-feature selection and declared registry alias. Native Cargo preserves the manifest syntax; this wrapper supplies no alternative dependency resolver. It observes direct/transitive local path inputs before Cargo runs and maps them into the private mirror, including quoted `path` keys. Original replacement semantics are restored in the published manifest. Project Cargo configurations and uncaptured external workspace pointers fail before native dispatch. SDK workspace inheritance and maintained dependencies cannot be edited. Cargo/rustc, recipe, source, local resources, registry/CA inputs and the accepted capture are rechecked before publication. A partial publication restores only the wrapper's own exact bytes, preserving a concurrent user edit.
 
 `add`, `update`, `remove` and `lock` preserve the previous accepted application capture. A changed declaration/lock invalidates that capture until another resolve and exact review. After editing, repeat the capture/review sequence; frontend `test` and `watch` verify the accepted bytes and retain explicit recipe trust. Apply the same `--registry-config` to authoring and resolution for a private registry. Adding build dependencies still requires separate executable-tool approval at compilation.
