@@ -3,9 +3,9 @@
   "sources": [
     {
       "repository": "https://github.com/bytecodealliance/wasmtime",
-      "sourceCommit": "d02ffd202850007ea953224f589a569e8830eb6c",
+      "sourceCommit": "72bc45bd197c46718df0c02b8d4cbc1cb610ab2d",
       "license": "Apache-2.0 WITH LLVM-exception",
-      "sourceUrl": "https://github.com/bytecodealliance/wasmtime/blob/d02ffd202850007ea953224f589a569e8830eb6c/LICENSE",
+      "sourceUrl": "https://github.com/bytecodealliance/wasmtime/blob/72bc45bd197c46718df0c02b8d4cbc1cb610ab2d/LICENSE",
       "donor": {"name": "wasmtime", "version": "48.0.6", "file": "LICENSE"},
       "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
       "packages": {

@@ -615,9 +615,98 @@
   "unchangedEngineFeaturesAndLimits": true,
   "historicalReceiptsNotRequalified": true,
   "license": {
-    "sourceUrl": "https://raw.githubusercontent.com/bytecodealliance/wasmtime/d02ffd202850007ea953224f589a569e8830eb6c/LICENSE",
+    "sourceUrl": "https://raw.githubusercontent.com/bytecodealliance/wasmtime/72bc45bd197c46718df0c02b8d4cbc1cb610ab2d/LICENSE",
     "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
-    "bytes": 12243
+    "bytes": 12243,
+    "publishedCrateSourceCommit": "72bc45bd197c46718df0c02b8d4cbc1cb610ab2d",
+    "publishedCrateChecksumsVerified": 15,
+    "noSourceArchivesPersisted": true,
+    "strictRevisionControls": [
+      {
+        "package": "cranelift-assembler-x64",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "cranelift-assembler-x64-meta",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "cranelift-bitset",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "cranelift-isle",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "cranelift-srcgen",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "pulley-interpreter",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "pulley-macros",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "wasmtime-internal-component-macro",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "wasmtime-internal-component-util",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "wasmtime-internal-core",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "wasmtime-internal-jit-debug",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "wasmtime-internal-jit-icache-coherence",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "wasmtime-internal-versioned-export-macros",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      },
+      {
+        "package": "wasmtime-internal-wit-bindgen",
+        "oldExactRevisionDenied": true,
+        "newAuthenticatedRevisionAccepted": true,
+        "scope": "source identity predicates; POSIX descriptor I/O substituted for Windows"
+      }
+    ]
   },
   "localChecks": {
     "focusedPython": "37 passed",
@@ -710,5 +799,13 @@
     "observedFailure": "latentd exact rustls 0.23.45 conflicts with latent-oci exact rustls 0.23.46",
     "repair": "advance the fifth direct pin without changing features",
     "newHostedBuildRequired": true
+  },
+  "guestSbomCorrection": {
+    "failedHead": "efa776af6953c6f22e8bcecc5e90ac80866c0d77",
+    "job": 117795509115,
+    "run": 39168193411,
+    "diagnostic": "shared-license-exact-revision-required",
+    "correction": "only sourceCommit/sourceUrl follow exact published48.0.6 source; guard and license digest unchanged",
+    "newHostedGuestSbomRequired": true
   }
 }
