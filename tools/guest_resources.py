@@ -213,7 +213,8 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
         register(logical, spellings, paths_seen)
         require(row["origin"] == "application" and "owner" not in row
                 or row["origin"] == "dependency" and isinstance(row.get("owner"), str)
-                and re.fullmatch(r"[A-Za-z0-9_@+./:-]{1,256}", row["owner"]), "resource-index-origin")
+                and re.fullmatch(r"[A-Za-z0-9_@+./:-]{1,256}", row["owner"])
+                and ".." not in row["owner"] and "//" not in row["owner"], "resource-index-origin")
         require(isinstance(row["digest"], str) and SHA.fullmatch(row["digest"])
                 and row["object"] == "resources/objects/" + row["digest"][7:], "resource-object-path-invalid")
         require(type(row["size"]) is int and 0 <= row["size"] <= MAX_FILE, "resource-byte-limit", "exhausted")
