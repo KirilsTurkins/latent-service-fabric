@@ -121,8 +121,10 @@ def qualify(prepared: Path, output: Path) -> dict:
         commands.run('sign-Git-fixture', products['examples/capsule_authoring'], 'demo-sign', output / 'signed',
                      built[0], *(prepared / 'builds' / name for name in COMPANIONS))
         stage = 'signed-node'
-        node = node_workflow(products['latent'], products['latentd'], output / 'signed', output / 'node', language='rust')
-        require(node['status'] == 'passed', 'Git-component-node-not-qualified')
+        node = node_workflow(products['latent'], products['latentd'], output / 'signed', output / 'node',
+                             language='rust', captured_git_component=True)
+        require(node['status'] == 'passed' and node.get('capturedGitComponent', {}).get('status') == 'passed'
+                and len(node['capturedGitComponent']['cases']) == 3, 'Git-component-node-not-qualified')
         stage = 'final-integrity'
         require(inputs('rust') == before and materials == {name: file_identity(ROOT / name) for name in MATERIALS}
                 and all(file_identity(binary, 512 * 1024 * 1024) == qualified['binaries'][name]

@@ -269,6 +269,15 @@ admission denials and physical cleanup under their original limits. No build
 script or proc macro is approved by this fixture; unexpected executable inputs
 stop before review.
 
+The Git selection adds three signed calls after every original tutorial check.
+The external crate's ordinary APIs classify dynamic request characters, and the
+outside library returns distinct start/continuation counts with its captured
+UTF-8 and binary resource values. Two different inputs and a fresh warm repeat
+must return their exact distinct payloads; the original greeting cannot satisfy
+this gate. Actual quiescent ownership sampling follows every added call. This
+test-runner selector is Rust-only, defaults off and changes no ordinary template,
+runtime grant or invocation ceiling.
+
 Source controls alone do not establish that this job passed. Its retained
 component, source, graph, tool and node receipts define any actual qualification.
 This finite pure Git case does not claim private Git support, catalogue removal,

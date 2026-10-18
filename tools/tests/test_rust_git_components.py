@@ -1,5 +1,6 @@
 """Git component campaign source controls; all native operations here are modelled."""
 import copy
+import inspect
 import json
 from pathlib import Path
 import tempfile
@@ -10,6 +11,7 @@ from unittest.mock import Mock, patch
 from tools import application_dependencies as dependencies
 from tools import qualify_rust_git_components as campaign
 from tools import rust_git_component_fixture as fixture
+from tools import run_rust_capsule_workflow as workflow
 from tools.build_snapshot import canonical, digest
 from tools.phase3_resource_identity import file_identity
 from tools.native_runtime.common import InstallError
@@ -201,7 +203,7 @@ class PreparedGitComponentInputs(unittest.TestCase):
             destination = output / 'node'
             destination.mkdir()
             (destination / 'workflow.json').write_bytes(canonical({'status': 'modelled'}))
-            return {'status': 'passed'}
+            return {'status': 'passed', 'capturedGitComponent': {'status': 'passed', 'cases': [{}, {}, {}]}}
 
         self.enterContext(patch.object(campaign, 'Commands', return_value=commands))
         self.enterContext(patch.object(campaign, 'resolve_tools', return_value=(
@@ -222,7 +224,8 @@ class PreparedGitComponentInputs(unittest.TestCase):
         self.assertEqual(sign[2:4], ('demo-sign', output / 'signed'))
         self.assertEqual(sign[4], output / 'first')
         self.assertEqual(sign[5:], tuple(self.prepared / 'builds' / name for name in campaign.COMPANIONS))
-        self.assertEqual(next(row[1] for row in order if row[0] == 'node'), {'language': 'rust'})
+        self.assertEqual(next(row[1] for row in order if row[0] == 'node'),
+                         {'language': 'rust', 'captured_git_component': True})
         self.assertFalse(result['hermetic'])
         self.assertEqual(result['releasePublication'], 'not-performed')
 
@@ -234,3 +237,53 @@ class PreparedGitComponentInputs(unittest.TestCase):
         self.assertEqual(json.loads((output / 'FAILED.json').read_bytes())['stage'],
                          'isolated-offline-component-builds')
         self.assertFalse((output / 'qualification.json').exists())
+
+
+class GitSignedOutputControls(unittest.TestCase):
+    def response(self, expected):
+        return {'exitCode': 0, 'decoded': [{'ok': expected}], 'response': {'outcomeKnown': True}}
+
+    def test_three_signed_outputs_require_dynamic_git_counts_resources_and_physical_samples(self):
+        evidence = {'invocations': [], 'samples': []}
+        responses = [self.response(expected) for value, expected in fixture.PROBE_CASES]
+        with patch.object(fixture, 'call', side_effect=responses) as invoked, \
+                patch.object(fixture, 'sample', return_value={'idle': True}) as sampled:
+            fixture.probe(None, {'fixture': 'target'}, None, evidence, 17)
+        self.assertEqual(invoked.call_count, 3)
+        self.assertEqual(sampled.call_count, 3)
+        self.assertEqual(len(evidence['invocations']), 3)
+        self.assertEqual(evidence['capturedGitComponent']['status'], 'passed')
+        calls = invoked.call_args_list
+        self.assertEqual([row.args[4] for row in calls], [['git-proof:' + value] for value, _ in fixture.PROBE_CASES])
+        self.assertEqual(calls[0].args[4], calls[2].args[4])
+        self.assertEqual(len({row.args[5] for row in calls}), 3)
+        self.assertNotEqual(responses[0]['decoded'], responses[1]['decoded'])
+        self.assertTrue(all(expected.startswith('Git source resources|') for _, expected in fixture.PROBE_CASES))
+        self.assertIn('text.chars().filter', fixture.LIBRARY)
+
+    def test_original_greeting_output_cannot_satisfy_the_git_library_probe(self):
+        evidence = {'invocations': [], 'samples': []}
+        with patch.object(fixture, 'call', return_value=self.response('Hello, Ada!')), \
+                patch.object(fixture, 'sample') as sampled, \
+                patch('tools.capsule_invocation_diagnostics.capture') as diagnosed:
+            with self.assertRaisesRegex(RuntimeError, 'authoring-application-result'):
+                fixture.probe(None, {}, None, evidence, 17)
+        sampled.assert_not_called()
+        diagnosed.assert_called_once()
+        self.assertNotIn('capturedGitComponent', evidence)
+
+    def test_correct_value_without_actual_retirement_cannot_complete(self):
+        evidence = {'invocations': [], 'samples': []}
+        with patch.object(fixture, 'call', return_value=self.response(fixture.PROBE_CASES[0][1])), \
+                patch.object(fixture, 'sample', side_effect=RuntimeError('owner-not-retired')):
+            with self.assertRaisesRegex(RuntimeError, 'owner-not-retired'):
+                fixture.probe(None, {}, None, evidence, 17)
+        self.assertNotIn('capturedGitComponent', evidence)
+
+    def test_additional_selector_is_closed_rust_only_and_default_off(self):
+        self.assertIs(inspect.signature(workflow.run).parameters['captured_git_component'].default, False)
+        for language, selected in (('go', True), ('c', True), ('java', True), ('typescript', True),
+                                   ('dotnet', True), ('rust', 1), ('rust', None)):
+            with self.subTest(language=language, selected=selected), self.assertRaisesRegex(
+                    RuntimeError, 'authoring-captured-Git-component-language'):
+                workflow.run(None, None, None, None, language=language, captured_git_component=selected)

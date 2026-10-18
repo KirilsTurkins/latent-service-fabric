@@ -15,6 +15,7 @@ from tools.build_snapshot import canonical, digest
 from tools.qualify_rust_git_dependencies import PACKAGE, REPOSITORY, REVISIONS, require
 from tools.rust_capsule_project import snapshot
 from tools.rust_dependency_fixture import direct_libraries
+from tools.rust_capsule_node import assert_value, call, sample
 
 LOCAL_PACKAGE = 'outside-git-component-library'
 LOCAL_VERSION = '0.7.2'
@@ -28,7 +29,30 @@ pub fn prefix() -> &'static str {
     assert_eq!(include_str!("utf8.txt").as_bytes(), &[71_u8, 114, 195, 188, 195, 159, 101]);
     include_str!("greeting.txt")
 }
+pub fn describe(text: &str) -> String {
+    let start = text.chars().filter(|value| UnicodeXID::is_xid_start(*value)).count();
+    let continuing = text.chars().filter(|value| UnicodeXID::is_xid_continue(*value)).count();
+    let bytes = include_bytes!("binary.dat").iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+    format!("{}|start={start}|continue={continuing}|utf8={}|bytes={bytes}",
+            include_str!("proof.txt"), include_str!("utf8.txt"))
+}
 '''
+PROBE_CASES = (('A\u03a99\u0301', 'Git source resources|start=2|continue=4|utf8=Gr\u00fc\u00dfe|bytes=00ff4180'),
+               ('9_', 'Git source resources|start=0|continue=2|utf8=Gr\u00fc\u00dfe|bytes=00ff4180'),
+               ('A\u03a99\u0301', 'Git source resources|start=2|continue=4|utf8=Gr\u00fc\u00dfe|bytes=00ff4180'))
+
+
+def probe(client, target, ownership_probe, result, population):
+    """Three additional ordinary signed calls, including a fresh warm repeat."""
+    cases = []
+    for index, (value, expected) in enumerate(PROBE_CASES):
+        row = call(client, target, 'greeting', 'greet', ['git-proof:' + value], f'authoring-git-proof-{index}')
+        result['invocations'].append(row)
+        assert_value(client, row, [{'ok': expected}])
+        result['samples'].append(sample(client, ownership_probe, f'after-git-proof-{index}', population))
+        cases.append({'inputDigest': digest(value.encode()), 'expected': expected})
+    result['capturedGitComponent'] = {'status': 'passed', 'cases': cases,
+                                      'scope': 'dynamic ordinary UnicodeXID APIs and captured immutable resources'}
 
 
 def selected(lock: dict, graph: dict) -> dict:
@@ -67,14 +91,16 @@ license = "Apache-2.0"
 {PACKAGE} = {{git = "{REPOSITORY}", rev = "{revision}"}}
 ''', encoding='utf-8')
     (library / 'src/lib.rs').write_text(LIBRARY, encoding='utf-8')
-    resources = {'greeting.txt': b'Hello, ', 'binary.dat': bytes((0, 255, 65, 128)),
+    resources = {'greeting.txt': b'Hello, ', 'proof.txt': b'Git source resources', 'binary.dat': bytes((0, 255, 65, 128)),
                  'utf8.txt': bytes((71, 114, 195, 188, 195, 159, 101))}
     for name, raw in resources.items():
         (library / 'src' / name).write_bytes(raw)
     before = initial['src/lib.rs']
     hook = b'Ok(format!("Hello, {name}!"))'
     require(before.count(hook) == 1, 'Git-component-greeting-source-hook-changed')
-    after = before.replace(hook, b'let prefix = outside_git_component_library::prefix();\n    Ok(format!("{prefix}{name}!"))')
+    after = before.replace(hook, b'if let Some(text) = name.strip_prefix("git-proof:") {\n'
+                           b'        return Ok(outside_git_component_library::describe(text));\n    }\n'
+                           b'    let prefix = outside_git_component_library::prefix();\n    Ok(format!("{prefix}{name}!"))')
     (project / 'src/lib.rs').write_bytes(after)
     added = authoring.author(project, 'add', identity=PACKAGE, version=version,
                              git=REPOSITORY, revision=revision, cargo=cargo)
