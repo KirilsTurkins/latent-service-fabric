@@ -30,6 +30,7 @@ pub struct Pump {
     set: u32,
     callbacks: RefCell<BTreeMap<u32, Completion>>,
     operations: RefCell<Vec<Weak<dyn Progress>>>,
+    retired: RefCell<Vec<Box<dyn FnOnce()>>>,
 }
 thread_local! {
     static CURRENT: Rc<Pump> = Rc::new(Pump::new());
@@ -45,6 +46,7 @@ impl Pump {
             set,
             callbacks: RefCell::new(BTreeMap::new()),
             operations: RefCell::new(Vec::with_capacity(MAX_OPERATIONS)),
+            retired: RefCell::new(Vec::with_capacity(MAX_OPERATIONS)),
         }
     }
 
@@ -57,10 +59,37 @@ impl Pump {
         let mut operations = pump.operations.borrow_mut();
         operations.retain(|owner| owner.strong_count() != 0);
         assert!(
-            operations.len() < MAX_OPERATIONS,
+            operations.len() + pump.retired.borrow().len() < MAX_OPERATIONS,
             "HTTP readiness owner limit"
         );
         operations.push(Rc::downgrade(operation));
+    }
+
+    /// Synchronous resource destructors transfer exact original owners here.
+    /// They must never cancel/drop an accepted future from a sync WIT task.
+    pub fn retire(action: impl FnOnce() + 'static) {
+        let pump = Self::current();
+        let mut retired = pump.retired.borrow_mut();
+        assert!(
+            retired.len() < MAX_OPERATIONS,
+            "canonical retirement owner limit"
+        );
+        retired.push(Box::new(action));
+    }
+
+    /// Called only by the compiler-private async drain before root task-return.
+    /// A future's real destructor confirms its original canonical cancellation;
+    /// only then may the captured resources, token and quota slot be released.
+    pub fn drain_retired(self: &Rc<Self>) {
+        loop {
+            let action = self.retired.borrow_mut().pop();
+            let Some(action) = action else { break };
+            self.enter(action);
+        }
+        assert!(
+            self.callbacks.borrow().is_empty(),
+            "root still has accepted canonical work"
+        );
     }
 
     /// The v2 clone/drop contract keeps this pump alive through actual pending
@@ -75,7 +104,8 @@ impl Pump {
             },
             vtable: &VTABLE,
         };
-        let previous = unsafe { wasip3_task_set(ptr::from_mut(&mut task.v1)) };
+        // Preserve provenance over the v2 vtable as well as its v1 prefix.
+        let previous = unsafe { wasip3_task_set(ptr::from_mut(&mut task).cast::<Task>()) };
         let restore = Restore(previous);
         let result = action();
         drop(restore);
@@ -160,6 +190,10 @@ impl Drop for Pump {
         assert!(
             self.callbacks.get_mut().is_empty(),
             "pending canonical owner destruction"
+        );
+        assert!(
+            self.retired.get_mut().is_empty(),
+            "undrained canonical retirement owners"
         );
         unsafe { waitable_set_drop(self.set) };
     }

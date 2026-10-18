@@ -2,9 +2,10 @@ use super::{
     model,
     support::{finish, tenant, Harness},
 };
-use latent_activation::ActivationOutcome;
+use latent_activation::{ActivationOutcome, RetainedActivationOutcome};
 use latent_core::{
-    ActivationClock, IncomingDeadline, PlatformError, PlatformErrorCode, RouteGeneration,
+    ActivationClock, ActivationId, ActivationPhase, ActivationTerminalState, CancelDisposition,
+    IncomingDeadline, PlatformError, PlatformErrorCode, RouteGeneration,
 };
 use latent_node::InboundActivationReservation;
 use std::{sync::atomic::Ordering, time::Duration};
@@ -169,6 +170,158 @@ async fn an_expired_pull_cannot_receive_a_fresh_activation_deadline() {
         matches!(pending.checkpoint(), Err(e) if e.code == PlatformErrorCode::DeadlineExceeded)
     );
     assert!(matches!(pending.start(0), Err(e) if e.code == PlatformErrorCode::DeadlineExceeded));
+    assert_eq!(h.backend.preparation_calls.load(Ordering::Acquire), 0);
+    h.assert_idle();
+}
+
+#[test]
+fn pre_execution_refusals_preserve_producer_diagnostics_and_release_capacity() {
+    use latent_core::diagnostic::{ActivationDiagnostic, DiagnosticReason, DiagnosticStage};
+    for (code, terminal, diagnostic) in [
+        (
+            PlatformErrorCode::PermissionDenied,
+            ActivationTerminalState::Rejected,
+            Some(ActivationDiagnostic::new(
+                DiagnosticStage::Binding,
+                DiagnosticReason::GrantDenied,
+            )),
+        ),
+        (
+            PlatformErrorCode::ResourceExhausted,
+            ActivationTerminalState::ResourceExhausted,
+            Some(ActivationDiagnostic::new(
+                DiagnosticStage::Admission,
+                DiagnosticReason::QueuePressure,
+            )),
+        ),
+        (
+            PlatformErrorCode::Unavailable,
+            ActivationTerminalState::DependencyFailed,
+            None,
+        ),
+    ] {
+        let h = Harness::standard();
+        let pending = reserve(&h, "inbound-refused", 512).unwrap();
+        let error = PlatformError {
+            code,
+            message: "private inbound producer detail".into(),
+            retryable: true,
+            details: Vec::new(),
+        };
+        let error = match &diagnostic {
+            Some(diagnostic) => diagnostic.clone().attach(error),
+            None => error,
+        };
+        assert_eq!(pending.reject(error.clone()), error);
+        let status = h.status("inbound-refused");
+        assert_eq!(status.phase, ActivationPhase::Admitted);
+        assert_eq!(status.terminal_state, Some(terminal));
+        let Some(RetainedActivationOutcome::PlatformFailure(retained)) = status.terminal_outcome
+        else {
+            panic!("the actual producer failure must be retained");
+        };
+        assert_eq!(retained.code, code);
+        assert!(retained.retryable);
+        assert_eq!(ActivationDiagnostic::from_error(&retained), diagnostic);
+        let page = h
+            .manager
+            .journal()
+            .inspect_tree(&tenant(), &ActivationId("inbound-refused".into()), 8, None)
+            .unwrap();
+        assert_eq!(page.nodes.len(), 1);
+        assert_eq!(page.nodes[0].diagnostic, diagnostic);
+        assert_eq!(page.nodes[0].terminal_state, Some(terminal));
+        assert!(!format!("{page:?}").contains("private inbound producer detail"));
+        assert_eq!(h.backend.preparation_calls.load(Ordering::Acquire), 0);
+        h.assert_idle();
+    }
+}
+
+#[test]
+fn rejection_preserves_original_deadline_and_accepted_cancellation_winners() {
+    for cancelled in [false, true] {
+        let h = Harness::standard();
+        let pending = reserve(&h, "inbound-stopped", 512).unwrap();
+        let id = pending.activation_id().clone();
+        let (terminal, code) = if cancelled {
+            assert_eq!(
+                h.manager
+                    .cancel_for(&tenant(), &id, "accepted before refusal")
+                    .unwrap(),
+                CancelDisposition::Accepted
+            );
+            (
+                ActivationTerminalState::Cancelled,
+                PlatformErrorCode::Cancelled,
+            )
+        } else {
+            h.clock.advance(Duration::from_secs(3));
+            (
+                ActivationTerminalState::DeadlineExceeded,
+                PlatformErrorCode::DeadlineExceeded,
+            )
+        };
+        let original = PlatformError {
+            code: PlatformErrorCode::Unavailable,
+            message: "producer refused before dispatch".into(),
+            retryable: false,
+            details: Vec::new(),
+        };
+        assert_eq!(pending.reject(original.clone()), original);
+        let status = h.status("inbound-stopped");
+        assert_eq!(status.terminal_state, Some(terminal));
+        let Some(RetainedActivationOutcome::PlatformFailure(retained)) = status.terminal_outcome
+        else {
+            panic!("the original terminal winner must be retained");
+        };
+        assert_eq!(retained.code, code);
+        assert_eq!(h.backend.preparation_calls.load(Ordering::Acquire), 0);
+        h.assert_idle();
+    }
+}
+
+#[test]
+fn late_cancellation_cannot_replace_an_inbound_refusal() {
+    let h = Harness::standard();
+    let pending = reserve(&h, "inbound-refusal-first", 512).unwrap();
+    let id = pending.activation_id().clone();
+    let original = PlatformError {
+        code: PlatformErrorCode::Unavailable,
+        message: "producer refused before dispatch".into(),
+        retryable: false,
+        details: Vec::new(),
+    };
+    assert_eq!(pending.reject(original.clone()), original);
+    let before = h.status("inbound-refusal-first");
+    assert_eq!(
+        before.terminal_state,
+        Some(ActivationTerminalState::DependencyFailed)
+    );
+    assert_eq!(
+        h.manager
+            .cancel_for(&tenant(), &id, "after refusal")
+            .unwrap(),
+        CancelDisposition::AlreadyTerminal(ActivationTerminalState::DependencyFailed)
+    );
+    let after = h.status("inbound-refusal-first");
+    assert_eq!(after.terminal_state, before.terminal_state);
+    assert_eq!(after.terminal_outcome, before.terminal_outcome);
+    assert_eq!(
+        after.terminal_at_unix_millis,
+        before.terminal_at_unix_millis
+    );
+    assert_eq!(h.backend.preparation_calls.load(Ordering::Acquire), 0);
+    h.assert_idle();
+}
+
+#[test]
+fn abandoning_an_unstarted_inbound_reservation_is_still_cancellation() {
+    let h = Harness::standard();
+    drop(reserve(&h, "inbound-abandoned", 512).unwrap());
+    assert_eq!(
+        h.status("inbound-abandoned").terminal_state,
+        Some(ActivationTerminalState::Cancelled)
+    );
     assert_eq!(h.backend.preparation_calls.load(Ordering::Acquire), 0);
     h.assert_idle();
 }

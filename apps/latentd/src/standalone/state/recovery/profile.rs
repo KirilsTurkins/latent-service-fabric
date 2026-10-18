@@ -3,6 +3,7 @@
 mod http_custody;
 mod native_memory;
 mod reconstructed_http;
+mod refreshed_http;
 pub(super) use http_custody::CurrentHttpInput;
 use http_custody::HttpCustody;
 use latent_core::PlatformError;
@@ -160,6 +161,9 @@ impl Profile {
             }
             Some(SelectedHttpCustody::Reconstructed) => {
                 self.conformance_with_marker(reconstructed_http::MARKER)?
+            }
+            Some(SelectedHttpCustody::Refreshed) => {
+                self.conformance_with_marker(refreshed_http::MARKER)?
             }
             _ => self.conformance()?,
         };

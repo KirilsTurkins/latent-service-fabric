@@ -287,8 +287,8 @@ class DetachedConsumer(unittest.TestCase):
         project_root, work, _output, verified, isolation = approval_tests.ExecutionApproval.fixture(self)
         # The source fixture is not private controller state. Keep real locking
         # and ownership checks active in a separate, correctly created workspace.
-        controller = project_root.parent / 'controller'
-        paths.new_directory(controller)
+        workspace = project_root.parent / 'controller'
+        paths.new_directory(workspace)
         source = project_root / 'main.rs'
         source.write_bytes(b'first source')
         explicit = common.digest(canonical(consumer.request(verified, isolation, common.digest(source.read_bytes()))))
@@ -323,7 +323,7 @@ class DetachedConsumer(unittest.TestCase):
         with patch.object(project, 'load', return_value=(maintained(), A)), \
              patch.object(build_client, 'selection', side_effect=lambda _root: (A, common.digest(source.read_bytes()))), \
              patch.object(watch.time, 'sleep'):
-            result = watch.run(controller, connection, project_root, '/tools', build=execute, emit=emit,
+            result = watch.run(workspace, connection, project_root, '/tools', build=execute, emit=emit,
                                executable_approval=explicit, check_session=check_session)
         self.assertEqual(result, {'state': 'stopped'})
         self.assertEqual(passed, [explicit, explicit])

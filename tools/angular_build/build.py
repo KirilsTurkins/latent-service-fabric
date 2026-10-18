@@ -19,8 +19,9 @@ def compile_application(config: dict, captured: Path, work: Path, tools: BuildTo
     for mode in ('configure', 'bundle'):
         if mode == 'bundle':
             tools.call([node, str(tools.toolchain / 'node_modules/@angular/compiler-cli/bundles/src/bin/ngc.js'),
-                        '-p', str(bundle / 'tsconfig.json')], captured, node=True)
-        tools.call([node, str(scripts / 'bundle.mjs'), toolchain, str(captured), str(bundle), mode], captured, node=True)
+                        '-p', str(bundle / 'tsconfig.json')], captured, node=True, stage='angular-compile')
+        tools.call([node, str(scripts / 'bundle.mjs'), toolchain, str(captured), str(bundle), mode], captured,
+                   node=True, stage=mode)
     client = read(bundle, 'client.js', 8 * 1024 * 1024)
     client_path = '/client/' + digest(client)[7:] + '/main.js'
     stage = work / 'component'
@@ -39,18 +40,21 @@ def compile_application(config: dict, captured: Path, work: Path, tools: BuildTo
     ):
         destination.write_bytes(read(source.parent, source.name, 8 * 1024 * 1024))
     (stage / 'assets.js').write_bytes(b'export const clientAsset=' + canonical(client_path) + b';\n')
-    tools.call([node, str(scripts / 'componentize.mjs'), toolchain, str(stage)], stage, node=True, seconds=300)
+    tools.call([node, str(scripts / 'componentize.mjs'), toolchain, str(stage)], stage, node=True, seconds=300,
+               stage='componentize')
     features = ['--features', 'backend-http'] if config.get('backendProfile') == 'scoped-http-get-v1' else []
     cargo_output = tools.call([str(tools.paths['cargo']), 'build', '--locked', '--offline', '-p', 'latent-angular-renderer-adapter',
-                               '--target', 'wasm32-unknown-unknown', '--release', '--message-format=json', *features], ROOT)
+                               '--target', 'wasm32-unknown-unknown', '--release', '--message-format=json', *features], ROOT,
+                              stage='adapter-build')
     dependencies = cargo.observe(cargo_output, tools)
     core = Path(tools.environment['CARGO_TARGET_DIR']) / 'wasm32-unknown-unknown/release/latent_angular_renderer_adapter.wasm'
     adapter = stage / 'adapter.wasm'
     component = stage / 'application.wasm'
     composer = str(tools.paths['wasm-tools'])
-    tools.call([composer, 'component', 'new', str(core), '-o', str(adapter)], stage, seconds=60)
-    tools.call([composer, 'compose', str(adapter), '-d', str(stage / 'renderer.wasm'), '-o', str(component)], stage, seconds=60)
-    tools.call([composer, 'validate', str(component)], stage, seconds=60)
+    tools.call([composer, 'component', 'new', str(core), '-o', str(adapter)], stage, seconds=60, stage='component-new')
+    tools.call([composer, 'compose', str(adapter), '-d', str(stage / 'renderer.wasm'), '-o', str(component)], stage,
+               seconds=60, stage='component-compose')
+    tools.call([composer, 'validate', str(component)], stage, seconds=60, stage='component-validate')
     materials = [file_identity(path, name, 32 * 1024 * 1024) for name, path in (
         ('angular-client-bundle', bundle / 'client.js'), ('angular-server-bundle', bundle / 'server.js'),
         ('javascript-embedding', stage / 'renderer.wasm'), ('async-adapter', adapter), ('renderer-component', component))]

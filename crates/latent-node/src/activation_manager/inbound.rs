@@ -233,24 +233,27 @@ impl InboundActivationReservation {
     /// bytes actually written to the reserved buffer, not a network declaration.
     pub fn start(mut self, input_length: usize) -> Result<ActivationHandle, PlatformError> {
         if let Err(failure) = self.checkpoint() {
-            return self.reject(failure);
+            return Err(self.reject(failure));
         }
         if input_length > self.envelope.input.len() {
-            return self.reject(error(
+            return Err(self.reject(error(
                 PlatformErrorCode::InvalidArgument,
                 "inbound input exceeds reservation",
-            ));
+            )));
         }
         self.envelope.input.truncate(input_length);
         Ok(handle(self.manager, self.envelope, self.lifecycle))
     }
 
-    fn reject(self, failure: PlatformError) -> Result<ActivationHandle, PlatformError> {
+    /// Publish a pre-execution refusal and return the original adapter error.
+    /// Existing deadline and cancellation arbitration determines the journal result.
+    #[must_use]
+    pub fn reject(self, failure: PlatformError) -> PlatformError {
         drop(self.envelope);
         let _ = self.lifecycle.complete(failure_for_platform_error(
             failure.clone(),
             BudgetConsumption::default(),
         ));
-        Err(failure)
+        failure
     }
 }

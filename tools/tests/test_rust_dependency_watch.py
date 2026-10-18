@@ -771,3 +771,104 @@ class PublicFailureObservation(unittest.TestCase):
             add_public_diagnostics(passed, lambda: [], root,
                                    lambda: self.fail('passing report observed failure metadata'))
             self.assertEqual(passed, {'passed': True, 'watchEvents': []})
+
+
+class RustWatchReviewBoundary(unittest.TestCase):
+    def test_actual_watcher_keeps_transient_lock_and_trust_refusals_distinct_without_repeating_them(self):
+        from unittest.mock import patch
+        from tools.dev_workflow import build_client, paths, watch
+        from tools.dev_workflow.common import DevError
+        from tools.qualify_rust_dependency_watch import unreviewed_lock_refusal
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            workspace, source = root / 'test-watch', root / 'source'
+            paths.new_directory(workspace)
+            paths.new_directory(source)
+            phase, events, builds, calls = ['transient'], [], [], []
+            class Connection:
+                def call(self, operation, arguments, **options):
+                    calls.append(operation)
+                    if operation != 'status':
+                        raise AssertionError('a refused edit dispatched external work')
+                    return {'state': 'ready' if len(calls) <= 5 else 'stopped'}
+            def selection(_source):
+                if phase[0] == 'transient':
+                    raise OSError('intermediate editor save')
+                if phase[0] == 'unreviewed':
+                    raise DevError('dependency-native-lock-drift')
+                return ('new-recipe', 'reviewed-source')
+            def emit(value):
+                events.append(value)
+                if value['code'] == 'source-unavailable-during-edit':
+                    phase[0] = 'unreviewed'
+                elif value['code'] == 'dependency-native-lock-drift':
+                    phase[0] = 'reviewed'
+            def build(*arguments, **options):
+                builds.append(options['selected'])
+                raise DevError('workspace-recipe-trust-required')
+            with patch.object(build_client, 'selection', selection), patch.object(watch.time, 'sleep'):
+                self.assertEqual(watch.run(workspace, Connection(), source, '/unused', build=build, emit=emit),
+                                 {'state': 'stopped'})
+            self.assertEqual([(e['phase'], e['code']) for e in events], [
+                ('source', 'source-unavailable-during-edit'),
+                ('source', 'dependency-native-lock-drift'),
+                ('build', 'workspace-recipe-trust-required')])
+            # The old event-only oracle accepted the transient edit. The real
+            # watcher emits one trust refusal and intentionally does not repeat it.
+            self.assertEqual(next(i for i, e in enumerate(events) if e.get('event') == 'edit-failed'), 0)
+            self.assertEqual(next(i for i, e in enumerate(events) if unreviewed_lock_refusal(e)), 1)
+            self.assertEqual(builds, [('new-recipe', 'reviewed-source')])
+            self.assertEqual(calls, ['status'] * 6)
+
+    def test_unreviewed_gate_requires_the_exact_certain_source_lock_failure(self):
+        from tools.qualify_rust_dependency_watch import unreviewed_lock_refusal
+        event = {'event': 'edit-failed', 'phase': 'source',
+                 'code': 'dependency-native-lock-drift', 'uncertain': False}
+        self.assertTrue(unreviewed_lock_refusal(event))
+        for changed in (None, [], {}, {**event, 'event': 'deployed'},
+                {**event, 'phase': 'build'}, {**event, 'code': 'source-unavailable-during-edit'},
+                {**event, 'code': 'workspace-recipe-trust-required'},
+                {**event, 'uncertain': True}, {**event, 'uncertain': 0},
+                {key: value for key, value in event.items() if key != 'uncertain'}):
+            with self.subTest(changed=changed):
+                self.assertFalse(unreviewed_lock_refusal(changed))
+
+    def test_public_matched_gates_are_closed_bounded_and_omit_private_or_credential_fields(self):
+        import json
+        from tools.qualify_rust_dependency_watch import public_gate_observations
+        gates = {
+            'updateBeforeReview': ('source', 'dependency-native-lock-drift'),
+            'updateBeforeTrust': ('build', 'workspace-recipe-trust-required'),
+            'updateBeforeNewSignedWorkspace': ('deploy', 'signed-test-build-changed-use-new-workspace'),
+            'removeBeforeReview': ('source', 'dependency-native-lock-drift'),
+            'removeBeforeTrust': ('build', 'workspace-recipe-trust-required'),
+            'removeBeforeNewSignedWorkspace': ('deploy', 'signed-test-build-changed-use-new-workspace')}
+        raw = {name: {'event': 'edit-failed', 'phase': phase, 'code': code, 'uncertain': False,
+                      'source': 'a' * 64, 'diagnostics': '/private/token-secret',
+                      'currentDeployment': {'credential': 'token-secret'}}
+               for name, (phase, code) in gates.items()}
+        raw['token-secret'] = raw['updateBeforeReview']
+        projected = public_gate_observations(raw)
+        self.assertEqual(set(projected), set(gates))
+        self.assertEqual(projected, {name: {key: raw[name][key]
+            for key in ('event', 'phase', 'code', 'uncertain')} for name in gates})
+        text = json.dumps(projected)
+        self.assertLess(len(text), 2048)
+        for private in ('token-secret', '/private/', 'a' * 64, 'currentDeployment', 'diagnostics'):
+            self.assertNotIn(private, text)
+
+    def test_public_matched_gates_never_accept_wrong_refusal_or_uncertain_events(self):
+        from tools.qualify_rust_dependency_watch import public_gate_observations
+        event = {'event': 'edit-failed', 'phase': 'source',
+                 'code': 'dependency-native-lock-drift', 'uncertain': False}
+        for changed in (None, [], {**event, 'phase': 'build'},
+                        {**event, 'code': 'token-secret'}, {**event, 'code': 'a' * 64},
+                        {**event, 'uncertain': True}, {**event, 'uncertain': 0}):
+            with self.subTest(changed=changed):
+                self.assertEqual(public_gate_observations({'updateBeforeReview': changed}), {})
+        self.assertEqual(public_gate_observations({'updateBeforeTrust': event}), {})
+        signed = {**event, 'phase': 'build', 'code': 'signed-test-build-changed-use-new-workspace'}
+        for name in ('updateBeforeNewSignedWorkspace', 'removeBeforeNewSignedWorkspace'):
+            self.assertEqual(public_gate_observations({name: signed}), {})
+            deployed = {**signed, 'phase': 'deploy'}
+            self.assertEqual(public_gate_observations({name: deployed}), {name: deployed})
