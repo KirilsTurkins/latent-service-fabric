@@ -18,8 +18,8 @@ SDK = ROOT / "sdk/dotnet"
 PROJECTS = ("Latent.Sdk", "Latent.Sdk.SemanticTests", "Latent.Sdk.Transport", "Latent.Sdk.Transport.Tests", "Latent.Sdk.ProviderWorkflow")
 LOCKED = PROJECTS[2:]
 PROTOS = ("latent/control/v1/common.proto", "latent/control/v1/policy.proto", "latent/control/v1/capability.proto", "latent/invocation/v1/invocation.proto")
-SDK_VERSION = "8.0.425"
-RUNTIME_VERSION = "8.0.31"
+SDK_VERSION = "8.0.426"
+RUNTIME_VERSION = "8.0.32"
 GRPC_TOOLS = "2.71.0"
 
 sys.path.insert(0, str(ROOT))

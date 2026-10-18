@@ -3404,7 +3404,7 @@
       "sha256": "60d239e77fc42814896aeede9e765d0c988983fa8d3a801bd905e2e126377716"
     },
     "sdk/dotnet/validate.py": {
-      "sha256": "f16d1917e58fb7f0e9239e3d8ca43ba3bc0a415b650f30dcb6f54d4c52d77c64"
+      "sha256": "53084d115d39ced69c7134f37c3ffe7b444e5a7351a2f2dae6a61a73576ae679"
     },
     "sdk/go/dependencies.py": {
       "sha256": "60dbbe3d3f04bc699efd92a2c200ee4356654ec2611243d11498ab39ec624883"
@@ -7206,7 +7206,7 @@
   "workflowIdentities": {
     ".github/workflows/registry-cli.yml": "a713a8b94a6165e048cbb65688f6c767010393b619c8c9cc9e080830786be854",
     ".github/workflows/c-guest-authoring.yml": "9517e1d2a98749f05121d389421f649c3b8aff8323e97046d5f456f1d489bc42",
-    ".github/workflows/ci.yml": "de96fb23dc62d831a4c67ed9468478326e6bc7eca81848a5b5795421f8e79a24",
+    ".github/workflows/ci.yml": "85d3b4d86c6070393e1b5a6e50b63083ca61d449596ed250fca48f616b9c98e6",
     ".github/workflows/developer-packaged-qualification.yml": "e9ec2f74bb293bd7694830746f8d23bc00eb439413ce8aa2312f6e223acea758",
     ".github/workflows/developer-platform-preflight.yml": "163bfee1f8ff2d4801a1b14b73ae76fc76b7d8a7782c5cf25dbeb41bba4d740c",
     ".github/workflows/developer-tools.yml": "ba8a97d024e2735da86ff0e82c4ec20866195ad00b9cd7b77526d670aa94b27f",

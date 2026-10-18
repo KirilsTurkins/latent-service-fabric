@@ -777,7 +777,7 @@ jobs:
       - name: Set up the .NET SDK provider participant
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 8.0.425
+          dotnet-version: 8.0.426
       - name: Validate contracts, echo component, and generated bindings
         run: |
           unset CARGO_INCREMENTAL
@@ -877,7 +877,7 @@ jobs:
           java-version: "25.0.4+101.0.LTS"
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 8.0.425
+          dotnet-version: 8.0.426
       - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
         with:
           version: "0.16.0"
