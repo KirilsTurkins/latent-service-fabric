@@ -278,8 +278,9 @@ def native_graph(metadata: dict, *, filtered=False) -> tuple[dict, dict]:
             raise DependencyError('cargo-native-graph-invalid')
         return value
 
-    def strings(value):
-        if not isinstance(value, list) or any(not token(item) for item in rows(value)) or len(set(value)) != len(value):
+    def strings(value, maximum=1024):
+        if (not isinstance(value, list) or len(value) > maximum
+                or any(not token(item) for item in value) or len(set(value)) != len(value)):
             raise DependencyError('cargo-native-graph-invalid')
         return value
 
@@ -301,7 +302,9 @@ def native_graph(metadata: dict, *, filtered=False) -> tuple[dict, dict]:
         raise DependencyError('cargo-native-graph-root-invalid')
     count = 0
     for node in nodes.values():
-        count += len(strings(node.get('features')))
+        # Native all-features vectors are not package/edge collections. Keep
+        # their existing aggregate capacity without expanding structural rows.
+        count += len(strings(node.get('features'), maximum=MAX_GRAPH_ROWS))
         identities = set()
         for edge in rows(node.get('deps')):
             if (not isinstance(edge, dict) or not token(edge.get('pkg')) or edge['pkg'] not in nodes

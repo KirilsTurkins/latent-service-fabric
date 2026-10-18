@@ -120,6 +120,31 @@ class CargoMetadata(unittest.TestCase):
             with self.subTest(field=field), self.assertRaisesRegex(DependencyError, '^cargo-native-edge-(kind-)?duplicate$'):
                 native.selected_graph(value, self.selected, self.root)
 
+    def test_feature_vectors_keep_native_capacity_and_the_original_aggregate_bound(self):
+        value = copy.deepcopy(self.full)
+        value['packages'] = value['packages'][:1]
+        value['resolve']['nodes'] = [{'id': 'root', 'features': [f'feature-{i}' for i in range(65536)], 'deps': []}]
+        self.assertIs(native.native_graph(value)[1]['root'], value['resolve']['nodes'][0])
+        value['resolve']['nodes'][0]['features'].append('one-too-many')
+        with self.assertRaisesRegex(DependencyError, '^cargo-native-graph-invalid$'):
+            native.native_graph(value)
+        value = copy.deepcopy(self.full)
+        value['resolve']['nodes'][0]['features'] = [f'root-{i}' for i in range(32768)]
+        value['resolve']['nodes'][1]['features'] = [f'shared-{i}' for i in range(32768)]
+        with self.assertRaisesRegex(DependencyError, '^cargo-native-metadata-limit$'):
+            native.native_graph(value)
+
+    def test_feature_capacity_does_not_expand_packages_edges_dependency_ids_or_kinds(self):
+        mutations = [lambda m: m.update(packages=m['packages']*342),
+                     lambda m: m['resolve'].update(nodes=m['resolve']['nodes']*342),
+                     lambda m: m['resolve']['nodes'][0].update(deps=[{'pkg': 'shared'}]*1025),
+                     lambda m: m['resolve']['nodes'][0].update(dependencies=[f'id-{i}' for i in range(1025)]),
+                     lambda m: m['resolve']['nodes'][0]['deps'][0].update(dep_kinds=[{'kind': None, 'target': None}]*1025)]
+        for index, mutate in enumerate(mutations):
+            value = copy.deepcopy(self.full); mutate(value)
+            with self.subTest(index=index), self.assertRaisesRegex(DependencyError, '^cargo-native-graph-invalid$'):
+                native.native_graph(value)
+
     def test_json_duplicate_fields_invalid_constants_and_finite_limits_fail_closed(self):
         with self.assertRaisesRegex(DependencyError, '^cargo-native-metadata-duplicate-field$'):
             native.native_metadata(b'{"version":1,"version":1}')
