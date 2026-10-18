@@ -196,6 +196,29 @@ class Archives(unittest.TestCase):
                 with self.assertRaises(DependencyError):
                     archive_files(self.zip(rows), "zip")
 
+    def test_literal_exclamation_names_roundtrip_without_interpretation(self):
+        from tools.application_dependency_store import directory_files, materialize
+
+        files = {"testdata/expect/yo!.go": b"package expect\n", "data/!name!.txt": b"literal bytes"}
+        selected = archive_files(self.zip(list(files.items())), "zip")
+        self.assertEqual(selected, files)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            store = Store(root / "store")
+            inventory = captured_files(selected, store)
+            self.assertEqual({row["path"] for row in inventory}, set(files))
+            materialize(inventory, root / "offline", store)
+            self.assertEqual(directory_files(root / "offline"), files)
+            self.assertNotEqual(tree_identity(inventory), tree_identity(captured_files(
+                {name.replace("!", ""): data for name, data in files.items()}, store)))
+        for rows in [[("../yo!.go", b"x")], [("/yo!.go", b"x")],
+                     [("C:/yo!.go", b"x")], [("x\\yo!.go", b"x")],
+                     [("Expect/yo!.go", b"x"), ("expect/other.go", b"y")],
+                     [("yo!", b"x"), ("yo!/child", b"y")],
+                     [("yo!.go", b"x"), ("yo!.go", b"y")]]:
+            with self.subTest(rows=rows), self.assertRaises(DependencyError):
+                archive_files(self.zip(rows), "zip")
+
     def test_zip_link_denied(self):
         stream = io.BytesIO()
         with zipfile.ZipFile(stream, "w") as archive:

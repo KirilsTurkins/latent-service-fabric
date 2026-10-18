@@ -6,6 +6,8 @@ use std::{
     sync::{Condvar, Mutex},
 };
 
+mod trace;
+
 fn fixture() -> (tempfile::TempDir, StateSettings, StateBootstrap) {
     let root = tempfile::tempdir().unwrap();
     let settings = super::super::bootstrap::tests::settings(root.path());

@@ -1,0 +1,13 @@
+{
+  "kind": "workflow",
+  "policy": {
+    "concurrency": {"cancel-in-progress": true, "group": "${{ github.workflow }}-${{ github.ref }}"},
+    "name": "IntelliJ project",
+    "on": {"pull_request": null, "push": {"branches": ["development"]}, "workflow_dispatch": null},
+    "permissions": {"contents": "read"}
+  },
+  "requiredJobs": ["project"],
+  "reviewReason": "Add portable IntelliJ metadata and launcher regression coverage without changing existing execution obligations.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/intellij.yml"
+}

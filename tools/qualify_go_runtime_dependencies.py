@@ -131,7 +131,9 @@ def qualify(output: Path) -> dict:
         (project / 'wit/world.wit').write_bytes((original / 'world.wit').read_bytes())
         document = json.loads((project / 'capsule-project.json').read_bytes())
         document['world'] = 'tests:caller/service@1.0.0'
-        write_json(project / 'capsule-project.json', document)
+        # create() already wrote this file in our fresh private fixture tree.
+        # Configure it before capture; receipts still use exclusive write_json.
+        (project / 'capsule-project.json').write_bytes(json.dumps(document, indent=2).encode() + b'\n')
         go = shutil.which('go')
         if go is None:
             raise ValueError('missing-pinned-go-compiler-tool:go')

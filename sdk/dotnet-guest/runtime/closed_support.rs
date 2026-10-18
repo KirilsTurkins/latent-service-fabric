@@ -4,12 +4,6 @@ struct ClosedDescriptor;
 struct ClosedDirectoryEntries;
 struct ClosedTerminalInput;
 struct ClosedTerminalOutput;
-impl io::poll::Guest for ClosedRuntime {
-    type Pollable = ClosedPoll;
-    fn poll(inputs: Vec<io::poll::PollableBorrow<'_>>) -> Vec<u32> {
-        ClosedPoll::poll(inputs)
-    }
-}
 impl io::error::Guest for ClosedRuntime {
     type Error = ClosedError;
 }

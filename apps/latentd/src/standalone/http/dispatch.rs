@@ -184,18 +184,36 @@ pub(super) fn begin(
             Arc::new(catalog),
         )
         .map_err(status)?;
-    let eligibility = reserved.publication_eligibility().map_err(status)?;
+    let eligibility = match reserved.publication_eligibility() {
+        Ok(eligibility) => eligibility,
+        Err(error) => return Err(status(reserved.reject(error))),
+    };
     let transaction = match (transaction.as_ref(), facts.as_ref()) {
-        (Some(route), Some(facts)) => Some(
-            super::transaction::bind(
-                shared.services.transactions.as_ref().ok_or(503u16)?,
-                route,
-                facts,
-                &mut reserved,
-                invocation.input().len(),
-            )
-            .map_err(status)?,
-        ),
+        (Some(route), Some(facts)) => {
+            let binding = shared
+                .services
+                .transactions
+                .as_ref()
+                .ok_or_else(|| PlatformError {
+                    code: PlatformErrorCode::Unavailable,
+                    message: "transaction HTTP services unavailable".into(),
+                    retryable: false,
+                    details: Vec::new(),
+                })
+                .and_then(|services| {
+                    super::transaction::bind(
+                        services,
+                        route,
+                        facts,
+                        &mut reserved,
+                        invocation.input().len(),
+                    )
+                });
+            match binding {
+                Ok(binding) => Some(binding),
+                Err(error) => return Err(status(reserved.reject(error))),
+            }
+        }
         _ => None,
     };
     let cache = match cache.map(|request| {

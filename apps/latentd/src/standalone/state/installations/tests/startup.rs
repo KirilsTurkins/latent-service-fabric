@@ -1,4 +1,6 @@
 //! Real signed deferred HTTP installation for the actual readiness consumer.
+mod dispatch_policy;
+
 use super::*;
 use latent_capabilities::broker::{
     io::{IoLimits, IoRuntime},

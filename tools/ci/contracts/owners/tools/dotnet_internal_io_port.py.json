@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/dotnet_internal_io_port.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Observe the bounded private I/O metadata projection owner, matching actual adapter signatures, preserving core bytes and public contracts.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "5b0c446efae0fd0e2ddf097ef56d9f1e74fa2314336dde11727985141c4b5870"
+}

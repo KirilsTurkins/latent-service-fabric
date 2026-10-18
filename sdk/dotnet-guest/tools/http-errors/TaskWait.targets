@@ -1,0 +1,22 @@
+<Project>
+  <Target Name="LsfBindActualTaskWait"
+          AfterTargets="ComputeIlcCompileInputs"
+          BeforeTargets="WriteIlcRspFileForCompilation"
+          Condition="'$(RuntimeIdentifier)' == 'wasi-wasm'">
+    <ItemGroup>
+      <_LsfTaskWaitCandidates Include="@(IlcReference)"
+          Condition="'%(IlcReference.Filename)' == 'System.Private.CoreLib' And '%(IlcReference.Extension)' == '.dll'" />
+      <_LsfTaskWaitUnknown Include="@(_LsfTaskWaitCandidates)" Exclude="$(LsfTaskWaitOriginal)" />
+    </ItemGroup>
+    <Error Condition="'@(_LsfTaskWaitCandidates->Count())' != '1'"
+        Text="task-wait-port-framework-reference-count" />
+    <Error Condition="'@(_LsfTaskWaitUnknown)' != ''" Text="task-wait-port-unknown-framework-reference" />
+    <Error Condition="!Exists('$(LsfTaskWaitAssembly)')" Text="task-wait-port-missing-derived-assembly" />
+    <ItemGroup>
+      <IlcReference Remove="@(_LsfTaskWaitCandidates)" />
+      <IlcReference Include="$(LsfTaskWaitAssembly)" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(LsfTaskWaitReferenceReceipt)"
+        Lines="@(IlcReference->'%(FullPath)')" Overwrite="false" Encoding="UTF-8" />
+  </Target>
+</Project>

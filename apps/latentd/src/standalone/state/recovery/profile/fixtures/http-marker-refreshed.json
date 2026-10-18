@@ -1,0 +1,4 @@
+{
+  "schemaVersion": "latent.java.current-http-source-input.v1",
+  "idempotencyProfile": "qualified-http-v1:bb85705ae221db0b883cf8253e00ef1091b7ea70e768299bb14a2175286c4391"
+}

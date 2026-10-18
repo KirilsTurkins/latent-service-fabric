@@ -117,6 +117,37 @@ def verify_download(row: dict, expected: dict) -> tuple[dict[str, bytes], dict[s
     return original, selected
 
 
+def graph_manifests(cache: Path, expected: dict) -> dict[str, bytes]:
+    """Retain checksum-bound graph metadata, including superseded module versions."""
+    allowed = {}
+    for (module, version), checksum in expected.items():
+        if not version.endswith('/go.mod'):
+            continue
+        module_path(module)
+        version = version.removesuffix('/go.mod')
+        if not re.fullmatch(r'v[0-9][A-Za-z0-9.+-]{0,127}', version):
+            raise DependencyError('go-native-module-version-invalid')
+        # cmd/go's cache uses module.EscapePath/EscapeVersion, not URL quoting.
+        escape = lambda text: ''.join('!' + char.lower() if 'A' <= char <= 'Z' else char for char in text)
+        relative = escape(module) + '/@v/' + escape(version) + '.mod'
+        if relative in allowed:
+            raise DependencyError('go-native-manifest-cache-collision')
+        allowed[relative] = checksum
+    result, total = {}, 0
+    for path in sorted(cache.rglob('*.mod')):
+        relative = path.relative_to(cache).as_posix()
+        if relative not in allowed:
+            raise DependencyError('go-graph-manifest-not-in-reviewed-sums')
+        raw = read_bytes(path)
+        if h1({'go.mod': raw}) != allowed[relative]:
+            raise DependencyError('go-graph-manifest-identity')
+        total += len(raw)
+        if len(result) >= 8192 or total > 256 * 1024 * 1024:
+            raise DependencyError('go-graph-manifest-cache-bound')
+        result[relative] = raw
+    return result
+
+
 def graph(modules: list[dict], edges: str, root: dict) -> dict:
     selected = {module_path(row['Path']): row for row in modules}
     if len(selected) != len(modules) or len(modules) > 1024:
@@ -271,10 +302,13 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         if read_bytes(work / 'go.sum') != original['go.sum'] or read_bytes(work / 'go.mod') != fetch_manifest:
             raise DependencyError('go-native-declarations-or-sums-not-locked')
         edges = run_bounded([str(go), 'mod', 'graph'], work, environment, 60, 2 * 1024 * 1024).stdout.decode()
+        if read_bytes(work / 'go.sum') != original['go.sum'] or read_bytes(work / 'go.mod') != fetch_manifest:
+            raise DependencyError('go-native-declarations-or-sums-not-locked')
         native = graph(modules, edges, root)
         downloads_by_key = {(row['Path'], row['Version']): row for row in downloads}
         store, artifacts = Store(owner / 'dependency-inputs/objects'), []
-        cache, cache_files = owned / 'captured-downloads', {}
+        cache = owned / 'captured-downloads'
+        cache_files = graph_manifests(owned / 'modules/cache/download', expected_sums)
         cache.mkdir()
         selected_local = {}
         for row in sorted(modules, key=lambda item: item['Path']):
