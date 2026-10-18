@@ -211,6 +211,27 @@ class PrivateEntryFrames(unittest.TestCase):
                 self.assertFalse(result['qualification'])
                 self.assertFalse(result['privateBinaryPublished'])
 
+    def test_failed_private_launch_retains_only_closed_preflight_and_launcher_categories(self):
+        failure = {'phase': 'temp-ancestors', 'code': 'temporary-mode', 'exception': 'SystemExit'}
+        stderr = (b'private error /secret/source token=private-value\n'
+            b'bwrap: creating new namespace /secret failed: Operation not permitted\n'
+            b'LSF_GO_DIAG_HOST_FAILURE '+json.dumps(failure).encode()+b'\n')
+        result = frames.private_build_observation(SimpleNamespace(returncode=1, stdout=b'', stderr=stderr))
+        self.assertEqual(result, {'buildExitCode': 1, 'hostPreflight': None, 'compilerErrorCodes': [],
+            'launchObservation': {'preflightFailure': failure, 'launcherFamilies': ['bwrap'],
+                'launcherCategories': ['namespace-setup', 'permission-denied'], 'rawLauncherOutputRetained': False}})
+        self.assertNotIn('private-value', json.dumps(result))
+        self.assertNotIn('/secret', json.dumps(result))
+        for key in failure:
+            changed = {**failure, key: '/secret/private-value'}
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'failure-shape'):
+                frames.private_build_observation(SimpleNamespace(returncode=1, stdout=b'',
+                    stderr=b'LSF_GO_DIAG_HOST_FAILURE '+json.dumps(changed).encode()+b'\n'))
+        for raw in (b'LSF_GO_DIAG_HOST_FAILURE {}\n'*2,
+                    b'LSF_GO_DIAG_HOST_FAILURE '+b'x'*513):
+            with self.assertRaisesRegex(ValueError, 'failure-shape'):
+                frames.private_build_observation(SimpleNamespace(returncode=1, stdout=b'', stderr=raw))
+
     def test_private_observer_is_last_after_all_acceptance_with_no_binary_or_raw_output_artifact(self):
         model = yaml.safe_load(read_file(ROOT/'.github/workflows/go-guest.yml'))
         job = model['jobs']['upstream-probe']

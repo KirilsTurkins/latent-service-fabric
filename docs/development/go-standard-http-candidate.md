@@ -47,7 +47,9 @@ sanitizer. It reuses the unchanged signed no-HTTP package, runtime grants,
 activation budget, integer-control call and owner fences. Its two read-only
 source overlays enable only bounded frame capture and numeric stderr emission;
 DWARF details stay disabled. No names, source paths or raw native output are
-retained, and the private binary is excluded from artifacts. The offline build
+retained, and the private binary is excluded from artifacts. A failed launcher
+retains only the existing closed family/category and preflight phase/code fields;
+unknown or private values are refused. The offline build
 and replay share a 600-second diagnostic bound, with 450 seconds for the build
 and 90 seconds for the node. This is the last native command after every
 acceptance command; the ephemeral target is diagnostic-only afterwards and

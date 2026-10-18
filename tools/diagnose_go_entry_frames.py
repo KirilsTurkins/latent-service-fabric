@@ -199,6 +199,15 @@ def replay(releases, binaries, output, deadline):
     return record
 
 
+def private_build_observation(built) -> dict:
+    """Retain only existing closed launcher/preflight categories, never raw output."""
+    output = built.stderr+b'\n'+built.stdout
+    return {'buildExitCode': built.returncode, 'hostPreflight': host.frame_host_observation(output),
+        'launchObservation': host.frame_launch_observation(output),
+        'compilerErrorCodes': sorted(set(code.decode()
+            for code in re.findall(rb'error\[(E[0-9]{4})\]', built.stderr)))[:16]}
+
+
 def diagnose(diagnostic: Path, native: Path, output: Path) -> dict:
     output = fresh(output)
     deadline = time.monotonic()+600
@@ -246,8 +255,7 @@ def diagnose(diagnostic: Path, native: Path, output: Path) -> dict:
         environment['CARGO_TARGET_DIR'] = str(target)
         command = build_command(ROOT, overlays, environment, tools, context)
         built = run_bounded_result(command, ROOT, environment, min(450, deadline-time.monotonic()), 1048576)
-        record.update(buildExitCode=built.returncode, hostPreflight=host.frame_host_observation(built.stdout+b'\n'+built.stderr),
-            compilerErrorCodes=sorted(set(code.decode() for code in re.findall(rb'error\[(E[0-9]{4})\]', built.stderr)))[:16])
+        record.update(private_build_observation(built))
         require(built.returncode == 0 and record['hostPreflight'] is not None, 'go-entry-frame-private-build-failed')
         private_host = output/'private-latentd'
         shutil.copy2(target/'debug/latentd', private_host)

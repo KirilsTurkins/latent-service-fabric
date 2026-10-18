@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/diagnose_go_entry_frames.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Bounded failure-only numeric observer: same signed control, two readonly source overlays, last diagnostic-only target, no public raw output or binary",
+  "reviewReason": "Retain only existing finite preflight and launcher categories after a22 setup failed before Cargo; raw output remains discarded, all boundaries unchanged",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "9bcdd1383f9c2090bb9ed6ec4f6edd5dfc3a44b08b4776cfa49293066de7b0cf"
+  "sha256": "adb834610522d736097bebc6d2336e094fe44f1f2eccbe569de30ef7413fd6a0"
 }
