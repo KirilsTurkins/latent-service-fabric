@@ -149,6 +149,14 @@
         "run": "python3 -m unittest tools.tests.test_go_dependency_authoring tools.tests.test_guest_authoring_frontend\n"
       },
       {
+        "name": "Test controlled native Go declaration and lock authoring",
+        "run": "python3 -m unittest tools.tests.test_go_native_authoring"
+      },
+      {
+        "name": "Test captured library failure and cancellation observation fences",
+        "run": "python3 -m unittest tools.tests.test_go_dependency_recovery"
+      },
+      {
         "name": "Qualify captured Go libraries in signed components",
         "run": "python3 tools/qualify_go_capsules.py --application-dependencies --output \"$RUNNER_TEMP/go-capsule-dependencies\"\n"
       },
@@ -172,7 +180,7 @@
   },
   "jobId": "upstream-probe",
   "kind": "job",
-  "reviewReason": "Compose exact current runtime and owned networking gates; preserve every original command, artifact, trigger, runner, environment, case and original45-minute deadline.",
+  "reviewReason": "Compose actual merged normal Go authoring, strict Rust qualification and networking gates; preserve all parent commands, artifacts, triggers, environment, runner and unchanged45-minute bound.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

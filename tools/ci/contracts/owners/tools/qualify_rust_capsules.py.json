@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_capsules.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve explicit Rust and .NET captured-recovery selection and Rust FFI qualification after their shared-owner merge.",
+  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "ac28b55d5be80732dc4a0c09ba65f612c6d2f75e4fdf7015035a3b8743c1cee2"
+  "sha256": "fca1305106ce7c1490ca0c54ebfd6eac5061f9a911e4fb8837aaa8182880044b"
 }

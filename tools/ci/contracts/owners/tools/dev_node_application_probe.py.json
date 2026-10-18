@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/dev_node_application_probe.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Preserve reviewed C logging and explicit Rust captured recovery plus all signed C/Rust watch commands after current development integration.",
+  "reviewReason": "Preserve Go and development runtime coverage; explicitly grant the signed Go fixture capabilities and require two distinct successful fresh activations per reviewed build; exercise native and faulted bounded metadata parsing on Python 3.13.",
   "schemaVersion": "latent.ci.contracts.v1",
   "sha256": "8d53677740a6713ff88128788ca6f7d7672759b97d6fe6f230ed33ca0b2df1f0"
 }
