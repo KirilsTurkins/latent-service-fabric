@@ -8,7 +8,11 @@
     "DeliveredTemplateCaller.test_actual_template_wrapper_selects_its_project_at_main_resolver_call",
     "DeliveredTemplateCaller.test_flat_project_cannot_substitute_for_the_actual_template_wrapper",
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode",
+    "MaintainedScenarioBudget.test_missing_malformed_or_ambiguous_original_budget_refuses_before_replacing_inputs",
+    "MaintainedScenarioBudget.test_real_delivered_node_budget_survives_all_replacements_without_changing_portable_budget",
+    "PostDeployFailureProjection.test_actual_deadline_producer_preserves_numeric_consumption_through_public_failure",
     "PostDeployFailureProjection.test_actual_scenario_producer_yields_only_closed_ordinal_failure_fields",
+    "PostDeployFailureProjection.test_consumption_is_revalidated_as_closed_canonical_unsigned_decimal_strings",
     "PostDeployFailureProjection.test_observer_recursion_and_runtime_errors_preserve_actual_original_exception_identity",
     "PostDeployFailureProjection.test_only_first_eight_original_ordinals_and_exact_flags_are_retained",
     "PostDeployFailureProjection.test_private_regex_shaped_strings_nested_fields_and_non_boolean_flags_never_escape",
@@ -137,7 +141,55 @@
       ],
       "skipSites": []
     },
+    "MaintainedScenarioBudget.test_missing_malformed_or_ambiguous_original_budget_refuses_before_replacing_inputs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:ce47aa8e6bb2696f3b83e57add2a21472bbb59e00104ae691add267bfd158fbd"
+      ],
+      "skipSites": []
+    },
+    "MaintainedScenarioBudget.test_real_delivered_node_budget_survives_all_replacements_without_changing_portable_budget": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:ce47aa8e6bb2696f3b83e57add2a21472bbb59e00104ae691add267bfd158fbd"
+      ],
+      "skipSites": []
+    },
+    "PostDeployFailureProjection.test_actual_deadline_producer_preserves_numeric_consumption_through_public_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:9c0f3f65b1000765c621dd33ce411d53316c2965923adecdb4a7530da0ca79a1"
+      ],
+      "skipSites": []
+    },
     "PostDeployFailureProjection.test_actual_scenario_producer_yields_only_closed_ordinal_failure_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f993841a482d0d61b6b751eba408c30b76ea04a01d252cc7ab262396de350d9a",
+        "class:setup-sha256:9c0f3f65b1000765c621dd33ce411d53316c2965923adecdb4a7530da0ca79a1"
+      ],
+      "skipSites": []
+    },
+    "PostDeployFailureProjection.test_consumption_is_revalidated_as_closed_canonical_unsigned_decimal_strings": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -272,6 +324,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_typescript_dependency_watch.py",
-  "reviewReason": "Retain only bounded closed ordinal fields from an already parsed failed post-deploy report; preserve original error identity, all14 prior cases/guards and every qualification criterion.",
+  "reviewReason": "Add real delivered template and actual scenario adapter controls proving separate maintained deadlines and invalid-input refusal",
   "schemaVersion": "latent.ci.contracts.v1"
 }

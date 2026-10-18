@@ -194,6 +194,8 @@ def optional_failure_file(root, relative, maximum):
 def collect_build_failures(workspace, output_root):
     """Read fixed metadata only from this workspace's at most four owned attempts."""
     from tools.dev_workflow import build_cache, paths
+    from tools.dev_workflow.common import DevError
+    from tools.dev_workflow.executable_approval_request import MAX_REQUEST
     paths.relative(output_root)
     builds = workspace / 'builds'
     try:
@@ -214,14 +216,23 @@ def collect_build_failures(workspace, output_root):
             raw = optional_failure_file(builds, relative + output_root + '/BUILD-FAILED.json', 65536)
             if raw is not None:
                 row.update(public_build_failure(json.loads(raw)))
-            raw = optional_failure_file(builds,
-                relative + output_root + '/executable-input-approval-request.json', 65536)
+            def optional_observation(name, maximum, field):
+                try:
+                    return optional_failure_file(builds, relative + name, maximum)
+                except DevError as error:
+                    if error.code != 'file-byte-limit':
+                        raise
+                    row.setdefault('unavailable', {})[field] = 'file-byte-limit'
+                    return None
+            raw = optional_observation(output_root + '/executable-input-approval-request.json',
+                                       MAX_REQUEST, 'executableApprovalRequest')
             if raw is not None:
                 requested = public_executable_approval_request(json.loads(raw))
                 if requested:
                     row['executableApprovalRequest'] = requested
             for stream in ('stdout', 'stderr'):
-                raw = optional_failure_file(builds, relative + 'build-cache/compiler-' + stream + '.log', 1024 * 1024)
+                raw = optional_observation('build-cache/compiler-' + stream + '.log',
+                                           1024 * 1024, 'compiler' + stream.title())
                 if raw is None:
                     continue
                 row['compiler' + stream.title() + 'Sha256'] = 'sha256:' + hashlib.sha256(raw).hexdigest()
@@ -274,6 +285,14 @@ class ShutdownOnce:
         require(not self.attempted, 'watch-down-already-attempted-no-retry')
         self.attempted = True
         return operation()
+
+
+def remove_owned_revision(inputs, application, fixture, author):
+    """Give native Cargo its original path manifests, never the later compiler."""
+    fixture.restore_revision(inputs, 2)
+    author('remove-closed-graph', 'remove', application, fixture.PRIMARY)
+    fixture.remove_original(inputs, 'primary')
+    fixture.remove_original(inputs, 'child')
 
 
 def write_frontend(frontend, python, args, events):
@@ -499,7 +518,7 @@ def main() -> int:
         report['updateBeforeNewSignedWorkspace'] = denied
         stop_watch('initial')
         offset = start_watch('updated')
-        author('remove-closed-graph', 'remove', application, fixture.PRIMARY)
+        remove_owned_revision(inputs, application, fixture, author)
         offset, denied = await_event(offset, lambda value: value.get('event') == 'edit-failed', 'unreviewed-remove', 30)
         require(denied['uncertain'] is False, 'unreviewed-remove-must-be-certain')
         report['removeBeforeReview'] = denied

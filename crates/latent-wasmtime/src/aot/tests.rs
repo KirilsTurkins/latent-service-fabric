@@ -144,6 +144,7 @@ fn every_lowered_profile_bound_and_hard_limit_is_checked() {
         },
     ] {
         assert!(ValidatedAotProfile::from_config(&config, limits).is_err());
+        assert!(ValidatedAotProfile::with_runtime_engine(&config, limits).is_err());
     }
     for limits in [
         AotCompilerLimits {
@@ -168,5 +169,6 @@ fn every_lowered_profile_bound_and_hard_limit_is_checked() {
         },
     ] {
         assert!(limits.validate().is_err());
+        assert!(ValidatedAotProfile::with_runtime_engine(&config, limits).is_err());
     }
 }

@@ -4,6 +4,8 @@
 #[cfg(unix)]
 #[path = "admission_tests/audit.rs"]
 mod audit;
+#[path = "admission_tests/checked_upload.rs"]
+mod checked_upload;
 #[path = "admission_tests/fixture.rs"]
 mod fixture;
 #[path = "admission_tests/publication_lease.rs"]
