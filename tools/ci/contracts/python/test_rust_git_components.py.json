@@ -1,0 +1,192 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "python",
+  "reviewReason": "Retain all ten original cases and guards without any skip/decorator/base changes; reviewed fixture hashes add runner imports and the required three-case modelled node response. Add four distinct signed output, incorrect baseline, physical retirement and default-off Rust selector controls. No native execution claim.",
+  "module": "tools/tests/test_rust_git_components.py",
+  "cases": [
+    "GitComponentCapture.test_changed_greeting_hook_is_refused_before_native_authoring",
+    "GitComponentCapture.test_foreign_revision_or_executable_input_cannot_reach_review_or_cleanup",
+    "GitComponentCapture.test_normal_exact_git_authoring_and_unchanged_api_precede_review_and_original_removal",
+    "GitComponentCapture.test_selected_git_must_be_a_real_application_root_edge",
+    "GitSignedOutputControls.test_additional_selector_is_closed_rust_only_and_default_off",
+    "GitSignedOutputControls.test_correct_value_without_actual_retirement_cannot_complete",
+    "GitSignedOutputControls.test_original_greeting_output_cannot_satisfy_the_git_library_probe",
+    "GitSignedOutputControls.test_three_signed_outputs_require_dynamic_git_counts_resources_and_physical_samples",
+    "PreparedGitComponentInputs.test_bundle_exports_only_closed_public_signer_inputs_and_exact_native_files",
+    "PreparedGitComponentInputs.test_changed_source_native_or_companion_is_refused_before_bundle_creation",
+    "PreparedGitComponentInputs.test_mutated_original_during_build_cannot_reach_signer_or_node",
+    "PreparedGitComponentInputs.test_offline_identity_then_two_isolated_builds_precede_strict_signer_and_node",
+    "PreparedGitComponentInputs.test_signer_layer_paths_cannot_escape_the_prepared_build",
+    "PreparedGitComponentInputs.test_unexpected_native_product_cannot_be_executed_or_exported"
+  ],
+  "guards": {
+    "GitComponentCapture.test_normal_exact_git_authoring_and_unchanged_api_precede_review_and_original_removal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:b811c7616d052ad6f982ed1c8e2153566bd4dfad5090023551e201c01be3b4d4"
+      ]
+    },
+    "GitComponentCapture.test_foreign_revision_or_executable_input_cannot_reach_review_or_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:b811c7616d052ad6f982ed1c8e2153566bd4dfad5090023551e201c01be3b4d4"
+      ]
+    },
+    "GitComponentCapture.test_selected_git_must_be_a_real_application_root_edge": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:b811c7616d052ad6f982ed1c8e2153566bd4dfad5090023551e201c01be3b4d4"
+      ]
+    },
+    "GitComponentCapture.test_changed_greeting_hook_is_refused_before_native_authoring": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:b811c7616d052ad6f982ed1c8e2153566bd4dfad5090023551e201c01be3b4d4"
+      ]
+    },
+    "PreparedGitComponentInputs.test_bundle_exports_only_closed_public_signer_inputs_and_exact_native_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:8453d8fcf1f33b36af78893a1338e5e7a406547a0277845f50cfc58810e4dbe2"
+      ]
+    },
+    "PreparedGitComponentInputs.test_changed_source_native_or_companion_is_refused_before_bundle_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:8453d8fcf1f33b36af78893a1338e5e7a406547a0277845f50cfc58810e4dbe2"
+      ]
+    },
+    "PreparedGitComponentInputs.test_unexpected_native_product_cannot_be_executed_or_exported": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:8453d8fcf1f33b36af78893a1338e5e7a406547a0277845f50cfc58810e4dbe2"
+      ]
+    },
+    "PreparedGitComponentInputs.test_signer_layer_paths_cannot_escape_the_prepared_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:8453d8fcf1f33b36af78893a1338e5e7a406547a0277845f50cfc58810e4dbe2"
+      ]
+    },
+    "PreparedGitComponentInputs.test_offline_identity_then_two_isolated_builds_precede_strict_signer_and_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:8453d8fcf1f33b36af78893a1338e5e7a406547a0277845f50cfc58810e4dbe2"
+      ]
+    },
+    "PreparedGitComponentInputs.test_mutated_original_during_build_cannot_reach_signer_or_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:8453d8fcf1f33b36af78893a1338e5e7a406547a0277845f50cfc58810e4dbe2"
+      ]
+    },
+    "GitSignedOutputControls.test_three_signed_outputs_require_dynamic_git_counts_resources_and_physical_samples": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:3328521ebcd814f56693d6ef2d166a1bd08cba588c61e9308ffaaf4c1139d53d"
+      ]
+    },
+    "GitSignedOutputControls.test_original_greeting_output_cannot_satisfy_the_git_library_probe": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:3328521ebcd814f56693d6ef2d166a1bd08cba588c61e9308ffaaf4c1139d53d"
+      ]
+    },
+    "GitSignedOutputControls.test_correct_value_without_actual_retirement_cannot_complete": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:3328521ebcd814f56693d6ef2d166a1bd08cba588c61e9308ffaaf4c1139d53d"
+      ]
+    },
+    "GitSignedOutputControls.test_additional_selector_is_closed_rust_only_and_default_off": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "skipSites": [],
+      "fixtureGuards": [
+        "module:setup-sha256:b0fac972523a8b0e6953ee6db0581a2b6829ae1f738737ee34159a37d7321ba6",
+        "class:setup-sha256:3328521ebcd814f56693d6ef2d166a1bd08cba588c61e9308ffaaf4c1139d53d"
+      ]
+    }
+  }
+}
