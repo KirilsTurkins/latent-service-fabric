@@ -493,7 +493,7 @@ fn runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics()
         assert_eq!(public.detail_items.len(), 1);
         assert_eq!(
             public.detail_items[0].fields,
-            Metadata::from([("kind".into(), kind.into())])
+            std::collections::HashMap::from([("kind".into(), kind.into())])
         );
         assert_eq!(public.code, "guest-trap");
         assert!(!public.retryable);
