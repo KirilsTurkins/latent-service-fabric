@@ -79,6 +79,73 @@ class RustDependencyWatchFixture(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'already-attempted-no-retry'):
             fence.call(lambda: self.fail('replayed confirmed mutation'))
 
+class RustWatchRemoval(unittest.TestCase):
+    def inputs(self, temporary):
+        root = Path(temporary)
+        application = root / 'application'; application.mkdir()
+        sdk = application / 'sdk-lock.json'; sdk.write_bytes(b'unchanged-sdk-control')
+        inputs = fixture.create(application)
+        fixture.remove_original(inputs, 'primary')
+        fixture.remove_original(inputs, 'child')
+        return application, inputs, sdk
+
+    def test_native_remove_sees_exact_owned_revision_two_then_compile_boundary_has_no_original_paths(self):
+        import json
+        from tools.qualify_rust_dependency_watch import remove_owned_revision
+        with tempfile.TemporaryDirectory() as temporary:
+            application, inputs, sdk = self.inputs(temporary)
+            events = []
+            def author(*arguments):
+                self.assertEqual(arguments, ('remove-closed-graph', 'remove', application, fixture.PRIMARY))
+                events.append('native-remove')
+                for name, expected in fixture.revision(2).items():
+                    directory = Path(inputs[name])
+                    actual = {path.relative_to(directory).as_posix(): path.read_bytes()
+                              for path in directory.rglob('*') if path.is_file()}
+                    self.assertEqual(actual, expected)
+                    identity = json.dumps({name: fixture.digest(raw) for name, raw in sorted(actual.items())},
+                                          sort_keys=True, separators=(',', ':')).encode()
+                    self.assertEqual(fixture.digest(identity), inputs['inputDigests'][name + '-v2'])
+            remove_owned_revision(inputs, application, fixture, author)
+            # This is the state handed back to the unchanged removed-build path.
+            self.assertFalse(Path(inputs['primary']).exists())
+            self.assertFalse(Path(inputs['child']).exists())
+            events.append('removed-compile-boundary')
+            self.assertEqual(events, ['native-remove', 'removed-compile-boundary'])
+            self.assertEqual(sdk.read_bytes(), b'unchanged-sdk-control')
+
+    def test_failed_native_remove_preserves_original_exception_without_replay_or_later_stages(self):
+        from tools.qualify_rust_dependency_watch import remove_owned_revision
+        with tempfile.TemporaryDirectory() as temporary:
+            application, inputs, sdk = self.inputs(temporary)
+            original = RuntimeError('original-native-remove-failure')
+            events = []
+            def author(*arguments):
+                events.append('native-remove')
+                self.assertTrue(Path(inputs['primary']).is_dir())
+                self.assertTrue(Path(inputs['child']).is_dir())
+                raise original
+            with self.assertRaises(RuntimeError) as observed:
+                remove_owned_revision(inputs, application, fixture, author)
+                events.extend(['removed-compile', 'removed-deploy'])
+            self.assertIs(observed.exception, original)
+            self.assertEqual(events, ['native-remove'])
+            self.assertEqual(sdk.read_bytes(), b'unchanged-sdk-control')
+
+    def test_changed_owned_root_refuses_before_native_remove_and_preserves_source(self):
+        from tools.qualify_rust_dependency_watch import remove_owned_revision
+        with tempfile.TemporaryDirectory() as temporary:
+            application, inputs, sdk = self.inputs(temporary)
+            changed = {**inputs, 'ownedRoot': str(application.resolve())}
+            calls = []
+            with self.assertRaisesRegex(ValueError, 'owned Rust watch input root changed'):
+                remove_owned_revision(changed, application, fixture, lambda *arguments: calls.append(arguments))
+            self.assertEqual(calls, [])
+            self.assertFalse(Path(inputs['primary']).exists())
+            self.assertFalse(Path(inputs['child']).exists())
+            self.assertEqual(sdk.read_bytes(), b'unchanged-sdk-control')
+
+
 class FrontendRuntime(unittest.TestCase):
     def test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode(self):
         import json
@@ -574,6 +641,73 @@ class PublicFailureObservation(unittest.TestCase):
                 collect_build_failures(root, 'output')
             public = self.preserve_original(root, lambda: 'output')
             self.assert_closed_observation(public, 'owned-attempt-metadata', 'file-byte-limit')
+
+    def test_owned_approval_request_above_64k_uses_canonical_viewer_bound_without_exposing_or_approving_it(self):
+        import json
+        from tools.build_snapshot import canonical, digest
+        from tools.dev_workflow.executable_approval_request import MAX_REQUEST
+        from tools.qualify_rust_dependency_watch import collect_build_failures
+        request, private = PublicExecutableApproval().request()
+        request['specification']['executableInputs'][0]['metadata']['targets'] = [
+            {'name': private + str(index), 'src_path': '/private/' + private, 'kind': ['proc-macro']}
+            for index in range(400)]
+        request['identity'] = digest(canonical(request['specification']))
+        raw = canonical(request)
+        self.assertGreater(len(raw), 65536)
+        self.assertLessEqual(len(raw), MAX_REQUEST)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            _attempt, output, _cache, _owner = self.failed_attempt(root)
+            (output / 'BUILD-FAILED.json').write_text(json.dumps({'stage': 'executable-input-approval',
+                'reason': 'captured Cargo build scripts/macros require the exact retained executable-input approval identity'}))
+            target = output / 'executable-input-approval-request.json'
+            target.write_bytes(raw)
+            row = collect_build_failures(root, 'output')[0]
+            self.assertEqual(row['reasonCode'], 'executable-input-approval-required')
+            observed = row['executableApprovalRequest']
+            self.assertEqual(observed['requestIdentity'], request['identity'])
+            self.assertIs(observed['qualification'], False)
+            self.assertNotIn('approvalIdentity', observed)
+            self.assertNotIn(private, json.dumps(row))
+            self.assertNotIn('/private/', json.dumps(row))
+            self.assertEqual(target.read_bytes(), raw)
+
+    def test_later_oversized_request_and_logs_keep_original_taxonomy_and_closed_per_file_observations(self):
+        import json
+        from tools.dev_workflow.executable_approval_request import MAX_REQUEST
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            _attempt, output, cache, _owner = self.failed_attempt(root)
+            (output / 'BUILD-FAILED.json').write_text(json.dumps({'stage': 'compile', 'reason': 'captured-input-missing'}))
+            (output / 'executable-input-approval-request.json').write_bytes(b'x' * (MAX_REQUEST + 1))
+            for stream in ('stdout', 'stderr'):
+                (cache / ('compiler-' + stream + '.log')).write_bytes(b'x' * (1024 * 1024 + 1))
+            public = self.preserve_original(root, lambda: 'output')
+            self.assertEqual(public['failure'], 'initial-build-failed')
+            self.assertIs(public['passed'], False)
+            self.assertNotIn('buildFailureObservation', public)
+            self.assertEqual(len(public['buildFailures']), 1)
+            row = public['buildFailures'][0]
+            self.assertEqual(row['stage'], 'compile')
+            self.assertIn('reasonSha256', row)
+            self.assertEqual(row['unavailable'], {'executableApprovalRequest': 'file-byte-limit',
+                'compilerStdout': 'file-byte-limit', 'compilerStderr': 'file-byte-limit'})
+            self.assertLess(len(json.dumps(public)), 1024)
+
+    def test_unsafe_optional_approval_file_still_fails_closed_instead_of_becoming_unavailable(self):
+        import os
+        from tools.qualify_rust_dependency_watch import collect_build_failures
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            _attempt, output, _cache, _owner = self.failed_attempt(root)
+            (output / 'BUILD-FAILED.json').write_text('{"stage":"compile"}')
+            target = output / 'executable-input-approval-request.json'
+            target.write_text('{}')
+            os.link(target, output / 'alias')
+            with self.assertRaisesRegex(ValueError, 'single-link-regular-file-required'):
+                collect_build_failures(root, 'output')
+            public = self.preserve_original(root, lambda: 'output')
+            self.assert_closed_observation(public, 'owned-attempt-metadata', 'single-link-regular-file-required')
 
     def test_actual_link_and_owner_refusals_remain_closed_metadata_observations(self):
         import os

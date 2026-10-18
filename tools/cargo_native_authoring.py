@@ -258,7 +258,10 @@ def author(project: Path, operation: str, *, identity: str | None = None, versio
                     if optional:
                         arguments.append('--optional')
                 run_bounded([str(cargo), *arguments, *manifest], owned, environment, 600, 4 * 1024 * 1024)
-            run_bounded([str(cargo), 'generate-lockfile', *manifest], owned, environment, 600, 4 * 1024 * 1024)
+            # Resolve changed declarations against the copied lock. Regenerating
+            # it would also refresh every unrelated SDK/compiler dependency.
+            run_bounded([str(cargo), 'metadata', '--format-version', '1', *manifest],
+                        owned, environment, 600, 4 * 1024 * 1024)
             reverse = {mapped: source for source, mapped in mappings.items()}
             raw_manifest = native.selected_manifest(read_bytes(work / 'Cargo.toml'), work / 'Cargo.toml', app / 'Cargo.toml', reverse)
             if operation == 'remove':

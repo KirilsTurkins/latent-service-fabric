@@ -1,0 +1,327 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Closed private diagnostic of the original startup reservation; not production or ticket qualification",
+  "initialCheckpoint": "recovery-startup-continuation-checkpoint-2026-10-15.json",
+  "source": {
+    "baseCommit": "5e51bc73aba7ab3965b29b690c938ee42942cb26",
+    "kind": "five stock roles and conductor at the original source, with one separately built private Node observer",
+    "privateObserverFiles": [
+      "apps/latentd/src/standalone/start.rs",
+      "apps/latentd/src/standalone/startup_observation.rs",
+      "apps/latentd/src/standalone/startup_observation/failure.rs",
+      "apps/latentd/src/standalone/state/bootstrap.rs",
+      "apps/latentd/src/standalone/state/kernel.rs",
+      "apps/latentd/src/standalone/state/store.rs"
+    ],
+    "privateNodeSHA256": "601bbb46cbccc88593aeb011e14536a6b1a990733151c918615ff84d49efaeb4",
+    "privateNodeBuildReceiptSHA256": "999aa262883a9cbb37b0a15383c9befe39b1e663e6af8557862e46d8069a923c",
+    "privateNodeSourceReceiptSHA256": "62b9d47dadcfdbc220b8446fdcb925fca5abbd32ac906dc640bd88dedc628bfc",
+    "conductorSelectionSHA256": "54ba83c8cb05c57eb85f63572982fece61c414dea6a4fee993036bae8a389e4b",
+    "stockRoleArchiveIndexSHA256": "ade4a76c98ce18faeef1217725078d4b1948cd3ce0347f899e4bfd42bf63ccdf",
+    "wholeFollowupHeadTested": false
+  },
+  "programme": {
+    "mode": "terminal",
+    "passed": false,
+    "diagnosticOnly": true,
+    "seconds": 122.631924,
+    "measuredCases": [
+      "publish-aggregate",
+      "publish-put-once-legacy-v1",
+      "publish-put-once-compatible-v2",
+      "publish-put-once-writer-v2",
+      "publish-put-once-diagnostics",
+      "namespace-create",
+      "deploy-put-once-legacy-v1-legacy-runtime",
+      "fresh-query-no-command",
+      "deploy-put-once-diagnostics-diagnostic-runtime"
+    ],
+    "cliProcesses": 89,
+    "nativeActions": [],
+    "failedStage": "actual-http",
+    "failedStartupOrdinal": 8,
+    "terminalFailure": {
+      "owner": "platform",
+      "reason": "unavailable"
+    },
+    "firstObservedRefusal": {
+      "stage": "nativeCapacity",
+      "failure": {
+        "owner": "nativeCapacity",
+        "reason": "deadlineExceeded"
+      },
+      "cost": {
+        "elapsedMicros": 5731795,
+        "intervalMicros": 12,
+        "remainingMicros": 0,
+        "deadlineReached": true
+      }
+    },
+    "failures": [
+      {
+        "stage": "nativeCapacity",
+        "failure": {
+          "owner": "nativeCapacity",
+          "reason": "deadlineExceeded"
+        },
+        "cost": {
+          "elapsedMicros": 5731795,
+          "intervalMicros": 12,
+          "remainingMicros": 0,
+          "deadlineReached": true
+        }
+      },
+      {
+        "stage": "stateKernelBootstrap",
+        "failure": {
+          "owner": "platform",
+          "reason": "unavailable"
+        },
+        "cost": {
+          "elapsedMicros": 5731805,
+          "intervalMicros": 10,
+          "remainingMicros": 0,
+          "deadlineReached": true
+        }
+      },
+      {
+        "stage": "protectedStoreStartup",
+        "failure": {
+          "owner": "platform",
+          "reason": "unavailable"
+        },
+        "cost": {
+          "elapsedMicros": 5731854,
+          "intervalMicros": 48,
+          "remainingMicros": 0,
+          "deadlineReached": true
+        }
+      },
+      {
+        "stage": "nodeServices",
+        "failure": {
+          "owner": "platform",
+          "reason": "unavailable"
+        },
+        "cost": {
+          "elapsedMicros": 5731906,
+          "intervalMicros": 52,
+          "remainingMicros": 0,
+          "deadlineReached": true
+        }
+      }
+    ],
+    "phaseCosts": [
+      {
+        "stage": "nativeCapacity",
+        "cost": {
+          "elapsedMicros": 364,
+          "intervalMicros": 364,
+          "remainingMicros": 4999635,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "executionProfile",
+        "cost": {
+          "elapsedMicros": 537,
+          "intervalMicros": 173,
+          "remainingMicros": 4999462,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "auditCatalog",
+        "cost": {
+          "elapsedMicros": 62867,
+          "intervalMicros": 62330,
+          "remainingMicros": 4937132,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "supplyChainCatalog",
+        "cost": {
+          "elapsedMicros": 74427,
+          "intervalMicros": 11560,
+          "remainingMicros": 4925572,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "startupControl",
+        "cost": {
+          "elapsedMicros": 74711,
+          "intervalMicros": 283,
+          "remainingMicros": 4925288,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "artifactCatalog",
+        "cost": {
+          "elapsedMicros": 3383804,
+          "intervalMicros": 3309092,
+          "remainingMicros": 1616195,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "policyCatalog",
+        "cost": {
+          "elapsedMicros": 3399360,
+          "intervalMicros": 15556,
+          "remainingMicros": 1600639,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "deploymentCatalog",
+        "cost": {
+          "elapsedMicros": 3504199,
+          "intervalMicros": 104838,
+          "remainingMicros": 1495800,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "rolloutCatalog",
+        "cost": {
+          "elapsedMicros": 3504811,
+          "intervalMicros": 612,
+          "remainingMicros": 1495188,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "deploymentAuditReconciliation",
+        "cost": {
+          "elapsedMicros": 3504830,
+          "intervalMicros": 19,
+          "remainingMicros": 1495169,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "triggerAuditReconciliation",
+        "cost": {
+          "elapsedMicros": 3504836,
+          "intervalMicros": 5,
+          "remainingMicros": 1495163,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "catalogAuditReconciliation",
+        "cost": {
+          "elapsedMicros": 3504863,
+          "intervalMicros": 26,
+          "remainingMicros": 1495136,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "providerCatalog",
+        "cost": {
+          "elapsedMicros": 4116945,
+          "intervalMicros": 612081,
+          "remainingMicros": 883054,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "catalogsComplete",
+        "cost": {
+          "elapsedMicros": 4116952,
+          "intervalMicros": 7,
+          "remainingMicros": 883047,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "nodeCompositionBegin",
+        "cost": {
+          "elapsedMicros": 4116990,
+          "intervalMicros": 38,
+          "remainingMicros": 883009,
+          "deadlineReached": false
+        }
+      },
+      {
+        "stage": "nodeComposition",
+        "cost": {
+          "elapsedMicros": 5730342,
+          "intervalMicros": 1613351,
+          "remainingMicros": 0,
+          "deadlineReached": true
+        }
+      },
+      {
+        "stage": "nodeServicesBegin",
+        "cost": {
+          "elapsedMicros": 5730350,
+          "intervalMicros": 7,
+          "remainingMicros": 0,
+          "deadlineReached": true
+        }
+      },
+      {
+        "stage": "stateKernelBootstrap",
+        "cost": {
+          "elapsedMicros": 5731782,
+          "intervalMicros": 1432,
+          "remainingMicros": 0,
+          "deadlineReached": true
+        }
+      }
+    ],
+    "truncated": false
+  },
+  "originalBounds": {
+    "startupReservationSeconds": 5,
+    "innerProgrammeSeconds": 1200,
+    "outerOwnerSeconds": 1250,
+    "minimumHostHeadroomBytes": 3221225472,
+    "headroomSampleIntervalSeconds": 1,
+    "maximumStartupFailures": 32,
+    "maximumRetainedPhaseCosts": 20,
+    "maximumCombinedEvents": 32,
+    "maximumAddedMonotonicReads": 32
+  },
+  "closedOwnership": {
+    "ownedChildren": 57,
+    "identitySignals": "pidfd",
+    "remainingOwnedChildren": 0,
+    "timedOut": false,
+    "forcedCleanup": false,
+    "ownerBoundaryPassed": true,
+    "sourceAndProductPostGuardsPassed": true,
+    "postGuardCount": 10,
+    "normalPhysicalRetirements": 7,
+    "intentionalCrashRetirements": 0,
+    "failedStartupHasNativeShutdownReport": false,
+    "minimumObservedHostHeadroomBytes": 146212798464
+  },
+  "interpretation": [
+    "The original five-second reservation had expired before the observed kernel entry; the first recorded refusal was nativeCapacity/deadlineExceeded.",
+    "Artifact catalog, provider catalog and node composition intervals include wall time, scheduling, I/O and observer overhead. They do not establish exclusive CPU costs or savings from a proposed change.",
+    "This private Node failure does not isolate the causes of the earlier stock terminal Node 12 or pending Node 6 failures.",
+    "No deadline was moved, rearmed or extended; no operational authority or cleanup check was bypassed.",
+    "The failed startup produced no native shutdown report. Seven preceding normal stops independently reported physical store, native and effect retirement."
+  ],
+  "evidence": {
+    "safeSummarySHA256": "594699984441e4af0e0d78b11f8441b1adbc6c67d1831ded8d7e7ba52da2b71e",
+    "rawStartupStderrSHA256": "43720ffaa2f4b867f6d9b9502bc1af5cfc4b382f721a0254dc958399544b9cdd",
+    "campaignReceiptSHA256": "58fdf4dab09fd0adea7dabc56d3ef5086e6a9a842b375ef2a0166f4c2b51636e",
+    "wrapperReceiptSHA256": "e3db773b9b3e9ce948e265ee0df506e31036a5ad6160db79b34936bb4ab396e8",
+    "protectedStoreRead": false,
+    "snapshotPayloadRead": false
+  },
+  "acceptance": {
+    "ordinaryTerminalPassed": false,
+    "ordinaryPendingPassed": false,
+    "wholeHeadQualified": false,
+    "packagedDistributionQualified": false,
+    "issueAcceptance": false
+  }
+}
