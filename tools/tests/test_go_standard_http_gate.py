@@ -14,6 +14,28 @@ from tools.rust_capsule_project import ROOT, read_file, snapshot
 
 
 class StandardHttpGate(unittest.TestCase):
+    def test_compile_qualifier_selects_the_actual_captured_world_for_both_fixtures(self):
+        from tools import qualify_go_http_context
+        for fixture in ('http-context-conformance','standard-http-conformance'):
+            with self.subTest(fixture=fixture), tempfile.TemporaryDirectory() as directory, \
+                    patch.object(qualify_go_http_context,'Commands'), \
+                    patch.object(qualify_go_http_context,'Compiler') as factory:
+                compiler = factory.return_value
+                compiler.materials = []
+                def compile_fixture(source, wit, world, output, **kwargs):
+                    package = read_file(wit/'world.wit').decode().split('package ',1)[1].split('@',1)[0]
+                    self.assertEqual(world,package+'/service@1.0.0')
+                    output.mkdir()
+                    component = output/'component.wasm'
+                    component.write_bytes(b'not-executed-component-control')
+                    return component, {}
+                compiler.compile.side_effect = compile_fixture
+                result = qualify_go_http_context.qualify(Path(directory)/'compile',fixture_name=fixture)
+                self.assertEqual(result['status'],'passed')
+                self.assertEqual(result['qualification'],'compile-only')
+                self.assertEqual(result['signedExecution'],'not-run')
+                self.assertFalse(result['defaultNetHttpQualification'])
+
     def test_project_world_and_export_package_share_the_declared_tenant(self):
         with tempfile.TemporaryDirectory() as directory:
             app = project(Path(directory)/'application')

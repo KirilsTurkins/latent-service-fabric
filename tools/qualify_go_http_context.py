@@ -46,7 +46,7 @@ def qualify(output: Path, *, fixture_name='http-context-conformance'):
         stage(output / 'wit', fixture)
         commands = Commands(output, output, dict(os.environ), deadline_seconds=900, command_seconds=600)
         compiler = Compiler(output / 'compiler', ROOT / 'sdk/go-guest', commands, runtime_profile=INITIALIZER_PROFILE)
-        world = 'tests:go-standard-http/service@1.0.0' if fixture_name == 'standard-http-conformance' else 'tests:go-http-context/service@1.0.0'
+        world = 'examples:go-standard-http/service@1.0.0' if fixture_name == 'standard-http-conformance' else 'tests:go-http-context/service@1.0.0'
         component, bindings = compiler.compile(output / 'src', output / 'wit',
             world, output / 'build', runtime_profile=INITIALIZER_PROFILE)
         compiler.check_unchanged()
