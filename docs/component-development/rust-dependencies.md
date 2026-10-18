@@ -251,3 +251,26 @@ deleted again before every captured compilation. The ordinary captured compiler
 retains its network-denied namespace. The programme exports only bounded public results.
 Its source is not an executed qualification receipt, and later final-source CI
 must preserve the other language gates in the shared developer-tools job.
+
+The separate `git-components` Rust workflow job consumes only the same run's
+identity-checked public native binaries and observed companion signer inputs.
+Its exporter excludes compiler caches, original source directories and signing
+keys. Every original signed authoring stage and its 35-minute bound remains;
+the additional Git job has its own 20-minute bound and does not rebuild the
+native workspace.
+
+The Git fixture uses ordinary `unicode-xid` 0.2.6 APIs from upstream commit
+`5d50587f19713cd35f1f48e5d4d011aa9c54dbff`, through normal Cargo add, capture
+and exact review. An outside-project crate includes UTF-8 and binary resources
+and is removed after review. Fresh-home locked-offline metadata must confirm
+the same Git identity before two ordinary isolated offline component builds.
+The existing strict demo signer and enforced node then check observable results,
+admission denials and physical cleanup under their original limits. No build
+script or proc macro is approved by this fixture; unexpected executable inputs
+stop before review.
+
+Source controls alone do not establish that this job passed. Its retained
+component, source, graph, tool and node receipts define any actual qualification.
+This finite pure Git case does not claim private Git support, catalogue removal,
+complete host hermeticity, reproducible components, Rust thread/I/O compatibility
+or successful dependency watch. Those acceptance items retain separate evidence.

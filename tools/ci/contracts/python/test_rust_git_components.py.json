@@ -1,0 +1,140 @@
+{
+  "cases": [
+    "GitComponentCapture.test_changed_greeting_hook_is_refused_before_native_authoring",
+    "GitComponentCapture.test_foreign_revision_or_executable_input_cannot_reach_review_or_cleanup",
+    "GitComponentCapture.test_normal_exact_git_authoring_and_unchanged_api_precede_review_and_original_removal",
+    "GitComponentCapture.test_selected_git_must_be_a_real_application_root_edge",
+    "PreparedGitComponentInputs.test_bundle_exports_only_closed_public_signer_inputs_and_exact_native_files",
+    "PreparedGitComponentInputs.test_changed_source_native_or_companion_is_refused_before_bundle_creation",
+    "PreparedGitComponentInputs.test_mutated_original_during_build_cannot_reach_signer_or_node",
+    "PreparedGitComponentInputs.test_offline_identity_then_two_isolated_builds_precede_strict_signer_and_node",
+    "PreparedGitComponentInputs.test_signer_layer_paths_cannot_escape_the_prepared_build",
+    "PreparedGitComponentInputs.test_unexpected_native_product_cannot_be_executed_or_exported"
+  ],
+  "guards": {
+    "GitComponentCapture.test_changed_greeting_hook_is_refused_before_native_authoring": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e8e6b27aa4e98bb995630c4a09add2939831ef6a1730ca4b1389fea9fc86f85",
+        "class:setup-sha256:b811c7616d052ad6f982ed1c8e2153566bd4dfad5090023551e201c01be3b4d4"
+      ],
+      "skipSites": []
+    },
+    "GitComponentCapture.test_foreign_revision_or_executable_input_cannot_reach_review_or_cleanup": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e8e6b27aa4e98bb995630c4a09add2939831ef6a1730ca4b1389fea9fc86f85",
+        "class:setup-sha256:b811c7616d052ad6f982ed1c8e2153566bd4dfad5090023551e201c01be3b4d4"
+      ],
+      "skipSites": []
+    },
+    "GitComponentCapture.test_normal_exact_git_authoring_and_unchanged_api_precede_review_and_original_removal": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e8e6b27aa4e98bb995630c4a09add2939831ef6a1730ca4b1389fea9fc86f85",
+        "class:setup-sha256:b811c7616d052ad6f982ed1c8e2153566bd4dfad5090023551e201c01be3b4d4"
+      ],
+      "skipSites": []
+    },
+    "GitComponentCapture.test_selected_git_must_be_a_real_application_root_edge": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e8e6b27aa4e98bb995630c4a09add2939831ef6a1730ca4b1389fea9fc86f85",
+        "class:setup-sha256:b811c7616d052ad6f982ed1c8e2153566bd4dfad5090023551e201c01be3b4d4"
+      ],
+      "skipSites": []
+    },
+    "PreparedGitComponentInputs.test_bundle_exports_only_closed_public_signer_inputs_and_exact_native_files": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e8e6b27aa4e98bb995630c4a09add2939831ef6a1730ca4b1389fea9fc86f85",
+        "class:setup-sha256:d8c5ae436725ac3fa0c6c1928e94709ee89662c3a2408f4d489847ab5f9d0d32"
+      ],
+      "skipSites": []
+    },
+    "PreparedGitComponentInputs.test_changed_source_native_or_companion_is_refused_before_bundle_creation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e8e6b27aa4e98bb995630c4a09add2939831ef6a1730ca4b1389fea9fc86f85",
+        "class:setup-sha256:d8c5ae436725ac3fa0c6c1928e94709ee89662c3a2408f4d489847ab5f9d0d32"
+      ],
+      "skipSites": []
+    },
+    "PreparedGitComponentInputs.test_mutated_original_during_build_cannot_reach_signer_or_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e8e6b27aa4e98bb995630c4a09add2939831ef6a1730ca4b1389fea9fc86f85",
+        "class:setup-sha256:d8c5ae436725ac3fa0c6c1928e94709ee89662c3a2408f4d489847ab5f9d0d32"
+      ],
+      "skipSites": []
+    },
+    "PreparedGitComponentInputs.test_offline_identity_then_two_isolated_builds_precede_strict_signer_and_node": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e8e6b27aa4e98bb995630c4a09add2939831ef6a1730ca4b1389fea9fc86f85",
+        "class:setup-sha256:d8c5ae436725ac3fa0c6c1928e94709ee89662c3a2408f4d489847ab5f9d0d32"
+      ],
+      "skipSites": []
+    },
+    "PreparedGitComponentInputs.test_signer_layer_paths_cannot_escape_the_prepared_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e8e6b27aa4e98bb995630c4a09add2939831ef6a1730ca4b1389fea9fc86f85",
+        "class:setup-sha256:d8c5ae436725ac3fa0c6c1928e94709ee89662c3a2408f4d489847ab5f9d0d32"
+      ],
+      "skipSites": []
+    },
+    "PreparedGitComponentInputs.test_unexpected_native_product_cannot_be_executed_or_exported": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:5e8e6b27aa4e98bb995630c4a09add2939831ef6a1730ca4b1389fea9fc86f85",
+        "class:setup-sha256:d8c5ae436725ac3fa0c6c1928e94709ee89662c3a2408f4d489847ab5f9d0d32"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_git_components.py",
+  "reviewReason": "Add ten modelled source controls for normal Git identity, immutable resources, review ordering, public artifact bounds, offline builds and strict signer/node ordering; preserve existing modules and guards.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

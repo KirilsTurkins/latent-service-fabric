@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_git_components.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Bounded actual Git component qualifier and closed public prepared bundle; source controls do not claim native execution or grant executable-tool approval.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "b507771e791a6b65e99275264a1d96bc726b76e69103238cebd1fe96429aee49"
+}

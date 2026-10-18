@@ -1,0 +1,79 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "Captured Cargo Git offline components and signed execution",
+    "needs": "authoring",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain",
+        "with": {
+          "targets": "wasm32-unknown-unknown"
+        }
+      },
+      {
+        "uses": "bytecodealliance/actions/wasm-tools/setup",
+        "with": {
+          "version": "1.254.0"
+        }
+      },
+      {
+        "uses": "mlugg/setup-zig",
+        "with": {
+          "version": "0.16.0"
+        }
+      },
+      {
+        "name": "Install the existing bounded compiler namespace and pinned bindings",
+        "run": "sudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\npython3 -m pip install --requirement tools/requirements.lock\npython3 tools/install_guest_bindgen.py \"$RUNNER_TEMP/guest-tools\"\necho \"$RUNNER_TEMP/guest-tools\" >> \"$GITHUB_PATH\"\n"
+      },
+      {
+        "name": "Download only this run's identity-checked public prerequisites",
+        "uses": "actions/download-artifact",
+        "with": {
+          "name": "rust-git-prepared-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-git-prepared"
+        }
+      },
+      {
+        "name": "Test Git source admission and prepared artifact refusal controls",
+        "run": "python3 -m unittest tools.tests.test_rust_git_components"
+      },
+      {
+        "name": "Compile the captured unchanged Git crate offline and execute signed components",
+        "run": "python3 tools/qualify_rust_git_components.py run --prepared-qualification \"$RUNNER_TEMP/rust-git-prepared\" --output \"$RUNNER_TEMP/rust-git-components\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain bounded Git component qualification observations including failures",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "if-no-files-found": "warn",
+          "name": "rust-git-components-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-git-components/qualification.json\n${{ runner.temp }}/rust-git-components/FAILED.json\n${{ runner.temp }}/rust-git-components/capture.json\n${{ runner.temp }}/rust-git-components/offline.json\n${{ runner.temp }}/rust-git-components/logs/**\n${{ runner.temp }}/rust-git-components/first/*.json\n${{ runner.temp }}/rust-git-components/first/logs/**\n${{ runner.temp }}/rust-git-components/first/component.wasm\n${{ runner.temp }}/rust-git-components/first/component.wit\n${{ runner.temp }}/rust-git-components/offline-rebuild/*.json\n${{ runner.temp }}/rust-git-components/offline-rebuild/logs/**\n${{ runner.temp }}/rust-git-components/offline-rebuild/component.wasm\n${{ runner.temp }}/rust-git-components/offline-rebuild/component.wit\n${{ runner.temp }}/rust-git-components/node/workflow.json\n${{ runner.temp }}/rust-git-components/node/FAILED.json\n",
+          "retention-days": 3
+        }
+      }
+    ],
+    "timeout-minutes": 20
+  },
+  "jobId": "git-components",
+  "kind": "job",
+  "reviewReason": "Separate bounded signed Git component job consumes this run exact public prepared tuple; no native rebuild, existing authority and resource limits retained.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml"
+}
