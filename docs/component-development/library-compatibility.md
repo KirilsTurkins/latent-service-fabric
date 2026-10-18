@@ -143,5 +143,22 @@ client was reaped. Unknown, conflicting or oversized trap details do not supply
 a runtime disposition. Messages, cell identifiers and private detail fields are
 excluded from the observation.
 
+The text reader also names the existing node-owned numeric diagnostic stage,
+reason and optional profile. For example, stage `3` and reason `4` are displayed
+as `preparation (3)` and `unsupported-engine-profile (4)`. These labels describe
+the producer's observation; they do not identify a reached library operation,
+prove a missing API implementation, or certify a package. In particular,
+`queue-pressure` does not identify a task, thread or timer limit. The existing
+cause and resource-dimension fields keep their separate evidence rules.
+
+When supplied by the node, `configured_bound`, `calculated_requirement`,
+`fixed_bytes`, `lifting_fuel` and `lift_multiplier` are displayed as their exact
+unsigned measurements. Zero stays zero; absent measurements and profiles are
+not invented. Missing and invalid-present diagnostics are labelled separately.
+Unknown enum values, duplicate observations, oversized numbers and private or
+unrecognized diagnostic fields supply no display labels or measurements. The
+reader makes no additional call, changes no invocation result, and retains the
+same source bindings, redaction, retirement and retry limitations.
+
 Add `--json` to validate and emit the same machine report. This command only
 reads the explicit report; it does not execute library code or grant authority.
