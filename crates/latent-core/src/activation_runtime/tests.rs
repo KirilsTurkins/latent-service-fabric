@@ -78,6 +78,59 @@ fn lazy_path_allocates_no_records_and_accepted_owners_share_finite_limits() {
 }
 
 #[test]
+fn continuations_require_live_original_generation_before_any_admission() {
+    let foreign = runtime();
+    let runtime = runtime();
+    let foreign_owner = foreign.register(OwnerKind::Task, None).unwrap();
+    let metadata = runtime.snapshot().host_memory_bytes;
+    let reject = |token| {
+        let before = runtime.snapshot();
+        let failure = runtime
+            .register(OwnerKind::Result, Some(token))
+            .unwrap_err();
+        assert_eq!(failure.code, PlatformErrorCode::InvalidArgument);
+        assert_eq!(failure.message, "runtime-token");
+        let after = runtime.snapshot();
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert_eq!(after.admission_failures, before.admission_failures + 1);
+    };
+    reject(foreign_owner.token());
+    assert!(runtime.inner.state.lock().unwrap().slab.is_none());
+    assert_eq!(runtime.snapshot().host_memory_bytes, metadata);
+
+    let settled = runtime.register(OwnerKind::Task, None).unwrap();
+    let stale = settled.token();
+    drop(settled);
+    let live = runtime.register(OwnerKind::Task, None).unwrap();
+    reject(stale);
+    reject(RuntimeToken {
+        generation: live.token().generation,
+        id: u64::MAX,
+    });
+    let before = runtime.snapshot().host_memory_bytes;
+    let failure = RuntimeTimer::new(&runtime, Instant::now(), None, Some(stale)).unwrap_err();
+    assert_eq!(failure.code, PlatformErrorCode::InvalidArgument);
+    assert_eq!(runtime.snapshot().host_memory_bytes, before);
+
+    let result = runtime
+        .register(OwnerKind::Result, Some(live.token()))
+        .unwrap();
+    drop(result);
+    runtime.begin_drain();
+    reject(stale);
+    reject(foreign_owner.token());
+    let result = runtime
+        .register(OwnerKind::Result, Some(live.token()))
+        .unwrap();
+    drop(result);
+    drop(live);
+    runtime.retire().unwrap();
+    drop(foreign_owner);
+    foreign.retire().unwrap();
+}
+
+#[test]
 fn close_allows_bounded_live_continuations_and_rejects_independent_work() {
     let runtime = runtime();
     let task = runtime.register(OwnerKind::Task, None).unwrap();
@@ -92,6 +145,45 @@ fn close_allows_bounded_live_continuations_and_rejects_independent_work() {
     drop(result);
     runtime.retire().unwrap();
     assert!(runtime.register(OwnerKind::Task, None).is_err());
+}
+
+#[test]
+fn task_support_admission_checks_original_kind_and_liveness_under_the_same_lock() {
+    let foreign = runtime();
+    let foreign_task = foreign.register(OwnerKind::Task, None).unwrap();
+    let runtime = runtime();
+    let wrong_kind = runtime.register(OwnerKind::Result, None).unwrap();
+    let task = runtime.register(OwnerKind::Task, None).unwrap();
+    let task_token = task.token();
+    let reject = |token| {
+        let before = runtime.snapshot();
+        let failure = runtime
+            .register_from_task(OwnerKind::Native, token)
+            .unwrap_err();
+        assert_eq!(failure.code, PlatformErrorCode::InvalidArgument);
+        assert_eq!(failure.message, "runtime-task-continuation");
+        let after = runtime.snapshot();
+        assert_eq!(after.owners, before.owners);
+        assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
+        assert_eq!(after.admission_failures, before.admission_failures + 1);
+    };
+    reject(wrong_kind.token());
+    reject(foreign_task.token());
+    reject(RuntimeToken {
+        generation: task_token.generation,
+        id: u64::MAX,
+    });
+    runtime.begin_drain();
+    let native = runtime
+        .register_from_task(OwnerKind::Native, task_token)
+        .unwrap();
+    drop(task);
+    reject(task_token);
+    drop(native);
+    drop(wrong_kind);
+    runtime.retire().unwrap();
+    drop(foreign_task);
+    foreign.retire().unwrap();
 }
 
 #[test]

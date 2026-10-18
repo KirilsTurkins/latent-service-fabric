@@ -1,0 +1,44 @@
+package dev.latent.guest.facilities;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+/** One synchronous bounded record per write; no worker or deferred flush. */
+public final class StandardLog {
+    private StandardLog() { }
+    public static void writeOut(byte[] bytes, int offset, int length) throws IOException {
+        write(false, bytes, offset, length);
+    }
+    public static void writeErr(byte[] bytes, int offset, int length) throws IOException {
+        write(true, bytes, offset, length);
+    }
+    private static void write(boolean error, byte[] bytes, int offset, int length) throws IOException {
+        if (bytes == null) throw new NullPointerException();
+        if (offset < 0 || length < 0 || offset > bytes.length || length > bytes.length - offset)
+            throw new IndexOutOfBoundsException();
+        if (length == 0) return;
+        if (length > 4096) throw new IOException("bounded-log-write-too-large");
+        int end = offset + length;
+        for (int position = offset; position < end;) {
+            int first = bytes[position++] & 255;
+            if (first < 128) continue;
+            int count;
+            int code;
+            int minimum;
+            if (first >= 194 && first <= 223) { count = 1; code = first & 31; minimum = 128; }
+            else if (first >= 224 && first <= 239) { count = 2; code = first & 15; minimum = 2048; }
+            else if (first >= 240 && first <= 244) { count = 3; code = first & 7; minimum = 65536; }
+            else throw new IOException("bounded-log-invalid-utf8");
+            if (count > end - position) throw new IOException("bounded-log-incomplete-utf8-write");
+            for (int index = 0; index < count; index++) {
+                int next = bytes[position++] & 255;
+                if ((next & 192) != 128) throw new IOException("bounded-log-invalid-utf8");
+                code = (code << 6) | (next & 63);
+            }
+            if (code < minimum || code > 0x10ffff || code >= 0xd800 && code <= 0xdfff)
+                throw new IOException("bounded-log-invalid-utf8");
+        }
+        String message = new String(bytes, offset, length, StandardCharsets.UTF_8);
+        LOG_BODY
+    }
+}

@@ -10,7 +10,7 @@ from .common import decode, digest, encode, members, require
 
 
 def validate(value: dict) -> dict:
-    members(value, set(), {"clock", "http", "blob", "secrets", "metrics", "localService", "events"})
+    members(value, set(), {"clock", "http", "blob", "secrets", "metrics", "localService", "events", "random"})
     require(value and len(encode(value)) <= 256 * 1024, "node-fixture-byte-limit")
     if "clock" in value:
         clock = members(value["clock"], {"monotonicNanos", "wallUnixMillis"})
@@ -35,6 +35,9 @@ def validate(value: dict) -> dict:
     if "localService" in value:
         from . import local_service_fixture
         local_service_fixture.validate(value["localService"])
+    if "random" in value:
+        from . import random_fixture
+        random_fixture.validate(value["random"])
     return value
 
 
@@ -77,7 +80,7 @@ def initialized(source: Path, cases: list[dict], selected: dict | None, runtime:
             requested = decode(raw, 256 * 1024)
             # Other adapter fixtures remain explicitly unsupported by the
             # common runner until a node implementation has initialized them.
-            if not isinstance(requested, dict) or set(requested) not in ({"clock"}, {"http"}, {"blob"}, {"secrets"}, {"metrics"}, {"localService"}, {"events"}):
+            if not isinstance(requested, dict) or set(requested) not in ({"clock"}, {"http"}, {"blob"}, {"secrets"}, {"metrics"}, {"localService"}, {"events"}, {"random"}):
                 continue
             validate(requested)
             if selected is None or any(selected.get(key) != value for key, value in requested.items()):
@@ -87,6 +90,10 @@ def initialized(source: Path, cases: list[dict], selected: dict | None, runtime:
             if "blob" in requested and fixture["kind"] == "real-provider":
                 from . import blob_fixture
                 if blob_fixture.initialized(requested["blob"], providers):
+                    result.add(fixture["id"])
+            if "random" in requested and fixture["kind"] == "real-provider":
+                from . import random_fixture
+                if random_fixture.initialized(requested["random"], providers):
                     result.add(fixture["id"])
             if "secrets" in requested and fixture["kind"] == "real-provider":
                 from . import secret_fixture

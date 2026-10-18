@@ -71,7 +71,19 @@ public final class Activation {
         work.managed = true;
         try { threads.put(thread, work); }
         catch (Throwable error) { Bindings.LatentRuntimeActivation.settle(work.token); throw error; }
-        thread.start();
+        try { thread.start(); }
+        catch (Throwable error) {
+            // Before the maintained start hook consumes this preparation, no
+            // worker has been accepted. Later failures retain uncertain work.
+            if (work.prepared) {
+                var settled = Bindings.LatentRuntimeActivation.settle(work.token);
+                if (settled.isError()) throw new IllegalStateException("activation-runtime-start-rollback-" + settled.error(), error);
+                threads.remove(thread);
+                work.token = null;
+                work.complete = true;
+            }
+            throw error;
+        }
     }
 
     public interface ManagedPool {
@@ -281,12 +293,27 @@ public final class Activation {
             }
         }
         if (selected != null) {
-            var waited = Bindings.LatentRuntimeActivation.timerNext(((Lease)selected).token);
-            if (waited.isError()) throw new IllegalStateException("activation-runtime-timer-next-" + waited.error());
-            selected.fired = true;
+            if (HostCalls.enabled()) {
+                var waited = Bindings.lsfRootTimerNext(((Lease)selected).token);
+                if (waited.isSome() && waited.value().isError())
+                    throw new IllegalStateException("activation-runtime-timer-next-" + waited.value().error());
+                selected.fired = waited.isSome();
+            } else {
+                var waited = Bindings.LatentRuntimeActivation.timerNext(((Lease)selected).token);
+                if (waited.isError()) throw new IllegalStateException("activation-runtime-timer-next-" + waited.error());
+                selected.fired = true;
+            }
         } else {
-            var waited = Bindings.LatentRuntimeActivation.waitFor(new Unsigned64(nanos), Option.some(root.token));
-            if (waited.isError()) throw new IllegalStateException("activation-runtime-wait-" + waited.error());
+            if (HostCalls.enabled()) {
+                if (!(millis < 0 && HostCalls.waitAny())) {
+                    var waited = Bindings.lsfRootWaitFor(new Unsigned64(nanos), Option.some(root.token));
+                    if (waited.isSome() && waited.value().isError())
+                        throw new IllegalStateException("activation-runtime-wait-" + waited.value().error());
+                }
+            } else {
+                var waited = Bindings.LatentRuntimeActivation.waitFor(new Unsigned64(nanos), Option.some(root.token));
+                if (waited.isError()) throw new IllegalStateException("activation-runtime-wait-" + waited.error());
+            }
         }
         var awake = Bindings.LatentRuntimeActivation.wake(root.token);
         if (awake.isError()) throw new IllegalStateException("activation-runtime-wake-" + awake.error());
@@ -316,10 +343,12 @@ public final class Activation {
                 retireIdlePools();
                 if (!pending()) break;
                 queueClockCaptured = false;
+                HostCalls.poll();
                 long delay = EventQueue.processSingle();
                 // The queue may become empty because that event completed the
                 // last accepted task. Establish quiescence before parking.
                 closeCompletedRoot();
+                if (HostCalls.poll()) continue;
                 // Interrupting idle workers can enqueue their ordinary finally
                 // continuations after processSingle calculated its delay. Run
                 // the guest queue again before using that now-stale delay.

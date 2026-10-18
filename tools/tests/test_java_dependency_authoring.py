@@ -316,5 +316,211 @@ for name, module in sys.modules.items():
         self.assertIn(b'"status":"verified"', completed.stdout)
 
 
+class JavaWatchShutdown(unittest.TestCase):
+    def test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved(self):
+        from tools.qualify_java_dependency_watch import ShutdownOnce
+        fence = ShutdownOnce()
+        calls = []
+        original = RuntimeError('unknown external shutdown result')
+        def uncertain():
+            calls.append('down')
+            self.assertTrue(fence.attempted)
+            raise original
+        with self.assertRaises(RuntimeError) as observed:
+            fence.call(uncertain)
+        self.assertIs(observed.exception, original)
+        with self.assertRaisesRegex(ValueError, 'already-attempted-no-retry'):
+            fence.call(lambda: calls.append('replayed'))
+        self.assertEqual(calls, ['down'])
+
+    def test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed(self):
+        from tools.qualify_java_dependency_watch import ShutdownOnce
+        fence = ShutdownOnce()
+        receipt = {'state': 'stopped', 'reaped': True, 'cleanShutdown': True}
+        self.assertIs(fence.call(lambda: receipt), receipt)
+        with self.assertRaisesRegex(ValueError, 'already-attempted-no-retry'):
+            fence.call(lambda: self.fail('replayed confirmed mutation'))
+
+
+class FrontendRuntime(unittest.TestCase):
+    def test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode(self):
+        import json
+        import hashlib
+        import os
+        import subprocess
+        import sys
+        from types import SimpleNamespace
+        import zipfile
+        from tools import qualify_java_dependency_watch as qualifier
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            helper = root / 'helper.pyz'
+            with zipfile.ZipFile(helper, 'w') as archive:
+                archive.writestr('tools/__init__.py', '')
+                archive.writestr('tools/dev_workflow/__init__.py', '')
+                archive.writestr('tools/dev_workflow/cli.py',
+                    'import json,sys\n'
+                    'def main():\n'
+                    ' print(json.dumps({"isolated":sys.flags.isolated,'
+                    '"ignoreEnvironment":sys.flags.ignore_environment,'
+                    '"noBytecode":sys.dont_write_bytecode,"cachePrefix":sys.pycache_prefix}))\n'
+                    ' return 0\n')
+            frontend, events = root / 'frontend.py', root / 'events.jsonl'
+            python = Path(sys.executable)
+            args = SimpleNamespace(helper=helper,
+                helper_sha256='sha256:' + hashlib.sha256(helper.read_bytes()).hexdigest())
+            qualifier.write_frontend(frontend, python, args, events)
+            header = frontend.read_text().splitlines()[0]
+            self.assertTrue(header.startswith('#!' + str(python)))
+            argument = header[len('#!' + str(python)):].strip()
+            environment = {'PATH': os.defpath, 'HOME': temporary, 'TEMP': temporary, 'TMP': temporary,
+                'PYTHONPATH': str(root / 'ambient-imports'),
+                'PYTHONPYCACHEPREFIX': str(root / 'ambient-bytecode')}
+            if sys.platform == 'win32':
+                environment['SystemRoot'] = os.environ['SystemRoot']
+            result = subprocess.run([str(python), *([argument] if argument else []), str(frontend)],
+                cwd=root, env=environment, capture_output=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stderr.decode('utf-8', 'replace'))
+            self.assertEqual(json.loads(result.stdout), {'isolated': 1, 'ignoreEnvironment': 1,
+                'noBytecode': True, 'cachePrefix': None})
+            self.assertEqual(events.read_bytes(), result.stdout)
+            self.assertFalse((root / 'ambient-bytecode').exists())
+
+class JavaWatchPublicBoundary(unittest.TestCase):
+    def test_public_projection_preserves_failure_and_cleanup_without_raw_workspace_material(self):
+        from tools.qualify_java_dependency_watch import public_projection
+        report = {'schemaVersion': 'latent.java.dependency-watch-qualification.v1',
+            'passed': False, 'publisherAuthenticated': False, 'cleanHost': False,
+            'sourceCandidate': True, 'admission': 'explicit-signed-fixture-per-reviewed-build',
+            'phase': 'watch', 'durationSeconds': 1.0, 'failure': 'initial-connect-failed',
+            'outsideJars': {'primary': 'sha256:' + '1' * 64},
+            'commands': [{'private': 'must-not-publish'}], 'inputs': {'private': 'must-not-publish'},
+            'sourceNode': {'private': 'must-not-publish'}, 'cleanupAfterFailure': {'private': 'must-not-publish'},
+            'stages': [{'id': 'initial', 'deployment': {'private': 'must-not-publish'},
+                'build': {'private': 'must-not-publish'}, 'tests': {'passed': True, 'private': 'must-not-publish'}}],
+            'shutdowns': [{'id': 'initial', 'watchExitCode': 0,
+                'result': {'state': 'stopped', 'reaped': True, 'cleanShutdown': True,
+                           'private': 'must-not-publish'}}]}
+        public = public_projection(report, qualifier='q', helper='h', source_probe='p')
+        self.assertFalse(public['passed'])
+        self.assertEqual(public['failure'], 'initial-connect-failed')
+        self.assertEqual(public['cleanup'], 'not-performed')
+        self.assertEqual(public['deploymentCount'], 1)
+        self.assertEqual(public['stages'], [{'id': 'initial', 'passed': True}])
+        report['watchEvents'] = [{'event': 'edit-failed', 'phase': 'build',
+            'code': 'workspace-recipe-trust-required', 'uncertain': False,
+            'source': '/private/workspace', 'diagnostics': ['must-not-publish']}]
+        observed = public_projection(report, qualifier='q', helper='h', source_probe='p')
+        self.assertEqual(observed['watchEvents'], [{'event': 'edit-failed', 'phase': 'build',
+            'code': 'workspace-recipe-trust-required', 'uncertain': False}])
+        self.assertNotIn('must-not-publish', json.dumps(observed))
+        self.assertNotIn('/private/workspace', json.dumps(observed))
+        from tools.qualify_java_dependency_watch import public_watch_events
+        self.assertEqual(len(public_watch_events(report['watchEvents'] * 40)), 32)
+        self.assertEqual(public_watch_events([{'event': 'private/path', 'code': 'x' * 161,
+            'phase': 'bad\nphase', 'uncertain': 'must-not-publish'}]), [])
+        self.assertEqual(public['shutdowns'], [{'id': 'initial', 'watchExitCode': 0,
+            'state': 'stopped', 'reaped': True, 'cleanShutdown': True}])
+        self.assertNotIn('must-not-publish', json.dumps(public))
+        report.update(passed=True, cleanup='confirmed-normal-down')
+        self.assertTrue(public_projection(report, qualifier='q', helper='h', source_probe='p')['passed'])
+
+    def test_qualifier_uses_current_private_account_home_and_node_root(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import qualify_java_dependency_watch as qualifier
+        owned = Path('/owned-private-watch-home')
+        with patch.object(Path, 'home', return_value=owned):
+            environment = qualifier.qualification_environment(owned / 'output')
+        self.assertEqual(environment['HOME'], str(owned))
+        source_probe = SimpleNamespace(helper=SimpleNamespace(root_directory=lambda: owned / '.lsf-dev'))
+        self.assertEqual(qualifier.node_workspace_root(source_probe, 'owned-workspace'),
+                         owned / '.lsf-dev/owned-workspace')
+
+
+    def test_public_watch_events_omit_credential_shaped_values_and_keep_closed_producer_labels(self):
+        import ast
+        import inspect
+        from tools.qualify_java_dependency_watch import public_watch_events
+        observed = public_watch_events([
+            None, [], 'private-source',
+            {'event': 'edit-failed', 'phase': 'build', 'code': 'workspace-recipe-trust-required',
+             'uncertain': False, 'private': 'token-secret'},
+            {'event': 'token-secret', 'phase': 'a' * 64, 'code': 'token-secret'},
+            {'event': 'a' * 64, 'phase': 'token-secret', 'code': 'a' * 64, 'uncertain': 1},
+            {'event': [], 'phase': {}, 'code': None, 'uncertain': True},
+        ])
+        self.assertEqual(observed, [
+            {'event': 'edit-failed', 'phase': 'build', 'code': 'workspace-recipe-trust-required',
+             'uncertain': False}, {'uncertain': True}])
+        self.assertNotIn('token-secret', json.dumps(observed))
+        self.assertNotIn('a' * 64, json.dumps(observed))
+        tree = ast.parse(inspect.getsource(public_watch_events))
+        definitions = [node for node in ast.walk(tree) if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == 'allowed' for target in node.targets)]
+        self.assertEqual(len(definitions), 1)
+        allowed = ast.literal_eval(definitions[0].value)
+        self.assertEqual(set(allowed), {'event', 'phase', 'code'})
+        self.assertEqual(tuple(len(allowed[key]) for key in ('event', 'phase', 'code')), (5, 4, 23))
+        root = Path(__file__).resolve().parents[2]
+        actual = set()
+        for name in ('tools/dev_workflow/cli.py', 'tools/dev_workflow/watch.py',
+                     'tools/dev_workflow/build.py', 'tools/dev_workflow/build_client.py',
+                     'tools/dev_workflow/node_test_signing.py', 'tools/dev_workflow/tool_inventory.py',
+                     'tools/dev_workflow/paths.py', 'tools/dev_guest_recipe.py'):
+            actual.update(node.value for node in ast.walk(ast.parse((root / name).read_text()))
+                if isinstance(node, ast.Constant) and isinstance(node.value, str))
+        self.assertLessEqual(set().union(*allowed.values()), actual)
+
+    def test_optional_observer_errors_preserve_original_exception_identity(self):
+        from tools.qualify_java_dependency_watch import add_public_watch_events
+        for kind in (ValueError, OSError, RecursionError, RuntimeError):
+            with self.subTest(observer=kind.__name__):
+                original = ValueError('initial-build-failed')
+                report = {'passed': False, 'failure': str(original)}
+                def broken_observer():
+                    raise kind('private-observer-details')
+                with self.assertRaises(ValueError) as observed:
+                    try:
+                        raise original
+                    finally:
+                        add_public_watch_events(report, broken_observer)
+                self.assertIs(observed.exception, original)
+                self.assertEqual(report, {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': []})
+
+    def test_bounded_deeply_nested_actual_event_file_preserves_original_failure(self):
+        from tools.qualify_java_dependency_watch import add_public_watch_events, read_watch_events
+        with tempfile.TemporaryDirectory() as temporary:
+            events = Path(temporary) / 'events.jsonl'
+            raw = b'[' * 16384 + b'0' + b']' * 16384 + b'\n'
+            self.assertLess(len(raw), 4 * 1024 * 1024)
+            events.write_bytes(raw)
+            with self.assertRaises(RecursionError):
+                read_watch_events(events)
+            original = RuntimeError('original-qualification-failure')
+            report = {'passed': False, 'failure': 'initial-build-failed'}
+            with self.assertRaises(RuntimeError) as observed:
+                try:
+                    raise original
+                finally:
+                    add_public_watch_events(report, lambda: read_watch_events(events))
+            self.assertIs(observed.exception, original)
+            self.assertEqual(report, {'passed': False, 'failure': 'initial-build-failed', 'watchEvents': []})
+
+    def test_event_reader_keeps_existing_byte_limit_partial_line_and_missing_file_contract(self):
+        from tools.qualify_java_dependency_watch import add_public_watch_events, read_watch_events
+        with tempfile.TemporaryDirectory() as temporary:
+            events = Path(temporary) / 'events.jsonl'
+            self.assertEqual(read_watch_events(events), [])
+            events.write_bytes(b'{"code":"success"}\n{"partial":')
+            self.assertEqual(read_watch_events(events), [{'code': 'success'}])
+            report = {'passed': True}
+            add_public_watch_events(report, lambda: read_watch_events(events))
+            self.assertEqual(report, {'passed': True, 'watchEvents': [{'code': 'success'}]})
+            events.write_bytes(b'x' * (4 * 1024 * 1024 + 1))
+            with self.assertRaisesRegex(ValueError, 'watch-event-byte-limit'):
+                read_watch_events(events)
+
 if __name__ == '__main__':
     unittest.main()

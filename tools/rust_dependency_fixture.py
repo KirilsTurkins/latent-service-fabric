@@ -4,14 +4,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import shutil
-import tempfile
-import tomllib
 
 from tools.application_dependencies import LOCK
-from tools.build_observation import build_environment
-from tools.build_process import run_bounded
 from tools.build_snapshot import canonical, digest
 from tools.rust_application_dependencies import resolve
+from tools import cargo_native_authoring
 
 
 DENIAL_CONTROL = r'''
@@ -78,12 +75,47 @@ outside-qualification-macro = {path = "../developer-owned-macro"}
 ''', encoding='utf-8')
     resource = b'Hello, '
     (library / 'src/greeting.txt').write_bytes(resource)
+    (library / 'src/binary.dat').write_bytes(bytes((0, 255, 65, 128)))
+    (library / 'src/utf8.txt').write_bytes(bytes((71, 114, 195, 188, 195, 159, 101)))
     (library / 'src/lib.rs').write_text('''use unicode_normalization::UnicodeNormalization;
+use std::sync::atomic::{AtomicU32, Ordering};
+static CALLS: AtomicU32 = AtomicU32::new(0);
 pub fn prefix() -> String {
+    assert_eq!(CALLS.fetch_add(1, Ordering::Relaxed), 0, "library static state leaked across activations");
+    assert_eq!(include_bytes!("binary.dat"), &[0_u8, 255, 65, 128]);
+    assert_eq!(include_str!("utf8.txt").as_bytes(), &[71_u8, 114, 195, 188, 195, 159, 101]);
+    let dropped = std::cell::Cell::new(0);
+    struct Guard<'a>(&'a std::cell::Cell<u32>);
+    impl Drop for Guard<'_> { fn drop(&mut self) { self.0.set(self.0.get() + 1); } }
+    drop(Guard(&dropped));
+    assert_eq!(dropped.get(), 1);
     assert_eq!("\\u{212b}".nfc().collect::<String>(), "\\u{00c5}");
     let value = include_str!("greeting.txt").nfc().collect::<String>();
     assert_eq!(value, outside_qualification_macro::captured_prefix!());
     value
+}
+#[cfg_attr(target_arch = "wasm32", link(wasm_import_module = "env"))]
+extern "C" { fn outside_native_cpu() -> u32; }
+pub fn native_value() -> u32 { unsafe { outside_native_cpu() } }
+pub fn exercise(which: &str) {
+    match which {
+        "panic" => panic!("captured library panic-abort control"),
+        "memory" => {
+            let mut bytes = vec![1_u8; 64 * 1024 * 1024];
+            std::hint::black_box(&mut bytes);
+        }
+        "fuel" => loop { std::hint::spin_loop(); },
+        "spin" => loop {
+            // The original fuel ceiling must outlast the read-only observer.
+            // Wasmtime charges bulk copies per byte; zero-page growth adds
+            // no memory or authority and retains the ordinary runtime path.
+            #[cfg(target_arch = "wasm32")]
+            std::hint::black_box(core::arch::wasm32::memory_grow::<0>(std::hint::black_box(0)));
+            #[cfg(not(target_arch = "wasm32"))]
+            std::hint::spin_loop();
+        },
+        _ => {}
+    }
 }
 ''', encoding='utf-8')
     (macro / 'Cargo.toml').write_text('''[package]
@@ -108,9 +140,6 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
     println!("cargo:rerun-if-changed=build.rs");
 }
 ''', encoding='utf-8')
-    with (project / 'Cargo.toml').open('a', encoding='utf-8') as output:
-        output.write('\n[dependencies]\nunicode-normalization = "=0.1.24"\n'
-                     'outside-qualification-library = {path = ' + json.dumps(str(library).replace('\\', '/')) + '}\n')
     source = project / 'src/lib.rs'
     before = source.read_bytes()
     after = before.replace(b'pub fn greet(name: String)', b'include!(concat!(env!("OUT_DIR"), "/captured.rs"));\npub fn greet(name: String)')
@@ -119,26 +148,43 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
                           b'    let prefix = "Hello, ".nfc().collect::<String>();\n'
                           b'    assert_eq!("\\u{212b}".nfc().collect::<String>(), "\\u{00c5}");\n'
                           b'    assert_eq!(prefix, outside_qualification_library::prefix());\n'
+                          b'    outside_qualification_library::exercise(&name);\n'
                           b'    Ok(format!("{prefix}{name}!"))')
     if after == before or b'Ok(format!("Hello, {name}!"))' in after:
         raise ValueError('Rust dependency qualification source hook changed')
     after = b'use unicode_normalization::UnicodeNormalization;\n' + after
     source.write_bytes(after)
-    pins = tomllib.loads((project / 'vendor/lsf/rust-toolchain.toml').read_text())
-    # The explicit fetch stage is the sole place the native lock can advance.
-    # Metadata does not execute build.rs or procedural macros.
-    with tempfile.TemporaryDirectory(prefix='lsf-rust-fixture-lock-') as temporary:
-        temporary = Path(temporary)
-        environment = build_environment(temporary)
-        environment.update(CARGO_HOME=str(temporary / 'cargo-home'), HOME=str(temporary / 'home'),
-                           USERPROFILE=str(temporary / 'home'), RUSTUP_TOOLCHAIN=pins['toolchain']['channel'],
-                           RUSTUP_AUTO_INSTALL='0', RUSTC=str(cargo.parent / 'rustc'))
-        run_bounded([str(cargo), 'metadata', '--manifest-path', str(project / 'Cargo.toml'), '--format-version', '1'],
-                    temporary, environment, 600, 16 * 1024 * 1024)
+    added = cargo_native_authoring.author(project, 'add', identity='unicode-normalization', version='0.1.24', cargo=cargo)
+    cargo_native_authoring.author(project, 'add', identity='outside-qualification-library', version='0.1.0', local=library, cargo=cargo)
+    locked = cargo_native_authoring.author(project, 'lock', cargo=cargo)
     candidate = project / 'target/qualification.candidate.json'
-    candidate.parent.mkdir()
+    candidate.parent.mkdir(exist_ok=True)
     lock = resolve(project, candidate, cargo=cargo)
-    (project / LOCK).write_bytes(canonical(lock) + b'\n')
+    from tools.rust_dependency_authoring import review, status
+    from tools.application_dependency_store import DependencyError
+    review(project, candidate, digest(candidate.read_bytes()))
+    reviewed = {name: (project / name).read_bytes() for name in ('Cargo.toml', 'Cargo.lock')}
+    accepted = (project / LOCK).read_bytes()
+    external_manifest = (library / 'Cargo.toml').read_bytes()
+    stale_controls = []
+    for operation in ('update', 'remove'):
+        if operation == 'update':
+            (library / 'Cargo.toml').write_bytes(external_manifest.replace(b'version = "0.1.0"', b'version = "0.1.1"', 1))
+        cargo_native_authoring.author(project, operation, identity='outside-qualification-library',
+            version='0.1.1' if operation == 'update' else None, local=library if operation == 'update' else None, cargo=cargo)
+        try:
+            status(project)
+        except DependencyError:
+            stale_controls.append(operation)
+        else:
+            raise ValueError('Rust native authoring retained stale accepted capture')
+        if (project / LOCK).read_bytes() != accepted:
+            raise ValueError('Rust native authoring changed accepted capture')
+        for name, raw in reviewed.items():
+            (project / name).write_bytes(raw)
+        (library / 'Cargo.toml').write_bytes(external_manifest)
+        if status(project)['status'] != 'verified':
+            raise ValueError('Rust exact reviewed metadata restoration failed')
     selected = {row['metadata'].get('package') for row in lock['artifacts']}
     if not {'unicode-normalization', 'tinyvec', 'tinyvec_macros', 'outside-qualification-macro'} <= selected:
         raise ValueError('native Rust qualification graph did not capture the required transitives')
@@ -156,6 +202,11 @@ pub fn captured_prefix(_input: proc_macro::TokenStream) -> proc_macro::TokenStre
     return {'formatVersion': 1, 'thirdParty': 'unicode-normalization/0.1.24',
             'transitives': ['tinyvec', 'tinyvec_macros'], 'developerOwned': 'outside-qualification-library/0.1.0',
             'applicationLibraries': application_libraries,
+            'declaredSemantics': {'panic': 'abort', 'drop': 'explicit-normal-scope',
+                'resources': ['UTF-8 include_str', 'binary include_bytes'], 'staticState': 'fresh-per-activation',
+                'faultPaths': ['panic', 'memory', 'fuel', 'spin'], 'unwind': 'unsupported-not-claimed'},
+            'authoringWorkflow': {'add': added, 'nativeLock': locked, 'staleCaptureRejected': stale_controls,
+                                 'exactReviewedMetadataRestored': True},
             'resourceDigest': digest(resource), 'sourceDigest': digest(after),
             'coldPreparationBudget': {'originalWallTimeLimitMillis': original_wall_limit,
                                       'wallTimeLimitMillis': recipe['limits']['wallTimeLimitMillis'],

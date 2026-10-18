@@ -38,7 +38,9 @@ raise SystemExit(main())
 
 def guest_command(python: str, helper: str, expected: str, mode: str) -> list[str]:
     require(mode in {"rpc", "create-user", "user-status", "remove-user"}, "helper-mode")
-    return [python, "-I", "-c", EXEC_HELPER, helper, sha(expected), mode]
+    # The selected Python may belong to an immutable delivered compiler inventory.
+    # Isolation does not suppress bytecode; keep every helper mode read-only.
+    return [python, "-I", "-B", "-c", EXEC_HELPER, helper, sha(expected), mode]
 
 
 def validate(value: dict) -> dict:
@@ -119,4 +121,4 @@ class Backend:
                     "owned-process-command-deadline", "owned-process-command-output-limit"}:
                 raise
             raise DevError("backend-transport-lost-status-required", uncertain=operation not in
-                           {"hello", "doctor", "status", "logs", "recover", "preflight"}) from None
+                           {"hello", "doctor", "status", "logs", "recover", "preflight", "executable-approval-request"}) from None

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "latent.typescript.promise-header-export-control.v1",
+  "status": "passed",
+  "scope": "normal-pinned-upstream-header-export-only",
+  "firefoxCommit": "9dab3d6f643e926a340c391ea30968e940390dec",
+  "originalSource": [
+    {
+      "path": "js/src/builtin/Promise.cpp",
+      "bytes": 283510,
+      "sha256": "03a0a7d9bd2a2bdd6b373486c9e86c99f35baae9d76814048c873bd8004d0649"
+    },
+    {
+      "path": "js/src/moz.build",
+      "bytes": 22098,
+      "sha256": "97630e2e9f1b0ef54dc586dcd08d9d5a9a897237dd526f43fe433986873fc004"
+    },
+    {
+      "path": "js/src/vm/PromiseObject.h",
+      "bytes": 9854,
+      "sha256": "92a691bff5bb06319c5e95a6ab21fe0e4cdbe32fc18cd2f51f748033d3d9cffd"
+    }
+  ],
+  "derivedSource": [
+    {
+      "path": "js/public/ActivationPromiseHooks.h",
+      "bytes": 2147,
+      "sha256": "37417b24250854e41d6c320d978daf8338bf7393526dab70b725e8f1fb06654e"
+    },
+    {
+      "path": "js/src/builtin/Promise.cpp",
+      "bytes": 287872,
+      "sha256": "ee3582e978e3dc4e96dbfbbcb06ad39552c7c11f8b444d16f6d92258b4d92425"
+    },
+    {
+      "path": "js/src/moz.build",
+      "bytes": 22140,
+      "sha256": "5b0cbffda924f262b41559dcce68214c0c4e7ed238a49f66a29c1edcea3d7afa"
+    },
+    {
+      "path": "js/src/vm/PromiseObject.h",
+      "bytes": 9854,
+      "sha256": "92a691bff5bb06319c5e95a6ab21fe0e4cdbe32fc18cd2f51f748033d3d9cffd"
+    }
+  ],
+  "derivation": {
+    "path": "tools/typescript_guest/promise_engine.py",
+    "sha256": "0ead7ee429517220a2936dc4db1051e030b5bb712165d50dd855e03d5abe7f90"
+  },
+  "normalPublicHeader": {
+    "path": "dist/include/js/ActivationPromiseHooks.h",
+    "kind": "generated-source-link",
+    "sourcePath": "js/public/ActivationPromiseHooks.h",
+    "bytes": 2147,
+    "sha256": "37417b24250854e41d6c320d978daf8338bf7393526dab70b725e8f1fb06654e",
+    "identicalToMaintainedAbi": true
+  },
+  "controls": {
+    "changedMozBuildRejectedBeforePatching": true,
+    "objdirHeaderInjection": false,
+    "normalMachBuildGeneratedHeader": true,
+    "originalPromiseObjectDeclarationUnchanged": true,
+    "originalPromiseAndReactionClassOperationsUnchanged": true
+  },
+  "engineBuildQualified": false,
+  "signedComponentQualified": false,
+  "qualification": "unknown",
+  "apiSupport": "not-evaluated",
+  "limitations": [
+    "The initial cold source build reached its original600second cutoff; no completed engine is claimed.",
+    "A separate cold source bootstrap continues; it is not the compiler/runtime qualification gate."
+  ]
+}

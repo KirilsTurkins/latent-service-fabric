@@ -6,6 +6,8 @@ subsequent documentation or contract-boundary change.
 This report tracks [#548](https://github.com/KirilsTurkins/latent-service-fabric/issues/548).
 The [authoring guide](../component-development/java-authoring.md) and
 [SDK reference](../../sdk/java-guest/README.md) describe the implemented path.
+The separate [fiber host import candidate](java-fiber-host-io.md) records pending
+runtime qualification and does not change this report's frozen attribution.
 
 ## Passing source and execution evidence
 
@@ -196,6 +198,9 @@ Runtime release publication remains on HOLD; issue #345 still requires human
 newcomer review independently of automated guide execution. Exact final-head
 CI and artifact verification are mandatory before squash-admin merge into
 `development`. This ticket does not authorize a development-to-release promotion.
+
+The [standard timer qualification](java-standard-timers.md) records the separate
+recurring-timer candidate, reference controls and pending signed execution gate.
 
 ## Retained failed attempts
 

@@ -1,6 +1,20 @@
 {
   "kind": "workflow",
   "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "rust-capsule-authoring-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
     "name": "Rust capsule authoring",
     "on": {
       "pull_request": {
@@ -10,6 +24,7 @@
         "paths": [
           ".github/workflows/rust-capsule-authoring.yml",
           "sdk/rust-guest/**",
+          "sdk/rust-standard-runtime/**",
           "sdk/transaction-contract/**",
           "crates/**",
           "apps/**",
@@ -18,7 +33,8 @@
           "tools/**",
           "wit/**",
           "Cargo.*",
-          "docs/component-development/rust-authoring.md"
+          "docs/component-development/rust-authoring.md",
+          "docs/component-development/rust-dependencies.md"
         ]
       },
       "push": {
@@ -28,6 +44,7 @@
         "paths": [
           ".github/workflows/rust-capsule-authoring.yml",
           "sdk/rust-guest/**",
+          "sdk/rust-standard-runtime/**",
           "sdk/transaction-contract/**",
           "crates/**",
           "apps/**",
@@ -36,32 +53,20 @@
           "tools/**",
           "wit/**",
           "Cargo.*",
-          "docs/component-development/rust-authoring.md"
+          "docs/component-development/rust-authoring.md",
+          "docs/component-development/rust-dependencies.md"
         ]
       }
     },
     "permissions": {
       "contents": "read"
-    },
-    "concurrency": {
-      "group": "rust-capsule-authoring-${{ github.ref }}",
-      "cancel-in-progress": true
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
-    "authoring"
+    "authoring",
+    "standard-clocks"
   ],
-  "reviewReason": "Keep all exact historical baseline/before/coverage and case/guard obligations while reconciling current actual compiler/dependency/transaction/native owners. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Incoming reviewed obligation: Preserve current actual workflow triggers, permissions, guards and job ownership after the reviewed source merge. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions.",
+  "reviewReason": "Preserve merged authenticated private Cargo and standard clock jobs while adding normal dependency authoring selection; all original commands, artifacts, deadlines and gates remain.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

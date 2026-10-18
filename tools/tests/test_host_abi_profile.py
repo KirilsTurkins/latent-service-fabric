@@ -27,7 +27,22 @@ class HostAbiProfileTests(unittest.TestCase):
             with self.subTest(version=version):
                 self.check_matrix(version, world_directory)
 
-    def check_matrix(self, version, world_directory):
+    def test_explicit_native_profile_preserves_frozen_default_and_exact_source_identity(self):
+        self.check_matrix(6, "runtime-phase3-native", native_profile=True)
+        default = json.loads((ROOT / "wit/host-abi-phase3-v5.json").read_bytes())
+        native = json.loads((ROOT / "wit/host-abi-phase3-v6.json").read_bytes())
+        self.assertEqual(native["interfaces"][:-1], default["interfaces"])
+        self.assertEqual(native["interfaces"][-1]["interface"], "latent:runtime-native/threads@0.1.0")
+        self.assertFalse(native["interfaces"][-1]["installed"])
+        source = (ROOT / "crates/latent-core/src/host_profile.rs").read_text(encoding="utf-8")
+        self.assertIn("pub const PHASE3_HOST_ABI_CURRENT: HostAbiProfile = PHASE3_HOST_ABI_V5;", source)
+        engine = (ROOT / "crates/latent-wasmtime/src/config/engine.rs").read_text(encoding="utf-8")
+        self.assertIn("wasm_component_model_threading(self.owned_native_threads())", engine)
+        self.assertIn(".owned_native_threads\n", engine)
+        configuration = (ROOT / "crates/latent-wasmtime/src/config.rs").read_text(encoding="utf-8")
+        self.assertIn("owned_native_threads: false", configuration)
+
+    def check_matrix(self, version, world_directory, native_profile=False):
         path = ROOT / f"wit/host-abi-phase3-v{version}.json"
         self.assertLess(path.stat().st_size, 16 * 1024)
         raw = path.read_bytes()
@@ -61,15 +76,15 @@ class HostAbiProfileTests(unittest.TestCase):
         self.assertEqual(names, set(re.findall(r"^\s*import ([^;]+);", world, re.MULTILINE)))
         self.assertIn("package " + matrix["world"].replace("/capsule", "") + ";", world)
         dependencies = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]["dependencies"]
-        self.check_generator_pins(version, matrix, dependencies)
+        self.check_generator_pins(version, matrix, dependencies, native_profile=native_profile)
 
-    def check_generator_pins(self, version, matrix, dependencies):
+    def check_generator_pins(self, version, matrix, dependencies, native_profile=False):
         self.assertEqual(matrix["id"], f"lsf-host-abi-phase3-v{version}")
         if version in HISTORICAL_MATRICES:
             self.assertEqual(matrix["wasmtimeVersion"], "48.0.3" if version == 4 else "47.0.4")
             self.assertEqual(matrix["guestGenerator"], "wit-bindgen@0.62.0")
         else:
-            self.assertEqual(version, 5, "new active ABI profiles require explicit review")
+            self.assertEqual(version, 6 if native_profile else 5, "new active ABI profiles require explicit review")
             self.assertEqual(dependencies["wasmtime"]["version"], "=" + matrix["wasmtimeVersion"])
             self.assertEqual("wit-bindgen@" + dependencies["wit-bindgen"].lstrip("="), matrix["guestGenerator"])
 
@@ -82,6 +97,10 @@ class HostAbiProfileTests(unittest.TestCase):
                     self.check_generator_pins(version, {**matrix, field: invalid}, dependencies)
         with self.assertRaises(AssertionError):
             self.check_generator_pins(6, {**matrix, "id": "lsf-host-abi-phase3-v6"}, dependencies)
+        native = json.loads((ROOT / "wit/host-abi-phase3-v6.json").read_bytes())
+        for field, invalid in (("wasmtimeVersion", "0.0.0"), ("guestGenerator", "wit-bindgen@0.0.0")):
+            with self.subTest(version=6, field=field), self.assertRaises(AssertionError):
+                self.check_generator_pins(6, {**native, field: invalid}, dependencies, native_profile=True)
 
 
 if __name__ == "__main__":

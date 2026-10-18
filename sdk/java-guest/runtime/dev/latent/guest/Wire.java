@@ -7,6 +7,7 @@ import org.teavm.interop.Import;
 
 /** Private bounded bridge to maintained wit-bindgen C, not a host wire protocol. */
 public final class Wire {
+    public interface HostFunction { Address call(int operation, Address bytes, int length); }
     public static final int MAX_BYTES = 8 * 1024 * 1024;
     public static final int MAX_ITEMS = 65536;
     private Wire() { }
@@ -130,9 +131,18 @@ public final class Wire {
         }
         public Reader call(int operation) {
             require(!closed);
-            // The array remains strongly live across this native call. No Java
-            // scheduler or asynchronous callback may run inside the profile.
-            Address result = host(operation, Address.ofData(data), length);
+            return result(host(operation, Address.ofData(data), length), false);
+        }
+        public Reader call(HostFunction function, int operation, boolean allowPendingCancellation) {
+            require(!closed);
+            // The writer, its array and its resource borrows remain strongly
+            // live in the caller's suspended frame until terminal completion.
+            Address result = function.call(operation, Address.ofData(data), length);
+            return result(result, allowPendingCancellation);
+        }
+        private Reader result(Address result, boolean allowPendingCancellation) {
+            if (allowPendingCancellation && result.toInt() == 0) return null;
+            require(result.toInt() != 0);
             try { return Reader.copy(result.add(4), result.getInt()); }
             finally { free(result); }
         }

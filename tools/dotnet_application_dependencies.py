@@ -327,10 +327,15 @@ def feed_config(policy: dict | None, owned: Path, sdk_configuration: bytes) -> t
         if 'authorizationEnv' in row:
             key = row['authorizationEnv']
             secret = os.environ.get(key) if isinstance(key, str) and re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', key) else None
-            if not secret or any(char in secret for char in '\0\r\n'):
+            if not secret:
                 raise DependencyError('nuget-explicit-feed-credential-missing')
+            username = row.get('username', 'token')
+            if (not isinstance(username, str) or not 0 < len(username) <= 16384 or len(secret) > 16384
+                    or any(ord(char) < 32 or ord(char) == 127 or 0xd800 <= ord(char) <= 0xdfff
+                           or ord(char) in {0xfffe, 0xffff} for char in username + secret)):
+                raise DependencyError('nuget-explicit-feed-credential-invalid')
             credential = ET.SubElement(credentials, row['name'])
-            ET.SubElement(credential, 'add', {'key': 'Username', 'value': row.get('username', 'token')})
+            ET.SubElement(credential, 'add', {'key': 'Username', 'value': username})
             ET.SubElement(credential, 'add', {'key': 'ClearTextPassword', 'value': secret})
         identities.append({'name': row['name'], 'kind': 'local' if 'path' in row else 'https', 'sourceIdentityDigest': identity})
     root.append(mappings)
@@ -338,14 +343,29 @@ def feed_config(policy: dict | None, owned: Path, sdk_configuration: bytes) -> t
 
 
 def resolve(project: Path, candidate: Path, *, dotnet: Path, tools: Path, policy: dict | None = None, update_lock: bool = False) -> dict:
+    from tools.dotnet_dependency_authoring import transaction
+    with transaction(project) as (owner, app, private, sdk):
+        return _resolve(owner, app, private, sdk, candidate, dotnet=dotnet, tools=tools,
+                        policy=policy, update_lock=update_lock)
+
+
+def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *, dotnet: Path,
+             tools: Path, policy: dict | None, update_lock: bool) -> dict:
+    from tools.dotnet_dependency_authoring import candidate_location, optional, source_files, unchanged, publish
     project, dotnet, tools = regular_path(project).resolve(strict=True), regular_path(dotnet).resolve(strict=True), regular_path(tools).resolve(strict=True)
-    candidate = regular_path(candidate)
-    if candidate.exists() or candidate == project / 'latent.dependencies.lock.json':
-        raise DependencyError('nuget-resolve-requires-new-review-candidate')
-    files = snapshot(project)
+    candidate = candidate_location(owner, candidate)
+    if os.path.lexists(candidate):
+        raise DependencyError('dependency-candidate-exists')
+    previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, 'latent.dependencies.lock.json')
+    previous_native = {name: optional(project, name) for name in (LOCK, ASSETS)}
+    resolver_before = file_identity(dotnet, 'dotnet')
+    helper_before = file_identity(tools / 'package-hash/PackageHash.dll', 'nuget-content-hash-helper')
+    recipe_before = file_identity(Path(__file__), 'nuget-capture-recipe')
+    helper_source = snapshot(tools / 'package-hash-source')
+    files = source_files(project)
     declared = declarations(files)
     baseline = json.loads(files['vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json'])
-    if snapshot(tools / 'package-hash-source') != snapshot(project / 'vendor/lsf/sdk/dotnet-guest/tools/package-hash'):
+    if helper_source != snapshot(project / 'vendor/lsf/sdk/dotnet-guest/tools/package-hash'):
         raise DependencyError('nuget-content-hash-helper-source-not-sdk-owned')
     with tempfile.TemporaryDirectory(prefix='lsf-nuget-resolve-') as temporary:
         owned = Path(temporary)
@@ -399,40 +419,65 @@ def resolve(project: Path, candidate: Path, *, dotnet: Path, tools: Path, policy
             specs.append({'id': identity, 'role': 'build-tool' if row['executableAssets'] else 'application',
                 'format': 'zip', 'mount': 'dependencies/nuget/' + identity, 'source': {'path': str(archive)},
                 'dependencies': dependencies, 'metadata': {'ecosystem': 'nuget', **row}})
-        # Native assets retain no machine-specific restore/project/cache paths.
-        (project / LOCK).write_bytes(lock_bytes)
-        (project / ASSETS).write_bytes(canonical(native) + b'\n')
+        # Capture against a staged native graph. No accepted source/manifest/lock
+        # is mutated while network resolution or original-package checks can fail.
+        prefix = project.relative_to(owner).as_posix() + '/' if project != owner else ''
+        check = owned / 'capture-inputs'
+        check.mkdir(mode=0o700)
+        native_bytes = canonical(native) + b'\n'
         manifest = {'formatVersion': 1, 'language': 'dotnet', 'selection': declared['selection'],
-            'nativeLocks': [PROJECT, 'global.json', LOCK, ASSETS], 'artifacts': specs, 'transformations': []}
-        (project / MANIFEST).write_bytes(canonical(manifest) + b'\n')
-        captured = capture(project)
-        # Only resolver locations existed temporarily; every original is now CAS-bound.
-        store = Store(project / 'dependency-inputs/objects')
+            'nativeLocks': [prefix + name for name in (PROJECT, 'global.json', LOCK, ASSETS)],
+            'artifacts': specs, 'transformations': []}
+        for row in specs:
+            if row['metadata'].get('ecosystem') == 'msbuild-resource':
+                row['source'] = {'path': str(project / row['metadata']['source'])}
+        for name, raw in {PROJECT: files[PROJECT], 'global.json': files['global.json'], LOCK: lock_bytes, ASSETS: native_bytes}.items():
+            target = check / (prefix + name)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(raw)
+        (check / MANIFEST).write_bytes(canonical(manifest) + b'\n')
+        store = Store(owner / 'dependency-inputs/objects')
+        captured = capture(check, cache=store.root)
+        originals = {row['id']: row['original'] for row in captured['artifacts']}
         for row in manifest['artifacts']:
-            row['source'] = {'path': store.path(row['metadata']['originalDigest']).relative_to(project).as_posix()}
-        (project / MANIFEST).write_bytes(canonical(manifest) + b'\n')
-        captured = capture(project)
-        if any(snapshot(project).get(name) != value for name, value in files.items() if name not in {LOCK, ASSETS, MANIFEST}):
-            raise DependencyError('nuget-application-input-mutated-during-resolution')
-        candidate.parent.mkdir(parents=True, exist_ok=True)
-        candidate.write_bytes(canonical(captured) + b'\n')
+            row['source'] = {'path': store.path(originals[row['id']]['digest']).relative_to(owner).as_posix()}
+        manifest_bytes = canonical(manifest) + b'\n'
+        (check / MANIFEST).write_bytes(manifest_bytes)
+        # The same portable manifest is recaptured against private copies of the
+        # exact original CAS objects; its digest is produced by capture itself.
+        staged_store = Store(check / 'dependency-inputs/objects')
+        for original in originals.values():
+            staged_store.put(store.get(**original))
+        captured = capture(check, cache=store.root)
+        validate_selection(files, declared['selection'], json.loads(lock_bytes), native, captured['artifacts'])
+        if (source_files(project) != files or optional(owner, MANIFEST) != previous_manifest
+                or optional(owner, 'latent.dependencies.lock.json') != previous_lock
+                or file_identity(dotnet, 'dotnet') != resolver_before
+                or file_identity(helper, 'nuget-content-hash-helper') != helper_before
+                or file_identity(Path(__file__), 'nuget-capture-recipe') != recipe_before
+                or snapshot(tools / 'package-hash-source') != helper_source):
+            raise DependencyError('nuget-source-lock-resolver-or-helper-mutated')
+        unchanged(owner, sdk)
+        publish(owner, private, sdk, candidate, captured,
+                {prefix + LOCK: (lock_bytes, previous_native[LOCK]),
+                 prefix + ASSETS: (native_bytes, previous_native[ASSETS]),
+                 MANIFEST: (manifest_bytes, previous_manifest)})
         return captured
 
 
-def configure(closure, project: Path, packages: Path) -> dict:
-    from tools.guest_dependency_inputs import read_native
-    files = snapshot(project, exclude=('dependencies', 'application-vendor'))
-    declared = declarations(files, closure.lock['selection'])
-    native = json.loads(read_native(closure, ASSETS, 16 * 1024 * 1024))
-    baseline = json.loads(read_bytes(project / 'vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json'))
+def validate_selection(files: dict[str, bytes], selected: dict, native_lock: dict, native: dict,
+                       artifacts: list[dict]) -> tuple[dict, list[dict], dict]:
+    """Check the native graph identically during exact review and compilation."""
+    declared = declarations(files, selected)
+    baseline = json.loads(files['vendor/lsf/sdk/dotnet-guest/probes/smoke/packages.lock.json'])
     if native['selection'] != declared['selection'] or native['sdkBaselineDigest'] != digest(canonical(baseline)):
         raise DependencyError('nuget-native-selection-or-sdk-baseline-drift')
-    expected = analyze(json.loads(read_native(closure, LOCK)), native['assets'], baseline, declared)
+    expected = analyze(native_lock, native['assets'], baseline, declared)
     normalized = [{key: value for key, value in row.items() if key not in {'originalDigest', 'originalSize'}} for row in native['packages']]
     if normalized != expected['packages'] or any(native[key] != expected[key] for key in ('resources', 'trimmingDescriptors')):
         raise DependencyError('nuget-native-assets-or-resource-selection-drift')
     active = [row for row in native['packages'] if not row['sdk']]
-    rows = {row['id']: row for row in closure.lock['artifacts']}
+    rows = {row['id']: row for row in artifacts}
     resource_specs = executable_resources(declared, files)
     if set(rows) != {row['package'] + '/' + row['version'] for row in active} | {row['id'] for row in resource_specs}:
         raise DependencyError('nuget-captured-package-closure-not-native-selection')
@@ -441,6 +486,26 @@ def configure(closure, project: Path, packages: Path) -> dict:
         if (artifact['role'] != 'build-tool' or artifact['mount'] != spec['mount'] or artifact['metadata'] != spec['metadata']
                 or artifact['original'] != {'digest': spec['metadata']['originalDigest'], 'size': spec['metadata']['originalSize']}):
             raise DependencyError('dotnet-executable-resource-not-selected-original')
+    selected_ids = {row['package'] + '/' + row['version'] for row in active}
+    for row in active:
+        identity = row['package'] + '/' + row['version']
+        artifact = rows[identity]
+        children = sorted({edge['id'] for edge in row['dependencies'] if edge['id'] in selected_ids})
+        if (artifact['format'] != 'zip' or artifact['mount'] != 'dependencies/nuget/' + identity
+                or artifact['role'] != ('build-tool' if row['executableAssets'] else 'application')
+                or artifact['metadata'] != {'ecosystem': 'nuget', **row}
+                or artifact['original'] != {'digest': row['originalDigest'], 'size': row['originalSize']}
+                or artifact['dependencies'] != children):
+            raise DependencyError('nuget-captured-package-not-native-original')
+    return declared, active, rows
+
+
+def configure(closure, project: Path, packages: Path) -> dict:
+    from tools.guest_dependency_inputs import read_native
+    files = snapshot(project, exclude=('dependencies', 'application-vendor'))
+    native = json.loads(read_native(closure, ASSETS, 16 * 1024 * 1024))
+    declared, active, rows = validate_selection(files, closure.lock['selection'],
+        json.loads(read_native(closure, LOCK)), native, closure.lock['artifacts'])
     layouts = []
     for row in active:
         identity = row['package'] + '/' + row['version']

@@ -53,6 +53,21 @@ class JavaDependencies(unittest.TestCase):
                 with self.assertRaisesRegex(DependencyError, "duplicate"):
                     classpath(closure, root / "classpath")
 
+    def test_distinct_jar_indexes_remain_in_each_selected_jar_without_lookup_collision(self):
+        indexes = [b"JarIndex-Version: 1.0\n\none.jar\noutside/one\n",
+                   b"JarIndex-Version: 1.0\n\ntwo.jar\noutside/two\n"]
+        root, closure = self.prepare([
+            ("one", {"outside/one/Pure.class": class_bytes(), "META-INF/INDEX.LIST": indexes[0]}, ["two"]),
+            ("two", {"outside/two/Pure.class": class_bytes(), "META-INF/INDEX.LIST": indexes[1]}, []),
+        ])
+        jars, receipt = classpath(closure, root / "classpath")
+        self.assertEqual(receipt["resources"], [])
+        for ordinal, jar in enumerate(jars):
+            self.assertEqual(selected_entries(jar.read_bytes(), 25)["META-INF/INDEX.LIST"], indexes[ordinal])
+            entry = next(row for row in receipt["artifacts"][ordinal]["entries"] if row["path"] == "META-INF/INDEX.LIST")
+            self.assertEqual(entry["digest"], digest(indexes[ordinal]))
+        closure.check_unchanged()
+
     def test_multi_release_highest_qualified_release_with_original_identity(self):
         jar = deterministic_jar({"META-INF/MANIFEST.MF": b"Manifest-Version: 1.0\r\nMulti-Release: true\r\n",
             "org/example/Pure.class": class_bytes(52), "META-INF/versions/21/org/example/Pure.class": class_bytes(65),
@@ -148,6 +163,23 @@ class JavaResourceArtifacts(unittest.TestCase):
         jars, receipt = classpath(closure, root / "classpath")
         rows, sources = packaged_resources(closure, receipt, files)
         return root, closure, {**files, **sources}, jars, receipt, rows
+
+    def test_index_metadata_does_not_become_a_merged_immutable_resource(self):
+        indexes = [b"JarIndex-Version: 1.0\n\nfirst.jar\noutside/one\n",
+                   b"JarIndex-Version: 1.0\n\nsecond.jar\noutside/two\n"]
+        root, closure, _files, jars, receipt, rows = self.selected([
+            ("unknown:first:1", {"outside/one/Pure.class": class_bytes(), "META-INF/INDEX.LIST": indexes[0],
+                                 "outside/one/data.txt": b"first immutable bytes"}, ["unknown:second:1"]),
+            ("unknown:second:1", {"outside/two/Pure.class": class_bytes(), "META-INF/INDEX.LIST": indexes[1],
+                                  "outside/two/data.txt": b"second immutable bytes"}, []),
+        ])
+        self.assertEqual({row["path"] for row in rows}, {"outside/one/data.txt", "outside/two/data.txt"})
+        self.assertEqual({row["path"] for row in receipt["resources"]}, {row["path"] for row in rows})
+        self.assertFalse(any(row["metadata"].get("path") == "META-INF/INDEX.LIST" for row in closure.lock["artifacts"]))
+        for ordinal, jar in enumerate(jars):
+            self.assertEqual(selected_entries(jar.read_bytes(), 25)["META-INF/INDEX.LIST"], indexes[ordinal])
+        self.assertFalse(list(root.glob("*-outside-original.jar")))
+        closure.check_unchanged()
 
     def test_nested_and_anonymous_class_names_survive_capture_and_offline_selection(self):
         entries = {"outside/Container.class": class_bytes(), "outside/Container$Nested.class": class_bytes(),

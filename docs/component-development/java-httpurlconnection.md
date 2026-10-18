@@ -11,9 +11,13 @@ LSF transport or executor. The compiler replaces the default browser HTTP handle
 at its standard runtime boundary; it preserves URL parsing and application/JAR
 identities. User-supplied URL handlers remain optional guest extensions.
 
-This is an implementation candidate. Native Java ownership controls passed;
-the actual TeaVM-emitted component, signed provider runs and unchanged published
-client libraries have **not** qualified this profile. Issue #688 remains open.
+This is an implementation candidate. Native Java ownership controls and a
+[finite signed ordinary-API provider gate](../testing/java-standard-http.md)
+passed, including actual TeaVM component execution, HTTP errors, denied targets,
+body failures/early close, uncertain POST and physical retirement. One unchanged
+published default client also passes that finite provider matrix. Two independent
+clients, private dependencies and the complete profile remain unqualified.
+Issue #688 remains open.
 It is independent of the listener-free Java HttpServer profile. Selecting both
 profiles merges their SDK compiler provider lists without replacing either list.
 
@@ -47,7 +51,15 @@ default. The finite long request path delegates to the existing bounded upload;
 it does not truncate a requested length. An unchanged outside caller's bytecode
 retains its standard method references. These transformations passed an actual
 TeaVM 0.15 class-model check using the compiler JARs' recorded SHA-256 identities;
-an emitted-component run remains required.
+the ordinary and published-client components now exercise that boundary.
+
+`URL.openConnection(Proxy.NO_PROXY)` selects the same default handler. The
+compiler supplies the standard direct marker and the missing overload beneath
+captured bytecode. Shared standard type identities let a library's optional
+proxy branch link without requiring the application to replace its factory.
+The finite profile rejects explicit proxies and socket-address resolution with
+concrete errors before DNS or contact. It supplies no socket or proxy transport.
+These standard API substitutions do not inspect dependency coordinates.
 
 Each upload/body/chunk uses the generated owned WIT resource. Stream close,
 disconnect and errors release guest ownership without claiming physical retirement;

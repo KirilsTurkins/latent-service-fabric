@@ -9,6 +9,7 @@ import tempfile
 import time
 
 from tools.build_process_signals import owned_cancellation
+from tools import java_control_refusal_diagnostic as control_refusals
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.dev_workflow import state
@@ -102,18 +103,20 @@ def runtime_config(settings: dict, service: str) -> None:
             "providerBinding": name + "-installed"})
 
 
-def grant_runtime(client, node, record, publication) -> list[dict]:
+def grant_runtime(client, node, record, publication, *, tenant="examples",
+                  principal="server-caller", suffix="") -> list[dict]:
     grants = []
     for name, (capability, profile, operation, kind) in {**profiles("java"), "context": CONTEXT}.items():
-        descriptor = next(row for row in node.startup_record["providers"] if row["id"] == name)
+        descriptor = next(row for row in node.startup_record["providers"] if row["id"] == name + suffix)
         binding, policy = client.directory / (name + "-binding.json"), client.directory / (name + "-policy.json")
-        write_json(binding, {"formatVersion": 1, "tenant": "examples", "capability": capability,
+        require(descriptor["tenant"] == tenant, "java-server-runtime-provider-tenant")
+        write_json(binding, {"formatVersion": 1, "tenant": tenant, "capability": capability,
             "providerProfile": profile, "configurationDigest": descriptor["configurationDigest"],
             "configurationEpoch": 1, "restriction": {"operations": [operation]}})
         client.call("policy", "--kind", "provider-binding", "apply", "--id", name + "-installed", "--file", binding,
                     "--operation-id", "install-" + name, "--expected-generation", "0")
-        write_json(policy, {"formatVersion": 1, "tenant": "examples", "rules": [{
-            "id": "runtime", "effect": "allow", "principals": [{"kind": "trigger", "subject": "server-caller"}],
+        write_json(policy, {"formatVersion": 1, "tenant": tenant, "rules": [{
+            "id": "runtime", "effect": "allow", "principals": [{"kind": "trigger", "subject": principal}],
             "services": [record["service"]], "publications": [publication], "capability": capability,
             "operations": [operation], "resources": {"kind": kind},
             "ceiling": {"operations": 4 if name == "context" else 4096, "inputBytes": 0,
@@ -209,7 +212,7 @@ def verify_tls_fixture(directory: Path) -> list[dict]:
 
 
 def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: Path, *, helper=False,
-        tls_tool: Path | None = None, lifecycle=None, tls=False) -> dict:
+        tls_tool: Path | None = None, lifecycle=None, tls=False, routes_factory=None) -> dict:
     evidence = fresh(evidence)
     record = read_json(fixture / "release-set.json")["releases"][0]
     result = {"schemaVersion": "lsf.java.server.node-conformance.v1", "status": "in-progress", "http": [],
@@ -217,6 +220,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
               "profile": "lsf.java.httpserver.buffered.v1", "helperSource": helper,
               "lane": "original-ingress" if lifecycle is None else "revision-lifecycle"}
     observed_paths = {"cli": binary, "node": node_binary, "workflow": Path(__file__),
+        "managementRefusalHelper": Path(__file__).with_name("java_control_refusal_diagnostic.py"),
+        "nodeLauncher": Path(__file__).with_name("phase2_operator_scenario.py"),
         "declaration": build / "server-source.json", "profile": build / "server-profile.json",
         "sourceInputs": build / "source-inputs.json", "component": build / "component.wasm"}
     if helper or tls:
@@ -272,7 +277,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             if lifecycle is not None:
                 lifecycle.configure_ingress(settings)
             config.write_bytes(json.dumps(settings, separators=(",", ":")).encode())
-            node = connect(client, node_binary, root / "node", config, "examples", 1)
+            node = connect(client, node_binary, root / "node", config, "examples", 1,
+                           control_refusal_diagnostic=True)
             result["startup"] = node.startup_record
             observe_idle(client, evidence, "dormant-before-publication")
             package = fixture / record["name"] / "package"
@@ -299,7 +305,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             manifests = server_routes.plan(declaration, json.dumps(mounts, separators=(",", ":")).encode(), selected,
                 source_digest=digest(source), profile_digest=digest(profile))
             owner = {"tenant": "examples", "route": deployed["name"], "clientConfigDigest": digest(read_file(client.config))}
-            routes = server_routes.Routes(root / "routes", route_cli, owner)
+            routes = (server_routes.Routes(root / "routes", route_cli, owner) if routes_factory is None
+                      else routes_factory(root / "routes", route_cli, owner, mounts=mounts))
             with state.lock(root / "routes", "server-routes.lock"): result["routes"] = routes.apply(manifests)
             endpoint = node.startup_record["httpEndpoint"]
 
@@ -329,7 +336,9 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
                 "retirement": after_denial, "storeCreation": "not-observed"}
             grants = grant_runtime(client, node, record, publication)
             if lifecycle is not None:
-                grants.append(lifecycle.grant_initial_http(client, node, record["service"], publication))
+                additional = lifecycle.grant_initial_http(client, node, record["service"], publication)
+                if additional is not None:
+                    grants.append(additional)
             deployed = deploy(client, fixture / record["name"] / "deployment.json", publication,
                 generation=str(deployed["generation"]), grants=grants)
             result["deployment"] = deployed
@@ -437,6 +446,8 @@ def run(binary: Path, node_binary: Path, fixture: Path, build: Path, evidence: P
             raise
         finally:
             client.node = None
-            if node is not None: node.close()
+            if node is not None:
+                node.close()
+                result["managementRefusals"] = control_refusals.retain(node, evidence)
             write_json(evidence / "conformance.json", result)
     return result

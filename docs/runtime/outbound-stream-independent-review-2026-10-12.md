@@ -1,5 +1,9 @@
 # Outbound stream decision submitted for independent review
 
+The [October 15 review](outbound-stream-independent-review-2026-10-15.md) adds
+fresh current-source execution and dependency-drift findings. The observations
+below retain their original source and date.
+
 This is the criterion-level review packet for
 [#737](https://github.com/KirilsTurkins/latent-service-fabric/issues/737),
 [PR #912](https://github.com/KirilsTurkins/latent-service-fabric/pull/912) and

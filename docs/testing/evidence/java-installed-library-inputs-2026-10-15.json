@@ -1,0 +1,428 @@
+{
+  "schemaVersion": "latent.java-installed-library-inputs.native-controls.v1",
+  "status": "passed",
+  "publisherAuthenticated": false,
+  "scope": "installed local source-candidate offline compilation and strict declaration invalidation",
+  "host": {
+    "network": "Docker --network none",
+    "effectiveUser": 1000,
+    "checkoutMounted": false,
+    "ambientPath": "/nonexistent",
+    "python": "delivered sdk/bin/python -I -B",
+    "compiler": "only delivered managed compiler inventory"
+  },
+  "qualifier": {
+    "sha256": "sha256:5925a6d05e16f420b5a4b41104bb422f8af7d4b95569b5622ce8fbf3567a3168",
+    "bytes": 8899
+  },
+  "cases": {
+    "public": {
+      "status": "passed",
+      "publisherAuthenticated": false,
+      "scope": "local-candidate-captured-Java-offline-build-and-declaration-invalidation",
+      "effectiveUser": 1000,
+      "commands": [
+        {
+          "name": "verify-original-capture",
+          "exitCode": 0,
+          "elapsedSeconds": 1.2706112759988173,
+          "stdout": {
+            "sha256": "sha256:cdd49b15a659795eda0d26dcb567a44ec2931deadc7ada8f7d6a48b28f5526c2",
+            "bytes": 12988
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        },
+        {
+          "name": "offline-installed-build",
+          "exitCode": 0,
+          "elapsedSeconds": 80.08700105000025,
+          "stdout": {
+            "sha256": "sha256:12ba58077dce86ca3fc9b81c2e05628aa34b190d16437a369f769ed8c351e6b9",
+            "bytes": 121
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        },
+        {
+          "name": "update",
+          "exitCode": 0,
+          "elapsedSeconds": 1.0183034170004248,
+          "stdout": {
+            "sha256": "sha256:2019568483f63f9b38654a2c05d3e3b57ec25cd98549fadb5d5621529c780c70",
+            "bytes": 432
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        },
+        {
+          "name": "update-requires-review",
+          "exitCode": 1,
+          "elapsedSeconds": 1.0182679919998918,
+          "stdout": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          },
+          "stderr": {
+            "sha256": "sha256:8794da8bc4494c2f15f9e78b0cc899a34dbe24debf601e629b9caa184b1cc14a",
+            "bytes": 156
+          }
+        },
+        {
+          "name": "remove",
+          "exitCode": 0,
+          "elapsedSeconds": 0.8687213570010499,
+          "stdout": {
+            "sha256": "sha256:7e1c491ef52b251cdfb0d8efc8572e9ecc3b9a2a8d7c40e5c7da69d6f25d5fd7",
+            "bytes": 432
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        },
+        {
+          "name": "remove-requires-review",
+          "exitCode": 1,
+          "elapsedSeconds": 0.7677504390012473,
+          "stdout": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          },
+          "stderr": {
+            "sha256": "sha256:8794da8bc4494c2f15f9e78b0cc899a34dbe24debf601e629b9caa184b1cc14a",
+            "bytes": 156
+          }
+        },
+        {
+          "name": "restore-normal-declaration",
+          "exitCode": 0,
+          "elapsedSeconds": 0.9184325730020646,
+          "stdout": {
+            "sha256": "sha256:5d3f693fea3c4e07b805896f114f14d18ca3fe9306b1cb39a367071290aba13c",
+            "bytes": 429
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        },
+        {
+          "name": "verify-restored-capture",
+          "exitCode": 0,
+          "elapsedSeconds": 0.9693898290024663,
+          "stdout": {
+            "sha256": "sha256:6fd7853480e07d3bf97a3d65e332824be3a21a088a14758006a4408ed22d64e4",
+            "bytes": 12988
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        }
+      ],
+      "candidateSource": "a3bc5dfdbbd618a11d2c13f91e465de1e1bf81f5",
+      "candidateManifest": {
+        "sha256": "sha256:9a949c427cb55e67c088b383130443ff0a831c15e114c3d122cbaf4b9fc4bc1f",
+        "bytes": 294301
+      },
+      "candidateArchive": {
+        "name": "latent-dev-linux-x86_64-java-tools.zip",
+        "sha256": "sha256:446c84910bdd4e8696e3e42a0d88262902217f47ef334676b5585d773fc34ffa",
+        "size": 518184587
+      },
+      "managedInputs": {
+        "sha256": "sha256:0cc97203cda60e301226ed236d09c2807b2f1298e163e58ab6d691add02df2df",
+        "bytes": 2250056
+      },
+      "adapter": {
+        "sha256": "sha256:c5d5813ab4b88eb427cd9256bf3476df8d33abec75707b769a78708d81753564",
+        "bytes": 10001
+      },
+      "qualifier": {
+        "sha256": "sha256:5925a6d05e16f420b5a4b41104bb422f8af7d4b95569b5622ce8fbf3567a3168",
+        "bytes": 8899
+      },
+      "capturedInputIdentity": "sha256:2db43e4c3d27b9b93e31eb813007581e0be3530e3f5be30ef3fbed91b9d50dfa",
+      "artifacts": {
+        "component.wasm": {
+          "sha256": "sha256:037576d8add2b828920efa685c94a4dd4bc45aaa7a4cd62dc0e5bac1c0eea0d0",
+          "bytes": 2281928
+        },
+        "source-inputs.json": {
+          "sha256": "sha256:eebd75308eb2804ef28d9f688ebcf91d105dae25491967cbc8e1fedc19b668bf",
+          "bytes": 25583
+        },
+        "recipe-inputs.json": {
+          "sha256": "sha256:0e2249ceb547e720de1a24081080f70a307fb3176677a0763476bf0671d1ca8f",
+          "bytes": 8605
+        },
+        "compiler-inputs.json": {
+          "sha256": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+          "bytes": 2902802
+        },
+        "application-dependencies.json": {
+          "sha256": "sha256:2ab0a1d7d1a861391d826e449c79c4d790a727a779d22bbfb2f72aed907ef0b7",
+          "bytes": 222736
+        },
+        "java-classpath.json": {
+          "sha256": "sha256:43761e6c8ea370f584d8cdbf19fce149d4f2c2b5cc77cd5866d9d772ef29ee75",
+          "bytes": 215587
+        },
+        "build-observation.json": {
+          "sha256": "sha256:8c02d0469c8f5bc9e3b45b0b83c44c0e442b08806276dc28ded0668dd36608ea",
+          "bytes": 3322
+        },
+        "BUILD-COMPLETE.json": {
+          "sha256": "sha256:af7955e9fc7afafb55c42c58dace5a614ce540e6a0e545e6f46fdedb77259d0c",
+          "bytes": 8908
+        }
+      },
+      "exactDeclarationOrderRestored": false,
+      "releaseQualification": false,
+      "remainingAcceptance": [
+        "authenticated frontend watch/update deployment lifecycle"
+      ]
+    },
+    "private": {
+      "status": "passed",
+      "publisherAuthenticated": false,
+      "scope": "local-candidate-captured-Java-offline-build-and-declaration-invalidation",
+      "effectiveUser": 1000,
+      "commands": [
+        {
+          "name": "verify-original-capture",
+          "exitCode": 0,
+          "elapsedSeconds": 1.269977594998636,
+          "stdout": {
+            "sha256": "sha256:d1ab20d9de3500f0e7fdf226252e1697001a1feba6a793aa25f3c08f7d5b7608",
+            "bytes": 13136
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        },
+        {
+          "name": "offline-installed-build",
+          "exitCode": 0,
+          "elapsedSeconds": 79.23557068599985,
+          "stdout": {
+            "sha256": "sha256:12ba58077dce86ca3fc9b81c2e05628aa34b190d16437a369f769ed8c351e6b9",
+            "bytes": 121
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        },
+        {
+          "name": "update",
+          "exitCode": 0,
+          "elapsedSeconds": 0.9192388439987553,
+          "stdout": {
+            "sha256": "sha256:5b2ae5af27bdaa9740fa4e165f0771457846b3ed119055cf8e49df4071ea9701",
+            "bytes": 432
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        },
+        {
+          "name": "update-requires-review",
+          "exitCode": 1,
+          "elapsedSeconds": 0.8183151880002697,
+          "stdout": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          },
+          "stderr": {
+            "sha256": "sha256:8794da8bc4494c2f15f9e78b0cc899a34dbe24debf601e629b9caa184b1cc14a",
+            "bytes": 156
+          }
+        },
+        {
+          "name": "remove",
+          "exitCode": 0,
+          "elapsedSeconds": 1.0189723650000815,
+          "stdout": {
+            "sha256": "sha256:2c2ab6597fb94676b13195f4d760151e5b7e5af8c5549ea06dc1f6a72a6916c0",
+            "bytes": 432
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        },
+        {
+          "name": "remove-requires-review",
+          "exitCode": 1,
+          "elapsedSeconds": 0.7678102059981029,
+          "stdout": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          },
+          "stderr": {
+            "sha256": "sha256:8794da8bc4494c2f15f9e78b0cc899a34dbe24debf601e629b9caa184b1cc14a",
+            "bytes": 156
+          }
+        },
+        {
+          "name": "restore-normal-declaration",
+          "exitCode": 0,
+          "elapsedSeconds": 0.8689041270008602,
+          "stdout": {
+            "sha256": "sha256:0cc07aa1007b151bc21d0abb6726ca0d65bb86153f865b9a85518c952a64eac7",
+            "bytes": 429
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        },
+        {
+          "name": "reordered-add-requires-review",
+          "exitCode": 1,
+          "elapsedSeconds": 0.7676304320011695,
+          "stdout": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          },
+          "stderr": {
+            "sha256": "sha256:8794da8bc4494c2f15f9e78b0cc899a34dbe24debf601e629b9caa184b1cc14a",
+            "bytes": 156
+          }
+        },
+        {
+          "name": "verify-restored-capture",
+          "exitCode": 0,
+          "elapsedSeconds": 0.919678266000119,
+          "stdout": {
+            "sha256": "sha256:a9247b90a4bc9b877db9d020596ed9ef3a3c27863ac938b4894598df5dde831d",
+            "bytes": 13136
+          },
+          "stderr": {
+            "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "bytes": 0
+          }
+        }
+      ],
+      "candidateSource": "a3bc5dfdbbd618a11d2c13f91e465de1e1bf81f5",
+      "candidateManifest": {
+        "sha256": "sha256:9a949c427cb55e67c088b383130443ff0a831c15e114c3d122cbaf4b9fc4bc1f",
+        "bytes": 294301
+      },
+      "candidateArchive": {
+        "name": "latent-dev-linux-x86_64-java-tools.zip",
+        "sha256": "sha256:446c84910bdd4e8696e3e42a0d88262902217f47ef334676b5585d773fc34ffa",
+        "size": 518184587
+      },
+      "managedInputs": {
+        "sha256": "sha256:0cc97203cda60e301226ed236d09c2807b2f1298e163e58ab6d691add02df2df",
+        "bytes": 2250056
+      },
+      "adapter": {
+        "sha256": "sha256:c5d5813ab4b88eb427cd9256bf3476df8d33abec75707b769a78708d81753564",
+        "bytes": 10001
+      },
+      "qualifier": {
+        "sha256": "sha256:5925a6d05e16f420b5a4b41104bb422f8af7d4b95569b5622ce8fbf3567a3168",
+        "bytes": 8899
+      },
+      "capturedInputIdentity": "sha256:0a3ec1accc48eddf1c2ff40bd649db4e57c4f6545ca4f5a0cc5aecdd454fbd70",
+      "artifacts": {
+        "component.wasm": {
+          "sha256": "sha256:22d6844ad1ea9c9b00d31eab89a3a2ae2c1c78986bf17e07968ded6f852ae259",
+          "bytes": 2279668
+        },
+        "source-inputs.json": {
+          "sha256": "sha256:204f3d335d79c88af0ec4a9b05d59d66bdf3f7252de99d9adb466690d3347632",
+          "bytes": 25704
+        },
+        "recipe-inputs.json": {
+          "sha256": "sha256:0e2249ceb547e720de1a24081080f70a307fb3176677a0763476bf0671d1ca8f",
+          "bytes": 8605
+        },
+        "compiler-inputs.json": {
+          "sha256": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+          "bytes": 2902802
+        },
+        "application-dependencies.json": {
+          "sha256": "sha256:ebf9d7458db28621c226abbdf49b1b1885c57f787ec5563e23d4aace365f5be0",
+          "bytes": 224908
+        },
+        "java-classpath.json": {
+          "sha256": "sha256:5488f0a5cf399d37a3bb888798d1e0959a53316bb8e1353b83151c1c4d84094a",
+          "bytes": 215629
+        },
+        "build-observation.json": {
+          "sha256": "sha256:edcfb3814d84cbd564cadebcf2de626a35350a3ed3beebc5880d628d516cb2e8",
+          "bytes": 3322
+        },
+        "BUILD-COMPLETE.json": {
+          "sha256": "sha256:8b0522b15034b3aaab531a4b68ca961399d0dfc62096686059a10c44c4b08333",
+          "bytes": 8907
+        }
+      },
+      "exactDeclarationOrderRestored": true,
+      "releaseQualification": false,
+      "remainingAcceptance": [
+        "authenticated frontend watch/update deployment lifecycle"
+      ]
+    }
+  },
+  "inputArchives": {
+    "public": {
+      "sha256": "sha256:206560c5a7ae80e2191925800a8a39e896c824abf6d15fdb2acfc13f89c87f43",
+      "bytes": 3123200
+    },
+    "private": {
+      "sha256": "sha256:9adba43452c12278162c27c180209171574bc8ec1a94ca279e3d1b6250491e33",
+      "bytes": 3143680
+    }
+  },
+  "componentEquivalence": {
+    "public": "Byte-identical to actual signed ordinary-node recovery component in PR#1006.",
+    "private": "Byte-identical to actual signed ordinary-node private graph component in PR#1001.",
+    "scope": "Installed compiler outputs remain packageAssembled=false. No fabricated packager material or admission receipt."
+  },
+  "earlierFailedAttempts": [
+    {
+      "case": "public-first-invalidation-expectation",
+      "status": "failed",
+      "receipt": {
+        "sha256": "sha256:6724ab86fae8380c798c68cdb8a79f3ac529f3c90b9db1bc3668324991adf831",
+        "bytes": 3901
+      },
+      "reason": "Qualifier expected a later graph-drift diagnostic. The installed CLI correctly rejected native-lock drift first; full attempt remained failed.",
+      "qualifier": {
+        "sha256": "sha256:41270f4da5924d06c72ba1813deb17d720c199f48a09d1e783e2a4eedb5a3686",
+        "bytes": 5537
+      }
+    },
+    {
+      "case": "private-declaration-order-assumption",
+      "status": "failed",
+      "receipt": {
+        "sha256": "sha256:98c063e5729ae53883d499de5d6a3c03e099e9b12e2a374328c7d18de3a3fe32",
+        "bytes": 5112
+      },
+      "reason": "Normal remove/add changed declaration order. Equal declarations could not revive the exact reviewed configuration; original failed attempt retained.",
+      "qualifier": {
+        "sha256": "sha256:e5af63fbd0275d95975accf1df4f8c09b6aa9e39fc4d6bc7895ab0df910570bc",
+        "bytes": 7739
+      }
+    }
+  ],
+  "remainingAcceptance": [
+    "authenticated frontend watch and deployment of a newly reviewed version"
+  ],
+  "releaseQualification": false
+}

@@ -1,0 +1,20 @@
+var lsfCheckpointQuantum uint32
+
+// Linked only from compiler-owned entry/backedge instrumentation. A bounded
+// instruction quantum does not consult wall time or create a new deadline.
+//go:linkname lsfCheckpoint
+func lsfCheckpoint() {
+	if !lsfActivationActive { return }
+	lsfCheckpointQuantum++
+	if lsfCheckpointQuantum < 1024 { return }
+	lsfCheckpointQuantum = 0
+	lsfActivationYield()
+}
+
+// Reachable explicitly non-suspendable paths fail rather than claim sibling
+// progress. The source transformation retains their original diagnostic sites.
+//go:linkname lsfUnsupportedCheckpoint
+//go:nosplit
+func lsfUnsupportedCheckpoint() { abort() }
+
+func lsfActivationYield()

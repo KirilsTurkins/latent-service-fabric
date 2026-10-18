@@ -43,6 +43,30 @@ def rehash(value):
 
 
 class OwnerSelection(unittest.TestCase):
+    def test_go_activation_profile_binds_explicit_project_and_captured_selection(self):
+        profile = 'go-component-activation-v1'
+        for captured in (False, True):
+            with self.subTest(captured=captured):
+                files, graph = inputs('go', 'ordinary-library' if captured else None)
+                files['capsule-project.json'] = encode({'runtimeProfile': profile})
+                if graph is not None:
+                    graph['selection']['runtimeProfile'] = profile
+                    files['latent.dependencies.lock.json'] = encode(graph)
+                output = self.output / str(captured)
+                output.mkdir()
+                runtime.emit(output, 'go', profile, files, inventory(files), COMPONENT, materials(),
+                    graph=graph, binding_digest=BINDINGS, configuration={'profile': profile})
+                value = runtime.read((output / 'standard-runtime-selection.json').read_bytes())
+                runtime.verify_build(value, 'go', files, inventory(files), COMPONENT, materials())
+                if graph is not None:
+                    graph['selection']['runtimeProfile'] = runtime.PROFILES['go']
+                    files['latent.dependencies.lock.json'] = encode(graph)
+                    with self.assertRaisesRegex(DevError, 'project-and-captured-runtime-profile-disagree'):
+                        runtime.verify_build(value, 'go', files, inventory(files), COMPONENT, materials())
+                files['capsule-project.json'] = encode({'runtimeProfile': 'unbounded-native-threads'})
+                with self.assertRaisesRegex(DevError, 'go-runtime-profile-not-installed'):
+                    runtime.verify_build(value, 'go', files, inventory(files), COMPONENT, materials())
+
     def setUp(self):
         owned = tempfile.TemporaryDirectory(); self.addCleanup(owned.cleanup)
         self.output = Path(owned.name)

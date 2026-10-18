@@ -543,7 +543,8 @@
             "latent:state/key-value@0.2.0",
             "latent:intents/staging@0.1.0",
             "latent:runtime/activation@0.1.0",
-            "latent:network/streams@0.1.0"
+            "latent:network/streams@0.1.0",
+            "latent:runtime-native/threads@0.1.0"
           ]
         },
         "operations": {
@@ -1085,6 +1086,32 @@
               },
               "resources": {
                 "$ref": "#/$defs/stream"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capability": {
+                "const": "latent:runtime-native/threads@0.1.0"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operations": {
+                "type": "array",
+                "maxItems": 16,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "start"
+                  ]
+                }
+              },
+              "resources": {
+                "$ref": "#/$defs/context"
               }
             }
           }

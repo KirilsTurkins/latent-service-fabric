@@ -84,8 +84,13 @@ class Isolation:
         return distribution(root)
 
     def __init__(self, workspace: Path, tools: dict[str, Path], distributions: dict[str, Path], *,
-                 loader_directories: tuple[Path, ...] = ()):
-        if sys.platform != "linux" or not (sandbox := shutil.which("bwrap")) or not (loader_probe := shutil.which("ldd")):
+                 loader_directories: tuple[Path, ...] = (), host_tool_path: str | None = None):
+        if host_tool_path is not None and (not isinstance(host_tool_path, str)
+                or not host_tool_path or "\0" in host_tool_path):
+            raise DependencyError("compiler-host-tool-path-invalid")
+        search = {} if host_tool_path is None else {"path": host_tool_path}
+        if (sys.platform != "linux" or not (sandbox := shutil.which("bwrap", **search))
+                or not (loader_probe := shutil.which("ldd", **search))):
             raise DependencyError("captured-compiler-isolation-requires-linux-bubblewrap")
         self.workspace = regular_path(workspace).resolve(strict=True)
         self.read_only_inputs: list[Path] = []

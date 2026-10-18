@@ -1,0 +1,36 @@
+{
+  "cases": [
+    "RustPrivateArchives.test_native_locked_offline_graph_retains_private_transitive_source",
+    "RustPrivateArchives.test_private_manifest_records_transitive_registry_index"
+  ],
+  "guards": {
+    "RustPrivateArchives.test_native_locked_offline_graph_retains_private_transitive_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:69cf3c65216bff819954e63b3bff395cd1cba5ed8c05caf189a9da467887454a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustPrivateArchives.test_private_manifest_records_transitive_registry_index": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:69cf3c65216bff819954e63b3bff395cd1cba5ed8c05caf189a9da467887454a",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_rust_private_archives.py",
+  "reviewReason": "Bind pinned Cargo metadata control to the exact Rust compiler under isolated HOME",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

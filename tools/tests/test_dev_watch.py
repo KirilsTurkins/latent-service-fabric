@@ -139,6 +139,65 @@ class WatchTransitions(unittest.TestCase):
         self.assertTrue(error.exception.uncertain)
         self.assertEqual(calls.count("deploy"), 1)
 
+    def test_explicit_trust_change_retries_current_source_once(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workspace, source = root / "workspace", root / "source"
+            paths.new_directory(workspace)
+            paths.new_directory(source)
+            trusted = {"project": str(source), "recipe": "recipe"}
+            calls, events, attempts = [], [], []
+            class Connection:
+                def call(self, operation, arguments, **options):
+                    calls.append(operation)
+                    if operation == "status":
+                        count = calls.count("status")
+                        if count in {2, 4}:
+                            # A later identical atomic rewrite is not another edit.
+                            state.atomic(workspace, "trust.json", trusted)
+                        return {"state": "stopped" if count >= 6 else "ready"}
+                    if operation == "deploy":
+                        return {"publication": "reviewed", "source": "source-a"}
+                    raise AssertionError(operation)
+            def build(*args, **kwargs):
+                attempts.append(kwargs["selected"])
+                common.require((workspace / "trust.json").exists()
+                    and state.load(workspace, "trust.json") == trusted, "workspace-recipe-trust-required")
+                return {"source": "source-a"}
+            with patch.object(build_client, "selection", return_value=("recipe", "source-a")), patch.object(watch.time, "sleep"):
+                watch.run(workspace, Connection(), source, "/tools", build=build, emit=events.append)
+            self.assertEqual(attempts, [("recipe", "source-a"), ("recipe", "source-a")])
+            self.assertEqual(calls.count("deploy"), 1)
+            self.assertEqual(events[0]["code"], "workspace-recipe-trust-required")
+            self.assertEqual([item["event"] for item in events],
+                             ["edit-failed", "deployed", "post-deploy-tests-not-selected"])
+
+    def test_trust_revoked_after_compile_prevents_deployment(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workspace, source = root / "workspace", root / "source"
+            paths.new_directory(workspace)
+            paths.new_directory(source)
+            state.atomic(workspace, "trust.json", {"project": str(source), "recipe": "recipe"})
+            calls, events = [], []
+            class Connection:
+                def call(self, operation, arguments, **options):
+                    calls.append(operation)
+                    if operation == "status":
+                        return {"state": "ready" if calls.count("status") <= 2 else "stopped"}
+                    if operation == "deploy":
+                        return {"publication": "must-not-publish"}
+                    raise AssertionError(operation)
+            def build(*args, **kwargs):
+                common.require((workspace / "trust.json").exists(), "workspace-recipe-trust-required")
+                (workspace / "trust.json").unlink()
+                return {"source": "source-a"}
+            with patch.object(build_client, "selection", return_value=("recipe", "source-a")), patch.object(watch.time, "sleep"):
+                watch.run(workspace, Connection(), source, "/tools", build=build, emit=events.append)
+            self.assertNotIn("deploy", calls)
+            self.assertEqual(events[0]["event"], "build-superseded")
+            self.assertEqual(events[0]["code"], "guest-build-superseded")
+
 
 @unittest.skipUnless(sys.platform == "linux", "actual Linux helper ownership")
 class BuildCancellation(unittest.TestCase):

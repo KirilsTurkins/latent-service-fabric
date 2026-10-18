@@ -160,6 +160,7 @@ impl StateTransactionHost {
             released: AtomicBool::new(false),
             guest_closed: AtomicBool::new(false),
             technical_fault: AtomicBool::new(false),
+            result_unavailable_after_return: AtomicBool::new(false),
             context,
             command: info,
             staging_identity,

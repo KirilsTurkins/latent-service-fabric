@@ -63,13 +63,43 @@ impl CapabilityPlanSource for Plans {
         Ok(self.plan.clone())
     }
 }
-pub struct Probe(pub AtomicBool);
+pub struct Probe {
+    cancelled: AtomicBool,
+    signal: tokio::sync::Notify,
+}
+impl Probe {
+    pub fn cancel(&self) {
+        self.cancelled.store(true, Ordering::Release);
+        self.signal.notify_waiters();
+    }
+}
 impl ExecutionCancellationProbe for Probe {
     fn is_cancelled(&self) -> bool {
-        self.0.load(Ordering::Acquire)
+        self.cancelled.load(Ordering::Acquire)
     }
     fn reason(&self) -> Option<String> {
         None
+    }
+}
+impl latent_core::BudgetCancellationProbe for Probe {
+    fn is_cancelled(&self) -> bool {
+        ExecutionCancellationProbe::is_cancelled(self)
+    }
+    fn cancelled(&self) -> latent_core::BoxFuture<'_, ()> {
+        Box::pin(async move {
+            loop {
+                let ready = self.signal.notified();
+                tokio::pin!(ready);
+                ready.as_mut().enable();
+                if ExecutionCancellationProbe::is_cancelled(self) {
+                    return;
+                }
+                ready.await;
+            }
+        })
+    }
+    fn mark_terminal(&self) {
+        self.cancel();
     }
 }
 pub struct Control {
@@ -106,6 +136,7 @@ pub struct Fixture {
     pub plan_hook: PlanHook,
     pub plan_lookup_hook: PlanLookupHook,
     pub revision: ResolvedRevision,
+    owned_native_stacks: bool,
     _provider: ProviderRegistration,
     _directory: tempfile::TempDir,
 }
@@ -174,6 +205,24 @@ impl Fixture {
         fuel_async_yield_interval: Option<u64>,
         currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,
     ) -> Self {
+        Self::from_publication_profile(
+            directory,
+            catalog,
+            publication,
+            fuel_async_yield_interval,
+            currentness_read_wait,
+            false,
+        )
+        .await
+    }
+    pub async fn from_publication_profile(
+        directory: tempfile::TempDir,
+        catalog: Arc<DirectoryArtifactRepository>,
+        publication: ReleaseUseEligibility,
+        fuel_async_yield_interval: Option<u64>,
+        currentness_read_wait: Option<Arc<dyn latent_executor::PreparationReadWait>>,
+        owned_native_stacks: bool,
+    ) -> Self {
         let policies = Arc::new(
             PolicyStore::open(
                 &directory.path().join("policies"),
@@ -200,7 +249,7 @@ impl Fixture {
         let provider = broker
             .register_provider(ProviderConfiguration {
                 capability: component::CAP,
-                profile: "builtin-wall-v1",
+                profile: component::PROFILE,
                 configuration_digest: &digest,
                 configuration_epoch: 1,
                 restriction_json: br#"{"operations":[]}"#,
@@ -227,7 +276,7 @@ impl Fixture {
                 &[CapabilityBindingSpec {
                     definition_digest: None,
                     provider: &provider.reference(),
-                    imported_operations: &["now-unix-millis".into()],
+                    imported_operations: &[component::OPERATION.into()],
                     policy_ids: &["p".into()],
                     provider_binding_id: "binding",
                     deployment_restriction_json: br#"{"operations":[]}"#,
@@ -245,7 +294,7 @@ impl Fixture {
                 hook: plan_hook.clone(),
             }),
         ));
-        let mut config = support::config();
+        let mut config = native_stack_config(owned_native_stacks);
         config.fuel_async_yield_interval = fuel_async_yield_interval;
         let factory = WasmtimeComponentEngineFactory::with_catalog(
             config,
@@ -279,6 +328,7 @@ impl Fixture {
             plan_hook,
             plan_lookup_hook,
             revision,
+            owned_native_stacks,
             _provider: provider,
             _directory: directory,
         }
@@ -293,9 +343,22 @@ impl Fixture {
     }
     pub fn request(&self, id: &str) -> (ExecutionRequest, Control) {
         let id = ActivationId(id.into());
-        let grant = support::budget();
-        let budget = ActivationBudget::new(
-            EffectiveActivationBudget::admit_at(
+        let mut grant = support::budget();
+        if self.owned_native_stacks {
+            // A descendant root requires a finite original deadline. Narrow
+            // only this explicit profile to the existing fixture watchdog.
+            grant.wall_time_limit_millis = Some(support::WATCHDOG.as_millis().try_into().unwrap());
+        }
+        // Native support reserves host memory in the original Phase3 ledger.
+        // Keep the default Phase1 clock path and every finite grant unchanged.
+        let profile = if self.owned_native_stacks {
+            latent_core::BudgetProfile::Phase3
+        } else {
+            latent_core::BudgetProfile::Phase1
+        };
+        let budget = ActivationBudget::with_profile(
+            EffectiveActivationBudget::admit_profile_at(
+                profile,
                 &grant,
                 &grant,
                 &grant,
@@ -303,7 +366,18 @@ impl Fixture {
                 ClockSample::system_now(),
             )
             .unwrap(),
-        );
+            profile,
+        )
+        .unwrap();
+        let probe = Arc::new(Probe {
+            cancelled: AtomicBool::new(false),
+            signal: tokio::sync::Notify::new(),
+        });
+        if self.owned_native_stacks {
+            budget
+                .enable_descendants(latent_core::DelegationLimits::default(), probe.clone())
+                .unwrap();
+        }
         let mut request = support::request(
             self.prepared.clone(),
             &id,
@@ -318,14 +392,7 @@ impl Fixture {
             contract: component::CAP.into(),
             opaque_handle: "descriptive-only".into(),
         });
-        (
-            request,
-            Control {
-                id,
-                budget,
-                probe: Arc::new(Probe(AtomicBool::new(false))),
-            },
-        )
+        (request, Control { id, budget, probe })
     }
     pub fn idle(&self) {
         let resources = self.backend.resource_snapshot();
@@ -345,6 +412,23 @@ impl Fixture {
         );
     }
 }
+
+pub fn native_stack_config(owned: bool) -> latent_wasmtime::WasmtimeConfig {
+    let mut config = support::config();
+    if owned {
+        config.owned_native_stacks = true;
+        config.activation_runtime = Some(latent_core::activation_runtime::RuntimeLimits {
+            tasks: 2,
+            executors: 1,
+            queued_work: 1,
+            waits: 2,
+            timers: 2,
+            results: 1,
+            native_owners: 1,
+        });
+    }
+    config
+}
 fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &str) {
     for (id, kind, value) in [
         (
@@ -353,7 +437,7 @@ fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &st
             json!({"formatVersion":1,"tenant":"tests","rules":[{
                 "id":"allow", "effect":"allow","principals":[{"kind":"service","subject":"generic-test"}],
                 "services":["generic"], "publications":[publication.publication().as_str()], "capability":component::CAP,
-                "operations":["now-unix-millis"], "resources":{"kind":"clock"},
+                "operations":[component::OPERATION], "resources":{"kind":"clock"},
                 "ceiling":{"operations":1,"inputBytes":1024,"outputBytes":1024,"wallTimeMillis":5000}
             }]}),
         ),
@@ -361,7 +445,7 @@ fn install(store: &PolicyStore, publication: &ReleaseUseEligibility, digest: &st
             "binding",
             RecordKind::ProviderBinding,
             json!({"formatVersion":1,"tenant":"tests","capability":component::CAP,
-            "providerProfile":"builtin-wall-v1","configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
+            "providerProfile":component::PROFILE,"configurationDigest":digest,"configurationEpoch":1,"restriction":{"operations":[]}}),
         ),
     ] {
         store

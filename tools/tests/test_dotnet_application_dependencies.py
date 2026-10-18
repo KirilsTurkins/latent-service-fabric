@@ -128,6 +128,35 @@ class NugetDependencies(unittest.TestCase):
             with self.subTest(endpoint=endpoint), self.assertRaisesRegex(DependencyError, 'endpoint-invalid'):
                 feed_config({'sources': [{'name': 'private', 'url': endpoint}]}, self.root, baseline)
 
+    def test_private_feed_credentials_reject_controls_types_and_limits_before_restore(self):
+        from unittest.mock import patch
+        baseline = self.files['vendor/lsf/sdk/dotnet-guest/nuget.config']
+        for field, values in (('username', ('', 7, 'bad\x01name', 'bad\x7fname', 'bad\ud800name', 'bad\ufffename', 'x' * 16385)),
+                              ('password', ('bad\x00token', 'bad\x01token', 'bad\x7ftoken', 'bad\ud800token', 'bad\ufffftoken', 'x' * 16385))):
+            for ordinal, value in enumerate(values):
+                row = {'name': 'private', 'url': 'https://feed.example.test/index.json',
+                       'authorizationEnv': 'LSF_SELECTED_FEED', 'username': 'selected-user'}
+                secret = value if field == 'password' else 'selected-token'
+                if field == 'username':
+                    row['username'] = value
+                with self.subTest(field=field, ordinal=ordinal), \
+                        patch('tools.dotnet_application_dependencies.os.environ', {'LSF_SELECTED_FEED': secret}), \
+                        self.assertRaisesRegex(DependencyError, 'credential-invalid'):
+                    feed_config({'sources': [row]}, self.root, baseline)
+
+    def test_bounded_private_feed_credentials_preserve_xml_values_and_public_redaction(self):
+        from unittest.mock import patch
+        username, secret = 'selected&<é', 'opaque<&" token é' + 'x' * 16000
+        with patch('tools.dotnet_application_dependencies.os.environ', {'LSF_SELECTED_FEED': secret}):
+            config, receipt = feed_config({'sources': [{'name': 'private',
+                'url': 'https://feed.example.test/index.json', 'authorizationEnv': 'LSF_SELECTED_FEED',
+                'username': username}]}, self.root, self.files['vendor/lsf/sdk/dotnet-guest/nuget.config'])
+        credentials = ET.fromstring(config).find('packageSourceCredentials/private')
+        self.assertEqual({row.attrib['key']: row.attrib['value'] for row in credentials},
+                         {'Username': username, 'ClearTextPassword': secret})
+        self.assertNotIn(username, json.dumps(receipt))
+        self.assertNotIn(secret, json.dumps(receipt))
+
     def test_embedded_resources_cannot_read_absolute_or_uncaptured_files(self):
         for name in (b'/etc/passwd', b'../outside.txt', b'resources/absent.txt'):
             with self.assertRaises(DependencyError):
@@ -779,6 +808,111 @@ class CapturedCompilerSelection(unittest.TestCase):
                     compiler.compile(work, 'examples:greeting/service@1.0.0', output)
             self.assertNotIn('native-aot', self.stages)
             self.assertTrue((self.evidence / 'nuget-asset-selection-drift.json').is_file())
+
+
+class RelocatedCompilerPython(unittest.TestCase):
+    def setUp(self):
+        from contextlib import ExitStack
+        from unittest.mock import patch
+        from tools import dotnet_compiler_isolation as isolation
+        self.isolation = isolation
+        self.stack = ExitStack()
+        self.addCleanup(self.stack.close)
+        self.root = Path(self.stack.enter_context(tempfile.TemporaryDirectory()))
+        self.prefix = self.root / 'relocated python'
+        (self.prefix / 'bin').mkdir(parents=True)
+        (self.prefix / 'lib').mkdir()
+        self.executable = self.prefix / 'bin/python'
+        self.executable.write_bytes(b'interpreter-source-control')
+        self.stem = f'libpython{sys.version_info.major}.{sys.version_info.minor}.so'
+        self.soname = self.stem + '.1.0'
+        self.library = self.prefix / 'lib' / self.soname
+        self.library.write_bytes(b'selected-library-source-control')
+        self.ambient = self.root / 'ambient'
+        self.ambient.mkdir()
+        (self.ambient / self.stem).write_bytes(b'foreign-library-source-control')
+        self.configuration = {'LDLIBRARY': self.stem, 'INSTSONAME': self.soname,
+                              'LIBDIR': str(self.ambient)}
+        self.mappings = self.root / 'maps'
+        if not hasattr(os, 'major'):
+            self.stack.enter_context(patch.object(os, 'major', return_value=7, create=True))
+            self.stack.enter_context(patch.object(os, 'minor', return_value=9, create=True))
+        self.stack.enter_context(patch.object(isolation, 'PYTHON_MAPPINGS', self.mappings))
+        self.stack.enter_context(patch.object(sys, 'base_prefix', str(self.prefix)))
+        self.stack.enter_context(patch.object(sys, 'executable', str(self.executable)))
+        self.stack.enter_context(patch.object(sys, 'abiflags', '', create=True))
+        self.stack.enter_context(patch.object(isolation.sysconfig, 'get_config_var',
+                                             side_effect=self.configuration.get))
+        self.map_library(self.library)
+
+    def map_library(self, path, *, inode=None, device=None):
+        info = path.stat()
+        device = device or (os.major(info.st_dev), os.minor(info.st_dev))
+        inode = info.st_ino if inode is None else inode
+        escaped = str(path).replace('\\', '\\134').replace(' ', '\\040')
+        self.mappings.write_text(
+            f'1000-2000 r-xp 00000000 {device[0]:x}:{device[1]:x} {inode} {escaped}\n', encoding='utf-8')
+
+    def test_relocated_soname_only_layout_stages_exact_bytes_and_alias_without_ambient_fallback(self):
+        self.assertFalse((self.prefix / 'lib' / self.stem).exists())
+        destination = self.root / 'captured-lib'
+        destination.mkdir()
+        self.isolation.stage_python_shared_library(destination)
+        self.assertEqual({path.name for path in destination.iterdir()}, {self.stem, self.soname})
+        self.assertTrue(all(path.read_bytes() == self.library.read_bytes() for path in destination.iterdir()))
+        self.assertEqual((self.ambient / self.stem).read_bytes(), b'foreign-library-source-control')
+
+    def test_missing_prefix_library_rejects_even_when_build_time_libdir_has_a_library(self):
+        self.library.unlink()
+        with self.assertRaisesRegex(DependencyError, 'missing-or-ambiguous'):
+            self.isolation.python_shared_library()
+
+    def test_two_distinct_configured_objects_are_ambiguous(self):
+        (self.prefix / 'lib' / self.stem).write_bytes(b'other-object')
+        with self.assertRaisesRegex(DependencyError, 'missing-or-ambiguous'):
+            self.isolation.python_shared_library()
+
+    def test_foreign_loaded_object_and_changed_device_or_inode_reject(self):
+        foreign = self.ambient / self.soname
+        foreign.write_bytes(self.library.read_bytes())
+        self.map_library(foreign)
+        with self.assertRaisesRegex(DependencyError, 'mapped-library-mismatch'):
+            self.isolation.python_shared_library()
+        self.map_library(self.library, inode=self.library.stat().st_ino + 1)
+        with self.assertRaisesRegex(DependencyError, 'mapped-library-mismatch'):
+            self.isolation.python_shared_library()
+        info = self.library.stat()
+        self.map_library(self.library, device=(os.major(info.st_dev), os.minor(info.st_dev) + 1))
+        with self.assertRaisesRegex(DependencyError, 'mapped-library-mismatch'):
+            self.isolation.python_shared_library()
+
+    def test_missing_oversized_or_ambiguous_mapping_rejects(self):
+        self.mappings.write_bytes(b'')
+        with self.assertRaisesRegex(DependencyError, 'mapped-library-required'):
+            self.isolation.python_shared_library()
+        self.mappings.write_bytes(b'x' * (1024 * 1024 + 1))
+        with self.assertRaisesRegex(DependencyError, 'mapping-limit'):
+            self.isolation.python_shared_library()
+        foreign = self.ambient / self.soname
+        foreign.write_bytes(b'foreign')
+        self.map_library(self.library)
+        selected = self.mappings.read_bytes()
+        self.map_library(foreign)
+        self.mappings.write_bytes(selected + self.mappings.read_bytes())
+        with self.assertRaisesRegex(DependencyError, 'mapped-library-mismatch'):
+            self.isolation.python_shared_library()
+
+    def test_foreign_abi_paths_and_interpreter_prefix_mismatch_reject(self):
+        from unittest.mock import patch
+        for name in ('libpython0.0.so', '../' + self.stem, self.stem + '/foreign', 1):
+            with self.subTest(name=name):
+                self.configuration['LDLIBRARY'] = name
+                with self.assertRaisesRegex(DependencyError, 'library-abi-mismatch'):
+                    self.isolation.python_shared_library()
+        self.configuration['LDLIBRARY'] = self.stem
+        with patch.object(sys, 'executable', str(self.ambient / self.stem)):
+            with self.assertRaisesRegex(DependencyError, 'prefix-mismatch'):
+                self.isolation.python_shared_library()
 
 
 if __name__ == '__main__':

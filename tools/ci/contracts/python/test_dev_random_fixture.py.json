@@ -1,0 +1,114 @@
+{
+  "cases": [
+    "RandomFixture.test_actual_packaged_helper_imports_random_owner_without_checkout_or_ambient_python",
+    "RandomFixture.test_closed_bounds_reject_seeds_unknown_keys_booleans_and_unbounded_values",
+    "RandomFixture.test_default_managed_profiles_remain_unchanged_and_selected_configuration_grants_nothing",
+    "RandomFixture.test_missing_provider_or_invalid_selected_bounds_fail_before_policy_mutation",
+    "RandomFixture.test_only_explicit_byte_operation_and_selected_ceiling_reach_ordinary_policy_owner",
+    "RandomFixture.test_real_provider_fixture_requires_exact_initialized_profile_and_selected_bytes",
+    "RandomFixture.test_refused_consent_starts_no_signer_and_creates_no_provider_or_policy_state",
+    "RandomFixture.test_unrequested_grants_do_not_publish_policies_and_default_go_operation_is_preserved"
+  ],
+  "guards": {
+    "RandomFixture.test_actual_packaged_helper_imports_random_owner_without_checkout_or_ambient_python": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35957fb5cea6a0598f9efd00c5c7e7e603d88a7b7da98f04ace30b8a71121528",
+        "class:setup-sha256:8908263e47d4a65b30c56bd0aa5aa8a098ee0ebfe4f2d4328dd1799c70429292"
+      ],
+      "skipSites": []
+    },
+    "RandomFixture.test_closed_bounds_reject_seeds_unknown_keys_booleans_and_unbounded_values": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35957fb5cea6a0598f9efd00c5c7e7e603d88a7b7da98f04ace30b8a71121528",
+        "class:setup-sha256:8908263e47d4a65b30c56bd0aa5aa8a098ee0ebfe4f2d4328dd1799c70429292"
+      ],
+      "skipSites": []
+    },
+    "RandomFixture.test_default_managed_profiles_remain_unchanged_and_selected_configuration_grants_nothing": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35957fb5cea6a0598f9efd00c5c7e7e603d88a7b7da98f04ace30b8a71121528",
+        "class:setup-sha256:8908263e47d4a65b30c56bd0aa5aa8a098ee0ebfe4f2d4328dd1799c70429292"
+      ],
+      "skipSites": []
+    },
+    "RandomFixture.test_missing_provider_or_invalid_selected_bounds_fail_before_policy_mutation": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35957fb5cea6a0598f9efd00c5c7e7e603d88a7b7da98f04ace30b8a71121528",
+        "class:setup-sha256:8908263e47d4a65b30c56bd0aa5aa8a098ee0ebfe4f2d4328dd1799c70429292"
+      ],
+      "skipSites": []
+    },
+    "RandomFixture.test_only_explicit_byte_operation_and_selected_ceiling_reach_ordinary_policy_owner": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35957fb5cea6a0598f9efd00c5c7e7e603d88a7b7da98f04ace30b8a71121528",
+        "class:setup-sha256:8908263e47d4a65b30c56bd0aa5aa8a098ee0ebfe4f2d4328dd1799c70429292"
+      ],
+      "skipSites": []
+    },
+    "RandomFixture.test_real_provider_fixture_requires_exact_initialized_profile_and_selected_bytes": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35957fb5cea6a0598f9efd00c5c7e7e603d88a7b7da98f04ace30b8a71121528",
+        "class:setup-sha256:8908263e47d4a65b30c56bd0aa5aa8a098ee0ebfe4f2d4328dd1799c70429292"
+      ],
+      "skipSites": []
+    },
+    "RandomFixture.test_refused_consent_starts_no_signer_and_creates_no_provider_or_policy_state": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35957fb5cea6a0598f9efd00c5c7e7e603d88a7b7da98f04ace30b8a71121528",
+        "class:setup-sha256:8908263e47d4a65b30c56bd0aa5aa8a098ee0ebfe4f2d4328dd1799c70429292"
+      ],
+      "skipSites": []
+    },
+    "RandomFixture.test_unrequested_grants_do_not_publish_policies_and_default_go_operation_is_preserved": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:35957fb5cea6a0598f9efd00c5c7e7e603d88a7b7da98f04ace30b8a71121528",
+        "class:setup-sha256:8908263e47d4a65b30c56bd0aa5aa8a098ee0ebfe4f2d4328dd1799c70429292"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_dev_random_fixture.py",
+  "reviewReason": "Retain all seven reviewed explicit fixture controls and add actual isolated packaged-helper import with no checkout/ambientPython; no skips or guard changes.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

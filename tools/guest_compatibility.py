@@ -203,18 +203,27 @@ def main() -> int:
     parser.add_argument("report", type=Path)
     parser.add_argument("--json", action="store_true", help="validate and emit the bounded machine report")
     parser.add_argument('--context', type=Path, help='Present a separately source/component-bound runtime context')
+    parser.add_argument('--outcomes', type=Path, help='Present original invocation observations bound to this component')
     args = parser.parse_args()
+    require(not args.json or (args.context is None and args.outcomes is None), 'compatibility-sidecar-presentation-requires-text')
     with args.report.open("rb") as source:
         value = read(source.read(MAX_BYTES + 1))
     selected = None
     if args.context is not None:
-        require(not args.json, 'compatibility-context-presentation-requires-text')
         from tools import guest_compatibility_context
         with args.context.open('rb') as source:
             selected = guest_compatibility_context.read(source.read(guest_compatibility_context.MAX_BYTES + 1), report=value)
+    outcomes = None
+    if args.outcomes is not None:
+        from tools import guest_compatibility_outcomes
+        with args.outcomes.open('rb') as source:
+            outcomes = guest_compatibility_outcomes.read(source.read(guest_compatibility_outcomes.MAX_BYTES + 1),
+                report=value, selected_context=selected)
     print(encode(value).decode().rstrip() if args.json else present(value), end="\n" if args.json else "")
     if selected is not None:
         print(guest_compatibility_context.present(selected), end='')
+    if outcomes is not None:
+        print(guest_compatibility_outcomes.present(outcomes), end='')
     return 0
 
 

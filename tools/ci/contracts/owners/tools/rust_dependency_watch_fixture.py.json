@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/rust_dependency_watch_fixture.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Independent original Cargo primary and transitive sources resource version updates and owned deletion guards",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "e4e8d9076233ae2b858bb638c7f216445744bfbb51a7fb9227aaaa5fbe5d0766"
+}

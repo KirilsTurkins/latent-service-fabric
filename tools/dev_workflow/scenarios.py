@@ -225,6 +225,14 @@ def run_prepared(prepared: list, unsupported: dict, environment: str, adapter, i
                         "execution": decode(encode(case["execution"])) if "execution" in case else None,
                         "resolvedRevision": revision, "targetMatches": target_matches,
                         "expectedRevision": dict(expected_target) if expected_target is not None else None})
+        if environment == "node" and not matched:
+            try:
+                from .node_diagnostics import original_result
+                consumption = original_result(result).get("consumption")
+                if consumption:
+                    results[-1]["consumption"] = consumption
+            except Exception:
+                pass  # Diagnostic collection cannot replace the original outcome.
         admission_reason = _admission_reason(result)
         if admission_reason is not None:
             results[-1]["admissionReason"] = admission_reason

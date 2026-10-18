@@ -158,6 +158,46 @@ def local_path(source: str, project: Path) -> Path:
     return regular_path(project / value).resolve(strict=True)
 
 
+def fetch_environment(owned: Path, registries: dict) -> dict:
+    cache = owned / 'npm-cache'
+    environment = build_environment(owned)
+    environment.update(HOME=str(owned / 'home'), USERPROFILE=str(owned / 'home'),
+        NPM_CONFIG_CACHE=str(cache), NPM_CONFIG_USERCONFIG=str(owned / 'registry.npmrc'),
+        NPM_CONFIG_GLOBALCONFIG=str(owned / 'empty.npmrc'), NPM_CONFIG_UPDATE_NOTIFIER='false',
+        GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
+    (owned / 'empty.npmrc').write_bytes(b'')
+    (owned / 'git-empty.config').write_bytes(b'')
+    configuration = []
+    for ordinal, row in enumerate(registries['registries']):
+        if not isinstance(row, dict) or set(row) - {'scope', 'url', 'authorizationEnv'} or 'url' not in row:
+            raise DependencyError('npm-registry-configuration-invalid')
+        url = row['url']
+        if (not isinstance(url, str) or not 1 <= len(url) <= 4096
+                or any(char.isspace() or ord(char) < 32 or 127 <= ord(char) <= 159 for char in url)):
+            raise DependencyError('npm-registry-endpoint-invalid')
+        parsed = urlsplit(url)
+        if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
+            raise DependencyError('npm-registry-endpoint-invalid')
+        scope = row.get('scope', '')
+        if scope and not re.fullmatch(r'@[A-Za-z0-9._-]+', scope):
+            raise DependencyError('npm-registry-scope-invalid')
+        configuration.append((scope + ':' if scope else '') + 'registry=' + row['url'])
+        if 'authorizationEnv' in row:
+            variable = row['authorizationEnv']
+            if not isinstance(variable, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable):
+                raise DependencyError('npm-registry-authorization-unavailable')
+            # Authorization selects an opaque token value. It cannot restore
+            # NODE_OPTIONS, loader flags, HOME or executable lookup overrides.
+            secret = os.environ[variable]
+            if len(secret) > 8192 or any(ord(char) < 32 or ord(char) == 127 for char in secret):
+                raise DependencyError('npm-registry-authorization-format')
+            selected_variable = 'LSF_NPM_REGISTRY_TOKEN_' + str(ordinal)
+            environment[selected_variable] = secret
+            configuration.append('//' + parsed.netloc + parsed.path.rstrip('/') + '/:_authToken=${' + selected_variable + '}')
+    (owned / 'registry.npmrc').write_text('\n'.join(configuration) + '\n', encoding='utf-8')
+    return environment
+
+
 def resolve(project: Path, candidate: Path, *, node: Path | None = None, npm: Path | None = None,
             selected: dict | None = None, registry_config: Path | None = None) -> dict:
     from tools.typescript_dependency_authoring import transaction
@@ -177,7 +217,12 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
     previous_graph = optional(project, 'npm-resolved.lock.json')
     before = source_files(project)
-    selected = selection(selected)
+    from tools.typescript_guest.runtime_profile import selected_profile
+    requested = dict(selected or {})
+    selection(requested)  # Preserve native selection diagnostics before profile inheritance.
+    profile = selected_profile(decode_json(read_bytes(project / 'capsule-project.json')),
+                               {'selection': requested})
+    selected = selection({**requested, 'runtimeProfile': profile})
     original = {name: read_bytes(project / name) for name in ('package.json', 'package-lock.json')}
     declaration = decode_json(original['package.json'])
     locked = native_lock(original['package-lock.json'])
@@ -201,33 +246,7 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
         owned = Path(temporary)
         work, cache = _mirror(project, owned), owned / 'npm-cache'
         work.mkdir(parents=True)
-        environment = build_environment(owned)
-        environment.update(HOME=str(owned / 'home'), USERPROFILE=str(owned / 'home'),
-            NPM_CONFIG_CACHE=str(cache), NPM_CONFIG_USERCONFIG=str(owned / 'registry.npmrc'),
-            NPM_CONFIG_GLOBALCONFIG=str(owned / 'empty.npmrc'), NPM_CONFIG_UPDATE_NOTIFIER='false',
-            GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
-        (owned / 'empty.npmrc').write_bytes(b'')
-        (owned / 'git-empty.config').write_bytes(b'')
-        configuration = []
-        for ordinal, row in enumerate(registries['registries']):
-            if not isinstance(row, dict) or set(row) - {'scope', 'url', 'authorizationEnv'} or 'url' not in row:
-                raise DependencyError('npm-registry-configuration-invalid')
-            parsed = urlsplit(row['url'])
-            if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
-                raise DependencyError('npm-registry-endpoint-invalid')
-            scope = row.get('scope', '')
-            if scope and not re.fullmatch(r'@[A-Za-z0-9._-]+', scope):
-                raise DependencyError('npm-registry-scope-invalid')
-            configuration.append((scope + ':' if scope else '') + 'registry=' + row['url'])
-            if variable := row.get('authorizationEnv'):
-                if not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable):
-                    raise DependencyError('npm-registry-authorization-unavailable')
-                # Authorization selects an opaque token value. It cannot restore
-                # NODE_OPTIONS, loader flags, HOME or executable lookup overrides.
-                selected_variable = 'LSF_NPM_REGISTRY_TOKEN_' + str(ordinal)
-                environment[selected_variable] = os.environ[variable]
-                configuration.append('//' + parsed.netloc + parsed.path.rstrip('/') + '/:_authToken=${' + selected_variable + '}')
-        (owned / 'registry.npmrc').write_text('\n'.join(configuration) + '\n', encoding='utf-8')
+        environment = fetch_environment(owned, registries)
         # Preserve native relative path semantics in an owned mirror. No project
         # npmrc, global cache, or package lifecycle hook reaches this stage.
         local_paths = {project}

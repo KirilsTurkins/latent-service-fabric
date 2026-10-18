@@ -27,6 +27,85 @@ def sources():
 
 
 class GoRuntimeOverlayTests(unittest.TestCase):
+    def test_activation_dispatcher_rejects_changed_dependency_before_transformation(self):
+        from tools.go_guest import activation
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'wit/async/async.go'
+            source.parent.mkdir(parents=True)
+            source.write_text('package async // substituted dispatcher')
+            with self.assertRaisesRegex(ValueError, 'dispatcher-source-drift'):
+                activation.async_source(root, runtime.ROOT / 'sdk/go-guest')
+            self.assertEqual(source.read_text(), 'package async // substituted dispatcher')
+
+    def test_activation_export_refuses_missing_and_synchronous_entry_before_writing(self):
+        from tools.go_guest import activation
+        for source in ('package main\nfunc main() {}\n',
+                       '//go:wasmexport execute\nfunc execute() { wasm_export_task_return_run() }\n'):
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                path = root / 'wit_exports.go'
+                path.write_text(source)
+                with self.assertRaisesRegex(ValueError, 'go-activation-'):
+                    activation.exports(root)
+                self.assertEqual(path.read_text(), source)
+
+    def test_activation_selection_is_explicit_and_retains_default_profile(self):
+        from tools.go_guest import activation
+        from tools.go_application_dependencies import selection
+        self.assertEqual(selection()['runtimeProfile'], 'go-component-async-v1')
+        self.assertEqual(selection({'runtimeProfile': activation.PROFILE})['runtimeProfile'], activation.PROFILE)
+        self.assertEqual(selection({'runtimeProfile': activation.CHECKPOINT_PROFILE})['runtimeProfile'], activation.CHECKPOINT_PROFILE)
+        with self.assertRaisesRegex(ValueError, 'profile-not-installed'):
+            selection({'runtimeProfile': 'unbounded-native-threads'})
+
+    def test_checkpoints_cover_selected_open_modules_but_preserve_dispatcher_and_standard_runtime(self):
+        from tools.go_guest import checkpoints
+        from tools.rust_capsule_project import digest
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            generated, output = root / 'module', root / 'overlay'
+            output.mkdir()
+            names = ['app/main.go', 'vendor/example.org/arbitrary-worker/worker.go',
+                     'vendor/go.bytecodealliance.org/pkg/wit/async/async.go', 'standard/runtime.go']
+            paths = [generated / name for name in names]
+            for path in paths:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'package fixture\nfunc Run(){}\n')
+            originals = {path: path.read_bytes() for path in paths}
+            packages = [{'Dir': str(path.parent), 'GoFiles': [path.name], 'Standard': index == 3}
+                        for index, path in enumerate(paths)]
+            def execute(label, tool, request, destination):
+                selected = json.loads(request.read_bytes())
+                self.assertEqual({row['path'] for row in selected}, {str(path) for path in paths[:2]})
+                destination.mkdir()
+                rows = []
+                for index, row in enumerate(selected):
+                    adapted = destination / (str(index) + '.go')
+                    adapted.write_bytes(originals[Path(row['path'])] + b'// compiler checkpoint\n')
+                    rows.append({'path': row['path'], 'adapted': str(adapted), 'sites': [{'line': 2, 'column': 12, 'suspendable': True}],
+                                 'upstreamDigest': digest(originals[Path(row['path'])]), 'adaptedDigest': digest(adapted.read_bytes())})
+                return json.dumps(rows)
+            replacements, records = checkpoints.transform(SimpleNamespace(run=execute), generated, packages, {paths[0]}, output)
+            self.assertEqual(set(replacements), {str(path) for path in paths[:2]})
+            self.assertEqual(len(records), 2)
+            for path, original in originals.items():
+                self.assertEqual(path.read_bytes(), original)
+
+    def test_checkpoint_parser_cannot_return_an_unselected_source(self):
+        from tools.go_guest import checkpoints
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'module/main.go'
+            source.parent.mkdir()
+            source.write_text('package fixture\nfunc Run(){}\n')
+            compiler = SimpleNamespace(run=lambda *arguments: json.dumps([{'path': str(root / 'foreign.go')}]))
+            with self.assertRaisesRegex(ValueError, 'returned-unselected-source'):
+                checkpoints.transform(compiler, source.parent,
+                    [{'Dir': str(source.parent), 'GoFiles': [source.name]}], {source}, root)
+
     def fixture(self, root, prepared=True):
         text = sources()
         if prepared:
