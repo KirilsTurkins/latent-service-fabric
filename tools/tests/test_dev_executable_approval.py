@@ -294,8 +294,15 @@ class DetachedConsumer(unittest.TestCase):
         explicit = common.digest(canonical(consumer.request(verified, isolation, common.digest(source.read_bytes()))))
         events, passed = [], []
         connection = Mock()
-        connection.call.side_effect = lambda operation, *args, **kwargs: (
-            {'state': 'stopped' if len(passed) == 2 else 'ready'} if operation == 'status' else {'generation': '1'})
+        status_calls = 0
+        def call(operation, *args, **kwargs):
+            nonlocal status_calls
+            if operation == 'status':
+                status_calls += 1
+                self.assertLessEqual(status_calls, 4, events)
+                return {'state': 'stopped' if len(passed) == 2 else 'ready'}
+            return {'generation': '1'}
+        connection.call.side_effect = call
         def execute(_workspace, _connection, _source, _tool_root, **kwargs):
             passed.append(kwargs['executable_approval'])
             try:

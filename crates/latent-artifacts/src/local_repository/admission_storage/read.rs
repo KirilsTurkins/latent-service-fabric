@@ -11,11 +11,46 @@ use super::super::{
     METADATA_FILE,
 };
 use super::{Blob, Evidence, StoredAdmission, RECORD_FILE};
-use crate::package::{validate_package_json, validate_package_path, PackageLimits};
+use crate::package::{validate_package_json, validate_package_path, PackageLayer, PackageLimits};
 use crate::{
     content_digest, AdmissionBinding, AdmissionEvidence, AdmissionStorageLimits,
     PackageAdmissionUpload,
 };
+
+/// Exact owned bytes read and digest-checked against one immutable side record.
+/// This is neither a package association nor current admission authority.
+pub(in crate::local_repository) struct CheckedUpload<'record> {
+    record: &'record StoredAdmission,
+    upload: PackageAdmissionUpload,
+}
+
+impl CheckedUpload<'_> {
+    pub(in crate::local_repository) fn as_upload(&self) -> &PackageAdmissionUpload {
+        &self.upload
+    }
+
+    pub(in crate::local_repository) fn layer_matches(
+        &self,
+        index: usize,
+        expected: &PackageLayer,
+    ) -> bool {
+        self.record
+            .layers
+            .get(index)
+            .zip(self.upload.layers.get(index))
+            .is_some_and(|(stored, (path, bytes))| {
+                stored.path == expected.path
+                    && path == &expected.path
+                    && stored.blob.size == expected.size
+                    && bytes.len() as u64 == expected.size
+                    && stored.blob.digest == expected.digest.as_str()
+            })
+    }
+
+    pub(in crate::local_repository) fn into_upload(self) -> PackageAdmissionUpload {
+        self.upload
+    }
+}
 
 impl StoredAdmission {
     pub(in crate::local_repository) fn read(
@@ -200,6 +235,19 @@ impl StoredAdmission {
         };
         limits.check_upload(&value, component_limit)?;
         Ok(value)
+    }
+
+    pub(in crate::local_repository) fn checked_upload(
+        &self,
+        directory: &Path,
+        limits: AdmissionStorageLimits,
+        component_limit: usize,
+    ) -> Result<CheckedUpload<'_>, PlatformError> {
+        self.upload(directory, limits, component_limit)
+            .map(|upload| CheckedUpload {
+                record: self,
+                upload,
+            })
     }
 
     /// Reads only immutable package content. Detached policy evidence is neither

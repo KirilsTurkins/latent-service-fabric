@@ -64,11 +64,15 @@ class CargoNativeAuthoring(unittest.TestCase):
                     text += '\n[dependencies]\n'
                 text += identity + '=' + value + '\n'
             manifest.write_text(text, encoding='utf-8')
-        elif command[1] == 'generate-lockfile':
+        elif command[1] == 'metadata':
+            self.assertEqual(command[2:4], ['--format-version', '1'])
+            self.assertNotIn('--no-deps', command)
             if self.fail_lock:
                 raise RuntimeError('private native failure')
             if self.after:
                 self.after(manifest.parent)
+            if not (manifest.parent / 'Cargo.lock').exists():
+                (manifest.parent / 'Cargo.lock').write_bytes(b'version = 4\n')
             with (manifest.parent / 'Cargo.lock').open('ab') as output:
                 output.write(b'\n[[package]]\nname="native-selected-control"\nversion="1.0.0"\n')
         else:
@@ -93,7 +97,64 @@ class CargoNativeAuthoring(unittest.TestCase):
         self.assertEqual(locking.sdk_configuration(tomllib.loads((self.app / 'Cargo.toml').read_text())), before)
         self.assertEqual(accepted.read_bytes(), b'previous reviewed capture')
         self.assertEqual((self.app / 'sdk-lock.json').read_bytes(), self.sdk)
-        self.assertTrue(all(command[1] in {'--version', 'add', 'remove', 'generate-lockfile'} for command, _cwd, _env in self.commands))
+        self.assertTrue(all(command[1] in {'--version', 'add', 'remove', 'metadata'} for command, _cwd, _env in self.commands))
+
+    def test_native_edits_and_lock_keep_compatible_sdk_compiler_versions_and_checksums(self):
+        baseline_raw = (self.app / 'Cargo.lock').read_bytes()
+        baseline = tomllib.loads(baseline_raw.decode())['package']
+        expected = {(row['name'], row['version'], row.get('source'), row.get('checksum')) for row in baseline}
+        sdk = next(row for row in baseline if row['name'] == 'thiserror-impl')
+        latest = sdk['version'].rsplit('.', 1)
+        latest = latest[0] + '.' + str(int(latest[1]) + 1)
+        refreshes = []
+        def conservative_cargo(command, cwd, environment, seconds, maximum):
+            if command[1] not in {'metadata', 'generate-lockfile'}:
+                return self.command(command, cwd, environment, seconds, maximum)
+            self.assertEqual(seconds, 600)
+            self.assertEqual(maximum, 4 * 1024 * 1024)
+            manifest = Path(command[command.index('--manifest-path') + 1])
+            # Model Cargo's two distinct behaviours: a normal resolver keeps
+            # compatible existing selections; generate-lockfile refreshes them.
+            selected = baseline_raw
+            if command[1] == 'generate-lockfile':
+                refreshes.append(True)
+                selected = re.sub(
+                    rb'(name\s*=\s*"thiserror-impl"\s*\nversion\s*=\s*")[^"]+',
+                    lambda match: match[1] + latest.encode(), selected, count=1)
+            else:
+                self.assertEqual(command[2:4], ['--format-version', '1'])
+                self.assertNotIn('--no-deps', command)
+            declaration = tomllib.loads(manifest.read_text())['dependencies'].get('outside')
+            if declaration is not None:
+                version = declaration['version'] if isinstance(declaration, dict) else declaration
+                selected += ('\n[[package]]\nname="outside"\nversion=' + json.dumps(version.removeprefix('=')) + '\n').encode()
+            (manifest.parent / 'Cargo.lock').write_bytes(selected)
+            return subprocess.CompletedProcess(command, 0, b'{"version":1}', b'')
+        for operation, values in (
+                ('add', {'identity': 'outside', 'version': '1.0.0', 'local': self.library}),
+                ('lock', {}),
+                ('update', {'identity': 'outside', 'version': '2.0.0'}),
+                ('remove', {'identity': 'outside'})):
+            with self.subTest(operation=operation), patch.object(locking, 'run_bounded', side_effect=conservative_cargo):
+                result = locking.author(self.owner, operation, cargo=self.cargo, **values)
+                rows = tomllib.loads((self.app / 'Cargo.lock').read_text())['package']
+                unchanged = {(row['name'], row['version'], row.get('source'), row.get('checksum'))
+                             for row in rows if row['name'] != 'outside'}
+                self.assertEqual(unchanged, expected)
+                outside = [row['version'] for row in rows if row['name'] == 'outside']
+                self.assertEqual(outside, [] if operation == 'remove' else ['2.0.0' if operation == 'update' else '1.0.0'])
+                self.assertFalse(result['compilerExecution'])
+                self.assertEqual((self.app / 'sdk-lock.json').read_bytes(), self.sdk)
+        self.assertEqual(refreshes, [])
+
+    def test_native_lock_resolves_missing_lock_without_running_a_build(self):
+        (self.app / 'Cargo.lock').unlink()
+        result = self.author('lock')
+        locked = tomllib.loads((self.app / 'Cargo.lock').read_text())
+        self.assertEqual(locked['version'], 4)
+        self.assertEqual(locked['package'][0]['name'], 'native-selected-control')
+        self.assertFalse(result['compilerExecution'])
+        self.assertEqual([command[1] for command, _cwd, _env in self.commands], ['--version', 'metadata'])
 
     def test_nonexact_and_sdk_edits_are_rejected_before_native_commands(self):
         before = fixture.project.snapshot(self.app)
