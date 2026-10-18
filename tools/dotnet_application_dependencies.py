@@ -187,9 +187,20 @@ def coordinate(value: str) -> tuple[str, str]:
     return package_name(name), version.lower()
 
 
+def unique_package_names(values, *, versioned: bool = False) -> dict[str, str]:
+    result = {}
+    for value in values:
+        name = coordinate(value)[0] if versioned else package_name(value)
+        if name in result:
+            raise DependencyError('nuget-native-package-identity-ambiguous')
+        result[name] = value
+    return result
+
+
 def sdk_packages(lock: dict) -> dict[str, dict]:
     result = {}
     for target in lock['dependencies'].values():
+        unique_package_names(target)
         for name, row in target.items():
             identity = package_name(name) + '/' + row['resolved'].lower()
             if identity in result and result[identity]['contentHash'] != row['contentHash']:
@@ -228,6 +239,7 @@ def analyze(lock: dict, assets: dict, baseline: dict, declared: dict) -> dict:
     sdk = sdk_packages(baseline)
     native = {}
     for target, packages in lock['dependencies'].items():
+        unique_package_names(packages)
         for name, row in packages.items():
             identity = package_name(name) + '/' + row['resolved'].lower()
             if row.get('type') not in {'Direct', 'Transitive'} or not isinstance(row.get('contentHash'), str):
@@ -245,7 +257,10 @@ def analyze(lock: dict, assets: dict, baseline: dict, declared: dict) -> dict:
     if set(sdk) - native.keys():
         raise DependencyError('nuget-sdk-compiler-runtime-closure-missing')
     libraries = assets.get('libraries', {})
-    if {key.lower() for key in libraries} != native.keys() or any(row.get('type') != 'package' for row in libraries.values()):
+    library_ids = [key.lower() for key in libraries]
+    if len(library_ids) != len(set(library_ids)):
+        raise DependencyError('nuget-native-package-identity-ambiguous')
+    if set(library_ids) != native.keys() or any(row.get('type') != 'package' for row in libraries.values()):
         raise DependencyError('nuget-native-selected-graph-not-closed')
     rows = {}
     for original, library in sorted(libraries.items()):
@@ -261,7 +276,7 @@ def analyze(lock: dict, assets: dict, baseline: dict, declared: dict) -> dict:
         rows[identity] = {'package': name, 'version': version, 'contentHash': library['sha512'],
                           'sdk': identity in sdk, 'files': files, 'targets': {}, 'dependencies': [], 'executableAssets': []}
     for target, packages in sorted(assets['targets'].items()):
-        target_by_name = {coordinate(key)[0]: key.lower() for key in packages}
+        target_by_name = {name: key.lower() for name, key in unique_package_names(packages, versioned=True).items()}
         for original, value in sorted(packages.items()):
             identity = original.lower()
             if identity not in rows:
@@ -282,6 +297,7 @@ def analyze(lock: dict, assets: dict, baseline: dict, declared: dict) -> dict:
                             and selected[asset].get('buildAction') == 'EmbeddedResource' and asset.lower().endswith('.resx')):
                         rows[identity]['executableAssets'].append(asset)
             rows[identity]['targets'][target] = selected_assets
+            unique_package_names(value.get('dependencies', {}))
             for dependency, requested in sorted(value.get('dependencies', {}).items()):
                 child = target_by_name.get(package_name(dependency))
                 if child is None:

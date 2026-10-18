@@ -1092,5 +1092,126 @@ class NugetSelectedNativeAssets(unittest.TestCase):
             self.assertFalse(cache.exists())
 
 
+class NugetCanonicalIdentities(unittest.TestCase):
+    def setUp(self):
+        self.fixture = NugetDependencies('test_native_transitive_closure_is_selected_without_catalogue')
+        self.fixture.setUp()
+        self.addCleanup(self.fixture.doCleanups)
+
+    def native(self):
+        lock, assets, baseline, declared = copy.deepcopy(self.fixture.native())
+        assets['targets'] = {name: copy.deepcopy(packages) for name, packages in assets['targets'].items()}
+        return lock, assets, baseline, declared
+
+    def reviewed(self):
+        fixture = NugetSelectedNativeAssets('test_exact_review_refuses_consistent_native_metadata_and_preserves_inputs')
+        fixture.fixture = self.fixture
+        return fixture.reviewed_graph()
+
+    def test_lock_and_sdk_case_aliases_cannot_collapse_selected_package_identity(self):
+        for baseline_alias in (False, True):
+            for package in ('Maintained.Compiler', 'Outside.Library', 'Transitive.Code'):
+                if baseline_alias and package != 'Maintained.Compiler':
+                    continue
+                lock, assets, baseline, declared = self.native()
+                packages = (baseline if baseline_alias else lock)['dependencies']['net10.0']
+                packages[package.lower()] = copy.deepcopy(packages[package])
+                before = copy.deepcopy((lock, assets, baseline, declared))
+                with self.subTest(baseline=baseline_alias, package=package), self.assertRaisesRegex(
+                        DependencyError, '^nuget-native-package-identity-ambiguous$'):
+                    analyze(lock, assets, baseline, declared)
+                self.assertEqual((lock, assets, baseline, declared), before)
+
+    def test_assets_library_case_aliases_refuse_application_transitive_and_sdk_coordinates(self):
+        for package in ('Maintained.Compiler/1.0.0', 'Outside.Library/2.0.0', 'Transitive.Code/3.0.0'):
+            lock, assets, baseline, declared = self.native()
+            assets['libraries'][package.lower()] = copy.deepcopy(assets['libraries'][package])
+            with self.subTest(package=package), self.assertRaisesRegex(
+                    DependencyError, '^nuget-native-package-identity-ambiguous$'):
+                analyze(lock, assets, baseline, declared)
+
+    def test_selected_target_case_aliases_or_multiple_versions_cannot_choose_a_last_package(self):
+        for target in ('net10.0', 'net10.0/wasi-wasm'):
+            for alias in ('outside.library/2.0.0', 'Outside.Library/2.1.0'):
+                lock, assets, baseline, declared = self.native()
+                original = 'Outside.Library/2.0.0'
+                assets['targets'][target][alias] = copy.deepcopy(assets['targets'][target][original])
+                if alias.endswith('2.1.0'):
+                    lock['dependencies']['net10.0/wasi-wasm']['Outside.Library'] = {
+                        'type': 'Direct', 'resolved': '2.1.0', 'contentHash': HASH}
+                    assets['libraries'][alias] = {**assets['libraries'][original],
+                                                'path': alias.lower()}
+                with self.subTest(target=target, alias=alias), self.assertRaisesRegex(
+                        DependencyError, '^nuget-native-package-identity-ambiguous$'):
+                    analyze(lock, assets, baseline, declared)
+
+    def test_dependency_name_aliases_cannot_duplicate_or_replace_a_selected_edge(self):
+        for target in ('net10.0', 'net10.0/wasi-wasm'):
+            lock, assets, baseline, declared = self.native()
+            edges = assets['targets'][target]['Outside.Library/2.0.0']['dependencies']
+            edges['transitive.code'] = '[9.0.0]'
+            with self.subTest(target=target), self.assertRaisesRegex(
+                    DependencyError, '^nuget-native-package-identity-ambiguous$'):
+                analyze(lock, assets, baseline, declared)
+
+    def test_exact_review_refuses_alias_even_when_captured_package_metadata_agrees(self):
+        from tools.dotnet_application_dependencies import validate_selection
+        files, selected, lock, native, artifacts = self.reviewed()
+        original = native['assets']['libraries']['Outside.Library/2.0.0']
+        native['assets']['libraries']['outside.library/2.0.0'] = copy.deepcopy(original)
+        before = copy.deepcopy((files, selected, lock, native, artifacts))
+        with self.assertRaisesRegex(DependencyError, '^nuget-native-package-identity-ambiguous$'):
+            validate_selection(files, selected, lock, native, artifacts)
+        self.assertEqual((files, selected, lock, native, artifacts), before)
+
+    def test_offline_alias_refusal_precedes_cache_creation_and_original_archive_reads(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tools.build_snapshot import canonical
+        from tools.dotnet_application_dependencies import configure
+        files, selected, _lock, native, artifacts = self.reviewed()
+        native['assets']['libraries']['outside.library/2.0.0'] = copy.deepcopy(
+            native['assets']['libraries']['Outside.Library/2.0.0'])
+        files['nuget-resolved.lock.json'] = canonical(native)
+        project = self.fixture.root / 'application'
+        for name, raw in files.items():
+            destination = project / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(raw)
+        sdk = {name: raw for name, raw in files.items() if name.startswith('vendor/') or name == 'sdk-lock.json'}
+        for artifact in artifacts:
+            source = project / artifact['mount']
+            source.mkdir(parents=True)
+            (source / (artifact['metadata']['package'] + '.nuspec')).write_bytes(b'<package />')
+        cache = self.fixture.root / 'ambiguous-offline-cache'
+        store = Mock()
+        store.get.return_value = b'controlled-original-archive-boundary'
+        closure = SimpleNamespace(project=project, work=project, store=store, identity='captured-source-control',
+                                  lock={'selection': selected, 'artifacts': artifacts})
+        with self.assertRaisesRegex(DependencyError, '^nuget-native-package-identity-ambiguous$'):
+            configure(closure, project, cache)
+        self.assertFalse(cache.exists())
+        store.get.assert_not_called()
+        for name, raw in {**sdk, **{name: files[name] for name in ('packages.lock.json', 'nuget-resolved.lock.json')}}.items():
+            self.assertEqual((project / name).read_bytes(), raw)
+
+    def test_unique_mixed_case_and_distinct_versions_in_separate_targets_remain_valid(self):
+        lock, assets, baseline, declared = self.native()
+        original, replacement = 'Outside.Library/2.0.0', 'oUtSiDe.LiBrArY/2.1.0'
+        target = assets['targets']['net10.0/wasi-wasm']
+        target[replacement] = target.pop(original)
+        assets['libraries'][replacement] = {**copy.deepcopy(assets['libraries'][original]),
+                                            'path': replacement.lower()}
+        lock['dependencies']['net10.0/wasi-wasm']['oUtSiDe.LiBrArY'] = {
+            'type': 'Direct', 'resolved': '2.1.0', 'contentHash': HASH}
+        result = analyze(lock, assets, baseline, declared)
+        rows = {row['version']: row for row in result['packages'] if row['package'] == 'outside.library'}
+        self.assertEqual(set(rows), {'2.0.0', '2.1.0'})
+        self.assertEqual(set(rows['2.0.0']['targets']), {'net10.0'})
+        self.assertEqual(set(rows['2.1.0']['targets']), {'net10.0/wasi-wasm'})
+        self.assertTrue(all({edge['id'] for edge in row['dependencies']} == {'transitive.code/3.0.0'}
+                            for row in rows.values()))
+
+
 if __name__ == '__main__':
     unittest.main()
