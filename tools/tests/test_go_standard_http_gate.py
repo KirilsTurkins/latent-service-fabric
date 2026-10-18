@@ -14,6 +14,16 @@ from tools.rust_capsule_project import ROOT, read_file, snapshot
 
 
 class StandardHttpGate(unittest.TestCase):
+    def test_project_world_and_export_package_share_the_declared_tenant(self):
+        with tempfile.TemporaryDirectory() as directory:
+            app = project(Path(directory)/'application')
+            descriptor = json.loads(read_file(app/'capsule-project.json'))
+            package = read_file(app/'wit/world.wit').decode().split('package ',1)[1].split('@',1)[0]
+            self.assertEqual(package.split(':',1)[0], descriptor['tenant'])
+            self.assertEqual(descriptor['world'], package+'/service@1.0.0')
+            self.assertEqual(read_file(app/'src/main.go').decode().splitlines()[0],
+                'package export_'+package.replace(':','_').replace('-','_')+'_api')
+
     def test_signed_peer_carrier_is_an_existing_runnable_shared_owner(self):
         import sys
         from tools.go_standard_http_node import PEER_SOURCE
@@ -30,7 +40,7 @@ class StandardHttpGate(unittest.TestCase):
             app = project(Path(directory)/'application')
             descriptor, _lock, _pins = validate(snapshot(app))
             self.assertEqual(descriptor['runtimeProfile'],'go-component-activation-v4')
-            self.assertEqual(descriptor['world'],'tests:go-standard-http/service@1.0.0')
+            self.assertEqual(descriptor['world'],'examples:go-standard-http/service@1.0.0')
             self.assertEqual(read_file(app/'src/main.go'),
                 read_file(ROOT/'sdk/go-guest/runtime/standard-http-conformance/main.go'))
             self.assertEqual(read_file(app/'wit/world.wit'),

@@ -133,7 +133,7 @@ def invoke(client, target, which, url, activation):
     write_json(path, [which, url]); write_json(budget, target['budget'])
     process = Process([client.executable, '--output', 'json', '--config', str(client.config), '--profile', 'operator',
         '--rpc-timeout-ms', '120000', 'invoke', '--service', SERVICE, '--route', target['name'],
-        '--contract', 'tests:go-standard-http/api@1.0.0', '--function', 'run', '--activation-id', activation,
+        '--contract', 'examples:go-standard-http/api@1.0.0', '--function', 'run', '--activation-id', activation,
         '--input', str(path), '--budget', str(budget), '--budget-profile', 'phase3'],
         client.directory, client.environment, client.cancellation, maximum=65536)
     try:
