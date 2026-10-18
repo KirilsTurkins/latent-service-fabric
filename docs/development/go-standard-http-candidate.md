@@ -27,6 +27,9 @@ The signed entry diagnostics remain separate from HTTP qualification. Two tiny
 ordinary v4 projects keep the same `run(u32, string) -> string` world and constant
 return, differing only by a blank `net/http` import. They use the frozen normal
 native products, ordinary compiler/signing/admission and original owner fences.
+Both diagnostic worlds declare only their four reachable runtime imports and use
+runtime-only grants; the final component-surface check remains strict. The
+required HTTP fixtures keep their full HTTP world and original grants.
 Their public rows are retained even if an entry traps; they never count among the
 original 33 standard or 30 library cases. This failure-only observation is bounded
 to 600 seconds, with 180-second compiles and 90-second node scenarios, under the

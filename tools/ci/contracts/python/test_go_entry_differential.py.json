@@ -3,7 +3,8 @@
     "EntryDifferential.test_diagnostic_is_failure_only_and_neither_original_signed_gate_is_optional",
     "EntryDifferential.test_normal_build_frozen_products_and_both_observations_keep_original_deadline",
     "EntryDifferential.test_only_http_import_changes_same_v4_public_string_contract",
-    "EntryDifferential.test_public_rows_require_reaping_and_zero_effects_without_turning_traps_into_qualification"
+    "EntryDifferential.test_public_rows_require_reaping_and_zero_effects_without_turning_traps_into_qualification",
+    "EntryDifferential.test_runtime_only_grants_and_failure_row_survive_unconfirmed_retirement"
   ],
   "guards": {
     "EntryDifferential.test_diagnostic_is_failure_only_and_neither_original_signed_gate_is_optional": {
@@ -13,7 +14,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:c833df52d49dec6e2b9a1ff0fb4b898c3fe9d95ba7809b88aaf7b2e2f5efea0c",
+        "module:setup-sha256:a7d758606b1b586f90143db984dc657d3b49298c4baf648346d3979281312d5c",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -25,7 +26,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:c833df52d49dec6e2b9a1ff0fb4b898c3fe9d95ba7809b88aaf7b2e2f5efea0c",
+        "module:setup-sha256:a7d758606b1b586f90143db984dc657d3b49298c4baf648346d3979281312d5c",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -37,7 +38,7 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:c833df52d49dec6e2b9a1ff0fb4b898c3fe9d95ba7809b88aaf7b2e2f5efea0c",
+        "module:setup-sha256:a7d758606b1b586f90143db984dc657d3b49298c4baf648346d3979281312d5c",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -49,7 +50,19 @@
       "classDecorators": [],
       "decorators": [],
       "fixtureGuards": [
-        "module:setup-sha256:c833df52d49dec6e2b9a1ff0fb4b898c3fe9d95ba7809b88aaf7b2e2f5efea0c",
+        "module:setup-sha256:a7d758606b1b586f90143db984dc657d3b49298c4baf648346d3979281312d5c",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "EntryDifferential.test_runtime_only_grants_and_failure_row_survive_unconfirmed_retirement": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:a7d758606b1b586f90143db984dc657d3b49298c4baf648346d3979281312d5c",
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
@@ -57,6 +70,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_entry_differential.py",
-  "reviewReason": "Test same captured v4 world, strict zero effects, frozen native inputs, and mandatory original signed gates",
+  "reviewReason": "Review unchanged case names, decorators and skip guards; added Mock and ExitStack imports change only module setup fingerprint. Verify exact runtime-only diagnostic surface and row checkpoint before failed retirement.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

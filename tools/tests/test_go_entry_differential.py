@@ -1,11 +1,12 @@
 """No native/compiler execution: boundaries of the signed import diagnostic."""
+from contextlib import ExitStack
 from copy import deepcopy
 import json
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import yaml
 
@@ -46,7 +47,54 @@ class EntryDifferential(unittest.TestCase):
             self.assertEqual(sources[0], sources[1].replace(b'import _ "net/http"\n\n', b''))
             self.assertIn(b'func Run(which uint32, address string) string { return "entered" }', sources[0])
             self.assertEqual(worlds[0], worlds[1])
-            self.assertEqual(worlds[0], read_file(ROOT/'sdk/go-guest/runtime/standard-http-conformance/world.wit'))
+            original = read_file(ROOT/'sdk/go-guest/runtime/standard-http-conformance/world.wit')
+            self.assertEqual(worlds[0], original.replace(b'    import latent:http/streaming@0.3.0;\n', b''))
+            self.assertNotIn(b'latent:http/', worlds[0])
+
+    def test_runtime_only_grants_and_failure_row_survive_unconfirmed_retirement(self):
+        with tempfile.TemporaryDirectory() as directory, ExitStack() as patches:
+            root = Path(directory)
+            binaries = {}
+            for name in ('latent', 'latentd', 'capsule_authoring'):
+                binaries[name] = root/name
+                binaries[name].write_bytes(name.encode())
+            output = root/'node'
+            client, service, peer, probe = Mock(), Mock(), Mock(), Mock()
+            origin = {'host': '127.0.0.1', 'port': 1}
+            peer.line.return_value = {'origins': {'primary': origin}}
+            probe.sample.return_value = {}
+            client.call.return_value = {'data': {'operation': {'publication': {'id': 'publication'}}}}
+            runtime = [{'capability': name} for name in ('clock-wall', 'clock-monotonic', 'random', 'activation')]
+            authorized = runtime+[{'capability': 'latent:http/streaming@0.3.0'}]
+            row = {'exitCode': 4, 'processReaped': True, 'decoded': None, 'response': {'data': {
+                'terminalState': 'guest_trap', 'consumption': {'outboundRequests': 0, 'childCalls': 0, 'effectCount': 0}}}}
+            def configuration(directory, _signed, _startup, _credential):
+                path = directory/'config.json'
+                path.write_text('{}')
+                return path
+            def fence(*args):
+                self.assertEqual(json.loads(read_file(output/'entry.json'))['entry'], row)
+                self.assertEqual(args[-1], 'entry-differential')
+                raise WorkflowError('unconfirmed-retirement-control')
+            replacements = {'RecordingClient': Mock(return_value=client), 'configuration': configuration,
+                'connect': Mock(return_value=service), 'Probe': Mock(return_value=probe),
+                'grants': Mock(return_value=(runtime, authorized)), 'deploy': Mock(return_value={'name': 'target'}),
+                'invoke': Mock(return_value=row), 'retire_case': fence}
+            for name, value in replacements.items():
+                patches.enter_context(patch.object(diagnostic.node, name, value))
+            patches.enter_context(patch.object(diagnostic, 'Process', return_value=peer))
+            patches.enter_context(patch.object(diagnostic, 'run_bounded_result', return_value=SimpleNamespace(returncode=0)))
+            with self.assertRaisesRegex(WorkflowError, 'unconfirmed-retirement-control'):
+                diagnostic.observe(root/'artifact', binaries, output, diagnostic.time.monotonic()+90)
+            self.assertIs(replacements['deploy'].call_args.kwargs['grants'], runtime)
+            saved = json.loads(read_file(output/'observation.json'))
+            self.assertEqual(saved['entry'], row)
+            self.assertEqual(saved['outcome'], 'trapped')
+            self.assertEqual(saved['stage'], 'retirement')
+            self.assertEqual(saved['status'], 'incomplete')
+            self.assertFalse(saved['qualification'])
+            service.close.assert_called_once()
+            peer.close.assert_called_once()
 
     def test_public_rows_require_reaping_and_zero_effects_without_turning_traps_into_qualification(self):
         row = {'exitCode': 0, 'processReaped': True, 'decoded': ['entered'],

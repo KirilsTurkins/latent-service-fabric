@@ -33,6 +33,12 @@ def capture(directory: Path, variant: str) -> Path:
               + ('import _ "net/http"\n\n' if variant == 'with-http-import' else '')
               + 'func Run(which uint32, address string) string { return "entered" }\n').encode()
     (app/'src/main.go').write_bytes(source)
+    wit = read_file(app/'wit/world.wit')
+    unused = b'    import latent:http/streaming@0.3.0;\n'
+    require(wit.count(unused) == 1, 'go-entry-diagnostic-world-preimage')
+    # No diagnostic calls HTTP: retain the exact public API and only the four
+    # actual runtime imports, rather than relaxing final-surface validation.
+    (app/'wit/world.wit').write_bytes(wit.replace(unused, b''))
     lock = read_json(app/'sdk-lock.json')
     lock['template'] = {'name': 'go-entry-'+variant, 'sourceDigest': digest(source),
                         'witDigest': digest(read_file(app/'wit/world.wit'))}
@@ -91,8 +97,8 @@ def observe(artifact: Path, binaries: dict, output: Path, deadline: float) -> di
                 '--operation-id', 'entry-diagnostic-publish', '--expected-generation', '0')
             publication = published['data']['operation']['publication']['id']
             origin = startup['origins']['primary']
-            _runtime, authorized = node.grants(client, service, publication, origin)
-            target = node.deploy(client, source/'deployment.json', publication, grants=authorized)
+            runtime, _authorized = node.grants(client, service, publication, origin)
+            target = node.deploy(client, source/'deployment.json', publication, grants=runtime)
             record['stage'] = 'entry'
             record['entry'] = node.invoke(client, target, 25,
                 f"http://{origin['host']}:{origin['port']}/conformance/json", 'entry-differential')
