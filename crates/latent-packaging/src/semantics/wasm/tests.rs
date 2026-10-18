@@ -5,6 +5,7 @@ use fixtures::{component, Options};
 use latent_core::PlatformErrorCode;
 use wasm_encoder::{Component, Encode, ModuleSection, RawSection};
 mod aliases;
+mod data;
 
 #[test]
 fn canonical_creator_without_proof_never_opens_descriptive_threading_parser() {
