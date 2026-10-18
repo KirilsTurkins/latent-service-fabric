@@ -64,9 +64,10 @@
   },
   "requiredJobs": [
     "authoring",
+    "git-closure",
     "standard-clocks"
   ],
-  "reviewReason": "Preserve merged authenticated private Cargo and standard clock jobs while adding normal dependency authoring selection; all original commands, artifacts, deadlines and gates remain.",
+  "reviewReason": "Preserve merged authenticated private Cargo and standard clock jobs while adding normal dependency authoring selection; all original commands, artifacts, deadlines and gates remain. Add an independent bounded noncompiling Git capture/offline job; existing signed job definitions and deadlines remain identical.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/rust-capsule-authoring.yml"
 }

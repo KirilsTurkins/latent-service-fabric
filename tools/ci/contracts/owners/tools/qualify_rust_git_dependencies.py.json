@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "owner",
+  "reviewReason": "Bounded normal native Git capture and fresh-home offline metadata campaign; no application compilation or signed execution.",
+  "path": "tools/qualify_rust_git_dependencies.py",
+  "reviewBoundary": "committed-fingerprint",
+  "sha256": "c9c7fbea417b3c909ac8b97a9469d88c8e939d9b1f9ab5f0dfafe5fa2888d29a"
+}

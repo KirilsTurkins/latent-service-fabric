@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "latent.ci.contracts.v1",
+  "kind": "job",
+  "reviewReason": "Run real public exact-revision Cargo authoring/capture/review and fresh-home offline metadata; no compilation or signed-node claim. Existing jobs unchanged.",
+  "workflow": ".github/workflows/rust-capsule-authoring.yml",
+  "jobId": "git-closure",
+  "definition": {
+    "name": "Native Cargo Git capture and offline metadata",
+    "runs-on": "ubuntu-24.04",
+    "timeout-minutes": 20,
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "uses": "dtolnay/rust-toolchain"
+      },
+      {
+        "name": "Install pinned validation dependencies",
+        "run": "python3 -m pip install --requirement tools/requirements.lock"
+      },
+      {
+        "name": "Test Git offline command and closure refusal controls",
+        "run": "python3 -m unittest tools.tests.test_rust_git_conformance"
+      },
+      {
+        "name": "Capture two exact Git revisions and verify fresh-home offline metadata",
+        "run": "python3 tools/qualify_rust_git_dependencies.py --cargo \"$(rustup which --toolchain 1.97.1 cargo)\" --output \"$RUNNER_TEMP/rust-git-closure\"\n"
+      },
+      {
+        "name": "Retain source and offline Git observations including failures",
+        "if": "always()",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "name": "rust-git-closure-${{ github.sha }}",
+          "path": "${{ runner.temp }}/rust-git-closure/qualification.json\n${{ runner.temp }}/rust-git-closure/FAILED.json\n${{ runner.temp }}/rust-git-closure/phase-*.json\n",
+          "if-no-files-found": "warn",
+          "retention-days": 3
+        }
+      }
+    ]
+  },
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {}
+}
