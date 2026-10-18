@@ -1,0 +1,93 @@
+{
+  "formatVersion": 1,
+  "buildType": "https://latent.dev/build/go-capsule/v1",
+  "source": {
+    "repository": "https://github.com/KirilsTurkins/latent-service-fabric",
+    "revision": "f342642111ec6993cd1abd06e5405937bc90139665d13335b0cc8ab7c8c3d07b",
+    "snapshotDigest": "sha256:f342642111ec6993cd1abd06e5405937bc90139665d13335b0cc8ab7c8c3d07b",
+    "repositoryTrust": "operator-asserted",
+    "capture": "explicit-input-files"
+  },
+  "componentDigest": "sha256:d96287c8f8b8c723c162113d53cce64277518176e4780c87db2553cc7b13a804",
+  "componentSize": 12077006,
+  "materials": [
+    {
+      "name": "build-recipe",
+      "digest": "sha256:71ffbdfb2ded2f7c5688bcdfc183c230db2c368a8d45152aaffa094627b5e660",
+      "size": 7307
+    },
+    {
+      "name": "componentize-go",
+      "digest": "sha256:9f351ee76b86696e8c9f747fc65261a323254d45a1cc3f4319bcbe5137c9803d",
+      "size": 17767096
+    },
+    {
+      "name": "contracts-tool",
+      "digest": "sha256:de1fe2704a9a46f73c9d31a1aa7a442d9aa5970b198133e6062a87ef043f8d40",
+      "size": 7254480
+    },
+    {
+      "name": "dependency-lock",
+      "digest": "sha256:fef064834fabec9b4ef82f2acad1817030c02316bcda3be780b52aec78a060f5",
+      "size": 501
+    },
+    {
+      "name": "go",
+      "digest": "sha256:548d3c32f83fa81152f543eb1526be7884cfe0526eb5e9ce29d3eca14786e7e0",
+      "size": 17164055
+    },
+    {
+      "name": "go-checkpoints",
+      "digest": "sha256:b82b39a5471380ff06ce6a62398303bd52c40a589790bf7104fc14db231b5f29",
+      "size": 4812720
+    },
+    {
+      "name": "go-runtime-transformations",
+      "digest": "sha256:9d715e34f0cc96748e9119c210705ee2322bcdc01ea3238bbb7df96f1602eb24",
+      "size": 9368
+    },
+    {
+      "name": "package-inputs",
+      "digest": "sha256:d359b671a9feadde072dfa5a30b1cfff1d180505b2473b3c9f4499faa50118f1",
+      "size": 1331
+    },
+    {
+      "name": "packager",
+      "digest": "sha256:e7ec6942849d7949c80f835d723ef5f2e91050a801fd2a7ee64d08ddde3ba73b",
+      "size": 17839160
+    },
+    {
+      "name": "source-snapshot",
+      "digest": "sha256:f342642111ec6993cd1abd06e5405937bc90139665d13335b0cc8ab7c8c3d07b",
+      "size": 13002
+    },
+    {
+      "name": "standard-runtime-selection",
+      "digest": "sha256:45f24be57ebf2b60ebaa318ae57691b1f48d6a311aa70fe178625b9012547b09",
+      "size": 3038
+    },
+    {
+      "name": "toolchain-config",
+      "digest": "sha256:4697bc952fb2758088297231150165a05c7a31b1954ced4f8af0f16296403de2",
+      "size": 816
+    },
+    {
+      "name": "wasm-tools",
+      "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+      "size": 20231696
+    }
+  ],
+  "parameters": {
+    "goPackage": "go-standard-http",
+    "compiler": "componentize-go",
+    "target": "wasm32-wasip1",
+    "runtime": "go-component-activation-v4",
+    "locked": true,
+    "ambientWasi": false
+  },
+  "startedAt": 1792341989,
+  "finishedAt": 1792342009,
+  "reproducibility": "not-checked",
+  "hermetic": false,
+  "dependencyCompleteness": "declared-inputs-incomplete"
+}

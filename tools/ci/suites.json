@@ -5409,14 +5409,17 @@
         "verify::tests::concurrent::currentness_readers_share_trust_without_spurious_resource_exhaustion",
         "verify::tests::concurrent::exclusive_writer_refuses_currentness_without_queuing_or_renewing_proof",
         "verify::tests::concurrent::poisoned_writer_keeps_proof_reads_and_trust_replacement_closed",
-        "verify::tests::contended_owner_rejects_without_queuing_and_preserves_observed_time"
+        "verify::tests::contended_owner_rejects_without_queuing_and_preserves_observed_time",
+        "provenance::tests::activation_profiles_preserve_locked_target_compiler_package_and_shape_refusals",
+        "provenance::tests::observed_v4_recipe_decodes_without_relabelling_or_granting_authority",
+        "provenance::tests::only_the_closed_installed_go_runtime_profiles_decode"
       ],
       "expectedIgnored": [],
       "id": "latent-signing.lib.latent-signing",
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-signing/Cargo.toml",
-      "minimumCases": 58,
+      "minimumCases": 61,
       "mode": "libtest",
       "package": "latent-signing",
       "platforms": [
