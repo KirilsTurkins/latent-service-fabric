@@ -67,6 +67,23 @@ public final class Arithmetic {
             return new String(value.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
+    public static String loaderResource() throws java.io.IOException {
+        ClassLoader loader = Arithmetic.class.getClassLoader();
+        if (loader == null) throw new java.io.IOException("captured-loader-unavailable");
+        try (java.io.InputStream missing = loader.getResourceAsStream("outside/owner/missing.txt")) {
+            if (missing != null) throw new java.io.IOException("captured-loader-absence-incorrect");
+        }
+        try (java.io.InputStream first = loader.getResourceAsStream("outside/owner/badge.txt");
+             java.io.InputStream second = loader.getResourceAsStream("outside/owner/badge.txt")) {
+            if (first == null || second == null || first == second)
+                throw new java.io.IOException("captured-loader-stream-owner-incorrect");
+            int firstByte = first.read();
+            if (firstByte != 'p' || second.read() != firstByte)
+                throw new java.io.IOException("captured-loader-stream-position-incorrect");
+            return "loader:" + (char) firstByte
+                + new String(first.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+    }
 }
 ''', encoding='utf-8')
     commands.run('independent-javac', 'javac', '--release', '17', '-proc:none', '-encoding', 'UTF-8',
@@ -102,6 +119,10 @@ public final class Capsule implements Bindings.Exports {
         if (name.isEmpty()) return Result.err("Please enter a name.");
         if (name.equals("resource")) {
             try { return Result.ok(Arithmetic.resource()); }
+            catch (java.io.IOException failure) { return Result.err(failure.getMessage()); }
+        }
+        if (name.equals("resource-loader")) {
+            try { return Result.ok(Arithmetic.loaderResource()); }
             catch (java.io.IOException failure) { return Result.err(failure.getMessage()); }
         }
         if (name.equals("throw")) throw new IllegalStateException("selected-library-error");
@@ -211,6 +232,7 @@ def execute(root: Path, native: Path, native_identity: dict) -> dict:
             for ordinal, (argument, expected, code) in enumerate((
                 ('SDK', [{'ok': '42/53444b/KDS'}], 0),
                 ('resource', [{'ok': 'private captured resource\n'}], 0),
+                ('resource-loader', [{'ok': 'loader:private captured resource\n'}], 0),
                 ('', [{'err': 'Please enter a name.'}], 3),
                 ('Ada', [{'ok': '42/416461/adA'}], 0),
             )):
