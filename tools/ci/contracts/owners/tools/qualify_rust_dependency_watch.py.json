@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Observe exact recipe-trust refusal after queued Rust source and dependency reconciliation within 120 seconds; retain the 2400-second campaign, unreviewed-lock gate, signed stages and bounded public projection.",
+  "reviewReason": "Retain the three signed Rust watch stages and 2400-second limit while writing only a bounded phase, operation and hashed label checkpoint before a command or event wait; a deadline remains a failure.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "4f62856e6c520024cac571bb1399126f6b51a3a5ed041effb0b8f13b52dc4990"
+  "sha256": "27aa6dcc2279df71e4760d4d0089ef43657d1a6c6433b3ee83aa7527afbc1180"
 }

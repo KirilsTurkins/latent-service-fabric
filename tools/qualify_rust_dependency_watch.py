@@ -398,8 +398,20 @@ def main() -> int:
     env = {'PATH': '/nonexistent', 'HOME': str(Path.home()), 'LANG': 'C.UTF-8',
            'TMPDIR': str(root), 'TEMP': str(root), 'TMP': str(root)}
 
+    def checkpoint(kind, label):
+        require(kind in {'command', 'watch-event', 'complete'}, 'unknown-watch-checkpoint')
+        require(report['phase'] in {'prepare', 'runtime', 'watch', 'complete'}, 'unknown-watch-phase')
+        require(type(label) is str and len(label) <= 96, 'invalid-watch-checkpoint-label')
+        public = {'schemaVersion': 1, 'phase': report['phase'], 'operation': kind,
+                  'labelSha256': hashlib.sha256(label.encode('utf-8')).hexdigest(),
+                  'completedCommands': len(report['commands']), 'completedDeployments': len(report['stages'])}
+        temporary = root / 'public-progress.tmp'
+        write(temporary, public)
+        os.replace(temporary, root / 'public-progress.json')
+
     def command(label, argv, *, timeout=1000, expected=0):
         require(time.monotonic() - began < 2400, 'qualification-total-deadline')
+        checkpoint('command', label)
         result = subprocess.run([str(item) for item in argv], cwd=root, env=env,
                                 capture_output=True, timeout=timeout)
         require(len(result.stdout) + len(result.stderr) <= 1024 * 1024, 'command-output-limit')
@@ -431,6 +443,7 @@ def main() -> int:
         return result
 
     def await_event(offset, predicate, label, timeout=1000):
+        checkpoint('watch-event', label)
         deadline = min(began + 2400, time.monotonic() + timeout)
         while time.monotonic() < deadline:
             values = observed()
@@ -576,6 +589,7 @@ def main() -> int:
         require(digest(args.helper) == args.helper_sha256 and digest(args.source_probe) == args.source_probe_sha256,
                 'source-owner-changed')
         report.update(passed=True, phase='complete', deploymentCount=3, cleanup='confirmed-normal-down')
+        checkpoint('complete', 'three-reviewed-builds')
         return 0
     except BaseException as error:
         report['failure'] = str(error) if isinstance(error, ValueError) else type(error).__name__
