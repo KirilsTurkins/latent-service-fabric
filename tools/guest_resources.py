@@ -204,11 +204,13 @@ def verify(raw: bytes, objects: dict[str, bytes], *, source_digest: str, compone
     require(isinstance(value["resources"], list) and type(value["count"]) is int
             and value["count"] == len(value["resources"]) <= MAX_COUNT, "resource-count-limit", "exhausted")
     require(type(value["bytes"]) is int and 0 <= value["bytes"] <= MAX_TOTAL, "resource-byte-limit", "exhausted")
-    total, spellings, paths_seen, object_paths = 0, {}, set(), set()
+    total, spellings, paths_seen, object_paths, previous = 0, {}, set(), set(), ""
     for row in value["resources"]:
         require(isinstance(row, dict) and set(row) in ({"path", "object", "digest", "size", "mediaType", "origin"},
                 {"path", "object", "digest", "size", "mediaType", "origin", "owner"}), "resource-index-entry-schema")
         logical = name(row["path"])
+        require(previous < logical, "resource-index-order")
+        previous = logical
         media(row["mediaType"])
         register(logical, spellings, paths_seen)
         require(row["origin"] == "application" and "owner" not in row

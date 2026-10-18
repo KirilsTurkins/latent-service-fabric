@@ -109,6 +109,18 @@ class ResourceCapture(unittest.TestCase):
         self.assertEqual(first.objects, second.objects)
         self.assertNotEqual(first.index["manifestDigest"], second.index["manifestDigest"])
 
+    def test_rehashed_index_cannot_reorder_selected_resources(self):
+        files = captured()
+        files[resources.MANIFEST] = manifest([row(), row("copy.txt")])
+        packaged = resources.capture(files, COMPONENT, SOURCE)
+        self.assertEqual([item["path"] for item in packaged.index["resources"]],
+                         ["copy.txt", "data/greeting.txt"])
+        changed = copy.deepcopy(packaged.index)
+        changed["resources"].reverse()
+        changed["identity"] = digest(encode({key: value for key, value in changed.items() if key != "identity"}))
+        with self.assertRaisesRegex(resources.ResourceError, "resource-index-order"):
+            check(resources.PackagedResources(changed, packaged.objects))
+
     def test_missing_file_and_unobserved_host_path_fail_without_reading_host(self):
         files = captured()
         for source in ("missing.txt", "/etc/passwd", "../private.txt", "C:/private.txt", "encoded%2fpath"):
