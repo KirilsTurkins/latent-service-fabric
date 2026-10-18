@@ -7,6 +7,7 @@ import hashlib
 import os
 from pathlib import Path
 import pwd
+import re
 import secrets
 import shutil
 import subprocess
@@ -75,6 +76,24 @@ def run(payload: Path, supplied: Path, output: Path, *, qualifier: Path, fixture
         public = observed / 'public-qualification.json'
         if public.is_file() and not public.is_symlink():
             (output / public.name).write_bytes(files.read(public, 1024 * 1024, owners={0, account.pw_uid}))
+        checkpoint = {'status': 'unavailable'}
+        progress = observed / 'public-progress.json'
+        try:
+            if progress.is_file() and not progress.is_symlink():
+                value = decode(files.read(progress, 4096, owners={0, account.pw_uid}), 4096)
+                if (type(value) is dict
+                        and set(value) == {'schemaVersion', 'phase', 'operation', 'labelSha256',
+                                           'completedCommands', 'completedDeployments'}
+                        and type(value['schemaVersion']) is int and value['schemaVersion'] == 1
+                        and value.get('phase') in {'prepare', 'runtime', 'watch', 'complete'}
+                        and value.get('operation') in {'command', 'watch-event', 'complete'}
+                        and isinstance(value.get('labelSha256'), str)
+                        and re.fullmatch('[0-9a-f]{64}', value['labelSha256'])
+                        and all(type(value.get(name)) is int and 0 <= value[name] <= 1024
+                                for name in ('completedCommands', 'completedDeployments'))):
+                    checkpoint = {'status': 'observed', **value}
+        except (OSError, ValueError, TypeError):
+            pass
         for filename in ('initial-build.stdout', 'initial-build.stderr'):
             diagnostic = observed / filename
             if diagnostic.is_file() and not diagnostic.is_symlink():
@@ -82,7 +101,8 @@ def run(payload: Path, supplied: Path, output: Path, *, qualifier: Path, fixture
         (output / 'ci-account.json').write_bytes(encode({
             'purpose': 'ephemeral-source-rust-dependency-watch', 'privatePasswdHome': True,
             'dedicatedUnprivilegedAccount': True, 'resolverNetwork': 'explicit-native-registry-fetch', 'compilerIsolation': 'maintained-network-none-namespace',
-            'runnerAclChanged': False, 'cleanup': 'private-evidence-retained-until-runner-teardown'}))
+            'runnerAclChanged': False, 'cleanup': 'private-evidence-retained-until-runner-teardown',
+            'lastCheckpoint': checkpoint}))
     require(result is not None and result.returncode == 0, 'actual-rust-dependency-watch-qualification-failed')
     report = decode((output / 'public-qualification.json').read_bytes(), 1024 * 1024)
     require(report['passed'] is True and report['deploymentCount'] == 3,
