@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Expose only the exact static native lock drift code in the bounded public Rust watch event vocabulary; keep original gate, limits and privacy controls.",
+  "reviewReason": "Observe exact recipe-trust refusal after queued Rust source and dependency reconciliation within 120 seconds; retain the 2400-second campaign, unreviewed-lock gate, signed stages and bounded public projection.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "54a63111857f395b39d276c8823365aafff2be614bc2205d47cbfb5d9025049f"
+  "sha256": "4f62856e6c520024cac571bb1399126f6b51a3a5ed041effb0b8f13b52dc4990"
 }

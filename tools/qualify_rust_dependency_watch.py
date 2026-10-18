@@ -538,8 +538,10 @@ def main() -> int:
         fixture.remove_original(inputs, 'primary')
         fixture.remove_original(inputs, 'child')
         tests('43/SDK/captured watch data')
+        # The watcher can finish a queued source/dependency observation before
+        # reaching the recipe-trust refusal; the outer 2400s limit still applies.
         offset, denied = await_event(offset, lambda value: value.get('code') == 'workspace-recipe-trust-required',
-                                     'updated-recipe-trust', 30)
+                                     'updated-recipe-trust', 120)
         report['updateBeforeTrust'] = denied
         front('updated-explicit-trust', 'trust', '--project', application)
         offset, denied = await_event(offset, lambda value: value.get('code') == 'signed-test-build-changed-use-new-workspace',
@@ -555,7 +557,7 @@ def main() -> int:
         tests('removed/SDK')
         review('removed')
         offset, denied = await_event(offset, lambda value: value.get('code') == 'workspace-recipe-trust-required',
-                                     'removed-recipe-trust', 30)
+                                     'removed-recipe-trust', 120)
         report['removeBeforeTrust'] = denied
         front('removed-explicit-trust', 'trust', '--project', application)
         offset, denied = await_event(offset, lambda value: value.get('code') == 'signed-test-build-changed-use-new-workspace',
