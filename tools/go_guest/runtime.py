@@ -21,6 +21,7 @@ UPSTREAM_PREIMAGES = {
     "runtime/lock_js.go": "b354c0bdb9ac4bbc7ba52361653e81768324a147fca6d3ea42c19e6e3abf1ab6",
     "runtime/lock_sema.go": "75d2a07f05071f1537a1fad231e3397ae33ebac5026c66d09959b7c898f1ea5c",
     "runtime/proc.go": "40d15ce858cf058cff92606001a29ee1689db88c121a2f0c283163a0d64a7375",
+    "runtime/netpoll_wasip1.go": "5462ad1c05a38ba052d77b3795fb284e2606471585ef5faef4f99cc27f400082",
 }
 PREIMAGES = {**UPSTREAM_PREIMAGES,
     "runtime/lock_wasip1.go": "720415791179802557117471740f92cddf4b8a8aa0ebfdba1322bbc621e1f62c",
@@ -123,6 +124,16 @@ def overlay(goroot: Path, destination: Path, go_package: Path | None = None,
             *, sdk: Path | None = None, activation: bool = False, checkpoints: bool = False, timers: bool = False) -> Path:
     goroot, destination = checked_roots(goroot, destination)
     sources = checked_sources(goroot, PREIMAGES)
+    # netpollinit reserves subs[0] for its synthetic timeout. GC world restart
+    # calls netpoll(0) even with no armed descriptors; the upstream poller then
+    # asks WASI to poll that empty, already-expired timeout. There is no event
+    # to obtain in that case. Keep the original locked empty-list return, but
+    # include this nonblocking/clock-only case without entering the denied
+    # WASI adapter. Real FD subscriptions and timed/blocking polls are unchanged.
+    sources["runtime/netpoll_wasip1.go"] = replace_once(
+        sources["runtime/netpoll_wasip1.go"],
+        "\tif len(pollsubs) == 0 {",
+        "\tif len(pollsubs) == 0 || (delay == 0 && len(pollsubs) == 1) {")
     text = sources["runtime/os_wasip1.go"]
     for declaration in (
         "func clock_time_get(clock_id clockid, precision timestamp, time *timestamp) errno",
