@@ -1,0 +1,26 @@
+{
+  "schemaVersion":"latent.ci.contracts.v2",
+  "kind":"python",
+  "reviewReason":"Add exact HTTPS Git source/revision typed authoring, authoritative native metadata version/source binding, normalized default HTTPS port/root identity and exact lock/declaration refusal. Preserve existing transaction/SDK/capture and all prior modules/contracts. Native outputs are modelled.",
+  "module":"tools/tests/test_cargo_git_authoring.py",
+  "cases":["CargoGitAuthoring.test_add_and_revision_update_preserve_sdk_and_require_fresh_capture","CargoGitAuthoring.test_cli_routes_git_and_revision_to_the_existing_transaction","CargoGitAuthoring.test_invalid_secret_unpinned_or_mutually_exclusive_selection_fails_before_native_work","CargoGitAuthoring.test_native_default_https_port_and_root_path_normalization_keep_exact_commit","CargoGitAuthoring.test_native_lock_must_contain_one_exact_selected_git_package","CargoGitAuthoring.test_native_manifest_cannot_substitute_another_source_or_reference","CargoGitAuthoring.test_native_metadata_must_bind_direct_package_version_source_and_exact_revision"],
+  "guards":{
+    "CargoGitAuthoring.test_add_and_revision_update_preserve_sdk_and_require_fresh_capture":
+      "c369c4e7e901737a5adc34fbdac1032edb0a2608550ca190c07a52fb0958b71e",
+    "CargoGitAuthoring.test_invalid_secret_unpinned_or_mutually_exclusive_selection_fails_before_native_work":
+      "c369c4e7e901737a5adc34fbdac1032edb0a2608550ca190c07a52fb0958b71e",
+    "CargoGitAuthoring.test_native_default_https_port_and_root_path_normalization_keep_exact_commit":
+      "c369c4e7e901737a5adc34fbdac1032edb0a2608550ca190c07a52fb0958b71e",
+    "CargoGitAuthoring.test_native_metadata_must_bind_direct_package_version_source_and_exact_revision":
+      "c369c4e7e901737a5adc34fbdac1032edb0a2608550ca190c07a52fb0958b71e",
+    "CargoGitAuthoring.test_native_manifest_cannot_substitute_another_source_or_reference":
+      "c369c4e7e901737a5adc34fbdac1032edb0a2608550ca190c07a52fb0958b71e",
+    "CargoGitAuthoring.test_native_lock_must_contain_one_exact_selected_git_package":
+      "c369c4e7e901737a5adc34fbdac1032edb0a2608550ca190c07a52fb0958b71e",
+    "CargoGitAuthoring.test_cli_routes_git_and_revision_to_the_existing_transaction":
+      "c369c4e7e901737a5adc34fbdac1032edb0a2608550ca190c07a52fb0958b71e"
+  },
+  "guardDefinitions":{
+    "c369c4e7e901737a5adc34fbdac1032edb0a2608550ca190c07a52fb0958b71e":{"bases":["unittest.TestCase"],"classDecorators":[],"decorators":[],"skipSites":[],"fixtureGuards":["module:setup-sha256:8b7dfb44ba2753f71c8aaa71307b1f20a6f827ca660d70d63d5dfe1774944e10","class:setup-sha256:4fa2117f50f87febe2b19d651274c51bfdafa4bc62aa16973673eea77989a61d"]}
+  }
+}
