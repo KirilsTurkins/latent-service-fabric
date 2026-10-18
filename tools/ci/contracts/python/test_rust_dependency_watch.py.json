@@ -36,7 +36,11 @@
     "RustDependencyWatchFixture.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved",
     "RustWatchRemoval.test_changed_owned_root_refuses_before_native_remove_and_preserves_source",
     "RustWatchRemoval.test_failed_native_remove_preserves_original_exception_without_replay_or_later_stages",
-    "RustWatchRemoval.test_native_remove_sees_exact_owned_revision_two_then_compile_boundary_has_no_original_paths"
+    "RustWatchRemoval.test_native_remove_sees_exact_owned_revision_two_then_compile_boundary_has_no_original_paths",
+    "RustWatchReviewBoundary.test_actual_watcher_keeps_transient_lock_and_trust_refusals_distinct_without_repeating_them",
+    "RustWatchReviewBoundary.test_public_matched_gates_are_closed_bounded_and_omit_private_or_credential_fields",
+    "RustWatchReviewBoundary.test_public_matched_gates_never_accept_wrong_refusal_or_uncertain_events",
+    "RustWatchReviewBoundary.test_unreviewed_gate_requires_the_exact_certain_source_lock_failure"
   ],
   "guards": {
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode": {
@@ -482,10 +486,58 @@
         "class:setup-sha256:4e65b9829de9ab04aafa8b9cac85174fe81fd358b83438392764e773e011ace8"
       ],
       "skipSites": []
+    },
+    "RustWatchReviewBoundary.test_actual_watcher_keeps_transient_lock_and_trust_refusals_distinct_without_repeating_them": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustWatchReviewBoundary.test_public_matched_gates_are_closed_bounded_and_omit_private_or_credential_fields": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustWatchReviewBoundary.test_public_matched_gates_never_accept_wrong_refusal_or_uncertain_events": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "RustWatchReviewBoundary.test_unreviewed_gate_requires_the_exact_certain_source_lock_failure": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_rust_dependency_watch.py",
-  "reviewReason": "Retain all 34 historical cases and guards; add three regression cases for exact revision restoration, fail-closed native removal, and owned-root refusal.",
+  "reviewReason": "Add four focused actual-watch, strict refusal and bounded privacy controls; preserve all 37 existing cases and guard bodies.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

@@ -2,7 +2,7 @@
   "kind": "owner",
   "path": "tools/qualify_rust_dependency_watch.py",
   "reviewBoundary": "committed-fingerprint",
-  "reviewReason": "Restore the exact owned revision-two crate manifests for native Cargo removal, then delete originals again before the unchanged captured-compilation and signed-deployment gates.",
+  "reviewReason": "Preserve exact certain native-lock refusal gates and project six fixed matched gate witnesses without private fields; retain all original qualification limits and guards.",
   "schemaVersion": "latent.ci.contracts.v1",
-  "sha256": "5c9a0a6dfc77d8df94eaa64c105851fc9c8b002d09abf8b3051891f9b376dc7e"
+  "sha256": "55bfa4d123f71eba420df0081acdce744634cd6518e84970cee093e7edb83423"
 }
