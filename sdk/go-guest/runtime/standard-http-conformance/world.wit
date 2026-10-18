@@ -1,4 +1,4 @@
-package tests:go-standard-http@1.0.0;
+package examples:go-standard-http@1.0.0;
 
 interface api {
     run: async func(which: u32, url: string) -> string;

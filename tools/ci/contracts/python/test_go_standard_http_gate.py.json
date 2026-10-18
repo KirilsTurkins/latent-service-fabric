@@ -1,11 +1,24 @@
 {
   "cases": [
     "StandardHttpGate.test_project_captures_exact_ordinary_fixture_and_immutable_sdk_for_real_build",
+    "StandardHttpGate.test_project_world_and_export_package_share_the_declared_tenant",
     "StandardHttpGate.test_signed_peer_carrier_is_an_existing_runnable_shared_owner",
     "StandardHttpGate.test_tampered_frozen_native_product_is_rejected_before_project_or_compiler"
   ],
   "guards": {
     "StandardHttpGate.test_project_captures_exact_ordinary_fixture_and_immutable_sdk_for_real_build": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:f47ef97ea0b14f846cf5763901398589faf34d38d989892e9550f4ed9baee369",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "StandardHttpGate.test_project_world_and_export_package_share_the_declared_tenant": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -44,6 +57,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_standard_http_gate.py",
-  "reviewReason": "Preserve both existing capture and native product guards; execute the retained generic peer carrier CLI to reject missing entrypoints",
+  "reviewReason": "Align the maintained standard HTTP fixture world/export with its unchanged declared examples tenant; retain all existing guards and add a real captured-project namespace/export-package regression.",
   "schemaVersion": "latent.ci.contracts.v1"
 }

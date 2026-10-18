@@ -18,7 +18,7 @@ def project(directory: Path) -> Path:
         target.parent.mkdir(parents=True,exist_ok=True)
         with target.open('xb') as output: output.write(raw)
     descriptor = json.loads(read_file(app/'capsule-project.json'))
-    descriptor['world'] = 'tests:go-standard-http/service@1.0.0'
+    descriptor['world'] = 'examples:go-standard-http/service@1.0.0'
     descriptor['limits']['outboundRequests'] = 8
     (app/'capsule-project.json').write_text(json.dumps(descriptor,indent=2)+'\n',encoding='utf-8')
     lock = json.loads(read_file(app/'sdk-lock.json'))
