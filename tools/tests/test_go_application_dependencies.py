@@ -117,6 +117,43 @@ class GoDependencies(unittest.TestCase):
             with self.assertRaisesRegex(DependencyError, 'expanded-module-differs'):
                 verify_download(row, expected)
 
+    def test_graph_metadata_keeps_superseded_versions_offline_with_original_hashes_and_escaping(self):
+        from tools.go_application_dependencies import graph_manifests
+        with tempfile.TemporaryDirectory() as temporary:
+            cache = Path(temporary)
+            versions = {'v1.3.0': b'module example.test/Upper/Library\n',
+                        'v1.8.0': b'module example.test/Upper/Library\n\ngo 1.27.2\n'}
+            expected = {}
+            for version, raw in versions.items():
+                path = cache / ('example.test/!upper/!library/@v/' + version + '.mod')
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(raw)
+                expected[('example.test/Upper/Library', version + '/go.mod')] = h1({'go.mod': raw})
+            result = graph_manifests(cache, expected)
+            self.assertEqual(result, {'example.test/!upper/!library/@v/' + version + '.mod': raw
+                                      for version, raw in versions.items()})
+            # Older graph metadata is retained without selecting its source or ZIP.
+            self.assertEqual(len(result), 2)
+            self.assertTrue(all(name.endswith('.mod') for name in result))
+            (cache / 'example.test/!upper/!library/@v/v1.3.0.mod').write_bytes(b'tampered')
+            with self.assertRaisesRegex(DependencyError, 'go-graph-manifest-identity'):
+                graph_manifests(cache, expected)
+
+    def test_graph_metadata_rejects_unreviewed_mislocated_or_traversing_manifests(self):
+        from tools.go_application_dependencies import graph_manifests
+        with tempfile.TemporaryDirectory() as temporary:
+            cache = Path(temporary)
+            raw = b'module example.test/library\n'
+            path = cache / 'example.test/library/@v/v1.0.0.mod'
+            path.parent.mkdir(parents=True)
+            path.write_bytes(raw)
+            expected = {('example.test/library', 'v1.0.0/go.mod'): h1({'go.mod': raw})}
+            for sums_value in ({}, {('other.test/library', 'v1.0.0/go.mod'): h1({'go.mod': raw})},
+                               {('example.test/library', '../../outside/go.mod'): h1({'go.mod': raw})}):
+                with self.subTest(sums=sums_value), self.assertRaises(DependencyError):
+                    graph_manifests(cache, sums_value)
+            self.assertEqual(graph_manifests(cache, expected), {'example.test/library/@v/v1.0.0.mod': raw})
+
     def test_native_graph_records_mvs_minimums_replacements_excludes_and_closed_selection(self):
         root = {'Module': {'Path': 'application.example.test/new-identity'}, 'Go': '1.27.2',
                 'Exclude': [{'Path': 'module.example.test/transitive', 'Version': 'v0.9.0'}]}
