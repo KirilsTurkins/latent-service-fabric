@@ -1,4 +1,4 @@
-package export_tests_go_standard_http_api
+package export_examples_go_standard_http_api
 
 import (
 	"bytes"
