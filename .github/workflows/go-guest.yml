@@ -16,9 +16,13 @@ on:
       - tools/go_capsule*.py
       - tools/go_application_dependencies.py
       - tools/go_dependency_authoring.py
+      - tools/go_native_authoring.py
+      - tools/tests/test_go_native_authoring.py
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
       - tools/go_dependency_fixture.py
+      - tools/go_dependency_recovery.py
+      - tools/tests/test_go_dependency_recovery.py
       - tools/application_dependenc*.py
       - tools/captured_compiler_isolation.py
       - tools/probe_go_authoring.py
@@ -38,6 +42,7 @@ on:
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
       - tools/diagnose_go_timer_failure.py
+      - tools/qualify_go_runtime_dependencies.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
       - tools/guest_runtime_grants.py
@@ -46,6 +51,7 @@ on:
       - tools/tests/test_build_provenance_schemas.py
       - schemas/**
       - docs/component-development/go-authoring.md
+      - docs/component-development/go-dependencies.md
       - docs/development/go-capsule-qualification.md
       - docs/development/go-http-context-cancellation.md
       - crates/latent-wasmtime/**
@@ -77,9 +83,13 @@ on:
       - tools/go_capsule*.py
       - tools/go_application_dependencies.py
       - tools/go_dependency_authoring.py
+      - tools/go_native_authoring.py
+      - tools/tests/test_go_native_authoring.py
       - tools/tests/test_go_dependency_authoring.py
       - tools/guest_authoring_frontend.py
       - tools/go_dependency_fixture.py
+      - tools/go_dependency_recovery.py
+      - tools/tests/test_go_dependency_recovery.py
       - tools/application_dependenc*.py
       - tools/captured_compiler_isolation.py
       - tools/probe_go_authoring.py
@@ -99,6 +109,7 @@ on:
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
       - tools/diagnose_go_timer_failure.py
+      - tools/qualify_go_runtime_dependencies.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
       - tools/guest_runtime_grants.py
@@ -107,6 +118,7 @@ on:
       - tools/tests/test_build_provenance_schemas.py
       - schemas/**
       - docs/component-development/go-authoring.md
+      - docs/component-development/go-dependencies.md
       - docs/development/go-capsule-qualification.md
       - docs/development/go-http-context-cancellation.md
       - crates/latent-wasmtime/**
@@ -286,6 +298,10 @@ jobs:
       - name: Test reviewed module lifecycle and selected frontend
         run: |
           python3 -m unittest tools.tests.test_go_dependency_authoring tools.tests.test_guest_authoring_frontend
+      - name: Test controlled native Go declaration and lock authoring
+        run: python3 -m unittest tools.tests.test_go_native_authoring
+      - name: Test captured library failure and cancellation observation fences
+        run: python3 -m unittest tools.tests.test_go_dependency_recovery
       - name: Qualify captured Go libraries in signed components
         run: |
           python3 tools/qualify_go_capsules.py --application-dependencies --output "$RUNNER_TEMP/go-capsule-dependencies"

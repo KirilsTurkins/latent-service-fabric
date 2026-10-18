@@ -32,6 +32,8 @@ def native_assembly(data: bytes) -> bool:
 
 
 def selection(value: dict | None = None) -> dict:
+    if value is not None and not isinstance(value, dict):
+        raise DependencyError('go-selection-fields-invalid')
     value = dict(value or {})
     if set(value) - {'target', 'runtimeProfile', 'tags'}:
         raise DependencyError('go-selection-fields-invalid')
@@ -40,7 +42,8 @@ def selection(value: dict | None = None) -> dict:
             or not re.fullmatch(r'[A-Za-z0-9_]{1,64}', tag) for tag in tags)):
         raise DependencyError('go-build-tags-invalid')
     profile = value.get('runtimeProfile', PROFILE)
-    if value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4'}:
+    if (value.get('target', 'wasip1/wasm') != 'wasip1/wasm' or not isinstance(profile, str)
+            or profile not in {PROFILE, 'go-component-activation-v1', 'go-component-activation-v2', 'go-component-activation-v3', 'go-component-activation-v4'}):
         raise DependencyError('go-runtime-profile-not-installed')
     return {'target': 'wasip1/wasm', 'runtimeProfile': profile, 'tags': sorted(set(tags))}
 
@@ -190,40 +193,8 @@ def _mirror(source: Path, owned: Path) -> Path:
     return owned / 'mirror' / (source.drive.replace(':', '') or 'posix') / Path(*source.parts[1:])
 
 
-def resolve(project: Path, candidate: Path, *, go: Path | None = None, selected: dict | None = None,
-            proxy_config: Path | None = None) -> dict:
-    from tools.go_dependency_authoring import transaction
-    with transaction(project) as (owner, app, private, sdk):
-        return _resolve(owner, app, private, sdk, candidate, go=go, selected=selected, proxy_config=proxy_config)
-
-
-def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *, go: Path | None,
-             selected: dict | None, proxy_config: Path | None) -> dict:
-    from tools.go_dependency_authoring import candidate_location, optional, replace, source_files, unchanged
-    from tools.dev_workflow import paths
-    candidate = candidate_location(owner, candidate)
-    if os.path.lexists(candidate):
-        raise DependencyError('dependency-candidate-exists')
-    previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
-    previous_graph = optional(project, 'go-resolved.lock.json')
-    source_before = source_files(project)
-    selected = dict(selected or {})
-    project_document = json.loads(source_before['capsule-project.json'])
-    if not isinstance(project_document, dict):
-        raise DependencyError('go-runtime-project-profile-invalid')
-    project_profile = project_document.get('runtimeProfile')
-    if 'runtimeProfile' in project_document:
-        if 'runtimeProfile' in selected and selected['runtimeProfile'] != project_profile:
-            raise DependencyError('go-project-and-captured-runtime-profile-disagree')
-        selected['runtimeProfile'] = project_profile
-    selected = selection(selected)
-    original = {name: read_bytes(project / name) for name in ('go.mod', 'go.sum')}
-    expected_sums = sums(original['go.sum'])
-    pins = json.loads(read_bytes(project / 'vendor/lsf/sdk/go-guest/toolchain.lock.json'))
-    sdk_lock = json.loads(read_bytes(project / 'vendor/lsf/sdk/go-guest/runtime-deps/dependencies.lock.json'))
-    recipe_before = file_identity(Path(__file__), 'go-module-capture-recipe')
-    go = regular_path(go or Path(shutil.which('go') or 'missing-go')).resolve(strict=True)
-    go_before = file_identity(go, 'native-module-resolver')
+def fetch_environment(owner: Path, owned: Path, proxy_config: Path | None = None) -> tuple[dict, dict, bytes | None]:
+    """One explicit proxy/checksum policy for native module selection and locking."""
     proxy_bytes = None
     if proxy_config is not None:
         proxy_config = regular_path(proxy_config).resolve(strict=True)
@@ -243,28 +214,68 @@ def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *,
     if not isinstance(private_modules, list) or len(private_modules) > 32 or any(not isinstance(value, str)
             or not re.fullmatch(r'[A-Za-z0-9_./*?\[\]-]{1,512}', value) for value in private_modules):
         raise DependencyError('go-private-module-policy-invalid')
+    environment = build_environment(owned)
+    environment.update(GOTOOLCHAIN='local', GOWORK='off', GOENV='off', CGO_ENABLED='0', GOFLAGS='-mod=readonly',
+        GOCACHE=str(owned / 'cache'), GOMODCACHE=str(owned / 'modules'), HOME=str(owned / 'home'),
+        USERPROFILE=str(owned / 'home'), GOPROXY=policy['proxy'], GOSUMDB=policy['sumdb'],
+        GOPRIVATE=','.join(private_modules), GONOPROXY='none', GONOSUMDB=','.join(private_modules), GOAUTH='netrc',
+        GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
+    (owned / 'git-empty.config').write_bytes(b'')
+    if 'authorizationEnv' in policy:
+        variable = policy['authorizationEnv']
+        username = policy.get('username', 'token')
+        if (not isinstance(variable, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable)
+                or not isinstance(username, str) or not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}', username)):
+            raise DependencyError('go-proxy-authorization-unavailable')
+        secret = os.environ[variable]
+        if not re.fullmatch(r'[^\s]{1,8192}', secret) or any(ord(char) < 32 or ord(char) == 127 for char in secret):
+            raise DependencyError('go-proxy-authorization-format')
+        netrc = owned / 'resolver.netrc'
+        netrc.write_text('machine ' + proxy.hostname + ' login ' + username + ' password ' + secret + '\n')
+        netrc.chmod(0o600)
+        environment['NETRC'] = str(netrc)
+    return environment, policy, proxy_bytes
+
+
+def resolve(project: Path, candidate: Path, *, go: Path | None = None, selected: dict | None = None,
+            proxy_config: Path | None = None) -> dict:
+    from tools.go_dependency_authoring import transaction
+    with transaction(project) as (owner, app, private, sdk):
+        return _resolve(owner, app, private, sdk, candidate, go=go, selected=selected, proxy_config=proxy_config)
+
+
+def _resolve(owner: Path, project: Path, private: Path, sdk, candidate: Path, *, go: Path | None,
+             selected: dict | None, proxy_config: Path | None) -> dict:
+    from tools.go_dependency_authoring import candidate_location, optional, replace, source_files, unchanged
+    from tools.dev_workflow import paths
+    candidate = candidate_location(owner, candidate)
+    if os.path.lexists(candidate):
+        raise DependencyError('dependency-candidate-exists')
+    previous_manifest, previous_lock = optional(owner, MANIFEST), optional(owner, LOCK)
+    previous_graph = optional(project, 'go-resolved.lock.json')
+    source_before = source_files(project)
+    if selected is not None and not isinstance(selected, dict):
+        raise DependencyError('go-selection-fields-invalid')
+    selected = dict(selected or {})
+    project_document = json.loads(source_before['capsule-project.json'])
+    if not isinstance(project_document, dict):
+        raise DependencyError('go-runtime-project-profile-invalid')
+    project_profile = project_document.get('runtimeProfile')
+    if 'runtimeProfile' in project_document:
+        if 'runtimeProfile' in selected and selected['runtimeProfile'] != project_profile:
+            raise DependencyError('go-project-and-captured-runtime-profile-disagree')
+        selected['runtimeProfile'] = project_profile
+    selected = selection(selected)
+    original = {name: read_bytes(project / name) for name in ('go.mod', 'go.sum')}
+    expected_sums = sums(original['go.sum'])
+    pins = json.loads(read_bytes(project / 'vendor/lsf/sdk/go-guest/toolchain.lock.json'))
+    sdk_lock = json.loads(read_bytes(project / 'vendor/lsf/sdk/go-guest/runtime-deps/dependencies.lock.json'))
+    recipe_before = file_identity(Path(__file__), 'go-module-capture-recipe')
+    go = regular_path(go or Path(shutil.which('go') or 'missing-go')).resolve(strict=True)
+    go_before = file_identity(go, 'native-module-resolver')
     with tempfile.TemporaryDirectory(prefix='lsf-go-module-resolve-') as temporary:
         owned = Path(temporary)
-        environment = build_environment(owned)
-        environment.update(GOTOOLCHAIN='local', GOWORK='off', GOENV='off', CGO_ENABLED='0', GOFLAGS='-mod=readonly',
-            GOCACHE=str(owned / 'cache'), GOMODCACHE=str(owned / 'modules'), HOME=str(owned / 'home'),
-            USERPROFILE=str(owned / 'home'), GOPROXY=policy['proxy'], GOSUMDB=policy['sumdb'],
-            GOPRIVATE=','.join(private_modules), GONOPROXY='none', GONOSUMDB=','.join(private_modules), GOAUTH='netrc',
-            GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=str(owned / 'git-empty.config'), GIT_TERMINAL_PROMPT='0')
-        (owned / 'git-empty.config').write_bytes(b'')
-        if 'authorizationEnv' in policy:
-            variable = policy['authorizationEnv']
-            username = policy.get('username', 'token')
-            if (not isinstance(variable, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]{0,127}', variable) or not os.environ.get(variable)
-                    or not isinstance(username, str) or not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}', username)):
-                raise DependencyError('go-proxy-authorization-unavailable')
-            secret = os.environ[variable]
-            if not re.fullmatch(r'[^\s]{1,8192}', secret) or any(ord(char) < 32 or ord(char) == 127 for char in secret):
-                raise DependencyError('go-proxy-authorization-format')
-            netrc = owned / 'resolver.netrc'
-            netrc.write_text('machine ' + proxy.hostname + ' login ' + username + ' password ' + secret + '\n')
-            netrc.chmod(0o600)
-            environment['NETRC'] = str(netrc)
+        environment, policy, proxy_bytes = fetch_environment(owner, owned, proxy_config)
         version = run_bounded([str(go), 'version'], owned, environment, 10, 16384).stdout.decode().strip()
         if version.split()[2:3] != [pins['go']['version']]:
             raise DependencyError('go-module-resolver-version-not-pinned')

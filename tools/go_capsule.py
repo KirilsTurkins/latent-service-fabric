@@ -22,6 +22,19 @@ def parser() -> argparse.ArgumentParser:
     from tools.go_guest.activation import PROFILES
     new.add_argument('--runtime-profile', choices=('go-component-async-v1', *sorted(PROFILES)),
                      help='Explicit runtime candidate; activation profiles create async exports and declared runtime imports')
+    for operation in ('add', 'update', 'remove'):
+        edit = commands.add_parser(operation, help='Edit only the application native Go declaration')
+        edit.add_argument('project', type=Path)
+        edit.add_argument('identity', help='Native Go module path')
+        edit.add_argument('--go', type=Path)
+        if operation != 'remove':
+            edit.add_argument('--version', required=True, help='Exact native module version, including v prefix')
+            edit.add_argument('--path', type=Path, help='Explicit local replacement for this exact requirement')
+    lock = commands.add_parser('lock', help='Explicitly select native go.mod/go.sum in an owned fetch stage')
+    lock.add_argument('project', type=Path)
+    lock.add_argument('--go', type=Path)
+    lock.add_argument('--tag', action='append', default=[])
+    lock.add_argument('--proxy-config', type=Path)
     resolve_ = commands.add_parser("resolve", help="Explicitly fetch and capture a locked native module graph")
     resolve_.add_argument("project", type=Path)
     resolve_.add_argument("--candidate", type=Path, required=True)
@@ -72,7 +85,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    authoring = args.command in {'resolve', 'review-lock', 'dependencies', 'test', 'watch', 'generator-request', 'generate'}
+    authoring = args.command in {'add', 'update', 'remove', 'lock', 'resolve', 'review-lock', 'dependencies', 'test', 'watch', 'generator-request', 'generate'}
     try:
         if authoring:
             from tools import go_dependency_authoring as dependencies
@@ -94,7 +107,13 @@ def main(argv: list[str] | None = None) -> int:
                 except (ValueError, OSError):
                     print('Go dependency frontend receipt unavailable; inspect workspace status.', file=sys.stderr)
                 return outcome.exit_code
-            if args.command in {'generator-request', 'generate'}:
+            if args.command in {'add', 'update', 'remove', 'lock'}:
+                from tools import go_native_authoring as native
+                result = (native.create_lock(args.project, go=args.go, proxy_config=args.proxy_config, tags=args.tag)
+                          if args.command == 'lock' else native.edit(args.project, args.command,
+                              identity=args.identity, version=getattr(args, 'version', None),
+                              local=getattr(args, 'path', None), go=args.go))
+            elif args.command in {'generator-request', 'generate'}:
                 from tools import go_generator_authoring as generator
                 result = (generator.request(args.project, args.candidate, tool=args.tool,
                             arguments=args.arg, inputs=args.inputs, destination=args.destination,
