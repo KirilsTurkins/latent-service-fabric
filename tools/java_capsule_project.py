@@ -10,6 +10,27 @@ from tools.rust_capsule_project import (ROOT, AUTHORING_TEMPLATES, TEMPLATES, TU
     fresh, inventory, read_file, snapshot)
 
 
+def sdk_inputs(root: Path) -> dict[str, bytes]:
+    files = {"sdk/java-guest/" + path: data for path, data in sdk_snapshot(root / "sdk/java-guest").items()}
+    files.update({"wit/platform/" + path: data for path, data in snapshot(root / "wit/platform").items()})
+    for path in ("Cargo.toml", "tools/toolchain.toml", "LICENSE", "NOTICE"):
+        files[path] = read_file(root / path)
+    return files
+
+
+def authoring_inputs(root: Path) -> dict[str, bytes]:
+    """Exact source inputs used by the maintained independent-project creators."""
+    files = sdk_inputs(root)
+    for template in AUTHORING_TEMPLATES:
+        path = ("tools/toolchain-smoke/examples/tutorial_" + template.replace("-", "_")
+                if template in TUTORIALS else "examples/rust-capsules/" + template)
+        files[path + "/world.wit"] = read_file(root / path / "world.wit")
+    for path in ("examples/echo-contract/capsule.json", "sdk/profile/transaction-requirements-v1.json",
+                 "examples/rust-capsules/transactional-aggregate/state-schema.json"):
+        files[path] = read_file(root / path)
+    return dict(sorted(files.items()))
+
+
 def runtime_wit(source: bytes, world: str) -> bytes:
     """Templates visibly declare the two real clock imports needed by TeaVM."""
     text = source.decode()
@@ -29,10 +50,7 @@ def create(directory: Path, template: str, name: str | None = None) -> Path:
         raise ValueError("use a lowercase kebab-case capsule name, at most 64 bytes")
     source = (ROOT / "tools/toolchain-smoke/examples" / ("tutorial_" + template.replace("-", "_"))
               if template in TUTORIALS else ROOT / "examples/rust-capsules" / template)
-    vendor = {"sdk/java-guest/" + path: data for path, data in sdk_snapshot(ROOT / "sdk/java-guest").items()}
-    vendor.update({"wit/platform/" + path: data for path, data in snapshot(ROOT / "wit/platform").items()})
-    for path in ("Cargo.toml", "tools/toolchain.toml", "LICENSE", "NOTICE"):
-        vendor[path] = read_file(ROOT / path)
+    vendor = sdk_inputs(ROOT)
     files = {"vendor/lsf/" + path: data for path, data in vendor.items()}
     files.update({"src/dev/latent/app/Capsule.java": read_file(ROOT / "sdk/java-guest/templates" / (template + ".java")),
                   "wit/world.wit": runtime_wit(read_file(source / "world.wit"), "service"), ".gitignore": b"/target/\n"})

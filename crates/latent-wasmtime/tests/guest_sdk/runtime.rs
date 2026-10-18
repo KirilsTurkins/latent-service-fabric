@@ -30,6 +30,7 @@ const CLOCKS: [(&str, &str, &str); 2] = [
 ];
 const RANDOM: &str = "latent:random/random@0.1.0";
 pub const ACTIVATION: &str = "latent:runtime/activation@0.1.0";
+pub const NATIVE: &str = "latent:runtime-native/threads@0.1.0";
 const ACTIVATION_OPERATIONS: [&str; 11] = [
     "register",
     "park",
@@ -230,6 +231,44 @@ impl Runtime {
         call_wall_millis: u64,
         clocks: bool,
     ) -> Self {
+        Self::activation_scoped_with_effects(
+            broker,
+            policies,
+            tenant,
+            scopes,
+            call_wall_millis,
+            (clocks, false),
+        )
+    }
+
+    pub fn activation_scoped_with_effects(
+        broker: &ActivationCapabilityBroker,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+        (clocks, random): (bool, bool),
+    ) -> Self {
+        Self::activation_scoped_with_native(
+            broker,
+            policies,
+            tenant,
+            scopes,
+            call_wall_millis,
+            (clocks, random),
+            false,
+        )
+    }
+
+    pub fn activation_scoped_with_native(
+        broker: &ActivationCapabilityBroker,
+        policies: &PolicyStore,
+        tenant: &str,
+        scopes: &[Scope<'_>],
+        call_wall_millis: u64,
+        (clocks, random): (bool, bool),
+        native: bool,
+    ) -> Self {
         let mut owner = Self::default();
         let profile = latent_core::activation_runtime::PROFILE;
         let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
@@ -252,6 +291,26 @@ impl Runtime {
             .unwrap();
         owner.add_operations(registration.reference(), &ACTIVATION_OPERATIONS);
         owner.clocks.push(registration);
+        if native {
+            let profile = "conservative-native-total-starts-v1";
+            let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
+            let registration = broker
+                .register_provider(ProviderConfiguration {
+                    capability: NATIVE,
+                    profile,
+                    configuration_digest: digest.as_str(),
+                    configuration_epoch: 1,
+                    restriction_json: br#"{"operations":[]}"#,
+                    minimum_call_charges: &[ProviderBudgetRequirement {
+                        operation: "start",
+                        dimension: BudgetDimension::CpuFuel,
+                        minimum: 100,
+                    }],
+                })
+                .unwrap();
+            owner.add(registration.reference(), "start");
+            owner.clocks.push(registration);
+        }
         if clocks {
             for (capability, profile, operation) in CLOCKS {
                 let digest = latent_artifacts::package::artifact_blob_digest(profile.as_bytes());
@@ -273,6 +332,16 @@ impl Runtime {
                 owner.clocks.push(registration);
             }
         }
+        if random {
+            let provider = RandomProvider::system(
+                broker,
+                1,
+                latent_capabilities::broker::random::RandomLimits::default(),
+            )
+            .unwrap();
+            owner.add(provider.reference(), "u64-value");
+            owner.random = Some(provider);
+        }
         owner.authorize(policies, tenant, scopes, call_wall_millis);
         owner
     }
@@ -291,7 +360,7 @@ impl Runtime {
                 "principals":[{"kind":scope.principal.0,"subject":scope.principal.1}],
                 "services":scope.services,"publications":scope.publications.iter().map(PublicationId::as_str).collect::<Vec<_>>(),
                 "capability":capability,"operations":entry.operation,
-                "resources":{"kind":if capability == RANDOM {"random"} else {"clock"}},
+                "resources":{"kind":if capability == RANDOM {"random"} else if capability == NATIVE {"context"} else {"clock"}},
                 "ceiling":{"operations":4096,"inputBytes":if capability == RANDOM {8} else {0},"outputBytes":32768,"wallTimeMillis":call_wall_millis}
             })).collect();
             for (id, kind, document) in [

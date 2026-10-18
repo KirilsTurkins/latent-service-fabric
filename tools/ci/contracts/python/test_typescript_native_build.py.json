@@ -1,0 +1,127 @@
+{
+  "cases": [
+    "NativeBuildInputs.test_archive_composition_keeps_original_input_cap_and_bounds_added_objects",
+    "NativeBuildInputs.test_header_deadline_and_conflicting_original_configuration_fail_closed",
+    "NativeBuildInputs.test_header_staging_preserves_original_bytes_and_adds_exact_original_confdefs",
+    "NativeBuildInputs.test_normal_codec_installation_requires_one_original_definition_before_bindings",
+    "NativeBuildInputs.test_source_inventory_returns_original_bytes_without_mutating_carrier",
+    "NativeBuildInputs.test_upstream_object_list_rejects_changed_shape_duplicates_and_path_escape",
+    "SourceSplicerInputOwnership.test_incomplete_or_promoted_source_receipt_is_not_accepted",
+    "SourceSplicerInputOwnership.test_source_compiler_input_rechecks_equal_size_products_and_original_receipts",
+    "SourceSplicerInputOwnership.test_unknown_or_escaping_recipe_cannot_become_an_engine_build_input"
+  ],
+  "guards": {
+    "NativeBuildInputs.test_archive_composition_keeps_original_input_cap_and_bounds_added_objects": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeBuildInputs.test_header_deadline_and_conflicting_original_configuration_fail_closed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeBuildInputs.test_header_staging_preserves_original_bytes_and_adds_exact_original_confdefs": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeBuildInputs.test_normal_codec_installation_requires_one_original_definition_before_bindings": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeBuildInputs.test_source_inventory_returns_original_bytes_without_mutating_carrier": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "NativeBuildInputs.test_upstream_object_list_rejects_changed_shape_duplicates_and_path_escape": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "SourceSplicerInputOwnership.test_incomplete_or_promoted_source_receipt_is_not_accepted": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:d5d0525c90711b810c2f7c061deb29f06b580f712e337f180ad65e1d259b6ebc"
+      ],
+      "skipSites": []
+    },
+    "SourceSplicerInputOwnership.test_source_compiler_input_rechecks_equal_size_products_and_original_receipts": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:d5d0525c90711b810c2f7c061deb29f06b580f712e337f180ad65e1d259b6ebc"
+      ],
+      "skipSites": []
+    },
+    "SourceSplicerInputOwnership.test_unknown_or_escaping_recipe_cannot_become_an_engine_build_input": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:98ee5909d48c4e2812572479b10eb71b10079f90b92b49340f60eb00add03dcc",
+        "class:setup-sha256:d5d0525c90711b810c2f7c061deb29f06b580f712e337f180ad65e1d259b6ebc"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_typescript_native_build.py",
+  "reviewReason": "Retain every original source case/body/guard from the corrected parent and source compiler leaf, including derived archive bounds and normal text-codec installation; exact compiler input ownership and recipe denial remain separate source-only controls.",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

@@ -15,7 +15,7 @@ from tools.rust_capsule_project import digest, inventory, read_file, snapshot, w
 
 class Compiler:
     def __init__(self, root: Path, sdk: Path, commands, *, offline_cache: Path | None = None,
-                 source_root: Path | None = None, application_closure=None):
+                 source_root: Path | None = None, application_closure=None, runtime_profile='go-component-async-v1'):
         self.root, self.sdk, self.commands = root, sdk, commands
         self.source_root = source_root
         self.application_closure, self.isolation = application_closure, None
@@ -70,6 +70,10 @@ class Compiler:
             raise ValueError("unreviewed-go-component-validator")
         self.goroot = Path(self.run("go-root", "go", "env", "GOROOT").strip())
         checked_sources(self.goroot, PREIMAGES)
+        from tools.go_guest.activation import CHECKPOINT_PROFILE
+        if runtime_profile == CHECKPOINT_PROFILE:
+            from tools.go_guest.checkpoints import prepare
+            prepare(self)
         if application_closure is not None:
             from tools.captured_compiler_isolation import Isolation
             selected_tools = dict(self.paths)
@@ -90,7 +94,15 @@ class Compiler:
                    if self.isolation is not None else [self.paths[tool], *arguments])
         return self.commands.run(label, *command).decode("utf-8")
 
-    def compile(self, source: Path, wit: Path, world: str, output: Path) -> tuple[Path, dict]:
+    def compile(self, source: Path, wit: Path, world: str, output: Path,
+                *, runtime_profile: str = 'go-component-async-v1') -> tuple[Path, dict]:
+        from tools.go_guest.activation import PROFILES, CHECKPOINT_PROFILE, exports
+        if runtime_profile not in {'go-component-async-v1', *PROFILES}:
+            raise ValueError('go-runtime-profile-not-installed')
+        activation = runtime_profile in PROFILES
+        checkpoints = runtime_profile == CHECKPOINT_PROFILE
+        if checkpoints and 'go-checkpoints' not in self.paths:
+            raise ValueError('go-checkpoint-parser-not-prepared-before-compiler-containment')
         output.mkdir()
         generated = output / "module"
         comparison = output / "independent-bindings"
@@ -100,6 +112,14 @@ class Compiler:
         originals = snapshot(generated)
         if originals != snapshot(comparison):
             raise ValueError("non-reproducible-go-binding-generation")
+        entry_transform = []
+        if activation:
+            if not (generated / 'latent_runtime_activation/wit_bindings.go').is_file():
+                raise ValueError('go-activation-requires-explicit-runtime-import')
+            before = (generated / 'wit_exports.go').read_bytes()
+            exports(generated)
+            entry_transform.append({'name': 'go-activation-entry-drain', 'upstreamDigest': digest(before),
+                'adaptedDigest': digest((generated / 'wit_exports.go').read_bytes()), 'profile': runtime_profile})
         # No other module graph can be selected by a generated or handwritten
         # go.mod. The single reviewed package is vendored before runtime overlay.
         module = (generated / "go.mod").read_text()
@@ -173,12 +193,12 @@ class Compiler:
             raise ValueError("unimplemented-Go-WIT-export")
         binding_before = {path: path.read_bytes() for path in generated.glob("*/wit_bindings.go")}
         install(self.sdk, generated)
-        transforms = []
+        transforms = entry_transform
         for path, before in sorted(binding_before.items()):
             after = path.read_bytes()
             if after != before:
                 transforms.append({"name": "go-sdk-resource-owner/" + path.parent.name,
-                    "upstreamDigest": digest(before), "adaptedDigest": digest(after), "profile": self.pins["profile"]})
+                    "upstreamDigest": digest(before), "adaptedDigest": digest(after), "profile": runtime_profile})
         if selected_module is not None and selected_module["module"] != "wit_component":
             # Only generated SDK/WIT imports are rewritten. Application and
             # transitive source retains ordinary Go module semantics.
@@ -190,7 +210,7 @@ class Compiler:
                 if after != before:
                     path.write_bytes(after)
                     transforms.append({"path": path.relative_to(generated).as_posix(),
-                        "upstreamDigest": digest(before), "adaptedDigest": digest(after), "profile": self.pins["profile"]})
+                        "upstreamDigest": digest(before), "adaptedDigest": digest(after), "profile": runtime_profile})
         previous = self.commands.root
         self.commands.root = generated
         try:
@@ -200,11 +220,27 @@ class Compiler:
                 raise ValueError("unreviewed-go-dependency-checksum")
             self.run("vendor-locked-module", "go", "mod", "vendor")
             overlay_path = overlay(self.goroot, output / "runtime-overlay",
-                                   generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk)
+                                   generated / "vendor/go.bytecodealliance.org/pkg", sdk=self.sdk,
+                                   activation=activation, checkpoints=checkpoints)
             self.commands.environment["GOFLAGS"] = "-mod=vendor -overlay=" + str(overlay_path)
+            if selected_module is not None and selected_module["tags"]:
+                self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])
+            replacements = json.loads(overlay_path.read_bytes())["Replace"]
+            if checkpoints:
+                from tools.go_application_dependencies import json_stream
+                from tools.go_guest.checkpoints import transform
+                packages = json_stream(self.run('checkpoint-selected-packages', 'go', 'list', '-deps', '-json', './...').encode())
+                added, checkpoints_inputs = transform(self, generated, packages, application_source_paths, overlay_path.parent)
+                replacements.update(added)
+                overlay_path.write_text(json.dumps({'Replace': replacements}, indent=2, sort_keys=True) + '\n')
+                transforms.extend(checkpoints_inputs)
+            for upstream, adapted in sorted(replacements.items()):
+                transforms.append({"name": "go-runtime-overlay/" + Path(adapted).name,
+                    "upstreamDigest": digest(read_file(Path(upstream))), "adaptedDigest": digest(read_file(Path(adapted))),
+                    "profile": runtime_profile})
+            write_json(self.commands.output / 'go-runtime-transformations.json',
+                {'formatVersion': 1, 'profile': runtime_profile, 'automaticTransformations': transforms})
             if selected_module is not None:
-                if selected_module["tags"]:
-                    self.commands.environment["GOFLAGS"] += " -tags=" + ",".join(selected_module["tags"])
                 from tools.go_application_dependencies import json_stream, native_assembly
                 packages = json_stream(self.run("selected-go-packages", "go", "list", "-deps", "-json", "./...").encode())
                 selected_packages = []
@@ -220,11 +256,6 @@ class Compiler:
                         "imports": package.get("Imports", []), "goFiles": package.get("GoFiles", []),
                         "embedFiles": package.get("EmbedFiles", []), "embedPatterns": package.get("EmbedPatterns", []),
                         "module": {key: (package.get("Module") or {}).get(key) for key in ("Path", "Version", "Sum")}})
-                replacements = json.loads(overlay_path.read_bytes())["Replace"]
-                for upstream, adapted in sorted(replacements.items()):
-                    transforms.append({"name": "go-runtime-overlay/" + Path(adapted).name,
-                        "upstreamDigest": digest(read_file(Path(upstream))), "adaptedDigest": digest(read_file(Path(adapted))),
-                        "profile": self.pins["profile"]})
                 write_json(self.commands.output / "go-module-build-inputs.json", {"formatVersion": 1, **selected_module,
                     "packages": selected_packages, "automaticTransformations": transforms, "initialization": "fresh-component-runtime"})
                 self.isolation.protect_inputs(generated, overlay_path.parent)

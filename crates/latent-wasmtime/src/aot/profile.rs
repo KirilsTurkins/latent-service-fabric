@@ -112,6 +112,14 @@ impl ValidatedAotProfile {
         Ok(())
     }
 
+    pub(crate) fn authenticate_component(&self, bytes: &[u8]) -> Result<(), PlatformError> {
+        crate::component_threading::Authentication::verify(
+            self.bootstrap.settings.owned_native_threads(),
+            bytes,
+        )?;
+        Ok(())
+    }
+
     /// Closed, bounded trusted-child input; decoding alone grants no authority.
     pub fn bootstrap(&self) -> Result<Vec<u8>, PlatformError> {
         // Private fields have fixed-size numbers and at most a native target and
@@ -124,10 +132,19 @@ impl ValidatedAotProfile {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn engine_from_bootstrap(
     bytes: &[u8],
     limits: AotCompilerLimits,
 ) -> Result<(Engine, [u8; 32]), PlatformError> {
+    let (engine, identity, _) = engine_from_bootstrap_with_threading(bytes, limits)?;
+    Ok((engine, identity))
+}
+
+pub(crate) fn engine_from_bootstrap_with_threading(
+    bytes: &[u8],
+    limits: AotCompilerLimits,
+) -> Result<(Engine, [u8; 32], bool), PlatformError> {
     let limits = limits.validate()?;
     if bytes.len() > MAX_BOOTSTRAP_BYTES {
         return Err(exhausted());
@@ -146,7 +163,7 @@ pub(crate) fn engine_from_bootstrap(
     if blob(actual) != expected {
         return Err(mismatch());
     }
-    Ok((engine, actual))
+    Ok((engine, actual, value.settings.owned_native_threads()))
 }
 
 fn compiler_engine(settings: &CompilerEngineSettings) -> Result<Engine, PlatformError> {
@@ -200,6 +217,9 @@ fn declared_digest(
 }
 
 fn capabilities(config: &WasmtimeConfig) -> [u8; 32] {
+    if config.owned_native_threads {
+        return crate::bindings::host_abi_digest_for(latent_core::PHASE3_HOST_ABI_V6);
+    }
     if !config.transactional_state {
         return crate::bindings::host_abi_digest();
     }

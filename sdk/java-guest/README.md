@@ -44,13 +44,26 @@ WASI-SDK **29** / Clang **21.1.4**, wit-bindgen **0.62.0 C**, and wasm-tools
 The obsolete TeaVM-WASI generator is not used. Build machines run JVM processes;
 capsules do not deploy or retain a JVM, Java server, guest host thread or event loop.
 
+The opt-in fiber runtime rolls back a managed worker reservation when internal
+startup fails before the maintained start hook accepts work. A later start
+failure or unconfirmed host settlement retains its original owner until actual
+cleanup. This ownership repair does not qualify custom `Thread.start` overrides;
+the [runtime profile](../../docs/runtime/java-activation-fibers.md) records that
+remaining reference-runtime difference.
+
 Edit `src/dev/latent/app/Capsule.java` and `wit/world.wit` in the created project.
 The entry class implements generated `dev.latent.generated.Bindings.Exports`.
-Additional Java source files beneath `src` are captured. Application JARs,
-Maven projects, Gradle plugins/build scripts, JNI, reflection-based dynamic
-loading, arbitrary native libraries and host threads are outside this profile.
-Core Java values, records, exceptions, lambdas and the reachable TeaVM class
-library used by the examples are supported; this is not a complete JDK runtime.
+Additional Java source files beneath `src` are captured. Declare developer-selected
+Maven or local/private JARs through [application dependency authoring](../../docs/component-development/java-dependencies.md),
+then explicitly resolve and review their captured transitive closure. Normal
+compilation consumes those bytes offline, separately from the pinned SDK locks.
+Processors and generators require separate explicit approval and containment;
+application Gradle scripts and compiler extension services do not run implicitly.
+Reachable JNI/native calls, dynamic loading and missing runtime methods require
+a selected maintained implementation or a concrete compatibility diagnostic.
+Unused native asset bytes remain attributed inputs. Core Java values, records,
+exceptions, lambdas and the reachable TeaVM class library used by the examples
+are supported; this is not a complete JDK runtime.
 Filesystem, stdout/stderr and ambient networking are unavailable, not fake
 successful operations. Use the declared platform capabilities for effects.
 
@@ -87,6 +100,13 @@ node's public JSON RPC exports, including nested resource values. Unsupported
 public signatures are rejected before Java compilation rather than at invocation.
 
 ## Capability ownership
+
+The opt-in [standard URLConnection profile](../../docs/component-development/java-httpurlconnection.md)
+also has a [finite signed real-provider gate](../../docs/testing/java-standard-http.md)
+using ordinary construction, body streams and error/cleanup paths. It shares
+the same typed provider authority and owners. One unchanged published client now
+passes that finite matrix through its default factory. Two-client/private-library
+and complete runtime qualification remain open under #688.
 
 The nine [stateless Java examples](examples) exercise their eight capability interfaces. The table also describes the separately selected Phase 4 transaction template:
 

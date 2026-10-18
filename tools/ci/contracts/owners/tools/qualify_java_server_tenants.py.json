@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_java_server_tenants.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Preserve neutral signed package while selecting examples only in the signer-created operator deployment; keep original budgets, authority checks and nine tenant cases",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "509b8408e9ecf0a2fced2b8a3e28261a14bc0d1386345d12cc049aaca0d16844"
+}

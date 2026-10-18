@@ -26,4 +26,5 @@ def profile(sdk: Path, recipe_inputs: bytes, source_inputs: bytes, component: by
         "qualification": "pending", "schemes": ["http"],
         "limits": {"requestBodyBytes": 262144, "responseBodyBytes": 262144, "chunkBytes": 4096},
         "unsupported": ["https-standard-type", "separate-phase-timeouts", "automatic-redirects",
-            "explicit-chunk-framing", "status-line-and-reason-phrase", "indexed-response-headers"]})
+            "explicit-chunk-framing", "status-line-and-reason-phrase", "indexed-response-headers",
+            "proxy-transport", "socket-address-resolution"]})

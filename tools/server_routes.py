@@ -152,6 +152,13 @@ class Routes:
     def remove(self, names: list[str]) -> dict:
         require(isinstance(names, list) and 0 < len(names) <= MAX_TRIGGERS and len(set(names)) == len(names),
                 "server-route-removal-selection")
+        value = self.read()
+        require(value["pending"] is None, "server-route-recover-original-operation-first")
+        # Reject an invalid or contested selection before deleting any mount.
+        # Each actual deletion still rechecks ownership and uses its own CAS.
+        for name in names:
+            require(name in value["routes"], "server-route-owned-removal-required")
+            self.check_owned(name, self.observe(name), value)
         for name in names:
             value = self.read()
             require(value["pending"] is None and name in value["routes"], "server-route-owned-removal-required")

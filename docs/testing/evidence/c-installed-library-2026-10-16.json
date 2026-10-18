@@ -1,0 +1,1019 @@
+{
+  "schemaVersion": "lsf.c.installed-library-observation.v1",
+  "date": "2026-10-16",
+  "status": "passed",
+  "ownerIssues": [
+    678,
+    684
+  ],
+  "publisherAuthenticated": false,
+  "releasePublished": false,
+  "installedCompiler": {
+    "status": "passed",
+    "publisherAuthenticated": false,
+    "releasePublished": false,
+    "scope": "installed-C-creation-offline-library-build-and-review-invalidation",
+    "effectiveUser": 1000,
+    "commands": [
+      {
+        "name": "create-greeting",
+        "exitCode": 0,
+        "elapsedSeconds": 0.5866300510024303,
+        "stdout": {
+          "sha256": "sha256:2f68ba202731c89bc371c6c61e7569d5264c2524e9a76c732b415567570b8b4e",
+          "bytes": 35
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "create-word-count",
+        "exitCode": 0,
+        "elapsedSeconds": 0.5637128480011597,
+        "stdout": {
+          "sha256": "sha256:b8d9448b0c9b5c859a6cad2e32cd092c15d29166d3f2f51189a4649fdb087b16",
+          "bytes": 37
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "create-shipping",
+        "exitCode": 0,
+        "elapsedSeconds": 0.5544532080020872,
+        "stdout": {
+          "sha256": "sha256:0360c671b4515fb1100b2aa854b579fc8422d9ee40f58ead73762ed25dc44593",
+          "bytes": 35
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "create-http-status",
+        "exitCode": 0,
+        "elapsedSeconds": 0.5848391289982828,
+        "stdout": {
+          "sha256": "sha256:c0a2ecf5e720035b701e23a8852490f396e94fe643cb901a5fcbf025c334b19b",
+          "bytes": 38
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "create-recovery",
+        "exitCode": 0,
+        "elapsedSeconds": 0.6344252830022015,
+        "stdout": {
+          "sha256": "sha256:a4050d460c904847a78e0111081c4bfbce98fb34a4ac260ce1e54d55bdc33029",
+          "bytes": 35
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "create-transactional-aggregate",
+        "exitCode": 0,
+        "elapsedSeconds": 0.593835826999566,
+        "stdout": {
+          "sha256": "sha256:6f31c35a0841bde1eae2bf0d688ada99ddcc0b3fa8811962af61f0879d33771c",
+          "bytes": 50
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "verify-capture",
+        "exitCode": 0,
+        "elapsedSeconds": 0.6554564820035012,
+        "stdout": {
+          "sha256": "sha256:9080e47035e17aa40ae22689cad89df2fa336c9b8773a2ecbd6d59af8e88ac72",
+          "bytes": 735
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "offline-build",
+        "exitCode": 0,
+        "elapsedSeconds": 37.61790908500552,
+        "stdout": {
+          "sha256": "sha256:97685a84e97e06352832c51620e951b786953f653082811f2604a8ed17443499",
+          "bytes": 118
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "update",
+        "exitCode": 0,
+        "elapsedSeconds": 0.6097459779994097,
+        "stdout": {
+          "sha256": "sha256:077c278caba1255cbb489d88ad0241530ab105100a14822f332e4037ad5b9e17",
+          "bytes": 775
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "update-requires-review",
+        "exitCode": 1,
+        "elapsedSeconds": 0.5385636579958373,
+        "stdout": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "stderr": {
+          "sha256": "sha256:7692b5f5661752d898791bcfccddafdb0fc40c281cc79f0d944f5aeb1e371d8a",
+          "bytes": 152
+        }
+      },
+      {
+        "name": "remove",
+        "exitCode": 0,
+        "elapsedSeconds": 0.569074016995728,
+        "stdout": {
+          "sha256": "sha256:f9873aa50cb7e1c25b2bdc443b0e629b4618bef75a4b1b53e2771afc616d34d6",
+          "bytes": 741
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "remove-requires-review",
+        "exitCode": 1,
+        "elapsedSeconds": 0.5678842490015086,
+        "stdout": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "stderr": {
+          "sha256": "sha256:7692b5f5661752d898791bcfccddafdb0fc40c281cc79f0d944f5aeb1e371d8a",
+          "bytes": 152
+        }
+      },
+      {
+        "name": "add-original",
+        "exitCode": 0,
+        "elapsedSeconds": 0.5490449730059481,
+        "stdout": {
+          "sha256": "sha256:6e3dabcbd545685b058712e2e2b4bf89f525411d32c2d056c3c514afb79b63ee",
+          "bytes": 772
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      },
+      {
+        "name": "reordered-add-requires-review",
+        "exitCode": 1,
+        "elapsedSeconds": 0.5276315739974962,
+        "stdout": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "stderr": {
+          "sha256": "sha256:7692b5f5661752d898791bcfccddafdb0fc40c281cc79f0d944f5aeb1e371d8a",
+          "bytes": 152
+        }
+      },
+      {
+        "name": "verify-original-reviewed-bytes",
+        "exitCode": 0,
+        "elapsedSeconds": 0.5667182589968434,
+        "stdout": {
+          "sha256": "sha256:a5884032959b1e50ca6b252f977e1ddbbb7bc53543e6cbfebe17eb54d88dc0a7",
+          "bytes": 735
+        },
+        "stderr": {
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      }
+    ],
+    "qualifier": {
+      "sha256": "sha256:aee46ddaabce9721f766ca2d801fb4276b01c28b1f665bad2aa3be457f54d9de",
+      "bytes": 8661
+    },
+    "candidateSource": "b3548f71ff2954f65da9594415706f163802aa4c",
+    "archive": {
+      "name": "latent-dev-linux-x86_64-c-tools.zip",
+      "sha256": "sha256:78af5b342736ec968df98af1a806bb11044d058f8cd051c41b956a06cf186efa",
+      "size": 81457431
+    },
+    "manifest": {
+      "sha256": "sha256:4ba8c075638bafd9bf56a65819746a458d8cc804bb9b8ae04d34481886a8a074",
+      "bytes": 200345
+    },
+    "helper": {
+      "sha256": "sha256:3ed958748059f40772b7382596d6e180792b8f3f743bbe0977f0dfbcee721927",
+      "bytes": 239243
+    },
+    "capturedInputIdentity": "sha256:15f90b6b3c7b439409dd6696dd09d7b58a48e524f9605caed5f6240e75a80c2a",
+    "artifacts": {
+      "component.wasm": {
+        "sha256": "sha256:bafc72255be880a91c31b942441df142af8db2d8d8f8ce903e254d660e02d52e",
+        "bytes": 867755
+      },
+      "source-inputs.json": {
+        "sha256": "sha256:3ecf212663f74a7ca340e49549ca47e3ea52718771333044a5585031710e70ac",
+        "bytes": 7153
+      },
+      "recipe-inputs.json": {
+        "sha256": "sha256:12bb57542b0fcbe2d30213f1e96c4adfcfcad1013dbcebf34dcae3b6332c64e2",
+        "bytes": 6415
+      },
+      "application-dependencies.json": {
+        "sha256": "sha256:012667ce9ca812e02a36490447c2335d855b30902cfe6e3d7310908bbd1219fd",
+        "bytes": 2458
+      },
+      "build-observation.json": {
+        "sha256": "sha256:df761d5365b82079343c95ed813b47d75cf811fa860a6dc56e7745bd0b463ab3",
+        "bytes": 2782
+      },
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:40d07ec6effce61a7458b6120a29ae717ad1f2de3b8ac519a2d85ebe90698a86",
+        "bytes": 1887
+      }
+    },
+    "normalAddChangedDeclarationOrder": true,
+    "elapsedSeconds": 49.71280848199967,
+    "remainingAcceptance": [
+      "authenticated frontend watch and newly reviewed version deployment"
+    ]
+  },
+  "isolation": {
+    "effectiveUser": 1000,
+    "network": "none",
+    "checkoutMounted": false,
+    "inheritedPath": "/nonexistent",
+    "candidateAndCaptureMounts": "readonly",
+    "hostPrerequisite": "Bubblewrap with permitted namespaces; original contained compiler remains required"
+  },
+  "node": {
+    "status": "passed",
+    "publisherAuthenticated": false,
+    "scope": "installed-library-greeting-and-four-preserved-source-controls-on-ordinary-signed-node",
+    "invocations": 27,
+    "nativeTuple": {
+      "receipt": {
+        "sha256": "sha256:4b4cc872d422c34bbf083f498f7a1b1fc8b81f0d3a1ef71b29be9d5d791465fc",
+        "bytes": 1494
+      },
+      "sourceHead": "a49bbf172e08c13ed7bd5588e2323064652f9366",
+      "sourceTree": "5696ad304208a902ed115f27120609fc8d4f9f04",
+      "tupleRole": "ordinary-defaults",
+      "hostAbiProfile": "lsf-host-abi-phase3-v5",
+      "wasmtimeVersion": "48.0.6",
+      "binaries": {
+        "latent": {
+          "sha256": "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+          "bytes": 69976672,
+          "actualFeatures": []
+        },
+        "latentd": {
+          "sha256": "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+          "bytes": 182386208,
+          "actualFeatures": []
+        },
+        "package": {
+          "sha256": "sha256:c361aad3ed1aa9371e6acd657368ab216a72a66aa5fecba8b0f5d3169291940f",
+          "bytes": 19100192,
+          "actualFeatures": []
+        },
+        "capsule_contracts": {
+          "sha256": "sha256:60e42c99f6286ed4e6254a05156963c2e50e543414e9fa5f108eede7bb4e397e",
+          "bytes": 7967376,
+          "actualFeatures": []
+        },
+        "capsule_authoring": {
+          "sha256": "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+          "bytes": 24994784,
+          "actualFeatures": []
+        }
+      }
+    },
+    "component": {
+      "sha256": "sha256:bafc72255be880a91c31b942441df142af8db2d8d8f8ce903e254d660e02d52e",
+      "bytes": 867755
+    },
+    "workflow": {
+      "sha256": "sha256:bd53e57d9cdcacdc160496f5cf2901ac86a04c738b34d3c5a2289920bffe5235",
+      "bytes": 248895
+    }
+  },
+  "nodeObservations": {
+    "source": {
+      "sha256": "sha256:1228718068998717d48ca5ec2b0b69c5411a8a01c714f94d668f21706062a376",
+      "files": 3131,
+      "bytes": 23456456,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    },
+    "scope": "isolated-local-experimental-node-with-enforced-package-admission",
+    "limitations": [
+      "Non-atomic Linux /proc observations; RSS is not allocator retention.",
+      "Finite correctness experiment, not a production sizing or throughput claim."
+    ],
+    "limits": {
+      "overallSeconds": 180,
+      "invocationMillis": 5000,
+      "controlMillis": 15000,
+      "controlProcessSeconds": 25,
+      "peerSeconds": 180
+    },
+    "providerIdle": [
+      {
+        "counters": {
+          "audit_capture_dropped": "0",
+          "audit_closed": "0",
+          "audit_dropped_observations": "0",
+          "audit_pending_attempts": "0",
+          "audit_query_bytes": "0",
+          "audit_query_owners": "0",
+          "audit_queued_bytes": "16384",
+          "audit_queued_operations": "0",
+          "audit_recovery_pending": "0",
+          "audit_reserved_bytes": "16384",
+          "audit_reserved_records": "1",
+          "audit_stage_bytes": "0",
+          "audit_unavailable_events": "0",
+          "broker_buffer_bytes": "0",
+          "broker_calls": "0",
+          "broker_handles": "0",
+          "broker_metadata_bytes": "81968",
+          "broker_plans": "17",
+          "broker_providers": "1",
+          "broker_results": "0",
+          "broker_sessions": "0",
+          "io_buffers": "0",
+          "io_calls": "0",
+          "io_metadata_bytes": "0",
+          "io_occupied_running_slots": "0",
+          "io_queued_calls": "0",
+          "io_result_bytes": "0",
+          "io_staged_bytes": "0",
+          "io_streams": "0",
+          "pool_active_connections": "0",
+          "pool_cleanup_jobs": "0",
+          "pool_clients": "1",
+          "pool_closed": "0",
+          "pool_configurations": "1",
+          "pool_connecting_connections": "0",
+          "pool_connections": "0",
+          "pool_control_failed": "0",
+          "pool_control_owners": "1",
+          "pool_failed_cleanup": "0",
+          "pool_idle_connections": "0",
+          "pool_metadata_bytes": "762240",
+          "pool_pending_requests": "0",
+          "pool_retained_configurations": "1",
+          "pool_retired_connections": "0",
+          "pool_running_requests": "0",
+          "pool_workers": "0"
+        },
+        "scope": "node",
+        "unavailable": []
+      },
+      {
+        "counters": {
+          "audit_capture_dropped": "0",
+          "audit_closed": "0",
+          "audit_dropped_observations": "0",
+          "audit_pending_attempts": "0",
+          "audit_query_bytes": "0",
+          "audit_query_owners": "0",
+          "audit_queued_bytes": "0",
+          "audit_queued_operations": "0",
+          "audit_recovery_pending": "0",
+          "audit_reserved_bytes": "0",
+          "audit_reserved_records": "0",
+          "audit_stage_bytes": "0",
+          "audit_unavailable_events": "0",
+          "broker_buffer_bytes": "0",
+          "broker_calls": "0",
+          "broker_handles": "0",
+          "broker_metadata_bytes": "81968",
+          "broker_plans": "17",
+          "broker_providers": "1",
+          "broker_results": "0",
+          "broker_sessions": "0",
+          "io_buffers": "0",
+          "io_calls": "0",
+          "io_metadata_bytes": "0",
+          "io_occupied_running_slots": "0",
+          "io_queued_calls": "0",
+          "io_result_bytes": "0",
+          "io_staged_bytes": "0",
+          "io_streams": "0",
+          "pool_active_connections": "0",
+          "pool_cleanup_jobs": "0",
+          "pool_clients": "1",
+          "pool_closed": "0",
+          "pool_configurations": "1",
+          "pool_connecting_connections": "0",
+          "pool_connections": "0",
+          "pool_control_failed": "0",
+          "pool_control_owners": "1",
+          "pool_failed_cleanup": "0",
+          "pool_idle_connections": "0",
+          "pool_metadata_bytes": "762240",
+          "pool_pending_requests": "0",
+          "pool_retained_configurations": "1",
+          "pool_retired_connections": "0",
+          "pool_running_requests": "0",
+          "pool_workers": "0"
+        },
+        "scope": "node",
+        "unavailable": []
+      },
+      {
+        "counters": {
+          "audit_capture_dropped": "0",
+          "audit_closed": "0",
+          "audit_dropped_observations": "0",
+          "audit_pending_attempts": "0",
+          "audit_query_bytes": "0",
+          "audit_query_owners": "0",
+          "audit_queued_bytes": "16384",
+          "audit_queued_operations": "0",
+          "audit_recovery_pending": "0",
+          "audit_reserved_bytes": "16384",
+          "audit_reserved_records": "1",
+          "audit_stage_bytes": "0",
+          "audit_unavailable_events": "0",
+          "broker_buffer_bytes": "0",
+          "broker_calls": "0",
+          "broker_handles": "0",
+          "broker_metadata_bytes": "81968",
+          "broker_plans": "17",
+          "broker_providers": "1",
+          "broker_results": "0",
+          "broker_sessions": "0",
+          "io_buffers": "0",
+          "io_calls": "0",
+          "io_metadata_bytes": "0",
+          "io_occupied_running_slots": "0",
+          "io_queued_calls": "0",
+          "io_result_bytes": "0",
+          "io_staged_bytes": "0",
+          "io_streams": "0",
+          "pool_active_connections": "0",
+          "pool_cleanup_jobs": "0",
+          "pool_clients": "1",
+          "pool_closed": "0",
+          "pool_configurations": "1",
+          "pool_connecting_connections": "0",
+          "pool_connections": "0",
+          "pool_control_failed": "0",
+          "pool_control_owners": "1",
+          "pool_failed_cleanup": "0",
+          "pool_idle_connections": "0",
+          "pool_metadata_bytes": "762240",
+          "pool_pending_requests": "0",
+          "pool_retained_configurations": "1",
+          "pool_retired_connections": "0",
+          "pool_running_requests": "0",
+          "pool_workers": "0"
+        },
+        "scope": "node",
+        "unavailable": []
+      },
+      {
+        "counters": {
+          "audit_capture_dropped": "0",
+          "audit_closed": "0",
+          "audit_dropped_observations": "0",
+          "audit_pending_attempts": "0",
+          "audit_query_bytes": "0",
+          "audit_query_owners": "0",
+          "audit_queued_bytes": "0",
+          "audit_queued_operations": "0",
+          "audit_recovery_pending": "0",
+          "audit_reserved_bytes": "0",
+          "audit_reserved_records": "0",
+          "audit_stage_bytes": "0",
+          "audit_unavailable_events": "0",
+          "broker_buffer_bytes": "0",
+          "broker_calls": "0",
+          "broker_handles": "0",
+          "broker_metadata_bytes": "81968",
+          "broker_plans": "17",
+          "broker_providers": "1",
+          "broker_results": "0",
+          "broker_sessions": "0",
+          "io_buffers": "0",
+          "io_calls": "0",
+          "io_metadata_bytes": "0",
+          "io_occupied_running_slots": "0",
+          "io_queued_calls": "0",
+          "io_result_bytes": "0",
+          "io_staged_bytes": "0",
+          "io_streams": "0",
+          "pool_active_connections": "0",
+          "pool_cleanup_jobs": "0",
+          "pool_clients": "1",
+          "pool_closed": "0",
+          "pool_configurations": "1",
+          "pool_connecting_connections": "0",
+          "pool_connections": "0",
+          "pool_control_failed": "0",
+          "pool_control_owners": "1",
+          "pool_failed_cleanup": "0",
+          "pool_idle_connections": "0",
+          "pool_metadata_bytes": "762240",
+          "pool_pending_requests": "0",
+          "pool_retained_configurations": "1",
+          "pool_retired_connections": "0",
+          "pool_running_requests": "0",
+          "pool_workers": "0"
+        },
+        "scope": "node",
+        "unavailable": []
+      },
+      {
+        "counters": {
+          "audit_capture_dropped": "0",
+          "audit_closed": "0",
+          "audit_dropped_observations": "0",
+          "audit_pending_attempts": "0",
+          "audit_query_bytes": "0",
+          "audit_query_owners": "0",
+          "audit_queued_bytes": "0",
+          "audit_queued_operations": "0",
+          "audit_recovery_pending": "0",
+          "audit_reserved_bytes": "0",
+          "audit_reserved_records": "0",
+          "audit_stage_bytes": "0",
+          "audit_unavailable_events": "0",
+          "broker_buffer_bytes": "0",
+          "broker_calls": "0",
+          "broker_handles": "0",
+          "broker_metadata_bytes": "81968",
+          "broker_plans": "17",
+          "broker_providers": "1",
+          "broker_results": "0",
+          "broker_sessions": "0",
+          "io_buffers": "0",
+          "io_calls": "0",
+          "io_metadata_bytes": "0",
+          "io_occupied_running_slots": "0",
+          "io_queued_calls": "0",
+          "io_result_bytes": "0",
+          "io_staged_bytes": "0",
+          "io_streams": "0",
+          "pool_active_connections": "0",
+          "pool_cleanup_jobs": "0",
+          "pool_clients": "1",
+          "pool_closed": "0",
+          "pool_configurations": "1",
+          "pool_connecting_connections": "0",
+          "pool_connections": "0",
+          "pool_control_failed": "0",
+          "pool_control_owners": "1",
+          "pool_failed_cleanup": "0",
+          "pool_idle_connections": "0",
+          "pool_metadata_bytes": "762240",
+          "pool_pending_requests": "0",
+          "pool_retained_configurations": "1",
+          "pool_retired_connections": "0",
+          "pool_running_requests": "0",
+          "pool_workers": "0"
+        },
+        "scope": "node",
+        "unavailable": []
+      },
+      {
+        "counters": {
+          "audit_capture_dropped": "0",
+          "audit_closed": "0",
+          "audit_dropped_observations": "0",
+          "audit_pending_attempts": "0",
+          "audit_query_bytes": "0",
+          "audit_query_owners": "0",
+          "audit_queued_bytes": "0",
+          "audit_queued_operations": "0",
+          "audit_recovery_pending": "0",
+          "audit_reserved_bytes": "0",
+          "audit_reserved_records": "0",
+          "audit_stage_bytes": "0",
+          "audit_unavailable_events": "0",
+          "broker_buffer_bytes": "0",
+          "broker_calls": "0",
+          "broker_handles": "0",
+          "broker_metadata_bytes": "81968",
+          "broker_plans": "17",
+          "broker_providers": "1",
+          "broker_results": "0",
+          "broker_sessions": "0",
+          "io_buffers": "0",
+          "io_calls": "0",
+          "io_metadata_bytes": "0",
+          "io_occupied_running_slots": "0",
+          "io_queued_calls": "0",
+          "io_result_bytes": "0",
+          "io_staged_bytes": "0",
+          "io_streams": "0",
+          "pool_active_connections": "0",
+          "pool_cleanup_jobs": "0",
+          "pool_clients": "1",
+          "pool_closed": "0",
+          "pool_configurations": "1",
+          "pool_connecting_connections": "0",
+          "pool_connections": "0",
+          "pool_control_failed": "0",
+          "pool_control_owners": "1",
+          "pool_failed_cleanup": "0",
+          "pool_idle_connections": "0",
+          "pool_metadata_bytes": "762240",
+          "pool_pending_requests": "0",
+          "pool_retained_configurations": "1",
+          "pool_retired_connections": "0",
+          "pool_running_requests": "0",
+          "pool_workers": "0"
+        },
+        "scope": "node",
+        "unavailable": []
+      }
+    ],
+    "nodeShutdown": {
+      "processId": 61,
+      "reaped": true,
+      "record": {
+        "schemaVersion": "latent.standalone.status.v1",
+        "event": "stopped",
+        "clean": true,
+        "report": {
+          "audit": {
+            "workerJoined": true,
+            "queuedOperations": 0,
+            "queryOwners": 0,
+            "queryBytes": 0,
+            "pendingAttempts": 0,
+            "reservedRecords": 0,
+            "stageBytes": 0,
+            "recoveryPending": false,
+            "unknownOutcomes": 0,
+            "previousSessionLossUnknown": false
+          },
+          "rollouts": {
+            "workerJoined": true,
+            "workerLive": false,
+            "queuedCommands": 0,
+            "activeCommands": 0,
+            "retainedRequestBytes": 0,
+            "responseOwners": 0,
+            "responseBytes": 0,
+            "failed": false,
+            "canary": {
+              "retainedWindows": 0,
+              "retainedSamples": 0,
+              "liveSamples": 0,
+              "snapshotOwners": 0
+            }
+          },
+          "policies": {
+            "workCompleted": true,
+            "activeJobs": 0,
+            "retainedReadOwners": 0
+          },
+          "providers": {
+            "clean": true,
+            "controlOwners": 0,
+            "connections": 0,
+            "pendingRequests": 0,
+            "runningRequests": 0,
+            "workers": 0,
+            "cleanupJobs": 0,
+            "failedCleanup": 0,
+            "sessions": 0,
+            "handles": 0,
+            "calls": 0,
+            "results": 0,
+            "ioCalls": 0,
+            "ioRetainedBytes": 0,
+            "blobStages": 0,
+            "blobHandles": 0,
+            "blobWork": 0,
+            "secretGenerations": 0,
+            "secretReferences": 0,
+            "streamOwners": 0,
+            "streamConnections": 0,
+            "streamPendingOperations": 0,
+            "streamRetainedChunks": 0,
+            "streamMaintenanceOwners": 0
+          },
+          "clean": true,
+          "activeConnections": 0,
+          "activeRpcs": 0,
+          "activeControlJobs": 0,
+          "activeActivations": 0,
+          "cancellationRegistrations": 0,
+          "observerCorrelations": 0,
+          "quotaReservations": 0,
+          "queuedReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "activeLeases": 0,
+          "queuedActivations": 0,
+          "quarantinedCells": 0,
+          "activeBackendInvocations": 0,
+          "instanceReservations": 0,
+          "preparingComponents": 0,
+          "preparingSourceBytes": 0,
+          "preparingMetadataBytes": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveTemporaryBuffers": 0,
+          "liveCancellationProbes": 0,
+          "telemetryRetainedEntries": 844,
+          "telemetryFlushed": true,
+          "epochHelperJoined": true,
+          "compiler": {
+            "maximum_jobs": 1,
+            "maximum_workers": 1,
+            "maximum_queued_jobs": 0,
+            "maximum_waiters": 3,
+            "maximum_waiters_per_job": 3,
+            "maximum_ready_preparations": 3,
+            "maximum_document_bytes": 5308416,
+            "assigned_jobs": 0,
+            "running_jobs": 0,
+            "queued_jobs": 0,
+            "waiting_callers": 0,
+            "ready_preparations": 0,
+            "ready_metadata_bytes": 0,
+            "ready_compiled_image_bytes": 0,
+            "reserved_document_bytes": 0,
+            "workers_live": 0,
+            "workers_quiescent": 1,
+            "workers_joined": 1,
+            "accepting": false,
+            "failed": false,
+            "jobs_started": 5,
+            "jobs_completed": 5,
+            "jobs_failed": 0,
+            "jobs_abandoned": 0,
+            "coalesced_waiters": 0,
+            "queue_rejected": 0,
+            "waiter_rejected": 0,
+            "ready_rejected": 0,
+            "cancelled_waiters": 0,
+            "discarded_results": 0
+          },
+          "cleanup": {
+            "capacity": 4,
+            "accepting": false,
+            "driverAlive": false,
+            "driverJoined": true,
+            "reserved": 0,
+            "queued": 0,
+            "running": 0,
+            "handoffs": 1,
+            "completed": 1,
+            "timedOut": 0,
+            "panicked": 0,
+            "fallbacks": 0,
+            "failed": false
+          }
+        }
+      }
+    },
+    "peerShutdown": {
+      "requests": 8,
+      "authorized": 8,
+      "unexpected": 0,
+      "holds": 3,
+      "closedHolds": 3
+    }
+  },
+  "invocations": [
+    {
+      "activation": "authoring-greeting-0",
+      "exitCode": 0,
+      "elapsedNanos": "74296133",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-greeting-1",
+      "exitCode": 0,
+      "elapsedNanos": "21614482",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-greeting-2",
+      "exitCode": 3,
+      "elapsedNanos": "16577158",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-greeting-warm",
+      "exitCode": 0,
+      "elapsedNanos": "16961492",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-word-count-0",
+      "exitCode": 0,
+      "elapsedNanos": "59515202",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-word-count-1",
+      "exitCode": 0,
+      "elapsedNanos": "17023082",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-word-count-2",
+      "exitCode": 3,
+      "elapsedNanos": "16444885",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-word-count-warm",
+      "exitCode": 0,
+      "elapsedNanos": "16360044",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-shipping-0",
+      "exitCode": 0,
+      "elapsedNanos": "53720508",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-shipping-1",
+      "exitCode": 0,
+      "elapsedNanos": "16597438",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-shipping-2",
+      "exitCode": 3,
+      "elapsedNanos": "16694029",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-shipping-warm",
+      "exitCode": 0,
+      "elapsedNanos": "16223300",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-fault-0",
+      "exitCode": 0,
+      "elapsedNanos": "48773647",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-fault-1",
+      "exitCode": 4,
+      "elapsedNanos": "16555871",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-fault-2",
+      "exitCode": 0,
+      "elapsedNanos": "16631236",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-fault-3",
+      "exitCode": 4,
+      "elapsedNanos": "16356004",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-fault-4",
+      "exitCode": 0,
+      "elapsedNanos": "16263124",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-fault-5",
+      "exitCode": 4,
+      "elapsedNanos": "158978146",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-fault-6",
+      "exitCode": 0,
+      "elapsedNanos": "16256084",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-http-0",
+      "exitCode": 0,
+      "elapsedNanos": "73474734",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-http-1",
+      "exitCode": 3,
+      "elapsedNanos": "16459845",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-http-2",
+      "exitCode": 0,
+      "elapsedNanos": "21334398",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-deadline",
+      "exitCode": 4,
+      "elapsedNanos": "115492624",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-after-deadline",
+      "exitCode": 0,
+      "elapsedNanos": "21720371",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-cancel",
+      "exitCode": 4,
+      "elapsedNanos": "54585066",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-after-cancel",
+      "exitCode": 0,
+      "elapsedNanos": "21620561",
+      "processReaped": true
+    },
+    {
+      "activation": "authoring-after-disconnect",
+      "exitCode": 0,
+      "elapsedNanos": "21680872",
+      "processReaped": true
+    }
+  ],
+  "rawReceipts": {
+    "c-installed-qualified-r3.json": {
+      "sha256": "sha256:5ffd4a9c1b17f5943f80ddd25b917a64a35799465b9438ccb8bf0f2818933ffa",
+      "bytes": 7929
+    },
+    "c-installed-node-qualified.json": {
+      "sha256": "sha256:b98f8776ae215079438e66635a2338ee5926a474154e62ecaad0c98c22d07cc5",
+      "bytes": 1771
+    },
+    "c-installed-node-workflow.json": {
+      "sha256": "sha256:bd53e57d9cdcacdc160496f5cf2901ac86a04c738b34d3c5a2289920bffe5235",
+      "bytes": 248895
+    }
+  },
+  "preservedFailures": [
+    {
+      "attempt": "baseline-installed-new",
+      "reason": "project directory does not exist",
+      "boundary": "Original candidate lacks SDK/template inputs; shipping fix is the tested candidate source"
+    },
+    {
+      "attempt": "offline-r1",
+      "reason": "captured-compiler-isolation-requires-linux-bubblewrap",
+      "boundary": "Unsupported host refused before source compilation; supported-host r2/r3 retain containment"
+    },
+    {
+      "attempt": "node-r1",
+      "reason": "private-state-directory-required",
+      "boundary": "Root qualification driver rejected the unprivileged compiler state before node dispatch; subsequent fresh attempt uses its original UID1000 owner"
+    },
+    {
+      "attempt": "node-r2",
+      "reason": "source-file-unavailable-or-unsafe",
+      "boundary": "Premature qualification driver refused a not-yet-completed component before packaging/node dispatch; final r3 waits for successful compiler receipt"
+    }
+  ],
+  "limitations": [
+    "Local source-candidate toolkit, not authenticated release installation",
+    "Installed greeting executes the captured third-party/local/transitive resource graph; four other components are preserved source controls from separate qualification",
+    "Default native binaries and node tooling retain their own explicit source identities",
+    "Compiler output bytes differ across fresh staging paths; no binary reproducibility claim",
+    "Authenticated frontend watch and newly reviewed version deployment remain open"
+  ]
+}

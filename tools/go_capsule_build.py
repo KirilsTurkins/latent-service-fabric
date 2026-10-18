@@ -21,7 +21,7 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
 
 BUILD_TYPE = "https://latent.dev/build/go-capsule/v1"
 RECIPE = ("tools/go_capsule.py", "tools/go_capsule_project.py", "tools/go_capsule_build.py",
-          "tools/go_guest/compiler.py", "tools/go_guest/runtime.py", "tools/go_guest/sdk.py", "tools/rust_capsule_project.py",
+          "tools/go_guest/compiler.py", "tools/go_guest/runtime.py", "tools/go_guest/activation.py", "tools/go_guest/checkpoints.py", "tools/go_guest/sdk.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
@@ -69,15 +69,23 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             commands = Commands(work, output, build_environment(temporary))
             stage = "application-dependencies"
             closure = prepare(observed.dependency_root, work, output, "go")
+            runtime_profile = project.get('runtimeProfile', 'go-component-async-v1')
+            if closure is not None:
+                selected = closure.lock['selection']['runtimeProfile']
+                if 'runtimeProfile' in project and selected != runtime_profile:
+                    raise ValueError('Go-project-and-captured-runtime-profile-disagree')
+                runtime_profile = selected
             compiler = Compiler(temporary / "compiler", work / "vendor/lsf/sdk/go-guest", commands,
-                                offline_cache=offline_cache, source_root=project_path / "src", application_closure=closure)
+                                offline_cache=offline_cache, source_root=project_path / "src", application_closure=closure,
+                                runtime_profile=runtime_profile)
             materials = list(compiler.materials.values())
             paths = {"contracts-tool": checked_path(contracts_tool)}
             if packager is not None:
                 paths["packager"] = checked_path(packager)
             materials.extend(file_identity(path, name) for name, path in paths.items())
             stage = "compile"
-            component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled")
+            component_path, generated = compiler.compile(work / "src", work / "wit", project["world"], temporary / "compiled",
+                                                       runtime_profile=runtime_profile)
             binding_digest = digest(json.dumps(generated, sort_keys=True, separators=(",", ":")).encode())
             component = read_file(component_path, 64 * 1024 * 1024)
             (output / "component.wasm").write_bytes(component)
@@ -129,7 +137,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 for name in ("application-dependencies.json", "compiler-containment.json", "go-module-build-inputs.json"):
                     data = read_file(output / name, 16 * 1024 * 1024)
                     materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
-            runtime_profile = closure.lock['selection']['runtimeProfile'] if closure is not None else 'go-component-async-v1'
+            transformations = read_file(output / 'go-runtime-transformations.json', 65536)
+            materials.append({'name': 'go-runtime-transformations', 'digest': digest(transformations), 'size': len(transformations)})
             materials.append(guest_runtime_receipts.emit(output, 'go', runtime_profile, files,
                 source_inputs, component, materials, graph=closure.lock if closure is not None else None,
                 binding_digest=binding_digest, configuration={"profile": runtime_profile, "world": project['world'],
@@ -142,7 +151,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                            "repositoryTrust": "operator-asserted", "capture": "explicit-input-files"},
                 "componentDigest": digest(component), "componentSize": len(component), "materials": sorted(materials, key=lambda row: row["name"]),
                 "parameters": {"goPackage": project["name"], "compiler": "componentize-go", "target": "wasm32-wasip1",
-                               "runtime": "go-component-async-v1", "locked": True, "ambientWasi": False},
+                               "runtime": runtime_profile, "locked": True, "ambientWasi": False},
                 "startedAt": started, "finishedAt": finished, "reproducibility": "not-checked", "hermetic": False,
                 "dependencyCompleteness": "declared-inputs-incomplete"})
             guest_compatibility_context_build.finish(output, files, source_inputs, component, materials)

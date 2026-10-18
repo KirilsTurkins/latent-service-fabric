@@ -1,0 +1,1560 @@
+{
+  "schemaVersion": "lsf.java.installed-server-observation.v1",
+  "date": "2026-10-15",
+  "status": "passed",
+  "ownerIssues": [
+    727,
+    728
+  ],
+  "scope": "source-candidate-installed-authoring-offline-compiler-and-real-route-cli",
+  "publisherAuthenticated": false,
+  "releasePublished": false,
+  "candidate": {
+    "sourceCommit": "a3bc5dfdbbd618a11d2c13f91e465de1e1bf81f5",
+    "archive": {
+      "name": "latent-dev-linux-x86_64-java-tools.zip",
+      "sha256": "sha256:446c84910bdd4e8696e3e42a0d88262902217f47ef334676b5585d773fc34ffa",
+      "size": 518184587
+    },
+    "manifest": {
+      "sha256": "sha256:9a949c427cb55e67c088b383130443ff0a831c15e114c3d122cbaf4b9fc4bc1f",
+      "bytes": 294301
+    },
+    "installerHelper": {
+      "sha256": "sha256:174e119dffffe6e09bc8545394680e54a1629bc2c07d5a7268788dbf8df102df",
+      "bytes": 237501
+    },
+    "effectiveUser": 1000,
+    "artifacts": {
+      "component.wasm": {
+        "sha256": "sha256:af39d2d2a095260efe9fd8991389fb606eeb591a533e568f40a8c03f25a75392",
+        "bytes": 1855349
+      },
+      "server-source.json": {
+        "sha256": "sha256:0c2e32f8784c1f7b1b0767437d6a7f50272906bd1299877e19cc94f8c6d5aa8a",
+        "bytes": 1663
+      },
+      "server-profile.json": {
+        "sha256": "sha256:6aca93883f794faf4775161644c2905175d1a5440e2be2f1ade527660284709c",
+        "bytes": 2310
+      },
+      "source-inputs.json": {
+        "sha256": "sha256:243f275b09abfed2aeee26207923ba29080830e244bc7199ba163168b7cec4be",
+        "bytes": 25080
+      },
+      "recipe-inputs.json": {
+        "sha256": "sha256:0e2249ceb547e720de1a24081080f70a307fb3176677a0763476bf0671d1ca8f",
+        "bytes": 8605
+      },
+      "compiler-inputs.json": {
+        "sha256": "sha256:46190f6e208fc5a0046522f2783adcc0752a7bc762db7a8b507e198fd064883b",
+        "bytes": 2902802
+      },
+      "build-observation.json": {
+        "sha256": "sha256:56336a65fe93cfcda53f7de99bebb999ebb09ef264d401693f7ebedce9f92c0e",
+        "bytes": 2980
+      },
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:aa84d002cf82018682ad521a5d170f9d091e2d99efb8b054d4c7d84bc66ce54f",
+        "bytes": 9428
+      }
+    },
+    "commands": [
+      {
+        "name": "python-version",
+        "exitCode": 0,
+        "elapsedSeconds": 0.018213055001979228
+      },
+      {
+        "name": "create",
+        "exitCode": 0,
+        "elapsedSeconds": 0.6110061569997924
+      },
+      {
+        "name": "build",
+        "exitCode": 0,
+        "elapsedSeconds": 78.85211855799935
+      },
+      {
+        "name": "route-help",
+        "exitCode": 0,
+        "elapsedSeconds": 0.3651047209968965
+      }
+    ],
+    "elapsedSeconds": 87.17616324000119
+  },
+  "isolatedCompiler": {
+    "network": "none",
+    "checkoutMounted": false,
+    "inheritedPath": "/nonexistent",
+    "effectiveUser": 1000,
+    "compilerStatementPreserved": true
+  },
+  "signedNode": {
+    "status": "passed",
+    "scope": "installed-route-command-and-real-shared-listener",
+    "toolInventory": "sha256:6e44823036beeb0b15bac94e74a641acdf9bffb5866590bb870c3a6d64225472",
+    "nativeTuple": {
+      "receipt": {
+        "sha256": "sha256:4b4cc872d422c34bbf083f498f7a1b1fc8b81f0d3a1ef71b29be9d5d791465fc",
+        "bytes": 1494
+      },
+      "sourceHead": "a49bbf172e08c13ed7bd5588e2323064652f9366",
+      "sourceTree": "5696ad304208a902ed115f27120609fc8d4f9f04",
+      "tupleRole": "ordinary-defaults",
+      "hostAbiProfile": "lsf-host-abi-phase3-v5",
+      "wasmtimeVersion": "48.0.6",
+      "binaries": {
+        "latent": {
+          "sha256": "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+          "bytes": 69976672,
+          "actualFeatures": []
+        },
+        "latentd": {
+          "sha256": "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+          "bytes": 182386208,
+          "actualFeatures": []
+        },
+        "package": {
+          "sha256": "sha256:c361aad3ed1aa9371e6acd657368ab216a72a66aa5fecba8b0f5d3169291940f",
+          "bytes": 19100192,
+          "actualFeatures": []
+        },
+        "capsule_contracts": {
+          "sha256": "sha256:60e42c99f6286ed4e6254a05156963c2e50e543414e9fa5f108eede7bb4e397e",
+          "bytes": 7967376,
+          "actualFeatures": []
+        },
+        "capsule_authoring": {
+          "sha256": "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+          "bytes": 24994784,
+          "actualFeatures": []
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "plan",
+        "exitCode": 0,
+        "stdoutDigest": "sha256:b21554a24bab930c7180e0f1ab06fce08ff957c323247b1576c4b7eefd074c1d",
+        "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "apply",
+        "exitCode": 0,
+        "stdoutDigest": "sha256:70406c8516f6142ff9899ef9bc5f25528eda5f6575340980b7d03b08587b7cbe",
+        "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "inspect",
+        "exitCode": 0,
+        "stdoutDigest": "sha256:1a3b74fa455b4660b0e4f028ea21e8c3230399e50b3137b228f8a31a259974bb",
+        "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "plan",
+        "exitCode": 0,
+        "stdoutDigest": "sha256:1a037c2825eae1dda4e291739b3dfbebe05b7f55df6cea21e8bf7316ec428223",
+        "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "apply",
+        "exitCode": 0,
+        "stdoutDigest": "sha256:0e3999766def2fd05b50c509a565821794b311c424e885ff8e679135f3d73c38",
+        "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "inspect",
+        "exitCode": 0,
+        "stdoutDigest": "sha256:5b6fc34e1712bdc0ef7474d9e4ca9eadc81743e76681bb6501dc98aa4a0daf70",
+        "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "remove",
+        "exitCode": 0,
+        "stdoutDigest": "sha256:5ab9ebb8964473e7b313b96d1dee6a3b140325c01c590bec55e9def9b79184dc",
+        "stderrDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "httpObservations": 18,
+    "component": {
+      "sha256": "sha256:af39d2d2a095260efe9fd8991389fb606eeb591a533e568f40a8c03f25a75392",
+      "bytes": 1855349
+    },
+    "nodeReceipt": {
+      "sha256": "sha256:0a09ff48db6e8b674a65ed370fe4751b3b28711caa3abb2a7482c8f8fe3c9808",
+      "bytes": 33185
+    },
+    "qualifier": {
+      "sha256": "sha256:7310facf4c6fea4b45d0afec10dc8a96fff01bbbb0301d6c411e1a3fbf8b8738",
+      "bytes": 7638
+    },
+    "nodeHarness": {
+      "sha256": "sha256:617b0373e2f4c34fc26c8e8ef8b074ed1914562b22e9a543a6617ea0babf5286",
+      "bytes": 30025
+    },
+    "publisherAuthenticated": false,
+    "releasePublished": false
+  },
+  "http": [
+    {
+      "method": "GET",
+      "path": "/hey",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 403,
+      "headers": [
+        [
+          "Content-Length",
+          "10"
+        ],
+        [
+          "Content-Type",
+          "text/plain; charset=utf-8"
+        ],
+        [
+          "cache-control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": "466f7262696464656e0a"
+    },
+    {
+      "method": "GET",
+      "path": "/hey",
+      "authority": "unconfigured.server.test",
+      "scheme": "https",
+      "status": 403,
+      "headers": [
+        [
+          "Connection",
+          "close"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Cache-Control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "GET",
+      "path": "/hey",
+      "authority": "foreign.server.test",
+      "scheme": "https",
+      "status": 403,
+      "headers": [
+        [
+          "Connection",
+          "close"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Cache-Control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/hey",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 403,
+      "headers": [
+        [
+          "Connection",
+          "close"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Cache-Control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/hey",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 404,
+      "headers": [
+        [
+          "Connection",
+          "close"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Cache-Control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "GET",
+      "path": "/hey",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 401,
+      "headers": [
+        [
+          "Connection",
+          "close"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Cache-Control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "GET",
+      "path": "/hey/%2Fsecret",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 400,
+      "headers": [
+        [
+          "Connection",
+          "close"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Cache-Control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "GET",
+      "path": "/hey/%252fsecret",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 400,
+      "headers": [
+        [
+          "Connection",
+          "close"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Cache-Control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "GET",
+      "path": "/hey/../case",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 400,
+      "headers": [
+        [
+          "Connection",
+          "close"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Cache-Control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "GET",
+      "path": "/hey//child",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 400,
+      "headers": [
+        [
+          "Connection",
+          "close"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Cache-Control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "GET",
+      "path": "/hey",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 200,
+      "headers": [
+        [
+          "Content-Length",
+          "4"
+        ],
+        [
+          "Content-Type",
+          "application/octet-stream"
+        ],
+        [
+          "cache-control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": "48657921"
+    },
+    {
+      "method": "GET",
+      "path": "/hey/child",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 200,
+      "headers": [
+        [
+          "Content-Length",
+          "4"
+        ],
+        [
+          "Content-Type",
+          "application/octet-stream"
+        ],
+        [
+          "cache-control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": "48657921"
+    },
+    {
+      "method": "GET",
+      "path": "/heyday",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 200,
+      "headers": [
+        [
+          "Content-Length",
+          "4"
+        ],
+        [
+          "Content-Type",
+          "application/octet-stream"
+        ],
+        [
+          "cache-control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": "48657921"
+    },
+    {
+      "method": "GET",
+      "path": "/hey?x=1",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 200,
+      "headers": [
+        [
+          "Content-Length",
+          "4"
+        ],
+        [
+          "Content-Type",
+          "application/octet-stream"
+        ],
+        [
+          "cache-control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": "48657921"
+    },
+    {
+      "method": "GET",
+      "path": "/hey/",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 200,
+      "headers": [
+        [
+          "Content-Length",
+          "4"
+        ],
+        [
+          "Content-Type",
+          "application/octet-stream"
+        ],
+        [
+          "cache-control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": "48657921"
+    },
+    {
+      "method": "GET",
+      "path": "/HEY",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 404,
+      "headers": [
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Content-Type",
+          "application/octet-stream"
+        ],
+        [
+          "cache-control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "GET",
+      "path": "/absent",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 404,
+      "headers": [
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Content-Type",
+          "application/octet-stream"
+        ],
+        [
+          "cache-control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    },
+    {
+      "method": "GET",
+      "path": "/hey",
+      "authority": "java.server.test",
+      "scheme": "https",
+      "status": 404,
+      "headers": [
+        [
+          "Connection",
+          "close"
+        ],
+        [
+          "Content-Length",
+          "0"
+        ],
+        [
+          "Cache-Control",
+          "no-store"
+        ],
+        [
+          "content-security-policy",
+          "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; worker-src 'none'; manifest-src 'self'"
+        ],
+        [
+          "x-content-type-options",
+          "nosniff"
+        ],
+        [
+          "x-frame-options",
+          "DENY"
+        ],
+        [
+          "referrer-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-opener-policy",
+          "same-origin"
+        ],
+        [
+          "cross-origin-resource-policy",
+          "same-origin"
+        ],
+        [
+          "permissions-policy",
+          "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ],
+        [
+          "strict-transport-security",
+          "max-age=31536000"
+        ]
+      ],
+      "body": ""
+    }
+  ],
+  "profile": "lsf.java.httpserver.buffered.v1",
+  "limits": {
+    "blobReadBytes": 0,
+    "blobWriteBytes": 0,
+    "childCalls": 0,
+    "cpuFuel": 1000000000,
+    "effectCount": 0,
+    "logBytes": 0,
+    "memoryBytes": 67108864,
+    "outboundRequests": 0,
+    "stateReadBytes": 0,
+    "stateWriteBytes": 0,
+    "wallTimeLimitMillis": 120000
+  },
+  "idle": {
+    "owners": {
+      "execution-cell-leases": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "cell",
+        "name": "execution-cell-leases",
+        "ownership": "activation-scoped"
+      },
+      "guest-cancellation-probes": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "probe",
+        "name": "guest-cancellation-probes",
+        "ownership": "activation-scoped"
+      },
+      "guest-component-instances": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "component-instance",
+        "name": "guest-component-instances",
+        "ownership": "activation-scoped"
+      },
+      "guest-host-states": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "host-state",
+        "name": "guest-host-states",
+        "ownership": "activation-scoped"
+      },
+      "guest-invocations": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "invocation",
+        "name": "guest-invocations",
+        "ownership": "activation-scoped"
+      },
+      "guest-stores": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "store",
+        "name": "guest-stores",
+        "ownership": "activation-scoped"
+      },
+      "guest-value-buffers": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "buffer-group",
+        "name": "guest-value-buffers",
+        "ownership": "activation-scoped"
+      },
+      "http-buffer-reservations": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "16777216",
+        "kind": "byte",
+        "name": "http-buffer-reservations",
+        "ownership": "node-fixed"
+      },
+      "http-exchanges": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "2",
+        "kind": "exchange",
+        "name": "http-exchanges",
+        "ownership": "node-fixed"
+      },
+      "invocation-cleanup-slots": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "4",
+        "kind": "continuation",
+        "name": "invocation-cleanup-slots",
+        "ownership": "node-fixed"
+      },
+      "prepared-instance-reservations": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "1",
+        "kind": "reservation",
+        "name": "prepared-instance-reservations",
+        "ownership": "activation-scoped"
+      },
+      "resident-service-listeners": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "0",
+        "kind": "listener",
+        "name": "resident-service-listeners",
+        "ownership": "service-resident"
+      },
+      "resident-service-processes": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "0",
+        "kind": "process",
+        "name": "resident-service-processes",
+        "ownership": "service-resident"
+      },
+      "resident-service-threads": {
+        "activeCount": "0",
+        "attributes": {},
+        "configuredCount": "0",
+        "kind": "thread",
+        "name": "resident-service-threads",
+        "ownership": "service-resident"
+      }
+    },
+    "quotas": {
+      "activeActivations": 0,
+      "queuedActivations": 0,
+      "reservedCpuFuel": "0",
+      "reservedMemoryBytes": "0"
+    },
+    "cells": [
+      {
+        "accepting": true,
+        "active": 0,
+        "available": 1,
+        "cancellations": "0",
+        "class": "standard",
+        "expired": "0",
+        "granted": "8",
+        "maxWaitMicros": "417",
+        "observationAvailable": true,
+        "oldestLeaseAgeMicros": "0",
+        "quarantined": 0,
+        "queueCapacity": 2,
+        "queueDepth": 0,
+        "queuedTenants": 0,
+        "rejected": "0",
+        "total": 1,
+        "totalWaitMicros": "1209"
+      }
+    ],
+    "topologyComplete": false
+  },
+  "shutdown": {
+    "processId": 1021,
+    "reaped": true,
+    "record": {
+      "schemaVersion": "latent.standalone.status.v1",
+      "event": "stopped",
+      "clean": true,
+      "report": {
+        "audit": {
+          "workerJoined": true,
+          "queuedOperations": 0,
+          "queryOwners": 0,
+          "queryBytes": 0,
+          "pendingAttempts": 0,
+          "reservedRecords": 0,
+          "stageBytes": 0,
+          "recoveryPending": false,
+          "unknownOutcomes": 0,
+          "previousSessionLossUnknown": false
+        },
+        "rollouts": {
+          "workerJoined": true,
+          "workerLive": false,
+          "queuedCommands": 0,
+          "activeCommands": 0,
+          "retainedRequestBytes": 0,
+          "responseOwners": 0,
+          "responseBytes": 0,
+          "failed": false,
+          "canary": {
+            "retainedWindows": 0,
+            "retainedSamples": 0,
+            "liveSamples": 0,
+            "snapshotOwners": 0
+          }
+        },
+        "policies": {
+          "workCompleted": true,
+          "activeJobs": 0,
+          "retainedReadOwners": 0
+        },
+        "providers": {
+          "clean": true,
+          "controlOwners": 0,
+          "connections": 0,
+          "pendingRequests": 0,
+          "runningRequests": 0,
+          "workers": 0,
+          "cleanupJobs": 0,
+          "failedCleanup": 0,
+          "sessions": 0,
+          "handles": 0,
+          "calls": 0,
+          "results": 0,
+          "ioCalls": 0,
+          "ioRetainedBytes": 0,
+          "blobStages": 0,
+          "blobHandles": 0,
+          "blobWork": 0,
+          "secretGenerations": 0,
+          "secretReferences": 0,
+          "streamOwners": 0,
+          "streamConnections": 0,
+          "streamPendingOperations": 0,
+          "streamRetainedChunks": 0,
+          "streamMaintenanceOwners": 0
+        },
+        "http": {
+          "listenerAlive": false,
+          "ownerAlive": false,
+          "joined": true,
+          "failed": false,
+          "accepting": false,
+          "maximumConnections": 4,
+          "connections": 0,
+          "maximumExchanges": 2,
+          "exchanges": 0,
+          "maximumBufferBytes": 16777216,
+          "reservedBufferBytes": 0,
+          "assets": {
+            "maximumReads": 8,
+            "activeReads": 0,
+            "maximumBufferBytes": 33554432,
+            "retainedBufferBytes": 0,
+            "cacheEntries": 0,
+            "cacheHits": 0,
+            "cacheMisses": 0,
+            "corruptions": 0,
+            "capacityRejections": 0
+          },
+          "responseCacheEntries": 0,
+          "responseCacheOwners": 0,
+          "responseCacheReservedBytes": 0
+        },
+        "clean": true,
+        "activeConnections": 0,
+        "activeRpcs": 0,
+        "activeControlJobs": 0,
+        "activeActivations": 0,
+        "cancellationRegistrations": 0,
+        "observerCorrelations": 0,
+        "quotaReservations": 0,
+        "queuedReservations": 0,
+        "reservedCpuFuel": 0,
+        "reservedMemoryBytes": 0,
+        "activeLeases": 0,
+        "queuedActivations": 0,
+        "quarantinedCells": 0,
+        "activeBackendInvocations": 0,
+        "instanceReservations": 0,
+        "preparingComponents": 0,
+        "preparingSourceBytes": 0,
+        "preparingMetadataBytes": 0,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "liveCancellationProbes": 0,
+        "telemetryRetainedEntries": 283,
+        "telemetryFlushed": true,
+        "epochHelperJoined": true,
+        "compiler": {
+          "maximum_jobs": 1,
+          "maximum_workers": 1,
+          "maximum_queued_jobs": 0,
+          "maximum_waiters": 3,
+          "maximum_waiters_per_job": 3,
+          "maximum_ready_preparations": 3,
+          "maximum_document_bytes": 5308416,
+          "assigned_jobs": 0,
+          "running_jobs": 0,
+          "queued_jobs": 0,
+          "waiting_callers": 0,
+          "ready_preparations": 0,
+          "ready_metadata_bytes": 0,
+          "ready_compiled_image_bytes": 0,
+          "reserved_document_bytes": 0,
+          "workers_live": 0,
+          "workers_quiescent": 1,
+          "workers_joined": 1,
+          "accepting": false,
+          "failed": false,
+          "jobs_started": 1,
+          "jobs_completed": 1,
+          "jobs_failed": 0,
+          "jobs_abandoned": 0,
+          "coalesced_waiters": 0,
+          "queue_rejected": 0,
+          "waiter_rejected": 0,
+          "ready_rejected": 0,
+          "cancelled_waiters": 0,
+          "discarded_results": 0
+        },
+        "cleanup": {
+          "capacity": 4,
+          "accepting": false,
+          "driverAlive": false,
+          "driverJoined": true,
+          "reserved": 0,
+          "queued": 0,
+          "running": 0,
+          "handoffs": 0,
+          "completed": 0,
+          "timedOut": 0,
+          "panicked": 0,
+          "fallbacks": 0,
+          "failed": false
+        }
+      }
+    }
+  },
+  "tls": {
+    "certificate": {
+      "sha256": "sha256:7adb8e7c85d8cec1b4c1e0c8d2ef9dceeed059036d9faf107904dcd3c2ad155d",
+      "bytes": 688
+    },
+    "certificateAuthority": {
+      "sha256": "sha256:4e85524c1a2eda8cf5b3d29f4bf3b0a848c6e1aa2036af899f8fddea6682f49b",
+      "bytes": 446
+    },
+    "verifiedTransportHostname": "localhost",
+    "logicalAuthority": "java.server.test",
+    "fixtureControls": [
+      {
+        "case": "trusted-chain",
+        "status": "verified",
+        "version": "TLSv1.3",
+        "certificateDigest": "sha256:72ac177dca594d3494bdf82b20e42180abedf653bd3e6ccaed1d2407baf88470"
+      },
+      {
+        "case": "hostname-mismatch",
+        "status": "rejected",
+        "verificationCode": 62
+      },
+      {
+        "case": "untrusted-chain",
+        "status": "rejected",
+        "verificationCode": 20
+      }
+    ]
+  },
+  "rawReceipts": {
+    "installed-server-qualified.json": {
+      "sha256": "sha256:260ecbf18322dc92e383b2928d49bd5fdd35cfb07d0ad5dd90ed97a3e3da26af",
+      "bytes": 2361
+    },
+    "installed-server-actual-qualified-r3.json": {
+      "sha256": "sha256:9f90953b8ae78970527131da4763a1068ddff4a96dab4e6eac42fe0079859537",
+      "bytes": 3920
+    },
+    "installed-server-actual-conformance-r3.json": {
+      "sha256": "sha256:0a09ff48db6e8b674a65ed370fe4751b3b28711caa3abb2a7482c8f8fe3c9808",
+      "bytes": 33185
+    }
+  },
+  "preservedFailures": [
+    {
+      "attempt": "installed-server-actual-r1",
+      "reason": "provenance-malformed",
+      "disposition": "compiler output intentionally required normal controller packaging before signing; no statement or admission gate weakened"
+    }
+  ],
+  "limitations": [
+    "Local candidate, not publisher-authenticated or release-published",
+    "Signed node uses recorded default native products at a different explicit source",
+    "Node qualification has actual loopback networking; network-none isolation applies to the separate installed compiler observation",
+    "No full installed frontend/watch or all HttpServer executor/runtime profile claim",
+    "Original lifecycle acceptance remains in its separate source-bound receipt"
+  ]
+}

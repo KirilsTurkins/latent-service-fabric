@@ -1,6 +1,6 @@
 # Workspace package index
 
-The root [Cargo workspace](../Cargo.toml) contains **52 Rust packages**: 41 libraries under `crates/`, three applications, two Rust SDK packages and six tool packages. Every member has a package README linked below. This index covers workspace members; independently built application examples and language-runtime projects retain their own guides.
+The root [Cargo workspace](../Cargo.toml) contains **53 Rust packages**: 42 libraries under `crates/`, three applications, two Rust SDK packages and six tool packages. Every member has a package README linked below. This index covers workspace members; independently built application examples and language-runtime projects retain their own guides.
 
 Use [the package architecture walkthrough](../docs/development/workspace-packages.md) for end-to-end flows, ownership boundaries and test selection. Package READMEs map concrete modules, implementation status, lifetimes, dependency/feature gates, source tests and related specifications. The manifest and implementation remain the authority for exact signatures and limits.
 
@@ -16,6 +16,7 @@ An interface trait is not an installed service. In particular, workflows, remote
 | [`latent-manifest`](latent-manifest/README.md) | Typed capsule, deployment, binding and trigger documents, bounded JSON codecs and semantic validation. |
 | [`latent-contracts`](latent-contracts/README.md) | Structural contract descriptors and bounded compatibility/binding analysis. |
 | [`latent-component-bindings`](latent-component-bindings/README.md) | Single build-generated Rust binding owner for LSF's authoritative WIT worlds. |
+| [`latent-component-threading`](latent-component-threading/README.md) | Bounded post-link transforms and complete component-routing authentication for the explicit Rust continuation source profile; engine thread creation remains disabled. |
 | [`latent-rpc`](latent-rpc/README.md) | Build-generated Protobuf messages, Tonic clients/servers and descriptor-set ownership, plus checked platform-error and transaction conversions. |
 
 ## Packages, trust and publication

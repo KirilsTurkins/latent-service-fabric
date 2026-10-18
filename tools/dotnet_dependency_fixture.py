@@ -34,8 +34,51 @@ def install(project: Path, outside: Path, tools: Path, *, identity='Outside.Qual
         root.mkdir()
     resource = b'Hello, '
     (library / 'prefix.txt').write_bytes(resource)
+    (library / 'message.txt').write_text('Gr\u00fc\u00dfe', encoding='utf-8')
+    (library / 'data.bin').write_bytes(bytes((0, 255, 65, 128)))
     (library / 'Library.cs').write_text('''namespace DeveloperInput;
 public static class LibraryPrefix {
+    private static readonly string Initialization = Read();
+    private static int calls;
+    private static byte[][]? retained;
+    private static byte[] ReadBytes(string name) {
+        using var stream = typeof(LibraryPrefix).Assembly.GetManifestResourceStream(name)
+            ?? throw new System.Exception("captured developer resource missing");
+        using var output = new System.IO.MemoryStream();
+        stream.CopyTo(output);
+        return output.ToArray();
+    }
+    private static bool CatchAndFinally() {
+        bool caught = false, finalized = false;
+        try { throw new System.InvalidOperationException("ordinary captured library exception"); }
+        catch (System.InvalidOperationException error) { caught = error.Message == "ordinary captured library exception"; }
+        finally { finalized = true; }
+        return caught && finalized;
+    }
+    public static void Exercise(string mode) {
+        var message = System.Text.Encoding.UTF8.GetString(ReadBytes("developer.message"));
+        var data = ReadBytes("developer.binary");
+        if (calls != 0 || Initialization != "Hello, " || message != "Gr\\u00fc\\u00dfe" || data.Length != 4 ||
+            data[0] != 0 || data[1] != 255 || data[2] != 65 || data[3] != 128 || !CatchAndFinally())
+            throw new System.Exception("captured resources, initialization, finally or fresh state changed");
+        calls++;
+        if (mode == "exception") throw new System.InvalidOperationException("captured library requested failure");
+        if (mode == "memory") {
+            retained = new byte[32][];
+            for (int index = 0; index < retained.Length; ++index) retained[index] = new byte[16 * 1024 * 1024];
+            System.GC.KeepAlive(retained);
+            throw new System.Exception("captured library allocation unexpectedly fit original budget");
+        }
+        if (mode == "fuel") while (true) { calls++; }
+        if (mode == "spin") {
+            var source = new byte[128 * 1024];
+            var destination = new byte[source.Length];
+            while (true) {
+                System.Buffer.BlockCopy(source, 0, destination, 0, source.Length);
+                System.GC.KeepAlive(destination);
+            }
+        }
+    }
     public static string Read() {
         using var input = typeof(LibraryPrefix).Assembly.GetManifestResourceStream("developer.prefix")
             ?? throw new System.Exception("captured developer resource missing");
@@ -48,7 +91,8 @@ public static class LibraryPrefix {
 <PropertyGroup><TargetFramework>net10.0</TargetFramework><OutputType>Library</OutputType>
 <Nullable>enable</Nullable><UseSharedCompilation>false</UseSharedCompilation>
 <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps><ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets></PropertyGroup>
-<ItemGroup><EmbeddedResource Include="prefix.txt" LogicalName="developer.prefix" /></ItemGroup>
+<ItemGroup><EmbeddedResource Include="prefix.txt" LogicalName="developer.prefix" />
+<EmbeddedResource Include="message.txt" LogicalName="developer.message" /><EmbeddedResource Include="data.bin" LogicalName="developer.binary" /></ItemGroup>
 </Project>''', encoding='utf-8')
     (library / 'nuget.config').write_text('<configuration><packageSources><clear /></packageSources></configuration>')
     (library / 'global.json').write_bytes((project / 'global.json').read_bytes())
@@ -74,12 +118,13 @@ public static class LibraryPrefix {
     (feed / (identity.lower() + '.1.0.0.nupkg')).write_bytes(original.getvalue())
     source = project / 'src/Main.cs'
     before = source.read_bytes()
-    after = before.replace(b'$"Hello, {clean}!"', b'Prefix() + clean + "!"')
+    after = before.replace(b'$"Hello, {clean}!"', b'Prefix(clean) + clean + "!"')
     if after == before:
         raise ValueError('C# dependency qualification source hook changed')
     if serialization == 'memorypack':
         helper = b'''
-    private static string Prefix() {
+    private static string Prefix(string mode) {
+        DeveloperInput.LibraryPrefix.Exercise(mode);
         var resource = DeveloperInput.LibraryPrefix.Read();
         var encoded = MemoryPack.MemoryPackSerializer.Serialize(new CapturedPayload { Prefix = resource });
         var restored = MemoryPack.MemoryPackSerializer.Deserialize<CapturedPayload>(encoded)
@@ -91,7 +136,8 @@ public static class LibraryPrefix {
 '''
     else:
         helper = b'''
-    private static string Prefix() {
+    private static string Prefix(string mode) {
+        DeveloperInput.LibraryPrefix.Exercise(mode);
         var input = Newtonsoft.Json.Linq.JObject.Parse("{\\"prefix\\":\\"Hello, \\"}");
         var parsed = (string?)input["prefix"];
         if (parsed != "Hello, ") throw new System.Exception("actual transitive JSON result mismatch");
@@ -115,15 +161,40 @@ public partial class CapturedPayload {
 }
 '''
     source.write_bytes(after)
-    declaration = project / 'Capsule.csproj'
-    declaration.write_bytes(declaration.read_bytes().replace(b'</Project>',
-        ('<ItemGroup><PackageReference Include="' + identity + '" Version="[1.0.0]" />'
-         '<PackageReference Include="' + application + '" Version="[' + version + ']" /></ItemGroup></Project>').encode()))
+    from tools import dotnet_dependency_authoring as authoring
+    authoring.edit(project, 'add', identity=identity, version='1.0.0')
+    authoring.edit(project, 'add', identity=application, version=version)
     candidate = project / 'target/qualification.candidate.json'
-    candidate.parent.mkdir()
+    candidate.parent.mkdir(exist_ok=True)
     lock = resolve(project, candidate, dotnet=compiler.dotnet, tools=tools,
         policy={'sources': [{'name': 'developer', 'path': str(feed), 'patterns': [identity]}]})
-    (project / LOCK).write_bytes(canonical(lock) + b'\n')
+    reviewed = authoring.review(project, candidate, digest(candidate.read_bytes()))
+    if reviewed['status'] != 'reviewed' or authoring.status(project)['status'] != 'verified':
+        raise ValueError('normal NuGet exact review did not accept the captured graph')
+    # Actual captured native graph: declaration edits must preserve the accepted
+    # lock while making it unusable; only exact reviewed source restoration revives it.
+    declaration = project / 'Capsule.csproj'
+    reviewed_source, reviewed_lock = declaration.read_bytes(), (project / LOCK).read_bytes()
+    controls = []
+    from tools.application_dependency_store import DependencyError
+    for operation, selected_version in (('update', '2.0.0'), ('remove', None)):
+        try:
+            authoring.edit(project, operation, identity=identity, version=selected_version)
+            try:
+                authoring.status(project)
+            except DependencyError as error:
+                if str(error) != 'dependency-native-lock-drift':
+                    raise
+            else:
+                raise ValueError('changed NuGet declaration reused an accepted native graph')
+            if (project / LOCK).read_bytes() != reviewed_lock:
+                raise ValueError('NuGet dependency editing replaced the accepted lock')
+            controls.append({'operation': operation, 'acceptedLockPreserved': True,
+                'staleGraphRejected': True, 'compilerExecution': False})
+        finally:
+            declaration.write_bytes(reviewed_source)
+        if authoring.status(project)['status'] != 'verified':
+            raise ValueError('exact reviewed NuGet declarations did not restore verification')
     selected = {row['metadata']['package'] for row in lock['artifacts']}
     if not {identity.lower(), application.lower(), *(name.lower() for name in transitive)} <= selected:
         raise ValueError('native NuGet qualification graph did not capture actual transitive/local packages')
@@ -140,7 +211,13 @@ public partial class CapturedPayload {
         'generatedSerialization': {'generator': 'MemoryPack.Generator/1.21.4', 'type': 'CapturedPayload',
             'ordinaryCalls': ['MemoryPackSerializer.Serialize', 'MemoryPackSerializer.Deserialize']} if serialization == 'memorypack' else None,
         'resourceDigest': digest(resource), 'managedAssemblyDigest': digest(assembly),
+        'recoveryCases': ['exception', 'memory', 'fuel', 'spin', 'normal-catch-finally', 'resource-initialization', 'fresh-state'],
+        'resourceDigests': {'message.txt': digest('Gr\u00fc\u00dfe'.encode()),
+                            'data.bin': digest(bytes((0, 255, 65, 128)))},
         'declaredNoncryptoEntropy': 'latent:random/random@0.1.0',
         'sourceDigest': digest(source.read_bytes()), 'offlineOriginals': 'unavailable-after-capture',
         'nativeGraphDigest': digest((project / 'nuget-resolved.lock.json').read_bytes()),
-        'preparationCommands': commands.records}
+        'preparationCommands': commands.records,
+        'authoringWorkflow': {'commands': ['add', 'resolve', 'review-lock', 'dependencies'],
+            'exactCandidateDigest': reviewed['candidateDigest'], 'declarationChanges': controls,
+            'exactReviewedSourceRestored': True, 'acceptedLockDigest': digest(reviewed_lock)}}

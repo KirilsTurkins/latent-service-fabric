@@ -23,6 +23,11 @@ The crate has no workspace dependencies. It does not create a node, open a datab
 3. Child delegation preserves the original parent accounting owner and deadline. A descriptive budget copy cannot create additional spendable capacity.
 4. Owners release reservations at actual reclamation. Store-local scheduling handles cease to be usable outside their original generation.
 
+A supplied continuation token must identify a still-live owner in the same
+Store generation even before root closing. Invalid ancestry fails before record
+allocation or work admission; omitting a continuation still requests independent
+work under the normal lifecycle rules.
+
 ## Integration boundaries
 
 Use `test-support` only for deterministic clocks, IDs, workspaces and coordination helpers. Upstream foundations can depend on that feature directly without pulling in the node-dependent test harness. Declared application errors and platform failures remain separate types. Diagnostic observations describe owners; they do not mint permission or prove that native work stopped.

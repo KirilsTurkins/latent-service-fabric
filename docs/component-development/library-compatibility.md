@@ -123,5 +123,15 @@ Add `--context output/compatibility-context.json` to present the separately boun
 standard-runtime and patch context. It must match the report's source/component
 identity. `--json` continues to emit the original v1 report on its own.
 
+Add `--outcomes output/compatibility-outcomes.json` to include the original
+invocation observations. The reader checks the closed diagnostic fields, numeric
+bounds, report/component identity and, when supplied, the matching context before
+printing any report. The frontend source identity stays separate from the
+compiler inventory. A node-reported resource exhaustion can retain an unknown
+resource dimension; queue pressure and coarse error codes do not identify a
+library failure. Missing or invalid context and omitted observations remain
+visible. Client reaping does not prove physical retirement, and no outcome grants
+a retry right. These presentation options read existing files and issue no calls.
+
 Add `--json` to validate and emit the same machine report. This command only
 reads the explicit report; it does not execute library code or grant authority.

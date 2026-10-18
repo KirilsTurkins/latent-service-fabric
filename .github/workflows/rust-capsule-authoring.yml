@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/rust-capsule-authoring.yml'
       - 'sdk/rust-guest/**'
+      - 'sdk/rust-standard-runtime/**'
       - 'sdk/transaction-contract/**'
       - 'crates/**'
       - 'apps/**'
@@ -15,11 +16,13 @@ on:
       - 'wit/**'
       - 'Cargo.*'
       - 'docs/component-development/rust-authoring.md'
+      - 'docs/component-development/rust-dependencies.md'
   push:
     branches: [development]
     paths:
       - '.github/workflows/rust-capsule-authoring.yml'
       - 'sdk/rust-guest/**'
+      - 'sdk/rust-standard-runtime/**'
       - 'sdk/transaction-contract/**'
       - 'crates/**'
       - 'apps/**'
@@ -29,6 +32,7 @@ on:
       - 'wit/**'
       - 'Cargo.*'
       - 'docs/component-development/rust-authoring.md'
+      - 'docs/component-development/rust-dependencies.md'
 
 permissions:
   contents: read
@@ -49,6 +53,96 @@ env:
   CARGO_PROFILE_TEST_OVERFLOW_CHECKS: "true"
 
 jobs:
+  standard-clocks:
+    name: Rebuilt Rust standard clocks and signed grants
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Verify standard source and executable ownership controls
+        run: |
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -m unittest tools.tests.test_rust_standard_clock_profile tools.tests.test_rust_standard_tls_profile tools.tests.test_rust_standard_sysroot_source tools.tests.test_rust_standard_sysroot_build tools.tests.test_rust_standard_clock_gate
+          cargo fetch --locked
+      - name: Execute owned Rust stack transforms and TLS source reference
+        run: |
+          python3 -m unittest tools.tests.test_rust_tls_reference
+          cargo test --locked -p latent-component-threading --target-dir "$RUNNER_TEMP/rust-stack-transform"
+          cargo test --locked --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --target-dir "$RUNNER_TEMP/rust-stack-transform"
+          python3 tools/run_rust_tls_reference.py --rustc "$(rustup which rustc)" --output "$RUNNER_TEMP/rust-tls-reference"
+      - name: Authenticate actual complete thread component routing
+        run: |
+          python3 -m unittest tools.tests.test_rust_thread_routing
+          cargo build --locked --manifest-path sdk/rust-standard-runtime/stack-transform/Cargo.toml --target-dir "$RUNNER_TEMP/rust-stack-transform"
+          python3 tools/qualify_rust_thread_routing.py --transformer "$RUNNER_TEMP/rust-stack-transform/debug/latent-rust-std-stack-source-transform" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/rust-thread-routing"
+      - name: Build the exact current signed clock test harness
+        run: |
+          cargo test --locked -p latent-wasmtime --test clock_admission --no-run --message-format=json > "$RUNNER_TEMP/rust-standard-clock-native.json"
+          cargo test --locked -p latent-wasmtime --test clock_admission -- --test-threads=1
+      - name: Execute rebuilt ordinary SystemTime and Instant components
+        run: |
+          python3 tools/qualify_rust_standard_clocks.py --cargo-inventory "$RUNNER_TEMP/rust-standard-clock-native.json" --native-target "$GITHUB_WORKSPACE/target" --rust-bin "$(dirname "$(rustup which rustc)")" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/rust-standard-clocks"
+      - name: Prove original native stack ownership through physical retirement
+        run: |
+          python3 -m unittest tools.tests.test_owned_native_stacks
+          cargo test --locked -p latent-wasmtime --lib native_stacks::tests:: -- --test-threads=1 --nocapture
+          python3 tools/qualify_owned_native_stacks.py --cargo-inventory "$RUNNER_TEMP/rust-standard-clock-native.json" --native-target "$GITHUB_WORKSPACE/target" --clocks "$RUNNER_TEMP/rust-standard-clocks" --output "$RUNNER_TEMP/owned-native-stacks"
+      - name: Qualify authenticated canonical child admission and physical retirement
+        run: |
+          python3 -m unittest tools.tests.test_owned_native_threads
+          cargo test --locked -p latent-policy --lib capability::tests::native_start_policy_recognizes_only_exact_contract_operation_and_context_scope -- --exact
+          cargo test --locked -p latent-packaging --lib semantics::wasm::tests::canonical_creator_without_proof_never_opens_descriptive_threading_parser -- --exact
+          cargo test --locked -p latent-packaging --lib semantics::host::tests::native_runtime_recognition_matches_exact_v6_wit_without_changing_current_installation -- --exact
+          cargo test --locked -p latent-wasmtime --lib component_threading::tests:: -- --test-threads=1
+          cargo test --locked -p latent-wasmtime --lib config::engine::tests:: -- --test-threads=1
+          cargo test --locked -p latent-core --lib activation_runtime::tests::task_support_admission_checks_original_kind_and_liveness_under_the_same_lock -- --exact
+          cargo test --locked -p latent-wasmtime --test local_service --no-run --message-format=json > "$RUNNER_TEMP/owned-native-child-native.json"
+          python3 tools/qualify_owned_native_threads.py --transformer "$RUNNER_TEMP/rust-stack-transform/debug/latent-rust-std-stack-source-transform" --wasm-tools "$(command -v wasm-tools)" --cargo-inventory "$RUNNER_TEMP/owned-native-child-native.json" --native-target "$GITHUB_WORKSPACE/target" --output "$RUNNER_TEMP/owned-native-children"
+      - name: Retain bounded standard clock evidence including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rust-standard-clocks-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/rust-standard-clock-native.json
+            ${{ runner.temp }}/rust-standard-clocks/report.json
+            ${{ runner.temp }}/rust-standard-clocks/**/qualification.json
+            ${{ runner.temp }}/rust-standard-clocks/**/clock-guest.json
+            ${{ runner.temp }}/rust-standard-clocks/**/std-sysroot-build.json
+            ${{ runner.temp }}/rust-standard-clocks/**/BUILD-FAILED.json
+            ${{ runner.temp }}/rust-standard-clocks/**/component.wasm
+            ${{ runner.temp }}/rust-standard-clocks/**/project/**
+            ${{ runner.temp }}/rust-standard-clocks/**/logs/**
+            ${{ runner.temp }}/owned-native-stacks/**
+            ${{ runner.temp }}/rust-tls-reference/reference.json
+            ${{ runner.temp }}/rust-thread-routing/**
+            ${{ runner.temp }}/owned-native-child-native.json
+            ${{ runner.temp }}/owned-native-children/**
+          if-no-files-found: warn
+          retention-days: 3
   authoring:
     name: Standalone Rust capsule authoring
     runs-on: ubuntu-24.04
@@ -102,6 +196,10 @@ jobs:
         # Native compiler controls below remain independently required.
         run: |
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_rust_application_dependencies tools.tests.test_application_dependency_approval tools.tests.test_captured_compiler_isolation
+      - name: Test captured Rust fault and fresh-invocation protocol boundaries
+        run: python3 -m unittest tools.tests.test_rust_dependency_recovery
+      - name: Test bounded Rust original-core and native FFI diagnostic boundaries
+        run: python3 -m unittest tools.tests.test_rust_raw_core_retention tools.tests.test_rust_dependency_failures
       - name: Test reviewed Rust dependency authoring and selected frontend
         run: python3 -m unittest tools.tests.test_rust_dependency_authoring tools.tests.test_guest_authoring_frontend
       - name: Qualify proposed transaction shapes with the maintained Rust compiler and HTTP preparation
@@ -117,13 +215,28 @@ jobs:
         env:
           LSF_TRANSACTION_GUEST_ROOT: ${{ runner.temp }}/transaction-guests-rust
         run: |
+          set -o pipefail
           cargo --config .cargo/managed-guest.toml test --locked -p latent-wire --lib phase4::local_transaction::tests:: -- --ignored --test-threads=1 --nocapture 2>&1 | tee "$RUNNER_TEMP/transaction-guests-rust/node-dedup-executions.log"
+      - name: Preserve typed host-result uncertainty and original technical aborts
+        run: |
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-executor --lib tests::existing_report_constructors_keep_host_result_observed -- --exact
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-node --lib transaction_runtime::tests::technical_abort:: -- --test-threads=1 --nocapture
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-node --lib activation_runner::diagnostics::tests::codec_metadata_alone_never_classifies_guest_traps -- --exact
       - name: Execute complete outside-checkout authoring qualification
         run: |
           python3 tools/qualify_rust_capsules.py --output "$RUNNER_TEMP/rust-capsule-authoring"
       - name: Qualify captured Rust libraries and approved generators
         run: |
           python3 tools/qualify_rust_capsules.py --application-dependencies --output "$RUNNER_TEMP/rust-capsule-dependencies"
+      - name: Test native Cargo declaration and lock authoring boundaries
+        run: python3 -m unittest tools.tests.test_cargo_native_authoring
+      - name: Qualify authenticated private Cargo capture and offline signed execution
+        run: |
+          python3 tools/qualify_rust_private_dependencies.py \
+            --prepared-qualification "$RUNNER_TEMP/rust-capsule-dependencies" \
+            --output "$RUNNER_TEMP/rust-private-dependencies"
+      - name: Verify published private archive semantics with locked offline Cargo metadata
+        run: python3 -m unittest tools.tests.test_rust_private_archives
       - name: Exercise developer cache with the actual operator and compiled Rust package inputs
         run: >-
           python3 tools/run_dev_build_cache_tests.py --packager target/debug/latent
@@ -140,6 +253,22 @@ jobs:
         with:
           name: rust-capsule-authoring-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/rust-private-dependencies/qualification.json
+            ${{ runner.temp }}/rust-private-dependencies/FAILED.json
+            ${{ runner.temp }}/rust-private-dependencies/capture.json
+            ${{ runner.temp }}/rust-private-dependencies/integrity-controls.json
+            ${{ runner.temp }}/rust-private-dependencies/registry-observations.json
+            ${{ runner.temp }}/rust-private-dependencies/native-lock-preparation.json
+            ${{ runner.temp }}/rust-private-dependencies/*-candidate.json.failed.json
+            ${{ runner.temp }}/rust-private-dependencies/logs/**
+            ${{ runner.temp }}/rust-private-dependencies/first/*.json
+            ${{ runner.temp }}/rust-private-dependencies/first/logs/**
+            ${{ runner.temp }}/rust-private-dependencies/first/component.wasm
+            ${{ runner.temp }}/rust-private-dependencies/offline-rebuild/*.json
+            ${{ runner.temp }}/rust-private-dependencies/offline-rebuild/logs/**
+            ${{ runner.temp }}/rust-private-dependencies/offline-rebuild/component.wasm
+            ${{ runner.temp }}/rust-private-dependencies/node/workflow.json
+            ${{ runner.temp }}/rust-private-dependencies/node/FAILED.json
             ${{ runner.temp }}/transaction-guests-rust/node-dedup-executions.log
             ${{ runner.temp }}/transaction-guests-rust/**/report.json
             ${{ runner.temp }}/transaction-guests-rust/**/source-inputs.json

@@ -135,5 +135,89 @@ class NpmDependencies(unittest.TestCase):
             self.assertEqual((work / 'dependencies/npm/node_modules/index.cjs').read_bytes(), b'exports.value = 7;')
 
 
+class PreparedNpmQualification(unittest.TestCase):
+    def fixture(self, root):
+        from tools.qualify_typescript_dependencies import PRODUCTS
+        from tools.phase3_resource_identity import file_identity
+        from tools.build_snapshot import digest
+        (root / 'native-binaries').mkdir()
+        inputs = {'fixture': 'exact maintained source selection'}
+        source = canonical(inputs)
+        for name in ('source-inputs.json', 'source-inputs-after.json'):
+            (root / name).write_bytes(source)
+        binaries = {}
+        for name in PRODUCTS:
+            identity = name if name in ('latent', 'latentd') else 'examples/' + name
+            path = root / 'native-binaries' / identity.replace('/', '-')
+            path.write_bytes(('owned fixture ' + name).encode())
+            binaries[identity] = file_identity(path)
+        qualified = {'status': 'passed', 'applicationDependencies': {}, 'sourceIdentityDigest': digest(source),
+                     'binaries': binaries}
+        (root / 'qualification.json').write_bytes(canonical(qualified))
+        return inputs, qualified
+
+    def test_exact_completed_source_and_five_products_are_required(self):
+        from unittest.mock import patch
+        from tools.phase2_operator_process import WorkflowError
+        from tools.qualify_typescript_dependencies import prepared_native
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            inputs, _ = self.fixture(root)
+            with patch('tools.qualify_typescript_dependencies.inputs', return_value=inputs):
+                products, identity = prepared_native(root)
+            self.assertEqual(set(products), {'latent', 'latentd', 'package', 'capsule_contracts', 'capsule_authoring'})
+            self.assertEqual(identity['scope'], 'exact-source-preceding-maintained-qualification')
+            (products['latentd']).write_bytes(b'changed after native capture')
+            with patch('tools.qualify_typescript_dependencies.inputs', return_value=inputs):
+                with self.assertRaisesRegex(WorkflowError, 'prepared-native-changed'):
+                    prepared_native(root)
+
+    def test_changed_current_source_or_after_snapshot_never_selects_native_products(self):
+        from unittest.mock import patch
+        from tools.phase2_operator_process import WorkflowError
+        from tools.qualify_typescript_dependencies import prepared_native
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            inputs, _ = self.fixture(root)
+            with patch('tools.qualify_typescript_dependencies.inputs', return_value={'fixture': 'changed'}):
+                with self.assertRaisesRegex(WorkflowError, 'exact-prepared-source-required'):
+                    prepared_native(root)
+            (root / 'source-inputs-after.json').write_bytes(canonical(inputs) + b'\n')
+            with patch('tools.qualify_typescript_dependencies.inputs', return_value=inputs):
+                with self.assertRaisesRegex(WorkflowError, 'exact-prepared-source-required'):
+                    prepared_native(root)
+
+    def test_pending_or_source_only_qualification_cannot_replace_completed_dependency_gate(self):
+        from unittest.mock import patch
+        from tools.phase2_operator_process import WorkflowError
+        from tools.qualify_typescript_dependencies import prepared_native
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            inputs, qualified = self.fixture(root)
+            for change in ({**qualified, 'status': 'in-progress'},
+                           {key: value for key, value in qualified.items() if key != 'applicationDependencies'},
+                           {**qualified, 'sourceIdentityDigest': 'sha256:' + '0' * 64}):
+                (root / 'qualification.json').write_bytes(canonical(change))
+                with patch('tools.qualify_typescript_dependencies.inputs', return_value=inputs):
+                    with self.assertRaisesRegex(WorkflowError, 'exact-prepared-source-required'):
+                        prepared_native(root)
+
+    def test_missing_or_additional_native_product_is_not_an_equivalent_tuple(self):
+        from unittest.mock import patch
+        from tools.phase2_operator_process import WorkflowError
+        from tools.qualify_typescript_dependencies import prepared_native
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            inputs, qualified = self.fixture(root)
+            variants = [dict(qualified['binaries']), dict(qualified['binaries'])]
+            variants[0].pop('examples/package')
+            variants[1]['examples/other-tool'] = qualified['binaries']['latent']
+            for binaries in variants:
+                (root / 'qualification.json').write_bytes(canonical({**qualified, 'binaries': binaries}))
+                with patch('tools.qualify_typescript_dependencies.inputs', return_value=inputs):
+                    with self.assertRaisesRegex(WorkflowError, 'prepared-products-not-exact'):
+                        prepared_native(root)
+
+
 if __name__ == '__main__':
     unittest.main()

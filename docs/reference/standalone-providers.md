@@ -1,5 +1,26 @@
 # Configure standalone providers
 
+An optional `scalarAliases` array gives another tenant or provider service an
+explicit logical identity for an installed `clockMonotonic`, `clockWall`,
+`random`, `context`, or `log` provider. For example, alongside a `context`
+installation with identity `context` and epoch `1`, this fragment makes that
+same registration available for a separate foreign-tenant binding:
+
+```text
+{"scalarAliases":[{"source":"context","identity":{"id":"foreign-context","tenant":"foreign","service":"foreign-runtime","epoch":1}}]}
+```
+
+Put the fragment inside `providers`. Its binding must name tenant `foreign`,
+provider service `foreign-runtime`, and the exact context contract. Provider
+binding policies, activation grants, principals and publication restrictions
+remain separate for each tenant; an alias grants no access. The context callback
+uses the actual activation identity. An alias does not change its source epoch,
+configuration digest, implementation, callback, resource limits or registration.
+Installation identities and aliases together must fit the original fourteen
+provider descriptor slots. Alias identities must be unique, and each scalar
+contract has at most one identity per tenant and provider service. Alias chains,
+ambiguous sources, and aliases for stateful or network providers are rejected.
+
 The opt-in `providers` object installs the existing bounded HTTP and immutable
 local-blob providers in the standalone node. Explicit `clockMonotonic`, `clockWall`
 and `random` installations also enable the maintained activation-clock and

@@ -7,6 +7,8 @@ mod component;
 #[path = "broker/fixture.rs"]
 #[allow(dead_code)]
 mod fixture;
+#[path = "clock_admission/monotonic.rs"]
+mod monotonic;
 #[path = "clock_admission/signed.rs"]
 mod signed;
 #[path = "generic_backend/support.rs"]
@@ -15,6 +17,60 @@ mod support;
 
 use fixture::*;
 use std::{future::Future, pin::Pin, sync::Mutex, task::Poll};
+
+#[tokio::test]
+async fn owned_stack_fixture_selects_original_phase3_without_expanding_finite_grant() {
+    for owned in [false, true] {
+        let signed =
+            signed::Fixture::with_component_profile(true, &component::bytes(), owned).await;
+        let (request, control) = signed.guest.request("clock-accounting-profile");
+        let expected = if owned {
+            latent_core::BudgetProfile::Phase3
+        } else {
+            latent_core::BudgetProfile::Phase1
+        };
+        assert_eq!(control.budget.profile(), expected);
+        assert_eq!(control.budget.granted(), &request.budget);
+        let mut expected_grant = support::budget();
+        if owned {
+            expected_grant.wall_time_limit_millis =
+                Some(support::WATCHDOG.as_millis().try_into().unwrap());
+        }
+        assert_eq!(request.budget, expected_grant);
+        assert_eq!(request.activation.budget, request.budget);
+        let deadline = control.budget.deadline();
+        assert_eq!(
+            deadline.remaining_at(deadline.admitted_at_monotonic()),
+            request
+                .budget
+                .wall_time_limit_millis
+                .map(Duration::from_millis)
+        );
+        assert_eq!(control.budget.host_memory_bytes(), 0);
+        let reservation = control.budget.reserve_host_memory(4096);
+        if owned {
+            let mut reservation = reservation.expect("explicit original Phase3 native accounting");
+            reservation.confirm();
+            assert_eq!(control.budget.host_memory_bytes(), 4096);
+            drop(reservation);
+            assert_eq!(control.budget.host_memory_bytes(), 0);
+            let lineage = control.budget.descendant_snapshot().unwrap();
+            assert_eq!(lineage.depth, 0);
+            assert_eq!(lineage.live_descendants, 0);
+            assert!(!control.budget.descendant_is_cancelled());
+            control.probe.cancel();
+            assert!(control.budget.descendant_is_cancelled());
+        } else {
+            assert!(matches!(
+                reservation,
+                Err(latent_core::BudgetError::InvalidAccountingOperation {
+                    dimension: latent_core::BudgetDimension::MemoryBytes,
+                })
+            ));
+        }
+        signed.guest.idle();
+    }
+}
 
 async fn pending_at_fence(
     mut invocation: Pin<&mut impl Future<Output = latent_executor::ExecutionReport>>,
@@ -201,7 +257,7 @@ async fn real_session_wait_keeps_original_cancellation_and_lease_expiry() {
         let mut invocation = Box::pin(f.backend.invoke_contained(request, &control));
         pending_at_fence(invocation.as_mut(), &held).await;
         if cancelled {
-            control.probe.0.store(true, Ordering::Release);
+            control.probe.cancel();
         } else {
             signed.expire_original_lease();
         }
@@ -247,6 +303,16 @@ async fn legacy_session_without_timer_fails_closed_before_store_or_guest() {
 #[tokio::test]
 #[ignore = "requires explicitly rebuilt std clock guest from the pinned infrastructure source"]
 async fn ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores() {
+    ordinary_clock(false).await;
+}
+
+#[tokio::test]
+#[ignore = "requires explicitly rebuilt std clock guest and controlled native-stack profile"]
+async fn ordinary_std_systemtime_with_owned_native_stack() {
+    ordinary_clock(true).await;
+}
+
+async fn ordinary_clock(owned_native_stacks: bool) {
     use sha2::{Digest, Sha256};
     let directory = std::path::PathBuf::from(
         std::env::var_os("LSF_RUST_STD_CLOCK_GUEST")
@@ -271,7 +337,7 @@ async fn ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores(
     // Cryptographic test publisher/builder admission and actual production
     // broker execution. The separate build marker is an input witness, not
     // proof of production builder trust or std/thread runtime qualification.
-    let signed = signed::Fixture::with_component(true, &bytes).await;
+    let signed = signed::Fixture::with_component_profile(true, &bytes, owned_native_stacks).await;
     let f = &signed.guest;
     for id in ["ordinary-clock-first", "ordinary-clock-fresh"] {
         let (request, control) = f.request(id);
@@ -293,6 +359,14 @@ async fn ordinary_std_systemtime_runs_on_signed_current_grants_and_fresh_stores(
             .violation()
             .is_none());
         f.idle();
+        println!(
+            "{}",
+            serde_json::json!({"schemaVersion":"latent.rust.std-clock-execution.v1",
+            "activation":id,"clockKind":marker["clockKind"],"componentDigest":marker["componentDigest"],
+            "fuel":consumption.cpu_fuel,"peakWasmBytes":consumption.peak_memory_bytes,
+            "wallMicros":consumption.wall_time_micros,"sampledPhysicalOwnersRetired":true,
+            "ownedNativeStacks":owned_native_stacks})
+        );
     }
     assert_eq!(f.clock.calls.load(Ordering::Acquire), 4);
     assert_eq!(f.backend.resource_snapshot().stores_created, 2);

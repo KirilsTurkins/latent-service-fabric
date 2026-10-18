@@ -60,6 +60,12 @@ impl StateTransactionHost {
     }
 }
 impl TransactionHost for StateTransactionHost {
+    fn observe_host_result(&self, disposition: latent_executor::HostResultDisposition) {
+        if disposition == latent_executor::HostResultDisposition::UnavailableAfterReturn {
+            self.result_unavailable_after_return
+                .store(true, Ordering::Release);
+        }
+    }
     fn staging_identity(&self) -> Option<TransactionStagingIdentity> {
         self.staging_identity.clone()
     }

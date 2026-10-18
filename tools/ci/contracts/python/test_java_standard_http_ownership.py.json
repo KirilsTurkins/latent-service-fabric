@@ -1,0 +1,49 @@
+{
+  "cases": [
+    "JavaStandardHttpOwnershipTests.test_acquired_peer_retires_before_its_private_credential_directory_is_removed",
+    "JavaStandardHttpOwnershipTests.test_expired_parent_deadline_cannot_start_signer_or_create_evidence",
+    "JavaStandardHttpOwnershipTests.test_failed_peer_acquisition_cleans_private_credentials_outside_retained_evidence"
+  ],
+  "guards": {
+    "JavaStandardHttpOwnershipTests.test_acquired_peer_retires_before_its_private_credential_directory_is_removed": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0eb43d24605257af4e0ee1309ad410efd88f51f3146af4c33098858ebb8c1db",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaStandardHttpOwnershipTests.test_expired_parent_deadline_cannot_start_signer_or_create_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0eb43d24605257af4e0ee1309ad410efd88f51f3146af4c33098858ebb8c1db",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    },
+    "JavaStandardHttpOwnershipTests.test_failed_peer_acquisition_cleans_private_credentials_outside_retained_evidence": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:e0eb43d24605257af4e0ee1309ad410efd88f51f3146af4c33098858ebb8c1db",
+        "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
+      ],
+      "skipSites": []
+    }
+  },
+  "kind": "python",
+  "module": "tools/tests/test_java_standard_http_ownership.py",
+  "reviewReason": "Check failed/acquired peer secret isolation and physical cleanup ordering plus refusal of an expired original deadline",
+  "schemaVersion": "latent.ci.contracts.v1"
+}

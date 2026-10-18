@@ -33,6 +33,34 @@ public final class TimerReadinessSourceControl {
         try { operation.run(); throw new AssertionError("expected-source-denial"); }
         catch (IllegalStateException expected) { }
     }
+    private static int owners() throws ReflectiveOperationException {
+        return ((Map<?, ?>)field(Bindings.LatentRuntimeActivation.class, "owners").get(null)).size();
+    }
+    private static void managedStartRollback() throws Exception {
+        Map<?, ?> threads = (Map<?, ?>)get("threads");
+        int original = owners();
+        var failure = new IllegalThreadStateException("source-start-rejected");
+        Thread rejected = new Thread() { @Override public void start() { throw failure; } };
+        for (int attempt = 0; attempt < 2; attempt++) {
+            try { Activation.startManaged(rejected); throw new AssertionError("rejected-start-succeeded"); }
+            catch (IllegalThreadStateException error) { require(error == failure, "original-start-error-preserved"); }
+            require(!threads.containsKey(rejected) && owners() == original, "unaccepted-start-rolled-back");
+        }
+        Thread uncertain = new Thread() { @Override public void start() { Activation.starting(this); throw failure; } };
+        try { Activation.startManaged(uncertain); throw new AssertionError("uncertain-start-succeeded"); }
+        catch (IllegalThreadStateException error) { require(error == failure, "uncertain-start-original-error"); }
+        require(threads.containsKey(uncertain) && owners() == original + 1, "accepted-start-keeps-physical-owner");
+        Activation.finished(uncertain);
+        require(owners() == original, "explicit-source-owner-settlement");
+
+        Bindings.LatentRuntimeActivation.denySettle = true;
+        try { Activation.startManaged(rejected); throw new AssertionError("rollback-denial-succeeded"); }
+        catch (IllegalStateException error) { require(error.getCause() == failure, "rollback-denial-preserves-start-cause"); }
+        finally { Bindings.LatentRuntimeActivation.denySettle = false; }
+        require(threads.containsKey(rejected) && owners() == original + 1, "failed-rollback-retains-original-owner");
+        Activation.finished(rejected);
+        require(owners() == original, "failed-rollback-explicit-source-settlement");
+    }
     public static void main(String[] arguments) throws Exception {
         set("entered", true); set("root", work(Thread.currentThread()));
         long deadline = Activation.monotonicMillis() + 200;
@@ -82,6 +110,7 @@ public final class TimerReadinessSourceControl {
         pair(100); int waits = Bindings.LatentRuntimeActivation.waits; Activation.waitFor(1); Activation.waitFor(-1);
         require(Bindings.LatentRuntimeActivation.waits == waits + 2 && Bindings.LatentRuntimeActivation.timers() == 0, "unmatched-and-indefinite-waits-stay-charged");
         require(Monitors.absoluteSleepDeadline(Long.MAX_VALUE - 1, 2) == Long.MAX_VALUE, "pure-saturation-preserved");
-        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback");
+        managedStartRollback();
+        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback");
     }
 }

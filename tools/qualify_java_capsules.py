@@ -21,6 +21,9 @@ from tools.java_capsule_build import build
 from tools.java_capsule_project import create
 from tools.java_server_project import create_server
 from tools.java_server_node import run as server_workflow
+from tools.java_standard_http_project import project as standard_http_project
+from tools.java_standard_http_node import run as standard_http_workflow
+from tools.java_standard_http_library import qualify as standard_library_workflow
 from tools.phase3_resource_identity import file_identity, inventory, source_identity
 from tools.qualify_rust_capsules import HELPERS, guide
 from tools.run_rust_capsule_workflow import run as node_workflow
@@ -31,7 +34,13 @@ JAVA_HELPERS = (*HELPERS, "java_capsule.py", "java_capsule_project.py", "java_ca
     "qualify_java_capsules.py", "qualify_java_bridge.py", "build_java_guest_capsules.py", "browser_response_ownership.py",
     "java_guest/compiler.py", "java_guest/bindings.py", "java_guest/model.py", "java_guest/java.py",
     "java_guest/c.py", "java_guest/lock.py", "java_guest/surface.py", "guest_runtime_grants.py", "guest_runtime_profiles.py",
-    "build_snapshot.py", "../.cargo/managed-guest.toml", "../contracts/http/browser-response-ownership-v1.json", "java_server_project.py", "java_server_source.py", "java_server_node.py", "server_source.py", "server_routes.py", "server_capsule.py")
+    "java_guest/facilities.py", "qualify_java_entropy.py", "qualify_java_logging.py",
+    "build_snapshot.py", "../.cargo/managed-guest.toml", "../contracts/http/browser-response-ownership-v1.json", "java_server_project.py", "java_server_source.py", "java_server_node.py", "server_source.py", "server_routes.py", "server_capsule.py",
+    "java_standard_http_project.py", "java_standard_http_node.py", "java_standard_http_peer.py",
+    "standard_http/peer.py", "standard_http/protocol.py", "standard_http/vectors.py", "standard_http/observations.py",
+    "static_api/node.py",
+    "../examples/java-standard-http/Capsule.java", "../examples/java-standard-http/world.wit",
+    "java_standard_http_library.py", "../examples/java-http-request/Capsule.java")
 
 
 def inputs():
@@ -116,6 +125,17 @@ def qualify(output: Path, wasi_sdk: Path):
             "--", "--ignored", "--test-threads=1")
         stage = "sign-demo"
         commands.run(stage, binaries["examples/capsule_authoring"], "demo-sign", output / "releases", *built)
+        stage = 'ordinary-standard-http'
+        standard_project = standard_http_project(output/'projects/standard-http')
+        standard_artifact = build(standard_project, output/'builds/standard-http', binaries['examples/capsule_contracts'],
+            binaries['examples/package'], 'https://github.com/KirilsTurkins/latent-service-fabric', wasi_sdk,
+            timeout=min(900, commands.deadline-time.monotonic()))
+        result['standardHttp'] = standard_http_workflow(standard_artifact, {
+            'latent': binaries['latent'], 'latentd': binaries['latentd'],
+            'capsule_authoring': binaries['examples/capsule_authoring']}, output/'standard-http-node', deadline=commands.deadline)
+        stage = 'unchanged-default-http-client'
+        result['standardHttpLibrary'] = standard_library_workflow(commands, binaries, wasi_sdk,
+            output/'standard-http-library')
         stage = "enforced-node"
         result["node"] = node_workflow(binaries["latent"], binaries["latentd"], output / "releases", output / "node", language="java")
         stage = "printed-guide"

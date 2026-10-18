@@ -1,0 +1,278 @@
+{
+  "schemaVersion": "lsf.java.server.current-qualification-summary.v1",
+  "date": "2026-10-15",
+  "toolingSourceHead": "dd86b0f1918874d1420da96fd0a2ca1408a0a816",
+  "sourceArchive": {
+    "sha256": "sha256:c60ae896774f2fa01cf4134d39769d4a16840aa3550ba01e0296a1483fa88dfd",
+    "bytes": 584335360
+  },
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:4b4cc872d422c34bbf083f498f7a1b1fc8b81f0d3a1ef71b29be9d5d791465fc",
+      "bytes": 1494
+    },
+    "sourceHead": "a49bbf172e08c13ed7bd5588e2323064652f9366",
+    "sourceTree": "5696ad304208a902ed115f27120609fc8d4f9f04",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.6"
+  },
+  "nativeProducts": {
+    "latent": {
+      "sha256": "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+      "bytes": 69976672,
+      "actualFeatures": []
+    },
+    "latentd": {
+      "sha256": "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+      "bytes": 182386208,
+      "actualFeatures": []
+    },
+    "package": {
+      "sha256": "sha256:c361aad3ed1aa9371e6acd657368ab216a72a66aa5fecba8b0f5d3169291940f",
+      "bytes": 19100192,
+      "actualFeatures": []
+    },
+    "capsule_contracts": {
+      "sha256": "sha256:60e42c99f6286ed4e6254a05156963c2e50e543414e9fa5f108eede7bb4e397e",
+      "bytes": 7967376,
+      "actualFeatures": []
+    },
+    "capsule_authoring": {
+      "sha256": "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+      "bytes": 24994784,
+      "actualFeatures": []
+    }
+  },
+  "environment": {
+    "platform": "linux-x86_64",
+    "java": "25.0.4.1+1",
+    "teavm": "0.15.0",
+    "gradle": "9.1.0",
+    "wasiSdk": "29.0"
+  },
+  "sourceControls": {
+    "routeAndLifecycleCases": 41,
+    "skips": 0,
+    "retainedRouteCases": 24,
+    "addedRemovalCases": 3
+  },
+  "referenceControls": {
+    "kernelCases": 16,
+    "astCases": 15,
+    "jdkReferenceCases": 7,
+    "receipt": {
+      "sha256": "sha256:51f55ea7e9520465c5c89890740e2095a0fab562da77015e8f3c28afe1c46460",
+      "bytes": 3960
+    }
+  },
+  "qualificationReceipt": {
+    "sha256": "sha256:22615f60b22d50abeabda0e0ff2f06cfa03a9e8f8aa132b6251130e3356d8a07",
+    "bytes": 257630
+  },
+  "suiteReceipt": {
+    "sha256": "sha256:9ba847ec1ec04a111c64888888ebac78dac44d0c44d513b5d84560c9f6b72b68",
+    "bytes": 1661
+  },
+  "lanes": {
+    "baseline": {
+      "componentDigest": "sha256:bc878168a2a1ff450a197fedf1d5fe6e4dc1b3393488627fe2a085e83eec535a",
+      "sourceSnapshotDigest": "sha256:a0085c67b81da763b2ed0fa0ac4713ae776fd883ee31222803257c1f6d2417e9",
+      "profile": "lsf.java.httpserver.buffered.v1",
+      "httpObservations": 52,
+      "inputs": {
+        "cli": {
+          "sha256": "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+          "bytes": 69976672
+        },
+        "node": {
+          "sha256": "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+          "bytes": 182386208
+        },
+        "workflow": {
+          "sha256": "sha256:c946ddd0fa29c63fa632de8877d81a33b089f0079bcd225561e2154fdbe78be2",
+          "bytes": 29884
+        },
+        "declaration": {
+          "sha256": "sha256:6b4237fca063b1b4f9d8a539dccfc4e5236dbeea3299245fe2e9f4cca8f32eb4",
+          "bytes": 2285
+        },
+        "profile": {
+          "sha256": "sha256:5a68ccdfa5f4a0c98111a72adaa430883d995352085ab960cb525245f137a6ce",
+          "bytes": 2310
+        },
+        "sourceInputs": {
+          "sha256": "sha256:a0085c67b81da763b2ed0fa0ac4713ae776fd883ee31222803257c1f6d2417e9",
+          "bytes": 25220
+        },
+        "component": {
+          "sha256": "sha256:bc878168a2a1ff450a197fedf1d5fe6e4dc1b3393488627fe2a085e83eec535a",
+          "bytes": 1918178
+        },
+        "tlsFixtureTool": {
+          "sha256": "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+          "bytes": 24994784
+        }
+      },
+      "inputsUnchanged": true,
+      "sampledOwnerCounts": {
+        "execution-cell-leases": "0",
+        "guest-cancellation-probes": "0",
+        "guest-component-instances": "0",
+        "guest-host-states": "0",
+        "guest-invocations": "0",
+        "guest-stores": "0",
+        "guest-value-buffers": "0",
+        "http-buffer-reservations": "0",
+        "http-exchanges": "0",
+        "invocation-cleanup-slots": "0",
+        "prepared-instance-reservations": "0",
+        "resident-service-listeners": "0",
+        "resident-service-processes": "0",
+        "resident-service-threads": "0"
+      },
+      "topologyComplete": false,
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "cells": [
+        {
+          "active": 0,
+          "available": 1,
+          "total": 1,
+          "quarantined": 0,
+          "observationAvailable": true
+        }
+      ],
+      "shutdown": {
+        "reaped": true,
+        "clean": true,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "activeBackendInvocations": 0,
+        "quarantinedCells": 0,
+        "httpListenerAlive": false,
+        "httpOwnerJoined": true,
+        "providerClean": true,
+        "compilerWorkersJoined": 1
+      }
+    },
+    "lifecycle": {
+      "componentDigest": "sha256:f373a8910f87713bf9e17d2d5fbf93114dbbef6c214b5f25257b80e59c4713b8",
+      "sourceSnapshotDigest": "sha256:b65322764085e26dfaf4f358db2d4fa6d964458d070fbe9739fc5e21f39588a3",
+      "profile": "lsf.java.httpserver.buffered.v1",
+      "httpObservations": 18,
+      "inputs": {
+        "cli": {
+          "sha256": "sha256:ac19f6be5cfd9b86f8d23d7d40f65c3639142c300a90b33057e1d6996950ea38",
+          "bytes": 69976672
+        },
+        "node": {
+          "sha256": "sha256:4385396881bc30a4906c888b601feb20ee01f89430f34f573a6076d14e728980",
+          "bytes": 182386208
+        },
+        "workflow": {
+          "sha256": "sha256:c946ddd0fa29c63fa632de8877d81a33b089f0079bcd225561e2154fdbe78be2",
+          "bytes": 29884
+        },
+        "declaration": {
+          "sha256": "sha256:00482dc7cd2709f98e146028600342ccb36777f613e7254854339b6367a9378b",
+          "bytes": 3243
+        },
+        "profile": {
+          "sha256": "sha256:5a68ccdfa5f4a0c98111a72adaa430883d995352085ab960cb525245f137a6ce",
+          "bytes": 2310
+        },
+        "sourceInputs": {
+          "sha256": "sha256:b65322764085e26dfaf4f358db2d4fa6d964458d070fbe9739fc5e21f39588a3",
+          "bytes": 25369
+        },
+        "component": {
+          "sha256": "sha256:f373a8910f87713bf9e17d2d5fbf93114dbbef6c214b5f25257b80e59c4713b8",
+          "bytes": 2430704
+        },
+        "tlsFixtureTool": {
+          "sha256": "sha256:be736d231ab7b09ae6fb8324d05cb5b17ea7ceea7c49401b84a7c2ac24459b74",
+          "bytes": 24994784
+        }
+      },
+      "inputsUnchanged": true,
+      "sampledOwnerCounts": {
+        "execution-cell-leases": "0",
+        "guest-cancellation-probes": "0",
+        "guest-component-instances": "0",
+        "guest-host-states": "0",
+        "guest-invocations": "0",
+        "guest-stores": "0",
+        "guest-value-buffers": "0",
+        "http-buffer-reservations": "0",
+        "http-exchanges": "0",
+        "invocation-cleanup-slots": "0",
+        "prepared-instance-reservations": "0",
+        "resident-service-listeners": "0",
+        "resident-service-processes": "0",
+        "resident-service-threads": "0"
+      },
+      "topologyComplete": false,
+      "quotaUsage": {
+        "activeActivations": 0,
+        "queuedActivations": 0,
+        "reservedCpuFuel": "0",
+        "reservedMemoryBytes": "0"
+      },
+      "cells": [
+        {
+          "active": 0,
+          "available": 1,
+          "total": 1,
+          "quarantined": 0,
+          "observationAvailable": true
+        }
+      ],
+      "shutdown": {
+        "reaped": true,
+        "clean": true,
+        "liveStores": 0,
+        "liveHostStates": 0,
+        "liveInstances": 0,
+        "liveTemporaryBuffers": 0,
+        "activeBackendInvocations": 0,
+        "quarantinedCells": 0,
+        "httpListenerAlive": false,
+        "httpOwnerJoined": true,
+        "providerClean": true,
+        "compilerWorkersJoined": 1
+      },
+      "cases": [
+        "tampered-declarations-retain-real-last-good-ingress",
+        "second-real-source-publication",
+        "ordinary-client-gate-response-without-redeployment",
+        "real-inflight-revision-remains-pinned-across-redeployment",
+        "real-redeployment-pins-new-publication",
+        "rollback-requires-explicit-old-publication-redeployment",
+        "authenticated-explicit-rollback-fresh-generation",
+        "competing-publication-denied-without-overwrite",
+        "ordinary-static-state-is-fresh-per-invocation",
+        "actual-client-disconnect-retires-original-http-owner",
+        "original-one-billion-fuel-ceiling-with-fresh-reuse",
+        "narrower-root-deadline-closes-original-peer"
+      ],
+      "directSyntheticHttpRpcUsed": false
+    }
+  },
+  "authority": "none",
+  "hostedCi": "pending",
+  "closesIssues": [],
+  "remaining": [
+    "Current-head hosted CI and merge",
+    "Clean installed frontend/server authoring workflow for #728",
+    "Successful cross-tenant application execution is not asserted by foreign-route denials",
+    "Executor-enabled server lifecycle remains a separate unqualified profile"
+  ],
+  "scope": "ordinary-source listener-free buffered Java server and shared route tooling; no release approval"
+}

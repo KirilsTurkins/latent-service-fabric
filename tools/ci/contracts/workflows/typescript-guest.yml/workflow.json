@@ -1,6 +1,20 @@
 {
   "kind": "workflow",
   "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "typescript-guest-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
     "name": "TypeScript guest qualification",
     "on": {
       "pull_request": {
@@ -20,13 +34,23 @@
           "tools/typescript_capsule.py",
           "tools/typescript*dependencies.py",
           "tools/typescript_dependency_authoring.py",
+          "tools/npm_lock_authoring.py",
           "tools/tests/test_typescript_dependency_authoring.py",
+          "tools/tests/test_npm_lock_authoring.py",
           "tools/guest_authoring_frontend.py",
           "tools/typescript_dependency_fixture.py",
           "tools/application_dependenc*.py",
           "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
+          "tools/build_typescript_promise_library.py",
+          "tools/build_typescript_native_engine.py",
+          "tools/build_typescript_source_splicer.py",
+          "tools/tests/test_typescript_splicer_build.py",
+          "tools/tests/test_typescript_native_build.py",
+          "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
+          "tools/qualify_typescript_dependencies.py",
+          "tools/tests/test_typescript_application_dependencies.py",
           "tools/*rust_capsule*.py",
           "crates/latent-wasmtime/tests/**",
           "crates/latent-signing/**",
@@ -34,6 +58,7 @@
           "apps/latentd/**",
           ".cargo/managed-guest.toml",
           "docs/component-development/typescript-authoring.md",
+          "docs/component-development/typescript-dependencies.md",
           "examples/typescript-capsules/**",
           "wit/platform/**",
           "tools/toolchain.toml",
@@ -61,13 +86,23 @@
           "tools/typescript_capsule.py",
           "tools/typescript*dependencies.py",
           "tools/typescript_dependency_authoring.py",
+          "tools/npm_lock_authoring.py",
           "tools/tests/test_typescript_dependency_authoring.py",
+          "tools/tests/test_npm_lock_authoring.py",
           "tools/guest_authoring_frontend.py",
           "tools/typescript_dependency_fixture.py",
           "tools/application_dependenc*.py",
           "tools/captured_compiler_isolation.py",
           "tools/build_typescript_guest_capsules.py",
+          "tools/build_typescript_promise_library.py",
+          "tools/build_typescript_native_engine.py",
+          "tools/build_typescript_source_splicer.py",
+          "tools/tests/test_typescript_splicer_build.py",
+          "tools/tests/test_typescript_native_build.py",
+          "tools/tests/test_typescript_promise_library.py",
           "tools/qualify_typescript_capsules.py",
+          "tools/qualify_typescript_dependencies.py",
+          "tools/tests/test_typescript_application_dependencies.py",
           "tools/*rust_capsule*.py",
           "crates/latent-wasmtime/tests/**",
           "crates/latent-signing/**",
@@ -75,6 +110,7 @@
           "apps/latentd/**",
           ".cargo/managed-guest.toml",
           "docs/component-development/typescript-authoring.md",
+          "docs/component-development/typescript-dependencies.md",
           "examples/typescript-capsules/**",
           "wit/platform/**",
           "tools/toolchain.toml",
@@ -86,26 +122,14 @@
     },
     "permissions": {
       "contents": "read"
-    },
-    "concurrency": {
-      "group": "typescript-guest-${{ github.ref }}",
-      "cancel-in-progress": true
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
-    "boundary"
+    "boundary",
+    "promise-library",
+    "source-splicer"
   ],
-  "reviewReason": "Keep all exact historical baseline/before/coverage and case/guard obligations while reconciling current actual compiler/dependency/transaction/native owners. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows. Incoming reviewed obligation: Preserve current actual workflow triggers, permissions, guards and job ownership after the reviewed source merge. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows. Reconcile current native namespace management prerequisites with original affine state, real currentness clock and capability-session source; preserve all commands, cases, skip/decorator guards, historical mappings, matrices and deadlines. Reconcile exact development812b management and compiler prerequisites; preserve both parent case/decorator/skip inventories, all raw commands, matrices, deadlines and supported SDK regressions. Preserve all captured-library, approval, namespace and transaction compiler obligations, original job/step guards and both evidence directories while reconciling the reviewed current development workflows.",
+  "reviewReason": "Preserve both npm lifecycle and reviewed source-owned compiler workflow obligations during development integration.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/typescript-guest.yml"
 }

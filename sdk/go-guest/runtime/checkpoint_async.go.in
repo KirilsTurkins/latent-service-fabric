@@ -1,0 +1,8 @@
+//go:linkname lsfActivationYield runtime.lsfActivationYield
+func lsfActivationYield() {
+	// Each caller parks before a second queue entry is possible. The original
+	// task admission bounds the entire queue; it cannot accumulate callbacks.
+	channel := make(chan unit)
+	state.yielding = append(state.yielding, channel)
+	(<-channel)
+}

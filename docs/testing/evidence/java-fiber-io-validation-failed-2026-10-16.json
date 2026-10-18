@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "latent.java.fiber-io.validation-observation.v1",
+  "date": "2026-10-16",
+  "status": "original-validation-failure-reproduced",
+  "pullRequest": 1032,
+  "sourceHead": "0057c9c19b1cf9e90d1b4c8c5bcd4056108280cf",
+  "testedMerge": "e7f24de6fa6a590378f7bd5b9f656fb08ade2e15",
+  "workflowRun": 38845063114,
+  "job": 116793608805,
+  "artifact": 12025674161,
+  "component": {
+    "digest": "sha256:f1095d834cacdcd8174831ebe7c2c00358c295c9528d44a5e5ef2b994e6f17ac",
+    "bytes": 1108480
+  },
+  "validation": [
+    {
+      "features": [],
+      "exitCode": 1,
+      "diagnostic": "error: async `subtask.cancel` requires the component model more async builtins feature (at offset 0x10d889)"
+    },
+    {
+      "features": [
+        "--features",
+        "cm-more-async-builtins"
+      ],
+      "exitCode": 0,
+      "diagnostic": ""
+    }
+  ],
+  "correction": "Enable only cm-more-async-builtins during explicit fiber_io_profile validation. All other Java profiles retain the original validator invocation.",
+  "runtimeBoundary": "Existing activation runtime configuration already selects wasm_component_model_more_async_builtins; no runtime engine or capability setting changed.",
+  "qualification": {
+    "nativeIoInvocations": 0,
+    "libraryInvocations": 0,
+    "runtimeQualified": false,
+    "freshSignedIoAndLibraryGates": "pending",
+    "publisherAuthenticated": false,
+    "releaseQualified": false
+  }
+}

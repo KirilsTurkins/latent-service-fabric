@@ -6,15 +6,18 @@ import re
 from tools import guest_compatibility as compatibility
 from tools import guest_compatibility_context as context
 from tools.dev_workflow import node_diagnostics
-from tools.dev_workflow.common import digest, encode, require, sha
+from tools.dev_workflow.common import decode, digest, encode, integer, members, require, sha
 
 SCHEMA = 'lsf.guest.compatibility.outcomes.v1'
+MAX_BYTES = node_diagnostics.MAX_BYTES
 ERROR_CODES = frozenset({'ok', 'cancelled', 'unknown', 'deadline-exceeded', 'unimplemented', 'internal',
     'unavailable', 'data-loss', 'out-of-range', 'resource-exhausted', 'invalid-argument', 'not-found',
     'already-exists', 'permission-denied', 'unauthenticated', 'failed-precondition', 'aborted',
     *node_diagnostics.TRAP_CODES})
 DIAGNOSTIC_FIELDS = frozenset({'stage', 'reason', 'profile', 'profile_digest', 'configured_bound',
     'calculated_requirement', 'fixed_bytes', 'lifting_fuel', 'lift_multiplier'})
+CAUSES = {5: 'missing-provider', 8: 'denied-grant', 10: 'resource-exhausted',
+          11: 'resource-exhausted', 12: 'resource-exhausted', 13: 'deadline', 14: 'deadline', 15: 'cancelled'}
 
 
 def from_build(source, descriptor, receipt):
@@ -101,14 +104,129 @@ def original(value):
     # code, trap, QueuePressure or success cannot identify a library operation.
     if observed['state'] == 'observed':
         reason = int(observed['fields']['reason'])
-        if reason in {5, 8, 10, 11, 13, 14, 15}:
-            projected['cause'] = {5: 'missing-provider', 8: 'denied-grant', 10: 'resource-exhausted',
-                11: 'resource-exhausted', 13: 'deadline', 14: 'deadline', 15: 'cancelled'}[reason]
+        projected['cause'] = CAUSES.get(reason, 'unknown')
         if reason in {10, 11}:
             projected['resourceDimension'] = {10: 'guest-memory', 11: 'fuel'}[reason]
     projected['libraryReachability'] = 'unknown'
     projected['physicalRetirement'] = 'unproven'
     return projected
+
+
+def validate(value, *, report=None, selected_context=None):
+    members(value, {'schemaVersion', 'frontendSourceDigest', 'componentDigest', 'contextState',
+        'cases', 'omittedCases', 'authority', 'libraryReachability', 'initialization', 'workerDrain',
+        'retrySafety', 'identity'}, {'contextIdentity', 'compatibilitySourceDigest', 'compatibilityReportIdentity'})
+    require(value['schemaVersion'] == SCHEMA, 'compatibility-outcomes-version')
+    for key in ('frontendSourceDigest', 'componentDigest', 'identity'):
+        sha(value[key])
+    require(isinstance(value['contextState'], str) and value['contextState'] in {'absent', 'invalid-present', 'observed'},
+            'compatibility-outcomes-context-state')
+    links = {'contextIdentity', 'compatibilitySourceDigest', 'compatibilityReportIdentity'}
+    require((links <= value.keys()) if value['contextState'] == 'observed' else not links & value.keys(),
+            'compatibility-outcomes-context-links')
+    for key in links & value.keys():
+        sha(value[key])
+    require((value['authority'], value['libraryReachability'], value['initialization'],
+             value['workerDrain'], value['retrySafety']) == ('none', 'unknown', 'unknown', 'unproven', 'unknown'),
+            'compatibility-outcomes-cannot-certify-support-or-retirement')
+    require(isinstance(value['cases'], list) and len(value['cases']) <= node_diagnostics.MAX_CASES,
+            'compatibility-outcomes-case-limit')
+    integer(value['omittedCases'], 0, 2**64 - 1)
+    for row in value['cases']:
+        members(row, {'case', 'errorCodeState', 'activationDiagnostic', 'cause', 'resourceDimension',
+            'libraryReachability', 'physicalRetirement', 'clientProcess'},
+            {'malformed', 'category', 'outcomeKnown', 'consumption', 'invalidConsumptionFields',
+             'guestTrapCode', 'trapDetailsUnavailable', 'admissionCurrentnessReason', 'errorCode', 'targetMatches'})
+        require(isinstance(row['case'], str)
+                and re.fullmatch('[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', row['case']) is not None,
+                'compatibility-outcomes-case-name')
+        require(isinstance(row['errorCodeState'], str) and row['errorCodeState'] in {'absent', 'invalid-present', 'observed'},
+                'compatibility-outcomes-error-state')
+        require(('errorCode' in row) == (row['errorCodeState'] == 'observed'), 'compatibility-outcomes-error-code')
+        if 'errorCode' in row:
+            require(isinstance(row['errorCode'], str) and row['errorCode'] in ERROR_CODES,
+                    'compatibility-outcomes-error-code')
+        observed = members(row['activationDiagnostic'], {'state'}, {'fields'})
+        require(isinstance(observed['state'], str) and observed['state'] in {'absent', 'invalid-present', 'observed'},
+                'compatibility-outcomes-diagnostic-state')
+        require(('fields' in observed) == (observed['state'] == 'observed'), 'compatibility-outcomes-diagnostic-fields')
+        if observed['state'] == 'observed':
+            require(diagnostic({'details': [{'kind': 'activation.diagnostic.v1', 'fields': observed['fields']}]}) == observed,
+                    'compatibility-outcomes-diagnostic-fields')
+        reason = int(observed['fields']['reason']) if observed['state'] == 'observed' else None
+        require(row['cause'] == CAUSES.get(reason, 'unknown')
+                and row['resourceDimension'] == {10: 'guest-memory', 11: 'fuel'}.get(reason, 'unknown'),
+                'compatibility-outcomes-cause-evidence')
+        require((row['libraryReachability'], row['physicalRetirement']) == ('unknown', 'unproven')
+                and isinstance(row['clientProcess'], str) and row['clientProcess'] in {'reaped', 'not-confirmed'},
+                'compatibility-outcomes-retirement-evidence')
+        for key in ('outcomeKnown', 'targetMatches'):
+            if key in row:
+                require(type(row[key]) is bool, 'compatibility-outcomes-boolean')
+        for key in ('malformed', 'trapDetailsUnavailable'):
+            if key in row:
+                require(row[key] is True, 'compatibility-outcomes-boolean')
+        if 'category' in row:
+            require(isinstance(row['category'], str) and row['category'] in node_diagnostics.CATEGORIES,
+                    'compatibility-outcomes-category')
+        if 'consumption' in row:
+            counters = members(row['consumption'], set(), set(node_diagnostics.U64_FIELDS + node_diagnostics.U32_FIELDS))
+            for name, number in counters.items():
+                bits = 64 if name in node_diagnostics.U64_FIELDS else 32
+                require(isinstance(number, str) and node_diagnostics._decimal(number, 64) == number and int(number) < 1 << bits,
+                        'compatibility-outcomes-consumption')
+        if 'invalidConsumptionFields' in row:
+            names = row['invalidConsumptionFields']
+            require(isinstance(names, list) and len(names) <= len(node_diagnostics.U64_FIELDS + node_diagnostics.U32_FIELDS)
+                    and all(isinstance(name, str)
+                    and name in node_diagnostics.U64_FIELDS + node_diagnostics.U32_FIELDS for name in names)
+                    and len(names) == len(set(names)) and not set(names) & row.get('consumption', {}).keys(),
+                    'compatibility-outcomes-invalid-consumption')
+        if 'guestTrapCode' in row:
+            require(isinstance(row['guestTrapCode'], str) and row['guestTrapCode'] in node_diagnostics.TRAP_CODES
+                    and row.get('errorCode') == 'guest-trap' and 'trapDetailsUnavailable' not in row,
+                    'compatibility-outcomes-trap-code')
+        if 'trapDetailsUnavailable' in row:
+            require(row.get('errorCode') == 'guest-trap', 'compatibility-outcomes-trap-code')
+        if 'admissionCurrentnessReason' in row:
+            require(isinstance(row['admissionCurrentnessReason'], str)
+                    and row['admissionCurrentnessReason'] in node_diagnostics.CURRENTNESS_REASONS
+                    and row.get('guestTrapCode') == 'guest-runtime-error', 'compatibility-outcomes-currentness')
+    require(len(encode(value)) <= MAX_BYTES
+            and digest(encode({key: item for key, item in value.items() if key != 'identity'})) == value['identity'],
+            'compatibility-outcomes-identity-or-size')
+    if report is not None:
+        compatibility.validate(report)
+        require(value['componentDigest'] == report['componentDigest'], 'compatibility-outcomes-stale-component')
+        if value['contextState'] == 'observed':
+            require(value['compatibilitySourceDigest'] == report['sourceDigest']
+                    and value['compatibilityReportIdentity'] == report['identity'], 'compatibility-outcomes-stale-report')
+    if selected_context is not None:
+        context.validate(selected_context, report=report, component=value['componentDigest'])
+        if value['contextState'] == 'observed':
+            require((value['contextIdentity'], value['compatibilitySourceDigest'], value['compatibilityReportIdentity']) ==
+                    (selected_context['identity'], selected_context['sourceDigest'], selected_context['compatibilityReportIdentity']),
+                    'compatibility-outcomes-stale-context')
+    return value
+
+
+def read(raw, **bindings):
+    return validate(decode(raw, MAX_BYTES), **bindings)
+
+
+def present(value):
+    validate(value)
+    lines = [f"Original invocation outcomes: {len(value['cases'])} retained; context {value['contextState']}."]
+    for row in value['cases']:
+        dimension = f" ({row['resourceDimension']})" if row['resourceDimension'] != 'unknown' else ''
+        code = row.get('errorCode', row['errorCodeState'])
+        lines.append(f"{row['case']}: cause {row['cause']}{dimension}; code {code}; client {row['clientProcess']}.")
+        if row.get('targetMatches') is False:
+            lines.append('Selected target differs from the original invocation result.')
+    if value['omittedCases']:
+        lines.append(f"Additional invocation observations omitted: {value['omittedCases']}.")
+    lines.append('Library reachability and initialization remain unknown; physical retirement is unproven. No retry right is inferred.')
+    return '\n'.join(lines) + '\n'
 
 
 class Capture:

@@ -14,6 +14,7 @@ from tools import (guest_compatibility_build, guest_resources, guest_dependency_
                    guest_authoring_frontend, java_http_client, java_server_source, server_source)
 from tools.java_capsule_project import validate
 from tools.java_guest.compiler import Compiler
+from tools.java_guest import compiler_diagnostics
 from tools.java_guest import resources as java_resources
 from tools.application_dependencies import prepare, verify_inputs
 from tools.application_dependency_approval import request as execution_request, approve as approve_execution
@@ -28,13 +29,16 @@ from tools.rust_capsule_project import (ROOT, checked_path, digest, fresh, inven
 
 BUILD_TYPE = "https://latent.dev/build/java-capsule/v1"
 ACTIVATION_PROFILE = "teavm-activation-fibers-v1"
+FIBER_IO_PROFILE = "teavm-activation-fibers-io-v1"
+ACTIVATION_PROFILES = frozenset((ACTIVATION_PROFILE, FIBER_IO_PROFILE))
 RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_capsule_build.py",
           "tools/application_dependencies.py", "tools/application_dependency_store.py",
           "tools/application_dependency_tools.py", "tools/java_application_dependencies.py", "tools/java_dependency_resolution.py",
           "tools/java_registry_tls.py",
           "tools/java_resource_artifacts.py", "tools/java_dependency_authoring.py", "tools/toolchain.toml",
           "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/class_origin.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
-          "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
+          "tools/java_guest/compiler_diagnostics.py",
+          "tools/java_guest/java.py", "tools/java_guest/c.py", "tools/java_guest/async_imports.py", "tools/java_guest/lock.py", "tools/java_guest/surface.py", "tools/rust_capsule_project.py",
           "tools/rust_capsule_build.py", "tools/build_observation.py", "tools/build_process.py",
           "tools/build_process_linux.py", "tools/build_process_windows.py", "tools/build_process_signals.py",
           "tools/build_snapshot.py", "tools/stage_runtime_wit.py", "examples/echo-contract/capsule.json",
@@ -49,6 +53,7 @@ RECIPE += java_server_source.RECIPE
 RECIPE += ("tools/java_generator_authoring.py",)
 RECIPE += java_http_client.RECIPE
 RECIPE += ("tools/application_dependency_approval.py", "tools/captured_compiler_isolation.py", "tools/java_annotation_processors.py")
+RECIPE += ("tools/java_guest/facilities.py",)
 
 
 def retain_logs(source: Path, output: Path) -> None:
@@ -68,7 +73,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
           runtime_profile: str | None = None, executable_approval: str | None = None) -> Path:
     if type(timeout) not in {int, float} or not 0 < timeout <= 900:
         raise ValueError("Java build deadline must be positive and at most 900 seconds")
-    if runtime_profile is not None and (type(runtime_profile) is not str or runtime_profile != ACTIVATION_PROFILE):
+    if runtime_profile is not None and (type(runtime_profile) is not str or runtime_profile not in ACTIVATION_PROFILES):
         raise ValueError("unsupported Java runtime profile")
     if offline_cache is not None and read_only_cache is not None:
         raise ValueError("Java dependency cache selections are mutually exclusive")
@@ -163,7 +168,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 write_json(output / "diagnostic-source.json", {
                     "capturedSource": str(temporary / "compiled/project/src/main/java"),
                     "requestedSource": str(project_path / "src")})
-                profile_selection = {"activation_profile": True} if runtime_profile == ACTIVATION_PROFILE else {}
+                profile_selection = {"activation_profile": True} if runtime_profile in ACTIVATION_PROFILES else {}
+                if runtime_profile == FIBER_IO_PROFILE: profile_selection['fiber_io_profile'] = True
                 if server_plan is not None:
                     profile_selection.update(server_profile=True, server_bridge=automatic_bridge)
                 if application_resources is not None:
@@ -181,7 +187,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 bindings_dir.mkdir()
                 for path in sorted((temporary / "compiled/bindings").iterdir()):
                     (bindings_dir / path.name).write_bytes(read_file(path))
-                if runtime_profile == ACTIVATION_PROFILE:
+                if runtime_profile in ACTIVATION_PROFILES:
                     for name in ("runtime-profile.json", "source-origins.json"):
                         (output / name).write_bytes(read_file(temporary / "compiled" / name))
                     recorded_profile = read_json(output / "runtime-profile.json")
@@ -258,7 +264,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     data = files['java-generated-inputs.json']
                     materials.append({"name": "java-generator-inputs",
                                       "digest": digest(data), "size": len(data)})
-                if runtime_profile == ACTIVATION_PROFILE:
+                if runtime_profile in ACTIVATION_PROFILES:
                     materials.extend({"name": name, "digest": digest(data), "size": len(data)} for name, data in (
                         ("java-runtime-profile", read_file(output / "runtime-profile.json")),
                         ("java-source-origins", read_file(output / "source-origins.json"))))
@@ -288,7 +294,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     "observationDigest": digest(read_file(output / "build-observation.json")), "sourceDigest": digest(source_inputs),
                     "componentDigest": digest(component), "sdkBindingDigest": generated["bindings"]["digest"],
                     "buildSeconds": round(time.monotonic() - start, 6), "commands": compiler.records + commands.records}
-                if runtime_profile == ACTIVATION_PROFILE:
+                if runtime_profile in ACTIVATION_PROFILES:
                     marker["javaRuntimeProfile"] = runtime_profile
                 write_json(output / "BUILD-COMPLETE.json", marker)
             finally:
@@ -299,4 +305,8 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             "reason": str(error) if isinstance(error, (ValueError, BuildProcessError)) else type(error).__name__,
             "commands": (compiler.records if compiler else []) + (commands.records if commands else [])})
         guest_compatibility_build.failure_report(output, "java", stage, files=files)
+        compiler_diagnostics.emit(output, stage,
+            expected_source=source_inputs if stage == 'compile' else None,
+            expected_compiler=compiler.compiler_inputs if compiler is not None else None,
+            expected_classpath=application_inventory if stage == 'compile' else None)
         raise

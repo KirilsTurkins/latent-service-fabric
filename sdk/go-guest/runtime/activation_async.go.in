@@ -1,0 +1,23 @@
+// Compiler-owned additions to the authenticated component async dispatcher.
+//go:linkname lsfActivationEnter runtime.lsfActivationEnter
+func lsfActivationEnter()
+//go:linkname lsfActivationLeave runtime.lsfActivationLeave
+func lsfActivationLeave()
+//go:linkname lsfCurrentOwner runtime.lsfCurrentOwner
+func lsfCurrentOwner() (uint64, uint64)
+
+//go:wasmimport latent:runtime/activation@0.1.0 [async-lower]wait-for
+//go:noescape
+func lsfWaitFor(ns int64, hasParent int32, generation, id int64, result unsafe.Pointer) uint32
+
+//go:linkname lsfActivationSleep runtime.lsfActivationSleep
+func lsfActivationSleep(ns int64) {
+	generation, id := lsfCurrentOwner()
+	pinner := runtime.Pinner{}
+	defer pinner.Unpin()
+	result := witRuntime.Allocate(&pinner, 2, 1)
+	SubtaskWait(lsfWaitFor(ns, 1, int64(generation), int64(id), result))
+	if *(*byte)(result) != 0 {
+		panic("LSF sleep cancelled or denied")
+	}
+}

@@ -176,10 +176,60 @@ jobs:
           cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service \
             runtime::signed_java_threads_spin_join_and_thread_local_use_real_activation_fibers -- \
             --ignored --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/java-activation-fibers/signed-runtime.log"
+      - name: Prepare Java fiber host imports against the original compiler closure
+        id: prepare-java-fiber-io
+        run: |
+          python3 tools/qualify_java_fibers.py --fixture fiber-io \
+            --output "$RUNNER_TEMP/java-fiber-io" \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Execute signed Java pending host imports and overlapping waits
+        id: signed-java-fiber-io
+        env:
+          LSF_GUEST_SDK_LANGUAGE: java
+          LSF_JAVA_FIBER_IO_FIXTURE: ${{ runner.temp }}/java-fiber-io
+        run: |
+          set -o pipefail
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service \
+            runtime::signed_java_host_imports_suspend_only_their_owned_callers -- \
+            --ignored --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/java-fiber-io/signed-runtime.log"
+      - name: Prepare unchanged standard Java timers with reference and ownership controls
+        id: prepare-java-standard-timers
+        run: |
+          python3 tools/qualify_java_fibers.py --fixture timers \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --output "$RUNNER_TEMP/java-standard-timers" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Execute signed recurring Java timers and physical worker retirement
+        id: signed-java-standard-timers
+        env:
+          LSF_GUEST_SDK_LANGUAGE: java
+          LSF_JAVA_TIMER_FIXTURE: ${{ runner.temp }}/java-standard-timers
+        run: |
+          set -o pipefail
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service \
+            runtime::signed_java_standard_timers_recur_cancel_and_drain_owned_workers -- \
+            --ignored --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/java-standard-timers/signed-runtime.log"
       - name: Qualify standalone Java projects, nine SDK components, signed node and printed guide
         run: |
           set -o pipefail
           python3 tools/qualify_java_capsules.py --output "$RUNNER_TEMP/java-capsule-authoring" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-capsule-authoring.log"
+      - name: Capture and compile unchanged published Java worker libraries
+        id: prepare-java-worker-libraries
+        run: |
+          python3 tools/qualify_java_fibers.py --fixture worker-libraries \
+            --output "$RUNNER_TEMP/java-worker-libraries" \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Execute signed published libraries with their default workers
+        id: signed-java-worker-libraries
+        env:
+          LSF_GUEST_SDK_LANGUAGE: java
+          LSF_JAVA_WORKER_LIBRARIES_FIXTURE: ${{ runner.temp }}/java-worker-libraries
+        run: |
+          set -o pipefail
+          cargo --config .cargo/managed-guest.toml test --locked -p latent-wasmtime --test local_service \
+            runtime::signed_java_published_libraries_use_unchanged_default_workers -- \
+            --ignored --exact --nocapture 2>&1 | tee "$RUNNER_TEMP/java-worker-libraries/signed-runtime.log"
       - name: Qualify separately signed typed Java domain through ordinary Java HTTP adapter
         run: |
           set -o pipefail
@@ -188,6 +238,15 @@ jobs:
         run: |
           set -o pipefail
           python3 tools/qualify_java_server_lifecycle_suite.py --output "$RUNNER_TEMP/java-server-lifecycle" --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-server-lifecycle.log"
+      - name: Qualify shared-node Java state and credentials in two admitted tenants
+        run: |
+          set -euo pipefail
+          python3 tools/qualify_java_server_tenants.py \
+            --output "$RUNNER_TEMP/java-server-tenants" \
+            --native-directory "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
+            --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-server-tenants.log"
       - name: Qualify exact-approved contained processors and signed generated Java source
         run: |
           set -euo pipefail
@@ -200,12 +259,35 @@ jobs:
             --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
             --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-annotation-processors.log"
+      - name: Qualify captured original JAR native and reflection compiler failures with a signed ordinary entry
+        run: |
+          set -euo pipefail
+          python3 tools/qualify_java_library_failures.py \
+            --output "$RUNNER_TEMP/java-library-failures" \
+            --native-directory "$RUNNER_TEMP/java-server-lifecycle/selected-native" \
+            --native-tuple "$RUNNER_TEMP/java-server-lifecycle/native/native-tuple.json" \
+            --read-only-cache "$RUNNER_TEMP/java-activation-fibers/compiler/gradle-home/caches/modules-2" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" 2>&1 | tee "$RUNNER_TEMP/java-library-failures.log"
       - name: Retain diagnostics, generated source and component candidates
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: java-guest-feasibility-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/java-library-failures.log
+            ${{ runner.temp }}/java-library-failures/qualification.json
+            ${{ runner.temp }}/java-library-failures/FAILED.json
+            ${{ runner.temp }}/java-library-failures/capture.json
+            ${{ runner.temp }}/java-library-failures/candidate.json
+            ${{ runner.temp }}/java-library-failures/logs/**
+            ${{ runner.temp }}/java-library-failures/native-method/*.json
+            ${{ runner.temp }}/java-library-failures/native-method/compiler-logs/**
+            ${{ runner.temp }}/java-library-failures/generic-reflection/*.json
+            ${{ runner.temp }}/java-library-failures/generic-reflection/compiler-logs/**
+            ${{ runner.temp }}/java-library-failures/ordinary/*.json
+            ${{ runner.temp }}/java-library-failures/ordinary/compiler-logs/**
+            ${{ runner.temp }}/java-library-failures/ordinary/component.wasm
+            ${{ runner.temp }}/java-library-failures/node/**/*.json
             ${{ runner.temp }}/java-annotation-processors.log
             ${{ runner.temp }}/java-annotation-processors/qualification.json
             ${{ runner.temp }}/java-annotation-processors/FAILED.json
@@ -241,6 +323,27 @@ jobs:
             ${{ runner.temp }}/java-server-lifecycle/build-*/logs/**
             ${{ runner.temp }}/java-server-lifecycle/build-*/component.wasm
             ${{ runner.temp }}/java-server-lifecycle/execution/**/*.json
+            ${{ runner.temp }}/java-server-tenants.log
+            ${{ runner.temp }}/java-server-tenants/qualification.json
+            ${{ runner.temp }}/java-server-tenants/signed/release-set.json
+            ${{ runner.temp }}/java-server-tenants/build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/java-server-tenants/build/BUILD-FAILED.json
+            ${{ runner.temp }}/java-server-tenants/build/source-inputs.json
+            ${{ runner.temp }}/java-server-tenants/build/recipe-inputs.json
+            ${{ runner.temp }}/java-server-tenants/build/server-source.json
+            ${{ runner.temp }}/java-server-tenants/build/server-profile.json
+            ${{ runner.temp }}/java-server-tenants/build/compiler-inputs.json
+            ${{ runner.temp }}/java-server-tenants/build/compiler-logs/**
+            ${{ runner.temp }}/java-server-tenants/build/logs/**
+            ${{ runner.temp }}/java-server-tenants/build/package-source.json
+            ${{ runner.temp }}/java-server-tenants/build/capsule.json
+            ${{ runner.temp }}/java-server-tenants/build/deployment.json
+            ${{ runner.temp }}/java-server-tenants/build/contracts.json
+            ${{ runner.temp }}/java-server-tenants/build/wit-lock.json
+            ${{ runner.temp }}/java-server-tenants/build/surface.json
+            ${{ runner.temp }}/java-server-tenants/build/component.wasm
+            ${{ runner.temp }}/java-server-tenants/logs/**
+            ${{ runner.temp }}/java-server-tenants/execution/**/*.json
             ${{ runner.temp }}/java-aggregate-encoding/vectors.log
             ${{ runner.temp }}/java-transaction-diagnostic-schemas.tar.gz
             ${{ runner.temp }}/java-aggregate-encoding/diagnostic-vectors.log
@@ -299,6 +402,12 @@ jobs:
             ${{ runner.temp }}/java-guest-bindings/compiler/*.command.json
             ${{ runner.temp }}/java-guest-bindings/compiler-inputs.json
             ${{ runner.temp }}/java-guest-bindings/runtime-probe.log
+            ${{ runner.temp }}/java-guest-bindings/standard-entropy-controls/controls.json
+            ${{ runner.temp }}/java-guest-bindings/standard-entropy-controls/reference-bindings/
+            ${{ runner.temp }}/java-guest-bindings/compiled/standard-entropy-profile.json
+            ${{ runner.temp }}/java-guest-bindings/standard-logging-controls/controls.json
+            ${{ runner.temp }}/java-guest-bindings/standard-logging-controls/reference-bindings/
+            ${{ runner.temp }}/java-guest-bindings/compiled/standard-logging-profile.json
             ${{ runner.temp }}/java-server-native/**
             ${{ runner.temp }}/java-guest-bindings/compiled/bindings/
             ${{ runner.temp }}/java-guest-bindings/compiled/component.wasm
@@ -311,6 +420,41 @@ jobs:
             ${{ runner.temp }}/java-activation-fibers/build/runtime-profile.json
             ${{ runner.temp }}/java-activation-fibers/build/component.wasm
             ${{ runner.temp }}/java-activation-fibers/signed-runtime.log
+            ${{ runner.temp }}/java-fiber-io/FIBERS-COMPILE.json
+            ${{ runner.temp }}/java-fiber-io/compiler-inputs.json
+            ${{ runner.temp }}/java-fiber-io/compiler/*.log
+            ${{ runner.temp }}/java-fiber-io/compiler/*.command.json
+            ${{ runner.temp }}/java-fiber-io/src/**
+            ${{ runner.temp }}/java-fiber-io/wit/**
+            ${{ runner.temp }}/java-fiber-io/build/runtime-profile.json
+            ${{ runner.temp }}/java-fiber-io/build/bindings/**
+            ${{ runner.temp }}/java-fiber-io/build/component.wasm
+            ${{ runner.temp }}/java-fiber-io/signed-runtime.log
+            ${{ runner.temp }}/java-worker-libraries/FIBERS-COMPILE.json
+            ${{ runner.temp }}/java-worker-libraries/compiler-inputs.json
+            ${{ runner.temp }}/java-worker-libraries/compiler/*.log
+            ${{ runner.temp }}/java-worker-libraries/compiler/*.command.json
+            ${{ runner.temp }}/java-worker-libraries/src/**
+            ${{ runner.temp }}/java-worker-libraries/wit/**
+            ${{ runner.temp }}/java-worker-libraries/build/runtime-profile.json
+            ${{ runner.temp }}/java-worker-libraries/build/bindings/**
+            ${{ runner.temp }}/java-worker-libraries/build/component.wasm
+            ${{ runner.temp }}/java-worker-libraries/library-inputs/candidate.json
+            ${{ runner.temp }}/java-worker-libraries/library-inputs/receipts/*.json
+            ${{ runner.temp }}/java-worker-libraries/library-inputs/application/java-dependencies.json
+            ${{ runner.temp }}/java-worker-libraries/library-inputs/application/java-resolved.lock.json
+            ${{ runner.temp }}/java-worker-libraries/library-inputs/application/latent.dependencies*.json
+            ${{ runner.temp }}/java-worker-libraries/signed-runtime.log
+            ${{ runner.temp }}/java-standard-timers/FIBERS-COMPILE.json
+            ${{ runner.temp }}/java-standard-timers/compiler-inputs.json
+            ${{ runner.temp }}/java-standard-timers/compiler/*.log
+            ${{ runner.temp }}/java-standard-timers/compiler/*.command.json
+            ${{ runner.temp }}/java-standard-timers/src/**
+            ${{ runner.temp }}/java-standard-timers/wit/**
+            ${{ runner.temp }}/java-standard-timers/build/runtime-profile.json
+            ${{ runner.temp }}/java-standard-timers/build/component.wasm
+            ${{ runner.temp }}/java-standard-timers/build/core.wasm
+            ${{ runner.temp }}/java-standard-timers/signed-runtime.log
             ${{ runner.temp }}/java-capsule-authoring.log
             ${{ runner.temp }}/java-http-composition.log
             ${{ runner.temp }}/java-http-composition/**/*.json
@@ -329,6 +473,15 @@ jobs:
             ${{ runner.temp }}/java-capsule-authoring/*.json
             ${{ runner.temp }}/java-capsule-authoring/logs/**
             ${{ runner.temp }}/java-capsule-authoring/builds/**
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/**/*.json
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/build/**
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/provider/**
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-acquisition/*.log
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-acquisition/*.command.json
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-library/compiler-build/component.wasm
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-node/FAILED.json
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-node/controls/*.json
+            ${{ runner.temp }}/java-capsule-authoring/standard-http-node/after-*.json
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/*.json
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/logs/**
             ${{ runner.temp }}/java-capsule-authoring/sdk-guests/java-*/*.json
@@ -347,3 +500,100 @@ jobs:
             ${{ runner.temp }}/java-capsule-authoring/guide/projects/results/**
           if-no-files-found: warn
           retention-days: 14
+
+  dependency-ingestion:
+    name: Captured Java dependency native programme (${{ matrix.mode }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [private, recovery]
+    env:
+      PYTHONDONTWRITEBYTECODE: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13.5'
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '25.0.4+101.0.LTS'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - uses: bytecodealliance/actions/wasm-tools/setup@9152e710e9f7182e4c29ad218e4f335a7b203613 # v1
+        with:
+          version: 1.254.0
+      - name: Prepare pinned native Java tools and compiler namespaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -m unittest tools.tests.test_java_dependency_suite
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap protobuf-compiler pkg-config libssl-dev
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          curl --fail --location --retry 3 --max-time 180 \
+            https://services.gradle.org/distributions/gradle-9.1.0-bin.zip \
+            -o "$RUNNER_TEMP/dependency-gradle.zip"
+          echo "a17ddd85a26b6a7f5ddb71ff8b05fc5104c0202c6e64782429790c933686c806  $RUNNER_TEMP/dependency-gradle.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/dependency-gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.1.0/bin" >> "$GITHUB_PATH"
+          curl --fail --location --max-time 180 \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-29/wasi-sdk-29.0-x86_64-linux.tar.gz \
+            -o "$RUNNER_TEMP/dependency-wasi-sdk.tar.gz"
+          echo "87d1d1a2879d139cdc624b968efad3d4a97b8078cdff95e63ac88ecafd1a0171  $RUNNER_TEMP/dependency-wasi-sdk.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/dependency-wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
+          python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/dependency-bindgen"
+          echo "$RUNNER_TEMP/dependency-bindgen" >> "$GITHUB_PATH"
+      - name: Capture, compile offline and execute the selected real dependency programme
+        run: |
+          python3 tools/qualify_java_dependency_suite.py --mode "${{ matrix.mode }}" \
+            --output "$RUNNER_TEMP/java-dependency-${{ matrix.mode }}" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Retain bounded public source, compiler and execution observations
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: java-dependency-${{ matrix.mode }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/qualification.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/FAILED.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/source-inputs.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/source-inputs-after.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/compiler-inputs.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/compiler-cache-inputs.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/compiler-acquisition.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/compiler/*.log
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/native/native-tuple.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/capture.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/qualification.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/FAILED.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/PRIVATE-FAILED.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/private-acquisition.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/private-qualification.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/private-peer-observations.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/private-acquisition/logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/acquisition/logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/execution/logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/build/*.json
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/build/component.wasm
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/build/compiler-logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/build/logs/**
+            ${{ runner.temp }}/java-dependency-${{ matrix.mode }}/${{ matrix.mode }}/node/**/*.json
+          if-no-files-found: warn
+          retention-days: 7

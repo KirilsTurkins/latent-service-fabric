@@ -58,7 +58,7 @@ def selected_entries(payload: bytes, release: int) -> dict[str, bytes]:
 
 
 def per_jar_metadata(name: str) -> bool:
-    return (name == "META-INF/MANIFEST.MF" or name == "module-info.class"
+    return (name in {"META-INF/MANIFEST.MF", "META-INF/INDEX.LIST", "module-info.class"}
             or name.startswith("META-INF/") and name.endswith((".SF", ".RSA", ".DSA", ".EC"))
             or name.upper().startswith(("META-INF/LICENSE", "META-INF/NOTICE")))
 
@@ -89,7 +89,7 @@ def classpath(closure: Closure | None, destination: Path, *, release: int = 25) 
         original = read_bytes(closure.work / item["mount"])
         selected = selected_entries(original, release)
         for name, data in selected.items():
-            # Signature/manifest/module metadata identifies its own JAR rather
+            # Signature/manifest/index/module metadata identifies its own JAR rather
             # than an application classpath lookup; retain in each artifact.
             per_jar = per_jar_metadata(name)
             if not per_jar:
