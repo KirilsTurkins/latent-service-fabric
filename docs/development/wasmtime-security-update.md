@@ -1,8 +1,36 @@
-# Wasmtime 47.0.4 security baseline
+# Wasmtime security baseline
+
+## October 18, 2026: release patch backport
+
+The maintained runtime and isolated compiler now select Wasmtime **48.0.6**,
+matching Cranelift **0.135.6** and its internal Wasm/WIT tools **0.254.2**.
+The release workspace's separate Wasm parser/encoder **0.259.0** stays unchanged.
+The four existing rustls consumers select **0.23.46** with the same features.
+
+This addresses the patched-version ranges for the fourteen Wasmtime and four
+rustls findings observed on the release lock by the October 18 RustSec job.
+The [bounded advisory and lock review](release-rust-security-2026-10-18.json)
+binds all eighteen advisory documents to RustSec database
+`999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b`, and records the before/after locks.
+The last eleven Wasmtime findings require 48.0.6; 48.0.4 is insufficient.
+See the pinned primary sources for
+[Wasmtime](https://github.com/RustSec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0364.md)
+and [rustls](https://github.com/RustSec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/rustls/RUSTSEC-2026-0349.md).
+
+No engine feature, host interface, fuel, memory, table, lifecycle or authority
+setting changes. The runtime version, bounded-layout label, renderer hash input,
+active ABI metadata and native-loader guard advance together. Rebuild and deploy
+the runtime and isolated AOT compiler together, and re-prepare old native images;
+old receipts and artifacts do not qualify the new engine.
+
+This is a source and advisory-range review, not a local cargo-audit or runtime
+execution result. Hosted RustSec, Rust checks/tests, MSRV, TLS and runtime/native
+qualification remain required before a release decision. The independent npm
+backport and the inherited Go, NuGet and Maven findings remain separate.
 
 ## September 29, 2026: Wasmtime 48.0.3 security baseline
 
-The maintained runtime and isolated compiler select Wasmtime **48.0.3**, with
+For that update, the runtime and isolated compiler selected Wasmtime **48.0.3**, with
 matching Cranelift **0.135.3** internals. The default compiler remains Rust
 **1.97.1**; the minimum supported Rust version becomes **1.95.0**, as required
 by Wasmtime 48. Both the manifest and minimum-version CI lane change together.

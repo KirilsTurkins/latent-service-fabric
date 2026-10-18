@@ -1,0 +1,637 @@
+{
+  "schemaVersion": "latent.release-rust-security-review.v1",
+  "reviewedAt": "2026-10-18",
+  "releaseBase": "0ad80497604b2815487e4e5c870aa8fa1f1a0a61",
+  "policyDependency": {
+    "pullRequest": 1064,
+    "commit": "dcc0eb99141fa5e7867aed0183080730ec45b84c"
+  },
+  "observedFailure": {
+    "pullRequest": 1065,
+    "head": "b9ef54ba2af69d53707c107a602fabb7f915ad81",
+    "testedMerge": "85137c0861735c9bf268b92f810b267551eab535",
+    "job": 117790220689,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39166356953/job/117790220689"
+  },
+  "advisoryDatabase": "999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b",
+  "advisories": [
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0325",
+      "patched": [
+        ">= 48.0.4, < 49.0.0",
+        ">= 49.0.2"
+      ],
+      "unaffected": [
+        "< 47.0.0"
+      ],
+      "blob": "bad3a63f82a5c7cf8786ddfaed3ea0ee15746c31",
+      "sha256": "f5d5f6a2912116174edb0d1da1dfd0d379ccd4785ed48c472d9953fbfed6c8bf",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0325.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.4, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0326",
+      "patched": [
+        ">= 48.0.4, < 49.0.0",
+        ">= 49.0.2"
+      ],
+      "unaffected": [
+        "< 47.0.0"
+      ],
+      "blob": "963c4650e428d0c022f497fb16e1350929ac97d5",
+      "sha256": "ac7d0e402140816961d94825c88f5a5240845f0eee59fba7e953c8ffb62c8af9",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0326.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.4, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0327",
+      "patched": [
+        ">= 48.0.4, < 49.0.0",
+        ">= 49.0.2"
+      ],
+      "unaffected": [
+        "< 39.0.0"
+      ],
+      "blob": "c5cf86d5a746a546559aa168aed5aa77e7ca593b",
+      "sha256": "760cf4066ff8085480d973a889571b9f26401b80a92deac2f5a4f8e613cacee4",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0327.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.4, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0353",
+      "patched": [
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [
+        "< 46.0.0"
+      ],
+      "blob": "a454eaa25e3a85354ad1883b4d03f86d9184aa51",
+      "sha256": "4491e78276d9f6d8a77d71aea7520ce52da554f8c3e181f991f925976b692469",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0353.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0354",
+      "patched": [
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [
+        "< 46.0.0"
+      ],
+      "blob": "833a11125bb4464f13ab13242583b2437350ff9d",
+      "sha256": "8df076753ca5e9873096e205268ec6bb68b2963f2648cc5b11165a5edb2df945",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0354.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0355",
+      "patched": [
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [
+        "< 46.0.0"
+      ],
+      "blob": "a474f1bf4c5282aea1ad94f51da94ade53a59d81",
+      "sha256": "fbd9ffa8c6b3eecfd9fe7fd5e80b8631d0c22bc570b373870d55e70d88fe1450",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0355.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0356",
+      "patched": [
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [
+        "< 46.0.0"
+      ],
+      "blob": "e33011eb6a9d79fe3791f3084cdb772432a829df",
+      "sha256": "3549153c60da29686f91be5a2801cb37169a67304d939c131272e738b126e91b",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0356.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0357",
+      "patched": [
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [
+        "< 46.0.0"
+      ],
+      "blob": "e73358e49110234ee9539c2a7b0c45509e5fa0f4",
+      "sha256": "41518fb0f819c74c47084fcbf1446ec1c072b1204b511fc2b4d7861a19cb30d4",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0357.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0358",
+      "patched": [
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [
+        "< 46.0.0"
+      ],
+      "blob": "dd00cf3cc5e7d3acfeda37c1fd2e2fb145c6db06",
+      "sha256": "d6589cdb697acf1b684ccd9cb535a6d408a706803fc1e099848b980d9c1d51f6",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0358.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0359",
+      "patched": [
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [
+        "< 42.0.0"
+      ],
+      "blob": "388d06d6627e4aa32b7fbb557821ac42a5c7dfa5",
+      "sha256": "9cb6d69764749b8bf95a32c3f13b8caf2297689af13bc27bee9fb6e1bda6f4e1",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0359.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0361",
+      "patched": [
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [
+        "< 46.0.0"
+      ],
+      "blob": "9d06406b68e46bd42bcff2b74476929f1be934c9",
+      "sha256": "4a9ed54d9eefc07cc40bd561f7fe66c1f22f3fdfd1562442ee969f5779f00403",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0361.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0362",
+      "patched": [
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [
+        "< 42.0.0"
+      ],
+      "blob": "664ab5377dbe43bc9ebabf06df52e7129304a77f",
+      "sha256": "c8edff175df538c9c98a0ad2963349bbeee0776ea8b46d8f5c9b10b999c241a4",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0362.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0363",
+      "patched": [
+        ">= 36.0.18, < 37.0.0",
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [],
+      "blob": "b4a2e355490aa4ffc78eb5d2dd79d511dd39c8c0",
+      "sha256": "8af923d42a3a3b6593ebf1acbaa2d84582dba723d256e0e4827fb80684147e78",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0363.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "wasmtime",
+      "id": "RUSTSEC-2026-0364",
+      "patched": [
+        ">= 48.0.6, < 49.0.0",
+        ">= 49.0.3"
+      ],
+      "unaffected": [
+        "< 47.0.0"
+      ],
+      "blob": "c340400e588364bd95e08db8278c8fd1a52aeda1",
+      "sha256": "40f69a073c32562144f7740eb759878885577cca1dea27442d2a0a08a62b0a99",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/wasmtime/RUSTSEC-2026-0364.md",
+      "selectedVersion": "48.0.6",
+      "matchedPatchedRanges": [
+        ">= 48.0.6, < 49.0.0"
+      ]
+    },
+    {
+      "package": "rustls",
+      "id": "RUSTSEC-2026-0346",
+      "patched": [
+        ">= 0.23.46"
+      ],
+      "unaffected": [
+        "< 0.21.0"
+      ],
+      "blob": "e030a92694be16743fcca12b2cb734cc26a6f46b",
+      "sha256": "04933c9695fedb8b523c96723f0e193e2f8fd1c0f22945dc82904571967cb9bd",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/rustls/RUSTSEC-2026-0346.md",
+      "selectedVersion": "0.23.46",
+      "matchedPatchedRanges": [
+        ">= 0.23.46"
+      ]
+    },
+    {
+      "package": "rustls",
+      "id": "RUSTSEC-2026-0347",
+      "patched": [
+        ">= 0.23.46"
+      ],
+      "unaffected": [
+        "< 0.23.44"
+      ],
+      "blob": "7517259c3113c2eaabdb19ce0b4f425ad7ef4c14",
+      "sha256": "b1b31d99c76e17daae8211937a0c28197c68c2e573caeba5875e0fc769c548a8",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/rustls/RUSTSEC-2026-0347.md",
+      "selectedVersion": "0.23.46",
+      "matchedPatchedRanges": [
+        ">= 0.23.46"
+      ]
+    },
+    {
+      "package": "rustls",
+      "id": "RUSTSEC-2026-0348",
+      "patched": [
+        ">= 0.23.46"
+      ],
+      "unaffected": [
+        "< 0.23.9"
+      ],
+      "blob": "9f6475419f41a0164d75eb2938d0a102f469e4ba",
+      "sha256": "99ec103400ea094e34211303d4b87ec52893cd60560e5b192b328f570fb23555",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/rustls/RUSTSEC-2026-0348.md",
+      "selectedVersion": "0.23.46",
+      "matchedPatchedRanges": [
+        ">= 0.23.46"
+      ]
+    },
+    {
+      "package": "rustls",
+      "id": "RUSTSEC-2026-0349",
+      "patched": [
+        ">= 0.23.46"
+      ],
+      "unaffected": [],
+      "blob": "d6b07bc0543745a011ae92d4fa93efe12a3e78fe",
+      "sha256": "147d66906c11c601bdc4c47f26dc9e017340e310e86e177b34a8845453485876",
+      "url": "https://github.com/rustsec/advisory-db/blob/999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b/crates/rustls/RUSTSEC-2026-0349.md",
+      "selectedVersion": "0.23.46",
+      "matchedPatchedRanges": [
+        ">= 0.23.46"
+      ]
+    }
+  ],
+  "locks": [
+    {
+      "path": "Cargo.lock",
+      "beforeSha256": "241629dc0ad46799c29bc93456abab98c0f6c1b9ff71083c7c43c31052174319",
+      "afterSha256": "4ba3a9faa29552790a2631e95b2274bd5791a4fb7b67850ca3fb884dbb39eed5",
+      "packages": 438,
+      "selections": [
+        {
+          "name": "rustls",
+          "version": "0.23.46",
+          "checksum": "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf"
+        },
+        {
+          "name": "wasmtime",
+          "version": "48.0.6",
+          "checksum": "3a26206e1b2f1403d4d17c8fa7e736b693d7e9b1a7b9a5bf860e1c580472704d"
+        }
+      ]
+    },
+    {
+      "path": "tools/rust_capsule.lock",
+      "beforeSha256": "ab35feca672d68fae9daa5b398569b23a66eb460b50fce0d0a245ff07c850bae",
+      "afterSha256": "7f9ec99a93c0bd4a64db8f6cb5918d49d505ead82d1ccb2250ba8a741022f1c4",
+      "packages": 130,
+      "selections": [
+        {
+          "name": "wasmtime",
+          "version": "48.0.6",
+          "checksum": "3a26206e1b2f1403d4d17c8fa7e736b693d7e9b1a7b9a5bf860e1c580472704d"
+        }
+      ]
+    },
+    {
+      "path": "tools/native-fixture/Cargo.lock",
+      "beforeSha256": "5a3a0c94a65e69df322615f435e5678a4c6caa99cc20bf1e35f1631b6cc501c5",
+      "afterSha256": "5a3a0c94a65e69df322615f435e5678a4c6caa99cc20bf1e35f1631b6cc501c5",
+      "packages": 109,
+      "selections": []
+    }
+  ],
+  "patchRecordSource": "13a62ed814475ef60ca1749d023cddbd954d9a31",
+  "cohortRecordsPerLock": 33,
+  "cohort": [
+    {
+      "name": "cranelift-assembler-x64",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "9d620e7c8e86c48ff33f750fd49a2f3fa39529e6bfe59639dfdfcbf81329f737",
+      "afterChecksum": "9195e7cefae4f6c586ef4abace39e08a4cfbbde0839479f7075f0739db5ec108"
+    },
+    {
+      "name": "cranelift-assembler-x64-meta",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "75015effc364f66dfda9f45f3d78b5509957303258521143839adfd762eade60",
+      "afterChecksum": "f47195db7c0d11bb54fc4a03f94136344059121baad9e59dcf537cf007ed45f9"
+    },
+    {
+      "name": "cranelift-bforest",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "e18dd511b085013add81cd0b5381207451c791c93f8487c800ec71455287446e",
+      "afterChecksum": "23e38972e913f89b465f99d3a1add645d507ad8d2cb32b05161769330b72648c"
+    },
+    {
+      "name": "cranelift-bitset",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "a92f504aa9105998333f8416a7d32dac037313e2103649f91a143f383d445fee",
+      "afterChecksum": "d3352069928676bf94f502e352f4d879ba16dcd2fc413fddb9617d72eaf42127"
+    },
+    {
+      "name": "cranelift-codegen",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "f26f0f8551262c68d14cbb5c60e805394f38c7492f2a02c3a4592cef40b342e9",
+      "afterChecksum": "7332e689fc423e86b03617b071889a0e67089ed529b0cba1e22e2d630e120987"
+    },
+    {
+      "name": "cranelift-codegen-meta",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "6672eac6d00c944a01712109d376019ab46ff4c3b37bb3419fa350b25523b1ad",
+      "afterChecksum": "6dc7d4ec2d00466628fa9cb8197b7850771a2db0c16a902065c8513706a7ac18"
+    },
+    {
+      "name": "cranelift-codegen-shared",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "2f2bd3116e2cdef47a5755c484fa5feca18bd77ea7db418e492f72faaa7582f2",
+      "afterChecksum": "b08c970e27b123ff6764a525aa50dfd4a6e350022e8c27027d10b3dde5cc49fc"
+    },
+    {
+      "name": "cranelift-control",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "9706989f98e3f7f1b1bc16450089c0393b141f79701590f7bf830c3a531454a2",
+      "afterChecksum": "985a7c32c3a72fd8f44a8ead3211352c364ce509bf8b0b177184d7574f4e9397"
+    },
+    {
+      "name": "cranelift-entity",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "26094b0d1072871e07bcb4f53982744ee42657fb40c2175081a10d71f06f8546",
+      "afterChecksum": "ce7ae3678365a2fced842f320dd90760816d57e62dc41e65804c7a86ce16dff2"
+    },
+    {
+      "name": "cranelift-frontend",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "247fa35f45fd4477ca045e23f14b2aafe6bdbe9df3d754b1429e0587b356116b",
+      "afterChecksum": "21e84fb8be0b38d9d1c52831050957586e9b1140565f47dcbcf9a08d2d124940"
+    },
+    {
+      "name": "cranelift-isle",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "ad1e07f7c111564a5deda3ca9e4ac2f043f8e1fc844a62d3a3feb2be26b49274",
+      "afterChecksum": "8f295be6751bdae90f2ecdda3ecc5ef60192ac204ec2345ec1b924b9a6554ed4"
+    },
+    {
+      "name": "cranelift-native",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "4d0ee388c00a256fee3241f6c8d93e9b8b4175bac3a5527c1dc80169e047643e",
+      "afterChecksum": "b00de3571d1817908e3a6d0e04349400a360d336be8ad07ca0f7cb0beeb3c353"
+    },
+    {
+      "name": "cranelift-srcgen",
+      "before": "0.135.3",
+      "after": "0.135.6",
+      "beforeChecksum": "1f739117ccbeec70314433f304ced82abe89e75ff32ab676c2d7da661358af1e",
+      "afterChecksum": "ce1932d832b1d6c0fcb852d4b1fd1fe9930fc2e0cfa7d125a90ee3f86978310d"
+    },
+    {
+      "name": "pulley-interpreter",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "76169f68135d6e5b956787c0c20954b40ae30bf60c46dde8e887ee78c1bee63a",
+      "afterChecksum": "8da9e35352d5ed6636a3b18e2099f96cf00e9dcc707f7d9d599a64ec5fabcef7"
+    },
+    {
+      "name": "pulley-macros",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "be2b53c01b72bd94f0a2982f9ef503d5d547b4cace3d771fee05831379e7cac2",
+      "afterChecksum": "cf76d5588cc67bac2ba972c751d4f1b4545eebf2dea8117410dc7f450bae6c97"
+    },
+    {
+      "name": "wasm-encoder",
+      "before": "0.254.0",
+      "after": "0.254.2",
+      "beforeChecksum": "09480d646178e5fdd12bb06e812d0af9a3a191dbc9cd697fdc86687beade7393",
+      "afterChecksum": "ebaca0b540bdb15d195ff34fb23074255948708b8916a11a339ba4513dc61906"
+    },
+    {
+      "name": "wasm-metadata",
+      "before": "0.254.0",
+      "after": "0.254.2",
+      "beforeChecksum": "b01df5f3b4ca7881e843f3bc0fb8a3905d79c68692250dcb8e33e698705ccdb6",
+      "afterChecksum": "5d1880dd9a848aa68f387966256c34ad49abb4607e3cfa35720d2723d0591cd3"
+    },
+    {
+      "name": "wasmparser",
+      "before": "0.254.0",
+      "after": "0.254.2",
+      "beforeChecksum": "d5769a29f799fbab136aaf65b4fe5384cd7d93fe6fc9ba0dcb6c8382a1f16e27",
+      "afterChecksum": "c5ff8685b587722894b6f25958fc608d315b93b8d23647bfb567664e7006d757"
+    },
+    {
+      "name": "wasmprinter",
+      "before": "0.254.0",
+      "after": "0.254.2",
+      "beforeChecksum": "64e3ba11e024f504698f87b629b2b66c22a1231758de7607754963f7d198be39",
+      "afterChecksum": "8b03c8f270f3f384f70f42869b5ff7f6253fe4f0aa8590f7edd332c1943e5f51"
+    },
+    {
+      "name": "wasmtime",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "8ec755a941ae13c7f54210be272d77c4282a271d853558332827d0c8cd5dfba0",
+      "afterChecksum": "3a26206e1b2f1403d4d17c8fa7e736b693d7e9b1a7b9a5bf860e1c580472704d"
+    },
+    {
+      "name": "wasmtime-environ",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "9dca6a4a583fe56081cac202f7850b9d987d72bbb6cec8ac6503d3d6d65b165e",
+      "afterChecksum": "ca61f6e56877ffa9633e0d1ee3ee01c4b5dd08d8e1609417a245b496163526af"
+    },
+    {
+      "name": "wasmtime-internal-component-macro",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "0363b11ef205e5518739a0e3cd3f54c9b0a2ab6c495e0ba4776a78154722b896",
+      "afterChecksum": "d217ee3ec268aaa301fdf63af2b560c1a00ea774c5789fc8537364c2726be4ab"
+    },
+    {
+      "name": "wasmtime-internal-component-util",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "0b9bfdaa8f3e07e78c8efac1cc8bbbc0af3607d0b412c80e9cea77d18adfa9f1",
+      "afterChecksum": "3d4bb47a14f6458a45125d6fedaac3ad95769f946755ae282763fc0343c8ccdc"
+    },
+    {
+      "name": "wasmtime-internal-core",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "72250d72e27bea7d614af6742ed185d3e9d39de471f33e177c71874a7184586d",
+      "afterChecksum": "84493645ddd62c4615bbe0bd1a6bf9740e69c11b70404f2db8726ee793442b88"
+    },
+    {
+      "name": "wasmtime-internal-cranelift",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "52abc6a4ac7ab272fb1de7ed5040e0b6aa8cc49a74016588cf53f2e27366ad43",
+      "afterChecksum": "de4b3fb57ab495f3a08032859e1b940fa63e63cb755804fb032a06bf530aeb33"
+    },
+    {
+      "name": "wasmtime-internal-fiber",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "818599f226d134c04432c4d7a34541687a6d965fbfa9bc73b95a2d4b7ae99c8a",
+      "afterChecksum": "984950b72b8660737ec8deb590c95e4103877c23c83bd0ad23b9990a789fcfe2"
+    },
+    {
+      "name": "wasmtime-internal-jit-debug",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "0a0c01126eeaa5d432df800b2a1952f21868cc7fb61c4b452dbfcf2fa14ebdb1",
+      "afterChecksum": "679f24b3251a3c6235bc0170efa0d503ac570678308d60bd2e7f325d16f51536"
+    },
+    {
+      "name": "wasmtime-internal-jit-icache-coherence",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "4d42e1fc31e9e23ced0136cf271deb931a7375f54307f90c27cc271740fa938f",
+      "afterChecksum": "a2627fc8f496dcb22fad20cb97e8b77b494c225d84522642d23ec425bf17713b"
+    },
+    {
+      "name": "wasmtime-internal-unwinder",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "71f967bac5a11867a374b0d2f0f1febc087ebfdaebd4797a382cbb80d8a3dfb2",
+      "afterChecksum": "64752c0f1351970e20ed8fd7704220d7871b8824bdeb252258738b58264ef191"
+    },
+    {
+      "name": "wasmtime-internal-versioned-export-macros",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "65b0174e50f6f882498eb55ff2dd5c666cf3700ad00a05a608b8f83ec18a03e0",
+      "afterChecksum": "ff1b5eb4b2838bbbeaadd02c61e307a1fdbd47efca9d96684c04de5721157dca"
+    },
+    {
+      "name": "wasmtime-internal-wit-bindgen",
+      "before": "48.0.3",
+      "after": "48.0.6",
+      "beforeChecksum": "62a5137cc642ddf52082099b6aa9d38bed5105cb2918fe1c8779013842132022",
+      "afterChecksum": "bf92ecab96882cd1a5d9ee41c457053bccf8f1c57cfe617d38549b929ab82e91"
+    },
+    {
+      "name": "wit-component",
+      "before": "0.254.0",
+      "after": "0.254.2",
+      "beforeChecksum": "b0e65bb94c369b3c4741ce3d1d2704b1fec93db7c540df0e521a097e7ceeb5be",
+      "afterChecksum": "1c96b3cea6838dbea55173baa56991fcb087896c321b0a770db201e5a0bd3506"
+    },
+    {
+      "name": "wit-parser",
+      "before": "0.254.0",
+      "after": "0.254.2",
+      "beforeChecksum": "1655131e4f7d3f0cb141f6eca71315ca40eff0f3d4de7cff0a82bacedd8c89b4",
+      "afterChecksum": "22672d61bfb9df46a16b46ce38522293aee1cc4749fc84a3464ce4083b3d5fd6"
+    }
+  ],
+  "allDependencyEdgesResolveUniquely": true,
+  "unrelatedLockPackagesPreserved": true,
+  "workspaceWasmparser": "0.259.0",
+  "wasmtimeInternalWasmTools": "0.254.2",
+  "unchangedEngineFeaturesAndLimits": true,
+  "historicalReceiptsNotRequalified": true,
+  "license": {
+    "sourceUrl": "https://raw.githubusercontent.com/bytecodealliance/wasmtime/d02ffd202850007ea953224f589a569e8830eb6c/LICENSE",
+    "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
+    "bytes": 12243
+  },
+  "localChecks": {
+    "focusedPython": "37 passed",
+    "cargoAuditExecuted": false,
+    "cargoOrNativeExecuted": false
+  },
+  "requiredHostedChecks": [
+    "RustSec",
+    "Rust checks/tests",
+    "MSRV",
+    "TLS/runtime/native/AOT qualification"
+  ],
+  "separateWork": [
+    "npm repairs in #1065",
+    "inherited Go/NuGet/Maven advisories"
+  ]
+}

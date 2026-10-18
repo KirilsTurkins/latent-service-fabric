@@ -18,7 +18,7 @@ def report():
     return {"schemaVersion": "latent.standalone.config-check.v1", "profile": "external-capsule-v1",
             "threatClass": "T1", "guestBoundary": "in-process-wasmtime", "admission": "enforced",
             "protectedCredentialFile": True, "hostAbiProfile": "lsf-host-abi-phase3-v4",
-            "wasmtimeVersion": "48.0.3", "target": "x86_64-unknown-linux-gnu",
+            "wasmtimeVersion": "48.0.6", "target": "x86_64-unknown-linux-gnu",
             "compiler": "isolated-aot-compiler-v1", "compilerSandbox": "lsf-linux-x86_64-landlock3-seccomp-v1",
             "authenticatedNativeLoading": True}
 
@@ -42,7 +42,8 @@ class SecurityProfileSchema(unittest.TestCase):
         for key, value in (("threatClass", "T0"), ("admission", "trusted-local"),
                            ("protectedCredentialFile", False), ("compiler", "in-process"),
                            ("compilerSandbox", None), ("authenticatedNativeLoading", False),
-                           ("wasmtimeVersion", "47.0.3"), ("guestBoundary", "fixed-host"),
+                           ("wasmtimeVersion", "47.0.3"), ("wasmtimeVersion", "48.0.3"),
+                           ("guestBoundary", "fixed-host"),
                            ("hostAbiProfile", "lsf-host-abi-phase3-v1"), ("token", "secret")):
             self.assertFalse(schema.is_valid(dict(report(), **{key: value})), key)
 

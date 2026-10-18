@@ -3563,7 +3563,7 @@
       "sha256": "9d0fa6087fa4e34cb8acd4737533c8effdd15bcdec2485c28e0f47d6157fab56"
     },
     "tools/phase3_security.py": {
-      "sha256": "261070388f3aefc3604aa07b58d28f79b3dd2cb26bd2e58217619caf0bca232e"
+      "sha256": "cff90c19d03fcc18e8d04b2098ca287ad51a61a345a92789d313184d9e6f3761"
     },
     "tools/prepare_dev_packaged_probe.py": {
       "sha256": "da346e6f90223ba2edd3b18a3f0ba6bb0df3d21c268e5f3f6ffa9641649ac449"
@@ -3686,7 +3686,7 @@
       "sha256": "99bd586c5df8f3ad03bd811fa86c10fde9034cd3c1a0de76731585b0d51ae7bf"
     },
     "tools/run_security_profile_workflow.py": {
-      "sha256": "0f8787c5b61f9a27e943cafcc3ec32f1fd27633d9f4012e8b2f227f3ee2a8f8d"
+      "sha256": "c96a7b655ed0038983d6bcc8089a4d3677c0c0b6f465e2c89a358ac2ec58e592"
     },
     "tools/run_static_site_workflow.py": {
       "sha256": "cb06179e97b1b7122579e7137fab5508ca5566131ba4e0ee2e860cc77cd0d788"

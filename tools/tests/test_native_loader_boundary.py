@@ -22,7 +22,7 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = "warn"
 [workspace.dependencies]
-wasmtime = {version = "=48.0.3", default-features = false}
+wasmtime = {version = "=48.0.6", default-features = false}
 ''')
         self.write(f"{boundary.CRATE}/Cargo.toml", '''
 [lints.rust]
@@ -90,8 +90,11 @@ all = "warn"
 
     def test_engine_update_requires_review(self) -> None:
         path = self.root / "Cargo.toml"
-        path.write_text(path.read_text().replace("=48.0.3", "=48.0.0"), encoding="utf-8")
-        self.assertTrue(boundary.validate(self.root))
+        original = path.read_text()
+        for version in ("48.0.3", "48.0.0"):
+            with self.subTest(version=version):
+                path.write_text(original.replace("=48.0.6", "=" + version), encoding="utf-8")
+                self.assertTrue(boundary.validate(self.root))
 
     def test_other_workspace_member_cannot_relax_lints(self) -> None:
         self.write("crates/other/Cargo.toml", '[lints.rust]\nunsafe_code = "allow"\n')

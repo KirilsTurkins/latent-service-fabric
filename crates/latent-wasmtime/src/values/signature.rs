@@ -44,7 +44,7 @@ pub(crate) fn validate_host_signature(
     }
     // UTF-16/Latin-1 lifting and String growth need at most a conservative 4x
     // source-byte allowance. Retain an independent conservative allowance for
-    // nested inline values even though Wasmtime 48.0.3 now meters those allocations.
+    // nested inline values even though Wasmtime 48.0.6 now meters those allocations.
     let multiplier = state.largest_element.div_ceil(size_of::<Val>()).max(4);
     let maximum = hostcall_fuel
         .checked_mul(multiplier)
