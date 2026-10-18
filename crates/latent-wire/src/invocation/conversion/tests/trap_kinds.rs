@@ -489,6 +489,7 @@ fn runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics()
         else {
             unreachable!()
         };
+        let expected_retryable = error.retryable;
         let public = sanitize_platform_error(error.into(), &limits).unwrap();
         assert_eq!(public.detail_items.len(), 1);
         assert_eq!(
@@ -496,7 +497,7 @@ fn runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics()
             std::collections::HashMap::from([("kind".into(), kind.into())])
         );
         assert_eq!(public.code, "guest-trap");
-        assert!(!public.retryable);
+        assert_eq!(public.retryable, expected_retryable);
     }
     let ActivationOutcome::Failed { error, .. } =
         trap_failure(vec![detail("runtime-error", "call-and-postreturn")])
@@ -523,6 +524,6 @@ fn runtime_phase_projection_is_closed_coupled_and_preserves_terminal_semantics()
             .iter()
             .all(|item| !item.fields.contains_key("phase")));
         assert_eq!(public.code, "guest-trap");
-        assert!(!public.retryable);
+        assert_eq!(public.retryable, error.retryable);
     }
 }
