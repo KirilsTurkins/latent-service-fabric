@@ -633,5 +633,82 @@
   "separateWork": [
     "npm repairs in #1065",
     "inherited Go/NuGet/Maven advisories"
-  ]
+  ],
+  "rustlsDirectConsumers": [
+    {
+      "path": "apps/latentd/Cargo.toml",
+      "section": "dependencies",
+      "dependency": {
+        "version": "=0.23.46",
+        "default-features": false,
+        "features": [
+          "ring",
+          "std"
+        ]
+      }
+    },
+    {
+      "path": "crates/latent-http/Cargo.toml",
+      "section": "dependencies",
+      "dependency": {
+        "version": "=0.23.46",
+        "default-features": false,
+        "features": [
+          "ring",
+          "std",
+          "tls12"
+        ]
+      }
+    },
+    {
+      "path": "crates/latent-nats/Cargo.toml",
+      "section": "dependencies",
+      "dependency": {
+        "version": "=0.23.46",
+        "default-features": false,
+        "features": [
+          "ring",
+          "std",
+          "tls12"
+        ]
+      }
+    },
+    {
+      "path": "crates/latent-oci/Cargo.toml",
+      "section": "dependencies",
+      "dependency": {
+        "version": "=0.23.46",
+        "default-features": false,
+        "features": [
+          "ring",
+          "std",
+          "tls12"
+        ]
+      }
+    },
+    {
+      "path": "crates/latent-wasmtime/Cargo.toml",
+      "section": "target.cfg(target_os = \"linux\").dev-dependencies",
+      "dependency": {
+        "version": "=0.23.46",
+        "default-features": false,
+        "features": [
+          "ring",
+          "std",
+          "tls12"
+        ]
+      }
+    }
+  ],
+  "trackedCargoManifestsChecked": 52,
+  "nativeBuildCorrection": {
+    "failedHead": "a8f8a2e7417e6df37312a4385a3ab81a2009a138",
+    "run": 39167939478,
+    "job": 117794748134,
+    "artifact": 12150929370,
+    "url": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39167939478/job/117794748134",
+    "observedFailure": "latentd exact rustls 0.23.45 conflicts with latent-oci exact rustls 0.23.46",
+    "repair": "advance the fifth direct pin without changing features",
+    "newHostedBuildRequired": true
+  }
 }

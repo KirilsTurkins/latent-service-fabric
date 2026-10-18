@@ -5,7 +5,7 @@
 The maintained runtime and isolated compiler now select Wasmtime **48.0.6**,
 matching Cranelift **0.135.6** and its internal Wasm/WIT tools **0.254.2**.
 The release workspace's separate Wasm parser/encoder **0.259.0** stays unchanged.
-The four existing rustls consumers select **0.23.46** with the same features.
+The five existing rustls consumers select **0.23.46** with the same features.
 
 This addresses the patched-version ranges for the fourteen Wasmtime and four
 rustls findings observed on the release lock by the October 18 RustSec job.
