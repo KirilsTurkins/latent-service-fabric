@@ -34,6 +34,55 @@ def require(value, reason):
         raise ValueError(reason)
 
 
+def command_timeout(began, timeout):
+    """A late command cannot outlive the unchanged whole-programme deadline."""
+    remaining = 2400 - (time.monotonic() - began)
+    require(remaining > 0, 'qualification-total-deadline')
+    return min(timeout, remaining)
+
+
+def public_command_timings(commands, maximum=8):
+    """Numeric observations and hashed labels only; never command arguments."""
+    if not isinstance(commands, list) or len(commands) > 1024:
+        return []
+    result = []
+    for command in commands[-maximum:]:
+        if (not isinstance(command, dict) or type(command.get('id')) is not str
+                or len(command['id']) > 96
+                or any(type(command.get(key)) is not int or not 0 <= command[key] <= 3600000
+                       for key in ('startedMillis', 'durationMillis'))):
+            continue
+        result.append({'labelSha256': hashlib.sha256(command['id'].encode('utf-8')).hexdigest(),
+                       'startedMillis': command['startedMillis'], 'durationMillis': command['durationMillis']})
+    return result
+
+
+def public_checkpoint(value):
+    """Validate the fixed private-account projection without copying unknown fields."""
+    if (type(value) is not dict
+            or set(value) != {'schemaVersion', 'phase', 'operation', 'labelSha256',
+                             'completedCommands', 'completedDeployments', 'elapsedMillis', 'commandTimings'}
+            or type(value['schemaVersion']) is not int or value['schemaVersion'] != 1
+            or type(value.get('phase')) is not str or value['phase'] not in {'prepare', 'runtime', 'watch', 'complete'}
+            or type(value.get('operation')) is not str or value['operation'] not in {'command', 'watch-event', 'complete'}
+            or not isinstance(value.get('labelSha256'), str)
+            or not re.fullmatch('[0-9a-f]{64}', value['labelSha256'])
+            or any(type(value.get(key)) is not int or not 0 <= value[key] <= 1024
+                   for key in ('completedCommands', 'completedDeployments'))
+            or type(value.get('elapsedMillis')) is not int or not 0 <= value['elapsedMillis'] <= 3600000
+            or type(value.get('commandTimings')) is not list
+            or len(value['commandTimings']) > min(8, value['completedCommands'])):
+        return {}
+    for row in value['commandTimings']:
+        if (type(row) is not dict or set(row) != {'labelSha256', 'startedMillis', 'durationMillis'}
+                or type(row.get('labelSha256')) is not str or not re.fullmatch('[0-9a-f]{64}', row['labelSha256'])
+                or any(type(row.get(key)) is not int or not 0 <= row[key] <= 3600000
+                       for key in ('startedMillis', 'durationMillis'))
+                or row['startedMillis'] + row['durationMillis'] > value['elapsedMillis']):
+            return {}
+    return value
+
+
 def write(path: Path, value) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
 
@@ -404,21 +453,27 @@ def main() -> int:
         require(type(label) is str and len(label) <= 96, 'invalid-watch-checkpoint-label')
         public = {'schemaVersion': 1, 'phase': report['phase'], 'operation': kind,
                   'labelSha256': hashlib.sha256(label.encode('utf-8')).hexdigest(),
-                  'completedCommands': len(report['commands']), 'completedDeployments': len(report['stages'])}
+                  'completedCommands': len(report['commands']), 'completedDeployments': len(report['stages']),
+                  'elapsedMillis': int((time.monotonic() - began) * 1000),
+                  'commandTimings': public_command_timings(report['commands'])}
+        require(public_checkpoint(public), 'invalid-watch-checkpoint')
         temporary = root / 'public-progress.tmp'
         write(temporary, public)
         os.replace(temporary, root / 'public-progress.json')
 
     def command(label, argv, *, timeout=1000, expected=0):
-        require(time.monotonic() - began < 2400, 'qualification-total-deadline')
         checkpoint('command', label)
+        timeout = command_timeout(began, timeout)
+        started = time.monotonic()
         result = subprocess.run([str(item) for item in argv], cwd=root, env=env,
                                 capture_output=True, timeout=timeout)
+        finished = time.monotonic()
         require(len(result.stdout) + len(result.stderr) <= 1024 * 1024, 'command-output-limit')
         (root / (label + '.stdout')).write_bytes(result.stdout)
         (root / (label + '.stderr')).write_bytes(result.stderr)
         report['commands'].append({'id': label, 'exitCode': result.returncode,
-            'stdout': digest(root / (label + '.stdout')), 'stderr': digest(root / (label + '.stderr'))})
+            'stdout': digest(root / (label + '.stdout')), 'stderr': digest(root / (label + '.stderr')),
+            'startedMillis': int((started - began) * 1000), 'durationMillis': int((finished - started) * 1000)})
         write(root / 'qualification.json', report)
         require(result.returncode == expected, label + '-failed')
         return result
@@ -627,6 +682,7 @@ def main() -> int:
             'admission', 'resolverNetwork', 'compilerNetwork', 'phase', 'durationSeconds')}
         public.update(qualifier=digest(Path(__file__)), fixture=args.fixture_sha256,
             helper=args.helper_sha256, sourceProbe=args.source_probe_sha256,
+            commandTimings=public_command_timings(report['commands'], 1024),
             outsideInputs=report.get('outsideInputs', {}),
             originalInputsRemovedBeforeCompile=report.get('originalInputsRemovedBeforeCompile', False),
             deploymentCount=len(report['stages']),

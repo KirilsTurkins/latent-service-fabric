@@ -874,3 +874,145 @@ class RustWatchReviewBoundary(unittest.TestCase):
             self.assertEqual(public_gate_observations({name: signed}), {})
             deployed = {**signed, 'phase': 'deploy'}
             self.assertEqual(public_gate_observations({name: deployed}), {name: deployed})
+
+
+class RustWatchCommandDeadline(unittest.TestCase):
+    def command(self, root, clock, run, checkpoint):
+        # Execute the actual nested command owner without invoking any compiler,
+        # private account, node or the surrounding main programme.
+        import ast
+        from types import FunctionType, SimpleNamespace
+        from tools import qualify_rust_dependency_watch as qualifier
+        source = Path(qualifier.__file__).read_text(encoding='utf-8')
+        main = next(node for node in ast.parse(source).body if isinstance(node, ast.FunctionDef) and node.name == 'main')
+        command = next(node for node in main.body if isinstance(node, ast.FunctionDef) and node.name == 'command')
+        report = {'commands': []}
+        namespace = {**vars(qualifier), 'time': clock, 'subprocess': SimpleNamespace(run=run),
+                     'root': root, 'env': {'PATH': '/nonexistent'}, 'began': 0,
+                     'report': report, 'checkpoint': checkpoint}
+        # command_timeout uses the same controlled monotonic source as the body.
+        namespace['command_timeout'] = FunctionType(qualifier.command_timeout.__code__,
+                                                    {**vars(qualifier), 'time': clock})
+        exec(compile(ast.Module(body=[command], type_ignores=[]), '<actual-watch-command>', 'exec'), namespace)
+        return namespace['command'], report
+
+    def test_late_actual_command_is_capped_by_remaining_total_budget_before_dispatch(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temporary:
+            run = Mock(return_value=SimpleNamespace(returncode=0, stdout=b'', stderr=b''))
+            checkpoint = Mock()
+            command, report = self.command(Path(temporary), SimpleNamespace(monotonic=lambda: 2399), run, checkpoint)
+            command('removed-build', ['never-executed'])
+            self.assertEqual(run.call_args.kwargs['timeout'], 1)
+            checkpoint.assert_called_once_with('command', 'removed-build')
+            self.assertEqual(report['commands'][0]['startedMillis'], 2399000)
+            self.assertEqual(report['commands'][0]['durationMillis'], 0)
+
+    def test_actual_command_retains_smaller_command_cap_and_expired_total_never_dispatches(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        for now, selected, expected in ((100, 1000, 1000), (2390, 2, 2), (2400, 1000, None)):
+            with self.subTest(now=now), tempfile.TemporaryDirectory() as temporary:
+                run = Mock(return_value=SimpleNamespace(returncode=0, stdout=b'', stderr=b''))
+                command, _ = self.command(Path(temporary), SimpleNamespace(monotonic=lambda: now), run, Mock())
+                if expected is None:
+                    with self.assertRaisesRegex(ValueError, '^qualification-total-deadline$'):
+                        command('bounded', ['never-executed'], timeout=selected)
+                    run.assert_not_called()
+                else:
+                    command('bounded', ['never-executed'], timeout=selected)
+                    self.assertEqual(run.call_args.kwargs['timeout'], expected)
+
+    def test_actual_command_timeout_preserves_original_failure_and_never_marks_completion(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        import subprocess
+        with tempfile.TemporaryDirectory() as temporary:
+            original = subprocess.TimeoutExpired(['private-argument'], 1)
+            run, checkpoint = Mock(side_effect=original), Mock()
+            command, report = self.command(Path(temporary), SimpleNamespace(monotonic=lambda: 2399), run, checkpoint)
+            with self.assertRaises(subprocess.TimeoutExpired) as observed:
+                command('removed-build', ['never-executed'])
+            self.assertIs(observed.exception, original)
+            self.assertEqual(report['commands'], [])
+            self.assertEqual(list(Path(temporary).iterdir()), [])
+            self.assertEqual(run.call_args.kwargs['timeout'], 1)
+            checkpoint.assert_called_once_with('command', 'removed-build')
+
+    def test_budget_helper_preserves_original_deadlines_and_fractional_remaining_time(self):
+        from unittest.mock import patch
+        from tools import qualify_rust_dependency_watch as qualifier
+        for now, selected, expected in ((10, 1000, 1000), (2399.75, 1000, .25), (2390, 2, 2)):
+            with self.subTest(now=now), patch.object(qualifier.time, 'monotonic', return_value=now):
+                self.assertEqual(qualifier.command_timeout(0, selected), expected)
+        for now in (2400, 2401):
+            with self.subTest(now=now), patch.object(qualifier.time, 'monotonic', return_value=now):
+                with self.assertRaisesRegex(ValueError, '^qualification-total-deadline$'):
+                    qualifier.command_timeout(0, 1000)
+
+
+class RustWatchProgressTiming(unittest.TestCase):
+    def test_actual_checkpoint_atomically_records_elapsed_time_and_bounded_completed_timings(self):
+        import ast
+        import hashlib
+        import json
+        from types import SimpleNamespace
+        from tools import qualify_rust_dependency_watch as qualifier
+        main = next(node for node in ast.parse(Path(qualifier.__file__).read_text()).body
+                    if isinstance(node, ast.FunctionDef) and node.name == 'main')
+        selected = next(node for node in main.body if isinstance(node, ast.FunctionDef) and node.name == 'checkpoint')
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            commands = [{'id': 'private-label-' + str(n), 'startedMillis': n * 1000, 'durationMillis': 500}
+                        for n in range(12)]
+            namespace = {**vars(qualifier), 'root': root, 'began': 0,
+                         'time': SimpleNamespace(monotonic=lambda: 2399),
+                         'report': {'phase': 'watch', 'commands': commands, 'stages': [1, 2]}}
+            exec(compile(ast.Module(body=[selected], type_ignores=[]), '<actual-watch-checkpoint>', 'exec'), namespace)
+            namespace['checkpoint']('command', 'removed-build')
+            result = json.loads((root / 'public-progress.json').read_bytes())
+            self.assertEqual(result['elapsedMillis'], 2399000)
+            self.assertEqual((result['completedCommands'], result['completedDeployments']), (12, 2))
+            self.assertEqual(len(result['commandTimings']), 8)
+            self.assertEqual(result['commandTimings'][0], {
+                'labelSha256': hashlib.sha256(b'private-label-4').hexdigest(),
+                'startedMillis': 4000, 'durationMillis': 500})
+            self.assertNotIn('private-label', json.dumps(result))
+            self.assertFalse((root / 'public-progress.tmp').exists())
+            self.assertEqual(qualifier.public_checkpoint(result), result)
+
+    def test_checkpoint_projection_refuses_unknown_private_fields_and_malformed_timing(self):
+        import copy
+        from tools.qualify_rust_dependency_watch import public_checkpoint
+        original = {'schemaVersion': 1, 'phase': 'watch', 'operation': 'command', 'labelSha256': 'a' * 64,
+                    'completedCommands': 1, 'completedDeployments': 0, 'elapsedMillis': 1000,
+                    'commandTimings': [{'labelSha256': 'b' * 64, 'startedMillis': 0, 'durationMillis': 500}]}
+        self.assertEqual(public_checkpoint(original), original)
+        invalid = [None, [], {**original, 'arguments': ['private']}, {**original, 'phase': []},
+                   {**original, 'elapsedMillis': True}, {**original, 'elapsedMillis': 3600001},
+                   {**original, 'commandTimings': original['commandTimings'] * 9},
+                   {**original, 'completedCommands': 0}]
+        for key, value in (('startedMillis', -1), ('durationMillis', True), ('durationMillis', 1001),
+                           ('labelSha256', '../private'), ('token', 'private')):
+            item = copy.deepcopy(original)
+            item['commandTimings'][0][key] = value
+            invalid.append(item)
+        for value in invalid:
+            with self.subTest(value=value):
+                self.assertEqual(public_checkpoint(value), {})
+
+    def test_completed_timing_projection_omits_private_fields_and_invalid_rows(self):
+        import hashlib
+        from tools.qualify_rust_dependency_watch import public_command_timings
+        good = {'id': 'private-label', 'startedMillis': 100, 'durationMillis': 250,
+                'stdout': 'private', 'arguments': ['secret']}
+        expected = {'labelSha256': hashlib.sha256(b'private-label').hexdigest(),
+                    'startedMillis': 100, 'durationMillis': 250}
+        self.assertEqual(public_command_timings([good] * 12), [expected] * 8)
+        self.assertEqual(public_command_timings([good] * 12, 1024), [expected] * 12)
+        self.assertEqual(public_command_timings([good] * 1025), [])
+        for row in (None, {**good, 'id': []}, {**good, 'id': 'x' * 97},
+                    {**good, 'startedMillis': True}, {**good, 'durationMillis': 3600001}):
+            with self.subTest(row=row):
+                self.assertEqual(public_command_timings([row]), [])

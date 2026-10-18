@@ -7,7 +7,6 @@ import hashlib
 import os
 from pathlib import Path
 import pwd
-import re
 import secrets
 import shutil
 import subprocess
@@ -20,6 +19,7 @@ if __package__ in {None, ''}:
 from tools.dev_workflow import process
 from tools.dev_workflow.common import decode, encode, require
 from tools.native_runtime import files
+from tools.qualify_rust_dependency_watch import public_checkpoint
 
 
 def digest(path: Path) -> str:
@@ -81,16 +81,7 @@ def run(payload: Path, supplied: Path, output: Path, *, qualifier: Path, fixture
         try:
             if progress.is_file() and not progress.is_symlink():
                 value = decode(files.read(progress, 4096, owners={0, account.pw_uid}), 4096)
-                if (type(value) is dict
-                        and set(value) == {'schemaVersion', 'phase', 'operation', 'labelSha256',
-                                           'completedCommands', 'completedDeployments'}
-                        and type(value['schemaVersion']) is int and value['schemaVersion'] == 1
-                        and value.get('phase') in {'prepare', 'runtime', 'watch', 'complete'}
-                        and value.get('operation') in {'command', 'watch-event', 'complete'}
-                        and isinstance(value.get('labelSha256'), str)
-                        and re.fullmatch('[0-9a-f]{64}', value['labelSha256'])
-                        and all(type(value.get(name)) is int and 0 <= value[name] <= 1024
-                                for name in ('completedCommands', 'completedDeployments'))):
+                if public_checkpoint(value):
                     checkpoint = {'status': 'observed', **value}
         except (OSError, ValueError, TypeError):
             pass
