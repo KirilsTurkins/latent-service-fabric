@@ -16,6 +16,21 @@ ERROR_CODES = frozenset({'ok', 'cancelled', 'unknown', 'deadline-exceeded', 'uni
     *node_diagnostics.TRAP_CODES})
 DIAGNOSTIC_FIELDS = frozenset({'stage', 'reason', 'profile', 'profile_digest', 'configured_bound',
     'calculated_requirement', 'fixed_bytes', 'lifting_fuel', 'lift_multiplier'})
+# Labels for latent-core's producer-owned ActivationDiagnostic vocabulary.
+# These describe its observation, not an inferred library failure or remedy.
+DIAGNOSTIC_LABELS = {
+    'stage': {1: 'admission', 2: 'queue', 3: 'preparation', 4: 'binding', 5: 'execution',
+              6: 'provider', 7: 'cleanup', 8: 'output-validation'},
+    'reason': {1: 'signature-allocation-limit', 2: 'value-allocation-limit',
+        3: 'unsupported-component-surface', 4: 'unsupported-engine-profile',
+        5: 'provider-absent', 6: 'binding-absent', 7: 'admission-denied', 8: 'grant-denied',
+        9: 'queue-pressure', 10: 'guest-memory-exhausted', 11: 'guest-fuel-exhausted',
+        12: 'guest-resource-exhausted', 13: 'provider-timeout', 14: 'deadline-exceeded',
+        15: 'cancelled', 16: 'http-response-rejected'},
+    'profile': {1: 'wasmtime-service-values-v1', 2: 'wasmtime-buffered-web-values-v1'},
+}
+DIAGNOSTIC_MEASUREMENTS = ('configured_bound', 'calculated_requirement', 'fixed_bytes',
+                           'lifting_fuel', 'lift_multiplier')
 CAUSES = {5: 'missing-provider', 8: 'denied-grant', 10: 'resource-exhausted',
           11: 'resource-exhausted', 12: 'resource-exhausted', 13: 'deadline', 14: 'deadline', 15: 'cancelled'}
 
@@ -81,7 +96,7 @@ def diagnostic(error):
             continue
         if not isinstance(value, str) or re.fullmatch('0|[1-9][0-9]{0,19}', value) is None or int(value) >= 2**64:
             return {'state': 'invalid-present'}
-        if name in {'stage', 'reason', 'profile'} and not 1 <= int(value) <= {'stage': 8, 'reason': 16, 'profile': 2}[name]:
+        if name in DIAGNOSTIC_LABELS and int(value) not in DIAGNOSTIC_LABELS[name]:
             return {'state': 'invalid-present'}
         retained[name] = value
     return {'state': 'observed', 'fields': retained}
@@ -223,6 +238,17 @@ def present(value):
         lines.append(f"{row['case']}: cause {row['cause']}{dimension}; code {code}; client {row['clientProcess']}.")
         if 'guestTrapCode' in row:
             lines.append(f"Observed runtime disposition {row['guestTrapCode']}.")
+        observed = row['activationDiagnostic']
+        if observed['state'] == 'observed':
+            fields = observed['fields']
+            labels = [f"{name} {DIAGNOSTIC_LABELS[name][int(fields[name])]} ({fields[name]})"
+                      for name in DIAGNOSTIC_LABELS if name in fields]
+            lines.append('Observed node diagnostic: ' + '; '.join(labels) + '.')
+            measurements = [f'{name} {fields[name]}' for name in DIAGNOSTIC_MEASUREMENTS if name in fields]
+            if measurements:
+                lines.append('Observed node measurements: ' + '; '.join(measurements) + '.')
+        else:
+            lines.append(f"Node diagnostic: {observed['state']}.")
         if row.get('targetMatches') is False:
             lines.append('Selected target differs from the original invocation result.')
     if value['omittedCases']:
