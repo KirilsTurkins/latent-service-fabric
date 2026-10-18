@@ -221,6 +221,8 @@ def present(value):
         dimension = f" ({row['resourceDimension']})" if row['resourceDimension'] != 'unknown' else ''
         code = row.get('errorCode', row['errorCodeState'])
         lines.append(f"{row['case']}: cause {row['cause']}{dimension}; code {code}; client {row['clientProcess']}.")
+        if 'guestTrapCode' in row:
+            lines.append(f"Observed runtime disposition {row['guestTrapCode']}.")
         if row.get('targetMatches') is False:
             lines.append('Selected target differs from the original invocation result.')
     if value['omittedCases']:

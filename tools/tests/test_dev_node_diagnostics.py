@@ -22,6 +22,22 @@ def failure():
 
 
 class Projection(unittest.TestCase):
+    def test_lifecycle_refusal_retains_only_the_existing_closed_disposition(self):
+        result = failure()
+        result["error"]["details"][0]["fields"] = {
+            "code": "runtime-lifecycle-unproven", "cell_id": "private-cell"}
+        original = copy.deepcopy(result)
+        captured = diagnostics.original_result(result)
+        self.assertEqual(captured["guestTrapCode"], "runtime-lifecycle-unproven")
+        self.assertNotIn("trapDetailsUnavailable", captured)
+        self.assertNotIn("admissionCurrentnessReason", captured)
+        self.assertNotIn("private-", json.dumps(captured))
+        self.assertEqual(captured["consumption"]["cpuFuel"], str((1 << 64) - 1))
+        self.assertEqual(result, original)
+        for outer_code in ("internal", "ok", "runtime-lifecycle-unproven"):
+            result["error"]["code"] = outer_code
+            self.assertNotIn("guestTrapCode", diagnostics.original_result(result))
+
     def test_original_trap_currentness_and_full_width_consumption_survive_without_secrets(self):
         result = failure()
         result["data"].update(payload={"data": "private-body"}, metadata={"credential": "private-token"})
