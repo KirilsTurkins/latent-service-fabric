@@ -108,7 +108,10 @@ func Exercise(mode string) {
         source := make([]byte, 128*1024)
         destination := make([]byte, len(source))
         for {
-            copy(destination, source)
+            for index := range destination {
+                destination[index] = source[index] ^ byte(calls)
+                calls++
+            }
             runtime.KeepAlive(destination)
         }
     }

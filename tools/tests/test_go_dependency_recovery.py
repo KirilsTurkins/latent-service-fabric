@@ -95,3 +95,59 @@ class GoDependencyRecovery(unittest.TestCase):
                     None, {'samples': []}, 17)
         started.assert_not_called()
         client.call.assert_not_called()
+
+
+class GoCancellationWorkload(unittest.TestCase):
+    def test_generated_external_workload_uses_value_dependent_scalar_work_without_waits(self):
+        import tempfile
+        from pathlib import Path
+        from tools import go_dependency_fixture as fixture
+
+        class StopBeforeNativeAuthoring(Exception):
+            pass
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = root / 'application'
+            (project / 'src').mkdir(parents=True)
+            (project / 'src/main.go').write_bytes(b'package main\nimport (\n)\nfunc greet(name string) string { return "Hello, " + name + "!" }\n')
+            with patch.object(fixture.native_authoring, 'edit', side_effect=StopBeforeNativeAuthoring) as native:
+                with self.assertRaises(StopBeforeNativeAuthoring):
+                    fixture.install(project, root / 'outside', root / 'not-executed-go')
+            native.assert_called_once()
+            generated = (root / 'outside/developer-owned-library/prefix.go').read_text(encoding='utf-8')
+        spin = generated.split('case "spin":', 1)[1].split('//go:generate', 1)[0]
+        # Bulk memory.copy is priced per byte in the pinned engine. The cancel
+        # fixture must exercise ordinary scalar instructions at the same limits.
+        self.assertIn('source := make([]byte, 128*1024)', spin)
+        self.assertIn('destination := make([]byte, len(source))', spin)
+        self.assertIn('for index := range destination', spin)
+        self.assertIn('destination[index] = source[index] ^ byte(calls)', spin)
+        self.assertIn('calls++', spin)
+        self.assertIn('runtime.KeepAlive(destination)', spin)
+        for forbidden in ('copy(', 'clear(', 'time.Sleep(', 'Gosched(', 'select', 'chan '):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, spin)
+        self.assertIn('//go:build sdk_dependency_qualification', generated)
+        self.assertIn('case "fuel":\n        for { calls++ }', generated)
+
+    def test_known_terminal_fuel_exhaustion_cannot_qualify_as_cancellation(self):
+        client, process, patches = GoDependencyRecovery().run_control()
+        original = client.call.side_effect
+
+        def already_terminal(*args, **kwargs):
+            result = original(*args, **kwargs)
+            if args[:2] == ('activation', 'cancel'):
+                result['data'].update(disposition='already_terminal', terminalState='resource_exhausted')
+            return result
+
+        client.call.side_effect = already_terminal
+        with patches[0] as invoked, patches[1], patches[2] as started, patches[3] as finished:
+            with self.assertRaisesRegex(RuntimeError, 'go-library-cancel-unconfirmed-no-replay'):
+                suite.recover(client, {'budget': {'memoryBytes': 4, 'cpuFuel': 100_000_000}},
+                              None, {'samples': []}, 17)
+        self.assertEqual(started.call_count, 1)
+        self.assertEqual(invoked.call_count, 6)
+        finished.assert_not_called()
+        process.close.assert_called_once_with()
+        self.assertEqual(sum(row.args[:2] == ('activation', 'cancel') for row in client.call.call_args_list), 1)
