@@ -13,6 +13,16 @@ The runtime parent, actual component build, signed provider cases, two unchanged
 independent libraries and outside-checkout developer module remain required.
 Source controls do not establish runtime qualification or close the ticket.
 
+The ordinary engine's finite table ceiling is 12,000 entries. The captured Go
+linker reserves 4,096 slots before its function entries: the observed standard
+component needs 10,495, exceeding the previous 10,000 ceiling during instantiation.
+This changes the engine compatibility digest and does not increase linear-memory,
+fuel, deadline or capability allowances. On a 64-bit host, the unchanged maximum
+of 128 tables has a slot-storage ceiling of 12,288,000 bytes, 2,048,000 bytes above
+the prior bound; allocator overhead is additional. This is a host-native bound,
+not a claim that table storage is charged as guest linear memory or that the full
+Go cost-accounting acceptance is complete. Fresh signed qualification is required.
+
 ## Finite API contract
 
 The candidate supports ordinary default Client calls, DefaultClient,

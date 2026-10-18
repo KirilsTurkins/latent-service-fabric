@@ -361,6 +361,42 @@ mod tests {
     const WASM_PAGE_BYTES: usize = 64 * 1024;
 
     #[test]
+    fn finite_default_table_limit_admits_go_minimum_and_rejects_excess() {
+        fn instantiate(minimum: u64, limit: usize) -> wasmtime::Result<()> {
+            let mut tables = wasm_encoder::TableSection::new();
+            tables.table(wasm_encoder::TableType {
+                element_type: wasm_encoder::RefType::FUNCREF,
+                table64: false,
+                minimum,
+                maximum: None,
+                shared: false,
+            });
+            let mut bytes = wasm_encoder::Module::new();
+            bytes.section(&tables);
+            let engine = wasmtime::Engine::default();
+            let module = wasmtime::Module::new(&engine, bytes.finish())?;
+            let config = WasmtimeConfig {
+                maximum_table_elements: limit,
+                ..WasmtimeConfig::default()
+            };
+            let mut store = wasmtime::Store::new(
+                &engine,
+                TrackingLimiter::with_config(WASM_PAGE_BYTES, &config),
+            );
+            store.limiter(|limiter| limiter);
+            wasmtime::Instance::new(&mut store, &module, &[]).map(|_| ())
+        }
+
+        // The pinned Go linker reserves 4096 table slots before its 6399 functions.
+        assert!(instantiate(10_495, 10_000).is_err());
+        let limit = WasmtimeConfig::default().maximum_table_elements;
+        assert_eq!(limit, 12_000);
+        instantiate(10_495, limit).expect("captured Go component table fits");
+        instantiate(12_000, limit).expect("exact finite default table limit");
+        assert!(instantiate(12_001, limit).is_err());
+    }
+
+    #[test]
     fn java_exception_reservation_and_linear_memories_share_one_budget() {
         let reserved = crate::config::JAVA_EXCEPTION_HEAP_BYTES;
         let mut limiter = TrackingLimiter::new(reserved + 2 * WASM_PAGE_BYTES);

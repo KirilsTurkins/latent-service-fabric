@@ -83,6 +83,22 @@ fn generic_and_legacy_payload_adapters_have_distinct_compatibility() {
 }
 
 #[test]
+fn finite_default_table_capacity_rekeys_the_legacy_engine_configuration() {
+    let current = WasmtimeConfig::default();
+    assert_eq!(current.maximum_table_elements, 12_000);
+    let mut legacy = current.clone();
+    legacy.maximum_table_elements = 10_000;
+    assert_ne!(
+        current.configuration_digest(DispatchMode::Generic),
+        legacy.configuration_digest(DispatchMode::Generic)
+    );
+    assert_eq!(
+        current.profile(DispatchMode::Generic).configuration["maximum-table-elements"],
+        "12000"
+    );
+}
+
+#[test]
 fn changes_to_execution_and_preparation_bounds_change_compatibility() {
     let config = WasmtimeConfig::default();
     let before = config.configuration_digest(DispatchMode::Generic);

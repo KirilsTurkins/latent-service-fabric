@@ -232,7 +232,7 @@ impl Default for WasmtimeConfig {
             maximum_instances_per_store: 128,
             maximum_memories_per_store: 16,
             maximum_tables_per_store: 128,
-            maximum_table_elements: 10_000,
+            maximum_table_elements: 12_000,
             pooling_maximum_component_instance_bytes: 1024 * 1024,
             pooling_maximum_core_instance_bytes: 1024 * 1024,
             pooling_maximum_core_instances_per_component: 4,

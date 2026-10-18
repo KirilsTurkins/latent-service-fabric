@@ -7317,7 +7317,9 @@
         "native_stacks::tests::logical_finalization_cannot_hide_a_guest_owned_native_or_task_record",
         "native_stacks::tests::original_native_and_memory_limits_reject_before_mapping_and_roll_back_unstarted_permits",
         "backend::call_phase::tests::only_generic_runtime_failure_gets_the_actual_closed_call_boundary",
-        "backend::call_phase::tests::call_boundary_does_not_relabel_traps_accounting_or_lifecycle_failures"
+        "backend::call_phase::tests::call_boundary_does_not_relabel_traps_accounting_or_lifecycle_failures",
+        "host::tests::finite_default_table_limit_admits_go_minimum_and_rejects_excess",
+        "config::tests::finite_default_table_capacity_rekeys_the_legacy_engine_configuration"
       ],
       "expectedIgnored": [
         "cache::measurement::cache_lookup_collector",
@@ -7330,7 +7332,7 @@
       ],
       "kind": "lib",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 377,
+      "minimumCases": 379,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
@@ -10285,7 +10287,8 @@
         "config::tests::providers::scalar_aliases::aliases_cannot_change_epoch_chain_sources_or_duplicate_any_identity_or_scope",
         "config::tests::providers::scalar_aliases::aliases_never_supply_missing_or_stateful_implementations",
         "config::tests::providers::scalar_aliases::aliases_preserve_original_fourteen_descriptor_slots_and_closed_input",
-        "standalone::start::tests::provider_startup::scalar_aliases_keep_one_configuration_and_reap_without_creating_guest_owners"
+        "standalone::start::tests::provider_startup::scalar_aliases_keep_one_configuration_and_reap_without_creating_guest_owners",
+        "config::tests::engine::ordinary_node_inherits_finite_table_capacity_without_extra_engine_options"
       ],
       "expectedIgnored": [
         "standalone::http::assets::browser::actual_browser_application_uses_only_the_public_shared_http_contract",
@@ -10354,7 +10357,7 @@
       ],
       "kind": "lib",
       "manifest": "apps/latentd/Cargo.toml",
-      "minimumCases": 445,
+      "minimumCases": 446,
       "mode": "libtest",
       "package": "latentd",
       "platforms": [
