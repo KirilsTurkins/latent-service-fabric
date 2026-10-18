@@ -70,6 +70,7 @@ def run(args):
             record['currentHttpEndpointInput'] = file_identity(args.current_http_endpoint, 'endpoint-declaration', 8192)
             record['currentHttpInstallationInputs'] = terminal.current_installation_identity(args)
             client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence, phase4=True)
+            primary = None
             try:
                 stage = 'package'
                 selected = current_campaign.selections(args.portable, args.current_selections,
@@ -100,20 +101,19 @@ def run(args):
                                'qualification-input-changed')
                 terminal.recheck_inputs(args, work, record)
                 record.update(passed=True, signedPendingRestoreCloseQualified=True)
+            except BaseException as error:
+                primary = error
+                raise
             finally:
-                with cancellation.defer():
-                    if node is not None:
-                        node.close()
-                    if peer is not None:
-                        peer.close()
-                cancellation.check()
+                terminal.close_owners(record, cancellation, node, peer, primary=primary)
     except BaseException as error:
         terminal.failure(record, stage, error)
         record['signedPendingRestoreCloseQualified'] = False
     finally:
         record.update(seconds=round(time.monotonic() - started, 6),
                       cliProcesses=client.calls if client else 0, measuredCases=list(evidence.cases))
-        record['evidenceInventory'] = evidence.record('inventory', evidence.summary())
+        if not terminal.finalize_inventory(record, evidence, 'inventory'):
+            record['signedPendingRestoreCloseQualified'] = False
         write_json(work / 'campaign-receipt.json', record)
     print(bounded_receipt(record))
     return 0 if record['passed'] else 1

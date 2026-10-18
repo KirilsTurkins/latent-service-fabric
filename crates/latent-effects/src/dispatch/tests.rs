@@ -295,3 +295,105 @@ fn forged_terminal_record_without_physical_send_and_receipt_is_corrupt() {
     bytes.extend(serde_json::to_vec(&forged).unwrap());
     assert_eq!(EffectRecord::decode(&bytes), Err(AuthorityError::Invalid));
 }
+
+fn qualified_second_attempt() -> (EffectRecord, AttemptIdentity) {
+    let mut record = record();
+    let first = record.claim(1, time(101)).unwrap();
+    record.begin_send(&first).unwrap();
+    record
+        .complete(&first, receipt(Disposition::Uncertain, 102))
+        .unwrap();
+    record
+        .schedule_retry(
+            RetryProof::QualifiedDeduplication {
+                valid_until_millis: 200,
+                same_payload: true,
+                same_provider_incarnation: true,
+            },
+            time(103),
+            1,
+        )
+        .unwrap();
+    let second = record.claim(1, time(104)).unwrap();
+    assert_eq!(second.retry_horizon_millis(), Some(200));
+    assert!(!record.send_started());
+    (record, second)
+}
+
+#[test]
+fn known_nonexecution_after_qualified_retry_preserves_original_horizon_through_reopen() {
+    let (mut record, second) = qualified_second_attempt();
+    let authority = record.authority().unwrap().encode().unwrap();
+    record
+        .complete(&second, receipt(Disposition::KnownFailed, 105))
+        .unwrap();
+    record
+        .schedule_retry(RetryProof::KnownNonexecution, time(106), 1)
+        .unwrap();
+    let bytes = record.encode().unwrap();
+    let mut reopened = EffectRecord::decode(&bytes).unwrap();
+    assert_eq!(reopened.durable_format(), ("latent.effect-record.v1", 1));
+    assert_eq!(reopened.encode().unwrap(), bytes);
+    assert_eq!(reopened.authority().unwrap().encode().unwrap(), authority);
+    let third = reopened.claim(1, time(107)).unwrap();
+    assert_eq!(third.attempt(), 3);
+    assert_eq!(third.retry_horizon_millis(), Some(200));
+    assert!(!reopened.send_started());
+    reopened
+        .complete(&third, receipt(Disposition::KnownFailed, 108))
+        .unwrap();
+    reopened
+        .schedule_retry(RetryProof::KnownNonexecution, time(109), 1)
+        .unwrap();
+    assert_eq!(reopened.claim(1, time(110)), Err(AuthorityError::Capacity));
+    assert_eq!(reopened.disposition(), Disposition::DeadLettered);
+    assert_eq!(reopened.attempts(), 3);
+}
+
+#[test]
+fn retained_retry_horizon_keeps_original_clock_expiry_and_send_fences() {
+    let (mut record, second) = qualified_second_attempt();
+    record
+        .complete(&second, receipt(Disposition::KnownFailed, 105))
+        .unwrap();
+    let unchanged = record.encode().unwrap();
+    for sample in [
+        EffectTime {
+            unix_millis: 106,
+            continuity_proven: false,
+        },
+        time(104),
+    ] {
+        assert_eq!(
+            record.schedule_retry(RetryProof::KnownNonexecution, sample, 1),
+            Err(AuthorityError::ClockDiscontinuity)
+        );
+        assert_eq!(record.encode().unwrap(), unchanged);
+    }
+    let mut expired = record.clone();
+    let expiry = expired.authority().unwrap().expires_at_millis();
+    assert_eq!(
+        expired.schedule_retry(RetryProof::KnownNonexecution, time(expiry - 1), 1),
+        Err(AuthorityError::Expired)
+    );
+    assert_eq!(expired.disposition(), Disposition::KnownFailed);
+    assert_eq!(expired.attempts(), 2);
+    record
+        .schedule_retry(RetryProof::KnownNonexecution, time(106), 1)
+        .unwrap();
+    let mut reopened = EffectRecord::decode(&record.encode().unwrap()).unwrap();
+    assert_eq!(
+        reopened.claim(1, time(200)),
+        Err(AuthorityError::PolicyBlocked)
+    );
+    assert_eq!(reopened.disposition(), Disposition::PolicyBlocked);
+    assert_eq!(reopened.attempts(), 2);
+    let (mut sent, claim) = qualified_second_attempt();
+    sent.begin_send(&claim).unwrap();
+    sent.complete(&claim, receipt(Disposition::KnownFailed, 105))
+        .unwrap();
+    assert_eq!(
+        sent.schedule_retry(RetryProof::KnownNonexecution, time(106), 1),
+        Err(AuthorityError::PolicyBlocked)
+    );
+}

@@ -14,6 +14,11 @@ on:
       - 'examples/rust-capsules/transactional-aggregate/**'
       - 'tools/dotnet_guest*'
       - 'tools/dotnet_guest/**'
+      - 'examples/dotnet-standard-http/**'
+      - 'tools/dotnet_standard_http*.py'
+      - 'tools/dotnet_internal_io_port.py'
+      - 'tools/qualify_dotnet_standard_http.py'
+      - 'tools/standard_http/**'
       - 'tools/dotnet_capsule.py'
       - 'tools/dotnet_application_dependencies.py'
       - 'tools/dotnet_dependency_authoring.py'
@@ -184,6 +189,11 @@ jobs:
           export LSF_WIT_BINDGEN="$RUNNER_TEMP/dotnet-guest/tools/wit-bindgen" LSF_WASM_TOOLS=wasm-tools
           /usr/bin/time -f '{"wallSeconds":%e,"maxRssKiB":%M,"exitCode":%x}' -o "$RUNNER_TEMP/dotnet-guest/compilation-cost.json" dotnet build Smoke.csproj -c Release --no-restore -p:WasiSdkRoot="$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" -p:WitBindgenExe="python3 $GITHUB_WORKSPACE/tools/dotnet_guest_bindings.py" 2>&1 | tee "$RUNNER_TEMP/dotnet-guest/build.log"
           cp packages.lock.json "$RUNNER_TEMP/dotnet-guest/packages.lock.json"
+      - name: Pair private blocking I/O function types without changing original core bytes
+        run: |
+          cp "$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm" "$RUNNER_TEMP/dotnet-guest/original-raw.wasm"
+          python3 tools/dotnet_internal_io_port.py --raw "$RUNNER_TEMP/dotnet-guest/original-raw.wasm" --adapter "$RUNNER_TEMP/dotnet-authoring-tools/runtime.wasm" --output "$RUNNER_TEMP/dotnet-guest/internal-io-port"
+          cp "$RUNNER_TEMP/dotnet-guest/internal-io-port/component.wasm" "$RUNNER_TEMP/dotnet-probe-source/bin/Release/net10.0/wasi-wasm/publish/Smoke.wasm"
       - name: Compose capability-constrained compiler support
         shell: bash
         run: |
@@ -209,6 +219,9 @@ jobs:
       - name: Qualify captured projects, all SDK owners, enforced node and printed guide
         run: |
           python3 tools/qualify_dotnet_capsules.py --output "$RUNNER_TEMP/dotnet-capsule-authoring" --tools "$RUNNER_TEMP/dotnet-authoring-tools"
+      - name: Qualify ordinary default HttpClient, JSON parsing, disposal and cancellation
+        run: |
+          python3 tools/qualify_dotnet_standard_http.py --output "$RUNNER_TEMP/dotnet-standard-http" --tools "$RUNNER_TEMP/dotnet-authoring-tools" --native-qualification "$RUNNER_TEMP/dotnet-capsule-authoring"
       - name: Qualify captured NuGet libraries and embedded resources
         run: |
           python3 -m unittest tools.tests.test_dotnet_dependency_recovery
@@ -222,6 +235,7 @@ jobs:
           name: dotnet-guest-qualification-${{ github.sha }}
           path: |
             ${{ runner.temp }}/dotnet-standard-resources/**
+            ${{ runner.temp }}/dotnet-standard-http/**
             ${{ runner.temp }}/transaction-guests-dotnet/**/report.json
             ${{ runner.temp }}/transaction-guests-dotnet/**/source-inputs.json
             ${{ runner.temp }}/transaction-guests-dotnet/**/recipe-inputs.json
@@ -229,6 +243,8 @@ jobs:
             ${{ runner.temp }}/transaction-guests-dotnet/**/component.wasm
             ${{ runner.temp }}/transaction-guests-dotnet/**/component.wit
             ${{ runner.temp }}/transaction-guests-dotnet/**/compiler-inputs.json
+            ${{ runner.temp }}/transaction-guests-dotnet/**/native-aot-original.wit.json
+            ${{ runner.temp }}/transaction-guests-dotnet/**/internal-io-selected.wat
             ${{ runner.temp }}/transaction-guests-dotnet/**/logs/**
             ${{ runner.temp }}/transaction-guests-dotnet/**/compiler/*.log
             ${{ runner.temp }}/transaction-guests-dotnet/**/compiler/*.command.json
@@ -241,6 +257,8 @@ jobs:
             ${{ runner.temp }}/transaction-contract-dotnet/component.wit
             ${{ runner.temp }}/transaction-contract-dotnet/preparation.json
             ${{ runner.temp }}/transaction-contract-dotnet/compiler-inputs.json
+            ${{ runner.temp }}/transaction-contract-dotnet/native-aot-original.wit.json
+            ${{ runner.temp }}/transaction-contract-dotnet/internal-io-selected.wat
             ${{ runner.temp }}/transaction-contract-dotnet/logs/**
             ${{ runner.temp }}/transaction-contract-dotnet/compiler/*.log
             ${{ runner.temp }}/transaction-contract-dotnet/compiler/*.command.json

@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/intellij_windows.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Fix native Windows launch without Bash/WSL, preserve failure status and qualify actual locked website preparation.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "634d6db5710a948d41e7210119daa8572d18847ac817710d25d44d02a30ff9d6"
+}

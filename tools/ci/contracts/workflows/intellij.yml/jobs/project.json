@@ -1,0 +1,93 @@
+{
+  "baselineRevision": "50f003dd006e0786494936c49e55dc683cf26fd6",
+  "before": {},
+  "coverage": {},
+  "definition": {
+    "name": "IDE metadata (${{ matrix.os }})",
+    "runs-on": "${{ matrix.os }}",
+    "timeout-minutes": 10,
+    "strategy": {
+      "fail-fast": false,
+      "matrix": {
+        "os": [
+          "ubuntu-24.04",
+          "windows-2025",
+          "macos-15"
+        ]
+      }
+    },
+    "defaults": {
+      "run": {
+        "shell": "bash"
+      }
+    },
+    "steps": [
+      {
+        "uses": "actions/checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "actions/setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "name": "Export review-only IDE metadata",
+        "id": "export",
+        "run": "# Reviewed delegated owners: tools/intellij.sh tools/intellij_windows.py\npython tools/intellij.py --export \"$RUNNER_TEMP/intellij-review\"\n"
+      },
+      {
+        "name": "Check committed IDE metadata",
+        "id": "check",
+        "run": "python tools/intellij.py --check"
+      },
+      {
+        "name": "Test IDE project and launcher contracts",
+        "id": "tests",
+        "if": "always()",
+        "run": "python -m unittest tools.tests.test_intellij tools.tests.test_intellij_windows -v"
+      },
+      {
+        "name": "Exercise the unified Python help entry on every host",
+        "id": "unified_help",
+        "run": "python tools/intellij.py run help"
+      },
+      {
+        "name": "Select the website Node runtime for native Windows execution",
+        "if": "runner.os == 'Windows'",
+        "uses": "actions/setup-node",
+        "with": {
+          "node-version-file": "website/package.json",
+          "package-manager-cache": false
+        }
+      },
+      {
+        "name": "Exercise Windows terminal helper and unified locked website preparation",
+        "id": "windows_launch",
+        "if": "runner.os == 'Windows'",
+        "shell": "pwsh",
+        "run": "$env:LSF_IDE_PYTHON = (Get-Command python).Source\ncmd.exe /d /c tools\\intellij.cmd help\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/intellij.py run website-prepare\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ngit diff --exit-code\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n"
+      },
+      {
+        "name": "Retain review proposal, not machine settings",
+        "if": "always()",
+        "uses": "actions/upload-artifact",
+        "with": {
+          "name": "intellij-review-${{ matrix.os }}-${{ github.sha }}",
+          "path": "${{ runner.temp }}/intellij-review/",
+          "include-hidden-files": true,
+          "if-no-files-found": "error",
+          "retention-days": 7
+        }
+      }
+    ]
+  },
+  "jobId": "project",
+  "kind": "job",
+  "reviewReason": "Retain three-platform metadata/tests and real Windows terminal help; qualify locked website preparation through the unified Python entry and add actual help execution on every host.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/intellij.yml"
+}

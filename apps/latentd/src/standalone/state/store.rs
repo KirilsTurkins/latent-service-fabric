@@ -7,6 +7,7 @@ use latent_state::protected_store::{ProtectedStoreOwner, ProtectedStoreStartup};
 
 use super::{bootstrap::StateBootstrap, validation};
 use crate::config::state::{StateSettings, STARTUP_VALIDATOR_BYTES};
+use crate::standalone::startup_observation::{record, record_platform, Stage};
 
 /// This guard is private to one startup future. Losing that future closes the
 /// original global owner and quarantines accepted native initialization, while
@@ -81,6 +82,7 @@ impl StateBootstrap {
             },
             Arc::clone(&self.clock),
         )
+        .inspect_err(|error| record(Stage::ProtectedStoreInitializerAdmission, *error))
         .map_err(|_| super::unavailable())?;
         let mut guard = StartingStore {
             startup: initializer,
@@ -88,6 +90,10 @@ impl StateBootstrap {
             delivered: false,
         };
         let result = tokio::time::timeout_at(self.deadline.into(), &mut guard.startup).await;
+        if let Ok(Err(error)) = &result {
+            record(Stage::ProtectedStoreInitializerCompletion, *error);
+        }
+        let deadline_elapsed = result.is_err();
         let store = if let Ok(Ok(store)) = result {
             Arc::new(store)
         } else {
@@ -101,7 +107,11 @@ impl StateBootstrap {
             ) {
                 let _report = drain.await;
             }
-            return Err(super::unavailable());
+            let failure = super::unavailable();
+            if deadline_elapsed {
+                record_platform(Stage::ProtectedStoreInitializerDeadline, &failure);
+            }
+            return Err(failure);
         };
         if !store.uses_native_capacity(&self.native) || self.check_live().is_err() {
             store.quarantine();

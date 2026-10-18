@@ -1,5 +1,9 @@
 # C# capsule qualification
 
+The later [stackful canonical async export bridge](dotnet-stackful-async-exports.md)
+has separate source/encoder controls. Those controls do not extend the historical
+execution results below to default HttpClient or complete managed Task support.
+
 This is developer execution evidence for #549, separate from the beginner
 [C# authoring guide](../component-development/dotnet-authoring.md). It does not
 authorize a release or replace human newcomer review #345. The complete finite

@@ -182,6 +182,17 @@ fn fields(kind: &str) -> Option<&'static [(&'static str, Value)]> {
             ("requested", Unsigned),
         ],
         "activation.guest-trap-kind" => &[("kind", Value::GuestTrapKind)],
+        "activation.guest-trap" => &[(
+            "code",
+            Known(&[
+                "guest-trap",
+                "guest-runtime-error",
+                "runtime-lifecycle-unproven",
+                "budget-accounting-failed",
+                "result-limit-exceeded",
+                "invalid-component-result",
+            ]),
+        )],
         "activation.deadline-exceeded" | "budget.deadline-out-of-range" => &[
             ("deadline_unix_millis", Unsigned),
             ("admitted_at_unix_millis", Unsigned),

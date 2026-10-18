@@ -68,6 +68,34 @@ def public_events(values):
     return result
 
 
+def unreviewed_lock_refusal(value):
+    """A transient edit or recipe-trust refusal is not an unreviewed native lock."""
+    return (isinstance(value, dict) and value.get('event') == 'edit-failed'
+            and value.get('phase') == 'source'
+            and value.get('code') == 'dependency-native-lock-drift'
+            and value.get('uncertain') is False)
+
+
+def public_gate_observations(report):
+    """Project only the six fixed refusal witnesses, without private event fields."""
+    gates = {
+        'updateBeforeReview': ('source', 'dependency-native-lock-drift'),
+        'updateBeforeTrust': ('build', 'workspace-recipe-trust-required'),
+        'updateBeforeNewSignedWorkspace': ('deploy', 'signed-test-build-changed-use-new-workspace'),
+        'removeBeforeReview': ('source', 'dependency-native-lock-drift'),
+        'removeBeforeTrust': ('build', 'workspace-recipe-trust-required'),
+        'removeBeforeNewSignedWorkspace': ('deploy', 'signed-test-build-changed-use-new-workspace'),
+    }
+    result = {}
+    for name, (phase, code) in gates.items():
+        value = report.get(name)
+        if (isinstance(value, dict) and value.get('event') == 'edit-failed'
+                and value.get('phase') == phase and value.get('code') == code
+                and value.get('uncertain') is False):
+            result[name] = {'event': 'edit-failed', 'phase': phase, 'code': code, 'uncertain': False}
+    return result
+
+
 def public_build_failure(value):
     """Keep bounded failure taxonomy; never retain compiler reasons or arguments."""
     if not isinstance(value, dict):
@@ -502,7 +530,7 @@ def main() -> int:
         offset = start_watch('initial')
         fixture.restore_revision(inputs, 2)
         author('update-child', 'update', application, fixture.PRIMARY, '--version', '0.1.1', '--path', inputs['primary'])
-        offset, denied = await_event(offset, lambda value: value.get('event') == 'edit-failed', 'unreviewed-update', 30)
+        offset, denied = await_event(offset, unreviewed_lock_refusal, 'unreviewed-update', 30)
         require(denied['uncertain'] is False, 'unreviewed-update-must-be-certain')
         report['updateBeforeReview'] = denied
         review('updated')
@@ -519,7 +547,7 @@ def main() -> int:
         stop_watch('initial')
         offset = start_watch('updated')
         remove_owned_revision(inputs, application, fixture, author)
-        offset, denied = await_event(offset, lambda value: value.get('event') == 'edit-failed', 'unreviewed-remove', 30)
+        offset, denied = await_event(offset, unreviewed_lock_refusal, 'unreviewed-remove', 30)
         require(denied['uncertain'] is False, 'unreviewed-remove-must-be-certain')
         report['removeBeforeReview'] = denied
         capsule.write_text(fixture.application_source(removed=True), encoding='utf-8')
@@ -591,6 +619,9 @@ def main() -> int:
             stages=[{'id': row['id'], 'passed': row['tests']['passed']} for row in report['stages']])
         if 'failure' in report:
             public['failure'] = report['failure']
+        gates = public_gate_observations(report)
+        if gates:
+            public['gateObservations'] = gates
         add_public_diagnostics(public, observed, node_root,
             lambda: project.load(application)[0]['build']['outputRoot'])
         write(root / 'public-qualification.json', public)

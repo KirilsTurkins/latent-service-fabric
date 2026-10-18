@@ -8,12 +8,15 @@ import time
 import tomllib
 
 from tools.build_observation import build_environment, file_identity, resolve_tools
-from tools.build_process import run_bounded
+from tools.build_process import BuildProcessError, run_bounded
 from tools.build_snapshot import SnapshotError, canonical, digest, is_reparse
 from tools.angular_build.inputs import decode, read
 
 ROOT = Path(__file__).resolve().parents[2]
 NODE_VERSION = '24.19.0'
+BUILD_STAGES = frozenset(('tool', 'node-version', 'configure', 'angular-compile', 'bundle',
+                         'componentize', 'adapter-build', 'component-new', 'component-compose',
+                         'component-validate', 'assembler'))
 ADAPTER_FILES = ('Cargo.toml', 'src/abi.rs', 'src/lib.rs', 'src/wire.rs', 'src/backend.rs', 'wit/adapter.wit',
                  'runtime/bridge.js', 'runtime/timers.js')
 
@@ -125,23 +128,31 @@ class BuildTools:
                                  if key in ('PATH', 'SystemRoot', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'ComSpec',
                                             'PATHEXT', 'TEMP', 'TMP', 'TMPDIR', 'LC_ALL', 'TZ')}
         self.node_environment.update({'HOME': str(private_home), 'USERPROFILE': str(private_home)})
-        version = self.call([str(self.paths['node']), '--version'], ROOT, node=True, seconds=30).strip()
+        version = self.call([str(self.paths['node']), '--version'], ROOT, node=True, seconds=30,
+                            stage='node-version').strip()
         if version != ('v' + NODE_VERSION).encode():
             raise SnapshotError('Angular Node version differs from its pin')
         self.profile = self.cli('package', 'renderer-profile')
         if self.profile.get('profile') != 'angular-ssr-component-v1':
             raise SnapshotError('package assembler lacks the approved renderer profile')
 
-    def call(self, command: list[str], cwd: Path, *, node=False, seconds=300, maximum=4 * 1024 * 1024) -> bytes:
+    def call(self, command: list[str], cwd: Path, *, node=False, seconds=300, maximum=4 * 1024 * 1024,
+             stage='tool') -> bytes:
+        if stage not in BUILD_STAGES:
+            raise SnapshotError('unsupported Angular build stage')
         self.cancellation.check()
         remaining = min(seconds, self.deadline - time.monotonic())
         if remaining <= 0:
             raise SnapshotError('Angular build deadline exceeded')
-        return run_bounded(command, cwd=cwd, env=self.node_environment if node else self.environment,
-                           timeout_seconds=remaining, max_output_bytes=maximum).stdout
+        try:
+            return run_bounded(command, cwd=cwd, env=self.node_environment if node else self.environment,
+                               timeout_seconds=remaining, max_output_bytes=maximum).stdout
+        except BuildProcessError as error:
+            raise BuildProcessError('angular-' + stage + ':' + error.reason) from None
 
     def cli(self, *arguments: str) -> dict:
-        result = decode(self.call([str(self.paths['package-assembler']), '--output', 'json', *arguments], ROOT))
+        result = decode(self.call([str(self.paths['package-assembler']), '--output', 'json', *arguments], ROOT,
+                                  stage='assembler'))
         if result.get('category') != 'success' or not isinstance(result.get('data'), dict):
             raise SnapshotError('Angular package assembler failed')
         return result['data']
