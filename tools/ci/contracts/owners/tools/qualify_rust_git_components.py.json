@@ -1,0 +1,8 @@
+{
+  "kind": "owner",
+  "path": "tools/qualify_rust_git_components.py",
+  "reviewBoundary": "committed-fingerprint",
+  "reviewReason": "Retain bounded public prepared inputs and isolated Git build/sign campaign; require distinct dynamic library/resource signed output evidence before qualification.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "sha256": "906a2782268403e60714b9ba0ec869a8fba6eb964f46bd94742c04b696fdab87"
+}
