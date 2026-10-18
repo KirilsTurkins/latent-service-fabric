@@ -1,6 +1,20 @@
 {
   "kind": "workflow",
   "policy": {
+    "concurrency": {
+      "cancel-in-progress": true,
+      "group": "go-guest-${{ github.ref }}"
+    },
+    "env": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
+    },
     "name": "Go guest qualification",
     "on": {
       "pull_request": {
@@ -41,6 +55,7 @@
           "tools/tests/fixtures/go-http-context/**",
           "tools/qualify_go_runtime_dependencies.py",
           "tools/diagnose_go_timer_failure.py",
+          "tools/qualify_go_runtime_dependencies.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
@@ -108,6 +123,7 @@
           "tools/tests/fixtures/go-http-context/**",
           "tools/qualify_go_runtime_dependencies.py",
           "tools/diagnose_go_timer_failure.py",
+          "tools/qualify_go_runtime_dependencies.py",
           "tools/qualify_rust_capsules.py",
           "tools/*rust_capsule*.py",
           "tools/guest_runtime_grants.py",
@@ -138,26 +154,12 @@
     },
     "permissions": {
       "contents": "read"
-    },
-    "concurrency": {
-      "group": "go-guest-${{ github.ref }}",
-      "cancel-in-progress": true
-    },
-    "env": {
-      "CARGO_BUILD_JOBS": "2",
-      "CARGO_INCREMENTAL": "0",
-      "CARGO_PROFILE_DEV_DEBUG": "0",
-      "CARGO_PROFILE_TEST_DEBUG": "0",
-      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
-      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
-      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true"
     }
   },
   "requiredJobs": [
     "upstream-probe"
   ],
-  "reviewReason": "Compose actual merged normal Go authoring, strict Rust qualification and networking gates; preserve all parent commands, artifacts, triggers, environment, runner and unchanged45-minute bound.",
+  "reviewReason": "Compose admitted initializer and published worker gates with original typed context/default HTTP qualification; preserve all parent steps, commands, artifacts, runners, permissions, environment and45-minute bound.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/go-guest.yml"
 }

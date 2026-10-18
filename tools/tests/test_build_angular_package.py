@@ -396,5 +396,135 @@ console.log('hydration wrapper boundaries passed');
             self.assertIn(b'hydration wrapper boundaries passed', result.stdout)
 
 
+class AngularBuildFailureDiagnosticTests(unittest.TestCase):
+    def fixture(self):
+        import io
+        from unittest import mock
+        from tools.angular_build import tools as builder
+        instance = object.__new__(builder.BuildTools)
+        instance.deadline = 200
+        instance.cancellation = SimpleNamespace(check=mock.Mock())
+        instance.environment = {'PRIVATE_ENV': 'PRIVATE_ENV_VALUE'}
+        instance.node_environment = {'PRIVATE_NODE_ENV': 'PRIVATE_NODE_VALUE'}
+        return builder, instance, io.StringIO(), mock
+
+    def test_success_preserves_exact_arguments_deadline_cap_and_stdout(self):
+        import contextlib
+        import subprocess
+        for stage in ('node-version', 'assembler', 'configure', 'angular-compile', 'bundle',
+                      'componentize', 'adapter-build', 'component-new', 'component-compose', 'component-validate', 'tool'):
+            for node, seconds, maximum in ((False, 300, 4 * 1024 * 1024), (True, 30, 789)):
+                with self.subTest(stage=stage, node=node):
+                    builder, instance, output, mock = self.fixture()
+                    command, cwd = ['PRIVATE_ARG'], Path('PRIVATE_CWD')
+                    result = subprocess.CompletedProcess(command, 0, b'PRIVATE_STDOUT', b'PRIVATE_STDERR')
+                    with mock.patch.object(builder, 'run_bounded_result', return_value=result) as runner, \
+                            mock.patch.object(builder.time, 'monotonic', return_value=100), contextlib.redirect_stderr(output):
+                        actual = instance.call(command, cwd, stage=stage, node=node, seconds=seconds, maximum=maximum)
+                    self.assertIs(actual, result.stdout)
+                    runner.assert_called_once_with(command, cwd=cwd,
+                        env=instance.node_environment if node else instance.environment,
+                        timeout_seconds=min(seconds, 100), max_output_bytes=maximum)
+                    instance.cancellation.check.assert_called_once_with()
+                    self.assertEqual(output.getvalue(), '')
+
+    def test_nonzero_exit_has_only_bounded_static_metadata_and_output_identities(self):
+        import contextlib
+        import hashlib
+        import subprocess
+        builder, instance, output, mock = self.fixture()
+        command, cwd = ['PRIVATE_ARG'], Path('PRIVATE_CWD')
+        result = subprocess.CompletedProcess(command, 7, b'PRIVATE_STDOUT', b'PRIVATE_STDERR')
+        with mock.patch.object(builder, 'run_bounded_result', return_value=result), \
+                mock.patch.object(builder.time, 'monotonic', return_value=100), contextlib.redirect_stderr(output):
+            with self.assertRaisesRegex(BuildProcessError, '^angular-angular-compile:command-exit$'):
+                instance.call(command, cwd, stage='angular-compile')
+        record = json.loads(output.getvalue())
+        self.assertEqual(record, {'schemaVersion': 'latent.angular.build-failure.v1', 'qualification': False,
+            'stage': 'angular-compile', 'reason': 'command-exit', 'exitKind': 'nonzero',
+            'stdout': {'bytes': len(result.stdout), 'digest': 'sha256:' + hashlib.sha256(result.stdout).hexdigest()},
+            'stderr': {'bytes': len(result.stderr), 'digest': 'sha256:' + hashlib.sha256(result.stderr).hexdigest()}})
+        self.assertLessEqual(len(output.getvalue().encode()), 1025)
+        for secret in ('PRIVATE_ARG', 'PRIVATE_CWD', 'PRIVATE_ENV', 'PRIVATE_NODE', 'PRIVATE_STDOUT', 'PRIVATE_STDERR'):
+            self.assertNotIn(secret, output.getvalue())
+
+    def test_signal_exit_keeps_the_original_failure_and_no_raw_signal(self):
+        import contextlib
+        import subprocess
+        builder, instance, output, mock = self.fixture()
+        result = subprocess.CompletedProcess(['PRIVATE_ARG'], -9, b'', b'')
+        with mock.patch.object(builder, 'run_bounded_result', return_value=result), \
+                mock.patch.object(builder.time, 'monotonic', return_value=100), contextlib.redirect_stderr(output):
+            with self.assertRaisesRegex(BuildProcessError, '^angular-componentize:command-exit$'):
+                instance.call(['PRIVATE_ARG'], Path('PRIVATE_CWD'), stage='componentize')
+        self.assertEqual(json.loads(output.getvalue())['exitKind'], 'signal')
+        self.assertNotIn('-9', output.getvalue())
+
+    def test_deadline_overflow_and_cleanup_errors_keep_identity_without_complete_capture(self):
+        import contextlib
+        for reason in ('command-deadline', 'command-output-limit', 'process-cleanup'):
+            with self.subTest(reason=reason):
+                builder, instance, output, mock = self.fixture()
+                error = BuildProcessError(reason)
+                with mock.patch.object(builder, 'run_bounded_result', side_effect=error), \
+                        mock.patch.object(builder.time, 'monotonic', return_value=100), contextlib.redirect_stderr(output):
+                    with self.assertRaises(BuildProcessError) as observed:
+                        instance.call(['PRIVATE_ARG'], Path('PRIVATE_CWD'), stage='adapter-build')
+                self.assertIs(observed.exception.__context__, error)
+                self.assertEqual(observed.exception.reason, 'angular-adapter-build:' + reason)
+                record = json.loads(output.getvalue())
+                self.assertEqual((record['reason'], record['exitKind']), (reason, 'not-completed'))
+                self.assertIsNone(record['stdout'])
+                self.assertIsNone(record['stderr'])
+
+    def test_unknown_process_reason_is_redacted_without_changing_the_exception(self):
+        import contextlib
+        builder, instance, output, mock = self.fixture()
+        error = BuildProcessError('PRIVATE_UNRECOGNIZED_REASON')
+        with mock.patch.object(builder, 'run_bounded_result', side_effect=error), \
+                mock.patch.object(builder.time, 'monotonic', return_value=100), contextlib.redirect_stderr(output):
+            with self.assertRaises(BuildProcessError) as observed:
+                instance.call(['PRIVATE_ARG'], Path('PRIVATE_CWD'), stage='component-compose')
+        self.assertIs(observed.exception.__context__, error)
+        self.assertEqual(observed.exception.reason, 'angular-component-compose:' + error.reason)
+        self.assertEqual(json.loads(output.getvalue())['reason'], 'other')
+        self.assertNotIn('PRIVATE', output.getvalue())
+
+    def test_expired_overall_deadline_does_not_start_a_command(self):
+        import contextlib
+        builder, instance, output, mock = self.fixture()
+        with mock.patch.object(builder, 'run_bounded_result') as runner, \
+                mock.patch.object(builder.time, 'monotonic', return_value=200), contextlib.redirect_stderr(output):
+            with self.assertRaisesRegex(SnapshotError, '^Angular build deadline exceeded$'):
+                instance.call(['PRIVATE_ARG'], Path('PRIVATE_CWD'), stage='component-validate')
+        runner.assert_not_called()
+        record = json.loads(output.getvalue())
+        self.assertEqual((record['stage'], record['reason'], record['exitKind']),
+                         ('component-validate', 'build-deadline', 'not-completed'))
+        self.assertIsNone(record['stdout'])
+        self.assertIsNone(record['stderr'])
+
+    def test_unknown_or_nonstring_stage_cannot_reach_a_command_or_diagnostic(self):
+        import contextlib
+        for stage in ('PRIVATE_STAGE', None, []):
+            with self.subTest(stage=stage):
+                builder, instance, output, mock = self.fixture()
+                with mock.patch.object(builder, 'run_bounded_result') as runner, contextlib.redirect_stderr(output):
+                    with self.assertRaisesRegex(SnapshotError, '^unsupported Angular build stage$'):
+                        instance.call(['PRIVATE_ARG'], Path('PRIVATE_CWD'), stage=stage)
+                runner.assert_not_called()
+                self.assertEqual(output.getvalue(), '')
+
+    def test_failed_diagnostic_sink_cannot_replace_the_original_command_failure(self):
+        import subprocess
+        builder, instance, _, mock = self.fixture()
+        result = subprocess.CompletedProcess(['PRIVATE_ARG'], 1, b'', b'')
+        failed = SimpleNamespace(write=mock.Mock(side_effect=OSError('PRIVATE_SINK_ERROR')))
+        with mock.patch.object(builder, 'run_bounded_result', return_value=result), \
+                mock.patch.object(builder.time, 'monotonic', return_value=100), mock.patch.object(builder.sys, 'stderr', failed):
+            with self.assertRaisesRegex(BuildProcessError, '^angular-tool:command-exit$'):
+                instance.call(['PRIVATE_ARG'], Path('PRIVATE_CWD'), stage='tool')
+
+
 if __name__ == '__main__':
     unittest.main()

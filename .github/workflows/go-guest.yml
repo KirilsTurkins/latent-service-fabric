@@ -39,6 +39,7 @@ on:
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
       - tools/diagnose_go_timer_failure.py
+      - tools/qualify_go_runtime_dependencies.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
       - tools/guest_runtime_grants.py
@@ -102,6 +103,7 @@ on:
       - tools/tests/fixtures/go-http-context/**
       - tools/qualify_go_runtime_dependencies.py
       - tools/diagnose_go_timer_failure.py
+      - tools/qualify_go_runtime_dependencies.py
       - tools/qualify_rust_capsules.py
       - tools/*rust_capsule*.py
       - tools/guest_runtime_grants.py
