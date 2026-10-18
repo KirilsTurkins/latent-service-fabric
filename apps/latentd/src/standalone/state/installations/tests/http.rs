@@ -418,3 +418,5 @@ async fn request(address: std::net::SocketAddr, input: &str, token: &str) -> Vec
         .unwrap();
     bytes
 }
+
+mod refusal;

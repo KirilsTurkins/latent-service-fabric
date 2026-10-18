@@ -185,6 +185,50 @@ class AngularBuildInputTests(unittest.TestCase):
                 check_html(html)
 
 
+class AngularBuildFailureTests(unittest.TestCase):
+    def tools(self):
+        import time
+        from tools.angular_build.tools import BuildTools
+        selected = BuildTools.__new__(BuildTools)
+        selected.deadline = time.monotonic() + 30
+        selected.cancellation = SimpleNamespace(check=lambda: None)
+        selected.environment = dict(os.environ, PRIVATE_ANGULAR_TEST='private-environment-value')
+        selected.node_environment = selected.environment
+        return selected
+
+    def test_failed_tool_reports_stage_and_original_reason_without_child_output_or_arguments(self):
+        import sys
+        selected = self.tools()
+        cases = [
+            ('componentize', 'command-exit',
+             'import os,sys; print(sys.argv[1]); print(os.environ["PRIVATE_ANGULAR_TEST"], file=sys.stderr); sys.exit(7)'),
+            ('adapter-build', 'command-output-limit', 'print("x" * 512)'),
+        ]
+        for stage, reason, script in cases:
+            with self.subTest(stage=stage):
+                with self.assertRaises(BuildProcessError) as raised:
+                    selected.call([sys.executable, '-c', script, 'private-argument-value'], ROOT,
+                                  stage=stage, seconds=10, maximum=128)
+                self.assertEqual(str(raised.exception), 'angular-' + stage + ':' + reason)
+                self.assertNotIn('private-', str(raised.exception))
+
+    def test_successful_tool_keeps_original_stdout_and_finite_call_contract(self):
+        import sys
+        result = self.tools().call([sys.executable, '-c', 'print("compiled")'], ROOT,
+                                   node=True, stage='angular-compile', seconds=10, maximum=128)
+        self.assertEqual(result, b'compiled\r\n' if os.name == 'nt' else b'compiled\n')
+
+    def test_unapproved_stage_is_rejected_before_starting_a_child(self):
+        import sys
+        with tempfile.TemporaryDirectory() as temporary:
+            marker = Path(temporary) / 'unexpected-child'
+            with self.assertRaisesRegex(SnapshotError, '^unsupported Angular build stage$'):
+                self.tools().call([sys.executable, '-c',
+                                  'from pathlib import Path; import sys; Path(sys.argv[1]).touch()', str(marker)],
+                                 ROOT, stage='private-argument-value')
+            self.assertFalse(marker.exists())
+
+
 class AngularHydrationWrapperTests(unittest.TestCase):
     def test_actual_typescript_preflight_rejects_server_templates_and_outside_reference_directives(self):
         node = shutil.which('node')

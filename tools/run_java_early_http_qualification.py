@@ -169,6 +169,7 @@ def run(args):
             record.update(nativeTools=tools, collectorDigests=collectors, input=item.observation(),
                           compilerSourceCommit=item.compiler_source, selectionDigest=args.selection_digest)
             client = RecordingClient(args.cli, client_root, cancellation, deadline, evidence, phase4=True)
+            primary = None
             try:
                 stage = 'package'
                 signed = package(args, item, work / 'packages', max(1, int(min(600, deadline - time.monotonic()))))
@@ -235,18 +236,19 @@ def run(args):
                     and {name: file_identity(getattr(args, name), name, 1073741824) for name in tools} == tools,
                     'early-qualification-input-changed')
                 record.update(passed=True, signedGuestExecutionQualified=True, immediateHttpDenialQualified=True)
+            except BaseException as error:
+                primary = error
+                raise
             finally:
-                with cancellation.defer():
-                    if node is not None:
-                        node.close()
-                cancellation.check()
+                terminal.close_owners(record, cancellation, node, None, primary=primary)
     except BaseException as error:
         terminal.failure(record, stage, error)
         record['immediateHttpDenialQualified'] = False
     finally:
         record.update(seconds=round(time.monotonic() - started, 6), cliProcesses=client.calls if client else 0,
                       measuredCases=list(evidence.cases))
-        record['evidenceInventory'] = evidence.record('inventory', evidence.summary())
+        if not terminal.finalize_inventory(record, evidence, 'inventory'):
+            record['immediateHttpDenialQualified'] = False
         write_json(work / 'campaign-receipt.json', record)
     print(bounded_receipt(record))
     return 0 if record['passed'] else 1

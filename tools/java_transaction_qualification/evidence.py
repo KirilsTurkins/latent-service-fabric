@@ -78,6 +78,14 @@ class Evidence:
     def record(self, name: str, value) -> dict:
         return self.write(name + ".json", encoded(value))
 
+    def stream(self, name: str, raw: bytes) -> dict:
+        require(isinstance(name, str) and re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,95}", name),
+                "closed-evidence-file-name")
+        require(isinstance(raw, bytes), "original-evidence-byte-bound")
+        if not raw:
+            return {"empty": True, "bytes": 0, "digest": digest(raw)}
+        return self.write(name, raw)
+
     def passed(self, name: str, observed: dict):
         with self.lock:
             require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", name)
@@ -125,11 +133,12 @@ class RecordingClient(Client):
             result = process.complete(min(until, time.monotonic() + timeout))
         finally:
             process.close()
-            self.evidence.write(f"cli-{ordinal:03d}.stdout", bytes(process.buffers[0]))
-            self.evidence.write(f"cli-{ordinal:03d}.stderr", bytes(process.buffers[1]))
+            stdout = self.evidence.stream(f"cli-{ordinal:03d}.stdout", bytes(process.buffers[0]))
+            stderr = self.evidence.stream(f"cli-{ordinal:03d}.stderr", bytes(process.buffers[1]))
             self.evidence.record(f"cli-{ordinal:03d}-process", {
                 "exitStatus": process.owner.process.returncode,
-                "reaped": process.closed and process.owner.finished})
+                "reaped": process.closed and process.owner.finished,
+                "stdout": stdout, "stderr": stderr})
         if self.node:
             self.node.drain()
         value = decode(result.stdout, 1048576)
@@ -154,10 +163,11 @@ def native(client: RecordingClient, executable: Path, stage: str, *arguments, ti
         result = process.complete(min(client.deadline, time.monotonic() + timeout))
     finally:
         process.close()
-        client.evidence.write(stage + ".stdout", bytes(process.buffers[0]))
-        client.evidence.write(stage + ".stderr", bytes(process.buffers[1]))
+        stdout = client.evidence.stream(stage + ".stdout", bytes(process.buffers[0]))
+        stderr = client.evidence.stream(stage + ".stderr", bytes(process.buffers[1]))
         client.evidence.record(stage + "-process", {
             "exitStatus": process.owner.process.returncode,
-            "reaped": process.closed and process.owner.finished})
+            "reaped": process.closed and process.owner.finished,
+            "stdout": stdout, "stderr": stderr})
     require(result.returncode == 0, "native-helper-refused-" + stage)
     return result.stdout
