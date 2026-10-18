@@ -234,5 +234,102 @@ class StagedRustLinker(unittest.TestCase):
             self.assertFalse((project.parent / "build-cache/host-linker").exists())
 
 
+class CargoManifestSpans(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.original = self.root / 'project/Cargo.toml'
+        self.mappings = {(self.root / 'selected').resolve(): Path('dependencies/cargo-paths/selected')}
+
+    def relocate(self, raw):
+        return selected_manifest(raw, self.original, Path('Cargo.toml'), self.mappings)
+
+    def test_comments_strings_metadata_and_source_paths_keep_exact_unrelated_bytes(self):
+        raw = (b'# path = "../not-a-crate"\r\n'
+               b'[package]\r\nname="outside"\r\n'
+               b'description = \'\'\'example path = "../not-a-crate"\'\'\'\r\n'
+               b'[package.metadata]\r\npath = "../selected"\r\n'
+               b'example = \'path = "../not-a-crate"\'\r\n'
+               b'items = [{ path = "../selected" }]\r\n'
+               b'[lib]\r\npath = "../selected"\r\n'
+               b'[dependencies]\r\nselected = { "path"  =  \'../selected\', features=["pure"] }'
+               b' # path = "../not-a-crate"\r\n')
+        expected = raw.replace(b'"path"  =  \'../selected\'',
+                               b'"path"  =  "dependencies/cargo-paths/selected"')
+        self.assertEqual(self.relocate(raw), expected)
+        self.assertEqual(tomllib.loads(expected.decode())['package']['metadata']['path'], '../selected')
+
+    def test_all_supported_dependency_table_and_inline_forms_relocate_only_the_value(self):
+        forms = [
+            '[dependencies]\nselected={path=VALUE, version="1.0.0"}\n',
+            '[dev-dependencies.selected]\npath=VALUE\n',
+            '[build-dependencies.selected]\n"path"=VALUE\n',
+            '[workspace.dependencies.selected]\npath=VALUE\n',
+            '[target.\'cfg(unix)\'.dependencies]\nselected={path=VALUE}\n',
+            '[target.\'cfg(target_arch = "wasm32")\'.build-dependencies.selected]\npath=VALUE\n',
+            '[patch.crates-io.selected]\npath=VALUE\n',
+            '[patch."https://registry.example.test/index"]\nselected={path=VALUE}\n',
+            '[replace."outside:1.0.0"]\npath=VALUE\n',
+            'dependencies.selected.path=VALUE\n',
+            'dependencies={selected={path=VALUE, metadata={path="../not-a-crate"}}}\n',
+        ]
+        for form in forms:
+            with self.subTest(form=form):
+                raw = form.replace('VALUE', "'../selected'").encode()
+                expected = form.replace('VALUE', '"dependencies/cargo-paths/selected"').encode()
+                self.assertEqual(self.relocate(raw), expected)
+
+    def test_literal_escaped_and_multiline_strings_bind_the_parsed_native_path(self):
+        for literal in ('"../selected"', "'../selected'", '"""../selected"""',
+                        "'''../selected'''", '"..\\u002fselected"', '"""\\\n../selected"""'):
+            with self.subTest(literal=literal):
+                raw = ('[dependencies.selected]\npath = ' + literal + '\n').encode()
+                self.assertEqual(tomllib.loads(raw.decode())['dependencies']['selected']['path'], '../selected')
+                self.assertEqual(self.relocate(raw), b'[dependencies.selected]\npath = "dependencies/cargo-paths/selected"\n')
+
+    def test_quoted_dotted_keys_and_array_table_data_do_not_confuse_locations(self):
+        raw = (b'"dependencies"."odd.name"."path" = "../selected"\n'
+               b'[[bin]]\nname="sample"\npath="../selected"\n'
+               b'[package.metadata]\nnumber=1.25\ntime=1979-05-27T07:32:00Z\n'
+               b'matrix=[[1,2], [{path="../selected"}]]\n')
+        self.assertEqual(self.relocate(raw), raw.replace(b'"path" = "../selected"',
+            b'"path" = "dependencies/cargo-paths/selected"', 1))
+
+    def test_no_dependency_paths_and_unmapped_internal_dependencies_are_byte_identical(self):
+        for raw in (b'[package.metadata]\npath="../unrelated"\n',
+                    b'[dependencies]\nlocal={path="local"}\n'):
+            with self.subTest(raw=raw):
+                self.assertEqual(self.relocate(raw), raw)
+
+    def test_external_unselected_dependencies_fail_even_when_metadata_matches_a_selected_root(self):
+        raw = b'[package.metadata]\npath="../selected"\n[dependencies.actual]\npath="../missing"\n'
+        with self.assertRaisesRegex(DependencyError, '^cargo-path-dependency-not-in-selected-graph$'):
+            self.relocate(raw)
+
+    def test_invalid_ambiguous_or_non_string_path_forms_fail_with_closed_diagnostics(self):
+        for raw in (b'\xff', b'[dependencies.actual]\npath="one"\npath="two"\n',
+                    b'[dependencies.actual]\npath="unterminated\n'):
+            with self.subTest(raw=raw), self.assertRaisesRegex(DependencyError, '^cargo-path-relocation-invalid-toml$'):
+                self.relocate(raw)
+        for raw in (b'target=1\n', b'workspace=1\n', b'patch=1\n', b'dependencies=[]\n',
+                    b'[[dependencies.actual]]\npath="../selected"\n'):
+            with self.subTest(raw=raw), self.assertRaisesRegex(DependencyError, '^cargo-path-relocation-syntax-unsupported$'):
+                self.relocate(raw)
+        with self.assertRaisesRegex(DependencyError, '^cargo-path-relocation-path-invalid$'):
+            self.relocate(b'[dependencies.actual]\npath=7\n')
+        with self.assertRaisesRegex(DependencyError, '^cargo-path-relocation-path-invalid$'):
+            self.relocate(b'[dependencies.actual]\npath="\\u0000"\n')
+
+    def test_manifest_byte_token_and_depth_limits_fail_before_partial_transformation(self):
+        from unittest.mock import patch
+        raw = b'[dependencies.actual]\npath="../selected"\n[package.metadata]\narray=[[[1]]]\n'
+        for name, maximum in (('MAX_MANIFEST_BYTES', len(raw)-1), ('MAX_MANIFEST_TOKENS', 4),
+                              ('MAX_MANIFEST_DEPTH', 2)):
+            with self.subTest(name=name), patch('tools.rust_application_dependencies.' + name, maximum), \
+                    self.assertRaisesRegex(DependencyError, '^cargo-path-relocation-limit$'):
+                self.relocate(raw)
+
+
 if __name__ == '__main__':
     unittest.main()
