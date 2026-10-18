@@ -1,9 +1,11 @@
 # Bounded standard outbound stream profile v1
 
-This is the frozen proposal owned by [ADR-0061](../../adr/0061-bound-standard-outbound-streams.md)
-and [#737](https://github.com/KirilsTurkins/latent-service-fabric/issues/737).
-Production installation remains disabled pending architecture/security review,
-provider #738, operator #739 and conformance #740. The current shipped HTTP
+This is the accepted bounded design contract owned by
+[ADR-0061](../../adr/0061-bound-standard-outbound-streams.md) and
+[#737](https://github.com/KirilsTurkins/latent-service-fabric/issues/737). The
+[owner acceptance](outbound-stream-acceptance-2026-10-16.md) records the exact reviewed inputs.
+Production installation remains disabled pending provider #738, operator #739
+and conformance #740. The current shipped HTTP
 profiles are unchanged. The exact [WIT](../../wit/platform/network/package.wit)
 is recognized by host ABI V5; actual installation is restricted to the explicit
 `development-outbound` provider and `development-outbound-streams` node features.

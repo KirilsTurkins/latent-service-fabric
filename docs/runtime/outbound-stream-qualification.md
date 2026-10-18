@@ -5,9 +5,10 @@ The shared implementation remains restricted to explicit development features.
 The [October 12 review packet](outbound-stream-review-2026-10-12.md) records
 fresh bounded TCP/component/owner controls, the captured TLS parser allocation
 reference and its remaining independent approval and full TLS accounting gates.
+The [owner decision](outbound-stream-acceptance-2026-10-16.md) accepts
 [ADR-0061](../../adr/0061-bound-standard-outbound-streams.md) and the
-[profile](outbound-stream-profile.md) remain subject to #737 architecture/security
-review. The maintained suites define canonical TCP and physical-ownership controls.
+[profile](outbound-stream-profile.md) as the bounded design contract. It supplies
+no production installation or new execution qualification. The maintained suites define canonical TCP and physical-ownership controls.
 Execution remains pending wherever no authenticated source-bound receipt is
 linked below. Case presence and earlier count-only narratives do not establish
 current success, ordinary language networking or a released node artifact.
@@ -105,8 +106,9 @@ required, including all 12 currentness reasons and both retryability values. Thi
 diagnostic neither settles the original operation nor authorizes a mutation
 retry; the original pending identity and receipt-recovery rules are unchanged.
 
-Open delivery gates include #737's explicit review, protected node/operator
-end-to-end qualification and live rotation workflow (#739), full adversarial
+The #737 design decision is recorded separately from the open implementation
+gates: protected node/operator end-to-end qualification and live rotation
+workflow (#739), full adversarial
 socket/uncertainty and measured native
 peaks (#740), and every ordinary standard-library and unchanged non-HTTP workload
 for Rust/C/Go/Java/TypeScript/.NET. The ABI contains `host-tls` as an explicit

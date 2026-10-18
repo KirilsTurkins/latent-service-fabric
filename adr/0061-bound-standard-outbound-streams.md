@@ -1,8 +1,9 @@
 # ADR-0061: Bound standard outbound streams beneath language runtimes
 
 - Date: 2026-09-30
-- Status: Proposed for architecture and security review; production installation
-  remains disabled pending the review and qualification gates below.
+- Status: Accepted as the bounded design contract on 2026-10-16; production
+  installation remains disabled pending the implementation and qualification gates.
+- Acceptance: [owner decision and literal criterion record](../docs/runtime/outbound-stream-acceptance-2026-10-16.md).
 - Decision owner: [#737](https://github.com/KirilsTurkins/latent-service-fabric/issues/737)
 - Implementation owners: [provider #738](https://github.com/KirilsTurkins/latent-service-fabric/issues/738),
   [operators #739](https://github.com/KirilsTurkins/latent-service-fabric/issues/739),
@@ -96,7 +97,9 @@ the selected middleware settings rather than certified by package name.
 
 1. Architecture and security review must explicitly accept this ADR's selected
    profile, TLS/secret placement, authority, resource bounds and unsupported
-   operations. A merge of preparatory code alone is not that review.
+   operations. The [recorded owner acceptance](../docs/runtime/outbound-stream-acceptance-2026-10-16.md)
+   satisfies this contract-review gate; a preparatory code merge alone does not.
+   The implementation gates below remain required.
 2. #738 must deliver actual provider/ABI/broker/currentness/ownership semantics
    and focused real-component tests. Unknown imports/profiles and unavailable
    providers remain denied. The production default remains disabled.
