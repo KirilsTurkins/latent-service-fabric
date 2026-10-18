@@ -2,7 +2,7 @@
 
 Edit the ordinary application `Cargo.toml` and generate/review its native `Cargo.lock` independently of `sdk-lock.json`. Public registry, exact git revisions and outside-project path crates use Cargo's resolver. Package names identify provenance and do not require LSF catalogue entries. Keep the SDK workspace inheritance and maintained guest/WIT dependency declarations pinned.
 
-Use normal native `add`, `update`, `remove` and `lock` stages for application declarations. These are explicit fetch operations: the pinned Cargo editor and lock generator run in an observed private mirror with the same registry/CA policy as capture. They never run application build scripts, proc macros or a compiler build. Select an exact package version; a local package must declare that same name/version. Then capture and review the exact candidate before the existing build/package/admission flow:
+Use normal native `add`, `update`, `remove` and `lock` stages for application declarations. These are explicit fetch operations: the pinned Cargo editor and resolver run in an observed private mirror with the same registry/CA policy as capture. Native `cargo metadata --format-version 1` resolves changed declarations against the existing lock, retaining compatible selections instead of refreshing every unrelated SDK/compiler dependency. It also creates a missing lock. Necessary dependency changes still require capture and review; executable inputs still require their separate exact approval. These operations never run application build scripts, proc macros or a compiler build. Select an exact package version; a local package must declare that same name/version. Then capture and review the exact candidate before the existing build/package/admission flow:
 
 ```powershell
 python tools/rust_capsule.py add ./my-rust unicode-normalization --version 0.1.24 --cargo ./reviewed-rust/bin/cargo
@@ -169,7 +169,9 @@ workspaces: the initial value, an updated transitive value, then dependency
 removal. Before each replacement, unreviewed lock inputs, changed recipe trust
 and a previous build's signing consent must stop deployment. Every watcher
 must finish through normal `down` with a reaped, clean node. Explicit Cargo
-fetch may contact its registries; the ordinary captured compiler retains its
-network-denied namespace. The programme exports only bounded public results.
+fetch may contact its registries. The exact owned crate revision is restored
+while native update/removal loads its manifests; its original directories are
+deleted again before every captured compilation. The ordinary captured compiler
+retains its network-denied namespace. The programme exports only bounded public results.
 Its source is not an executed qualification receipt, and later final-source CI
 must preserve the other language gates in the shared developer-tools job.

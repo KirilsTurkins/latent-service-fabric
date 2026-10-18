@@ -142,8 +142,9 @@ impl DirectoryArtifactRepository {
             .as_ref()
             .ok_or_else(|| corrupt("admission-record-missing"))?;
         let binding = stored.binding(path, config.limits)?;
-        let upload = stored.upload(path, config.limits, self.config.max_component_bytes)?;
-        association::verify(&binding, &upload, &verified.metadata, &self.codec)?;
+        let upload = stored.checked_upload(path, config.limits, self.config.max_component_bytes)?;
+        let upload =
+            association::verify_checked(&binding, upload, &verified.metadata, &self.codec)?;
         let recovered = config.authority.recover(&binding, upload);
         let eligibility = match recovered {
             Ok(value) => {

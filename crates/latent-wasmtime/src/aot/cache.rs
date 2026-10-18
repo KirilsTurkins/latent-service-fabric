@@ -18,7 +18,6 @@ use super::{
     supervisor::AotPreparedInput,
     AotCompilationJob, IsolatedAotCompiler, ValidatedAotProfile,
 };
-use crate::WasmtimeConfig;
 use latent_artifacts::{
     ArtifactRepository, DirectoryArtifactRepository, RawArtifactCache, RawArtifactKey,
 };
@@ -46,7 +45,7 @@ pub(crate) struct NativeAotService {
 
 impl NativeAotService {
     pub(crate) fn new(
-        config: &WasmtimeConfig,
+        profile: ValidatedAotProfile,
         engine: &Engine,
         catalog: Arc<DirectoryArtifactRepository>,
         settings: NativeAotSettings,
@@ -57,7 +56,6 @@ impl NativeAotService {
             &settings.cache.receipt_root,
             catalog.root(),
         )?;
-        let profile = ValidatedAotProfile::from_config(config, settings.process.compiler)?;
         profile.check_engine(engine)?;
         let images = NativeImageBudget::new(settings.images)?;
         // Platform/approved binary checks precede all cache-root mutations.
