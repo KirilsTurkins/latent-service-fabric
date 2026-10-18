@@ -49,8 +49,14 @@ profile semantics govern accepted continuation authority; those continuations
 retain the original destination, ceilings and monotonic deadline. An operation
 timeout only narrows that deadline. Reserved credentials/framing, DNS/SSRF,
 TLS, redirect destinations and credential stripping remain enforced by the
-selected host profile. Streaming HTTP accepts identity encoding only. A
-buffered profile's decompression support is not inherited by this interface.
+selected host profile. Streaming HTTP accepts identity-encoded response bodies
+only. HEAD responses and statuses 204 and 304 have no body: their
+`Content-Encoding` representation metadata is preserved without decoding or
+charging a representation `Content-Length` as transferred body bytes. This
+follows [RFC 9110 sections 6.4.1 and 9.3.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-6.4.1).
+An encoded GET entity response still returns `unsupported-encoding`, even when
+its declared length is zero. A buffered profile's decompression support is not
+inherited by this interface.
 
 Opaque TCP/TLS bytes require the separately reviewed stream contract and exact
 endpoint/port/transport grants. Neither a missing typed HTTP mapping nor a
@@ -79,7 +85,7 @@ protected store and separately grants only the intended HTTP resources.
 | `malformed-framing` | Conflicting content length and transfer encoding |
 | `malformed-json` | A valid HTTP response whose domain JSON is incomplete |
 | `oversized-body` | A real 64 KiB response for a separately configured narrower limit |
-| `gzip-json` | Actual gzip bytes; identity-only streaming must reject the encoding |
+| `gzip-json` | Actual gzip GET bytes are unsupported by identity-only streaming; HEAD preserves the encoding/length metadata with no payload |
 | `redirect`, `redirect-target` | Two distinct origins and explicit credential-presence observations |
 | `redirect-denied`, `denied-target` | A redirect toward an independently ungranted destination |
 | `commit-pending` | One POST mutation committed before withheld response headers |
@@ -176,3 +182,19 @@ verifies credential retirement, clean I/O ownership and no destination contact.
 Both earlier setup failures are retained separately from the passing attempt.
 No standard language client, complete #680 acceptance, or production raw-stream
 enablement is claimed by these source and fixture checks.
+
+### Bodyless representation metadata
+
+The source regression cases cover HEAD 200, GET 204 and GET 304 with gzip
+representation metadata, empty EOF/trailers, and owner retirement. HEAD/304
+advertise a 4096-byte representation under an unchanged 1024-byte streaming
+output limit; no response body is transferred or decompressed. An actual
+resource-component control uses the same three responses through the frozen
+streaming ABI and checks the original activation budget, empty I/O ledger,
+clean pools and reusable execution. Encoded GET 200/302 entity responses remain
+unsupported. The controlled peer also verifies real HEAD gzip metadata and an
+empty wire payload.
+
+These Rust cases are registered for hosted execution; adding them and running
+the Python peer does not establish a hosted component pass or complete #680.
+The provider identity, WIT, limits and authority rules remain unchanged.

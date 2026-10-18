@@ -34,14 +34,15 @@ pub(super) fn begin(mut exchange: Exchange) -> Result<Body, Error> {
     let reply = exchange.response.take().ok_or(Error::InvalidState)?;
     let limits = exchange.inner.config.limits;
     validate(reply.headers(), limits)?;
-    if reply
-        .headers()
-        .get("content-encoding")
-        .is_some_and(|v| !v.as_bytes().eq_ignore_ascii_case(b"identity"))
+    let bodyless = exchange.head || matches!(reply.status().as_u16(), 204 | 304);
+    if !bodyless
+        && reply
+            .headers()
+            .get("content-encoding")
+            .is_some_and(|v| !v.as_bytes().eq_ignore_ascii_case(b"identity"))
     {
         return Err(Error::UnsupportedEncoding);
     }
-    let bodyless = exchange.head || matches!(reply.status().as_u16(), 204 | 304);
     let expected = if bodyless {
         Some(0)
     } else {

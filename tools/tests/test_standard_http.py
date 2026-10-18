@@ -321,6 +321,19 @@ class ControlledPeer(unittest.TestCase):
         self.assertIn(b"Content-Encoding: gzip\r\n", raw)
         self.assertEqual(json.loads(gzip.decompress(raw.split(b"\r\n\r\n")[1])), vectors.DOMAIN)
 
+    def test_head_preserves_encoded_representation_metadata_without_payload(self):
+        raw = self.reply(self.send("gzip-json", method=b"HEAD"))
+        headers, body = raw.split(b"\r\n\r\n", 1)
+        encoded = gzip.compress(vectors.json_bytes(vectors.DOMAIN), mtime=0)
+        self.assertTrue(headers.startswith(b"HTTP/1.1 200 "))
+        self.assertIn(b"Content-Encoding: gzip\r\n", headers + b"\r\n")
+        self.assertIn(f"Content-Length: {len(encoded)}\r\n".encode(), headers + b"\r\n")
+        self.assertEqual(body, b"")
+        observation = self.peer.observation()
+        observations.validate(observation)
+        self.assertEqual(observation["completedResponseWrites"], 1)
+        self.assertEqual(observation["openConnections"], 0)
+
     def test_failed_authentication_does_not_mutate_and_a_fresh_request_still_succeeds(self):
         self.assertEqual(self.reply(self.send("commit-close", method=b"POST", body=b"change", credential=False)), b"")
         self.assertEqual(self.peer.observation()["committedMutations"], 0)

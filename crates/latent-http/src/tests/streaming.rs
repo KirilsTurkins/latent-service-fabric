@@ -199,6 +199,100 @@ async fn encoding_and_upgrade_are_rejected_and_redirect_is_an_ordinary_response(
     }
 }
 #[tokio::test]
+async fn bodyless_responses_preserve_encoding_metadata_without_body_budget() {
+    for (method, status, length) in [
+        (HttpMethod::Head, 200, "Content-Length: 4096\r\n"),
+        (HttpMethod::Get, 204, ""),
+        (HttpMethod::Get, 304, "Content-Length: 4096\r\n"),
+    ] {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            read_request(&mut stream).await;
+            stream
+                .write_all(format!("HTTP/1.1 {status} Test\r\nContent-Encoding: gzip\r\n{length}Connection: close\r\n\r\n").as_bytes())
+                .await
+                .unwrap();
+        });
+        let f = fixture(port, 1);
+        let (session, _) = f.session(5000);
+        let observer = session.observer();
+        let upload = f
+            .streaming
+            .as_ref()
+            .unwrap()
+            .start(
+                &session,
+                StreamingHttpRequest {
+                    metadata: request(port, method),
+                    body_length: Some(0),
+                },
+            )
+            .unwrap()
+            .await
+            .unwrap();
+        let mut body = upload.finish().await.unwrap();
+        assert_eq!(body.head().status(), status);
+        assert!(body
+            .head()
+            .headers()
+            .any(|field| field == ("content-encoding", "gzip")));
+        assert!(body.read(4).await.unwrap().is_none());
+        assert_eq!(body.trailers().unwrap().iter().count(), 0);
+        assert!(body.read(4).await.unwrap().is_none());
+        drop(body);
+        drop(session);
+        assert!(observer.is_quiescent());
+        assert_eq!(
+            f.io.snapshot(),
+            latent_capabilities::broker::io::IoSnapshot::default()
+        );
+        server.await.unwrap();
+        f.clean().await;
+    }
+}
+#[tokio::test]
+async fn encoded_entity_responses_remain_unsupported_even_with_zero_length() {
+    for (status, encoding) in [(200, "gzip"), (302, "br")] {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            read_request(&mut stream).await;
+            stream
+                .write_all(format!("HTTP/1.1 {status} Test\r\nContent-Encoding: {encoding}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").as_bytes())
+                .await
+                .unwrap();
+        });
+        let f = fixture(port, 1);
+        let (session, _) = f.session(5000);
+        let observer = session.observer();
+        let upload = f
+            .streaming
+            .as_ref()
+            .unwrap()
+            .start(
+                &session,
+                StreamingHttpRequest {
+                    metadata: request(port, HttpMethod::Get),
+                    body_length: Some(0),
+                },
+            )
+            .unwrap()
+            .await
+            .unwrap();
+        assert!(matches!(
+            upload.finish().await,
+            Err(Error::UnsupportedEncoding)
+        ));
+        drop(session);
+        assert!(observer.is_quiescent());
+        server.await.unwrap();
+        f.clean().await;
+    }
+}
+#[tokio::test]
 async fn original_deadline_closes_a_stalled_response_without_refunding_held_chunks() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();

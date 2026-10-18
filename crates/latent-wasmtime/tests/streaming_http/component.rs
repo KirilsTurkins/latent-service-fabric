@@ -301,6 +301,16 @@ fn caller() -> Module {
     module.section(&exports);
     // locals: 0 mode, 1 upload, 2 body, 3 chunk, 4 byte total, 5 status.
     let mut body = Function::new([(5, ValType::I32)]);
+    mode(&mut body, 10);
+    instructions(
+        &mut body,
+        [
+            Instruction::I32Const(ARGS),
+            Instruction::I32Const(1),
+            Instruction::I32Store8(MemArg { align: 0, ..mem(0) }),
+            Instruction::End,
+        ],
+    );
     call(&mut body, 0, [Instruction::I32Const(ARGS)]);
     // Denials are returned as a stable test code; the provider must never start.
     instructions(

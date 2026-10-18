@@ -2530,7 +2530,9 @@
         "tests::responses::trailers_and_unsolicited_response_bytes_cannot_change_the_next_result",
         "tests::secret_references::both_http_profiles_use_rotated_opaque_credentials_and_refuse_revoked_material",
         "tests::secret_references::provider_bindings_reject_wrong_tenant_origin_header_and_guest_overrides",
+        "tests::streaming::bodyless_responses_preserve_encoding_metadata_without_body_budget",
         "tests::streaming::completed_stream_reuses_socket_without_retaining_an_activation_cycle",
+        "tests::streaming::encoded_entity_responses_remain_unsupported_even_with_zero_length",
         "tests::streaming::encoding_and_upgrade_are_rejected_and_redirect_is_an_ordinary_response",
         "tests::streaming::finite_upload_window_stalls_without_an_unbounded_producer_queue",
         "tests::streaming::first_chunk_precedes_complete_body_and_retained_chunks_keep_ownership",
@@ -2548,7 +2550,7 @@
       "ignoredLeaves": [],
       "kind": "lib",
       "manifest": "crates/latent-http/Cargo.toml",
-      "minimumCases": 62,
+      "minimumCases": 64,
       "mode": "libtest",
       "package": "latent-http",
       "platforms": [
@@ -8834,6 +8836,7 @@
       "expectedCases": [
         "a_revoked_grant_blocks_a_new_stream_before_any_network_work",
         "abort_or_trap_before_upload_finishes_reclaims_the_connection",
+        "bodyless_encoding_metadata_crosses_component_abi_and_reclaims_owners",
         "cancellation_of_a_suspended_guest_read_closes_socket_and_all_resources",
         "dormant_streaming_deployments_create_no_provider_or_activation_owners",
         "guest_reads_before_full_body_and_store_drop_closes_the_stream",
@@ -8847,7 +8850,7 @@
       "ignoredLeaves": [],
       "kind": "test",
       "manifest": "crates/latent-wasmtime/Cargo.toml",
-      "minimumCases": 9,
+      "minimumCases": 10,
       "mode": "libtest",
       "package": "latent-wasmtime",
       "platforms": [
