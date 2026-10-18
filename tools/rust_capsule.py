@@ -32,6 +32,8 @@ def parser() -> argparse.ArgumentParser:
             native.add_argument('--version', required=True, help='Exact version; a local package must declare the same version')
             native.add_argument('--path', type=Path)
             native.add_argument('--registry')
+            native.add_argument('--git', help='Explicit HTTPS Git URL; excludes --path/--registry and requires --rev')
+            native.add_argument('--rev', help='Exact lowercase 40-hex Git commit; selected package must match --version')
             native.add_argument('--feature', action='append', default=[])
             native.add_argument('--no-default-features', action='store_true')
             native.add_argument('--optional', action='store_true')
@@ -112,7 +114,9 @@ def main(argv: list[str] | None = None) -> int:
                     version=getattr(args, 'version', None), local=getattr(args, 'path', None),
                     section=getattr(args, 'section', 'dependencies'), target=getattr(args, 'target', None),
                     features=getattr(args, 'feature', []), no_default_features=getattr(args, 'no_default_features', False),
-                    optional=getattr(args, 'optional', False), registry=getattr(args, 'registry', None))
+                    optional=getattr(args, 'optional', False), registry=getattr(args, 'registry', None),
+                    **({'git': args.git, 'revision': args.rev}
+                       if getattr(args, 'git', None) is not None or getattr(args, 'rev', None) is not None else {}))
             elif args.command == 'resolve':
                 import os
                 from tools.application_dependency_store import DependencyError

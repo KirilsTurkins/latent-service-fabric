@@ -57,6 +57,25 @@ Authoring supports an explicit dependency section, target, features, optional/de
 
 `add`, `update`, `remove` and `lock` preserve the previous accepted application capture. A changed declaration/lock invalidates that capture until another resolve and exact review. After editing, repeat the capture/review sequence; frontend `test` and `watch` verify the accepted bytes and retain explicit recipe trust. Apply the same `--registry-config` to authoring and resolution for a private registry. Adding build dependencies still requires separate executable-tool approval at compilation.
 
+For an explicit HTTPS Git source, normal `add` and `update` accept `--git` and
+`--rev` alongside the required exact package `--version`. Select a full lowercase
+40-hex commit, independently of the package version:
+
+```powershell
+python tools/rust_capsule.py add ./my-rust ordinary-library --version 1.2.3 --git https://example.org/developer/library.git --rev 1111111111111111111111111111111111111111 --cargo ./reviewed-rust/bin/cargo
+```
+
+Use the actual reviewed URL and commit. The Git selector excludes `--path` and
+`--registry`; credentials, queries, fragments and moving/abbreviated references
+are refused before native work. Cargo receives its ordinary Git arguments rather
+than a registry version selector. Before publication, the wrapper checks the
+direct native package's exact version, Git URL and revision against the request,
+its resulting declaration and its native lock entry. Existing source/tool/policy
+rechecks and transaction rollback still apply. An existing manifest version
+constraint must also equal the requested version. Repeat capture and exact review
+after a revision update; authoring does not certify signed component execution,
+private Git authentication or catalogue-removal qualification.
+
 The pinned Cargo `remove` command also prunes unused workspace dependencies.
 Authoring retains the original immutable SDK workspace sections when Cargo
 only deletes unchanged entries. It verifies the complete restored TOML meaning
