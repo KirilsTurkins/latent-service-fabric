@@ -66,6 +66,25 @@ unchanged 45-minute job. A difference can narrow the reachable initialization
 graph; it does not identify a specific initializer or prove an ABI defect by
 itself. No raw private runtime error or named native backtrace is made public.
 
+At exact `dc77129d33a8092402b3fa6a5868b7de498dd15e`, the private replay reached
+its authenticated preflight, built offline and captured nine bounded numeric
+frames for the unchanged signed no-HTTP integer control. The original source,
+component, signed release and frozen products remained unchanged. Mapping the
+exact component's function indices and offsets identifies runtime bootstrap:
+`_initialize` through `rt0`, `schedinit`, `randinit`, `random_get` and the closed
+exit adapter. The four signatures still trap with identical per-component fuel;
+HTTP and string handling are not necessary for that failure. This does not
+establish that later HTTP paths work.
+
+The qualifier's runtime policy allowed zero input bytes for every scalar provider,
+but the random provider dispatches an eight-byte little-endian length descriptor,
+including for `u64-value`. Its refusal makes the Go overlay exit rather than use
+clock-derived entropy. The candidate now grants exactly eight input bytes to
+that scalar random operation; clock and activation inputs stay zero. Provider
+limits, output allowances, operation restrictions and the fail-closed runtime are
+unchanged. A focused policy regression is red with the old ceiling and green
+with this correction. Fresh original signed HTTP and client gates remain required.
+
 ## Finite API contract
 
 The candidate supports ordinary default Client calls, DefaultClient,

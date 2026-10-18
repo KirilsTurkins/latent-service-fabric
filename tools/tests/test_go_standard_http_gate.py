@@ -14,6 +14,40 @@ from tools.rust_capsule_project import ROOT, read_file, snapshot
 
 
 class StandardHttpGate(unittest.TestCase):
+    def test_random_grant_funds_exact_scalar_descriptor_without_opening_other_inputs(self):
+        from types import SimpleNamespace
+        from tools import go_standard_http_node as node
+        providers = [{'id': name, 'capability': capability, 'profile': profile,
+                      'configurationDigest': 'sha256:'+'0'*64}
+                     for name, (capability, profile, _operation, _kind) in node.RUNTIME_PROVIDERS.items()]
+        providers += [{'id': 'activation', 'capability': node.ACTIVATION, 'profile': 'activation-owned-v1',
+                       'configurationDigest': 'sha256:'+'1'*64},
+                      {'id': 'http-standard', 'capability': node.CAPABILITY,
+                       'profile': 'bounded-streaming-http-identity-v1', 'configurationDigest': 'sha256:'+'2'*64}]
+        installation = SimpleNamespace(startup_record={'providers': providers})
+        with patch.object(node, 'policy') as apply:
+            runtime, authorized = node.grants('client', installation, 'publication',
+                                             {'scheme': 'http', 'host': '127.0.0.1', 'port': 1234})
+        policies = {call.args[2]: call.args[3] for call in apply.call_args_list if call.args[1] == 'policy'}
+        # The actual broker dispatches an eight-byte little-endian length even
+        # for scalar u64-value. This is request metadata, not entropy output.
+        provider = read_file(ROOT/'crates/latent-capabilities/src/broker/random.rs').decode()
+        self.assertIn('let input = (length as u64).to_le_bytes();', provider)
+        self.assertIn('ResourceTarget::Random,\n                &input,', provider)
+        descriptor = (8).to_bytes(8, 'little')
+        ceiling = policies['random-allow']['rules'][0]['ceiling']
+        self.assertEqual(ceiling['inputBytes'], len(descriptor))
+        self.assertLess(ceiling['inputBytes'], len(descriptor)+1)
+        self.assertEqual(ceiling['outputBytes'], 32768)
+        for identity in ('clockMonotonic', 'clockWall', 'activation'):
+            self.assertEqual(policies[identity+'-allow']['rules'][0]['ceiling']['inputBytes'], 0)
+        binding = next(call.args[3] for call in apply.call_args_list if call.args[2] == 'random-installed')
+        self.assertEqual(binding['restriction']['operations'], ['u64-value'])
+        self.assertEqual(policies['random-allow']['rules'][0]['operations'], ['u64-value'])
+        self.assertEqual(len(runtime), 4)
+        self.assertEqual(authorized[:-1], runtime)
+        self.assertEqual(authorized[-1]['capability'], node.CAPABILITY)
+
     def test_entry_probes_keep_original_http_cases_separate_and_retire_without_external_effects(self):
         from tools import go_standard_http_node as node
         source = read_file(ROOT/'sdk/go-guest/runtime/standard-http-conformance/main.go').decode()

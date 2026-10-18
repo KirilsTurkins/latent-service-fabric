@@ -89,10 +89,13 @@ def grants(client, node, publication, origin):
             'capability': capability, 'providerProfile': profile,
             'configurationDigest': descriptor['configurationDigest'], 'configurationEpoch': 1,
             'restriction': {'operations': [operation]}})
+        # The random provider dispatches an eight-byte length descriptor even
+        # for u64-value. Clock reads carry no input payload.
+        input_bytes = 8 if name == 'random' else 0
         policy(client, 'policy', name + '-allow', {'formatVersion': 1, 'tenant': 'examples', 'rules': [{
             'id': 'runtime', 'effect': 'allow', 'principals': [{'kind': 'administrator', 'subject': 'workflow-operator'}],
             'services': [SERVICE], 'publications': [publication], 'capability': capability, 'operations': [operation],
-            'resources': {'kind': kind}, 'ceiling': {'operations': 4096, 'inputBytes': 0,
+            'resources': {'kind': kind}, 'ceiling': {'operations': 4096, 'inputBytes': input_bytes,
                 'outputBytes': 32768, 'wallTimeMillis': 5000}}]})
         result.append({'capability': capability, 'policy': name + '-allow'})
     for capability, identity, binding, operations, kind, ceiling in (
