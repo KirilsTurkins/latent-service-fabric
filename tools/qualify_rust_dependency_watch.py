@@ -287,6 +287,14 @@ class ShutdownOnce:
         return operation()
 
 
+def remove_owned_revision(inputs, application, fixture, author):
+    """Give native Cargo its original path manifests, never the later compiler."""
+    fixture.restore_revision(inputs, 2)
+    author('remove-closed-graph', 'remove', application, fixture.PRIMARY)
+    fixture.remove_original(inputs, 'primary')
+    fixture.remove_original(inputs, 'child')
+
+
 def write_frontend(frontend, python, args, events):
     frontend.write_text('#!' + str(python) + ' -IB' + '''
 import hashlib,io,pathlib,sys
@@ -510,7 +518,7 @@ def main() -> int:
         report['updateBeforeNewSignedWorkspace'] = denied
         stop_watch('initial')
         offset = start_watch('updated')
-        author('remove-closed-graph', 'remove', application, fixture.PRIMARY)
+        remove_owned_revision(inputs, application, fixture, author)
         offset, denied = await_event(offset, lambda value: value.get('event') == 'edit-failed', 'unreviewed-remove', 30)
         require(denied['uncertain'] is False, 'unreviewed-remove-must-be-certain')
         report['removeBeforeReview'] = denied

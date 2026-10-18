@@ -79,6 +79,73 @@ class RustDependencyWatchFixture(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'already-attempted-no-retry'):
             fence.call(lambda: self.fail('replayed confirmed mutation'))
 
+class RustWatchRemoval(unittest.TestCase):
+    def inputs(self, temporary):
+        root = Path(temporary)
+        application = root / 'application'; application.mkdir()
+        sdk = application / 'sdk-lock.json'; sdk.write_bytes(b'unchanged-sdk-control')
+        inputs = fixture.create(application)
+        fixture.remove_original(inputs, 'primary')
+        fixture.remove_original(inputs, 'child')
+        return application, inputs, sdk
+
+    def test_native_remove_sees_exact_owned_revision_two_then_compile_boundary_has_no_original_paths(self):
+        import json
+        from tools.qualify_rust_dependency_watch import remove_owned_revision
+        with tempfile.TemporaryDirectory() as temporary:
+            application, inputs, sdk = self.inputs(temporary)
+            events = []
+            def author(*arguments):
+                self.assertEqual(arguments, ('remove-closed-graph', 'remove', application, fixture.PRIMARY))
+                events.append('native-remove')
+                for name, expected in fixture.revision(2).items():
+                    directory = Path(inputs[name])
+                    actual = {path.relative_to(directory).as_posix(): path.read_bytes()
+                              for path in directory.rglob('*') if path.is_file()}
+                    self.assertEqual(actual, expected)
+                    identity = json.dumps({name: fixture.digest(raw) for name, raw in sorted(actual.items())},
+                                          sort_keys=True, separators=(',', ':')).encode()
+                    self.assertEqual(fixture.digest(identity), inputs['inputDigests'][name + '-v2'])
+            remove_owned_revision(inputs, application, fixture, author)
+            # This is the state handed back to the unchanged removed-build path.
+            self.assertFalse(Path(inputs['primary']).exists())
+            self.assertFalse(Path(inputs['child']).exists())
+            events.append('removed-compile-boundary')
+            self.assertEqual(events, ['native-remove', 'removed-compile-boundary'])
+            self.assertEqual(sdk.read_bytes(), b'unchanged-sdk-control')
+
+    def test_failed_native_remove_preserves_original_exception_without_replay_or_later_stages(self):
+        from tools.qualify_rust_dependency_watch import remove_owned_revision
+        with tempfile.TemporaryDirectory() as temporary:
+            application, inputs, sdk = self.inputs(temporary)
+            original = RuntimeError('original-native-remove-failure')
+            events = []
+            def author(*arguments):
+                events.append('native-remove')
+                self.assertTrue(Path(inputs['primary']).is_dir())
+                self.assertTrue(Path(inputs['child']).is_dir())
+                raise original
+            with self.assertRaises(RuntimeError) as observed:
+                remove_owned_revision(inputs, application, fixture, author)
+                events.extend(['removed-compile', 'removed-deploy'])
+            self.assertIs(observed.exception, original)
+            self.assertEqual(events, ['native-remove'])
+            self.assertEqual(sdk.read_bytes(), b'unchanged-sdk-control')
+
+    def test_changed_owned_root_refuses_before_native_remove_and_preserves_source(self):
+        from tools.qualify_rust_dependency_watch import remove_owned_revision
+        with tempfile.TemporaryDirectory() as temporary:
+            application, inputs, sdk = self.inputs(temporary)
+            changed = {**inputs, 'ownedRoot': str(application.resolve())}
+            calls = []
+            with self.assertRaisesRegex(ValueError, 'owned Rust watch input root changed'):
+                remove_owned_revision(changed, application, fixture, lambda *arguments: calls.append(arguments))
+            self.assertEqual(calls, [])
+            self.assertFalse(Path(inputs['primary']).exists())
+            self.assertFalse(Path(inputs['child']).exists())
+            self.assertEqual(sdk.read_bytes(), b'unchanged-sdk-control')
+
+
 class FrontendRuntime(unittest.TestCase):
     def test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode(self):
         import json

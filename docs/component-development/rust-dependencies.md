@@ -169,7 +169,9 @@ workspaces: the initial value, an updated transitive value, then dependency
 removal. Before each replacement, unreviewed lock inputs, changed recipe trust
 and a previous build's signing consent must stop deployment. Every watcher
 must finish through normal `down` with a reaped, clean node. Explicit Cargo
-fetch may contact its registries; the ordinary captured compiler retains its
-network-denied namespace. The programme exports only bounded public results.
+fetch may contact its registries. The exact owned crate revision is restored
+while native update/removal loads its manifests; its original directories are
+deleted again before every captured compilation. The ordinary captured compiler
+retains its network-denied namespace. The programme exports only bounded public results.
 Its source is not an executed qualification receipt, and later final-source CI
 must preserve the other language gates in the shared developer-tools job.

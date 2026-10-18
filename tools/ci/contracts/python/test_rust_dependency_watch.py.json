@@ -33,7 +33,10 @@
     "RustDependencyWatchFixture.test_confirmed_shutdown_receipt_is_preserved_and_same_owner_is_not_replayed",
     "RustDependencyWatchFixture.test_removal_entry_has_no_library_reference_and_keeps_normal_wit",
     "RustDependencyWatchFixture.test_two_real_crates_preserve_primary_api_and_resource_across_update",
-    "RustDependencyWatchFixture.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved"
+    "RustDependencyWatchFixture.test_uncertain_shutdown_is_never_replayed_and_original_failure_is_preserved",
+    "RustWatchRemoval.test_changed_owned_root_refuses_before_native_remove_and_preserves_source",
+    "RustWatchRemoval.test_failed_native_remove_preserves_original_exception_without_replay_or_later_stages",
+    "RustWatchRemoval.test_native_remove_sees_exact_owned_revision_two_then_compile_boundary_has_no_original_paths"
   ],
   "guards": {
     "FrontendRuntime.test_exact_frontend_ignores_ambient_python_inputs_and_never_writes_bytecode": {
@@ -443,10 +446,46 @@
         "class:setup-sha256:ad2e13b69c4fc1fda46413f740f426fc1793cfc6d6da8d226ba619f1aef48be7"
       ],
       "skipSites": []
+    },
+    "RustWatchRemoval.test_changed_owned_root_refuses_before_native_remove_and_preserves_source": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:4e65b9829de9ab04aafa8b9cac85174fe81fd358b83438392764e773e011ace8"
+      ],
+      "skipSites": []
+    },
+    "RustWatchRemoval.test_failed_native_remove_preserves_original_exception_without_replay_or_later_stages": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:4e65b9829de9ab04aafa8b9cac85174fe81fd358b83438392764e773e011ace8"
+      ],
+      "skipSites": []
+    },
+    "RustWatchRemoval.test_native_remove_sees_exact_owned_revision_two_then_compile_boundary_has_no_original_paths": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:c9397e078e5b9716e054e62f649d05e9a0914ac13f42e551a71d1f37c63b4d65",
+        "class:setup-sha256:4e65b9829de9ab04aafa8b9cac85174fe81fd358b83438392764e773e011ace8"
+      ],
+      "skipSites": []
     }
   },
   "kind": "python",
   "module": "tools/tests/test_rust_dependency_watch.py",
-  "reviewReason": "Add request bound and diagnostic loss regressions while preserving every prior case and execution guard",
+  "reviewReason": "Retain all 34 historical cases and guards; add three regression cases for exact revision restoration, fail-closed native removal, and owned-root refusal.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
