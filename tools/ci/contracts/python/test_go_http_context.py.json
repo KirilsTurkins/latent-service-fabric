@@ -1,6 +1,7 @@
 {
   "cases": [
     "GoHttpContextTests.test_all_original_calls_and_resource_owners_remain_byte_identical",
+    "GoHttpContextTests.test_collected_timer_drain_retires_exact_slot_before_original_fence",
     "GoHttpContextTests.test_context_facade_requires_explicit_selection_and_actual_streaming_import",
     "GoHttpContextTests.test_every_pinned_call_rejects_marshalling_or_ownership_drift",
     "GoHttpContextTests.test_exact_dispatcher_profiles_preserve_timers_checkpoints_and_initializer_edges",
@@ -9,6 +10,18 @@
   ],
   "guards": {
     "GoHttpContextTests.test_all_original_calls_and_resource_owners_remain_byte_identical": {
+      "bases": [
+        "unittest.TestCase"
+      ],
+      "classDecorators": [],
+      "decorators": [],
+      "fixtureGuards": [
+        "module:setup-sha256:8f313f499d97bdaefd1bd9109c839c4ee115bb9ec818ab04f9cb7eb0c5da5e34",
+        "class:setup-sha256:3a574815edc62a76b1338a6e1ad64c8de564e09ee42d226697d1265a70079e15"
+      ],
+      "skipSites": []
+    },
+    "GoHttpContextTests.test_collected_timer_drain_retires_exact_slot_before_original_fence": {
       "bases": [
         "unittest.TestCase"
       ],
@@ -83,6 +96,6 @@
   },
   "kind": "python",
   "module": "tools/tests/test_go_http_context.py",
-  "reviewReason": "Six additive source and ownership controls against captured generated HTTP and dispatcher preimages; no execution or net/http claim.",
+  "reviewReason": "Preserve all six existing generated HTTP and dispatcher source controls and their exact execution guards. Add one non-skipped collected-timer drain prerequisite checking exact-token retirement before the original fence, stale-token and unconfirmed-stop refusals, and unchanged live-callback restrictions. Source controls do not establish signed execution or net/http qualification.",
   "schemaVersion": "latent.ci.contracts.v1"
 }
